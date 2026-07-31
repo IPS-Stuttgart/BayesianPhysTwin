@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-source-reproduction-v1",
+  "claim_boundary": "Fresh DLO2 source reproduction. DLO2 source values and all official evaluation values remain unopened until the DLO1 long-run gate authorizes this stage.",
+  "model_initialization": "official-deform-dlo-initialization-v1",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "code_vendored": false,
+    "license_status": "No explicit upstream license file observed at the locked commit; import from a separately obtained checkout only.",
+    "dense_solver_compatibility_shim": "sksparse-import-only-stub-v1"
+  },
+  "data": {
+    "development_partition": "train",
+    "official_eval_metrics_opened": false,
+    "forbid_eval_reads_during_source_stage": true,
+    "dlo_types": ["DLO2"],
+    "expected_train_trajectories_per_dlo": 56,
+    "expected_frames_per_trajectory": 500,
+    "expected_coordinate_count": 3,
+    "expected_node_count": {
+      "DLO2": 12
+    }
+  },
+  "source_split": {
+    "contract": "sha256-name-partition-v1",
+    "seed": "deform-dlo2-fresh-v1-20260731",
+    "fit_count": 40,
+    "validation_count": 8,
+    "source_test_count": 8
+  },
+  "training": {
+    "random_seed": 42,
+    "unroll_horizon_frames": 50,
+    "batch_size": 32,
+    "total_updates": 6400,
+    "checkpoint_updates": [0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400],
+    "optimizer": "official-sgd-parameter-groups-v1",
+    "cublas_workspace_config": ":4096:8",
+    "known_action_nodes": [0, 1, -2, -1],
+    "window_sampling": "frozen-uniform-fit-trajectory-and-start-v1",
+    "checkpoint_selection": "minimum-validation-l1-tie-earliest-v1",
+    "author_runtime_guidance": "Use 50 rather than 100 unrolled training steps to reduce reported long-horizon instability."
+  },
+  "source_gate": {
+    "published_reference_l1_m": {
+      "DLO2": 0.0097
+    },
+    "published_error_multiplier_max": 1.1,
+    "minimum_persistence_wins": 6,
+    "required_source_test_count": 8,
+    "advance_only_if_all_gates_pass": true
+  },
+  "checkpoint_posterior": {
+    "validation_improvement_min": 0.01,
+    "source_transfer_improvement_min": 0.01,
+    "source_transfer_minimum_case_wins": 5,
+    "fallback": "selected_single_exact",
+    "benchmark_point_loss": "coordinate-wise-l1",
+    "predictive_median_definition": "coordinate-wise-weighted-midpoint-median-v1",
+    "operators": ["parameter_mean", "predictive_mean", "predictive_median"],
+    "softmax_temperature_m": 0.001,
+    "coordinate_variance_floor_m2": 0.000025,
+    "coordinate_interval_nominal_coverage": 0.9,
+    "arms": [
+      {
+        "name": "tail_2_uniform",
+        "updates": [6040, 6400],
+        "weighting": "uniform"
+      },
+      {
+        "name": "tail_3_uniform",
+        "updates": [5200, 6040, 6400],
+        "weighting": "uniform"
+      },
+      {
+        "name": "tail_4_uniform",
+        "updates": [4000, 5200, 6040, 6400],
+        "weighting": "uniform"
+      },
+      {
+        "name": "late_validation_softmax",
+        "updates": [2560, 4000, 5200, 6040, 6400],
+        "weighting": "validation-softmax"
+      }
+    ]
+  },
+  "authorization": {
+    "required_parent_contract": "deform-dlo-longrun-result-v2",
+    "required_parent_protocol_sha256": "a1c7ad23ccf6c83e0130efb9c9b172063892caf5b0066ca79cd6ad3b151515a0",
+    "required_parent_source_gate_passed": true,
+    "required_parent_checkpoint_posterior_authorized": true,
+    "required_parent_posterior": {
+      "protocol_path": "configs/sota/deform_dlo_longrun_posterior_v2.json",
+      "protocol_sha256": "f2ed821600b9d99ee8cd0d35a0c70ccbf65de75415324b833c75350cf9ab8eeb",
+      "result_contract": "deform-dlo-longrun-posterior-result-v1",
+      "selection_contract": "deform-dlo-longrun-posterior-selection-v1",
+      "exact_fallback": false,
+      "fresh_dlo2_checkpoint_posterior_authorized": true
+    },
+    "parent_result_must_be_supplied_before_preflight": true
+  },
+  "future_stage": {
+    "official_eval_allowed_before_source_gate": false,
+    "identical_information_sota_only": true,
+    "online_prefix_assimilation_must_be_reported_separately": true,
+    "dlo1_retuning_forbidden": true
+  }
+}

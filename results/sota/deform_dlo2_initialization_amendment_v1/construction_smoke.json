@@ -1,29 +1,41 @@
 {
-  "schema_version": 1,
-  "contract": "deform-dlo2-initialization-construction-smoke-v1",
-  "claim_boundary": "Target-free model-construction verification only; no DLO2 trajectory or official-evaluation artifact was read.",
-  "executed_on": "gpuserver4090:gpu1",
-  "dlo2_source_read": false,
-  "official_eval_read": false,
-  "upstream": {
-    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
-    "train_deform_sha256": "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
-  },
-  "implementation": {
-    "parser_sha256": "1efa8a00e17ae4fc1eb179bdc6c0a7edfb031c087090f00c80c4e052906693d7",
-    "runner_sha256": "a16880d2090afd5530a425f35e95c151bbb6824114945bbb6ec891a822c2aada"
-  },
   "checks": {
     "dlo1_rest_geometry_constructor_parity": true,
     "dlo1_rest_lengths_constructor_parity": true,
-    "dlo2_rest_shape": [1, 12, 3],
-    "dlo2_rest_edge_length_shape": [1, 11],
-    "dlo2_rest_region_length_shape": [1, 11],
     "dlo2_bend_stiffness_expected": 0.0005,
     "dlo2_bend_stiffness_observed_mean": 0.0005000000237487257,
-    "dlo2_twist_stiffness_expected": 0.00003,
-    "dlo2_twist_stiffness_observed_mean": 0.00003000000106112566,
+    "dlo2_rest_edge_length_shape": [
+      1,
+      11
+    ],
+    "dlo2_rest_region_length_shape": [
+      1,
+      11
+    ],
+    "dlo2_rest_shape": [
+      1,
+      12,
+      3
+    ],
+    "dlo2_twist_stiffness_expected": 3e-05,
+    "dlo2_twist_stiffness_observed_mean": 3.000000106112566e-05,
     "source_hash_verified": true
   },
-  "passed": true
+  "claim_boundary": "Target-free model-construction verification only; no DLO1/DLO2 trajectory or official-evaluation artifact was read.",
+  "contract": "deform-dlo2-initialization-construction-smoke-v1",
+  "dlo1_source_read": false,
+  "dlo2_source_read": false,
+  "executed_on": "workstation1:cuda:1",
+  "implementation": {
+    "parser_sha256": "1efa8a00e17ae4fc1eb179bdc6c0a7edfb031c087090f00c80c4e052906693d7",
+    "runner_sha256": "68688808cdc4b8967448fcd40d54574043ab38d0b71af94ed9c6721e17067871",
+    "verifier_sha256": "311b8e7a84037b021e796ac34ff483ab8b72abbf27acfdd73a86d3d5490714c5"
+  },
+  "official_eval_read": false,
+  "passed": true,
+  "schema_version": 1,
+  "upstream": {
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "train_deform_sha256": "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
+  }
 }

@@ -15,6 +15,7 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     evaluate_deform_coordinate_uncertainty,
     load_deform_checkpoint_belief_protocol,
     select_deform_checkpoint_belief_arm,
+    weighted_deform_prediction_median,
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -107,6 +108,44 @@ def test_checkpoint_belief_combines_predictive_moments() -> None:
 
     assert np.all(mean == pytest.approx(1.5))
     assert np.all(variance == pytest.approx(0.75))
+
+
+def test_checkpoint_belief_weighted_median_matches_l1_point_functional() -> None:
+    two_member = weighted_deform_prediction_median(
+        {
+            40: np.asarray([0.0, 4.0]),
+            80: np.asarray([2.0, 2.0]),
+        },
+        {40: 0.5, 80: 0.5},
+    )
+    ordinary = weighted_deform_prediction_median(
+        {
+            40: np.asarray([0.0, 100.0]),
+            80: np.asarray([100.0, 0.0]),
+            120: np.asarray([2.0, 2.0]),
+        },
+        {40: 1.0 / 3.0, 80: 1.0 / 3.0, 120: 1.0 / 3.0},
+    )
+    dominant = weighted_deform_prediction_median(
+        {
+            40: np.asarray([0.0, 100.0]),
+            80: np.asarray([7.0, 7.0]),
+            120: np.asarray([20.0, 0.0]),
+        },
+        {40: 0.2, 80: 0.6, 120: 0.2},
+    )
+
+    assert np.array_equal(two_member, np.asarray([1.0, 3.0]))
+    assert np.array_equal(ordinary, np.asarray([2.0, 2.0]))
+    assert np.array_equal(dominant, np.asarray([7.0, 7.0]))
+
+
+def test_checkpoint_belief_weighted_median_rejects_bad_weights() -> None:
+    with pytest.raises(ValueError, match="sum to one"):
+        weighted_deform_prediction_median(
+            {40: np.zeros(1), 80: np.ones(1)},
+            {40: 0.4, 80: 0.4},
+        )
 
 
 def test_checkpoint_belief_prediction_records_match_exact_l1() -> None:

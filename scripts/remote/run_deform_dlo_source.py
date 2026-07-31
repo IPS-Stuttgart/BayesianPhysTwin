@@ -24,6 +24,7 @@ from bayesian_phystwin.deform_dlo_source import (
     evaluate_deform_source_gate,
     load_deform_dlo_source_protocol,
     sha256_file,
+    validate_deform_dlo2_stage_authorization,
 )
 from bayesian_phystwin.deform_dlo_upstream import load_deform_dlo_initialization
 
@@ -33,6 +34,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--upstream-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--stage-authorization", type=Path)
     parser.add_argument("--dlo-type", default="DLO1")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument(
@@ -51,6 +53,48 @@ def _write_json(path: Path, payload: dict[str, object], *, immutable: bool) -> N
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(rendered, encoding="utf-8")
+
+
+def _read_json(path: Path) -> dict[str, object]:
+    payload = json.loads(path.resolve().read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"expected a JSON object: {path}")
+    return payload
+
+
+def _dlo2_stage_authorization(
+    path: Path | None,
+    *,
+    protocol: dict[str, object],
+    protocol_path: Path,
+) -> dict[str, object] | None:
+    if protocol["dlo_types"] != ("DLO2",):
+        if path is not None:
+            raise ValueError("stage authorization is valid only for DLO2")
+        return None
+    if path is None:
+        raise ValueError("DLO2 source run requires stage authorization")
+    resolved = path.resolve()
+    authorization = _read_json(resolved)
+    validated = validate_deform_dlo2_stage_authorization(
+        protocol,
+        authorization,
+        protocol_sha256=sha256_file(protocol_path),
+    )
+    for label in ("parent_longrun_result", "parent_posterior_result"):
+        identity = authorization[label]
+        if not isinstance(identity, dict):
+            raise ValueError(f"DLO2 {label} identity is invalid")
+        parent_path = Path(str(identity.get("path", ""))).resolve()
+        if not parent_path.is_file() or sha256_file(parent_path) != identity.get(
+            "sha256"
+        ):
+            raise ValueError(f"DLO2 {label} identity does not verify")
+    return {
+        "path": str(resolved),
+        "sha256": sha256_file(resolved),
+        **validated,
+    }
 
 
 def _assert_upstream(root: Path, expected_commit: str) -> dict[str, object]:
@@ -239,12 +283,10 @@ def _build_dlo_model(
         modules.computeEdges(rest_vertices.clone())
     )
     model.DEFORM_func.bend_stiffness = torch.nn.Parameter(
-        initialization.bend_stiffness
-        * torch.ones((1, edge_count), device=device)
+        initialization.bend_stiffness * torch.ones((1, edge_count), device=device)
     )
     model.DEFORM_func.twist_stiffness = torch.nn.Parameter(
-        initialization.twist_stiffness
-        * torch.ones((1, edge_count), device=device)
+        initialization.twist_stiffness * torch.ones((1, edge_count), device=device)
     )
     return model_function, model
 
@@ -581,6 +623,11 @@ def main() -> int:
     protocol = load_deform_dlo_source_protocol(args.protocol)
     if args.dlo_type not in protocol["dlo_types"]:
         raise ValueError("requested DLO type is outside the registered protocol")
+    stage_authorization = _dlo2_stage_authorization(
+        args.stage_authorization,
+        protocol=protocol,
+        protocol_path=args.protocol,
+    )
     upstream = _assert_upstream(args.upstream_root, protocol["upstream"]["commit"])
     frame_count = int(protocol["data"]["expected_frames_per_trajectory"])
     node_count = int(protocol["data"]["expected_node_count"][args.dlo_type])
@@ -635,6 +682,7 @@ def main() -> int:
         "validated_development_trajectory_count": len(development_trajectories),
         "frame_count": frame_count,
         "node_count": node_count,
+        "stage_authorization": stage_authorization,
     }
     _write_json(output_root / "preflight.json", preflight, immutable=True)
     if args.mode == "preflight":
@@ -811,6 +859,7 @@ def main() -> int:
             "registered_source_gate_evaluated": False,
             "source_test_opened": False,
             "model_initialization": initialization_record,
+            "stage_authorization": stage_authorization,
             "training": training_losses,
             "fit_rollout": fit_rollout,
             "elapsed_seconds": time.perf_counter() - started,
@@ -863,6 +912,7 @@ def main() -> int:
         },
         "upstream": upstream,
         "model_initialization": initialization_record,
+        "stage_authorization": stage_authorization,
         "runtime": {
             "python": sys.version,
             "torch": torch.__version__,

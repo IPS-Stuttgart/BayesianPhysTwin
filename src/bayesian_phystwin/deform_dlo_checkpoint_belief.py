@@ -13,7 +13,14 @@ import numpy as np
 
 DEFORM_CHECKPOINT_BELIEF_SCHEMA_VERSION = 1
 DEFORM_CHECKPOINT_BELIEF_CONTRACT = "deform-dlo-checkpoint-belief-exploratory-v1"
-DEFORM_LONGRUN_POSTERIOR_CONTRACT = "deform-dlo-longrun-posterior-v1"
+DEFORM_LONGRUN_POSTERIOR_SCHEMA_VERSION = 2
+DEFORM_LONGRUN_POSTERIOR_CONTRACT = "deform-dlo-longrun-posterior-v2"
+DEFORM_POSTERIOR_OPERATORS = (
+    "parameter_mean",
+    "predictive_mean",
+    "predictive_median",
+)
+DEFORM_PREDICTIVE_MEDIAN_DEFINITION = "coordinate-wise-weighted-midpoint-median-v1"
 
 
 def load_deform_checkpoint_belief_protocol(path: str | Path) -> dict[str, object]:
@@ -80,7 +87,7 @@ def load_deform_longrun_posterior_protocol(
 
     source = Path(path).resolve()
     payload = json.loads(source.read_text(encoding="utf-8"))
-    if payload.get("schema_version") != DEFORM_CHECKPOINT_BELIEF_SCHEMA_VERSION:
+    if payload.get("schema_version") != DEFORM_LONGRUN_POSTERIOR_SCHEMA_VERSION:
         raise ValueError("unsupported DEFORM long-run posterior schema")
     if payload.get("contract") != DEFORM_LONGRUN_POSTERIOR_CONTRACT:
         raise ValueError("unsupported DEFORM long-run posterior contract")
@@ -98,11 +105,14 @@ def load_deform_longrun_posterior_protocol(
             or len(str(identity.get("sha256", ""))) != 64
         ):
             raise ValueError("long-run posterior parent identity is invalid")
-    if tuple(payload.get("operators", ())) != (
-        "parameter_mean",
-        "predictive_mean",
-    ):
+    if tuple(payload.get("operators", ())) != DEFORM_POSTERIOR_OPERATORS:
         raise ValueError("long-run posterior operators differ")
+    if (
+        payload.get("benchmark_point_loss") != "coordinate-wise-l1"
+        or payload.get("predictive_median_definition")
+        != DEFORM_PREDICTIVE_MEDIAN_DEFINITION
+    ):
+        raise ValueError("long-run posterior point-functional policy differs")
     if payload.get("fallback") != "selected_single_exact":
         raise ValueError("long-run posterior must preserve exact fallback")
     for key in (
@@ -185,9 +195,15 @@ def validate_deform_dlo2_checkpoint_posterior(
     if (
         not isinstance(raw_operators, Sequence)
         or isinstance(raw_operators, (str, bytes))
-        or tuple(raw_operators) != ("parameter_mean", "predictive_mean")
+        or tuple(raw_operators) != DEFORM_POSTERIOR_OPERATORS
     ):
         raise ValueError("DLO2 posterior operators differ")
+    if (
+        raw.get("benchmark_point_loss") != "coordinate-wise-l1"
+        or raw.get("predictive_median_definition")
+        != DEFORM_PREDICTIVE_MEDIAN_DEFINITION
+    ):
+        raise ValueError("DLO2 posterior point-functional policy differs")
     if raw.get("fallback") != "selected_single_exact":
         raise ValueError("DLO2 posterior must preserve exact fallback")
     for key in ("validation_improvement_min", "source_transfer_improvement_min"):
@@ -254,6 +270,100 @@ def validate_deform_dlo2_checkpoint_posterior(
     result = dict(raw)
     result["arms"] = arms
     return result
+
+
+def validate_deform_dlo2_fresh_posterior_parent(
+    source_protocol: Mapping[str, object],
+    parent_result: Mapping[str, object],
+    selection_seal: Mapping[str, object],
+    *,
+    selection_seal_sha256: str,
+) -> dict[str, object]:
+    """Require the DLO1 posterior transfer gate before fresh DLO2 access."""
+
+    authorization = source_protocol.get("authorization")
+    if not isinstance(authorization, Mapping):
+        raise ValueError("fresh DLO2 protocol omits parent authorization")
+    required = authorization.get("required_parent_posterior")
+    if not isinstance(required, Mapping):
+        raise ValueError("fresh DLO2 protocol omits the DLO1 posterior gate")
+    expected_protocol_sha256 = str(required.get("protocol_sha256", ""))
+    result_selection_identity = parent_result.get("selection_seal")
+    sealed_protocol_identity = selection_seal.get("protocol")
+    if (
+        len(expected_protocol_sha256) != 64
+        or parent_result.get("contract") != required.get("result_contract")
+        or parent_result.get("official_eval_read") is not False
+        or parent_result.get("exact_fallback") is not required.get("exact_fallback")
+        or parent_result.get("fresh_dlo2_checkpoint_posterior_authorized")
+        is not required.get("fresh_dlo2_checkpoint_posterior_authorized")
+        or selection_seal.get("contract") != required.get("selection_contract")
+        or selection_seal.get("official_eval_read") is not False
+        or not isinstance(result_selection_identity, Mapping)
+        or result_selection_identity.get("sha256") != selection_seal_sha256
+        or not isinstance(sealed_protocol_identity, Mapping)
+        or sealed_protocol_identity.get("sha256") != expected_protocol_sha256
+    ):
+        raise ValueError("DLO1 posterior did not authorize fresh DLO2")
+
+    selected_arm = str(parent_result.get("selected_arm", ""))
+    selected_spec = parent_result.get("selected_spec")
+    result_selection = parent_result.get("selection")
+    sealed_selection = selection_seal.get("selection")
+    candidate_specs = selection_seal.get("candidate_specs")
+    if (
+        not selected_arm
+        or not isinstance(selected_spec, Mapping)
+        or not isinstance(result_selection, Mapping)
+        or result_selection != sealed_selection
+        or result_selection.get("selected_arm") != selected_arm
+        or not isinstance(candidate_specs, Mapping)
+        or candidate_specs.get(selected_arm) != selected_spec
+    ):
+        raise ValueError("DLO1 posterior selection lineage differs")
+
+    policy = validate_deform_dlo2_checkpoint_posterior(source_protocol)
+    source_test = parent_result.get("source_test")
+    transfer = source_test.get("transfer") if isinstance(source_test, Mapping) else None
+    if (
+        not isinstance(transfer, Mapping)
+        or float(transfer.get("relative_improvement", -math.inf))
+        < float(str(policy["source_transfer_improvement_min"]))
+        or int(transfer.get("wins", -1))
+        < int(str(policy["source_transfer_minimum_case_wins"]))
+    ):
+        raise ValueError("DLO1 posterior source-transfer gate differs")
+
+    uncertainty = parent_result.get("uncertainty")
+    source_uncertainty = (
+        uncertainty.get("source_test") if isinstance(uncertainty, Mapping) else None
+    )
+    variance_scale = (
+        float(uncertainty.get("validation_fitted_variance_scale", math.nan))
+        if isinstance(uncertainty, Mapping)
+        else math.nan
+    )
+    coverage = (
+        float(source_uncertainty.get("coordinate_coverage", math.nan))
+        if isinstance(source_uncertainty, Mapping)
+        else math.nan
+    )
+    if (
+        not math.isfinite(variance_scale)
+        or variance_scale < 1.0
+        or not math.isfinite(coverage)
+        or not 0.0 <= coverage <= 1.0
+    ):
+        raise ValueError("DLO1 posterior calibration record is invalid")
+    return {
+        "selected_arm": selected_arm,
+        "selected_spec": dict(selected_spec),
+        "source_transfer_relative_improvement": float(transfer["relative_improvement"]),
+        "source_transfer_wins": int(transfer["wins"]),
+        "validation_fitted_variance_scale": variance_scale,
+        "source_coordinate_coverage": coverage,
+        "posterior_protocol_sha256": expected_protocol_sha256,
+    }
 
 
 def _validation_errors(
@@ -406,6 +516,63 @@ def combine_deform_checkpoint_predictions(
     for update, array in zip(updates, arrays, strict=True):
         variance += weights[update] * np.square(array - mean)
     return mean, variance
+
+
+def weighted_deform_prediction_median(
+    predictions_by_update: Mapping[int, np.ndarray],
+    weights_by_update: Mapping[int, float],
+) -> np.ndarray:
+    """Return the coordinate-wise weighted median with midpoint tie handling.
+
+    The midpoint convention makes a two-member equal-weight posterior agree with
+    its predictive mean while retaining the L1-optimal median for larger banks.
+    """
+
+    updates = tuple(sorted(int(update) for update in weights_by_update))
+    if not updates or set(updates) != {int(update) for update in predictions_by_update}:
+        raise ValueError(
+            "checkpoint predictions and weights must use identical updates"
+        )
+    weights = []
+    arrays = []
+    for update in updates:
+        weight = float(weights_by_update[update])
+        array = np.asarray(predictions_by_update[update], dtype=np.float64)
+        if not math.isfinite(weight) or weight <= 0.0:
+            raise ValueError("checkpoint weights must be finite and positive")
+        if array.size == 0 or not np.isfinite(array).all():
+            raise ValueError("checkpoint predictions must be finite and nonempty")
+        weights.append(weight)
+        arrays.append(array)
+    if not math.isclose(sum(weights), 1.0, rel_tol=0.0, abs_tol=1e-10):
+        raise ValueError("checkpoint weights must sum to one")
+    if any(array.shape != arrays[0].shape for array in arrays[1:]):
+        raise ValueError("checkpoint predictions have different shapes")
+
+    stacked = np.stack(arrays, axis=0)
+    order = np.argsort(stacked, axis=0, kind="stable")
+    sorted_values = np.take_along_axis(stacked, order, axis=0)
+    broadcast_weights = np.broadcast_to(
+        np.asarray(weights, dtype=np.float64).reshape(
+            (len(weights),) + (1,) * arrays[0].ndim
+        ),
+        stacked.shape,
+    )
+    sorted_weights = np.take_along_axis(broadcast_weights, order, axis=0)
+    cumulative = np.cumsum(sorted_weights, axis=0)
+    lower_index = np.argmax(cumulative >= 0.5, axis=0)
+    upper_index = np.argmax(cumulative > 0.5, axis=0)
+    lower = np.take_along_axis(
+        sorted_values,
+        np.expand_dims(lower_index, axis=0),
+        axis=0,
+    )[0]
+    upper = np.take_along_axis(
+        sorted_values,
+        np.expand_dims(upper_index, axis=0),
+        axis=0,
+    )[0]
+    return 0.5 * (lower + upper)
 
 
 def deform_prediction_records(

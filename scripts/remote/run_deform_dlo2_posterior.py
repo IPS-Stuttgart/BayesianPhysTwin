@@ -21,6 +21,7 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     evaluate_deform_coordinate_uncertainty,
     select_deform_checkpoint_belief_arm,
     validate_deform_dlo2_checkpoint_posterior,
+    weighted_deform_prediction_median,
 )
 from bayesian_phystwin.deform_dlo_source import (
     choose_deform_validation_checkpoint,
@@ -75,6 +76,14 @@ def main() -> int:
         source_protocol_sha256=protocol_sha256,
         upstream_commit=upstream_commit,
     )
+    stage_authorization = source_result.get("stage_authorization")
+    if (
+        not isinstance(stage_authorization, dict)
+        or stage_authorization.get("contract") != "deform-dlo2-fresh-authorization-v2"
+        or stage_authorization.get("protocol_sha256") != protocol_sha256
+        or not str(stage_authorization.get("selected_arm", ""))
+    ):
+        raise ValueError("DLO2 source result omits its posterior-transfer gate")
     upstream = source_runtime._assert_upstream(args.upstream_root, upstream_commit)
 
     manifest_identity = source_result.get("source_manifest")
@@ -180,14 +189,23 @@ def main() -> int:
     for base_name, weights in weights_by_base_arm.items():
         if base_name == "selected_single":
             continue
+        member_predictions = {
+            update: member_validation[update]["predictions"] for update in weights
+        }
         predictive_mean, predictive_variance = combine_deform_checkpoint_predictions(
-            {update: member_validation[update]["predictions"] for update in weights},
+            member_predictions,
+            weights,
+        )
+        predictive_median = weighted_deform_prediction_median(
+            member_predictions,
             weights,
         )
         for operator in policy["operators"]:
             candidate_name = f"{operator}::{base_name}"
             if operator == "predictive_mean":
                 point_prediction = predictive_mean
+            elif operator == "predictive_median":
+                point_prediction = predictive_median
             elif operator == "parameter_mean":
                 averaged_state = average_deform_checkpoint_states(
                     {update: states[update] for update in weights},
@@ -291,6 +309,11 @@ def main() -> int:
         )
         if spec["operator"] == "predictive_mean":
             source_point_prediction = source_mean
+        elif spec["operator"] == "predictive_median":
+            source_point_prediction = weighted_deform_prediction_median(
+                {update: member_source[update]["predictions"] for update in weights},
+                weights,
+            )
         else:
             averaged_state = average_deform_checkpoint_states(
                 {update: states[update] for update in weights},

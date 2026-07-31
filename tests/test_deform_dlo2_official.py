@@ -18,9 +18,12 @@ from bayesian_phystwin.deform_dlo_official import (
 from bayesian_phystwin.deform_dlo_source import sha256_file
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_official_eval_v1.json"
+PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_official_eval_v2.json"
+SUPERSEDED_PROTOCOL = (
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_official_eval_v1.json"
+)
 ALLTRAIN_PROTOCOL = (
-    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_alltrain_refit_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_alltrain_refit_v2.json"
 )
 RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_official.py"
 
@@ -29,7 +32,9 @@ def _load_runner():
     scripts_root = str(RUNNER.parent)
     sys.path.insert(0, scripts_root)
     try:
-        spec = importlib.util.spec_from_file_location("deform_dlo2_official_runner", RUNNER)
+        spec = importlib.util.spec_from_file_location(
+            "deform_dlo2_official_runner", RUNNER
+        )
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -93,12 +98,15 @@ def _authorization_artifacts():
 def test_official_protocol_is_one_shot_and_target_blind() -> None:
     protocol = load_deform_dlo2_official_protocol(PROTOCOL)
 
-    assert (
-        protocol["model_initialization"]
-        == "official-deform-dlo-initialization-v1"
-    )
+    assert protocol["model_initialization"] == "official-deform-dlo-initialization-v1"
     assert protocol["evaluation"]["expected_trajectory_count"] == 14
     assert protocol["evaluation"]["failure_policy"] == "seal-failure-no-retry-v1"
+    assert (
+        protocol["evaluation"]["published_reference_operator"][
+            "canonical_unique_index_count"
+        ]
+        == 9
+    )
     assert protocol["methods"]["target_selection"] is False
     assert protocol["methods"]["target_calibration"] is False
     assert protocol["methods"]["target_retries"] is False
@@ -112,6 +120,23 @@ def test_official_protocol_rejects_target_selection(tmp_path: Path) -> None:
     changed.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="method policy"):
+        load_deform_dlo2_official_protocol(changed)
+
+
+def test_superseded_official_protocol_cannot_open_target() -> None:
+    with pytest.raises(ValueError, match="unsupported DLO2 official-evaluation schema"):
+        load_deform_dlo2_official_protocol(SUPERSEDED_PROTOCOL)
+
+
+def test_official_protocol_rejects_reference_draw_change(tmp_path: Path) -> None:
+    payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    payload["evaluation"]["published_reference_operator"]["canonical_eval_indices"][
+        0
+    ] = 0
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="canonical reference draw"):
         load_deform_dlo2_official_protocol(changed)
 
 
@@ -187,6 +212,29 @@ def test_official_authorization_accepts_frozen_parameter_mean() -> None:
     assert selected["parameter_mean_checkpoint"] == parameter_mean
 
 
+def test_official_authorization_accepts_frozen_predictive_median() -> None:
+    protocol = load_deform_dlo2_official_protocol(PROTOCOL)
+    alltrain_protocol = load_deform_dlo2_alltrain_protocol(ALLTRAIN_PROTOCOL)
+    alltrain_result, final_method, method_spec = _authorization_artifacts()
+    final_method["operator"] = "predictive_median"
+    method_spec["operator"] = "predictive_median"
+
+    selected = validate_deform_dlo2_official_authorization(
+        protocol,
+        alltrain_protocol,
+        alltrain_result,
+        final_method,
+        method_spec,
+        alltrain_protocol_sha256=sha256_file(ALLTRAIN_PROTOCOL),
+        alltrain_result_sha256="a" * 64,
+        final_method_sha256="c" * 64,
+        method_spec_sha256="b" * 64,
+    )
+
+    assert selected["operator"] == "predictive_median"
+    assert selected["parameter_mean_checkpoint"] is None
+
+
 def _record(name: str, model: float, persistence: float = 0.02):
     return {
         "name": name,
@@ -214,6 +262,9 @@ def test_official_summary_requires_all_cases_and_passes_all_three_gates() -> Non
 
     assert summary["bayesian_case_wins"] == 14
     assert summary["candidate_horizon_l1_m"]["late"] == pytest.approx(0.012)
+    assert summary["published_reference_compatibility"][
+        "candidate_mean_l1_m"
+    ] == pytest.approx(0.008)
     assert summary["claim_gate"]["passed"] is True
 
     with pytest.raises(ValueError, match="frozen cohort"):
@@ -225,6 +276,33 @@ def test_official_summary_requires_all_cases_and_passes_all_three_gates() -> Non
             minimum_relative_improvement=0.01,
             minimum_case_wins=8,
         )
+
+
+def test_official_summary_requires_both_published_reference_views() -> None:
+    names = [f"case-{index:02d}" for index in range(14)]
+    candidate = [_record(name, 0.008) for name in names]
+    candidate[8] = _record(names[8], 0.02)
+    baseline = [_record(name, 0.03) for name in names]
+
+    summary = summarize_deform_dlo2_official_records(
+        candidate,
+        baseline,
+        expected_case_count=14,
+        published_reference_l1_m=0.0097,
+        minimum_relative_improvement=0.01,
+        minimum_case_wins=8,
+    )
+
+    assert summary["candidate_mean_l1_m"] < 0.0097
+    assert summary["published_reference_compatibility"]["candidate_mean_l1_m"] > 0.0097
+    assert (
+        summary["claim_gate"]["published_reference_all_unique_strictly_better"] is True
+    )
+    assert (
+        summary["claim_gate"]["published_reference_canonical_draw_strictly_better"]
+        is False
+    )
+    assert summary["claim_gate"]["passed"] is False
 
 
 def test_official_uncertainty_uses_fixed_scale_and_reports_horizons() -> None:
@@ -255,16 +333,50 @@ def test_eval_manifest_is_sorted_and_rejects_partial_cohort(tmp_path: Path) -> N
     manifest = runner._build_eval_manifest(
         eval_root,
         expected_count=14,
+        canonical_reference_draw_indices=[
+            1,
+            7,
+            9,
+            7,
+            11,
+            7,
+            13,
+            8,
+            8,
+            6,
+            8,
+            5,
+            8,
+            4,
+        ],
         protocol_path=PROTOCOL,
         alltrain_result_path=ALLTRAIN_PROTOCOL,
     )
 
     assert manifest["ordered_names"] == sorted(manifest["ordered_names"])
+    assert manifest["canonical_reference_unique_count"] == 9
+    assert manifest["canonical_reference_draw_names"][0] == "case-01.pkl"
     (eval_root / "case-13.pkl").unlink()
     with pytest.raises(ValueError, match="expected 14"):
         runner._build_eval_manifest(
             eval_root,
             expected_count=14,
+            canonical_reference_draw_indices=[
+                1,
+                7,
+                9,
+                7,
+                11,
+                7,
+                13,
+                8,
+                8,
+                6,
+                8,
+                5,
+                8,
+                4,
+            ],
             protocol_path=PROTOCOL,
             alltrain_result_path=ALLTRAIN_PROTOCOL,
         )

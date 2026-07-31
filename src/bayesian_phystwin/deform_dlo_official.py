@@ -11,8 +11,12 @@ import numpy as np
 
 from .deform_dlo_checkpoint_belief import evaluate_deform_coordinate_uncertainty
 
-DEFORM_DLO2_OFFICIAL_SCHEMA_VERSION = 1
-DEFORM_DLO2_OFFICIAL_CONTRACT = "deform-dlo2-official-eval-v1"
+DEFORM_DLO2_OFFICIAL_SCHEMA_VERSION = 2
+DEFORM_DLO2_OFFICIAL_CONTRACT = "deform-dlo2-official-eval-v2"
+DEFORM_CANONICAL_REFERENCE_DRAW = (1, 7, 9, 7, 11, 7, 13, 8, 8, 6, 8, 5, 8, 4)
+DEFORM_UPSTREAM_TRAIN_SCRIPT_SHA256 = (
+    "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
+)
 
 
 def _mapping(value: object, *, label: str) -> Mapping[str, object]:
@@ -45,6 +49,23 @@ def _weights(value: object, *, label: str) -> dict[int, float]:
     return result
 
 
+def _reference_draw_indices(
+    value: object,
+    *,
+    expected_case_count: int,
+) -> tuple[int, ...]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise ValueError("canonical reference draw must be an array")
+    indices = tuple(int(str(item)) for item in value)
+    if (
+        indices != DEFORM_CANONICAL_REFERENCE_DRAW
+        or len(indices) != expected_case_count
+        or any(index < 0 or index >= expected_case_count for index in indices)
+    ):
+        raise ValueError("canonical reference draw differs")
+    return indices
+
+
 def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
     """Load the immutable one-shot DLO2 evaluation protocol."""
 
@@ -54,10 +75,7 @@ def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
         raise ValueError("unsupported DLO2 official-evaluation schema")
     if payload.get("contract") != DEFORM_DLO2_OFFICIAL_CONTRACT:
         raise ValueError("unsupported DLO2 official-evaluation contract")
-    if (
-        payload.get("model_initialization")
-        != "official-deform-dlo-initialization-v1"
-    ):
+    if payload.get("model_initialization") != "official-deform-dlo-initialization-v1":
         raise ValueError("DLO2 official initialization contract differs")
 
     parent = _mapping(
@@ -82,6 +100,10 @@ def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
     ):
         raise ValueError("DLO2 official parent gate differs")
     reference = float(str(evaluation.get("published_reference_l1_m", math.nan)))
+    reference_operator = _mapping(
+        evaluation.get("published_reference_operator"),
+        label="published_reference_operator",
+    )
     if (
         evaluation.get("dlo_type") != "DLO2"
         or evaluation.get("partition") != "eval"
@@ -99,7 +121,7 @@ def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
         )
         != 12
         or evaluation.get("trajectory_policy")
-        != "all-eval-files-sorted-once-v1"
+        != "all-eval-files-sorted-once-plus-canonical-reference-draw-v2"
         or evaluation.get("failure_policy") != "seal-failure-no-retry-v1"
         or evaluation.get("metric") != "mean-coordinate-l1-m"
         or evaluation.get("horizon_breakdown") != "equal-frame-thirds-v1"
@@ -107,6 +129,26 @@ def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
         or reference <= 0.0
     ):
         raise ValueError("DLO2 official evaluation contract differs")
+    reference_draw = _reference_draw_indices(
+        reference_operator.get("canonical_eval_indices"),
+        expected_case_count=14,
+    )
+    if (
+        reference_operator.get("loader")
+        != "upstream-random-choices-with-replacement-v1"
+        or reference_operator.get("upstream_train_script_sha256")
+        != DEFORM_UPSTREAM_TRAIN_SCRIPT_SHA256
+        or int(str(reference_operator.get("python_random_seed", -1))) != 0
+        or int(str(reference_operator.get("preceding_train_population", -1))) != 56
+        or int(str(reference_operator.get("preceding_train_draw_count", -1))) != 56
+        or int(str(reference_operator.get("eval_population", -1))) != 14
+        or int(str(reference_operator.get("eval_draw_count", -1))) != 14
+        or reference_operator.get("canonical_filename_order") != "sorted-by-name-v1"
+        or int(str(reference_operator.get("canonical_unique_index_count", -1)))
+        != len(set(reference_draw))
+        or reference_operator.get("upstream_glob_order") != "unspecified"
+    ):
+        raise ValueError("DLO2 published-reference operator differs")
     if (
         methods.get("candidate") != "preselected-alltrain-posterior"
         or methods.get("comparison_baseline")
@@ -122,7 +164,8 @@ def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
         str(gate.get("bayesian_relative_improvement_min", math.nan))
     )
     if (
-        gate.get("published_reference_strictly_better") is not True
+        gate.get("published_reference_all_unique_strictly_better") is not True
+        or gate.get("published_reference_canonical_draw_strictly_better") is not True
         or not math.isfinite(relative_improvement)
         or not 0.0 < relative_improvement < 1.0
         or _positive_int(
@@ -219,7 +262,11 @@ def validate_deform_dlo2_official_authorization(
         raise ValueError("final method points to a different method specification")
 
     operator = str(final_method.get("operator", ""))
-    if operator not in ("parameter_mean", "predictive_mean"):
+    if operator not in (
+        "parameter_mean",
+        "predictive_mean",
+        "predictive_median",
+    ):
         raise ValueError("all-train final operator is invalid")
     final_weights = _weights(
         final_method.get("checkpoint_weights"), label="final checkpoint weights"
@@ -257,11 +304,9 @@ def validate_deform_dlo2_official_authorization(
 
     parameter_mean = final_method.get("parameter_mean_checkpoint")
     if operator == "parameter_mean":
-        parameter_mean = _mapping(
-            parameter_mean, label="parameter-mean checkpoint"
-        )
+        parameter_mean = _mapping(parameter_mean, label="parameter-mean checkpoint")
     elif parameter_mean is not None:
-        raise ValueError("predictive-mean method unexpectedly has a parameter mean")
+        raise ValueError("predictive method unexpectedly has a parameter mean")
 
     calibration = _mapping(
         final_method.get("variance_calibration"), label="variance calibration"
@@ -289,7 +334,9 @@ def validate_deform_dlo2_official_authorization(
         "operator": operator,
         "weights": final_weights,
         "comparison_baseline_checkpoint": dict(baseline),
-        "member_checkpoints": {update: dict(value) for update, value in members.items()},
+        "member_checkpoints": {
+            update: dict(value) for update, value in members.items()
+        },
         "parameter_mean_checkpoint": (
             dict(parameter_mean) if isinstance(parameter_mean, Mapping) else None
         ),
@@ -314,6 +361,7 @@ def summarize_deform_dlo2_official_records(
     published_reference_l1_m: float,
     minimum_relative_improvement: float,
     minimum_case_wins: int,
+    canonical_reference_draw_indices: Sequence[int] = DEFORM_CANONICAL_REFERENCE_DRAW,
 ) -> dict[str, object]:
     """Compute the frozen aggregate, paired comparison, and claim gate."""
 
@@ -347,6 +395,10 @@ def summarize_deform_dlo2_official_records(
     ):
         raise ValueError("official evaluation does not cover the frozen cohort")
     names = tuple(sorted(candidate))
+    reference_draw = _reference_draw_indices(
+        canonical_reference_draw_indices,
+        expected_case_count=expected_case_count,
+    )
     for name in names:
         if float(str(candidate[name]["persistence_l1_m"])) != float(
             str(baseline[name]["persistence_l1_m"])
@@ -359,17 +411,29 @@ def summarize_deform_dlo2_official_records(
     candidate_mean = mean(candidate, "model_l1_m")
     baseline_mean = mean(baseline, "model_l1_m")
     persistence_mean = mean(candidate, "persistence_l1_m")
+
+    def draw_mean(records: Mapping[str, Mapping[str, object]], key: str) -> float:
+        return float(
+            np.mean(
+                [float(str(records[names[index]][key])) for index in reference_draw]
+            )
+        )
+
+    candidate_reference_mean = draw_mean(candidate, "model_l1_m")
+    baseline_reference_mean = draw_mean(baseline, "model_l1_m")
+    persistence_reference_mean = draw_mean(candidate, "persistence_l1_m")
     relative_improvement = (
-        (baseline_mean - candidate_mean) / baseline_mean
-        if baseline_mean > 0.0
-        else 0.0
+        (baseline_mean - candidate_mean) / baseline_mean if baseline_mean > 0.0 else 0.0
     )
     wins = sum(
         float(str(candidate[name]["model_l1_m"]))
         < float(str(baseline[name]["model_l1_m"]))
         for name in names
     )
-    published_passed = candidate_mean < published_reference_l1_m
+    published_all_unique_passed = candidate_mean < published_reference_l1_m
+    published_canonical_draw_passed = (
+        candidate_reference_mean < published_reference_l1_m
+    )
     improvement_passed = relative_improvement >= minimum_relative_improvement
     wins_passed = wins >= minimum_case_wins
     return {
@@ -390,12 +454,31 @@ def summarize_deform_dlo2_official_records(
         "bayesian_relative_improvement": relative_improvement,
         "bayesian_case_wins": wins,
         "published_reference_l1_m": float(published_reference_l1_m),
+        "published_reference_compatibility": {
+            "operator": "canonical-with-replacement-draw-v2",
+            "canonical_eval_indices": list(reference_draw),
+            "canonical_unique_index_count": len(set(reference_draw)),
+            "candidate_mean_l1_m": candidate_reference_mean,
+            "comparison_baseline_mean_l1_m": baseline_reference_mean,
+            "action_aware_persistence_mean_l1_m": persistence_reference_mean,
+            "upstream_glob_order": "unspecified",
+        },
         "claim_gate": {
             "all_expected_cases_present": True,
-            "published_reference_strictly_better": published_passed,
+            "published_reference_all_unique_strictly_better": (
+                published_all_unique_passed
+            ),
+            "published_reference_canonical_draw_strictly_better": (
+                published_canonical_draw_passed
+            ),
             "bayesian_relative_improvement_passed": improvement_passed,
             "bayesian_case_wins_passed": wins_passed,
-            "passed": published_passed and improvement_passed and wins_passed,
+            "passed": (
+                published_all_unique_passed
+                and published_canonical_draw_passed
+                and improvement_passed
+                and wins_passed
+            ),
         },
     }
 
@@ -430,9 +513,7 @@ def evaluate_deform_dlo2_official_uncertainty(
     thirds: dict[str, object] = {}
     for third, label in enumerate(("early", "middle", "late")):
         indices = [
-            frame
-            for frame in range(horizon)
-            if min(2, (3 * frame) // horizon) == third
+            frame for frame in range(horizon) if min(2, (3 * frame) // horizon) == third
         ]
         values = evaluate_deform_coordinate_uncertainty(
             predicted[:, indices],

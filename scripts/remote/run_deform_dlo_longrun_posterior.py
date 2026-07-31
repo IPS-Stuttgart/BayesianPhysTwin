@@ -22,6 +22,7 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     evaluate_deform_coordinate_uncertainty,
     load_deform_longrun_posterior_protocol,
     select_deform_checkpoint_belief_arm,
+    weighted_deform_prediction_median,
 )
 from bayesian_phystwin.deform_dlo_longrun import load_deform_dlo_longrun_protocol
 from bayesian_phystwin.deform_dlo_source import (
@@ -389,10 +390,16 @@ def main() -> int:
         predictive_mean, predictive_variance = combine_deform_checkpoint_predictions(
             member_predictions, weights
         )
+        predictive_median = weighted_deform_prediction_median(
+            member_predictions,
+            weights,
+        )
         for operator in posterior["operators"]:
             candidate_name = f"{operator}::{base_name}"
             if operator == "predictive_mean":
                 point_prediction = predictive_mean
+            elif operator == "predictive_median":
+                point_prediction = predictive_median
             elif operator == "parameter_mean":
                 averaged_state = average_deform_checkpoint_states(
                     {update: states[update] for update in weights},
@@ -493,6 +500,11 @@ def main() -> int:
         )
         if spec["operator"] == "predictive_mean":
             source_point_prediction = source_mean
+        elif spec["operator"] == "predictive_median":
+            source_point_prediction = weighted_deform_prediction_median(
+                {update: member_source[update]["predictions"] for update in weights},
+                weights,
+            )
         else:
             averaged_state = average_deform_checkpoint_states(
                 {update: states[update] for update in weights},

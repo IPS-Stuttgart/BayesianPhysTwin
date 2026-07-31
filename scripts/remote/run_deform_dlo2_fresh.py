@@ -10,6 +10,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+    validate_deform_dlo2_fresh_posterior_parent,
+)
 from bayesian_phystwin.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
@@ -21,6 +24,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--parent-longrun-result", type=Path, required=True)
+    parser.add_argument("--parent-posterior-result", type=Path, required=True)
     parser.add_argument("--upstream-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
@@ -61,6 +65,23 @@ def main() -> int:
         protocol_payload,
         parent,
     )
+    posterior_path = args.parent_posterior_result.resolve()
+    posterior_result = _read_json(posterior_path)
+    selection_identity = posterior_result.get("selection_seal")
+    if not isinstance(selection_identity, dict):
+        raise ValueError("DLO1 posterior result omits its selection seal")
+    selection_path = Path(str(selection_identity.get("path", ""))).resolve()
+    if not selection_path.is_file() or sha256_file(
+        selection_path
+    ) != selection_identity.get("sha256"):
+        raise ValueError("DLO1 posterior selection seal does not verify")
+    selection_seal = _read_json(selection_path)
+    posterior_authorization = validate_deform_dlo2_fresh_posterior_parent(
+        protocol_payload,
+        posterior_result,
+        selection_seal,
+        selection_seal_sha256=sha256_file(selection_path),
+    )
 
     output_root = args.output_root.resolve()
     if output_root.exists() and any(output_root.iterdir()):
@@ -68,8 +89,8 @@ def main() -> int:
     output_root.mkdir(parents=True, exist_ok=True)
     source_output = output_root / "source_run"
     authorization = {
-        "schema_version": 1,
-        "contract": "deform-dlo2-fresh-authorization-v1",
+        "schema_version": 2,
+        "contract": "deform-dlo2-fresh-authorization-v2",
         "mode": args.mode,
         "official_eval_read": False,
         "source_test_opened": False,
@@ -82,9 +103,19 @@ def main() -> int:
             "sha256": sha256_file(parent_path),
             **parent_authorization,
         },
+        "parent_posterior_result": {
+            "path": str(posterior_path),
+            "sha256": sha256_file(posterior_path),
+            "selection_seal": {
+                "path": str(selection_path),
+                "sha256": sha256_file(selection_path),
+            },
+            **posterior_authorization,
+        },
         "source_output": str(source_output),
     }
-    _write_json(output_root / "authorization.json", authorization)
+    authorization_path = output_root / "authorization.json"
+    _write_json(authorization_path, authorization)
 
     runner = Path(__file__).resolve().with_name("run_deform_dlo_source.py")
     command = [
@@ -96,6 +127,8 @@ def main() -> int:
         str(args.upstream_root.resolve()),
         "--output-root",
         str(source_output),
+        "--stage-authorization",
+        str(authorization_path),
         "--dlo-type",
         "DLO2",
         "--device",

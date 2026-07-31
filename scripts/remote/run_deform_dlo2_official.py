@@ -12,6 +12,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import run_deform_dlo_longrun_posterior as posterior_runtime
 import run_deform_dlo_source as source_runtime
 
@@ -20,8 +21,10 @@ from bayesian_phystwin.deform_dlo_alltrain import (
 )
 from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     combine_deform_checkpoint_predictions,
+    weighted_deform_prediction_median,
 )
 from bayesian_phystwin.deform_dlo_official import (
+    DEFORM_CANONICAL_REFERENCE_DRAW,
     evaluate_deform_dlo2_official_uncertainty,
     load_deform_dlo2_official_protocol,
     summarize_deform_dlo2_official_records,
@@ -68,6 +71,21 @@ def _mapping(value: object, *, label: str) -> dict[str, object]:
     return value
 
 
+def _integer_list(value: object, *, label: str) -> list[int]:
+    if not isinstance(value, list) or any(isinstance(item, bool) for item in value):
+        raise ValueError(f"{label} must be an integer array")
+    try:
+        return [int(str(item)) for item in value]
+    except ValueError as error:
+        raise ValueError(f"{label} must be an integer array") from error
+
+
+def _string_list(value: object, *, label: str) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise ValueError(f"{label} must be a string array")
+    return list(value)
+
+
 def _verified_json_identity(
     identity: Mapping[str, object], *, label: str
 ) -> tuple[Path, dict[str, object]]:
@@ -75,18 +93,17 @@ def _verified_json_identity(
     if (
         not path.is_file()
         or sha256_file(path) != identity.get("sha256")
-        or int(identity.get("size_bytes", path.stat().st_size)) != path.stat().st_size
+        or int(str(identity.get("size_bytes", path.stat().st_size)))
+        != path.stat().st_size
     ):
         raise ValueError(f"{label} identity does not verify")
     return path, _read_json(path)
 
 
-def _verified_file_identity(
-    identity: Mapping[str, object], *, label: str
-) -> Path:
+def _verified_file_identity(identity: Mapping[str, object], *, label: str) -> Path:
     path = Path(str(identity.get("path", ""))).resolve()
     default_size = path.stat().st_size if path.exists() else -1
-    expected_size = int(identity.get("size_bytes", default_size))
+    expected_size = int(str(identity.get("size_bytes", default_size)))
     if (
         not path.is_file()
         or path.stat().st_size != expected_size
@@ -108,7 +125,7 @@ def _verified_checkpoint_bundle(
     path = Path(str(identity.get("path", ""))).resolve()
     if (
         not path.is_file()
-        or path.stat().st_size != int(identity.get("size_bytes", -1))
+        or path.stat().st_size != int(str(identity.get("size_bytes", -1)))
         or sha256_file(path) != identity.get("sha256")
     ):
         raise ValueError("all-train checkpoint identity does not verify")
@@ -132,6 +149,7 @@ def _build_eval_manifest(
     eval_root: Path,
     *,
     expected_count: int,
+    canonical_reference_draw_indices: list[int],
     protocol_path: Path,
     alltrain_result_path: Path,
 ) -> dict[str, object]:
@@ -149,13 +167,25 @@ def _build_eval_manifest(
         }
         for path in paths
     }
+    ordered_names = list(identities)
+    if (
+        tuple(canonical_reference_draw_indices) != DEFORM_CANONICAL_REFERENCE_DRAW
+        or len(canonical_reference_draw_indices) != expected_count
+        or any(
+            index < 0 or index >= expected_count
+            for index in canonical_reference_draw_indices
+        )
+    ):
+        raise ValueError("canonical reference draw is invalid")
     return {
-        "schema_version": 1,
-        "contract": "deform-dlo2-official-eval-manifest-v1",
+        "schema_version": 2,
+        "contract": "deform-dlo2-official-eval-manifest-v2",
         "official_eval_read": True,
         "outcomes_evaluated": False,
         "partition": "eval",
-        "trajectory_policy": "all-eval-files-sorted-once-v1",
+        "trajectory_policy": (
+            "all-eval-files-sorted-once-plus-canonical-reference-draw-v2"
+        ),
         "protocol": {
             "path": str(protocol_path.resolve()),
             "sha256": sha256_file(protocol_path),
@@ -165,14 +195,19 @@ def _build_eval_manifest(
             "sha256": sha256_file(alltrain_result_path),
         },
         "trajectories": identities,
-        "ordered_names": list(identities),
+        "ordered_names": ordered_names,
+        "canonical_reference_draw_indices": canonical_reference_draw_indices,
+        "canonical_reference_draw_names": [
+            ordered_names[index] for index in canonical_reference_draw_indices
+        ],
+        "canonical_reference_unique_count": len(set(canonical_reference_draw_indices)),
     }
 
 
 def _failure_payload(*, stage: str, error: BaseException) -> dict[str, object]:
     return {
-        "schema_version": 1,
-        "contract": "deform-dlo2-official-eval-failure-v1",
+        "schema_version": 2,
+        "contract": "deform-dlo2-official-eval-failure-v2",
         "official_eval_read": True,
         "retry_authorized": False,
         "stage": stage,
@@ -192,11 +227,16 @@ def main() -> int:
     source_protocol = load_deform_dlo_source_protocol(source_protocol_path)
     alltrain_protocol_sha256 = sha256_file(alltrain_protocol_path)
     source_protocol_sha256 = sha256_file(source_protocol_path)
+    official_parent = _mapping(
+        protocol["parent_alltrain_protocol"], label="official parent protocol"
+    )
+    alltrain_parent = _mapping(
+        alltrain_protocol["parent_source_protocol"], label="all-train parent protocol"
+    )
+    evaluation = _mapping(protocol["evaluation"], label="evaluation")
     if (
-        alltrain_protocol_sha256
-        != protocol["parent_alltrain_protocol"]["sha256"]
-        or source_protocol_sha256
-        != alltrain_protocol["parent_source_protocol"]["sha256"]
+        alltrain_protocol_sha256 != official_parent["sha256"]
+        or source_protocol_sha256 != alltrain_parent["sha256"]
         or source_protocol["dlo_types"] != ("DLO2",)
     ):
         raise ValueError("official evaluator protocol lineage differs")
@@ -233,8 +273,8 @@ def main() -> int:
         raise RuntimeError(f"one-shot output root is not empty: {output_root}")
     output_root.mkdir(parents=True, exist_ok=True)
     authorization = {
-        "schema_version": 1,
-        "contract": "deform-dlo2-official-eval-authorization-v1",
+        "schema_version": 2,
+        "contract": "deform-dlo2-official-eval-authorization-v2",
         "official_eval_read": False,
         "one_shot_execution_authorized": True,
         "protocol": {
@@ -313,15 +353,15 @@ def main() -> int:
     )
     verify_checkpoint(
         baseline_identity,
-        expected_update=int(baseline_identity["update"]),
+        expected_update=int(str(baseline_identity["update"])),
     )
     member_identities = _mapping(
         selected["member_checkpoints"], label="member checkpoints"
     )
-    for update, identity in member_identities.items():
+    for update_text, identity in member_identities.items():
         verify_checkpoint(
             _mapping(identity, label="member checkpoint"),
-            expected_update=int(update),
+            expected_update=int(update_text),
         )
     parameter_identity = selected["parameter_mean_checkpoint"]
     if isinstance(parameter_identity, dict):
@@ -332,21 +372,30 @@ def main() -> int:
     stage = "target-manifest"
     started = time.perf_counter()
     try:
+        reference_operator = _mapping(
+            evaluation["published_reference_operator"],
+            label="published reference operator",
+        )
+        reference_draw = _integer_list(
+            reference_operator["canonical_eval_indices"],
+            label="canonical reference draw",
+        )
         manifest = _build_eval_manifest(
             eval_root,
-            expected_count=int(protocol["evaluation"]["expected_trajectory_count"]),
+            expected_count=int(str(evaluation["expected_trajectory_count"])),
+            canonical_reference_draw_indices=reference_draw,
             protocol_path=protocol_path,
             alltrain_result_path=alltrain_result_path,
         )
         manifest_path = output_root / "evaluation_manifest.json"
         _write_json(manifest_path, manifest)
         stage = "target-load"
-        names = list(manifest["ordered_names"])
+        names = _string_list(manifest["ordered_names"], label="evaluation names")
         trajectories = source_runtime._load_named_trajectories(
             manifest,
             names,
-            frame_count=int(protocol["evaluation"]["expected_frame_count"]),
-            node_count=int(protocol["evaluation"]["expected_node_count"]),
+            frame_count=int(str(evaluation["expected_frame_count"])),
+            node_count=int(str(evaluation["expected_node_count"])),
         )
 
         stage = "fixed-rollouts"
@@ -362,23 +411,21 @@ def main() -> int:
                     torch=torch,
                     device=args.device,
                     dlo_type="DLO2",
-                    node_count=int(protocol["evaluation"]["expected_node_count"]),
+                    node_count=int(str(evaluation["expected_node_count"])),
                 )
             return rollout_cache[digest]
 
         baseline_rollout = rollout(baseline_identity)
         member_rollouts: dict[int, dict[str, object]] = {}
-        for update, identity in sorted(
+        for member_update, identity in sorted(
             (
                 (int(key), _mapping(value, label="member checkpoint"))
                 for key, value in member_identities.items()
             )
         ):
             member_rollout = rollout(identity)
-            posterior_runtime._assert_common_rollout(
-                baseline_rollout, member_rollout
-            )
-            member_rollouts[update] = member_rollout
+            posterior_runtime._assert_common_rollout(baseline_rollout, member_rollout)
+            member_rollouts[member_update] = member_rollout
         posterior_mean, posterior_variance = combine_deform_checkpoint_predictions(
             {
                 update: member_rollouts[update]["predictions"]
@@ -388,6 +435,14 @@ def main() -> int:
         )
         if selected["operator"] == "predictive_mean":
             candidate_prediction = posterior_mean
+        elif selected["operator"] == "predictive_median":
+            candidate_prediction = weighted_deform_prediction_median(
+                {
+                    update: member_rollouts[update]["predictions"]
+                    for update in member_rollouts
+                },
+                selected["weights"],
+            )
         else:
             if not isinstance(parameter_identity, dict):
                 raise RuntimeError("parameter-mean checkpoint disappeared")
@@ -406,28 +461,28 @@ def main() -> int:
         candidate_records = posterior_runtime._records(candidate_rollout)
         baseline_records = posterior_runtime._records(baseline_rollout)
         gate_config = _mapping(protocol["claim_gate"], label="claim gate")
-        evaluation = _mapping(protocol["evaluation"], label="evaluation")
         summary = summarize_deform_dlo2_official_records(
             candidate_records,
             baseline_records,
-            expected_case_count=int(evaluation["expected_trajectory_count"]),
-            published_reference_l1_m=float(evaluation["published_reference_l1_m"]),
+            expected_case_count=int(str(evaluation["expected_trajectory_count"])),
+            published_reference_l1_m=float(str(evaluation["published_reference_l1_m"])),
             minimum_relative_improvement=float(
-                gate_config["bayesian_relative_improvement_min"]
+                str(gate_config["bayesian_relative_improvement_min"])
             ),
-            minimum_case_wins=int(gate_config["bayesian_minimum_case_wins"]),
+            minimum_case_wins=int(str(gate_config["bayesian_minimum_case_wins"])),
+            canonical_reference_draw_indices=reference_draw,
         )
         uncertainty = evaluate_deform_dlo2_official_uncertainty(
             candidate_prediction,
-            baseline_rollout["targets"],
+            np.asarray(baseline_rollout["targets"]),
             posterior_variance,
-            variance_floor_m2=float(selected["variance_floor_m2"]),
-            variance_scale=float(selected["variance_scale"]),
-            nominal_coverage=float(selected["nominal_coordinate_coverage"]),
+            variance_floor_m2=float(str(selected["variance_floor_m2"])),
+            variance_scale=float(str(selected["variance_scale"])),
+            nominal_coverage=float(str(selected["nominal_coordinate_coverage"])),
         )
         result = {
-            "schema_version": 1,
-            "contract": "deform-dlo2-official-eval-result-v1",
+            "schema_version": 2,
+            "contract": "deform-dlo2-official-eval-result-v2",
             "claim_boundary": protocol["claim_boundary"],
             "official_eval_read": True,
             "target_selection_performed": False,
@@ -452,9 +507,7 @@ def main() -> int:
                 "source_validation_scale_reused_unchanged": True,
                 "variance_scale": selected["variance_scale"],
                 "variance_floor_m2": selected["variance_floor_m2"],
-                "nominal_coordinate_coverage": selected[
-                    "nominal_coordinate_coverage"
-                ],
+                "nominal_coordinate_coverage": selected["nominal_coordinate_coverage"],
                 "metrics": uncertainty,
             },
             "runtime": {

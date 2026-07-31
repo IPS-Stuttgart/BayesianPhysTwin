@@ -223,6 +223,48 @@ def validate_deform_dlo2_fresh_parent(
     }
 
 
+def validate_deform_dlo2_stage_authorization(
+    protocol: Mapping[str, object],
+    authorization: Mapping[str, object],
+    *,
+    protocol_sha256: str,
+) -> dict[str, object]:
+    """Require the registered two-parent wrapper for every DLO2 source run."""
+
+    protocol_identity = authorization.get("protocol")
+    longrun = authorization.get("parent_longrun_result")
+    posterior = authorization.get("parent_posterior_result")
+    if (
+        protocol.get("dlo_types") != ("DLO2",)
+        or authorization.get("contract") != "deform-dlo2-fresh-authorization-v2"
+        or authorization.get("official_eval_read") is not False
+        or authorization.get("source_test_opened") is not False
+        or not isinstance(protocol_identity, Mapping)
+        or protocol_identity.get("sha256") != protocol_sha256
+        or not isinstance(longrun, Mapping)
+        or longrun.get("source_gate_passed") is not True
+        or longrun.get("checkpoint_posterior_authorized") is not True
+        or not isinstance(posterior, Mapping)
+        or not str(posterior.get("selected_arm", ""))
+        or not isinstance(posterior.get("selected_spec"), Mapping)
+        or float(posterior.get("source_transfer_relative_improvement", -math.inf))
+        < 0.01
+        or int(posterior.get("source_transfer_wins", -1)) < 5
+        or not math.isfinite(
+            float(posterior.get("validation_fitted_variance_scale", math.nan))
+        )
+        or float(posterior.get("validation_fitted_variance_scale", math.nan)) < 1.0
+    ):
+        raise ValueError("DLO2 source stage authorization differs")
+    return {
+        "contract": str(authorization["contract"]),
+        "protocol_sha256": protocol_sha256,
+        "selected_arm": str(posterior["selected_arm"]),
+        "parent_longrun_result_sha256": str(longrun.get("sha256", "")),
+        "parent_posterior_result_sha256": str(posterior.get("sha256", "")),
+    }
+
+
 def build_deform_dlo_source_manifest(
     protocol_path: str | Path,
     data_root: str | Path,

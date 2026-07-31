@@ -11,7 +11,7 @@ from bayesian_phystwin.deform_dlo_alltrain import (
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_alltrain_refit_v1.json"
+PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_alltrain_refit_v2.json"
 RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_alltrain.py"
 
 
@@ -77,10 +77,7 @@ def _parents() -> tuple[dict[str, object], dict[str, object], dict[str, object]]
 def test_dlo2_alltrain_protocol_uses_all_training_data_and_no_reselection() -> None:
     protocol = load_deform_dlo2_alltrain_protocol(PROTOCOL)
 
-    assert (
-        protocol["model_initialization"]
-        == "official-deform-dlo-initialization-v1"
-    )
+    assert protocol["model_initialization"] == "official-deform-dlo-initialization-v1"
     assert protocol["data"]["trajectory_count"] == 56
     assert protocol["data"]["use_every_train_trajectory"] is True
     assert protocol["data"]["official_eval_read"] is False
@@ -116,6 +113,29 @@ def test_dlo2_alltrain_authorization_preserves_selected_spec() -> None:
     assert selected["weights"] == {6040: 0.4, 6400: 0.6}
     assert selected["comparison_baseline_update"] == 6400
     assert selected["validation_fitted_variance_scale"] == 2.0
+
+
+def test_dlo2_alltrain_authorization_accepts_predictive_median() -> None:
+    protocol = load_deform_dlo2_alltrain_protocol(PROTOCOL)
+    source, posterior, selection = _parents()
+    selected_spec = posterior["selected_spec"]
+    selected_spec["operator"] = "predictive_median"
+    posterior["selected_arm"] = "predictive_median::tail_2_uniform"
+    posterior["selection"]["selected_arm"] = "predictive_median::tail_2_uniform"
+    selection["candidate_specs"] = {
+        "predictive_median::tail_2_uniform": selected_spec,
+    }
+
+    selected = validate_deform_dlo2_alltrain_authorization(
+        protocol,
+        source,
+        posterior,
+        selection,
+        source_protocol_sha256="b" * 64,
+        source_result_sha256="a" * 64,
+    )
+
+    assert selected["operator"] == "predictive_median"
 
 
 def test_dlo2_alltrain_authorization_rejects_fallback() -> None:

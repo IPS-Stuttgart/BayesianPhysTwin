@@ -20,10 +20,7 @@ def load_deform_dlo2_alltrain_protocol(path: str | Path) -> dict[str, object]:
         raise ValueError("unsupported DLO2 all-train schema")
     if payload.get("contract") != DEFORM_DLO2_ALLTRAIN_CONTRACT:
         raise ValueError("unsupported DLO2 all-train contract")
-    if (
-        payload.get("model_initialization")
-        != "official-deform-dlo-initialization-v1"
-    ):
+    if payload.get("model_initialization") != "official-deform-dlo-initialization-v1":
         raise ValueError("DLO2 all-train initialization contract differs")
 
     parent = payload.get("parent_source_protocol")
@@ -155,9 +152,11 @@ def validate_deform_dlo2_alltrain_authorization(
         raise ValueError("DLO2 posterior selected method does not match its seal")
     operator = str(selected_spec.get("operator", ""))
     raw_weights = selected_spec.get("weights")
-    if operator not in ("parameter_mean", "predictive_mean") or not isinstance(
-        raw_weights, Mapping
-    ):
+    if operator not in (
+        "parameter_mean",
+        "predictive_mean",
+        "predictive_median",
+    ) or not isinstance(raw_weights, Mapping):
         raise ValueError("DLO2 posterior selected method is invalid")
     weights = {int(update): float(weight) for update, weight in raw_weights.items()}
     raw_checkpoint_updates = protocol.get("checkpoint_updates")
