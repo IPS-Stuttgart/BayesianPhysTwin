@@ -183,6 +183,40 @@ def partition_deform_source_names(
     }
 
 
+def validate_deform_dlo2_fresh_parent(
+    protocol_payload: Mapping[str, object],
+    parent: Mapping[str, object],
+) -> dict[str, object]:
+    """Verify that the frozen DLO1 long run authorized fresh DLO2 access."""
+
+    authorization = protocol_payload.get("authorization")
+    if not isinstance(authorization, Mapping):
+        raise ValueError("fresh DLO2 protocol omits parent authorization")
+    source_gate = parent.get("source_gate")
+    parent_protocol = parent.get("protocol")
+    if (
+        parent.get("contract") != authorization.get("required_parent_contract")
+        or parent.get("official_eval_read") is not False
+        or not isinstance(source_gate, Mapping)
+        or source_gate.get("passed")
+        is not authorization.get("required_parent_source_gate_passed")
+        or parent.get("checkpoint_posterior_authorized")
+        is not authorization.get("required_parent_checkpoint_posterior_authorized")
+        or not isinstance(parent_protocol, Mapping)
+        or parent_protocol.get("sha256")
+        != authorization.get("required_parent_protocol_sha256")
+    ):
+        raise ValueError("fresh DLO2 parent did not authorize this stage")
+    return {
+        "contract": str(parent["contract"]),
+        "source_gate_passed": bool(source_gate["passed"]),
+        "checkpoint_posterior_authorized": bool(
+            parent["checkpoint_posterior_authorized"]
+        ),
+        "parent_protocol_sha256": str(parent_protocol["sha256"]),
+    }
+
+
 def build_deform_dlo_source_manifest(
     protocol_path: str | Path,
     data_root: str | Path,

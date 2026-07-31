@@ -47,7 +47,8 @@ reproduction. It does not authorize DLO1 official evaluation or a SOTA claim.
 
 ```bash
 python scripts/remote/run_deform_dlo_longrun_posterior.py \
-  --protocol configs/sota/deform_dlo_longrun_v2.json \
+  --protocol configs/sota/deform_dlo_longrun_posterior_v1.json \
+  --longrun-protocol configs/sota/deform_dlo_longrun_v2.json \
   --longrun-result /path/to/longrun_result.json \
   --source-manifest results/sota/deform_dlo_source_v1/source_manifest.json \
   --upstream-root /path/to/DEFORM \
@@ -58,6 +59,10 @@ python scripts/remote/run_deform_dlo_longrun_posterior.py \
 The runner verifies all checkpoint, schedule, protocol, source-manifest, and
 runtime identities and installs the same official-evaluation read guard as the
 parent run.
+
+The posterior policy is a separate immutable artifact from the executing
+long-run protocol. This prevents later posterior development from changing the
+bytes to which the already-running parent is bound.
 
 A validation-only parity smoke at implementation commit `04c40a9` reproduced
 the parent update-280 rollout to within `7.7e-8 m` in model L1 and `2.1e-9 m`

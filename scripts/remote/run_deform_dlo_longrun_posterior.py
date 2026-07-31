@@ -20,6 +20,7 @@ from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     deform_prediction_records,
     evaluate_deform_checkpoint_belief_transfer,
     evaluate_deform_coordinate_uncertainty,
+    load_deform_longrun_posterior_protocol,
     select_deform_checkpoint_belief_arm,
 )
 from bayesian_phystwin.deform_dlo_longrun import load_deform_dlo_longrun_protocol
@@ -32,6 +33,7 @@ from bayesian_phystwin.deform_dlo_source import (
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--protocol", type=Path, required=True)
+    parser.add_argument("--longrun-protocol", type=Path, required=True)
     parser.add_argument("--longrun-result", type=Path, required=True)
     parser.add_argument("--source-manifest", type=Path, required=True)
     parser.add_argument("--upstream-root", type=Path, required=True)
@@ -260,7 +262,8 @@ def _mean_error(records: list[dict[str, object]]) -> float:
 
 def main() -> int:
     args = _parse_args()
-    protocol = load_deform_dlo_longrun_protocol(args.protocol)
+    posterior = load_deform_longrun_posterior_protocol(args.protocol)
+    load_deform_dlo_longrun_protocol(args.longrun_protocol)
     output_root = args.output_root.resolve()
     if output_root.exists() and any(output_root.iterdir()):
         raise RuntimeError(f"output root is not empty: {output_root}")
@@ -268,18 +271,25 @@ def main() -> int:
 
     result_path = args.longrun_result.resolve()
     result = _read_json(result_path)
-    protocol_sha256 = sha256_file(args.protocol)
-    _validate_longrun_result(result, protocol_sha256=protocol_sha256)
+    posterior_protocol_sha256 = sha256_file(args.protocol)
+    longrun_protocol_sha256 = sha256_file(args.longrun_protocol)
+    if longrun_protocol_sha256 != posterior["parent_longrun_protocol"]["sha256"]:
+        raise ValueError("posterior policy binds a different long-run protocol")
+    _validate_longrun_result(
+        result,
+        protocol_sha256=longrun_protocol_sha256,
+    )
     manifest_path = args.source_manifest.resolve()
     manifest = _read_json(manifest_path)
     parent_source_result = _read_json(
-        Path(protocol["source_result"]["repository_path"])
+        Path(posterior["parent_source_result"]["repository_path"])
     )
     if (
-        sha256_file(Path(protocol["source_result"]["repository_path"]))
-        != protocol["source_result"]["sha256"]
+        sha256_file(Path(posterior["parent_source_result"]["repository_path"]))
+        != posterior["parent_source_result"]["sha256"]
         or sha256_file(manifest_path)
         != parent_source_result["source_manifest"]["sha256"]
+        or manifest.get("contract") != "deform-dlo-source-reproduction-v1"
         or manifest.get("official_eval_read") is not False
         or manifest.get("dlo_type") != "DLO1"
     ):
@@ -307,7 +317,6 @@ def main() -> int:
     modules = source_runtime._load_upstream(args.upstream_root)
     source_runtime._seed_everything(torch, 20260731)
 
-    posterior = protocol["checkpoint_posterior_if_source_gate_passes"]
     arm_protocol = {
         "arms": posterior["arms"],
         "validation_gate": {
@@ -416,7 +425,7 @@ def main() -> int:
     selection_seal = {
         "schema_version": 1,
         "contract": "deform-dlo-longrun-posterior-selection-v1",
-        "claim_boundary": protocol["claim_boundary"],
+        "claim_boundary": posterior["claim_boundary"],
         "official_eval_read": False,
         "longrun_result": {
             "path": str(result_path),
@@ -424,7 +433,11 @@ def main() -> int:
         },
         "protocol": {
             "path": str(args.protocol.resolve()),
-            "sha256": protocol_sha256,
+            "sha256": posterior_protocol_sha256,
+        },
+        "longrun_protocol": {
+            "path": str(args.longrun_protocol.resolve()),
+            "sha256": longrun_protocol_sha256,
         },
         "upstream": upstream,
         "candidate_specs": candidate_specs,
@@ -538,7 +551,7 @@ def main() -> int:
     output = {
         "schema_version": 1,
         "contract": "deform-dlo-longrun-posterior-result-v1",
-        "claim_boundary": protocol["claim_boundary"],
+        "claim_boundary": posterior["claim_boundary"],
         "official_eval_read": False,
         "selection_seal": {
             "path": str(selection_path),
@@ -555,7 +568,7 @@ def main() -> int:
         },
         "uncertainty": uncertainty,
         "fresh_dlo2_checkpoint_posterior_authorized": continuation_passed,
-        "fresh_confirmation_contract": protocol["fresh_confirmation"],
+        "fresh_confirmation_contract": posterior["fresh_confirmation"],
     }
     output_path = output_root / "posterior_result.json"
     _write_json(output_path, output)

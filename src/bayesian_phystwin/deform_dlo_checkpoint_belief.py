@@ -13,6 +13,7 @@ import numpy as np
 
 DEFORM_CHECKPOINT_BELIEF_SCHEMA_VERSION = 1
 DEFORM_CHECKPOINT_BELIEF_CONTRACT = "deform-dlo-checkpoint-belief-exploratory-v1"
+DEFORM_LONGRUN_POSTERIOR_CONTRACT = "deform-dlo-longrun-posterior-v1"
 
 
 def load_deform_checkpoint_belief_protocol(path: str | Path) -> dict[str, object]:
@@ -65,6 +66,94 @@ def load_deform_checkpoint_belief_protocol(path: str | Path) -> dict[str, object
         raise ValueError("checkpoint-belief temperature is invalid")
     if gate.get("fallback") != "selected_single_exact":
         raise ValueError("checkpoint-belief fallback must remain exact")
+
+    result = dict(payload)
+    result["arms"] = arms
+    result["protocol_path"] = str(source)
+    return result
+
+
+def load_deform_longrun_posterior_protocol(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the posterior policy separately from its executing long-run parent."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != DEFORM_CHECKPOINT_BELIEF_SCHEMA_VERSION:
+        raise ValueError("unsupported DEFORM long-run posterior schema")
+    if payload.get("contract") != DEFORM_LONGRUN_POSTERIOR_CONTRACT:
+        raise ValueError("unsupported DEFORM long-run posterior contract")
+    if payload.get("source_test_status") != "post-open-exploratory-only":
+        raise ValueError("long-run posterior DLO1 source test must remain exploratory")
+    if payload.get("official_eval_policy") != "forbidden":
+        raise ValueError("long-run posterior must forbid official evaluation")
+    if payload.get("fresh_confirmation_dlo") != "DLO2":
+        raise ValueError("long-run posterior confirmation must use fresh DLO2")
+    for key in ("parent_longrun_protocol", "parent_source_result"):
+        identity = payload.get(key)
+        if (
+            not isinstance(identity, Mapping)
+            or not str(identity.get("repository_path", ""))
+            or len(str(identity.get("sha256", ""))) != 64
+        ):
+            raise ValueError("long-run posterior parent identity is invalid")
+    if tuple(payload.get("operators", ())) != (
+        "parameter_mean",
+        "predictive_mean",
+    ):
+        raise ValueError("long-run posterior operators differ")
+    if payload.get("fallback") != "selected_single_exact":
+        raise ValueError("long-run posterior must preserve exact fallback")
+    for key in (
+        "validation_improvement_min",
+        "source_transfer_improvement_min",
+    ):
+        value = float(payload.get(key, math.nan))
+        if not math.isfinite(value) or not 0.0 < value < 1.0:
+            raise ValueError("long-run posterior gate is invalid")
+    temperature = float(payload.get("softmax_temperature_m", math.nan))
+    if not math.isfinite(temperature) or temperature <= 0.0:
+        raise ValueError("long-run posterior temperature is invalid")
+    if int(payload.get("source_transfer_minimum_case_wins", -1)) not in range(9):
+        raise ValueError("long-run posterior win gate is invalid")
+    variance_floor = float(payload.get("coordinate_variance_floor_m2", math.nan))
+    nominal_coverage = float(
+        payload.get("coordinate_interval_nominal_coverage", math.nan)
+    )
+    if (
+        not math.isfinite(variance_floor)
+        or variance_floor <= 0.0
+        or not math.isfinite(nominal_coverage)
+        or not 0.0 < nominal_coverage < 1.0
+    ):
+        raise ValueError("long-run posterior uncertainty is invalid")
+    raw_arms = payload.get("arms")
+    if not isinstance(raw_arms, list) or not raw_arms:
+        raise ValueError("long-run posterior contains no arms")
+    arm_names: set[str] = set()
+    allowed_updates = {2560, 4000, 5200, 6040, 6400}
+    arms = []
+    for arm in raw_arms:
+        if not isinstance(arm, Mapping):
+            raise ValueError("long-run posterior arm is malformed")
+        name = str(arm.get("name", ""))
+        updates = tuple(int(update) for update in arm.get("updates", ()))
+        if not name or name in arm_names:
+            raise ValueError("long-run posterior arm names differ")
+        if (
+            not updates
+            or tuple(sorted(set(updates))) != updates
+            or not set(updates).issubset(allowed_updates)
+        ):
+            raise ValueError("long-run posterior arm updates differ")
+        if arm.get("weighting") not in ("uniform", "validation-softmax"):
+            raise ValueError("long-run posterior weighting differs")
+        arm_names.add(name)
+        arms.append({**arm, "name": name, "updates": updates})
+    fresh = payload.get("fresh_confirmation")
+    if not isinstance(fresh, Mapping) or fresh.get("dlo_type") != "DLO2":
+        raise ValueError("long-run posterior fresh confirmation differs")
 
     result = dict(payload)
     result["arms"] = arms

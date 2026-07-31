@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
 
-from bayesian_phystwin.deform_dlo_longrun import (
-    load_deform_dlo_longrun_protocol,
+from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+    load_deform_longrun_posterior_protocol,
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo_longrun_v2.json"
+PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo_longrun_posterior_v1.json"
 PARITY = (
     REPOSITORY_ROOT
     / "results"
@@ -17,8 +17,7 @@ PARITY = (
 
 
 def test_longrun_posterior_operator_bank_is_frozen() -> None:
-    protocol = load_deform_dlo_longrun_protocol(PROTOCOL)
-    posterior = protocol["checkpoint_posterior_if_source_gate_passes"]
+    posterior = load_deform_longrun_posterior_protocol(PROTOCOL)
 
     assert posterior["operators"] == ["parameter_mean", "predictive_mean"]
     assert posterior["fallback"] == "selected_single_exact"

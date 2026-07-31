@@ -193,20 +193,49 @@ def _seed_everything(torch: Any, seed: int) -> None:
     torch.use_deterministic_algorithms(True, warn_only=True)
 
 
-def _build_dlo1_model(
-    modules: SimpleNamespace, torch: Any, device: str
+def _build_dlo_model(
+    modules: SimpleNamespace,
+    torch: Any,
+    device: str,
+    *,
+    node_count: int,
 ) -> tuple[Any, Any]:
     if device.split(":", maxsplit=1)[0] != "cuda":
         raise ValueError("registered DEFORM source run requires a CUDA device")
-    model_function = modules.DEFORM_func(n_vert=13, n_edge=12, device=device)
-    model = modules.DEFORM_sim(n_vert=13, n_edge=12, pbd_iter=10, device=device)
+    if node_count < 5:
+        raise ValueError("registered DEFORM source run requires at least five nodes")
+    edge_count = node_count - 1
+    model_function = modules.DEFORM_func(
+        n_vert=node_count,
+        n_edge=edge_count,
+        device=device,
+    )
+    model = modules.DEFORM_sim(
+        n_vert=node_count,
+        n_edge=edge_count,
+        pbd_iter=10,
+        device=device,
+    )
     model.DEFORM_func.bend_stiffness = torch.nn.Parameter(
-        5e-5 * torch.ones((1, 12), device=device)
+        5e-5 * torch.ones((1, edge_count), device=device)
     )
     model.DEFORM_func.twist_stiffness = torch.nn.Parameter(
-        2e-5 * torch.ones((1, 12), device=device)
+        2e-5 * torch.ones((1, edge_count), device=device)
     )
     return model_function, model
+
+
+def _build_dlo1_model(
+    modules: SimpleNamespace,
+    torch: Any,
+    device: str,
+) -> tuple[Any, Any]:
+    return _build_dlo_model(
+        modules,
+        torch,
+        device,
+        node_count=13,
+    )
 
 
 def _official_optimizer(torch: Any, model: Any) -> Any:
@@ -525,8 +554,8 @@ def _checkpoint_identity(path: Path, update: int) -> dict[str, object]:
 def main() -> int:
     args = _parse_args()
     protocol = load_deform_dlo_source_protocol(args.protocol)
-    if args.dlo_type != "DLO1":
-        raise ValueError("source v1 registers DLO1 only")
+    if args.dlo_type not in protocol["dlo_types"]:
+        raise ValueError("requested DLO type is outside the registered protocol")
     upstream = _assert_upstream(args.upstream_root, protocol["upstream"]["commit"])
     output_root = args.output_root.resolve()
     if output_root.exists() and any(output_root.iterdir()):
@@ -586,7 +615,12 @@ def main() -> int:
     modules = _load_upstream(args.upstream_root)
     seed = int(protocol["training"]["random_seed"])
     _seed_everything(torch, seed)
-    model_function, model = _build_dlo1_model(modules, torch, args.device)
+    model_function, model = _build_dlo_model(
+        modules,
+        torch,
+        args.device,
+        node_count=node_count,
+    )
     optimizer = _official_optimizer(torch, model)
     fit_trajectories = {name: development_trajectories[name] for name in fit_names}
     orientations = _precompute_material_u0(
