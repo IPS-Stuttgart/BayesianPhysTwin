@@ -38,6 +38,15 @@ The parameter-mean and predictive-mean checkpoint arms, temperatures,
 uncertainty floor, and exact fallback are copied byte-for-byte from the separate
 DLO1 posterior policy. DLO2 source outcomes cannot change them.
 
+After the single-checkpoint DLO2 source gate passes, the separate posterior
+runner selects among those fixed arms using only the eight DLO2 validation
+trajectories. It preserves the selected single checkpoint exactly unless the
+best posterior arm improves validation L1 by at least 1%. A non-fallback arm
+must then improve the untouched eight-case source panel by at least 1% and win
+at least five paired cases before it can authorize an identical-information
+official evaluation. The official evaluation directory remains read-guarded
+throughout this stage.
+
 Passing the DLO2 source gate can authorize an identical-information official
 evaluation. It cannot authorize online-prefix assimilation in the SOTA table;
 that remains a separately labeled information setting.
@@ -52,4 +61,15 @@ python scripts/remote/run_deform_dlo2_fresh.py \
   --output-root /path/to/dlo2-fresh-v1 \
   --device cuda:0 \
   --mode run
+```
+
+Conditional posterior command:
+
+```bash
+python scripts/remote/run_deform_dlo2_posterior.py \
+  --protocol configs/sota/deform_dlo2_fresh_v1.json \
+  --source-result /path/to/dlo2-fresh-v1/source_run/source_result.json \
+  --upstream-root /path/to/DEFORM \
+  --output-root /path/to/dlo2-posterior-v1 \
+  --device cuda:0
 ```

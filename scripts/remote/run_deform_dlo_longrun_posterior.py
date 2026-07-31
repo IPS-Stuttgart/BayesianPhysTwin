@@ -220,8 +220,14 @@ def _evaluate_state(
     modules: Any,
     torch: Any,
     device: str,
+    node_count: int = 13,
 ) -> dict[str, object]:
-    model_function, model = source_runtime._build_dlo1_model(modules, torch, device)
+    model_function, model = source_runtime._build_dlo_model(
+        modules,
+        torch,
+        device,
+        node_count=node_count,
+    )
     model.load_state_dict(state, strict=True)
     return _rollout_arrays(
         trajectories,

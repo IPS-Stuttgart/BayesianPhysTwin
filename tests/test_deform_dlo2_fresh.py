@@ -3,6 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from bayesian_phystwin.deform_dlo_checkpoint_belief import (
+    validate_deform_dlo2_checkpoint_posterior,
+)
 from bayesian_phystwin.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     partition_deform_source_names,
@@ -63,7 +66,8 @@ def test_dlo2_fresh_parent_gate_accepts_only_authorized_longrun() -> None:
 
 
 def test_dlo2_fresh_posterior_matches_dlo1_policy() -> None:
-    payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    payload = load_deform_dlo_source_protocol(PROTOCOL)
+    policy = validate_deform_dlo2_checkpoint_posterior(payload)
     posterior = json.loads(
         (
             REPOSITORY_ROOT
@@ -76,8 +80,31 @@ def test_dlo2_fresh_posterior_matches_dlo1_policy() -> None:
     for key in (
         "operators",
         "softmax_temperature_m",
+        "source_transfer_improvement_min",
+        "source_transfer_minimum_case_wins",
         "coordinate_variance_floor_m2",
         "coordinate_interval_nominal_coverage",
         "arms",
     ):
-        assert payload["checkpoint_posterior"][key] == posterior[key]
+        expected = posterior[key]
+        if key == "arms":
+            expected = [
+                {**arm, "updates": tuple(arm["updates"])} for arm in posterior["arms"]
+            ]
+        assert policy[key] == expected
+
+
+def test_dlo2_fresh_posterior_rejects_a_weakened_fallback() -> None:
+    payload = load_deform_dlo_source_protocol(PROTOCOL)
+    payload["checkpoint_posterior"]["fallback"] = "best_candidate"
+
+    with pytest.raises(ValueError, match="exact fallback"):
+        validate_deform_dlo2_checkpoint_posterior(payload)
+
+
+def test_dlo2_fresh_posterior_rejects_an_incomplete_source_protocol() -> None:
+    payload = load_deform_dlo_source_protocol(PROTOCOL)
+    payload["source_split"] = None
+
+    with pytest.raises(ValueError, match="incomplete"):
+        validate_deform_dlo2_checkpoint_posterior(payload)

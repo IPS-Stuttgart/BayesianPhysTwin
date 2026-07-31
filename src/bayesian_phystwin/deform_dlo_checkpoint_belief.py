@@ -161,6 +161,83 @@ def load_deform_longrun_posterior_protocol(
     return result
 
 
+def validate_deform_dlo2_checkpoint_posterior(
+    source_protocol: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate the posterior policy frozen inside the fresh DLO2 protocol."""
+
+    data = source_protocol.get("data")
+    if (
+        tuple(source_protocol.get("dlo_types", ())) != ("DLO2",)
+        or not isinstance(data, Mapping)
+        or data.get("official_eval_metrics_opened") is not False
+    ):
+        raise ValueError("DLO2 posterior requires an evaluation-closed DLO2 protocol")
+    raw = source_protocol.get("checkpoint_posterior")
+    if not isinstance(raw, Mapping):
+        raise ValueError("DLO2 protocol omits its checkpoint posterior")
+    if tuple(raw.get("operators", ())) != ("parameter_mean", "predictive_mean"):
+        raise ValueError("DLO2 posterior operators differ")
+    if raw.get("fallback") != "selected_single_exact":
+        raise ValueError("DLO2 posterior must preserve exact fallback")
+    for key in ("validation_improvement_min", "source_transfer_improvement_min"):
+        value = float(raw.get(key, math.nan))
+        if not math.isfinite(value) or not 0.0 < value < 1.0:
+            raise ValueError("DLO2 posterior gate is invalid")
+    source_split = source_protocol.get("source_split")
+    training = source_protocol.get("training")
+    if not isinstance(source_split, Mapping) or not isinstance(training, Mapping):
+        raise ValueError("DLO2 posterior source protocol is incomplete")
+    minimum_wins = int(raw.get("source_transfer_minimum_case_wins", -1))
+    source_count = int(source_split.get("source_test_count", -1))
+    if minimum_wins < 1 or minimum_wins > source_count:
+        raise ValueError("DLO2 posterior win gate is invalid")
+    temperature = float(raw.get("softmax_temperature_m", math.nan))
+    variance_floor = float(raw.get("coordinate_variance_floor_m2", math.nan))
+    nominal_coverage = float(raw.get("coordinate_interval_nominal_coverage", math.nan))
+    if (
+        not math.isfinite(temperature)
+        or temperature <= 0.0
+        or not math.isfinite(variance_floor)
+        or variance_floor <= 0.0
+        or not math.isfinite(nominal_coverage)
+        or not 0.0 < nominal_coverage < 1.0
+    ):
+        raise ValueError("DLO2 posterior uncertainty policy is invalid")
+
+    checkpoint_updates = {
+        int(update) for update in training.get("checkpoint_updates", ())
+    }
+    if not checkpoint_updates:
+        raise ValueError("DLO2 posterior checkpoint schedule is empty")
+    raw_arms = raw.get("arms")
+    if not isinstance(raw_arms, list) or not raw_arms:
+        raise ValueError("DLO2 posterior contains no arms")
+    names: set[str] = set()
+    arms = []
+    for raw_arm in raw_arms:
+        if not isinstance(raw_arm, Mapping):
+            raise ValueError("DLO2 posterior arm is malformed")
+        name = str(raw_arm.get("name", ""))
+        updates = tuple(int(update) for update in raw_arm.get("updates", ()))
+        if (
+            not name
+            or name in names
+            or not updates
+            or tuple(sorted(set(updates))) != updates
+            or not set(updates).issubset(checkpoint_updates)
+        ):
+            raise ValueError("DLO2 posterior arm identity differs")
+        if raw_arm.get("weighting") not in ("uniform", "validation-softmax"):
+            raise ValueError("DLO2 posterior arm weighting differs")
+        names.add(name)
+        arms.append({**raw_arm, "name": name, "updates": updates})
+
+    result = dict(raw)
+    result["arms"] = arms
+    return result
+
+
 def _validation_errors(
     records: Sequence[Mapping[str, object]],
 ) -> dict[int, float]:
@@ -471,8 +548,10 @@ def select_deform_checkpoint_belief_arm(
 def evaluate_deform_checkpoint_belief_transfer(
     candidate_records: Sequence[Mapping[str, object]],
     baseline_records: Sequence[Mapping[str, object]],
+    *,
+    claim_boundary: str = "post-open DLO1 exploratory; fresh DLO2 required",
 ) -> dict[str, object]:
-    """Summarize the post-open DLO1 transfer without changing the selector."""
+    """Summarize paired source transfer without changing the selector."""
 
     def indexed(
         records: Sequence[Mapping[str, object]],
@@ -508,5 +587,5 @@ def evaluate_deform_checkpoint_belief_transfer(
         "baseline_mean_l1_m": baseline_mean,
         "relative_improvement": improvement,
         "wins": wins,
-        "claim_boundary": "post-open DLO1 exploratory; fresh DLO2 required",
+        "claim_boundary": claim_boundary,
     }

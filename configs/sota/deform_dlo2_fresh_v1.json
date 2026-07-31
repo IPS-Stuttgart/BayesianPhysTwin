@@ -52,6 +52,8 @@
   },
   "checkpoint_posterior": {
     "validation_improvement_min": 0.01,
+    "source_transfer_improvement_min": 0.01,
+    "source_transfer_minimum_case_wins": 5,
     "fallback": "selected_single_exact",
     "operators": ["parameter_mean", "predictive_mean"],
     "softmax_temperature_m": 0.001,

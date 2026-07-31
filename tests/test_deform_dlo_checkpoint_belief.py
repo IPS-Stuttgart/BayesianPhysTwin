@@ -198,6 +198,13 @@ def test_checkpoint_belief_transfer_uses_paired_cases() -> None:
     assert transfer["wins"] == 2
     assert "post-open" in transfer["claim_boundary"]
 
+    fresh = evaluate_deform_checkpoint_belief_transfer(
+        candidate,
+        baseline,
+        claim_boundary="fresh DLO2 source transfer",
+    )
+    assert fresh["claim_boundary"] == "fresh DLO2 source transfer"
+
 
 def test_checkpoint_belief_transfer_rejects_duplicate_cases() -> None:
     with pytest.raises(ValueError, match="not unique"):
