@@ -27,3 +27,21 @@ The route is complementary to checkpoint averaging: checkpoint members share
 one optimization trajectory, while the second seed probes between-run model
 uncertainty. Its extra compute is justified only if that independent diversity
 survives both validation and source-transfer gates.
+
+The standalone evaluator lock is
+`configs/sota/deform_dlo1_deep_ensemble_eval_v1.json`. It binds both training
+protocols and the original seed-42 source manifest by SHA-256. Once both source
+results exist, the registered operator is:
+
+```bash
+python scripts/remote/run_deform_dlo_deep_ensemble.py \
+  --protocol configs/sota/deform_dlo1_deep_ensemble_eval_v1.json \
+  --seed42-longrun-protocol configs/sota/deform_dlo_longrun_v2.json \
+  --seed42-longrun-result /path/to/seed42/longrun_result.json \
+  --seed42-source-manifest results/sota/deform_dlo_source_v1/source_manifest.json \
+  --seed43-source-protocol configs/sota/deform_dlo1_seed43_longrun_v1.json \
+  --seed43-source-result /path/to/seed43/source_result.json \
+  --upstream-root /path/to/DEFORM \
+  --output-root /new/empty/two-seed-output \
+  --device cuda:0
+```
