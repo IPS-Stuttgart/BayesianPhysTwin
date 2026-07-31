@@ -1,0 +1,51 @@
+{
+  "arcsim_endpoint_real_to_sim_l1_m": 0.05242500140905,
+  "arcsim_real_to_sim_l1_m": 0.05322464662233837,
+  "artifact_kind": "RGBenchARCSimSourceAccuracyResultV13",
+  "authorized_split": "source",
+  "case_id": "green_tshirt/fling/01",
+  "claim_boundary": "one already-declared source-case advancement screen; not a benchmark or state-of-the-art claim",
+  "comparators": {
+    "physical_real_to_sim_l1_m": 0.05939356004993469,
+    "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+    "selected_dynamic_real_to_sim_l1_m": 0.04964315282920389
+  },
+  "decision": "close-arcsim-source-route",
+  "gates": {
+    "all_passed": false,
+    "beats_remeshed_physical_baseline": true,
+    "beats_selected_dynamic_baseline": false,
+    "published_improvement_at_least_5pct": false
+  },
+  "horizons": [
+    {
+      "name": "early",
+      "real_to_sim_l1_m": 0.040468998563604676
+    },
+    {
+      "name": "middle",
+      "real_to_sim_l1_m": 0.07016965341511065
+    },
+    {
+      "name": "late",
+      "real_to_sim_l1_m": 0.0490352878882998
+    }
+  ],
+  "implementation_commit": "e9f16d47ca6142c3a8306bc5452dfbcddcd7717d",
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "prediction_sealed_before_point_cloud_coordinates": true,
+    "source_point_cloud_coordinates_read_for_scoring": true,
+    "target_outcomes_read": false
+  },
+  "prediction_metadata_sha256": "a7c3c7bc8f945d7296bb067d74700abe8eabca3964f4765886847c1f9280fa33",
+  "prediction_sha256": "4266332973decb9068866bec92399567fe7f2d697e3c93fff2d9a5b2bcc96bd6",
+  "protocol_id": "rgbbench-arcsim-dirichlet-source-v13",
+  "protocol_sha256": "6025644cdabd9abd5c106d2c51a012f86f809304b9e7912873d81ca5e56d3e3b",
+  "relative_improvements": {
+    "physical_real_to_sim_l1_m": 0.10386502210693982,
+    "published_garment_dynamics_real_to_sim_l1_m": -0.27027796234697776,
+    "selected_dynamic_real_to_sim_l1_m": -0.07214476899677436
+  },
+  "schema_version": 1
+}

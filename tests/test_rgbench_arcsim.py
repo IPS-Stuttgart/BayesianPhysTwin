@@ -457,3 +457,25 @@ def test_v13_freezes_one_case_accuracy_without_mechanics_selection() -> None:
     ].items():
         assert sha256_file(root / relative_path) == expected_sha256
     assert v13["information_boundary"]["prediction_stage_forbidden"]
+
+
+def test_v13_result_closes_failed_source_route_without_target_access() -> None:
+    root = Path(__file__).resolve().parents[1]
+    result = json.loads(
+        (
+            root
+            / "results"
+            / "sota"
+            / "rgbbench_arcsim_dirichlet_source_v13"
+            / "result.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert result["decision"] == "close-arcsim-source-route"
+    assert result["gates"] == {
+        "all_passed": False,
+        "beats_remeshed_physical_baseline": True,
+        "beats_selected_dynamic_baseline": False,
+        "published_improvement_at_least_5pct": False,
+    }
+    assert result["arcsim_real_to_sim_l1_m"] == pytest.approx(0.05322464662233837)
+    assert result["information_boundary"]["target_outcomes_read"] is False
