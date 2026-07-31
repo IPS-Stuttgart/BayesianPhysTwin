@@ -17,6 +17,9 @@ from bayesian_phystwin.deform_dlo_source import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo_source_v1.json"
+SEED43_PROTOCOL = (
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo1_seed43_longrun_v1.json"
+)
 
 
 def test_registered_deform_source_protocol_is_source_only() -> None:
@@ -29,6 +32,26 @@ def test_registered_deform_source_protocol_is_source_only() -> None:
     assert protocol["training"]["unroll_horizon_frames"] == 50
     assert protocol["training"]["checkpoint_updates"][-1] == 280
     assert protocol["training"]["cublas_workspace_config"] == ":4096:8"
+
+
+def test_seed43_deep_ensemble_member_is_preregistered_and_source_only() -> None:
+    baseline = load_deform_dlo_source_protocol(PROTOCOL)
+    seed43 = load_deform_dlo_source_protocol(SEED43_PROTOCOL)
+    candidate = seed43["deep_ensemble_candidate"]
+
+    assert seed43["dlo_types"] == ("DLO1",)
+    assert seed43["source_split"] == baseline["source_split"]
+    assert seed43["training"]["random_seed"] == 43
+    assert seed43["training"]["total_updates"] == 6400
+    assert seed43["data"]["official_eval_metrics_opened"] is False
+    assert candidate["comparison_baseline"] == (
+        "lower-validation-error-single-member-v1"
+    )
+    assert candidate["fallback"] == "comparison-baseline-exact"
+    assert candidate["validation_improvement_min"] == 0.01
+    assert candidate["source_transfer_improvement_min"] == 0.01
+    assert candidate["source_transfer_minimum_case_wins"] == 5
+    assert candidate["fresh_confirmation"]["seeds"] == [42, 43]
 
 
 def test_deform_source_protocol_rejects_eval_development(tmp_path: Path) -> None:
