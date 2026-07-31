@@ -51,6 +51,11 @@ Passing the DLO2 source gate can authorize an identical-information official
 evaluation. It cannot authorize online-prefix assimilation in the SOTA table;
 that remains a separately labeled information setting.
 
+If the Bayesian posterior also passes its fresh transfer gate, the selected
+operator and weights advance unchanged to the all-56 final refit described in
+`deform_dlo2_alltrain_refit_v1.md`. This restores the full official training
+budget before evaluation without reopening method selection.
+
 ## Command
 
 ```bash

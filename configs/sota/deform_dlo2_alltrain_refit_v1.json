@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-alltrain-refit-v1",
+  "claim_boundary": "Final all-training-data DLO2 refit after fresh source confirmation. Official evaluation remains unopened and no method choice may change in this stage.",
+  "parent_source_protocol": {
+    "repository_path": "configs/sota/deform_dlo2_fresh_v1.json",
+    "sha256": "aef5f392c70613c159c5124f75924018cdcd1a5ceaf84264546d667a1bc5c076"
+  },
+  "required_parent": {
+    "source_result_contract": "deform-dlo-source-reproduction-result-v1",
+    "source_gate_passed": true,
+    "posterior_result_contract": "deform-dlo2-posterior-result-v1",
+    "posterior_exact_fallback": false,
+    "posterior_official_eval_authorized": true
+  },
+  "data": {
+    "dlo_type": "DLO2",
+    "partition": "train",
+    "trajectory_count": 56,
+    "frame_count": 500,
+    "node_count": 12,
+    "use_every_train_trajectory": true,
+    "official_eval_read": false
+  },
+  "training": {
+    "random_seed": 42,
+    "unroll_horizon_frames": 50,
+    "batch_size": 32,
+    "total_updates": 6400,
+    "checkpoint_updates": [0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400],
+    "optimizer": "official-sgd-parameter-groups-v1",
+    "cublas_workspace_config": ":4096:8",
+    "known_action_nodes": [0, 1, -2, -1],
+    "window_sampling": "frozen-uniform-all-56-train-v1"
+  },
+  "method_transfer": {
+    "selection_source": "fresh-dlo2-posterior-result",
+    "operator": "copy-selected-spec-exactly",
+    "checkpoint_weights": "copy-selected-spec-exactly",
+    "validation_reselection": false,
+    "source_reselection": false,
+    "target_reselection": false,
+    "variance_scale": "copy-validation-fitted-scale-exactly"
+  },
+  "output": {
+    "materialize_parameter_mean_checkpoint": true,
+    "preserve_predictive_member_checkpoints": true,
+    "official_eval_authorized_by_refit_alone": false
+  }
+}

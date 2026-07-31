@@ -167,8 +167,11 @@ def validate_deform_dlo2_checkpoint_posterior(
     """Validate the posterior policy frozen inside the fresh DLO2 protocol."""
 
     data = source_protocol.get("data")
+    raw_dlo_types = source_protocol.get("dlo_types")
     if (
-        tuple(source_protocol.get("dlo_types", ())) != ("DLO2",)
+        not isinstance(raw_dlo_types, Sequence)
+        or isinstance(raw_dlo_types, (str, bytes))
+        or tuple(raw_dlo_types) != ("DLO2",)
         or not isinstance(data, Mapping)
         or data.get("official_eval_metrics_opened") is not False
     ):
@@ -176,7 +179,12 @@ def validate_deform_dlo2_checkpoint_posterior(
     raw = source_protocol.get("checkpoint_posterior")
     if not isinstance(raw, Mapping):
         raise ValueError("DLO2 protocol omits its checkpoint posterior")
-    if tuple(raw.get("operators", ())) != ("parameter_mean", "predictive_mean"):
+    raw_operators = raw.get("operators")
+    if (
+        not isinstance(raw_operators, Sequence)
+        or isinstance(raw_operators, (str, bytes))
+        or tuple(raw_operators) != ("parameter_mean", "predictive_mean")
+    ):
         raise ValueError("DLO2 posterior operators differ")
     if raw.get("fallback") != "selected_single_exact":
         raise ValueError("DLO2 posterior must preserve exact fallback")
@@ -205,9 +213,12 @@ def validate_deform_dlo2_checkpoint_posterior(
     ):
         raise ValueError("DLO2 posterior uncertainty policy is invalid")
 
-    checkpoint_updates = {
-        int(update) for update in training.get("checkpoint_updates", ())
-    }
+    raw_checkpoint_updates = training.get("checkpoint_updates")
+    if not isinstance(raw_checkpoint_updates, Sequence) or isinstance(
+        raw_checkpoint_updates, (str, bytes)
+    ):
+        raise ValueError("DLO2 posterior checkpoint schedule is malformed")
+    checkpoint_updates = {int(update) for update in raw_checkpoint_updates}
     if not checkpoint_updates:
         raise ValueError("DLO2 posterior checkpoint schedule is empty")
     raw_arms = raw.get("arms")
@@ -219,7 +230,12 @@ def validate_deform_dlo2_checkpoint_posterior(
         if not isinstance(raw_arm, Mapping):
             raise ValueError("DLO2 posterior arm is malformed")
         name = str(raw_arm.get("name", ""))
-        updates = tuple(int(update) for update in raw_arm.get("updates", ()))
+        raw_updates = raw_arm.get("updates")
+        if not isinstance(raw_updates, Sequence) or isinstance(
+            raw_updates, (str, bytes)
+        ):
+            raise ValueError("DLO2 posterior arm updates are malformed")
+        updates = tuple(int(update) for update in raw_updates)
         if (
             not name
             or name in names
@@ -243,8 +259,8 @@ def _validation_errors(
 ) -> dict[int, float]:
     errors: dict[int, float] = {}
     for record in records:
-        update = int(record.get("update", -1))
-        error = float(record.get("validation_l1_m", math.nan))
+        update = int(str(record.get("update", -1)))
+        error = float(str(record.get("validation_l1_m", math.nan)))
         if update < 0 or update in errors or not math.isfinite(error) or error < 0.0:
             raise ValueError("invalid checkpoint validation record")
         errors[update] = error
@@ -264,10 +280,21 @@ def build_deform_checkpoint_belief_arms(
     candidates: dict[str, dict[int, float]] = {
         "selected_single": {selected_update: 1.0}
     }
-    temperature = float(protocol["validation_gate"]["softmax_temperature_m"])
-    for arm in protocol["arms"]:
+    validation_gate = protocol.get("validation_gate")
+    raw_arms = protocol.get("arms")
+    if not isinstance(validation_gate, Mapping) or not isinstance(raw_arms, Sequence):
+        raise ValueError("checkpoint-belief arm protocol is malformed")
+    temperature = float(str(validation_gate["softmax_temperature_m"]))
+    for arm in raw_arms:
+        if not isinstance(arm, Mapping):
+            raise ValueError("checkpoint-belief arm is malformed")
         name = str(arm["name"])
-        updates = tuple(int(value) for value in arm["updates"])
+        raw_updates = arm["updates"]
+        if not isinstance(raw_updates, Sequence) or isinstance(
+            raw_updates, (str, bytes)
+        ):
+            raise ValueError("checkpoint-belief arm updates are malformed")
+        updates = tuple(int(value) for value in raw_updates)
         missing = [update for update in updates if update not in errors]
         if missing:
             raise ValueError(f"checkpoint-belief arm {name} is missing {missing}")
@@ -563,7 +590,7 @@ def evaluate_deform_checkpoint_belief_transfer(
             name = str(record["name"])
             if not name or name in result:
                 raise ValueError(f"{label} checkpoint-belief cases are not unique")
-            result[name] = float(record["model_l1_m"])
+            result[name] = float(str(record["model_l1_m"]))
         return result
 
     candidate = indexed(candidate_records, label="candidate")
