@@ -58,3 +58,8 @@ python scripts/remote/run_deform_dlo_longrun_posterior.py \
 The runner verifies all checkpoint, schedule, protocol, source-manifest, and
 runtime identities and installs the same official-evaluation read guard as the
 parent run.
+
+A validation-only parity smoke at implementation commit `04c40a9` reproduced
+the parent update-280 rollout to within `7.7e-8 m` in model L1 and `2.1e-9 m`
+in persistence L1. The checksummed record is stored under
+`results/sota/deform_dlo_longrun_posterior_v1/`.
