@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-official-eval-v1",
+  "claim_boundary": "One-shot identical-information evaluation of the preselected all-56 DLO2 Bayesian method. No evaluation outcome may alter the model, weights, calibration, or reporting set.",
+  "parent_alltrain_protocol": {
+    "repository_path": "configs/sota/deform_dlo2_alltrain_refit_v1.json",
+    "sha256": "3c7937879fa7eb113234d333570e03e7a846315ef3a2682d0b51dc7198eb70c4"
+  },
+  "required_parent": {
+    "result_contract": "deform-dlo2-alltrain-result-v1",
+    "official_eval_read": false,
+    "official_eval_execution_authorized": true,
+    "final_method_contract": "deform-dlo2-alltrain-final-method-v1"
+  },
+  "evaluation": {
+    "dlo_type": "DLO2",
+    "partition": "eval",
+    "expected_trajectory_count": 14,
+    "expected_frame_count": 500,
+    "expected_node_count": 12,
+    "trajectory_policy": "all-eval-files-sorted-once-v1",
+    "failure_policy": "seal-failure-no-retry-v1",
+    "metric": "mean-coordinate-l1-m",
+    "horizon_breakdown": "equal-frame-thirds-v1",
+    "published_reference_l1_m": 0.0097,
+    "published_reference_source": "DEFORM-CoRL-2024-DLO2"
+  },
+  "methods": {
+    "candidate": "preselected-alltrain-posterior",
+    "comparison_baseline": "preselected-alltrain-single-checkpoint",
+    "action_aware_persistence": true,
+    "target_selection": false,
+    "target_calibration": false,
+    "target_retries": false,
+    "case_replacement": false
+  },
+  "claim_gate": {
+    "published_reference_strictly_better": true,
+    "bayesian_relative_improvement_min": 0.01,
+    "bayesian_minimum_case_wins": 8,
+    "require_all_expected_cases": true
+  },
+  "uncertainty": {
+    "use_source_validation_scale_unchanged": true,
+    "report_coordinate_marginal_coverage": true,
+    "report_interval_width": true,
+    "report_gaussian_nll": true,
+    "report_coordinate_nees": true,
+    "report_horizon_breakdown": true
+  }
+}
