@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-longrun-continuation-v2",
+  "claim_boundary": "DLO1 source outcomes are already open. This continuation is exploratory method development and cannot confirm transfer or state of the art.",
+  "dlo_type": "DLO1",
+  "source_test_status": "post-open-exploratory-only",
+  "official_eval_policy": "forbidden",
+  "fresh_confirmation_dlo": "DLO2",
+  "source_reproduction_commit": "4ef71f16b909a8db7b60f08047010250f0b765b1",
+  "source_result": {
+    "repository_path": "results/sota/deform_dlo_source_v1/source_result.json",
+    "sha256": "9722a7bf4800e18677daa15cb220a39f9a72c73ae2f7ca7d100bb4cba25e8f65",
+    "required_advancement_authorized": false
+  },
+  "starting_checkpoint": {
+    "global_update": 280,
+    "sha256": "c42ddb273f6aefe932c42d899419e8579c798f15a6d2448d72849574197ab91d",
+    "size_bytes": 351807,
+    "optimizer_state_required": true
+  },
+  "training": {
+    "continuation_random_seed": 20260731,
+    "continuation_updates": 6120,
+    "final_global_update": 6400,
+    "batch_size": 32,
+    "unroll_horizon_frames": 50,
+    "checkpoint_updates": [640, 1280, 2560, 4000, 5200, 6040, 6400],
+    "cublas_workspace_config": ":4096:8",
+    "validation_selection": "mean-coordinate-l1-m",
+    "validation_tie_break": "lower-global-update"
+  },
+  "source_gate": {
+    "published_reference_l1_m": 0.0101,
+    "published_error_multiplier_max": 1.1,
+    "minimum_persistence_wins": 6
+  },
+  "checkpoint_posterior_if_source_gate_passes": {
+    "validation_improvement_min": 0.01,
+    "fallback": "selected_single_exact",
+    "arms": [
+      {
+        "name": "tail_2_uniform",
+        "updates": [6040, 6400],
+        "weighting": "uniform"
+      },
+      {
+        "name": "tail_3_uniform",
+        "updates": [5200, 6040, 6400],
+        "weighting": "uniform"
+      },
+      {
+        "name": "tail_4_uniform",
+        "updates": [4000, 5200, 6040, 6400],
+        "weighting": "uniform"
+      },
+      {
+        "name": "late_validation_softmax",
+        "updates": [2560, 4000, 5200, 6040, 6400],
+        "weighting": "validation-softmax",
+        "temperature_m": 0.001
+      }
+    ]
+  },
+  "fresh_confirmation": {
+    "dlo_type": "DLO2",
+    "train_from_scratch": true,
+    "same_total_update_budget": true,
+    "same_horizon_and_batch_size": true,
+    "same_checkpoint_posterior_arm_bank": true,
+    "no_dlo1_retuning": true,
+    "official_eval_remains_closed_until_dlo2_source_gate": true,
+    "identical_information_only": true
+  }
+}
