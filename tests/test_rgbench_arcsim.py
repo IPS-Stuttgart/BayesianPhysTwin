@@ -38,6 +38,19 @@ from scripts.held.run_rgbbench_arcsim_full_horizon_v12 import (
 from scripts.held.run_rgbbench_arcsim_full_horizon_v12 import (
     _load_protocol as _load_full_horizon_protocol,
 )
+from scripts.held.run_rgbbench_arcsim_source_v13 import (
+    ARTIFACT_KIND as SOURCE_ARTIFACT_KIND,
+)
+from scripts.held.run_rgbbench_arcsim_source_v13 import (
+    PROTOCOL_ID as SOURCE_PROTOCOL_ID,
+)
+from scripts.held.run_rgbbench_arcsim_source_v13 import (
+    _load_protocol as _load_source_protocol,
+)
+from scripts.held.run_rgbbench_arcsim_source_v13 import (
+    _mapped_protocol,
+    _verify_comparators,
+)
 
 
 def _parameters_for_test(**changes: object) -> ARCSimClothParameters:
@@ -411,3 +424,36 @@ def test_v12_binds_full_horizon_without_changing_v11_mechanics() -> None:
     ].items():
         assert sha256_file(root / relative_path) == expected_sha256
     assert v12["information_boundary"]["forbidden"]
+
+
+def test_v13_freezes_one_case_accuracy_without_mechanics_selection() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v12 = _load_full_horizon_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_full_horizon_v12.json"
+    )
+    v13 = _load_source_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_source_v13.json"
+    )
+    assert v13["protocol_id"] == SOURCE_PROTOCOL_ID
+    assert v13["artifact_kind"] == SOURCE_ARTIFACT_KIND
+    assert v13["predecessor"]["protocol_id"] == v12["protocol_id"]
+    assert v13["predecessor"]["status"] == "target_free_full_horizon_passed"
+    assert v13["physics"] == v12["physics"]
+    assert v13["source_case"]["case_id"] == "green_tshirt/fling/01"
+    assert v13["source_case"]["evaluation_frame_count"] == 27
+    assert v13["source_gate"]["minimum_relative_improvement_vs_published"] == 0.05
+
+    mapped = _mapped_protocol(v13)
+    assert mapped["competence_case"] == v13["source_case"]
+    assert mapped["competence_gate"] == v13["source_gate"]
+    assert "competence_case" not in v13
+    assert _verify_comparators(v13) == {
+        "physical_real_to_sim_l1_m": 0.05939356004993469,
+        "selected_dynamic_real_to_sim_l1_m": 0.04964315282920389,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+    }
+    for relative_path, expected_sha256 in v13["upstream"][
+        "implementation_artifact_sha256s"
+    ].items():
+        assert sha256_file(root / relative_path) == expected_sha256
+    assert v13["information_boundary"]["prediction_stage_forbidden"]
