@@ -164,6 +164,9 @@ def main() -> int:
         "official_eval_read": False,
         "operator": selected_method["operator"],
         "checkpoint_weights": selected_method["weights"],
+        "comparison_baseline_update": selected_method[
+            "comparison_baseline_update"
+        ],
         "validation_fitted_variance_scale": selected_method[
             "validation_fitted_variance_scale"
         ],
@@ -351,7 +354,11 @@ def main() -> int:
 
     indexed_checkpoints = {int(record["update"]): record for record in checkpoints}
     weights = selected_method["weights"]
-    if not set(weights).issubset(indexed_checkpoints):
+    baseline_update = int(selected_method["comparison_baseline_update"])
+    if (
+        baseline_update not in indexed_checkpoints
+        or not set(weights).issubset(indexed_checkpoints)
+    ):
         raise RuntimeError("all-train run omitted a selected posterior checkpoint")
     selected_members = {
         str(update): indexed_checkpoints[update] for update in sorted(weights)
@@ -388,6 +395,7 @@ def main() -> int:
         "official_eval_read": False,
         "operator": selected_method["operator"],
         "checkpoint_weights": weights,
+        "comparison_baseline_checkpoint": indexed_checkpoints[baseline_update],
         "member_checkpoints": selected_members,
         "parameter_mean_checkpoint": parameter_mean_identity,
         "method_spec": {

@@ -105,6 +105,7 @@ def validate_deform_dlo2_alltrain_authorization(
     if not isinstance(required, Mapping):
         raise ValueError("DLO2 all-train protocol omits parent gates")
     source_gate = source_result.get("source_gate")
+    selected_checkpoint = source_result.get("selected_checkpoint")
     if (
         source_result.get("contract") != required.get("source_result_contract")
         or source_result.get("official_eval_read") is not False
@@ -113,6 +114,9 @@ def validate_deform_dlo2_alltrain_authorization(
         or source_gate.get("passed") is not required.get("source_gate_passed")
     ):
         raise ValueError("DLO2 source result did not authorize all-train refit")
+    if not isinstance(selected_checkpoint, Mapping):
+        raise ValueError("DLO2 source result omits its selected checkpoint")
+    baseline_update = int(selected_checkpoint.get("update", -1))
     if (
         posterior_result.get("contract") != required.get("posterior_result_contract")
         or posterior_result.get("official_eval_read") is not False
@@ -159,6 +163,7 @@ def validate_deform_dlo2_alltrain_authorization(
     checkpoint_updates = {int(update) for update in raw_checkpoint_updates}
     if (
         not weights
+        or baseline_update not in checkpoint_updates
         or not set(weights).issubset(checkpoint_updates)
         or any(
             not math.isfinite(weight) or weight <= 0.0 for weight in weights.values()
@@ -195,6 +200,7 @@ def validate_deform_dlo2_alltrain_authorization(
     return {
         "operator": operator,
         "weights": weights,
+        "comparison_baseline_update": baseline_update,
         "validation_fitted_variance_scale": variance_scale,
         "variance_floor_m2": variance_floor,
         "nominal_coordinate_coverage": nominal_coverage,

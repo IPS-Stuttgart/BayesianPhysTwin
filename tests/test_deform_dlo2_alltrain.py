@@ -45,6 +45,7 @@ def _parents() -> tuple[dict[str, object], dict[str, object], dict[str, object]]
         "official_eval_read": False,
         "advancement_authorized": True,
         "source_gate": {"passed": True},
+        "selected_checkpoint": {"update": 6400},
     }
     posterior = {
         "contract": "deform-dlo2-posterior-result-v1",
@@ -109,6 +110,7 @@ def test_dlo2_alltrain_authorization_preserves_selected_spec() -> None:
 
     assert selected["operator"] == "predictive_mean"
     assert selected["weights"] == {6040: 0.4, 6400: 0.6}
+    assert selected["comparison_baseline_update"] == 6400
     assert selected["validation_fitted_variance_scale"] == 2.0
 
 

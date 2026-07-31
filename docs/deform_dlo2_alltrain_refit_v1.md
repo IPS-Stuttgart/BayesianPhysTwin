@@ -43,6 +43,10 @@ For a parameter-mean posterior, the runner materializes the weighted model
 state after training. For a predictive-mean posterior, it preserves the exact
 member checkpoints and weights. Both forms produce one immutable final-method
 artifact for the later one-shot evaluation.
+The source-validation-selected single-checkpoint update is also carried into
+the all-56 run as a fixed comparison baseline, allowing the untouched
+evaluation to isolate the Bayesian arm's contribution under identical data and
+training schedules.
 
 ## Command
 
