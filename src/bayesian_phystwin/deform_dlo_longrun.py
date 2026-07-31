@@ -48,6 +48,12 @@ def load_deform_dlo_longrun_protocol(path: str | Path) -> dict[str, object]:
         raise ValueError("long-run starting-checkpoint digest is invalid")
     if starting.get("optimizer_state_required") is not True:
         raise ValueError("long-run must resume the optimizer state")
+    for key in (
+        "source_protocol_raw_sha256",
+        "source_protocol_lf_normalized_sha256",
+    ):
+        if len(str(starting.get(key, ""))) != 64:
+            raise ValueError("long-run source-protocol digest is invalid")
 
     training = payload.get("training")
     if not isinstance(training, Mapping):

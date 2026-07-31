@@ -13,6 +13,7 @@ PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo_longrun_v2.json"
 SOURCE_RESULT = (
     REPOSITORY_ROOT / "results" / "sota" / "deform_dlo_source_v1" / "source_result.json"
 )
+SOURCE_PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo_source_v1.json"
 
 
 def _sha256(path: Path) -> str:
@@ -31,6 +32,17 @@ def test_longrun_binds_failed_source_without_reopening_eval() -> None:
     assert (
         protocol["starting_checkpoint"]["sha256"]
         == source_result["selected_checkpoint"]["checkpoint"]["sha256"]
+    )
+    assert protocol["starting_checkpoint"][
+        "source_protocol_lf_normalized_sha256"
+    ] == _sha256(SOURCE_PROTOCOL)
+    assert (
+        protocol["starting_checkpoint"]["source_protocol_raw_sha256"]
+        == "979328e633bc85ee2c94fa5ece774644fc8a11ca2d0d4598924fb7b5847803f6"
+    )
+    assert (
+        protocol["starting_checkpoint"]["source_protocol_raw_sha256"]
+        != protocol["starting_checkpoint"]["source_protocol_lf_normalized_sha256"]
     )
     assert protocol["source_test_status"] == "post-open-exploratory-only"
     assert protocol["official_eval_policy"] == "forbidden"

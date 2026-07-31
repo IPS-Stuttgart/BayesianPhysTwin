@@ -63,3 +63,9 @@ python scripts/remote/run_deform_dlo_longrun.py \
 
 The runner requires the same PyTorch and CUDA versions as the parent result,
 verifies every parent hash, and refuses a nonempty output directory.
+
+The parent checkpoint embedded the SHA-256 of a CRLF checkout of the source
+protocol (`979328e6...`), whereas the Git blob and archived v2 checkout use LF
+(`62e10c76...`). Preflight requires both recorded digests and exact equality
+after CRLF-to-LF normalization; parsed JSON equality alone is not used to waive
+the checkpoint provenance check.

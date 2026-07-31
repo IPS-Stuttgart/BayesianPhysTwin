@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import time
@@ -44,6 +45,11 @@ def _read_json(path: Path) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ValueError(f"expected a JSON object: {path}")
     return payload
+
+
+def _sha256_lf_normalized(path: Path) -> str:
+    payload = path.resolve().read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _write_json(
@@ -171,10 +177,13 @@ def main() -> int:
         map_location=args.device,
         weights_only=True,
     )
+    starting_identity = protocol["starting_checkpoint"]
     if (
-        int(parent_bundle.get("update", -1))
-        != int(protocol["starting_checkpoint"]["global_update"])
-        or parent_bundle.get("protocol_sha256") != sha256_file(args.source_protocol)
+        int(parent_bundle.get("update", -1)) != int(starting_identity["global_update"])
+        or parent_bundle.get("protocol_sha256")
+        != starting_identity["source_protocol_raw_sha256"]
+        or _sha256_lf_normalized(args.source_protocol)
+        != starting_identity["source_protocol_lf_normalized_sha256"]
         or parent_bundle.get("schedule_sha256")
         != source_result["window_schedule"]["sha256"]
     ):
@@ -225,6 +234,10 @@ def main() -> int:
         "source_test_opened": False,
         "parent_source_result_sha256": sha256_file(source_result_path),
         "parent_checkpoint_sha256": sha256_file(starting_checkpoint_path),
+        "source_protocol_raw_parent_sha256": parent_bundle["protocol_sha256"],
+        "source_protocol_lf_normalized_sha256": _sha256_lf_normalized(
+            args.source_protocol
+        ),
         "continuation_schedule": {
             "path": str(schedule_path),
             "sha256": sha256_file(schedule_path),
