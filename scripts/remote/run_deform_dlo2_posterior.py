@@ -161,6 +161,7 @@ def main() -> int:
             modules=modules,
             torch=torch,
             device=args.device,
+            dlo_type="DLO2",
             node_count=node_count,
         )
         if reference_validation is None:
@@ -198,6 +199,7 @@ def main() -> int:
                     modules=modules,
                     torch=torch,
                     device=args.device,
+                    dlo_type="DLO2",
                     node_count=node_count,
                 )
                 posterior_runtime._assert_common_rollout(
@@ -275,6 +277,7 @@ def main() -> int:
                 modules=modules,
                 torch=torch,
                 device=args.device,
+                dlo_type="DLO2",
                 node_count=node_count,
             )
             if reference_source is None:
@@ -299,6 +302,7 @@ def main() -> int:
                 modules=modules,
                 torch=torch,
                 device=args.device,
+                dlo_type="DLO2",
                 node_count=node_count,
             )
             posterior_runtime._assert_common_rollout(

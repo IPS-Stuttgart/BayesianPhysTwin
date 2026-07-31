@@ -220,12 +220,14 @@ def _evaluate_state(
     modules: Any,
     torch: Any,
     device: str,
+    dlo_type: str = "DLO1",
     node_count: int = 13,
 ) -> dict[str, object]:
     model_function, model = source_runtime._build_dlo_model(
         modules,
         torch,
         device,
+        dlo_type=dlo_type,
         node_count=node_count,
     )
     model.load_state_dict(state, strict=True)

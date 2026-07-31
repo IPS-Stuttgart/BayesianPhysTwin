@@ -77,6 +77,10 @@ def _parents() -> tuple[dict[str, object], dict[str, object], dict[str, object]]
 def test_dlo2_alltrain_protocol_uses_all_training_data_and_no_reselection() -> None:
     protocol = load_deform_dlo2_alltrain_protocol(PROTOCOL)
 
+    assert (
+        protocol["model_initialization"]
+        == "official-deform-dlo-initialization-v1"
+    )
     assert protocol["data"]["trajectory_count"] == 56
     assert protocol["data"]["use_every_train_trajectory"] is True
     assert protocol["data"]["official_eval_read"] is False

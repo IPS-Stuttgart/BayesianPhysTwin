@@ -25,6 +25,7 @@ from bayesian_phystwin.deform_dlo_source import (
     load_deform_dlo_source_protocol,
     sha256_file,
 )
+from bayesian_phystwin.deform_dlo_upstream import load_deform_dlo_initialization
 
 
 def _parse_args() -> argparse.Namespace:
@@ -119,12 +120,14 @@ def _load_upstream(root: Path) -> SimpleNamespace:
     sys.path.insert(0, str(root.resolve()))
     from DEFORM_func import DEFORM_func
     from DEFORM_sim import DEFORM_sim
-    from util import computeEdges
+    from util import computeEdges, computeLengths
 
     return SimpleNamespace(
         DEFORM_func=DEFORM_func,
         DEFORM_sim=DEFORM_sim,
         computeEdges=computeEdges,
+        computeLengths=computeLengths,
+        train_deform_path=root.resolve() / "train_DEFORM.py",
     )
 
 
@@ -198,12 +201,22 @@ def _build_dlo_model(
     torch: Any,
     device: str,
     *,
+    dlo_type: str,
     node_count: int,
 ) -> tuple[Any, Any]:
     if device.split(":", maxsplit=1)[0] != "cuda":
         raise ValueError("registered DEFORM source run requires a CUDA device")
     if node_count < 5:
         raise ValueError("registered DEFORM source run requires at least five nodes")
+    initialization = load_deform_dlo_initialization(
+        modules.train_deform_path,
+        dlo_type,
+    )
+    if initialization.node_count != node_count:
+        raise ValueError(
+            f"registered {dlo_type} node count differs from locked upstream "
+            f"initialization: {node_count} != {initialization.node_count}"
+        )
     edge_count = node_count - 1
     model_function = modules.DEFORM_func(
         n_vert=node_count,
@@ -216,11 +229,22 @@ def _build_dlo_model(
         pbd_iter=10,
         device=device,
     )
+    rest_vertices = torch.tensor(
+        initialization.rest_vertices_m,
+        dtype=torch.float32,
+        device=device,
+    ).unsqueeze(0)
+    model.rest_vert = torch.nn.Parameter(rest_vertices)
+    model.m_restEdgeL, model.m_restRegionL = modules.computeLengths(
+        modules.computeEdges(rest_vertices.clone())
+    )
     model.DEFORM_func.bend_stiffness = torch.nn.Parameter(
-        5e-5 * torch.ones((1, edge_count), device=device)
+        initialization.bend_stiffness
+        * torch.ones((1, edge_count), device=device)
     )
     model.DEFORM_func.twist_stiffness = torch.nn.Parameter(
-        2e-5 * torch.ones((1, edge_count), device=device)
+        initialization.twist_stiffness
+        * torch.ones((1, edge_count), device=device)
     )
     return model_function, model
 
@@ -234,6 +258,7 @@ def _build_dlo1_model(
         modules,
         torch,
         device,
+        dlo_type="DLO1",
         node_count=13,
     )
 
@@ -557,6 +582,19 @@ def main() -> int:
     if args.dlo_type not in protocol["dlo_types"]:
         raise ValueError("requested DLO type is outside the registered protocol")
     upstream = _assert_upstream(args.upstream_root, protocol["upstream"]["commit"])
+    frame_count = int(protocol["data"]["expected_frames_per_trajectory"])
+    node_count = int(protocol["data"]["expected_node_count"][args.dlo_type])
+    initialization = load_deform_dlo_initialization(
+        args.upstream_root.resolve() / "train_DEFORM.py",
+        args.dlo_type,
+    )
+    upstream_train_identity = upstream["source_files"]["train_DEFORM.py"]
+    if (
+        initialization.node_count != node_count
+        or initialization.source_sha256 != upstream_train_identity["sha256"]
+    ):
+        raise RuntimeError("DLO initialization differs from the locked upstream source")
+    initialization_record = initialization.to_record()
     output_root = args.output_root.resolve()
     if output_root.exists() and any(output_root.iterdir()):
         raise RuntimeError(f"output root is not empty: {output_root}")
@@ -571,8 +609,6 @@ def main() -> int:
     _write_json(manifest_path, manifest, immutable=True)
     _install_eval_read_guard(data_root / args.dlo_type / "eval")
 
-    frame_count = int(protocol["data"]["expected_frames_per_trajectory"])
-    node_count = int(protocol["data"]["expected_node_count"][args.dlo_type])
     fit_names = list(manifest["split"]["fit"])
     validation_names = list(manifest["split"]["validation"])
     source_test_names = list(manifest["split"]["source_test"])
@@ -595,6 +631,7 @@ def main() -> int:
             "sha256": sha256_file(manifest_path),
         },
         "upstream": upstream,
+        "model_initialization": initialization_record,
         "validated_development_trajectory_count": len(development_trajectories),
         "frame_count": frame_count,
         "node_count": node_count,
@@ -619,6 +656,7 @@ def main() -> int:
         modules,
         torch,
         args.device,
+        dlo_type=args.dlo_type,
         node_count=node_count,
     )
     optimizer = _official_optimizer(torch, model)
@@ -667,6 +705,7 @@ def main() -> int:
                 "optimizer_state_dict": optimizer.state_dict(),
                 "protocol_sha256": sha256_file(args.protocol),
                 "schedule_sha256": sha256_file(schedule_path),
+                "model_initialization": initialization_record,
             },
             checkpoint_path,
         )
@@ -771,6 +810,7 @@ def main() -> int:
             "official_eval_read": False,
             "registered_source_gate_evaluated": False,
             "source_test_opened": False,
+            "model_initialization": initialization_record,
             "training": training_losses,
             "fit_rollout": fit_rollout,
             "elapsed_seconds": time.perf_counter() - started,
@@ -822,6 +862,7 @@ def main() -> int:
             "sha256": sha256_file(schedule_path),
         },
         "upstream": upstream,
+        "model_initialization": initialization_record,
         "runtime": {
             "python": sys.version,
             "torch": torch.__version__,

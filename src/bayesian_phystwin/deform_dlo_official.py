@@ -54,6 +54,11 @@ def load_deform_dlo2_official_protocol(path: str | Path) -> dict[str, object]:
         raise ValueError("unsupported DLO2 official-evaluation schema")
     if payload.get("contract") != DEFORM_DLO2_OFFICIAL_CONTRACT:
         raise ValueError("unsupported DLO2 official-evaluation contract")
+    if (
+        payload.get("model_initialization")
+        != "official-deform-dlo-initialization-v1"
+    ):
+        raise ValueError("DLO2 official initialization contract differs")
 
     parent = _mapping(
         payload.get("parent_alltrain_protocol"), label="parent_alltrain_protocol"

@@ -1,5 +1,9 @@
 # DEFORM DLO2 all-training-data refit v1
 
+Construction remains bound to `official-deform-dlo-initialization-v1`, including
+the DLO2-specific upstream rest geometry and recomputed rest lengths described in
+`docs/deform_dlo2_initialization_amendment_v1.md`.
+
 ## Purpose
 
 The fresh DLO2 source protocol reserves 8 of 56 official training trajectories

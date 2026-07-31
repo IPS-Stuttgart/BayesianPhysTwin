@@ -2,9 +2,10 @@
   "schema_version": 1,
   "contract": "deform-dlo2-official-eval-v1",
   "claim_boundary": "One-shot identical-information evaluation of the preselected all-56 DLO2 Bayesian method. No evaluation outcome may alter the model, weights, calibration, or reporting set.",
+  "model_initialization": "official-deform-dlo-initialization-v1",
   "parent_alltrain_protocol": {
     "repository_path": "configs/sota/deform_dlo2_alltrain_refit_v1.json",
-    "sha256": "3c7937879fa7eb113234d333570e03e7a846315ef3a2682d0b51dc7198eb70c4"
+    "sha256": "684db0be9f90ac66b8e89881dfeffc1e1dc658ebcd6334898a7340a32455a425"
   },
   "required_parent": {
     "result_contract": "deform-dlo2-alltrain-result-v1",

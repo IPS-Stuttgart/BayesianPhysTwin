@@ -33,6 +33,10 @@ def test_dlo2_fresh_protocol_is_disjoint_and_eval_closed() -> None:
     protocol = load_deform_dlo_source_protocol(PROTOCOL)
 
     assert protocol["dlo_types"] == ("DLO2",)
+    assert (
+        protocol["model_initialization"]
+        == "official-deform-dlo-initialization-v1"
+    )
     assert protocol["data"]["expected_node_count"] == {"DLO2": 12}
     assert protocol["training"]["total_updates"] == 6400
     assert protocol["training"]["checkpoint_updates"][-2:] == [6040, 6400]
@@ -108,3 +112,13 @@ def test_dlo2_fresh_posterior_rejects_an_incomplete_source_protocol() -> None:
 
     with pytest.raises(ValueError, match="incomplete"):
         validate_deform_dlo2_checkpoint_posterior(payload)
+
+
+def test_dlo2_fresh_rejects_a_generic_model_initialization(tmp_path: Path) -> None:
+    payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    payload["model_initialization"] = "constructor-default"
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="locked upstream initialization"):
+        load_deform_dlo_source_protocol(changed)

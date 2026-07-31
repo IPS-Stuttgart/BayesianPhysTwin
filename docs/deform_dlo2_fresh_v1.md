@@ -1,5 +1,11 @@
 # Fresh DEFORM DLO2 confirmation protocol
 
+The DLO2 model is constructed with the DLO-specific rest geometry, rest lengths,
+and stiffness parsed from the locked external upstream source under
+`official-deform-dlo-initialization-v1`. The target-free correction and its
+information boundary are recorded in
+`docs/deform_dlo2_initialization_amendment_v1.md`.
+
 DLO2 is the independent source confirmation for the long-budget DEFORM route.
 Its training values, source outcomes, and official evaluation values remain
 unopened until the frozen DLO1 long-run result explicitly authorizes this stage.

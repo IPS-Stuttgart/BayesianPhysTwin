@@ -1,5 +1,10 @@
 # DEFORM DLO2 Official Evaluation V1
 
+Every loaded checkpoint is reconstructed with
+`official-deform-dlo-initialization-v1`; the official evaluator refuses a parent
+protocol with a different initialization contract. See
+`docs/deform_dlo2_initialization_amendment_v1.md`.
+
 This stage is the final, one-shot evaluation of a method selected without using
 the official DEFORM evaluation partition. It can run only after the fresh DLO2
 source reproduction, checkpoint-posterior transfer gate, and all-56 training

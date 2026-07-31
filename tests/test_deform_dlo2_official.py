@@ -93,6 +93,10 @@ def _authorization_artifacts():
 def test_official_protocol_is_one_shot_and_target_blind() -> None:
     protocol = load_deform_dlo2_official_protocol(PROTOCOL)
 
+    assert (
+        protocol["model_initialization"]
+        == "official-deform-dlo-initialization-v1"
+    )
     assert protocol["evaluation"]["expected_trajectory_count"] == 14
     assert protocol["evaluation"]["failure_policy"] == "seal-failure-no-retry-v1"
     assert protocol["methods"]["target_selection"] is False

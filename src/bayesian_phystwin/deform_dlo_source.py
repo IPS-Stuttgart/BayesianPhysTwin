@@ -72,6 +72,12 @@ def load_deform_dlo_source_protocol(path: str | Path) -> dict[str, object]:
     dlo_types = tuple(str(value) for value in data.get("dlo_types", ()))
     if not dlo_types or any(not value.startswith("DLO") for value in dlo_types):
         raise ValueError("DEFORM source protocol has invalid DLO types")
+    if (
+        "DLO2" in dlo_types
+        and payload.get("model_initialization")
+        != "official-deform-dlo-initialization-v1"
+    ):
+        raise ValueError("DLO2 must use its locked upstream initialization")
     expected_trajectories = _require_positive_int(
         data.get("expected_train_trajectories_per_dlo"),
         label="expected_train_trajectories_per_dlo",

@@ -8,6 +8,13 @@ CONFIG_ROOT = REPOSITORY_ROOT / "configs" / "sota"
 SOURCE_RESULT = (
     REPOSITORY_ROOT / "results" / "sota" / "deform_dlo_source_v1" / "source_result.json"
 )
+INITIALIZATION_SMOKE = (
+    REPOSITORY_ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo2_initialization_amendment_v1"
+    / "construction_smoke.json"
+)
 
 
 def _load(name: str) -> dict[str, object]:
@@ -52,6 +59,20 @@ def test_deform_release_chain_has_no_stale_parent_hash() -> None:
     )
 
 
+def test_dlo2_initialization_smoke_binds_its_implementation() -> None:
+    smoke = json.loads(INITIALIZATION_SMOKE.read_text(encoding="utf-8"))
+
+    assert smoke["passed"] is True
+    assert smoke["dlo2_source_read"] is False
+    assert smoke["official_eval_read"] is False
+    assert smoke["implementation"]["parser_sha256"] == sha256_file(
+        REPOSITORY_ROOT / "src" / "bayesian_phystwin" / "deform_dlo_upstream.py"
+    )
+    assert smoke["implementation"]["runner_sha256"] == sha256_file(
+        REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
+    )
+
+
 def test_deform_release_chain_preserves_the_selected_method_family() -> None:
     longrun = _load("deform_dlo_longrun_v2.json")
     posterior = _load("deform_dlo_longrun_posterior_v1.json")
@@ -78,6 +99,12 @@ def test_deform_release_chain_preserves_the_selected_method_family() -> None:
     assert fresh["training"]["unroll_horizon_frames"] == alltrain["training"][
         "unroll_horizon_frames"
     ]
+    assert (
+        fresh["model_initialization"]
+        == alltrain["model_initialization"]
+        == official["model_initialization"]
+        == "official-deform-dlo-initialization-v1"
+    )
     assert alltrain["method_transfer"]["target_reselection"] is False
     assert official["methods"]["target_selection"] is False
     assert official["methods"]["target_calibration"] is False

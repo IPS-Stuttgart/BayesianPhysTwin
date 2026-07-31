@@ -174,6 +174,8 @@ def validate_deform_dlo2_checkpoint_posterior(
         or tuple(raw_dlo_types) != ("DLO2",)
         or not isinstance(data, Mapping)
         or data.get("official_eval_metrics_opened") is not False
+        or source_protocol.get("model_initialization")
+        != "official-deform-dlo-initialization-v1"
     ):
         raise ValueError("DLO2 posterior requires an evaluation-closed DLO2 protocol")
     raw = source_protocol.get("checkpoint_posterior")

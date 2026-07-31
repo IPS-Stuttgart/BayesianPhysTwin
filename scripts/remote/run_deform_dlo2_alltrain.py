@@ -240,6 +240,7 @@ def main() -> int:
         modules,
         torch,
         args.device,
+        dlo_type="DLO2",
         node_count=node_count,
     )
     optimizer = source_runtime._official_optimizer(torch, model)

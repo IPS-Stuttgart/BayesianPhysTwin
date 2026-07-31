@@ -361,6 +361,7 @@ def main() -> int:
                     modules=modules,
                     torch=torch,
                     device=args.device,
+                    dlo_type="DLO2",
                     node_count=int(protocol["evaluation"]["expected_node_count"]),
                 )
             return rollout_cache[digest]
