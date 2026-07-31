@@ -6,6 +6,7 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from statistics import NormalDist
 from typing import Any
 
 import numpy as np
@@ -174,6 +175,166 @@ def average_deform_checkpoint_states(
             raise ValueError(f"discrete checkpoint state {name} differs")
         result[name] = reference.clone()
     return result
+
+
+def combine_deform_checkpoint_predictions(
+    predictions_by_update: Mapping[int, np.ndarray],
+    weights_by_update: Mapping[int, float],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the posterior predictive mean and diagonal checkpoint variance."""
+
+    updates = tuple(sorted(int(update) for update in weights_by_update))
+    if not updates or set(updates) != {int(update) for update in predictions_by_update}:
+        raise ValueError(
+            "checkpoint predictions and weights must use identical updates"
+        )
+    weights = {}
+    arrays = []
+    for update in updates:
+        weight = float(weights_by_update[update])
+        array = np.asarray(predictions_by_update[update], dtype=np.float64)
+        if not math.isfinite(weight) or weight <= 0.0:
+            raise ValueError("checkpoint weights must be finite and positive")
+        if array.size == 0 or not np.isfinite(array).all():
+            raise ValueError("checkpoint predictions must be finite and nonempty")
+        weights[update] = weight
+        arrays.append(array)
+    if not math.isclose(sum(weights.values()), 1.0, rel_tol=0.0, abs_tol=1e-10):
+        raise ValueError("checkpoint weights must sum to one")
+    if any(array.shape != arrays[0].shape for array in arrays[1:]):
+        raise ValueError("checkpoint predictions have different shapes")
+
+    mean = np.zeros_like(arrays[0], dtype=np.float64)
+    for update, array in zip(updates, arrays, strict=True):
+        mean += weights[update] * array
+    variance = np.zeros_like(mean)
+    for update, array in zip(updates, arrays, strict=True):
+        variance += weights[update] * np.square(array - mean)
+    return mean, variance
+
+
+def deform_prediction_records(
+    predictions: np.ndarray,
+    targets: np.ndarray,
+    persistence: np.ndarray,
+    names: Sequence[str],
+) -> list[dict[str, object]]:
+    """Compute the exact source metrics from externally combined predictions."""
+
+    predicted = np.asarray(predictions, dtype=np.float64)
+    observed = np.asarray(targets, dtype=np.float64)
+    persisted = np.asarray(persistence, dtype=np.float64)
+    if (
+        predicted.ndim != 4
+        or predicted.shape[-1] != 3
+        or predicted.shape != observed.shape
+        or predicted.shape != persisted.shape
+        or predicted.shape[0] != len(names)
+        or not np.isfinite(predicted).all()
+        or not np.isfinite(observed).all()
+        or not np.isfinite(persisted).all()
+    ):
+        raise ValueError("DEFORM prediction arrays are incompatible")
+    normalized_names = tuple(str(name) for name in names)
+    if any(not name for name in normalized_names) or len(set(normalized_names)) != len(
+        normalized_names
+    ):
+        raise ValueError("DEFORM prediction names must be nonempty and unique")
+
+    horizon = predicted.shape[1]
+    absolute = np.abs(predicted - observed)
+    thirds = []
+    for third in range(3):
+        indices = [
+            frame for frame in range(horizon) if min(2, (3 * frame) // horizon) == third
+        ]
+        if not indices:
+            raise ValueError("DEFORM prediction horizon cannot form thirds")
+        thirds.append(np.mean(absolute[:, indices], axis=(1, 2, 3)))
+    model_error = np.mean(absolute, axis=(1, 2, 3))
+    persistence_error = np.mean(np.abs(persisted - observed), axis=(1, 2, 3))
+    return [
+        {
+            "name": name,
+            "model_l1_m": float(model_error[index]),
+            "persistence_l1_m": float(persistence_error[index]),
+            "early_l1_m": float(thirds[0][index]),
+            "middle_l1_m": float(thirds[1][index]),
+            "late_l1_m": float(thirds[2][index]),
+        }
+        for index, name in enumerate(normalized_names)
+    ]
+
+
+def calibrate_deform_coordinate_variance(
+    predictions: np.ndarray,
+    targets: np.ndarray,
+    raw_variance_m2: np.ndarray,
+    *,
+    variance_floor_m2: float,
+) -> float:
+    """Fit one validation-only variance scale, never shrinking raw uncertainty."""
+
+    predicted = np.asarray(predictions, dtype=np.float64)
+    observed = np.asarray(targets, dtype=np.float64)
+    variance = np.asarray(raw_variance_m2, dtype=np.float64)
+    if (
+        predicted.shape != observed.shape
+        or predicted.shape != variance.shape
+        or predicted.size == 0
+        or not np.isfinite(predicted).all()
+        or not np.isfinite(observed).all()
+        or not np.isfinite(variance).all()
+        or np.any(variance < 0.0)
+        or not math.isfinite(variance_floor_m2)
+        or variance_floor_m2 <= 0.0
+    ):
+        raise ValueError("DEFORM variance calibration arrays are invalid")
+    effective = np.maximum(variance, variance_floor_m2)
+    scale = float(np.mean(np.square(predicted - observed) / effective))
+    return max(1.0, scale)
+
+
+def evaluate_deform_coordinate_uncertainty(
+    predictions: np.ndarray,
+    targets: np.ndarray,
+    raw_variance_m2: np.ndarray,
+    *,
+    variance_floor_m2: float,
+    variance_scale: float,
+    nominal_coverage: float,
+) -> dict[str, float]:
+    """Evaluate coordinate-marginal Gaussian diagnostics for a fixed scale."""
+
+    predicted = np.asarray(predictions, dtype=np.float64)
+    observed = np.asarray(targets, dtype=np.float64)
+    variance = np.asarray(raw_variance_m2, dtype=np.float64)
+    if (
+        predicted.shape != observed.shape
+        or predicted.shape != variance.shape
+        or predicted.size == 0
+        or not np.isfinite(predicted).all()
+        or not np.isfinite(observed).all()
+        or not np.isfinite(variance).all()
+        or np.any(variance < 0.0)
+        or not math.isfinite(variance_floor_m2)
+        or variance_floor_m2 <= 0.0
+        or not math.isfinite(variance_scale)
+        or variance_scale < 1.0
+        or not math.isfinite(nominal_coverage)
+        or not 0.0 < nominal_coverage < 1.0
+    ):
+        raise ValueError("DEFORM uncertainty inputs are invalid")
+    effective = variance_scale * np.maximum(variance, variance_floor_m2)
+    residual = predicted - observed
+    z_value = NormalDist().inv_cdf(0.5 * (1.0 + nominal_coverage))
+    half_width = z_value * np.sqrt(effective)
+    nll = 0.5 * (np.log(2.0 * np.pi * effective) + np.square(residual) / effective)
+    return {
+        "coordinate_coverage": float(np.mean(np.abs(residual) <= half_width)),
+        "mean_interval_width_m": float(np.mean(2.0 * half_width)),
+        "mean_gaussian_nll": float(np.mean(nll)),
+    }
 
 
 def select_deform_checkpoint_belief_arm(

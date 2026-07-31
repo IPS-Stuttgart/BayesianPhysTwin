@@ -95,6 +95,61 @@ def load_deform_dlo_longrun_protocol(path: str | Path) -> dict[str, object]:
     ):
         raise ValueError("long-run source gate is invalid")
 
+    posterior = payload.get("checkpoint_posterior_if_source_gate_passes")
+    if not isinstance(posterior, Mapping):
+        raise ValueError("long-run protocol omits its checkpoint posterior")
+    if tuple(posterior.get("operators", ())) != (
+        "parameter_mean",
+        "predictive_mean",
+    ):
+        raise ValueError("long-run checkpoint-posterior operators differ")
+    if posterior.get("fallback") != "selected_single_exact":
+        raise ValueError("long-run checkpoint posterior must fall back exactly")
+    for key in (
+        "validation_improvement_min",
+        "source_transfer_improvement_min",
+    ):
+        value = float(posterior.get(key, math.nan))
+        if not math.isfinite(value) or not 0.0 < value < 1.0:
+            raise ValueError("long-run checkpoint-posterior gate is invalid")
+    temperature = float(posterior.get("softmax_temperature_m", math.nan))
+    if not math.isfinite(temperature) or temperature <= 0.0:
+        raise ValueError("long-run checkpoint-posterior temperature is invalid")
+    if int(posterior.get("source_transfer_minimum_case_wins", -1)) not in range(9):
+        raise ValueError("long-run checkpoint-posterior win gate is invalid")
+    variance_floor = float(posterior.get("coordinate_variance_floor_m2", math.nan))
+    nominal_coverage = float(
+        posterior.get("coordinate_interval_nominal_coverage", math.nan)
+    )
+    if (
+        not math.isfinite(variance_floor)
+        or variance_floor <= 0.0
+        or not math.isfinite(nominal_coverage)
+        or not 0.0 < nominal_coverage < 1.0
+    ):
+        raise ValueError("long-run checkpoint-posterior uncertainty is invalid")
+    raw_arms = posterior.get("arms")
+    if not isinstance(raw_arms, list) or not raw_arms:
+        raise ValueError("long-run checkpoint posterior contains no arms")
+    arm_names: set[str] = set()
+    available_updates = set(checkpoints)
+    for arm in raw_arms:
+        if not isinstance(arm, Mapping):
+            raise ValueError("long-run checkpoint-posterior arm is malformed")
+        name = str(arm.get("name", ""))
+        updates = tuple(int(update) for update in arm.get("updates", ()))
+        if not name or name in arm_names:
+            raise ValueError("long-run checkpoint-posterior arm names differ")
+        if (
+            not updates
+            or tuple(sorted(set(updates))) != updates
+            or not set(updates).issubset(available_updates)
+        ):
+            raise ValueError("long-run checkpoint-posterior updates differ")
+        if arm.get("weighting") not in ("uniform", "validation-softmax"):
+            raise ValueError("long-run checkpoint-posterior weighting differs")
+        arm_names.add(name)
+
     result = dict(payload)
     result["protocol_path"] = str(source)
     result["training"] = {**training, "checkpoint_updates": checkpoints}

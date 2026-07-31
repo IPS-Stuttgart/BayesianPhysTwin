@@ -1,13 +1,18 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 
 from bayesian_phystwin.deform_dlo_checkpoint_belief import (
     average_deform_checkpoint_states,
     build_deform_checkpoint_belief_arms,
+    calibrate_deform_coordinate_variance,
+    combine_deform_checkpoint_predictions,
+    deform_prediction_records,
     evaluate_deform_checkpoint_belief_transfer,
+    evaluate_deform_coordinate_uncertainty,
     load_deform_checkpoint_belief_protocol,
     select_deform_checkpoint_belief_arm,
 )
@@ -89,6 +94,64 @@ def test_checkpoint_belief_average_rejects_discrete_disagreement() -> None:
             },
             {40: 0.5, 80: 0.5},
         )
+
+
+def test_checkpoint_belief_combines_predictive_moments() -> None:
+    mean, variance = combine_deform_checkpoint_predictions(
+        {
+            40: np.zeros((1, 2, 1, 3), dtype=np.float32),
+            80: np.full((1, 2, 1, 3), 2.0, dtype=np.float32),
+        },
+        {40: 0.25, 80: 0.75},
+    )
+
+    assert np.all(mean == pytest.approx(1.5))
+    assert np.all(variance == pytest.approx(0.75))
+
+
+def test_checkpoint_belief_prediction_records_match_exact_l1() -> None:
+    targets = np.zeros((1, 6, 1, 3), dtype=float)
+    predictions = np.arange(6, dtype=float)[None, :, None, None]
+    predictions = np.repeat(predictions, 3, axis=-1)
+    persistence = np.ones_like(targets)
+
+    records = deform_prediction_records(
+        predictions,
+        targets,
+        persistence,
+        ["case"],
+    )
+
+    assert records[0]["model_l1_m"] == pytest.approx(2.5)
+    assert records[0]["persistence_l1_m"] == pytest.approx(1.0)
+    assert records[0]["early_l1_m"] == pytest.approx(0.5)
+    assert records[0]["middle_l1_m"] == pytest.approx(2.5)
+    assert records[0]["late_l1_m"] == pytest.approx(4.5)
+
+
+def test_checkpoint_belief_variance_calibration_never_shrinks() -> None:
+    predictions = np.zeros((1, 2, 1, 3), dtype=float)
+    targets = np.ones_like(predictions)
+    variance = np.zeros_like(predictions)
+
+    scale = calibrate_deform_coordinate_variance(
+        predictions,
+        targets,
+        variance,
+        variance_floor_m2=0.25,
+    )
+    diagnostics = evaluate_deform_coordinate_uncertainty(
+        predictions,
+        targets,
+        variance,
+        variance_floor_m2=0.25,
+        variance_scale=scale,
+        nominal_coverage=0.9,
+    )
+
+    assert scale == pytest.approx(4.0)
+    assert diagnostics["coordinate_coverage"] == pytest.approx(1.0)
+    assert diagnostics["mean_interval_width_m"] > 3.0
 
 
 def test_checkpoint_belief_selector_falls_back_exactly() -> None:

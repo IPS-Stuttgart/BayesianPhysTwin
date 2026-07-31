@@ -39,6 +39,12 @@
   "checkpoint_posterior_if_source_gate_passes": {
     "validation_improvement_min": 0.01,
     "fallback": "selected_single_exact",
+    "operators": ["parameter_mean", "predictive_mean"],
+    "softmax_temperature_m": 0.001,
+    "source_transfer_improvement_min": 0.01,
+    "source_transfer_minimum_case_wins": 5,
+    "coordinate_variance_floor_m2": 0.000025,
+    "coordinate_interval_nominal_coverage": 0.9,
     "arms": [
       {
         "name": "tail_2_uniform",
@@ -58,8 +64,7 @@
       {
         "name": "late_validation_softmax",
         "updates": [2560, 4000, 5200, 6040, 6400],
-        "weighting": "validation-softmax",
-        "temperature_m": 0.001
+        "weighting": "validation-softmax"
       }
     ]
   },
