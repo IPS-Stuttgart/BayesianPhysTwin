@@ -265,3 +265,36 @@ def test_greedy_information_selection_abstains_on_zero_gain() -> None:
 
     assert len(selection.selected_indices) == 0
     assert len(selection.mutual_information_nats) == 0
+
+
+@pytest.mark.parametrize(
+    "count",
+    [True, np.bool_(False), 1.5, np.float64(2.0), -1],
+)
+def test_greedy_information_selection_rejects_noninteger_count(
+    count: object,
+) -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(np.eye(1))
+
+    with pytest.raises(ValueError, match="count must be a nonnegative integer"):
+        greedy_nuisance_aware_selection(
+            prior,
+            (np.asarray([[1.0]]),),
+            (None,),
+            (np.asarray([[1.0]]),),
+            count=count,
+        )
+
+
+def test_greedy_information_selection_accepts_numpy_integer_count() -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(np.eye(1))
+
+    selection = greedy_nuisance_aware_selection(
+        prior,
+        (np.asarray([[1.0]]),),
+        (None,),
+        (np.asarray([[1.0]]),),
+        count=np.int64(1),
+    )
+
+    np.testing.assert_array_equal(selection.selected_indices, np.asarray([0]))
