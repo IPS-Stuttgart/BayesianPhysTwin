@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-longrun-v2-compact-result-v1",
+  "claim_boundary": "Post-open DLO1 source evidence only. No DLO2 source or official DEFORM evaluation artifact was opened.",
+  "official_eval_read": false,
+  "longrun": {
+    "execution_commit": "2060c71",
+    "protocol_sha256": "a1c7ad23ccf6c83e0130efb9c9b172063892caf5b0066ca79cd6ad3b151515a0",
+    "result_path": "/home/florianpfaff/source-only/deform-bayesian-v2/runs/longrun-v2-2060c71/longrun_result.json",
+    "result_sha256": "65c86db0f0ad6af9d583e1753a5752b9dac02226764415b93bd8b66a91856985",
+    "completed_updates": 6400,
+    "selected_update": 6400,
+    "validation_l1_m": 0.009256238292437047,
+    "source_mean_l1_m": 0.009642382734455168,
+    "source_persistence_mean_l1_m": 0.058485901448875666,
+    "source_persistence_wins": 8,
+    "published_dlo1_reference_l1_m": 0.0101,
+    "source_gate_passed": true,
+    "checkpoint_posterior_authorized": true
+  },
+  "checkpoint_posterior": {
+    "evaluation_commit": "f8e9e3a",
+    "protocol_sha256": "f2ed821600b9d99ee8cd0d35a0c70ccbf65de75415324b833c75350cf9ab8eeb",
+    "result_path": "/home/florianpfaff/source-only/deform-bayesian-v2/runs/dlo1-posterior-v2-f8e9e3a-attempt2/posterior_result.json",
+    "result_sha256": "c8c10100ffe24af2b3195a41823dea8ca432e24793c911446aa78ebb488b4b41",
+    "selection_seal_sha256": "990e325d69863d244aee9f30b5884711ba8eebc53e3ea086248745c32da684d0",
+    "best_candidate": "predictive_mean::tail_4_uniform",
+    "baseline_validation_l1_m": 0.009256238292437047,
+    "candidate_validation_l1_m": 0.009249797665644013,
+    "validation_relative_improvement": 0.0006958147132292904,
+    "required_validation_relative_improvement": 0.01,
+    "exact_fallback": true,
+    "selected_arm": "selected_single",
+    "fresh_dlo2_checkpoint_posterior_authorized": false
+  },
+  "execution_note": "The first invocation stopped before rollout because repository-relative lineage was resolved from the remote home directory. Attempt 2 ran the unchanged frozen evaluator from the exact archive root and produced the only outcome-bearing result."
+}
