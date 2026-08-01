@@ -13,6 +13,8 @@ from .deform_dlo_checkpoint_belief import evaluate_deform_coordinate_uncertainty
 
 DEFORM_DLO2_OFFICIAL_SCHEMA_VERSION = 2
 DEFORM_DLO2_OFFICIAL_CONTRACT = "deform-dlo2-official-eval-v2"
+DEFORM_DLO2_DEEP_OFFICIAL_SCHEMA_VERSION = 1
+DEFORM_DLO2_DEEP_OFFICIAL_CONTRACT = "deform-dlo2-deep-official-eval-v1"
 DEFORM_CANONICAL_REFERENCE_DRAW = (1, 7, 9, 7, 11, 7, 13, 8, 8, 6, 8, 5, 8, 4)
 DEFORM_UPSTREAM_TRAIN_SCRIPT_SHA256 = (
     "d45abe23a22b0f01fa266833844c4f9b71a2b7e375f8e955e3278b9e969acc55"
@@ -349,6 +351,270 @@ def validate_deform_dlo2_official_authorization(
             "alltrain_result_sha256": alltrain_result_sha256,
             "final_method_sha256": final_method_sha256,
             "method_spec_sha256": method_spec_sha256,
+        },
+    }
+
+
+def load_deform_dlo2_deep_official_protocol(
+    path: str | Path,
+) -> dict[str, object]:
+    """Load the immutable one-shot two-seed DLO2 evaluation protocol."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != DEFORM_DLO2_DEEP_OFFICIAL_SCHEMA_VERSION:
+        raise ValueError("unsupported DLO2 deep official-evaluation schema")
+    if payload.get("contract") != DEFORM_DLO2_DEEP_OFFICIAL_CONTRACT:
+        raise ValueError("unsupported DLO2 deep official-evaluation contract")
+    if payload.get("model_initialization") != "official-deform-dlo-initialization-v1":
+        raise ValueError("DLO2 deep official initialization differs")
+    parent = _mapping(
+        payload.get("parent_alltrain_protocol"), label="parent_alltrain_protocol"
+    )
+    required = _mapping(payload.get("required_parent"), label="required_parent")
+    evaluation = _mapping(payload.get("evaluation"), label="evaluation")
+    methods = _mapping(payload.get("methods"), label="methods")
+    gate = _mapping(payload.get("claim_gate"), label="claim_gate")
+    uncertainty = _mapping(payload.get("uncertainty"), label="uncertainty")
+    if (
+        not str(parent.get("repository_path", ""))
+        or len(str(parent.get("sha256", ""))) != 64
+        or required.get("result_contract")
+        != "deform-dlo2-deep-alltrain-result-v1"
+        or required.get("official_eval_read") is not False
+        or required.get("official_eval_execution_authorized") is not True
+        or required.get("final_method_contract")
+        != "deform-dlo2-deep-alltrain-final-method-v1"
+    ):
+        raise ValueError("DLO2 deep official parent gate differs")
+    reference = float(str(evaluation.get("published_reference_l1_m", math.nan)))
+    reference_operator = _mapping(
+        evaluation.get("published_reference_operator"),
+        label="published_reference_operator",
+    )
+    reference_draw = _reference_draw_indices(
+        reference_operator.get("canonical_eval_indices"),
+        expected_case_count=14,
+    )
+    if (
+        evaluation.get("dlo_type") != "DLO2"
+        or evaluation.get("partition") != "eval"
+        or _positive_int(
+            evaluation.get("expected_trajectory_count"),
+            label="expected_trajectory_count",
+        )
+        != 14
+        or _positive_int(
+            evaluation.get("expected_frame_count"), label="expected_frame_count"
+        )
+        != 500
+        or _positive_int(
+            evaluation.get("expected_node_count"), label="expected_node_count"
+        )
+        != 12
+        or evaluation.get("trajectory_policy")
+        != "all-eval-files-sorted-once-plus-canonical-reference-draw-v2"
+        or evaluation.get("failure_policy") != "seal-failure-no-retry-v1"
+        or evaluation.get("metric") != "mean-coordinate-l1-m"
+        or evaluation.get("horizon_breakdown") != "equal-frame-thirds-v1"
+        or not math.isfinite(reference)
+        or reference != 0.0097
+        or reference_operator.get("loader")
+        != "upstream-random-choices-with-replacement-v1"
+        or reference_operator.get("upstream_train_script_sha256")
+        != DEFORM_UPSTREAM_TRAIN_SCRIPT_SHA256
+        or int(str(reference_operator.get("python_random_seed", -1))) != 0
+        or int(str(reference_operator.get("preceding_train_population", -1))) != 56
+        or int(str(reference_operator.get("preceding_train_draw_count", -1))) != 56
+        or int(str(reference_operator.get("eval_population", -1))) != 14
+        or int(str(reference_operator.get("eval_draw_count", -1))) != 14
+        or reference_operator.get("canonical_filename_order") != "sorted-by-name-v1"
+        or int(str(reference_operator.get("canonical_unique_index_count", -1)))
+        != len(set(reference_draw))
+        or reference_operator.get("upstream_glob_order") != "unspecified"
+    ):
+        raise ValueError("DLO2 deep official evaluation contract differs")
+    if (
+        methods.get("candidate")
+        != "preselected-alltrain-two-seed-predictive-mean"
+        or methods.get("comparison_baseline")
+        != "preselected-lower-validation-seed"
+        or methods.get("action_aware_persistence") is not True
+        or methods.get("target_selection") is not False
+        or methods.get("target_calibration") is not False
+        or methods.get("target_retries") is not False
+        or methods.get("case_replacement") is not False
+    ):
+        raise ValueError("DLO2 deep official method policy differs")
+    relative_improvement = float(
+        str(gate.get("ensemble_relative_improvement_min", math.nan))
+    )
+    if (
+        gate.get("published_reference_all_unique_strictly_better") is not True
+        or gate.get("published_reference_canonical_draw_strictly_better") is not True
+        or relative_improvement != 0.01
+        or _positive_int(
+            gate.get("ensemble_minimum_case_wins"),
+            label="ensemble_minimum_case_wins",
+        )
+        != 8
+        or gate.get("require_all_expected_cases") is not True
+        or uncertainty.get("use_source_validation_scale_unchanged") is not True
+        or uncertainty.get("report_coordinate_marginal_coverage") is not True
+        or uncertainty.get("report_interval_width") is not True
+        or uncertainty.get("report_gaussian_nll") is not True
+        or uncertainty.get("report_coordinate_nees") is not True
+        or uncertainty.get("report_horizon_breakdown") is not True
+    ):
+        raise ValueError("DLO2 deep official claim or uncertainty gate differs")
+    result = dict(payload)
+    result["protocol_path"] = str(source)
+    return result
+
+
+def validate_deform_dlo2_deep_official_authorization(
+    protocol: Mapping[str, object],
+    alltrain_protocol: Mapping[str, object],
+    alltrain_result: Mapping[str, object],
+    final_method: Mapping[str, object],
+    *,
+    alltrain_protocol_sha256: str,
+    alltrain_result_sha256: str,
+    final_method_sha256: str,
+) -> dict[str, object]:
+    """Return the exact two-seed method after every pre-target check passes."""
+
+    parent = _mapping(
+        protocol.get("parent_alltrain_protocol"), label="parent_alltrain_protocol"
+    )
+    required = _mapping(protocol.get("required_parent"), label="required_parent")
+    if (
+        parent.get("sha256") != alltrain_protocol_sha256
+        or alltrain_protocol.get("contract")
+        != "deform-dlo2-deep-alltrain-refit-v1"
+        or alltrain_result.get("contract") != required.get("result_contract")
+        or alltrain_result.get("official_eval_read")
+        is not required.get("official_eval_read")
+        or alltrain_result.get("official_eval_execution_authorized")
+        is not required.get("official_eval_execution_authorized")
+        or len(alltrain_result_sha256) != 64
+    ):
+        raise ValueError("deep all-train result did not authorize official evaluation")
+    result_protocol = _mapping(
+        alltrain_result.get("protocol"), label="deep all-train result protocol"
+    )
+    result_final = _mapping(
+        alltrain_result.get("final_method"), label="deep final-method identity"
+    )
+    if (
+        result_protocol.get("sha256") != alltrain_protocol_sha256
+        or result_final.get("sha256") != final_method_sha256
+        or final_method.get("contract") != required.get("final_method_contract")
+        or final_method.get("official_eval_read") is not False
+        or final_method.get("operator") != "predictive_mean"
+    ):
+        raise ValueError("deep all-train final method lineage differs")
+    weights = _weights(final_method.get("seed_weights"), label="seed weights")
+    updates_raw = _mapping(final_method.get("member_updates"), label="member updates")
+    updates = {int(str(seed)): int(str(update)) for seed, update in updates_raw.items()}
+    members_raw = _mapping(
+        final_method.get("member_checkpoints"), label="member checkpoints"
+    )
+    members = {
+        int(str(seed)): _mapping(identity, label="member checkpoint")
+        for seed, identity in members_raw.items()
+    }
+    baseline_seed = int(str(final_method.get("comparison_baseline_seed", -1)))
+    baseline = _mapping(
+        final_method.get("comparison_baseline_checkpoint"),
+        label="comparison baseline checkpoint",
+    )
+    if (
+        set(weights) != {42, 43}
+        or set(updates) != {42, 43}
+        or set(members) != {42, 43}
+        or any(
+            int(str(members[seed].get("update", -1))) != updates[seed]
+            for seed in (42, 43)
+        )
+        or baseline_seed not in (42, 43)
+        or members[baseline_seed] != baseline
+    ):
+        raise ValueError("deep all-train member bank differs")
+    result_seed_runs = _mapping(
+        alltrain_result.get("seed_results"), label="result seed runs"
+    )
+    method_seed_runs = _mapping(
+        final_method.get("seed_results"), label="method seed runs"
+    )
+    if result_seed_runs != method_seed_runs or set(map(int, result_seed_runs)) != {
+        42,
+        43,
+    }:
+        raise ValueError("deep all-train seed lineage differs")
+    calibration = _mapping(
+        final_method.get("variance_calibration"), label="variance calibration"
+    )
+    scale = float(str(calibration.get("scale", math.nan)))
+    floor = float(str(calibration.get("floor_m2", math.nan)))
+    coverage = float(str(calibration.get("nominal_coordinate_coverage", math.nan)))
+    if (
+        not math.isfinite(scale)
+        or scale < 1.0
+        or not math.isfinite(floor)
+        or floor <= 0.0
+        or not math.isfinite(coverage)
+        or not 0.0 < coverage < 1.0
+    ):
+        raise ValueError("deep all-train uncertainty calibration differs")
+    selected_method = _mapping(
+        alltrain_result.get("selected_method"), label="selected method"
+    )
+    selected_weights = _weights(
+        selected_method.get("seed_weights"), label="selected seed weights"
+    )
+    selected_updates_raw = _mapping(
+        selected_method.get("member_updates"), label="selected member updates"
+    )
+    selected_updates = {
+        int(str(seed)): int(str(update))
+        for seed, update in selected_updates_raw.items()
+    }
+    selected_calibration = _mapping(
+        selected_method.get("variance_calibration"),
+        label="selected variance calibration",
+    )
+    if (
+        selected_method.get("operator") != "predictive_mean"
+        or selected_weights != weights
+        or selected_updates != updates
+        or int(str(selected_method.get("comparison_baseline_seed", -1)))
+        != baseline_seed
+        or selected_calibration != calibration
+    ):
+        raise ValueError("deep all-train member bank differs from frozen selection")
+    runtime = _mapping(alltrain_result.get("runtime"), label="deep all-train runtime")
+    return {
+        "operator": "predictive_mean",
+        "weights": weights,
+        "member_updates": updates,
+        "comparison_baseline_seed": baseline_seed,
+        "comparison_baseline_checkpoint": dict(baseline),
+        "member_checkpoints": {
+            seed: dict(identity) for seed, identity in members.items()
+        },
+        "variance_scale": scale,
+        "variance_floor_m2": floor,
+        "nominal_coordinate_coverage": coverage,
+        "seed_results": {
+            int(str(seed)): dict(_mapping(identity, label="seed result"))
+            for seed, identity in result_seed_runs.items()
+        },
+        "runtime": dict(runtime),
+        "lineage": {
+            "alltrain_protocol_sha256": alltrain_protocol_sha256,
+            "alltrain_result_sha256": alltrain_result_sha256,
+            "final_method_sha256": final_method_sha256,
         },
     }
 
