@@ -251,3 +251,76 @@ def test_invalid_mode_basis_is_rejected() -> None:
             support,
             mode_basis=np.ones((2, 1)),
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("query_count", 1.5),
+        ("maximum_reseeds", False),
+        ("minimum_camera_support", 2.0),
+        ("reseed_patience_frames", np.float64(2.0)),
+        ("minimum_reseed_interval_frames", np.bool_(True)),
+    ],
+)
+def test_query_config_rejects_noninteger_discrete_settings(
+    field: str,
+    value: object,
+) -> None:
+    with pytest.raises(ValueError, match="must be an integer"):
+        PhysicsGuidedQueryConfig(**{field: value})
+
+
+def test_query_config_canonicalizes_numpy_integer_settings() -> None:
+    config = PhysicsGuidedQueryConfig(
+        query_count=np.int64(2),
+        maximum_reseeds=np.int32(1),
+        minimum_camera_support=np.int64(2),
+        reseed_patience_frames=np.int32(2),
+        minimum_reseed_interval_frames=np.int64(1),
+    )
+
+    assert type(config.query_count) is int
+    assert type(config.maximum_reseeds) is int
+    assert type(config.minimum_camera_support) is int
+    assert type(config.reseed_patience_frames) is int
+    assert type(config.minimum_reseed_interval_frames) is int
+
+
+def test_query_planner_rejects_fractional_candidate_ids() -> None:
+    rollout = np.zeros((2, 2, 3), dtype=float)
+    rollout[1, :, 0] = 1.0
+    pixels = _projected_pixels(2, rollout)
+    support = np.ones((2, 2, 2), dtype=float)
+
+    with pytest.raises(ValueError, match="candidate_ids must contain integers"):
+        plan_physics_guided_queries(
+            rollout,
+            pixels,
+            support,
+            candidate_ids=np.asarray([0.0, 1.0]),
+        )
+
+
+def test_camera_query_index_requires_a_nonnegative_integer() -> None:
+    rollout = np.zeros((2, 1, 3), dtype=float)
+    rollout[1, 0, 0] = 1.0
+    pixels = _projected_pixels(2, rollout)
+    support = np.ones((2, 2, 1), dtype=float)
+    plan = plan_physics_guided_queries(
+        rollout,
+        pixels,
+        support,
+        config=PhysicsGuidedQueryConfig(
+            query_count=1,
+            maximum_reseeds=0,
+            contact_exclusion_fraction=0.0,
+        ),
+    )
+
+    for invalid_index in (0.0, True, np.bool_(False), -1):
+        with pytest.raises(ValueError, match="camera_index must be an integer"):
+            plan.camera_queries_txy(invalid_index)
+
+    node_ids, _, _ = plan.camera_queries_txy(np.int64(0))
+    np.testing.assert_array_equal(node_ids, np.asarray([0]))
