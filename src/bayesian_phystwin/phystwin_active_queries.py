@@ -19,9 +19,7 @@ def _require(condition: bool | np.bool_, message: str) -> None:
 
 
 def _integer_at_least(value: object, *, name: str, minimum: int) -> int:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(
-        value, (int, np.integer)
-    ):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be an integer >= {minimum}")
     integer = int(value)
     _require(integer >= minimum, f"{name} must be an integer >= {minimum}")
