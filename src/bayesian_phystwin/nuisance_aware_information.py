@@ -22,9 +22,7 @@ def _require(condition: bool | np.bool_, message: str) -> None:
 
 
 def _nonnegative_integer(value: object, *, name: str) -> int:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(
-        value, (int, np.integer)
-    ):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be a nonnegative integer")
     integer = int(value)
     _require(integer >= 0, f"{name} must be a nonnegative integer")
