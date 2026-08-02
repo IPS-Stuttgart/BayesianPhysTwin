@@ -24,6 +24,7 @@ from bayesian_phystwin.deform360_tactile_guard_outcome_sealed import (
     build_prediction_barrier,
     build_technical_fallback,
     canonical_sha256,
+    canonical_text_sha256,
     file_sha256,
     git_blob_oid,
     load_frozen_tactile_model,
@@ -224,10 +225,10 @@ def _write_protocol_bundle(root: Path) -> dict[str, Path]:
                 "model_sha256": _model_sha256(model),
                 "feature_names": list(TACTILE_REGRET_FEATURE_NAMES),
             },
-            "source_sha256": {
-                MODULE: file_sha256(REPO / MODULE),
-                TACTILE_MODULE: file_sha256(REPO / TACTILE_MODULE),
-                PAIRWISE_MODULE: file_sha256(REPO / PAIRWISE_MODULE),
+            "source_text_sha256": {
+                MODULE: canonical_text_sha256(REPO / MODULE),
+                TACTILE_MODULE: canonical_text_sha256(REPO / TACTILE_MODULE),
+                PAIRWISE_MODULE: canonical_text_sha256(REPO / PAIRWISE_MODULE),
             },
         },
         "advancement_gates": {
@@ -440,6 +441,17 @@ def test_registered_protocol_binds_sources_model_and_tactile_manifest() -> None:
         tactile_manifest
     )
     assert len(tactile_manifest["cases"]) == 12
+
+
+def test_source_text_identity_is_checkout_line_ending_invariant(
+    tmp_path: Path,
+) -> None:
+    lf = tmp_path / "source-lf.py"
+    crlf = tmp_path / "source-crlf.py"
+    lf.write_bytes(b"alpha = 1\nbeta = 2\n")
+    crlf.write_bytes(b"alpha = 1\r\nbeta = 2\r\n")
+
+    assert canonical_text_sha256(lf) == canonical_text_sha256(crlf)
 
 
 def test_guarded_prediction_is_target_free_and_future_marker_invariant(

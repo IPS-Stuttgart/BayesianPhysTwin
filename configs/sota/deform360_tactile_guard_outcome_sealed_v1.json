@@ -201,7 +201,7 @@
       "observation_std_m": 0.005,
       "process_std_m_per_sqrt_frame": 0.003
     },
-    "source_sha256": {
+    "source_text_sha256": {
       "scripts/remote/extract_deform360_tactile_features.py": "6b1fd43e42546ad49496646993f56d7b8af79c2fbb11f83224c69dcae1e21b16",
       "scripts/remote/run_deform360_tactile_guard_outcome_sealed_measurement.py": "30fb3dd1a436f4bbcde482f0267732310bac7c070295b725001a8074d23e1268",
       "scripts/remote/run_deform360_tactile_guard_outcome_sealed_prediction.py": "e611d987a70ef44dafee8e0aa616af824ae9502c0add5b7051cc01dd19b5dc17",
@@ -210,10 +210,10 @@
       "scripts/remote/stage_deform360_tactile_guard_outcome_sealed_backbone.py": "bf9b5bbf213dfc7839bfd2a96923478d6c7cbda751bd9dd35fd5821988e16fdd",
       "scripts/remote/validate_deform360_tactile_guard_v14_custody.py": "5793e9ab9cd76df3fe079cd0652273a5ba71e70e4a4bcc567e0ac720b51aae64",
       "src/bayesian_phystwin/deform360_pairwise_regret_guard.py": "0d9c6cb949359e84312ffd5f7569b519c2ba55002541e36401e4f8c04897b954",
-      "src/bayesian_phystwin/deform360_raw_camera_observation.py": "f2e4bafa6135a2a1fa26973c650ebf368bd204e27b08c5248ba98bae6acf444b",
+      "src/bayesian_phystwin/deform360_raw_camera_observation.py": "2c24e587e9acd1dda589363240a81b268863fbe808ce05c58f8a5b70f12f76c3",
       "src/bayesian_phystwin/deform360_tactile_features.py": "4606b292c40f525bcf2315b4cbb39e1e4d575126fbc2adf3bbd0a0d1d45d4e03",
-      "src/bayesian_phystwin/deform360_tactile_guard_outcome_sealed.py": "5b9dc049e48e9e86d788889097465d2e4543d0fd760bdba738a02f25221f83d8",
-      "src/bayesian_phystwin/deform360_tactile_regret_guard.py": "aa89fe957ac064900a7c56b3466ce742b6b3e76326f9897bbb479744b9342bab"
+      "src/bayesian_phystwin/deform360_tactile_guard_outcome_sealed.py": "66b90f2fd1ec27e031a6c03a5ab2f7d48230566b93ec4147907ba9736295cd86",
+      "src/bayesian_phystwin/deform360_tactile_regret_guard.py": "c8a39a2f0467b0088d249aa17be9aab39b2092acf9092a25fcdd0c4b42e46ac4"
     },
     "tactile_source_model": {
       "artifact_kind": "Deform360TactileRegretGuardSourceDiagnostic",
@@ -244,6 +244,6 @@
     ]
   },
   "protocol_id": "deform360-tactile-regret-guard-outcome-sealed-v1",
-  "protocol_sha256": "11d02b599c15797cd12670049965a5e0cd55092602822b9f61e8916d7b48915b",
+  "protocol_sha256": "13267716dd89da51175b245fce9588f9ec163ec2571007f3e6c46a43b9fc424f",
   "schema_version": 1
 }

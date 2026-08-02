@@ -72,6 +72,14 @@ def file_sha256(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_text_sha256(path: str | Path) -> str:
+    """Hash UTF-8 source text after normalizing checkout line endings."""
+
+    text = Path(path).read_text(encoding="utf-8")
+    canonical = text.replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def git_blob_oid(path: str | Path) -> str:
     data = Path(path).read_bytes()
     header = f"blob {len(data)}\0".encode("ascii")
@@ -250,7 +258,7 @@ def load_outcome_sealed_protocol(
         == list(TACTILE_REGRET_FEATURE_NAMES),
         "tactile source model contract changed",
     )
-    source_hashes = method.get("source_sha256", {})
+    source_hashes = method.get("source_text_sha256", {})
     _require(
         isinstance(source_hashes, Mapping)
         and source_hashes
@@ -260,7 +268,7 @@ def load_outcome_sealed_protocol(
     if repository_root is not None:
         root = Path(repository_root).resolve()
         observed = {
-            name: file_sha256(root / name) for name in source_hashes
+            name: canonical_text_sha256(root / name) for name in source_hashes
         }
         _require(observed == dict(source_hashes), "frozen method source tree changed")
     gates = payload.get("advancement_gates", {})
@@ -1184,6 +1192,7 @@ __all__ = [
     "build_guarded_prediction",
     "build_prediction_barrier",
     "build_technical_fallback",
+    "canonical_text_sha256",
     "canonical_sha256",
     "file_sha256",
     "git_blob_oid",
