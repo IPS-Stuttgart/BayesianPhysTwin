@@ -38,8 +38,8 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     CHECKPOINT_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
+    TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
-    TARGET_TAKE_IDS,
     UPSTREAM_COMMIT,
     action_field_history_is_supported,
     build_prediction_barrier,
@@ -48,6 +48,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     load_pokeflex_shrinkage_target_protocol,
     prediction_seal_sha256,
     score_one_prediction,
+    target_take_ids_for_protocol,
     validate_prediction_barrier,
     validate_prediction_seal,
 )
@@ -96,11 +97,15 @@ def _predict(
     checkpoint_root: Path,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
-    if protocol["protocol_id"] != TARGET_PROTOCOL_V2:
-        raise ValueError("new predictions require the v2 pre-outcome amendment")
+    if protocol["protocol_id"] not in {
+        TARGET_PROTOCOL_V2,
+        TARGET_PROTOCOL_OFFICIAL18_V1,
+    }:
+        raise ValueError("new predictions require a robot-history-aware protocol")
+    target_take_ids = target_take_ids_for_protocol(protocol)
     take_root = take_root.resolve()
     output_dir = output_dir.resolve()
-    if take_root.name not in TARGET_TAKE_IDS:
+    if take_root.name not in target_take_ids:
         raise ValueError(f"take is outside the target lock: {take_root.name}")
     if output_dir.exists():
         raise FileExistsError(f"prediction output already exists: {output_dir}")
@@ -380,8 +385,9 @@ def _predict(
 
 def _barrier(prediction_root: Path, output: Path, protocol_path: Path) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
+    target_take_ids = target_take_ids_for_protocol(protocol)
     seal_paths = [
-        prediction_root / take_id / "seal.json" for take_id in TARGET_TAKE_IDS
+        prediction_root / take_id / "seal.json" for take_id in target_take_ids
     ]
     payload = build_prediction_barrier(seal_paths, protocol)
     _write_json(output, payload)
@@ -417,6 +423,7 @@ def _score(
     protocol_path: Path,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
+    target_take_ids = target_take_ids_for_protocol(protocol)
     barrier = json.loads(barrier_path.read_text(encoding="utf-8"))
     validate_prediction_barrier(barrier, protocol)
     if not _git_clean(REPOSITORY_ROOT):
@@ -425,7 +432,7 @@ def _score(
         raise ValueError("target scorer revision differs from prediction revision")
     barrier_predictions = {str(row["take_id"]): row for row in barrier["predictions"]}
     per_object = []
-    for take_id in TARGET_TAKE_IDS:
+    for take_id in target_take_ids:
         archive = validate_prediction_seal(
             prediction_root / take_id / "seal.json",
             protocol,

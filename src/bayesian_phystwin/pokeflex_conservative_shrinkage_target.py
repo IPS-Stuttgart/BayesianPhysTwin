@@ -28,6 +28,42 @@ TARGET_OBJECTS = (
 TARGET_TAKE_IDS = tuple(f"{name}_T2" for name in TARGET_OBJECTS)
 TARGET_PROTOCOL_V1 = "pokeflex-conservative-shrinkage-target-v1"
 TARGET_PROTOCOL_V2 = "pokeflex-conservative-shrinkage-target-v2"
+TARGET_PROTOCOL_OFFICIAL18_V1 = "pokeflex-conservative-shrinkage-official18-v1"
+OFFICIAL18_TARGET_TAKE_IDS = (
+    "MemoryFoam_T2",
+    "PlushVolleyball_T4",
+    "FoamHalfSphere_T3",
+    "3dPrintedBunny_T1",
+    "3dPrintedPyramid_T6",
+    "FoamDice_T3",
+    "PlushMoon_T1",
+    "PlushOctopus_T6",
+    "PlushDice_T8",
+    "PlushTurtle_T3",
+    "Pillow_T8",
+    "3dPrintedCylinder_T7",
+    "Beanbag_T6",
+    "3dPrintedHeart_T14",
+    "FoamCylinder_T1",
+    "ToiletPaperRoll_T1",
+    "Sponge_T10",
+    "3dPrintedPizza_T13",
+)
+OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS = (
+    "FoamDice_T3",
+    "PlushOctopus_T6",
+    "ToiletPaperRoll_T1",
+)
+OFFICIAL18_PROSPECTIVE_TAKE_IDS = tuple(
+    take_id
+    for take_id in OFFICIAL18_TARGET_TAKE_IDS
+    if take_id not in OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS
+)
+OFFICIAL_EVALUATOR_SHA256 = (
+    "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60"
+)
+PUBLISHED_KINECT_CD_UL1_MM = 6.498
+PUBLISHED_KINECT_JACCARD = 0.820
 SOURCE_PROTOCOL_SHA256 = (
     "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9"
 )
@@ -86,6 +122,20 @@ def _take_identity(take_id: str) -> tuple[str, str]:
     return object_name, f"T{take_number}"
 
 
+def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return the immutable cohort associated with a target protocol."""
+
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_OFFICIAL18_V1:
+        return OFFICIAL18_TARGET_TAKE_IDS
+    return TARGET_TAKE_IDS
+
+
+def protocol_requires_robot_history(protocol_id: str) -> bool:
+    """Return whether prediction custody includes explicit robot-history support."""
+
+    return protocol_id in {TARGET_PROTOCOL_V2, TARGET_PROTOCOL_OFFICIAL18_V1}
+
+
 def action_field_history_is_supported(
     robot_by_frame: Mapping[int, Mapping[str, Any]],
     source_frame: int,
@@ -118,7 +168,12 @@ def validate_pokeflex_shrinkage_target_protocol(
     )
     protocol_id = payload.get("protocol_id")
     _require(
-        protocol_id in {TARGET_PROTOCOL_V1, TARGET_PROTOCOL_V2},
+        protocol_id
+        in {
+            TARGET_PROTOCOL_V1,
+            TARGET_PROTOCOL_V2,
+            TARGET_PROTOCOL_OFFICIAL18_V1,
+        },
         "target protocol id changed",
     )
     observed = target_protocol_sha256(payload)
@@ -139,11 +194,27 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     cohort = payload.get("target_cohort")
     _require(isinstance(cohort, Mapping), "target cohort is missing")
-    _require(
-        tuple(cohort.get("objects", ())) == TARGET_OBJECTS,
-        "target object cohort changed",
-    )
-    _require(cohort.get("take") == "T2", "target take changed")
+    if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1:
+        _require(
+            tuple(cohort.get("take_ids", ())) == OFFICIAL18_TARGET_TAKE_IDS,
+            "official target take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ()))
+            == OFFICIAL18_PROSPECTIVE_TAKE_IDS,
+            "prospective target take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("development_overlap_take_ids", ()))
+            == OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS,
+            "development-overlap cohort changed",
+        )
+    else:
+        _require(
+            tuple(cohort.get("objects", ())) == TARGET_OBJECTS,
+            "target object cohort changed",
+        )
+        _require(cohort.get("take") == "T2", "target take changed")
     _require(cohort.get("replacement_allowed") is False, "replacement was enabled")
 
     method = payload.get("method")
@@ -155,12 +226,13 @@ def validate_pokeflex_shrinkage_target_protocol(
         method.get("unsupported_frame_action") == "byte-identical released checkpoint",
         "fallback changed",
     )
-    if protocol_id == TARGET_PROTOCOL_V2:
+    if protocol_requires_robot_history(str(protocol_id)):
         _require(
             method.get("missing_required_robot_pose_action")
             == "mark update unsupported and return byte-identical released checkpoint",
             "missing-pose fallback changed",
         )
+    if protocol_id == TARGET_PROTOCOL_V2:
         amendment = payload.get("preoutcome_amendment")
         _require(isinstance(amendment, Mapping), "pre-outcome amendment is missing")
         _require(
@@ -192,7 +264,8 @@ def validate_pokeflex_shrinkage_target_protocol(
         "prediction/scoring separation changed",
     )
     _require(
-        int(custody.get("required_prediction_seal_count", -1)) == len(TARGET_OBJECTS),
+        int(custody.get("required_prediction_seal_count", -1))
+        == len(target_take_ids_for_protocol(payload)),
         "prediction barrier count changed",
     )
     _require(
@@ -223,10 +296,43 @@ def validate_pokeflex_shrinkage_target_protocol(
         evaluation.get("jaccard_boolean_backend") == "manifold",
         "Jaccard backend changed",
     )
-    _require(
-        float(evaluation.get("minimum_candidate_jaccard_valid_fraction", -1.0)) == 1.0,
-        "Jaccard validity gate changed",
-    )
+    if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1:
+        _require(
+            evaluation.get("aggregation")
+            == "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic",
+            "official aggregation changed",
+        )
+        _require(
+            evaluation.get("jaccard_role")
+            == "non-gating reproducibility diagnostic because the released target meshes are not guaranteed volumetric",
+            "official Jaccard role changed",
+        )
+        official = payload.get("official_reference")
+        _require(isinstance(official, Mapping), "official reference is missing")
+        _require(
+            official.get("code_commit") == UPSTREAM_COMMIT,
+            "official evaluator commit changed",
+        )
+        _require(
+            official.get("evaluator_sha256") == OFFICIAL_EVALUATOR_SHA256,
+            "official evaluator bytes changed",
+        )
+        _require(
+            float(official.get("published_kinect_CD_UL1_mm", -1.0))
+            == PUBLISHED_KINECT_CD_UL1_MM,
+            "published CD reference changed",
+        )
+        _require(
+            float(official.get("published_kinect_jaccard", -1.0))
+            == PUBLISHED_KINECT_JACCARD,
+            "published Jaccard reference changed",
+        )
+    else:
+        _require(
+            float(evaluation.get("minimum_candidate_jaccard_valid_fraction", -1.0))
+            == 1.0,
+            "Jaccard validity gate changed",
+        )
 
     gates = payload.get("gates")
     _require(isinstance(gates, Mapping), "target gates are missing")
@@ -234,10 +340,31 @@ def validate_pokeflex_shrinkage_target_protocol(
     paired = gates.get("paired_transfer")
     _require(isinstance(direct, Mapping), "direct gate is missing")
     _require(isinstance(paired, Mapping), "paired gate is missing")
-    _require(float(direct.get("CD_UL1_mm_below", -1.0)) == 6.498, "CD gate changed")
-    _require(
-        float(direct.get("jaccard_not_below", -1.0)) == 0.82, "Jaccard gate changed"
-    )
+    if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1:
+        reproduction = gates.get("baseline_reproduction")
+        _require(isinstance(reproduction, Mapping), "reproduction gate is missing")
+        _require(
+            float(reproduction.get("maximum_relative_CD_UL1_error", -1.0)) == 0.05,
+            "baseline reproduction tolerance changed",
+        )
+        _require(
+            float(direct.get("candidate_CD_UL1_mm_below", -1.0))
+            == PUBLISHED_KINECT_CD_UL1_MM,
+            "official candidate CD gate changed",
+        )
+        _require(
+            direct.get("jaccard_is_gating") is False,
+            "official Jaccard unexpectedly became gating",
+        )
+    else:
+        _require(
+            float(direct.get("CD_UL1_mm_below", -1.0)) == 6.498,
+            "CD gate changed",
+        )
+        _require(
+            float(direct.get("jaccard_not_below", -1.0)) == 0.82,
+            "Jaccard gate changed",
+        )
     _require(
         float(paired.get("relative_CD_UL1_improvement_above", -1.0)) == 0.0,
         "paired improvement gate changed",
@@ -264,7 +391,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         "passed": True,
         "protocol_sha256": observed,
         "protocol_id": protocol_id,
-        "target_take_ids": TARGET_TAKE_IDS,
+        "target_take_ids": target_take_ids_for_protocol(payload),
         "selected_arm": SELECTED_ARM,
     }
 
@@ -310,7 +437,7 @@ def _load_prediction_arrays(
         "action_supported",
         "correction_rms_m",
     }
-    if protocol_id == TARGET_PROTOCOL_V2:
+    if protocol_requires_robot_history(protocol_id):
         required.add("robot_history_supported")
     with np.load(path, allow_pickle=False) as archive:
         _require(set(archive.files) == required, "prediction array schema changed")
@@ -353,10 +480,13 @@ def validate_prediction_seal(
     revision = seal.get("implementation_revision")
     _require(isinstance(revision, str) and len(revision) == 40, "revision is invalid")
     take_id = seal.get("take_id")
-    _require(take_id in TARGET_TAKE_IDS, "prediction take is outside target cohort")
+    target_take_ids = target_take_ids_for_protocol(protocol)
+    _require(take_id in target_take_ids, "prediction take is outside target cohort")
     object_name, take = _take_identity(str(take_id))
     _require(seal.get("object_name") == object_name, "prediction object changed")
-    _require(take == "T2", "prediction take changed")
+    protocol_id = str(protocol["protocol_id"])
+    if protocol_id != TARGET_PROTOCOL_OFFICIAL18_V1:
+        _require(take == "T2", "prediction take changed")
     _require(
         dict(seal.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
         "prediction checkpoint changed",
@@ -371,7 +501,6 @@ def validate_prediction_seal(
         file_sha256(npz_path) == seal.get("prediction_npz_sha256"),
         "prediction archive checksum mismatch",
     )
-    protocol_id = str(protocol["protocol_id"])
     arrays = _load_prediction_arrays(npz_path, protocol_id=protocol_id)
     baseline = np.asarray(arrays["baseline_vertices_m"], dtype=np.float64)
     candidate = np.asarray(arrays["candidate_vertices_m"], dtype=np.float64)
@@ -398,7 +527,7 @@ def validate_prediction_seal(
     _require(int(frames[0]) == 6, "prediction does not begin at frame six")
     _require(supported.shape == frames.shape, "support shape changed")
     _require(supported.dtype == np.bool_, "support mask must be Boolean")
-    if protocol_id == TARGET_PROTOCOL_V2:
+    if protocol_requires_robot_history(protocol_id):
         robot_supported = np.asarray(arrays["robot_history_supported"])
         _require(robot_supported.shape == frames.shape, "robot support shape changed")
         _require(robot_supported.dtype == np.bool_, "robot support must be Boolean")
@@ -443,15 +572,16 @@ def build_prediction_barrier(
     seal_paths: Sequence[Path],
     protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Require all eight sealed predictions before target scoring is authorized."""
+    """Require every registered prediction before target scoring is authorized."""
 
     validate_pokeflex_shrinkage_target_protocol(protocol)
+    target_take_ids = target_take_ids_for_protocol(protocol)
     archives = [validate_prediction_seal(path, protocol) for path in seal_paths]
-    _require(len(archives) == len(TARGET_TAKE_IDS), "prediction barrier is incomplete")
+    _require(len(archives) == len(target_take_ids), "prediction barrier is incomplete")
     by_take = {archive.take_id: archive for archive in archives}
     _require(len(by_take) == len(archives), "duplicate prediction seal")
     _require(
-        tuple(sorted(by_take)) == tuple(sorted(TARGET_TAKE_IDS)),
+        tuple(sorted(by_take)) == tuple(sorted(target_take_ids)),
         "target seal set changed",
     )
     revisions = {archive.implementation_revision for archive in archives}
@@ -464,7 +594,7 @@ def build_prediction_barrier(
         "selected_arm": SELECTED_ARM,
         "implementation_revision": next(iter(revisions)),
         "prediction_count": len(archives),
-        "target_take_ids": list(TARGET_TAKE_IDS),
+        "target_take_ids": list(target_take_ids),
         "predictions": [
             {
                 "take_id": take_id,
@@ -472,7 +602,7 @@ def build_prediction_barrier(
                 "seal_file_sha256": file_sha256(by_take[take_id].seal_path),
                 "prediction_npz_sha256": file_sha256(by_take[take_id].npz_path),
             }
-            for take_id in TARGET_TAKE_IDS
+            for take_id in target_take_ids
         ],
         "target_mesh_opened": False,
         "scoring_authorized": True,
@@ -486,6 +616,7 @@ def validate_prediction_barrier(
     protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
     validate_pokeflex_shrinkage_target_protocol(protocol)
+    target_take_ids = target_take_ids_for_protocol(protocol)
     _require(
         barrier.get("artifact_kind")
         == "PokeFlexConservativeShrinkagePredictionBarrier",
@@ -504,9 +635,12 @@ def validate_prediction_barrier(
         "barrier source changed",
     )
     _require(barrier.get("selected_arm") == SELECTED_ARM, "barrier arm changed")
-    _require(int(barrier.get("prediction_count", -1)) == 8, "barrier count changed")
     _require(
-        tuple(barrier.get("target_take_ids", ())) == TARGET_TAKE_IDS,
+        int(barrier.get("prediction_count", -1)) == len(target_take_ids),
+        "barrier count changed",
+    )
+    _require(
+        tuple(barrier.get("target_take_ids", ())) == target_take_ids,
         "barrier cohort changed",
     )
     _require(
@@ -517,11 +651,11 @@ def validate_prediction_barrier(
     )
     predictions = barrier.get("predictions")
     _require(
-        isinstance(predictions, list) and len(predictions) == len(TARGET_TAKE_IDS),
+        isinstance(predictions, list) and len(predictions) == len(target_take_ids),
         "barrier prediction inventory changed",
     )
     _require(
-        tuple(row.get("take_id") for row in predictions) == TARGET_TAKE_IDS,
+        tuple(row.get("take_id") for row in predictions) == target_take_ids,
         "barrier prediction order changed",
     )
     return {"passed": True, "barrier_sha256": barrier["barrier_sha256"]}
@@ -621,7 +755,7 @@ def paired_object_bootstrap_upper_difference(
     """Bootstrap the object-balanced candidate-minus-baseline difference."""
 
     values = np.asarray(differences_mm, dtype=np.float64)
-    _require(values.shape == (len(TARGET_OBJECTS),), "bootstrap requires eight objects")
+    _require(values.ndim == 1 and len(values) >= 2, "bootstrap requires objects")
     _require(np.all(np.isfinite(values)), "bootstrap differences are non-finite")
     _require(replicates >= 1000, "bootstrap replicate count is too small")
     _require(0.5 < upper_quantile < 1.0, "bootstrap quantile is invalid")
@@ -631,6 +765,156 @@ def paired_object_bootstrap_upper_difference(
     return float(np.quantile(draws, upper_quantile))
 
 
+def _evaluate_official18_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Apply the exact-split reproduction and prospective-transfer gates."""
+
+    _require(
+        len(per_take) == len(OFFICIAL18_TARGET_TAKE_IDS),
+        "official target result set is incomplete",
+    )
+    by_take = {str(row["take_id"]): row for row in per_take}
+    _require(
+        tuple(sorted(by_take)) == tuple(sorted(OFFICIAL18_TARGET_TAKE_IDS)),
+        "official target result cohort changed",
+    )
+    ordered = [by_take[take_id] for take_id in OFFICIAL18_TARGET_TAKE_IDS]
+    for row in ordered:
+        frames = row.get("frames")
+        _require(isinstance(frames, list), "official frame scores are missing")
+        _require(
+            len(frames) == int(row["scored_frame_count"]),
+            "official scored-frame inventory changed",
+        )
+
+    baseline_frames = np.asarray(
+        [frame["baseline_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    candidate_frames = np.asarray(
+        [frame["candidate_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    _require(len(baseline_frames) > 0, "official target has no scored frames")
+    _require(np.all(np.isfinite(baseline_frames)), "baseline scores are non-finite")
+    _require(np.all(np.isfinite(candidate_frames)), "candidate scores are non-finite")
+    baseline_global = float(np.mean(baseline_frames))
+    candidate_global = float(np.mean(candidate_frames))
+    _require(baseline_global > 0.0, "baseline official score is zero")
+
+    baseline_object = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    candidate_object = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    _require(np.all(np.isfinite(baseline_object)), "baseline object scores are invalid")
+    _require(
+        np.all(np.isfinite(candidate_object)), "candidate object scores are invalid"
+    )
+
+    prospective = [by_take[take_id] for take_id in OFFICIAL18_PROSPECTIVE_TAKE_IDS]
+    prospective_baseline = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in prospective], dtype=np.float64
+    )
+    prospective_candidate = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in prospective], dtype=np.float64
+    )
+    prospective_baseline_mean = float(np.mean(prospective_baseline))
+    prospective_candidate_mean = float(np.mean(prospective_candidate))
+    _require(prospective_baseline_mean > 0.0, "prospective baseline score is zero")
+    prospective_relative = float(
+        (prospective_baseline_mean - prospective_candidate_mean)
+        / prospective_baseline_mean
+    )
+    prospective_object_relative = (
+        prospective_baseline - prospective_candidate
+    ) / prospective_baseline
+
+    gates = protocol["gates"]
+    paired = gates["paired_transfer"]
+    upper_difference = paired_object_bootstrap_upper_difference(
+        prospective_candidate - prospective_baseline,
+        replicates=int(paired["bootstrap_replicates"]),
+        seed=int(paired["bootstrap_seed"]),
+        upper_quantile=float(paired["bootstrap_upper_quantile"]),
+    )
+    published = float(
+        protocol["official_reference"]["published_kinect_CD_UL1_mm"]
+    )
+    reproduction_relative_error = abs(baseline_global - published) / published
+    reproduction_pass = bool(
+        reproduction_relative_error
+        <= float(gates["baseline_reproduction"]["maximum_relative_CD_UL1_error"])
+    )
+    candidate_reference_pass = bool(
+        candidate_global
+        < float(gates["direct_metric_reference"]["candidate_CD_UL1_mm_below"])
+    )
+    paired_pass = bool(
+        prospective_relative
+        > float(paired["relative_CD_UL1_improvement_above"])
+        and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
+        and float(np.min(prospective_object_relative))
+        >= -float(paired["maximum_per_object_relative_regression"])
+    )
+
+    candidate_jaccard = [
+        float(frame["candidate_jaccard"])
+        for row in ordered
+        for frame in row["frames"]
+        if frame["candidate_jaccard"] is not None
+    ]
+    total_frames = len(candidate_frames)
+    direct_pass = bool(reproduction_pass and candidate_reference_pass)
+    return {
+        "published_kinect_CD_UL1_mm": published,
+        "baseline_official_split_global_CD_UL1_mm": baseline_global,
+        "candidate_official_split_global_CD_UL1_mm": candidate_global,
+        "official_split_global_relative_CD_UL1_improvement": float(
+            (baseline_global - candidate_global) / baseline_global
+        ),
+        "baseline_reproduction_relative_error": float(reproduction_relative_error),
+        "baseline_reproduction_passed": reproduction_pass,
+        "candidate_below_published_reference_passed": candidate_reference_pass,
+        "baseline_official_split_object_balanced_CD_UL1_mm": float(
+            np.mean(baseline_object)
+        ),
+        "candidate_official_split_object_balanced_CD_UL1_mm": float(
+            np.mean(candidate_object)
+        ),
+        "full18_object_win_count": int(np.sum(candidate_object < baseline_object)),
+        "prospective_take_count": len(OFFICIAL18_PROSPECTIVE_TAKE_IDS),
+        "development_overlap_take_count": len(
+            OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS
+        ),
+        "prospective_object_balanced_baseline_CD_UL1_mm": prospective_baseline_mean,
+        "prospective_object_balanced_candidate_CD_UL1_mm": prospective_candidate_mean,
+        "prospective_object_balanced_relative_CD_UL1_improvement": prospective_relative,
+        "prospective_object_win_count": int(
+            np.sum(prospective_candidate < prospective_baseline)
+        ),
+        "prospective_minimum_per_object_relative_improvement": float(
+            np.min(prospective_object_relative)
+        ),
+        "prospective_bootstrap_upper_candidate_minus_baseline_CD_UL1_mm": (
+            upper_difference
+        ),
+        "candidate_global_jaccard_valid": (
+            float(np.mean(candidate_jaccard)) if candidate_jaccard else None
+        ),
+        "candidate_jaccard_valid_fraction": float(
+            len(candidate_jaccard) / total_frames
+        ),
+        "jaccard_is_gating": False,
+        "direct_metric_reference_passed": direct_pass,
+        "paired_transfer_passed": paired_pass,
+        "all_target_gates_passed": bool(direct_pass and paired_pass),
+    }
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -638,6 +922,8 @@ def evaluate_target_metrics(
     """Aggregate already-scored target objects and apply the frozen gates."""
 
     validate_pokeflex_shrinkage_target_protocol(protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_OFFICIAL18_V1:
+        return _evaluate_official18_metrics(per_object, protocol)
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
