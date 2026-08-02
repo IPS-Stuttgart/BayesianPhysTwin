@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageSourceProtocol",
+  "protocol_id": "pokeflex-conservative-shrinkage-source-v1",
+  "locked_at_utc": "2026-08-03T00:00:00Z",
+  "status": "source-family selection on previously opened objects; target objects remain sealed",
+  "claim_boundary": "This is source-only selection of a conservative causal PokeFlex correction. It is not a target result or a state-of-the-art claim.",
+  "parent_protocol": {
+    "protocol_id": "pokeflex-bayesian-registration-v1",
+    "protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33"
+  },
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "published_kinect_CD_UL1_mm": 6.498,
+    "published_kinect_jaccard": 0.82
+  },
+  "evidence_boundary": {
+    "opened_source_take_ids": [
+      "3dPrintedHeart_T1",
+      "3dPrintedHeart_T4",
+      "3dPrintedHeart_T5",
+      "3dPrintedHeart_T6",
+      "FoamDice_T1",
+      "FoamDice_T4",
+      "FoamDice_T5",
+      "FoamDice_T6",
+      "FoamDice_T7",
+      "FoamDice_T8",
+      "MemoryFoam_T1",
+      "MemoryFoam_T4",
+      "MemoryFoam_T5",
+      "MemoryFoam_T6",
+      "PlushOctopus_T1",
+      "PlushOctopus_T4",
+      "PlushOctopus_T5",
+      "PlushOctopus_T6",
+      "PlushOctopus_T7",
+      "ToiletPaperRoll_T1",
+      "ToiletPaperRoll_T4",
+      "ToiletPaperRoll_T5",
+      "ToiletPaperRoll_T6",
+      "3dPrintedPyramid_T2",
+      "Beanbag_T2",
+      "FoamCylinder_T2",
+      "PlushMoon_T2"
+    ],
+    "opened_source_object_count": 9,
+    "target_objects": [
+      "3dPrintedCylinder",
+      "3dPrintedPizza",
+      "FoamHalfSphere",
+      "Pillow",
+      "PlushDice",
+      "PlushTurtle",
+      "PlushVolleyball",
+      "Sponge"
+    ],
+    "target_take": "T2",
+    "target_objects_remain_sealed": true,
+    "replacement_allowed": false
+  },
+  "causal_contract": {
+    "target_frame": "f",
+    "kinect_history": "f-5 through f-1 only",
+    "robot_history": "through f-1 only",
+    "frame_f_observation_allowed_before_prediction": false,
+    "frame_f_mesh_allowed_before_scoring": false,
+    "candidate_family": "parent-protocol action-local state correction transferred once by template vertex identity",
+    "unsupported_frame_action": "released Kinect checkpoint vertices byte-for-byte"
+  },
+  "selection": {
+    "candidate_bank": "the already frozen positive-scale action-local relative-radius bank in every source artifact",
+    "minimum_object_balanced_relative_improvement": 0.01,
+    "maximum_per_object_relative_regression": 0.0,
+    "aggregation": "equal frames within take, equal takes within physical object, equal physical objects",
+    "tie_break": "smallest positive scale, then smallest support radius, then arm name",
+    "online_selector": "none; the selected arm is fixed before target access"
+  },
+  "source_gates": {
+    "same_arm_selected_in_all_leave_one_object_out_folds": true,
+    "minimum_held_object_wins": 9,
+    "maximum_held_object_regressions": 0,
+    "minimum_full_source_object_balanced_relative_improvement": 0.01,
+    "maximum_full_source_object_regressions": 0,
+    "maximum_unsupported_frame_fallback_mismatches": 0,
+    "all_required_before_target_protocol": true
+  },
+  "target_progression_if_source_passes": {
+    "prediction_and_scoring_must_be_separate": true,
+    "all_eight_prediction_seals_required_before_any_target_mesh_score": true,
+    "method_and_checkpoint_hashes_frozen_before_archive_member_access": true,
+    "primary_direct_sota_gate": {
+      "object_balanced_CD_UL1_mm_below": 6.498,
+      "object_balanced_jaccard_not_below": 0.82
+    },
+    "paired_secondary_gate": {
+      "object_balanced_relative_improvement_over_checkpoint_above": 0.0,
+      "object_cluster_bootstrap_upper_difference_mm_below": 0.0,
+      "maximum_per_object_relative_regression": 0.0
+    }
+  },
+  "forbidden": [
+    "using a target outcome to choose the correction arm",
+    "opening any target T2 archive member before a separate target lock is committed and pushed",
+    "using frame f or later observations to predict frame f",
+    "weakening the source gates after reading this source result",
+    "calling source development a state-of-the-art result",
+    "touching any held-v8 artifact or process"
+  ],
+  "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9"
+}
