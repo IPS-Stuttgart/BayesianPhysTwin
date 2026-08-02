@@ -1,0 +1,27 @@
+{
+  "artifact_kind": "Deform360TactileCoveragePreflightV1",
+  "artifact_sha256": "6a8394ec75c9bf15aa2699bfee07a4fe28948789efd2014013c6de57012b4493",
+  "eligible_case_count": 9,
+  "future_tactile_values_read": false,
+  "outcomes_read": false,
+  "parent_manifest_artifact_sha256": "63c30a7d46aa054c0c36babe8ab88ee469b756644bd9e7a8d31140fcb8d61766",
+  "schema_version": 1,
+  "technical_failure_count": 3,
+  "technical_failures": [
+    {
+      "case": "055-lettuce-cloth-ep0000",
+      "maximum_start_gap_us": 3123,
+      "reason": "causal_tactile_window_start_uncovered"
+    },
+    {
+      "case": "189-bear-big-ep0000",
+      "maximum_start_gap_us": 8045,
+      "reason": "causal_tactile_window_start_uncovered"
+    },
+    {
+      "case": "193-frog-ep0000",
+      "maximum_start_gap_us": 3374,
+      "reason": "causal_tactile_window_start_uncovered"
+    }
+  ]
+}
