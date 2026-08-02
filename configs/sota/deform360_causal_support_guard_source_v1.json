@@ -1,0 +1,85 @@
+{
+  "artifact_kind": "Deform360CausalSupportGuardSourceDevelopmentProtocol",
+  "claim_boundary": "Post-open source-development protocol. The routes were identified using opened source evidence; passing these checks may justify a fresh prospective test but cannot establish confirmation or state of the art.",
+  "created_date": "2026-08-03",
+  "evaluation": {
+    "candidate_arm": "dual_backbone_pairwise_consensus_rbf",
+    "held_object_excluded_from_each_fit": true,
+    "metric_unit": "m",
+    "object_balanced_reporting": true,
+    "opened_positive_panel": {
+      "case_count": 27,
+      "object_count": 5
+    },
+    "opened_stress_panel": {
+      "case_count": 12,
+      "object_count": 12
+    },
+    "selected_baseline_arm": "selected_raw_backbone",
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "implementation": {
+    "diagnostic_runner_sha256": "b33e20b35475f848b3096ad83a3812a3ecff53b4b509c75ddb9a3b40140cdb9d",
+    "guard_module_sha256": "a5307e7b7398d6a44c91bf043b29669eaf4a37f102a488ca5081bc18b2e1ee5b"
+  },
+  "information_boundary": {
+    "fresh_target_read": false,
+    "future_camera_observation_read": false,
+    "future_tactile_read": false,
+    "held_v8_read": false,
+    "opened_source_outcomes_used_to_select_routes_and_thresholds": true,
+    "rejected_interval_is_bit_exact_baseline": true,
+    "target_argument_accepted": false
+  },
+  "inputs": {
+    "open27_tactile_features_sha256": "a3379df47579d12b4b8a4485183d79b52d6ef5895fda1d8132f5c86a1b6ee3fb",
+    "pairwise_source_result_sha256": "fea8d63d0115d85ace552fea819cc3b34363c1402d702d80e3f637760d7edce1",
+    "stress12_tactile_features_sha256": "0ae48f657a786366e24a5b0cc23a9d3e80331928895d58b94ab9b95d564b7abf"
+  },
+  "method": {
+    "candidate_noop_is_not_an_admission": true,
+    "feature_names": [
+      "sensor_ratio_max",
+      "correction_change_rms_over_object_scale",
+      "prior_consistency_gain"
+    ],
+    "regret_tolerance_m": 0.0,
+    "route_objective": "maximize beneficial admissions with zero regressive source admissions; then minimize admissions and choose the stricter threshold",
+    "route_union": "logical_or",
+    "routes": [
+      {
+        "direction": "at_most",
+        "evidence_kind": "independent-tactile-support",
+        "feature_name": "sensor_ratio_max",
+        "name": "low_tactile_loading"
+      },
+      {
+        "direction": "at_least",
+        "evidence_kind": "causal-response-support",
+        "feature_name": "correction_change_rms_over_object_scale",
+        "name": "large_causal_correction_change"
+      },
+      {
+        "direction": "at_least",
+        "evidence_kind": "temporal-belief-support",
+        "feature_name": "prior_consistency_gain",
+        "name": "temporally_consistent_prior"
+      }
+    ]
+  },
+  "protocol_id": "deform360-causal-support-guard-source-v1",
+  "protocol_sha256": "91b2ec6df943e97cacff84cdc26b01b67e2d6f68b14c86a34d331c816b3cd745",
+  "source_development_checks": {
+    "at_least_five_joint_case_wins": true,
+    "at_least_five_objects_with_admission": true,
+    "at_least_ten_beneficial_updates_admitted": true,
+    "combined_accepted_regressive_update_count_maximum": 0,
+    "open27_chamfer_improvement_percent_maximum": -4.0,
+    "open27_identity_improvement_percent_maximum": -4.0,
+    "stress12_accepted_regressive_update_count_maximum": 0
+  }
+}
