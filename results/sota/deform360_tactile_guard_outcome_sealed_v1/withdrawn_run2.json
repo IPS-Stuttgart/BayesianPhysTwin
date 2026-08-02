@@ -1,0 +1,22 @@
+{
+  "affected_cases": [
+    "189-bear-big-ep0000",
+    "055-lettuce-cloth-ep0000",
+    "193-frog-ep0000"
+  ],
+  "artifact_kind": "Deform360TactileGuardPreOutcomeWithdrawalV1",
+  "artifact_sha256": "aba58c17c24aa50ac7e1b60791f7f109b2a79d826f9ad4523c6c4e16c896ed35",
+  "created_utc": "2026-08-02T16:33:09.764460+00:00",
+  "disposition": "preserve run2 unchanged; supersede before outcome opening using the locked V14 action-window timestamps for all twelve cases",
+  "information_boundary": {
+    "future_object_observation_read": false,
+    "future_target_read": false,
+    "held_v8_read": false,
+    "outcome_manifest_read": false,
+    "replacement_or_case_selection_changed": false
+  },
+  "reason": "Three tactile coverage checks used the full aligned episode start instead of the sealed V14 76-frame action-window timeline.",
+  "reason_code": "v14_action_window_timeline_staging_mismatch",
+  "schema_version": 1,
+  "withdrawn_barrier_result_sha256": "29746696ea1015baf7b2b8c88673884e57e11ccbe905fee8b9c27b09beb533e4"
+}

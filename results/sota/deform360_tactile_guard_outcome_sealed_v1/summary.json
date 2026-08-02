@@ -1,46 +1,164 @@
 {
   "advancement_decision": {
     "future_outcomes_opened": false,
-    "reason": "zero admitted updates make the minimum-win and minimum-improvement gates impossible",
+    "reason": "minimum_joint_case_wins_is_mathematically_unreachable",
     "state_of_the_art_claim_supported": false,
     "status": "failed_before_outcome_opening",
     "target_metrics_scored": false
   },
-  "artifact_kind": "Deform360TactileGuardPreOutcomeAbstentionResultV1",
-  "artifact_sha256": "f2b9e7250b0a1c34ccf325d7c7f19b2d47585a01ad4efd41c2a34cabf1ac483e",
+  "artifact_kind": "Deform360TactileGuardPreOutcomeImpossibilityResultV1",
+  "artifact_sha256": "741ad1d9bd494b488204e2ef7f581599d9946ed8f41ecbc4ed5464cd740dc49f",
   "claim_label": "prospective_outcome_sealed_identity_known_transfer",
   "cohort_accounting": {
-    "ordinary_successful_prediction_count": 9,
+    "ordinary_successful_prediction_count": 12,
     "replacement_count": 0,
-    "retained_technical_failure_count": 3,
+    "retained_technical_failure_count": 0,
     "total_locked_case_count": 12,
     "unsealable_case_count": 0
   },
+  "finalizer_source_sha256": "e06f6198d3df72155781e22878a8d730f745b2ecd4269a42e818b99b6e186c0b",
+  "gate_impossibility_proof": {
+    "gate": "minimum_joint_case_wins",
+    "maximum_possible_joint_case_wins": 1,
+    "reason": "A bit-exact baseline case can only tie, so strict joint wins are possible only for cases whose sealed guarded trajectory differs from the registered baseline.",
+    "required_joint_case_wins": 2
+  },
   "guard_audit": {
-    "accepted_update_count": 0,
-    "admission_threshold": 0.7,
-    "all_guarded_predictions_bit_exact_to_registered_baseline": true,
-    "decision_count": 27,
-    "maximum_source_benefit_score": 0.2516027934651038,
-    "minimum_source_benefit_score": -0.10982066984218267,
-    "raw_candidate_differs_from_baseline_case_count": 9
+    "accepted_update_count": 3,
+    "admitted_case_count": 1,
+    "admitted_cases": [
+      "199-hat-ep0000"
+    ],
+    "case_audits": [
+      {
+        "accepted_update_count": 0,
+        "case": "189-bear-big-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "87d049e0dc18ccfcf20d64e5126c100cfd45de51dfcbfb63af3453b3ca1d5bd4",
+        "prediction_seal_result_sha256": "620701f40387c84d5bc50b1fc602a59a55fbe0f72766554d2196dee3cf79b0ff",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "190-monkey-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "731b9c2a2743fc50297cfff63717fe35ece213e7496b19405ea85aeab1b0fe59",
+        "prediction_seal_result_sha256": "9a10b5b32c8d20d68dfbde4857de8d6269b665575384260b4c1a00d7a1974e99",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "042-necktie-cloth-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "71e7cdd8bc45eb79a2df5c67989e8d4228df2e3ec25a3079ec66d256548c07ee",
+        "prediction_seal_result_sha256": "85b89d032da787b79696a72aa820c7f787be72331e0df7301f56853dae9263c9",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "106-baking-mat-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "64a57d80971b9e08ca93def08a7a868dd654148ab0e568a9757302714035f66d",
+        "prediction_seal_result_sha256": "0d76b3162c87c56381b6a643fc1aae80f777281151f9f30a4519b67fc7e66b08",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "192-fish-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "e3a92012f4a9b9b16183855df7cdeffcbbd152312433f4b6d8239b9dc61118cc",
+        "prediction_seal_result_sha256": "12f5e67e528723c8ca45edc9c7f61773c67b86ebdc2b9bda0fec6f4a7a78c9e6",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "055-lettuce-cloth-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "ae2f0a8fb16fad6b492a21873b1f2a1c76b6688c72da07a181fe39c83485fab8",
+        "prediction_seal_result_sha256": "0085e7d2e2033656902a02ae28300ab1599d3159b7f51b3164db438de85270c9",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "193-frog-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "db668f869532d6004a60fec73ca36e0128393e12e6e365bf79bfd650b6f5285f",
+        "prediction_seal_result_sha256": "90fc8b78474346d49a18377f975fda7595d5bb1c8063721a2587935c053a57a8",
+        "raw_candidate_differs_from_registered_baseline": false,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "194-fish-orange-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "eac5dae0475ced4801ed1c4cd6908619733291228d83226b080c86a2d1c1ab52",
+        "prediction_seal_result_sha256": "84bea3ca2ca874e74724a61481641ecb8f61c3faf7a234ee9d2d01423c16a234",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "065-pita-bread-cloth-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "1297102b0039f63259f90357a28d06db5a2a4ef39656f4ae52e0ac59cba3352f",
+        "prediction_seal_result_sha256": "3503040b9188fd3b297536392285c0c8fb4679f75af79fb39723791bd85df14a",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 3,
+        "case": "199-hat-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": true,
+        "prediction_seal_file_sha256": "5a2d036b0bf2bbec334992241abac292aa693ffe293fe2b159666be2d0f04339",
+        "prediction_seal_result_sha256": "10d7d4fcbf375942a71dfb582484613dbb1f0a326e71c91a5754ede524ffac4b",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "082-curtain-cloth-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "f2232dffe17c1bb21267659e804294cdc2a4b9a522acbee6984271859d0e0929",
+        "prediction_seal_result_sha256": "802a15fe084457d62986bbfeede087c52b4577f53c659470f3640b15a9a39355",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      },
+      {
+        "accepted_update_count": 0,
+        "case": "098-beach-ball-cloth-ep0000",
+        "guarded_prediction_differs_from_registered_baseline": false,
+        "prediction_seal_file_sha256": "f2cba19672cf66665759a2dddd13f1419ca85ee047c62b96af93e33a3023b119",
+        "prediction_seal_result_sha256": "2c3e1ab6f32ae69dc70f57fba46d74673583a08acee6c54635f34ae1aec93d15",
+        "raw_candidate_differs_from_registered_baseline": true,
+        "status": "ordinary_prediction_sealed"
+      }
+    ],
+    "exact_registered_baseline_case_count": 11,
+    "nontrivial_prediction_case_count": 1,
+    "nontrivial_prediction_cases": [
+      "199-hat-ep0000"
+    ]
   },
   "information_boundary": {
     "future_identity_or_metric_read": false,
     "future_object_observation_read": false,
     "held_v8_read": false,
-    "outcome_manifest_read": false
+    "outcome_manifest_read": false,
+    "target_trajectory_read": false
   },
-  "input_preflight": {
-    "runtime_preflight_artifact_sha256": "a8346e39c381d9040f35b5ea915eead7699d468cd4c0ee77b88a6905f04471df",
-    "tactile_eligible_case_count": 9,
-    "tactile_technical_failure_count": 3
+  "prediction_barrier": {
+    "barrier_passed": true,
+    "file_sha256": "3953bf6da5ff788b585c490ac5785679fd575f60aa7cad543f915e3ade2dae4f",
+    "result_sha256": "4721b84acb210f0515f2a30758504235f15eee40bccb798ea25d1188b49c095b"
   },
-  "prediction_barrier_file_sha256": "2116431712a0ddbd8ce2932d8735e5cbbef706db8d574b2a89bc008363b81eba",
-  "prediction_barrier_result_sha256": "29746696ea1015baf7b2b8c88673884e57e11ccbe905fee8b9c27b09beb533e4",
   "protocol_config_sha256": "f25c0ea88e87035cd515ef4853bbbd2abadfda7763dd3d24f049b5ba91f76411",
   "protocol_id": "deform360-tactile-regret-guard-outcome-sealed-v1",
-  "runtime_archive_sha256": "928bfc8b8f651eb9516c5bf27a1c5aacbe06f5b3d1dc6cc7d288644364383774",
-  "runtime_commit": "929be39",
+  "runtime_revision": "426176af4162bbde8d98ec7db17bcdccc55b8aa7",
   "schema_version": 1
 }

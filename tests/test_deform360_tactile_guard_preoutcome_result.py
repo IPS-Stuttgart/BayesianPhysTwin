@@ -17,10 +17,21 @@ from bayesian_phystwin.deform360_tactile_guard_outcome_sealed import (
     build_guarded_prediction,
     build_prediction_barrier,
     build_technical_fallback,
+    canonical_sha256,
+    canonical_text_sha256,
+    file_sha256,
 )
 from bayesian_phystwin.deform360_tactile_guard_preoutcome_result import (
     PREOUTCOME_RESULT_ARTIFACT_KIND,
     build_preoutcome_impossibility_result,
+)
+
+REGISTERED_RESULT_ROOT = (
+    REPO / "results/sota/deform360_tactile_guard_outcome_sealed_v1"
+)
+FINALIZER_SOURCE = (
+    REPO
+    / "src/bayesian_phystwin/deform360_tactile_guard_preoutcome_result.py"
 )
 
 
@@ -124,3 +135,29 @@ def test_mutated_prediction_after_barrier_is_rejected(tmp_path: Path) -> None:
             prediction_root=predictions,
             runtime_revision="c" * 40,
         )
+
+
+def test_registered_preoutcome_result_binds_finalizer_and_barrier() -> None:
+    summary = json.loads((REGISTERED_RESULT_ROOT / "summary.json").read_text())
+    barrier_path = REGISTERED_RESULT_ROOT / "prediction_barrier.json"
+    barrier = json.loads(barrier_path.read_text())
+
+    assert summary["artifact_sha256"] == canonical_sha256(
+        summary, digest_key="artifact_sha256"
+    )
+    assert summary["finalizer_source_sha256"] == canonical_text_sha256(
+        FINALIZER_SOURCE
+    )
+    assert summary["prediction_barrier"]["file_sha256"] == file_sha256(
+        barrier_path
+    )
+    assert barrier["result_sha256"] == canonical_sha256(
+        barrier, digest_key="result_sha256"
+    )
+    assert summary["prediction_barrier"]["result_sha256"] == barrier[
+        "result_sha256"
+    ]
+    assert summary["advancement_decision"]["future_outcomes_opened"] is False
+    assert summary["gate_impossibility_proof"][
+        "maximum_possible_joint_case_wins"
+    ] < summary["gate_impossibility_proof"]["required_joint_case_wins"]
