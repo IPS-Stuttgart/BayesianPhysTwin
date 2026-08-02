@@ -95,6 +95,17 @@ def _staging_paths(
     return sorted(paths)
 
 
+def _stable_selection_score(values: tuple[int, int, int, float]) -> list[int | float]:
+    """Remove backend-level roundoff from diagnostic-only ray angles."""
+
+    return [
+        round(float(value), 12)
+        if isinstance(value, (float, np.floating))
+        else int(value)
+        for value in values
+    ]
+
+
 def preflight_dynamic_pool_case(
     panel_case_dir: str | Path,
     processed_episode_dir: str | Path,
@@ -156,10 +167,7 @@ def preflight_dynamic_pool_case(
         "candidate_ids": candidates.tolist(),
         "center_ids": centers.tolist(),
         "selected_cameras": list(selected_cameras),
-        "selection_score": [
-            float(value) if isinstance(value, float) else int(value)
-            for value in plan["selection_score"]
-        ],
+        "selection_score": _stable_selection_score(plan["selection_score"]),
         "staging_relative_paths": _staging_paths(
             case_dir.name,
             processed,

@@ -31,6 +31,15 @@ def test_preflight_cli_has_only_source_paths() -> None:
     assert args.output_dir == "output"
 
 
+def test_selection_score_is_stable_to_backend_roundoff() -> None:
+    first = (64, 64, 512, 81.13098975818097)
+    second = (64, 64, 512, 81.13098975818099)
+
+    assert preflight._stable_selection_score(first) == preflight._stable_selection_score(
+        second
+    )
+
+
 def test_case_preflight_uses_frame_zero_and_emits_staging_plan(
     tmp_path: Path,
     monkeypatch,
