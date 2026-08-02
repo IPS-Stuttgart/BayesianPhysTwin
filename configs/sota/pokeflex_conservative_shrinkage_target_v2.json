@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageTargetProtocol",
+  "protocol_id": "pokeflex-conservative-shrinkage-target-v2",
+  "locked_at_utc": "2026-08-02T18:05:10Z",
+  "status": "pre-outcome schema-support amendment; all eight target predictions must be regenerated at one new clean revision",
+  "claim_boundary": "This is a prospective causal one-step PokeFlex evaluation of one source-selected Bayesian-PhysTwin correction. Passing the direct metric-reference gate supports a result against the published PokeFlex metric values on this registered split, not identity with the paper's internal test split.",
+  "preoutcome_amendment": {
+    "supersedes_protocol_sha256": "7662ec3d92e2ae1d6872e32c218baaae27926924c730178d7477f98c684ff277",
+    "trigger": "one registered target take supplies T_WT but no T_WE in its prediction-input robot stream",
+    "target_mesh_outcome_opened": false,
+    "original_prediction_seal_count": 7,
+    "uniform_eight_take_rerun_required": true,
+    "policy": "a prediction frame lacking any required T_WT, T_WE, or force value in its frozen action-field history is unsupported and returns the released checkpoint exactly",
+    "forbidden_imputation": "T_WT may not be substituted for T_WE and no missing actuator pose may be inferred"
+  },
+  "source_gate": {
+    "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+    "result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+    "result_git_commit": "234e201d586712f5966908b86cacc3076dc5b6ca",
+    "passed": true,
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "source_object_count": 9,
+    "source_object_win_count": 9,
+    "source_object_balanced_relative_improvement": 0.01286289679729027
+  },
+  "target_cohort": {
+    "objects": [
+      "3dPrintedCylinder",
+      "3dPrintedPizza",
+      "FoamHalfSphere",
+      "Pillow",
+      "PlushDice",
+      "PlushTurtle",
+      "PlushVolleyball",
+      "Sponge"
+    ],
+    "take": "T2",
+    "replacement_allowed": false,
+    "selection_basis": "the target split registered in pokeflex-bayesian-registration-v1 before any target T2 outcome was opened"
+  },
+  "method": {
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "physical_prior": "released PokeFlex Kinect checkpoint",
+    "state_update": "robust correlation-aware graph registration at f-1",
+    "field": "action_local_state_relative_0.4",
+    "scale": 0.125,
+    "transfer": "one material-vertex-identity step from f-1 to f",
+    "required_action_history": "finite T_WT, T_WE, and force values for every frame used by the frozen action-local field",
+    "missing_required_robot_pose_action": "mark update unsupported and return byte-identical released checkpoint",
+    "unsupported_frame_action": "byte-identical released checkpoint",
+    "online_selector": "none"
+  },
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    }
+  },
+  "custody": {
+    "prediction_and_scoring_are_separate": true,
+    "required_prediction_seal_count": 8,
+    "all_prediction_revisions_must_match": true,
+    "implementation_checkout_must_be_clean": true,
+    "target_mesh_access_before_barrier": "forbidden",
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "template_mesh": "allowed explicit task input selected by the frozen upstream robot-metadata rule",
+    "prediction_frames": "all contiguous f from 6 through the last robot frame; active-frame filtering occurs only during locked scoring",
+    "scored_frames": "force-y at f exceeds 3 N, matching the frozen source evaluation",
+    "retry_policy": "the seven v1 seals are preserved as superseded; all eight predictions are rerun uniformly under this pre-outcome amendment, with no replacement or outcome-dependent method change"
+  },
+  "evaluation": {
+    "primary_metric": "CD_UL1_mm",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to target surface points in original metric coordinates",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720,
+    "aggregation": "equal frames within each T2 take, then equal physical objects",
+    "jaccard_definition": "trimesh boolean intersection volume divided by union volume",
+    "jaccard_boolean_backend": "manifold",
+    "minimum_candidate_jaccard_valid_fraction": 1.0,
+    "invalid_jaccard_action": "report the failure and fail the direct metric-reference gate; never substitute a voxel surrogate"
+  },
+  "gates": {
+    "direct_metric_reference": {
+      "CD_UL1_mm_below": 6.498,
+      "jaccard_not_below": 0.82,
+      "reference_scope": "published PokeFlex Kinect values on a different internal test split"
+    },
+    "paired_transfer": {
+      "relative_CD_UL1_improvement_above": 0.0,
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "maximum_per_object_relative_regression": 0.0,
+      "bootstrap_unit": "physical object",
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_upper_quantile": 0.975
+    }
+  },
+  "forbidden": [
+    "opening a target deformed mesh before all eight v2 prediction seals pass the barrier",
+    "using frame f Kinect or robot observations to predict frame f",
+    "substituting T_WT for missing T_WE or otherwise imputing a required actuator pose",
+    "changing the selected arm, scale, support radius, metric, or gate after target access",
+    "replacing a failed target object",
+    "tuning from target outcomes",
+    "claiming an identical split to the published internal PokeFlex test set",
+    "touching any held-v8 artifact or process"
+  ],
+  "protocol_sha256": "8e1f41002aecc93d09f6894259f78147d83c8990c95544563ccfd079fcfc9b22"
+}
