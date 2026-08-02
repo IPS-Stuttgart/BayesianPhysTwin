@@ -8,9 +8,13 @@ import pytest
 
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     CHECKPOINT_SHA256,
+    OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS,
+    OFFICIAL18_PROSPECTIVE_TAKE_IDS,
+    OFFICIAL18_TARGET_TAKE_IDS,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
+    TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
     TARGET_TAKE_IDS,
     UPSTREAM_COMMIT,
@@ -20,6 +24,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     file_sha256,
     load_pokeflex_shrinkage_target_protocol,
     prediction_seal_sha256,
+    protocol_requires_robot_history,
     score_one_prediction,
     target_protocol_sha256,
     validate_pokeflex_shrinkage_target_protocol,
@@ -33,6 +38,12 @@ PROTOCOL_PATH = (
 PROTOCOL_V2_PATH = (
     ROOT / "configs" / "sota" / "pokeflex_conservative_shrinkage_target_v2.json"
 )
+OFFICIAL18_PROTOCOL_PATH = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "pokeflex_conservative_shrinkage_official18_v1.json"
+)
 RUNNER_PATH = (
     ROOT / "scripts" / "held" / "run_pokeflex_conservative_shrinkage_target.py"
 )
@@ -44,6 +55,10 @@ def _protocol() -> dict[str, object]:
 
 def _protocol_v2() -> dict[str, object]:
     return json.loads(PROTOCOL_V2_PATH.read_text(encoding="utf-8"))
+
+
+def _official18_protocol() -> dict[str, object]:
+    return json.loads(OFFICIAL18_PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
 def _write_prediction(
@@ -88,7 +103,7 @@ def _write_prediction(
         action_supported=np.asarray([False, True], dtype=np.bool_),
         correction_rms_m=np.asarray([0.0, 0.001], dtype=np.float64),
     )
-    if protocol["protocol_id"] == TARGET_PROTOCOL_V2:
+    if protocol_requires_robot_history(str(protocol["protocol_id"])):
         if robot_history_supported is None:
             robot_history_supported = np.asarray([False, True], dtype=np.bool_)
         arrays["robot_history_supported"] = robot_history_supported
@@ -113,7 +128,7 @@ def _write_prediction(
         "future_mesh_read": False,
         "future_mesh_read_count": 0,
     }
-    if protocol["protocol_id"] == TARGET_PROTOCOL_V2:
+    if protocol_requires_robot_history(str(protocol["protocol_id"])):
         seal["missing_robot_history_frame_count"] = int(
             np.sum(~np.asarray(robot_history_supported, dtype=np.bool_))
         )
@@ -137,6 +152,22 @@ def test_v2_target_protocol_locks_preoutcome_missing_pose_fallback() -> None:
     assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
     assert loaded["protocol_id"] == TARGET_PROTOCOL_V2
     assert loaded["preoutcome_amendment"]["target_mesh_outcome_opened"] is False
+
+
+def test_official18_protocol_locks_exact_split_and_overlap_boundary() -> None:
+    loaded = load_pokeflex_shrinkage_target_protocol(OFFICIAL18_PROTOCOL_PATH)
+
+    assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
+    assert loaded["protocol_id"] == TARGET_PROTOCOL_OFFICIAL18_V1
+    assert tuple(loaded["target_cohort"]["take_ids"]) == OFFICIAL18_TARGET_TAKE_IDS
+    assert (
+        tuple(loaded["target_cohort"]["prospective_take_ids"])
+        == OFFICIAL18_PROSPECTIVE_TAKE_IDS
+    )
+    assert (
+        tuple(loaded["target_cohort"]["development_overlap_take_ids"])
+        == OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS
+    )
 
 
 def test_action_field_history_rejects_missing_end_effector_pose() -> None:
@@ -207,6 +238,21 @@ def test_barrier_requires_all_targets_and_one_revision(tmp_path: Path) -> None:
         build_prediction_barrier(paths, _protocol())
 
 
+def test_official18_barrier_requires_all_exact_takes(tmp_path: Path) -> None:
+    protocol = _official18_protocol()
+    paths = [
+        _write_prediction(tmp_path, take_id, protocol=protocol)
+        for take_id in OFFICIAL18_TARGET_TAKE_IDS
+    ]
+
+    barrier = build_prediction_barrier(paths, protocol)
+
+    assert barrier["prediction_count"] == 18
+    assert tuple(barrier["target_take_ids"]) == OFFICIAL18_TARGET_TAKE_IDS
+    with pytest.raises(ValueError, match="incomplete"):
+        build_prediction_barrier(paths[:-1], protocol)
+
+
 def test_prediction_function_has_no_target_mesh_loader() -> None:
     tree = ast.parse(RUNNER_PATH.read_text(encoding="utf-8"))
     prediction = next(
@@ -272,3 +318,37 @@ def test_target_aggregation_applies_direct_and_paired_gates() -> None:
     assert result["paired_transfer_passed"] is True
     assert result["all_target_gates_passed"] is True
     assert result["object_win_count"] == 8
+
+
+def test_official18_aggregation_applies_reproduction_and_prospective_gates() -> None:
+    rows = []
+    for take_id in OFFICIAL18_TARGET_TAKE_IDS:
+        object_name, _, _ = take_id.rpartition("_T")
+        rows.append(
+            {
+                "object_name": object_name,
+                "take_id": take_id,
+                "baseline_mean_CD_UL1_mm": 6.498,
+                "candidate_mean_CD_UL1_mm": 6.0,
+                "candidate_jaccard_valid_count": 0,
+                "candidate_mean_jaccard_valid": None,
+                "scored_frame_count": 1,
+                "frames": [
+                    {
+                        "baseline_CD_UL1_mm": 6.498,
+                        "candidate_CD_UL1_mm": 6.0,
+                        "candidate_jaccard": None,
+                    }
+                ],
+            }
+        )
+
+    result = evaluate_target_metrics(rows, _official18_protocol())
+
+    assert result["baseline_reproduction_passed"] is True
+    assert result["candidate_below_published_reference_passed"] is True
+    assert result["paired_transfer_passed"] is True
+    assert result["all_target_gates_passed"] is True
+    assert result["prospective_take_count"] == 15
+    assert result["development_overlap_take_count"] == 3
+    assert result["jaccard_is_gating"] is False
