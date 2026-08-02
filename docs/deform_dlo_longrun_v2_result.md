@@ -21,9 +21,22 @@ is repository-relative. It stopped before any candidate rollout. The preserved
 attempt-2 invocation changed only the working directory to the exact
 `f8e9e3a` archive root; no protocol, candidate, threshold, or data changed.
 
+The independent seed-43 run also completed all 6,400 updates and passed its
+DLO1 source gate. It selected update 5,200, obtained 9.0305 mm validation L1,
+10.4045 mm source L1, and beat persistence on all eight source trajectories.
+
+The preregistered two-seed evaluator then compared equal-weight and frozen
+validation-softmax predictive means against the lower-validation seed. The best
+candidate was the validation-softmax mean at 8.9714 mm validation L1 versus
+9.0305 mm for seed 43, a 0.6543% improvement. This missed the locked 1% gate.
+The evaluator therefore selected the exact seed-43 fallback, reported zero
+source-transfer improvement and zero candidate wins by construction, and did
+not authorize fresh DLO2 work.
+
 No DLO2 source trajectory or official DEFORM evaluation trajectory was opened.
-The independent seed-43 run and the separately frozen two-seed ensemble remain
-the only active route in this experiment.
+The checkpoint-posterior and independent-seed ensemble routes are both closed;
+the prepared DLO2 source, all-train, and one-shot evaluation machinery remains
+unexecuted.
 
 Compact checksummed evidence is in
 `results/sota/deform_dlo_longrun_v2/summary.json`; the complete source artifacts

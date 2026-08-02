@@ -33,5 +33,37 @@
     "selected_arm": "selected_single",
     "fresh_dlo2_checkpoint_posterior_authorized": false
   },
-  "execution_note": "The first invocation stopped before rollout because repository-relative lineage was resolved from the remote home directory. Attempt 2 ran the unchanged frozen evaluator from the exact archive root and produced the only outcome-bearing result."
+  "independent_seed": {
+    "execution_commit": "f03c521",
+    "protocol_sha256": "fb2a5eacc85f415fb078aef69de333cb25e1d9c8334343f055eb06c56bb87710",
+    "result_path": "/home/florianpfaff/source-only/deform-bayesian-v2/runs/dlo1-seed43-v1-f03c521/source_result.json",
+    "result_sha256": "6acadbf8375ae8cd265a91e52d4c949c9cc24faebfedfa83c96c6cdfe0ee36d6",
+    "completed_updates": 6400,
+    "selected_update": 5200,
+    "validation_l1_m": 0.009030461718793958,
+    "source_mean_l1_m": 0.010404471773654222,
+    "source_persistence_mean_l1_m": 0.058485901448875666,
+    "source_persistence_wins": 8,
+    "published_dlo1_reference_l1_m": 0.0101,
+    "source_gate_passed": true
+  },
+  "two_seed_ensemble": {
+    "evaluation_commit": "f8e9e3a",
+    "protocol_sha256": "8a64e2e81c598fc9fa375a9bed63ae51bd0077527ece1241e4e7d1443c5e9072",
+    "result_path": "/home/florianpfaff/source-only/deform-bayesian-v2/runs/dlo1-deep-ensemble-v1-f8e9e3a/ensemble_result.json",
+    "result_sha256": "626866e21bd5ffab0f5e918a0914ebe279bec3cb3e11b41ebbecba2171568961",
+    "selection_seal_sha256": "4568e1dc8282498b53f00f2b64067b19dab3073da5e8147a82260194d80be525",
+    "comparison_baseline_seed": 43,
+    "best_candidate": "validation_softmax_predictive_mean",
+    "baseline_validation_l1_m": 0.009030462416071309,
+    "candidate_validation_l1_m": 0.008971377253564386,
+    "validation_relative_improvement": 0.006542872312028088,
+    "required_validation_relative_improvement": 0.01,
+    "exact_fallback": true,
+    "selected_arm": "selected_single",
+    "source_transfer_relative_improvement": 0.0,
+    "source_transfer_wins": 0,
+    "fresh_dlo2_deep_ensemble_authorized": false
+  },
+  "execution_note": "The checkpoint-posterior attempt-2 and two-seed evaluator ran unchanged from the exact f8e9e3a archive. Both selected exact fallback before DLO2 access, so every DLO2 stage remains unopened and unexecuted."
 }
