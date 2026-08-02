@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageTargetSummary",
+  "protocol_sha256": "8e1f41002aecc93d09f6894259f78147d83c8990c95544563ccfd079fcfc9b22",
+  "implementation_revision": "118135a50ca9a73c12752c80fab266f661ce3b8b",
+  "source_result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "prediction_barrier_sha256": "7b9ae64a9f4d9118bfda55e00c53efe41e9c8603b3e8b28f18bdd37ea23ce20b",
+  "prediction_barrier_file_sha256": "5479e24aad405c515a23b989773999bb82f8db8ae7c32367985a888ac4ed9103",
+  "scoring_staging_manifest_sha256": "0baed344d86fa672f1448afe645de97101792996cf9a4ba84437b7cd901f7d67",
+  "scoring_staging_manifest_file_sha256": "3a2526beae79dcdeb8d0b94887da56bb77be7c293539c4b137802885530f284a",
+  "target_result_file_sha256": "eed0b72d7aa80cdf232fdbf98152cf76a675f2f80ed7adc7039d3b086829ed16",
+  "target_object_count": 8,
+  "active_target_frame_count": 649,
+  "eligible_updated_object_count": 7,
+  "exact_fallback_object_count": 1,
+  "baseline_object_balanced_CD_UL1_mm": 5.690544237803001,
+  "candidate_object_balanced_CD_UL1_mm": 5.630992823827412,
+  "object_balanced_relative_CD_UL1_improvement": 0.010464976896231151,
+  "bootstrap_upper_candidate_minus_baseline_CD_UL1_mm": -0.027105154890965155,
+  "object_win_count": 7,
+  "minimum_per_object_relative_improvement": 0.0,
+  "paired_transfer_passed": true,
+  "published_CD_UL1_reference_mm": 6.498,
+  "candidate_relative_below_published_CD_reference": 0.13342677380310689,
+  "candidate_jaccard_valid_fraction": 0.0,
+  "direct_metric_reference_passed": false,
+  "all_target_gates_passed": false,
+  "jaccard_failure": {
+    "error": "ValueError: Not all meshes are volumes!",
+    "affected_candidate_frames": 649,
+    "registered_action": "fail the direct metric-reference gate without substituting a surrogate",
+    "post_result_diagnostic": "the first scored released target mesh for all eight objects is non-watertight and non-volumetric; seven of eight corresponding prediction meshes are volumetric"
+  },
+  "objects": [
+    {
+      "object_name": "3dPrintedCylinder",
+      "baseline_CD_UL1_mm": 3.877644499521416,
+      "candidate_CD_UL1_mm": 3.7436660547393306,
+      "relative_improvement": 0.03455150279986242,
+      "supported_scored_frames": 56,
+      "scored_frames": 59
+    },
+    {
+      "object_name": "3dPrintedPizza",
+      "baseline_CD_UL1_mm": 2.0833537721595055,
+      "candidate_CD_UL1_mm": 2.071938311808362,
+      "relative_improvement": 0.005479367212468508,
+      "supported_scored_frames": 55,
+      "scored_frames": 60
+    },
+    {
+      "object_name": "FoamHalfSphere",
+      "baseline_CD_UL1_mm": 2.9745438810308955,
+      "candidate_CD_UL1_mm": 2.9159034107271093,
+      "relative_improvement": 0.019714104968410476,
+      "supported_scored_frames": 83,
+      "scored_frames": 88
+    },
+    {
+      "object_name": "Pillow",
+      "baseline_CD_UL1_mm": 7.830078720031265,
+      "candidate_CD_UL1_mm": 7.8012117424387135,
+      "relative_improvement": 0.0036866778259460934,
+      "supported_scored_frames": 73,
+      "scored_frames": 78
+    },
+    {
+      "object_name": "PlushDice",
+      "baseline_CD_UL1_mm": 8.93952830533373,
+      "candidate_CD_UL1_mm": 8.795309308264512,
+      "relative_improvement": 0.016132730066212898,
+      "supported_scored_frames": 83,
+      "scored_frames": 88
+    },
+    {
+      "object_name": "PlushTurtle",
+      "baseline_CD_UL1_mm": 6.8452206460829395,
+      "candidate_CD_UL1_mm": 6.782008570792717,
+      "relative_improvement": 0.00923448323413711,
+      "supported_scored_frames": 63,
+      "scored_frames": 68
+    },
+    {
+      "object_name": "PlushVolleyball",
+      "baseline_CD_UL1_mm": 9.256634640988478,
+      "candidate_CD_UL1_mm": 9.256634640988478,
+      "relative_improvement": 0.0,
+      "supported_scored_frames": 0,
+      "scored_frames": 96
+    },
+    {
+      "object_name": "Sponge",
+      "baseline_CD_UL1_mm": 3.71734943727578,
+      "candidate_CD_UL1_mm": 3.681270550860067,
+      "relative_improvement": 0.009705540741995226,
+      "supported_scored_frames": 107,
+      "scored_frames": 112
+    }
+  ],
+  "claim_boundary": "The prospective source-selected correction transfers positively against the released PokeFlex checkpoint on the registered public T2 cohort. Its CD_UL1 value is numerically below the published reference on a different split. The failed registered Jaccard-validity gate prevents a full direct metric-reference or state-of-the-art claim."
+}
