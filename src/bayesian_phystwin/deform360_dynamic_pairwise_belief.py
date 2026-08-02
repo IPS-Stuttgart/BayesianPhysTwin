@@ -41,7 +41,6 @@ from .phystwin_online_belief import (
     RecursiveRbfBeliefSnapshot,
     decode_recursive_rbf_belief,
     initialize_recursive_rbf_belief,
-    update_recursive_rbf_belief,
 )
 
 PROTOCOL_ID = "deform360-dynamic-pairwise-belief-open27-v1-development"
@@ -68,6 +67,133 @@ def _vector_cosine(first: np.ndarray, second: np.ndarray) -> float:
     if denominator <= 1e-15:
         return 0.0
     return float(np.clip(np.dot(left, right) / denominator, -1.0, 1.0))
+
+
+def _student_t_reliability(
+    residual_m: np.ndarray,
+    scale_m: np.ndarray,
+    *,
+    degrees_of_freedom: float,
+    minimum: float,
+) -> np.ndarray:
+    standardized = residual_m / scale_m[None]
+    squared_radius = np.sum(np.square(standardized), axis=1)
+    dimension = residual_m.shape[1]
+    reliability = (degrees_of_freedom + dimension) / (
+        degrees_of_freedom + squared_radius
+    )
+    return np.clip(reliability, minimum, 1.0)
+
+
+def update_metric_recursive_rbf_belief(
+    prior: RecursiveRbfBeliefSnapshot,
+    frame_index: int,
+    center_positions_m: np.ndarray,
+    measured_residual_m: np.ndarray,
+    available: np.ndarray,
+    *,
+    prior_reliability: np.ndarray,
+    observation_variance_m2: np.ndarray,
+    config: RecursiveRbfBeliefConfig,
+) -> tuple[RecursiveRbfBeliefSnapshot, np.ndarray]:
+    """Apply one metric, reliability-aware robust update to a frozen RBF prior."""
+
+    if frame_index < 0:
+        raise ValueError("frame_index must be nonnegative")
+    if prior.last_update_frame is not None and frame_index <= prior.last_update_frame:
+        raise ValueError("updates must have strictly increasing frame indices")
+    positions = np.asarray(center_positions_m, dtype=np.float64)
+    residual = np.asarray(measured_residual_m, dtype=np.float64)
+    mask = np.asarray(available, dtype=bool).copy()
+    reliability_prior = np.asarray(prior_reliability, dtype=np.float64)
+    metric_variance = np.asarray(observation_variance_m2, dtype=np.float64)
+    center_count = len(prior.center_ids)
+    expected_vector = (center_count,)
+    if positions.shape != (center_count, 3) or residual.shape != (center_count, 3):
+        raise ValueError("centre positions and residuals must have shape (K, 3)")
+    if (
+        mask.shape != expected_vector
+        or reliability_prior.shape != expected_vector
+        or metric_variance.shape != expected_vector
+    ):
+        raise ValueError("metric update vectors must have shape (K,)")
+    if not np.all(np.isfinite(reliability_prior)) or np.any(
+        (reliability_prior < 0.0) | (reliability_prior > 1.0)
+    ):
+        raise ValueError("prior reliability must lie in [0, 1]")
+    if not np.all(np.isfinite(metric_variance)) or np.any(metric_variance <= 0.0):
+        raise ValueError("metric observation variance must be positive")
+    mask &= np.all(np.isfinite(positions), axis=1)
+    mask &= np.all(np.isfinite(residual), axis=1)
+    mask &= reliability_prior > 0.0
+
+    elapsed = (
+        0 if prior.last_update_frame is None else frame_index - prior.last_update_frame
+    )
+    process_variance = elapsed * config.process_std_m_per_sqrt_frame**2
+    global_variance = prior.global_variance_m2 + process_variance
+    local_variance = prior.local_variance_m2 + process_variance
+    global_mean = prior.global_mean_m.copy()
+    local_mean = prior.local_mean_m.copy()
+    update_count = prior.update_count.copy()
+    combined_reliability = np.zeros(center_count, dtype=np.float64)
+
+    if np.any(mask):
+        selected = residual[mask]
+        selected_prior = reliability_prior[mask]
+        selected_variance = metric_variance[mask]
+        robust_location = np.median(selected, axis=0)
+        absolute_deviation = np.abs(selected - robust_location)
+        robust_scale = 1.4826 * np.median(absolute_deviation, axis=0)
+        robust_scale = np.maximum(robust_scale, config.observation_std_m)
+
+        effective_count = max(float(np.sum(selected_prior)), 1e-15)
+        metric_variance_floor = float(
+            np.average(selected_variance, weights=selected_prior)
+        )
+        global_observation_variance = np.maximum(
+            np.square(robust_scale), metric_variance_floor
+        ) / effective_count
+        global_gain = global_variance / (global_variance + global_observation_variance)
+        global_mean += global_gain * (robust_location - global_mean)
+        global_variance *= 1.0 - global_gain
+
+        local_observation = selected - global_mean
+        robust_reliability = _student_t_reliability(
+            local_observation,
+            np.maximum(robust_scale, config.observation_std_m),
+            degrees_of_freedom=config.degrees_of_freedom,
+            minimum=config.minimum_reliability,
+        )
+        selected_reliability = selected_prior * robust_reliability
+        selected_ids = np.flatnonzero(mask)
+        combined_reliability[selected_ids] = selected_reliability
+        for local_index, center_index in enumerate(selected_ids):
+            observation_variance = (
+                selected_variance[local_index] / selected_reliability[local_index]
+            )
+            gain = local_variance[center_index] / (
+                local_variance[center_index] + observation_variance
+            )
+            local_mean[center_index] += gain * (
+                local_observation[local_index] - local_mean[center_index]
+            )
+            local_variance[center_index] *= 1.0 - gain
+            update_count[center_index] += 1
+
+    posterior = RecursiveRbfBeliefSnapshot(
+        center_ids=prior.center_ids,
+        center_positions_m=np.where(mask[:, None], positions, prior.center_positions_m),
+        global_mean_m=global_mean,
+        global_variance_m2=np.maximum(global_variance, 1e-12),
+        local_mean_m=local_mean,
+        local_variance_m2=np.maximum(local_variance, 1e-12),
+        update_count=update_count,
+        last_update_frame=frame_index,
+        object_scale_m=prior.object_scale_m,
+    )
+    combined_reliability.setflags(write=False)
+    return posterior, combined_reliability
 
 
 @dataclass(frozen=True)
@@ -310,15 +436,15 @@ def _propose_belief_updates(
     for name, backbone in backbones.items():
         available = selected_mask & gates[name].inlier_mask
         residual = measurement[update, pool_ids] - backbone[update, pool_ids]
-        proposed[name], _ = update_recursive_rbf_belief(
+        proposed[name], _ = update_metric_recursive_rbf_belief(
             states[name],
             update,
             backbone[update, pool_ids],
             residual,
             available,
-            config=config.belief,
             prior_reliability=effective_reliability,
             observation_variance_m2=observation_variance_m2,
+            config=config.belief,
         )
     return proposed
 
@@ -671,4 +797,5 @@ __all__ = [
     "DynamicPairwiseBeliefConfig",
     "predict_dynamic_pairwise_belief_arrays",
     "select_dynamic_centers",
+    "update_metric_recursive_rbf_belief",
 ]

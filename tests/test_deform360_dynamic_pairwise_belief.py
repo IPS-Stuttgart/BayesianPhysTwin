@@ -10,6 +10,11 @@ from bayesian_phystwin.deform360_dynamic_pairwise_belief import (
     DynamicPairwiseBeliefConfig,
     predict_dynamic_pairwise_belief_arrays,
     select_dynamic_centers,
+    update_metric_recursive_rbf_belief,
+)
+from bayesian_phystwin.phystwin_online_belief import (
+    RecursiveRbfBeliefConfig,
+    initialize_recursive_rbf_belief,
 )
 
 
@@ -163,6 +168,44 @@ def test_correlated_duplicate_pool_cannot_increase_information() -> None:
     assert np.sum(duplicated.mutual_information_nats) <= np.sum(
         original.mutual_information_nats
     ) + 1e-12
+
+
+def test_metric_variance_and_prior_reliability_scale_recursive_update() -> None:
+    points = np.column_stack((np.linspace(0.0, 1.0, 5), np.zeros((5, 2))))
+    center_ids = np.asarray([0, 2, 4])
+    config = RecursiveRbfBeliefConfig()
+    prior = initialize_recursive_rbf_belief(
+        center_ids,
+        points[center_ids],
+        points,
+        config=config,
+    )
+    residual = np.repeat(np.asarray([[0.01, 0.0, 0.0]]), 3, axis=0)
+    available = np.ones(3, dtype=bool)
+    confident, _ = update_metric_recursive_rbf_belief(
+        prior,
+        1,
+        points[center_ids],
+        residual,
+        available,
+        prior_reliability=np.ones(3),
+        observation_variance_m2=np.full(3, 0.002**2),
+        config=config,
+    )
+    conservative, reliability = update_metric_recursive_rbf_belief(
+        prior,
+        1,
+        points[center_ids],
+        residual,
+        available,
+        prior_reliability=np.full(3, 0.25),
+        observation_variance_m2=np.full(3, 0.010**2),
+        config=config,
+    )
+
+    assert conservative.global_mean_m[0] < confident.global_mean_m[0]
+    assert np.all(conservative.local_variance_m2 > confident.local_variance_m2)
+    assert np.all(reliability <= 0.25)
 
 
 def test_insufficient_independent_views_is_exact_selected_fallback() -> None:

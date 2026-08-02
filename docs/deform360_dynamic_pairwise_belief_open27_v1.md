@@ -36,9 +36,10 @@ V12, V13, V14, DEFORM-DLO2, or any held-v8 attempt.
 
 ## Frozen Measurement Path
 
-The existing raw-camera AllTracker builder is run with `--center-count 64`.
-Its default remains 16, preserving the frozen earlier path. For update frame
-`u`, the tracker reads only RGB frames `[0, u]`. No future image, target
+The existing raw-camera AllTracker builder is invoked through the new opt-in
+`deform360_raw_camera_observation_pool` CLI with `--center-count 64`. The
+frozen earlier CLI and shared builder source remain byte-identical. For update
+frame `u`, the tracker reads only RGB frames `[0, u]`. No future image, target
 trajectory, manual future identity, or outcome manifest enters measurement
 construction.
 
