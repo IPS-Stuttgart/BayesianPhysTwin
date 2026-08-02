@@ -43,6 +43,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Active-query configuration, plan metadata, candidate identities, camera indices,
+  and nuisance-aware greedy selection counts now require genuine integer values;
+  booleans and fractional values fail closed instead of silently changing the
+  number or identity of selected observations.
 - The package now installs exactly one executable, `bpt`. Stable operations and
   research workflows are reached through grouped routes and lazy dispatch.
 - Command help, documentation, and installed-artifact tests now distinguish

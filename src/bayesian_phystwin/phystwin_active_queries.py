@@ -18,6 +18,26 @@ def _require(condition: bool | np.bool_, message: str) -> None:
         raise ValueError(message)
 
 
+def _integer_at_least(value: object, *, name: str, minimum: int) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
+        raise ValueError(f"{name} must be an integer >= {minimum}")
+    integer = int(value)
+    _require(integer >= minimum, f"{name} must be an integer >= {minimum}")
+    return integer
+
+
+def _integer_vector(value: np.ndarray, *, name: str) -> np.ndarray:
+    raw = np.asarray(value)
+    integer_dtype = np.issubdtype(raw.dtype, np.integer) and not np.issubdtype(
+        raw.dtype, np.bool_
+    )
+    _require(
+        raw.size == 0 or integer_dtype,
+        f"{name} must contain integers",
+    )
+    return np.asarray(raw, dtype=np.int64).copy()
+
+
 @dataclass(frozen=True)
 class PhysicsGuidedQueryConfig:
     """Selection and causal reseeding settings for one rollout prefix."""
@@ -39,12 +59,31 @@ class PhysicsGuidedQueryConfig:
     minimum_reseed_interval_frames: int = 2
 
     def __post_init__(self) -> None:
-        _require(self.query_count >= 1, "query_count must be positive")
-        _require(self.maximum_reseeds >= 0, "maximum_reseeds must be nonnegative")
-        _require(
-            self.minimum_camera_support >= 2,
-            "minimum_camera_support must retain independent multiview support",
-        )
+        discrete_values = {
+            "query_count": _integer_at_least(
+                self.query_count, name="query_count", minimum=1
+            ),
+            "maximum_reseeds": _integer_at_least(
+                self.maximum_reseeds, name="maximum_reseeds", minimum=0
+            ),
+            "minimum_camera_support": _integer_at_least(
+                self.minimum_camera_support,
+                name="minimum_camera_support",
+                minimum=2,
+            ),
+            "reseed_patience_frames": _integer_at_least(
+                self.reseed_patience_frames,
+                name="reseed_patience_frames",
+                minimum=1,
+            ),
+            "minimum_reseed_interval_frames": _integer_at_least(
+                self.minimum_reseed_interval_frames,
+                name="minimum_reseed_interval_frames",
+                minimum=1,
+            ),
+        }
+        for name, value in discrete_values.items():
+            object.__setattr__(self, name, value)
         _require(
             np.isfinite(self.minimum_motion_m) and self.minimum_motion_m >= 0.0,
             "minimum_motion_m must be finite and nonnegative",
@@ -80,14 +119,6 @@ class PhysicsGuidedQueryConfig:
             np.isfinite(self.mode_regularization) and self.mode_regularization > 0.0,
             "mode_regularization must be positive",
         )
-        _require(
-            self.reseed_patience_frames >= 1,
-            "reseed_patience_frames must be positive",
-        )
-        _require(
-            self.minimum_reseed_interval_frames >= 1,
-            "minimum_reseed_interval_frames must be positive",
-        )
 
 
 @dataclass(frozen=True)
@@ -110,12 +141,31 @@ class PhysicsGuidedQueryPlan:
     prefix_frame_count: int
 
     def __post_init__(self) -> None:
+        requested_active_queries = _integer_at_least(
+            self.requested_active_queries,
+            name="requested_active_queries",
+            minimum=1,
+        )
+        minimum_camera_support = _integer_at_least(
+            self.minimum_camera_support,
+            name="minimum_camera_support",
+            minimum=2,
+        )
+        prefix_frame_count = _integer_at_least(
+            self.prefix_frame_count,
+            name="prefix_frame_count",
+            minimum=1,
+        )
+        object.__setattr__(self, "requested_active_queries", requested_active_queries)
+        object.__setattr__(self, "minimum_camera_support", minimum_camera_support)
+        object.__setattr__(self, "prefix_frame_count", prefix_frame_count)
+
         arrays = {
-            "node_ids": np.asarray(self.node_ids, dtype=np.int64).copy(),
-            "seed_frames": np.asarray(self.seed_frames, dtype=np.int64).copy(),
-            "replaces_node_ids": np.asarray(
-                self.replaces_node_ids, dtype=np.int64
-            ).copy(),
+            "node_ids": _integer_vector(self.node_ids, name="node_ids"),
+            "seed_frames": _integer_vector(self.seed_frames, name="seed_frames"),
+            "replaces_node_ids": _integer_vector(
+                self.replaces_node_ids, name="replaces_node_ids"
+            ),
             "camera_mask": np.asarray(self.camera_mask, dtype=bool).copy(),
             "seed_pixels_xy": np.asarray(self.seed_pixels_xy, dtype=np.float64).copy(),
             "motion_score": np.asarray(self.motion_score, dtype=np.float64).copy(),
@@ -162,12 +212,6 @@ class PhysicsGuidedQueryPlan:
             arrays["seed_pixels_xy"].shape == (event_count, camera_count, 2),
             "seed_pixels_xy must have shape (Q, C, 2)",
         )
-        _require(self.requested_active_queries >= 1, "requested query count is invalid")
-        _require(
-            self.minimum_camera_support >= 2,
-            "minimum camera support must be multiview",
-        )
-        _require(self.prefix_frame_count >= 1, "prefix frame count is invalid")
         if event_count:
             node_ids = arrays["node_ids"]
             seed_frames = arrays["seed_frames"]
@@ -249,14 +293,15 @@ class PhysicsGuidedQueryPlan:
         """Return node IDs, ``[seed_frame, x, y]``, and replacement IDs."""
 
         camera_count = self.camera_mask.shape[1]
-        if not 0 <= camera_index < camera_count:
+        index = _integer_at_least(camera_index, name="camera_index", minimum=0)
+        if index >= camera_count:
             raise ValueError("camera_index lies outside the query plan")
-        keep = self.camera_mask[:, camera_index]
+        keep = self.camera_mask[:, index]
         node_ids = self.node_ids[keep].copy()
         queries = np.column_stack(
             (
                 self.seed_frames[keep].astype(np.float64),
-                self.seed_pixels_xy[keep, camera_index],
+                self.seed_pixels_xy[keep, index],
             )
         )
         replaces = self.replaces_node_ids[keep].copy()
@@ -577,7 +622,7 @@ def plan_physics_guided_queries(
     if candidate_ids is None:
         candidates = np.arange(node_count, dtype=np.int64)
     else:
-        candidates = np.asarray(candidate_ids, dtype=np.int64)
+        candidates = _integer_vector(candidate_ids, name="candidate_ids")
         _require(
             candidates.ndim == 1 and len(candidates) >= 1,
             "candidate_ids is empty",
