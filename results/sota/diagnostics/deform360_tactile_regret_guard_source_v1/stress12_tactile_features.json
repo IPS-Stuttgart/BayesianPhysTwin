@@ -1,0 +1,1614 @@
+{
+  "artifact_kind": "Deform360CausalTactileFeatureAudit",
+  "artifact_sha256": "7fac787d6d081c265d37177175a36ae97d0076b2384fd96e82cd2c1afba45765",
+  "cases": [
+    {
+      "case": "007-feather-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 31223,
+      "object": "007-feather",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769378436516038.npy",
+          "data": "brics-odroid_tactilel_left_1769378474581965.npy",
+          "data_sha256": "8b4176e8a8b1cc9fcf20a1e6a515cc303d1dde5cc7e393f6e02ec7128eea46ed",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769378474581965.txt"
+        },
+        {
+          "baseline": "median_1769378437043597.npy",
+          "data": "brics-odroid_tactilel_right_1769378474582017.npy",
+          "data_sha256": "eef6e4515bbcc8250bc559b95733169c19d80ed59dc027601622d88010a703f6",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769378474582017.txt"
+        },
+        {
+          "baseline": "median_1769378435806815.npy",
+          "data": "brics-odroid_tactiler_left_1769378474590592.npy",
+          "data_sha256": "90247855edd90ae24959d6bc65f5ccc7d5866adc807ece9120f31f3749dbcd0a",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769378474590592.txt"
+        },
+        {
+          "baseline": "median_1769378436417605.npy",
+          "data": "brics-odroid_tactiler_right_1769378474585820.npy",
+          "data_sha256": "5a217b4dcb225826cf13450b7e0c8dd985c5c9a653f7a150f7c86ef43a8b3e1b",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769378474585820.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.02959830866807611,
+          "energy_concentration": 0.4989106753812636,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.6818857329980162,
+          "mean_pattern_change_fraction_3": 0.3309834693757141,
+          "mean_pattern_cosine_3": 0.9182751884696699,
+          "segment_energy_cv": 0.0187842036101407,
+          "sensor_active_taxels": [
+            57,
+            50,
+            21,
+            5
+          ],
+          "sensor_energy": [
+            81.0,
+            114.5,
+            26.0,
+            8.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0657894736842106,
+            0.9462809917355371,
+            1.0196078431372548,
+            0.8
+          ],
+          "total_energy": 229.5,
+          "total_energy_change_fraction_3": -0.0014503263234228114,
+          "total_energy_over_initial": 0.9870967741935484,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 3.175475687103594,
+          "energy_concentration": 0.5093670886075949,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 1.1631599960755994,
+          "mean_pattern_change_fraction_3": 0.5530127299566219,
+          "mean_pattern_cosine_3": 0.9359658188973329,
+          "segment_energy_cv": 0.6671448018178676,
+          "sensor_active_taxels": [
+            56,
+            51,
+            88,
+            59
+          ],
+          "sensor_energy": [
+            84.0,
+            120.5,
+            503.0,
+            280.0
+          ],
+          "sensor_energy_over_initial": [
+            1.105263157894737,
+            0.9958677685950413,
+            19.725490196078432,
+            28.0
+          ],
+          "total_energy": 987.5,
+          "total_energy_change_fraction_3": 0.6078697421981005,
+          "total_energy_over_initial": 4.247311827956989,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 3.9471458773784356,
+          "energy_concentration": 0.41367521367521365,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.1500220636906393,
+          "mean_pattern_change_fraction_3": 0.08522559228472616,
+          "mean_pattern_cosine_3": 0.9954942750847657,
+          "segment_energy_cv": 0.05058358916379026,
+          "sensor_active_taxels": [
+            53,
+            53,
+            82,
+            72
+          ],
+          "sensor_energy": [
+            81.5,
+            127.5,
+            477.0,
+            484.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0723684210526316,
+            1.0537190082644627,
+            18.705882352941178,
+            48.4
+          ],
+          "total_energy": 1170.0,
+          "total_energy_change_fraction_3": 0.007318123116659492,
+          "total_energy_over_initial": 5.032258064516129,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "012-hat-cloth-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 51350,
+      "object": "012-hat-cloth",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1766171881588973.npy",
+          "data": "brics-odroid_tactilel_left_1766172122868110.npy",
+          "data_sha256": "ae19eeac6806819ec50c1d14a04d18adb723439b38218bff4a2b041cdd0f72dc",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1766172122868110.txt"
+        },
+        {
+          "baseline": "median_1766171882169473.npy",
+          "data": "brics-odroid_tactilel_right_1766172122899137.npy",
+          "data_sha256": "d7efce9e29054cd7b203428283ec76dc44c7dcba0927e95adba03e637c45ebfb",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1766172122899137.txt"
+        },
+        {
+          "baseline": "median_1766171877526034.npy",
+          "data": "brics-odroid_tactiler_left_1766172122852707.npy",
+          "data_sha256": "151ff8ffe6cf45352a2fb9b00bba2f5a5871e83cb05abcbd640ce3f85313c551",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1766172122852707.txt"
+        },
+        {
+          "baseline": "median_1766171878211419.npy",
+          "data": "brics-odroid_tactiler_right_1766172122860591.npy",
+          "data_sha256": "909cd17f310424ec0fc7fdeb24b52b2246c5e7578003c79a981bb69ccb2b8b3e",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1766172122860591.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.19915019397746167,
+          "energy_concentration": 0.6043829296424452,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.2206109732558935,
+          "mean_pattern_change_fraction_3": 0.18462114910580585,
+          "mean_pattern_cosine_3": 0.9825657696733717,
+          "segment_energy_cv": 0.07102153545653765,
+          "sensor_active_taxels": [
+            74,
+            51,
+            58,
+            54
+          ],
+          "sensor_energy": [
+            114.5,
+            75.0,
+            668.0,
+            1310.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0177777777777777,
+            0.9433962264150944,
+            0.604524886877828,
+            0.9300674476393326
+          ],
+          "total_energy": 2167.5,
+          "total_energy_change_fraction_3": -0.04690362770245505,
+          "total_energy_over_initial": 0.8011458140824247,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.8834287825605025,
+          "energy_concentration": 0.3803486529318542,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 1.7320508075688774,
+          "mean_pattern_change_fraction_3": 0.6003036227258312,
+          "mean_pattern_cosine_3": 0.9340825743619281,
+          "segment_energy_cv": 0.7807698852060172,
+          "sensor_active_taxels": [
+            77,
+            52,
+            35,
+            2
+          ],
+          "sensor_energy": [
+            116.5,
+            77.0,
+            120.0,
+            2.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0355555555555556,
+            0.9685534591194969,
+            0.1085972850678733,
+            0.0014199503017394391
+          ],
+          "total_energy": 315.5,
+          "total_energy_change_fraction_3": -0.02573340195573866,
+          "total_energy_over_initial": 0.11661430419515802,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.8970995750969887,
+          "energy_concentration": 0.40754039497307004,
+          "loaded_sensor_fraction": 0.75,
+          "maximum_pattern_change_fraction_3": 0.554700196225229,
+          "mean_pattern_change_fraction_3": 0.22134639095601072,
+          "mean_pattern_cosine_3": 0.9533707126363704,
+          "segment_energy_cv": 0.05340980961079646,
+          "sensor_active_taxels": [
+            74,
+            54,
+            26,
+            1
+          ],
+          "sensor_energy": [
+            113.5,
+            73.0,
+            91.0,
+            1.0
+          ],
+          "sensor_energy_over_initial": [
+            1.008888888888889,
+            0.9182389937106918,
+            0.08235294117647059,
+            0.0007099751508697196
+          ],
+          "total_energy": 278.5,
+          "total_energy_change_fraction_3": -0.01763668430335097,
+          "total_energy_over_initial": 0.10293845869525041,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "014-glove-vinyl-cloth-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 32202,
+      "object": "014-glove-vinyl-cloth",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769646566282437.npy",
+          "data": "brics-odroid_tactilel_left_1769646605194410.npy",
+          "data_sha256": "8ec1f093e650ce480bf48b370721ba8669fe305738424466bcb21c999950a78a",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769646605194410.txt"
+        },
+        {
+          "baseline": "median_1769646566869250.npy",
+          "data": "brics-odroid_tactilel_right_1769646605212453.npy",
+          "data_sha256": "92d73ff4768ec36b50b24a3dfabcaf3bdbf34b825f3a83e322c978d9ef3db20e",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769646605212453.txt"
+        },
+        {
+          "baseline": "median_1769646565303670.npy",
+          "data": "brics-odroid_tactiler_left_1769646605212419.npy",
+          "data_sha256": "8d4d4a48d985654a635de8c5d26fc4d141a7cdaef79dd9f7ed02bc725b129a94",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769646605212419.txt"
+        },
+        {
+          "baseline": "median_1769646565953762.npy",
+          "data": "brics-odroid_tactiler_right_1769646605194724.npy",
+          "data_sha256": "c60eb2062e2586372f2463e92c4fa4a7acd11d4cd96dcdf909ec43622809d899",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769646605194724.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.002749770852428964,
+          "energy_concentration": 0.6060329067641682,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.4822428221704121,
+          "mean_pattern_change_fraction_3": 0.17790624301656818,
+          "mean_pattern_cosine_3": 0.9647827959865649,
+          "segment_energy_cv": 0.002685659793147196,
+          "sensor_active_taxels": [
+            30,
+            15,
+            101,
+            70
+          ],
+          "sensor_energy": [
+            38.0,
+            17.0,
+            663.0,
+            376.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9620253164556962,
+            1.0,
+            0.9954954954954955,
+            1.0080428954423593
+          ],
+          "total_energy": 1094.0,
+          "total_energy_change_fraction_3": -0.0015211439002130293,
+          "total_energy_over_initial": 0.998630762209037,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.04216315307057745,
+          "energy_concentration": 0.5822339489885664,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.2753713563286057,
+          "mean_pattern_change_fraction_3": 0.1538404399501367,
+          "mean_pattern_cosine_3": 0.9819054284687974,
+          "segment_energy_cv": 0.014610611277875527,
+          "sensor_active_taxels": [
+            35,
+            16,
+            99,
+            75
+          ],
+          "sensor_energy": [
+            44.0,
+            19.0,
+            662.0,
+            412.0
+          ],
+          "sensor_energy_over_initial": [
+            1.1139240506329113,
+            1.1176470588235294,
+            0.993993993993994,
+            1.1045576407506703
+          ],
+          "total_energy": 1137.0,
+          "total_energy_change_fraction_3": 0.004712812960235775,
+          "total_energy_over_initial": 1.0378822455499772,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.7937671860678277,
+          "energy_concentration": 0.6755555555555556,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.5063160398440778,
+          "mean_pattern_change_fraction_3": 0.32613483201833926,
+          "mean_pattern_cosine_3": 0.9369364294516853,
+          "segment_energy_cv": 0.5053109194656814,
+          "sensor_active_taxels": [
+            32,
+            16,
+            72,
+            7
+          ],
+          "sensor_energy": [
+            40.0,
+            18.0,
+            152.0,
+            15.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0126582278481013,
+            1.0588235294117647,
+            0.22822822822822822,
+            0.040214477211796246
+          ],
+          "total_energy": 225.0,
+          "total_energy_change_fraction_3": -0.057262569832402306,
+          "total_energy_over_initial": 0.2053856686444546,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "018-trashbag-cloth-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 34349,
+      "object": "018-trashbag-cloth",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769454358062388.npy",
+          "data": "brics-odroid_tactilel_left_1769454535027633.npy",
+          "data_sha256": "7784c5fd9dde744c90006b0c5d6a2d35434286bc9ba74b5ad0b7a18bdb0c55f5",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769454535027633.txt"
+        },
+        {
+          "baseline": "median_1769454358665501.npy",
+          "data": "brics-odroid_tactilel_right_1769454535048100.npy",
+          "data_sha256": "46e6d8d9e5578fbef2bbd2ed5ad62cbb5f8775be20acbb07254823935290de0a",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769454535048100.txt"
+        },
+        {
+          "baseline": "median_1769454355478481.npy",
+          "data": "brics-odroid_tactiler_left_1769454535048144.npy",
+          "data_sha256": "c0659a0d7a882346e599c81a80492cfc05162c7b42a99e495c0ab376ac4960ef",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769454535048144.txt"
+        },
+        {
+          "baseline": "median_1769454356161216.npy",
+          "data": "brics-odroid_tactiler_right_1769454535048501.npy",
+          "data_sha256": "ce65104b875e5733ac7ef2e03ba4c8bc56bdaa16369551cce0ff72922de32c59",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769454535048501.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.028676470588235293,
+          "energy_concentration": 0.43376230128690385,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.1825917774124759,
+          "mean_pattern_change_fraction_3": 0.08106562702678372,
+          "mean_pattern_cosine_3": 0.9947812224614073,
+          "segment_energy_cv": 0.009593229284588134,
+          "sensor_active_taxels": [
+            104,
+            37,
+            75,
+            73
+          ],
+          "sensor_energy": [
+            195.0,
+            80.0,
+            573.0,
+            473.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0051546391752577,
+            0.975609756097561,
+            1.0017482517482517,
+            0.9357072205736894
+          ],
+          "total_energy": 1321.0,
+          "total_energy_change_fraction_3": -0.005520702634880747,
+          "total_energy_over_initial": 0.9759881787957149,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.0058823529411764705,
+          "energy_concentration": 0.42616959064327486,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.08503091108427586,
+          "mean_pattern_change_fraction_3": 0.055974262431110214,
+          "mean_pattern_cosine_3": 0.9982007514224951,
+          "segment_energy_cv": 0.011461117595309345,
+          "sensor_active_taxels": [
+            103,
+            36,
+            76,
+            77
+          ],
+          "sensor_energy": [
+            193.0,
+            81.0,
+            583.0,
+            511.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9948453608247423,
+            0.9878048780487805,
+            1.0192307692307692,
+            1.0108803165182987
+          ],
+          "total_energy": 1368.0,
+          "total_energy_change_fraction_3": 0.007116564417177971,
+          "total_energy_over_initial": 1.0107129663834502,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.016911764705882352,
+          "energy_concentration": 0.4083769633507853,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.30050125348238005,
+          "mean_pattern_change_fraction_3": 0.11592764910498164,
+          "mean_pattern_cosine_3": 0.9919973513579734,
+          "segment_energy_cv": 0.011922766386560575,
+          "sensor_active_taxels": [
+            105,
+            36,
+            66,
+            81
+          ],
+          "sensor_energy": [
+            196.0,
+            74.0,
+            546.0,
+            521.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0103092783505154,
+            0.9024390243902439,
+            0.9545454545454546,
+            1.0306627101879327
+          ],
+          "total_energy": 1337.0,
+          "total_energy_change_fraction_3": 0.0,
+          "total_energy_over_initial": 0.9878093830809014,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "019-trashbag-plastic-cloth-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 34242,
+      "object": "019-trashbag-plastic-cloth",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769460597210742.npy",
+          "data": "brics-odroid_tactilel_left_1769460643183575.npy",
+          "data_sha256": "06ac3bb37c542371a4b1d9123e4724f2326757d99cc059119236dec745a56586",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769460643183575.txt"
+        },
+        {
+          "baseline": "median_1769460597934242.npy",
+          "data": "brics-odroid_tactilel_right_1769460643215794.npy",
+          "data_sha256": "3f2b695c0e0140d10162c8d35e9e2fa7d2ee6356ef48b06f6ec0d7e18db9eae2",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769460643215794.txt"
+        },
+        {
+          "baseline": "median_1769460596302485.npy",
+          "data": "brics-odroid_tactiler_left_1769460643211775.npy",
+          "data_sha256": "14c3dccf10674677f1721e9f72bbe441f010df394ba9b7f0f593cfbf624364ad",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769460643211775.txt"
+        },
+        {
+          "baseline": "median_1769460596981580.npy",
+          "data": "brics-odroid_tactiler_right_1769460643183490.npy",
+          "data_sha256": "43d2e83bdd559ad9f9adcb23ffb74159ead15d1f5188ad387c78e93348af5d2d",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769460643183490.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.037262357414448666,
+          "energy_concentration": 0.5080645161290323,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.4797212214725609,
+          "mean_pattern_change_fraction_3": 0.17696749748879662,
+          "mean_pattern_cosine_3": 0.9671120947138113,
+          "segment_energy_cv": 0.010519597993735605,
+          "sensor_active_taxels": [
+            33,
+            25,
+            87,
+            108
+          ],
+          "sensor_energy": [
+            35.0,
+            35.0,
+            601.0,
+            693.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0294117647058822,
+            1.0769230769230769,
+            0.9917491749174917,
+            1.0413223140495869
+          ],
+          "total_energy": 1364.0,
+          "total_energy_change_fraction_3": 0.011369253583786569,
+          "total_energy_over_initial": 1.0194319880418534,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.0311787072243346,
+          "energy_concentration": 0.5051622418879056,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.43355498476206,
+          "mean_pattern_change_fraction_3": 0.21780658120731752,
+          "mean_pattern_cosine_3": 0.9576471495140677,
+          "segment_energy_cv": 0.011387913035078068,
+          "sensor_active_taxels": [
+            35,
+            24,
+            89,
+            103
+          ],
+          "sensor_energy": [
+            37.0,
+            34.0,
+            600.0,
+            685.0
+          ],
+          "sensor_energy_over_initial": [
+            1.088235294117647,
+            1.0461538461538462,
+            0.9900990099009901,
+            1.0293012772351615
+          ],
+          "total_energy": 1356.0,
+          "total_energy_change_fraction_3": 0.008428358948934003,
+          "total_energy_over_initial": 1.0134529147982063,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.013688212927756654,
+          "energy_concentration": 0.5056264066016504,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.2830889839296111,
+          "mean_pattern_change_fraction_3": 0.13533902182083174,
+          "mean_pattern_cosine_3": 0.9851125673300389,
+          "segment_energy_cv": 0.011386522586782988,
+          "sensor_active_taxels": [
+            32,
+            21,
+            92,
+            103
+          ],
+          "sensor_energy": [
+            35.0,
+            30.0,
+            594.0,
+            674.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0294117647058822,
+            0.9230769230769231,
+            0.9801980198019802,
+            1.0127723516153269
+          ],
+          "total_energy": 1333.0,
+          "total_energy_change_fraction_3": -0.008676251859196883,
+          "total_energy_over_initial": 0.9962630792227205,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "020-cutting-mat-cloth-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 43366,
+      "object": "020-cutting-mat-cloth",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1766174740595919.npy",
+          "data": "brics-odroid_tactilel_left_1766175020904583.npy",
+          "data_sha256": "965ced3bef2a43ee5715bd5fb6adccb16f59c4e961bcb31d7503d378a3a81866",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1766175020904583.txt"
+        },
+        {
+          "baseline": "median_1766174741244297.npy",
+          "data": "brics-odroid_tactilel_right_1766175020910017.npy",
+          "data_sha256": "580eab9f8a1250a76b91a596eb97d09fb666cff417a0af7162e8e19d2f41f617",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1766175020910017.txt"
+        },
+        {
+          "baseline": "median_1766174738683034.npy",
+          "data": "brics-odroid_tactiler_left_1766175020876231.npy",
+          "data_sha256": "333fc813bf326177e099cee1320c9466f410d860c6ba81c462f11cae83aacc8d",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1766175020876231.txt"
+        },
+        {
+          "baseline": "median_1766174739438851.npy",
+          "data": "brics-odroid_tactiler_right_1766175020872135.npy",
+          "data_sha256": "992d4adac564f6ac943e9ed9ec04efa8775b3e5c2faec3210941a57ba4c6c7fc",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1766175020872135.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.008717310087173101,
+          "energy_concentration": 0.33209876543209876,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 2.569046515733026,
+          "mean_pattern_change_fraction_3": 0.7106496545067281,
+          "mean_pattern_cosine_3": 0.8645586959179931,
+          "segment_energy_cv": 0.015772433365317577,
+          "sensor_active_taxels": [
+            79,
+            34,
+            65,
+            8
+          ],
+          "sensor_energy": [
+            132.5,
+            128.0,
+            134.5,
+            10.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9742647058823529,
+            1.003921568627451,
+            1.0590551181102361,
+            0.8695652173913043
+          ],
+          "total_energy": 405.0,
+          "total_energy_change_fraction_3": 0.03934987168520113,
+          "total_energy_over_initial": 1.007462686567164,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.031133250311332503,
+          "energy_concentration": 0.34318766066838047,
+          "loaded_sensor_fraction": 0.75,
+          "maximum_pattern_change_fraction_3": 1.0,
+          "mean_pattern_change_fraction_3": 0.309287155359033,
+          "mean_pattern_cosine_3": 0.7469720529288233,
+          "segment_energy_cv": 0.013615578590809776,
+          "sensor_active_taxels": [
+            79,
+            32,
+            66,
+            0
+          ],
+          "sensor_energy": [
+            131.5,
+            124.0,
+            133.5,
+            0.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9669117647058824,
+            0.9725490196078431,
+            1.0511811023622046,
+            0.0
+          ],
+          "total_energy": 389.0,
+          "total_energy_change_fraction_3": -0.013524936601859631,
+          "total_energy_over_initial": 0.9676616915422885,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.024906600249066,
+          "energy_concentration": 0.34355044699872284,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.7337993857053428,
+          "mean_pattern_change_fraction_3": 0.21590856371315872,
+          "mean_pattern_cosine_3": 0.9225246661052121,
+          "segment_energy_cv": 0.00924830303573856,
+          "sensor_active_taxels": [
+            79,
+            32,
+            59,
+            4
+          ],
+          "sensor_energy": [
+            134.5,
+            123.0,
+            130.0,
+            4.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9889705882352942,
+            0.9647058823529412,
+            1.0236220472440944,
+            0.34782608695652173
+          ],
+          "total_energy": 391.5,
+          "total_energy_change_fraction_3": -0.007604562737642729,
+          "total_energy_over_initial": 0.9738805970149254,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "048-butter-sponge-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 74359,
+      "object": "048-butter-sponge",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1766160241556726.npy",
+          "data": "brics-odroid_tactilel_left_1766160638193210.npy",
+          "data_sha256": "948cffc0ae7eee7983ee8310c34123d8b7ddcfb3ce0aa892b9da22071046d910",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1766160638193210.txt"
+        },
+        {
+          "baseline": "median_1766160242151820.npy",
+          "data": "brics-odroid_tactilel_right_1766160638187078.npy",
+          "data_sha256": "ec04d0fbebc4fd62930013445530ad917c5e0fb3f98c04c2b0e584e5c8b04f61",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1766160638187078.txt"
+        },
+        {
+          "baseline": "median_1766160239526271.npy",
+          "data": "brics-odroid_tactiler_left_1766160638188991.npy",
+          "data_sha256": "fbb4649b2d540835ce687bccb35f48ee31944f987bf5859c7de6a82071c5f8f5",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1766160638188991.txt"
+        },
+        {
+          "baseline": "median_1766160240154038.npy",
+          "data": "brics-odroid_tactiler_right_1766160638218987.npy",
+          "data_sha256": "cc4c6ee05b1ef9ac1255ad2484362338f656f4026b755f14d6fc4655f11fb39d",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1766160638218987.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.0064495324089003546,
+          "energy_concentration": 0.5845882729894265,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.1279455290972533,
+          "mean_pattern_change_fraction_3": 0.06717905516798252,
+          "mean_pattern_cosine_3": 0.9971545249960223,
+          "segment_energy_cv": 0.007484095565520382,
+          "sensor_active_taxels": [
+            111,
+            66,
+            89,
+            119
+          ],
+          "sensor_energy": [
+            263.0,
+            438.5,
+            595.0,
+            1824.5
+          ],
+          "sensor_energy_over_initial": [
+            1.0193798449612403,
+            0.9887260428410372,
+            1.0798548094373865,
+            1.0
+          ],
+          "total_energy": 3121.0,
+          "total_energy_change_fraction_3": -0.003724196637582561,
+          "total_energy_over_initial": 1.0142996425089372,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.0064495324089003546,
+          "energy_concentration": 0.6082986222364627,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.10346775339716156,
+          "mean_pattern_change_fraction_3": 0.06281643172744925,
+          "mean_pattern_cosine_3": 0.9975579951164137,
+          "segment_energy_cv": 0.01013575412536147,
+          "sensor_active_taxels": [
+            112,
+            66,
+            68,
+            123
+          ],
+          "sensor_energy": [
+            260.0,
+            440.5,
+            522.0,
+            1898.5
+          ],
+          "sensor_energy_over_initial": [
+            1.0077519379844961,
+            0.9932356257046223,
+            0.9473684210526315,
+            1.040559057275966
+          ],
+          "total_energy": 3121.0,
+          "total_energy_change_fraction_3": 0.003698343785174465,
+          "total_energy_over_initial": 1.0142996425089372,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.7389551757497581,
+          "energy_concentration": 0.5429277331686226,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.580350758522708,
+          "mean_pattern_change_fraction_3": 0.19613061568561518,
+          "mean_pattern_cosine_3": 0.9852482604844948,
+          "segment_energy_cv": 0.5435327657485394,
+          "sensor_active_taxels": [
+            110,
+            66,
+            33,
+            18
+          ],
+          "sensor_energy": [
+            256.0,
+            439.5,
+            86.0,
+            28.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9922480620155039,
+            0.9909808342728298,
+            0.1560798548094374,
+            0.01534667032063579
+          ],
+          "total_energy": 809.5,
+          "total_energy_change_fraction_3": -0.046712463199214876,
+          "total_energy_over_initial": 0.2630809229769256,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "050-boxing-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 34241,
+      "object": "050-boxing",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769279340223983.npy",
+          "data": "brics-odroid_tactilel_left_1769279426552756.npy",
+          "data_sha256": "3a441c9418a3e296e2e527e9ff2a17b400128f1f398386992e197b43565ece96",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769279426552756.txt"
+        },
+        {
+          "baseline": "median_1769279340785054.npy",
+          "data": "brics-odroid_tactilel_right_1769279426552689.npy",
+          "data_sha256": "801f24d76cbd7b6fc5ddb710b227bd84305754fe7ec5820fcf3c26b047771d89",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769279426552689.txt"
+        },
+        {
+          "baseline": "median_1769279341497305.npy",
+          "data": "brics-odroid_tactiler_left_1769279426565956.npy",
+          "data_sha256": "8ab208c2b10fc0863ba61167fbe529bcb0f6a446e0d86f008fb7ef3175e5ace6",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769279426565956.txt"
+        },
+        {
+          "baseline": "median_1769279342169665.npy",
+          "data": "brics-odroid_tactiler_right_1769279426555013.npy",
+          "data_sha256": "2d81ff0e2e2d92c56311eb0ee5dbeb129fa7eab509e5a4204920dc6c9ca9b762",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769279426555013.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.5775127768313458,
+          "energy_concentration": 0.6306695464362851,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.5575040903982775,
+          "mean_pattern_change_fraction_3": 0.23587467357637598,
+          "mean_pattern_cosine_3": 0.9478616566992315,
+          "segment_energy_cv": 0.16872975423176279,
+          "sensor_active_taxels": [
+            17,
+            7,
+            38,
+            27
+          ],
+          "sensor_energy": [
+            21.0,
+            7.0,
+            314.0,
+            584.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9545454545454546,
+            0.8235294117647058,
+            1.043189368770764,
+            2.151012891344383
+          ],
+          "total_energy": 926.0,
+          "total_energy_change_fraction_3": 0.025849335302806413,
+          "total_energy_over_initial": 1.5356550580431176,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.534923339011925,
+          "energy_concentration": 0.6037735849056604,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.39528470752104744,
+          "mean_pattern_change_fraction_3": 0.19264985999106599,
+          "mean_pattern_cosine_3": 0.9676955754613895,
+          "segment_energy_cv": 0.017797980594269007,
+          "sensor_active_taxels": [
+            17,
+            6,
+            39,
+            26
+          ],
+          "sensor_energy": [
+            21.0,
+            6.0,
+            330.0,
+            544.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9545454545454546,
+            0.7058823529411765,
+            1.0963455149501662,
+            2.0036832412523022
+          ],
+          "total_energy": 901.0,
+          "total_energy_change_fraction_3": -0.013863553447646804,
+          "total_energy_over_initial": 1.494195688225539,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.31175468483816016,
+          "energy_concentration": 0.5896103896103896,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.7971913312948083,
+          "mean_pattern_change_fraction_3": 0.29623028460707834,
+          "mean_pattern_cosine_3": 0.9205566632768621,
+          "segment_energy_cv": 0.07337383866709837,
+          "sensor_active_taxels": [
+            19,
+            10,
+            30,
+            21
+          ],
+          "sensor_energy": [
+            23.0,
+            11.0,
+            282.0,
+            454.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0454545454545454,
+            1.2941176470588236,
+            0.9368770764119602,
+            1.6721915285451197
+          ],
+          "total_energy": 770.0,
+          "total_energy_change_fraction_3": -0.0030211480362536784,
+          "total_energy_over_initial": 1.2769485903814262,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "051-cube-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 25196,
+      "object": "051-cube",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769464491882420.npy",
+          "data": "brics-odroid_tactilel_left_1769464515190030.npy",
+          "data_sha256": "6b200e3eac93cfa48134846dd2bc5d5731e2a6f0a523d31a0c97837696249392",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769464515190030.txt"
+        },
+        {
+          "baseline": "median_1769464492448159.npy",
+          "data": "brics-odroid_tactilel_right_1769464515188046.npy",
+          "data_sha256": "53589a10299bdecd72bd285537155f82713fb61f2baae1715f88c77b98c73654",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769464515188046.txt"
+        },
+        {
+          "baseline": "median_1769464491240896.npy",
+          "data": "brics-odroid_tactiler_left_1769464515194099.npy",
+          "data_sha256": "466a51d913c9d672a9ccffb95560c88178e57dd438d51d5fb7a73405b8a3e7bc",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769464515194099.txt"
+        },
+        {
+          "baseline": "median_1769464491904483.npy",
+          "data": "brics-odroid_tactiler_right_1769464515194151.npy",
+          "data_sha256": "2caa7472bebd8df8d85a682d9510e0ab85e3af7398ce3d24c693ad6c35d9f174",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769464515194151.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.03763440860215054,
+          "energy_concentration": 0.40932642487046633,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.9201549232998366,
+          "mean_pattern_change_fraction_3": 0.5045756236629888,
+          "mean_pattern_cosine_3": 0.8441210816299791,
+          "segment_energy_cv": 0.05205158759740181,
+          "sensor_active_taxels": [
+            27,
+            14,
+            24,
+            9
+          ],
+          "sensor_energy": [
+            30.5,
+            16.5,
+            39.5,
+            10.0
+          ],
+          "sensor_energy_over_initial": [
+            0.991869918699187,
+            1.1578947368421053,
+            1.082191780821918,
+            0.9090909090909091
+          ],
+          "total_energy": 96.5,
+          "total_energy_change_fraction_3": -0.060064935064935106,
+          "total_energy_over_initial": 1.0432432432432432,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.06989247311827956,
+          "energy_concentration": 0.40703517587939697,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.7608859102526822,
+          "mean_pattern_change_fraction_3": 0.4092665344205525,
+          "mean_pattern_cosine_3": 0.9149719342766103,
+          "segment_energy_cv": 0.03789992342668685,
+          "sensor_active_taxels": [
+            30,
+            13,
+            28,
+            12
+          ],
+          "sensor_energy": [
+            34.5,
+            12.5,
+            40.5,
+            12.0
+          ],
+          "sensor_energy_over_initial": [
+            1.1219512195121952,
+            0.8771929824561403,
+            1.1095890410958904,
+            1.0909090909090908
+          ],
+          "total_energy": 99.5,
+          "total_energy_change_fraction_3": 0.04920913884007035,
+          "total_energy_over_initial": 1.0756756756756756,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.08064516129032258,
+          "energy_concentration": 0.373134328358209,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.8918825850158447,
+          "mean_pattern_change_fraction_3": 0.4029033251575705,
+          "mean_pattern_cosine_3": 0.9056176103815567,
+          "segment_energy_cv": 0.036736280064618536,
+          "sensor_active_taxels": [
+            31,
+            14,
+            24,
+            12
+          ],
+          "sensor_energy": [
+            35.5,
+            15.5,
+            37.5,
+            12.0
+          ],
+          "sensor_energy_over_initial": [
+            1.1544715447154472,
+            1.087719298245614,
+            1.0273972602739727,
+            1.0909090909090908
+          ],
+          "total_energy": 100.5,
+          "total_energy_change_fraction_3": 0.03253424657534252,
+          "total_energy_over_initial": 1.0864864864864865,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "053-squeezer-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 35389,
+      "object": "053-squeezer",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1769730455107643.npy",
+          "data": "brics-odroid_tactilel_left_1769730492582945.npy",
+          "data_sha256": "31f24e75204a514a4db863179f291301ef7a712fe96355fca247db5231eba85f",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1769730492582945.txt"
+        },
+        {
+          "baseline": "median_1769730455687804.npy",
+          "data": "brics-odroid_tactilel_right_1769730492622436.npy",
+          "data_sha256": "4faebd94f673c70c68419f376e985503ec176c3c2a4a9d60ad0a810565afe071",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1769730492622436.txt"
+        },
+        {
+          "baseline": "median_1769730467729286.npy",
+          "data": "brics-odroid_tactiler_left_1769730492583661.npy",
+          "data_sha256": "1f337ff90fa790b1cb28093e6cfcacb58dbfaa4bdd70644f712f0c3d8eee4068",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1769730492583661.txt"
+        },
+        {
+          "baseline": "median_1769730468370363.npy",
+          "data": "brics-odroid_tactiler_right_1769730492611470.npy",
+          "data_sha256": "d755db4649825f3f26aefc5517de2509611149cb00f4904356239b7507ab715a",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1769730492611470.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.03142159853569249,
+          "energy_concentration": 0.5313385826771654,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.3456210712828079,
+          "mean_pattern_change_fraction_3": 0.1736388126177485,
+          "mean_pattern_cosine_3": 0.9755913068329077,
+          "segment_energy_cv": 0.009268765928339797,
+          "sensor_active_taxels": [
+            24,
+            22,
+            58,
+            40
+          ],
+          "sensor_energy": [
+            28.0,
+            28.0,
+            1687.0,
+            1432.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9824561403508771,
+            1.0,
+            0.9808139534883721,
+            0.9565798263193053
+          ],
+          "total_energy": 3175.0,
+          "total_energy_change_fraction_3": -0.008741804558226662,
+          "total_energy_over_initial": 0.9699098823888804,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.862111043319097,
+          "energy_concentration": 0.504424778761062,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.5609116959735323,
+          "mean_pattern_change_fraction_3": 0.35287979963290667,
+          "mean_pattern_cosine_3": 0.9358963818294271,
+          "segment_energy_cv": 0.5741620961068061,
+          "sensor_active_taxels": [
+            26,
+            22,
+            65,
+            31
+          ],
+          "sensor_energy": [
+            29.0,
+            31.0,
+            228.0,
+            164.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0175438596491229,
+            1.1071428571428572,
+            0.1325581395348837,
+            0.10955243820975284
+          ],
+          "total_energy": 452.0,
+          "total_energy_change_fraction_3": -0.2586112629852378,
+          "total_energy_over_initial": 0.13807850924087367,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.9234289200732154,
+          "energy_concentration": 0.6772908366533864,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.5367826312580717,
+          "mean_pattern_change_fraction_3": 0.344557150141847,
+          "mean_pattern_cosine_3": 0.9350006341599864,
+          "segment_energy_cv": 0.16474036641362302,
+          "sensor_active_taxels": [
+            28,
+            22,
+            77,
+            10
+          ],
+          "sensor_energy": [
+            31.0,
+            32.0,
+            170.0,
+            18.0
+          ],
+          "sensor_energy_over_initial": [
+            1.087719298245614,
+            1.1428571428571428,
+            0.09883720930232558,
+            0.012024048096192385
+          ],
+          "total_energy": 251.0,
+          "total_energy_change_fraction_3": -0.07720588235294118,
+          "total_energy_over_initial": 0.07667634030853826,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "162-straw-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 37972,
+      "object": "162-straw",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1766072466105710.npy",
+          "data": "brics-odroid_tactilel_left_1766073601980954.npy",
+          "data_sha256": "6807dc989895b5a29b8225a8016bdaac41db53e4ae1b7d84459e6930fcebf84a",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1766073601980954.txt"
+        },
+        {
+          "baseline": "median_1766072466788173.npy",
+          "data": "brics-odroid_tactilel_right_1766073601973527.npy",
+          "data_sha256": "cb8292e110ba5dfebff3438eab9c879304191af3bb3369383612f7a710a31ec3",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1766073601973527.txt"
+        },
+        {
+          "baseline": "median_1766072463252323.npy",
+          "data": "brics-odroid_tactiler_left_1766073601968062.npy",
+          "data_sha256": "5c0af1930800eabd49538c03081c156e91c6f7cb43bb95ad128e49616056cdf6",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1766073601968062.txt"
+        },
+        {
+          "baseline": "median_1766072464150175.npy",
+          "data": "brics-odroid_tactiler_right_1766073601973539.npy",
+          "data_sha256": "b777cd59e156a4e91fd75b967e53ea8090ad0a23a4fd4f2937a823bffb126c81",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1766073601973539.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.056525881232137185,
+          "energy_concentration": 0.7285843101893598,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.34844234738093166,
+          "mean_pattern_change_fraction_3": 0.21052110042680972,
+          "mean_pattern_cosine_3": 0.9752435151424288,
+          "segment_energy_cv": 0.04539797821520396,
+          "sensor_active_taxels": [
+            70,
+            34,
+            36,
+            35
+          ],
+          "sensor_energy": [
+            102.0,
+            70.5,
+            279.0,
+            1212.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9902912621359223,
+            1.0071428571428571,
+            2.9214659685863875,
+            0.9199240986717268
+          ],
+          "total_energy": 1663.5,
+          "total_energy_change_fraction_3": -0.04148660328435609,
+          "total_energy_over_initial": 1.0488650693568726,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.07113369323594793,
+          "energy_concentration": 0.6356359324043878,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.1485940306284472,
+          "mean_pattern_change_fraction_3": 0.10365671411119207,
+          "mean_pattern_cosine_3": 0.9937494864535389,
+          "segment_energy_cv": 0.0340659237526272,
+          "sensor_active_taxels": [
+            69,
+            35,
+            43,
+            31
+          ],
+          "sensor_energy": [
+            101.0,
+            70.5,
+            443.0,
+            1072.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9805825242718447,
+            1.0071428571428571,
+            4.638743455497382,
+            0.8136622390891841
+          ],
+          "total_energy": 1686.5,
+          "total_energy_change_fraction_3": 0.010182689427972447,
+          "total_energy_over_initial": 1.0633669609079446,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": -0.00825658939345824,
+          "energy_concentration": 0.5904578930515529,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.232890758258435,
+          "mean_pattern_change_fraction_3": 0.14008210396818183,
+          "mean_pattern_cosine_3": 0.9878344903621279,
+          "segment_energy_cv": 0.029660349519533925,
+          "sensor_active_taxels": [
+            72,
+            32,
+            52,
+            32
+          ],
+          "sensor_energy": [
+            105.0,
+            65.5,
+            469.0,
+            922.0
+          ],
+          "sensor_energy_over_initial": [
+            1.0194174757281553,
+            0.9357142857142857,
+            4.9109947643979055,
+            0.6998102466793169
+          ],
+          "total_energy": 1561.5,
+          "total_energy_change_fraction_3": -0.0014920601087073332,
+          "total_energy_over_initial": 0.9845523329129886,
+          "update_frame": 57
+        }
+      ]
+    },
+    {
+      "case": "200-watch-ep0000",
+      "episode_index": 0,
+      "frame_count": 81,
+      "maximum_alignment_delta_us": 36542,
+      "object": "200-watch",
+      "sensor_count": 4,
+      "source_records": [
+        {
+          "baseline": "median_1770413379466047.npy",
+          "data": "brics-odroid_tactilel_left_1770413405699336.npy",
+          "data_sha256": "a11642d99fff6a14e6e515a0cf09ad8a9ae3e6eb7b7c2268b0085a1ef2aa2d2b",
+          "sensor": "brics-odroid_tactilel_left",
+          "timestamps": "brics-odroid_tactilel_left_1770413405699336.txt"
+        },
+        {
+          "baseline": "median_1770413380083131.npy",
+          "data": "brics-odroid_tactilel_right_1770413405698030.npy",
+          "data_sha256": "36130179764edb05b23275786b5da28bb82ebac5b396b28bf4e194139024dc5c",
+          "sensor": "brics-odroid_tactilel_right",
+          "timestamps": "brics-odroid_tactilel_right_1770413405698030.txt"
+        },
+        {
+          "baseline": "median_1770413378927342.npy",
+          "data": "brics-odroid_tactiler_left_1770413405696060.npy",
+          "data_sha256": "b54d49f89fa3d4d5804b7b997a11a4df97a3533f86582b4508bc07297653b659",
+          "sensor": "brics-odroid_tactiler_left",
+          "timestamps": "brics-odroid_tactiler_left_1770413405696060.txt"
+        },
+        {
+          "baseline": "median_1770413379611119.npy",
+          "data": "brics-odroid_tactiler_right_1770413405696632.npy",
+          "data_sha256": "2f82217c02ee2c759d8eeaaaf33e237bd4671195392e590224a809d83d4692fb",
+          "sensor": "brics-odroid_tactiler_right",
+          "timestamps": "brics-odroid_tactiler_right_1770413405696632.txt"
+        }
+      ],
+      "updates": [
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.012738853503184714,
+          "energy_concentration": 0.37735849056603776,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.7472894743280937,
+          "mean_pattern_change_fraction_3": 0.4546265340682928,
+          "mean_pattern_cosine_3": 0.8610032800636663,
+          "segment_energy_cv": 0.028631783848296243,
+          "sensor_active_taxels": [
+            34,
+            15,
+            35,
+            12
+          ],
+          "sensor_energy": [
+            42.0,
+            60.0,
+            41.0,
+            16.0
+          ],
+          "sensor_energy_over_initial": [
+            0.8571428571428571,
+            1.1538461538461537,
+            1.0789473684210527,
+            1.5238095238095237
+          ],
+          "total_energy": 159.0,
+          "total_energy_change_fraction_3": 0.0236051502145924,
+          "total_energy_over_initial": 1.0635451505016722,
+          "update_frame": 19
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 0.025477707006369428,
+          "energy_concentration": 0.36645962732919257,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.4053217416888888,
+          "mean_pattern_change_fraction_3": 0.2490227978992941,
+          "mean_pattern_cosine_3": 0.9699346649192704,
+          "segment_energy_cv": 0.035190339262398944,
+          "sensor_active_taxels": [
+            39,
+            15,
+            33,
+            9
+          ],
+          "sensor_energy": [
+            48.0,
+            59.0,
+            41.0,
+            13.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9795918367346939,
+            1.1346153846153846,
+            1.0789473684210527,
+            1.2380952380952381
+          ],
+          "total_energy": 161.0,
+          "total_energy_change_fraction_3": 0.00625,
+          "total_energy_over_initial": 1.0769230769230769,
+          "update_frame": 38
+        },
+        {
+          "cumulative_energy_change_from_frame0_fraction": 1.2452229299363058,
+          "energy_concentration": 0.5092198581560283,
+          "loaded_sensor_fraction": 1.0,
+          "maximum_pattern_change_fraction_3": 0.6809725806162275,
+          "mean_pattern_change_fraction_3": 0.3257134018738615,
+          "mean_pattern_cosine_3": 0.9375312967887751,
+          "segment_energy_cv": 0.32597749301045753,
+          "sensor_active_taxels": [
+            39,
+            21,
+            55,
+            17
+          ],
+          "sensor_energy": [
+            48.0,
+            66.0,
+            179.5,
+            59.0
+          ],
+          "sensor_energy_over_initial": [
+            0.9795918367346939,
+            1.2692307692307692,
+            4.723684210526316,
+            5.619047619047619
+          ],
+          "total_energy": 352.5,
+          "total_energy_change_fraction_3": 0.10790990047145095,
+          "total_energy_over_initial": 2.3578595317725752,
+          "update_frame": 57
+        }
+      ]
+    }
+  ],
+  "information_boundary": {
+    "each_update_uses_tactile_at_or_before_update": true,
+    "future_tactile_used_for_update": false,
+    "held_v8_read": false,
+    "opened_source_only": true,
+    "target_outcomes_read": false
+  },
+  "update_frames": [
+    19,
+    38,
+    57
+  ]
+}

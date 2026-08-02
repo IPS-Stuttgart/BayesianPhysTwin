@@ -1,0 +1,76 @@
+{
+  "artifact_kind": "Deform360TactileRegretGuardSourceDevelopmentProtocol",
+  "claim_boundary": "Post-open source-development lock. The result may justify a fresh prospective test but cannot establish confirmation or state of the art.",
+  "created_date": "2026-08-02",
+  "evaluation": {
+    "candidate_arm": "dual_backbone_pairwise_consensus_rbf",
+    "held_object_excluded_from_each_fit": true,
+    "metric_unit": "m",
+    "object_balanced_reporting": true,
+    "opened_positive_panel": {
+      "case_count": 27,
+      "object_count": 5
+    },
+    "opened_stress_panel": {
+      "case_count": 12,
+      "object_count": 12
+    },
+    "selected_baseline_arm": "selected_raw_backbone",
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "implementation": {
+    "diagnostic_runner_sha256": "1b0429de6a9dd659514affd642779da0e8e818084625e0bbf0fa4653cb212033",
+    "tactile_guard_module_sha256": "c8a39a2f0467b0088d249aa17be9aab39b2092acf9092a25fcdd0c4b42e46ac4"
+  },
+  "information_boundary": {
+    "episode_wide_tactile_normalization_used": false,
+    "fresh_target_read": false,
+    "future_tactile_read": false,
+    "held_v8_read": false,
+    "opened_source_outcomes_used_to_fit_guard": true,
+    "rejected_interval_is_bit_exact_baseline": true,
+    "target_argument_accepted": false
+  },
+  "inputs": {
+    "open27_tactile_features_sha256": "a3379df47579d12b4b8a4485183d79b52d6ef5895fda1d8132f5c86a1b6ee3fb",
+    "pairwise_source_result_sha256": "fea8d63d0115d85ace552fea819cc3b34363c1402d702d80e3f637760d7edce1",
+    "stress12_tactile_features_sha256": "0ae48f657a786366e24a5b0cc23a9d3e80331928895d58b94ab9b95d564b7abf"
+  },
+  "method": {
+    "admission_threshold": 0.7,
+    "feature_names": [
+      "total_energy_over_initial",
+      "total_energy_change_fraction_3",
+      "mean_pattern_change_fraction_3",
+      "maximum_pattern_change_fraction_3",
+      "mean_pattern_cosine_3",
+      "energy_concentration",
+      "segment_energy_cv",
+      "cumulative_energy_change_from_frame0_fraction",
+      "sensor_ratio_min",
+      "sensor_ratio_max",
+      "sensor_ratio_std",
+      "active_taxel_mean",
+      "active_taxel_std"
+    ],
+    "history_frame_count": 3,
+    "initial_reference_frame_count": 6,
+    "object_balanced_source_loss": true,
+    "raw_baseline_subtracted_taxels": true,
+    "ridge_penalty": 10.0,
+    "score_semantics": "linear source-fitted benefit score; not a probability"
+  },
+  "protocol_id": "deform360-tactile-regret-guard-source-v1",
+  "protocol_sha256": "0591dfb5c88e3b578099b86503b7e8d1d9bf664258fb86b94bf354ded516986e",
+  "source_advancement_gates": {
+    "at_least_three_beneficial_updates_admitted": true,
+    "combined_accepted_regressive_update_count_maximum": 0,
+    "open27_chamfer_improvement_percent_maximum": -2.0,
+    "open27_identity_improvement_percent_maximum": -2.0,
+    "stress12_accepted_regressive_update_count_maximum": 0
+  }
+}
