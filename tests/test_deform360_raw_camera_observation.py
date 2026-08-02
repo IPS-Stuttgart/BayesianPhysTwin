@@ -20,6 +20,12 @@ from bayesian_phystwin.deform360_raw_camera_observation import (
 )
 
 
+def test_raw_camera_config_normalizes_json_update_frames() -> None:
+    config = RawCameraObservationConfig(update_frames=[19, 38, 57])
+
+    assert config.update_frames == (19, 38, 57)
+
+
 def _camera_to_world(x: float, y: float = 0.0) -> np.ndarray:
     result = np.eye(4)
     result[:3, 3] = (x, y, 0.0)

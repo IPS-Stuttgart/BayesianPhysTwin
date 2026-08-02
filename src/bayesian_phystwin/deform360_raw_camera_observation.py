@@ -100,8 +100,10 @@ class RawCameraObservationConfig:
             raise ValueError("AllTracker window length must exceed one")
         if not 0.0 < self.visibility_threshold < 1.0:
             raise ValueError("visibility threshold must lie in (0, 1)")
-        if tuple(sorted(set(self.update_frames))) != self.update_frames:
+        normalized_update_frames = tuple(int(frame) for frame in self.update_frames)
+        if tuple(sorted(set(normalized_update_frames))) != normalized_update_frames:
             raise ValueError("update_frames must be strictly increasing")
+        object.__setattr__(self, "update_frames", normalized_update_frames)
 
 
 def expected_open_case_names() -> tuple[str, ...]:
