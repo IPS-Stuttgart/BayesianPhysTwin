@@ -55,7 +55,7 @@ Registered result:
 `results/sota/diagnostics/deform360_cross_modal_support_guard_source_v2/result.json`
 
 Canonical artifact SHA-256:
-`9568028f00a93ee74900145ad2da73ac51d01db0751a725dd024a28224166e11`
+`a8fad12b9df844bd2152eee660e6dcdfb545830191d65cafac5a5be081e6f148`
 
-File SHA-256:
-`1c8e8ccabc24f5dd12733de26d4efce09e4a8f35a318e96fe23df9c037da5078`
+LF-normalized Git-text SHA-256:
+`db991a8bbebf838371830204239b92ad00f6aa5b4d095ba34d0eb7673be07cf9`

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import sys
@@ -34,6 +35,12 @@ if _SOURCE_V1_SPEC is None or _SOURCE_V1_SPEC.loader is None:
     raise RuntimeError("could not load causal-support source v1 helpers")
 source_v1 = importlib.util.module_from_spec(_SOURCE_V1_SPEC)
 _SOURCE_V1_SPEC.loader.exec_module(source_v1)
+
+
+def _lf_normalized_sha256(path: Path) -> str:
+    """Hash a Git text artifact independently of checkout line endings."""
+
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _extra_feature_lookup(
@@ -229,8 +236,8 @@ def main() -> int:
     source_v1._require(
         source_v1._file_sha256(paths["source_result"])
         == inputs["pairwise_source_result_sha256"]
-        and source_v1._file_sha256(paths["source_v1_result"])
-        == inputs["causal_support_source_v1_result_sha256"]
+        and _lf_normalized_sha256(paths["source_v1_result"])
+        == inputs["causal_support_source_v1_result_lf_sha256"]
         and source_v1._file_sha256(paths["open27_tactile"])
         == inputs["open27_tactile_features_sha256"]
         and source_v1._file_sha256(paths["stress12_tactile"])
@@ -326,7 +333,16 @@ def main() -> int:
         "inputs": {
             name: {
                 "path": source_v1._display_path(path),
-                "file_sha256": source_v1._file_sha256(path),
+                "file_sha256": (
+                    _lf_normalized_sha256(path)
+                    if name == "source_v1_result"
+                    else source_v1._file_sha256(path)
+                ),
+                "hash_semantics": (
+                    "lf-normalized-git-text"
+                    if name == "source_v1_result"
+                    else "raw-bytes"
+                ),
             }
             for name, path in paths.items()
         },

@@ -20,14 +20,18 @@ def _canonical_sha256(payload: dict[str, object]) -> str:
     return hashlib.sha256(blob).hexdigest()
 
 
+def _lf_normalized_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def test_registered_cross_modal_support_source_v2_result() -> None:
     payload = json.loads(RESULT.read_text(encoding="utf-8"))
     assert payload["artifact_sha256"] == _canonical_sha256(payload)
     assert payload["artifact_sha256"] == (
-        "9568028f00a93ee74900145ad2da73ac51d01db0751a725dd024a28224166e11"
+        "a8fad12b9df844bd2152eee660e6dcdfb545830191d65cafac5a5be081e6f148"
     )
-    assert hashlib.sha256(RESULT.read_bytes()).hexdigest() == (
-        "1c8e8ccabc24f5dd12733de26d4efce09e4a8f35a318e96fe23df9c037da5078"
+    assert _lf_normalized_sha256(RESULT) == (
+        "db991a8bbebf838371830204239b92ad00f6aa5b4d095ba34d0eb7673be07cf9"
     )
 
     cross_fitted = payload["cross_fitted"]
