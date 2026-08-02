@@ -35,6 +35,12 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--device", default="cuda:0")
     build.add_argument("--shard-index", type=int, default=0)
     build.add_argument("--shard-count", type=int, default=1)
+    build.add_argument(
+        "--center-count",
+        type=int,
+        default=16,
+        help="Causal frame-zero observation pool size; frozen default remains 16.",
+    )
     build.add_argument("--camera-count", type=int, default=8)
     build.add_argument("--max-side", type=int, default=512)
     build.add_argument(
@@ -61,6 +67,7 @@ def main() -> None:
                 "AllTracker source revision differs from the protocol lock"
             )
         config = RawCameraObservationConfig(
+            center_count=args.center_count,
             selected_camera_count=args.camera_count,
             alltracker_max_side=args.max_side,
         )

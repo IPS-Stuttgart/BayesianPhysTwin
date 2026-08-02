@@ -1,0 +1,43 @@
+{
+  "advancement_gates": {
+    "all_64_observed_identities_excluded_from_every_score": true,
+    "all_acceptances_pass_physical_and_multiview_guards": true,
+    "all_rejections_are_exact_fallback": true,
+    "at_least_four_of_five_joint_object_wins": true,
+    "both_primary_cluster_intervals_exclude_zero": true,
+    "both_primary_metrics_improve_at_least_one_percent": true,
+    "late_identity_improves": true,
+    "maximum_object_relative_regression": 0.02
+  },
+  "candidate": {
+    "active_center_count": 16,
+    "association_candidate_count": 24,
+    "information_effective_sample_cap": 8.0,
+    "maximum_correction_to_physical_motion_ratio": 2.0,
+    "minimum_action_support": 0.1,
+    "minimum_correction_physical_cosine": 0.0,
+    "minimum_inlier_view_count": 3,
+    "minimum_observed_motion_m": 0.0005,
+    "minimum_physical_agreement_gain": 0.4,
+    "minimum_physical_response_m": 0.0005,
+    "observation_pool_count": 64,
+    "observation_variance_floor_m2": 0.000025,
+    "pairwise_absolute_strain_m": 0.03,
+    "pairwise_minimum_inlier_count": 9,
+    "pairwise_minimum_inlier_fraction": 0.7,
+    "pairwise_relative_strain": 0.1,
+    "physical_response_rank": 4,
+    "update_frames": [19, 38, 57]
+  },
+  "claim_boundary": "already-open Open27 source development only",
+  "forbidden": [
+    "held-v8 access",
+    "fresh-object access",
+    "future-frame observation input",
+    "post-outcome threshold tuning",
+    "revival of V12, V13, V14, or DEFORM-DLO2"
+  ],
+  "protocol_id": "deform360-dynamic-pairwise-belief-open27-v1-development",
+  "source_bundle_manifest_sha256": "02babb4e041fce354a168a76c055a043032dbbf5eb5320e2c8a0e409bb2d83bb",
+  "status": "implementation-locked-before-new-64-pool-source-outcomes"
+}

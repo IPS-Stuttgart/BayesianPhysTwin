@@ -342,12 +342,15 @@ def update_recursive_rbf_belief(
     available: np.ndarray,
     *,
     config: RecursiveRbfBeliefConfig,
+    prior_reliability: np.ndarray | None = None,
+    observation_variance_m2: np.ndarray | None = None,
 ) -> tuple[RecursiveRbfBeliefSnapshot, np.ndarray]:
     """Apply one robust causal measurement update.
 
-    Returns the posterior and the Student-t reliability assigned to each
-    centre.  Unavailable centres receive zero reliability and retain their
-    predicted prior.
+    Residual-independent reliability and metric observation variance are
+    optional so legacy callers retain their exact likelihood. The innovation
+    enters once through the Student-t weight. The returned reliability is the
+    product of prior and robust reliability; unavailable centres receive zero.
     """
 
     if frame_index < 0:
@@ -356,14 +359,39 @@ def update_recursive_rbf_belief(
         raise ValueError("updates must have strictly increasing frame indices")
     positions = np.asarray(center_positions_m, dtype=float)
     residual = np.asarray(measured_residual_m, dtype=float)
-    mask = np.asarray(available, dtype=bool)
+    mask = np.asarray(available, dtype=bool).copy()
     center_count = len(prior.center_ids)
     if positions.shape != (center_count, 3) or residual.shape != (center_count, 3):
         raise ValueError("centre positions and residuals must have shape (K, 3)")
     if mask.shape != (center_count,):
         raise ValueError("available must have shape (K,)")
+    if prior_reliability is None:
+        prior_weight = np.ones(center_count, dtype=float)
+    else:
+        prior_weight = np.asarray(prior_reliability, dtype=float)
+        if prior_weight.shape != (center_count,):
+            raise ValueError("prior_reliability must have shape (K,)")
+        if not np.all(np.isfinite(prior_weight)) or np.any(
+            (prior_weight < 0.0) | (prior_weight > 1.0)
+        ):
+            raise ValueError("prior_reliability must lie in [0, 1]")
+    if observation_variance_m2 is None:
+        metric_variance = np.full(
+            center_count,
+            config.observation_std_m**2,
+            dtype=float,
+        )
+    else:
+        metric_variance = np.asarray(observation_variance_m2, dtype=float)
+        if metric_variance.shape != (center_count,):
+            raise ValueError("observation_variance_m2 must have shape (K,)")
+        if not np.all(np.isfinite(metric_variance)) or np.any(
+            metric_variance <= 0.0
+        ):
+            raise ValueError("observation_variance_m2 must be positive")
     mask &= np.all(np.isfinite(positions), axis=1)
     mask &= np.all(np.isfinite(residual), axis=1)
+    mask &= prior_weight > 0.0
 
     elapsed = (
         0 if prior.last_update_frame is None else frame_index - prior.last_update_frame
@@ -378,31 +406,43 @@ def update_recursive_rbf_belief(
 
     if np.any(mask):
         selected = residual[mask]
+        selected_prior = prior_weight[mask]
+        selected_variance = metric_variance[mask]
         robust_location = np.median(selected, axis=0)
         absolute_deviation = np.abs(selected - robust_location)
         robust_scale = 1.4826 * np.median(absolute_deviation, axis=0)
         robust_scale = np.maximum(robust_scale, config.observation_std_m)
 
         # A coordinate-wise median is the high-breakdown observation of the
-        # global component.  Its variance shrinks with available point count.
-        global_observation_variance = np.square(robust_scale) / np.sum(mask)
+        # global component. Correlated evidence shrinks it only by the caller's
+        # residual-independent effective reliability mass.
+        effective_count = max(float(np.sum(selected_prior)), 1e-15)
+        metric_variance_floor = float(
+            np.average(selected_variance, weights=selected_prior)
+        )
+        global_observation_variance = np.maximum(
+            np.square(robust_scale),
+            metric_variance_floor,
+        ) / effective_count
         global_gain = global_variance / (global_variance + global_observation_variance)
         global_mean += global_gain * (robust_location - global_mean)
         global_variance *= 1.0 - global_gain
 
         local_observation = selected - global_mean
         local_scale = np.maximum(robust_scale, config.observation_std_m)
-        selected_reliability = _student_t_reliability(
+        robust_reliability = _student_t_reliability(
             local_observation,
             local_scale,
             degrees_of_freedom=config.degrees_of_freedom,
             minimum=config.minimum_reliability,
         )
+        selected_reliability = selected_prior * robust_reliability
         selected_ids = np.flatnonzero(mask)
         reliability[selected_ids] = selected_reliability
         for local_index, centre_index in enumerate(selected_ids):
             observation_variance = (
-                config.observation_std_m**2 / selected_reliability[local_index]
+                selected_variance[local_index]
+                / selected_reliability[local_index]
             )
             gain = local_variance[centre_index] / (
                 local_variance[centre_index] + observation_variance

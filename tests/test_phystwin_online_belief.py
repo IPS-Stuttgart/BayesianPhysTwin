@@ -181,6 +181,84 @@ def test_isolated_large_residual_is_downweighted() -> None:
     assert np.max(prediction.mean_m[:, 0]) < 0.04
 
 
+def test_explicit_default_observation_model_is_behavior_compatible() -> None:
+    points, centre_ids, config = _line_problem()
+    prior = initialize_recursive_rbf_belief(
+        centre_ids,
+        points[centre_ids],
+        points,
+        config=config,
+    )
+    residual = np.asarray([[0.01, 0.0, 0.0], [0.01, 0.0, 0.0], [0.02, 0.0, 0.0]])
+    available = np.ones(3, dtype=bool)
+
+    legacy, legacy_reliability = update_recursive_rbf_belief(
+        prior,
+        1,
+        points[centre_ids],
+        residual,
+        available,
+        config=config,
+    )
+    explicit, explicit_reliability = update_recursive_rbf_belief(
+        prior,
+        1,
+        points[centre_ids],
+        residual,
+        available,
+        config=config,
+        prior_reliability=np.ones(3),
+        observation_variance_m2=np.full(3, config.observation_std_m**2),
+    )
+
+    for name in (
+        "center_positions_m",
+        "global_mean_m",
+        "global_variance_m2",
+        "local_mean_m",
+        "local_variance_m2",
+        "update_count",
+    ):
+        np.testing.assert_array_equal(getattr(legacy, name), getattr(explicit, name))
+    np.testing.assert_array_equal(legacy_reliability, explicit_reliability)
+
+
+def test_metric_variance_and_prior_reliability_conservatively_scale_update() -> None:
+    points, centre_ids, config = _line_problem()
+    prior = initialize_recursive_rbf_belief(
+        centre_ids,
+        points[centre_ids],
+        points,
+        config=config,
+    )
+    residual = np.repeat(np.asarray([[0.01, 0.0, 0.0]]), 3, axis=0)
+    available = np.ones(3, dtype=bool)
+    confident, _ = update_recursive_rbf_belief(
+        prior,
+        1,
+        points[centre_ids],
+        residual,
+        available,
+        config=config,
+        prior_reliability=np.ones(3),
+        observation_variance_m2=np.full(3, 0.002**2),
+    )
+    conservative, reliability = update_recursive_rbf_belief(
+        prior,
+        1,
+        points[centre_ids],
+        residual,
+        available,
+        config=config,
+        prior_reliability=np.full(3, 0.25),
+        observation_variance_m2=np.full(3, 0.010**2),
+    )
+
+    assert conservative.global_mean_m[0] < confident.global_mean_m[0]
+    assert np.all(conservative.local_variance_m2 > confident.local_variance_m2)
+    assert np.all(reliability <= 0.25)
+
+
 def test_update_rejects_noncausal_frame_order() -> None:
     points, centre_ids, config = _line_problem()
     prior = initialize_recursive_rbf_belief(
