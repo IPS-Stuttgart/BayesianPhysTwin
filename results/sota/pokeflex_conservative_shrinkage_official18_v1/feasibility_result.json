@@ -1,0 +1,50 @@
+{
+  "artifact_kind": "PokeFlexOfficial18PublicFeasibilityResult",
+  "schema_version": 1,
+  "protocol_id": "pokeflex-conservative-shrinkage-official18-v1",
+  "protocol_sha256": "cb1a7270362fe102e3deb4b589f5f4dd67268ba2b7bbee13fa4dbd9c9ad3ab97",
+  "implementation_revision": "a35c081",
+  "status": "failed_preoutcome",
+  "public_download": {
+    "completed": true,
+    "completed_at": "2026-07-14T21:33:49+02:00",
+    "interaction": "poking",
+    "archive_count": 116,
+    "download_script_sha256": "ae13a9acd2ba02d46fb340c15edba687929e6f84debc01c7792d6bf41859ed11",
+    "license_sha256": "2c32cfb4aec25f42d1a06e12121076f2f43f6dfb89e0ef01e52e992655130f8f"
+  },
+  "official_reference": {
+    "evaluator_sha256": "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60",
+    "hard_coded_take_count": 18,
+    "paper_split_description": "one randomly selected recording sequence per object"
+  },
+  "exact_path_preflight": {
+    "expected_take_count": 18,
+    "present_take_count": 13,
+    "missing_take_count": 5,
+    "missing_take_ids": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ],
+    "public_max_poking_take_by_missing_object": {
+      "Pillow": 7,
+      "3dPrintedCylinder": 6,
+      "3dPrintedHeart": 6,
+      "Sponge": 5,
+      "3dPrintedPizza": 6
+    },
+    "authoritative_internal_to_public_mapping_available": false,
+    "exact_public_split_materializable": false
+  },
+  "custody": {
+    "target_mesh_opened": false,
+    "prediction_seal_count": 0,
+    "prediction_barrier_created": false,
+    "scoring_run": false,
+    "replacement_or_guessed_mapping_used": false
+  },
+  "decision": "Do not run the official18 protocol without an author-supplied internal-to-public take mapping or the processed validation set. Preserve the locked protocol as an infeasible design artifact and retain the independent T2 paired-transfer result as the current prospective evidence."
+}
