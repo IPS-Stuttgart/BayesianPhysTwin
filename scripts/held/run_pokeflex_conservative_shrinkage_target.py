@@ -38,6 +38,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     CHECKPOINT_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
+    TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
     UPSTREAM_COMMIT,
@@ -100,6 +101,7 @@ def _predict(
     if protocol["protocol_id"] not in {
         TARGET_PROTOCOL_V2,
         TARGET_PROTOCOL_OFFICIAL18_V1,
+        TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     }:
         raise ValueError("new predictions require a robot-history-aware protocol")
     target_take_ids = target_take_ids_for_protocol(protocol)

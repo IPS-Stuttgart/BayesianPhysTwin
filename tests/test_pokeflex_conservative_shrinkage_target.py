@@ -8,12 +8,17 @@ import pytest
 
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     CHECKPOINT_SHA256,
+    OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS,
+    OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS,
+    OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
     OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS,
+    OFFICIAL18_MISSING_PUBLIC_TAKE_IDS,
     OFFICIAL18_PROSPECTIVE_TAKE_IDS,
     OFFICIAL18_TARGET_TAKE_IDS,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
+    TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
     TARGET_TAKE_IDS,
@@ -44,6 +49,12 @@ OFFICIAL18_PROTOCOL_PATH = (
     / "sota"
     / "pokeflex_conservative_shrinkage_official18_v1.json"
 )
+OFFICIAL13_PUBLIC_PROTOCOL_PATH = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "pokeflex_conservative_shrinkage_official13_public_v1.json"
+)
 RUNNER_PATH = (
     ROOT / "scripts" / "held" / "run_pokeflex_conservative_shrinkage_target.py"
 )
@@ -59,6 +70,10 @@ def _protocol_v2() -> dict[str, object]:
 
 def _official18_protocol() -> dict[str, object]:
     return json.loads(OFFICIAL18_PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+
+def _official13_public_protocol() -> dict[str, object]:
+    return json.loads(OFFICIAL13_PUBLIC_PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
 def _write_prediction(
@@ -170,6 +185,32 @@ def test_official18_protocol_locks_exact_split_and_overlap_boundary() -> None:
     )
 
 
+def test_official13_public_protocol_locks_public_subset_and_claim_boundary() -> None:
+    loaded = load_pokeflex_shrinkage_target_protocol(OFFICIAL13_PUBLIC_PROTOCOL_PATH)
+
+    assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
+    assert loaded["protocol_id"] == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1
+    assert (
+        tuple(loaded["target_cohort"]["take_ids"])
+        == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
+    )
+    assert (
+        tuple(loaded["target_cohort"]["prospective_take_ids"])
+        == OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS
+    )
+    assert (
+        tuple(loaded["target_cohort"]["development_overlap_take_ids"])
+        == OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
+    )
+    assert (
+        tuple(loaded["target_cohort"]["missing_official_take_ids"])
+        == OFFICIAL18_MISSING_PUBLIC_TAKE_IDS
+    )
+    assert loaded["gates"]["direct_metric_reference"][
+        "published_aggregate_is_gating"
+    ] is False
+
+
 def test_action_field_history_rejects_missing_end_effector_pose() -> None:
     transform = np.eye(4).tolist()
     complete = {
@@ -249,6 +290,21 @@ def test_official18_barrier_requires_all_exact_takes(tmp_path: Path) -> None:
 
     assert barrier["prediction_count"] == 18
     assert tuple(barrier["target_take_ids"]) == OFFICIAL18_TARGET_TAKE_IDS
+    with pytest.raises(ValueError, match="incomplete"):
+        build_prediction_barrier(paths[:-1], protocol)
+
+
+def test_official13_public_barrier_requires_all_public_takes(tmp_path: Path) -> None:
+    protocol = _official13_public_protocol()
+    paths = [
+        _write_prediction(tmp_path, take_id, protocol=protocol)
+        for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
+    ]
+
+    barrier = build_prediction_barrier(paths, protocol)
+
+    assert barrier["prediction_count"] == 13
+    assert tuple(barrier["target_take_ids"]) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     with pytest.raises(ValueError, match="incomplete"):
         build_prediction_barrier(paths[:-1], protocol)
 
@@ -352,3 +408,43 @@ def test_official18_aggregation_applies_reproduction_and_prospective_gates() -> 
     assert result["prospective_take_count"] == 15
     assert result["development_overlap_take_count"] == 3
     assert result["jaccard_is_gating"] is False
+
+
+def test_official13_public_aggregation_gates_only_prospective_pairing() -> None:
+    rows = []
+    for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS:
+        object_name, _, _ = take_id.rpartition("_T")
+        candidate = (
+            7.0
+            if take_id in OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
+            else 6.0
+        )
+        rows.append(
+            {
+                "object_name": object_name,
+                "take_id": take_id,
+                "baseline_mean_CD_UL1_mm": 6.498,
+                "candidate_mean_CD_UL1_mm": candidate,
+                "candidate_jaccard_valid_count": 0,
+                "candidate_mean_jaccard_valid": None,
+                "scored_frame_count": 1,
+                "frames": [
+                    {
+                        "baseline_CD_UL1_mm": 6.498,
+                        "candidate_CD_UL1_mm": candidate,
+                        "candidate_jaccard": None,
+                    }
+                ],
+            }
+        )
+
+    result = evaluate_target_metrics(rows, _official13_public_protocol())
+
+    assert result["public_official_subset_take_count"] == 13
+    assert result["prospective_take_count"] == 10
+    assert result["development_overlap_take_count"] == 3
+    assert result["prospective_object_win_count"] == 10
+    assert result["paired_transfer_passed"] is True
+    assert result["all_target_gates_passed"] is True
+    assert result["published_reference_is_contextual_only"] is True
+    assert result["published_direct_comparison_authorized"] is False
