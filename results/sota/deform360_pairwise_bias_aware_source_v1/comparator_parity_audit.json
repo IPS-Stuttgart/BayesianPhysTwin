@@ -1,0 +1,35 @@
+{
+  "artifact_kind": "Deform360PairwiseComparatorParityAudit",
+  "candidate_predictions_changed": false,
+  "case_count": 27,
+  "claim_boundary": "Post-open comparator parity audit on the same five source objects; not a new method, target result, or state-of-the-art claim.",
+  "exact_dual_backbone_pairwise_rbf": {
+    "post_update_hidden_identity_rmse_m": {
+      "episode_mean_m": 0.007541936414096939,
+      "object_balanced_mean_m": 0.007441407273065592
+    },
+    "post_update_hidden_symmetric_chamfer_m": {
+      "episode_mean_m": 0.006874515361417309,
+      "object_balanced_mean_m": 0.0067953405418319955
+    }
+  },
+  "finding": "The registered pairwise_bias_aware source evaluator used one recursive RBF state over an already-spliced baseline. The earlier strong source arm maintains separate physical and persistence states and switches between them causally.",
+  "object_count": 5,
+  "pairwise_bias_aware_v1_relative_to_exact_dual_backbone": {
+    "post_update_hidden_identity_rmse_relative_change": 0.17005866706616057,
+    "post_update_hidden_symmetric_chamfer_relative_change": 0.15014034935393639
+  },
+  "protocol_id": "deform360-pairwise-comparator-parity-postopen-v1",
+  "selected_raw_baseline": {
+    "post_update_hidden_identity_rmse_m": {
+      "episode_mean_m": 0.00895030495665579,
+      "object_balanced_mean_m": 0.008807111194944251
+    },
+    "post_update_hidden_symmetric_chamfer_m": {
+      "episode_mean_m": 0.008003237892372703,
+      "object_balanced_mean_m": 0.007888347813936974
+    }
+  },
+  "source_result_summary_sha256": "5a52a7c9a27be4402b3f4c60c8f92f8a10e891f8db3900c7c955df77868477b1",
+  "transfer_manifest_sha256": "02babb4e041fce354a168a76c055a043032dbbf5eb5320e2c8a0e409bb2d83bb"
+}
