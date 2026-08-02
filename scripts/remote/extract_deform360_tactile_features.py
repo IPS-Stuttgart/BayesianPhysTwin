@@ -37,7 +37,8 @@ def main() -> int:
     args = _parse_args()
     manifest = json.loads(args.case_manifest.read_text(encoding="utf-8"))
     _require(
-        manifest.get("artifact_kind") == "Deform360TactileFeatureCaseManifestV1",
+        manifest.get("artifact_kind") == "Deform360TactileFeatureCaseManifestV1"
+        and manifest.get("schema_version") == 1,
         "unexpected tactile case manifest",
     )
     _require(
@@ -50,10 +51,12 @@ def main() -> int:
         and boundary.get("held_v8_read") is False,
         "tactile case manifest crossed its information boundary",
     )
+    opened_source_only = bool(boundary.get("opened_source_reproduction_only", False))
     payload = build_tactile_feature_artifact(
         manifest.get("cases", []),
         window_root=args.window_root,
         raw_root=args.raw_root,
+        opened_source_only=opened_source_only,
     )
     payload["inputs"] = {
         "case_manifest_path": args.case_manifest.name,

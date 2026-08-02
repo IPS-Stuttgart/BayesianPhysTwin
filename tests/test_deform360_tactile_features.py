@@ -81,6 +81,7 @@ def test_case_extraction_hashes_every_raw_input(tmp_path: Path) -> None:
             "data_sha256",
             "timestamps_sha256",
             "baseline_sha256",
+            "causal_source_frame_count",
         }
         assert all(len(record[name]) == 64 for name in record if name.endswith("sha256"))
 
@@ -104,6 +105,31 @@ def test_artifact_is_canonical_and_target_free(tmp_path: Path) -> None:
     assert artifact["artifact_sha256"] == canonical_artifact_sha256(artifact)
     assert artifact["information_boundary"]["target_outcomes_read"] is False
     assert artifact["information_boundary"]["future_tactile_used_for_update"] is False
+    assert (
+        artifact["information_boundary"][
+            "future_tactile_payload_bytes_hashed_for_custody"
+        ]
+        is True
+    )
+
+
+def test_source_reproduction_status_is_explicit(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    artifact = build_tactile_feature_artifact(
+        [
+            {
+                "case": "object-a-ep0000",
+                "object": "object-a",
+                "episode_index": 0,
+                "episode_path": "case-a/episode_0000",
+                "raw_object_path": "object-a",
+            }
+        ],
+        window_root=tmp_path / "windows",
+        raw_root=tmp_path / "raw",
+        opened_source_only=True,
+    )
+    assert artifact["information_boundary"]["opened_source_only"] is True
 
 
 def test_values_after_latest_update_do_not_change_features(tmp_path: Path) -> None:

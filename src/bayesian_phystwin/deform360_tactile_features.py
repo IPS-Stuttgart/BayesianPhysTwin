@@ -221,6 +221,7 @@ def extract_case_tactile_features(
                 "baseline": baseline_path.name,
                 "baseline_sha256": file_sha256(baseline_path),
                 "source_frame_count": len(source_timestamps),
+                "causal_source_frame_count": causal_source_stop,
             }
         )
     _, diagnostics = causal_tactile_regret_features(
@@ -252,6 +253,7 @@ def build_tactile_feature_artifact(
     initial_reference_frame_count: int = 6,
     history_frame_count: int = 3,
     available_frame_count: int | None = None,
+    opened_source_only: bool = False,
 ) -> dict[str, Any]:
     """Build a deterministic feature artifact from a target-free case manifest."""
 
@@ -280,10 +282,12 @@ def build_tactile_feature_artifact(
         "artifact_kind": "Deform360CausalTactileFeatureAuditV2",
         "schema_version": 2,
         "information_boundary": {
-            "opened_source_only": False,
+            "opened_source_only": bool(opened_source_only),
             "target_outcomes_read": False,
             "held_v8_read": False,
             "future_tactile_used_for_update": False,
+            "future_tactile_payload_bytes_hashed_for_custody": True,
+            "future_tactile_values_used_for_update": False,
             "each_update_uses_tactile_at_or_before_update": True,
             "episode_wide_tactile_normalization_used": False,
         },
