@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageTargetProtocol",
+  "protocol_id": "pokeflex-conservative-shrinkage-public-paired-v1",
+  "locked_at_utc": "2026-08-02T19:01:36Z",
+  "status": "pre-outcome lock for one previously unreferenced public take from each of fifteen eligible PokeFlex objects",
+  "claim_boundary": "This is a prospective paired evaluation of the unchanged source-selected Bayesian state correction against the released PokeFlex checkpoint on fifteen public takes absent from the complete tracked Bayesian-PhysTwin history at lock time. Passing supports improvement on this registered public cohort. It is not the paper's unavailable internal validation split, and the published 6.498 mm value is context rather than a gate.",
+  "source_gate": {
+    "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+    "result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+    "result_git_commit": "234e201d586712f5966908b86cacc3076dc5b6ca",
+    "passed": true,
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "source_object_count": 9,
+    "source_object_win_count": 9,
+    "source_object_balanced_relative_improvement": 0.01286289679729027
+  },
+  "selection_audit": {
+    "manifest_path": "configs/sota/pokeflex_public_paired_selection_v1.json",
+    "manifest_sha256": "d7a1357d78a4ddf18ace8053e29b3a2e63235bc87279becfdc8d2211f8a13632",
+    "git_ref_tip_count": 192,
+    "git_ref_tip_digest": "b402a78760d4a65dae0274fabac78d4f8d641eb202b7690f70a1ec045abc9cb0",
+    "tracked_text_blob_count": 3826,
+    "tracked_text_blob_digest": "ecd5275b8dc688634484f05df291479ee16cfdcae3cb0bbd65e50147bddee226",
+    "referenced_take_count": 63,
+    "referenced_take_digest": "bf680c98975be5064b979dee0448f99be8d3d39c47f9496f9086502dfa42d9c5",
+    "selected_take_digest": "6bea94c899c23903cbe84b0f90a9a9a14dd89e3e09c0c1a9573415ede7c7fa76",
+    "selection_was_target_free": true
+  },
+  "target_cohort": {
+    "take_ids": [
+      "3dPrintedCylinder_T4",
+      "3dPrintedHeart_T2",
+      "3dPrintedPizza_T3",
+      "3dPrintedPyramid_T3",
+      "Beanbag_T5",
+      "FoamCylinder_T5",
+      "FoamHalfSphere_T1",
+      "Pillow_T1",
+      "PlushDice_T4",
+      "PlushMoon_T6",
+      "PlushOctopus_T2",
+      "PlushTurtle_T4",
+      "PlushVolleyball_T1",
+      "Sponge_T1",
+      "ToiletPaperRoll_T2"
+    ],
+    "objects": [
+      "3dPrintedCylinder",
+      "3dPrintedHeart",
+      "3dPrintedPizza",
+      "3dPrintedPyramid",
+      "Beanbag",
+      "FoamCylinder",
+      "FoamHalfSphere",
+      "Pillow",
+      "PlushDice",
+      "PlushMoon",
+      "PlushOctopus",
+      "PlushTurtle",
+      "PlushVolleyball",
+      "Sponge",
+      "ToiletPaperRoll"
+    ],
+    "replacement_allowed": false,
+    "selection_basis": "deterministic minimum salted SHA-256 among public takes absent from the all-ref Bayesian-PhysTwin text audit, one take per eligible object",
+    "freshness_scope": "complete tracked Bayesian-PhysTwin history at lock time"
+  },
+  "method": {
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "physical_prior": "released PokeFlex Kinect checkpoint",
+    "state_update": "robust correlation-aware graph registration at f-1",
+    "field": "action_local_state_relative_0.4",
+    "scale": 0.125,
+    "transfer": "one material-vertex-identity step from f-1 to f",
+    "required_action_history": "finite T_WT, T_WE, and force values for every frame used by the frozen action-local field",
+    "missing_required_robot_pose_action": "mark update unsupported and return byte-identical released checkpoint",
+    "unsupported_frame_action": "byte-identical released checkpoint",
+    "online_selector": "none"
+  },
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    }
+  },
+  "official_reference": {
+    "paper": "PokeFlex: A Real-World Dataset of Deformable Objects for Physics-Based Reconstruction",
+    "arxiv": "2410.07688v2",
+    "published_kinect_CD_UL1_mm": 6.498,
+    "published_kinect_jaccard": 0.82,
+    "scope": "context only; the paper used a randomly selected internal validation recording per object and did not publish an internal-to-public take mapping"
+  },
+  "custody": {
+    "prediction_and_scoring_are_separate": true,
+    "required_prediction_seal_count": 15,
+    "all_prediction_revisions_must_match": true,
+    "implementation_checkout_must_be_clean": true,
+    "target_mesh_access_before_barrier": "forbidden",
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "template_mesh": "allowed explicit task input selected by the frozen upstream robot-metadata rule",
+    "prediction_frames": "all contiguous f from 6 through the last robot frame; active-frame filtering occurs only during locked scoring",
+    "scored_frames": "force-y at f exceeds 3 N, matching the registered source and public evaluators",
+    "retry_policy": "no replacement; technical failures and exact fallbacks remain in the registered cohort"
+  },
+  "evaluation": {
+    "primary_metric": "CD_UL1_mm",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to target surface points in original metric coordinates",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720,
+    "aggregation": "equal scored frames within each take, then equal physical objects",
+    "jaccard_definition": "trimesh boolean intersection volume divided by union volume",
+    "jaccard_boolean_backend": "manifold",
+    "jaccard_mesh_processing": "trimesh_default",
+    "jaccard_role": "non-gating diagnostic using the public evaluator's Trimesh reconstruction semantics",
+    "invalid_jaccard_action": "report the failure and valid fraction; never substitute a voxel, repaired, or alternate-mesh surrogate"
+  },
+  "gates": {
+    "direct_metric_reference": {
+      "candidate_CD_UL1_mm_below": 6.498,
+      "gating": false,
+      "scope": "context-only comparison to the published Kinect value on a different unavailable split"
+    },
+    "paired_transfer": {
+      "relative_CD_UL1_improvement_above": 0.0,
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "maximum_per_object_relative_regression": 0.0,
+      "minimum_object_win_count": 12,
+      "minimum_supported_object_count": 12,
+      "bootstrap_unit": "physical object",
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_upper_quantile": 0.975
+    }
+  },
+  "forbidden": [
+    "opening any selected target deformed mesh before all fifteen prediction seals pass the barrier",
+    "using frame f Kinect or robot observations to predict frame f",
+    "substituting T_WT for missing T_WE or otherwise imputing a required actuator pose",
+    "changing the selected arm, scale, support radius, metric, aggregation, or gate after target access",
+    "replacing a failed selected take",
+    "tuning from any selected-take outcome",
+    "claiming identity with the paper's unavailable internal validation split",
+    "using the cross-split published metric as an acceptance gate",
+    "substituting a repaired-mesh or voxel Jaccard for the registered diagnostic",
+    "touching any held-v8 artifact or process"
+  ],
+  "protocol_sha256": "b167c494acddd3defa6d29365990cec40ea7ff2a752c45b79e9632cf9482700d"
+}

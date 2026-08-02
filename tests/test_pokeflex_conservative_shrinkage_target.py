@@ -11,10 +11,14 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS,
     OFFICIAL18_PROSPECTIVE_TAKE_IDS,
     OFFICIAL18_TARGET_TAKE_IDS,
+    PUBLIC_PAIRED_SELECTION_MANIFEST_SHA256,
+    PUBLIC_PAIRED_TARGET_OBJECTS,
+    PUBLIC_PAIRED_TARGET_TAKE_IDS,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
     TARGET_PROTOCOL_OFFICIAL18_V1,
+    TARGET_PROTOCOL_PUBLIC_PAIRED_V1,
     TARGET_PROTOCOL_V2,
     TARGET_TAKE_IDS,
     UPSTREAM_COMMIT,
@@ -26,6 +30,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     prediction_seal_sha256,
     protocol_requires_robot_history,
     score_one_prediction,
+    selection_manifest_sha256,
     target_protocol_sha256,
     validate_pokeflex_shrinkage_target_protocol,
     validate_prediction_seal,
@@ -44,6 +49,15 @@ OFFICIAL18_PROTOCOL_PATH = (
     / "sota"
     / "pokeflex_conservative_shrinkage_official18_v1.json"
 )
+PUBLIC_PAIRED_PROTOCOL_PATH = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "pokeflex_conservative_shrinkage_public_paired_v1.json"
+)
+PUBLIC_PAIRED_SELECTION_PATH = (
+    ROOT / "configs" / "sota" / "pokeflex_public_paired_selection_v1.json"
+)
 RUNNER_PATH = (
     ROOT / "scripts" / "held" / "run_pokeflex_conservative_shrinkage_target.py"
 )
@@ -59,6 +73,10 @@ def _protocol_v2() -> dict[str, object]:
 
 def _official18_protocol() -> dict[str, object]:
     return json.loads(OFFICIAL18_PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+
+def _public_paired_protocol() -> dict[str, object]:
+    return json.loads(PUBLIC_PAIRED_PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
 def _write_prediction(
@@ -170,6 +188,23 @@ def test_official18_protocol_locks_exact_split_and_overlap_boundary() -> None:
     )
 
 
+def test_public_paired_protocol_locks_fresh_fifteen_take_cohort() -> None:
+    loaded = load_pokeflex_shrinkage_target_protocol(PUBLIC_PAIRED_PROTOCOL_PATH)
+    selection = json.loads(PUBLIC_PAIRED_SELECTION_PATH.read_text(encoding="utf-8"))
+
+    assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
+    assert loaded["protocol_id"] == TARGET_PROTOCOL_PUBLIC_PAIRED_V1
+    assert tuple(loaded["target_cohort"]["take_ids"]) == PUBLIC_PAIRED_TARGET_TAKE_IDS
+    assert tuple(loaded["target_cohort"]["objects"]) == PUBLIC_PAIRED_TARGET_OBJECTS
+    assert loaded["gates"]["direct_metric_reference"]["gating"] is False
+    assert selection["selection_manifest_sha256"] == selection_manifest_sha256(
+        selection
+    )
+    assert selection["selection_manifest_sha256"] == (
+        PUBLIC_PAIRED_SELECTION_MANIFEST_SHA256
+    )
+
+
 def test_action_field_history_rejects_missing_end_effector_pose() -> None:
     transform = np.eye(4).tolist()
     complete = {
@@ -249,6 +284,21 @@ def test_official18_barrier_requires_all_exact_takes(tmp_path: Path) -> None:
 
     assert barrier["prediction_count"] == 18
     assert tuple(barrier["target_take_ids"]) == OFFICIAL18_TARGET_TAKE_IDS
+    with pytest.raises(ValueError, match="incomplete"):
+        build_prediction_barrier(paths[:-1], protocol)
+
+
+def test_public_paired_barrier_requires_all_fifteen_takes(tmp_path: Path) -> None:
+    protocol = _public_paired_protocol()
+    paths = [
+        _write_prediction(tmp_path, take_id, protocol=protocol)
+        for take_id in PUBLIC_PAIRED_TARGET_TAKE_IDS
+    ]
+
+    barrier = build_prediction_barrier(paths, protocol)
+
+    assert barrier["prediction_count"] == 15
+    assert tuple(barrier["target_take_ids"]) == PUBLIC_PAIRED_TARGET_TAKE_IDS
     with pytest.raises(ValueError, match="incomplete"):
         build_prediction_barrier(paths[:-1], protocol)
 
@@ -352,3 +402,85 @@ def test_official18_aggregation_applies_reproduction_and_prospective_gates() -> 
     assert result["prospective_take_count"] == 15
     assert result["development_overlap_take_count"] == 3
     assert result["jaccard_is_gating"] is False
+
+
+def test_public_paired_aggregation_applies_transfer_and_support_gates() -> None:
+    rows = [
+        {
+            "object_name": object_name,
+            "take_id": take_id,
+            "baseline_mean_CD_UL1_mm": 6.2,
+            "candidate_mean_CD_UL1_mm": 6.0,
+            "candidate_jaccard_valid_count": 0,
+            "candidate_mean_jaccard_valid": None,
+            "scored_frame_count": 10,
+            "supported_frame_count": 1,
+        }
+        for object_name, take_id in zip(
+            PUBLIC_PAIRED_TARGET_OBJECTS,
+            PUBLIC_PAIRED_TARGET_TAKE_IDS,
+            strict=True,
+        )
+    ]
+
+    result = evaluate_target_metrics(rows, _public_paired_protocol())
+
+    assert result["object_win_count"] == 15
+    assert result["supported_object_count"] == 15
+    assert result["paired_transfer_passed"] is True
+    assert result["all_target_gates_passed"] is True
+    assert result["published_reference_is_gating"] is False
+
+
+def test_public_paired_aggregation_rejects_one_object_regression() -> None:
+    rows = [
+        {
+            "object_name": object_name,
+            "take_id": take_id,
+            "baseline_mean_CD_UL1_mm": 6.2,
+            "candidate_mean_CD_UL1_mm": 6.0,
+            "candidate_jaccard_valid_count": 0,
+            "candidate_mean_jaccard_valid": None,
+            "scored_frame_count": 10,
+            "supported_frame_count": 1,
+        }
+        for object_name, take_id in zip(
+            PUBLIC_PAIRED_TARGET_OBJECTS,
+            PUBLIC_PAIRED_TARGET_TAKE_IDS,
+            strict=True,
+        )
+    ]
+    rows[-1]["candidate_mean_CD_UL1_mm"] = 6.21
+
+    result = evaluate_target_metrics(rows, _public_paired_protocol())
+
+    assert result["object_win_count"] == 14
+    assert result["minimum_per_object_relative_improvement"] < 0.0
+    assert result["paired_transfer_passed"] is False
+
+
+def test_public_paired_aggregation_rejects_insufficient_support_breadth() -> None:
+    rows = [
+        {
+            "object_name": object_name,
+            "take_id": take_id,
+            "baseline_mean_CD_UL1_mm": 6.2,
+            "candidate_mean_CD_UL1_mm": 6.0,
+            "candidate_jaccard_valid_count": 0,
+            "candidate_mean_jaccard_valid": None,
+            "scored_frame_count": 10,
+            "supported_frame_count": int(index < 11),
+        }
+        for index, (object_name, take_id) in enumerate(
+            zip(
+                PUBLIC_PAIRED_TARGET_OBJECTS,
+                PUBLIC_PAIRED_TARGET_TAKE_IDS,
+                strict=True,
+            )
+        )
+    ]
+
+    result = evaluate_target_metrics(rows, _public_paired_protocol())
+
+    assert result["supported_object_count"] == 11
+    assert result["paired_transfer_passed"] is False

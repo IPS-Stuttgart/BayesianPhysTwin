@@ -29,6 +29,7 @@ TARGET_TAKE_IDS = tuple(f"{name}_T2" for name in TARGET_OBJECTS)
 TARGET_PROTOCOL_V1 = "pokeflex-conservative-shrinkage-target-v1"
 TARGET_PROTOCOL_V2 = "pokeflex-conservative-shrinkage-target-v2"
 TARGET_PROTOCOL_OFFICIAL18_V1 = "pokeflex-conservative-shrinkage-official18-v1"
+TARGET_PROTOCOL_PUBLIC_PAIRED_V1 = "pokeflex-conservative-shrinkage-public-paired-v1"
 OFFICIAL18_TARGET_TAKE_IDS = (
     "MemoryFoam_T2",
     "PlushVolleyball_T4",
@@ -58,6 +59,44 @@ OFFICIAL18_PROSPECTIVE_TAKE_IDS = tuple(
     take_id
     for take_id in OFFICIAL18_TARGET_TAKE_IDS
     if take_id not in OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS
+)
+PUBLIC_PAIRED_TARGET_TAKE_IDS = (
+    "3dPrintedCylinder_T4",
+    "3dPrintedHeart_T2",
+    "3dPrintedPizza_T3",
+    "3dPrintedPyramid_T3",
+    "Beanbag_T5",
+    "FoamCylinder_T5",
+    "FoamHalfSphere_T1",
+    "Pillow_T1",
+    "PlushDice_T4",
+    "PlushMoon_T6",
+    "PlushOctopus_T2",
+    "PlushTurtle_T4",
+    "PlushVolleyball_T1",
+    "Sponge_T1",
+    "ToiletPaperRoll_T2",
+)
+PUBLIC_PAIRED_TARGET_OBJECTS = tuple(
+    take_id.rpartition("_T")[0] for take_id in PUBLIC_PAIRED_TARGET_TAKE_IDS
+)
+PUBLIC_PAIRED_REF_TIP_COUNT = 192
+PUBLIC_PAIRED_REF_TIP_DIGEST = (
+    "b402a78760d4a65dae0274fabac78d4f8d641eb202b7690f70a1ec045abc9cb0"
+)
+PUBLIC_PAIRED_TEXT_BLOB_COUNT = 3826
+PUBLIC_PAIRED_TEXT_BLOB_DIGEST = (
+    "ecd5275b8dc688634484f05df291479ee16cfdcae3cb0bbd65e50147bddee226"
+)
+PUBLIC_PAIRED_REFERENCED_TAKE_COUNT = 63
+PUBLIC_PAIRED_REFERENCED_TAKE_DIGEST = (
+    "bf680c98975be5064b979dee0448f99be8d3d39c47f9496f9086502dfa42d9c5"
+)
+PUBLIC_PAIRED_SELECTED_TAKE_DIGEST = (
+    "6bea94c899c23903cbe84b0f90a9a9a14dd89e3e09c0c1a9573415ede7c7fa76"
+)
+PUBLIC_PAIRED_SELECTION_MANIFEST_SHA256 = (
+    "d7a1357d78a4ddf18ace8053e29b3a2e63235bc87279becfdc8d2211f8a13632"
 )
 OFFICIAL_EVALUATOR_SHA256 = (
     "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60"
@@ -116,6 +155,10 @@ def target_protocol_sha256(payload: Mapping[str, Any]) -> str:
     return canonical_payload_sha256(payload, digest_field="protocol_sha256")
 
 
+def selection_manifest_sha256(payload: Mapping[str, Any]) -> str:
+    return canonical_payload_sha256(payload, digest_field="selection_manifest_sha256")
+
+
 def _take_identity(take_id: str) -> tuple[str, str]:
     object_name, separator, take_number = take_id.rpartition("_T")
     _require(bool(separator) and take_number.isdigit(), "invalid target take id")
@@ -127,13 +170,19 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
 
     if protocol.get("protocol_id") == TARGET_PROTOCOL_OFFICIAL18_V1:
         return OFFICIAL18_TARGET_TAKE_IDS
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_PUBLIC_PAIRED_V1:
+        return PUBLIC_PAIRED_TARGET_TAKE_IDS
     return TARGET_TAKE_IDS
 
 
 def protocol_requires_robot_history(protocol_id: str) -> bool:
     """Return whether prediction custody includes explicit robot-history support."""
 
-    return protocol_id in {TARGET_PROTOCOL_V2, TARGET_PROTOCOL_OFFICIAL18_V1}
+    return protocol_id in {
+        TARGET_PROTOCOL_V2,
+        TARGET_PROTOCOL_OFFICIAL18_V1,
+        TARGET_PROTOCOL_PUBLIC_PAIRED_V1,
+    }
 
 
 def action_field_history_is_supported(
@@ -173,6 +222,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_V1,
             TARGET_PROTOCOL_V2,
             TARGET_PROTOCOL_OFFICIAL18_V1,
+            TARGET_PROTOCOL_PUBLIC_PAIRED_V1,
         },
         "target protocol id changed",
     )
@@ -208,6 +258,52 @@ def validate_pokeflex_shrinkage_target_protocol(
             tuple(cohort.get("development_overlap_take_ids", ()))
             == OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS,
             "development-overlap cohort changed",
+        )
+    elif protocol_id == TARGET_PROTOCOL_PUBLIC_PAIRED_V1:
+        _require(
+            tuple(cohort.get("take_ids", ())) == PUBLIC_PAIRED_TARGET_TAKE_IDS,
+            "public-paired target take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("objects", ())) == PUBLIC_PAIRED_TARGET_OBJECTS,
+            "public-paired target object cohort changed",
+        )
+        audit = payload.get("selection_audit")
+        _require(isinstance(audit, Mapping), "public-paired selection audit is missing")
+        _require(
+            audit.get("manifest_sha256") == PUBLIC_PAIRED_SELECTION_MANIFEST_SHA256,
+            "public-paired selection manifest changed",
+        )
+        _require(
+            int(audit.get("git_ref_tip_count", -1)) == PUBLIC_PAIRED_REF_TIP_COUNT,
+            "public-paired ref inventory changed",
+        )
+        _require(
+            audit.get("git_ref_tip_digest") == PUBLIC_PAIRED_REF_TIP_DIGEST,
+            "public-paired ref digest changed",
+        )
+        _require(
+            int(audit.get("tracked_text_blob_count", -1))
+            == PUBLIC_PAIRED_TEXT_BLOB_COUNT,
+            "public-paired text inventory changed",
+        )
+        _require(
+            audit.get("tracked_text_blob_digest") == PUBLIC_PAIRED_TEXT_BLOB_DIGEST,
+            "public-paired text digest changed",
+        )
+        _require(
+            int(audit.get("referenced_take_count", -1))
+            == PUBLIC_PAIRED_REFERENCED_TAKE_COUNT,
+            "public-paired exclusion count changed",
+        )
+        _require(
+            audit.get("referenced_take_digest")
+            == PUBLIC_PAIRED_REFERENCED_TAKE_DIGEST,
+            "public-paired exclusion digest changed",
+        )
+        _require(
+            audit.get("selected_take_digest") == PUBLIC_PAIRED_SELECTED_TAKE_DIGEST,
+            "public-paired selection digest changed",
         )
     else:
         _require(
@@ -327,6 +423,21 @@ def validate_pokeflex_shrinkage_target_protocol(
             == PUBLISHED_KINECT_JACCARD,
             "published Jaccard reference changed",
         )
+    elif protocol_id == TARGET_PROTOCOL_PUBLIC_PAIRED_V1:
+        _require(
+            evaluation.get("aggregation")
+            == "equal scored frames within each take, then equal physical objects",
+            "public-paired aggregation changed",
+        )
+        _require(
+            evaluation.get("jaccard_role")
+            == "non-gating diagnostic using the public evaluator's Trimesh reconstruction semantics",
+            "public-paired Jaccard role changed",
+        )
+        _require(
+            evaluation.get("jaccard_mesh_processing") == "trimesh_default",
+            "public-paired Jaccard processing changed",
+        )
     else:
         _require(
             float(evaluation.get("minimum_candidate_jaccard_valid_fraction", -1.0))
@@ -355,6 +466,24 @@ def validate_pokeflex_shrinkage_target_protocol(
         _require(
             direct.get("jaccard_is_gating") is False,
             "official Jaccard unexpectedly became gating",
+        )
+    elif protocol_id == TARGET_PROTOCOL_PUBLIC_PAIRED_V1:
+        _require(
+            float(direct.get("candidate_CD_UL1_mm_below", -1.0))
+            == PUBLISHED_KINECT_CD_UL1_MM,
+            "public-paired context reference changed",
+        )
+        _require(
+            direct.get("gating") is False,
+            "public-paired cross-split reference unexpectedly became gating",
+        )
+        _require(
+            int(paired.get("minimum_object_win_count", -1)) == 12,
+            "public-paired win-count gate changed",
+        )
+        _require(
+            int(paired.get("minimum_supported_object_count", -1)) == 12,
+            "public-paired support-breadth gate changed",
         )
     else:
         _require(
@@ -485,7 +614,7 @@ def validate_prediction_seal(
     object_name, take = _take_identity(str(take_id))
     _require(seal.get("object_name") == object_name, "prediction object changed")
     protocol_id = str(protocol["protocol_id"])
-    if protocol_id != TARGET_PROTOCOL_OFFICIAL18_V1:
+    if protocol_id in {TARGET_PROTOCOL_V1, TARGET_PROTOCOL_V2}:
         _require(take == "T2", "prediction take changed")
     _require(
         dict(seal.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
@@ -711,6 +840,7 @@ def official_volumetric_jaccard(
     target_faces: np.ndarray,
     *,
     engine: str = "manifold",
+    process: bool = False,
 ) -> float:
     """Compute PokeFlex's boolean-volume Jaccard with an explicit backend."""
 
@@ -724,12 +854,12 @@ def official_volumetric_jaccard(
     prediction = trimesh.Trimesh(
         vertices=np.asarray(prediction_vertices_m, dtype=np.float64),
         faces=np.asarray(prediction_faces, dtype=np.int64),
-        process=False,
+        process=process,
     )
     target = trimesh.Trimesh(
         vertices=np.asarray(target_vertices_m, dtype=np.float64),
         faces=np.asarray(target_faces, dtype=np.int64),
-        process=False,
+        process=process,
     )
     union = prediction.union(target, engine=engine)
     intersection = prediction.intersection(target, engine=engine)
@@ -915,6 +1045,102 @@ def _evaluate_official18_metrics(
     }
 
 
+def _evaluate_public_paired_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Apply the prospective paired gates on fresh public takes."""
+
+    _require(
+        len(per_take) == len(PUBLIC_PAIRED_TARGET_TAKE_IDS),
+        "public-paired target result set is incomplete",
+    )
+    by_take = {str(row["take_id"]): row for row in per_take}
+    _require(
+        len(by_take) == len(per_take),
+        "public-paired target contains duplicate takes",
+    )
+    _require(
+        tuple(sorted(by_take)) == tuple(sorted(PUBLIC_PAIRED_TARGET_TAKE_IDS)),
+        "public-paired target result cohort changed",
+    )
+    ordered = [by_take[take_id] for take_id in PUBLIC_PAIRED_TARGET_TAKE_IDS]
+    _require(
+        tuple(str(row["object_name"]) for row in ordered)
+        == PUBLIC_PAIRED_TARGET_OBJECTS,
+        "public-paired target object identities changed",
+    )
+
+    baseline = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    candidate = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    _require(np.all(np.isfinite(baseline)), "baseline target scores are non-finite")
+    _require(np.all(np.isfinite(candidate)), "candidate target scores are non-finite")
+    _require(np.all(baseline > 0.0), "baseline target score is zero")
+    baseline_mean = float(np.mean(baseline))
+    candidate_mean = float(np.mean(candidate))
+    relative = float((baseline_mean - candidate_mean) / baseline_mean)
+    object_relative = (baseline - candidate) / baseline
+    object_win_count = int(np.sum(candidate < baseline))
+    supported_object_count = int(
+        sum(int(row["supported_frame_count"]) > 0 for row in ordered)
+    )
+
+    paired = protocol["gates"]["paired_transfer"]
+    upper_difference = paired_object_bootstrap_upper_difference(
+        candidate - baseline,
+        replicates=int(paired["bootstrap_replicates"]),
+        seed=int(paired["bootstrap_seed"]),
+        upper_quantile=float(paired["bootstrap_upper_quantile"]),
+    )
+    paired_pass = bool(
+        relative > float(paired["relative_CD_UL1_improvement_above"])
+        and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
+        and float(np.min(object_relative))
+        >= -float(paired["maximum_per_object_relative_regression"])
+        and object_win_count >= int(paired["minimum_object_win_count"])
+        and supported_object_count >= int(paired["minimum_supported_object_count"])
+    )
+
+    total_frames = sum(int(row["scored_frame_count"]) for row in ordered)
+    candidate_valid = sum(
+        int(row["candidate_jaccard_valid_count"]) for row in ordered
+    )
+    valid_object_jaccard = [
+        float(row["candidate_mean_jaccard_valid"])
+        for row in ordered
+        if row["candidate_mean_jaccard_valid"] is not None
+    ]
+    candidate_jaccard = (
+        float(np.mean(valid_object_jaccard)) if valid_object_jaccard else None
+    )
+    context_threshold = float(
+        protocol["gates"]["direct_metric_reference"]["candidate_CD_UL1_mm_below"]
+    )
+    return {
+        "public_paired_take_count": len(PUBLIC_PAIRED_TARGET_TAKE_IDS),
+        "baseline_object_balanced_CD_UL1_mm": baseline_mean,
+        "candidate_object_balanced_CD_UL1_mm": candidate_mean,
+        "object_balanced_relative_CD_UL1_improvement": relative,
+        "object_win_count": object_win_count,
+        "minimum_per_object_relative_improvement": float(np.min(object_relative)),
+        "supported_object_count": supported_object_count,
+        "bootstrap_upper_candidate_minus_baseline_CD_UL1_mm": upper_difference,
+        "candidate_object_balanced_jaccard_valid": candidate_jaccard,
+        "candidate_jaccard_valid_fraction": float(candidate_valid / total_frames),
+        "published_kinect_CD_UL1_mm_context_only": context_threshold,
+        "candidate_below_published_context_reference": bool(
+            candidate_mean < context_threshold
+        ),
+        "published_reference_is_gating": False,
+        "paired_transfer_passed": paired_pass,
+        "all_target_gates_passed": paired_pass,
+    }
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -924,6 +1150,8 @@ def evaluate_target_metrics(
     validate_pokeflex_shrinkage_target_protocol(protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_OFFICIAL18_V1:
         return _evaluate_official18_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_PUBLIC_PAIRED_V1:
+        return _evaluate_public_paired_metrics(per_object, protocol)
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
@@ -1021,6 +1249,8 @@ def score_one_prediction(
             tv,
             tf,
             engine=str(evaluation["jaccard_boolean_backend"]),
+            process=evaluation.get("jaccard_mesh_processing")
+            == "trimesh_default",
         )
     )
     rows = []

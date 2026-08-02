@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexPublicPairedSelectionManifest",
+  "selection_id": "pokeflex-public-paired-v1",
+  "created_at_utc": "2026-08-02T19:01:36Z",
+  "outcome_access_before_selection": false,
+  "scan_scope": "all 192 local and origin Bayesian-PhysTwin branch tips fetched before selection; every unique tracked text blob at those tips",
+  "git_ref_tip_count": 192,
+  "git_ref_tip_digest": "b402a78760d4a65dae0274fabac78d4f8d641eb202b7690f70a1ec045abc9cb0",
+  "tracked_text_blob_count": 3826,
+  "tracked_text_blob_digest": "ecd5275b8dc688634484f05df291479ee16cfdcae3cb0bbd65e50147bddee226",
+  "referenced_take_count": 63,
+  "referenced_take_digest": "bf680c98975be5064b979dee0448f99be8d3d39c47f9496f9086502dfa42d9c5",
+  "public_poking_take_count": 116,
+  "unreferenced_public_take_count": 60,
+  "eligible_object_count": 15,
+  "exhausted_objects": [
+    "3dPrintedBunny",
+    "FoamDice",
+    "MemoryFoam"
+  ],
+  "selection_rule": "For each public object with at least one take absent from the all-ref text audit, select the take minimizing SHA256(b'pokeflex-public-paired-v1\\0' + take_id.encode('utf-8')); sort selected takes by object name; do not replace a selected take.",
+  "selected_take_ids": [
+    "3dPrintedCylinder_T4",
+    "3dPrintedHeart_T2",
+    "3dPrintedPizza_T3",
+    "3dPrintedPyramid_T3",
+    "Beanbag_T5",
+    "FoamCylinder_T5",
+    "FoamHalfSphere_T1",
+    "Pillow_T1",
+    "PlushDice_T4",
+    "PlushMoon_T6",
+    "PlushOctopus_T2",
+    "PlushTurtle_T4",
+    "PlushVolleyball_T1",
+    "Sponge_T1",
+    "ToiletPaperRoll_T2"
+  ],
+  "selected_take_digest": "6bea94c899c23903cbe84b0f90a9a9a14dd89e3e09c0c1a9573415ede7c7fa76",
+  "claim_boundary": "Freshness is relative to the complete tracked Bayesian-PhysTwin git history at lock time. It does not imply that these public PokeFlex recordings were never examined by unrelated external work.",
+  "selection_manifest_sha256": "d7a1357d78a4ddf18ace8053e29b3a2e63235bc87279becfdc8d2211f8a13632"
+}
