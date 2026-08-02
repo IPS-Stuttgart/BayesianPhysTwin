@@ -1,0 +1,337 @@
+{
+  "accepted_update_count": 2,
+  "advancement_gates": {
+    "all_64_observed_identities_excluded_from_every_score": true,
+    "all_acceptances_pass_physical_and_multiview_guards": true,
+    "all_rejections_are_exact_fallback": true,
+    "at_least_four_of_five_joint_object_wins": false,
+    "both_primary_cluster_intervals_exclude_zero": false,
+    "both_primary_metrics_improve_at_least_one_percent": false,
+    "late_identity_improves": false,
+    "no_object_regresses_more_than_two_percent": false
+  },
+  "aggregate": {
+    "dynamic_nuisance_pairwise_recursive_rbf": {
+      "late_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.011056738979025338,
+        "object_balanced_mean_m": 0.010958518079718692
+      },
+      "post_update_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.008938930458695024,
+        "object_balanced_mean_m": 0.008852844624567277
+      },
+      "post_update_hidden_symmetric_chamfer_m": {
+        "episode_mean_m": 0.008007748122288303,
+        "object_balanced_mean_m": 0.00796200821054251
+      }
+    },
+    "dynamic_pool_selected_backbone": {
+      "late_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.011056738979025338,
+        "object_balanced_mean_m": 0.010958518079718692
+      },
+      "post_update_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.009042503266321653,
+        "object_balanced_mean_m": 0.008950020475141757
+      },
+      "post_update_hidden_symmetric_chamfer_m": {
+        "episode_mean_m": 0.008127631768560588,
+        "object_balanced_mean_m": 0.008073441809422103
+      }
+    },
+    "fixed16_pairwise_consensus_rbf": {
+      "late_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.009398378686244767,
+        "object_balanced_mean_m": 0.009289744015120158
+      },
+      "post_update_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.007642443179617274,
+        "object_balanced_mean_m": 0.00754962918575462
+      },
+      "post_update_hidden_symmetric_chamfer_m": {
+        "episode_mean_m": 0.0070426623177566716,
+        "object_balanced_mean_m": 0.006969882151546723
+      }
+    },
+    "fixed16_selected_backbone": {
+      "late_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.010688111338229724,
+        "object_balanced_mean_m": 0.010518866540903362
+      },
+      "post_update_hidden_identity_rmse_m": {
+        "episode_mean_m": 0.008944017874501138,
+        "object_balanced_mean_m": 0.008799124841622284
+      },
+      "post_update_hidden_symmetric_chamfer_m": {
+        "episode_mean_m": 0.008162859912861102,
+        "object_balanced_mean_m": 0.008046787084238609
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "arrays_sha256": "85f13163d42d831b502f62840b7a253c3ea887d4388ed4062cc488303aa9d460",
+      "case": "002-rope-silk-ep0002",
+      "report_sha256": "bfae81fd3f93f9555f9125e7bca5308b383af2aa019987f38a510fbbfef23e00"
+    },
+    {
+      "arrays_sha256": "56c106a5cc81ce0d67cbceab4ddc626e842183b82a8e803ed96321a973468404",
+      "case": "002-rope-silk-ep0005",
+      "report_sha256": "5f8a2bf7a2c92a5446ca053d00a0d65d5cd6a90cba43df9d2acb0b0986da341a"
+    },
+    {
+      "arrays_sha256": "99bb23064d7e23d6db554813440fb244c90214e1fe4e07ec7158829f433aa77e",
+      "case": "002-rope-silk-ep0006",
+      "report_sha256": "b5bd6586e159a0dced35635452cc76a81ae7e8aefb9a7f874f86cf738d2d3de5"
+    },
+    {
+      "arrays_sha256": "0ffeba7de7161766e9a025ab21e88e8e41eacbccbd869644f35af5d5a8d90602",
+      "case": "002-rope-silk-ep0007",
+      "report_sha256": "464343ca9e89cdcf8dada1173426fb30df95f7a74d6fdf3115a1864a41ee402d"
+    },
+    {
+      "arrays_sha256": "baf7e99746544390ade4420e7e8cef0799af5d7713328882abd758087f25c71c",
+      "case": "002-rope-silk-ep0009",
+      "report_sha256": "2d6d55dbf3939aa27a432e6dcd6a0f08128c5ea1b6a44d2b2730f888ef2a8505"
+    },
+    {
+      "arrays_sha256": "5fb247f26d8a368cb987b6120d674fc64caec3a5a179d1ab7f5a1694456d5927",
+      "case": "083-blanket-cloth-ep0001",
+      "report_sha256": "484da34986773cef33ab780d7e3aa4c698f34f89760a9a2aaf492c434520cc2f"
+    },
+    {
+      "arrays_sha256": "1ab84f2b4c85ddbd68e0544f62999a6eb576a07bbeb429fc21b0c7c0088a21ea",
+      "case": "083-blanket-cloth-ep0002",
+      "report_sha256": "5f9d1e419e7f93b004862af35789b131eb3b9d90ef6da94c5d96a8a582566ed5"
+    },
+    {
+      "arrays_sha256": "f6fa387024039bd50f702e1fa26fa911d2445a7669fd3fea0e17481bfdaec662",
+      "case": "083-blanket-cloth-ep0004",
+      "report_sha256": "b4c188fc2db7ddeb6f30e579cd5e9c3322a55a7e7bdb55b1875384cea998f63f"
+    },
+    {
+      "arrays_sha256": "bc51b1fc31a71629f793cdbc2c38c6eb8133eb09064aa768ca960f264623b2a1",
+      "case": "083-blanket-cloth-ep0005",
+      "report_sha256": "9b4b2f898273ee5dcbf7c701aa2ddc012cfaac030e9bf9af42b16a50f3d2c2d3"
+    },
+    {
+      "arrays_sha256": "b9cf55b1c5015ac1f7f5016bf22034589cdfed84145218c4ddc761d3a552aaf3",
+      "case": "083-blanket-cloth-ep0008",
+      "report_sha256": "b09e3ee8c4e3a32bd89fde0eba941a9360ebdecb321463df039ca2955495eb41"
+    },
+    {
+      "arrays_sha256": "4a63a89db22a14bdf932d162f01cd31e143cbc2a78e1dc7d1d80e2739726a7fe",
+      "case": "083-blanket-cloth-ep0009",
+      "report_sha256": "902f9fe179835912b89712902f4252c6acb614619514c6352972c07a364007b5"
+    },
+    {
+      "arrays_sha256": "f3c97703328006e21888a08fef5b2fe3fd9e00526df81dea89315a2e8f246e08",
+      "case": "085-scarf-cloth-ep0003",
+      "report_sha256": "7d5ab0dba99754790cda9bc7e7fb9775f7aaccc79c6f32f63a164cec365ed0e2"
+    },
+    {
+      "arrays_sha256": "e7ec437ed297fa20fddd550f772023cf1b8da68febaf8390ebd8d331b2f3393f",
+      "case": "085-scarf-cloth-ep0004",
+      "report_sha256": "1720334019d5d0a3ce0b1b1fc7967e3680459d89622ece08156657932cccbfb7"
+    },
+    {
+      "arrays_sha256": "46e479b1f7cbd1b57958aba35622d45bfe1fed0d42912ebbfb630cc029f55599",
+      "case": "085-scarf-cloth-ep0006",
+      "report_sha256": "82144f48da92c0f53de4fd4fa037083099e525f1ff7c7cd90d8c586c593fa3cf"
+    },
+    {
+      "arrays_sha256": "284d3cb9c5063c952300e3d0a401cb0d6d33aee37a99eb83e58d052fcb1a86d8",
+      "case": "085-scarf-cloth-ep0008",
+      "report_sha256": "bcdd3ddc02d10a87d0268d7c91e4ae606f78d758260aeeb1deeb49bf61b307a1"
+    },
+    {
+      "arrays_sha256": "3bcc0240598b360995d86a03593c41a9850b55dd8ab47f043f4305b16e9c50d6",
+      "case": "085-scarf-cloth-ep0009",
+      "report_sha256": "993c505b7883b9aa7735d9ade6ddaaa3b464ab90567ae66b4ffafecda480041f"
+    },
+    {
+      "arrays_sha256": "d807e9a5080b3606cac27d1f114aa923300dccd5b9f19a9ec750e8b581165a23",
+      "case": "092-squirrel-ep0004",
+      "report_sha256": "830b8a70315810e5cb905dabb4dc100a5aabf74e958e35e76af4d1ab3f2394a3"
+    },
+    {
+      "arrays_sha256": "6e16b46ee7d4f44236af11d5232d1270709afa15676b52dcceec47c851dd1717",
+      "case": "092-squirrel-ep0005",
+      "report_sha256": "476d8223ca3ed2817cd71a61f12e29a4f9ab5dc75b082649de1679122e935665"
+    },
+    {
+      "arrays_sha256": "98ee56c7d619f2edfd4c5fbee279269c6df41624bbe11d042f5c61cc23677623",
+      "case": "092-squirrel-ep0007",
+      "report_sha256": "8c297fd043cb2e80f0aa499f230c49886f803b71ce2b6d8e7e4ef178945cc495"
+    },
+    {
+      "arrays_sha256": "e912716b6382d1cbbdc6ba24d7c90f10503ef65e0a8942b259be345361f33f89",
+      "case": "092-squirrel-ep0008",
+      "report_sha256": "93db8698d582167158412d07d54ab2ccb293d6293b7b6cca6e07009b540b6045"
+    },
+    {
+      "arrays_sha256": "c58373418b52ca718481ddf68fb15891b8189dc20b883ebaac6503351aa56627",
+      "case": "092-squirrel-ep0009",
+      "report_sha256": "f719f812b137741a23efc9ab784e2837fc4fe997f30142bb49b328ead6de1b97"
+    },
+    {
+      "arrays_sha256": "66fe4e1e1cc410db4b033e16f75c8251679c067619b55e6ddb74ca2ba7409f8e",
+      "case": "170-spider-ep0000",
+      "report_sha256": "b6692e995308f200f32d6cfc67c894af97582898bed4a079d4d8169ee1936676"
+    },
+    {
+      "arrays_sha256": "cbf17bfc3f2f810398b3fda0152370150cecf9f5b3da28be8392ad74251df497",
+      "case": "170-spider-ep0001",
+      "report_sha256": "457ffbe0fa5c598cea7049ab21364fba93bf4ae2d5c8c55ba91623267ebf3129"
+    },
+    {
+      "arrays_sha256": "b7f46c2e24e6212aac10351766c0783e68f627c4abae3c4b626ce401c2155827",
+      "case": "170-spider-ep0003",
+      "report_sha256": "1b0dc5ab29528c594ed1029899cd119e583c89c8457c42e1e5e098247d82ba30"
+    },
+    {
+      "arrays_sha256": "c62f57a4f27b19391ba4b8738212be1b39f2b29cb6690de9ea006201e96161e8",
+      "case": "170-spider-ep0005",
+      "report_sha256": "506dea038e910799ff7b776ca2519f3a1024c4f122c8e0def4ab1922fb8c58fe"
+    },
+    {
+      "arrays_sha256": "a56fd012609408c49b0e563a10e67fe724998b2777819687a150c6c69925706b",
+      "case": "170-spider-ep0008",
+      "report_sha256": "0c4a16fab73eed26594939f8f9a98c1947fbb4fa1a55b1f74fc39fe4588c4e55"
+    },
+    {
+      "arrays_sha256": "76d38de2fbb641b402b3a2fd3e3461bf97fc22ecc25fca9edce8f67a60bd2c9c",
+      "case": "170-spider-ep0009",
+      "report_sha256": "cad735553ac1620e043d9b1e7949ac8b8530a4111a28a55c66f62bddf7bf3c7f"
+    }
+  ],
+  "case_count": 27,
+  "claim_boundary": "These 27 cases and five objects were already outcome-open. The result may stop or lock a candidate for a genuinely fresh protocol; it cannot establish state of the art, calibration, or non-regression.",
+  "comparisons": {
+    "dynamic_nuisance_pairwise_recursive_rbf_vs_dynamic_pool_selected_backbone": {
+      "late_hidden_identity_rmse_m": {
+        "episode_mean_difference_m": 0.0,
+        "episode_tie_count": 27,
+        "episode_win_count": 0,
+        "object_balanced_mean_difference_m": 0.0,
+        "object_balanced_relative_change": 0.0,
+        "object_cluster_lower_95_m": 0.0,
+        "object_cluster_probability_improved": 0.0,
+        "object_cluster_upper_95_m": 0.0
+      },
+      "post_update_hidden_identity_rmse_m": {
+        "episode_mean_difference_m": -0.0001035728076266303,
+        "episode_tie_count": 25,
+        "episode_win_count": 2,
+        "object_balanced_mean_difference_m": -9.717585057447976e-05,
+        "object_balanced_relative_change": -0.010857612096461782,
+        "object_cluster_lower_95_m": -0.00024400366719728948,
+        "object_cluster_probability_improved": 0.9222,
+        "object_cluster_upper_95_m": 0.0
+      },
+      "post_update_hidden_symmetric_chamfer_m": {
+        "episode_mean_difference_m": -0.00011988364627228615,
+        "episode_tie_count": 25,
+        "episode_win_count": 2,
+        "object_balanced_mean_difference_m": -0.0001114335988795952,
+        "object_balanced_relative_change": -0.013802489881025304,
+        "object_cluster_lower_95_m": -0.0002918409898243336,
+        "object_cluster_probability_improved": 0.9222,
+        "object_cluster_upper_95_m": 0.0
+      }
+    },
+    "dynamic_nuisance_pairwise_recursive_rbf_vs_fixed16_pairwise_consensus_rbf": {
+      "late_hidden_identity_rmse_m": {
+        "episode_mean_difference_m": 0.0016583602927805739,
+        "episode_tie_count": 3,
+        "episode_win_count": 9,
+        "object_balanced_mean_difference_m": 0.001668774064598535,
+        "object_balanced_relative_change": 0.17963617316929376,
+        "object_cluster_lower_95_m": 0.0001708693336806382,
+        "object_cluster_probability_improved": 0.0165,
+        "object_cluster_upper_95_m": 0.0031421622219474934
+      },
+      "post_update_hidden_identity_rmse_m": {
+        "episode_mean_difference_m": 0.00129648727907775,
+        "episode_tie_count": 1,
+        "episode_win_count": 10,
+        "object_balanced_mean_difference_m": 0.001303215438812656,
+        "object_balanced_relative_change": 0.17261979452867574,
+        "object_cluster_lower_95_m": 0.0004878677289649108,
+        "object_cluster_probability_improved": 0.0,
+        "object_cluster_upper_95_m": 0.0021185631486604017
+      },
+      "post_update_hidden_symmetric_chamfer_m": {
+        "episode_mean_difference_m": 0.0009650858045316304,
+        "episode_tie_count": 1,
+        "episode_win_count": 8,
+        "object_balanced_mean_difference_m": 0.0009921260589957873,
+        "object_balanced_relative_change": 0.14234473946960774,
+        "object_cluster_lower_95_m": 0.00020372289022896564,
+        "object_cluster_probability_improved": 0.007,
+        "object_cluster_upper_95_m": 0.0017569195895321132
+      }
+    }
+  },
+  "config": {
+    "active_center_count": 16,
+    "association_candidate_count": 24,
+    "belief": {
+      "degrees_of_freedom": 4.0,
+      "global_prior_std_m": 0.1,
+      "length_scale_fraction": 0.1,
+      "local_blend": 1.0,
+      "local_prior_std_m": 0.02,
+      "maximum_correction_m": 0.1,
+      "minimum_length_scale_m": 0.0001,
+      "minimum_reliability": 0.02,
+      "observation_std_m": 0.005,
+      "process_std_m_per_sqrt_frame": 0.003
+    },
+    "information_effective_sample_cap": 8.0,
+    "maximum_correction_to_physical_motion_ratio": 2.0,
+    "minimum_action_support": 0.1,
+    "minimum_correction_physical_cosine": 0.0,
+    "minimum_information_gain_nats": 0.0,
+    "minimum_inlier_view_count": 3,
+    "minimum_motion_center_count": 3,
+    "minimum_observed_motion_m": 0.0005,
+    "minimum_physical_agreement_gain": 0.4,
+    "minimum_physical_response_m": 0.0005,
+    "nuisance_prior_std_m": 0.02,
+    "observation_pool_count": 64,
+    "observation_variance_floor_m2": 2.5e-05,
+    "pairwise_gate": {
+      "absolute_pair_strain_m": 0.03,
+      "maximum_exact_center_count": 24,
+      "minimum_inlier_count": 9,
+      "minimum_inlier_fraction": 0.7,
+      "relative_pair_strain": 0.1
+    },
+    "physical_response_rank": 4,
+    "state_prior_std_m": 0.02,
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "exact_fallback_count": 79,
+  "input_roots": {
+    "measurement": "/home/florianpfaff/source-only/open27-dynamic-pool64-measurements-v1",
+    "source": "/home/florianpfaff/source-only/open27-pairwise-bias-aware-transfer-v1-8108d37/source"
+  },
+  "larger_preregistered_run_justified": false,
+  "object_count": 5,
+  "object_level_gates": {
+    "joint_object_win_count": 0,
+    "maximum_object_relative_regression": {
+      "post_update_hidden_identity_rmse_m": 0.465883554550308,
+      "post_update_hidden_symmetric_chamfer_m": 0.33032843579843424
+    },
+    "object_count": 5
+  },
+  "protocol_id": "deform360-dynamic-pairwise-belief-open27-v1-development",
+  "status": "already-open-source-development",
+  "transfer_manifest_sha256": "02babb4e041fce354a168a76c055a043032dbbf5eb5320e2c8a0e409bb2d83bb"
+}
