@@ -38,8 +38,10 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     CHECKPOINT_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
+    TARGET_PROTOCOL_V2,
     TARGET_TAKE_IDS,
     UPSTREAM_COMMIT,
+    action_field_history_is_supported,
     build_prediction_barrier,
     evaluate_target_metrics,
     file_sha256,
@@ -94,6 +96,8 @@ def _predict(
     checkpoint_root: Path,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
+    if protocol["protocol_id"] != TARGET_PROTOCOL_V2:
+        raise ValueError("new predictions require the v2 pre-outcome amendment")
     take_root = take_root.resolve()
     output_dir = output_dir.resolve()
     if take_root.name not in TARGET_TAKE_IDS:
@@ -183,6 +187,7 @@ def _predict(
     update_supported = []
     update_accepted = []
     action_supported_rows = []
+    robot_history_supported_rows = []
     correction_rms = []
     diagnostics = []
     for target_frame in target_frames:
@@ -192,11 +197,19 @@ def _predict(
         accepted = source_frame in updates_by_frame and bool(
             updates_by_frame[source_frame].accepted
         )
-        action_supported = (
-            source_frame in robot_by_frame
-            and float(robot_by_frame[source_frame]["forces"][1]) > 3.0
+        source_record = robot_by_frame.get(source_frame, {})
+        source_forces = np.asarray(source_record.get("forces"), dtype=np.float64)
+        action_supported = bool(
+            source_forces.ndim == 1
+            and len(source_forces) >= 2
+            and np.isfinite(source_forces[1])
+            and source_forces[1] > 3.0
         )
-        supported = bool(accepted and action_supported)
+        robot_history_supported = action_field_history_is_supported(
+            robot_by_frame,
+            source_frame,
+        )
+        supported = bool(accepted and action_supported and robot_history_supported)
         if supported:
             source_prior = predictions_by_frame[source_frame].vertices_m
             correction = corrections_by_frame[source_frame]
@@ -243,6 +256,7 @@ def _predict(
         update_supported.append(supported)
         update_accepted.append(accepted)
         action_supported_rows.append(action_supported)
+        robot_history_supported_rows.append(robot_history_supported)
         correction_rms.append(field_rms)
         update = updates_by_frame.get(source_frame)
         diagnostics.append(
@@ -251,10 +265,17 @@ def _predict(
                 "source_frame": source_frame,
                 "accepted": accepted,
                 "action_supported": action_supported,
+                "robot_history_supported": robot_history_supported,
                 "update_supported": supported,
-                "reason": update.reason
-                if update is not None
-                else "no-five-frame-source-prior",
+                "reason": (
+                    "missing-required-action-history"
+                    if not robot_history_supported
+                    else (
+                        update.reason
+                        if update is not None
+                        else "no-five-frame-source-prior"
+                    )
+                ),
                 "association_count": (
                     int(update.diagnostics.get("association_count", 0))
                     if update is not None
@@ -293,6 +314,10 @@ def _predict(
         update_supported=supported_array,
         update_accepted=np.asarray(update_accepted, dtype=np.bool_),
         action_supported=np.asarray(action_supported_rows, dtype=np.bool_),
+        robot_history_supported=np.asarray(
+            robot_history_supported_rows,
+            dtype=np.bool_,
+        ),
         correction_rms_m=np.asarray(correction_rms, dtype=np.float64),
     )
 
@@ -325,6 +350,9 @@ def _predict(
         "supported_frame_count": int(np.sum(supported_array)),
         "fallback_frame_count": int(np.sum(~supported_array)),
         "fallback_mismatch_count": fallback_mismatches,
+        "missing_robot_history_frame_count": int(
+            np.sum(~np.asarray(robot_history_supported_rows, dtype=np.bool_))
+        ),
         "template_frame": template_frame,
         "template_preprocessing": template_preprocessing,
         "causal_history": "each prediction f uses Kinect frames f-5 through f-1",
@@ -453,7 +481,7 @@ def main() -> None:
             REPOSITORY_ROOT
             / "configs"
             / "sota"
-            / "pokeflex_conservative_shrinkage_target_v1.json"
+            / "pokeflex_conservative_shrinkage_target_v2.json"
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

@@ -26,6 +26,8 @@ TARGET_OBJECTS = (
     "Sponge",
 )
 TARGET_TAKE_IDS = tuple(f"{name}_T2" for name in TARGET_OBJECTS)
+TARGET_PROTOCOL_V1 = "pokeflex-conservative-shrinkage-target-v1"
+TARGET_PROTOCOL_V2 = "pokeflex-conservative-shrinkage-target-v2"
 SOURCE_PROTOCOL_SHA256 = (
     "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9"
 )
@@ -84,6 +86,26 @@ def _take_identity(take_id: str) -> tuple[str, str]:
     return object_name, f"T{take_number}"
 
 
+def action_field_history_is_supported(
+    robot_by_frame: Mapping[int, Mapping[str, Any]],
+    source_frame: int,
+) -> bool:
+    """Return whether the frozen action-local field has all required robot poses."""
+
+    for frame in range(max(1, source_frame - 3), source_frame + 1):
+        record = robot_by_frame.get(frame)
+        if record is None:
+            return False
+        for key in ("T_WT", "T_WE"):
+            transform = np.asarray(record.get(key), dtype=np.float64)
+            if transform.shape != (4, 4) or not np.all(np.isfinite(transform)):
+                return False
+        forces = np.asarray(record.get("forces"), dtype=np.float64)
+        if forces.ndim != 1 or len(forces) < 3 or not np.all(np.isfinite(forces[:3])):
+            return False
+    return True
+
+
 def validate_pokeflex_shrinkage_target_protocol(
     payload: Mapping[str, Any],
 ) -> dict[str, Any]:
@@ -94,8 +116,9 @@ def validate_pokeflex_shrinkage_target_protocol(
         payload.get("artifact_kind") == "PokeFlexConservativeShrinkageTargetProtocol",
         "target artifact kind changed",
     )
+    protocol_id = payload.get("protocol_id")
     _require(
-        payload.get("protocol_id") == "pokeflex-conservative-shrinkage-target-v1",
+        protocol_id in {TARGET_PROTOCOL_V1, TARGET_PROTOCOL_V2},
         "target protocol id changed",
     )
     observed = target_protocol_sha256(payload)
@@ -132,6 +155,27 @@ def validate_pokeflex_shrinkage_target_protocol(
         method.get("unsupported_frame_action") == "byte-identical released checkpoint",
         "fallback changed",
     )
+    if protocol_id == TARGET_PROTOCOL_V2:
+        _require(
+            method.get("missing_required_robot_pose_action")
+            == "mark update unsupported and return byte-identical released checkpoint",
+            "missing-pose fallback changed",
+        )
+        amendment = payload.get("preoutcome_amendment")
+        _require(isinstance(amendment, Mapping), "pre-outcome amendment is missing")
+        _require(
+            amendment.get("supersedes_protocol_sha256")
+            == "7662ec3d92e2ae1d6872e32c218baaae27926924c730178d7477f98c684ff277",
+            "superseded protocol changed",
+        )
+        _require(
+            amendment.get("target_mesh_outcome_opened") is False,
+            "amendment followed target outcome access",
+        )
+        _require(
+            amendment.get("uniform_eight_take_rerun_required") is True,
+            "uniform rerun requirement changed",
+        )
 
     upstream = payload.get("upstream")
     _require(isinstance(upstream, Mapping), "upstream lock is missing")
@@ -219,6 +263,7 @@ def validate_pokeflex_shrinkage_target_protocol(
     return {
         "passed": True,
         "protocol_sha256": observed,
+        "protocol_id": protocol_id,
         "target_take_ids": TARGET_TAKE_IDS,
         "selected_arm": SELECTED_ARM,
     }
@@ -247,7 +292,11 @@ def prediction_seal_sha256(payload: Mapping[str, Any]) -> str:
     return canonical_payload_sha256(payload, digest_field="seal_sha256")
 
 
-def _load_prediction_arrays(path: Path) -> dict[str, np.ndarray]:
+def _load_prediction_arrays(
+    path: Path,
+    *,
+    protocol_id: str,
+) -> dict[str, np.ndarray]:
     required = {
         "baseline_vertices_m",
         "candidate_vertices_m",
@@ -261,6 +310,8 @@ def _load_prediction_arrays(path: Path) -> dict[str, np.ndarray]:
         "action_supported",
         "correction_rms_m",
     }
+    if protocol_id == TARGET_PROTOCOL_V2:
+        required.add("robot_history_supported")
     with np.load(path, allow_pickle=False) as archive:
         _require(set(archive.files) == required, "prediction array schema changed")
         return {name: np.asarray(archive[name]) for name in archive.files}
@@ -320,7 +371,8 @@ def validate_prediction_seal(
         file_sha256(npz_path) == seal.get("prediction_npz_sha256"),
         "prediction archive checksum mismatch",
     )
-    arrays = _load_prediction_arrays(npz_path)
+    protocol_id = str(protocol["protocol_id"])
+    arrays = _load_prediction_arrays(npz_path, protocol_id=protocol_id)
     baseline = np.asarray(arrays["baseline_vertices_m"], dtype=np.float64)
     candidate = np.asarray(arrays["candidate_vertices_m"], dtype=np.float64)
     faces = np.asarray(arrays["faces"])
@@ -346,6 +398,19 @@ def validate_prediction_seal(
     _require(int(frames[0]) == 6, "prediction does not begin at frame six")
     _require(supported.shape == frames.shape, "support shape changed")
     _require(supported.dtype == np.bool_, "support mask must be Boolean")
+    if protocol_id == TARGET_PROTOCOL_V2:
+        robot_supported = np.asarray(arrays["robot_history_supported"])
+        _require(robot_supported.shape == frames.shape, "robot support shape changed")
+        _require(robot_supported.dtype == np.bool_, "robot support must be Boolean")
+        _require(
+            not np.any(supported & ~robot_supported),
+            "prediction used incomplete robot history",
+        )
+        _require(
+            int(seal.get("missing_robot_history_frame_count", -1))
+            == int(np.sum(~robot_supported)),
+            "missing robot-history count changed",
+        )
     _require(
         np.array_equal(candidate[~supported], baseline[~supported]),
         "unsupported prediction is not an exact fallback",

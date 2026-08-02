@@ -11,8 +11,10 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
+    TARGET_PROTOCOL_V2,
     TARGET_TAKE_IDS,
     UPSTREAM_COMMIT,
+    action_field_history_is_supported,
     build_prediction_barrier,
     evaluate_target_metrics,
     file_sha256,
@@ -28,6 +30,9 @@ ROOT = Path(__file__).parents[1]
 PROTOCOL_PATH = (
     ROOT / "configs" / "sota" / "pokeflex_conservative_shrinkage_target_v1.json"
 )
+PROTOCOL_V2_PATH = (
+    ROOT / "configs" / "sota" / "pokeflex_conservative_shrinkage_target_v2.json"
+)
 RUNNER_PATH = (
     ROOT / "scripts" / "held" / "run_pokeflex_conservative_shrinkage_target.py"
 )
@@ -37,13 +42,20 @@ def _protocol() -> dict[str, object]:
     return json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
+def _protocol_v2() -> dict[str, object]:
+    return json.loads(PROTOCOL_V2_PATH.read_text(encoding="utf-8"))
+
+
 def _write_prediction(
     root: Path,
     take_id: str,
     *,
     revision: str = "1" * 40,
     corrupt_fallback: bool = False,
+    protocol: dict[str, object] | None = None,
+    robot_history_supported: np.ndarray | None = None,
 ) -> Path:
+    protocol = _protocol() if protocol is None else protocol
     case_root = root / take_id
     case_root.mkdir(parents=True)
     tetrahedron = np.asarray(
@@ -63,8 +75,7 @@ def _write_prediction(
         candidate[0, 0, 0] = 0.002
     faces = np.asarray([[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]], dtype=np.int64)
     npz_path = case_root / "prediction.npz"
-    np.savez_compressed(
-        npz_path,
+    arrays = dict(
         baseline_vertices_m=baseline,
         candidate_vertices_m=candidate,
         faces=faces,
@@ -77,11 +88,16 @@ def _write_prediction(
         action_supported=np.asarray([False, True], dtype=np.bool_),
         correction_rms_m=np.asarray([0.0, 0.001], dtype=np.float64),
     )
+    if protocol["protocol_id"] == TARGET_PROTOCOL_V2:
+        if robot_history_supported is None:
+            robot_history_supported = np.asarray([False, True], dtype=np.bool_)
+        arrays["robot_history_supported"] = robot_history_supported
+    np.savez_compressed(npz_path, **arrays)
     object_name, _, _ = take_id.rpartition("_T")
     seal = {
         "schema_version": 1,
         "artifact_kind": "PokeFlexConservativeShrinkagePredictionSeal",
-        "protocol_sha256": _protocol()["protocol_sha256"],
+        "protocol_sha256": protocol["protocol_sha256"],
         "source_result_sha256": SOURCE_RESULT_SHA256,
         "selected_arm": SELECTED_ARM,
         "take_id": take_id,
@@ -97,6 +113,10 @@ def _write_prediction(
         "future_mesh_read": False,
         "future_mesh_read_count": 0,
     }
+    if protocol["protocol_id"] == TARGET_PROTOCOL_V2:
+        seal["missing_robot_history_frame_count"] = int(
+            np.sum(~np.asarray(robot_history_supported, dtype=np.bool_))
+        )
     seal["seal_sha256"] = prediction_seal_sha256(seal)
     seal_path = case_root / "seal.json"
     seal_path.write_text(json.dumps(seal), encoding="utf-8")
@@ -109,6 +129,43 @@ def test_target_protocol_matches_canonical_lock() -> None:
     assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
     assert loaded["source_gate"]["result_sha256"] == SOURCE_RESULT_SHA256
     assert tuple(loaded["target_cohort"]["objects"]) == TARGET_OBJECTS
+
+
+def test_v2_target_protocol_locks_preoutcome_missing_pose_fallback() -> None:
+    loaded = load_pokeflex_shrinkage_target_protocol(PROTOCOL_V2_PATH)
+
+    assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
+    assert loaded["protocol_id"] == TARGET_PROTOCOL_V2
+    assert loaded["preoutcome_amendment"]["target_mesh_outcome_opened"] is False
+
+
+def test_action_field_history_rejects_missing_end_effector_pose() -> None:
+    transform = np.eye(4).tolist()
+    complete = {
+        frame: {"T_WT": transform, "T_WE": transform, "forces": [0.0, 4.0, 0.0]}
+        for frame in range(2, 6)
+    }
+
+    assert action_field_history_is_supported(complete, 5) is True
+    del complete[4]["T_WE"]
+    assert action_field_history_is_supported(complete, 5) is False
+
+
+def test_v2_prediction_requires_robot_support_and_exact_fallback(tmp_path: Path) -> None:
+    protocol = _protocol_v2()
+    seal = _write_prediction(tmp_path, TARGET_TAKE_IDS[0], protocol=protocol)
+    archive = validate_prediction_seal(seal, protocol)
+
+    assert archive.update_supported.tolist() == [False, True]
+
+    invalid = _write_prediction(
+        tmp_path / "invalid",
+        TARGET_TAKE_IDS[0],
+        protocol=protocol,
+        robot_history_supported=np.asarray([False, False], dtype=np.bool_),
+    )
+    with pytest.raises(ValueError, match="incomplete robot history"):
+        validate_prediction_seal(invalid, protocol)
 
 
 def test_target_protocol_rejects_resigned_target_replacement() -> None:
