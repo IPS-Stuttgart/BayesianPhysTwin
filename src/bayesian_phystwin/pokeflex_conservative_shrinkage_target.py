@@ -29,6 +29,9 @@ TARGET_TAKE_IDS = tuple(f"{name}_T2" for name in TARGET_OBJECTS)
 TARGET_PROTOCOL_V1 = "pokeflex-conservative-shrinkage-target-v1"
 TARGET_PROTOCOL_V2 = "pokeflex-conservative-shrinkage-target-v2"
 TARGET_PROTOCOL_OFFICIAL18_V1 = "pokeflex-conservative-shrinkage-official18-v1"
+TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1 = (
+    "pokeflex-conservative-shrinkage-official13-public-v1"
+)
 OFFICIAL18_TARGET_TAKE_IDS = (
     "MemoryFoam_T2",
     "PlushVolleyball_T4",
@@ -58,6 +61,28 @@ OFFICIAL18_PROSPECTIVE_TAKE_IDS = tuple(
     take_id
     for take_id in OFFICIAL18_TARGET_TAKE_IDS
     if take_id not in OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS
+)
+OFFICIAL18_MISSING_PUBLIC_TAKE_IDS = (
+    "Pillow_T8",
+    "3dPrintedCylinder_T7",
+    "3dPrintedHeart_T14",
+    "Sponge_T10",
+    "3dPrintedPizza_T13",
+)
+OFFICIAL13_PUBLIC_TARGET_TAKE_IDS = tuple(
+    take_id
+    for take_id in OFFICIAL18_TARGET_TAKE_IDS
+    if take_id not in OFFICIAL18_MISSING_PUBLIC_TAKE_IDS
+)
+OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS = (
+    "FoamDice_T3",
+    "PlushOctopus_T6",
+    "ToiletPaperRoll_T1",
+)
+OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS = tuple(
+    take_id
+    for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
+    if take_id not in OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
 )
 OFFICIAL_EVALUATOR_SHA256 = (
     "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60"
@@ -127,13 +152,19 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
 
     if protocol.get("protocol_id") == TARGET_PROTOCOL_OFFICIAL18_V1:
         return OFFICIAL18_TARGET_TAKE_IDS
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
+        return OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     return TARGET_TAKE_IDS
 
 
 def protocol_requires_robot_history(protocol_id: str) -> bool:
     """Return whether prediction custody includes explicit robot-history support."""
 
-    return protocol_id in {TARGET_PROTOCOL_V2, TARGET_PROTOCOL_OFFICIAL18_V1}
+    return protocol_id in {
+        TARGET_PROTOCOL_V2,
+        TARGET_PROTOCOL_OFFICIAL18_V1,
+        TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+    }
 
 
 def action_field_history_is_supported(
@@ -173,6 +204,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_V1,
             TARGET_PROTOCOL_V2,
             TARGET_PROTOCOL_OFFICIAL18_V1,
+            TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         },
         "target protocol id changed",
     )
@@ -208,6 +240,26 @@ def validate_pokeflex_shrinkage_target_protocol(
             tuple(cohort.get("development_overlap_take_ids", ()))
             == OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS,
             "development-overlap cohort changed",
+        )
+    elif protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
+        _require(
+            tuple(cohort.get("take_ids", ())) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
+            "public official-subset take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ()))
+            == OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS,
+            "public prospective take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("development_overlap_take_ids", ()))
+            == OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS,
+            "public development-overlap cohort changed",
+        )
+        _require(
+            tuple(cohort.get("missing_official_take_ids", ()))
+            == OFFICIAL18_MISSING_PUBLIC_TAKE_IDS,
+            "missing official take inventory changed",
         )
     else:
         _require(
@@ -296,10 +348,17 @@ def validate_pokeflex_shrinkage_target_protocol(
         evaluation.get("jaccard_boolean_backend") == "manifold",
         "Jaccard backend changed",
     )
-    if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1:
+    if protocol_id in {
+        TARGET_PROTOCOL_OFFICIAL18_V1,
+        TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+    }:
+        expected_aggregation = (
+            "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic"
+            if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1
+            else "equal scored frames over the 13 publicly materializable official validation takes; object-balanced prospective values drive transfer gates"
+        )
         _require(
-            evaluation.get("aggregation")
-            == "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic",
+            evaluation.get("aggregation") == expected_aggregation,
             "official aggregation changed",
         )
         _require(
@@ -355,6 +414,15 @@ def validate_pokeflex_shrinkage_target_protocol(
         _require(
             direct.get("jaccard_is_gating") is False,
             "official Jaccard unexpectedly became gating",
+        )
+    elif protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
+        _require(
+            direct.get("published_aggregate_is_gating") is False,
+            "incomparable published aggregate became gating",
+        )
+        _require(
+            direct.get("released_checkpoint_pairing_is_primary") is True,
+            "released-checkpoint pairing changed",
         )
     else:
         _require(
@@ -485,7 +553,10 @@ def validate_prediction_seal(
     object_name, take = _take_identity(str(take_id))
     _require(seal.get("object_name") == object_name, "prediction object changed")
     protocol_id = str(protocol["protocol_id"])
-    if protocol_id != TARGET_PROTOCOL_OFFICIAL18_V1:
+    if protocol_id not in {
+        TARGET_PROTOCOL_OFFICIAL18_V1,
+        TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+    }:
         _require(take == "T2", "prediction take changed")
     _require(
         dict(seal.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
@@ -915,6 +986,147 @@ def _evaluate_official18_metrics(
     }
 
 
+def _evaluate_official13_public_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Gate the untouched public subset against the released checkpoint."""
+
+    _require(
+        len(per_take) == len(OFFICIAL13_PUBLIC_TARGET_TAKE_IDS),
+        "public official-subset result set is incomplete",
+    )
+    by_take = {str(row["take_id"]): row for row in per_take}
+    _require(
+        tuple(sorted(by_take)) == tuple(sorted(OFFICIAL13_PUBLIC_TARGET_TAKE_IDS)),
+        "public official-subset result cohort changed",
+    )
+    ordered = [by_take[take_id] for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS]
+    for row in ordered:
+        frames = row.get("frames")
+        _require(isinstance(frames, list), "public-subset frame scores are missing")
+        _require(
+            len(frames) == int(row["scored_frame_count"]),
+            "public-subset scored-frame inventory changed",
+        )
+
+    baseline_frames = np.asarray(
+        [frame["baseline_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    candidate_frames = np.asarray(
+        [frame["candidate_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    _require(len(baseline_frames) > 0, "public subset has no scored frames")
+    _require(np.all(np.isfinite(baseline_frames)), "baseline scores are non-finite")
+    _require(np.all(np.isfinite(candidate_frames)), "candidate scores are non-finite")
+    baseline_global = float(np.mean(baseline_frames))
+    candidate_global = float(np.mean(candidate_frames))
+    _require(baseline_global > 0.0, "public-subset baseline score is zero")
+
+    baseline_object = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    candidate_object = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    _require(np.all(np.isfinite(baseline_object)), "baseline object scores are invalid")
+    _require(
+        np.all(np.isfinite(candidate_object)), "candidate object scores are invalid"
+    )
+
+    prospective = [
+        by_take[take_id] for take_id in OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS
+    ]
+    prospective_baseline = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in prospective], dtype=np.float64
+    )
+    prospective_candidate = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in prospective], dtype=np.float64
+    )
+    prospective_baseline_mean = float(np.mean(prospective_baseline))
+    prospective_candidate_mean = float(np.mean(prospective_candidate))
+    _require(prospective_baseline_mean > 0.0, "prospective baseline score is zero")
+    prospective_relative = float(
+        (prospective_baseline_mean - prospective_candidate_mean)
+        / prospective_baseline_mean
+    )
+    prospective_object_relative = (
+        prospective_baseline - prospective_candidate
+    ) / prospective_baseline
+
+    paired = protocol["gates"]["paired_transfer"]
+    upper_difference = paired_object_bootstrap_upper_difference(
+        prospective_candidate - prospective_baseline,
+        replicates=int(paired["bootstrap_replicates"]),
+        seed=int(paired["bootstrap_seed"]),
+        upper_quantile=float(paired["bootstrap_upper_quantile"]),
+    )
+    paired_pass = bool(
+        prospective_relative
+        > float(paired["relative_CD_UL1_improvement_above"])
+        and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
+        and float(np.min(prospective_object_relative))
+        >= -float(paired["maximum_per_object_relative_regression"])
+    )
+
+    candidate_jaccard = [
+        float(frame["candidate_jaccard"])
+        for row in ordered
+        for frame in row["frames"]
+        if frame["candidate_jaccard"] is not None
+    ]
+    total_frames = len(candidate_frames)
+    return {
+        "published_kinect_CD_UL1_mm": float(
+            protocol["official_reference"]["published_kinect_CD_UL1_mm"]
+        ),
+        "published_reference_is_contextual_only": True,
+        "published_direct_comparison_authorized": False,
+        "public_official_subset_take_count": len(OFFICIAL13_PUBLIC_TARGET_TAKE_IDS),
+        "missing_official_take_count": len(OFFICIAL18_MISSING_PUBLIC_TAKE_IDS),
+        "baseline_public13_global_CD_UL1_mm": baseline_global,
+        "candidate_public13_global_CD_UL1_mm": candidate_global,
+        "public13_global_relative_CD_UL1_improvement": float(
+            (baseline_global - candidate_global) / baseline_global
+        ),
+        "baseline_public13_object_balanced_CD_UL1_mm": float(
+            np.mean(baseline_object)
+        ),
+        "candidate_public13_object_balanced_CD_UL1_mm": float(
+            np.mean(candidate_object)
+        ),
+        "full13_object_win_count": int(np.sum(candidate_object < baseline_object)),
+        "prospective_take_count": len(OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS),
+        "development_overlap_take_count": len(
+            OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
+        ),
+        "prospective_object_balanced_baseline_CD_UL1_mm": prospective_baseline_mean,
+        "prospective_object_balanced_candidate_CD_UL1_mm": prospective_candidate_mean,
+        "prospective_object_balanced_relative_CD_UL1_improvement": prospective_relative,
+        "prospective_object_win_count": int(
+            np.sum(prospective_candidate < prospective_baseline)
+        ),
+        "prospective_minimum_per_object_relative_improvement": float(
+            np.min(prospective_object_relative)
+        ),
+        "prospective_bootstrap_upper_candidate_minus_baseline_CD_UL1_mm": (
+            upper_difference
+        ),
+        "candidate_global_jaccard_valid": (
+            float(np.mean(candidate_jaccard)) if candidate_jaccard else None
+        ),
+        "candidate_jaccard_valid_fraction": float(
+            len(candidate_jaccard) / total_frames
+        ),
+        "jaccard_is_gating": False,
+        "released_checkpoint_pairing_is_primary": True,
+        "paired_transfer_passed": paired_pass,
+        "all_target_gates_passed": paired_pass,
+    }
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -924,6 +1136,8 @@ def evaluate_target_metrics(
     validate_pokeflex_shrinkage_target_protocol(protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_OFFICIAL18_V1:
         return _evaluate_official18_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
+        return _evaluate_official13_public_metrics(per_object, protocol)
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
