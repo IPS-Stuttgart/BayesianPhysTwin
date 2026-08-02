@@ -1,0 +1,820 @@
+{
+  "artifact_kind": "PokeFlexConservativeShrinkageSourceResult",
+  "candidate_bank": [
+    {
+      "arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+      "minimum_object_relative_improvement": 0.0021412617325416994,
+      "object_balanced_relative_improvement": 0.01286289679729027,
+      "object_win_count": 9,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.638483387894081,
+          "relative_improvement": 0.015228325396055564
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.3636535798845206,
+          "relative_improvement": 0.0021412617325416994
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.836133793834097,
+          "relative_improvement": 0.008226432517845383
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.3078032339112315,
+          "relative_improvement": 0.028084167211338773
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.564246740018202,
+          "relative_improvement": 0.011935541964712582
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.2902946381558675,
+          "relative_improvement": 0.025273757002999275
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.5551202665815005,
+          "relative_improvement": 0.004458441322802376
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 6.01019173042692,
+          "relative_improvement": 0.009840894524563382
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.521918854829817,
+          "relative_improvement": 0.010577249502753405
+        }
+      },
+      "radius_fraction": 0.4,
+      "scale": 0.125
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.25",
+      "minimum_object_relative_improvement": -0.019788986272884834,
+      "object_balanced_relative_improvement": 0.017695124486233053,
+      "object_win_count": 8,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.625718025515279,
+          "relative_improvement": 0.018683327369824365
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.4156003206584518,
+          "relative_improvement": -0.019788986272884834
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.8127665915812345,
+          "relative_improvement": 0.013018478091511354
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.2249182283929025,
+          "relative_improvement": 0.0467844756492658
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.504698425406493,
+          "relative_improvement": 0.022509762690866353
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.2744727150658743,
+          "relative_improvement": 0.032007407509605845
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.527975515545706,
+          "relative_improvement": 0.008035317243045959
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.959626595408477,
+          "relative_improvement": 0.018171332404712137
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.470251780852678,
+          "relative_improvement": 0.01983500569015051
+        }
+      },
+      "radius_fraction": 0.4,
+      "scale": 0.25
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.5",
+      "minimum_object_relative_improvement": -0.1219213355798281,
+      "object_balanced_relative_improvement": 0.004658107384575862,
+      "object_win_count": 6,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.7140914736973034,
+          "relative_improvement": -0.005235338535397149
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.657523835283894,
+          "relative_improvement": -0.1219213355798281
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.843946998661259,
+          "relative_improvement": 0.006624133996910642
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.202444171578411,
+          "relative_improvement": 0.05185501635387546
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.401811953476732,
+          "relative_improvement": 0.04077970485488136
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.3673023984225896,
+          "relative_improvement": -0.007499967213913994
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.4935215441021645,
+          "relative_improvement": 0.012575332388171212
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.890611478489008,
+          "relative_improvement": 0.029541343462314518
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.384477764501697,
+          "relative_improvement": 0.03520407673416881
+        }
+      },
+      "radius_fraction": 0.4,
+      "scale": 0.5
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.4_residual_scale_1",
+      "minimum_object_relative_improvement": -0.4375955370684581,
+      "object_balanced_relative_improvement": -0.08059552314410849,
+      "object_win_count": 4,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 4.178690593594643,
+          "relative_improvement": -0.13098115198148585
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 3.4052694106959893,
+          "relative_improvement": -0.4375955370684581
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 5.198955155103985,
+          "relative_improvement": -0.06617941545189998
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.649863285541689,
+          "relative_improvement": -0.04909056939850864
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.276407187645708,
+          "relative_improvement": 0.0630483061185032
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.819423858847367,
+          "relative_improvement": -0.19991828979838533
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.471850714229809,
+          "relative_improvement": 0.015430907281450135
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.893655453447224,
+          "relative_improvement": 0.029039858708266197
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.296956712605393,
+          "relative_improvement": 0.050886183293542
+        }
+      },
+      "radius_fraction": 0.4,
+      "scale": 1.0
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.55_residual_scale_0.125",
+      "minimum_object_relative_improvement": -0.0065208535364613684,
+      "object_balanced_relative_improvement": 0.016488864611169978,
+      "object_win_count": 8,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.6166688620868745,
+          "relative_improvement": 0.02113252360713702
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.384171754431451,
+          "relative_improvement": -0.0065208535364613684
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.831395136865924,
+          "relative_improvement": 0.009198215956176203
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.262402114736283,
+          "relative_improvement": 0.03832745460318021
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.528598178540716,
+          "relative_improvement": 0.018265792620684507
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.28289242005157,
+          "relative_improvement": 0.028424066191364616
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.523307976158728,
+          "relative_improvement": 0.008650360984580163
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.9871166411630625,
+          "relative_improvement": 0.013642438762927256
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.484512354655804,
+          "relative_improvement": 0.017279782310941183
+        }
+      },
+      "radius_fraction": 0.55,
+      "scale": 0.125
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.55_residual_scale_0.25",
+      "minimum_object_relative_improvement": -0.05414063360909438,
+      "object_balanced_relative_improvement": 0.017646484584749475,
+      "object_win_count": 8,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.61754362493477,
+          "relative_improvement": 0.020895765160617863
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.4969699485299666,
+          "relative_improvement": -0.05414063360909438
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.836827026099307,
+          "relative_improvement": 0.008084267419427915
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.175415585012927,
+          "relative_improvement": 0.05795313871334118
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.4362600498245754,
+          "relative_improvement": 0.03466262535812126
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.298398917528002,
+          "relative_improvement": 0.021824657636919653
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.477771425874708,
+          "relative_improvement": 0.01465073247397386
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.930422062473476,
+          "relative_improvement": 0.022982682109307095
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.4028890434522605,
+          "relative_improvement": 0.031905126000130846
+        }
+      },
+      "radius_fraction": 0.55,
+      "scale": 0.25
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.55_residual_scale_0.5",
+      "minimum_object_relative_improvement": -0.24580262792549457,
+      "object_balanced_relative_improvement": -0.021006629720058942,
+      "object_win_count": 5,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.836658416293428,
+          "relative_improvement": -0.03840862543649015
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.950964628959714,
+          "relative_improvement": -0.24580262792549457
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 5.006031929952883,
+          "relative_improvement": -0.026615548235856767
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.285191218847845,
+          "relative_improvement": 0.03318583371234263
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.2987933671754535,
+          "relative_improvement": 0.05907310707036273
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.5301615407929248,
+          "relative_improvement": -0.07681117169202856
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.422244412088959,
+          "relative_improvement": 0.02196755178358456
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.873298440626122,
+          "relative_improvement": 0.03239360888948739
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.2909738167187506,
+          "relative_improvement": 0.05195820435356224
+        }
+      },
+      "radius_fraction": 0.55,
+      "scale": 0.5
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.55_residual_scale_1",
+      "minimum_object_relative_improvement": -0.7865459321641994,
+      "object_balanced_relative_improvement": -0.19840068761523608,
+      "object_win_count": 3,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 4.788033663832824,
+          "relative_improvement": -0.2959025578846397
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 4.231837159155285,
+          "relative_improvement": -0.7865459321641994
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 5.859688829755243,
+          "relative_improvement": -0.20167984236315584
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 5.344524049567599,
+          "relative_improvement": -0.20581820023805664
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.202834813890409,
+          "relative_improvement": 0.07611283236930377
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 3.4027545546131486,
+          "relative_improvement": -0.4481779364115521
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.4311748076261726,
+          "relative_improvement": 0.02079078959065861
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 6.085886758798901,
+          "relative_improvement": -0.0026296097361078186
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.255891608416481,
+          "relative_improvement": 0.05824426830062446
+        }
+      },
+      "radius_fraction": 0.55,
+      "scale": 1.0
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.7_residual_scale_0.125",
+      "minimum_object_relative_improvement": -0.015777286171657634,
+      "object_balanced_relative_improvement": 0.018182931274042184,
+      "object_win_count": 8,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.6064142055792123,
+          "relative_improvement": 0.02390799189569326
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.4060977037628453,
+          "relative_improvement": -0.015777286171657634
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.838461554201469,
+          "relative_improvement": 0.0077490654096947775
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.2348601007852995,
+          "relative_improvement": 0.04454141517016352
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.4932831040152195,
+          "relative_improvement": 0.024536824730126305
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.287237147881573,
+          "relative_improvement": 0.026574993952347747
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.494321659656723,
+          "relative_improvement": 0.01246990080558863
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.973979871057793,
+          "relative_improvement": 0.015806677961889726
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.4479179798455775,
+          "relative_improvement": 0.02383679771253333
+        }
+      },
+      "radius_fraction": 0.7,
+      "scale": 0.125
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.7_residual_scale_0.25",
+      "minimum_object_relative_improvement": -0.09466837630646863,
+      "object_balanced_relative_improvement": 0.012520471082303228,
+      "object_win_count": 7,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 3.6442007770627463,
+          "relative_improvement": 0.013680888646798395
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 2.592969051847546,
+          "relative_improvement": -0.09466837630646863
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 4.881353934923361,
+          "relative_improvement": -0.0010471199854631408
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.173603135332347,
+          "relative_improvement": 0.05836205909457437
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.381181037924521,
+          "relative_improvement": 0.04444321500213266
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.3454074234322637,
+          "relative_improvement": 0.0018183127825923684
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.416396136329878,
+          "relative_improvement": 0.02273818168216113
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.917133760502648,
+          "relative_improvement": 0.025171885679321715
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.345516503182609,
+          "relative_improvement": 0.04218519314508018
+        }
+      },
+      "radius_fraction": 0.7,
+      "scale": 0.25
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.7_residual_scale_0.5",
+      "minimum_object_relative_improvement": -0.3711875110414651,
+      "object_balanced_relative_improvement": -0.057248219885613856,
+      "object_win_count": 4,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 4.040459747572598,
+          "relative_improvement": -0.09356836011002478
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 3.2479670166474093,
+          "relative_improvement": -0.3711875110414651
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 5.220967507755057,
+          "relative_improvement": -0.0706936142826402
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 4.471563357287309,
+          "relative_improvement": -0.008862983818149095
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.2358574648599365,
+          "relative_improvement": 0.07024887463025709
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 2.7344025748872784,
+          "relative_improvement": -0.16373409091473135
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.31141536490078,
+          "relative_improvement": 0.036571544637605924
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 5.92068223216617,
+          "relative_improvement": 0.024587286770376693
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.238252419716773,
+          "relative_improvement": 0.06140487515824611
+        }
+      },
+      "radius_fraction": 0.7,
+      "scale": 0.5
+    },
+    {
+      "arm": "checkpoint_action_local_state_relative_0.7_residual_scale_1",
+      "minimum_object_relative_improvement": -1.1196315130059387,
+      "object_balanced_relative_improvement": -0.33152204053592926,
+      "object_win_count": 3,
+      "objects": {
+        "3dPrintedHeart": {
+          "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+          "candidate_mean_CD_UL1_mm": 5.538415315389396,
+          "relative_improvement": -0.4989966816764593
+        },
+        "3dPrintedPyramid": {
+          "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+          "candidate_mean_CD_UL1_mm": 5.020825515294198,
+          "relative_improvement": -1.1196315130059387
+        },
+        "Beanbag": {
+          "baseline_mean_CD_UL1_mm": 4.876247918274063,
+          "candidate_mean_CD_UL1_mm": 6.6132431006990195,
+          "relative_improvement": -0.35621551888603764
+        },
+        "FoamCylinder": {
+          "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+          "candidate_mean_CD_UL1_mm": 6.1159303031195105,
+          "relative_improvement": -0.379860957213882
+        },
+        "FoamDice": {
+          "baseline_mean_CD_UL1_mm": 5.631461282477871,
+          "candidate_mean_CD_UL1_mm": 5.253788953648856,
+          "relative_improvement": 0.06706471196102004
+        },
+        "MemoryFoam": {
+          "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+          "candidate_mean_CD_UL1_mm": 4.0120036250981235,
+          "relative_improvement": -0.7074681812690435
+        },
+        "PlushMoon": {
+          "baseline_mean_CD_UL1_mm": 7.58895517794374,
+          "candidate_mean_CD_UL1_mm": 7.327273323457891,
+          "relative_improvement": 0.034481934383588375
+        },
+        "PlushOctopus": {
+          "baseline_mean_CD_UL1_mm": 6.069925224331553,
+          "candidate_mean_CD_UL1_mm": 6.419706269499661,
+          "relative_improvement": -0.05762526427277814
+        },
+        "ToiletPaperRoll": {
+          "baseline_mean_CD_UL1_mm": 5.580949954965871,
+          "candidate_mean_CD_UL1_mm": 5.388110804300626,
+          "relative_improvement": 0.03455310515616761
+        }
+      },
+      "radius_fraction": 0.7,
+      "scale": 1.0
+    }
+  ],
+  "claim_status": "source_development_only",
+  "config": {
+    "maximum_object_regression": 0.0,
+    "minimum_object_balanced_improvement": 0.01,
+    "tie_break": "smallest positive scale, then smallest support radius, then arm name"
+  },
+  "cross_fitted": {
+    "folds": [
+      {
+        "held_object": "3dPrintedHeart",
+        "held_relative_improvement": 0.015228325396055564,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "3dPrintedPyramid",
+        "held_relative_improvement": 0.0021412617325416994,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "Beanbag",
+        "held_relative_improvement": 0.008226432517845383,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "FoamCylinder",
+        "held_relative_improvement": 0.028084167211338773,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "FoamDice",
+        "held_relative_improvement": 0.011935541964712582,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "MemoryFoam",
+        "held_relative_improvement": 0.025273757002999275,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "PlushMoon",
+        "held_relative_improvement": 0.004458441322802376,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "PlushOctopus",
+        "held_relative_improvement": 0.009840894524563382,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      },
+      {
+        "held_object": "ToiletPaperRoll",
+        "held_relative_improvement": 0.010577249502753405,
+        "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+      }
+    ],
+    "held_nonregression": true,
+    "held_object_balanced_relative_improvement": 0.01286289679729027,
+    "held_object_win_count": 9,
+    "stable_selection": true
+  },
+  "fallback": {
+    "exact_metric_fallback_passed": true,
+    "selected_arm_metric_mismatch_count": 0,
+    "unsupported_frame_count": 131
+  },
+  "object_count": 9,
+  "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+  "schema_version": 1,
+  "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+  "selected_result": {
+    "arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "minimum_object_relative_improvement": 0.0021412617325416994,
+    "object_balanced_relative_improvement": 0.01286289679729027,
+    "object_win_count": 9,
+    "objects": {
+      "3dPrintedHeart": {
+        "baseline_mean_CD_UL1_mm": 3.6947482159835747,
+        "candidate_mean_CD_UL1_mm": 3.638483387894081,
+        "relative_improvement": 0.015228325396055564
+      },
+      "3dPrintedPyramid": {
+        "baseline_mean_CD_UL1_mm": 2.3687256414554594,
+        "candidate_mean_CD_UL1_mm": 2.3636535798845206,
+        "relative_improvement": 0.0021412617325416994
+      },
+      "Beanbag": {
+        "baseline_mean_CD_UL1_mm": 4.876247918274063,
+        "candidate_mean_CD_UL1_mm": 4.836133793834097,
+        "relative_improvement": 0.008226432517845383
+      },
+      "FoamCylinder": {
+        "baseline_mean_CD_UL1_mm": 4.4322801302157036,
+        "candidate_mean_CD_UL1_mm": 4.3078032339112315,
+        "relative_improvement": 0.028084167211338773
+      },
+      "FoamDice": {
+        "baseline_mean_CD_UL1_mm": 5.631461282477871,
+        "candidate_mean_CD_UL1_mm": 5.564246740018202,
+        "relative_improvement": 0.011935541964712582
+      },
+      "MemoryFoam": {
+        "baseline_mean_CD_UL1_mm": 2.3496798763864972,
+        "candidate_mean_CD_UL1_mm": 2.2902946381558675,
+        "relative_improvement": 0.025273757002999275
+      },
+      "PlushMoon": {
+        "baseline_mean_CD_UL1_mm": 7.58895517794374,
+        "candidate_mean_CD_UL1_mm": 7.5551202665815005,
+        "relative_improvement": 0.004458441322802376
+      },
+      "PlushOctopus": {
+        "baseline_mean_CD_UL1_mm": 6.069925224331553,
+        "candidate_mean_CD_UL1_mm": 6.01019173042692,
+        "relative_improvement": 0.009840894524563382
+      },
+      "ToiletPaperRoll": {
+        "baseline_mean_CD_UL1_mm": 5.580949954965871,
+        "candidate_mean_CD_UL1_mm": 5.521918854829817,
+        "relative_improvement": 0.010577249502753405
+      }
+    },
+    "radius_fraction": 0.4,
+    "scale": 0.125
+  },
+  "source_artifact_sha256s": {
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T1_full_template15mm_v2.json": "8ba070e383bfe63177e5348db9820cc52860d41ca5d69dfdaa09b43bc237d4b9",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T4_full_template15mm_v2.json": "f497b35cba4f37a4e7666df407ae46c9c3ff12791c105fb25be4a03c01712d86",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T5_full_template15mm_v2.json": "c709acc6bb6657e688ff383a6fa61b83b891072cb19ede134819b6e5fe5d1a32",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T6_full_template15mm_v2.json": "2930fc7ac52306fa41132898af22bd48bec143409db247fbede97573cadef599",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T1_full_template15mm_v2.json": "c750af6daa6efe1dfd091234d7befbb6098502cb87547634ccef8ac5b030a9d3",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T4_full_template15mm_v2.json": "cb6c915037885ffc1ae7e3513b5133b61c9f46a8cc8445d1c60680dc3b9de633",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T5_full_template15mm_v2.json": "44545675306095e453a5501ff6c188841b2a5af7b51fea75ce724f1b397296e7",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T6_full_template15mm_v2.json": "2c523069d2ed80dc2556040af46e8fcbe4785db46b292a04f4b52713f039bbe0",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/MemoryFoam_T1_full_template15mm_v2.json": "0a658260ff92c988c692c9d43a8ea5eff7fcedb1f55078beaf2da0dd8f9d400a",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/MemoryFoam_T4_full_template15mm_v2.json": "9357007d8f3c5d30a6894843016681942a881336100a1af7dca9fe261aef6d09",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/MemoryFoam_T5_full_template15mm_v2.json": "aac8114f680ce23f38914f4f69efaa9e02d00ce5cfefd017160d83c1912fd14f",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/MemoryFoam_T6_full_template15mm_v2.json": "769f49286c2e577ae6e8716210995063226faa3b8b2cf2ac3d95de1083345e23",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/PlushOctopus_T1_full_template15mm_v2.json": "81381d4c638261cd8fc3069389f2c75fb4a59aedac60df09df3c722250d70c5b",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/PlushOctopus_T4_full_template15mm_v2.json": "ad93c6aaec4173ad91ee113508ae0f923f5a993274386e47e97fe8923aae69e9",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/PlushOctopus_T5_full_template15mm_v2.json": "be1b3035c7e73327f376b32beedfb172622e741b4f7d448c7c6891708b48f12c",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/PlushOctopus_T6_full_template15mm_v2.json": "b82fa25bce9f95c50d809cfd44f6e23afb48d721290e1b67465ddd31c2d21bac",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/ToiletPaperRoll_T1_full_template15mm_v2.json": "17a8fc989601c72d2593e212304648b3f1196a7dcaeb6ac6a08285465673af71",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/ToiletPaperRoll_T4_full_template15mm_v2.json": "c8d5ea9563d4364c804a8213517f289ec8ecd8d9d3f467e2a12b19a27fe68ed6",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/ToiletPaperRoll_T5_full_template15mm_v2.json": "d27294be8674f1fe0aebd6647cee636437f077f9172778567ce5deb8e7e11802",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/ToiletPaperRoll_T6_full_template15mm_v2.json": "bfd8209a0cca7c4d4b09da7094618737ab3a76f3df645674cd935d712951f71d",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/3dPrintedPyramid_T2.json": "1369d85a5ef8cbfc2e2d05c0f41b5400990fe313c878d9dbcb873ef6b633e5ed",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/Beanbag_T2.json": "9e2d2edc8b08e4cc61985da7d0c8a9c1311aff4595cb4324af9dbae4b16ed5d6",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/FoamCylinder_T2.json": "6b65c1a6c573498e81cc24f68b425c3f35b6bf305355d395f663b03412059da7",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/PlushMoon_T2.json": "53311fe164379691eace6a88e0fa4782f7354f1e5867583308b18e5c2802c126",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-prospective-v1/FoamDice_T7_candidates.json": "436d1345d0a6f9628a9275ba668edeea533eefcd237adeda64e3898e11b09dde",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-prospective-v1/FoamDice_T8_candidates.json": "c396a742d3de7a7ad07c51519b7045c20c7153276f247370c31561880a65a6ef",
+    "/mnt/corsair/florianpfaff/pokeflex-regret-prospective-v1/PlushOctopus_T7_candidates.json": "81fde5b014fd91403b921b1de769c172c6434df53d8172451d039cd5f6ee9c65"
+  },
+  "source_gate_passed": true,
+  "take_count": 27,
+  "target_objects_opened": false
+}
