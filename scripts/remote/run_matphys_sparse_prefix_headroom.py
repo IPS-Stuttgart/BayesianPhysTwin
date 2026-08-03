@@ -70,6 +70,12 @@ from bayesian_phystwin.phystwin_online_belief import (
     initialize_recursive_rbf_belief,
     update_recursive_rbf_belief,
 )
+from bayesian_phystwin.phystwin_per_view_depth_belief import (
+    PerViewDepthLoaderConfig,
+    PerViewDepthStateConfig,
+    infer_per_view_depth_state_correction,
+    load_cotracker3_per_view_depth_observations,
+)
 from bayesian_phystwin.phystwin_planar_discrepancy import (
     fit_canonical_planar_discrepancy,
 )
@@ -94,6 +100,19 @@ class HeadroomConfig:
     cotracker_maximum_reprojection_error_px: float = 3.0
     cotracker_maximum_view_disagreement_m: float = 0.01
     cotracker_minimum_camera_count: int = 3
+    per_view_depth_patch_radius_px: int = 1
+    per_view_depth_sensor_std_m: float = 0.003
+    per_view_depth_pixel_noise_std_px: float = 1.0
+    per_view_depth_maximum_local_mad_m: float = 0.020
+    per_view_depth_window_frames: int = 8
+    per_view_depth_physical_response_rank: int = 4
+    per_view_depth_minimum_physical_response_m: float = 0.0005
+    per_view_depth_minimum_active_views: int = 2
+    per_view_depth_minimum_unique_identities: int = 16
+    per_view_depth_minimum_identifiable_fraction: float = 0.10
+    per_view_depth_maximum_correction_m: float = 0.020
+    per_view_depth_maximum_correction_to_response_ratio: float = 2.0
+    per_view_depth_correction_scales: tuple[float, ...] = (0.25, 0.5, 1.0)
     multiview_priority_minimum_availability_fraction: float = 0.10
     multiview_tangent_neighbor_count: int = 16
     ray_window_frames: int = 31
@@ -870,6 +889,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     laplacian = normalized_spring_laplacian(len(structure_points), springs)
 
     cotracker_summary = None
+    per_view_depth_observations = None
     directional_endpoint_inputs = None
     ray_bias_aware = (
         config.observation_source
@@ -882,6 +902,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     elif config.observation_source in {
         "cotracker3_source_depth",
         "alltracker_source_depth",
+        "cotracker3_per_view_depth_bias_aware",
     }:
         inference_prefix, valid_prefix, cotracker_summary = (
             _lift_cotracker_source_depth(
@@ -897,6 +918,79 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         inference_points[:train_end] = inference_prefix
         dense_valid = np.zeros_like(visible)
         dense_valid[:train_end] = valid_prefix
+        if (
+            config.observation_source
+            == "cotracker3_per_view_depth_bias_aware"
+        ):
+            per_view_depth_observations = (
+                load_cotracker3_per_view_depth_observations(
+                    Path(cues_path),
+                    Path(raw_case_dir),
+                    observed_points[0],
+                    train_end_frame=train_end,
+                    config=PerViewDepthLoaderConfig(
+                        minimum_view_quality=(
+                            config.cotracker_minimum_quality
+                        ),
+                        maximum_cycle_error_px=(
+                            config.cotracker_maximum_cycle_error_px
+                        ),
+                        depth_patch_radius_px=(
+                            config.per_view_depth_patch_radius_px
+                        ),
+                        depth_sensor_std_m=(
+                            config.per_view_depth_sensor_std_m
+                        ),
+                        pixel_noise_std_px=(
+                            config.per_view_depth_pixel_noise_std_px
+                        ),
+                        maximum_local_depth_mad_m=(
+                            config.per_view_depth_maximum_local_mad_m
+                        ),
+                    ),
+                )
+            )
+            per_view_valid = per_view_depth_observations.valid
+            cotracker_summary = {
+                "source_depth_control": cotracker_summary,
+                "per_view_depth": {
+                    "valid_fraction": float(
+                        np.mean(per_view_valid)
+                    ),
+                    "active_view_count": int(
+                        np.sum(
+                            np.any(
+                                per_view_depth_observations.valid,
+                                axis=(1, 2),
+                            )
+                        )
+                    ),
+                    "median_prior_reliability": (
+                        None
+                        if not np.any(per_view_valid)
+                        else float(
+                            np.median(
+                                per_view_depth_observations.prior_reliability[
+                                    per_view_valid
+                                ]
+                            )
+                        )
+                    ),
+                    "median_observation_std_m": (
+                        None
+                        if not np.any(per_view_valid)
+                        else float(
+                            np.median(
+                                np.sqrt(
+                                    per_view_depth_observations.variance_m2[
+                                        per_view_valid
+                                    ]
+                                )
+                            )
+                        )
+                    ),
+                },
+            }
     elif config.observation_source == "cotracker3_multiview":
         inference_prefix, valid_prefix, cotracker_summary = (
             _load_cotracker_multiview(
@@ -1489,6 +1583,167 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
                 }
             )
     selectors: dict[str, dict[str, Any]] = {}
+    if per_view_depth_observations is not None:
+        per_view_state_config = PerViewDepthStateConfig(
+            window_frames=config.per_view_depth_window_frames,
+            physical_response_rank=(
+                config.per_view_depth_physical_response_rank
+            ),
+            minimum_physical_response_m=(
+                config.per_view_depth_minimum_physical_response_m
+            ),
+            minimum_active_views=(
+                config.per_view_depth_minimum_active_views
+            ),
+            minimum_unique_identities=(
+                config.per_view_depth_minimum_unique_identities
+            ),
+            minimum_identifiable_fraction=(
+                config.per_view_depth_minimum_identifiable_fraction
+            ),
+            maximum_correction_m=(
+                config.per_view_depth_maximum_correction_m
+            ),
+            maximum_correction_to_response_ratio=(
+                config.per_view_depth_maximum_correction_to_response_ratio
+            ),
+        )
+        fit_per_view_state = infer_per_view_depth_state_correction(
+            per_view_depth_observations,
+            baseline,
+            structure_points,
+            end_frame=fit_end,
+            config=per_view_state_config,
+        )
+        full_per_view_state = infer_per_view_depth_state_correction(
+            per_view_depth_observations,
+            baseline,
+            structure_points,
+            end_frame=train_end,
+            config=per_view_state_config,
+        )
+        per_view_validation_candidates: list[dict[str, Any]] = []
+        per_view_selection_chamfer_weight = (
+            0.5 if config.manual_prefix_override else 1.0
+        )
+        if fit_per_view_state.accepted:
+            for scale in config.per_view_depth_correction_scales:
+                metrics = _evaluate(
+                    baseline,
+                    scale * fit_per_view_state.correction_m,
+                    start_frame=fit_end,
+                    end_frame=train_end,
+                    observed=observed_points,
+                    visible=visible,
+                    manual_tracks=manual_tracks,
+                    num_surface_points=num_surface_points,
+                )
+                per_view_validation_candidates.append(
+                    {
+                        "correction_scale": scale,
+                        "metrics": metrics,
+                        "selection_score": _selection_score(
+                            metrics,
+                            baseline_validation,
+                            chamfer_weight=(
+                                per_view_selection_chamfer_weight
+                            ),
+                        ),
+                        "no_metric_regression": all(
+                            metrics[name] <= baseline_validation[name]
+                            for name in (
+                                baseline_validation
+                                if config.manual_prefix_override
+                                else ("chamfer_distance_m",)
+                            )
+                        ),
+                    }
+                )
+        selected_per_view = min(
+            per_view_validation_candidates,
+            key=lambda item: (
+                item["selection_score"],
+                abs(np.log(item["correction_scale"])),
+                item["correction_scale"],
+            ),
+            default=None,
+        )
+        per_view_accepted = bool(
+            selected_per_view is not None
+            and full_per_view_state.accepted
+            and selected_per_view["selection_score"] < 1.0
+            and selected_per_view["no_metric_regression"]
+        )
+        for scale in config.per_view_depth_correction_scales:
+            arm = "per_view_depth_bias_aware_scale_" + (
+                format(scale, ".12g").replace(".", "p")
+            )
+            candidate_metrics[arm] = _evaluate(
+                baseline,
+                (
+                    scale * full_per_view_state.correction_m
+                    if full_per_view_state.accepted
+                    else np.zeros_like(structure_points)
+                ),
+                start_frame=train_end,
+                end_frame=future_end,
+                observed=observed_points,
+                visible=visible,
+                manual_tracks=manual_tracks,
+                num_surface_points=num_surface_points,
+            )
+        if per_view_accepted:
+            per_view_future_correction = (
+                float(selected_per_view["correction_scale"])
+                * full_per_view_state.correction_m
+            )
+        else:
+            per_view_future_correction = np.zeros_like(structure_points)
+        per_view_selector = "causal_selected_per_view_depth_bias_aware"
+        candidate_metrics[per_view_selector] = _evaluate(
+            baseline,
+            per_view_future_correction,
+            start_frame=train_end,
+            end_frame=future_end,
+            observed=observed_points,
+            visible=visible,
+            manual_tracks=manual_tracks,
+            num_surface_points=num_surface_points,
+        )
+        selectors[per_view_selector] = {
+            "accepted": per_view_accepted,
+            "fit_state": {
+                "accepted": fit_per_view_state.accepted,
+                "reason": fit_per_view_state.reason,
+                "diagnostics": fit_per_view_state.diagnostics,
+            },
+            "full_state": {
+                "accepted": full_per_view_state.accepted,
+                "reason": full_per_view_state.reason,
+                "diagnostics": full_per_view_state.diagnostics,
+            },
+            "validation_candidates": per_view_validation_candidates,
+            "selected_candidate": selected_per_view,
+            "selector_chamfer_weight": (
+                per_view_selection_chamfer_weight
+            ),
+            "manual_tracks_used_for_selection": bool(
+                config.manual_prefix_override
+            ),
+            "fallback": "bit-exact zero correction relative to baseline",
+            "fallback_applied": not per_view_accepted,
+            "fallback_is_exact": (
+                None
+                if per_view_accepted
+                else bool(
+                    np.array_equal(
+                        per_view_future_correction,
+                        np.zeros_like(per_view_future_correction),
+                    )
+                )
+            ),
+            "future_metrics": candidate_metrics[per_view_selector],
+        }
     if ray_bias_aware:
         fit_graph = graph_smoothed_discrepancy_posterior(
             fit_full_mean,
@@ -2673,6 +2928,7 @@ def parse_args() -> argparse.Namespace:
             "cotracker3_multiview_priority",
             "cotracker3_multiview_tangent_priority",
             "cotracker3_multiview_directional_priority",
+            "cotracker3_per_view_depth_bias_aware",
             "alltracker_multiview_ray_bias_aware",
         ),
         default="final_data",
@@ -2885,6 +3141,7 @@ def main() -> None:
         "cotracker3_multiview_priority",
         "cotracker3_multiview_tangent_priority",
         "cotracker3_multiview_directional_priority",
+        "cotracker3_per_view_depth_bias_aware",
     }:
         if args.raw_case_root is None:
             raise ValueError(

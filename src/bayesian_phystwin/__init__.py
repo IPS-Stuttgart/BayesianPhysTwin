@@ -90,6 +90,14 @@ from .phystwin_adapter import (
     export_phystwin_residuals,
     write_export_summary,
 )
+from .phystwin_per_view_depth_belief import (
+    PerViewDepthLoaderConfig,
+    PerViewDepthObservations,
+    PerViewDepthStateConfig,
+    PerViewDepthStateResult,
+    infer_per_view_depth_state_correction,
+    load_cotracker3_per_view_depth_observations,
+)
 from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
@@ -158,6 +166,10 @@ __all__ = [
     "PROB4D_CAUSAL_STREAM_ID",
     "PROB4D_SOURCE_REPOSITORY",
     "ParameterEnsemble",
+    "PerViewDepthLoaderConfig",
+    "PerViewDepthObservations",
+    "PerViewDepthStateConfig",
+    "PerViewDepthStateResult",
     "PhysicalLinearizationV1",
     "PhysicalResponseBasis",
     "PhysTwinExportConfig",
@@ -198,7 +210,9 @@ __all__ = [
     "grouped_conformal_upper_bounds",
     "grouped_student_t_mixture_likelihood",
     "is_prob4d_causal_observation_belief",
+    "infer_per_view_depth_state_correction",
     "load_observation_belief",
+    "load_cotracker3_per_view_depth_observations",
     "load_physical_linearization",
     "markov_log_evidence_batch",
     "measurement_variance",
