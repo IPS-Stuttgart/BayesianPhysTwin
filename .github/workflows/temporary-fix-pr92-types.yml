@@ -1,0 +1,88 @@
+name: Temporary type fix for PR 92
+
+on:
+  push:
+    branches:
+      - agent/harden-content-addressed-contracts
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/harden-content-addressed-contracts
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
+        with:
+          python-version: "3.12"
+      - name: Apply narrow typing fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          contracts = Path("src/bayesian_phystwin/_canonical_contracts.py")
+          contracts_text = contracts.read_text(encoding="utf-8")
+          old_imul = (
+              "    def __imul__(self, other: object) -> FrozenList:  "
+              "# type: ignore[misc]\n"
+          )
+          new_imul = "    def __imul__(self, other: object) -> FrozenList:\n"
+          if contracts_text.count(old_imul) != 1:
+              raise SystemExit("unexpected FrozenList.__imul__ source")
+          contracts.write_text(
+              contracts_text.replace(old_imul, new_imul), encoding="utf-8"
+          )
+
+          linearization = Path("src/bayesian_phystwin/physical_linearization.py")
+          linearization_text = linearization.read_text(encoding="utf-8")
+          old_save = '''    np.savez_compressed(
+              target,
+              descriptor_json=np.asarray(
+                  json.dumps(
+                      descriptor,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  )
+              ),
+              **linearization.arrays(),
+          )
+          '''
+          new_save = '''    payload: dict[str, Any] = {
+              "descriptor_json": np.asarray(
+                  json.dumps(
+                      descriptor,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  )
+              )
+          }
+          payload.update(linearization.arrays())
+          np.savez_compressed(target, **payload)
+          '''
+          if linearization_text.count(old_save) != 1:
+              raise SystemExit("unexpected physical-linearization save source")
+          linearization.write_text(
+              linearization_text.replace(old_save, new_save), encoding="utf-8"
+          )
+          PY
+          python -m pip install --disable-pip-version-check ruff==0.16.1
+          python -m ruff format \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/physical_linearization.py
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/physical_linearization.py
+          git commit -m "Fix canonical contract type checks"
+          git push origin HEAD:agent/harden-content-addressed-contracts
