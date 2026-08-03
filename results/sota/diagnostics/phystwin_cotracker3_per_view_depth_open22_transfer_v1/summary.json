@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-cotracker3-per-view-depth-open22-transfer-v1",
+  "status": "source_transfer_gate_failed",
+  "method_commit": "95546c946ecb3935a768ff53cda111b8b0e4ec80",
+  "protocol_commit": "8f3cd678365964425dded93065a55245f32db672",
+  "raw_result": {
+    "path": "open22_result.json",
+    "sha256": "b382755dd8edc8cba1370e1a324a7133643ffdf1c89a05e01db78ceb4b3f98db"
+  },
+  "primary_arm": "causal_selected_per_view_depth_bias_aware",
+  "development_3": {
+    "case_count": 3,
+    "baseline_chamfer_distance_m": 0.01196760735419599,
+    "candidate_chamfer_distance_m": 0.01146782659702081,
+    "chamfer_improvement_percent": 4.176112587784315,
+    "baseline_track_error_m": 0.01983378019273854,
+    "candidate_track_error_m": 0.018606062122839287,
+    "track_improvement_percent": 6.19003567634948,
+    "joint_case_wins": 2,
+    "worst_case_metric_regression_percent": 1.2164644070124728
+  },
+  "transfer_19": {
+    "case_count": 19,
+    "baseline_chamfer_distance_m": 0.011297170066236933,
+    "candidate_chamfer_distance_m": 0.01120116846463971,
+    "chamfer_improvement_percent": 0.8497845127085129,
+    "baseline_track_error_m": 0.02153169214944799,
+    "candidate_track_error_m": 0.021378157744281062,
+    "track_improvement_percent": 0.7130624202745917,
+    "joint_case_wins": 3,
+    "exact_fallback_ties": 10,
+    "worst_case_metric_regression_percent": 15.215094957797016,
+    "selector_accepted_cases": 9,
+    "full_state_update_accepted_cases": 16,
+    "capped_full_state_updates": 6
+  },
+  "all_22": {
+    "case_count": 22,
+    "baseline_chamfer_distance_m": 0.011388593332776802,
+    "candidate_chamfer_distance_m": 0.01123753093723713,
+    "chamfer_improvement_percent": 1.326435944506927,
+    "baseline_track_error_m": 0.02130015870080579,
+    "candidate_track_error_m": 0.021000144704993548,
+    "track_improvement_percent": 1.4085059178497756,
+    "joint_case_wins": 5,
+    "exact_fallback_ties": 10,
+    "worst_case_metric_regression_percent": 15.215094957797016
+  },
+  "post_open_fixed_scale_context": {
+    "warning": "descriptive only; these outcomes cannot select a replacement arm",
+    "scale_0p25_transfer_improvement_percent": {
+      "chamfer_distance_m": 0.35429175723026296,
+      "track_error_m": 1.2248433271161534
+    },
+    "scale_0p25_joint_case_wins": 7,
+    "scale_0p25_worst_case_metric_regression_percent": 3.136442361432632
+  },
+  "registered_gates": {
+    "minimum_chamfer_improvement_percent": 3.0,
+    "minimum_track_improvement_percent": 3.0,
+    "minimum_joint_case_wins": 12,
+    "maximum_case_metric_regression_percent": 10.0,
+    "chamfer_gate_passed": false,
+    "track_gate_passed": false,
+    "joint_win_gate_passed": false,
+    "maximum_regression_gate_passed": false,
+    "overall_passed": false
+  },
+  "decision": "stop this per-view depth state-update family without retuning it on the 19 transfer outcomes; do not proceed to a fresh evaluation"
+}
