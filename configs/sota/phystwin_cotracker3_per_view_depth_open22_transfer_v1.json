@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-cotracker3-per-view-depth-open22-transfer-v1",
+  "status": "locked_before_19_case_transfer_execution",
+  "evidence_role": "post-open source transfer diagnostic; not confirmation or a state-of-the-art claim",
+  "method_commit": "95546c946ecb3935a768ff53cda111b8b0e4ec80",
+  "cohort": {
+    "name": "released PhysTwin 22",
+    "outcome_status": "previously opened",
+    "development_cases": [
+      "single_lift_sloth",
+      "double_lift_sloth",
+      "double_stretch_sloth"
+    ],
+    "transfer_case_count": 19,
+    "transfer_rule": "all released PhysTwin-22 cases except the three named development cases"
+  },
+  "observation_path": {
+    "tracker": "frozen CoTracker3 per-camera prefix tracks",
+    "metric_lift": "each camera track is lifted through that camera's raw metric depth and frame-zero anchored",
+    "camera_rows": "kept separate through inference",
+    "prior_reliability": "tracker quality, cycle consistency, and local depth variation only; independent of the PhysTwin innovation",
+    "correlation_treatment": "effective-sample cap within each camera and equal-weight covariance intersection across cameras",
+    "nuisance_model": "shared spatial bias plus per-camera bias",
+    "innovation_model": "one robust Student-t state update",
+    "manual_prefix_tracks": false,
+    "future_rgb_or_depth_used": false
+  },
+  "state_update": {
+    "prefix_window_frames": 8,
+    "physical_response_rank": 4,
+    "minimum_physical_response_m": 0.0005,
+    "minimum_active_views": 2,
+    "minimum_unique_identities": 16,
+    "minimum_identifiable_fraction": 0.10,
+    "maximum_applied_correction_m": 0.020,
+    "maximum_correction_to_physical_response_ratio": 2.0,
+    "oversize_rule": "deterministically shrink the inferred direction to the tighter physical cap; never widen the cap",
+    "correction_scales": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "scale_selection": "lowest prefix validation Chamfer distance subject to no prefix regression",
+    "fallback": "exact unchanged physical baseline when support, identifiability, update, or selector gates fail"
+  },
+  "transfer_gates": {
+    "minimum_equal_case_chamfer_improvement_percent": 3.0,
+    "minimum_equal_case_manual_track_improvement_percent": 3.0,
+    "minimum_joint_case_wins": 12,
+    "maximum_case_metric_regression_percent": 10.0,
+    "require_exact_fallback": true,
+    "require_no_manual_selection_evidence": true
+  },
+  "calibration_boundary": {
+    "required_now": [
+      "finite positive-semidefinite coefficient covariance",
+      "duplicate-camera invariance control",
+      "gross-outlier robust-weight control",
+      "innovation-independent prior-reliability control"
+    ],
+    "required_before_fresh_evaluation": "a separately locked source-only projection and coverage audit for the capped state posterior",
+    "claim": "no future predictive calibration claim is made by this transfer diagnostic"
+  },
+  "decision": {
+    "pass": "authorize a separately locked source calibration audit and combination with the fixed graph-persistence baseline; do not open a fresh target yet",
+    "fail": "stop this per-view depth state-update family without retuning it on the 19 transfer outcomes"
+  },
+  "prohibited": [
+    "using manual prefix identities",
+    "using future RGB, depth, CoTracker, or VGGT evidence in prediction",
+    "changing the correction scales, rank, cap, or selector after transfer outcomes",
+    "calling the opened-cohort result confirmation or state of the art",
+    "touching held-v8 artifacts or any sealed target"
+  ],
+  "provenance": {
+    "cotracker3_cue_manifest_sha256": "899fadb41531bfe27d7743d8ba055e16fab3521259d1e3b7cbf945059ca82175",
+    "family_selection_sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890",
+    "development_result_path": "/home/florianpfaff/bpt-cotracker3-per-view-depth-smoke-v2/sloth_dev3_capped.json",
+    "development_result_sha256": "59274bcd551d75da4f48b05a3697607df763376f317b2fde61bffc6857a3805c"
+  }
+}
