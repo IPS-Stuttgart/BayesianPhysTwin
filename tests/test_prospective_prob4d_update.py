@@ -10,6 +10,7 @@ from bayesian_phystwin.prospective_prob4d_update import (
     update_claim_bearing_prob4d_from_artifacts,
 )
 
+
 OBSERVATION_ID = "a" * 64
 LINEARIZATION_ID = "b" * 64
 PROVIDER_ID = "c" * 64
@@ -160,6 +161,69 @@ def test_update_contract_rejects_invalid_calibration_digest() -> None:
             linearization_artifact_id=LINEARIZATION_ID,
             provider_manifest_id=PROVIDER_ID,
             calibration_artifact_ids={"gauge": "invalid"},
+            runtime_revision_source="independent-vcs-check",
+            runtime_revision_independently_verified=True,
+        )
+
+
+def test_update_contract_rejects_missing_and_unnamed_calibration_ids() -> None:
+    lineage = _lineage()
+    for calibration_ids, message in (({}, "missing"), ({"": "d" * 64}, "nonempty")):
+        with pytest.raises(ValueError, match=message):
+            ClaimBearingProb4DUpdateV1(
+                result=_result(lineage),
+                observation_artifact_id=OBSERVATION_ID,
+                linearization_artifact_id=LINEARIZATION_ID,
+                provider_manifest_id=PROVIDER_ID,
+                calibration_artifact_ids=calibration_ids,
+                runtime_revision_source="independent-vcs-check",
+                runtime_revision_independently_verified=True,
+            )
+
+
+def test_update_contract_rejects_wrong_result_and_runtime_types() -> None:
+    lineage = _lineage()
+    with pytest.raises(TypeError, match="GaugeAwareBeliefResult"):
+        ClaimBearingProb4DUpdateV1(
+            result=object(),  # type: ignore[arg-type]
+            observation_artifact_id=OBSERVATION_ID,
+            linearization_artifact_id=LINEARIZATION_ID,
+            provider_manifest_id=PROVIDER_ID,
+            calibration_artifact_ids=CALIBRATION_IDS,
+            runtime_revision_source="independent-vcs-check",
+            runtime_revision_independently_verified=True,
+        )
+    with pytest.raises(ValueError, match="runtime_revision_source"):
+        ClaimBearingProb4DUpdateV1(
+            result=_result(lineage),
+            observation_artifact_id=OBSERVATION_ID,
+            linearization_artifact_id=LINEARIZATION_ID,
+            provider_manifest_id=PROVIDER_ID,
+            calibration_artifact_ids=CALIBRATION_IDS,
+            runtime_revision_source="",
+            runtime_revision_independently_verified=True,
+        )
+    with pytest.raises(TypeError, match="must be a bool"):
+        ClaimBearingProb4DUpdateV1(
+            result=_result(lineage),
+            observation_artifact_id=OBSERVATION_ID,
+            linearization_artifact_id=LINEARIZATION_ID,
+            provider_manifest_id=PROVIDER_ID,
+            calibration_artifact_ids=CALIBRATION_IDS,
+            runtime_revision_source="independent-vcs-check",
+            runtime_revision_independently_verified=1,  # type: ignore[arg-type]
+        )
+
+
+def test_update_contract_rejects_unverified_result_lineage() -> None:
+    lineage = _lineage(runtime_verified=False)
+    with pytest.raises(ValueError, match="lacks independently verified"):
+        ClaimBearingProb4DUpdateV1(
+            result=_result(lineage),
+            observation_artifact_id=OBSERVATION_ID,
+            linearization_artifact_id=LINEARIZATION_ID,
+            provider_manifest_id=PROVIDER_ID,
+            calibration_artifact_ids=CALIBRATION_IDS,
             runtime_revision_source="independent-vcs-check",
             runtime_revision_independently_verified=True,
         )
