@@ -136,6 +136,15 @@ def test_explicit_v2_rejects_untracked_anchor_covariance() -> None:
         )
 
 
+def test_joint_gauge_fixture_rejects_unknown_repository_identity() -> None:
+    belief, _ = _belief()
+
+    with pytest.raises(ValueError, match="not the strict Prob4D causal stream"):
+        validate_prob4d_causal_observation_belief(
+            replace(belief, source_repository="Example/Prob4D")
+        )
+
+
 def test_joint_gauge_fixture_rejects_per_window_factor_groups() -> None:
     belief, _ = _belief()
 

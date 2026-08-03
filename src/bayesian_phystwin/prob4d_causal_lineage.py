@@ -69,8 +69,8 @@ def is_prob4d_causal_observation_belief(
     """Return whether the artifact declares a supported Prob4D causal stream."""
 
     return (
-        is_prob4d_source_repository(belief.source_repository)
-        and belief.stream_id == PROB4D_CAUSAL_STREAM_ID
+        is_prob4d_source_repository(getattr(belief, "source_repository", None))
+        and getattr(belief, "stream_id", None) == PROB4D_CAUSAL_STREAM_ID
     )
 
 
@@ -85,7 +85,7 @@ def _semantic_compatibility_belief(
     the public boundary validates and reports the original canonical identity.
     """
 
-    if belief.source_repository == PROB4D_SOURCE_REPOSITORY:
+    if getattr(belief, "source_repository", None) == PROB4D_SOURCE_REPOSITORY:
         return replace(
             belief,
             source_repository=PROB4D_LEGACY_SOURCE_REPOSITORY,
@@ -269,7 +269,10 @@ def validate_prob4d_causal_observation_belief(
     descriptor and provider-manifest identities must still agree exactly.
     """
 
-    if not is_prob4d_causal_observation_belief(belief):
+    declares_identity = hasattr(belief, "source_repository") or hasattr(
+        belief, "stream_id"
+    )
+    if declares_identity and not is_prob4d_causal_observation_belief(belief):
         raise ValueError("observation belief is not the strict Prob4D causal stream")
     result = dict(_validate_prob4d_semantics(_semantic_compatibility_belief(belief)))
     version, inferred = _resolved_stream_contract(
@@ -280,12 +283,15 @@ def validate_prob4d_causal_observation_belief(
         belief,
         require_claim_bearing=require_claim_bearing_provider_v2,
     )
+    source_repository = getattr(belief, "source_repository", None)
     result.update(
-        observation_artifact_id=belief.artifact_id,
-        source_repository=belief.source_repository,
+        observation_artifact_id=getattr(belief, "artifact_id", None),
+        source_repository=source_repository,
         canonical_source_repository=PROB4D_SOURCE_REPOSITORY,
-        source_repository_is_legacy=prob4d_source_repository_is_legacy(
-            belief.source_repository
+        source_repository_is_legacy=(
+            None
+            if source_repository is None
+            else prob4d_source_repository_is_legacy(source_repository)
         ),
         stream_contract_version=version,
         stream_contract_version_inferred=inferred,
