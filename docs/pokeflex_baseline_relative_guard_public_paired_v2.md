@@ -50,6 +50,16 @@ The dataset remains on `gpuserver6000`, while GPU prediction runs on
 the jump host is used only to initiate administrative SSH sessions and is not
 part of the data path.
 
+### Pre-seal schema amendment
+
+The first target-free smoke prediction stopped before producing a prediction
+archive or seal because the initial stager paired `volucam` calibration with
+`realsense` depth. The frozen checkpoint interface instead consumes the
+released `kinect` depth and its matching `kinect` calibration. The stager now
+copies that exact sensor pair and rejects calibration without 3-by-3 depth
+intrinsics or 4-by-4 depth extrinsics. No target mesh was opened, and all 12
+predictions must be generated at one later clean implementation revision.
+
 ## Primary gates
 
 The object-balanced paired comparison passes only if all conditions hold:

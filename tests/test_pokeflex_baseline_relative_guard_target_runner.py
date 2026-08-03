@@ -6,6 +6,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts" / "held" / "run_pokeflex_baseline_relative_guard_target.py"
 PROTOCOL = (
@@ -33,13 +35,25 @@ def test_stage_materializes_only_causal_inputs_and_one_template(
         archive.writestr(f"{take_id}/meshes/mesh-f00001.obj", "template")
         archive.writestr(f"{take_id}/meshes/mesh-f00006.obj", "forbidden-target")
         for camera in (0, 1):
+            parameters = {
+                "depth_intrinsics": np.eye(3).tolist(),
+                "depth_extrinsics": np.eye(4).tolist(),
+            }
             archive.writestr(
-                f"{take_id}/volucam/{camera}/camera_parameters.json", "{}"
+                f"{take_id}/kinect/{camera}/camera_parameters.json",
+                json.dumps(parameters),
+            )
+            archive.writestr(
+                f"{take_id}/volucam/{camera}/camera_parameters.json", "wrong"
             )
             for frame in range(1, 7):
                 archive.writestr(
+                    f"{take_id}/kinect/{camera}/depth/{frame:05d}.png",
+                    f"kinect-depth-{camera}-{frame}",
+                )
+                archive.writestr(
                     f"{take_id}/realsense/{camera}/depth/{frame:05d}.png",
-                    f"depth-{camera}-{frame}",
+                    f"wrong-depth-{camera}-{frame}",
                 )
     output = tmp_path / take_id
 
@@ -67,3 +81,6 @@ def test_stage_materializes_only_causal_inputs_and_one_template(
     assert (output / "meshes" / "mesh-f00001.obj").read_text() == "template"
     assert not (output / "meshes" / "mesh-f00006.obj").exists()
     assert len(list((output / "kinect" / "0" / "depth").glob("*.png"))) == 6
+    assert (
+        output / "kinect" / "0" / "depth" / "00001.png"
+    ).read_text() == "kinect-depth-0-1"

@@ -132,13 +132,19 @@ def _stage(zip_path: Path, output_dir: Path, protocol_path: Path) -> None:
             ),
         }
         for camera in (0, 1):
-            authorized[f"kinect/{camera}/camera_parameters.json"] = _zip_member(
-                archive, take_id, f"volucam/{camera}/camera_parameters.json"
+            parameter_bytes = _zip_member(
+                archive, take_id, f"kinect/{camera}/camera_parameters.json"
             )
+            parameters = json.loads(parameter_bytes)
+            if np.asarray(parameters.get("depth_intrinsics")).shape != (3, 3):
+                raise ValueError(f"invalid Kinect depth intrinsics for camera {camera}")
+            if np.asarray(parameters.get("depth_extrinsics")).shape != (4, 4):
+                raise ValueError(f"invalid Kinect depth extrinsics for camera {camera}")
+            authorized[f"kinect/{camera}/camera_parameters.json"] = parameter_bytes
             for frame in range(1, frame_limit):
                 output_name = f"kinect/{camera}/depth/{frame:05d}.png"
                 authorized[output_name] = _zip_member(
-                    archive, take_id, f"realsense/{camera}/depth/{frame:05d}.png"
+                    archive, take_id, f"kinect/{camera}/depth/{frame:05d}.png"
                 )
     output_dir.mkdir(parents=True, exist_ok=False)
     members = []
