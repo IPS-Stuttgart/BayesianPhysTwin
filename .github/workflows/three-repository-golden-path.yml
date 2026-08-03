@@ -101,7 +101,7 @@ jobs:
       - name: Check out public Causal4D consumer
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Causal4D
+          repository: IPS-Stuttgart/Causal4D
           ref: ${{ inputs.causal4d_ref || 'main' }}
           path: causal4d
           persist-credentials: false
@@ -191,7 +191,7 @@ jobs:
         if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Prob4D
+          repository: IPS-Stuttgart/Prob4D
           ref: ${{ inputs.prob4d_ref || 'main' }}
           path: prob4d
           token: ${{ env.PROB4D_READ_TOKEN }}
@@ -201,7 +201,7 @@ jobs:
         if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Causal4D
+          repository: IPS-Stuttgart/Causal4D
           ref: ${{ inputs.causal4d_ref || 'main' }}
           path: causal4d
           persist-credentials: false
