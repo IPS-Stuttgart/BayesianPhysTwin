@@ -212,6 +212,75 @@ def test_observation_belief_validates_reformatted_schema_guards(
         )
 
 
+@pytest.mark.parametrize(
+    "causal_frame_stop",
+    (True, 12.0, np.float64(12.0)),
+)
+def test_observation_belief_rejects_noninteger_causal_cutoff(
+    causal_frame_stop: object,
+) -> None:
+    with pytest.raises(ValueError, match="causal_frame_stop must be an integer"):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                "causal_frame_stop": causal_frame_stop,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "declared_frame_ids",
+        "frame_ids",
+        "entity_ids",
+        "view_indices",
+        "window_indices",
+        "correlation_group_ids",
+        "factor_group_ids",
+        "group_ids",
+    ),
+)
+def test_observation_belief_rejects_float_identity_arrays(field: str) -> None:
+    source = _belief()
+    values = np.asarray(getattr(source, field), dtype=np.float64)
+
+    with pytest.raises(ValueError, match=f"{field} must contain integers"):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                field: values,
+            }
+        )
+
+
+def test_observation_belief_canonicalizes_numpy_integer_and_name_sequences() -> None:
+    source = _belief()
+    belief = ObservationBeliefV1(
+        **{
+            **source.__dict__,
+            "causal_frame_stop": np.int64(source.causal_frame_stop),
+            "view_names": list(source.view_names),
+            "window_names": list(source.window_names),
+            "factor_names": list(source.factor_names),
+        }
+    )
+
+    assert type(belief.causal_frame_stop) is int
+    assert type(belief.view_names) is tuple
+    assert type(belief.window_names) is tuple
+    assert type(belief.factor_names) is tuple
+    assert belief.artifact_id == source.artifact_id
+
+
+def test_group_position_requires_a_genuine_integer() -> None:
+    belief = _belief()
+
+    with pytest.raises(ValueError, match="group_id must be an integer"):
+        belief.group_position(0.0)
+    assert belief.group_position(np.int64(1)) == 1
+
+
 def test_observation_belief_rejects_future_frame() -> None:
     belief = _belief()
     with pytest.raises(ValueError, match="causal boundary"):
