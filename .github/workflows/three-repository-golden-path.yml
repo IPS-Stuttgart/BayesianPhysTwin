@@ -100,6 +100,7 @@ env:
     ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}
   CAUSAL4D_REF: >-
     ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
+  PROB4D_CHECKOUT_REPOSITORY: FlorianPfaff/Prob4D
 
 jobs:
   consumer-contract-fixture:
@@ -205,11 +206,11 @@ jobs:
           path: bayesian-phystwin
           persist-credentials: false
 
-      - name: Check out Prob4D
+      - name: Check out Prob4D through retained credential alias
         if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: IPS-Stuttgart/Prob4D
+          repository: ${{ env.PROB4D_CHECKOUT_REPOSITORY }}
           ref: ${{ env.PROB4D_REF }}
           path: prob4d
           token: ${{ env.PROB4D_READ_TOKEN }}
@@ -249,7 +250,9 @@ jobs:
           {
             echo "### Tested repository refs"
             echo
-            echo "- Prob4D: \`${PROB4D_REF}\`"
+            echo "- Prob4D ref: \`${PROB4D_REF}\`"
+            echo "- Prob4D checkout alias: \`${PROB4D_CHECKOUT_REPOSITORY}\`"
+            echo "- Prob4D canonical identity: \`IPS-Stuttgart/Prob4D\`"
             echo "- BayesianPhysTwin: \`${GITHUB_SHA}\`"
             echo "- Causal4D: \`${CAUSAL4D_REF}\`"
           } >> "$GITHUB_STEP_SUMMARY"
