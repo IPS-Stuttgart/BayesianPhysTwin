@@ -269,18 +269,18 @@ def save_physical_linearization(
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor = linearization.descriptor()
     descriptor["artifact_id"] = linearization.artifact_id
-    np.savez_compressed(
-        target,
-        descriptor_json=np.asarray(
+    archive_payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
             json.dumps(
                 descriptor,
                 sort_keys=True,
                 separators=(",", ":"),
                 allow_nan=False,
             )
-        ),
-        **linearization.arrays(),
-    )
+        )
+    }
+    archive_payload.update(linearization.arrays())
+    np.savez_compressed(target, **archive_payload)
 
 
 def load_physical_linearization(path: str | Path) -> PhysicalLinearizationV1:
