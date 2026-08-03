@@ -164,6 +164,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "predict-deform360-crossview-guard": (
         "bayesian_phystwin.cli.deform360_crossview_guard"
     ),
+    "prob4d-prospective-protocol": (
+        "bayesian_phystwin.cli.prob4d_prospective_protocol"
+    ),
     "report-matphys-loo-sota": "bayesian_phystwin.cli.matphys_loo_sota_report",
     "search-phystwin-topology-field": (
         "bayesian_phystwin.cli.phystwin_zero_order_topology"
