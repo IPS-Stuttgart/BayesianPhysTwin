@@ -23,8 +23,7 @@ This gate detects:
 - missing metric-anchor provenance;
 - invalid joint cross-window gauge covariance claims;
 - consumer-side lineage or artifact validation regressions; and
-- accidental regression to repository names that predate the IPS-Stuttgart
-  transfers.
+- drift in the workflow's transfer-safe repository and dispatch policy.
 
 The fixture gate does not execute the current Prob4D implementation. It is a
 producer-neutral compatibility check and cannot by itself admit
@@ -79,6 +78,28 @@ The test then verifies:
 Validators remain implemented in their owning repositories. The integration
 test shares only immutable artifacts and expected accept/reject decisions.
 
+## Transfer-safe checkout identity
+
+The canonical Prob4D repository is `IPS-Stuttgart/Prob4D`, but the existing
+fine-grained `PROB4D_READ_TOKEN` was authorized before the repository transfer.
+The workflow therefore retains `FlorianPfaff/Prob4D` as the temporary checkout
+coordinate for that credential. GitHub resolves the historical coordinate to
+the same repository ID and commit history.
+
+This checkout alias is not accepted as proof of current project identity. The
+installed wheel must independently report:
+
+```text
+project_id = github-repository-id:1295794737
+canonical_repository = IPS-Stuttgart/Prob4D
+frozen_artifact_repository = FlorianPfaff/Prob4D
+```
+
+The exact historical string remains correct inside frozen observation schemas.
+After `PROB4D_READ_TOKEN` is re-authorized for the IPS-Stuttgart organization,
+the checkout coordinate can be changed to the canonical repository without
+changing any artifact, provider, run-manifest, or evidence semantics.
+
 ## Triggering and repository refs
 
 The workflow runs for relevant BayesianPhysTwin pull requests and `main` changes,
@@ -118,9 +139,10 @@ exit.
 
 ## GitHub Actions Credential Policy
 
-`IPS-Stuttgart/Prob4D` is private. Configure a BayesianPhysTwin repository secret
-named `PROB4D_READ_TOKEN` whose token has read-only contents access to that
-repository.
+Configure a BayesianPhysTwin repository secret named `PROB4D_READ_TOKEN`. During
+the transfer migration, it must retain read access through the historical
+checkout coordinate. The installed-wheel identity test prevents that coordinate
+from being confused with the current canonical project identity.
 
 Trusted same-repository pull requests, `main`, scheduled, manual, and
 repository-dispatch runs must execute the credentialed installed-wheel path or
