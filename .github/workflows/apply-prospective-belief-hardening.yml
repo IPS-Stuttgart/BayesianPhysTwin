@@ -80,12 +80,9 @@ jobs:
           git config user.name "OpenAI"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
+          test ! -e .github/workflows/apply-prospective-belief-hardening.yml
+          test ! -d .github/patches/prospective-belief-hardening
           git add -A
           test -n "$(git diff --cached --name-only)"
-          if git diff --cached --name-only | grep -E \
-            'apply-prospective-belief-hardening|\.github/patches/'; then
-            echo "publication scaffolding remains in the product diff" >&2
-            exit 1
-          fi
           git commit -m "Add prospective belief update infrastructure"
           git push origin HEAD:agent/prospective-belief-hardening
