@@ -31,41 +31,25 @@ jobs:
               ".github/workflows/three-repository-golden-path.yml"
           )
           text = workflow_path.read_text(encoding="utf-8")
-          old = '''      - name: Report unavailable Prob4D credential for external forks
-                if: >-
-                  env.PROB4D_READ_TOKEN == '' &&
-                  github.event_name == 'pull_request' &&
-                  github.event.pull_request.head.repo.full_name != github.repository
-                shell: bash
-                run: |
-                  echo "::warning title=Credentialed three-repository gate unavailable for external fork::" \\
-                    "GitHub withholds PROB4D_READ_TOKEN from fork pull requests."
-                  {
-                    echo "### Credentialed three-repository gate unavailable"
-                    echo
-                    echo "GitHub withholds repository secrets from external-fork pull requests."
-                    echo "The always-executed consumer fixture passed separately, but"
-                    echo "no current-Prob4D evidence is admitted."
-                  } >> "$GITHUB_STEP_SUMMARY"
-
-              - name: Reject missing Prob4D credential on trusted events
-                if: >-
-                  env.PROB4D_READ_TOKEN == '' &&
-                  (github.event_name != 'pull_request' ||
-                   github.event.pull_request.head.repo.full_name == github.repository)
-                shell: bash
-                run: |
-                  echo "::error title=Three-repository gate unavailable::" \\
-                    "PROB4D_READ_TOKEN is required for trusted pull requests, main, scheduled, manual, and repository-dispatch runs."
-                  exit 1
-
-              - name: Check out Bayesian-PhysTwin
-          '''
-          new = '''      - name: Probe Prob4D repository access
+          text = text.replace(
+              "PROB4D_CHECKOUT_REPOSITORY: FlorianPfaff/Prob4D",
+              "PROB4D_CHECKOUT_REPOSITORY: IPS-Stuttgart/Prob4D",
+          )
+          start_marker = (
+              "      - name: Report unavailable Prob4D credential for external forks\n"
+          )
+          end_marker = "      - name: Check out Bayesian-PhysTwin\n"
+          if text.count(start_marker) != 1:
+              raise SystemExit("unexpected credential-policy start marker")
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          token_expression = "$" + "{{ env.PROB4D_READ_TOKEN }}"
+          status_expression = "$" + "{{ steps.prob4d-access.outputs.status }}"
+          replacement = '''      - name: Probe Prob4D repository access
                 id: prob4d-access
                 shell: bash
                 env:
-                  TOKEN: ${{ env.PROB4D_READ_TOKEN }}
+                  TOKEN: __TOKEN_EXPRESSION__
                 run: |
                   if [[ -z "${TOKEN}" ]]; then
                     status="missing"
@@ -104,7 +88,7 @@ jobs:
                   {
                     echo "### Credentialed three-repository gate unavailable"
                     echo
-                    echo "Status: \`${{ steps.prob4d-access.outputs.status }}\`"
+                    echo "Status: `__STATUS_EXPRESSION__`"
                     echo
                     echo "The always-executed BayesianPhysTwin + Causal4D consumer fixture"
                     echo "passed separately, but no current-Prob4D execution is admitted."
@@ -122,22 +106,27 @@ jobs:
                     "PROB4D_READ_TOKEN must read IPS-Stuttgart/Prob4D for scheduled, manual, and repository-dispatch validation."
                   exit 1
 
-              - name: Check out Bayesian-PhysTwin
           '''
-          if text.count(old) != 1:
-              raise SystemExit("unexpected credential-policy source block")
-          text = text.replace(old, new)
-          count = text.count("if: env.PROB4D_READ_TOKEN != ''")
+          replacement = replacement.replace(
+              "__TOKEN_EXPRESSION__", token_expression
+          ).replace("__STATUS_EXPRESSION__", status_expression)
+          text = text[:start] + replacement + text[end:]
+          condition = "if: env.PROB4D_READ_TOKEN != ''"
+          count = text.count(condition)
           if count != 5:
               raise SystemExit(f"expected 5 checkout conditions, found {count}")
           text = text.replace(
-              "if: env.PROB4D_READ_TOKEN != ''",
+              condition,
               "if: steps.prob4d-access.outputs.available == 'true'",
           )
           workflow_path.write_text(text, encoding="utf-8")
 
           test_path = Path("tests/test_three_repository_workflow.py")
           test_text = test_path.read_text(encoding="utf-8")
+          test_text = test_text.replace(
+              'assert "PROB4D_CHECKOUT_REPOSITORY: FlorianPfaff/Prob4D" in text',
+              'assert "PROB4D_CHECKOUT_REPOSITORY: IPS-Stuttgart/Prob4D" in text',
+          )
           addition = '''
 
           def test_three_repository_workflow_probes_repository_access() -> None:
@@ -150,7 +139,8 @@ jobs:
               assert "Scheduled, manual, and repository-dispatch validation remains fail-closed" in text
           '''
           if "def test_three_repository_workflow_probes_repository_access" not in test_text:
-              test_path.write_text(test_text.rstrip() + addition + "\n", encoding="utf-8")
+              test_text = test_text.rstrip() + addition + "\n"
+          test_path.write_text(test_text, encoding="utf-8")
           PY
           python -m pip install --disable-pip-version-check ruff==0.16.1
           python -m ruff check --fix \
@@ -163,6 +153,13 @@ jobs:
       - name: Commit repair
         shell: bash
         run: |
+          if git diff --quiet -- \
+            .github/workflows/three-repository-golden-path.yml \
+            integration_tests/test_three_repository_project_identity.py \
+            tests/test_three_repository_workflow.py; then
+            echo "No repair changes required."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
