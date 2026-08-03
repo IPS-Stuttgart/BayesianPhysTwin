@@ -2,9 +2,9 @@
 
 Array-level fallback is useful for local numerical tests, but deployment must
 select the whole belief so state, parameters, particle weights, discrepancy,
-nuisance moments, and provenance remain consistent.  Rejection therefore
-returns the exact baseline object rather than reconstructing it from zero
-correction coefficients.
+nuisance moments, and provenance remain consistent. Rejection therefore returns
+the exact baseline object rather than reconstructing it from zero correction
+coefficients.
 """
 
 from __future__ import annotations
@@ -13,6 +13,12 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol, TypeVar
+
+from ._canonical_contracts import (
+    frozen_finite_json_mapping,
+    genuine_boolean,
+    plain_json,
+)
 
 
 class ArtifactBelief(Protocol):
@@ -28,13 +34,6 @@ def _validate_sha256(value: str, *, name: str) -> None:
         character not in "0123456789abcdef" for character in value
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
-
-
-def _validated_metadata(values: Mapping[str, Any]) -> dict[str, Any]:
-    try:
-        return json.loads(json.dumps(dict(values), sort_keys=True, allow_nan=False))
-    except (TypeError, ValueError) as error:
-        raise ValueError("metadata must contain finite JSON values") from error
 
 
 def _content_id(values: Mapping[str, Any]) -> str:
@@ -69,13 +68,27 @@ class CompleteBeliefGuardDecisionV1:
             ("certificate_id", self.certificate_id),
         ):
             _validate_sha256(value, name=name)
-        if not self.reason:
+        inference_admissible = genuine_boolean(
+            self.inference_admissible,
+            name="inference_admissible",
+        )
+        regret_guard_accepted = genuine_boolean(
+            self.regret_guard_accepted,
+            name="regret_guard_accepted",
+        )
+        if not isinstance(self.reason, str) or not self.reason:
             raise ValueError("guard decision reason must be nonempty")
-        if self.regret_guard_accepted and not self.inference_admissible:
+        if regret_guard_accepted and not inference_admissible:
             raise ValueError(
                 "regret_guard_accepted requires inference_admissible"
             )
-        object.__setattr__(self, "metadata", _validated_metadata(self.metadata))
+        object.__setattr__(self, "inference_admissible", inference_admissible)
+        object.__setattr__(self, "regret_guard_accepted", regret_guard_accepted)
+        object.__setattr__(
+            self,
+            "metadata",
+            frozen_finite_json_mapping(self.metadata),
+        )
 
     @property
     def decision_id(self) -> str:
@@ -90,7 +103,7 @@ class CompleteBeliefGuardDecisionV1:
                 "inference_admissible": self.inference_admissible,
                 "regret_guard_accepted": self.regret_guard_accepted,
                 "reason": self.reason,
-                "metadata": dict(self.metadata),
+                "metadata": plain_json(self.metadata),
             }
         )
 
@@ -117,16 +130,25 @@ class CompleteBeliefSelectionV1:
             ("selected_belief_id", self.selected_belief_id),
         ):
             _validate_sha256(value, name=name)
+        selected_candidate = genuine_boolean(
+            self.selected_candidate,
+            name="selected_candidate",
+        )
         expected = (
             self.candidate_belief_id
-            if self.selected_candidate
+            if selected_candidate
             else self.baseline_belief_id
         )
         if self.selected_belief_id != expected:
             raise ValueError("selected belief ID contradicts routing decision")
-        if not self.reason:
+        if not isinstance(self.reason, str) or not self.reason:
             raise ValueError("selection reason must be nonempty")
-        object.__setattr__(self, "metadata", _validated_metadata(self.metadata))
+        object.__setattr__(self, "selected_candidate", selected_candidate)
+        object.__setattr__(
+            self,
+            "metadata",
+            frozen_finite_json_mapping(self.metadata),
+        )
 
     @property
     def selection_id(self) -> str:
@@ -141,7 +163,7 @@ class CompleteBeliefSelectionV1:
                 "selected_belief_id": self.selected_belief_id,
                 "selected_candidate": self.selected_candidate,
                 "reason": self.reason,
-                "metadata": dict(self.metadata),
+                "metadata": plain_json(self.metadata),
             }
         )
 
