@@ -40,9 +40,16 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - Nuisance-aware marginalized information gain and deterministic greedy candidate
   selection for active observations with explicit camera, gauge, or shared-bias
   coefficients, covariance whitening, reliability weighting, and exact fallback.
+- An explicit conditional grouped Student-t objective that uses the same mixture
+  kernel, reliability semantics, zero-support behavior, and provider-final versus
+  consumer-owned information powers as prior-aware gauge inference.
 
 ### Changed
 
+- The historical grouped Student-t operation now identifies itself explicitly as
+  a covariance-marginalized diagnostic that does not use prior reliability. Its
+  component densities and responsibilities share the prior-aware solver's mixture
+  kernel, while the new conditional operation exposes the solver-aligned objective.
 - Active-query configuration, plan metadata, candidate identities, camera indices,
   and nuisance-aware greedy selection counts now require genuine integer values;
   booleans and fractional values fail closed instead of silently changing the
