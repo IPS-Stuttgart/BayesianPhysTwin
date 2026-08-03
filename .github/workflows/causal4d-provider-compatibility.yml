@@ -8,11 +8,15 @@ on:
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
+      - "tests/test_endpoint_model_average.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
       - "docs/causal4d_belief_provider_v1.md"
+      - "docs/prospective_belief_updates_v1.md"
       - "pyproject.toml"
       - ".github/workflows/causal4d-provider-compatibility.yml"
   push:
@@ -23,11 +27,15 @@ on:
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
+      - "tests/test_endpoint_model_average.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
       - "docs/causal4d_belief_provider_v1.md"
+      - "docs/prospective_belief_updates_v1.md"
       - "pyproject.toml"
       - ".github/workflows/causal4d-provider-compatibility.yml"
   workflow_dispatch:
@@ -60,7 +68,7 @@ jobs:
       - name: Check out Causal4D
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Causal4D
+          repository: IPS-Stuttgart/Causal4D
           ref: ${{ inputs.causal4d_ref || 'main' }}
           path: causal4d
 
@@ -92,7 +100,10 @@ jobs:
               src/bayesian_phystwin/phystwin \
               src/bayesian_phystwin/causal4d_provider_v2.py \
               src/bayesian_phystwin/causal4d_belief_provider_v1.py \
-              tests/test_causal4d_provider_v2.py
+              src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+              src/bayesian_phystwin/endpoint_model_average.py \
+              tests/test_causal4d_provider_v2.py \
+              tests/test_endpoint_model_average.py
             # v1 is a frozen compatibility facade; retain its historical import
             # grouping while enforcing every non-import-order Ruff diagnostic.
             python -m ruff check --ignore I001 \
@@ -112,6 +123,8 @@ jobs:
             src/bayesian_phystwin/causal4d_provider_v1.py \
             src/bayesian_phystwin/causal4d_provider_v2.py \
             src/bayesian_phystwin/causal4d_belief_provider_v1.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            src/bayesian_phystwin/endpoint_model_average.py \
             2>&1 | tee mypy-output.txt
 
       - name: Upload provider quality diagnostics
@@ -133,6 +146,7 @@ jobs:
           tests=(
             bayesian-phystwin/tests/test_causal4d_provider_v1.py
             bayesian-phystwin/tests/test_causal4d_provider_v2.py
+            bayesian-phystwin/tests/test_endpoint_model_average.py
             causal4d/tests/test_causal4d_provider_contract.py
             causal4d/tests/test_causal4d_bpt_belief.py
             causal4d/tests/test_causal4d_phystwin_backend.py
@@ -156,6 +170,9 @@ jobs:
           from bayesian_phystwin.causal4d_belief_provider_v1 import (
               causal4d_belief_provider_manifest,
           )
+          from bayesian_phystwin.causal4d_belief_provider_v2 import (
+              causal4d_belief_provider_v2_manifest,
+          )
           from bayesian_phystwin.causal4d_provider_v2 import (
               causal4d_provider_manifest,
           )
@@ -167,6 +184,11 @@ jobs:
               ),
               "belief-provider-v1-manifest.json": (
                   causal4d_belief_provider_manifest(provider_revision=revision)
+              ),
+              "belief-provider-v2-manifest.json": (
+                  causal4d_belief_provider_v2_manifest(
+                      provider_revision=revision
+                  )
               ),
           }
           for filename, payload in manifests.items():
@@ -183,6 +205,7 @@ jobs:
           path: |
             bayesian-phystwin/provider-v2-manifest.json
             bayesian-phystwin/belief-provider-v1-manifest.json
+            bayesian-phystwin/belief-provider-v2-manifest.json
           if-no-files-found: error
           retention-days: 14
 
