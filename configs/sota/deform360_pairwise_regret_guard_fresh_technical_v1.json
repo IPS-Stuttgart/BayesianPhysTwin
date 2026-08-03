@@ -1,0 +1,127 @@
+{
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshTechnicalLock",
+  "claim_boundary": "This is a no-refit, single-object multi-action technical replication. It can test whether the frozen update transfers to the sole untouched public Deform360 object, but it is not multi-object confirmation, a calibrated safety result, official Deform360 parity, or a state-of-the-art claim.",
+  "dataset": {
+    "excluded_public_object_count": 189,
+    "public_catalog_file_sha256": "88e9f733fc8e5c24e281e3bb81fb72914cd3ba0f160c7193085594a41989e74c",
+    "public_catalog_sha256": "0e01a6eef92b5e3e8a6a02c75bc0bc4eeb0472a22ed042699cd8c4b411115a28",
+    "public_object_count": 190,
+    "remaining_public_object_count": 1,
+    "repository": "brownu/deform360",
+    "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
+  },
+  "exclusion_union": {
+    "object_hash_count": 191,
+    "source_manifest_count": 15,
+    "union_file_sha256": "5fc4906b752afe5a95d91c82be2151b018fa925862740d4fd0e4ee36ca4de73b",
+    "union_sha256": "10dcaea50923ad4bf137a3b96ddc0a98128a4dbc2edc85ed45e9412e23cd42a3"
+  },
+  "execution_contract": {
+    "aggregation": "equal update intervals within episode and equal valid episodes within the single physical object",
+    "all_prediction_seals_must_precede_any_outcome_open": true,
+    "failed_predictions_retained_without_replacement": true,
+    "malformed_metadata_episodes_unsealable": true,
+    "ordinary_predictions_required_before_outcome_open": 9,
+    "primary_comparison": "selected physical/persistence backbone versus the frozen guarded pairwise update",
+    "primary_metrics": [
+      "post-update hidden-identity RMSE",
+      "post-update hidden symmetric Chamfer"
+    ]
+  },
+  "information_boundary": {
+    "catalog_directory_metadata_only": true,
+    "episode_media_read": false,
+    "episode_metadata_read": true,
+    "future_object_positions_deserialized": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_or_metric_read": false,
+    "processed_geometry_read": false
+  },
+  "lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2",
+  "method": {
+    "calibrated_safety_claim_allowed": false,
+    "deployment_certificate_feature_count": 16,
+    "fresh_outcomes_may_change_admission": false,
+    "refit_on_fresh_data_allowed": false,
+    "runtime_method_commit": "fc2ff43f2e100ce910bf8085a7e9e0144d87bae8",
+    "source_protocol_file_sha256": "e00cdb8ea92b7f501054dcbd44a011019ec9b75001825c0bc523af9831fc7e9b",
+    "source_qualification_file_sha256": "9fbc744deada239b1279827e762bfbabb32abe8b9d3a6ff68bd984ad22e710a3"
+  },
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "schema_version": 1,
+  "selected_physical_object": {
+    "catalog_oid": "51e368e7ab73f223c9be08f98b031f6bb1b69e69",
+    "metadata_file_sha256": "bafde9eb2106b679f289bbdec4c6e2308522bf516a3128dba4680a29799c8399",
+    "object_id": "197-hand-sanitizer",
+    "rejected_episode_count": 1,
+    "rejected_episodes": [
+      {
+        "action": "lift horizontal",
+        "bimanual": "yess",
+        "episode_id": 6,
+        "nonprehensile": "no",
+        "rejection_reasons": [
+          "bimanual must be exactly 'yes' or 'no'"
+        ]
+      }
+    ],
+    "valid_episode_count": 9,
+    "valid_episodes": [
+      {
+        "action": "lift side",
+        "bimanual": "no",
+        "episode_id": 0,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "lift top",
+        "bimanual": "no",
+        "episode_id": 1,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "lift center",
+        "bimanual": "no",
+        "episode_id": 2,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "drag",
+        "bimanual": "no",
+        "episode_id": 3,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "squeeze",
+        "bimanual": "no",
+        "episode_id": 4,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "lift vertical",
+        "bimanual": "yes",
+        "episode_id": 5,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "drag",
+        "bimanual": "yes",
+        "episode_id": 7,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "squeeze side",
+        "bimanual": "yes",
+        "episode_id": 8,
+        "nonprehensile": "no"
+      },
+      {
+        "action": "squeeze front",
+        "bimanual": "yes",
+        "episode_id": 9,
+        "nonprehensile": "no"
+      }
+    ]
+  },
+  "status": "source_only_locked_before_episode_media_or_processed_geometry"
+}
