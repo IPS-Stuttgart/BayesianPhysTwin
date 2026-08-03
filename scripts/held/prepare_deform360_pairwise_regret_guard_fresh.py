@@ -6,6 +6,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_processing import (
+    build_fresh_processing_protocol,
+    validate_fresh_processing_protocol,
+)
 from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_protocol import (
     build_exclusion_union,
     build_fresh_download_manifest,
@@ -44,6 +48,13 @@ def _parser() -> argparse.ArgumentParser:
     verify.add_argument("output", type=Path)
     verify.add_argument("--source-plan", required=True, type=Path)
     verify.add_argument("--download-root", required=True, type=Path)
+
+    processing = subparsers.add_parser("processing-lock")
+    processing.add_argument("output", type=Path)
+    processing.add_argument("--technical-lock", required=True, type=Path)
+    processing.add_argument("--source-plan", required=True, type=Path)
+    processing.add_argument("--download-manifest", required=True, type=Path)
+    processing.add_argument("--implementation-commit", required=True)
     return parser
 
 
@@ -67,12 +78,20 @@ def main() -> None:
             args.repository_tree,
         )
         validate_fresh_source_plan(artifact)
-    else:
+    elif args.command == "verify-download":
         artifact = build_fresh_download_manifest(
             args.source_plan,
             args.download_root,
         )
         validate_fresh_download_manifest(artifact)
+    else:
+        artifact = build_fresh_processing_protocol(
+            args.technical_lock,
+            args.source_plan,
+            args.download_manifest,
+            implementation_commit=args.implementation_commit,
+        )
+        validate_fresh_processing_protocol(artifact)
     write_json_artifact(artifact, args.output)
 
 
