@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360PairwiseRegretGuardSourceProtocol",
+  "protocol_id": "deform360-pairwise-regret-guard-source-v1",
+  "locked_at_utc": "2026-08-03T13:00:00Z",
+  "status": "post-open source-qualified candidate; fresh objects remain unopened for this method",
+  "claim_boundary": "This source study may authorize one no-refit evaluation on genuinely fresh Deform360 physical objects. It is not independent confirmation, calibrated safety evidence, official Deform360 Table-4 parity, or a state-of-the-art claim.",
+  "hypothesis": "A dense camera-derived discrepancy update improves a selected physical/persistence trajectory only when the action-conditioned physical twin supports motion of comparable scale and a source-calibrated upper regret bound is strictly negative.",
+  "predecessor_evidence": {
+    "open27_pairwise_positive": {
+      "algorithm_commit": "4b5db0b1f034eddbe0d1b4f3d13a6d9061b6fe39",
+      "algorithm_file_sha256": "815f76252c2255d214466124ababb243c4fe6ed4b1a6df703d9d5dbbcf9e644d",
+      "summary_sha256": "686086fdb4ea3b62b5ef947dd8de2696508b3eed5374b6ebca523bf5df8d832d",
+      "result": "The raw pairwise-clique RBF update improved hidden identity RMSE by 15.74% and hidden Chamfer by 14.10% relative to the selected physical/persistence backbone across five opened objects, but had no baseline-relative regret guard."
+    },
+    "prospective_camera_only_failure": {
+      "protocol_id": "deform360-selective-virtual-sensing-v1",
+      "prospective_aggregate_file_sha256": "91cad58f93a569a69369d5f6793db3cde1ad348d5501f9ab6869eefcb738f598",
+      "posthoc_diagnostic_file_sha256": "5b60867bca08cdf459c3568e5a5194f34fb800aa71128d5559f407cdac1c0c63",
+      "result": "The camera-only update regressed every one of twelve prospective object means because action-only windows made persistence nearly exact and coherent multiview bias passed camera-internal geometry checks."
+    }
+  },
+  "source_panel": {
+    "case_count": 27,
+    "physical_object_count": 5,
+    "candidate_available_interval_count": 49,
+    "unit_of_outer_cross_fitting": "physical object",
+    "aggregation": "equal intervals within case, equal cases within physical object, equal physical objects",
+    "source_payload_sha256": "79987ccab824ad22e020f79985b3293bf269971dddecb39fb677f66df465ab4c",
+    "qualification_sha256": "9fbc744deada239b1279827e762bfbabb32abe8b9d3a6ff68bd984ad22e710a3"
+  },
+  "implementation": {
+    "runtime_candidate_source_sha256": "325e39b1e9d318fb8c2899e7f1e9f717e121e9909656513affd44c921456fe7a",
+    "source_qualification_source_sha256": "cd77995fb16493045f7f8a63ff41a4c3fb36bb379fb13199e0ba24abc73d8d9a",
+    "source_runner_sha256": "da819f8cfb00f0a5aa2f2fd4f530c67810b37521384d0107a5be573d8122e095",
+    "open27_transfer_manifest_digest": "02babb4e041fce354a168a76c055a043032dbbf5eb5320e2c8a0e409bb2d83bb",
+    "measurement_manifest_aggregate_digest": "6fbdfe0d229534ee67c5633e002a7ca5f6085d17f4fbcbcfa2ab6247ca21e532",
+    "regeneration_check": "Every report, feature, score, and interval regret matched the prior development payload in all 27 cases."
+  },
+  "runtime_candidate": {
+    "base_backbone": "per-update selected physical prior or exact persistence using current prefix observation Chamfer; persistence is the insufficient-support default",
+    "camera_candidate": "unchanged pairwise-consensus full-blend recursive RBF correction",
+    "update_frames": [19, 38, 57],
+    "minimum_unique_camera_panel_count": 3,
+    "minimum_triangulation_view_count": 2,
+    "three_view_redundancy_role": "regret feature rather than brittle hard admission threshold",
+    "minimum_motion_center_count": 3,
+    "minimum_physical_support_m": 0.0005,
+    "minimum_observed_motion_m": 0.0005,
+    "minimum_physical_agreement_gain": 0.0,
+    "maximum_correction_to_physical_response": 2.0,
+    "correction_bound": "radial RMS correction is deterministically shrunk relative to the larger of prefix physical response and physical-versus-persistence future response",
+    "static_policy": "zero physical response returns the selected baseline bit-for-bit",
+    "regret_features": 16,
+    "regret_feature_roles": [
+      "physical and observed motion scale",
+      "future action-conditioned physical response",
+      "innovation and proposed correction scale",
+      "physical-observation agreement and direction",
+      "common-mode fraction",
+      "independent-view redundancy and reprojection",
+      "pairwise correspondence support",
+      "selected-backbone identity and prefix margin"
+    ]
+  },
+  "source_regret_certificate": {
+    "regression": "group-weighted ridge",
+    "ridge_penalty": 10.0,
+    "nominal_coverage": 0.5,
+    "within_group_coverage": 1.0,
+    "support_margin_std": 1.0,
+    "minimum_improvement_m": 0.0,
+    "selection": "candidate must lie in source feature support and have strictly negative upper regret",
+    "outer_fold_finite_sample_coverage": 0.6,
+    "deployment_finite_sample_coverage": 0.5,
+    "calibrated_safety_claim_allowed": false,
+    "fallback": "bit-exact selected physical/persistence baseline"
+  },
+  "source_acceptance": {
+    "minimum_relative_improvement_each_coprimary": 0.02,
+    "minimum_accepted_interval_count": 4,
+    "minimum_accepted_object_count": 2,
+    "maximum_harmful_accepted_interval_count": 0,
+    "placebo_trial_count": 1024,
+    "placebo_seed": 20260803,
+    "maximum_placebo_gate_pass_rate": 0.05,
+    "synthetic_positive_regret_m": -0.002,
+    "positive_control_must_pass": true
+  },
+  "information_boundary": {
+    "runtime_candidate_accepts_target": false,
+    "runtime_candidate_accepts_outcome": false,
+    "future_camera_or_object_observation_used": false,
+    "known_future_robot_action_used_by_physical_rollout": true,
+    "source_outcomes_used_only_for_cross_fit_regret_calibration_and_scoring": true,
+    "fresh_outcomes_may_select_or_refit_method": false,
+    "rejected_interval_policy": "bit-exact baseline fallback",
+    "held_v8_runtime_or_target_artifact_access": false
+  },
+  "decision": {
+    "source_gate_passed": true,
+    "fresh_accuracy_evaluation_allowed": true,
+    "fresh_protocol_requirement": "Exclude every previously opened, reserved, selected, or technically dispositioned physical object; preflight source and backend contracts before locking; seal all eligible predictions before any future target is opened; retain failures without replacement.",
+    "forbidden": [
+      "retuning this method on the opened source five or the opened selective-virtual-sensing twelve",
+      "using an existing frame-zero-only confirmatory lock for this RGB-prefix method",
+      "claiming calibrated non-regression from the 50% deployment certificate",
+      "opening or deriving any held-v8 target, query, score, barrier, outcome, or runtime artifact",
+      "replacing failed or unfavorable fresh cases"
+    ]
+  }
+}
