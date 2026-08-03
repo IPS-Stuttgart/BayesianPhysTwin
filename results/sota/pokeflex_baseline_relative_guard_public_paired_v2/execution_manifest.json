@@ -1,0 +1,80 @@
+{
+  "artifact_kind": "PokeFlexBaselineRelativeGuardPublicPairedV2ExecutionManifest",
+  "schema_version": 1,
+  "protocol_sha256": "4b401beb1a48e973da3af42a580c32f244163740f850ace4edef5ff43bfdb57c",
+  "selection_manifest_sha256": "418b80936fe98cc1007c7884ebcc8c10ed011a7487aa63e681b6a6e59c854d5f",
+  "development_certificate_sha256": "5eeb2350900334d487db5630f3a39a186a2e388be41334349cbcff613cdeb8a5",
+  "initial_preoutcome_attempt": {
+    "implementation_revision": "22b0a57e240c6c6657df88ce9f8d16873161d208",
+    "tag": "pokeflex-baseline-relative-guard-public-paired-v2-preoutcome",
+    "code_bundle_sha256": "8005460e8b7d3805dcbf4f4de59d8f29805dd27ddc8af6dbcea74a01e7c0bf10",
+    "causal_input_archive_sha256": "3264aaa88891cabb08be05e915a828268f6e08d3df3678f4533efb1f5093d8cc",
+    "causal_input_archive_byte_count": 625947517,
+    "status": "prediction_runtime_failure_before_output",
+    "failure": "KeyError: depth_intrinsics because the stager paired volucam calibration with realsense depth",
+    "prediction_archive_created": false,
+    "prediction_seal_created": false,
+    "target_mesh_opened": false
+  },
+  "preseal_amendment": {
+    "implementation_revision": "1185d9fb5e4a8c8f08df8d315bacbc64fbccf2f1",
+    "tag": "pokeflex-baseline-relative-guard-public-paired-v2-preoutcome-amendment1",
+    "code_bundle_sha256": "5b73abc030d396f5c58ca216182d4106dd21821c2394433432d05d6929c2ca06",
+    "change": "stage matching released kinect depth and kinect calibration; reject invalid depth calibration shapes",
+    "cohort_method_metric_and_gates_changed": false,
+    "native_pokeflex_tests_passed": 151,
+    "ruff_passed": true
+  },
+  "causal_staging": {
+    "host": "gpuserver6000",
+    "path": "/mnt/lexar4tb/pokeflex-baseline-relative-guard-public-paired-v2-1185d9f-inputs",
+    "archive_path": "/mnt/lexar4tb/pokeflex-baseline-relative-guard-public-paired-v2-1185d9f-inputs.tar.zst",
+    "archive_sha256": "1b517c2499b19a58a93c28f43a2f15b607f7b32a3fa8991560e7294f07fa6d17",
+    "archive_byte_count": 550067211,
+    "take_count": 12,
+    "future_target_mesh_read_count": 0,
+    "target_frame_observation_read_count": 0,
+    "staging_log_sha256": "dca431698f2e4182a27d6f39bdfc82a797fcf10dbcf6295890d94ea9a64ab468"
+  },
+  "causal_input_transfer": {
+    "source": "gpuserver6000 (129.69.102.145)",
+    "destination": "gpuserver4090 (129.69.102.139)",
+    "transport": "direct server-to-server LAN SCP; jump server not used for payload transfer",
+    "destination_sha256": "1b517c2499b19a58a93c28f43a2f15b607f7b32a3fa8991560e7294f07fa6d17"
+  },
+  "prediction": {
+    "host": "gpuserver4090",
+    "path": "/home/florianpfaff/pokeflex-baseline-relative-guard-public-paired-v2-1185d9f-predictions",
+    "implementation_revision": "1185d9fb5e4a8c8f08df8d315bacbc64fbccf2f1",
+    "prediction_seal_count": 12,
+    "raw_supported_frame_count": 801,
+    "guard_accepted_frame_count": 150,
+    "fallback_mismatch_count": 0,
+    "future_mesh_read_count": 0,
+    "prediction_log_sha256": "4482e469ae7e884b32b005ba204ce6bc53871505669ba49d311bcb999a975e74",
+    "prediction_log_scope": "eleven post-smoke predictions; the smoke prediction is bound by the complete barrier"
+  },
+  "barrier": {
+    "file_sha256": "904ce0b994b5dd5ad4b3cc943709497d187b0cef7c26cbfea796c2663c6a2ec4",
+    "canonical_sha256": "26aaed737db34e65796b855977afdfdc432146aed43cfd93da6cab29b88e2a8e",
+    "prediction_count": 12,
+    "target_mesh_opened": false,
+    "scoring_authorized": true
+  },
+  "sealed_prediction_transfer": {
+    "source": "gpuserver4090 (129.69.102.139)",
+    "destination": "gpuserver6000 (129.69.102.145)",
+    "transport": "direct server-to-server LAN SCP; jump server not used for payload transfer",
+    "archive_sha256": "45eb22c5e2791217ee144fbfa634c246a971537448c846b1f1f500f00b46eade",
+    "archive_byte_count": 390900277
+  },
+  "target_scoring": {
+    "host": "gpuserver6000",
+    "authorized_after_complete_barrier": true,
+    "target_result_file_sha256": "aa2680cbe0d7a6c9e342c9093ff4045e25a6952191fc9033376516d468329685",
+    "scoring_log_sha256": "68e971fb4f4b216e5e5079cedacfb149cd03f15a09b084e9ca894e4cb0a2c8a3",
+    "paired_transfer_passed": false
+  },
+  "claim_boundary": "Registered fresh-take public evaluation of a frozen baseline-relative guard; not the unavailable internal PokeFlex split and not an official-table SOTA confirmation.",
+  "held_v8_accessed": false
+}
