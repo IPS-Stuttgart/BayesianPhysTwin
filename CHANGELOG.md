@@ -43,6 +43,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Observation identities, physical-linearization identities, causal cutoffs, and
+  guarded-update decisions now reject booleans and floating-point values instead
+  of silently coercing them. Content-addressed observation, linearization,
+  nonlinear-closure, guard, and selection metadata is recursively immutable, so
+  nested mutation cannot change an existing artifact or decision ID.
 - Active-query configuration, plan metadata, candidate identities, camera indices,
   and nuisance-aware greedy selection counts now require genuine integer values;
   booleans and fractional values fail closed instead of silently changing the
