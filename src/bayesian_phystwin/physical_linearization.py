@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 
@@ -212,7 +213,10 @@ def validate_observation_linearization_alignment(
     if str(observation_belief.artifact_id) != linearization.observation_artifact_id:
         raise ValueError("linearization does not identify this observation artifact")
     for name in ("frame_ids", "entity_ids", "view_indices", "window_indices"):
-        observed = integer_array(getattr(observation_belief, name), name=f"observation {name}")
+        observed = integer_array(
+            getattr(observation_belief, name),
+            name=f"observation {name}",
+        )
         expected = np.asarray(getattr(linearization, name), dtype=np.int64)
         if not np.array_equal(observed, expected):
             raise ValueError(f"observation and linearization {name} differ")
@@ -428,7 +432,9 @@ def evaluate_nonlinear_closure(
         or relative_tolerance < 0.0
         or denominator_floor_m <= 0.0
     ):
-        raise ValueError("closure tolerances must be finite and nonnegative and floor positive")
+        raise ValueError(
+            "closure tolerances must be finite and nonnegative and floor positive"
+        )
     remainder = nonlinear - linearized
     absolute_error = float(np.max(np.linalg.norm(remainder, axis=1), initial=0.0))
     predicted_change = linearized - baseline
