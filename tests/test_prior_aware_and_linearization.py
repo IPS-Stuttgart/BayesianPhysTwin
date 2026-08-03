@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -9,6 +10,7 @@ from bayesian_phystwin.complete_belief_selection import (
     select_complete_belief,
 )
 from bayesian_phystwin.physical_linearization import (
+    NonlinearClosureV1,
     PhysicalLinearizationV1,
     evaluate_nonlinear_closure,
     validate_observation_linearization_alignment,
@@ -143,6 +145,47 @@ def test_response_scale_is_bound_to_linearization() -> None:
     assert _linearization().physical_response_scale_m == pytest.approx(0.01)
 
 
+@pytest.mark.parametrize(
+    "field",
+    ("frame_ids", "entity_ids", "view_indices", "window_indices"),
+)
+def test_linearization_rejects_lossy_integer_identity_coercion(field: str) -> None:
+    source = _linearization()
+    values = np.asarray(getattr(source, field), dtype=np.float64)
+
+    with pytest.raises(ValueError, match=f"{field} must contain integers"):
+        PhysicalLinearizationV1(
+            **{
+                **source.__dict__,
+                field: values,
+            }
+        )
+
+
+def test_linearization_metadata_is_deeply_immutable_and_id_stable() -> None:
+    metadata_input = {"nested": {"items": [1, {"accepted": True}]}}
+    linearization = PhysicalLinearizationV1(
+        **{
+            **_linearization().__dict__,
+            "metadata": metadata_input,
+        }
+    )
+    artifact_id = linearization.artifact_id
+
+    metadata_input["nested"]["items"][1]["accepted"] = False
+    assert linearization.metadata["nested"]["items"][1]["accepted"] is True
+    assert linearization.artifact_id == artifact_id
+
+    with pytest.raises(TypeError):
+        linearization.metadata["nested"]["items"][1]["accepted"] = False
+    with pytest.raises(TypeError):
+        linearization.metadata["nested"]["items"].append("mutated")
+
+    copied = copy.deepcopy(linearization.metadata)
+    copied["nested"]["items"].append("copy-only")
+    assert "copy-only" not in linearization.metadata["nested"]["items"]
+
+
 def test_nonlinear_closure_fails_large_remainder() -> None:
     linearization = _linearization()
     baseline = np.zeros((3, 3))
@@ -160,28 +203,122 @@ def test_nonlinear_closure_fails_large_remainder() -> None:
     assert not closure.candidate_valid
 
 
+def test_nonlinear_closure_metadata_is_immutable_and_id_stable() -> None:
+    metadata_input = {"checks": [{"name": "replay", "accepted": True}]}
+    closure = evaluate_nonlinear_closure(
+        _linearization().artifact_id,
+        baseline_query_m=np.zeros((1, 3)),
+        linearized_query_m=np.asarray([[0.01, 0.0, 0.0]]),
+        nonlinear_query_m=np.asarray([[0.01, 0.0, 0.0]]),
+        absolute_tolerance_m=0.0,
+        relative_tolerance=0.0,
+        metadata=metadata_input,
+    )
+    closure_id = closure.closure_id
+
+    metadata_input["checks"][0]["accepted"] = False
+    assert closure.metadata["checks"][0]["accepted"] is True
+    assert closure.closure_id == closure_id
+    with pytest.raises(TypeError):
+        closure.metadata["checks"][0]["accepted"] = False
+
+
+def test_nonlinear_closure_requires_a_genuine_boolean_decision() -> None:
+    with pytest.raises(ValueError, match="candidate_valid must be a boolean"):
+        NonlinearClosureV1(
+            linearization_artifact_id=A,
+            absolute_error_m=0.0,
+            relative_error=0.0,
+            absolute_tolerance_m=0.0,
+            relative_tolerance=0.0,
+            candidate_valid=1,
+        )
+
+
 @dataclass
 class Belief:
     artifact_id: str
     payload: np.ndarray
 
 
+def _guard_decision(
+    *,
+    inference_admissible: object = True,
+    regret_guard_accepted: object = False,
+    metadata: object | None = None,
+) -> CompleteBeliefGuardDecisionV1:
+    return CompleteBeliefGuardDecisionV1(
+        baseline_belief_id="d" * 64,
+        candidate_belief_id="e" * 64,
+        common_domain_id="f" * 64,
+        certificate_id="9" * 64,
+        inference_admissible=inference_admissible,
+        regret_guard_accepted=regret_guard_accepted,
+        reason="source certificate rejected",
+        metadata={} if metadata is None else metadata,
+    )
+
+
 def test_complete_belief_fallback_reuses_exact_baseline_object() -> None:
     baseline = Belief("d" * 64, np.asarray([0.0, -0.0], dtype=np.float32))
     candidate = Belief("e" * 64, np.asarray([1.0, 1.0], dtype=np.float32))
-    decision = CompleteBeliefGuardDecisionV1(
-        baseline_belief_id=baseline.artifact_id,
-        candidate_belief_id=candidate.artifact_id,
-        common_domain_id="f" * 64,
-        certificate_id="9" * 64,
-        inference_admissible=True,
-        regret_guard_accepted=False,
-        reason="source certificate rejected",
+    selected, manifest = select_complete_belief(
+        baseline,
+        candidate,
+        _guard_decision(),
     )
-    selected, manifest = select_complete_belief(baseline, candidate, decision)
     assert selected is baseline
     assert manifest.selected_belief_id == baseline.artifact_id
     assert not manifest.selected_candidate
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("inference_admissible", 1),
+        ("inference_admissible", np.int64(1)),
+        ("regret_guard_accepted", 0.0),
+    ),
+)
+def test_complete_belief_guard_requires_genuine_booleans(
+    field: str,
+    value: object,
+) -> None:
+    settings = {
+        "inference_admissible": True,
+        "regret_guard_accepted": False,
+        field: value,
+    }
+    with pytest.raises(ValueError, match=f"{field} must be a boolean"):
+        _guard_decision(**settings)
+
+
+def test_complete_belief_metadata_is_immutable_and_ids_are_stable() -> None:
+    metadata_input = {"certificate": {"groups": ["object-1"]}}
+    decision = _guard_decision(metadata=metadata_input)
+    decision_id = decision.decision_id
+
+    metadata_input["certificate"]["groups"].append("object-2")
+    assert decision.metadata["certificate"]["groups"] == ["object-1"]
+    assert decision.decision_id == decision_id
+    with pytest.raises(TypeError):
+        decision.metadata["certificate"]["groups"].append("mutated")
+
+    baseline = Belief("d" * 64, np.asarray([0.0]))
+    candidate = Belief("e" * 64, np.asarray([1.0]))
+    selection_metadata = {"routing": {"reasons": ["source-only"]}}
+    _, selection = select_complete_belief(
+        baseline,
+        candidate,
+        decision,
+        metadata=selection_metadata,
+    )
+    selection_id = selection.selection_id
+    selection_metadata["routing"]["reasons"].append("target-informed")
+    assert selection.metadata["routing"]["reasons"] == ["source-only"]
+    assert selection.selection_id == selection_id
+    with pytest.raises(TypeError):
+        selection.metadata["routing"]["reasons"].append("mutated")
 
 
 def _one_step_propagated_state_problem() -> tuple[
