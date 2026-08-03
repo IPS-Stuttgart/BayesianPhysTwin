@@ -80,9 +80,7 @@ class CompleteBeliefGuardDecisionV1:
         if not isinstance(self.reason, str) or not self.reason:
             raise ValueError("guard decision reason must be nonempty")
         if regret_guard_accepted and not inference_admissible:
-            raise ValueError(
-                "regret_guard_accepted requires inference_admissible"
-            )
+            raise ValueError("regret_guard_accepted requires inference_admissible")
         object.__setattr__(self, "inference_admissible", inference_admissible)
         object.__setattr__(self, "regret_guard_accepted", regret_guard_accepted)
         object.__setattr__(
@@ -136,9 +134,7 @@ class CompleteBeliefSelectionV1:
             name="selected_candidate",
         )
         expected = (
-            self.candidate_belief_id
-            if selected_candidate
-            else self.baseline_belief_id
+            self.candidate_belief_id if selected_candidate else self.baseline_belief_id
         )
         if self.selected_belief_id != expected:
             raise ValueError("selected belief ID contradicts routing decision")
