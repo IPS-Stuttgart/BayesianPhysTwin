@@ -60,8 +60,10 @@ def _canonical_json(value: Mapping[str, Any]) -> bytes:
 
 
 def _validate_sha256(value: str, *, name: str) -> None:
-    if not isinstance(value, str) or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
@@ -273,7 +275,9 @@ class ObservationBeliefV1:
             raise ValueError("group_ids must equal sorted unique correlation_group_ids")
         group_count = len(group_ids)
         if group_prior.shape != (group_count,) or group_weight.shape != (group_count,):
-            raise ValueError("group prior and composite weight must identify every group")
+            raise ValueError(
+                "group prior and composite weight must identify every group"
+            )
         if not np.all(np.isfinite(group_prior)) or np.any(
             (group_prior < 0.0) | (group_prior > 1.0)
         ):
