@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+import bayesian_phystwin.endpoint_model_average as endpoint_module
 from bayesian_phystwin.causal4d_belief_provider_v2 import (
     CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION,
     causal4d_belief_provider_v2_manifest,
@@ -9,6 +10,8 @@ from bayesian_phystwin.causal4d_belief_provider_v2 import (
 from bayesian_phystwin.contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 from bayesian_phystwin.endpoint_model_average import (
     ModelAveragedEndpointConfigV1,
+    ModelAveragedEndpointPosteriorV1,
+    ModelAveragedEndpointPredictionV1,
     infer_model_averaged_endpoint,
     predict_model_averaged_endpoint,
 )
@@ -216,3 +219,207 @@ def test_invalid_inputs_fail_closed() -> None:
     )
     with pytest.raises(ValueError, match="nonnegative integer"):
         predict_model_averaged_endpoint(posterior, horizon_steps=-1)
+
+
+def _posterior_contract_kwargs() -> dict[str, object]:
+    config = _single_config(FixedBayesianAnchorConfigV1())
+    return {
+        "mean_m": np.zeros((1, 3)),
+        "covariance_m2": np.eye(3)[None],
+        "final_nominal_probability": np.array([0.5]),
+        "update_count": np.array([1], dtype=np.int64),
+        "component_weights": np.ones((1, 1)),
+        "component_log_evidence": np.zeros((1, 1)),
+        "component_mean_m": np.zeros((1, 1, 3)),
+        "component_variance_m2": np.ones((1, 1)),
+        "component_process_variance_m2": np.zeros(1),
+        "config": config,
+        "end_frame": 1,
+    }
+
+
+def _prediction_contract_kwargs() -> dict[str, object]:
+    return {
+        "mean_m": np.zeros((1, 3)),
+        "covariance_m2": np.eye(3)[None],
+        "component_weights": np.ones((1, 1)),
+        "horizon_steps": 0,
+    }
+
+
+def test_config_rejects_wrong_component_type_and_invalid_priors() -> None:
+    with pytest.raises(TypeError, match="FixedBayesianAnchorConfigV1"):
+        ModelAveragedEndpointConfigV1(components=(object(),))  # type: ignore[arg-type]
+    component = FixedBayesianAnchorConfigV1()
+    with pytest.raises(ValueError, match="finite and positive"):
+        ModelAveragedEndpointConfigV1(
+            components=(component,),
+            component_prior_probability=(np.nan,),
+        )
+    with pytest.raises(ValueError, match="finite and positive"):
+        ModelAveragedEndpointConfigV1(
+            components=(component,),
+            component_prior_probability=(0.0,),
+        )
+
+
+@pytest.mark.parametrize(
+    ("covariance", "message"),
+    [
+        (np.zeros((1, 2, 2)), "shape"),
+        (np.full((1, 3, 3), np.nan), "finite"),
+        (
+            np.array([[[1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]]),
+            "symmetric",
+        ),
+        (-np.eye(3)[None], "positive semidefinite"),
+    ],
+)
+def test_prediction_rejects_invalid_covariance(
+    covariance: np.ndarray,
+    message: str,
+) -> None:
+    kwargs = _prediction_contract_kwargs()
+    kwargs["covariance_m2"] = covariance
+    with pytest.raises(ValueError, match=message):
+        ModelAveragedEndpointPredictionV1(**kwargs)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("config", object(), "config"),
+        ("end_frame", 1.5, "integer"),
+        ("end_frame", 0, "positive"),
+        ("mean_m", np.zeros((0, 3)), "mean_m"),
+        ("covariance_m2", np.repeat(np.eye(3)[None], 2, axis=0), "track count"),
+        ("final_nominal_probability", np.zeros(2), "probability shape"),
+        ("update_count", np.array([1.0]), "integers"),
+        ("update_count", np.array([-1]), "nonnegative"),
+        ("component_weights", np.ones((1, 2)), "weight/evidence"),
+        ("component_log_evidence", np.ones((1, 2)), "weight/evidence"),
+        ("component_mean_m", np.zeros((1, 2, 3)), "component_mean"),
+        ("component_variance_m2", np.zeros((1, 2)), "component_variance"),
+        ("component_process_variance_m2", np.zeros(2), "process_variance"),
+        ("component_log_evidence", np.array([[np.nan]]), "non-finite"),
+        ("final_nominal_probability", np.array([2.0]), r"\[0, 1\]"),
+        ("component_weights", np.array([[0.5]]), "row-normalized"),
+        ("component_variance_m2", np.array([[-1.0]]), "nonnegative"),
+        ("component_process_variance_m2", np.array([-1.0]), "nonnegative"),
+    ],
+)
+def test_posterior_contract_rejects_invalid_fields(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    kwargs = _posterior_contract_kwargs()
+    kwargs[field] = value
+    with pytest.raises((TypeError, ValueError), match=message):
+        ModelAveragedEndpointPosteriorV1(**kwargs)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("horizon_steps", True, "nonnegative integer"),
+        ("horizon_steps", 0.5, "nonnegative integer"),
+        ("mean_m", np.zeros((0, 3)), "mean_m"),
+        ("covariance_m2", np.repeat(np.eye(3)[None], 2, axis=0), "track count"),
+        ("component_weights", np.ones((2, 1)), "shape"),
+        ("mean_m", np.full((1, 3), np.nan), "non-finite"),
+        ("component_weights", np.array([[np.nan]]), "non-finite"),
+        ("component_weights", np.array([[-1.0]]), "row-normalized"),
+        ("component_weights", np.array([[0.5]]), "row-normalized"),
+    ],
+)
+def test_prediction_contract_rejects_invalid_fields(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    kwargs = _prediction_contract_kwargs()
+    kwargs[field] = value
+    with pytest.raises(ValueError, match=message):
+        ModelAveragedEndpointPredictionV1(**kwargs)  # type: ignore[arg-type]
+
+
+def test_additional_input_and_type_contracts_fail_closed() -> None:
+    with pytest.raises(ValueError, match="valid must match"):
+        infer_model_averaged_endpoint(
+            np.zeros((2, 1, 3)),
+            np.zeros((2, 2), dtype=bool),
+            end_frame=1,
+        )
+    residual = np.zeros((2, 1, 3))
+    residual[0, 0, 0] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        infer_model_averaged_endpoint(
+            residual,
+            np.ones((2, 1), dtype=bool),
+            end_frame=1,
+        )
+    with pytest.raises(ValueError, match="inside"):
+        infer_model_averaged_endpoint(
+            np.zeros((2, 1, 3)),
+            np.ones((2, 1), dtype=bool),
+            end_frame=0,
+        )
+    with pytest.raises(TypeError, match="config"):
+        infer_model_averaged_endpoint(
+            np.zeros((2, 1, 3)),
+            np.ones((2, 1), dtype=bool),
+            end_frame=1,
+            config=object(),  # type: ignore[arg-type]
+        )
+    with pytest.raises(TypeError, match="posterior"):
+        predict_model_averaged_endpoint(
+            object(),  # type: ignore[arg-type]
+            horizon_steps=0,
+        )
+
+
+def test_component_observation_mismatch_is_detected(monkeypatch) -> None:
+    original = endpoint_module._filter_component
+    calls = 0
+
+    def mismatched(*args, **kwargs):
+        nonlocal calls
+        values = original(*args, **kwargs)
+        calls += 1
+        if calls == 2:
+            count = values[3].copy()
+            count[0] += 1
+            return (*values[:3], count, values[4])
+        return values
+
+    monkeypatch.setattr(endpoint_module, "_filter_component", mismatched)
+    config = ModelAveragedEndpointConfigV1(
+        components=(
+            FixedBayesianAnchorConfigV1(process_std_m=0.0),
+            FixedBayesianAnchorConfigV1(process_std_m=0.001),
+        )
+    )
+    with pytest.raises(AssertionError, match="different observations"):
+        infer_model_averaged_endpoint(
+            np.zeros((1, 1, 3)),
+            np.ones((1, 1), dtype=bool),
+            end_frame=1,
+            config=config,
+        )
+
+
+def test_provider_default_and_invalid_config_paths() -> None:
+    posterior = infer_model_averaged_bayesian_anchor_endpoint(
+        np.zeros((1, 1, 3)),
+        np.ones((1, 1), dtype=bool),
+        end_frame=1,
+    )
+    assert posterior.update_count[0] == 1
+    with pytest.raises(TypeError, match="config"):
+        infer_model_averaged_bayesian_anchor_endpoint(
+            np.zeros((1, 1, 3)),
+            np.ones((1, 1), dtype=bool),
+            end_frame=1,
+            config=object(),  # type: ignore[arg-type]
+        )
