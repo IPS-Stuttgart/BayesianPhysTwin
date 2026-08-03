@@ -8,7 +8,6 @@ import numpy as np
 
 from .contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 
-
 MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION = 1
 
 

@@ -10,7 +10,6 @@ from bayesian_phystwin.prospective_prob4d_update import (
     update_claim_bearing_prob4d_from_artifacts,
 )
 
-
 OBSERVATION_ID = "a" * 64
 LINEARIZATION_ID = "b" * 64
 PROVIDER_ID = "c" * 64

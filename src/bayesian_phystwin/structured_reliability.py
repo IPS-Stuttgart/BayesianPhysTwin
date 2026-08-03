@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
-
 
 MARKOV_TIME_MODE_ORDER_ONLY = "order-only"
 MARKOV_TIME_MODE_INTEGER_STEPS = "integer-steps"

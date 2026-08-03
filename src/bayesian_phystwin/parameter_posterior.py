@@ -39,7 +39,7 @@ class ParameterEnsemble:
         self._renormalize_log_weights()
 
     @classmethod
-    def from_prior_samples(cls, particles: np.ndarray) -> "ParameterEnsemble":
+    def from_prior_samples(cls, particles: np.ndarray) -> ParameterEnsemble:
         values = np.asarray(particles)
         if values.ndim != 2:
             raise ValueError(
