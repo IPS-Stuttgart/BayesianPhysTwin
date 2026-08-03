@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkagePublicPairedSummary",
+  "claim_status": "registered prospective near-pass; paired-transfer gate failed",
+  "protocol_sha256": "b167c494acddd3defa6d29365990cec40ea7ff2a752c45b79e9632cf9482700d",
+  "implementation_revision": "c015534497c2a37aacd5c059ad48bed3721b6e3f",
+  "source_result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+  "evidence": {
+    "causal_input_manifest_file_sha256": "dd49bf8e4eb813a20667803523e1b7b8ccfcf8783a7f0b7054e75bded121857f",
+    "causal_input_manifest_sha256": "469c38d654a02360ccb15591bd9477dec0bbd158142a70dd6fd5f7a69090c8e9",
+    "prediction_attempt1_file_sha256": "d3ccb6ef9d67abd033f2177d63bd6fb89493f794c5adf80e7071ab0b55eedf45",
+    "prediction_attempt2_file_sha256": "baf7bb6348b7edd9d1bca957fe020942c9121636c61eabe3e35a8753ec63ae4a",
+    "prediction_barrier_file_sha256": "2752852e4c80e2444b70864d2df598e8efbc8e5aee84684c863d5b126a800e66",
+    "prediction_barrier_sha256": "d37ea9d533ab8e5ac47f5df387b8ffb21acb6300d0378213c1160a259fd9ba35",
+    "authorized_target_manifest_file_sha256": "695c39ecf65c4ae6251baa58494c108c2157864e0032d8bc840c939b25f3022d",
+    "authorized_target_manifest_sha256": "a6bad989678b2bed9023a7673ce31d1a0b1304ce9ddc9972ba2fb8c1a509ec74",
+    "target_result_file_sha256": "d3a03ca0c5f834cb5ae8fff840027e4ae919d3f94451a11847ab0b319221bb3c"
+  },
+  "target_object_count": 15,
+  "scored_frame_count": 1165,
+  "supported_frame_count": 1010,
+  "supported_object_count": 14,
+  "baseline_object_balanced_CD_UL1_mm": 4.703036315664229,
+  "candidate_object_balanced_CD_UL1_mm": 4.656542200240883,
+  "object_balanced_relative_CD_UL1_improvement": 0.009885978398357111,
+  "bootstrap_upper_candidate_minus_baseline_CD_UL1_mm": -0.029266977982326744,
+  "object_win_tie_loss_count": [13, 1, 1],
+  "minimum_per_object_relative_improvement": -0.004585143854373038,
+  "candidate_jaccard_valid_count": 868,
+  "candidate_jaccard_invalid_count": 297,
+  "candidate_jaccard_valid_fraction": 0.7450643776824034,
+  "candidate_object_balanced_jaccard_valid": 0.8957614146178915,
+  "gate_components": {
+    "positive_object_balanced_improvement": true,
+    "bootstrap_upper_difference_below_zero": true,
+    "no_object_regression": false,
+    "minimum_twelve_object_wins": true,
+    "minimum_twelve_supported_objects": true
+  },
+  "paired_transfer_passed": false,
+  "all_target_gates_passed": false,
+  "sole_regressing_take": {
+    "take_id": "Sponge_T1",
+    "baseline_CD_UL1_mm": 4.284630729615699,
+    "candidate_CD_UL1_mm": 4.304276377873855,
+    "relative_improvement": -0.004585143854373038
+  },
+  "published_kinect_CD_UL1_mm_context_only": 6.498,
+  "candidate_below_published_context_reference": true,
+  "published_reference_is_gating": false,
+  "claim_boundary": "The unchanged source-selected update improves the object-balanced mean on the registered fresh public cohort and passes its object-bootstrap criterion, but the frozen overall gate fails because Sponge_T1 regresses by 0.4585%. This is development evidence for a target-free guard, not confirmation and not an identical-split PokeFlex state-of-the-art claim."
+}

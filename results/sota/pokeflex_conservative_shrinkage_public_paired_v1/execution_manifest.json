@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkagePublicPairedExecutionManifest",
+  "repository_commit": "c015534497c2a37aacd5c059ad48bed3721b6e3f",
+  "protocol_sha256": "b167c494acddd3defa6d29365990cec40ea7ff2a752c45b79e9632cf9482700d",
+  "code_bundle_sha256": "18f0ceae91d14bdc137c6bf33f93b89af4796f0d72a857e8e79304cfca3ffb0b",
+  "causal_staging": {
+    "host": "gpuserver6000",
+    "path": "/mnt/lexar4tb/pokeflex-public-paired-v1-c015534-inputs",
+    "archive_path": "/mnt/lexar4tb/pokeflex-public-paired-v1-c015534-inputs.tar.zst",
+    "archive_sha256": "3d0cfae196aeef0fccbee056dd5153199fca44f24f64c93a9e754c91cacdbd3f",
+    "archive_byte_count": 700783364,
+    "future_mesh_member_read_count": 0,
+    "target_outcome_scored": false
+  },
+  "server_transfer": {
+    "source": "gpuserver6000 (129.69.102.145)",
+    "destination": "gpuserver4090 (129.69.102.139)",
+    "transport": "direct server-to-server LAN SSH; jump server not used for payload transfer",
+    "destination_archive": "/home/florianpfaff/pokeflex-public-paired-v1-c015534-inputs.direct.tar.zst",
+    "destination_archive_sha256": "3d0cfae196aeef0fccbee056dd5153199fca44f24f64c93a9e754c91cacdbd3f"
+  },
+  "prediction": {
+    "host": "gpuserver4090",
+    "path": "/home/florianpfaff/pokeflex-public-paired-v1-c015534-predictions",
+    "prediction_count": 15,
+    "first_attempt_log_sha256": "d3ccb6ef9d67abd033f2177d63bd6fb89493f794c5adf80e7071ab0b55eedf45",
+    "first_attempt_failure_count": 9,
+    "first_attempt_failure": "ModuleNotFoundError: No module named 'pyvista' before prediction output for the affected cases",
+    "retry_policy": "preserve successful predictions and rerun only the nine technical failures in the correct frozen environment",
+    "second_attempt_log_sha256": "baf7bb6348b7edd9d1bca957fe020942c9121636c61eabe3e35a8753ec63ae4a",
+    "second_attempt_success_count": 9
+  },
+  "barrier": {
+    "path": "/home/florianpfaff/pokeflex-public-paired-v1-c015534-prediction-barrier.json",
+    "file_sha256": "2752852e4c80e2444b70864d2df598e8efbc8e5aee84684c863d5b126a800e66",
+    "canonical_sha256": "d37ea9d533ab8e5ac47f5df387b8ffb21acb6300d0378213c1160a259fd9ba35",
+    "target_mesh_opened": false,
+    "scoring_authorized": true
+  },
+  "authorized_target_staging": {
+    "host": "gpuserver4090",
+    "path": "/home/florianpfaff/pokeflex-public-paired-v1-c015534-targets",
+    "manifest_file_sha256": "695c39ecf65c4ae6251baa58494c108c2157864e0032d8bc840c939b25f3022d",
+    "manifest_sha256": "a6bad989678b2bed9023a7673ce31d1a0b1304ce9ddc9972ba2fb8c1a509ec74",
+    "target_access_after_complete_barrier": true,
+    "target_mesh_member_read_count": 1165,
+    "non_scored_mesh_member_read_count": 0
+  },
+  "target_result": {
+    "path": "/home/florianpfaff/pokeflex-public-paired-v1-c015534-target-result.json",
+    "file_sha256": "d3a03ca0c5f834cb5ae8fff840027e4ae919d3f94451a11847ab0b319221bb3c",
+    "independently_recomputed_with_frozen_evaluator": true,
+    "aggregate_exactly_reproduced": true,
+    "paired_transfer_passed": false
+  },
+  "held_v8_accessed": false
+}
