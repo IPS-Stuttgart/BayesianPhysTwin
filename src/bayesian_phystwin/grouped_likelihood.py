@@ -465,15 +465,15 @@ def conditional_grouped_student_t_mixture_objective(
 
     mode = _resolved_composite_weight_mode(belief, settings.composite_weight_mode)
     group_count = len(belief.group_ids)
-    dimensions = np.zeros(group_count, dtype=np.int64)
-    nll = np.zeros(group_count, dtype=np.float64)
-    weighted_nll = np.zeros(group_count, dtype=np.float64)
-    posterior_nominal = np.empty(group_count, dtype=np.float64)
-    log_nominal = np.zeros(group_count, dtype=np.float64)
-    log_outlier = np.zeros(group_count, dtype=np.float64)
-    mean_association = np.zeros(group_count, dtype=np.float64)
-    mahalanobis = np.zeros(group_count, dtype=np.float64)
-    group_power = np.zeros(group_count, dtype=np.float64)
+    dimensions: NDArray[np.int64] = np.zeros(group_count, dtype=np.int64)
+    nll: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
+    weighted_nll: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
+    posterior_nominal: NDArray[np.float64] = np.empty(group_count, dtype=np.float64)
+    log_nominal: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
+    log_outlier: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
+    mean_association: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
+    mahalanobis: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
+    group_power: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)
     prior = np.clip(
         belief.group_prior_nominal_probability,
         settings.probability_floor,
