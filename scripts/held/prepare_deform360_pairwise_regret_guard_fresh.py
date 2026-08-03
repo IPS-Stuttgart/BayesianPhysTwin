@@ -21,6 +21,10 @@ from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_protocol import (
     validate_fresh_technical_lock,
     write_json_artifact,
 )
+from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_runtime import (
+    build_fresh_runtime_amendment,
+    validate_fresh_runtime_amendment,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -55,6 +59,14 @@ def _parser() -> argparse.ArgumentParser:
     processing.add_argument("--source-plan", required=True, type=Path)
     processing.add_argument("--download-manifest", required=True, type=Path)
     processing.add_argument("--implementation-commit", required=True)
+
+    runtime = subparsers.add_parser("runtime-lock")
+    runtime.add_argument("output", type=Path)
+    runtime.add_argument("--processing-protocol", required=True, type=Path)
+    runtime.add_argument("--failed-artifact", required=True, type=Path)
+    runtime.add_argument("--failed-log", required=True, type=Path)
+    runtime.add_argument("--runtime-identity", required=True, type=Path)
+    runtime.add_argument("--validator-commit", required=True)
     return parser
 
 
@@ -84,7 +96,7 @@ def main() -> None:
             args.download_root,
         )
         validate_fresh_download_manifest(artifact)
-    else:
+    elif args.command == "processing-lock":
         artifact = build_fresh_processing_protocol(
             args.technical_lock,
             args.source_plan,
@@ -92,6 +104,15 @@ def main() -> None:
             implementation_commit=args.implementation_commit,
         )
         validate_fresh_processing_protocol(artifact)
+    else:
+        artifact = build_fresh_runtime_amendment(
+            args.processing_protocol,
+            args.failed_artifact,
+            args.failed_log,
+            args.runtime_identity,
+            validator_commit=args.validator_commit,
+        )
+        validate_fresh_runtime_amendment(artifact)
     write_json_artifact(artifact, args.output)
 
 
