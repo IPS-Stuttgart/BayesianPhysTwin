@@ -2,6 +2,8 @@
 
 This module deliberately does not import Prob4D. It rechecks the neutral JSON/hash
 contract before Bayesian-PhysTwin treats a provider-v2 artifact as claim-bearing.
+Canonical organization identities and frozen pre-transfer identities are accepted,
+but an observation descriptor and its embedded provider manifest must agree.
 """
 
 from __future__ import annotations
@@ -11,11 +13,20 @@ import json
 from collections.abc import Mapping
 from typing import Any, cast
 
+from .prob4d_repository_identity import (
+    PROB4D_LEGACY_SOURCE_REPOSITORY,
+    PROB4D_SOURCE_REPOSITORIES,
+    PROB4D_SOURCE_REPOSITORY,
+    is_prob4d_source_repository,
+)
+
 PROB4D_PROVIDER_ATTESTATION_SCHEMA = "prob4d.provider-attestation"
 PROB4D_PROVIDER_ATTESTATION_VERSION = 1
 PROB4D_PROVIDER_API_VERSION = 2
 PROB4D_PROVIDER_IMPORT_BOUNDARY = "prob4d.provider_v2"
-PROB4D_PROVIDER_SOURCE_REPOSITORY = "FlorianPfaff/Prob4D"
+PROB4D_PROVIDER_SOURCE_REPOSITORY = PROB4D_SOURCE_REPOSITORY
+PROB4D_PROVIDER_LEGACY_SOURCE_REPOSITORY = PROB4D_LEGACY_SOURCE_REPOSITORY
+PROB4D_PROVIDER_SOURCE_REPOSITORIES = PROB4D_SOURCE_REPOSITORIES
 
 _REQUIRED_CAPABILITIES = frozenset(
     {
@@ -119,6 +130,15 @@ def _require_revision(value: Any, *, name: str) -> str:
     return result
 
 
+def _require_source_repository(value: Any, *, name: str) -> str:
+    result = str(value)
+    _require(
+        is_prob4d_source_repository(result),
+        f"{name} must be one of {sorted(PROB4D_SOURCE_REPOSITORIES)}",
+    )
+    return result
+
+
 def _canonical_json(value: Mapping[str, Any]) -> bytes:
     return json.dumps(
         dict(value),
@@ -140,6 +160,7 @@ def _validate_manifest(
     value: Any,
     *,
     expected_revision: str,
+    expected_source_repository: str | None,
 ) -> dict[str, Any]:
     manifest = _finite_json_mapping(value, name="Prob4D provider manifest")
     manifest_id = _require_sha256(
@@ -214,10 +235,16 @@ def _validate_manifest(
         "Prob4D provider metadata must be a mapping",
     )
     metadata = cast(Mapping[str, Any], metadata_value)
-    _require(
-        metadata.get("source_repository") == PROB4D_PROVIDER_SOURCE_REPOSITORY,
-        "Prob4D provider manifest source repository changed",
+    manifest_source_repository = _require_source_repository(
+        metadata.get("source_repository"),
+        name="Prob4D provider manifest source repository",
     )
+    if expected_source_repository is not None:
+        _require(
+            manifest_source_repository == expected_source_repository,
+            "Prob4D provider manifest source repository differs from observation "
+            "source repository",
+        )
     _require(
         metadata.get("python_import_boundary") == PROB4D_PROVIDER_IMPORT_BOUNDARY,
         "Prob4D provider manifest import boundary changed",
@@ -346,6 +373,7 @@ def validate_prob4d_provider_attestation(
     attestation: Mapping[str, Any],
     *,
     source_revision: str,
+    source_repository: str | None = None,
     require_claim_bearing: bool = False,
 ) -> dict[str, Any]:
     """Validate and normalize a provider-v2 statement without importing Prob4D."""
@@ -384,6 +412,14 @@ def validate_prob4d_provider_attestation(
         revision == observation_revision,
         "Prob4D provider-attestation revision differs from observation source revision",
     )
+    observation_source_repository = (
+        None
+        if source_repository is None
+        else _require_source_repository(
+            source_repository,
+            name="observation source repository",
+        )
+    )
     _require(
         normalized.get("python_import_boundary") == PROB4D_PROVIDER_IMPORT_BOUNDARY,
         "Prob4D provider-attestation import boundary changed",
@@ -392,6 +428,7 @@ def validate_prob4d_provider_attestation(
     manifest = _validate_manifest(
         normalized.get("provider_manifest"),
         expected_revision=revision,
+        expected_source_repository=observation_source_repository,
     )
     declared_manifest_id = _require_sha256(
         normalized.get("provider_manifest_id", ""),
@@ -473,6 +510,8 @@ __all__ = [
     "PROB4D_PROVIDER_ATTESTATION_SCHEMA",
     "PROB4D_PROVIDER_ATTESTATION_VERSION",
     "PROB4D_PROVIDER_IMPORT_BOUNDARY",
+    "PROB4D_PROVIDER_LEGACY_SOURCE_REPOSITORY",
+    "PROB4D_PROVIDER_SOURCE_REPOSITORIES",
     "PROB4D_PROVIDER_SOURCE_REPOSITORY",
     "compute_prob4d_provider_manifest_id",
     "validate_prob4d_provider_attestation",

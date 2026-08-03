@@ -18,6 +18,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   changelog.
 - Distribution manifests and regression checks that keep release metadata
   present and version-consistent.
+- A packaged `py.typed` marker and typed-distribution classifier for PEP 561
+  consumers.
+- A canonical/frozen Prob4D repository-identity boundary that accepts current
+  `IPS-Stuttgart/Prob4D` artifacts without rewriting content-addressed
+  `FlorianPfaff/Prob4D` evidence.
 - A typed `bpt` command registry with lifecycle, optional-dependency, ownership,
   and removed-alias metadata.
 - Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
@@ -47,6 +52,14 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   and nuisance-aware greedy selection counts now require genuine integer values;
   booleans and fractional values fail closed instead of silently changing the
   number or identity of selected observations.
+- Stable project URLs and the three-repository workflow now use the canonical
+  `IPS-Stuttgart/BayesianPhysTwin`, `IPS-Stuttgart/Prob4D`, and
+  `IPS-Stuttgart/Causal4D` repositories.
+- Prob4D provider-v2 validation accepts canonical and frozen repository identities
+  only when the observation descriptor and embedded provider manifest agree
+  exactly; mixed identities fail closed.
+- Provider-owned Prob4D composite-weight semantics are recognized under both the
+  canonical and frozen source repository identities.
 - The package now installs exactly one executable, `bpt`. Stable operations and
   research workflows are reached through grouped routes and lazy dispatch.
 - Command help, documentation, and installed-artifact tests now distinguish

@@ -2,13 +2,15 @@
 
 The semantic implementation lives in :mod:`prob4d_observation_contract`; this
 module name remains the public boundary for frozen Bayesian-PhysTwin imports. It
-also resolves the provider-specific stream-contract version and independently
-validates a provider-v2 attestation whenever one is present.
+also resolves the provider-specific stream-contract version, accepts the current
+organization repository identity without rewriting frozen artifacts, and
+independently validates a provider-v2 attestation whenever one is present.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 
 from .observation_belief import ObservationBeliefV1
@@ -21,14 +23,19 @@ from .prob4d_observation_contract import (
     PROB4D_JOINT_GAUGE_FACTOR_PREFIX,
     PROB4D_JOINT_GAUGE_MODEL,
     PROB4D_LEGACY_GAUGE_FACTOR_NAMES,
-    PROB4D_SOURCE_REPOSITORY,
     PROPAGATED_EXTERNAL_PRIOR,
-    is_prob4d_causal_observation_belief,
 )
 from .prob4d_observation_contract import (
     validate_prob4d_causal_observation_belief as _validate_prob4d_semantics,
 )
 from .prob4d_provider_attestation import validate_prob4d_provider_attestation
+from .prob4d_repository_identity import (
+    PROB4D_LEGACY_SOURCE_REPOSITORY,
+    PROB4D_SOURCE_REPOSITORIES,
+    PROB4D_SOURCE_REPOSITORY,
+    is_prob4d_source_repository,
+    prob4d_source_repository_is_legacy,
+)
 
 PROB4D_LEGACY_CAUSAL_STREAM_CONTRACT_VERSION = 1
 PROB4D_CAUSAL_STREAM_CONTRACT_VERSION = 2
@@ -54,6 +61,36 @@ def _require_nonnegative_integer(value: object, *, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValueError(f"{name} must be a non-negative integer")
     return value
+
+
+def is_prob4d_causal_observation_belief(
+    belief: ObservationBeliefV1,
+) -> bool:
+    """Return whether the artifact declares a supported Prob4D causal stream."""
+
+    return (
+        is_prob4d_source_repository(belief.source_repository)
+        and belief.stream_id == PROB4D_CAUSAL_STREAM_ID
+    )
+
+
+def _semantic_compatibility_belief(
+    belief: ObservationBeliefV1,
+) -> ObservationBeliefV1:
+    """Present the frozen source slug to the historical semantic validator.
+
+    The underlying semantic validator predates the repository transfer and its
+    source-identity check is part of frozen provider-v1 behavior. Replacing only
+    this in-memory descriptor field keeps that implementation unchanged while
+    the public boundary validates and reports the original canonical identity.
+    """
+
+    if belief.source_repository == PROB4D_SOURCE_REPOSITORY:
+        return replace(
+            belief,
+            source_repository=PROB4D_LEGACY_SOURCE_REPOSITORY,
+        )
+    return belief
 
 
 def _resolved_stream_contract(
@@ -107,6 +144,7 @@ def _provider_attestation_summary(
     validated = validate_prob4d_provider_attestation(
         raw,
         source_revision=belief.source_revision,
+        source_repository=belief.source_repository,
         require_claim_bearing=require_claim_bearing,
     )
     runtime = validated["runtime_revision"]
@@ -115,6 +153,11 @@ def _provider_attestation_summary(
         "schema_version": validated["schema_version"],
         "provider_api_version": validated["provider_api_version"],
         "provider_manifest_id": validated["provider_manifest_id"],
+        "source_repository": belief.source_repository,
+        "canonical_source_repository": PROB4D_SOURCE_REPOSITORY,
+        "source_repository_is_legacy": prob4d_source_repository_is_legacy(
+            belief.source_repository
+        ),
         "export_mode": validated["export_mode"],
         "claim_bearing": validated["claim_bearing"],
         "calibration_compatibility_validated": validated[
@@ -146,7 +189,8 @@ def _claim_bearing_calibration_summary(
         )
     if calibration.get("pointwise_covariance_fallback_allowed") is not False:
         raise ValueError(
-            "claim-bearing Prob4D observation cannot allow pointwise covariance fallback"
+            "claim-bearing Prob4D observation cannot allow pointwise covariance "
+            "fallback"
         )
 
     alignment_count = _require_nonnegative_integer(
@@ -220,10 +264,14 @@ def validate_prob4d_causal_observation_belief(
 
     Frozen provider-v1 artifacts remain valid when no attestation is present. New
     prospective evidence can set ``require_claim_bearing_provider_v2=True`` to
-    reject provider-v1 and exploratory provider-v2 artifacts.
+    reject provider-v1 and exploratory provider-v2 artifacts. Both the canonical
+    organization repository and the frozen pre-transfer identity are accepted;
+    descriptor and provider-manifest identities must still agree exactly.
     """
 
-    result = dict(_validate_prob4d_semantics(belief))
+    if not is_prob4d_causal_observation_belief(belief):
+        raise ValueError("observation belief is not the strict Prob4D causal stream")
+    result = dict(_validate_prob4d_semantics(_semantic_compatibility_belief(belief)))
     version, inferred = _resolved_stream_contract(
         belief.metadata,
         result.get("covariance_semantics"),
@@ -233,6 +281,12 @@ def validate_prob4d_causal_observation_belief(
         require_claim_bearing=require_claim_bearing_provider_v2,
     )
     result.update(
+        observation_artifact_id=belief.artifact_id,
+        source_repository=belief.source_repository,
+        canonical_source_repository=PROB4D_SOURCE_REPOSITORY,
+        source_repository_is_legacy=prob4d_source_repository_is_legacy(
+            belief.source_repository
+        ),
         stream_contract_version=version,
         stream_contract_version_inferred=inferred,
         strict_causal_stream_contract=version is not None,
@@ -296,9 +350,13 @@ __all__ = [
     "PROB4D_LEGACY_CAUSAL_STREAM_CONTRACT_VERSION",
     "PROB4D_LEGACY_COVARIANCE_SEMANTICS",
     "PROB4D_LEGACY_GAUGE_FACTOR_NAMES",
+    "PROB4D_LEGACY_SOURCE_REPOSITORY",
+    "PROB4D_SOURCE_REPOSITORIES",
     "PROB4D_SOURCE_REPOSITORY",
     "PROPAGATED_EXTERNAL_PRIOR",
     "is_prob4d_causal_observation_belief",
+    "is_prob4d_source_repository",
+    "prob4d_source_repository_is_legacy",
     "validate_claim_bearing_prob4d_observation_belief",
     "validate_prob4d_causal_observation_belief",
 ]

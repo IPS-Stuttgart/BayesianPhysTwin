@@ -22,6 +22,10 @@ change. Adding a newly released Python minor version is not complete until the
 core contracts, full test suite, wheel build, source-distribution build, and
 installed-artifact smoke tests pass for it.
 
+The distribution includes `bayesian_phystwin/py.typed`. Public annotations are
+therefore available to PEP 561 consumers from both wheel and source-distribution
+installations.
+
 ## Causal4D provider compatibility
 
 `bayesian_phystwin.causal4d_provider_v1` is the supported integration surface
@@ -41,6 +45,22 @@ for Causal4D.
 
 The normative provider details are maintained in
 [`docs/causal4d_provider_v1.md`](docs/causal4d_provider_v1.md).
+
+## Prob4D repository identity compatibility
+
+The canonical active producer is `IPS-Stuttgart/Prob4D`. Content-addressed
+artifacts released before the repository transfer record
+`FlorianPfaff/Prob4D`; that descriptor is retained as a frozen compatibility
+identity and must not be rewritten.
+
+Both identities are accepted only at the versioned Prob4D observation boundary.
+All causal lineage, covariance, metric-anchor, revision, and digest checks remain
+mandatory. For provider-v2 artifacts, the observation descriptor and embedded
+provider manifest must declare the same supported repository identity. A mixed
+canonical/frozen declaration fails closed.
+
+The exact migration contract is documented in
+[`docs/repository_identity_migration.md`](docs/repository_identity_migration.md).
 
 ## Command-line compatibility
 

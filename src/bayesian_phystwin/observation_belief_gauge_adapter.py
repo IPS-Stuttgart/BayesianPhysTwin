@@ -16,6 +16,7 @@ from .prob4d_causal_lineage import (
     is_prob4d_causal_observation_belief,
     validate_prob4d_causal_observation_belief,
 )
+from .prob4d_repository_identity import is_prob4d_source_repository
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -42,7 +43,7 @@ def _observation_composite_weight_mode(
     semantics = belief.metadata.get("group_composite_weight_semantics")
     if semantics == PROB4D_FINAL_COMPOSITE_WEIGHT_SEMANTICS:
         return COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL, "artifact-metadata"
-    if belief.source_repository == "FlorianPfaff/Prob4D":
+    if is_prob4d_source_repository(belief.source_repository):
         if semantics is not None:
             raise ValueError(
                 f"unsupported Prob4D group_composite_weight_semantics {semantics!r}"

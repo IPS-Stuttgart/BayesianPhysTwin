@@ -3,22 +3,33 @@
 The cross-repository CI has two deliberately different layers:
 
 ```text
-checked-in producer-neutral fixture -> Bayesian-PhysTwin + Causal4D consumers
-current Prob4D wheel -> Bayesian-PhysTwin wheel -> Causal4D wheel
+checked-in producer-neutral fixture -> BayesianPhysTwin + Causal4D consumers
+current Prob4D wheel -> BayesianPhysTwin wheel -> Causal4D wheel
 ```
 
 The first layer always executes. The second layer is the evidence-bearing
 installed-wheel golden path and requires read access to the private Prob4D
 repository.
 
+## Canonical repositories and frozen artifact identities
+
+The workflow checks out `IPS-Stuttgart/BayesianPhysTwin`,
+`IPS-Stuttgart/Prob4D`, and `IPS-Stuttgart/Causal4D`. Frozen Prob4D artifacts may
+still contain `FlorianPfaff/Prob4D` in their content-addressed source descriptor.
+Both identities are consumer-tested, while a provider-v2 descriptor and its
+embedded manifest must agree exactly. See
+[repository identity migration](repository_identity_migration.md).
+
 ## Always-Executed Consumer Fixture
 
-Every relevant pull request checks out Bayesian-PhysTwin and the public Causal4D
+Every relevant pull request checks out BayesianPhysTwin and the public Causal4D
 repository, installs both packages, and runs their independent observation
-contract, causal-lineage, and joint-gauge fixture tests. This gate detects:
+contract, causal-lineage, repository-identity, and joint-gauge fixture tests.
+This gate detects:
 
 - schema or content-address drift;
 - disagreement over strict causal-stream-v2 semantics;
+- canonical-versus-frozen repository identity mismatches;
 - missing metric-anchor provenance;
 - invalid joint cross-window gauge covariance claims;
 - consumer-side lineage or artifact validation regressions.
@@ -32,7 +43,7 @@ three-repository evidence.
 The evidence-bearing gate executes the released package boundary
 
 ```text
-Prob4D -> Bayesian-PhysTwin -> Causal4D
+Prob4D -> BayesianPhysTwin -> Causal4D
 ```
 
 without importing any repository from its source checkout. The runner requires
@@ -47,12 +58,12 @@ The test then verifies:
 1. Prob4D emits a deterministic, content-addressed strict causal-stream-v2
    observation with joint cross-window gauge covariance, complete metric-anchor
    provenance, and the exact tested Prob4D revision.
-2. Bayesian-PhysTwin independently reloads and validates that artifact, adapts
+2. BayesianPhysTwin independently reloads and validates that artifact, adapts
    it to the gauge-aware inference contract, and executes a deterministic update
    or its exact zero-update fallback.
 3. Causal4D independently reloads and validates the same observation archive,
    verifies that all source frames lie in `O-`, binds the observation lineage to
-   a content-addressed `TwinBelief`, validates the installed Bayesian-PhysTwin
+   a content-addressed `TwinBelief`, validates the installed BayesianPhysTwin
    provider, and executes a deterministic counterfactual query.
 4. Posterior support reduction preserves staged probability-mass accounting and
    never requests replay for an exact-zero posterior cell.
@@ -64,8 +75,8 @@ The test then verifies:
    access, stream-version disagreement, fixed-lag covariance falsely labelled as
    strict v2, changed metric-anchor source digests, missing calibration
    provenance, omitted anchor covariance, per-window gauge factors, duplicated
-   gauge semantics, and excessive covariance truncation. Causal4D also rejects
-   inconsistent composed posterior mass.
+   gauge semantics, excessive covariance truncation, and repository-identity
+   disagreement. Causal4D also rejects inconsistent composed posterior mass.
 
 Validators remain implemented in their owning repositories. The integration
 test shares only immutable artifacts and expected accept/reject decisions.
@@ -75,8 +86,8 @@ test shares only immutable artifacts and expected accept/reject decisions.
 From any directory with clean checkouts of all three repositories:
 
 ```bash
-bash Bayesian-PhysTwin/scripts/run_three_repository_golden_path.sh \
-  Bayesian-PhysTwin \
+bash BayesianPhysTwin/scripts/run_three_repository_golden_path.sh \
+  BayesianPhysTwin \
   Prob4D \
   Causal4D
 ```
@@ -88,7 +99,7 @@ exit.
 
 ## GitHub Actions Credential Policy
 
-`FlorianPfaff/Prob4D` is private. Configure a Bayesian-PhysTwin repository secret
+`IPS-Stuttgart/Prob4D` is private. Configure a BayesianPhysTwin repository secret
 named `PROB4D_READ_TOKEN` whose token has read-only contents access to that
 repository.
 

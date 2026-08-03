@@ -9,7 +9,9 @@ on:
       - "tests/fixtures/prob4d_joint_observation_v1.json"
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_repository_identity_compatibility.py"
       - "docs/three_repository_golden_path.md"
+      - "docs/repository_identity_migration.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
@@ -27,6 +29,7 @@ on:
       - "src/bayesian_phystwin/prob4d_causal_lineage.py"
       - "src/bayesian_phystwin/prob4d_observation_contract.py"
       - "src/bayesian_phystwin/prob4d_provider_attestation.py"
+      - "src/bayesian_phystwin/prob4d_repository_identity.py"
       - "src/bayesian_phystwin/gauge_aware_belief.py"
       - "src/bayesian_phystwin/_gauge_aware_contracts.py"
       - "src/bayesian_phystwin/_gauge_aware_solver.py"
@@ -42,7 +45,9 @@ on:
       - "tests/fixtures/prob4d_joint_observation_v1.json"
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_repository_identity_compatibility.py"
       - "docs/three_repository_golden_path.md"
+      - "docs/repository_identity_migration.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
@@ -60,6 +65,7 @@ on:
       - "src/bayesian_phystwin/prob4d_causal_lineage.py"
       - "src/bayesian_phystwin/prob4d_observation_contract.py"
       - "src/bayesian_phystwin/prob4d_provider_attestation.py"
+      - "src/bayesian_phystwin/prob4d_repository_identity.py"
       - "src/bayesian_phystwin/gauge_aware_belief.py"
       - "src/bayesian_phystwin/_gauge_aware_contracts.py"
       - "src/bayesian_phystwin/_gauge_aware_solver.py"
@@ -92,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Check out Bayesian-PhysTwin
+      - name: Check out BayesianPhysTwin
         uses: actions/checkout@v7
         with:
           path: bayesian-phystwin
@@ -101,7 +107,7 @@ jobs:
       - name: Check out public Causal4D consumer
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Causal4D
+          repository: IPS-Stuttgart/Causal4D
           ref: ${{ inputs.causal4d_ref || 'main' }}
           path: causal4d
           persist-credentials: false
@@ -121,11 +127,12 @@ jobs:
           python -m pip install -e "./bayesian-phystwin[dev]"
           python -m pip install -e "./causal4d[dev]"
 
-      - name: Validate the Bayesian-PhysTwin consumer fixture
+      - name: Validate the BayesianPhysTwin consumer fixture
         run: |
           python -m pytest -q \
             bayesian-phystwin/tests/test_prob4d_joint_contract_fixture.py \
-            bayesian-phystwin/tests/test_prob4d_causal_lineage.py
+            bayesian-phystwin/tests/test_prob4d_causal_lineage.py \
+            bayesian-phystwin/tests/test_repository_identity_compatibility.py
 
       - name: Validate the Causal4D consumer fixture
         run: |
@@ -139,7 +146,7 @@ jobs:
           {
             echo "### Always-executed consumer contract fixture"
             echo
-            echo "Bayesian-PhysTwin and Causal4D independently validated the checked-in observation fixture."
+            echo "BayesianPhysTwin and Causal4D independently validated the checked-in observation fixture."
             echo "This detects consumer/schema drift but does not claim that the"
             echo "current private Prob4D revision executed."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -180,7 +187,7 @@ jobs:
             "PROB4D_READ_TOKEN is required for trusted pull requests, main, scheduled, and manual runs."
           exit 1
 
-      - name: Check out Bayesian-PhysTwin
+      - name: Check out BayesianPhysTwin
         if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
@@ -191,7 +198,7 @@ jobs:
         if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Prob4D
+          repository: IPS-Stuttgart/Prob4D
           ref: ${{ inputs.prob4d_ref || 'main' }}
           path: prob4d
           token: ${{ env.PROB4D_READ_TOKEN }}
@@ -201,7 +208,7 @@ jobs:
         if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
-          repository: FlorianPfaff/Causal4D
+          repository: IPS-Stuttgart/Causal4D
           ref: ${{ inputs.causal4d_ref || 'main' }}
           path: causal4d
           persist-credentials: false

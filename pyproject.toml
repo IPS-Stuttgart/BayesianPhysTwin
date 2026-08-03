@@ -30,19 +30,20 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
 ]
 dependencies = [
     "numpy>=1.23",
 ]
 
 [project.urls]
-Repository = "https://github.com/FlorianPfaff/Bayesian-PhysTwin"
-Documentation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/tree/main/docs"
-Issues = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/issues"
-Changelog = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/CHANGELOG.md"
-Citation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/CITATION.cff"
-License = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/LICENSE"
-Support = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/SUPPORT.md"
+Repository = "https://github.com/IPS-Stuttgart/BayesianPhysTwin"
+Documentation = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/tree/main/docs"
+Issues = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/issues"
+Changelog = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/CHANGELOG.md"
+Citation = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/CITATION.cff"
+License = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/LICENSE"
+Support = "https://github.com/IPS-Stuttgart/BayesianPhysTwin/blob/main/SUPPORT.md"
 
 [project.scripts]
 bpt = "bayesian_phystwin.cli.main:main"
@@ -69,6 +70,9 @@ pyrecest = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+bayesian_phystwin = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

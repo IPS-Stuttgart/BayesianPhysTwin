@@ -97,8 +97,11 @@ from .prior_aware_gauge_belief import (
 from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_LINEAGE_VERSION,
     PROB4D_CAUSAL_STREAM_ID,
+    PROB4D_LEGACY_SOURCE_REPOSITORY,
+    PROB4D_SOURCE_REPOSITORIES,
     PROB4D_SOURCE_REPOSITORY,
     is_prob4d_causal_observation_belief,
+    is_prob4d_source_repository,
     validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
 )
@@ -156,6 +159,8 @@ __all__ = [
     "ObservationBeliefV1",
     "PROB4D_CAUSAL_LINEAGE_VERSION",
     "PROB4D_CAUSAL_STREAM_ID",
+    "PROB4D_LEGACY_SOURCE_REPOSITORY",
+    "PROB4D_SOURCE_REPOSITORIES",
     "PROB4D_SOURCE_REPOSITORY",
     "ParameterEnsemble",
     "PhysicalLinearizationV1",
@@ -198,6 +203,7 @@ __all__ = [
     "grouped_conformal_upper_bounds",
     "grouped_student_t_mixture_likelihood",
     "is_prob4d_causal_observation_belief",
+    "is_prob4d_source_repository",
     "load_observation_belief",
     "load_physical_linearization",
     "markov_log_evidence_batch",

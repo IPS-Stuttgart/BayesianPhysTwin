@@ -93,11 +93,13 @@ appended to the root README.
 
 ## Cross-repository interfaces
 
-- [Prob4D](https://github.com/FlorianPfaff/Prob4D) may emit the versioned,
+- [Prob4D](https://github.com/IPS-Stuttgart/Prob4D) may emit the versioned,
   content-addressed `ObservationBeliefV1` artifact consumed here.
-- [Causal4D](https://github.com/FlorianPfaff/Causal4D) owns Bayesian
+- [Causal4D](https://github.com/IPS-Stuttgart/Causal4D) owns Bayesian
   abduction-intervention-prediction and consumes the versioned provider and
   belief artifacts exported by Bayesian-PhysTwin.
+- [Repository identity migration](repository_identity_migration.md) records the
+  canonical organization paths and the frozen Prob4D source-identity boundary.
 - [Causal4D migration](causal4d_migration.md) records the historical command and
   tag boundary after Causal4D moved into its own repository.
 - [BayesianPhysTwin-Paper](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper)

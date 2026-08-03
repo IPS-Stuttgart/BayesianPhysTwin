@@ -97,6 +97,7 @@ jobs:
             tests/test_prior_aware_likelihood_conformance.py \
             tests/test_prob4d_causal_lineage.py \
             tests/test_prob4d_joint_contract_fixture.py \
+            tests/test_repository_identity_compatibility.py \
             tests/test_cli_main.py \
             tests/test_run_manifest.py \
             tests/test_run_manifest_v2.py \
@@ -120,6 +121,8 @@ jobs:
             src/bayesian_phystwin/phystwin_profile.py
             src/bayesian_phystwin/prob4d_causal_lineage.py
             src/bayesian_phystwin/prob4d_observation_contract.py
+            src/bayesian_phystwin/prob4d_provider_attestation.py
+            src/bayesian_phystwin/prob4d_repository_identity.py
             src/bayesian_phystwin/repository_provenance.py
             src/bayesian_phystwin/run_manifest.py
             src/bayesian_phystwin/run_manifest_v2.py
@@ -200,6 +203,7 @@ jobs:
             tests/test_prior_aware_likelihood_conformance.py \
             tests/test_prob4d_causal_lineage.py \
             tests/test_prob4d_joint_contract_fixture.py \
+            tests/test_repository_identity_compatibility.py \
             tests/test_cli_main.py \
             tests/test_run_manifest.py \
             tests/test_run_manifest_v2.py \
@@ -265,7 +269,8 @@ jobs:
             tests/test_causal4d_artifacts_v2.py \
             tests/test_gauge_aware_belief.py \
             tests/test_observation_belief_gauge_adapter.py \
-            tests/test_observation_belief.py
+            tests/test_observation_belief.py \
+            tests/test_repository_identity_compatibility.py
           bpt provider manifest \
             --provider-revision "${GITHUB_SHA}" \
             --output provider-manifest.json
@@ -373,7 +378,7 @@ jobs:
           test -n "$artifact"
           "$python_bin" -m pip install "$artifact"
           "$python_bin" -m pip check
-      - name: Exercise stable installed commands
+      - name: Exercise stable installed commands and typing metadata
         shell: bash
         run: |
           bin="$RUNNER_TEMP/bpt-artifact-smoke/bin"
@@ -383,3 +388,14 @@ jobs:
           "$bin/bpt" run manifest --help
           "$bin/bpt" experiment list >/dev/null
           "$bin/bpt" experiment describe phystwin-refit
+          "$bin/python" - <<'PY'
+          from importlib import resources
+
+          from bayesian_phystwin import PROB4D_SOURCE_REPOSITORY
+
+          marker = resources.files("bayesian_phystwin").joinpath("py.typed")
+          if not marker.is_file():
+              raise SystemExit("installed distribution has no py.typed marker")
+          if PROB4D_SOURCE_REPOSITORY != "IPS-Stuttgart/Prob4D":
+              raise SystemExit("installed package reports a stale Prob4D identity")
+          PY
