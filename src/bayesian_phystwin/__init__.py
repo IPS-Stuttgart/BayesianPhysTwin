@@ -50,8 +50,13 @@ from .grouped_conformal import (
     grouped_conformal_upper_bounds,
 )
 from .grouped_likelihood import (
+    CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS,
+    COVARIANCE_MARGINAL_SCORE_SEMANTICS,
+    ConditionalGroupedStudentTObjectiveConfig,
+    ConditionalGroupedStudentTObjectiveResult,
     GroupedStudentTLikelihoodConfig,
     GroupedStudentTLikelihoodResult,
+    conditional_grouped_student_t_mixture_objective,
     grouped_student_t_mixture_likelihood,
 )
 from .nuisance_aware_information import (
@@ -129,11 +134,15 @@ from .synthetic_benchmark import (
 )
 
 __all__ = [
+    "CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS",
+    "COVARIANCE_MARGINAL_SCORE_SEMANTICS",
     "BinaryCalibrationMetrics",
     "BiasAwareStateUpdateConfig",
     "BiasAwareStateUpdateResult",
     "CompleteBeliefGuardDecisionV1",
     "CompleteBeliefSelectionV1",
+    "ConditionalGroupedStudentTObjectiveConfig",
+    "ConditionalGroupedStudentTObjectiveResult",
     "ConformalScore",
     "GaugeAwareBeliefConfig",
     "GaugeAwareBeliefResult",
@@ -184,6 +193,7 @@ __all__ = [
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
     "centered_view_translation_bias_jacobian",
+    "conditional_grouped_student_t_mixture_objective",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
     "evaluate_nonlinear_closure",
