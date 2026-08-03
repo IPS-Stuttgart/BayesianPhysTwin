@@ -35,8 +35,10 @@ def _canonical_json(values: Mapping[str, Any]) -> bytes:
 
 
 def _validate_sha256(value: str, *, name: str) -> None:
-    if not isinstance(value, str) or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
@@ -121,23 +123,11 @@ class PhysicalLinearizationV1:
                 "linearization row identities must be nonempty and nonnegative"
             )
         if np.any(view_indices < 0) or np.any(window_indices < 0):
-            raise ValueError(
-                "linearization view/window identities must be nonnegative"
-            )
-        if (
-            state.ndim != 3
-            or state.shape[:2] != (count, 3)
-            or state.shape[2] < 1
-        ):
-            raise ValueError(
-                "state_jacobian must have shape (N, 3, S) with S >= 1"
-            )
+            raise ValueError("linearization view/window identities must be nonnegative")
+        if state.ndim != 3 or state.shape[:2] != (count, 3) or state.shape[2] < 1:
+            raise ValueError("state_jacobian must have shape (N, 3, S) with S >= 1")
         state_count = state.shape[2]
-        if (
-            query.ndim != 3
-            or query.shape[1:] != (3, state_count)
-            or len(query) == 0
-        ):
+        if query.ndim != 3 or query.shape[1:] != (3, state_count) or len(query) == 0:
             raise ValueError("query_state_jacobian must have shape (Q, 3, S)")
         if response.shape != query.shape[:2]:
             raise ValueError("physical_response_m must have shape (Q, 3)")
@@ -441,8 +431,7 @@ def evaluate_nonlinear_closure(
     denominator = max(float(np.linalg.norm(predicted_change)), denominator_floor_m)
     relative_error = float(np.linalg.norm(remainder) / denominator)
     candidate_valid = (
-        absolute_error <= absolute_tolerance_m
-        or relative_error <= relative_tolerance
+        absolute_error <= absolute_tolerance_m or relative_error <= relative_tolerance
     )
     return NonlinearClosureV1(
         linearization_artifact_id=linearization_artifact_id,
