@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - agent/prospective-belief-hardening
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/apply-prospective-belief-hardening.yml"
+      - ".github/patches/prospective-belief-hardening/**"
   workflow_dispatch:
 
 permissions:
@@ -11,17 +17,20 @@ permissions:
 
 concurrency:
   group: apply-prospective-belief-hardening
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   apply:
-    if: github.ref_name == 'agent/prospective-belief-hardening'
+    if: >-
+      github.ref_name == 'agent/prospective-belief-hardening' ||
+      github.head_ref == 'agent/prospective-belief-hardening'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: agent/prospective-belief-hardening
 
       - name: Verify immutable publication inputs
         shell: bash
