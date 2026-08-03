@@ -40,9 +40,27 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - Nuisance-aware marginalized information gain and deterministic greedy candidate
   selection for active observations with explicit camera, gauge, or shared-bias
   coefficients, covariance whitening, reliability weighting, and exact fallback.
+- An evidence-weighted robust endpoint model average that retains the fixed
+  Bayesian endpoint as a one-component special case, exposes per-track component
+  evidence, includes between-model disagreement in covariance, and propagates
+  horizon-dependent process uncertainty without future observations.
+- An additive Causal4D belief-provider v2 surface for the model-averaged endpoint;
+  provider v1 and all frozen endpoint semantics remain unchanged.
+- A one-call claim-bearing Prob4D update that validates stream-v2/provider-v2
+  evidence and a content-bound physical linearization before invoking the
+  prior-aware grouped-mixture solver.
+- An explicit integer-step time-gap mode for Markov reliability while preserving
+  the historical order-only behavior by default.
+- Focused self-hosted `workstation2` validation for prospective belief contracts,
+  numerical stress tests, and environment/GPU identity evidence.
 
 ### Changed
 
+- `ParameterEnsemble` now defensively owns its arrays and rejects empty,
+  non-finite, negative-residual, invalid-reliability, corrupted-weight, and
+  invalid-jitter inputs instead of silently clipping or propagating them.
+- Release, citation, README, and companion-repository links now use the canonical
+  `IPS-Stuttgart` repository locations after the organization transfer.
 - Active-query configuration, plan metadata, candidate identities, camera indices,
   and nuisance-aware greedy selection counts now require genuine integer values;
   booleans and fractional values fail closed instead of silently changing the
