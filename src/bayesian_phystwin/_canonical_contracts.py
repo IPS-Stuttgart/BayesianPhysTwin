@@ -69,7 +69,7 @@ class FrozenList(list):
         self._immutable(other)
         return self
 
-    def __imul__(self, other: object) -> FrozenList:  # type: ignore[misc]
+    def __imul__(self, other: object) -> FrozenList:
         self._immutable(other)
         return self
 
