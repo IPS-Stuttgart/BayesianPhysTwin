@@ -1,0 +1,85 @@
+/home/florianpfaff/.venvs/deform360-processing-v1/lib/python3.10/site-packages/nerfstudio/field_components/activations.py:32: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd(cast_inputs=torch.float32)
+/home/florianpfaff/.venvs/deform360-processing-v1/lib/python3.10/site-packages/nerfstudio/field_components/activations.py:39: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  def backward(ctx, g):
+[21:36:39] Saving config to:                                                                    experiment_config.py:136
+           /home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed/.scratch-197-hand-sanit                         
+           izer-ep0000-3676920/episode_0000/splatfacto/.scratch_000000/outputs/splat_0/splatfac                         
+           to/2026-08-03_213639/config.yml                                                                              
+/home/florianpfaff/.venvs/deform360-processing-v1/lib/python3.10/site-packages/nerfstudio/engine/trainer.py:137: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self.grad_scaler = GradScaler(enabled=self.use_grad_scaler)
+           Saving checkpoints to:                                                                         trainer.py:142
+           /home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed/.scratch-197-hand-sanitizer-ep000               
+           0-3676920/episode_0000/splatfacto/.scratch_000000/outputs/splat_0/splatfacto/2026-08-03_213639               
+           /nerfstudio_models                                                                                           
+           Auto image downscale factor of 1                                                 nerfstudio_dataparser.py:484
+/home/florianpfaff/.venvs/deform360-processing-v1/lib/python3.10/site-packages/torchmetrics/functional/image/lpips.py:332: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location="cpu"), strict=False)
+╭─────────────── viser ───────────────╮
+│             ╷                       │
+│   HTTP      │ http://0.0.0.0:7007   │
+│   Websocket │ ws://0.0.0.0:7007     │
+│             ╵                       │
+╰─────────────────────────────────────╯
+[21:36:42] Caching / undistorting eval images                                             full_images_datamanager.py:230
+
+[NOTE] Not running eval iterations since only viewer is enabled.
+Use --vis {wandb, tensorboard, viewer+wandb, viewer+tensorboard} to run with eval.
+No Nerfstudio checkpoint to load, so training from scratch.
+Disabled comet/tensorboard/wandb event writers
+           Caching / undistorting train images                                            full_images_datamanager.py:230
+
+/home/florianpfaff/.venvs/deform360-processing-v1/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:150: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+gsplat: No CUDA toolkit found. gsplat will be disabled.
+{
+  "action": "lift side",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshProcessing",
+  "bimanual": "no",
+  "camera_count": 9,
+  "cameras": [
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam0",
+    "brics-odroid-010_cam0",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "case": "197-hand-sanitizer-ep0000",
+  "code_revision": "3fb25da4d8a646515b8dc4c74d65d1d191f57529",
+  "episode_id": 0,
+  "error": {
+    "message": "'NoneType' object has no attribute 'CameraModelType'",
+    "type": "AttributeError"
+  },
+  "information_boundary": {
+    "future_geometry_deserialized_for_admission": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "source_rgb_and_masks_read": true,
+    "target_metric_read": false,
+    "technical_failure_causes_no_implicit_replacement": true
+  },
+  "inputs_sha256": {
+    "control_points_stage": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+    "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+    "mask_manifest": "be9e77e3e20bfd222e12546dd783b779967aa701224de677aa0393bcd6a37770",
+    "metadata": "bafde9eb2106b679f289bbdec4c6e2308522bf516a3128dba4680a29799c8399",
+    "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+    "protocol": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b",
+    "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+    "tracking_checkpoint": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+    "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+    "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467",
+    "window_stage": "2e814b2a16e96f9f4378d51650cb0f245c6c83113b76daa9ae2d1429fe25ac2e"
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-processing-v1",
+  "protocol_sha256": "c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f",
+  "result_sha256": "5398d456045a5f7cf09326c2ff22a150643847c8a0f1f99f98185d45ae99c10d",
+  "schema_version": 1,
+  "status": "technical_failure"
+}

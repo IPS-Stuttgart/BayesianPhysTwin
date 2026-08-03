@@ -1,0 +1,103 @@
+{
+  "amendment_id": "deform360-pairwise-regret-guard-fresh-runtime-v1",
+  "amendment_sha256": "fce41d3fc1496a596c49ae427a981bca6545ec0185c093ce3c4adacff9427a09",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshRuntimeAmendment",
+  "first_attempt": {
+    "artifact_file_sha256": "16ac21ad78843ed4fce3f1ee197eeef76e3ea618d67cd4aad8b0dcca68e141de",
+    "case": "197-hand-sanitizer-ep0000",
+    "error": {
+      "message": "'NoneType' object has no attribute 'CameraModelType'",
+      "type": "AttributeError"
+    },
+    "log_file_sha256": "4c9a4d90a260e6c2eeb2dc800712a07e383fb2412316fed7c27de5ff331a5345",
+    "result_sha256": "5398d456045a5f7cf09326c2ff22a150643847c8a0f1f99f98185d45ae99c10d",
+    "retained_as_technical_failure": true,
+    "status": "technical_failure"
+  },
+  "information_boundary": {
+    "future_object_positions_deserialized": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "source_processing_status_read": true,
+    "target_metric_read": false
+  },
+  "processing_protocol": {
+    "file_sha256": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b",
+    "implementation_commit": "3fb25da4d8a646515b8dc4c74d65d1d191f57529",
+    "protocol_sha256": "c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f"
+  },
+  "repair_scope": {
+    "algorithm_changed": false,
+    "first_attempt_may_not_be_deleted_or_relabelled": true,
+    "mask_or_admission_rule_changed": false,
+    "separate_output_tree_required": true,
+    "source_bytes_changed": false,
+    "target_or_outcome_used": false,
+    "window_or_camera_panel_changed": false
+  },
+  "runtime_identity": {
+    "artifact_kind": "Deform360PairwiseRegretGuardFreshRuntimeIdentity",
+    "cuda": {
+      "available": true,
+      "cuda_home": "/usr/local/cuda-12.4",
+      "device_capability": [
+        8,
+        9
+      ],
+      "device_name": "NVIDIA GeForce RTX 4090",
+      "nvcc": "/usr/local/cuda-12.4/bin/nvcc",
+      "nvcc_sha256": "bbcea3024f3ada9aafcbf9a8370c14dad1f4fb04b48147ad83dd7e13854ba0ed",
+      "nvcc_version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2024 NVIDIA Corporation\nBuilt on Thu_Mar_28_02:18:24_PDT_2024\nCuda compilation tools, release 12.4, V12.4.131\nBuild cuda_12.4.r12.4/compiler.34097967_0",
+      "torch_cuda": "12.1",
+      "torch_cuda_arch_list": "8.9"
+    },
+    "gsplat": {
+      "backend": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/runtime-check/torch-extensions-cuda124/gsplat_cuda/gsplat_cuda.so",
+      "backend_sha256": "b91a94a9c24c693b618bcd11196c24e578bde7e02a7fc336eb520b7a25c0011f",
+      "camera_model": "CameraModelType.PINHOLE",
+      "synthetic_rasterization": {
+        "alpha_shape": [
+          1,
+          16,
+          16,
+          1
+        ],
+        "finite": true,
+        "nonzero_alpha": true,
+        "render_shape": [
+          1,
+          16,
+          16,
+          3
+        ]
+      }
+    },
+    "identity_sha256": "37a50ddc75af08d8cf6fc0eb8e09654ee146de938b692f8707f66215fe0cc8bc",
+    "information_boundary": {
+      "held_v8_runtime_or_target_artifact_access": false,
+      "processed_geometry_read": false,
+      "source_rgb_read": false,
+      "target_metric_read": false
+    },
+    "packages": {
+      "gsplat": "1.4.0",
+      "nerfstudio": "1.1.5",
+      "ninja": "1.13.0",
+      "numpy": "1.26.4",
+      "torch": "2.4.0+cu121"
+    },
+    "platform": {
+      "machine": "x86_64",
+      "node": "workstation1",
+      "system": "Linux"
+    },
+    "python": {
+      "executable": "/usr/bin/python3.10",
+      "executable_sha256": "7d51cd6b48b521277f5caa4610a82126e315fa2be4df069823a8b1eeb5bd4a86",
+      "version": "3.10.12"
+    },
+    "schema_version": 1
+  },
+  "schema_version": 1,
+  "status": "locked_before_runtime_repair_attempt",
+  "validator_commit": "b195d7f7e789384bee62440d22f227887d2ab67a"
+}

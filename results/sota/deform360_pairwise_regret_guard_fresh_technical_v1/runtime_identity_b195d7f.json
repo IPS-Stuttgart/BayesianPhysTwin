@@ -1,0 +1,63 @@
+{
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshRuntimeIdentity",
+  "cuda": {
+    "available": true,
+    "cuda_home": "/usr/local/cuda-12.4",
+    "device_capability": [
+      8,
+      9
+    ],
+    "device_name": "NVIDIA GeForce RTX 4090",
+    "nvcc": "/usr/local/cuda-12.4/bin/nvcc",
+    "nvcc_sha256": "bbcea3024f3ada9aafcbf9a8370c14dad1f4fb04b48147ad83dd7e13854ba0ed",
+    "nvcc_version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2024 NVIDIA Corporation\nBuilt on Thu_Mar_28_02:18:24_PDT_2024\nCuda compilation tools, release 12.4, V12.4.131\nBuild cuda_12.4.r12.4/compiler.34097967_0",
+    "torch_cuda": "12.1",
+    "torch_cuda_arch_list": "8.9"
+  },
+  "gsplat": {
+    "backend": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/runtime-check/torch-extensions-cuda124/gsplat_cuda/gsplat_cuda.so",
+    "backend_sha256": "b91a94a9c24c693b618bcd11196c24e578bde7e02a7fc336eb520b7a25c0011f",
+    "camera_model": "CameraModelType.PINHOLE",
+    "synthetic_rasterization": {
+      "alpha_shape": [
+        1,
+        16,
+        16,
+        1
+      ],
+      "finite": true,
+      "nonzero_alpha": true,
+      "render_shape": [
+        1,
+        16,
+        16,
+        3
+      ]
+    }
+  },
+  "identity_sha256": "37a50ddc75af08d8cf6fc0eb8e09654ee146de938b692f8707f66215fe0cc8bc",
+  "information_boundary": {
+    "held_v8_runtime_or_target_artifact_access": false,
+    "processed_geometry_read": false,
+    "source_rgb_read": false,
+    "target_metric_read": false
+  },
+  "packages": {
+    "gsplat": "1.4.0",
+    "nerfstudio": "1.1.5",
+    "ninja": "1.13.0",
+    "numpy": "1.26.4",
+    "torch": "2.4.0+cu121"
+  },
+  "platform": {
+    "machine": "x86_64",
+    "node": "workstation1",
+    "system": "Linux"
+  },
+  "python": {
+    "executable": "/usr/bin/python3.10",
+    "executable_sha256": "7d51cd6b48b521277f5caa4610a82126e315fa2be4df069823a8b1eeb5bd4a86",
+    "version": "3.10.12"
+  },
+  "schema_version": 1
+}

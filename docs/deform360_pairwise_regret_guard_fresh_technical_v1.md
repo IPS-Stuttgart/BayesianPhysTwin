@@ -134,6 +134,38 @@ object positions. Inter-server source transfer must use the direct
 `gpuserver6000` to `gpuserver4090` LAN path; the jump server is used only for
 workstation control connections.
 
+### Runtime amendment
+
+The first episode-0 processing smoke reached Nerfstudio initialization but
+failed before training because the launch environment did not expose the
+installed CUDA toolkit to `gsplat`. The sealed failure is retained verbatim:
+
+| Field | Value |
+|---|---|
+| Processing result SHA-256 | `5398d456045a5f7cf09326c2ff22a150643847c8a0f1f99f98185d45ae99c10d` |
+| Failure-artifact file SHA-256 | `16ac21ad78843ed4fce3f1ee197eeef76e3ea618d67cd4aad8b0dcca68e141de` |
+| Log file SHA-256 | `4c9a4d90a260e6c2eeb2dc800712a07e383fb2412316fed7c27de5ff331a5345` |
+| Error | `AttributeError: 'NoneType' object has no attribute 'CameraModelType'` |
+
+No target metric, future object position, or held-v8 artifact was read. A
+runtime-only amendment was therefore locked before a repaired attempt. It
+changes no algorithm, source byte, window, camera panel, mask rule, admission
+rule, or outcome handling. It requires the failed attempt to remain archived
+and the amended attempt to use a separate output tree.
+
+The runtime validator is frozen at commit
+`b195d7f7e789384bee62440d22f227887d2ab67a`. The amendment is
+`configs/sota/deform360_pairwise_regret_guard_fresh_runtime_v1.json`, with
+internal SHA-256
+`fce41d3fc1496a596c49ae427a981bca6545ec0185c093ce3c4adacff9427a09`
+and file SHA-256
+`fb39639d69fe09d33be94485bce9d6e233c4a90d3905b862ba9caac9d31945d1`.
+It binds Python 3.10.12, Torch 2.4.0 with CUDA 12.1, the CUDA 12.4 toolkit,
+RTX 4090 compute capability 8.9, and compiled `gsplat_cuda.so` SHA-256
+`b91a94a9c24c693b618bcd11196c24e578bde7e02a7fc336eb520b7a25c0011f`.
+Certification includes a finite, nonzero synthetic rasterization and reads no
+source image or target artifact.
+
 ## Execution boundary
 
 The execution order is frozen:
