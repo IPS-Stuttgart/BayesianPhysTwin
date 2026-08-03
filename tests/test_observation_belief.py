@@ -1,5 +1,7 @@
 import copy
+import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -58,6 +60,31 @@ def _asymmetric_covariance() -> np.ndarray:
     covariance = _belief().local_covariance_m2.copy()
     covariance[0, 0, 1] = 1e-3
     return covariance
+
+
+def _write_observation_archive(
+    path: Path,
+    belief: ObservationBeliefV1,
+    *,
+    descriptor_changes: dict[str, Any],
+) -> None:
+    descriptor = {
+        **belief._descriptor(),
+        "artifact_id": belief.artifact_id,
+        **descriptor_changes,
+    }
+    payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
+            json.dumps(
+                descriptor,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+        )
+    }
+    payload.update(belief._arrays())
+    np.savez_compressed(path, **payload)
 
 
 def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
@@ -160,6 +187,37 @@ def test_observation_metadata_rejects_non_json_values(metadata: object) -> None:
 
 
 @pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("case_id", "", "case_id must be nonempty"),
+        ("case_id", cast(str, 1), "case_id must be nonempty"),
+        ("stream_id", "", "stream_id must be nonempty"),
+        ("stream_id", cast(str, 1), "stream_id must be nonempty"),
+        ("source_repository", "", "source repository must be nonempty"),
+        ("source_repository", cast(str, 1), "source repository must be nonempty"),
+        ("source_revision", "", "source revision must be nonempty"),
+        ("source_revision", cast(str, 1), "source revision must be nonempty"),
+        ("source_artifact_sha256", "invalid", "lowercase SHA-256"),
+        ("source_artifact_sha256", cast(str, 1), "lowercase SHA-256"),
+    ),
+)
+def test_observation_belief_rejects_invalid_descriptor_fields(
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    source = _belief()
+
+    with pytest.raises(ValueError, match=message):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                field: value,
+            }
+        )
+
+
+@pytest.mark.parametrize(
     ("changes", "message"),
     (
         (
@@ -208,6 +266,20 @@ def test_observation_belief_validates_reformatted_schema_guards(
             **{
                 **_belief().__dict__,
                 **changes,
+            }
+        )
+
+
+def test_observation_belief_rejects_nonfinite_low_rank_factors() -> None:
+    source = _belief()
+    factors = source.low_rank_factor_m.copy()
+    factors[0, 0, 0] = np.nan
+
+    with pytest.raises(ValueError, match="low-rank factors must be finite"):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                "low_rank_factor_m": factors,
             }
         )
 
@@ -278,7 +350,22 @@ def test_group_position_requires_a_genuine_integer() -> None:
 
     with pytest.raises(ValueError, match="group_id must be an integer"):
         belief.group_position(0.0)
+    with pytest.raises(KeyError, match="unknown correlation group"):
+        belief.group_position(2)
     assert belief.group_position(np.int64(1)) == 1
+
+
+def test_observation_loader_rejects_schema_version_drift(tmp_path: Path) -> None:
+    belief = _belief()
+    path = tmp_path / "schema-drift.npz"
+    _write_observation_archive(
+        path,
+        belief,
+        descriptor_changes={"schema_version": 2},
+    )
+
+    with pytest.raises(ValueError, match="unsupported observation-belief version"):
+        load_observation_belief(path)
 
 
 def test_observation_belief_rejects_future_frame() -> None:
