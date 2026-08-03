@@ -3,7 +3,8 @@
 Bayesian-PhysTwin exposes two deliberately different robust scores at the
 uncertain-gauge boundary. They share the same normalized nominal/outlier
 Student-t mixture kernel, but they represent different probabilistic objects and
-must not be reported as the same likelihood.
+must not be reported as the same likelihood. Both standalone operations are
+NumPy-only and remain available in the base installation.
 
 ## Conditional reliability-weighted objective
 
