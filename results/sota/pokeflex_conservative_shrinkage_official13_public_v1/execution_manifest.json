@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageOfficial13PublicExecutionManifest",
+  "protocol_sha256": "6becd1a69d482654bf4e4faad57cc94c76ab56c4e1d24e46707e7a423aff0146",
+  "protocol_file_sha256": "b8434ecff7e77f309b70b5191058934c3b89ee29f66dbdff164375d17c5a782b",
+  "implementation_revision": "f794ceff8421bc584a3d7c2e41bddcb01b87c16e",
+  "preoutcome_tag": "pokeflex-conservative-shrinkage-official13-public-v1-preoutcome",
+  "source_result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "prediction": {
+    "host": "gpuserver4090",
+    "campaign_root": "/home/florianpfaff/pokeflex-official13-public-v1-f794cef-attempt3",
+    "prediction_count": 13,
+    "prediction_bundle_bytes": 510237568,
+    "prediction_bundle_sha256": "5851d6be08460aa8352bb78dc6384dda9d92bc16a8db208e8d320c19277db774",
+    "prediction_inventory_sha256": "be5b2837a714d0d46a0fb3e9811cb169e26f9a73cd1d7063c1fc1ad4df00dd67",
+    "runtime_environment_sha256": "515a14bfbf943c09485a03c1ebcb6948cfdd25444cca9122b38371cff7d98ee4",
+    "runtime_freeze_sha256": "4cec4575ff7c01cf98a6e1c664ed31fac2db7b8be8deebbc6c71cc674444191b",
+    "status": "complete"
+  },
+  "direct_lan_transfer": {
+    "source": "gpuserver4090 (129.69.102.139)",
+    "destination": "gpuserver6000 (129.69.102.145)",
+    "transport": "direct rsync over the shared LAN",
+    "bytes": 510237568,
+    "elapsed_seconds": 52,
+    "jump_server_used_as_data_path": false
+  },
+  "barrier": {
+    "prediction_count": 13,
+    "barrier_sha256": "0eb52c17606d3e9684248987cf5404d8368eab00325d2decd8304aa069ef9324",
+    "barrier_file_sha256": "caa72b62f99b836d386d96b668797564f26d4b4629552ca8aec45e0caa71651c",
+    "target_mesh_opened_before_barrier": false,
+    "passed": true
+  },
+  "causal_staging": {
+    "host": "gpuserver6000",
+    "file_count": 4060,
+    "manifest_sha256": "60ad331b5204ceea24b45e39eb0951d430e78e61bd7d5064d4186a20a5050341",
+    "input_inventory_sha256": "3d300df6902e07533f3d7cc783574e878563425e76832923cc2cfde20d5f738f",
+    "bundle_bytes": 595445932,
+    "bundle_sha256": "a127a8c7fb995bfa9c408d688642f871a592d04a5a20cea21821f302ce1334ec",
+    "expected_actual_path_digest": "25afcb05df6dd64f568a81860a6519f7d33bbc769976884d8d39afd805354b8e",
+    "allowlist_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "scoring": {
+    "host": "gpuserver6000",
+    "campaign_root": "/home/florianpfaff/pokeflex-official13-public-v1-f794cef-scoring",
+    "target_mesh_count": 970,
+    "manifest_sha256": "effb4b6d5595601cf89e180d19928cf6660559c8da574147eaf50942f74effae",
+    "input_inventory_sha256": "b923338b27bf225cbbffee9e8f96076fd749d6a241431d2eab653d558d5225cc",
+    "expected_actual_path_digest": "70eda05affb4dff27719816c884593f9da7b1e041b3523f3f301e5ff0531f829",
+    "allowlist_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "environment_sha256": "92744ea71170b8a2e4ece4b335c2053c1cd7a0f432635169448dc70bfdf54153",
+    "venv_freeze_sha256": "5dcaf3969906688abbf3a6075ca674d4762a396cbe0aadc8c5ccf1f725ce88ad",
+    "log_sha256": "765172eaf853af8cf3e6d03388c8c3fa3a4b10733d4340f601502bdfe1214676",
+    "target_result_sha256": "0bc3a16f2f91a556d624b1b45fa8aca4063736085d474ee889ff99018901dbe4",
+    "status": "complete"
+  },
+  "independent_verification": {
+    "aggregate_recomputed_exactly": true,
+    "barrier_revalidated": true,
+    "scored_frame_count": 970,
+    "supported_frame_count": 835,
+    "candidate_jaccard_error_set": [
+      "ValueError: Not all meshes are volumes!"
+    ],
+    "focused_protocol_and_result_tests": "19 passed",
+    "linux_repository_suite": "1379 passed, 1 NumPy-version-specific failure",
+    "linux_repository_suite_environment": "NumPy 1.26.4; the failing test requires numpy._core.numeric from NumPy 2",
+    "numpy_2_compatibility_check": "1 passed under NumPy 2.4.5",
+    "changed_python_ruff": "passed",
+    "git_diff_check": "passed"
+  },
+  "preserved_nonresult_attempts": [
+    {
+      "stage": "causal staging attempt 1",
+      "failure": "zero-padded frame strings were parsed as shell octal and six wrong template candidates were copied",
+      "prediction_output_created": false,
+      "score_output_created": false,
+      "disposition": "quarantined"
+    },
+    {
+      "stage": "relay transfer attempt",
+      "failure": "the local jump-server relay reset after a partial 111-file transfer",
+      "prediction_output_created": false,
+      "score_output_created": false,
+      "disposition": "quarantined and replaced by direct LAN transfer"
+    },
+    {
+      "stage": "prediction runtime attempt 1",
+      "failure": "the selected environment lacked required transformers and pyvista imports",
+      "prediction_output_created": false,
+      "score_output_created": false,
+      "disposition": "log preserved; clean runtime attempt 2 used"
+    }
+  ],
+  "held_v8_artifacts_accessed": false
+}
