@@ -16,6 +16,7 @@ RESULT_ROOT = (
 RESULT = RESULT_ROOT / "target_result.json"
 BARRIER = RESULT_ROOT / "prediction_barrier.json"
 EXECUTION = RESULT_ROOT / "execution_manifest.json"
+POSTOPEN_AUDIT = RESULT_ROOT / "postopen_audit.json"
 
 
 def _sha256(path: Path) -> str:
@@ -67,3 +68,26 @@ def test_barrier_and_execution_manifest_preserve_preoutcome_custody() -> None:
     assert execution["prediction"]["fallback_mismatch_count"] == 0
     assert execution["target_scoring"]["paired_transfer_passed"] is False
     assert execution["held_v8_accessed"] is False
+
+
+def test_postopen_audit_proves_threshold_tuning_cannot_pass() -> None:
+    payload = json.loads(POSTOPEN_AUDIT.read_text(encoding="utf-8"))
+    audit = payload["audit"]
+
+    assert _sha256(POSTOPEN_AUDIT) == (
+        "3cec4bf48332be6ae164a6dfdd47f56dec4b186d65a7b74af614d71e176101a2"
+    )
+    assert audit["accepted_scored_frame_count"] == 137
+    assert audit["accepted_improving_frame_count"] == 126
+    assert audit["accepted_harmful_frame_count"] == 11
+    assert audit["accepted_false_safe_rate"] == pytest.approx(
+        0.08029197080291971
+    )
+    assert audit["accepted_upper_bound_coverage"] == pytest.approx(
+        0.8978102189781022
+    )
+    assert audit["maximum_zero_loss_win_count_from_sealed_candidates"] == 8
+    oracle = audit["frame_oracle_within_sealed_candidates"]
+    assert oracle["object_win_count"] == 9
+    assert oracle["object_tie_count"] == 3
+    assert oracle["object_loss_count"] == 0

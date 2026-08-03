@@ -61,3 +61,21 @@ These 12 outcomes are now open development evidence. They must not be used to
 alter the claim on this cohort. A further confirmation needs genuinely fresh
 physical objects or another dataset; selecting another take from the same
 opened PokeFlex objects would not provide independent object-level evidence.
+
+## Post-open guard audit
+
+A diagnostic over subsets of the already sealed candidates finds 126 improving
+and 11 harmful admitted scored frames, an 8.03% false-safe rate. The calibrated
+upper regret bound covers 89.78% of admitted frame outcomes, closely matching
+the 89.72% held-object coverage observed during development.
+
+Tightening the same upper-regret threshold cannot rescue the registered claim.
+The best zero-loss global cutoff retains only 8 object wins. Even an outcome
+oracle that keeps every improving sealed frame and rejects every harmful one
+reaches 9 wins, 3 ties, and no losses. Thus the missing tenth win cannot come
+from stricter admission over these candidates. A materially stronger attempt
+needs new observation support or a new candidate update, especially for the
+two exact-fallback objects; changing the guard threshold is insufficient.
+
+This audit is post-open and non-confirmatory. Its full artifact has SHA-256
+`3cec4bf48332be6ae164a6dfdd47f56dec4b186d65a7b74af614d71e176101a2`.
