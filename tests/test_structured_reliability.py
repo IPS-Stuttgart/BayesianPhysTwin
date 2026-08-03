@@ -44,7 +44,10 @@ def test_sequences_are_smoothed_independently_and_returned_in_input_order() -> N
 
     assert result.posterior_inlier_probability.shape == (4,)
     assert set(result.sequence_log_evidence) == {"a", "b"}
-    assert result.posterior_inlier_probability[1] < result.posterior_inlier_probability[0]
+    assert (
+        result.posterior_inlier_probability[1]
+        < result.posterior_inlier_probability[0]
+    )
     assert result.posterior_inlier_probability[2] > 0.9
 
 
@@ -209,4 +212,119 @@ def test_integer_step_mode_rejects_invalid_time_values(
             ["track", "track"],
             times,
             config=MarkovReliabilityConfig(time_delta_mode="integer-steps"),
+        )
+
+
+@pytest.mark.parametrize(
+    ("config", "message"),
+    [
+        (MarkovReliabilityConfig(outlier_persistence=1.0), "outlier_persistence"),
+        (MarkovReliabilityConfig(probability_floor=0.5), "probability_floor"),
+        (MarkovReliabilityConfig(time_delta_mode="unsupported"), "time_delta_mode"),
+        (MarkovReliabilityConfig(time_step=0.0), "time_step"),
+    ],
+)
+def test_additional_invalid_markov_configurations(
+    config: MarkovReliabilityConfig,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        smooth_markov_reliability(
+            np.array([0.5]),
+            np.array([0.0]),
+            np.array([0.0]),
+            ["track"],
+            [0],
+            config=config,
+        )
+
+
+def test_transition_helper_accepts_constant_matrix() -> None:
+    import bayesian_phystwin.structured_reliability as reliability_module
+
+    transition = np.log(np.array([[0.9, 0.1], [0.2, 0.8]]))
+    assert reliability_module._transition_at(transition, 0) is transition
+
+
+@pytest.mark.parametrize(
+    ("prior", "log_inlier", "log_outlier", "ids", "times", "message"),
+    [
+        (np.ones(2), np.zeros(1), np.zeros(2), ["a", "a"], [0, 1], "shape"),
+        (np.empty(0), np.empty(0), np.empty(0), [], [], "at least one"),
+        (np.array([np.nan]), np.zeros(1), np.zeros(1), ["a"], [0], "prior"),
+        (np.ones(1), np.array([np.nan]), np.zeros(1), ["a"], [0], "densities"),
+    ],
+)
+def test_scalar_markov_input_validation(
+    prior: np.ndarray,
+    log_inlier: np.ndarray,
+    log_outlier: np.ndarray,
+    ids: list[str],
+    times: list[int],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        smooth_markov_reliability(
+            prior,
+            log_inlier,
+            log_outlier,
+            ids,
+            times,
+        )
+
+
+@pytest.mark.parametrize(
+    ("prior", "log_inlier", "log_outlier", "ids", "times", "message"),
+    [
+        (np.ones(2), np.zeros(2), np.zeros(2), ["a", "a"], [0, 1], "equal shape"),
+        (
+            np.ones(2),
+            np.zeros((1, 2)),
+            np.zeros((2, 2)),
+            ["a", "a"],
+            [0, 1],
+            "equal shape",
+        ),
+        (
+            np.ones(1),
+            np.zeros((1, 2)),
+            np.zeros((1, 2)),
+            ["a", "a"],
+            [0, 1],
+            "prior_reliability",
+        ),
+        (np.empty(0), np.zeros((0, 0)), np.zeros((0, 0)), [], [], "at least one"),
+        (
+            np.array([np.nan]),
+            np.zeros((1, 1)),
+            np.zeros((1, 1)),
+            ["a"],
+            [0],
+            "prior_reliability",
+        ),
+        (
+            np.ones(1),
+            np.array([[np.nan]]),
+            np.zeros((1, 1)),
+            ["a"],
+            [0],
+            "densities",
+        ),
+    ],
+)
+def test_batched_markov_input_validation(
+    prior: np.ndarray,
+    log_inlier: np.ndarray,
+    log_outlier: np.ndarray,
+    ids: list[str],
+    times: list[int],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        markov_log_evidence_batch(
+            prior,
+            log_inlier,
+            log_outlier,
+            ids,
+            times,
         )
