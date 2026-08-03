@@ -151,7 +151,7 @@ class PerViewDepthStateConfig:
         shared_bias_prior_std_m=0.020,
         camera_bias_prior_std_m=0.010,
         effective_samples_per_view=64.0,
-        maximum_state_update_m=0.020,
+        maximum_state_update_m=0.100,
         reject_unanchored_ambiguity=True,
     )
 
@@ -254,9 +254,13 @@ def _sample_depth_patch_m(
             samples[selected[positive], column] = values[positive]
             column += 1
     count = np.sum(np.isfinite(samples), axis=1)
-    with np.errstate(all="ignore"):
-        median = np.nanmedian(samples, axis=1)
-        mad = np.nanmedian(np.abs(samples - median[:, None]), axis=1)
+    nonempty = count > 0
+    median = np.full(len(tracks), np.nan, dtype=np.float64)
+    mad = np.zeros(len(tracks), dtype=np.float64)
+    median[nonempty] = np.nanmedian(samples[nonempty], axis=1)
+    mad[nonempty] = np.nanmedian(
+        np.abs(samples[nonempty] - median[nonempty, None]), axis=1
+    )
     valid = (count > 0) & np.isfinite(median) & (median > 0.0)
     median[~valid] = np.nan
     mad[~valid] = 0.0
@@ -594,14 +598,31 @@ def infer_per_view_depth_state_correction(
     if not update.accepted:
         return _fallback(len(frame_zero), update.reason, diagnostics)
     correction = decode_bias_aware_state(update, identifiable.query_basis)
+    raw_maximum_correction = float(np.max(np.linalg.norm(correction, axis=1)))
+    raw_response_ratio = raw_maximum_correction / maximum_response
+    absolute_scale = cfg.maximum_correction_m / max(
+        raw_maximum_correction, np.finfo(np.float64).tiny
+    )
+    relative_limit = (
+        cfg.maximum_correction_to_response_ratio * maximum_response
+    )
+    relative_scale = relative_limit / max(
+        raw_maximum_correction, np.finfo(np.float64).tiny
+    )
+    cap_scale = min(1.0, absolute_scale, relative_scale)
+    correction *= cap_scale
     maximum_correction = float(np.max(np.linalg.norm(correction, axis=1)))
     response_ratio = maximum_correction / maximum_response
-    diagnostics["maximum_correction_m"] = maximum_correction
-    diagnostics["maximum_correction_to_response_ratio"] = response_ratio
-    if maximum_correction > cfg.maximum_correction_m:
-        return _fallback(len(frame_zero), "absolute-correction-cap", diagnostics)
-    if response_ratio > cfg.maximum_correction_to_response_ratio:
-        return _fallback(len(frame_zero), "physical-response-relative-cap", diagnostics)
+    diagnostics.update(
+        {
+            "raw_maximum_correction_m": raw_maximum_correction,
+            "raw_maximum_correction_to_response_ratio": raw_response_ratio,
+            "correction_cap_scale": cap_scale,
+            "correction_cap_applied": bool(cap_scale < 1.0),
+            "maximum_correction_m": maximum_correction,
+            "maximum_correction_to_response_ratio": response_ratio,
+        }
+    )
     state_count = len(update.state_coefficients_m)
     coefficient_covariance = update.posterior_covariance_m2[
         :state_count, :state_count

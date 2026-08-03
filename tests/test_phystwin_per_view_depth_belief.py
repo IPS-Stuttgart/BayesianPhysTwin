@@ -219,6 +219,38 @@ def test_robust_update_downweights_gross_outlier_once() -> None:
     assert result.diagnostics["state_update"]["minimum_camera_robust_weight"] < 0.1
 
 
+def test_large_inferred_update_is_shrunk_to_physical_cap() -> None:
+    observations, baseline, frame_zero, _ = _synthetic_problem()
+    config = PerViewDepthStateConfig(
+        window_frames=4,
+        minimum_unique_identities=8,
+        maximum_correction_m=0.001,
+        maximum_correction_to_response_ratio=2.0,
+        update=BiasAwareStateUpdateConfig(
+            observation_std_m=0.001,
+            state_prior_std_m=0.02,
+            shared_bias_prior_std_m=0.02,
+            camera_bias_prior_std_m=0.02,
+            effective_samples_per_view=16.0,
+            maximum_state_update_m=0.10,
+        ),
+    )
+
+    result = infer_per_view_depth_state_correction(
+        observations,
+        baseline,
+        frame_zero,
+        end_frame=len(baseline),
+        config=config,
+    )
+
+    assert result.accepted, result.reason
+    assert result.diagnostics["correction_cap_applied"] is True
+    assert result.diagnostics["raw_maximum_correction_m"] > 0.001
+    assert result.diagnostics["maximum_correction_m"] <= 0.001 + 1e-12
+    assert np.max(np.linalg.norm(result.correction_m, axis=1)) <= 0.001 + 1e-12
+
+
 def test_state_residual_cannot_change_prior_perception_reliability() -> None:
     observations, baseline, frame_zero, _ = _synthetic_problem()
     reliability_before = observations.prior_reliability.copy()
