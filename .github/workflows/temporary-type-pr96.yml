@@ -1,0 +1,60 @@
+name: Temporary typing repair for PR 96
+
+on:
+  push:
+    branches:
+      - agent/separate-grouped-likelihood-semantics
+    paths:
+      - .github/workflows/temporary-type-pr96.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/separate-grouped-likelihood-semantics
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Add explicit NumPy vector annotations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/grouped_likelihood.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = {
+              "    dimensions = np.zeros(group_count, dtype=np.int64)": "    dimensions: NDArray[np.int64] = np.zeros(group_count, dtype=np.int64)",
+              "    nll = np.zeros(group_count, dtype=np.float64)": "    nll: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+              "    weighted_nll = np.zeros(group_count, dtype=np.float64)": "    weighted_nll: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+              "    posterior_nominal = np.empty(group_count, dtype=np.float64)": "    posterior_nominal: NDArray[np.float64] = np.empty(group_count, dtype=np.float64)",
+              "    log_nominal = np.zeros(group_count, dtype=np.float64)": "    log_nominal: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+              "    log_outlier = np.zeros(group_count, dtype=np.float64)": "    log_outlier: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+              "    mean_association = np.zeros(group_count, dtype=np.float64)": "    mean_association: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+              "    mahalanobis = np.zeros(group_count, dtype=np.float64)": "    mahalanobis: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+              "    group_power = np.zeros(group_count, dtype=np.float64)": "    group_power: NDArray[np.float64] = np.zeros(group_count, dtype=np.float64)",
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f"missing expected source line: {old}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          rm .github/workflows/temporary-type-pr96.yml
+      - name: Validate changed module
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m ruff check src/bayesian_phystwin/grouped_likelihood.py
+          python -m ruff format --check src/bayesian_phystwin/grouped_likelihood.py
+          python -m mypy src/bayesian_phystwin/grouped_likelihood.py
+      - name: Commit repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/bayesian_phystwin/grouped_likelihood.py .github/workflows/temporary-type-pr96.yml
+          git commit -m "Type grouped likelihood result vectors"
+          git push origin HEAD:agent/separate-grouped-likelihood-semantics
