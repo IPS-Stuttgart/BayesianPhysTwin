@@ -61,7 +61,7 @@ jobs:
           git apply --check "$RUNNER_TEMP/prospective-belief.patch"
           git apply "$RUNNER_TEMP/prospective-belief.patch"
           rm -rf .github/patches/prospective-belief-hardening
-          rm .github/workflows/apply-prospective-belief-hardening.yml
+          rm -f .github/workflows/prospective-belief-workstation.yml
 
       - uses: actions/setup-python@v6
         with:
@@ -82,16 +82,21 @@ jobs:
             tests/test_parameter_posterior.py \
             tests/test_release_metadata.py
 
-      - name: Publish clean product commit
+      - name: Publish code, documentation, and tests
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "OpenAI"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
-          test ! -e .github/workflows/apply-prospective-belief-hardening.yml
+          test -e .github/workflows/apply-prospective-belief-hardening.yml
           test ! -d .github/patches/prospective-belief-hardening
+          test ! -e .github/workflows/prospective-belief-workstation.yml
           git add -A
           test -n "$(git diff --cached --name-only)"
+          if git diff --cached --name-only | grep '^.github/workflows/'; then
+            echo "workflow changes must be published by the GitHub app" >&2
+            exit 1
+          fi
           git commit -m "Add prospective belief update infrastructure"
           git push origin HEAD:agent/prospective-belief-hardening
