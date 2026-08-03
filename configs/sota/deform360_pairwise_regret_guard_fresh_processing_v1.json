@@ -1,0 +1,127 @@
+{
+  "admission": {
+    "future_geometry_deserialized_for_admission": false,
+    "maximum_point_count": 10000,
+    "minimum_camera_count": 3,
+    "minimum_point_count": 128,
+    "minimum_test_frame_count": 8,
+    "required_frame_count": 76,
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshProcessingProtocol",
+  "bindings": {
+    "download_file_sha256": "0c793f959ed6ab648bbf8f62cda7bb4392ec6983b6281aea6de4e9d0e2444b68",
+    "download_sha256": "db312df795b91d5bb86555671db04a899b85e62e9efbba3791a66333f54e099d",
+    "file_count": 828,
+    "source_plan_file_sha256": "e129172e96723d009c5491668ecf0a3a25f32689f359731ea4b6e529bb2faa27",
+    "source_plan_sha256": "d1d265dc4dffd89cbd15830e0be22eb609aafad2d27d7ed41e8b2f3e8c17a87d",
+    "source_tree_sha256": "02008f27fcd4dd501666898213ae691a47c5f4a587fa0af0592b70bc788eb2bc",
+    "technical_lock_file_sha256": "b1c481c09d3d51ab3bf23a585dda4a9ea730bfd9292165e00a976a6c6ab10c03",
+    "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2",
+    "total_bytes": 759011449
+  },
+  "dataset": {
+    "camera_panel": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "episode_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      8,
+      9
+    ],
+    "object_id": "197-hand-sanitizer"
+  },
+  "failure_accounting": {
+    "all_nine_valid_episodes_are_attempted": true,
+    "implicit_replacement": false,
+    "malformed_episode_six_remains_unsealable": true,
+    "source_rejections_are_not_predictions": true,
+    "technical_failures_are_retained": true
+  },
+  "implementation_commit": "3fb25da4d8a646515b8dc4c74d65d1d191f57529",
+  "information_boundary": {
+    "all_81_frames_may_create_observation_assets": true,
+    "future_object_positions_deserialized_for_admission": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "known_future_action_used_only_as_conditioning_input": true,
+    "outcomes_may_not_change_processing_or_admission": true,
+    "target_metric_read": false,
+    "window_sealed_before_object_processing": true
+  },
+  "mask": {
+    "base_selector_source_sha256": "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184",
+    "checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "frame_count": 81,
+    "input_camera_count": 12,
+    "manual_prompting": false,
+    "minimum_successful_cameras": 8,
+    "object_selector_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+    "sam2_commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4"
+  },
+  "processing": {
+    "cotracker_checkpoint_sha256": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+    "cotracker_predictor_sha256": "783536d6c77790fa6c8e005f2df1d6bd4f0d8955c2c67d464bfb4e64d366375f",
+    "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "cotracker_tree": "f0296ad047b50c1530063b67e575908257478cab",
+    "cube_half_extent_m": 0.5,
+    "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "deform360_source_sha256": {
+      "control_points_stage": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+      "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+      "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+      "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+      "robot_stage": "5944301cc781f179bea96470af50273836a13fdbb367af9a89a59ce1911c11e0",
+      "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+      "undistort": "06a500ab2ced8cc960d649d9e200d6d479804ef542ba5aac8fedc5733e74aba9",
+      "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467"
+    },
+    "first_frame_iterations": 500,
+    "minimum_processing_cameras": 8,
+    "minimum_visual_hull_points": 512,
+    "voxel_resolution": 120,
+    "warm_start_iterations": 250
+  },
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-processing-v1",
+  "protocol_sha256": "c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f",
+  "schema_version": 1,
+  "status": "locked_before_source_rgb_decode_or_processed_geometry",
+  "window": {
+    "action_position_field": "robot.actions[...,0,:]",
+    "candidate_first_frame": 8,
+    "candidate_stride_frames": 6,
+    "first_update_frame": 19,
+    "prediction_frame_count": 76,
+    "raw_frame_count": 81,
+    "score_step_range_half_open": [
+      19,
+      75
+    ],
+    "tie_break": "earliest candidate start",
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  }
+}

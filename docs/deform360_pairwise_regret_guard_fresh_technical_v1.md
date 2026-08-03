@@ -95,6 +95,45 @@ source protocol. Each of the nine valid metadata episodes has one paired RGB
 video and timestamp stream in every panel camera. All public LFS SHA-256 values
 are bound before download.
 
+## Download and preprocessing lock
+
+The complete nonaudio source inventory was downloaded at the pinned public
+revision and then rehashed offline. The archived verification artifact is
+`results/sota/deform360_pairwise_regret_guard_fresh_technical_v1/download_manifest.json`.
+
+| Field | Value |
+|---|---:|
+| Verified files | 828 |
+| Verified bytes | 759,011,449 |
+| Download-manifest SHA-256 | `db312df795b91d5bb86555671db04a899b85e62e9efbba3791a66333f54e099d` |
+| Download-manifest file SHA-256 | `0c793f959ed6ab648bbf8f62cda7bb4392ec6983b6281aea6de4e9d0e2444b68` |
+| Source-tree SHA-256 | `02008f27fcd4dd501666898213ae691a47c5f4a587fa0af0592b70bc788eb2bc` |
+
+The preprocessing implementation is frozen at commit
+`3fb25da4d8a646515b8dc4c74d65d1d191f57529`. Its protocol is
+`configs/sota/deform360_pairwise_regret_guard_fresh_processing_v1.json`, with
+internal SHA-256
+`c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f`
+and file SHA-256
+`fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b`.
+It fixes the following before any RGB decode or object reconstruction:
+
+- action-only selection of an 81-frame observation window and 76 prediction
+  rows, with online updates at frames 19, 38, and 57;
+- the existing 12-camera panel and generic, non-manual SAM2 mask policy;
+- exact Deform360, SAM2, and CoTracker source/checkpoint revisions;
+- official reconstruction, depth, tracking, point-cloud, and control-point
+  settings;
+- a minimum of eight successful mask cameras and the 128-node physical-backend
+  admission threshold; and
+- terminal retention of every mask, processing, and admission failure without
+  replacement.
+
+Admission hashes `final_data.pkl` for lineage but does not deserialize future
+object positions. Inter-server source transfer must use the direct
+`gpuserver6000` to `gpuserver4090` LAN path; the jump server is used only for
+workstation control connections.
+
 ## Execution boundary
 
 The execution order is frozen:
