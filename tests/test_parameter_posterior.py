@@ -116,3 +116,74 @@ def test_covariance_is_symmetric_and_read_only() -> None:
     assert not covariance.flags.writeable
     assert not ensemble.mean().flags.writeable
     assert not ensemble.weights.flags.writeable
+
+
+def test_update_rejects_shape_mismatches_and_overflow() -> None:
+    ensemble = ParameterEnsemble.from_prior_samples(np.array([[0.0], [1.0]]))
+    with pytest.raises(ValueError, match="residual_sums"):
+        ensemble.update_from_residuals(np.zeros(3), variance=1.0)
+    with pytest.raises(ValueError, match="reliability"):
+        ensemble.update_from_residuals(
+            np.zeros(2),
+            variance=1.0,
+            reliability=np.ones(3),
+        )
+    with pytest.raises(FloatingPointError, match="overflowed"):
+        ensemble.update_from_residuals(
+            np.full(2, np.finfo(np.float64).max),
+            variance=np.finfo(np.float64).tiny,
+        )
+
+
+def test_positive_jitter_path_is_exercised() -> None:
+    ensemble = ParameterEnsemble.from_prior_samples(
+        np.array([[0.0, 0.0], [1.0, 1.0]])
+    )
+    ensemble.systematic_resample(
+        np.random.default_rng(7),
+        jitter_std=np.array([0.1, 0.2]),
+    )
+    assert np.all(np.isfinite(ensemble.particles))
+
+
+def test_resampling_rejects_nonfinite_generator_output() -> None:
+    class NonfiniteGenerator:
+        def random(self) -> float:
+            return 0.5
+
+        def normal(self, **kwargs) -> np.ndarray:
+            return np.full(kwargs["size"], np.inf)
+
+    ensemble = ParameterEnsemble.from_prior_samples(np.array([[0.0], [1.0]]))
+    with pytest.raises(FloatingPointError, match="non-finite"):
+        ensemble.systematic_resample(  # type: ignore[arg-type]
+            NonfiniteGenerator(),
+            jitter_std=0.1,
+        )
+
+
+def test_mutated_invalid_shapes_fail_closed() -> None:
+    ensemble = ParameterEnsemble.from_prior_samples(np.array([[0.0], [1.0]]))
+    ensemble.particles = np.ones(2)
+    with pytest.raises(ValueError, match="shape"):
+        _ = ensemble.particle_count
+
+    ensemble.particles = np.empty((0, 1))
+    ensemble.log_weights = np.empty(0)
+    with pytest.raises(ValueError, match="at least one"):
+        _ = ensemble.dimension
+
+
+def test_invalid_exponential_totals_fail_closed(monkeypatch) -> None:
+    import bayesian_phystwin.parameter_posterior as posterior_module
+
+    ensemble = ParameterEnsemble.from_prior_samples(np.array([[0.0], [1.0]]))
+    monkeypatch.setattr(
+        posterior_module.np,
+        "exp",
+        lambda value: np.zeros_like(value, dtype=np.float64),
+    )
+    with pytest.raises(FloatingPointError, match="invalid particle weights"):
+        _ = ensemble.weights
+    with pytest.raises(FloatingPointError, match="normalization"):
+        ensemble._renormalize_log_weights()
