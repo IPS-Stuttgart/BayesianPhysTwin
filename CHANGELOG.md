@@ -50,6 +50,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   a covariance-marginalized diagnostic that does not use prior reliability. Its
   component densities and responsibilities share the prior-aware solver's mixture
   kernel, while the new conditional operation exposes the solver-aligned objective.
+- Observation identities, physical-linearization identities, causal cutoffs, and
+  guarded-update decisions now reject booleans and floating-point values instead
+  of silently coercing them. Content-addressed observation, linearization,
+  nonlinear-closure, guard, and selection metadata is recursively immutable, so
+  nested mutation cannot change an existing artifact or decision ID.
 - Active-query configuration, plan metadata, candidate identities, camera indices,
   and nuisance-aware greedy selection counts now require genuine integer values;
   booleans and fractional values fail closed instead of silently changing the
@@ -65,11 +70,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   contract v2, the full joint cross-window gauge covariance, matching calibration
   IDs, calibration of every alignment, and zero covariance-fallback use. Attested
   legacy stream-v1 marginals and inferred stream versions are no longer admissible.
-- Missing private-Prob4D credentials now fail trusted pull requests, `main`,
-  scheduled, and manual three-repository runs instead of producing a green skip.
-  External-fork pull requests still run the producer-neutral consumer fixture and
-  explicitly report that the secret-backed producer gate was unavailable and no
-  current-Prob4D evidence was admitted.
+- Three-repository CI now probes access to the transferred private Prob4D
+  repository before checkout. Pull requests and `main` pushes always run the
+  producer-neutral consumer fixture and explicitly admit no current-Prob4D
+  evidence when the credential is unavailable; scheduled, manual, and
+  repository-dispatch validation remains fail-closed.
 - Propagated-state robust inference now recomputes the final posterior from the
   returned IRLS weights and uses Cholesky solves for positive-definite prior and
   posterior systems instead of generic matrix inversion.
