@@ -85,6 +85,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
         "aggregate the sealed Deform360 bias-aware prospective result"
     ),
     "fetch-phystwin-eval-data": "fetch the released PhysTwin evaluation subset",
+    "prob4d-prospective-protocol": (
+        "freeze, verify, and adjudicate the prospective Prob4D feeder protocol"
+    ),
 }
 
 EXACT_OWNERS: Final[dict[str, str]] = {
@@ -99,6 +102,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "phystwin-refit": "phystwin-refit-v1",
     "evaluate-deform360-online-belief": "deform360-online-belief-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
+    "prob4d-prospective-protocol": "prob4d-bpt-prospective-v1",
 }
 
 
