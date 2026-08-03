@@ -1,0 +1,214 @@
+{
+  "artifact_kind": "PokeFlexBaselineRelativeGuardTargetProtocol",
+  "claim_boundary": "A pass supports strict improvement of the released PokeFlex Kinect checkpoint on this registered fresh-take cohort. It is not the paper's unavailable internal split; 6.498 mm is context only.",
+  "custody": {
+    "all_prediction_revisions_must_match": true,
+    "implementation_checkout_must_be_clean": true,
+    "prediction_and_scoring_are_separate": true,
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "required_prediction_seal_count": 12,
+    "retry_policy": "no replacement; preserve failures and exact fallbacks",
+    "scored_frames": "force-y at f exceeds 3 N",
+    "target_mesh_access_before_barrier": "forbidden",
+    "template_mesh": "allowed explicit upstream task input only"
+  },
+  "development_guard": {
+    "certificate": {
+      "coefficients": [
+        -0.05657443048180818,
+        0.017175082346184003,
+        0.008137267112476124,
+        -0.0252919343711718,
+        0.00014876048216689008,
+        -0.006971256332877586,
+        0.0026759564851639873
+      ],
+      "feature_center": [
+        1.6703597051173302,
+        1.9554739318031518,
+        0.07215169972533823,
+        0.8732965048342491,
+        6.695980032858939,
+        6.525467599378055
+      ],
+      "feature_scale": [
+        0.5414802935280362,
+        1.3714358842060053,
+        0.14421556516279133,
+        0.24585744178692917,
+        0.2140858162037594,
+        1.0317809826617979
+      ],
+      "finite_sample_coverage": 0.8235294117647058,
+      "finite_sample_rank": 14,
+      "minimum_improvement": 0.0,
+      "nominal_coverage": 0.8,
+      "ridge_penalty": 10.0,
+      "source_group_count": 16,
+      "standardized_feature_lower": [
+        -2.2986489405377086,
+        -1.3105806302512368,
+        -4.593202381647477,
+        -3.5520442191499177,
+        -3.290808789875291,
+        -2.975513294192327
+      ],
+      "standardized_feature_upper": [
+        4.159702256061777,
+        7.030941046640746,
+        3.9355656019624075,
+        0.47225153460834185,
+        1.0310584391288282,
+        2.6780686018663977
+      ],
+      "support_margin_std": 1.0,
+      "upper_residual_quantile": 0.07785305012559501
+    },
+    "certificate_sha256": "5eeb2350900334d487db5630f3a39a186a2e388be41334349cbcff613cdeb8a5",
+    "claim_status": "post-open source plus public-paired-v1 development; fresh outcomes required",
+    "evaluation_path": "results/sota/pokeflex_baseline_relative_guard_development_v2/development_evaluation.json",
+    "evaluation_sha256": "49007cc03f2ed10e59e3aa2588f2a5130b70d047e919d75200c2769143bf3c71",
+    "feature_names": [
+      "log1p_ratio",
+      "prior_motion_rms_mm",
+      "correction_prior_motion_cosine",
+      "previous_correction_cosine",
+      "log1p_association_count",
+      "update_rms_mm"
+    ],
+    "git_commit": "ece028ae8ce6cdfbd0c15af31482dffb6033edf7"
+  },
+  "evaluation": {
+    "aggregation": "equal scored frames within each take, then equal physical objects",
+    "jaccard_boolean_backend": "manifold",
+    "jaccard_definition": "trimesh boolean intersection volume divided by union volume",
+    "jaccard_mesh_processing": "trimesh_default",
+    "jaccard_role": "non-gating diagnostic",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministic predicted surface samples to target surface samples in metric coordinates",
+    "primary_metric": "CD_UL1_mm",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720
+  },
+  "forbidden": [
+    "opening any selected target mesh before all prediction seals pass",
+    "using target frame f observations to predict frame f",
+    "changing the certificate, cohort, candidate, metric, or gates after lock",
+    "replacing a failed selected take",
+    "tuning from any selected-take outcome",
+    "claiming identity with the unavailable published internal split",
+    "touching any held-v8 artifact or process"
+  ],
+  "gates": {
+    "direct_metric_reference": {
+      "candidate_CD_UL1_mm_below": 6.498,
+      "gating": false,
+      "scope": "cross-split published context only"
+    },
+    "paired_transfer": {
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_unit": "physical object",
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "bootstrap_upper_quantile": 0.975,
+      "maximum_per_object_relative_regression": 0.0,
+      "minimum_object_win_count": 10,
+      "minimum_object_win_fraction": 0.8,
+      "minimum_supported_object_count": 10,
+      "minimum_supported_object_fraction": 0.8,
+      "relative_CD_UL1_improvement_above": 0.0
+    }
+  },
+  "locked_at_utc": "2026-08-03T05:41:05Z",
+  "method": {
+    "fallback": "byte-identical released checkpoint",
+    "field": "action_local_state_relative_0.4",
+    "guard_features": [
+      "log1p_ratio",
+      "prior_motion_rms_mm",
+      "correction_prior_motion_cosine",
+      "previous_correction_cosine",
+      "log1p_association_count",
+      "update_rms_mm"
+    ],
+    "guard_inputs": "target-free quantities through f-1 plus physical prior f",
+    "guard_rule": "admit iff in source support and calibrated upper regret is below zero",
+    "missing_required_robot_pose_action": "mark update unsupported and return byte-identical released checkpoint",
+    "physical_prior": "released PokeFlex Kinect checkpoint",
+    "scale": 0.125,
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "state_update": "robust correlation-aware graph registration at f-1",
+    "target_frame_observation": "forbidden"
+  },
+  "protocol_id": "pokeflex-baseline-relative-guard-public-paired-v2",
+  "protocol_sha256": "4b401beb1a48e973da3af42a580c32f244163740f850ace4edef5ff43bfdb57c",
+  "schema_version": 1,
+  "selection_audit": {
+    "eligible_object_count": 12,
+    "git_ref_count": 315,
+    "git_ref_digest": "f3a43ea9f395eaa2fe1efe315ee4063b4b9278c8c5fef6a2b753a3b79cfc682e",
+    "git_ref_tip_count": 221,
+    "git_ref_tip_digest": "ff9569d6c32138367d9a87d28fbbe49fe642900b58931ee548059178cf71e720",
+    "manifest_file_sha256": "53d155d6818bdcb17e5fc18f5ebf8e544724410f306030647e10b0f21bf5c207",
+    "manifest_path": "configs/sota/pokeflex_baseline_relative_guard_public_paired_v2_selection.json",
+    "manifest_sha256": "418b80936fe98cc1007c7884ebcc8c10ed011a7487aa63e681b6a6e59c854d5f",
+    "public_take_count": 116,
+    "public_take_digest": "0a919ea126e59e31446281356674061a9be918aadd412665c1d9c63014b08c8d",
+    "reachable_blob_count": 5621,
+    "reachable_blob_digest": "9a54c659278d47d8dbda57155a456b76881af28e614dbf001ca2085cfab4e52e",
+    "referenced_take_count": 73,
+    "referenced_take_digest": "15599274f12c1e34acc4d3cc39bfe77670a31556a697909f91e830f55fe41dbb",
+    "repository_head": "df2f4933796ba78e35ae95d525c4eb1e553aab16",
+    "selected_take_digest": "81e31e86d15ba0cb2a37596c941ef94e1d288b14a615917790a7b00dd43203c5",
+    "selection_was_target_free": true
+  },
+  "source_gate": {
+    "passed": true,
+    "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+    "result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125"
+  },
+  "status": "pre-outcome lock for twelve all-history-fresh public PokeFlex takes",
+  "target_cohort": {
+    "freshness_scope": "every path and blob reachable from all local, remote, and tag refs present after the registered fetch",
+    "objects": [
+      "3dPrintedCylinder",
+      "3dPrintedPizza",
+      "3dPrintedPyramid",
+      "Beanbag",
+      "FoamCylinder",
+      "FoamHalfSphere",
+      "Pillow",
+      "PlushDice",
+      "PlushMoon",
+      "PlushTurtle",
+      "PlushVolleyball",
+      "Sponge"
+    ],
+    "replacement_allowed": false,
+    "selection_basis": "For each object with an unreferenced public take, select the take minimizing SHA256(salt_label || NUL || take_id); sort by object; never replace a selected take.",
+    "take_ids": [
+      "3dPrintedCylinder_T3",
+      "3dPrintedPizza_T5",
+      "3dPrintedPyramid_T1",
+      "Beanbag_T4",
+      "FoamCylinder_T7",
+      "FoamHalfSphere_T4",
+      "Pillow_T6",
+      "PlushDice_T5",
+      "PlushMoon_T3",
+      "PlushTurtle_T1",
+      "PlushVolleyball_T5",
+      "Sponge_T3"
+    ]
+  },
+  "upstream": {
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    },
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "repository": "https://github.com/pokeflex-dataset/reconstruction"
+  }
+}
