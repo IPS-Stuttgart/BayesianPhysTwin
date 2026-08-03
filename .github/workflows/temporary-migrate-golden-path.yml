@@ -1,0 +1,39 @@
+name: Temporary golden-path repository migration
+
+on:
+  push:
+    branches:
+      - agent/harden-content-addressed-contracts
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/harden-content-addressed-contracts
+      - name: Use canonical transferred repositories
+        shell: bash
+        run: |
+          sed -i \
+            -e 's#FlorianPfaff/Prob4D#IPS-Stuttgart/Prob4D#g' \
+            -e 's#FlorianPfaff/Causal4D#IPS-Stuttgart/Causal4D#g' \
+            .github/workflows/three-repository-golden-path.yml
+          git diff --check
+      - name: Commit repository migration
+        shell: bash
+        run: |
+          if git diff --quiet -- .github/workflows/three-repository-golden-path.yml; then
+            echo "No repository migration required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/three-repository-golden-path.yml
+          git commit -m "Use transferred repositories in golden-path CI"
+          git push origin HEAD:agent/harden-content-addressed-contracts
