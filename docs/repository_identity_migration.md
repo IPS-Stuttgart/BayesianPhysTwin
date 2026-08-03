@@ -43,6 +43,10 @@ artifacts and manifests retain their original repository strings. Experiments
 must bind the exact producer revision and must not normalize repository strings
 inside a content-addressed artifact after publication.
 
+New claim-bearing evidence should also record the complete canonical
+Prob4D–BayesianPhysTwin–Causal4D commit tuple and the installed wheel identities,
+so repository redirects cannot obscure the software boundary that actually ran.
+
 ## CI policy
 
 The three-repository installed-wheel workflow checks out the canonical
