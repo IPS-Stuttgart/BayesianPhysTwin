@@ -8,8 +8,12 @@ from pathlib import Path
 
 from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_protocol import (
     build_exclusion_union,
+    build_fresh_download_manifest,
+    build_fresh_source_plan,
     build_fresh_technical_lock,
     validate_exclusion_union,
+    validate_fresh_download_manifest,
+    validate_fresh_source_plan,
     validate_fresh_technical_lock,
     write_json_artifact,
 )
@@ -30,6 +34,16 @@ def _parser() -> argparse.ArgumentParser:
     lock.add_argument("--metadata", required=True, type=Path)
     lock.add_argument("--source-protocol", required=True, type=Path)
     lock.add_argument("--source-qualification", required=True, type=Path)
+
+    plan = subparsers.add_parser("plan")
+    plan.add_argument("output", type=Path)
+    plan.add_argument("--technical-lock", required=True, type=Path)
+    plan.add_argument("--repository-tree", required=True, type=Path)
+
+    verify = subparsers.add_parser("verify-download")
+    verify.add_argument("output", type=Path)
+    verify.add_argument("--source-plan", required=True, type=Path)
+    verify.add_argument("--download-root", required=True, type=Path)
     return parser
 
 
@@ -38,7 +52,7 @@ def main() -> None:
     if args.command == "union":
         artifact = build_exclusion_union(args.manifest)
         validate_exclusion_union(artifact)
-    else:
+    elif args.command == "lock":
         artifact = build_fresh_technical_lock(
             args.exclusion_union,
             args.public_catalog,
@@ -47,6 +61,18 @@ def main() -> None:
             args.source_qualification,
         )
         validate_fresh_technical_lock(artifact)
+    elif args.command == "plan":
+        artifact = build_fresh_source_plan(
+            args.technical_lock,
+            args.repository_tree,
+        )
+        validate_fresh_source_plan(artifact)
+    else:
+        artifact = build_fresh_download_manifest(
+            args.source_plan,
+            args.download_root,
+        )
+        validate_fresh_download_manifest(artifact)
     write_json_artifact(artifact, args.output)
 
 

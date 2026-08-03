@@ -33,6 +33,8 @@ from .deform360_pairwise_regret_guard_source import (
 EXCLUSION_KIND = "Deform360FreshObjectExclusionManifest"
 UNION_KIND = "Deform360PairwiseRegretGuardFreshExclusionUnion"
 LOCK_KIND = "Deform360PairwiseRegretGuardFreshTechnicalLock"
+SOURCE_PLAN_KIND = "Deform360PairwiseRegretGuardFreshSourcePlan"
+DOWNLOAD_KIND = "Deform360PairwiseRegretGuardFreshSourceDownload"
 CATALOG_KIND = "Deform360PublicObjectCatalogSnapshot"
 HASH_NAMESPACE = "deform360-fresh-object-exclusion-v1"
 HASH_PREFIX = HASH_NAMESPACE.encode("ascii") + b"\0"
@@ -42,6 +44,22 @@ DATASET_REVISION = "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
 _HEX40 = re.compile(r"^[0-9a-f]{40}$")
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _OBJECT_ID = re.compile(r"^[0-9]{3}-[a-z0-9][a-z0-9-]*$")
+_CAMERA_ID = re.compile(r"^brics-odroid-[0-9]+_cam[0-9]+$")
+
+FROZEN_CAMERA_PANEL = (
+    "brics-odroid-001_cam0",
+    "brics-odroid-006_cam0",
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam0",
+    "brics-odroid-010_cam0",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0",
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -645,6 +663,318 @@ def validate_fresh_technical_lock(
     )
 
 
+def _repository_file_rows(
+    tree: Sequence[Mapping[str, Any]], *, object_id: str
+) -> tuple[dict[str, Any], ...]:
+    prefix = f"raw/{object_id}/"
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for value in tree:
+        _require(isinstance(value, Mapping), "repository-tree row is malformed")
+        path = value.get("path")
+        _require(
+            isinstance(path, str) and path.startswith(prefix),
+            "repository-tree path escaped the locked object",
+        )
+        _require(path not in seen, "repository-tree path is duplicated")
+        seen.add(path)
+        if value.get("type") != "file":
+            continue
+        size = value.get("size")
+        oid = value.get("oid")
+        _require(
+            isinstance(size, int) and not isinstance(size, bool) and size >= 0,
+            "repository file size is malformed",
+        )
+        _require(
+            isinstance(oid, str) and _HEX40.fullmatch(oid) is not None,
+            "repository Git object ID is malformed",
+        )
+        lfs = value.get("lfs")
+        lfs_sha256 = None
+        if lfs is not None:
+            _require(isinstance(lfs, Mapping), "repository LFS record is malformed")
+            lfs_sha256 = lfs.get("oid")
+            _require(
+                isinstance(lfs_sha256, str)
+                and _HEX64.fullmatch(lfs_sha256) is not None
+                and lfs.get("size") == size,
+                "repository LFS binding is malformed",
+            )
+        if Path(path).suffix.lower() in {".flac", ".wav"}:
+            continue
+        rows.append(
+            {
+                "path": path,
+                "size": size,
+                "git_oid": oid,
+                "lfs_sha256": lfs_sha256,
+            }
+        )
+    _require(bool(rows), "repository tree contains no downloadable source files")
+    return tuple(sorted(rows, key=lambda row: row["path"]))
+
+
+def _episode_camera_sources(
+    file_rows: Sequence[Mapping[str, Any]],
+    *,
+    object_id: str,
+    episode_ids: Sequence[int],
+) -> list[dict[str, Any]]:
+    paths = {str(row["path"]) for row in file_rows}
+    episodes: list[dict[str, Any]] = []
+    for episode_id in episode_ids:
+        camera_rows: list[dict[str, Any]] = []
+        for camera in FROZEN_CAMERA_PANEL:
+            prefix = f"raw/{object_id}/{camera}/"
+            camera_paths = sorted(path for path in paths if path.startswith(prefix))
+            videos = {
+                Path(path).stem: path
+                for path in camera_paths
+                if Path(path).suffix.lower() == ".mp4"
+            }
+            timestamps = {
+                Path(path).stem: path
+                for path in camera_paths
+                if Path(path).suffix.lower() == ".txt"
+            }
+            paired = sorted(set(videos) & set(timestamps))
+            _require(
+                episode_id < len(paired),
+                f"locked episode is absent from camera {camera}",
+            )
+            stem = paired[episode_id]
+            camera_rows.append(
+                {
+                    "camera": camera,
+                    "recording_stem": stem,
+                    "video_path": videos[stem],
+                    "timestamp_path": timestamps[stem],
+                }
+            )
+        episodes.append(
+            {
+                "episode_id": episode_id,
+                "camera_count": len(camera_rows),
+                "cameras": camera_rows,
+            }
+        )
+    return episodes
+
+
+def build_fresh_source_plan(
+    technical_lock_path: str | Path,
+    repository_tree_path: str | Path,
+) -> dict[str, Any]:
+    """Bind the public file index and fixed camera panel before media download."""
+
+    lock = _load_json(technical_lock_path)
+    validate_fresh_technical_lock(lock)
+    try:
+        tree_payload = json.loads(Path(repository_tree_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError("cannot read repository-tree artifact") from exc
+    _require(isinstance(tree_payload, list), "repository tree must be a JSON list")
+    selected = lock["selected_physical_object"]
+    object_id = str(selected["object_id"])
+    rows = _repository_file_rows(tree_payload, object_id=object_id)
+    paths = {str(row["path"]) for row in rows}
+    _require(
+        f"raw/{object_id}/metadata.json" in paths,
+        "locked object metadata is absent from the repository tree",
+    )
+    calibration = sorted(
+        path
+        for path in paths
+        if path.startswith(f"raw/{object_id}/calibration_refined/")
+    )
+    _require(len(calibration) >= 3, "calibration panel is incomplete")
+    valid_episodes = selected["valid_episodes"]
+    episode_ids = [int(row["episode_id"]) for row in valid_episodes]
+    episode_sources = _episode_camera_sources(
+        rows, object_id=object_id, episode_ids=episode_ids
+    )
+    artifact = {
+        "schema_version": 1,
+        "artifact_kind": SOURCE_PLAN_KIND,
+        "protocol_id": "deform360-pairwise-regret-guard-fresh-source-v1",
+        "status": "file_index_locked_before_media_download",
+        "technical_lock_sha256": lock["lock_sha256"],
+        "technical_lock_file_sha256": file_sha256(technical_lock_path),
+        "repository": DATASET_REPOSITORY,
+        "revision": DATASET_REVISION,
+        "object_id": object_id,
+        "metadata_file_sha256": selected["metadata_file_sha256"],
+        "repository_tree_file_sha256": file_sha256(repository_tree_path),
+        "camera_panel": list(FROZEN_CAMERA_PANEL),
+        "episode_sources": episode_sources,
+        "calibration_paths": calibration,
+        "download": {
+            "audio_included": False,
+            "file_count": len(rows),
+            "total_bytes": sum(int(row["size"]) for row in rows),
+            "files": list(rows),
+        },
+        "information_boundary": {
+            "public_repository_file_index_read": True,
+            "episode_media_read": False,
+            "processed_geometry_read": False,
+            "future_object_positions_deserialized": False,
+            "outcome_or_metric_read": False,
+            "held_v8_runtime_or_target_artifact_access": False,
+        },
+    }
+    return _seal(artifact, digest_key="source_plan_sha256")
+
+
+def validate_fresh_source_plan(payload: Mapping[str, Any]) -> None:
+    _require(payload.get("schema_version") == 1, "wrong source-plan schema")
+    _require(payload.get("artifact_kind") == SOURCE_PLAN_KIND, "wrong source-plan kind")
+    _require(
+        payload.get("source_plan_sha256")
+        == _canonical_sha256(payload, digest_key="source_plan_sha256"),
+        "source-plan checksum changed",
+    )
+    _require(
+        payload.get("repository") == DATASET_REPOSITORY
+        and payload.get("revision") == DATASET_REVISION,
+        "source-plan dataset binding changed",
+    )
+    _require(
+        isinstance(payload.get("metadata_file_sha256"), str)
+        and _HEX64.fullmatch(payload["metadata_file_sha256"]) is not None,
+        "source-plan metadata binding changed",
+    )
+    _require(
+        tuple(payload.get("camera_panel", ())) == FROZEN_CAMERA_PANEL,
+        "source-plan camera panel changed",
+    )
+    episodes = payload.get("episode_sources")
+    _require(
+        isinstance(episodes, list)
+        and len(episodes) == 9
+        and all(
+            row.get("camera_count") == len(FROZEN_CAMERA_PANEL)
+            and [camera["camera"] for camera in row.get("cameras", [])]
+            == list(FROZEN_CAMERA_PANEL)
+            for row in episodes
+        ),
+        "source-plan episode camera contract changed",
+    )
+    download = payload.get("download", {})
+    files = download.get("files")
+    _require(
+        isinstance(files, list)
+        and download.get("file_count") == len(files)
+        and download.get("total_bytes")
+        == sum(int(row.get("size", -1)) for row in files)
+        and [row.get("path") for row in files]
+        == sorted({row.get("path") for row in files})
+        and download.get("audio_included") is False,
+        "source-plan download inventory changed",
+    )
+    boundary = payload.get("information_boundary", {})
+    _require(
+        boundary.get("public_repository_file_index_read") is True
+        and boundary.get("episode_media_read") is False
+        and boundary.get("processed_geometry_read") is False
+        and boundary.get("future_object_positions_deserialized") is False
+        and boundary.get("outcome_or_metric_read") is False
+        and boundary.get("held_v8_runtime_or_target_artifact_access") is False,
+        "source plan crossed its source-only boundary",
+    )
+
+
+def build_fresh_download_manifest(
+    source_plan_path: str | Path,
+    download_root: str | Path,
+) -> dict[str, Any]:
+    """Verify every downloaded byte against the locked public source plan."""
+
+    plan = _load_json(source_plan_path)
+    validate_fresh_source_plan(plan)
+    root = Path(download_root).resolve()
+    file_rows: list[dict[str, Any]] = []
+    digest = hashlib.sha256()
+    for expected in plan["download"]["files"]:
+        relative = str(expected["path"])
+        path = root / relative
+        _require(path.is_file(), f"locked source file is missing: {relative}")
+        size = path.stat().st_size
+        _require(size == expected["size"], f"locked source size changed: {relative}")
+        sha256 = file_sha256(path)
+        if relative == f"raw/{plan['object_id']}/metadata.json":
+            _require(
+                sha256 == plan["metadata_file_sha256"],
+                "locked metadata checksum changed during download",
+            )
+        if expected["lfs_sha256"] is not None:
+            _require(
+                sha256 == expected["lfs_sha256"],
+                f"locked LFS source checksum changed: {relative}",
+            )
+        encoded = relative.encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, "little"))
+        digest.update(encoded)
+        digest.update(bytes.fromhex(sha256))
+        file_rows.append({"path": relative, "size": size, "sha256": sha256})
+    artifact = {
+        "schema_version": 1,
+        "artifact_kind": DOWNLOAD_KIND,
+        "source_plan_sha256": plan["source_plan_sha256"],
+        "source_plan_file_sha256": file_sha256(source_plan_path),
+        "repository": plan["repository"],
+        "revision": plan["revision"],
+        "object_id": plan["object_id"],
+        "file_count": len(file_rows),
+        "total_bytes": sum(row["size"] for row in file_rows),
+        "source_tree_sha256": digest.hexdigest(),
+        "files": file_rows,
+        "information_boundary": {
+            "raw_source_bytes_read": True,
+            "future_object_positions_deserialized": False,
+            "processed_geometry_read": False,
+            "outcome_or_metric_read": False,
+            "held_v8_runtime_or_target_artifact_access": False,
+        },
+    }
+    return _seal(artifact, digest_key="download_sha256")
+
+
+def validate_fresh_download_manifest(payload: Mapping[str, Any]) -> None:
+    _require(payload.get("schema_version") == 1, "wrong download schema")
+    _require(payload.get("artifact_kind") == DOWNLOAD_KIND, "wrong download kind")
+    _require(
+        payload.get("download_sha256")
+        == _canonical_sha256(payload, digest_key="download_sha256"),
+        "download checksum changed",
+    )
+    files = payload.get("files")
+    _require(
+        isinstance(files, list)
+        and payload.get("file_count") == len(files)
+        and payload.get("total_bytes") == sum(row.get("size", -1) for row in files)
+        and all(
+            isinstance(row, Mapping)
+            and isinstance(row.get("path"), str)
+            and isinstance(row.get("size"), int)
+            and isinstance(row.get("sha256"), str)
+            and _HEX64.fullmatch(row["sha256"]) is not None
+            for row in files
+        ),
+        "download file inventory changed",
+    )
+    boundary = payload.get("information_boundary", {})
+    _require(
+        boundary.get("raw_source_bytes_read") is True
+        and boundary.get("future_object_positions_deserialized") is False
+        and boundary.get("processed_geometry_read") is False
+        and boundary.get("outcome_or_metric_read") is False
+        and boundary.get("held_v8_runtime_or_target_artifact_access") is False,
+        "download manifest crossed its source boundary",
+    )
+
+
 def write_json_artifact(payload: Mapping[str, Any], path: str | Path) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -657,13 +987,18 @@ def write_json_artifact(payload: Mapping[str, Any], path: str | Path) -> None:
 __all__ = [
     "DEFAULT_EXCLUSION_MANIFEST_SHA256S",
     "FreshTechnicalLockConfig",
+    "FROZEN_CAMERA_PANEL",
     "build_exclusion_union",
+    "build_fresh_download_manifest",
+    "build_fresh_source_plan",
     "build_fresh_technical_lock",
     "default_fresh_technical_lock_config",
     "file_sha256",
     "object_exclusion_hash",
     "validate_exclusion_manifest",
     "validate_exclusion_union",
+    "validate_fresh_download_manifest",
+    "validate_fresh_source_plan",
     "validate_fresh_technical_lock",
     "write_json_artifact",
 ]

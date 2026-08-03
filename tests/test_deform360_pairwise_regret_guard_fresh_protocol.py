@@ -9,14 +9,19 @@ import pytest
 from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_protocol import (
     CATALOG_KIND,
     EXCLUSION_KIND,
+    FROZEN_CAMERA_PANEL,
     HASH_NAMESPACE,
     FreshTechnicalLockConfig,
     _canonical_sha256,
     build_exclusion_union,
+    build_fresh_download_manifest,
+    build_fresh_source_plan,
     build_fresh_technical_lock,
     file_sha256,
     object_exclusion_hash,
     validate_exclusion_union,
+    validate_fresh_download_manifest,
+    validate_fresh_source_plan,
     validate_fresh_technical_lock,
 )
 
@@ -299,8 +304,96 @@ def test_committed_fresh_artifacts_validate() -> None:
             / "configs/sota/deform360_pairwise_regret_guard_fresh_technical_v1.json"
         ).read_text(encoding="utf-8")
     )
+    plan = json.loads(
+        (
+            root
+            / "configs/sota/deform360_pairwise_regret_guard_fresh_source_plan_v1.json"
+        ).read_text(encoding="utf-8")
+    )
     validate_exclusion_union(union)
     validate_fresh_technical_lock(lock)
+    validate_fresh_source_plan(plan)
     assert union["object_hash_count"] == 191
     assert lock["selected_physical_object"]["valid_episode_count"] == 9
     assert lock["selected_physical_object"]["rejected_episode_count"] == 1
+    assert plan["download"]["file_count"] == 828
+
+
+def _real_source_tree(tmp_path: Path) -> Path:
+    object_id = "197-hand-sanitizer"
+    rows: list[dict[str, object]] = [
+        {
+            "type": "file",
+            "oid": "1" * 40,
+            "size": 1,
+            "path": f"raw/{object_id}/metadata.json",
+        }
+    ]
+    for index in range(3):
+        rows.append(
+            {
+                "type": "file",
+                "oid": f"{index + 2:x}" * 40,
+                "size": 1,
+                "path": f"raw/{object_id}/calibration_refined/calibration-{index}.json",
+            }
+        )
+    for camera_index, camera in enumerate(FROZEN_CAMERA_PANEL):
+        for episode_id in range(10):
+            stem = f"{camera}_{episode_id:02d}"
+            for extension in ("mp4", "txt"):
+                rows.append(
+                    {
+                        "type": "file",
+                        "oid": f"{(camera_index + episode_id) % 16:x}" * 40,
+                        "size": 1,
+                        "path": f"raw/{object_id}/{camera}/{stem}.{extension}",
+                    }
+                )
+    path = tmp_path / "tree.json"
+    path.write_text(json.dumps(rows), encoding="utf-8")
+    return path
+
+
+def test_source_plan_uses_fixed_panel_and_skips_invalid_episode(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    lock_path = root / "configs/sota/deform360_pairwise_regret_guard_fresh_technical_v1.json"
+    plan = build_fresh_source_plan(lock_path, _real_source_tree(tmp_path))
+    validate_fresh_source_plan(plan)
+    assert plan["camera_panel"] == list(FROZEN_CAMERA_PANEL)
+    assert [row["episode_id"] for row in plan["episode_sources"]] == [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+    ]
+    assert all(row["camera_count"] == 12 for row in plan["episode_sources"])
+
+
+def test_download_manifest_verifies_locked_inventory(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    lock_path = root / "configs/sota/deform360_pairwise_regret_guard_fresh_technical_v1.json"
+    plan = build_fresh_source_plan(lock_path, _real_source_tree(tmp_path))
+    source_root = tmp_path / "download"
+    metadata_path = source_root / "raw/197-hand-sanitizer/metadata.json"
+    for row in plan["download"]["files"]:
+        path = source_root / row["path"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"x")
+    plan["metadata_file_sha256"] = hashlib.sha256(b"x").hexdigest()
+    plan["source_plan_sha256"] = _canonical_sha256(
+        plan, digest_key="source_plan_sha256"
+    )
+    plan_path = tmp_path / "plan.json"
+    _write(plan_path, plan)
+    manifest = build_fresh_download_manifest(plan_path, source_root)
+    validate_fresh_download_manifest(manifest)
+    assert manifest["file_count"] == len(plan["download"]["files"])
+    metadata_path.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="source size changed|metadata checksum"):
+        build_fresh_download_manifest(plan_path, source_root)

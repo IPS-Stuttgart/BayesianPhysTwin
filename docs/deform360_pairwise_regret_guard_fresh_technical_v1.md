@@ -78,6 +78,23 @@ The source-only technical lock is
 internal SHA-256
 `4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2`.
 
+The public repository file index was then locked, still before downloading any
+episode media, in
+`configs/sota/deform360_pairwise_regret_guard_fresh_source_plan_v1.json`:
+
+| Field | Value |
+|---|---:|
+| Frozen camera panel | 12 cameras |
+| Nonaudio source files | 828 |
+| Download bytes | 759,011,449 |
+| Source-plan SHA-256 | `d1d265dc4dffd89cbd15830e0be22eb609aafad2d27d7ed41e8b2f3e8c17a87d` |
+| Source-plan file SHA-256 | `e129172e96723d009c5491668ecf0a3a25f32689f359731ea4b6e529bb2faa27` |
+
+The 12-camera panel is inherited unchanged from the earlier prospective fresh
+source protocol. Each of the nine valid metadata episodes has one paired RGB
+video and timestamp stream in every panel camera. All public LFS SHA-256 values
+are bound before download.
+
 ## Execution boundary
 
 The execution order is frozen:
