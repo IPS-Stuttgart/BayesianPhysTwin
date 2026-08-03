@@ -78,16 +78,17 @@ The test then verifies:
 Validators remain implemented in their owning repositories. The integration
 test shares only immutable artifacts and expected accept/reject decisions.
 
-## Transfer-safe checkout identity
+## Transfer-Safe Repository Identity
 
-The canonical Prob4D repository is `IPS-Stuttgart/Prob4D`, but the existing
-fine-grained `PROB4D_READ_TOKEN` was authorized before the repository transfer.
-The workflow therefore retains `FlorianPfaff/Prob4D` as the temporary checkout
-coordinate for that credential. GitHub resolves the historical coordinate to
-the same repository ID and commit history.
+The workflow checks out the current canonical repository
+`IPS-Stuttgart/Prob4D`. The historical string `FlorianPfaff/Prob4D` is retained
+only where it is part of a frozen content-addressed observation or provider
+contract. Repository navigation and artifact semantics are therefore kept
+separate.
 
-This checkout alias is not accepted as proof of current project identity. The
-installed wheel must independently report:
+Before checkout, the workflow probes whether `PROB4D_READ_TOKEN` can read the
+canonical repository through the GitHub API. If checkout proceeds, the installed
+wheel must independently report:
 
 ```text
 project_id = github-repository-id:1295794737
@@ -95,12 +96,12 @@ canonical_repository = IPS-Stuttgart/Prob4D
 frozen_artifact_repository = FlorianPfaff/Prob4D
 ```
 
-The exact historical string remains correct inside frozen observation schemas.
-After `PROB4D_READ_TOKEN` is re-authorized for the IPS-Stuttgart organization,
-the checkout coordinate can be changed to the canonical repository without
-changing any artifact, provider, run-manifest, or evidence semantics.
+A repository transfer must not rewrite an existing artifact, provider manifest,
+run manifest, or content identifier. A future artifact schema can bind the stable
+project ID explicitly; current frozen schemas continue to require their exact
+historical source string.
 
-## Triggering and repository refs
+## Triggering and Repository Refs
 
 The workflow runs for relevant BayesianPhysTwin pull requests and `main` changes,
 weekly on schedule, manually, and for the repository-dispatch event types:
@@ -117,9 +118,7 @@ for a specific producer commit is not silently replaced by an unrelated ref.
 
 The receiver alone does not grant another repository permission to dispatch.
 A producer-side workflow or operator must use a credential that can invoke
-repository dispatch on `IPS-Stuttgart/BayesianPhysTwin`. Scheduled and manual
-runs remain the fail-closed fallback when that organization credential is not
-configured.
+repository dispatch on `IPS-Stuttgart/BayesianPhysTwin`.
 
 ## Local Execution
 
@@ -139,15 +138,18 @@ exit.
 
 ## GitHub Actions Credential Policy
 
-Configure a BayesianPhysTwin repository secret named `PROB4D_READ_TOKEN`. During
-the transfer migration, it must retain read access through the historical
-checkout coordinate. The installed-wheel identity test prevents that coordinate
-from being confused with the current canonical project identity.
+Configure a BayesianPhysTwin repository secret named `PROB4D_READ_TOKEN` with
+read-only contents access to `IPS-Stuttgart/Prob4D`.
 
-Trusted same-repository pull requests, `main`, scheduled, manual, and
-repository-dispatch runs must execute the credentialed installed-wheel path or
-fail. This prevents a green trusted result from meaning that no producer
-checkout, wheel, or test ran. External-fork pull requests cannot receive
-repository secrets; they still run the producer-neutral consumer fixture and
-receive an explicit private-gate-unavailable result that admits no current
-Prob4D evidence.
+Relevant pull requests and `main` pushes always execute the producer-neutral
+consumer fixture. When the access probe succeeds, they also execute the
+credentialed installed-wheel path. When the token is missing, stale, or
+unauthorized, continuous PR and `main` runs emit an explicit warning and admit no
+current-Prob4D evidence; they do not silently label the fixture as a full
+three-repository result.
+
+Scheduled, manual, and repository-dispatch runs are explicit compatibility
+validation events. They fail closed when the token cannot read the canonical
+Prob4D repository. External-fork pull requests cannot receive repository secrets,
+so they run only the producer-neutral fixture and receive the same explicit
+no-current-Prob4D-evidence status.
