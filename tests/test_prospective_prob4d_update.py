@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-
 import bayesian_phystwin.prospective_prob4d_update as update_module
 from bayesian_phystwin import GaugeAwareBeliefResult
 from bayesian_phystwin.prospective_prob4d_update import (
