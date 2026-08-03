@@ -1,5 +1,9 @@
 import copy
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -7,12 +11,16 @@ import pytest
 from bayesian_phystwin._gauge_aware_contracts import GaugeAwareObservationBatch
 from bayesian_phystwin.complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
+    CompleteBeliefSelectionV1,
     select_complete_belief,
 )
 from bayesian_phystwin.physical_linearization import (
+    PHYSICAL_LINEARIZATION_SCHEMA,
     NonlinearClosureV1,
     PhysicalLinearizationV1,
     evaluate_nonlinear_closure,
+    load_physical_linearization,
+    save_physical_linearization,
     validate_observation_linearization_alignment,
 )
 from bayesian_phystwin.prior_aware_gauge_belief import (
@@ -127,6 +135,25 @@ def _linearization() -> PhysicalLinearizationV1:
     )
 
 
+def _write_linearization_archive(
+    path: Path,
+    descriptor: Mapping[str, Any],
+    arrays: Mapping[str, np.ndarray],
+) -> None:
+    payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
+            json.dumps(
+                dict(descriptor),
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+        )
+    }
+    payload.update(arrays)
+    np.savez_compressed(path, **payload)
+
+
 def test_linearization_rejects_row_permutation() -> None:
     linearization = _linearization()
     permutation = np.asarray([1, 0, 2])
@@ -138,6 +165,20 @@ def test_linearization_rejects_row_permutation() -> None:
         window_indices=linearization.window_indices[permutation],
     )
     with pytest.raises(ValueError, match="differ"):
+        validate_observation_linearization_alignment(observation, linearization)
+
+
+def test_linearization_rejects_artifact_mismatch() -> None:
+    linearization = _linearization()
+    observation = Observation(
+        artifact_id="0" * 64,
+        frame_ids=linearization.frame_ids,
+        entity_ids=linearization.entity_ids,
+        view_indices=linearization.view_indices,
+        window_indices=linearization.window_indices,
+    )
+
+    with pytest.raises(ValueError, match="does not identify"):
         validate_observation_linearization_alignment(observation, linearization)
 
 
@@ -158,6 +199,43 @@ def test_linearization_rejects_lossy_integer_identity_coercion(field: str) -> No
             **{
                 **source.__dict__,
                 field: values,
+            }
+        )
+
+
+def test_linearization_rejects_nonvector_frame_ids() -> None:
+    source = _linearization()
+
+    with pytest.raises(ValueError, match="frame_ids must have shape"):
+        PhysicalLinearizationV1(
+            **{
+                **source.__dict__,
+                "frame_ids": np.asarray([[1, 1, 2]], dtype=np.int64),
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("observation_artifact_id", "invalid", "lowercase SHA-256"),
+        ("baseline_belief_id", cast(str, 1), "lowercase SHA-256"),
+        ("simulator_revision", "", "simulator_revision must be nonempty"),
+        ("simulator_revision", cast(str, 1), "simulator_revision must be nonempty"),
+    ),
+)
+def test_linearization_rejects_invalid_descriptor_fields(
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    source = _linearization()
+
+    with pytest.raises(ValueError, match=message):
+        PhysicalLinearizationV1(
+            **{
+                **source.__dict__,
+                field: value,
             }
         )
 
@@ -184,6 +262,74 @@ def test_linearization_metadata_is_deeply_immutable_and_id_stable() -> None:
     copied = copy.deepcopy(linearization.metadata)
     copied["nested"]["items"].append("copy-only")
     assert "copy-only" not in linearization.metadata["nested"]["items"]
+
+
+def test_linearization_round_trip_revalidates_content_address(tmp_path: Path) -> None:
+    source = _linearization()
+    path = tmp_path / "linearization.npz"
+
+    save_physical_linearization(path, source)
+    restored = load_physical_linearization(path)
+
+    assert restored.artifact_id == source.artifact_id
+    np.testing.assert_array_equal(restored.frame_ids, source.frame_ids)
+    assert not restored.state_jacobian.flags.writeable
+
+
+def test_linearization_loader_rejects_missing_descriptor(tmp_path: Path) -> None:
+    path = tmp_path / "missing-descriptor.npz"
+    np.savez_compressed(path, frame_ids=np.asarray([1], dtype=np.int64))
+
+    with pytest.raises(ValueError, match="no descriptor_json"):
+        load_physical_linearization(path)
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    (
+        ({"schema_name": "unsupported"}, "unsupported physical-linearization schema"),
+        ({"schema_version": 2}, "unsupported physical-linearization version"),
+        ({"schema_version": True}, "schema_version must be an integer"),
+    ),
+)
+def test_linearization_loader_rejects_descriptor_drift(
+    tmp_path: Path,
+    changes: Mapping[str, Any],
+    message: str,
+) -> None:
+    source = _linearization()
+    descriptor = {
+        **source.descriptor(),
+        "artifact_id": source.artifact_id,
+        **changes,
+    }
+    path = tmp_path / "descriptor-drift.npz"
+    _write_linearization_archive(path, descriptor, source.arrays())
+
+    with pytest.raises(ValueError, match=message):
+        load_physical_linearization(path)
+
+
+def test_linearization_loader_rejects_array_set_drift(tmp_path: Path) -> None:
+    source = _linearization()
+    descriptor = {**source.descriptor(), "artifact_id": source.artifact_id}
+    arrays = source.arrays()
+    arrays.pop("physical_response_m")
+    path = tmp_path / "array-drift.npz"
+    _write_linearization_archive(path, descriptor, arrays)
+
+    with pytest.raises(ValueError, match="array set changed"):
+        load_physical_linearization(path)
+
+
+def test_linearization_loader_rejects_payload_digest_mismatch(tmp_path: Path) -> None:
+    source = _linearization()
+    descriptor = {**source.descriptor(), "artifact_id": "0" * 64}
+    path = tmp_path / "digest-mismatch.npz"
+    _write_linearization_archive(path, descriptor, source.arrays())
+
+    with pytest.raises(ValueError, match="digest does not match"):
+        load_physical_linearization(path)
 
 
 def test_nonlinear_closure_fails_large_remainder() -> None:
@@ -231,7 +377,44 @@ def test_nonlinear_closure_requires_a_genuine_boolean_decision() -> None:
             relative_error=0.0,
             absolute_tolerance_m=0.0,
             relative_tolerance=0.0,
-            candidate_valid=1,
+            candidate_valid=cast(bool, 1),
+        )
+
+
+def test_nonlinear_closure_rejects_inconsistent_decision() -> None:
+    with pytest.raises(ValueError, match="does not match"):
+        NonlinearClosureV1(
+            linearization_artifact_id=A,
+            absolute_error_m=0.0,
+            relative_error=0.0,
+            absolute_tolerance_m=0.0,
+            relative_tolerance=0.0,
+            candidate_valid=False,
+        )
+
+
+@pytest.mark.parametrize(
+    ("absolute_tolerance", "relative_tolerance", "floor"),
+    (
+        (-1.0, 0.0, 1e-12),
+        (0.0, np.nan, 1e-12),
+        (0.0, 0.0, 0.0),
+    ),
+)
+def test_nonlinear_closure_rejects_invalid_tolerances(
+    absolute_tolerance: float,
+    relative_tolerance: float,
+    floor: float,
+) -> None:
+    with pytest.raises(ValueError, match="closure tolerances"):
+        evaluate_nonlinear_closure(
+            A,
+            baseline_query_m=np.zeros((1, 3)),
+            linearized_query_m=np.zeros((1, 3)),
+            nonlinear_query_m=np.zeros((1, 3)),
+            absolute_tolerance_m=absolute_tolerance,
+            relative_tolerance=relative_tolerance,
+            denominator_floor_m=floor,
         )
 
 
@@ -245,16 +428,17 @@ def _guard_decision(
     *,
     inference_admissible: object = True,
     regret_guard_accepted: object = False,
-    metadata: object | None = None,
+    reason: object = "source certificate rejected",
+    metadata: Mapping[str, Any] | None = None,
 ) -> CompleteBeliefGuardDecisionV1:
     return CompleteBeliefGuardDecisionV1(
         baseline_belief_id="d" * 64,
         candidate_belief_id="e" * 64,
         common_domain_id="f" * 64,
         certificate_id="9" * 64,
-        inference_admissible=inference_admissible,
-        regret_guard_accepted=regret_guard_accepted,
-        reason="source certificate rejected",
+        inference_admissible=cast(bool, inference_admissible),
+        regret_guard_accepted=cast(bool, regret_guard_accepted),
+        reason=cast(str, reason),
         metadata={} if metadata is None else metadata,
     )
 
@@ -270,6 +454,38 @@ def test_complete_belief_fallback_reuses_exact_baseline_object() -> None:
     assert selected is baseline
     assert manifest.selected_belief_id == baseline.artifact_id
     assert not manifest.selected_candidate
+
+
+def test_complete_belief_accepts_candidate_only_after_both_gates() -> None:
+    baseline = Belief("d" * 64, np.asarray([0.0]))
+    candidate = Belief("e" * 64, np.asarray([1.0]))
+
+    selected, manifest = select_complete_belief(
+        baseline,
+        candidate,
+        _guard_decision(
+            inference_admissible=True,
+            regret_guard_accepted=True,
+        ),
+    )
+
+    assert selected is candidate
+    assert manifest.selected_candidate
+    assert manifest.reason == "guard-accepted"
+
+
+def test_complete_belief_reports_numerical_rejection() -> None:
+    baseline = Belief("d" * 64, np.asarray([0.0]))
+    candidate = Belief("e" * 64, np.asarray([1.0]))
+
+    selected, manifest = select_complete_belief(
+        baseline,
+        candidate,
+        _guard_decision(inference_admissible=False),
+    )
+
+    assert selected is baseline
+    assert manifest.reason == "inference-rejected"
 
 
 @pytest.mark.parametrize(
@@ -291,6 +507,63 @@ def test_complete_belief_guard_requires_genuine_booleans(
     }
     with pytest.raises(ValueError, match=f"{field} must be a boolean"):
         _guard_decision(**settings)
+
+
+@pytest.mark.parametrize("reason", ("", 1))
+def test_complete_belief_guard_rejects_invalid_reason(reason: object) -> None:
+    with pytest.raises(ValueError, match="reason must be nonempty"):
+        _guard_decision(reason=reason)
+
+
+def test_complete_belief_guard_rejects_acceptance_after_inference_failure() -> None:
+    with pytest.raises(ValueError, match="requires inference_admissible"):
+        _guard_decision(
+            inference_admissible=False,
+            regret_guard_accepted=True,
+        )
+
+
+def test_complete_belief_selection_rejects_unbound_beliefs() -> None:
+    baseline = Belief("0" * 64, np.asarray([0.0]))
+    candidate = Belief("e" * 64, np.asarray([1.0]))
+
+    with pytest.raises(ValueError, match="does not bind the baseline"):
+        select_complete_belief(baseline, candidate, _guard_decision())
+
+    baseline = Belief("d" * 64, np.asarray([0.0]))
+    candidate = Belief("0" * 64, np.asarray([1.0]))
+    with pytest.raises(ValueError, match="does not bind the candidate"):
+        select_complete_belief(baseline, candidate, _guard_decision())
+
+
+def test_complete_belief_selection_contract_rejects_contradictions() -> None:
+    decision = _guard_decision()
+    base = {
+        "baseline_belief_id": "d" * 64,
+        "candidate_belief_id": "e" * 64,
+        "common_domain_id": "f" * 64,
+        "guard_decision_id": decision.decision_id,
+        "selected_belief_id": "d" * 64,
+        "selected_candidate": False,
+        "reason": "regret-guard-rejected",
+    }
+
+    with pytest.raises(ValueError, match="contradicts routing decision"):
+        CompleteBeliefSelectionV1(
+            **{
+                **base,
+                "selected_belief_id": "e" * 64,
+            }
+        )
+    with pytest.raises(ValueError, match="reason must be nonempty"):
+        CompleteBeliefSelectionV1(**{**base, "reason": ""})
+    with pytest.raises(ValueError, match="selected_candidate must be a boolean"):
+        CompleteBeliefSelectionV1(
+            **{
+                **base,
+                "selected_candidate": cast(bool, 0),
+            }
+        )
 
 
 def test_complete_belief_metadata_is_immutable_and_ids_are_stable() -> None:
