@@ -1,0 +1,37 @@
+name: Temporary formatter for PR 96
+
+on:
+  push:
+    branches:
+      - agent/separate-grouped-likelihood-semantics
+    paths:
+      - .github/workflows/temporary-format-pr96.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/separate-grouped-likelihood-semantics
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - run: |
+          python -m ruff format \
+            src/bayesian_phystwin/grouped_likelihood.py \
+            tests/test_grouped_likelihood.py
+          rm .github/workflows/temporary-format-pr96.yml
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/bayesian_phystwin/grouped_likelihood.py tests/test_grouped_likelihood.py .github/workflows/temporary-format-pr96.yml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Apply Ruff formatting to grouped likelihood semantics"
+          git push origin HEAD:agent/separate-grouped-likelihood-semantics
