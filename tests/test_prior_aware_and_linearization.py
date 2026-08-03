@@ -15,7 +15,6 @@ from bayesian_phystwin.complete_belief_selection import (
     select_complete_belief,
 )
 from bayesian_phystwin.physical_linearization import (
-    PHYSICAL_LINEARIZATION_SCHEMA,
     NonlinearClosureV1,
     PhysicalLinearizationV1,
     evaluate_nonlinear_closure,
