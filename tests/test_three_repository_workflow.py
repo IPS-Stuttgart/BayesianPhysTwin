@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "three-repository-golden-path.yml"
 
 
-def test_three_repository_workflow_uses_canonical_repositories() -> None:
+def test_three_repository_workflow_uses_transfer_safe_repositories() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
-    assert "repository: IPS-Stuttgart/Prob4D" in text
     assert "repository: IPS-Stuttgart/Causal4D" in text
-    assert "repository: FlorianPfaff/Prob4D" not in text
+    assert "PROB4D_CHECKOUT_REPOSITORY: FlorianPfaff/Prob4D" in text
+    assert "repository: ${{ env.PROB4D_CHECKOUT_REPOSITORY }}" in text
     assert "repository: FlorianPfaff/Causal4D" not in text
 
 
