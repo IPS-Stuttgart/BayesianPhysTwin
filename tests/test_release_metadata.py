@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from importlib import metadata, resources
+from importlib.metadata import metadata, version
+from importlib.util import find_spec
 from pathlib import Path
 
 
@@ -36,31 +37,33 @@ def test_release_metadata_files_are_present() -> None:
 
 
 def test_citation_matches_installed_distribution() -> None:
-    assert _cff_scalar("version") == metadata.version(DISTRIBUTION_NAME)
+    assert _cff_scalar("version") == version(DISTRIBUTION_NAME)
     assert _cff_scalar("license") == "MIT"
     assert _cff_scalar("repository-code") == REPOSITORY_URL
     assert _cff_scalar("url") == REPOSITORY_URL
 
 
 def test_distribution_uses_canonical_project_urls() -> None:
-    package_metadata = metadata.metadata(DISTRIBUTION_NAME)
+    package_metadata = metadata(DISTRIBUTION_NAME)
     project_urls = set(package_metadata.get_all("Project-URL") or ())
     assert f"Repository, {REPOSITORY_URL}" in project_urls
     assert f"Issues, {REPOSITORY_URL}/issues" in project_urls
 
 
 def test_distribution_declares_spdx_license_expression() -> None:
-    package_metadata = metadata.metadata(DISTRIBUTION_NAME)
+    package_metadata = metadata(DISTRIBUTION_NAME)
     assert package_metadata["License-Expression"] == "MIT"
     license_files = set(package_metadata.get_all("License-File") or ())
     assert {"LICENSE", "THIRD_PARTY_NOTICES.md"} <= license_files
 
 
 def test_distribution_contains_pep561_typing_marker() -> None:
-    package_metadata = metadata.metadata(DISTRIBUTION_NAME)
+    package_metadata = metadata(DISTRIBUTION_NAME)
     classifiers = set(package_metadata.get_all("Classifier") or ())
     assert "Typing :: Typed" in classifiers
-    marker = resources.files("bayesian_phystwin").joinpath("py.typed")
+    spec = find_spec("bayesian_phystwin")
+    assert spec is not None and spec.origin is not None
+    marker = Path(spec.origin).with_name("py.typed")
     assert marker.is_file()
 
 
