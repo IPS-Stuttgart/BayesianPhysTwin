@@ -9,6 +9,7 @@ on:
       - "tests/fixtures/prob4d_joint_observation_v1.json"
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_three_repository_workflow.py"
       - "docs/three_repository_golden_path.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
@@ -42,6 +43,7 @@ on:
       - "tests/fixtures/prob4d_joint_observation_v1.json"
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_three_repository_workflow.py"
       - "docs/three_repository_golden_path.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
@@ -66,6 +68,10 @@ on:
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
       - "src/bayesian_phystwin/run_manifest_v2.py"
+  repository_dispatch:
+    types:
+      - prob4d-compatibility
+      - causal4d-compatibility
   workflow_dispatch:
     inputs:
       prob4d_ref:
@@ -83,8 +89,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: three-repository-golden-path-${{ github.workflow }}-${{ github.ref }}
+  group: >-
+    three-repository-golden-path-${{ github.workflow }}-${{ github.ref }}-
+    ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}-
+    ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
   cancel-in-progress: true
+
+env:
+  PROB4D_REF: >-
+    ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}
+  CAUSAL4D_REF: >-
+    ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
+  PROB4D_CHECKOUT_REPOSITORY: IPS-Stuttgart/Prob4D
 
 jobs:
   consumer-contract-fixture:
@@ -93,21 +109,21 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Check out Bayesian-PhysTwin
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: bayesian-phystwin
           persist-credentials: false
 
       - name: Check out public Causal4D consumer
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Causal4D
-          ref: ${{ inputs.causal4d_ref || 'main' }}
+          ref: ${{ env.CAUSAL4D_REF }}
           path: causal4d
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -125,7 +141,8 @@ jobs:
         run: |
           python -m pytest -q \
             bayesian-phystwin/tests/test_prob4d_joint_contract_fixture.py \
-            bayesian-phystwin/tests/test_prob4d_causal_lineage.py
+            bayesian-phystwin/tests/test_prob4d_causal_lineage.py \
+            bayesian-phystwin/tests/test_three_repository_workflow.py
 
       - name: Validate the Causal4D consumer fixture
         run: |
@@ -139,9 +156,11 @@ jobs:
           {
             echo "### Always-executed consumer contract fixture"
             echo
-            echo "Bayesian-PhysTwin and Causal4D independently validated the checked-in observation fixture."
+            echo "BayesianPhysTwin and Causal4D independently validated the checked-in observation fixture."
             echo "This detects consumer/schema drift but does not claim that the"
             echo "current private Prob4D revision executed."
+            echo
+            echo "Causal4D ref: \`${CAUSAL4D_REF}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   installed-wheel-golden-path:
@@ -152,63 +171,96 @@ jobs:
     env:
       PROB4D_READ_TOKEN: ${{ secrets.PROB4D_READ_TOKEN }}
     steps:
-      - name: Report unavailable Prob4D credential for external forks
+      - name: Probe Prob4D repository access
+        id: prob4d-access
+        shell: bash
+        env:
+          TOKEN: ${{ env.PROB4D_READ_TOKEN }}
+        run: |
+          if [[ -z "${TOKEN}" ]]; then
+            status="missing"
+          else
+            http_status="$(
+              curl --silent --show-error \
+                --output /dev/null \
+                --write-out '%{http_code}' \
+                --header "Authorization: Bearer ${TOKEN}" \
+                --header "Accept: application/vnd.github+json" \
+                --header "X-GitHub-Api-Version: 2022-11-28" \
+                https://api.github.com/repos/IPS-Stuttgart/Prob4D \
+                || true
+            )"
+            case "${http_status}" in
+              200) status="available" ;;
+              401|403|404) status="inaccessible-${http_status}" ;;
+              *) status="transport-${http_status:-unknown}" ;;
+            esac
+          fi
+          if [[ "${status}" == "available" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "status=${status}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Record unavailable credentialed gate on continuous events
         if: >-
-          env.PROB4D_READ_TOKEN == '' &&
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name != github.repository
+          steps.prob4d-access.outputs.available != 'true' &&
+          (github.event_name == 'pull_request' || github.event_name == 'push')
         shell: bash
         run: |
-          echo "::warning title=Credentialed three-repository gate unavailable for external fork::" \
-            "GitHub withholds PROB4D_READ_TOKEN from fork pull requests."
+          echo "::warning title=Credentialed three-repository gate unavailable::" \
+            "PROB4D_READ_TOKEN is missing or cannot read IPS-Stuttgart/Prob4D."
           {
             echo "### Credentialed three-repository gate unavailable"
             echo
-            echo "GitHub withholds repository secrets from external-fork pull requests."
-            echo "The always-executed consumer fixture passed separately, but"
-            echo "no current-Prob4D evidence is admitted."
+            echo "Status: \`${{ steps.prob4d-access.outputs.status }}\`"
+            echo
+            echo "The always-executed BayesianPhysTwin + Causal4D consumer fixture"
+            echo "passed separately, but no current-Prob4D execution is admitted."
+            echo "Scheduled, manual, and repository-dispatch validation remains fail-closed."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Reject missing Prob4D credential on trusted events
+      - name: Reject unavailable credentialed gate on explicit validation events
         if: >-
-          env.PROB4D_READ_TOKEN == '' &&
-          (github.event_name != 'pull_request' ||
-           github.event.pull_request.head.repo.full_name == github.repository)
+          steps.prob4d-access.outputs.available != 'true' &&
+          github.event_name != 'pull_request' &&
+          github.event_name != 'push'
         shell: bash
         run: |
           echo "::error title=Three-repository gate unavailable::" \
-            "PROB4D_READ_TOKEN is required for trusted pull requests, main, scheduled, and manual runs."
+            "PROB4D_READ_TOKEN must read IPS-Stuttgart/Prob4D for scheduled, manual, and repository-dispatch validation."
           exit 1
 
       - name: Check out Bayesian-PhysTwin
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/checkout@v7
+        if: steps.prob4d-access.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: bayesian-phystwin
           persist-credentials: false
 
       - name: Check out Prob4D
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/checkout@v7
+        if: steps.prob4d-access.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: IPS-Stuttgart/Prob4D
-          ref: ${{ inputs.prob4d_ref || 'main' }}
+          repository: ${{ env.PROB4D_CHECKOUT_REPOSITORY }}
+          ref: ${{ env.PROB4D_REF }}
           path: prob4d
           token: ${{ env.PROB4D_READ_TOKEN }}
           persist-credentials: false
 
       - name: Check out Causal4D
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/checkout@v7
+        if: steps.prob4d-access.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Causal4D
-          ref: ${{ inputs.causal4d_ref || 'main' }}
+          ref: ${{ env.CAUSAL4D_REF }}
           path: causal4d
           persist-credentials: false
 
       - name: Set up Python
-        if: env.PROB4D_READ_TOKEN != ''
-        uses: actions/setup-python@v6
+        if: steps.prob4d-access.outputs.available == 'true'
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -218,9 +270,22 @@ jobs:
             causal4d/pyproject.toml
 
       - name: Build, install, and execute the isolated golden path
-        if: env.PROB4D_READ_TOKEN != ''
+        if: steps.prob4d-access.outputs.available == 'true'
         run: |
           bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
             bayesian-phystwin \
             prob4d \
             causal4d
+
+      - name: Record tested repository refs
+        if: steps.prob4d-access.outputs.available == 'true'
+        run: |
+          {
+            echo "### Tested repository refs"
+            echo
+            echo "- Prob4D ref: \`${PROB4D_REF}\`"
+            echo "- Prob4D checkout repository: \`${PROB4D_CHECKOUT_REPOSITORY}\`"
+            echo "- Prob4D project identity: \`github-repository-id:1295794737\`"
+            echo "- BayesianPhysTwin: \`${GITHUB_SHA}\`"
+            echo "- Causal4D: \`${CAUSAL4D_REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
