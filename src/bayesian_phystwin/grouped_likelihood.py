@@ -17,9 +17,7 @@ from ._prior_aware_gauge_math import (
 )
 from .observation_belief import ObservationBeliefV1
 
-COVARIANCE_MARGINAL_SCORE_SEMANTICS = (
-    "covariance-marginalized-student-t-score-v1"
-)
+COVARIANCE_MARGINAL_SCORE_SEMANTICS = "covariance-marginalized-student-t-score-v1"
 CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS = (
     "conditional-reliability-weighted-student-t-objective-v1"
 )
@@ -86,9 +84,7 @@ class ConditionalGroupedStudentTObjectiveConfig:
         if not np.isfinite(self.effective_samples_per_correlation_group) or (
             self.effective_samples_per_correlation_group <= 0.0
         ):
-            raise ValueError(
-                "effective_samples_per_correlation_group must be positive"
-            )
+            raise ValueError("effective_samples_per_correlation_group must be positive")
         if (
             self.composite_weight_mode is not None
             and self.composite_weight_mode not in _COMPOSITE_WEIGHT_MODES
@@ -504,7 +500,9 @@ def conditional_grouped_student_t_mixture_objective(
             group_power[position] = raw_composite
         else:
             cap = settings.effective_samples_per_correlation_group
-            group_power[position] = raw_composite * min(cap, active_count) / active_count
+            group_power[position] = (
+                raw_composite * min(cap, active_count) / active_count
+            )
         statistics = _student_t_mixture_statistics(
             float(mahalanobis[position]),
             int(dimensions[position]),

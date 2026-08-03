@@ -282,10 +282,7 @@ def test_conditional_objective_matches_prior_aware_mixture_kernel() -> None:
     residual = belief.mean_xyz_m[:2] - predicted[:2]
     whitened = residual / 0.01
     expected_mahalanobis = float(
-        np.sum(
-            belief.prior_reliability[:2]
-            * np.sum(np.square(whitened), axis=1)
-        )
+        np.sum(belief.prior_reliability[:2] * np.sum(np.square(whitened), axis=1))
     )
     statistics = _student_t_mixture_statistics(
         expected_mahalanobis,
@@ -353,9 +350,7 @@ def test_zero_reliability_row_is_fully_inert_for_conditional_objective() -> None
 
 
 def test_unsupported_conditional_group_is_exactly_inert() -> None:
-    belief = _replace_belief(
-        prior_reliability=np.asarray([0.0, 0.0, 0.7, 0.6])
-    )
+    belief = _replace_belief(prior_reliability=np.asarray([0.0, 0.0, 0.7, 0.6]))
     predicted = belief.mean_xyz_m.copy()
     predicted[:2] += 100.0
 
