@@ -6,8 +6,6 @@ import importlib
 import re
 from pathlib import Path
 
-import bayesian_phystwin
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DISTRIBUTION_NAME = "bayesian-phystwin"
@@ -63,9 +61,7 @@ def test_distribution_contains_pep561_typing_marker() -> None:
     package_metadata = _METADATA.metadata(DISTRIBUTION_NAME)
     classifiers = set(package_metadata.get_all("Classifier") or ())
     assert "Typing :: Typed" in classifiers
-    package_file = bayesian_phystwin.__file__
-    assert package_file is not None
-    marker = Path(package_file).with_name("py.typed")
+    marker = ROOT / "src" / "bayesian_phystwin" / "py.typed"
     assert marker.is_file()
 
 
