@@ -1,0 +1,51 @@
+name: Temporary retarget model-average diagnostic
+
+on:
+  push:
+    branches:
+      - agent/full22-endpoint-model-average-diagnostic
+    paths:
+      - .github/workflows/temporary-retarget-model-average-diagnostic.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-retarget-model-average-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  retarget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out diagnostic branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-endpoint-model-average-diagnostic
+          fetch-depth: 0
+      - name: Retarget active pull-request workflows to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/agent\/prospective-belief-hardening/main/g' \
+            .github/workflows/full22-model-average-hosted-reference.yml \
+            .github/workflows/full22-model-average-science.yml
+          grep -n 'branches:' -A2 \
+            .github/workflows/full22-model-average-hosted-reference.yml \
+            .github/workflows/full22-model-average-science.yml
+          if grep -R 'agent/prospective-belief-hardening' \
+            .github/workflows/full22-model-average-hosted-reference.yml \
+            .github/workflows/full22-model-average-science.yml
+          then
+            echo 'stale base branch remains' >&2
+            exit 1
+          fi
+          git diff --check
+          git config user.name "OpenAI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/full22-model-average-hosted-reference.yml \
+            .github/workflows/full22-model-average-science.yml
+          git commit -m "Retarget model-average diagnostics to main"
+          git push origin HEAD:agent/full22-endpoint-model-average-diagnostic
