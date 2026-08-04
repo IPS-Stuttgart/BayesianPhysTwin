@@ -46,9 +46,7 @@ PROB4D_FACTOR_BUNDLE_SCHEMA_VERSION = 4
 PROB4D_FROZEN_FACTOR_REPOSITORY = "FlorianPfaff/Prob4D"
 DEFAULT_MAXIMUM_DENSE_GAUGE_DESIGN_BYTES = 256 * 1024 * 1024
 
-_CALIBRATION_FIELDS = frozenset(
-    {"gauge_artifact_id", "point_artifact_id"}
-)
+_CALIBRATION_FIELDS = frozenset({"gauge_artifact_id", "point_artifact_id"})
 
 
 class _GaugeDescriptor(Protocol):
@@ -147,9 +145,7 @@ def _require_integer(
     name: str,
     minimum: int | None = None,
 ) -> int:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(
-        value, (int, np.integer)
-    ):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
         raise TypeError(f"{name} must be a genuine integer")
     result = int(value)
     if minimum is not None and result < minimum:
@@ -185,18 +181,14 @@ def _calibration_ids(value: object) -> Mapping[str, str]:
 def _string_tuple(value: object, *, name: str) -> tuple[str, ...]:
     if not isinstance(value, (list, tuple)) or not value:
         raise TypeError(f"{name} must be a nonempty list or tuple")
-    return tuple(
-        _require_string(item, name=f"{name} item") for item in value
-    )
+    return tuple(_require_string(item, name=f"{name} item") for item in value)
 
 
 def _array_sha256(value: np.ndarray) -> str:
     array = np.ascontiguousarray(np.asarray(value))
     digest = hashlib.sha256()
     digest.update(array.dtype.str.encode("ascii"))
-    digest.update(
-        json.dumps(array.shape, separators=(",", ":")).encode("ascii")
-    )
+    digest.update(json.dumps(array.shape, separators=(",", ":")).encode("ascii"))
     digest.update(array.view(np.uint8))
     return digest.hexdigest()
 
@@ -231,9 +223,7 @@ def _validate_provider_attestation(
         raise ValueError(
             "provider attestation manifest differs from the factor envelope"
         )
-    attested_calibration = _calibration_ids(
-        attestation.get("calibration_artifact_ids")
-    )
+    attested_calibration = _calibration_ids(attestation.get("calibration_artifact_ids"))
     if dict(attested_calibration) != dict(calibration_ids):
         raise ValueError(
             "provider attestation calibration IDs differ from the factor envelope"
@@ -243,13 +233,9 @@ def _validate_provider_attestation(
         name="provider runtime revision",
     )
     if runtime.get("source") != runtime_source:
-        raise ValueError(
-            "provider runtime source differs from the factor envelope"
-        )
+        raise ValueError("provider runtime source differs from the factor envelope")
     if runtime.get("independently_verified") is not True:
-        raise ValueError(
-            "provider runtime revision is not independently verified"
-        )
+        raise ValueError("provider runtime revision is not independently verified")
 
 
 def _validate_envelope_and_bundle(
@@ -268,18 +254,22 @@ def _validate_envelope_and_bundle(
         envelope.artifact_id,
         name="factor envelope artifact_id",
     )
-    if _require_sha256(
-        validated_bundle.artifact_id,
-        name="validated factor artifact_id",
-    ) != artifact_id:
-        raise ValueError(
-            "validated factor artifact ID differs from its envelope"
+    if (
+        _require_sha256(
+            validated_bundle.artifact_id,
+            name="validated factor artifact_id",
         )
-    if _require_integer(
-        envelope.bundle_schema_version,
-        name="bundle_schema_version",
-        minimum=1,
-    ) != PROB4D_FACTOR_BUNDLE_SCHEMA_VERSION:
+        != artifact_id
+    ):
+        raise ValueError("validated factor artifact ID differs from its envelope")
+    if (
+        _require_integer(
+            envelope.bundle_schema_version,
+            name="bundle_schema_version",
+            minimum=1,
+        )
+        != PROB4D_FACTOR_BUNDLE_SCHEMA_VERSION
+    ):
         raise ValueError("claim-bearing factors require schema version 4")
     repository = _require_string(
         envelope.source_repository,
@@ -316,16 +306,12 @@ def _validate_envelope_and_bundle(
             "claim-bearing explicit gauges require joint cross-window covariance"
         )
     if envelope.cross_window_gauge_covariance_preserved is not True:
-        raise ValueError(
-            "claim-bearing explicit gauges lost cross-window covariance"
-        )
+        raise ValueError("claim-bearing explicit gauges lost cross-window covariance")
     provider_manifest_id = _require_sha256(
         envelope.provider_manifest_id,
         name="provider_manifest_id",
     )
-    calibration_ids = _calibration_ids(
-        envelope.calibration_artifact_ids
-    )
+    calibration_ids = _calibration_ids(envelope.calibration_artifact_ids)
     runtime_source = _require_string(
         envelope.runtime_revision_source,
         name="runtime_revision_source",
@@ -358,14 +344,15 @@ def _validate_envelope_and_bundle(
     for name, expected in expected_strings.items():
         if getattr(bundle, name) != expected:
             raise ValueError(f"factor bundle differs from envelope field {name}")
-    if _require_integer(
-        bundle.causal_frame_stop,
-        name="bundle causal_frame_stop",
-        minimum=1,
-    ) != causal_frame_stop:
-        raise ValueError(
-            "factor bundle differs from envelope causal_frame_stop"
+    if (
+        _require_integer(
+            bundle.causal_frame_stop,
+            name="bundle causal_frame_stop",
+            minimum=1,
         )
+        != causal_frame_stop
+    ):
+        raise ValueError("factor bundle differs from envelope causal_frame_stop")
     if len(bundle.factors) != factor_count:
         raise ValueError("factor bundle differs from envelope factor_count")
     bundle_gauge_ids = tuple(
@@ -440,19 +427,13 @@ def _validate_stack(
     gauge_dimension = 7 * gauge_count
 
     if count != observation_count:
-        raise ValueError(
-            "sparse factor stack differs from envelope observation_count"
-        )
+        raise ValueError("sparse factor stack differs from envelope observation_count")
     if mean.shape != (count, 3):
         raise ValueError("world_mean_m must have shape (M, 3)")
     if conditional.shape != (count, 3, 3):
-        raise ValueError(
-            "conditional_world_covariance_m2 must have shape (M, 3, 3)"
-        )
+        raise ValueError("conditional_world_covariance_m2 must have shape (M, 3, 3)")
     if marginal.shape != (count, 3, 3):
-        raise ValueError(
-            "marginal_world_covariance_m2 must have shape (M, 3, 3)"
-        )
+        raise ValueError("marginal_world_covariance_m2 must have shape (M, 3, 3)")
     if local_gauge.shape != (count, 3, 7):
         raise ValueError("local_gauge_jacobian must have shape (M, 3, 7)")
     if gauge_indices.shape != (count,):
@@ -467,10 +448,13 @@ def _validate_stack(
         raise ValueError("joint gauge prior must be finite")
     if not np.allclose(gauge_prior, gauge_prior.T, atol=1e-12, rtol=1e-10):
         raise ValueError("joint gauge prior must be symmetric")
-    if np.min(
-        np.linalg.eigvalsh(0.5 * (gauge_prior + gauge_prior.T)),
-        initial=0.0,
-    ) < -1e-12:
+    if (
+        np.min(
+            np.linalg.eigvalsh(0.5 * (gauge_prior + gauge_prior.T)),
+            initial=0.0,
+        )
+        < -1e-12
+    ):
         raise ValueError("joint gauge prior must be positive semidefinite")
 
     for name, values, strictly_positive in (
@@ -482,11 +466,7 @@ def _validate_stack(
         if values.shape != (count,):
             raise ValueError(f"{name} must have shape (M,)")
         lower = values > 0.0 if strictly_positive else values >= 0.0
-        if (
-            not np.all(np.isfinite(values))
-            or not np.all(lower)
-            or np.any(values > 1.0)
-        ):
+        if not np.all(np.isfinite(values)) or not np.all(lower) or np.any(values > 1.0):
             interval = "(0, 1]" if strictly_positive else "[0, 1]"
             raise ValueError(f"{name} must lie in {interval}")
 
@@ -494,29 +474,19 @@ def _validate_stack(
         raise ValueError("factor row identity arrays must have shape (M,)")
     if np.any(point_ids < 0):
         raise ValueError("point_ids must be nonnegative")
-    if np.any(frame_indices < 0) or np.any(
-        frame_indices >= causal_frame_stop
+    if np.any(frame_indices < 0) or np.any(frame_indices >= causal_frame_stop):
+        raise ValueError("factor rows cross the exclusive causal frame stop")
+    if not (len(view_ids) == len(factor_ids) == len(groups) == count):
+        raise ValueError("factor string identities must contain one value per row")
+    if (
+        _require_integer(
+            stack.causal_frame_stop,
+            name="stack causal_frame_stop",
+            minimum=1,
+        )
+        != causal_frame_stop
     ):
-        raise ValueError(
-            "factor rows cross the exclusive causal frame stop"
-        )
-    if not (
-        len(view_ids)
-        == len(factor_ids)
-        == len(groups)
-        == count
-    ):
-        raise ValueError(
-            "factor string identities must contain one value per row"
-        )
-    if _require_integer(
-        stack.causal_frame_stop,
-        name="stack causal_frame_stop",
-        minimum=1,
-    ) != causal_frame_stop:
-        raise ValueError(
-            "sparse factor stack differs from envelope causal_frame_stop"
-        )
+        raise ValueError("sparse factor stack differs from envelope causal_frame_stop")
     active_arrays = (
         mean,
         conditional,
@@ -573,9 +543,7 @@ def _validate_linearization(
     gauge_indices: np.ndarray,
 ) -> None:
     if not isinstance(linearization, PhysicalLinearizationV1):
-        raise TypeError(
-            "linearization must be a PhysicalLinearizationV1"
-        )
+        raise TypeError("linearization must be a PhysicalLinearizationV1")
     if linearization.observation_artifact_id != observation_artifact_id:
         raise ValueError(
             "physical linearization does not identify this factor envelope"
@@ -592,9 +560,7 @@ def _validate_linearization(
             name=f"linearization {name}",
         )
         if not np.array_equal(observed, values):
-            raise ValueError(
-                f"factor rows and physical linearization {name} differ"
-            )
+            raise ValueError(f"factor rows and physical linearization {name} differ")
 
 
 def _dense_gauge_design(
@@ -606,28 +572,21 @@ def _dense_gauge_design(
 ) -> tuple[np.ndarray, int]:
     count = len(local_gauge_jacobian)
     gauge_dimension = 7 * gauge_count
-    required_bytes = (
-        count
-        * 3
-        * gauge_dimension
-        * np.dtype(np.float64).itemsize
-    )
+    required_bytes = count * 3 * gauge_dimension * np.dtype(np.float64).itemsize
     if required_bytes > maximum_bytes:
         raise MemoryError(
             "explicit-gauge dense compatibility design requires "
             f"{required_bytes} bytes, exceeding the declared "
             f"{maximum_bytes}-byte limit"
         )
-    design = np.zeros(
+    design: np.ndarray = np.zeros(
         (count, 3, gauge_dimension),
         dtype=np.float64,
     )
     for gauge_index in range(gauge_count):
         selected = gauge_indices == gauge_index
         start = 7 * gauge_index
-        design[selected, :, start : start + 7] = (
-            local_gauge_jacobian[selected]
-        )
+        design[selected, :, start : start + 7] = local_gauge_jacobian[selected]
     return design, required_bytes
 
 
@@ -722,9 +681,7 @@ def build_claim_bearing_explicit_gauge_batch(
     linearization: PhysicalLinearizationV1,
     *,
     physical_prediction_xyz_m: np.ndarray,
-    maximum_dense_gauge_design_bytes: int = (
-        DEFAULT_MAXIMUM_DENSE_GAUGE_DESIGN_BYTES
-    ),
+    maximum_dense_gauge_design_bytes: int = (DEFAULT_MAXIMUM_DENSE_GAUGE_DESIGN_BYTES),
     shared_bias_jacobian: np.ndarray | None = None,
     view_bias_jacobian: np.ndarray | None = None,
     state_prior_covariance_m2: np.ndarray | None = None,
@@ -790,13 +747,9 @@ def build_claim_bearing_explicit_gauge_batch(
         dtype=np.float64,
     )
     if physical_prediction.shape != (observation_count, 3):
-        raise ValueError(
-            "physical_prediction_xyz_m must have shape (M, 3)"
-        )
+        raise ValueError("physical_prediction_xyz_m must have shape (M, 3)")
     if not np.all(np.isfinite(physical_prediction)):
-        raise ValueError(
-            "physical_prediction_xyz_m must be finite"
-        )
+        raise ValueError("physical_prediction_xyz_m must be finite")
     shared = (
         np.zeros((observation_count, 3, 0), dtype=np.float64)
         if shared_bias_jacobian is None
@@ -809,9 +762,7 @@ def build_claim_bearing_explicit_gauge_batch(
     )
     row_power = stack["association"] * stack["composite"]
     if np.any(row_power <= 0.0):
-        raise ValueError(
-            "association-weighted composite power must be positive"
-        )
+        raise ValueError("association-weighted composite power must be positive")
 
     extra_metadata = frozen_finite_json_mapping(metadata)
     reserved_metadata: dict[str, Any] = {
@@ -822,21 +773,13 @@ def build_claim_bearing_explicit_gauge_batch(
         "simulator_revision": linearization.simulator_revision,
         "row_alignment_verified": True,
         "prob4d_claim_bearing_provider_v2_validated": True,
-        "prob4d_claim_bearing_factor_api_version": (
-            PROB4D_FACTOR_API_VERSION
-        ),
+        "prob4d_claim_bearing_factor_api_version": (PROB4D_FACTOR_API_VERSION),
         "prob4d_claim_bearing_factor_bundle_schema_version": (
             PROB4D_FACTOR_BUNDLE_SCHEMA_VERSION
         ),
-        "prob4d_claim_bearing_factor_bundle_envelope_artifact_id": (
-            artifact_id
-        ),
-        "prob4d_claim_bearing_provider_manifest_id": (
-            provider_manifest_id
-        ),
-        "prob4d_claim_bearing_calibration_artifact_ids": dict(
-            calibration_ids
-        ),
+        "prob4d_claim_bearing_factor_bundle_envelope_artifact_id": (artifact_id),
+        "prob4d_claim_bearing_provider_manifest_id": (provider_manifest_id),
+        "prob4d_claim_bearing_calibration_artifact_ids": dict(calibration_ids),
         "prob4d_claim_bearing_runtime_revision_source": runtime_source,
         "prob4d_claim_bearing_runtime_revision_independently_verified": True,
         "prob4d_explicit_gauge_covariance_semantics": (
@@ -846,25 +789,15 @@ def build_claim_bearing_explicit_gauge_batch(
         "prob4d_association_probability_semantics": (
             "generalized-Bayes-row-power-not-source-reliability-v1"
         ),
-        "prob4d_association_probability_sha256": _array_sha256(
-            stack["association"]
-        ),
-        "prob4d_source_reliability_sha256": _array_sha256(
-            stack["reliability"]
-        ),
-        "prob4d_prior_nominal_probability_sha256": _array_sha256(
-            stack["nominal"]
-        ),
-        "prob4d_provider_composite_weight_sha256": _array_sha256(
-            stack["composite"]
-        ),
+        "prob4d_association_probability_sha256": _array_sha256(stack["association"]),
+        "prob4d_source_reliability_sha256": _array_sha256(stack["reliability"]),
+        "prob4d_prior_nominal_probability_sha256": _array_sha256(stack["nominal"]),
+        "prob4d_provider_composite_weight_sha256": _array_sha256(stack["composite"]),
         "prob4d_dense_compatibility_bridge": True,
         "prob4d_dense_gauge_design_bytes": design_bytes,
         "prob4d_dense_gauge_design_limit_bytes": maximum_bytes,
         "prob4d_gauge_ids": list(gauge_ids),
-        "prob4d_view_ids_canonical_order": sorted(
-            set(stack["view_ids"])
-        ),
+        "prob4d_view_ids_canonical_order": sorted(set(stack["view_ids"])),
         "prob4d_factor_ids_sha256": hashlib.sha256(
             json.dumps(
                 list(stack["factor_ids"]),
@@ -879,8 +812,7 @@ def build_claim_bearing_explicit_gauge_batch(
     collisions = set(extra_metadata) & set(reserved_metadata)
     if collisions:
         raise ValueError(
-            "metadata overrides reserved explicit-gauge fields: "
-            f"{sorted(collisions)}"
+            f"metadata overrides reserved explicit-gauge fields: {sorted(collisions)}"
         )
     extra_plain = plain_json(extra_metadata)
     if not isinstance(extra_plain, dict):
@@ -903,18 +835,14 @@ def build_claim_bearing_explicit_gauge_batch(
         prior_reliability=stack["reliability"],
         prior_nominal_probability=stack["nominal"],
         composite_weight=row_power,
-        physical_response_scale_m=(
-            linearization.physical_response_scale_m
-        ),
+        physical_response_scale_m=(linearization.physical_response_scale_m),
         state_prior_covariance_m2=state_prior_covariance_m2,
         anchor_innovation_m=anchor_innovation_m,
         anchor_covariance_m2=anchor_covariance_m2,
         anchor_state_jacobian=anchor_state_jacobian,
         anchor_correlation_group_ids=anchor_correlation_group_ids,
         anchor_prior_reliability=anchor_prior_reliability,
-        anchor_prior_nominal_probability=(
-            anchor_prior_nominal_probability
-        ),
+        anchor_prior_nominal_probability=(anchor_prior_nominal_probability),
         anchor_composite_weight=anchor_composite_weight,
         anchor_bias_jacobian=anchor_bias_jacobian,
         anchor_bias_prior_covariance=anchor_bias_prior_covariance,
@@ -941,9 +869,7 @@ def update_claim_bearing_explicit_gauge_from_artifacts(
     linearization: PhysicalLinearizationV1,
     *,
     physical_prediction_xyz_m: np.ndarray,
-    maximum_dense_gauge_design_bytes: int = (
-        DEFAULT_MAXIMUM_DENSE_GAUGE_DESIGN_BYTES
-    ),
+    maximum_dense_gauge_design_bytes: int = (DEFAULT_MAXIMUM_DENSE_GAUGE_DESIGN_BYTES),
     shared_bias_jacobian: np.ndarray | None = None,
     view_bias_jacobian: np.ndarray | None = None,
     state_prior_covariance_m2: np.ndarray | None = None,
@@ -966,9 +892,7 @@ def update_claim_bearing_explicit_gauge_from_artifacts(
         sparse_stack,
         linearization,
         physical_prediction_xyz_m=physical_prediction_xyz_m,
-        maximum_dense_gauge_design_bytes=(
-            maximum_dense_gauge_design_bytes
-        ),
+        maximum_dense_gauge_design_bytes=(maximum_dense_gauge_design_bytes),
         shared_bias_jacobian=shared_bias_jacobian,
         view_bias_jacobian=view_bias_jacobian,
         state_prior_covariance_m2=state_prior_covariance_m2,
@@ -977,9 +901,7 @@ def update_claim_bearing_explicit_gauge_from_artifacts(
         anchor_state_jacobian=anchor_state_jacobian,
         anchor_correlation_group_ids=anchor_correlation_group_ids,
         anchor_prior_reliability=anchor_prior_reliability,
-        anchor_prior_nominal_probability=(
-            anchor_prior_nominal_probability
-        ),
+        anchor_prior_nominal_probability=(anchor_prior_nominal_probability),
         anchor_composite_weight=anchor_composite_weight,
         anchor_bias_jacobian=anchor_bias_jacobian,
         anchor_bias_prior_covariance=anchor_bias_prior_covariance,

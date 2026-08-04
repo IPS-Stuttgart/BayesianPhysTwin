@@ -185,10 +185,7 @@ def test_three_repository_explicit_gauge_factor_bridge() -> None:
         adapted.batch.gauge_prior_covariance,
         sparse.gauge_prior_covariance,
     )
-    assert (
-        sparse.sparse_gauge_design_nbytes
-        < adapted.dense_gauge_design_bytes
-    )
+    assert sparse.sparse_gauge_design_nbytes < adapted.dense_gauge_design_bytes
     update = update_claim_bearing_explicit_gauge_from_artifacts(
         validated,
         sparse,
@@ -196,9 +193,13 @@ def test_three_repository_explicit_gauge_factor_bridge() -> None:
         physical_prediction_xyz_m=physical_prediction,
     )
     assert update.observation_artifact_id == ARTIFACT_ID
-    assert update.result.input_lineage[
-        "prob4d_claim_bearing_factor_bundle_envelope_artifact_id"
-    ] == ARTIFACT_ID
-    assert update.result.input_lineage[
-        "prob4d_marginal_point_covariance_consumed"
-    ] is False
+    assert (
+        update.result.input_lineage[
+            "prob4d_claim_bearing_factor_bundle_envelope_artifact_id"
+        ]
+        == ARTIFACT_ID
+    )
+    assert (
+        update.result.input_lineage["prob4d_marginal_point_covariance_consumed"]
+        is False
+    )

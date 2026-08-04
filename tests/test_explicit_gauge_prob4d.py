@@ -103,9 +103,7 @@ def _fixture() -> tuple[
         source_revision=envelope.source_revision,
         causal_frame_stop=envelope.causal_frame_stop,
         factors=(object(), object()),
-        gauges=tuple(
-            SimpleNamespace(window_id=gauge_id) for gauge_id in gauge_ids
-        ),
+        gauges=tuple(SimpleNamespace(window_id=gauge_id) for gauge_id in gauge_ids),
     )
     validated = SimpleNamespace(
         bundle=bundle,
@@ -199,10 +197,7 @@ def test_explicit_gauge_bridge_preserves_factor_semantics() -> None:
         batch.composite_weight,
         stack.association_probability * stack.composite_weight,
     )
-    assert (
-        batch.composite_weight_mode
-        == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
-    )
+    assert batch.composite_weight_mode == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
 
     assert batch.gauge_jacobian.shape == (4, 3, 14)
     np.testing.assert_array_equal(
@@ -778,9 +773,7 @@ def test_explicit_gauge_adapter_result_rejects_non_batch() -> None:
             calibration_artifact_ids=adapted.calibration_artifact_ids,
             runtime_revision_source=adapted.runtime_revision_source,
             dense_gauge_design_bytes=adapted.dense_gauge_design_bytes,
-            dense_gauge_design_limit_bytes=(
-                adapted.dense_gauge_design_limit_bytes
-            ),
+            dense_gauge_design_limit_bytes=(adapted.dense_gauge_design_limit_bytes),
             gauge_ids=adapted.gauge_ids,
             view_ids=adapted.view_ids,
         )
@@ -802,12 +795,10 @@ def test_explicit_gauge_one_call_update_binds_all_lineage() -> None:
     assert update.provider_manifest_id == PROVIDER_MANIFEST_ID
     assert lineage["observation_artifact_id"] == ARTIFACT_ID
     assert lineage["linearization_artifact_id"] == linearization.artifact_id
-    assert lineage[
-        "prob4d_claim_bearing_provider_manifest_id"
-    ] == PROVIDER_MANIFEST_ID
-    assert lineage[
-        "prob4d_claim_bearing_runtime_revision_independently_verified"
-    ] is True
+    assert lineage["prob4d_claim_bearing_provider_manifest_id"] == PROVIDER_MANIFEST_ID
+    assert (
+        lineage["prob4d_claim_bearing_runtime_revision_independently_verified"] is True
+    )
     assert len(update.update_id) == 64
     retained = cast(dict[str, str], update.calibration_artifact_ids)
     with pytest.raises(TypeError):
