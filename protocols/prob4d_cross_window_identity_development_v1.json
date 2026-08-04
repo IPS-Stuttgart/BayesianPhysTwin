@@ -5,7 +5,17 @@
   "status": "development-only-before-confirmatory-target-lock",
   "repository_pins": {
     "bayesian_phystwin_base": "60551a12de96da7dbaeefe4c6c83cd5c923427e6",
-    "prob4d": "2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1"
+    "prob4d": "2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1",
+    "prob4d_controlled_generator_base": "aa8ffc6541011d044561e09870569a14ab3f586f",
+    "prob4d_cross_window_association_module": "2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1"
+  },
+  "execution_source_composition": {
+    "semantics": "clean controlled-study Prob4D base plus the exact additive cross-window association module",
+    "controlled_generator_base_revision": "aa8ffc6541011d044561e09870569a14ab3f586f",
+    "cross_window_tracklets_revision": "2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1",
+    "cross_window_tracklets_blob": "1c90c67c68a42189aabf5fe26ef06a75c6c48065",
+    "causal_tracklets_blob": "81a44bf6a767464149fe8e60661d7ef699ff3e40",
+    "sim3_blob": "1c3f443774f92d7fd580087aa393d793d6704c23"
   },
   "question": "Can Prob4D source-only association of material tracks across overlapping prediction windows improve a guarded BayesianPhysTwin future-state query relative to using only the newest internally persistent window?",
   "methods": [
