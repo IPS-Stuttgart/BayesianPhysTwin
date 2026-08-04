@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -11,6 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "science" / "run_full22_tempered_endpoint_diagnostic.py"
 PROTOCOL = ROOT / "protocols" / "full22_tempered_endpoint_diagnostic_v1.json"
+RESULT_ROOT = ROOT / "results" / "diagnostics" / "full22_tempered_endpoint_v1"
 
 
 def _load_script() -> ModuleType:
@@ -104,3 +106,30 @@ def test_protocol_rejects_reordered_caps(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="unique and sorted"):
         module._load_protocol(path)
+
+
+def test_committed_negative_result_binds_frozen_run() -> None:
+    summary_path = RESULT_ROOT / "summary.json"
+    readout = json.loads((RESULT_ROOT / "readout.json").read_text(encoding="utf-8"))
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    assert hashlib.sha256(summary_path.read_bytes()).hexdigest() == readout[
+        "source_files"
+    ]["summary_sha256"]
+    assert summary["repository_revision"] == readout["execution"][
+        "repository_revision"
+    ]
+    assert summary["advancement_gate"]["passed"] is False
+    assert readout["advancement_gate"]["passed"] is False
+    assert summary["aggregate"]["confirmation_19"]["case_count"] == 19
+    guarded = summary["aggregate"]["confirmation_19"]["methods"][
+        "tempered_guarded"
+    ]
+    assert 1000.0 * guarded["chamfer_distance_m"]["equal_case_mean_m"] == pytest.approx(
+        readout["confirmation_19"]["methods_mm"]["tempered_guarded"][
+            "chamfer_distance"
+        ]
+    )
+    assert readout["confirmation_19"]["selective_oracle_relative_improvement"][
+        "track_error"
+    ] < 0.005

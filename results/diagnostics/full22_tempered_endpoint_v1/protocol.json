@@ -1,0 +1,55 @@
+{
+  "advancement_gate": {
+    "maximum_case_metric_regression": 0.02,
+    "minimum_joint_wins": 12,
+    "minimum_relative_improvement": 0.005
+  },
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20260804,
+    "statistical_unit": "PhysTwin case with paired resampling"
+  },
+  "claim_boundary": "Retrospective mechanism diagnostic on the released official 22-case PhysTwin cohort. Historical outcomes and the development/confirmation split have already informed BayesianPhysTwin. The experiment may test whether correlation-aware evidence tempering creates transferable point-estimate or uncertainty headroom, but it is not fresh validation, calibrated deployment uncertainty, or a state-of-the-art claim.",
+  "development_cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "effective_evidence_count_caps": [
+    1.0,
+    2.0,
+    4.0,
+    8.0,
+    16.0,
+    1000000.0
+  ],
+  "fit_fraction": 0.75,
+  "interpolation_neighbors": 4,
+  "maximum_residual_m": 0.01,
+  "methods": [
+    "released_phystwin",
+    "last_residual",
+    "historical_model_average",
+    "tempered_selected",
+    "tempered_guarded"
+  ],
+  "model": {
+    "component_family": "frozen 5 x 3 historical process/observation standard-deviation grid",
+    "evidence_power": "min(1, effective_evidence_count_cap / accepted_prefix_observation_count)",
+    "fallback": "last-supported residual trajectory, returned exactly when the prefix validation guard rejects",
+    "future_observations_used": false,
+    "selection": "minimum vector RMSE on the permitted fit-to-train validation interval; ties prefer the smaller evidence-count cap"
+  },
+  "point_metrics": [
+    "official one-way L1 Chamfer distance",
+    "official manual-track Euclidean error"
+  ],
+  "schema": "bayesian-phystwin-full22-tempered-endpoint-diagnostic",
+  "schema_version": 1,
+  "status": "retrospective-non-claim-bearing",
+  "validation_guard": {
+    "minimum_absolute_improvement_m": 0.0001,
+    "minimum_relative_improvement": 0.005,
+    "reference": "last-supported residual estimated at fit_end"
+  }
+}
