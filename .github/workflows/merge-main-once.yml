@@ -1,0 +1,50 @@
+name: Merge main once
+
+on:
+  push:
+    branches:
+      - agent/prospective-belief-hardening
+    paths:
+      - .github/workflows/merge-main-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    name: Merge main with reviewed API union
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          if ! git merge --no-ff origin/main -m 'Merge main into prospective-belief branch'; then
+            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+            if [[ ${#conflicts[@]} -eq 0 ]]; then
+              git merge --abort
+              exit 1
+            fi
+            for path in "${conflicts[@]}"; do
+              case "$path" in
+                CHANGELOG.md|src/bayesian_phystwin/__init__.py) ;;
+                *)
+                  printf 'Unexpected conflict: %s\n' "$path"
+                  git merge --abort
+                  exit 1
+                  ;;
+              esac
+            done
+            git checkout --ours -- "${conflicts[@]}"
+            git add -- "${conflicts[@]}"
+            git commit --no-edit
+          fi
+          git push origin "HEAD:${GITHUB_REF_NAME}"
