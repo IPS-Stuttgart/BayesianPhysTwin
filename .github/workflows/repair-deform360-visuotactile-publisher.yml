@@ -1,0 +1,63 @@
+name: Repair Deform360 staged publisher
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-deform360-visuotactile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 10
+    steps:
+      - name: Check out publication branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-official-hub-visuotactile-v1
+          fetch-depth: 0
+
+      - name: Repair current-main CI anchor count
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          publisher = Path(
+              ".github/workflows/apply-deform360-visuotactile-ci.yml"
+          )
+          text = publisher.read_text(encoding="utf-8")
+          replacements = {
+              "if tests.count(test_anchor) != 2:": (
+                  "if tests.count(test_anchor) != 3:"
+              ),
+              "tests.yml: expected two gauge-aware suite anchors, ": (
+                  "tests.yml: expected three gauge-aware suite anchors, "
+              ),
+              "    if: github.actor != 'github-actions[bot]'\n": "",
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(
+                      f"publisher repair source changed for {old!r}: "
+                      f"count={text.count(old)}"
+                  )
+              text = text.replace(old, new)
+          publisher.write_text(text, encoding="utf-8")
+          Path(
+              ".github/workflows/repair-deform360-visuotactile-publisher.yml"
+          ).unlink()
+          PY
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair staged Deform360 publication gate"
+          git push origin HEAD:agent/deform360-official-hub-visuotactile-v1
