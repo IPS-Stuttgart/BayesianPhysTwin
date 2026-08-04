@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/deform360-source-hull-probe.yml"
       - "protocols/deform360_source_hull_contract_probe_v1.json"
+      - "protocols/deform360_source_hull_contract_probe_v2.json"
       - "scripts/science/probe_deform360_source_hulls.py"
       - "tests/test_probe_deform360_source_hulls.py"
       - "docs/deform360_source_hull_contract_probe.md"
@@ -86,6 +87,7 @@ jobs:
           python scripts/science/probe_deform360_source_hulls.py \
             --data-root "${DEFORM360_ROOT}" \
             --protocol protocols/deform360_source_hull_contract_probe_v1.json \
+            --amendment protocols/deform360_source_hull_contract_probe_v2.json \
             --output deform360-source-hull-probe/result.json \
             | tee deform360-source-hull-probe/probe.log
 
@@ -105,6 +107,10 @@ jobs:
           boundary = result["information_boundary"]
           if result["object_count"] != 6 or result["episode_count"] != 36:
               raise SystemExit("locked source cohort count changed")
+          if result["amendment_id"] != "deform360-source-hull-contract-probe-v2":
+              raise SystemExit("the empty-frame amendment was not applied")
+          if result["prediction_eligible_episode_count"] < 1:
+              raise SystemExit("no source archive supports rolling prediction")
           if boundary["points_world_m_coordinate_values_decoded"]:
               raise SystemExit("point-coordinate values were decoded")
           if boundary["model_prediction_run"]:
@@ -144,7 +150,21 @@ jobs:
           print()
           print(f"- Content SHA-256: `{result['content_probe_sha256']}`")
           print(f"- Provenance SHA-256: `{result['probe_sha256']}`")
-          print(f"- Objects / episodes: `{result['object_count']} / {result['episode_count']}`")
+          print(f"- Amendment: `{result['amendment_id']}`")
+          print(
+              f"- Objects / episodes: `{result['object_count']} / "
+              f"{result['episode_count']}`"
+          )
+          print(
+              "- Prediction-eligible / ineligible episodes: "
+              f"`{result['prediction_eligible_episode_count']} / "
+              f"{result['prediction_ineligible_episode_count']}`"
+          )
+          print(
+              "- Empty-frame archives / frames: "
+              f"`{result['empty_frame_archive_count']} / "
+              f"{result['total_empty_frame_count']}`"
+          )
           print(
               "- Constant-stride archives: "
               f"`{result['constant_frame_stride_counts']}`"
