@@ -1,0 +1,131 @@
+name: Apply byte-verified tempered V2 payload
+
+on:
+  push:
+    branches:
+      - agent/tempered-endpoint-belief-v2
+    paths:
+      - .github/workflows/apply-tempered-v2-payload.yml
+      - .github/patches/tempered-v2/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-tempered-v2-payload
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact publication branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/tempered-endpoint-belief-v2
+          fetch-depth: 0
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Reconstruct and verify the exact payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/patches/tempered-v2/part-* > tempered-v2-payload.b64
+          base64 --decode tempered-v2-payload.b64 > tempered-v2-payload.tar.gz
+          echo "eb0a3e36f2d31772fd5169c8c2a88a2b401753187b3d9a8fc82bee5b1b9e0f83  tempered-v2-payload.tar.gz" \
+            | sha256sum --check --strict
+          tar --extract --gzip --file tempered-v2-payload.tar.gz
+          rm tempered-v2-payload.b64 tempered-v2-payload.tar.gz
+
+      - name: Remove publication-only staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .github/patches/tempered-v2
+          rm .github/workflows/apply-tempered-v2-payload.yml
+          rm .github/workflows/temporary-export-tempered-v2-source.yml
+
+      - name: Validate contracts and source-only protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,data,graph]" "coverage==7.13.3"
+          python -m pip check
+          python -m ruff check \
+            src/bayesian_phystwin/tempered_endpoint_belief.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v3.py \
+            scripts/science/run_tempered_endpoint_source_study.py \
+            tests/test_tempered_endpoint_belief.py \
+            tests/test_tempered_endpoint_source_study.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/tempered_endpoint_belief.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v3.py \
+            scripts/science/run_tempered_endpoint_source_study.py \
+            tests/test_tempered_endpoint_belief.py \
+            tests/test_tempered_endpoint_source_study.py
+          python -m mypy --python-version 3.12 \
+            src/bayesian_phystwin/tempered_endpoint_belief.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v3.py
+          python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
+            tests/test_tempered_endpoint_belief.py \
+            tests/test_tempered_endpoint_source_study.py \
+            tests/test_endpoint_model_average.py \
+            tests/test_grouped_conformal.py \
+            tests/test_bias_aware_belief.py
+          python -m coverage report \
+            --include="src/bayesian_phystwin/tempered_endpoint_belief.py" \
+            --show-missing \
+            --fail-under=95
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path("protocols/tempered_endpoint_source_study_v1.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          digest = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = "daff5f8d8ad42533f5b5fdc4249b512e0285605f973139570740da01ccf5c506"
+          if digest != expected:
+              raise SystemExit(
+                  f"protocol digest changed: expected {expected}, received {digest}"
+              )
+          if payload["information_boundary"]["confirmation_outcomes_allowed"]:
+              raise SystemExit("source-only protocol permits confirmation outcomes")
+          expected_cases = {
+              "single_lift_sloth",
+              "double_lift_sloth",
+              "double_stretch_sloth",
+          }
+          if set(payload["source_cases"]) != expected_cases:
+              raise SystemExit("source-only case set changed")
+          print(f"locked source-only protocol: {digest}")
+          PY
+          git diff --check
+
+      - name: Publish the clean product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "Add source-tempered endpoint belief V2"
+          git push origin HEAD:agent/tempered-endpoint-belief-v2
