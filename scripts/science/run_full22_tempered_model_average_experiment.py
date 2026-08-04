@@ -50,9 +50,7 @@ from bayesian_phystwin.phystwin_residual_dynamics import (
 
 
 def _load_base_module() -> ModuleType:
-    path = Path(__file__).with_name(
-        "run_full22_endpoint_model_average_diagnostic.py"
-    )
+    path = Path(__file__).with_name("run_full22_endpoint_model_average_diagnostic.py")
     spec = importlib.util.spec_from_file_location(
         "_bayesian_phystwin_full22_model_average_base",
         path,
@@ -93,9 +91,7 @@ def _temperature_key(temperature: float) -> str:
 
 def _load_protocol(path: Path) -> tuple[dict[str, Any], str]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    expected_schema = (
-        "bayesian-phystwin-full22-tempered-model-average-experiment"
-    )
+    expected_schema = "bayesian-phystwin-full22-tempered-model-average-experiment"
     if payload.get("schema") != expected_schema:
         raise ValueError("unexpected tempered experiment protocol schema")
     if payload.get("schema_version") != 1:
@@ -168,9 +164,7 @@ def _tempered_posterior(
         component_log_evidence=posterior.component_log_evidence,
         component_mean_m=posterior.component_mean_m,
         component_variance_m2=posterior.component_variance_m2,
-        component_process_variance_m2=(
-            posterior.component_process_variance_m2
-        ),
+        component_process_variance_m2=(posterior.component_process_variance_m2),
         config=posterior.config,
         end_frame=posterior.end_frame,
     )
@@ -234,9 +228,7 @@ def _case_group_quantiles(
 ) -> dict[str, dict[str, float | int | None]]:
     future_count = len(residual) - train_end
     lookup = _horizon_lookup(future_count)
-    collected: dict[str, list[np.ndarray]] = {
-        label: [] for label in HORIZON_LABELS
-    }
+    collected: dict[str, list[np.ndarray]] = {label: [] for label in HORIZON_LABELS}
     for local_index, frame in enumerate(range(train_end, len(residual))):
         mean, covariance = predictor(local_index + 1)
         mask = np.asarray(valid[frame], dtype=bool) & np.asarray(
@@ -496,11 +488,7 @@ def _select_temperature(
                 float(candidate["combined_point_loss_vs_last_residual"])
             )
             case_entropy.append(
-                float(
-                    candidate["model_diagnostics"][
-                        "mean_component_entropy_nats"
-                    ]
-                )
+                float(candidate["model_diagnostics"]["mean_component_entropy_nats"])
             )
         records.append(
             {
@@ -509,9 +497,7 @@ def _select_temperature(
                 "equal_case_mean_point_loss_vs_last_residual": float(
                     np.mean(case_point_loss)
                 ),
-                "equal_case_mean_component_entropy_nats": float(
-                    np.mean(case_entropy)
-                ),
+                "equal_case_mean_component_entropy_nats": float(np.mean(case_entropy)),
                 "case_nll": dict(zip(DEVELOPMENT_CASES, case_nll, strict=True)),
                 "case_point_loss_vs_last_residual": dict(
                     zip(DEVELOPMENT_CASES, case_point_loss, strict=True)
@@ -566,9 +552,7 @@ def _select_guard(
             case: candidate_losses[case] if decisions[case] else 1.0
             for case in DEVELOPMENT_CASES
         }
-        relative_regrets = {
-            case: loss - 1.0 for case, loss in losses.items()
-        }
+        relative_regrets = {case: loss - 1.0 for case, loss in losses.items()}
         record = {
             "threshold_m": threshold,
             "accepted_case_count": int(sum(decisions.values())),
@@ -576,13 +560,9 @@ def _select_guard(
             "equal_case_mean_guarded_loss_vs_fallback": float(
                 np.mean(list(losses.values()))
             ),
-            "maximum_case_relative_regret": float(
-                max(relative_regrets.values())
-            ),
+            "maximum_case_relative_regret": float(max(relative_regrets.values())),
             "case_guarded_loss_vs_fallback": losses,
-            "feasible": bool(
-                max(relative_regrets.values()) <= maximum_regret + 1e-12
-            ),
+            "feasible": bool(max(relative_regrets.values()) <= maximum_regret + 1e-12),
         }
         records.append(record)
     feasible = [record for record in records if record["feasible"]]
@@ -632,15 +612,11 @@ def _fit_group_conformal(
             count = int(record["count"])
             quantile = record["quantile"]
             if count < 1 or quantile is None:
-                raise ValueError(
-                    f"no development conformal events for {case}/{label}"
-                )
+                raise ValueError(f"no development conformal events for {case}/{label}")
             counts[case] = count
             quantiles[case] = float(quantile)
         group_quantile = max(quantiles.values())
-        scales[label] = float(
-            max(minimum_scale, group_quantile / reference)
-        )
+        scales[label] = float(max(minimum_scale, group_quantile / reference))
         case_quantiles[label] = quantiles
         case_counts[label] = counts
     return {
@@ -826,9 +802,7 @@ def _final_case(
         "anchor_validation": {
             "accepted": bool(anchor_summary["selection"]["accepted"]),
             "selected_process_std_m": float(anchor_selected["process_std_m"]),
-            "selected_observation_std_m": float(
-                anchor_selected["observation_std_m"]
-            ),
+            "selected_observation_std_m": float(anchor_selected["observation_std_m"]),
         },
         "point": point,
         "predictive_calibration": calibration,
@@ -1053,16 +1027,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("the frozen development cases are not all present")
 
     development_jobs = [
-        (data_root, development_scratch, case, protocol)
-        for case in DEVELOPMENT_CASES
+        (data_root, development_scratch, case, protocol) for case in DEVELOPMENT_CASES
     ]
-    development = dict(
-        _run_jobs(development_jobs, args.workers, _development_case)
-    )
+    development = dict(_run_jobs(development_jobs, args.workers, _development_case))
     temperature_selection = _select_temperature(development, protocol)
-    selected_temperature = float(
-        temperature_selection["selected_temperature"]
-    )
+    selected_temperature = float(temperature_selection["selected_temperature"])
     guard_selection = _select_guard(
         development,
         protocol,
@@ -1091,8 +1060,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     selection_sha256 = BASE._sha256(selection_path)
 
     final_jobs = [
-        (data_root, final_scratch, case, protocol, selection_core)
-        for case in cases
+        (data_root, final_scratch, case, protocol, selection_core) for case in cases
     ]
     case_results = dict(_run_jobs(final_jobs, args.workers, _final_case))
     shutil.rmtree(scratch)
@@ -1120,10 +1088,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             ),
             "guard_acceptance_fraction": float(
                 np.mean(
-                    [
-                        case_results[case]["guard"]["accepted"]
-                        for case in cohort_cases
-                    ]
+                    [case_results[case]["guard"]["accepted"] for case in cohort_cases]
                 )
             ),
         }
@@ -1170,9 +1135,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "guard_acceptance_fraction"
         ],
         "confirmation_point": confirmation["point"],
-        "confirmation_predictive_calibration": confirmation[
-            "predictive_calibration"
-        ],
+        "confirmation_predictive_calibration": confirmation["predictive_calibration"],
         "claim_boundary": protocol["claim_boundary"],
     }
     BASE._write_json(output / "readout.json", readout)
