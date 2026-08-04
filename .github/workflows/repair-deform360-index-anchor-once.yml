@@ -1,0 +1,57 @@
+name: Repair Deform360 experiment-index anchor once
+
+on:
+  push:
+    branches:
+      - agent/deform360-official-hub-visuotactile-v1
+    paths:
+      - ".github/workflows/repair-deform360-index-anchor-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-deform360-index-anchor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out publication branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-official-hub-visuotactile-v1
+          fetch-depth: 0
+
+      - name: Narrow the line-wrap-sensitive documentation anchor
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          publisher = Path(
+              ".github/workflows/apply-deform360-visuotactile-ci.yml"
+          )
+          text = publisher.read_text(encoding="utf-8")
+          old = "This is a negative prospective result, not a target evaluation.\\n\\n"
+          new = "negative prospective result, not a target evaluation.\\n\\n"
+          if text.count(old) != 2:
+              raise SystemExit(
+                  "publisher experiment-index anchor changed: "
+                  f"expected=2, observed={text.count(old)}"
+              )
+          publisher.write_text(text.replace(old, new), encoding="utf-8")
+          Path(
+              ".github/workflows/repair-deform360-index-anchor-once.yml"
+          ).unlink()
+          PY
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair Deform360 experiment-index insertion"
+          git push origin HEAD:agent/deform360-official-hub-visuotactile-v1
