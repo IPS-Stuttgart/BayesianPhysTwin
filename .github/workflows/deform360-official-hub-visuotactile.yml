@@ -29,7 +29,7 @@ env:
 jobs:
   contracts:
     name: Contact-anchor and selection contracts
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 20
     steps:
       - name: Check out BayesianPhysTwin
