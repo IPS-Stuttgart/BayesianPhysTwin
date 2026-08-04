@@ -101,10 +101,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     _write_json(
         protocol,
         {
-            "schema": (
-                "bayesian-phystwin/"
-                "deform360-source-hull-contract-probe-protocol-v1"
-            ),
+            "schema": "bayesian-phystwin/deform360-source-hull-contract-probe-protocol-v1",
             "schema_version": 1,
             "config": config,
             "config_sha256": hashlib.sha256(_canonical_bytes(config)).hexdigest(),
@@ -149,10 +146,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     _write_json(
         amendment,
         {
-            "schema": (
-                "bayesian-phystwin/"
-                "deform360-source-hull-contract-probe-amendment-v2"
-            ),
+            "schema": "bayesian-phystwin/deform360-source-hull-contract-probe-amendment-v2",
             "schema_version": 1,
             "config": amendment_config,
             "config_sha256": hashlib.sha256(
