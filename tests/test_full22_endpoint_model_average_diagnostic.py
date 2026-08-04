@@ -18,7 +18,9 @@ RESULT_ROOT = ROOT / "results" / "diagnostics" / "full22_endpoint_model_average_
 PROTOCOL = ROOT / "protocols" / "full22_endpoint_model_average_diagnostic_v1.json"
 PROTOCOL_SHA256 = "8c4021f082b03ef761bc97300eeac11b6f3f92a2bdc52c1941020f6c1f340217"
 HOSTED_CSV_SHA256 = "19184cfefe707ed49739a18ee667402cfea24b46297f0217d2edcd85d5fc3b31"
-REPOSITORY_CSV_SHA256 = "ac37b5004987f94145dbca6ea8e08d60582f4fac323a5b5ae9cdcaa578eafa1d"
+REPOSITORY_CSV_SHA256 = (
+    "ac37b5004987f94145dbca6ea8e08d60582f4fac323a5b5ae9cdcaa578eafa1d"
+)
 
 
 def _load_script() -> ModuleType:
