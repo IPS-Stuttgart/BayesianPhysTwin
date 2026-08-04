@@ -246,6 +246,73 @@ def test_student_t_update_downweights_one_factor_outlier() -> None:
     assert result.state_coefficients[0] == pytest.approx(0.01, abs=0.003)
 
 
+def test_gauge_aware_final_system_rechecks_condition_number(monkeypatch) -> None:
+    conditions = iter((1.0, 1e6))
+    monkeypatch.setattr(np.linalg, "cond", lambda _: next(conditions))
+    mode = np.linspace(-1.0, 1.0, 9)
+
+    result = update_gauge_aware_belief(
+        _batch(mode, 0.01 * mode),
+        config=GaugeAwareBeliefConfig(
+            maximum_iterations=1,
+            maximum_condition_number=10.0,
+        ),
+    )
+
+    assert not result.inference_admissible
+    assert result.reason == "ill-conditioned-posterior"
+    assert result.diagnostics["condition_number"] == pytest.approx(1e6)
+    np.testing.assert_array_equal(result.state_coefficients, 0.0)
+
+
+def test_gauge_aware_final_cholesky_failure_falls_back(monkeypatch) -> None:
+    original_cholesky = np.linalg.cholesky
+    call_count = 0
+
+    def fail_final_cholesky(matrix: np.ndarray) -> np.ndarray:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise np.linalg.LinAlgError("synthetic final-system failure")
+        return original_cholesky(matrix)
+
+    monkeypatch.setattr(np.linalg, "cholesky", fail_final_cholesky)
+    mode = np.linspace(-1.0, 1.0, 9)
+
+    result = update_gauge_aware_belief(
+        _batch(mode, 0.01 * mode),
+        config=GaugeAwareBeliefConfig(maximum_iterations=1),
+    )
+
+    assert call_count == 2
+    assert not result.inference_admissible
+    assert result.reason == "singular-posterior"
+    np.testing.assert_array_equal(result.state_coefficients, 0.0)
+
+
+def test_gauge_aware_spd_paths_do_not_use_numpy_inverse(monkeypatch) -> None:
+    def reject_inverse(*_args: object, **_kwargs: object) -> np.ndarray:
+        raise AssertionError("np.linalg.inv must not be used for SPD systems")
+
+    monkeypatch.setattr(np.linalg, "inv", reject_inverse)
+    mode = np.linspace(-1.0, 1.0, 9)
+
+    result = update_gauge_aware_belief(
+        _batch(mode, 0.01 * mode),
+        config=GaugeAwareBeliefConfig(maximum_iterations=1),
+    )
+
+    assert result.inference_admissible
+    assert result.diagnostics["posterior_solver"] == "cholesky"
+    assert result.diagnostics["final_system_uses_returned_robust_weights"] is True
+    np.testing.assert_allclose(
+        result.posterior_covariance,
+        result.posterior_covariance.T,
+        atol=0.0,
+        rtol=0.0,
+    )
+
+
 def test_update_is_rejected_when_query_correction_exceeds_physical_response() -> None:
     mode = np.linspace(-1.0, 1.0, 12)
     batch = _batch(
@@ -356,9 +423,7 @@ def test_state_reparameterization_preserves_query_mean_and_covariance() -> None:
     )
 
     original_mean = decode_gauge_aware_query(original, query)
-    transformed_mean = decode_gauge_aware_query(
-        reparameterized, transformed_query
-    )
+    transformed_mean = decode_gauge_aware_query(reparameterized, transformed_query)
     np.testing.assert_allclose(transformed_mean, original_mean, atol=2e-8)
 
     original_state_cov = original.posterior_covariance[:2, :2]

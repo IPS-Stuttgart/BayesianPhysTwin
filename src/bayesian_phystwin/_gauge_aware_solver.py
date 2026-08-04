@@ -32,6 +32,10 @@ class _RegretDecision(Protocol):
     reason: str
 
 
+def _cholesky_solve(cholesky: np.ndarray, right: np.ndarray) -> np.ndarray:
+    return np.linalg.solve(cholesky.T, np.linalg.solve(cholesky, right))
+
+
 def _correlation_group_weights(
     group_ids: tuple[str, ...],
     reliability: np.ndarray,
@@ -552,7 +556,29 @@ def update_gauge_aware_belief(
                 anchor_target_w,
                 optimize=True,
             )
+        normal = 0.5 * (normal + normal.T)
         return normal, right
+
+    def solve_posterior(
+        posterior_normal: np.ndarray,
+        posterior_right: np.ndarray,
+    ) -> tuple[np.ndarray | None, np.ndarray | None, float, str | None]:
+        condition_number = float(np.linalg.cond(posterior_normal))
+        if (
+            not np.isfinite(condition_number)
+            or condition_number > cfg.maximum_condition_number
+        ):
+            return None, None, condition_number, "ill-conditioned-posterior"
+        try:
+            cholesky = np.linalg.cholesky(posterior_normal)
+        except np.linalg.LinAlgError:
+            return None, None, condition_number, "singular-posterior"
+        return (
+            _cholesky_solve(cholesky, posterior_right),
+            cholesky,
+            condition_number,
+            None,
+        )
 
     state_mapping = state_prior_square_root @ transform
     raw_state_reduced = np.einsum(
@@ -587,27 +613,16 @@ def update_gauge_aware_belief(
         iterations += 1
         previous = solution.copy()
         normal, right = posterior_system()
-        condition_number = float(np.linalg.cond(normal))
-        if (
-            not np.isfinite(condition_number)
-            or condition_number > cfg.maximum_condition_number
-        ):
+        solved, _, condition_number, failure = solve_posterior(normal, right)
+        if failure is not None or solved is None:
             diagnostics["condition_number"] = condition_number
             return _fallback_result(
                 batch,
-                "ill-conditioned-posterior",
+                failure or "singular-posterior",
                 diagnostics,
                 prior_covariance=full_prior_covariance,
             )
-        try:
-            solution = np.linalg.solve(normal, right)
-        except np.linalg.LinAlgError:
-            return _fallback_result(
-                batch,
-                "singular-posterior",
-                diagnostics,
-                prior_covariance=full_prior_covariance,
-            )
+        solution = solved
         residual = batch.innovation_m - np.einsum(
             "mci,i->mc", raw_observation_design, solution, optimize=True
         )
@@ -637,16 +652,21 @@ def update_gauge_aware_belief(
             break
 
     normal, right = posterior_system()
-    try:
-        solution = np.linalg.solve(normal, right)
-        reduced_covariance = np.linalg.inv(normal)
-    except np.linalg.LinAlgError:
+    solved, cholesky, condition_number, failure = solve_posterior(normal, right)
+    if failure is not None or solved is None or cholesky is None:
+        diagnostics["condition_number"] = condition_number
         return _fallback_result(
             batch,
-            "singular-posterior",
+            failure or "singular-posterior",
             diagnostics,
             prior_covariance=full_prior_covariance,
         )
+    solution = solved
+    reduced_covariance = _cholesky_solve(
+        cholesky,
+        np.eye(joint_dimension, dtype=np.float64),
+    )
+    reduced_covariance = 0.5 * (reduced_covariance + reduced_covariance.T)
 
     reduced_state_solution = solution[:reduced_state_count]
     whitened_state_solution = transform @ reduced_state_solution
@@ -680,7 +700,9 @@ def update_gauge_aware_belief(
     diagnostics.update(
         {
             "iterations": iterations,
-            "condition_number": float(np.linalg.cond(normal)),
+            "condition_number": condition_number,
+            "posterior_solver": "cholesky",
+            "final_system_uses_returned_robust_weights": True,
             "minimum_robust_weight": (
                 float(np.min(robust[active_observation]))
                 if np.any(active_observation)
