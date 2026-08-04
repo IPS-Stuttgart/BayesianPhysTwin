@@ -11,6 +11,7 @@ on:
       - "src/bayesian_phystwin/deform360_contact_anchor.py"
       - "tests/test_deform360_contact_anchor.py"
       - "tests/test_deform360_hub_selection.py"
+      - "tests/test_deform360_stage0_workflow.py"
       - "docs/deform360_official_hub_visuotactile_v1.md"
       - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
       - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
@@ -59,22 +60,24 @@ jobs:
             src/bayesian_phystwin/deform360_contact_anchor.py \
             scripts/science/build_deform360_hub_selection.py \
             tests/test_deform360_contact_anchor.py \
-            tests/test_deform360_hub_selection.py
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
           python -m ruff format --check \
             src/bayesian_phystwin/deform360_contact_anchor.py \
             scripts/science/build_deform360_hub_selection.py \
             tests/test_deform360_contact_anchor.py \
-            tests/test_deform360_hub_selection.py
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
           python -m pytest -q \
             tests/test_deform360_contact_anchor.py \
-            tests/test_deform360_hub_selection.py
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
           python -m compileall -q \
             src/bayesian_phystwin/deform360_contact_anchor.py \
             scripts/science/build_deform360_hub_selection.py
 
   official-hub-selection:
     name: Names and metadata only / workstation2
-    needs: contracts
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -113,6 +116,30 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]" "huggingface_hub>=0.30,<2"
           python -m pip check
+
+      - name: Revalidate target-blind implementation on publication runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m pytest -q \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py \
+            tests/test_deform360_stage0_workflow.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py
 
       - name: Record environment outside the checkout
         shell: bash
