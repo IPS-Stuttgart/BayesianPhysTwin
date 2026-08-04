@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, cast
 
 import numpy as np
+
+from ._canonical_contracts import frozen_finite_json_mapping
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -28,17 +29,8 @@ def _finite_array(value: np.ndarray, name: str, ndim: int) -> np.ndarray:
     return result
 
 
-def _validated_metadata(values: Mapping[str, Any] | None) -> dict[str, Any]:
-    try:
-        return json.loads(
-            json.dumps(
-                dict(values or {}),
-                sort_keys=True,
-                allow_nan=False,
-            )
-        )
-    except (TypeError, ValueError) as error:
-        raise ValueError("metadata must contain finite JSON values") from error
+def _validated_metadata(values: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    return frozen_finite_json_mapping(values, name="metadata")
 
 
 def _symmetric(value: np.ndarray) -> np.ndarray:
