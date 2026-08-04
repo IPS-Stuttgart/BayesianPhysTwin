@@ -41,12 +41,65 @@ jobs:
           set -euo pipefail
           bundle="${RUNNER_TEMP}/deform360-v2.tar.gz"
           source_root="${RUNNER_TEMP}/deform360-v2"
-          cat \
-            tools/deform360-v2-bundle-00.b64 \
-            tools/deform360-v2-bundle-01.b64 \
-            tools/deform360-v2-bundle-02.b64 \
-            | tr -d '\n' \
-            | base64 --decode > "${bundle}"
+          python - "${bundle}" <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          expected = "446332a40b0d54f10140113e939e1a16bf0a04d39f419a5e1c891820939ae6c5"
+          paths = [
+              Path("tools/deform360-v2-bundle-00.b64"),
+              Path("tools/deform360-v2-bundle-01.b64"),
+              Path("tools/deform360-v2-bundle-02.b64"),
+          ]
+          parts = ["".join(path.read_text(encoding="ascii").split()) for path in paths]
+
+          def padded(value: str) -> str:
+              return value + "=" * ((-len(value)) % 4)
+
+          candidates: list[tuple[str, bytes]] = []
+          try:
+              candidates.append(
+                  (
+                      "independent-chunks",
+                      b"".join(
+                          base64.b64decode(padded(part), validate=True)
+                          for part in parts
+                      ),
+                  )
+              )
+          except ValueError as error:
+              print(f"independent-chunks rejected: {error}")
+
+          joined = "".join(parts)
+          for name, encoded in (
+              ("whole-stream", joined),
+              ("de-padded-stream", "".join(part.rstrip("=") for part in parts)),
+          ):
+              try:
+                  candidates.append(
+                      (name, base64.b64decode(padded(encoded), validate=True))
+                  )
+              except ValueError as error:
+                  print(f"{name} rejected: {error}")
+
+          matches = []
+          for name, payload in candidates:
+              digest = hashlib.sha256(payload).hexdigest()
+              print(f"{name}: bytes={len(payload)} sha256={digest}")
+              if digest == expected:
+                  matches.append((name, payload))
+          if len(matches) != 1:
+              raise SystemExit(
+                  f"expected exactly one verified decode strategy, found {len(matches)}"
+              )
+          strategy, payload = matches[0]
+          Path(sys.argv[1]).write_bytes(payload)
+          print(f"verified decode strategy: {strategy}")
+          PY
           echo "446332a40b0d54f10140113e939e1a16bf0a04d39f419a5e1c891820939ae6c5  ${bundle}" \
             | sha256sum --check --strict
           mkdir -p "${source_root}"
