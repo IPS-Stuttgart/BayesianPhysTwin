@@ -1,4 +1,4 @@
-name: One-shot format cross-window identity study
+name: One-shot correct and format cross-window identity study
 
 on:
   pull_request:
@@ -40,7 +40,77 @@ jobs:
       - name: Install formatting tools
         run: python -m pip install "ruff>=0.6"
 
-      - name: Remove the audited unused import and format changed Python
+      - name: Make cross-window evidence additive to the newest-window reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "scripts/science/prob4d_cross_window_identity_development_v1.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          start = text.index("def _selected_rows(")
+          stop = text.index("def _batch_for_method(", start)
+          replacement = '''def _selected_rows(
+              group: GroupData,
+              association: GroupAssociation,
+              method_id: str,
+          ) -> tuple[np.ndarray, np.ndarray]:
+              point_count = len(np.unique(group.stack.point_ids))
+              specifications: list[tuple[int, int, int]] = []
+              right_true = association.context.right_local_to_true
+
+              def add_newest_window() -> None:
+                  for frame in (2, 3):
+                      specifications.extend(
+                          (frame, true_id, true_id) for true_id in right_true
+                      )
+
+              if method_id == FRAMEWISE:
+                  specifications.extend((3, true_id, true_id) for true_id in right_true)
+              elif method_id == NEWEST_WINDOW:
+                  add_newest_window()
+              elif method_id == NAIVE_MERGE:
+                  add_newest_window()
+                  for frame in (0, 1):
+                      specifications.extend(
+                          (frame, local_id, true_id)
+                          for local_id, true_id in enumerate(right_true)
+                      )
+              elif method_id == SOURCE_LINKED:
+                  add_newest_window()
+                  for left_id, right_id in association.result.accepted_pairs:
+                      true_id = right_true[right_id]
+                      specifications.extend(
+                          (frame, left_id, true_id) for frame in (0, 1)
+                      )
+              elif method_id == ORACLE_LINKED:
+                  add_newest_window()
+                  for true_id in right_true:
+                      specifications.extend(
+                          (frame, true_id, true_id) for frame in (0, 1)
+                      )
+              else:
+                  raise ValueError(f"unknown observation method: {method_id}")
+
+              row_indices = np.asarray(
+                  [frame * point_count + true_id for frame, true_id, _ in specifications],
+                  dtype=np.int64,
+              )
+              assigned_ids = np.asarray(
+                  [assigned for _, _, assigned in specifications],
+                  dtype=np.int64,
+              )
+              return row_indices, assigned_ids
+
+
+          '''
+          path.write_text(text[:start] + replacement + text[stop:], encoding="utf-8")
+          PY
+
+      - name: Remove audited lint debt and format changed Python
         shell: bash
         run: |
           set -euo pipefail
@@ -69,5 +139,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Format cross-window identity development study"
+          git commit -m "Make cross-window evidence additive to newest-window inference"
           git push origin HEAD:agent/prob4d-cross-window-identity-study
