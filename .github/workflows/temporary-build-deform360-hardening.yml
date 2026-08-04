@@ -113,32 +113,60 @@ jobs:
               label_index = lines.index(label)
           except ValueError as error:
               raise SystemExit("result-identity patch label is missing") from error
-          needle = (
+          selection_needle = (
               '        \'\'\'        "selection_sha256": '
               'seal["selection_sha256"],'
           )
-          matches = [
+          selection_matches = [
               index
               for index in range(max(0, label_index - 20), label_index)
-              if lines[index] == needle
+              if lines[index] == selection_needle
           ]
-          if len(matches) != 2:
+          if len(selection_matches) != 2:
               raise SystemExit(
-                  f"generator amendment expected two lines, found {len(matches)}"
+                  "generator amendment expected two selection lines, "
+                  f"found {len(selection_matches)}"
               )
-          protocol_line = (
+          protocol_triple = (
               '        \'\'\'        "protocol_file_sha256": '
               'seal["protocol_file_sha256"],'
           )
-          selection_line = (
+          selection_plain = (
               '        "selection_sha256": seal["selection_sha256"],'
           )
-          for index in reversed(matches):
-              lines[index] = protocol_line
-              lines.insert(index + 1, selection_line)
+          for index in reversed(selection_matches):
+              lines[index] = protocol_triple
+              lines.insert(index + 1, selection_plain)
+
+          label_index = lines.index(label)
+          protocol_matches = [
+              index
+              for index in range(max(0, label_index - 30), label_index)
+              if lines[index] == protocol_triple
+          ]
+          if len(protocol_matches) != 2:
+              raise SystemExit(
+                  "generator amendment expected two protocol lines, "
+                  f"found {len(protocol_matches)}"
+              )
+          schema_line = '        \'\'\'        "schema": RESULT_SCHEMA,'
+          schema_version_line = '        "schema_version": 1,'
+          protocol_id_line = (
+              '        "protocol_id": protocol["protocol_id"],'
+          )
+          protocol_plain = (
+              '        "protocol_file_sha256": '
+              'seal["protocol_file_sha256"],'
+          )
+          for index in reversed(protocol_matches):
+              lines[index] = schema_line
+              lines.insert(index + 1, schema_version_line)
+              lines.insert(index + 2, protocol_id_line)
+              lines.insert(index + 3, protocol_plain)
+
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           actual = hashlib.sha256(path.read_bytes()).hexdigest()
-          expected = "2ba89428c006bfb1565724f10d245110e9050da6b4cb024f91d3d1d34af542df"
+          expected = "4c445c717d45d04879df3a4c303f44202a56faaaa17fdb920fcd6ca1f3fd0aef"
           if actual != expected:
               raise SystemExit(f"amended generator digest mismatch: {actual} != {expected}")
           print(f"amended {path}: {actual}")
