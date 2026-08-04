@@ -162,7 +162,7 @@ def _transition_logs_for_times(
         atol=1e-10,
     ):
         raise ValueError("time gaps must be positive integer multiples of time_step")
-    logs = np.empty((transition_count, 2, 2), dtype=np.float64)
+    logs: np.ndarray = np.empty((transition_count, 2, 2), dtype=np.float64)
     for index, step_count in enumerate(steps):
         powered = np.linalg.matrix_power(transition, int(step_count))
         powered /= np.sum(powered, axis=1, keepdims=True)

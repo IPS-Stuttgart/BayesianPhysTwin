@@ -63,9 +63,9 @@ class ParameterEnsemble:
     @property
     def weights(self) -> np.ndarray:
         self._validate_state()
-        normalized = self.log_weights - np.max(self.log_weights)
+        normalized: np.ndarray = self.log_weights - np.max(self.log_weights)
         weights = np.exp(normalized)
-        total = np.sum(weights)
+        total: float = float(np.sum(weights))
         if not np.isfinite(total) or total <= 0.0:
             raise FloatingPointError("invalid particle weights")
         result = weights / total
