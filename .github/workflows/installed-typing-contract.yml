@@ -1,0 +1,89 @@
+name: Installed typing contract
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/installed-typing-contract.yml"
+      - "docs/typing.md"
+      - "integration_tests/typing_consumer.py"
+      - "pyproject.toml"
+      - "scripts/release/verify_pep561_distribution.py"
+      - "src/bayesian_phystwin/py.typed"
+      - "tests/test_pep561_packaging.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/installed-typing-contract.yml"
+      - "docs/typing.md"
+      - "integration_tests/typing_consumer.py"
+      - "pyproject.toml"
+      - "scripts/release/verify_pep561_distribution.py"
+      - "src/bayesian_phystwin/py.typed"
+      - "tests/test_pep561_packaging.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: installed-typing-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  distribution-and-consumer:
+    name: Wheel/sdist and isolated consumer / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out Bayesian-PhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Build wheel and source distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --upgrade pip build
+          python -m build --wheel --sdist --outdir dist .
+
+      - name: Verify distribution typing metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/release/verify_pep561_distribution.py \
+            dist/*.whl \
+            dist/*.tar.gz
+
+      - name: Type-check an isolated installed-wheel consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel="$(find dist -maxdepth 1 -type f -name 'bayesian_phystwin-*.whl' -print)"
+          if [[ -z "${wheel}" || "$(printf '%s\n' "${wheel}" | wc -l)" -ne 1 ]]; then
+            echo "Expected exactly one Bayesian-PhysTwin wheel." >&2
+            exit 1
+          fi
+
+          run_root="$(mktemp -d "${RUNNER_TEMP}/bpt-typing-consumer.XXXXXX")"
+          trap 'rm -rf "${run_root}"' EXIT
+          python -m venv "${run_root}/venv"
+          "${run_root}/venv/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --upgrade pip mypy "${wheel}"
+          cp integration_tests/typing_consumer.py "${run_root}/typing_consumer.py"
+
+          cd "${run_root}"
+          env -u PYTHONPATH \
+            PYTHONNOUSERSITE=1 \
+            "${run_root}/venv/bin/python" -I -m mypy \
+            --strict \
+            --follow-imports=silent \
+            typing_consumer.py

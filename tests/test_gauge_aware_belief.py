@@ -5,6 +5,7 @@ import pytest
 
 from bayesian_phystwin.gauge_aware_belief import (
     GaugeAwareBeliefConfig,
+    GaugeAwareBeliefResult,
     GaugeAwareObservationBatch,
     decode_gauge_aware_query,
     select_gauge_aware_candidate,
@@ -33,6 +34,7 @@ def _batch(
     anchor_innovation_x: np.ndarray | None = None,
     anchor_groups: tuple[str, ...] | None = None,
     anchor_bias_mode: np.ndarray | None = None,
+    metadata: dict[str, object] | None = None,
 ) -> GaugeAwareObservationBatch:
     count = len(mode)
     gauge = _empty_design(count) if gauge_mode is None else _design(gauge_mode)
@@ -67,7 +69,9 @@ def _batch(
         prior_reliability=np.ones(count),
         physical_response_scale_m=physical_response_scale_m,
         state_prior_covariance_m2=np.asarray([[0.01]]),
-        metadata={"observation_artifact_id": "a" * 64},
+        metadata=(
+            {"observation_artifact_id": "a" * 64} if metadata is None else metadata
+        ),
         **kwargs,
     )
 
@@ -246,6 +250,73 @@ def test_student_t_update_downweights_one_factor_outlier() -> None:
     assert result.state_coefficients[0] == pytest.approx(0.01, abs=0.003)
 
 
+def test_gauge_aware_final_system_rechecks_condition_number(monkeypatch) -> None:
+    conditions = iter((1.0, 1e6))
+    monkeypatch.setattr(np.linalg, "cond", lambda _: next(conditions))
+    mode = np.linspace(-1.0, 1.0, 9)
+
+    result = update_gauge_aware_belief(
+        _batch(mode, 0.01 * mode),
+        config=GaugeAwareBeliefConfig(
+            maximum_iterations=1,
+            maximum_condition_number=10.0,
+        ),
+    )
+
+    assert not result.inference_admissible
+    assert result.reason == "ill-conditioned-posterior"
+    assert result.diagnostics["condition_number"] == pytest.approx(1e6)
+    np.testing.assert_array_equal(result.state_coefficients, 0.0)
+
+
+def test_gauge_aware_final_cholesky_failure_falls_back(monkeypatch) -> None:
+    original_cholesky = np.linalg.cholesky
+    call_count = 0
+
+    def fail_final_cholesky(matrix: np.ndarray) -> np.ndarray:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise np.linalg.LinAlgError("synthetic final-system failure")
+        return original_cholesky(matrix)
+
+    monkeypatch.setattr(np.linalg, "cholesky", fail_final_cholesky)
+    mode = np.linspace(-1.0, 1.0, 9)
+
+    result = update_gauge_aware_belief(
+        _batch(mode, 0.01 * mode),
+        config=GaugeAwareBeliefConfig(maximum_iterations=1),
+    )
+
+    assert call_count == 2
+    assert not result.inference_admissible
+    assert result.reason == "singular-posterior"
+    np.testing.assert_array_equal(result.state_coefficients, 0.0)
+
+
+def test_gauge_aware_spd_paths_do_not_use_numpy_inverse(monkeypatch) -> None:
+    def reject_inverse(*_args: object, **_kwargs: object) -> np.ndarray:
+        raise AssertionError("np.linalg.inv must not be used for SPD systems")
+
+    monkeypatch.setattr(np.linalg, "inv", reject_inverse)
+    mode = np.linspace(-1.0, 1.0, 9)
+
+    result = update_gauge_aware_belief(
+        _batch(mode, 0.01 * mode),
+        config=GaugeAwareBeliefConfig(maximum_iterations=1),
+    )
+
+    assert result.inference_admissible
+    assert result.diagnostics["posterior_solver"] == "cholesky"
+    assert result.diagnostics["final_system_uses_returned_robust_weights"] is True
+    np.testing.assert_allclose(
+        result.posterior_covariance,
+        result.posterior_covariance.T,
+        atol=0.0,
+        rtol=0.0,
+    )
+
+
 def test_update_is_rejected_when_query_correction_exceeds_physical_response() -> None:
     mode = np.linspace(-1.0, 1.0, 12)
     batch = _batch(
@@ -356,9 +427,7 @@ def test_state_reparameterization_preserves_query_mean_and_covariance() -> None:
     )
 
     original_mean = decode_gauge_aware_query(original, query)
-    transformed_mean = decode_gauge_aware_query(
-        reparameterized, transformed_query
-    )
+    transformed_mean = decode_gauge_aware_query(reparameterized, transformed_query)
     np.testing.assert_allclose(transformed_mean, original_mean, atol=2e-8)
 
     original_state_cov = original.posterior_covariance[:2, :2]
@@ -429,3 +498,59 @@ def test_regret_decision_must_be_bound_to_exact_candidate() -> None:
                 candidate_accepted=True,
             ),
         )
+
+
+def test_gauge_aware_batch_recursively_owns_and_freezes_metadata() -> None:
+    nested = {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    metadata: dict[str, object] = {"provider": nested}
+    batch = _batch(
+        np.asarray([1.0]),
+        np.asarray([0.0]),
+        metadata=metadata,
+    )
+
+    nested["calibration_ids"].append("mutated")
+    metadata["late"] = True
+
+    assert batch.metadata == {
+        "provider": {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    }
+    assert batch.metadata is not None
+    with pytest.raises(TypeError, match="immutable"):
+        batch.metadata["provider"] = {}  # type: ignore[index]
+    with pytest.raises(TypeError, match="immutable"):
+        batch.metadata["provider"]["calibration_ids"].append("mutated")
+
+
+def test_gauge_aware_result_recursively_owns_and_freezes_provenance() -> None:
+    diagnostic_details = {"iterations": [1, 2]}
+    lineage_details = {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    result = GaugeAwareBeliefResult(
+        inference_admissible=True,
+        reason="inference-admissible",
+        state_coefficients=np.asarray([0.0]),
+        gauge_delta=np.zeros(0),
+        shared_bias_coefficients=np.zeros(0),
+        view_bias_coefficients=np.zeros(0),
+        anchor_bias_coefficients=np.zeros(0),
+        posterior_covariance=np.asarray([[1.0]]),
+        identifiable_state_transform=np.asarray([[1.0]]),
+        identifiable_fractions=np.asarray([1.0]),
+        query_sensitivity_fractions=np.asarray([1.0]),
+        robust_weights=np.asarray([1.0]),
+        anchor_robust_weights=np.zeros(0),
+        diagnostics={"solver": diagnostic_details},
+        input_lineage={"provider": lineage_details},
+    )
+
+    diagnostic_details["iterations"].append(3)
+    lineage_details["calibration_ids"].append("mutated")
+
+    assert result.diagnostics == {"solver": {"iterations": [1, 2]}}
+    assert result.input_lineage == {
+        "provider": {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    }
+    with pytest.raises(TypeError, match="immutable"):
+        result.diagnostics["solver"]["iterations"].append(3)
+    with pytest.raises(TypeError, match="immutable"):
+        result.input_lineage["provider"]["calibration_ids"][0] = "mutated"

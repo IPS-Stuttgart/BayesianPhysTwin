@@ -235,6 +235,28 @@ def test_update_contract_freezes_calibration_mapping() -> None:
         update.calibration_artifact_ids["gauge"] = "f" * 64  # type: ignore[index]
 
 
+def test_update_contract_exposes_immutable_result_lineage() -> None:
+    supplied = dict(CALIBRATION_IDS)
+    lineage = {
+        **_lineage(),
+        "prob4d_claim_bearing_calibration_artifact_ids": supplied,
+    }
+    update = _update(result=_result(lineage))
+    update_id = update.update_id
+
+    supplied["gauge"] = "f" * 64
+
+    assert (
+        update.result.input_lineage["prob4d_claim_bearing_calibration_artifact_ids"]
+        == CALIBRATION_IDS
+    )
+    assert update.update_id == update_id
+    with pytest.raises(TypeError, match="immutable"):
+        update.result.input_lineage["prob4d_claim_bearing_calibration_artifact_ids"][
+            "gauge"
+        ] = "f" * 64
+
+
 def test_update_contract_rejects_invalid_calibration_digest() -> None:
     with pytest.raises(ValueError, match="calibration artifact"):
         _update(calibration_artifact_ids={"gauge": "invalid"})
