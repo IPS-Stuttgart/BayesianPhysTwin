@@ -1,0 +1,184 @@
+name: Port full-22 diagnostic onto main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  port:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Verify and copy the science-only source delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_base=b01890665aa22419bfb6310d3dc1716b7769e78a
+          source_head=b25abb2014ab54d07113eaf4a84205fa6c12c739
+          git fetch --no-tags origin "${source_base}" "${source_head}"
+
+          cat > /tmp/expected-files.txt <<'EOF'
+          .github/workflows/full22-model-average-hosted-reference.yml
+          .github/workflows/full22-model-average-science.yml
+          protocols/full22_endpoint_model_average_diagnostic_v1.json
+          results/diagnostics/full22_endpoint_model_average_v1/README.md
+          results/diagnostics/full22_endpoint_model_average_v1/artifact_manifest.json
+          results/diagnostics/full22_endpoint_model_average_v1/per_case.csv
+          results/diagnostics/full22_endpoint_model_average_v1/readout.json
+          scripts/science/run_full22_endpoint_model_average_diagnostic.py
+          tests/test_full22_endpoint_model_average_diagnostic.py
+          EOF
+          git diff --name-only "${source_base}" "${source_head}" \
+            | LC_ALL=C sort > /tmp/actual-files.txt
+          LC_ALL=C sort -o /tmp/expected-files.txt /tmp/expected-files.txt
+          diff -u /tmp/expected-files.txt /tmp/actual-files.txt
+
+          mapfile -t files < /tmp/expected-files.txt
+          git checkout "${source_head}" -- "${files[@]}"
+
+      - name: Rebind workflows to current main
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          hosted = Path(
+              '.github/workflows/full22-model-average-hosted-reference.yml'
+          )
+          text = hosted.read_text(encoding='utf-8')
+          old = '      - agent/prospective-belief-hardening\n'
+          if text.count(old) != 1:
+              raise RuntimeError('unexpected hosted-reference base trigger')
+          hosted.write_text(text.replace(old, '      - main\n'), encoding='utf-8')
+
+          science = Path('.github/workflows/full22-model-average-science.yml')
+          text = science.read_text(encoding='utf-8')
+          push_start = text.index('  push:\n')
+          pull_start = text.index('  pull_request:\n')
+          text = text[:push_start] + text[pull_start:]
+          old = '      - agent/prospective-belief-hardening\n'
+          if text.count(old) != 1:
+              raise RuntimeError('unexpected self-hosted base trigger')
+          science.write_text(text.replace(old, '      - main\n'), encoding='utf-8')
+          PY
+
+      - name: Install locked development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,data,graph]"
+          python -m pip check
+
+      - name: Validate code, protocol, and committed evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/run_full22_endpoint_model_average_diagnostic.py \
+            tests/test_full22_endpoint_model_average_diagnostic.py
+          python -m ruff format --check \
+            scripts/science/run_full22_endpoint_model_average_diagnostic.py \
+            tests/test_full22_endpoint_model_average_diagnostic.py
+          python -m pytest -q \
+            tests/test_full22_endpoint_model_average_diagnostic.py \
+            tests/test_endpoint_model_average.py
+          python - <<'PY'
+          import csv
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('results/diagnostics/full22_endpoint_model_average_v1')
+          manifest = json.loads(
+              (root / 'artifact_manifest.json').read_text(encoding='utf-8')
+          )
+          protocol = json.loads(
+              Path(
+                  'protocols/full22_endpoint_model_average_diagnostic_v1.json'
+              ).read_text(encoding='utf-8')
+          )
+          protocol_digest = hashlib.sha256(
+              json.dumps(
+                  protocol,
+                  sort_keys=True,
+                  separators=(',', ':'),
+                  allow_nan=False,
+              ).encode('utf-8')
+          ).hexdigest()
+          expected_protocol = (
+              '8c4021f082b03ef761bc97300eeac11b6f3f92a2bdc52c1941020f6c1f340217'
+          )
+          if protocol_digest != expected_protocol:
+              raise SystemExit(
+                  f'protocol digest changed: {protocol_digest} != {expected_protocol}'
+              )
+          if manifest['protocol_sha256'] != protocol_digest:
+              raise SystemExit('manifest protocol digest disagrees with protocol')
+
+          per_case = root / 'per_case.csv'
+          per_case_digest = hashlib.sha256(per_case.read_bytes()).hexdigest()
+          if per_case_digest != manifest['per_case_csv_sha256']:
+              raise SystemExit('per-case CSV digest disagrees with manifest')
+          with per_case.open(newline='', encoding='utf-8') as stream:
+              rows = list(csv.DictReader(stream))
+          if len(rows) != 22:
+              raise SystemExit(f'expected 22 per-case rows, received {len(rows)}')
+
+          readout = json.loads((root / 'readout.json').read_text(encoding='utf-8'))
+          if readout['protocol_sha256'] != protocol_digest:
+              raise SystemExit('readout protocol digest disagrees with protocol')
+          if readout['classification'] != 'retrospective-non-claim-bearing-diagnostic':
+              raise SystemExit('readout claim classification changed')
+          if readout['confirmation_19']['case_count'] != 19:
+              raise SystemExit('confirmation partition no longer contains 19 cases')
+          print(
+              json.dumps(
+                  {
+                      'protocol_sha256': protocol_digest,
+                      'per_case_sha256': per_case_digest,
+                      'case_count': len(rows),
+                      'classification': readout['classification'],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+          )
+          PY
+          git diff --check
+
+      - name: Commit the clean port and remove this one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/port-full22-model-average-diagnostic.yml
+          git add \
+            .github/workflows/full22-model-average-hosted-reference.yml \
+            .github/workflows/full22-model-average-science.yml \
+            protocols/full22_endpoint_model_average_diagnostic_v1.json \
+            results/diagnostics/full22_endpoint_model_average_v1/README.md \
+            results/diagnostics/full22_endpoint_model_average_v1/artifact_manifest.json \
+            results/diagnostics/full22_endpoint_model_average_v1/per_case.csv \
+            results/diagnostics/full22_endpoint_model_average_v1/readout.json \
+            scripts/science/run_full22_endpoint_model_average_diagnostic.py \
+            tests/test_full22_endpoint_model_average_diagnostic.py
+          git diff --cached --check
+          git commit -m 'Publish locked full-22 model-average diagnostic'
+          git push origin HEAD:${{ github.head_ref }}
