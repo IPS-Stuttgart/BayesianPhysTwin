@@ -151,10 +151,14 @@ def test_probe_reads_cadence_and_headers_without_reporting_coordinates(
 
     assert result["object_count"] == 1
     assert result["episode_count"] == 1
-    assert result["all_archives_constant_frame_stride"] is True
+    assert result["all_stride_observable_archives_constant_frame_stride"] is True
+    assert result["prediction_eligible_episode_count"] == 1
+    assert result["prediction_ineligible_episode_count"] == 0
     archive = result["archives"][0]
     assert archive["frame_indices"] == [0, 2, 4]
     assert archive["frame_stride_counts"] == {"2": 2}
+    assert archive["transition_count"] == 2
+    assert archive["prediction_eligible"] is True
     assert archive["points_world_m_header"]["shape"] == [15, 3]
     assert archive["points_world_m_header"]["coordinate_values_decoded"] is False
     assert "points_world_m" not in archive
@@ -162,6 +166,7 @@ def test_probe_reads_cadence_and_headers_without_reporting_coordinates(
     assert result["information_boundary"]["complete_archive_bytes_hashed"] is True
     assert result["constant_frame_stride_counts"] == {"2": 1}
     assert result["irregular_frame_stride_archive_count"] == 0
+    assert result["no_transition_archive_count"] == 0
     assert len(result["content_probe_sha256"]) == 64
     assert len(result["probe_sha256"]) == 64
 
@@ -171,9 +176,34 @@ def test_probe_reports_irregular_stride_without_hiding_it(tmp_path: Path) -> Non
 
     result = probe_locked_source_hulls(root, protocol_path=protocol)
 
-    assert result["all_archives_constant_frame_stride"] is False
+    assert result["all_stride_observable_archives_constant_frame_stride"] is False
     assert result["archives"][0]["frame_stride_counts"] == {"2": 1, "3": 1}
     assert result["irregular_frame_stride_archive_count"] == 1
+
+
+def test_short_archive_is_retained_but_prediction_ineligible(tmp_path: Path) -> None:
+    root, protocol = _fixture(tmp_path)
+    archive = next(root.rglob("sampled_hulls.npz"))
+    _write_hulls(
+        archive,
+        frames=np.array([7], dtype=np.int32),
+        point_counts=(4,),
+    )
+
+    result = probe_locked_source_hulls(root, protocol_path=protocol)
+
+    assert result["episode_count"] == 1
+    assert result["prediction_eligible_episode_count"] == 0
+    assert result["prediction_ineligible_episode_count"] == 1
+    assert result["prediction_ineligible_archives"] == [
+        str(archive.relative_to(root).as_posix())
+    ]
+    assert result["no_transition_archive_count"] == 1
+    record = result["archives"][0]
+    assert record["frame_count"] == 1
+    assert record["transition_count"] == 0
+    assert record["stride_observable"] is False
+    assert record["prediction_eligible"] is False
 
 
 def test_probe_fails_closed_on_offset_contract(tmp_path: Path) -> None:
