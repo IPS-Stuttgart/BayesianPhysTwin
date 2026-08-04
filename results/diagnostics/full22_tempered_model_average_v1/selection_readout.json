@@ -1,0 +1,226 @@
+{
+  "classification": "source-only-retrospective-selection",
+  "confirmation_outcomes_opened": false,
+  "development_cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "group_conformal": {
+    "across_case_rule": "maximum development-case quantile within each horizon",
+    "chi_square_reference": 6.251388631170325,
+    "development_case_quantiles_by_horizon": {
+      "early": {
+        "double_lift_sloth": 17.138943459786972,
+        "double_stretch_sloth": 4.031875564561906,
+        "single_lift_sloth": 14.426099931674392
+      },
+      "late": {
+        "double_lift_sloth": 35.980687913599745,
+        "double_stretch_sloth": 1.2970526035314724,
+        "single_lift_sloth": 51.64534048064346
+      },
+      "middle": {
+        "double_lift_sloth": 29.372191516446204,
+        "double_stretch_sloth": 1.5121581506497652,
+        "single_lift_sloth": 31.565400401087714
+      }
+    },
+    "development_event_counts_by_horizon": {
+      "early": {
+        "double_lift_sloth": 22576,
+        "double_stretch_sloth": 74511,
+        "single_lift_sloth": 30758
+      },
+      "late": {
+        "double_lift_sloth": 17048,
+        "double_stretch_sloth": 82745,
+        "single_lift_sloth": 27496
+      },
+      "middle": {
+        "double_lift_sloth": 17633,
+        "double_stretch_sloth": 73471,
+        "single_lift_sloth": 31005
+      }
+    },
+    "scales_by_horizon": {
+      "early": 2.7416218173238707,
+      "late": 8.261418946685277,
+      "middle": 5.049342196339878
+    },
+    "target_coverage": 0.9,
+    "temperature": 128.0
+  },
+  "guard": {
+    "development_scores_m": {
+      "double_lift_sloth": 0.008311159393113957,
+      "double_stretch_sloth": 0.004611348712376792,
+      "single_lift_sloth": 0.008288470016742966
+    },
+    "fallback": "last_residual",
+    "maximum_development_relative_regret": 0.0,
+    "score": "within-case 90th percentile endpoint disagreement norm between tempered model average and last-supported residual over updated tracks",
+    "selected_record": {
+      "accepted_case_count": 1,
+      "case_guarded_loss_vs_fallback": {
+        "double_lift_sloth": 1.0,
+        "double_stretch_sloth": 0.9879480523964729,
+        "single_lift_sloth": 1.0
+      },
+      "decisions": {
+        "double_lift_sloth": false,
+        "double_stretch_sloth": true,
+        "single_lift_sloth": false
+      },
+      "equal_case_mean_guarded_loss_vs_fallback": 0.9959826841321576,
+      "feasible": true,
+      "maximum_case_relative_regret": 0.0,
+      "threshold_m": 0.004611348712376792
+    },
+    "selected_threshold_m": 0.004611348712376792,
+    "temperature": 128.0
+  },
+  "protocol_sha256": "a351cf37ba19130feca4dcfb87b1e7ab9a2e601d22edeed3a39a00c904ecbbe3",
+  "schema": "bayesian-phystwin-tempered-model-average-selection-readout",
+  "schema_version": 1,
+  "selection_id": "d204e656894c007644c4b04cbe1b529da0e6aca0081a823dc4d5ef602bbb56fa",
+  "selection_sha256": "5dac806ab91a5709215bd3572b04361b5a541cfe81987c9385455f8ba7420b5f",
+  "temperature": {
+    "candidate_records": [
+      {
+        "case_nll": {
+          "double_lift_sloth": 1029.407546387559,
+          "double_stretch_sloth": 83.45904738781219,
+          "single_lift_sloth": 751.2644251086438
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.0015378214616728,
+          "double_stretch_sloth": 0.9941453514856591,
+          "single_lift_sloth": 1.017925342440585
+        },
+        "equal_case_mean_component_entropy_nats": 0.0989801954083619,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0045361717959723,
+        "equal_case_mean_updated_only_nll": 621.3770062946717,
+        "temperature": 1.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": 532.2725186917103,
+          "double_stretch_sloth": 80.39482682115885,
+          "single_lift_sloth": 217.7951237146952
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.001837101545158,
+          "double_stretch_sloth": 0.9928022760651852,
+          "single_lift_sloth": 1.0204375125387846
+        },
+        "equal_case_mean_component_entropy_nats": 0.2379493458271967,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0050256300497093,
+        "equal_case_mean_updated_only_nll": 276.8208230758548,
+        "temperature": 2.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": 108.89303328150954,
+          "double_stretch_sloth": 29.221877089883287,
+          "single_lift_sloth": 18.24079754534354
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.002254984679803,
+          "double_stretch_sloth": 0.991614910739353,
+          "single_lift_sloth": 1.0257972855010276
+        },
+        "equal_case_mean_component_entropy_nats": 0.5110537395413189,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0065557269733945,
+        "equal_case_mean_updated_only_nll": 52.11856930557878,
+        "temperature": 4.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": 59.313099676747535,
+          "double_stretch_sloth": 7.846282354829315,
+          "single_lift_sloth": -0.4698985363325297
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.0024188258801312,
+          "double_stretch_sloth": 0.9909660510492113,
+          "single_lift_sloth": 1.030616969047373
+        },
+        "equal_case_mean_component_entropy_nats": 0.8164198994243698,
+        "equal_case_mean_point_loss_vs_last_residual": 1.007?,
+        "equal_case_mean_updated_only_nll": 22.229827831748106,
+        "temperature": 8.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": 33.94993204013701,
+          "double_stretch_sloth": 3.4290218571562775,
+          "single_lift_sloth": -5.17251076636423
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.0026063427528302,
+          "double_stretch_sloth": 0.9901162743600858,
+          "single_lift_sloth": 1.033745807275013
+        },
+        "equal_case_mean_component_entropy_nats": 1.1918658072640917,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0088228081293095,
+        "equal_case_mean_updated_only_nll": 10.735481043643018,
+        "temperature": 16.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": 8.601754106350494,
+          "double_stretch_sloth": -3.3021042459778574,
+          "single_lift_sloth": -6.120458010823222
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.0028858987651328,
+          "double_stretch_sloth": 0.9892212826164203,
+          "single_lift_sloth": 1.035697823345056
+        },
+        "equal_case_mean_component_entropy_nats": 1.6892603027549755,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0092683349088696,
+        "equal_case_mean_updated_only_nll": -0.2736027168168619,
+        "temperature": 32.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": -7.274450244148214,
+          "double_stretch_sloth": -5.905922170089978,
+          "single_lift_sloth": -6.526? 
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.0033141743196334,
+          "double_stretch_sloth": 0.988449132542342,
+          "single_lift_sloth": 1.0366939202770087
+        },
+        "equal_case_mean_component_entropy_nats": 2.153785324283994,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0094857423796614,
+        "equal_case_mean_updated_only_nll": -6.568780288813665,
+        "temperature": 64.0
+      },
+      {
+        "case_nll": {
+          "double_lift_sloth": -9.34675900434283,
+          "double_stretch_sloth": -7.883759787603122,
+          "single_lift_sloth": -6.690733945599173
+        },
+        "case_point_loss_vs_last_residual": {
+          "double_lift_sloth": 1.0037827403417545,
+          "double_stretch_sloth": 0.9879480523964729,
+          "single_lift_sloth": 1.037166323621646
+        },
+        "equal_case_mean_component_entropy_nats": 2.443390992465826,
+        "equal_case_mean_point_loss_vs_last_residual": 1.0096323721199577,
+        "equal_case_mean_updated_only_nll": -7.973750912515042,
+        "temperature": 128.0
+      }
+    ],
+    "objective": "equal-development-case mean updated-only Gaussian negative log likelihood over future residual events",
+    "selected_temperature": 128.0,
+    "tie_break": [
+      "lower equal-case combined point loss relative to last-supported residual",
+      "lower temperature"
+    ]
+  }
+}
