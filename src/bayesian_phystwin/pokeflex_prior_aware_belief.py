@@ -14,7 +14,6 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
-from scipy.spatial import cKDTree
 
 from .gauge_aware_belief import GaugeAwareBeliefResult
 from .observation_belief import ObservationBeliefV1
@@ -300,6 +299,8 @@ def _assignment_rows(
     calibration_p90_m: np.ndarray,
     config: PokeFlexPriorAwareConfigV1,
 ) -> dict[str, np.ndarray]:
+    from scipy.spatial import cKDTree
+
     vertex_count = len(baseline_vertices_m)
     candidates = min(config.assignment_candidates, vertex_count)
     distance, index = cKDTree(baseline_vertices_m).query(
