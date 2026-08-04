@@ -212,7 +212,7 @@ jobs:
             scripts/science/build_deform360_hub_selection.py \
             tests/test_deform360_contact_anchor.py \
             tests/test_deform360_hub_selection.py
-          python -m ruff check \
+          python -m ruff check --fix \
             src/bayesian_phystwin/__init__.py \
             src/bayesian_phystwin/deform360_contact_anchor.py \
             scripts/science/build_deform360_hub_selection.py \
