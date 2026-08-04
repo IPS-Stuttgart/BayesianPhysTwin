@@ -9,6 +9,7 @@ from typing import cast
 import numpy as np
 import pytest
 
+from bayesian_phystwin import explicit_gauge_prob4d as _explicit
 from bayesian_phystwin._gauge_aware_contracts import (
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
 )
@@ -153,6 +154,16 @@ def _fixture() -> tuple[
     return validated, stack, linearization, physical_prediction
 
 
+def _changed_array(
+    value: np.ndarray,
+    index: tuple[int, ...],
+    replacement: float,
+) -> np.ndarray:
+    changed = np.asarray(value).copy()
+    changed[index] = replacement
+    return changed
+
+
 def test_explicit_gauge_bridge_preserves_factor_semantics() -> None:
     validated, stack, linearization, physical_prediction = _fixture()
 
@@ -215,6 +226,27 @@ def test_explicit_gauge_bridge_preserves_factor_semantics() -> None:
     assert adapted.observation_artifact_id == ARTIFACT_ID
 
 
+def test_explicit_gauge_bridge_accepts_optional_nuisance_inputs() -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    shared = np.zeros((4, 3, 1), dtype=np.float64)
+    view = np.zeros((4, 3, 1), dtype=np.float64)
+
+    adapted = build_claim_bearing_explicit_gauge_batch(
+        validated,
+        stack,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction,
+        shared_bias_jacobian=shared,
+        view_bias_jacobian=view,
+        state_prior_covariance_m2=np.eye(1, dtype=np.float64),
+        metadata={"registered_arm": "explicit-gauge"},
+    )
+
+    np.testing.assert_array_equal(adapted.batch.shared_bias_jacobian, shared)
+    np.testing.assert_array_equal(adapted.batch.view_bias_jacobian, view)
+    assert adapted.batch.metadata["registered_arm"] == "explicit-gauge"
+
+
 def test_explicit_gauge_bridge_fails_before_excessive_expansion() -> None:
     validated, stack, linearization, physical_prediction = _fixture()
     required_bytes = 4 * 3 * 14 * np.dtype(np.float64).itemsize
@@ -245,6 +277,64 @@ def test_explicit_gauge_bridge_rejects_row_identity_drift() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("attestation_field", "value", "match"),
+    (
+        ("claim_bearing", False, "not claim-bearing"),
+        ("export_mode", "exploratory", "not calibrated"),
+        ("provider_revision", "9" * 40, "revision differs"),
+        ("provider_manifest_id", "9" * 64, "manifest differs"),
+    ),
+)
+def test_explicit_gauge_bridge_rejects_attestation_identity_drift(
+    attestation_field: str,
+    value: object,
+    match: str,
+) -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    validated.envelope.provider_attestation = {
+        **validated.envelope.provider_attestation,
+        attestation_field: value,
+    }
+
+    with pytest.raises(ValueError, match=match):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            linearization,
+            physical_prediction_xyz_m=physical_prediction,
+        )
+
+
+@pytest.mark.parametrize(
+    ("runtime_field", "value", "match"),
+    (
+        ("source", "installed_vcs_metadata", "runtime source differs"),
+        ("independently_verified", False, "not independently verified"),
+    ),
+)
+def test_explicit_gauge_bridge_rejects_attested_runtime_drift(
+    runtime_field: str,
+    value: object,
+    match: str,
+) -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    attestation = dict(validated.envelope.provider_attestation)
+    attestation["runtime_revision"] = {
+        **attestation["runtime_revision"],
+        runtime_field: value,
+    }
+    validated.envelope.provider_attestation = attestation
+
+    with pytest.raises(ValueError, match=match):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            linearization,
+            physical_prediction_xyz_m=physical_prediction,
+        )
+
+
 def test_explicit_gauge_bridge_rejects_contradictory_attestation() -> None:
     validated, stack, linearization, physical_prediction = _fixture()
     validated.envelope.provider_attestation = {
@@ -256,6 +346,277 @@ def test_explicit_gauge_bridge_rejects_contradictory_attestation() -> None:
     }
 
     with pytest.raises(ValueError, match="calibration IDs differ"):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            linearization,
+            physical_prediction_xyz_m=physical_prediction,
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutator", "match"),
+    (
+        (
+            lambda validated: setattr(validated, "artifact_id", "9" * 64),
+            "artifact ID differs",
+        ),
+        (
+            lambda validated: setattr(
+                validated.envelope,
+                "bundle_schema_version",
+                3,
+            ),
+            "schema version 4",
+        ),
+        (
+            lambda validated: setattr(
+                validated.envelope,
+                "source_repository",
+                "IPS-Stuttgart/Prob4D",
+            ),
+            "frozen Prob4D producer identity",
+        ),
+        (
+            lambda validated: setattr(
+                validated.envelope,
+                "gauge_ids",
+                ("window-0", "window-0"),
+            ),
+            "gauge_ids must be unique",
+        ),
+        (
+            lambda validated: setattr(
+                validated.envelope,
+                "gauge_covariance_semantics",
+                "marginal-blocks-only",
+            ),
+            "joint cross-window covariance",
+        ),
+        (
+            lambda validated: setattr(
+                validated.envelope,
+                "cross_window_gauge_covariance_preserved",
+                False,
+            ),
+            "lost cross-window covariance",
+        ),
+        (
+            lambda validated: setattr(
+                validated.envelope,
+                "runtime_revision_independently_verified",
+                False,
+            ),
+            "literally True",
+        ),
+        (
+            lambda validated: setattr(
+                validated.bundle,
+                "sequence_id",
+                "changed-sequence",
+            ),
+            "field sequence_id",
+        ),
+        (
+            lambda validated: setattr(
+                validated.bundle,
+                "causal_frame_stop",
+                3,
+            ),
+            "causal_frame_stop",
+        ),
+        (
+            lambda validated: setattr(
+                validated.bundle,
+                "factors",
+                (object(),),
+            ),
+            "factor_count",
+        ),
+        (
+            lambda validated: setattr(
+                validated.bundle,
+                "gauges",
+                (SimpleNamespace(window_id="window-0"),),
+            ),
+            "gauges differ",
+        ),
+    ),
+)
+def test_explicit_gauge_bridge_rejects_envelope_bundle_drift(
+    mutator: object,
+    match: str,
+) -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    cast(object, mutator)(validated)  # type: ignore[operator]
+
+    with pytest.raises(ValueError, match=match):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            linearization,
+            physical_prediction_xyz_m=physical_prediction,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "factory", "match"),
+    (
+        (
+            "world_mean_m",
+            lambda stack: np.zeros((4, 2)),
+            "world_mean_m",
+        ),
+        (
+            "conditional_world_covariance_m2",
+            lambda stack: np.zeros((4, 2, 2)),
+            "conditional_world_covariance",
+        ),
+        (
+            "marginal_world_covariance_m2",
+            lambda stack: np.zeros((4, 2, 2)),
+            "marginal_world_covariance",
+        ),
+        (
+            "local_gauge_jacobian",
+            lambda stack: np.zeros((4, 3, 6)),
+            "local_gauge_jacobian",
+        ),
+        (
+            "gauge_indices",
+            lambda stack: np.zeros((4, 1), dtype=np.int64),
+            "gauge_indices",
+        ),
+        (
+            "gauge_ids",
+            lambda stack: ("window-0",),
+            "gauges differ",
+        ),
+        (
+            "gauge_indices",
+            lambda stack: np.asarray([0, 0, 2, 1], dtype=np.int64),
+            "unknown gauge",
+        ),
+        (
+            "gauge_prior_covariance",
+            lambda stack: np.eye(7),
+            "prior has changed shape",
+        ),
+        (
+            "gauge_prior_covariance",
+            lambda stack: _changed_array(
+                stack.gauge_prior_covariance,
+                (0, 0),
+                np.nan,
+            ),
+            "prior must be finite",
+        ),
+        (
+            "gauge_prior_covariance",
+            lambda stack: _changed_array(
+                stack.gauge_prior_covariance,
+                (0, 1),
+                0.1,
+            ),
+            "prior must be symmetric",
+        ),
+        (
+            "gauge_prior_covariance",
+            lambda stack: _changed_array(
+                stack.gauge_prior_covariance,
+                (0, 0),
+                -1.0,
+            ),
+            "positive semidefinite",
+        ),
+        (
+            "association_probability",
+            lambda stack: np.ones((4, 1)),
+            "association_probability must have shape",
+        ),
+        (
+            "prior_nominal_probability",
+            lambda stack: np.asarray([-0.1, 0.9, 0.9, 0.9]),
+            "prior_nominal_probability must lie",
+        ),
+        (
+            "point_ids",
+            lambda stack: np.asarray([-1, 1, 0, 1], dtype=np.int64),
+            "point_ids must be nonnegative",
+        ),
+        (
+            "frame_indices",
+            lambda stack: np.asarray([0, 0, 2, 1], dtype=np.int64),
+            "causal frame stop",
+        ),
+        (
+            "view_ids",
+            lambda stack: ("camera-a",),
+            "string identities",
+        ),
+        (
+            "causal_frame_stop",
+            lambda stack: 3,
+            "stack differs from envelope",
+        ),
+        (
+            "world_mean_m",
+            lambda stack: _changed_array(
+                stack.world_mean_m,
+                (0, 0),
+                np.nan,
+            ),
+            "non-finite values",
+        ),
+        (
+            "conditional_world_covariance_m2",
+            lambda stack: _changed_array(
+                stack.conditional_world_covariance_m2,
+                (0, 0, 1),
+                0.1,
+            ),
+            "conditional point covariances must be symmetric",
+        ),
+        (
+            "conditional_world_covariance_m2",
+            lambda stack: np.concatenate(
+                (
+                    np.zeros((1, 3, 3)),
+                    stack.conditional_world_covariance_m2[1:],
+                )
+            ),
+            "positive definite",
+        ),
+        (
+            "marginal_world_covariance_m2",
+            lambda stack: _changed_array(
+                stack.marginal_world_covariance_m2,
+                (0, 0, 1),
+                0.1,
+            ),
+            "marginal point covariances must be symmetric",
+        ),
+        (
+            "marginal_world_covariance_m2",
+            lambda stack: _changed_array(
+                stack.marginal_world_covariance_m2,
+                (0, 0, 0),
+                -1.0,
+            ),
+            "positive semidefinite",
+        ),
+    ),
+)
+def test_explicit_gauge_bridge_rejects_sparse_stack_drift(
+    field: str,
+    factory: object,
+    match: str,
+) -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    value = cast(object, factory)(stack)  # type: ignore[operator]
+    setattr(stack, field, value)
+
+    with pytest.raises(ValueError, match=match):
         build_claim_bearing_explicit_gauge_batch(
             validated,
             stack,
@@ -295,6 +656,133 @@ def test_explicit_gauge_bridge_rejects_zero_association_rows() -> None:
             stack,
             linearization,
             physical_prediction_xyz_m=physical_prediction,
+        )
+
+
+@pytest.mark.parametrize(
+    ("replacement", "match"),
+    (
+        (object(), "PhysicalLinearizationV1"),
+        (
+            replace(
+                _fixture()[2],
+                observation_artifact_id="9" * 64,
+            ),
+            "does not identify",
+        ),
+        (
+            replace(
+                _fixture()[2],
+                frame_ids=np.asarray([0, 1, 1, 1], dtype=np.int64),
+            ),
+            "frame_ids differ",
+        ),
+        (
+            replace(
+                _fixture()[2],
+                entity_ids=np.asarray([0, 2, 0, 1], dtype=np.int64),
+            ),
+            "entity_ids differ",
+        ),
+        (
+            replace(
+                _fixture()[2],
+                view_indices=np.asarray([0, 0, 1, 0], dtype=np.int64),
+            ),
+            "view_indices differ",
+        ),
+    ),
+)
+def test_explicit_gauge_bridge_rejects_linearization_drift(
+    replacement: object,
+    match: str,
+) -> None:
+    validated, stack, _linearization, physical_prediction = _fixture()
+
+    with pytest.raises((TypeError, ValueError), match=match):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            replacement,  # type: ignore[arg-type]
+            physical_prediction_xyz_m=physical_prediction,
+        )
+
+
+@pytest.mark.parametrize(
+    ("prediction", "match"),
+    (
+        (np.zeros((4, 2)), "shape"),
+        (
+            _changed_array(_fixture()[3], (0, 0), np.nan),
+            "must be finite",
+        ),
+    ),
+)
+def test_explicit_gauge_bridge_rejects_invalid_physical_prediction(
+    prediction: np.ndarray,
+    match: str,
+) -> None:
+    validated, stack, linearization, _physical_prediction = _fixture()
+
+    with pytest.raises(ValueError, match=match):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            linearization,
+            physical_prediction_xyz_m=prediction,
+        )
+
+
+def test_explicit_gauge_helper_contracts_fail_closed() -> None:
+    calls = (
+        (lambda: _explicit._require_string(1, name="value"), TypeError),
+        (lambda: _explicit._require_string("", name="value"), ValueError),
+        (lambda: _explicit._require_sha256("A" * 64, name="digest"), ValueError),
+        (lambda: _explicit._require_revision("g" * 40, name="revision"), ValueError),
+        (lambda: _explicit._require_integer(True, name="value"), TypeError),
+        (
+            lambda: _explicit._require_integer(0, name="value", minimum=1),
+            ValueError,
+        ),
+        (lambda: _explicit._require_mapping([], name="mapping"), TypeError),
+        (lambda: _explicit._require_mapping({1: "x"}, name="mapping"), TypeError),
+        (
+            lambda: _explicit._calibration_ids(
+                {"gauge_artifact_id": GAUGE_CALIBRATION_ID}
+            ),
+            ValueError,
+        ),
+        (lambda: _explicit._string_tuple([], name="items"), TypeError),
+        (lambda: _explicit._string_tuple([""], name="items"), ValueError),
+    )
+    for call, error in calls:
+        with pytest.raises(error):
+            call()
+
+
+def test_explicit_gauge_adapter_result_rejects_non_batch() -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    adapted = build_claim_bearing_explicit_gauge_batch(
+        validated,
+        stack,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction,
+    )
+
+    with pytest.raises(TypeError, match="GaugeAwareObservationBatch"):
+        _explicit.ExplicitGaugeFactorAdapterResult(
+            batch=object(),  # type: ignore[arg-type]
+            observation_artifact_id=adapted.observation_artifact_id,
+            linearization_artifact_id=adapted.linearization_artifact_id,
+            provider_manifest_id=adapted.provider_manifest_id,
+            calibration_artifact_ids=adapted.calibration_artifact_ids,
+            runtime_revision_source=adapted.runtime_revision_source,
+            dense_gauge_design_bytes=adapted.dense_gauge_design_bytes,
+            dense_gauge_design_limit_bytes=(
+                adapted.dense_gauge_design_limit_bytes
+            ),
+            gauge_ids=adapted.gauge_ids,
+            view_ids=adapted.view_ids,
         )
 
 
