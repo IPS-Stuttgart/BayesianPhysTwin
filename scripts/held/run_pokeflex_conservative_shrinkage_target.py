@@ -31,6 +31,14 @@ from run_pokeflex_checkpoint_registration_independent_depth import (  # noqa: E4
     _load_official_template,
 )
 
+from bayesian_phystwin.pokeflex_action_robust_scale import (  # noqa: E402
+    ACTION_ROBUST_SCALE_FILE_SHA256,
+    load_action_robust_scale_calibration,
+    validate_action_robust_scale_calibration,
+)
+from bayesian_phystwin.pokeflex_action_robust_scale import (  # noqa: E402
+    BASE_EFFECTIVE_SCALE as ACTION_ROBUST_BASE_EFFECTIVE_SCALE,
+)
 from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
     PokeFlexBayesianRegistrationConfig,
     register_pokeflex_graph_posterior,
@@ -39,6 +47,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     CHECKPOINT_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
@@ -112,6 +121,7 @@ def _predict(
     checkpoint_root: Path,
     source_stage_manifest: Path | None,
     instance_scale_calibration: Path | None,
+    action_robust_scale_calibration: Path | None,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
     if protocol["protocol_id"] not in {
@@ -120,6 +130,7 @@ def _predict(
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     }:
         raise ValueError("new predictions require a robot-history-aware protocol")
     target_take_ids = target_take_ids_for_protocol(protocol)
@@ -132,6 +143,7 @@ def _predict(
     if protocol["protocol_id"] in {
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     }:
         if source_stage_manifest is None:
             raise ValueError("fresh public prediction requires its stage manifest")
@@ -181,6 +193,43 @@ def _predict(
         }
     elif instance_scale_calibration is not None:
         raise ValueError("instance scale calibration is not allowed for this protocol")
+    if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        if action_robust_scale_calibration is None:
+            raise ValueError(
+                "action-robust protocol requires its scale calibration"
+            )
+        if (
+            file_sha256(action_robust_scale_calibration)
+            != ACTION_ROBUST_SCALE_FILE_SHA256
+        ):
+            raise ValueError("action-robust scale calibration bytes changed")
+        calibration = load_action_robust_scale_calibration(
+            action_robust_scale_calibration
+        )
+        validation = validate_action_robust_scale_calibration(calibration)
+        correction_multiplier = float(validation["multipliers"][object_name])
+        protocol_multiplier = float(
+            protocol["method"]["action_robust_scale_calibration"]["multipliers"]
+            [object_name]
+        )
+        if correction_multiplier != protocol_multiplier:
+            raise ValueError("protocol and action-robust multiplier differ")
+        calibration_record = {
+            "action_robust_scale_calibration_sha256": calibration[
+                "calibration_sha256"
+            ],
+            "action_robust_scale_calibration_file_sha256": file_sha256(
+                action_robust_scale_calibration
+            ),
+            "correction_multiplier": correction_multiplier,
+            "effective_scale": (
+                ACTION_ROBUST_BASE_EFFECTIVE_SCALE * correction_multiplier
+            ),
+        }
+    elif action_robust_scale_calibration is not None:
+        raise ValueError(
+            "action-robust scale calibration is not allowed for this protocol"
+        )
     if output_dir.exists():
         raise FileExistsError(f"prediction output already exists: {output_dir}")
     if file_sha256(source_result_path) != SOURCE_RESULT_SHA256:
@@ -418,7 +467,10 @@ def _predict(
         ),
         "correction_rms_m": np.asarray(correction_rms, dtype=np.float64),
     }
-    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+    if protocol["protocol_id"] in {
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    }:
         prediction_arrays["global_candidate_vertices_m"] = global_candidate
     np.savez_compressed(
         npz_path,
@@ -561,6 +613,7 @@ def _score(
         if protocol["protocol_id"] in {
             TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
             TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+            TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
         }:
             seal_payload = json.loads(archive.seal_path.read_text(encoding="utf-8"))
             stage_path = take_root / STAGE_MANIFEST_NAME
@@ -637,6 +690,7 @@ def main() -> None:
     predict.add_argument("--checkpoint-root", type=Path, required=True)
     predict.add_argument("--source-stage-manifest", type=Path)
     predict.add_argument("--instance-scale-calibration", type=Path)
+    predict.add_argument("--action-robust-scale-calibration", type=Path)
 
     barrier = subparsers.add_parser("barrier")
     barrier.add_argument("prediction_root", type=Path)
@@ -659,6 +713,7 @@ def main() -> None:
             args.checkpoint_root,
             args.source_stage_manifest,
             args.instance_scale_calibration,
+            args.action_robust_scale_calibration,
         )
     elif args.command == "barrier":
         _barrier(args.prediction_root, args.output, args.protocol)

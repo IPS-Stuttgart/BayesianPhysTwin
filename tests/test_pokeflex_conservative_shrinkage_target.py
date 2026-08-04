@@ -6,7 +6,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from bayesian_phystwin.pokeflex_action_robust_scale import (
+    ACTION_ROBUST_SCALE_FILE_SHA256,
+    ACTION_ROBUST_SCALE_SHA256,
+)
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
+    ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+    ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
     CHECKPOINT_SHA256,
     FRESH12_EXCLUSION_AUDIT_SHA256,
     FRESH12_PUBLIC_TARGET_TAKE_IDS,
@@ -23,6 +29,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
@@ -71,6 +78,9 @@ FRESH12_PUBLIC_PROTOCOL_PATH = (
 INSTANCE_FRESH12_PROTOCOL_PATH = (
     ROOT / "configs" / "sota" / "pokeflex_instance_shrinkage_fresh12_v2.json"
 )
+ACTION_ROBUST_FRESH6_PROTOCOL_PATH = (
+    ROOT / "configs" / "sota" / "pokeflex_action_robust_shrinkage_fresh6_v3.json"
+)
 FRESH12_AUDIT_PATH = (
     ROOT / "configs" / "sota" / "pokeflex_fresh12_exclusion_audit_v1.json"
 )
@@ -101,6 +111,10 @@ def _fresh12_public_protocol() -> dict[str, object]:
 
 def _instance_fresh12_protocol() -> dict[str, object]:
     return json.loads(INSTANCE_FRESH12_PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+
+def _action_robust_fresh6_protocol() -> dict[str, object]:
+    return json.loads(ACTION_ROBUST_FRESH6_PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
 def _write_prediction(
@@ -149,7 +163,10 @@ def _write_prediction(
         if robot_history_supported is None:
             robot_history_supported = np.asarray([False, True], dtype=np.bool_)
         arrays["robot_history_supported"] = robot_history_supported
-    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+    if protocol["protocol_id"] in {
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    }:
         global_candidate = baseline.copy()
         global_candidate[1, :, 0] = 0.0005
         arrays["global_candidate_vertices_m"] = global_candidate
@@ -181,11 +198,16 @@ def _write_prediction(
     if protocol["protocol_id"] in {
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     }:
         archive_sha256 = (
             FRESH12_PUBLIC_ZIP_SHA256
             if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
-            else INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
+            else (
+                INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
+                if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+                else ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256
+            )
         )
         seal["source_archive_name"] = f"{take_id}.zip"
         seal["source_archive_sha256"] = archive_sha256[take_id]
@@ -201,6 +223,18 @@ def _write_prediction(
         seal["instance_scale_calibration_sha256"] = INSTANCE_SCALE_CALIBRATION_SHA256
         seal["instance_scale_calibration_file_sha256"] = (
             INSTANCE_SCALE_CALIBRATION_FILE_SHA256
+        )
+        seal["global_fallback_mismatch_count"] = 0
+    if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        multiplier = float(
+            protocol["method"]["action_robust_scale_calibration"]["multipliers"]
+            [object_name]
+        )
+        seal["correction_multiplier"] = multiplier
+        seal["effective_scale"] = BASE_EFFECTIVE_SCALE * multiplier
+        seal["action_robust_scale_calibration_sha256"] = ACTION_ROBUST_SCALE_SHA256
+        seal["action_robust_scale_calibration_file_sha256"] = (
+            ACTION_ROBUST_SCALE_FILE_SHA256
         )
         seal["global_fallback_mismatch_count"] = 0
     seal["seal_sha256"] = prediction_seal_sha256(seal)
@@ -458,6 +492,29 @@ def test_instance_seal_and_scorer_preserve_three_arms(tmp_path: Path) -> None:
 
     assert "global_candidate_mean_CD_UL1_mm" in result
     assert "global_candidate_CD_UL1_mm" in result["frames"][0]
+
+
+def test_action_robust_barrier_and_seal_preserve_three_arms(tmp_path: Path) -> None:
+    protocol = _action_robust_fresh6_protocol()
+    paths = [
+        _write_prediction(tmp_path, take_id, protocol=protocol)
+        for take_id in ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS
+    ]
+
+    barrier = build_prediction_barrier(paths, protocol)
+    archive = validate_prediction_seal(paths[0], protocol)
+
+    assert barrier["prediction_count"] == 6
+    assert tuple(barrier["target_take_ids"]) == (
+        ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS
+    )
+    assert archive.global_candidate_vertices_m is not None
+    assert np.array_equal(
+        archive.global_candidate_vertices_m[~archive.update_supported],
+        archive.baseline_vertices_m[~archive.update_supported],
+    )
+    with pytest.raises(ValueError, match="incomplete"):
+        build_prediction_barrier(paths[:-1], protocol)
 
 
 def test_prediction_function_has_no_target_mesh_loader() -> None:

@@ -15,6 +15,34 @@ from typing import Any
 
 import numpy as np
 
+from .pokeflex_action_robust_freshness import (
+    ELIGIBLE_INVENTORY_SHA256 as ACTION_ROBUST_ELIGIBLE_INVENTORY_SHA256,
+)
+from .pokeflex_action_robust_freshness import (
+    FRESHNESS_AUDIT_FILE_SHA256 as ACTION_ROBUST_FRESHNESS_AUDIT_FILE_SHA256,
+)
+from .pokeflex_action_robust_freshness import (
+    FRESHNESS_AUDIT_SHA256 as ACTION_ROBUST_FRESHNESS_AUDIT_SHA256,
+)
+from .pokeflex_action_robust_freshness import (
+    PRIOR_EXCLUSION_UNION_SHA256 as ACTION_ROBUST_PRIOR_EXCLUSION_UNION_SHA256,
+)
+from .pokeflex_action_robust_freshness import (
+    SELECTED_INVENTORY_SHA256 as ACTION_ROBUST_SELECTED_INVENTORY_SHA256,
+)
+from .pokeflex_action_robust_freshness import (
+    SELECTED_ZIP_SHA256 as ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
+)
+from .pokeflex_action_robust_freshness import (
+    SELECTION_SALT as ACTION_ROBUST_SELECTION_SALT,
+)
+from .pokeflex_action_robust_scale import (
+    ACTION_ROBUST_SCALE_FILE_SHA256,
+    ACTION_ROBUST_SCALE_SHA256,
+)
+from .pokeflex_action_robust_scale import (
+    BASE_EFFECTIVE_SCALE as ACTION_ROBUST_BASE_EFFECTIVE_SCALE,
+)
 from .pokeflex_instance_freshness import (
     FRESHNESS_AUDIT_FILE_SHA256 as INSTANCE_FRESHNESS_AUDIT_FILE_SHA256,
 )
@@ -56,6 +84,12 @@ TARGET_PROTOCOL_FRESH12_PUBLIC_V1 = "pokeflex-conservative-shrinkage-fresh12-pub
 TARGET_PROTOCOL_INSTANCE_FRESH12_V2 = "pokeflex-instance-shrinkage-fresh12-v2"
 TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256 = (
     "ee2b4379d087c71a13a570a07d1acccfb881c7ad91479de42713265d47d225d3"
+)
+TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3 = (
+    "pokeflex-action-robust-shrinkage-fresh6-v3"
+)
+TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256 = (
+    "3e85d8fc89b16cdc2aceb13e9bf49d0c9e47f0a2761550323ec13b9b1bda8157"
 )
 OFFICIAL18_TARGET_TAKE_IDS = (
     "MemoryFoam_T2",
@@ -124,6 +158,9 @@ FRESH12_PUBLIC_TARGET_TAKE_IDS = (
     "Sponge_T4",
 )
 INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS = tuple(INSTANCE_FRESH12_PUBLIC_ZIP_SHA256)
+ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS = tuple(
+    ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256
+)
 INSTANCE_FRESH12_PRIOR_EXCLUSION_UNION_SHA256 = (
     "6cb1c809f70411fd0c35f30ae5bf891c8d1f87646e9cbf2ad27b5c428c3ac615"
 )
@@ -204,6 +241,15 @@ CHECKPOINT_SHA256 = {
     ),
 }
 
+CALIBRATED_SCALE_PROTOCOLS = {
+    TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+}
+STAGED_FRESH_PROTOCOLS = {
+    TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+    *CALIBRATED_SCALE_PROTOCOLS,
+}
+
 
 def _require(condition: bool | np.bool_, message: str) -> None:
     if not condition:
@@ -255,6 +301,8 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
         return FRESH12_PUBLIC_TARGET_TAKE_IDS
     if protocol.get("protocol_id") == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
         return INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        return ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS
     return TARGET_TAKE_IDS
 
 
@@ -265,8 +313,7 @@ def protocol_requires_robot_history(protocol_id: str) -> bool:
         TARGET_PROTOCOL_V2,
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
-        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        *STAGED_FRESH_PROTOCOLS,
     }
 
 
@@ -292,6 +339,8 @@ def action_field_history_is_supported(
 
 def validate_pokeflex_shrinkage_target_protocol(
     payload: Mapping[str, Any],
+    *,
+    bind_action_robust_digest: bool = True,
 ) -> dict[str, Any]:
     """Validate the exact target lock before any target member is opened."""
 
@@ -310,6 +359,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
             TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
             TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+            TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
         },
         "target protocol id changed",
     )
@@ -328,30 +378,57 @@ def validate_pokeflex_shrinkage_target_protocol(
     )
     _require(source.get("passed") is True, "source gate did not pass")
     _require(source.get("selected_arm") == SELECTED_ARM, "selected arm changed")
-    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
-        source_calibration = source.get("instance_scale_calibration")
+    if protocol_id in CALIBRATED_SCALE_PROTOCOLS:
+        calibration_key = (
+            "instance_scale_calibration"
+            if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+            else "action_robust_scale_calibration"
+        )
+        expected_sha256 = (
+            INSTANCE_SCALE_CALIBRATION_SHA256
+            if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+            else ACTION_ROBUST_SCALE_SHA256
+        )
+        expected_file_sha256 = (
+            INSTANCE_SCALE_CALIBRATION_FILE_SHA256
+            if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+            else ACTION_ROBUST_SCALE_FILE_SHA256
+        )
+        source_calibration = source.get(calibration_key)
         _require(
             isinstance(source_calibration, Mapping),
-            "source instance calibration is missing",
+            "source scale calibration is missing",
         )
         _require(
-            source_calibration.get("calibration_sha256")
-            == INSTANCE_SCALE_CALIBRATION_SHA256,
-            "source instance calibration changed",
+            source_calibration.get("calibration_sha256") == expected_sha256,
+            "source scale calibration changed",
         )
         _require(
             source_calibration.get("calibration_file_sha256")
-            == INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
-            "source instance calibration bytes changed",
+            == expected_file_sha256,
+            "source scale calibration bytes changed",
         )
         _require(
             int(source_calibration.get("source_object_count", -1)) == 12,
-            "source instance object count changed",
+            "source scale object count changed",
         )
         _require(
             source_calibration.get("future_take_outcomes_opened") is False,
-            "source instance calibration opened future takes",
+            "source scale calibration opened future takes",
         )
+        if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+            _require(
+                int(source_calibration.get("source_action_count", -1)) == 24,
+                "action-robust source action count changed",
+            )
+            _require(
+                int(source_calibration.get("adjusted_object_count", -1)) == 10,
+                "action-robust adjusted object count changed",
+            )
+            _require(
+                source_calibration.get("controls_passed") is True,
+                "action-robust controls failed",
+            )
 
     cohort = payload.get("target_cohort")
     _require(isinstance(cohort, Mapping), "target cohort is missing")
@@ -507,6 +584,63 @@ def validate_pokeflex_shrinkage_target_protocol(
             == INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
             "instance archive bytes changed",
         )
+    elif protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        _require(
+            tuple(cohort.get("take_ids", ()))
+            == ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+            "action-robust fresh take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ()))
+            == ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+            "action-robust prospective cohort changed",
+        )
+        _require(
+            tuple(cohort.get("development_overlap_take_ids", ())) == (),
+            "action-robust cohort gained take overlap",
+        )
+        audit = payload.get("freshness_audit")
+        _require(
+            isinstance(audit, Mapping),
+            "action-robust freshness audit is missing",
+        )
+        _require(
+            audit.get("audit_sha256") == ACTION_ROBUST_FRESHNESS_AUDIT_SHA256,
+            "action-robust freshness audit changed",
+        )
+        _require(
+            audit.get("audit_file_sha256")
+            == ACTION_ROBUST_FRESHNESS_AUDIT_FILE_SHA256,
+            "action-robust freshness audit bytes changed",
+        )
+        _require(
+            audit.get("public_inventory_sha256") == FRESH12_PUBLIC_INVENTORY_SHA256,
+            "action-robust public inventory changed",
+        )
+        _require(
+            audit.get("prior_exclusion_union_sha256")
+            == ACTION_ROBUST_PRIOR_EXCLUSION_UNION_SHA256,
+            "action-robust prior exclusion union changed",
+        )
+        _require(
+            audit.get("eligible_inventory_sha256")
+            == ACTION_ROBUST_ELIGIBLE_INVENTORY_SHA256,
+            "action-robust eligible inventory changed",
+        )
+        _require(
+            audit.get("selected_inventory_sha256")
+            == ACTION_ROBUST_SELECTED_INVENTORY_SHA256,
+            "action-robust selected inventory changed",
+        )
+        _require(
+            audit.get("selection_salt") == ACTION_ROBUST_SELECTION_SALT,
+            "action-robust selection salt changed",
+        )
+        _require(
+            dict(audit.get("selected_zip_sha256", {}))
+            == ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
+            "action-robust archive bytes changed",
+        )
     else:
         _require(
             tuple(cohort.get("objects", ())) == TARGET_OBJECTS,
@@ -519,53 +653,98 @@ def validate_pokeflex_shrinkage_target_protocol(
     _require(isinstance(method, Mapping), "method lock is missing")
     _require(method.get("selected_arm") == SELECTED_ARM, "target arm changed")
     _require(method.get("field") == "action_local_state_relative_0.4", "field changed")
-    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
-        _require(
-            method.get("scale_policy")
-            == "source-calibrated per physical object with frozen capped bank",
-            "instance scale policy changed",
+    if protocol_id in CALIBRATED_SCALE_PROTOCOLS:
+        is_instance_v2 = protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+        expected_policy = (
+            "source-calibrated per physical object with frozen capped bank"
+            if is_instance_v2
+            else (
+                "two-action maximin per physical object with frozen capped bank "
+                "and global fallback"
+            )
         )
         _require(
-            float(method.get("base_scale", -1.0)) == INSTANCE_BASE_EFFECTIVE_SCALE,
-            "instance base scale changed",
+            method.get("scale_policy") == expected_policy,
+            "calibrated scale policy changed",
         )
-        calibration = method.get("instance_scale_calibration")
-        _require(isinstance(calibration, Mapping), "instance calibration is missing")
+        base_scale = (
+            INSTANCE_BASE_EFFECTIVE_SCALE
+            if is_instance_v2
+            else ACTION_ROBUST_BASE_EFFECTIVE_SCALE
+        )
         _require(
-            calibration.get("calibration_sha256") == INSTANCE_SCALE_CALIBRATION_SHA256,
-            "instance calibration changed",
+            float(method.get("base_scale", -1.0)) == base_scale,
+            "calibrated base scale changed",
+        )
+        calibration_key = (
+            "instance_scale_calibration"
+            if is_instance_v2
+            else "action_robust_scale_calibration"
+        )
+        expected_calibration_sha256 = (
+            INSTANCE_SCALE_CALIBRATION_SHA256
+            if is_instance_v2
+            else ACTION_ROBUST_SCALE_SHA256
+        )
+        expected_calibration_file_sha256 = (
+            INSTANCE_SCALE_CALIBRATION_FILE_SHA256
+            if is_instance_v2
+            else ACTION_ROBUST_SCALE_FILE_SHA256
+        )
+        calibration = method.get(calibration_key)
+        _require(isinstance(calibration, Mapping), "scale calibration is missing")
+        _require(
+            calibration.get("calibration_sha256") == expected_calibration_sha256,
+            "scale calibration changed",
         )
         _require(
             calibration.get("calibration_file_sha256")
-            == INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
-            "instance calibration bytes changed",
+            == expected_calibration_file_sha256,
+            "scale calibration bytes changed",
         )
-        expected_multipliers = {
-            "3dPrintedCylinder": 2.0,
-            "3dPrintedPizza": 0.5,
-            "3dPrintedPyramid": 0.5,
-            "Beanbag": 2.0,
-            "FoamCylinder": 2.0,
-            "FoamHalfSphere": 2.0,
-            "Pillow": 2.0,
-            "PlushDice": 2.0,
-            "PlushMoon": 2.0,
-            "PlushTurtle": 2.0,
-            "PlushVolleyball": 1.0,
-            "Sponge": 1.5,
-        }
+        expected_multipliers = (
+            {
+                "3dPrintedCylinder": 2.0,
+                "3dPrintedPizza": 0.5,
+                "3dPrintedPyramid": 0.5,
+                "Beanbag": 2.0,
+                "FoamCylinder": 2.0,
+                "FoamHalfSphere": 2.0,
+                "Pillow": 2.0,
+                "PlushDice": 2.0,
+                "PlushMoon": 2.0,
+                "PlushTurtle": 2.0,
+                "PlushVolleyball": 1.0,
+                "Sponge": 1.5,
+            }
+            if is_instance_v2
+            else {
+                "3dPrintedCylinder": 3.0,
+                "3dPrintedPizza": 0.5,
+                "3dPrintedPyramid": 1.0,
+                "Beanbag": 4.0,
+                "FoamCylinder": 3.0,
+                "FoamHalfSphere": 2.0,
+                "Pillow": 2.0,
+                "PlushDice": 4.0,
+                "PlushMoon": 4.0,
+                "PlushTurtle": 4.0,
+                "PlushVolleyball": 1.0,
+                "Sponge": 1.5,
+            }
+        )
         _require(
             dict(calibration.get("multipliers", {})) == expected_multipliers,
-            "instance multiplier map changed",
+            "calibrated multiplier map changed",
         )
         expected_effective_scales = {
-            name: INSTANCE_BASE_EFFECTIVE_SCALE * multiplier
+            name: base_scale * multiplier
             for name, multiplier in expected_multipliers.items()
         }
         _require(
             dict(method.get("effective_scale_by_object", {}))
             == expected_effective_scales,
-            "instance effective scale map changed",
+            "calibrated effective scale map changed",
         )
         _require(
             method.get("target_outcome_adaptation") == "forbidden",
@@ -622,17 +801,14 @@ def validate_pokeflex_shrinkage_target_protocol(
     target_mesh_boundary = (
         "geometry decoding and scoring forbidden; opaque byte-preserving archive extraction allowed"
         if protocol_id
-        in {TARGET_PROTOCOL_FRESH12_PUBLIC_V1, TARGET_PROTOCOL_INSTANCE_FRESH12_V2}
+        in STAGED_FRESH_PROTOCOLS
         else "forbidden"
     )
     _require(
         custody.get("target_mesh_access_before_barrier") == target_mesh_boundary,
         "target mesh custody weakened",
     )
-    if protocol_id in {
-        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
-    }:
+    if protocol_id in STAGED_FRESH_PROTOCOLS:
         _require(
             custody.get("registered_source_archive_required") is True,
             "registered source archive requirement changed",
@@ -671,6 +847,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     }:
         expected_aggregation = (
             "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic"
@@ -678,7 +855,11 @@ def validate_pokeflex_shrinkage_target_protocol(
             else (
                 "equal scored frames over the 13 publicly materializable official validation takes; object-balanced prospective values drive transfer gates"
                 if protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1
-                else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+                else (
+                    "equal-weight physical objects over six prospectively selected public takes; frame-level values are diagnostic"
+                    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
+                    else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+                )
             )
         )
         _require(
@@ -748,10 +929,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             direct.get("released_checkpoint_pairing_is_primary") is True,
             "released-checkpoint pairing changed",
         )
-    elif protocol_id in {
-        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
-    }:
+    elif protocol_id in STAGED_FRESH_PROTOCOLS:
         _require(
             direct.get("published_aggregate_is_gating") is False,
             "incomparable published aggregate became gating",
@@ -823,6 +1001,48 @@ def validate_pokeflex_shrinkage_target_protocol(
             observed == TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256,
             "instance target protocol lock changed",
         )
+    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        advancement = gates.get("action_robust_advancement")
+        _require(
+            isinstance(advancement, Mapping),
+            "action-robust advancement gate missing",
+        )
+        _require(
+            float(advancement.get("relative_CD_UL1_improvement_above", -1.0))
+            == 0.0,
+            "action-robust advancement threshold changed",
+        )
+        _require(
+            float(advancement.get("bootstrap_upper_difference_mm_below", 1.0))
+            == 0.0,
+            "action-robust advancement bootstrap changed",
+        )
+        _require(
+            float(advancement.get("maximum_per_object_relative_regression", 1.0))
+            == 0.0,
+            "action-robust advancement regression tolerance changed",
+        )
+        _require(
+            int(advancement.get("bootstrap_replicates", -1)) == 20000,
+            "action-robust advancement bootstrap count changed",
+        )
+        _require(
+            int(advancement.get("bootstrap_seed", -1)) == 20260720,
+            "action-robust advancement bootstrap seed changed",
+        )
+        _require(
+            float(advancement.get("bootstrap_upper_quantile", -1.0)) == 0.975,
+            "action-robust advancement quantile changed",
+        )
+        if bind_action_robust_digest:
+            _require(
+                bool(TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256),
+                "registered action-robust protocol is unset",
+            )
+            _require(
+                observed == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256,
+                "action-robust target protocol lock changed",
+            )
     return {
         "passed": True,
         "protocol_sha256": observed,
@@ -876,7 +1096,7 @@ def _load_prediction_arrays(
     }
     if protocol_requires_robot_history(protocol_id):
         required.add("robot_history_supported")
-    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+    if protocol_id in CALIBRATED_SCALE_PROTOCOLS:
         required.add("global_candidate_vertices_m")
     with np.load(path, allow_pickle=False) as archive:
         _require(set(archive.files) == required, "prediction array schema changed")
@@ -929,16 +1149,18 @@ def validate_prediction_seal(
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     }:
         _require(take == "T2", "prediction take changed")
-    if protocol_id in {
-        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
-    }:
+    if protocol_id in STAGED_FRESH_PROTOCOLS:
         archive_sha256 = (
             FRESH12_PUBLIC_ZIP_SHA256
             if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
-            else INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
+            else (
+                INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
+                if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+                else ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256
+            )
         )
         _require(
             seal.get("source_archive_sha256") == archive_sha256[str(take_id)],
@@ -961,28 +1183,50 @@ def validate_prediction_seal(
                 isinstance(value, str) and len(value) == 64,
                 f"fresh {field} is invalid",
             )
-    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+    if protocol_id in CALIBRATED_SCALE_PROTOCOLS:
+        is_instance_v2 = protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
+        calibration_key = (
+            "instance_scale_calibration"
+            if is_instance_v2
+            else "action_robust_scale_calibration"
+        )
+        seal_prefix = "instance" if is_instance_v2 else "action_robust"
+        expected_calibration_sha256 = (
+            INSTANCE_SCALE_CALIBRATION_SHA256
+            if is_instance_v2
+            else ACTION_ROBUST_SCALE_SHA256
+        )
+        expected_calibration_file_sha256 = (
+            INSTANCE_SCALE_CALIBRATION_FILE_SHA256
+            if is_instance_v2
+            else ACTION_ROBUST_SCALE_FILE_SHA256
+        )
+        base_scale = (
+            INSTANCE_BASE_EFFECTIVE_SCALE
+            if is_instance_v2
+            else ACTION_ROBUST_BASE_EFFECTIVE_SCALE
+        )
         expected_multiplier = float(
-            protocol["method"]["instance_scale_calibration"]["multipliers"][object_name]
+            protocol["method"][calibration_key]["multipliers"][object_name]
         )
         _require(
             float(seal.get("correction_multiplier", -1.0)) == expected_multiplier,
-            "prediction instance multiplier changed",
+            "prediction calibrated multiplier changed",
         )
         _require(
             float(seal.get("effective_scale", -1.0))
-            == INSTANCE_BASE_EFFECTIVE_SCALE * expected_multiplier,
+            == base_scale * expected_multiplier,
             "prediction effective scale changed",
         )
         _require(
-            seal.get("instance_scale_calibration_sha256")
-            == INSTANCE_SCALE_CALIBRATION_SHA256,
-            "prediction instance calibration changed",
+            seal.get(f"{seal_prefix}_scale_calibration_sha256")
+            == expected_calibration_sha256,
+            "prediction scale calibration changed",
         )
         _require(
-            seal.get("instance_scale_calibration_file_sha256")
-            == INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
-            "prediction instance calibration bytes changed",
+            seal.get(f"{seal_prefix}_scale_calibration_file_sha256")
+            == expected_calibration_file_sha256,
+            "prediction scale calibration bytes changed",
         )
         _require(
             int(seal.get("global_fallback_mismatch_count", -1)) == 0,
@@ -1714,29 +1958,32 @@ def _paired_object_gate(
     }
 
 
-def _evaluate_instance_fresh12_metrics(
+def _evaluate_calibrated_scale_metrics(
     per_take: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
+    *,
+    target_take_ids: tuple[str, ...],
+    candidate_prefix: str,
+    advancement_gate_key: str,
 ) -> dict[str, Any]:
-    """Gate the instance scale against both checkpoint and global shrinkage."""
+    """Gate one frozen scale map against checkpoint and global shrinkage."""
 
     _require(
-        len(per_take) == len(INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS),
-        "instance fresh result set is incomplete",
+        len(per_take) == len(target_take_ids),
+        "calibrated fresh result set is incomplete",
     )
     by_take = {str(row["take_id"]): row for row in per_take}
     _require(
-        tuple(sorted(by_take))
-        == tuple(sorted(INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS)),
-        "instance fresh result cohort changed",
+        tuple(sorted(by_take)) == tuple(sorted(target_take_ids)),
+        "calibrated fresh result cohort changed",
     )
-    ordered = [by_take[take_id] for take_id in INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS]
+    ordered = [by_take[take_id] for take_id in target_take_ids]
     for row in ordered:
         frames = row.get("frames")
-        _require(isinstance(frames, list), "instance frame scores are missing")
+        _require(isinstance(frames, list), "calibrated frame scores are missing")
         _require(
             len(frames) == int(row["scored_frame_count"]),
-            "instance scored-frame inventory changed",
+            "calibrated scored-frame inventory changed",
         )
         _require(
             "global_candidate_mean_CD_UL1_mm" in row,
@@ -1769,7 +2016,7 @@ def _evaluate_instance_fresh12_metrics(
     candidate_object = np.asarray(
         [row["candidate_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
     )
-    _require(len(baseline_frames) > 0, "instance fresh cohort has no scored frames")
+    _require(len(baseline_frames) > 0, "calibrated cohort has no scored frames")
     for name, values in (
         ("baseline frames", baseline_frames),
         ("global frames", global_frames),
@@ -1794,7 +2041,7 @@ def _evaluate_instance_fresh12_metrics(
     advancement_gate = _paired_object_gate(
         candidate_object,
         global_object,
-        protocol["gates"]["instance_advancement"],
+        protocol["gates"][advancement_gate_key],
     )
     candidate_jaccard = [
         float(frame["candidate_jaccard"])
@@ -1808,11 +2055,13 @@ def _evaluate_instance_fresh12_metrics(
         ),
         "published_reference_is_contextual_only": True,
         "published_direct_comparison_authorized": False,
-        "instance_fresh_take_count": len(INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS),
+        f"{candidate_prefix}_fresh_take_count": len(target_take_ids),
         "development_overlap_take_count": 0,
         "baseline_frame_balanced_CD_UL1_mm": float(np.mean(baseline_frames)),
         "global_scale_frame_balanced_CD_UL1_mm": float(np.mean(global_frames)),
-        "instance_scale_frame_balanced_CD_UL1_mm": float(np.mean(candidate_frames)),
+        f"{candidate_prefix}_scale_frame_balanced_CD_UL1_mm": float(
+            np.mean(candidate_frames)
+        ),
         "global_scale_checkpoint_pairing": global_checkpoint_gate,
         "checkpoint_pairing": checkpoint_gate,
         "global_scale_advancement": advancement_gate,
@@ -1831,6 +2080,32 @@ def _evaluate_instance_fresh12_metrics(
     }
 
 
+def _evaluate_instance_fresh12_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    return _evaluate_calibrated_scale_metrics(
+        per_take,
+        protocol,
+        target_take_ids=INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
+        candidate_prefix="instance",
+        advancement_gate_key="instance_advancement",
+    )
+
+
+def _evaluate_action_robust_fresh6_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    return _evaluate_calibrated_scale_metrics(
+        per_take,
+        protocol,
+        target_take_ids=ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+        candidate_prefix="action_robust",
+        advancement_gate_key="action_robust_advancement",
+    )
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -1846,6 +2121,8 @@ def evaluate_target_metrics(
         return _evaluate_fresh12_public_metrics(per_object, protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
         return _evaluate_instance_fresh12_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        return _evaluate_action_robust_fresh6_metrics(per_object, protocol)
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
@@ -2042,7 +2319,10 @@ def score_one_prediction(
     }
     if global_candidate_mean is not None:
         result["global_candidate_mean_CD_UL1_mm"] = global_candidate_mean
-        result["instance_minus_global_mean_CD_UL1_mm"] = (
-            candidate_mean - global_candidate_mean
+        comparison_key = (
+            "action_robust_minus_global_mean_CD_UL1_mm"
+            if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
+            else "instance_minus_global_mean_CD_UL1_mm"
         )
+        result[comparison_key] = candidate_mean - global_candidate_mean
     return result

@@ -6,8 +6,11 @@ import pytest
 
 import bayesian_phystwin.pokeflex_fresh12_staging as staging
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
+    ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+    ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
     FRESH12_PUBLIC_TARGET_TAKE_IDS,
     FRESH12_PUBLIC_ZIP_SHA256,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     file_sha256,
 )
@@ -76,6 +79,29 @@ def test_stage_manifest_binds_archive_and_authorized_inventory(tmp_path: Path) -
 
     assert loaded["take_id"] == take_id
     assert len(loaded["files_by_path"]) == 6
+
+
+def test_stage_manifest_supports_action_robust_fresh6(tmp_path: Path) -> None:
+    take_id = ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS[0]
+    manifest = _manifest(FRESH12_PUBLIC_TARGET_TAKE_IDS[0])
+    manifest["take_id"] = take_id
+    manifest["archive_name"] = f"{take_id}.zip"
+    manifest["archive_sha256"] = ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256[take_id]
+    manifest["stage_manifest_sha256"] = stage_manifest_sha256(manifest)
+    path = tmp_path / "source_stage_manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    protocol = {
+        "protocol_id": TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+        "protocol_sha256": "1" * 64,
+    }
+
+    loaded = validate_pokeflex_fresh12_stage_manifest(
+        path,
+        protocol,
+        expected_take_id=take_id,
+    )
+
+    assert loaded["take_id"] == take_id
 
 
 def test_stage_manifest_rejects_resigned_unauthorized_member(tmp_path: Path) -> None:

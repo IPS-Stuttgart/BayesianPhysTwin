@@ -12,10 +12,13 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .pokeflex_conservative_shrinkage_target import (
+    ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+    ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
     FRESH12_PUBLIC_TARGET_TAKE_IDS,
     FRESH12_PUBLIC_ZIP_SHA256,
     INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
     INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     canonical_payload_sha256,
@@ -49,6 +52,11 @@ def _registered_archives(
         return (
             INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
             INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
+        )
+    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        return (
+            ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS,
+            ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
         )
     raise ValueError("stage protocol family changed")
 
