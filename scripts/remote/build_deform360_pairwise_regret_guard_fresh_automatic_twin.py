@@ -46,11 +46,13 @@ def _load_pickle(path: Path) -> dict[str, Any]:
 def _load_frozen_upstream(repo: Path) -> dict[str, Any]:
     """Load numerical modules only from the separately checksummed runtime."""
 
+    upstream_root = repo.resolve() / "src"
+    if str(upstream_root) not in sys.path:
+        sys.path.insert(0, str(upstream_root))
     import causal4d_public
 
     import bayesian_phystwin
 
-    upstream_root = repo.resolve() / "src"
     causal_path = upstream_root / "causal4d_public"
     bayesian_path = upstream_root / "bayesian_phystwin"
     _require(causal_path.is_dir(), "frozen causal4d_public package is missing")
