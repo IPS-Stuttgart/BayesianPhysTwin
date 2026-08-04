@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from types import MappingProxyType
 
 import numpy as np
 
@@ -12,6 +13,8 @@ MARKOV_TIME_MODE_INTEGER_STEPS = "integer-steps"
 _MARKOV_TIME_MODES = frozenset(
     {MARKOV_TIME_MODE_ORDER_ONLY, MARKOV_TIME_MODE_INTEGER_STEPS}
 )
+
+_SequenceIdentity = tuple[str, str | int]
 
 
 @dataclass(frozen=True)
@@ -38,7 +41,45 @@ class MarkovReliabilityResult:
     """Smoothed inlier probabilities and normalized sequence evidence."""
 
     posterior_inlier_probability: np.ndarray
-    sequence_log_evidence: dict[str, float]
+    sequence_log_evidence: Mapping[str, float]
+
+    def __post_init__(self) -> None:
+        posterior = np.array(
+            self.posterior_inlier_probability,
+            dtype=np.float64,
+            copy=True,
+            order="C",
+        )
+        if posterior.ndim != 1 or len(posterior) == 0:
+            raise ValueError("posterior_inlier_probability must be a nonempty vector")
+        if not np.all(np.isfinite(posterior)):
+            raise ValueError("posterior_inlier_probability must contain finite values")
+        if np.any((posterior < 0.0) | (posterior > 1.0)):
+            raise ValueError("posterior_inlier_probability must lie in [0, 1]")
+        if not isinstance(self.sequence_log_evidence, Mapping):
+            raise TypeError("sequence_log_evidence must be a mapping")
+        evidence: dict[str, float] = {}
+        for sequence_id, raw_value in self.sequence_log_evidence.items():
+            if not isinstance(sequence_id, str) or not sequence_id:
+                raise ValueError("sequence_log_evidence keys must be nonempty strings")
+            if isinstance(raw_value, (bool, np.bool_)):
+                raise ValueError("sequence_log_evidence values must be finite numbers")
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    "sequence_log_evidence values must be finite numbers"
+                ) from error
+            if not np.isfinite(value):
+                raise ValueError("sequence_log_evidence values must be finite numbers")
+            evidence[sequence_id] = value
+        posterior.setflags(write=False)
+        object.__setattr__(self, "posterior_inlier_probability", posterior)
+        object.__setattr__(
+            self,
+            "sequence_log_evidence",
+            MappingProxyType(dict(evidence)),
+        )
 
     @property
     def total_log_evidence(self) -> float:
@@ -60,6 +101,19 @@ def _validate_config(config: MarkovReliabilityConfig) -> None:
         raise ValueError(f"time_delta_mode must be one of {sorted(_MARKOV_TIME_MODES)}")
     if not np.isfinite(config.time_step) or config.time_step <= 0.0:
         raise ValueError("time_step must be finite and positive")
+
+
+def _validated_config(
+    config: MarkovReliabilityConfig | None,
+) -> MarkovReliabilityConfig:
+    if config is None:
+        result = MarkovReliabilityConfig()
+    elif isinstance(config, MarkovReliabilityConfig):
+        result = config
+    else:
+        raise TypeError("config must be a MarkovReliabilityConfig")
+    _validate_config(result)
+    return result
 
 
 def _transition_at(log_transition: np.ndarray, offset: int) -> np.ndarray:
@@ -108,16 +162,40 @@ def _backward(
     return beta
 
 
+def _validated_sequence_identity(value: object) -> tuple[_SequenceIdentity, str]:
+    if isinstance(value, (bool, np.bool_)):
+        raise ValueError("sequence_ids must contain strings or integers, not booleans")
+    if isinstance(value, str):
+        if not value:
+            raise ValueError("sequence_ids must contain nonempty strings or integers")
+        return ("str", value), value
+    if isinstance(value, (int, np.integer)):
+        integer = int(value)
+        return ("int", integer), str(integer)
+    raise TypeError("sequence_ids must contain strings or integers")
+
+
 def _ordered_group_indices(
     sequence_ids: np.ndarray,
     time_values: np.ndarray,
 ) -> list[tuple[str, np.ndarray, np.ndarray]]:
-    groups: dict[str, list[int]] = {}
+    groups: dict[_SequenceIdentity, list[int]] = {}
+    output_keys: dict[_SequenceIdentity, str] = {}
+    output_key_owners: dict[str, _SequenceIdentity] = {}
     for index, sequence_id in enumerate(sequence_ids):
-        groups.setdefault(str(sequence_id), []).append(index)
+        identity, output_key = _validated_sequence_identity(sequence_id)
+        owner = output_key_owners.get(output_key)
+        if owner is not None and owner != identity:
+            raise ValueError(
+                "sequence_ids contain distinct typed identities that collide "
+                f"after serialization: {output_key!r}"
+            )
+        output_key_owners[output_key] = identity
+        output_keys[identity] = output_key
+        groups.setdefault(identity, []).append(index)
 
     ordered: list[tuple[str, np.ndarray, np.ndarray]] = []
-    for sequence_id, indexes in groups.items():
+    for identity, indexes in groups.items():
         index_array = np.asarray(indexes, dtype=int)
         times = time_values[index_array]
         try:
@@ -125,7 +203,7 @@ def _ordered_group_indices(
         except (TypeError, ValueError):
             sort_values = times.astype(str)
         order = np.argsort(sort_values, kind="mergesort")
-        ordered.append((sequence_id, index_array[order], times[order]))
+        ordered.append((output_keys[identity], index_array[order], times[order]))
     return ordered
 
 
@@ -154,7 +232,12 @@ def _transition_logs_for_times(
             "integer-step time_values must be strictly increasing per sequence"
         )
     scaled = deltas / config.time_step
-    steps = np.rint(scaled).astype(np.int64)
+    if not np.all(np.isfinite(scaled)):
+        raise ValueError("time gaps must remain finite after time_step scaling")
+    rounded = np.rint(scaled)
+    if np.any(rounded > np.iinfo(np.int64).max):
+        raise ValueError("time gaps exceed the supported integer-step range")
+    steps = rounded.astype(np.int64)
     if np.any(steps < 1) or not np.allclose(
         scaled,
         steps,
@@ -187,6 +270,14 @@ def _markov_parameters(
     return transition, log_initial
 
 
+def _validated_prior_reliability(prior: np.ndarray) -> np.ndarray:
+    if not np.all(np.isfinite(prior)):
+        raise ValueError("prior_reliability must contain finite values")
+    if np.any((prior < 0.0) | (prior > 1.0)):
+        raise ValueError("prior_reliability must lie in [0, 1]")
+    return prior
+
+
 def smooth_markov_reliability(
     prior_reliability: np.ndarray,
     log_inlier_density: np.ndarray,
@@ -204,12 +295,11 @@ def smooth_markov_reliability(
     rather than an unnormalized factor-graph score.
     """
 
-    cfg = config or MarkovReliabilityConfig()
-    _validate_config(cfg)
+    cfg = _validated_config(config)
     prior = np.asarray(prior_reliability, dtype=float)
     log_inlier = np.asarray(log_inlier_density, dtype=float)
     log_outlier = np.asarray(log_outlier_density, dtype=float)
-    ids = np.asarray(sequence_ids)
+    ids = np.asarray(sequence_ids, dtype=object)
     times = np.asarray(time_values)
     n = prior.size
     for name, values in (
@@ -222,8 +312,7 @@ def smooth_markov_reliability(
             raise ValueError(f"{name} must have shape ({n},), got {values.shape}")
     if n == 0:
         raise ValueError("at least one measurement is required")
-    if not np.all(np.isfinite(prior)):
-        raise ValueError("prior_reliability must contain finite values")
+    _validated_prior_reliability(prior)
     if not np.all(np.isfinite(log_inlier)) or not np.all(np.isfinite(log_outlier)):
         raise ValueError("log densities must contain finite values")
 
@@ -259,7 +348,6 @@ def smooth_markov_reliability(
         sequence_log_evidence[sequence_id] = joint_log_partition - cue_log_partition
 
     result_posterior = np.clip(posterior, 0.0, 1.0)
-    result_posterior.setflags(write=False)
     return MarkovReliabilityResult(
         posterior_inlier_probability=result_posterior,
         sequence_log_evidence=sequence_log_evidence,
@@ -282,12 +370,11 @@ def markov_log_evidence_batch(
     used by grid/particle parameter inference.
     """
 
-    cfg = config or MarkovReliabilityConfig()
-    _validate_config(cfg)
+    cfg = _validated_config(config)
     prior = np.asarray(prior_reliability, dtype=float)
     log_inlier = np.asarray(log_inlier_density, dtype=float)
     log_outlier = np.asarray(log_outlier_density, dtype=float)
-    ids = np.asarray(sequence_ids)
+    ids = np.asarray(sequence_ids, dtype=object)
     times = np.asarray(time_values)
     if log_inlier.ndim != 2 or log_outlier.shape != log_inlier.shape:
         raise ValueError("log density arrays must have equal shape (p, n)")
@@ -303,8 +390,7 @@ def markov_log_evidence_batch(
             )
     if particle_count == 0 or measurement_count == 0:
         raise ValueError("at least one particle and measurement are required")
-    if not np.all(np.isfinite(prior)):
-        raise ValueError("prior_reliability must contain finite values")
+    _validated_prior_reliability(prior)
     if not np.all(np.isfinite(log_inlier)) or not np.all(np.isfinite(log_outlier)):
         raise ValueError("log densities must contain finite values")
 

@@ -59,6 +59,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Markov reliability now validates typed sequence identities without lossy string
+  coercion, rejects mixed identities such as `1` and `"1"` instead of merging
+  tracks, requires priors in `[0, 1]`, rejects invalid falsey configurations, and
+  returns defensively owned immutable posterior/evidence results. Integer-step
+  gaps also fail closed before an unrepresentable integer conversion.
 - The historical grouped Student-t operation now identifies itself explicitly as
   a covariance-marginalized diagnostic that does not use prior reliability. Its
   component densities and responsibilities share the prior-aware solver's mixture
