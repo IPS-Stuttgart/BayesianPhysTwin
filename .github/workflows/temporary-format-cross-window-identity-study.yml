@@ -1,4 +1,4 @@
-name: One-shot correct and format cross-window identity study
+name: One-shot finalize cross-window identity study
 
 on:
   pull_request:
@@ -15,12 +15,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  format:
+  finalize:
     if: >-
       github.actor != 'github-actions[bot]' &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 30
     steps:
       - name: Check out the experiment branch
@@ -29,18 +29,17 @@ jobs:
           ref: agent/prob4d-cross-window-identity-study
           fetch-depth: 0
           persist-credentials: true
+          clean: true
 
       - name: Set up Python 3.12
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
 
       - name: Install formatting tools
         run: python -m pip install "ruff>=0.6"
 
-      - name: Make cross-window evidence additive to the newest-window reference
+      - name: Correct source-linked abstention semantics
         shell: bash
         run: |
           set -euo pipefail
@@ -110,26 +109,97 @@ jobs:
           path.write_text(text[:start] + replacement + text[stop:], encoding="utf-8")
           PY
 
-      - name: Bind corrected protocol identity in both execution lanes
+      - name: Use content-addressed local Prob4D composition
         shell: bash
         run: |
           set -euo pipefail
-          old=23e9e9c209defaaf54af9e463dc8b66dc1d4825830fed8108e265ec5d6bb04c6
-          new=9a80d26da9fb74e00f05f0c5db5a2c2e1283a1b7343b0b74fcb8f5f2c1762f14
-          sed -i "s/${old}/${new}/g" \
-            .github/workflows/prob4d-cross-window-identity-development.yml \
-            .github/workflows/prob4d-cross-window-identity-development-hosted.yml
-          grep -F "PROTOCOL_SHA256: ${new}" \
-            .github/workflows/prob4d-cross-window-identity-development.yml
-          grep -F "PROTOCOL_SHA256: ${new}" \
-            .github/workflows/prob4d-cross-window-identity-development-hosted.yml
+          python - <<'PY'
+          from pathlib import Path
 
-      - name: Remove audited lint debt and format changed Python
+          path = Path(
+              ".github/workflows/prob4d-cross-window-identity-development.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          start = text.index("      - name: Resolve exact Prob4D source")
+          stop = text.index(
+              "      - name: Install exact producer and consumer", start
+          )
+          replacement = '''      - name: Compose exact Prob4D science source
+              id: prob4d
+              shell: bash
+              run: |
+                set -euo pipefail
+                base=/home/github-runner/src/Prob4D
+                additive=/home/github-runner/actions-runner/_work/Prob4D/Prob4D
+                destination="${RUNNER_TEMP}/prob4d-cross-window-composed-source"
+                test -d "${base}/.git"
+                test -d "${additive}/.git"
+                test "$(git -C "${base}" rev-parse HEAD)" = \
+                  aa8ffc6541011d044561e09870569a14ab3f586f
+                test -z "$(git -C "${base}" status --porcelain=v1)"
+                test "$(git -C "${base}" hash-object \
+                  src/prob4d/causal_tracklets.py)" = \
+                  81a44bf6a767464149fe8e60661d7ef699ff3e40
+                test "$(git -C "${base}" hash-object src/prob4d/sim3.py)" = \
+                  1c3f443774f92d7fd580087aa393d793d6704c23
+                test "$(git -C "${additive}" hash-object \
+                  src/prob4d/cross_window_tracklets.py)" = \
+                  1c90c67c68a42189aabf5fe26ef06a75c6c48065
+                rm -rf "${destination}"
+                git clone --no-hardlinks --quiet "${base}" "${destination}"
+                cp "${additive}/src/prob4d/cross_window_tracklets.py" \
+                  "${destination}/src/prob4d/cross_window_tracklets.py"
+                test "$(git -C "${destination}" hash-object \
+                  src/prob4d/cross_window_tracklets.py)" = \
+                  1c90c67c68a42189aabf5fe26ef06a75c6c48065
+                {
+                  echo "controlled_generator_base=aa8ffc6541011d044561e09870569a14ab3f586f"
+                  echo "cross_window_revision=${PROB4D_SOURCE_REVISION}"
+                  echo "cross_window_blob=1c90c67c68a42189aabf5fe26ef06a75c6c48065"
+                  echo "causal_tracklets_blob=81a44bf6a767464149fe8e60661d7ef699ff3e40"
+                  echo "sim3_blob=1c3f443774f92d7fd580087aa393d793d6704c23"
+                } | tee "${destination}/SCIENCE_SOURCE_COMPOSITION.txt"
+                echo "path=${destination}" >> "${GITHUB_OUTPUT}"
+
+'''
+          path.write_text(text[:start] + replacement + text[stop:], encoding="utf-8")
+          PY
+
+      - name: Bind final protocol identity and remove failed hosted lane
+        shell: bash
+        run: |
+          set -euo pipefail
+          final=a9f8514bbf9ff27b393122a7f811d765c8edf4fe6fc867d4b883b5283058a9fd
+          sed -i -E \
+            "s/PROTOCOL_SHA256: [0-9a-f]{64}/PROTOCOL_SHA256: ${final}/" \
+            .github/workflows/prob4d-cross-window-identity-development.yml
+          grep -F "PROTOCOL_SHA256: ${final}" \
+            .github/workflows/prob4d-cross-window-identity-development.yml
+          rm -f \
+            .github/workflows/prob4d-cross-window-identity-development-hosted.yml \
+            .github/workflows/temporary-prob4d-local-source-diagnostic.yml
+
+      - name: Update documentation and format changed Python
         shell: bash
         run: |
           set -euo pipefail
           sed -i '/^import hashlib$/d' \
             scripts/science/prob4d_cross_window_identity_development_v1.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("docs/prob4d_cross_window_identity_development_v1.md")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              "`P2_source_linked_cross_window_identity` | Merge only unambiguous mutual-best Prob4D links |",
+              "`P2_source_linked_cross_window_identity` | Newest-window reference plus only unambiguous mutual-best older-window links; zero links equal `P0` exactly |",
+          )
+          text = text.replace(
+              "resolves the exact Prob4D source revision",
+              "composes the clean controlled-study Prob4D base with the exact content-addressed additive association module",
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
           python -m ruff check --fix \
             scripts/science/prob4d_cross_window_identity_development_v1.py \
             tests/test_prob4d_cross_window_identity_development_v1.py
@@ -153,5 +223,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Make cross-window evidence additive to newest-window inference"
+          git commit -m "Finalize cross-window identity development execution"
           git push origin HEAD:agent/prob4d-cross-window-identity-study
