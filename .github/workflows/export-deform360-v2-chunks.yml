@@ -1,0 +1,41 @@
+name: Export staged Deform360 V2 bundle chunks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/export-deform360-v2-chunks.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: export-deform360-v2-chunks-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  export:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record committed chunk identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum tools/deform360-v2-bundle-*.b64 | tee bundle-chunks.sha256
+          wc -c tools/deform360-v2-bundle-*.b64 | tee bundle-chunks.bytes
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-v2-source-chunks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            tools/deform360-v2-bundle-00.b64
+            tools/deform360-v2-bundle-01.b64
+            tools/deform360-v2-bundle-02.b64
+            bundle-chunks.sha256
+            bundle-chunks.bytes
+          if-no-files-found: error
+          retention-days: 7
