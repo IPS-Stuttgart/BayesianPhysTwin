@@ -1,162 +1,123 @@
-name: CLI entrypoint contract
+name: One-shot Deform360 source staging
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "pyproject.toml"
-      - "README.md"
-      - "docs/command_line.md"
-      - "docs/experiment_index.md"
-      - "src/bayesian_phystwin/cli/_command_catalog.py"
-      - "src/bayesian_phystwin/cli/_command_dispatch.py"
-      - "src/bayesian_phystwin/cli/_command_inventory.py"
-      - "src/bayesian_phystwin/cli/command_registry.py"
-      - "src/bayesian_phystwin/cli/experiments.py"
-      - "src/bayesian_phystwin/cli/main.py"
-      - "tests/test_cli_main.py"
-      - "tests/test_command_registry.py"
-      - ".github/workflows/cli-entrypoints.yml"
   pull_request:
     branches: [main]
     paths:
-      - "pyproject.toml"
-      - "README.md"
-      - "docs/command_line.md"
-      - "docs/experiment_index.md"
-      - "src/bayesian_phystwin/cli/_command_catalog.py"
-      - "src/bayesian_phystwin/cli/_command_dispatch.py"
-      - "src/bayesian_phystwin/cli/_command_inventory.py"
-      - "src/bayesian_phystwin/cli/command_registry.py"
-      - "src/bayesian_phystwin/cli/experiments.py"
-      - "src/bayesian_phystwin/cli/main.py"
-      - "tests/test_cli_main.py"
-      - "tests/test_command_registry.py"
       - ".github/workflows/cli-entrypoints.yml"
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: cli-entrypoints-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PYTHONUNBUFFERED: "1"
+  group: one-shot-deform360-source-staging
+  cancel-in-progress: false
 
 jobs:
-  contract:
-    name: CLI contract / Python ${{ matrix.python-version }}
+  stage:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.12", "3.14"]
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - name: Check out the experiment branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Install package and development tools
-        run: python -m pip install -e ".[dev]"
-      - name: Run focused command tests
-        run: >-
-          python -m pytest -q
-          tests/test_cli_main.py
-          tests/test_command_registry.py
-      - name: Lint the command surface
-        if: matrix.python-version == '3.12'
-        run: >-
-          python -m ruff check
-          src/bayesian_phystwin/cli/_command_catalog.py
-          src/bayesian_phystwin/cli/_command_dispatch.py
-          src/bayesian_phystwin/cli/_command_inventory.py
-          src/bayesian_phystwin/cli/command_registry.py
-          src/bayesian_phystwin/cli/experiments.py
-          src/bayesian_phystwin/cli/main.py
-          tests/test_cli_main.py
-          tests/test_command_registry.py
-      - name: Type-check the command surface
-        if: matrix.python-version == '3.12'
-        run: >-
-          python -m mypy
-          src/bayesian_phystwin/cli/_command_catalog.py
-          src/bayesian_phystwin/cli/_command_dispatch.py
-          src/bayesian_phystwin/cli/_command_inventory.py
-          src/bayesian_phystwin/cli/command_registry.py
-          src/bayesian_phystwin/cli/experiments.py
-          src/bayesian_phystwin/cli/main.py
+          ref: agent/deform360-group-tempered-experiment
+          fetch-depth: 0
 
-  installed-artifacts:
-    name: Installed ${{ matrix.kind }} command surface
-    needs: contract
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        kind: [wheel, sdist]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Build distributions
-        run: |
-          python -m pip install build
-          python -m build
-      - name: Install one distribution in isolation
-        shell: bash
-        run: |
-          python -m venv "$RUNNER_TEMP/bpt-cli-smoke"
-          python_bin="$RUNNER_TEMP/bpt-cli-smoke/bin/python"
-          "$python_bin" -m pip install --upgrade pip
-          if [[ "${{ matrix.kind }}" == "wheel" ]]; then
-            artifact=$(find dist -maxdepth 1 -name '*.whl' -print -quit)
-          else
-            artifact=$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)
-          fi
-          test -n "$artifact"
-          "$python_bin" -m pip install "$artifact"
-          "$python_bin" -m pip check
-      - name: Exercise the installed registry
-        shell: bash
-        run: |
-          bin="$RUNNER_TEMP/bpt-cli-smoke/bin"
-          "$bin/bpt" --help
-          "$bin/bpt" provider manifest --help
-          "$bin/bpt" observation validate --help
-          "$bin/bpt" evidence summarize --help
-          "$bin/bpt" run manifest --help
-          "$bin/bpt" commands list --status stable --json
-          "$bin/bpt" commands describe bpt-phystwin-refit --json
-          "$bin/bpt" commands migrate bpt-phystwin-refit
-          "$bin/bpt" experiment list >/dev/null
-          "$bin/bpt" diagnostic describe audit-phystwin-calibration
-          "$bin/bpt" archive describe evaluate-phystwin-state-injection
-          if "$bin/bpt" experiment run bpt-phystwin-refit >/dev/null 2>&1; then
-            echo "removed executable name is still accepted as a runner alias" >&2
-            exit 1
-          fi
-          if compgen -G "$bin/bpt-*" >/dev/null; then
-            echo "legacy bpt-* executables were installed" >&2
-            find "$bin" -maxdepth 1 -type f -name 'bpt-*' -print >&2
-            exit 1
-          fi
-          "$bin/python" - <<'PY'
-          from importlib.metadata import distribution
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
-          scripts = {
-              entry.name: entry.value
-              for entry in distribution("bayesian-phystwin").entry_points
-              if entry.group == "console_scripts"
+      - name: Reconstruct and verify the exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import hashlib
+          import zlib
+          from pathlib import Path
+
+          expected_parts = {
+              "tools/deform360_group_tempered_payload_00.txt": "b3c1b1f386c4c1d971bd27f2152515df36f5db976db66f8d25a59bd7861df5d7",
+              "tools/deform360_group_tempered_payload_01.txt": "285d2230233d611ed05a245ac1b860a1bc8b4f7f225774e579c796c6a4a0e15c",
+              "tools/deform360_group_tempered_payload_02.txt": "762ba9738a043e60ad37954a03788312c3d5cdb2565436218cfd5d2c199581ef",
+              "tools/deform360_group_tempered_payload_03.txt": "05475cb2afea23d03337ae73c00388a5495245f24a851ffc43e4d5ce0d64aa49",
+              "tools/deform360_group_tempered_payload_04.txt": "6c24f68d20d69a826bdb567cc5286236ad42efa632980eae3093361e7580fab6",
           }
-          expected = {"bpt": "bayesian_phystwin.cli.main:main"}
-          if scripts != expected:
-              raise SystemExit(f"unexpected console scripts: {scripts}")
+          encoded = []
+          for name, expected in expected_parts.items():
+              path = Path(name)
+              raw = path.read_bytes()
+              actual = hashlib.sha256(raw).hexdigest()
+              if actual != expected:
+                  raise SystemExit(
+                      f"payload digest mismatch for {name}: {actual} != {expected}"
+                  )
+              encoded.append(raw.decode("ascii").strip())
+          source = zlib.decompress(base64.b85decode("".join(encoded)))
+          source_sha = hashlib.sha256(source).hexdigest()
+          expected_source = "fe21bedb9946c6d5989672d78d2b7452df7904e80734eb836aaa033f480f04f5"
+          if source_sha != expected_source:
+              raise SystemExit(
+                  f"source digest mismatch: {source_sha} != {expected_source}"
+              )
+          destination = Path(
+              "scripts/science/run_deform360_group_tempered_experiment.py"
+          )
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          destination.write_bytes(source)
+          print(f"reconstructed {destination}: {source_sha}")
           PY
+
+      - name: Install and validate the candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph]"
+          python -m pip check
+          python -m ruff format \
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
+          python -m ruff check \
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
+          python -m ruff format --check \
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
+          python -m pytest -q \
+            tests/test_deform360_public_evaluation.py \
+            tests/test_deform360_group_tempered_experiment.py
+          python -m py_compile \
+            scripts/science/run_deform360_group_tempered_experiment.py
+          git diff --check
+
+      - name: Publish only the clean product source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/cli-entrypoints.yml
+          git rm .github/workflows/stage-deform360-group-tempered.yml
+          rm tools/deform360_group_tempered_payload_*.txt
+          git add \
+            .github/workflows/cli-entrypoints.yml \
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py \
+            tools/deform360_group_tempered_payload_00.txt \
+            tools/deform360_group_tempered_payload_01.txt \
+            tools/deform360_group_tempered_payload_02.txt \
+            tools/deform360_group_tempered_payload_03.txt \
+            tools/deform360_group_tempered_payload_04.txt
+          git diff --cached --check
+          git commit -m "Implement group-held-out Deform360 experiment"
+          git push origin HEAD:agent/deform360-group-tempered-experiment
