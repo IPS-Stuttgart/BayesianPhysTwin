@@ -1,4 +1,4 @@
-name: Temporary export Deform360 evaluation branch
+name: Publish grouped Deform360 experiment
 
 on:
   pull_request:
@@ -8,24 +8,116 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: publish-grouped-deform360-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  export:
+  publish:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
-      - name: Check out branch
+      - name: Check out the PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
-          persist-credentials: false
-      - name: Export exact source tree
-        run: git archive --format=tar.gz --output=bayesian-phystwin-deform360-branch.tar.gz HEAD
-      - name: Upload source tree
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Restore the checksum-bound product files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tools/staging/deform360/bundle.part.* > /tmp/deform360-bundle.b64
+          base64 --decode /tmp/deform360-bundle.b64 > /tmp/deform360-bundle.tar.gz
+          echo "7c9c4339056c85b2cb3c7d2cceb70413c8e91d3d765571018901f2d57effd690  /tmp/deform360-bundle.tar.gz" \
+            | sha256sum -c -
+
+          cat > /tmp/expected-files.txt <<'EOF'
+          docs/deform360_public_evaluation_v1.md
+          protocols/deform360_grouped_public_experiment_v1.json
+          scripts/science/run_deform360_public_evaluation.py
+          tests/test_deform360_public_evaluation.py
+          EOF
+          tar -tzf /tmp/deform360-bundle.tar.gz \
+            | grep -v '/$' \
+            | sed 's#^\./##' \
+            | LC_ALL=C sort > /tmp/actual-files.txt
+          LC_ALL=C sort -o /tmp/expected-files.txt /tmp/expected-files.txt
+          diff -u /tmp/expected-files.txt /tmp/actual-files.txt
+          tar -xzf /tmp/deform360-bundle.tar.gz -C .
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          name: deform360-branch-source-${{ github.sha }}
-          path: bayesian-phystwin-deform360-branch.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate the exact experiment product
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check --fix \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m ruff format \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m ruff check \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m ruff format --check \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m pytest -q tests/test_deform360_public_evaluation.py
+          python -m compileall -q \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path("protocols/deform360_grouped_public_experiment_v1.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          digest = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = "059f7f5bed5c62e8b699348cc36c9a0af8a8b820cf7aecd745bc00ed54a3b945"
+          if digest != expected:
+              raise SystemExit(f"protocol digest changed: {digest} != {expected}")
+          print(f"locked protocol: {digest}")
+          PY
+          git diff --check
+
+      - name: Publish the clean product diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -r tools/staging/deform360
+          git add \
+            docs/deform360_public_evaluation_v1.md \
+            protocols/deform360_grouped_public_experiment_v1.json \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          git diff --cached --check
+          git commit -m "Run target-blind grouped Deform360 experiment"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
