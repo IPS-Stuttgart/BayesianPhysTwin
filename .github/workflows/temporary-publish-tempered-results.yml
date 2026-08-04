@@ -1,11 +1,12 @@
 name: Temporary publish tempered result evidence
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/tempered-model-average-results
+      - agent/tempered-model-average-experiment
     paths:
       - .github/workflows/temporary-publish-tempered-results.yml
+      - results/diagnostics/full22_tempered_model_average_v1/**
 
 permissions:
   actions: read
@@ -17,13 +18,16 @@ concurrency:
 
 jobs:
   publish:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out result branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: agent/tempered-model-average-results
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Download exact self-hosted evidence artifact
@@ -169,4 +173,4 @@ jobs:
           git add results/diagnostics/full22_tempered_model_average_v1
           git diff --cached --check
           git commit -m "Publish locked tempered model-average evidence"
-          git push origin HEAD:agent/tempered-model-average-results
+          git push origin HEAD:${{ github.head_ref }}
