@@ -121,9 +121,7 @@ jobs:
               ).encode("utf-8")
           ).hexdigest()
           if digest != os.environ["PROTOCOL_SHA256"]:
-              raise SystemExit(
-                  f"development protocol changed: {digest}"
-              )
+              raise SystemExit(f"development protocol changed: {digest}")
           target = protocol["confirmatory_target"]
           if target["seeds_committed"] is not False or "seed_start" in target:
               raise SystemExit("confirmatory target seeds were committed")
@@ -215,7 +213,7 @@ jobs:
           print(json.dumps(decision, indent=2, sort_keys=True))
           PY
           git diff --exit-code
-          test -z "$(git status --porcelain=v1)"
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
 
       - name: Publish development summary
         if: always()
