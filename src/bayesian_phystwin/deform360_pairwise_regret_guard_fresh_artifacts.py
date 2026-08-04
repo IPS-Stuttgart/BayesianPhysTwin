@@ -190,6 +190,7 @@ def build_fresh_processing_cohort(
                 "result_sha256": admission["result_sha256"],
                 "accepted": bool(admission["accepted"]),
                 "rejection_reasons": list(admission["rejection_reasons"]),
+                "observed_source_contract": admission["observed_source_contract"],
             }
         else:
             _require(not admission_path.exists(), "technical failure has an admission")
@@ -389,6 +390,91 @@ def build_fresh_physical_seal(
     )
     _write_json(output / PHYSICAL_SEAL_FILENAME, payload)
     validate_fresh_physical_seal(payload, case_dir=output, lock=lock, protocol=protocol)
+    return payload
+
+
+def write_fresh_physical_artifacts(
+    archive_path: str | Path,
+    manifest_path: str | Path,
+    arrays: Mapping[str, np.ndarray],
+    *,
+    case: Mapping[str, Any],
+    technical_lock: Mapping[str, Any],
+    processing_protocol: Mapping[str, Any],
+    physical_mode: str,
+    input_files: Mapping[str, str | Path],
+    runtime_provenance: Mapping[str, Any],
+    fallback_diagnostics: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Write a fresh physical archive without accepting future observations."""
+
+    _require(
+        physical_mode in {"warp_twin", "persistence_fallback"},
+        "unknown physical mode",
+    )
+    _require(
+        (physical_mode == "persistence_fallback") == (fallback_diagnostics is not None),
+        "fallback diagnostics disagree with physical mode",
+    )
+    validate_fresh_technical_lock(technical_lock)
+    validate_fresh_processing_protocol(processing_protocol)
+    expected = fresh_processing_case(
+        technical_lock, str(case["object_id"]), int(case["episode_id"])
+    )
+    _require(
+        all(case.get(key) == value for key, value in expected.items()),
+        "physical case differs from the technical lock",
+    )
+    stored = {name: np.asarray(arrays[name]) for name in sorted(PHYSICAL_ARRAY_NAMES)}
+    _require(set(stored) == PHYSICAL_ARRAY_NAMES, "physical arrays are incomplete")
+    archive = Path(archive_path).resolve()
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(archive, **stored)
+    load_physical_archive(archive)
+    payload = _seal(
+        {
+            "schema_version": 1,
+            "artifact_kind": "Deform360PairwiseRegretGuardFreshPhysicalPrediction",
+            "protocol_id": technical_lock["protocol_id"],
+            "technical_lock_sha256": technical_lock["lock_sha256"],
+            "processing_protocol_sha256": processing_protocol["protocol_sha256"],
+            **expected,
+            "episode_key": f"{expected['object_id']}/{expected['episode_id']}",
+            "physical_mode": physical_mode,
+            "physical_admitted": physical_mode == "warp_twin",
+            "fallback_diagnostics": (
+                None if fallback_diagnostics is None else dict(fallback_diagnostics)
+            ),
+            "physical_prediction_archive": {
+                "path": str(archive),
+                "file_sha256": file_sha256(archive),
+                "array_sha256": {
+                    name: array_sha256(value) for name, value in stored.items()
+                },
+            },
+            "input_files": {
+                name: {
+                    "path": str(Path(path).resolve()),
+                    "sha256": file_sha256(path),
+                }
+                for name, path in sorted(input_files.items())
+            },
+            "runtime_provenance": dict(runtime_provenance),
+            "information_boundary": {
+                "object_observation_frames_used": [0],
+                "known_future_robot_action_read": True,
+                "future_object_rgb_read": False,
+                "future_object_geometry_read": False,
+                "future_object_track_read": False,
+                "future_tactile_read": False,
+                "outcome_read": False,
+                "prediction_hashed_before_future_outcome_scoring": True,
+                "held_v8_runtime_or_target_artifact_access": False,
+            },
+            "passed": True,
+        }
+    )
+    _write_json(manifest_path, payload)
     return payload
 
 
@@ -782,6 +868,60 @@ def build_fresh_prediction_failure_seal(
     return payload
 
 
+def build_fresh_runtime_failure_seal(
+    technical_lock_path: str | Path,
+    output_path: str | Path,
+    *,
+    object_id: str,
+    episode_id: int,
+    stage: str,
+    error_type: str,
+    error_message: str,
+    input_files: Mapping[str, str | Path],
+) -> dict[str, Any]:
+    """Seal an admitted case's first technical prediction failure."""
+
+    _require(
+        stage
+        in {"physical-backbone", "prefix-camera-measurement", "guarded-prediction"},
+        "unsupported runtime failure stage",
+    )
+    _require(bool(error_type) and bool(error_message), "runtime error is empty")
+    lock = _load_json(technical_lock_path)
+    validate_fresh_technical_lock(lock)
+    case = fresh_processing_case(lock, object_id, int(episode_id))
+    payload = _seal(
+        {
+            "schema_version": 1,
+            "artifact_kind": FAILURE_SEAL_KIND,
+            "protocol_id": lock["protocol_id"],
+            "technical_lock_sha256": lock["lock_sha256"],
+            **case,
+            "stage": stage,
+            "disposition": "technical_failure",
+            "error": {"type": error_type, "message": error_message},
+            "inputs": {
+                name: {
+                    "path": str(Path(path).resolve()),
+                    "file_sha256": file_sha256(path),
+                }
+                for name, path in sorted(input_files.items())
+            },
+            "replacement_allowed": False,
+            "retry_allowed": False,
+            "ordinary_prediction_created": False,
+            "information_boundary": {
+                "failure_sealed_before_outcome": True,
+                "target_or_metric_read": False,
+                "outcome_manifest_read": False,
+                "held_v8_runtime_or_target_artifact_access": False,
+            },
+        }
+    )
+    _write_json(output_path, payload)
+    return payload
+
+
 def build_fresh_prediction_cohort(
     technical_lock_path: str | Path,
     prediction_root: str | Path,
@@ -897,9 +1037,11 @@ __all__ = [
     "build_fresh_physical_seal",
     "build_fresh_prediction_cohort",
     "build_fresh_prediction_failure_seal",
+    "build_fresh_runtime_failure_seal",
     "build_fresh_processing_cohort",
     "fresh_case_records",
     "validate_fresh_guarded_prediction_seal",
     "validate_fresh_physical_seal",
     "validate_fresh_processing_cohort",
+    "write_fresh_physical_artifacts",
 ]
