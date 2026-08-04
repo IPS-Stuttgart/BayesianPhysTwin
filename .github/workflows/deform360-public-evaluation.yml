@@ -205,7 +205,9 @@ jobs:
         run: |
           set -euo pipefail
           git diff --exit-code
-          git status --porcelain=v1 | tee deform360-inventory/git-status.txt
+          git status --porcelain=v1 --untracked-files=all -- \
+            . ':!deform360-inventory' \
+            | tee deform360-inventory/git-status.txt
           test ! -s deform360-inventory/git-status.txt
 
       - name: Publish metadata-only summary
