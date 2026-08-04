@@ -1,0 +1,43 @@
+name: One-shot format PR 127
+
+on:
+  push:
+    branches:
+      - agent/deform360-official-hub-visuotactile-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-format-pr127
+  cancel-in-progress: true
+
+jobs:
+  format-and-remove:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/deform360-official-hub-visuotactile-v1
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply the repository formatter
+        run: |
+          python -m pip install --disable-pip-version-check "ruff>=0.6"
+          python -m ruff format tests/test_deform360_hub_selection.py
+
+      - name: Commit the focused repair and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-format-pr127.yml
+          git add tests/test_deform360_hub_selection.py
+          git diff --cached --check
+          git commit -m "Format Deform360 Stage-0 contract test"
+          git push origin HEAD:agent/deform360-official-hub-visuotactile-v1
