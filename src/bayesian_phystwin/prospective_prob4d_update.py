@@ -6,6 +6,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any
 
 import numpy as np
@@ -31,18 +32,28 @@ def _validate_sha256(value: str, *, name: str) -> None:
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
-def _validated_calibration_ids(value: object) -> dict[str, str]:
+def _validated_calibration_ids(value: object) -> Mapping[str, str]:
     if not isinstance(value, Mapping) or not value:
         raise ValueError("claim-bearing calibration artifact IDs are missing")
     result: dict[str, str] = {}
-    for raw_name, raw_digest in value.items():
-        name = str(raw_name)
-        digest = str(raw_digest)
+    for name, digest in value.items():
+        if not isinstance(name, str):
+            raise TypeError("calibration artifact names must be strings")
+        if not isinstance(digest, str):
+            raise TypeError(f"calibration artifact {name!r} digest must be a string")
         if not name:
             raise ValueError("calibration artifact names must be nonempty")
         _validate_sha256(digest, name=f"calibration artifact {name}")
         result[name] = digest
-    return dict(sorted(result.items()))
+    return MappingProxyType(dict(sorted(result.items())))
+
+
+def _validated_runtime_revision_source(value: object) -> str:
+    if not isinstance(value, str):
+        raise TypeError("runtime_revision_source must be a string")
+    if not value:
+        raise ValueError("runtime_revision_source must be nonempty")
+    return value
 
 
 def _canonical_id(payload: Mapping[str, object]) -> str:
@@ -80,12 +91,18 @@ class ClaimBearingProb4DUpdateV1:
         calibration_ids = _validated_calibration_ids(
             self.calibration_artifact_ids
         )
-        if not self.runtime_revision_source:
-            raise ValueError("runtime_revision_source must be nonempty")
+        runtime_revision_source = _validated_runtime_revision_source(
+            self.runtime_revision_source
+        )
         if not isinstance(self.runtime_revision_independently_verified, bool):
             raise TypeError(
                 "runtime_revision_independently_verified must be a bool"
             )
+        if self.runtime_revision_independently_verified is not True:
+            raise ValueError(
+                "runtime_revision_independently_verified must be True"
+            )
+
         lineage = self.result.input_lineage
         expected = {
             "observation_artifact_id": self.observation_artifact_id,
@@ -93,17 +110,38 @@ class ClaimBearingProb4DUpdateV1:
             "prob4d_claim_bearing_provider_manifest_id": (
                 self.provider_manifest_id
             ),
+            "prob4d_claim_bearing_runtime_revision_source": (
+                runtime_revision_source
+            ),
         }
         for key, value in expected.items():
             if lineage.get(key) != value:
                 raise ValueError(f"result lineage does not bind {key}")
+
+        lineage_calibration_ids = _validated_calibration_ids(
+            lineage.get("prob4d_claim_bearing_calibration_artifact_ids")
+        )
+        if dict(lineage_calibration_ids) != dict(calibration_ids):
+            raise ValueError(
+                "result lineage does not bind calibration_artifact_ids"
+            )
         if lineage.get(
             "prob4d_claim_bearing_runtime_revision_independently_verified"
         ) is not True:
             raise ValueError(
                 "result lineage lacks independently verified runtime evidence"
             )
-        object.__setattr__(self, "calibration_artifact_ids", calibration_ids)
+
+        object.__setattr__(
+            self,
+            "calibration_artifact_ids",
+            calibration_ids,
+        )
+        object.__setattr__(
+            self,
+            "runtime_revision_source",
+            runtime_revision_source,
+        )
 
     @property
     def inference_admissible(self) -> bool:
@@ -171,8 +209,8 @@ def update_claim_bearing_prob4d_from_artifacts(
     calibration_ids = _validated_calibration_ids(
         metadata.get("prob4d_claim_bearing_calibration_artifact_ids")
     )
-    runtime_revision_source = str(
-        metadata.get("prob4d_claim_bearing_runtime_revision_source", "")
+    runtime_revision_source = _validated_runtime_revision_source(
+        metadata.get("prob4d_claim_bearing_runtime_revision_source")
     )
     runtime_verified = metadata.get(
         "prob4d_claim_bearing_runtime_revision_independently_verified"
