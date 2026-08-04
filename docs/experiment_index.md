@@ -73,8 +73,7 @@ The
 and its
 [frozen result](deform360_bias_aware_prospective_v2_result.md) record a
 prospective calibration gate. The target-free support gate passed, the fresh
-accuracy gate failed, and reserved targets remained unopened. This is a
-negative prospective result, not a target evaluation.
+accuracy gate failed, and reserved targets remained unopened. This is a negative prospective result, not a target evaluation.
 
 ## PhysTwin experiment families
 
