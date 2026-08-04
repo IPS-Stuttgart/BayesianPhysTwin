@@ -51,13 +51,9 @@ class MarkovReliabilityResult:
             order="C",
         )
         if posterior.ndim != 1 or len(posterior) == 0:
-            raise ValueError(
-                "posterior_inlier_probability must be a nonempty vector"
-            )
+            raise ValueError("posterior_inlier_probability must be a nonempty vector")
         if not np.all(np.isfinite(posterior)):
-            raise ValueError(
-                "posterior_inlier_probability must contain finite values"
-            )
+            raise ValueError("posterior_inlier_probability must contain finite values")
         if np.any((posterior < 0.0) | (posterior > 1.0)):
             raise ValueError("posterior_inlier_probability must lie in [0, 1]")
         if not isinstance(self.sequence_log_evidence, Mapping):
@@ -65,13 +61,9 @@ class MarkovReliabilityResult:
         evidence: dict[str, float] = {}
         for sequence_id, raw_value in self.sequence_log_evidence.items():
             if not isinstance(sequence_id, str) or not sequence_id:
-                raise ValueError(
-                    "sequence_log_evidence keys must be nonempty strings"
-                )
+                raise ValueError("sequence_log_evidence keys must be nonempty strings")
             if isinstance(raw_value, (bool, np.bool_)):
-                raise ValueError(
-                    "sequence_log_evidence values must be finite numbers"
-                )
+                raise ValueError("sequence_log_evidence values must be finite numbers")
             try:
                 value = float(raw_value)
             except (TypeError, ValueError) as error:
@@ -79,9 +71,7 @@ class MarkovReliabilityResult:
                     "sequence_log_evidence values must be finite numbers"
                 ) from error
             if not np.isfinite(value):
-                raise ValueError(
-                    "sequence_log_evidence values must be finite numbers"
-                )
+                raise ValueError("sequence_log_evidence values must be finite numbers")
             evidence[sequence_id] = value
         posterior.setflags(write=False)
         object.__setattr__(self, "posterior_inlier_probability", posterior)
