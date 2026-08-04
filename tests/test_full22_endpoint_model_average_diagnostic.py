@@ -9,10 +9,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = (
-    ROOT
-    / "scripts"
-    / "science"
-    / "run_full22_endpoint_model_average_diagnostic.py"
+    ROOT / "scripts" / "science" / "run_full22_endpoint_model_average_diagnostic.py"
 )
 
 
