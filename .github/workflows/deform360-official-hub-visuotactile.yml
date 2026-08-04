@@ -1,0 +1,181 @@
+name: Deform360 official-Hub visuotactile Stage 0
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-official-hub-visuotactile.yml"
+      - "protocols/deform360_official_hub_visuotactile_v1.json"
+      - "scripts/science/build_deform360_hub_selection.py"
+      - "src/bayesian_phystwin/deform360_contact_anchor.py"
+      - "tests/test_deform360_contact_anchor.py"
+      - "tests/test_deform360_hub_selection.py"
+      - "docs/deform360_official_hub_visuotactile_v1.md"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-official-hub-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Contact-anchor and selection contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out BayesianPhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate target-blind implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py
+          python -m pytest -q \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py
+
+  official-hub-selection:
+    name: Names and metadata only / workstation2
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact PR revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install metadata-only client
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" "huggingface_hub>=0.30,<2"
+          python -m pip check
+
+      - name: Record environment outside the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-official-hub-stage0"
+          rm -rf "${evidence}"
+          mkdir -p "${evidence}"
+          echo "EVIDENCE_DIR=${evidence}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            uname -a
+            python --version
+          } | tee "${evidence}/environment.txt"
+          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee "${evidence}/gpus.csv"
+
+      - name: Resolve official revision and select from names/metadata only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/build_deform360_hub_selection.py \
+            --repository . \
+            --protocol protocols/deform360_official_hub_visuotactile_v1.json \
+            --output "${EVIDENCE_DIR}/selection.json" \
+            | tee "${EVIDENCE_DIR}/selection.log"
+
+      - name: Verify the source checkout remained unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git status --porcelain=v1 --untracked-files=no \
+            | tee "${EVIDENCE_DIR}/git-status.txt"
+          test ! -s "${EVIDENCE_DIR}/git-status.txt"
+          sha256sum "${EVIDENCE_DIR}"/* \
+            | sort \
+            > "${EVIDENCE_DIR}/SHA256SUMS"
+
+      - name: Publish Stage-0 summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_DIR}/selection.json" ]]; then
+            python - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(
+              (Path(os.environ["EVIDENCE_DIR"]) / "selection.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print("### Official-Hub Deform360 Stage 0")
+          print()
+          print(f"- Resolved dataset revision: `{payload['dataset']['resolved_revision']}`")
+          print(f"- Selection content SHA-256: `{payload['content_selection_sha256']}`")
+          print(f"- Calibration objects: `{len(payload['selection']['calibration'])}`")
+          print(f"- Confirmation objects: `{len(payload['selection']['confirmation'])}`")
+          print("- Camera media opened: `false`")
+          print("- Tactile arrays opened: `false`")
+          print("- Target outcomes opened: `false`")
+          print()
+          print("The exact selection must be committed before any selected raw payload access.")
+          PY
+          else
+            echo "### Official-Hub Deform360 Stage 0" >> "${GITHUB_STEP_SUMMARY}"
+            echo >> "${GITHUB_STEP_SUMMARY}"
+            echo "No selection artifact was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload target-blind selection evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-official-hub-stage0-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_DIR }}
+          if-no-files-found: error
+          retention-days: 90

@@ -56,6 +56,14 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   the historical order-only behavior by default.
 - Focused self-hosted `workstation2` validation for prospective belief contracts,
   numerical stress tests, and environment/GPU identity evidence.
+- A content-addressed Deform360 contact-anchor contract that maps reduced
+  prefix tactile/proprioceptive evidence into displacement-equivalent rows,
+  preserves sensor correlation and optional bias, and attaches to the existing
+  gauge-aware solver without treating raw taxels as independent measurements.
+- A locked official-Hub Deform360 Stage-0 selector that excludes every prior
+  cohort and cache-touched object, resolves the exact public dataset revision,
+  and selects fresh calibration/confirmation objects from names and metadata
+  before any camera, tactile, robot, or geometry payload access.
 
 ### Changed
 

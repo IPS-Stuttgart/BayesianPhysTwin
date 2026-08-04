@@ -75,6 +75,11 @@ and its
 prospective calibration gate. The target-free support gate passed, the fresh
 accuracy gate failed, and reserved targets remained unopened. This is a negative prospective result, not a target evaluation.
 
+The [official-Hub Deform360 visuotactile v1 protocol](deform360_official_hub_visuotactile_v1.md) is the next independent-object
+gate. It replaces contaminated mounted-cache trajectories with an exact
+official raw-data revision, adds an independent contact anchor to the existing
+explicit-gauge solver, and remains locked before selected raw payload access.
+
 ## PhysTwin experiment families
 
 | Area | Primary document | Status and purpose |
