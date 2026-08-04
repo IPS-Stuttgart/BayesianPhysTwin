@@ -67,13 +67,12 @@ def _write_protocol(
     }
     payload = {
         "schema": (
-            "bayesian-phystwin/"
-            "deform360-source-hull-contract-probe-protocol-v1"
+            "bayesian-phystwin/deform360-source-hull-contract-probe-protocol-v1"
         ),
         "config": config,
-        "config_sha256": __import__("hashlib").sha256(
-            _canonical_bytes(config)
-        ).hexdigest(),
+        "config_sha256": __import__("hashlib")
+        .sha256(_canonical_bytes(config))
+        .hexdigest(),
         "schema_version": 1,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,9 +186,9 @@ def test_protocol_rejects_reserved_target(tmp_path: Path) -> None:
     payload = json.loads(protocol.read_text(encoding="utf-8"))
     payload["config"]["cohort"]["entries"][0]["classification"] = "reserved_target"
     payload["config"]["cohort"]["reserved_target_object_count"] = 1
-    payload["config_sha256"] = __import__("hashlib").sha256(
-        _canonical_bytes(payload["config"])
-    ).hexdigest()
+    payload["config_sha256"] = (
+        __import__("hashlib").sha256(_canonical_bytes(payload["config"])).hexdigest()
+    )
     protocol.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
