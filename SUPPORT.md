@@ -42,6 +42,14 @@ for Causal4D.
 The normative provider details are maintained in
 [`docs/causal4d_provider_v1.md`](docs/causal4d_provider_v1.md).
 
+The fixed endpoint surface
+`bayesian_phystwin.causal4d_belief_provider_v1` remains the compatibility
+boundary for frozen discrepancy-endpoint consumers. The additive
+`causal4d_belief_provider_v2` exposes evidence-weighted endpoint model averaging
+and horizon-dependent model-based covariance. Adopting provider v2 is an
+explicit consumer decision; it does not change provider v1 and does not imply
+that the raw covariance is prospectively calibrated.
+
 ## Command-line compatibility
 
 The current package installs one executable, `bpt`. Direct grouped routes are

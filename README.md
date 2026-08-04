@@ -58,10 +58,10 @@ Prob4D or another 4-D perception feeder
                                            Causal4D provider artifacts
 ```
 
-[Prob4D](https://github.com/FlorianPfaff/Prob4D) can export the portable
+[Prob4D](https://github.com/IPS-Stuttgart/Prob4D) can export the portable
 `ObservationBeliefV1` contract. Bayesian-PhysTwin owns the reliability-aware
 belief update and PhysTwin provider boundary.
-[Causal4D](https://github.com/FlorianPfaff/Causal4D) separately owns abduction,
+[Causal4D](https://github.com/IPS-Stuttgart/Causal4D) separately owns abduction,
 intervention, and counterfactual prediction.
 
 ## Installation
@@ -185,6 +185,9 @@ state-update and exact-fallback boundaries.
   negative results, experimental command families, and placement policy.
 - [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
   risk–coverage, exact fallback, tail regressions, and calibration summaries.
+- [Prospective belief updates](docs/prospective_belief_updates_v1.md):
+  evidence-weighted endpoint uncertainty, strict Prob4D update composition,
+  gap-aware reliability, and their empirical claim boundaries.
 - [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
   surface and provenance boundary.
 - [PhysTwin integration](docs/phystwin_integration.md): upstream artifacts,

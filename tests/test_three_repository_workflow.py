@@ -46,3 +46,18 @@ def test_three_repository_workflow_probes_repository_access() -> None:
         "Scheduled, manual, and repository-dispatch validation remains fail-closed"
         in text
     )
+
+
+def test_three_repository_workflow_tracks_prospective_belief_surfaces() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    required_paths = (
+        "src/bayesian_phystwin/causal4d_belief_provider_v2.py",
+        "src/bayesian_phystwin/endpoint_model_average.py",
+        "src/bayesian_phystwin/prospective_prob4d_update.py",
+        "tests/test_endpoint_model_average.py",
+        "tests/test_prospective_prob4d_update.py",
+        "docs/prospective_belief_updates_v1.md",
+    )
+    for path in required_paths:
+        assert f'- "{path}"' in text

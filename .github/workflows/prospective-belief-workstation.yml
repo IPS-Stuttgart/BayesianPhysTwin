@@ -1,0 +1,156 @@
+name: Prospective belief validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/prospective_prob4d_update.py"
+      - "src/bayesian_phystwin/structured_reliability.py"
+      - "src/bayesian_phystwin/parameter_posterior.py"
+      - "src/bayesian_phystwin/__init__.py"
+      - "tests/test_endpoint_model_average.py"
+      - "tests/test_prospective_prob4d_update.py"
+      - "tests/test_structured_reliability.py"
+      - "tests/test_parameter_posterior.py"
+      - ".github/workflows/prospective-belief-workstation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prospective-belief-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workstation2:
+    name: Focused contracts and numerical stress
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Record runner and GPU identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            uname -a
+            python --version
+          } | tee prospective-belief-environment.txt
+          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee prospective-belief-gpus.csv
+      - name: Archive repository context for reproducible review
+        run: |
+          tar -czf prospective-belief-source-context.tgz \
+            .github/workflows/tests.yml \
+            docs/experiment_index.md
+      - name: Install NumPy-only development environment
+        run: python -m pip install -e ".[dev]"
+      - name: Run focused contract tests
+        run: |
+          python -m pytest -q \
+            tests/test_endpoint_model_average.py \
+            tests/test_prospective_prob4d_update.py \
+            tests/test_structured_reliability.py \
+            tests/test_parameter_posterior.py \
+            tests/test_prob4d_causal_lineage.py \
+            tests/test_prob4d_joint_contract_fixture.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_release_metadata.py
+          python -m pip check
+      - name: Run deterministic endpoint stress evaluation
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import platform
+          import resource
+          import time
+
+          import numpy as np
+
+          from bayesian_phystwin import (
+              ModelAveragedEndpointConfigV1,
+              infer_model_averaged_endpoint,
+              predict_model_averaged_endpoint,
+          )
+
+          rng = np.random.default_rng(20260803)
+          frame_count = 60
+          track_count = 4096
+          residual = rng.normal(0.0, 0.004, size=(frame_count, track_count, 3))
+          outlier = rng.random((frame_count, track_count)) < 0.04
+          residual[outlier] += rng.normal(0.0, 0.04, size=(int(outlier.sum()), 3))
+          valid = rng.random((frame_count, track_count)) > 0.12
+          config = ModelAveragedEndpointConfigV1()
+
+          started = time.perf_counter()
+          posterior = infer_model_averaged_endpoint(
+              residual,
+              valid,
+              end_frame=frame_count,
+              config=config,
+          )
+          prediction = predict_model_averaged_endpoint(
+              posterior,
+              horizon_steps=30,
+          )
+          elapsed = time.perf_counter() - started
+          eigenvalues = np.linalg.eigvalsh(prediction.covariance_m2)
+          entropy = -np.sum(
+              posterior.component_weights
+              * np.log(np.maximum(posterior.component_weights, 1e-300)),
+              axis=1,
+          )
+          trace = np.trace(prediction.covariance_m2, axis1=1, axis2=2)
+          result = {
+              "schema": "bayesian-phystwin-endpoint-stress-v1",
+              "revision": os.environ["GITHUB_SHA"],
+              "python": platform.python_version(),
+              "numpy": np.__version__,
+              "frame_count": frame_count,
+              "track_count": track_count,
+              "component_count": len(config.components),
+              "elapsed_seconds": elapsed,
+              "max_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+              "minimum_covariance_eigenvalue": float(np.min(eigenvalues)),
+              "updated_track_fraction": float(np.mean(posterior.updated_mask)),
+              "mean_component_entropy": float(np.mean(entropy)),
+              "predictive_trace_quantiles_m2": {
+                  str(q): float(np.quantile(trace, q))
+                  for q in (0.0, 0.5, 0.9, 0.99, 1.0)
+              },
+          }
+          if result["minimum_covariance_eigenvalue"] < -1e-12:
+              raise SystemExit("predictive covariance lost PSD")
+          with open("prospective-belief-stress.json", "w", encoding="utf-8") as handle:
+              json.dump(result, handle, indent=2, sort_keys=True)
+              handle.write("\n")
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+      - name: Upload focused validation evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: prospective-belief-workstation2
+          path: |
+            prospective-belief-environment.txt
+            prospective-belief-gpus.csv
+            prospective-belief-stress.json
+            prospective-belief-source-context.tgz
+          if-no-files-found: warn
+          retention-days: 14

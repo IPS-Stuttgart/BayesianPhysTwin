@@ -43,6 +43,19 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - An explicit conditional grouped Student-t objective that uses the same mixture
   kernel, reliability semantics, zero-support behavior, and provider-final versus
   consumer-owned information powers as prior-aware gauge inference.
+- An evidence-weighted robust endpoint model average that retains the fixed
+  Bayesian endpoint as a one-component special case, exposes per-track component
+  evidence, includes between-model disagreement in covariance, and propagates
+  horizon-dependent process uncertainty without future observations.
+- An additive Causal4D belief-provider v2 surface for the model-averaged endpoint;
+  provider v1 and all frozen endpoint semantics remain unchanged.
+- A one-call claim-bearing Prob4D update that validates stream-v2/provider-v2
+  evidence and a content-bound physical linearization before invoking the
+  prior-aware grouped-mixture solver.
+- An explicit integer-step time-gap mode for Markov reliability while preserving
+  the historical order-only behavior by default.
+- Focused self-hosted `workstation2` validation for prospective belief contracts,
+  numerical stress tests, and environment/GPU identity evidence.
 
 ### Changed
 
@@ -50,6 +63,14 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   a covariance-marginalized diagnostic that does not use prior reliability. Its
   component densities and responsibilities share the prior-aware solver's mixture
   kernel, while the new conditional operation exposes the solver-aligned objective.
+- `ParameterEnsemble` now defensively owns its arrays and rejects empty,
+  non-finite, negative-residual, invalid-reliability, corrupted-weight, and
+  invalid-jitter inputs instead of silently clipping or propagating them.
+- Claim-bearing Prob4D update identities now require literal string SHA-256
+  content IDs; provider manifest IDs are no longer string-coerced before solver
+  admission.
+- Release, citation, README, and companion-repository links now use the canonical
+  `IPS-Stuttgart` repository locations after the organization transfer.
 - Observation identities, physical-linearization identities, causal cutoffs, and
   guarded-update decisions now reject booleans and floating-point values instead
   of silently coercing them. Content-addressed observation, linearization,

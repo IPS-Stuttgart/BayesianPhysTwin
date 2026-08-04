@@ -33,6 +33,15 @@ from .drift_bias import (
     filter_random_walk_bias,
     robust_random_walk_log_evidence_batch,
 )
+from .endpoint_model_average import (
+    DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
+    MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+    ModelAveragedEndpointConfigV1,
+    ModelAveragedEndpointPosteriorV1,
+    ModelAveragedEndpointPredictionV1,
+    infer_model_averaged_endpoint,
+    predict_model_averaged_endpoint,
+)
 from .gauge_aware_belief import (
     GaugeAwareBeliefConfig,
     GaugeAwareBeliefResult,
@@ -107,6 +116,11 @@ from .prob4d_causal_lineage import (
     validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
 )
+from .prospective_prob4d_update import (
+    CLAIM_BEARING_PROB4D_UPDATE_VERSION,
+    ClaimBearingProb4DUpdateV1,
+    update_claim_bearing_prob4d_from_artifacts,
+)
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
@@ -122,6 +136,8 @@ from .robust_likelihood import (
     robust_mixture_likelihood,
 )
 from .structured_reliability import (
+    MARKOV_TIME_MODE_INTEGER_STEPS,
+    MARKOV_TIME_MODE_ORDER_ONLY,
     MarkovReliabilityConfig,
     MarkovReliabilityResult,
     markov_log_evidence_batch,
@@ -134,16 +150,19 @@ from .synthetic_benchmark import (
 )
 
 __all__ = [
+    "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
     "CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS",
     "COVARIANCE_MARGINAL_SCORE_SEMANTICS",
     "BinaryCalibrationMetrics",
     "BiasAwareStateUpdateConfig",
     "BiasAwareStateUpdateResult",
+    "ClaimBearingProb4DUpdateV1",
     "CompleteBeliefGuardDecisionV1",
     "CompleteBeliefSelectionV1",
     "ConditionalGroupedStudentTObjectiveConfig",
     "ConditionalGroupedStudentTObjectiveResult",
     "ConformalScore",
+    "DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1",
     "GaugeAwareBeliefConfig",
     "GaugeAwareBeliefResult",
     "GaugeAwareObservationBatch",
@@ -154,8 +173,14 @@ __all__ = [
     "GroupedStudentTLikelihoodResult",
     "GuardedUpdateDecision",
     "IdentifiableStateBasis",
+    "MARKOV_TIME_MODE_INTEGER_STEPS",
+    "MARKOV_TIME_MODE_ORDER_ONLY",
+    "MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION",
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
+    "ModelAveragedEndpointConfigV1",
+    "ModelAveragedEndpointPosteriorV1",
+    "ModelAveragedEndpointPredictionV1",
     "NonlinearClosureV1",
     "NuisanceAwareInformationState",
     "NuisanceAwareInformationUpdate",
@@ -207,11 +232,13 @@ __all__ = [
     "group_max_nonconformity_scores",
     "grouped_conformal_upper_bounds",
     "grouped_student_t_mixture_likelihood",
+    "infer_model_averaged_endpoint",
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
     "load_physical_linearization",
     "markov_log_evidence_batch",
     "measurement_variance",
+    "predict_model_averaged_endpoint",
     "reliability_weighted_loss",
     "replay_residual_csv",
     "restrict_state_basis_to_identifiable_subspace",
@@ -226,6 +253,7 @@ __all__ = [
     "select_gauge_aware_candidate",
     "smooth_markov_reliability",
     "update_bias_aware_state",
+    "update_claim_bearing_prob4d_from_artifacts",
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",
     "validate_claim_bearing_prob4d_observation_belief",
