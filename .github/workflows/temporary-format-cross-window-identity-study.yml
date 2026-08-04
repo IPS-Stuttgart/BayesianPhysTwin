@@ -110,6 +110,20 @@ jobs:
           path.write_text(text[:start] + replacement + text[stop:], encoding="utf-8")
           PY
 
+      - name: Bind corrected protocol identity in both execution lanes
+        shell: bash
+        run: |
+          set -euo pipefail
+          old=23e9e9c209defaaf54af9e463dc8b66dc1d4825830fed8108e265ec5d6bb04c6
+          new=9a80d26da9fb74e00f05f0c5db5a2c2e1283a1b7343b0b74fcb8f5f2c1762f14
+          sed -i "s/${old}/${new}/g" \
+            .github/workflows/prob4d-cross-window-identity-development.yml \
+            .github/workflows/prob4d-cross-window-identity-development-hosted.yml
+          grep -F "PROTOCOL_SHA256: ${new}" \
+            .github/workflows/prob4d-cross-window-identity-development.yml
+          grep -F "PROTOCOL_SHA256: ${new}" \
+            .github/workflows/prob4d-cross-window-identity-development-hosted.yml
+
       - name: Remove audited lint debt and format changed Python
         shell: bash
         run: |
