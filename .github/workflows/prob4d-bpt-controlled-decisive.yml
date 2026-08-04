@@ -64,7 +64,9 @@ jobs:
           destination="${RUNNER_TEMP}/prob4d-controlled-decisive-source"
           rm -rf "${destination}"
 
+          runner_root="${GITHUB_WORKSPACE%/*/*}"
           candidates=(
+            "${runner_root}/Prob4D/Prob4D"
             "${RUNNER_WORKSPACE}/Prob4D/Prob4D"
             "${RUNNER_WORKSPACE}/prob4d/Prob4D"
             "${RUNNER_WORKSPACE}/prob4d/prob4d"
