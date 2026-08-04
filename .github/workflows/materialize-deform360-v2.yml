@@ -1,0 +1,95 @@
+name: Materialize Deform360 V2 hardening
+
+on:
+  push:
+    branches:
+      - agent/deform360-group-evaluation-v2
+    paths:
+      - ".github/workflows/materialize-deform360-v2.yml"
+      - "tools/deform360-v2-bundle-*.b64"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-deform360-v2
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out staging branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-group-evaluation-v2
+          fetch-depth: 0
+
+      - name: Reconstruct and verify the exact source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="${RUNNER_TEMP}/deform360-v2.tar.gz"
+          source_root="${RUNNER_TEMP}/deform360-v2"
+          cat \
+            tools/deform360-v2-bundle-00.b64 \
+            tools/deform360-v2-bundle-01.b64 \
+            tools/deform360-v2-bundle-02.b64 \
+            | tr -d '\n' \
+            | base64 --decode > "${bundle}"
+          echo "446332a40b0d54f10140113e939e1a16bf0a04d39f419a5e1c891820939ae6c5  ${bundle}" \
+            | sha256sum --check --strict
+          mkdir -p "${source_root}"
+          tar -xzf "${bundle}" -C "${source_root}" --strip-components=1
+
+      - name: Publish only the clean product diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_root="${RUNNER_TEMP}/deform360-v2"
+          files=(
+            ".github/workflows/deform360-group-evaluation.yml"
+            ".github/workflows/deform360-public-evaluation.yml"
+            "docs/deform360_group_evaluation_v2.md"
+            "scripts/science/prepare_deform360_archive_manifest.py"
+            "scripts/science/prepare_deform360_name_inventory.py"
+            "scripts/science/prepare_deform360_public_protocol.py"
+            "scripts/science/run_deform360_group_evaluation.py"
+            "tests/test_deform360_archive_manifest.py"
+            "tests/test_deform360_group_evaluation.py"
+            "tests/test_deform360_name_inventory.py"
+            "tests/test_deform360_preflight_workflow.py"
+            "tests/test_deform360_public_protocol.py"
+          )
+          for path in "${files[@]}"; do
+            test -f "${source_root}/${path}"
+            mkdir -p "$(dirname "${path}")"
+            cp -a "${source_root}/${path}" "${path}"
+          done
+
+          rm -f \
+            .github/workflows/materialize-deform360-v2.yml \
+            tools/deform360-v2-bundle-00.b64 \
+            tools/deform360-v2-bundle-01.b64 \
+            tools/deform360-v2-bundle-02.b64
+
+          python -m py_compile \
+            scripts/science/prepare_deform360_archive_manifest.py \
+            scripts/science/prepare_deform360_name_inventory.py \
+            scripts/science/prepare_deform360_public_protocol.py \
+            scripts/science/run_deform360_group_evaluation.py
+          git diff --check
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- \
+            .github/workflows/materialize-deform360-v2.yml \
+            tools/deform360-v2-bundle-00.b64 \
+            tools/deform360-v2-bundle-01.b64 \
+            tools/deform360-v2-bundle-02.b64 \
+            "${files[@]}"
+          git diff --cached --check
+          git commit -m "Harden staged Deform360 group evaluation"
+          git push origin HEAD:agent/deform360-group-evaluation-v2
