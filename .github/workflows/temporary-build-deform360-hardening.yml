@@ -102,6 +102,41 @@ jobs:
           destination.write_bytes(patch)
           print(f"reconstructed {destination}: {actual_patch}")
           PY
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          path = Path("/tmp/harden_pr120.py")
+          text = path.read_text(encoding="utf-8")
+          old = """        '''        \"selection_sha256\": seal[\"selection_sha256\"],
+        \"repository_revision\": seal[\"repository_revision\"],
+''',
+        '''        \"selection_sha256\": seal[\"selection_sha256\"],
+        \"structure_sha256\": structure[\"structure_sha256\"],
+        \"repository_revision\": seal[\"repository_revision\"],
+''',
+"""
+          new = """        '''        \"protocol_file_sha256\": seal[\"protocol_file_sha256\"],
+        \"selection_sha256\": seal[\"selection_sha256\"],
+        \"repository_revision\": seal[\"repository_revision\"],
+''',
+        '''        \"protocol_file_sha256\": seal[\"protocol_file_sha256\"],
+        \"selection_sha256\": seal[\"selection_sha256\"],
+        \"structure_sha256\": structure[\"structure_sha256\"],
+        \"repository_revision\": seal[\"repository_revision\"],
+''',
+"""
+          if text.count(old) != 1:
+              raise SystemExit(
+                  f"generator amendment expected one match, found {text.count(old)}"
+              )
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          actual = hashlib.sha256(path.read_bytes()).hexdigest()
+          expected = "2ba89428c006bfb1565724f10d245110e9050da6b4cb024f91d3d1d34af542df"
+          if actual != expected:
+              raise SystemExit(f"amended generator digest mismatch: {actual} != {expected}")
+          print(f"amended {path}: {actual}")
+          PY
           PYTHONPYCACHEPREFIX="${RUNNER_TEMP}/pycache" \
             python -m py_compile /tmp/harden_pr120.py
           python /tmp/harden_pr120.py
