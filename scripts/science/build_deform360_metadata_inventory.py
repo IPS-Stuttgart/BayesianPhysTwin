@@ -37,6 +37,14 @@ def _canonical_bytes(value: Any) -> bytes:
     ).encode("utf-8")
 
 
+def _content_sha256(value: Mapping[str, Any]) -> str:
+    payload = dict(value)
+    payload.pop("content_inventory_sha256", None)
+    payload.pop("inventory_sha256", None)
+    payload.pop("repository_revision", None)
+    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+
+
 def _result_sha256(value: Mapping[str, Any]) -> str:
     payload = dict(value)
     payload.pop("inventory_sha256", None)
@@ -334,6 +342,7 @@ def build_metadata_inventory(
         "extension_counts": dict(sorted(extension_counts.items())),
         "objects": objects,
     }
+    result["content_inventory_sha256"] = _content_sha256(result)
     result["inventory_sha256"] = _result_sha256(result)
     return result
 
@@ -368,6 +377,7 @@ def main() -> int:
     )
     write_inventory(args.output, inventory)
     summary = {
+        "content_inventory_sha256": inventory["content_inventory_sha256"],
         "inventory_sha256": inventory["inventory_sha256"],
         "recognized_object_count": inventory["recognized_object_count"],
         "classification_counts": inventory["classification_counts"],
