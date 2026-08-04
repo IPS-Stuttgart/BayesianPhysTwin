@@ -58,9 +58,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/bayesian-phystwin/trajectory-evaluation-v1
-          key: >-
-            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{
-            hashFiles('src/bayesian_phystwin/phystwin_data.py') }}
+          key: bpt-trajectory-evaluation-v1-${{ runner.os }}-${{ hashFiles('src/bayesian_phystwin/phystwin_data.py') }}
           restore-keys: |
             bpt-trajectory-evaluation-v1-${{ runner.os }}-
 
@@ -118,9 +116,15 @@ jobs:
           )
 
           manifest = _download_trajectory_subset(Path(os.environ["DATA_ROOT"]))
+          source_manifest = Path(manifest["manifest_path"])
+          compatibility_manifest = source_manifest.with_name(
+              "evaluation_subset_manifest.json"
+          )
+          compatibility_manifest.write_bytes(source_manifest.read_bytes())
           print(
               json.dumps(
                   {
+                      "compatibility_manifest": str(compatibility_manifest.resolve()),
                       "manifest_path": manifest["manifest_path"],
                       "manifest_sha256": manifest["manifest_sha256"],
                       "selected_case_count": len(manifest["selected_cases"]),
