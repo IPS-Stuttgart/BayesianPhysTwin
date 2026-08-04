@@ -108,9 +108,10 @@ jobs:
 
           path = Path("/tmp/harden_pr120.py")
           lines = path.read_text(encoding="utf-8").splitlines()
-          label = '        label="result structure identity",'
+
+          result_label = '        label="result structure identity",'
           try:
-              label_index = lines.index(label)
+              result_label_index = lines.index(result_label)
           except ValueError as error:
               raise SystemExit("result-identity patch label is missing") from error
           selection_needle = (
@@ -119,7 +120,9 @@ jobs:
           )
           selection_matches = [
               index
-              for index in range(max(0, label_index - 20), label_index)
+              for index in range(
+                  max(0, result_label_index - 20), result_label_index
+              )
               if lines[index] == selection_needle
           ]
           if len(selection_matches) != 2:
@@ -138,10 +141,12 @@ jobs:
               lines[index] = protocol_triple
               lines.insert(index + 1, selection_plain)
 
-          label_index = lines.index(label)
+          result_label_index = lines.index(result_label)
           protocol_matches = [
               index
-              for index in range(max(0, label_index - 30), label_index)
+              for index in range(
+                  max(0, result_label_index - 30), result_label_index
+              )
               if lines[index] == protocol_triple
           ]
           if len(protocol_matches) != 2:
@@ -164,9 +169,49 @@ jobs:
               lines.insert(index + 2, protocol_id_line)
               lines.insert(index + 3, protocol_plain)
 
+          workflow_label = '        label="workflow structure argument",'
+          try:
+              workflow_label_index = lines.index(workflow_label)
+          except ValueError as error:
+              raise SystemExit("workflow-argument patch label is missing") from error
+          workflow_prefix = (
+              '        \'\'\'            --seal '
+              '"${OUTPUT_ROOT}/selection.json"'
+          )
+          workflow_matches = [
+              index
+              for index in range(
+                  max(0, workflow_label_index - 20), workflow_label_index
+              )
+              if lines[index].startswith(workflow_prefix)
+          ]
+          if len(workflow_matches) != 2:
+              raise SystemExit(
+                  "generator amendment expected two workflow seal lines, "
+                  f"found {len(workflow_matches)}"
+              )
+          continuation = chr(92) * 2
+          command_triple = (
+              '        \'\'\'          "${VENV_ROOT}/bin/python" '
+              + continuation
+          )
+          evaluate_line = (
+              '            scripts/science/'
+              'run_deform360_normalized_evidence_external.py evaluate '
+              + continuation
+          )
+          seal_line = (
+              '            --seal "${OUTPUT_ROOT}/selection.json" '
+              + continuation
+          )
+          for index in reversed(workflow_matches):
+              lines[index] = command_triple
+              lines.insert(index + 1, evaluate_line)
+              lines.insert(index + 2, seal_line)
+
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           actual = hashlib.sha256(path.read_bytes()).hexdigest()
-          expected = "4c445c717d45d04879df3a4c303f44202a56faaaa17fdb920fcd6ca1f3fd0aef"
+          expected = "dbdb5153c32814481dfdb6195fca65afdfebd8186646d56a93994778c0e2d369"
           if actual != expected:
               raise SystemExit(f"amended generator digest mismatch: {actual} != {expected}")
           print(f"amended {path}: {actual}")
