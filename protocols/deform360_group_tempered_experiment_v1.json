@@ -2,9 +2,25 @@
   "bootstrap": {
     "samples": 2000,
     "seed": 20260804,
-    "unit": "path-defined object/session group"
+    "unit": "canonical Deform360 object directory"
   },
-  "claim_boundary": "External group-held-out evaluation on released Deform360 trajectory artifacts using a path-defined object/session split that is locked before arrays are opened. The adapter evaluates endpoint displacement transfer and raw/corrected predictive uncertainty, not the official action-conditioned Deform360 world-model task or Table-4 protocol. A positive registered decision would justify an official-adapter study; it is not by itself an official benchmark or deployment-calibration claim.",
+  "claim_boundary": "Within-run object-held-out evaluation on a six-object, provenance-specific Deform360 replication-v1 sampled-hull subset. Object paths and archive bytes are locked before arrays are opened, and source/calibration/target object roles are disjoint. The mounted release and some source outcomes have been used previously in this repository, so this is not fresh independent-data validation. The adapter evaluates endpoint displacement transfer and raw/corrected predictive uncertainty, not the official action-conditioned Deform360 world-model task or Table-4 protocol. A positive registered decision would justify an official-adapter study; it is not by itself an official benchmark or deployment-calibration claim.",
+  "cohort": {
+    "archive_filename": "sampled_hulls.npz",
+    "archive_layout": "<object>/episode_####/sampled_hulls.npz",
+    "expected_archive_count": 36,
+    "expected_object_ids": [
+      "002-rope-silk",
+      "081-stripe-rope",
+      "083-blanket-cloth",
+      "085-scarf-cloth",
+      "092-squirrel",
+      "170-spider"
+    ],
+    "mounted_relative_root": "data-7fea8e2/replication-v1/observations",
+    "representation": "packed-visual-hulls",
+    "source_outcomes_previously_open_globally": true
+  },
   "decision": {
     "maximum_absolute_coverage_error": 0.05,
     "maximum_harmful_accepted_rate": 0.05,
@@ -23,9 +39,9 @@
   "schema_version": 1,
   "split": {
     "calibration_fraction": 0.2,
-    "group_identity": "object directory plus first non-generic nested acquisition/session path; archive stem fallback",
+    "group_identity": "canonical-object-directory",
     "hash_salt": "deform360-group-tempered-v1-20260804",
-    "minimum_calibration_groups": 2,
+    "minimum_calibration_groups": 1,
     "minimum_source_groups": 2,
     "minimum_target_groups": 3,
     "source_fraction": 0.3
