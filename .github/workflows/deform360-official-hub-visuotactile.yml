@@ -196,10 +196,15 @@ jobs:
             echo "Exact selection lock is already committed."
             exit 0
           fi
+          # A self-hosted checkout may retain .git hooks from an earlier job.
+          # Publication must execute only the commands declared here.
+          git config --local core.hooksPath /dev/null
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Lock official Deform360 Stage-0 cohort"
-          git push origin "HEAD:${BPT_HEAD_REF}"
+          git -c core.hooksPath=/dev/null commit \
+            -m "Lock official Deform360 Stage-0 cohort"
+          git -c core.hooksPath=/dev/null push \
+            origin "HEAD:${BPT_HEAD_REF}"
 
       - name: Publish Stage-0 summary
         if: always()
