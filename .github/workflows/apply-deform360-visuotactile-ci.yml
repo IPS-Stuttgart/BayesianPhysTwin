@@ -1,0 +1,197 @@
+name: Apply Deform360 visuotactile integration edits
+
+on:
+  push:
+    branches:
+      - agent/deform360-official-hub-visuotactile-v1
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out publication branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-official-hub-visuotactile-v1
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Verify and materialize product payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .staging/deform360-visuotactile-product.tar.gz.b64.* \
+            | base64 --decode \
+            > "${RUNNER_TEMP}/deform360-visuotactile-product.tar.gz"
+          echo "e8973c108fb4cd2d95cf0393f1eb81e71e0e6c4c67c1d1088f613c4bbc04fdb4  ${RUNNER_TEMP}/deform360-visuotactile-product.tar.gz" \
+            | sha256sum --check --strict
+          python - <<'PY'
+          import os
+          import tarfile
+          from pathlib import Path, PurePosixPath
+
+          archive = Path(os.environ["RUNNER_TEMP"]) / "deform360-visuotactile-product.tar.gz"
+          with tarfile.open(archive, "r:gz") as handle:
+              for member in handle.getmembers():
+                  path = PurePosixPath(member.name)
+                  if path.is_absolute() or ".." in path.parts or member.issym() or member.islnk():
+                      raise SystemExit(f"unsafe staged path: {member.name}")
+              handle.extractall(".", filter="data")
+          PY
+          rm -rf .staging
+
+      - name: Apply exact integration edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding="utf-8")
+              if text.count(old) != 1:
+                  raise SystemExit(
+                      f"{path}: expected one exact source block, found {text.count(old)}"
+                  )
+              path.write_text(text.replace(old, new), encoding="utf-8")
+
+          init_path = Path("src/bayesian_phystwin/__init__.py")
+          replace_once(
+              init_path,
+              "from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics\n",
+              "from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics\n"
+              "from .deform360_contact_anchor import (\n"
+              "    DEFORM360_CONTACT_ANCHOR_SCHEMA,\n"
+              "    DEFORM360_CONTACT_ANCHOR_SEMANTICS,\n"
+              "    DEFORM360_CONTACT_ANCHOR_UNITS,\n"
+              "    DEFORM360_CONTACT_ANCHOR_VERSION,\n"
+              "    DEFORM360_SOURCE_REPOSITORY,\n"
+              "    DEFORM360_TACTILE_SOURCE_UNITS,\n"
+              "    Deform360ContactAnchorV1,\n"
+              "    attach_deform360_contact_anchor,\n"
+              ")\n",
+          )
+          replace_once(
+              init_path,
+              '    "COVARIANCE_MARGINAL_SCORE_SEMANTICS",\n',
+              '    "COVARIANCE_MARGINAL_SCORE_SEMANTICS",\n'
+              '    "DEFORM360_CONTACT_ANCHOR_SCHEMA",\n'
+              '    "DEFORM360_CONTACT_ANCHOR_SEMANTICS",\n'
+              '    "DEFORM360_CONTACT_ANCHOR_UNITS",\n'
+              '    "DEFORM360_CONTACT_ANCHOR_VERSION",\n'
+              '    "DEFORM360_SOURCE_REPOSITORY",\n'
+              '    "DEFORM360_TACTILE_SOURCE_UNITS",\n',
+          )
+          replace_once(
+              init_path,
+              '    "ConditionalGroupedStudentTObjectiveResult",\n',
+              '    "ConditionalGroupedStudentTObjectiveResult",\n'
+              '    "Deform360ContactAnchorV1",\n',
+          )
+          replace_once(
+              init_path,
+              '    "apply_group_regret_bound",\n',
+              '    "apply_group_regret_bound",\n'
+              '    "attach_deform360_contact_anchor",\n',
+          )
+
+          tests_path = Path(".github/workflows/tests.yml")
+          tests = tests_path.read_text(encoding="utf-8")
+          test_anchor = "            tests/test_gauge_aware_belief.py \\\n"
+          if tests.count(test_anchor) != 2:
+              raise SystemExit(
+                  "tests.yml: expected two gauge-aware suite anchors, "
+                  f"found {tests.count(test_anchor)}"
+              )
+          tests = tests.replace(
+              test_anchor,
+              test_anchor + "            tests/test_deform360_contact_anchor.py \\\n",
+          )
+          stable_anchor = "            src/bayesian_phystwin/gauge_aware_belief.py\n"
+          if tests.count(stable_anchor) != 1:
+              raise SystemExit("tests.yml: stable-file anchor changed")
+          tests = tests.replace(
+              stable_anchor,
+              stable_anchor
+              + "            src/bayesian_phystwin/deform360_contact_anchor.py\n",
+          )
+          tests_path.write_text(tests, encoding="utf-8")
+
+          changelog = Path("CHANGELOG.md")
+          replace_once(
+              changelog,
+              "- Focused self-hosted `workstation2` validation for prospective belief contracts,\n"
+              "  numerical stress tests, and environment/GPU identity evidence.\n",
+              "- Focused self-hosted `workstation2` validation for prospective belief contracts,\n"
+              "  numerical stress tests, and environment/GPU identity evidence.\n"
+              "- A content-addressed Deform360 contact-anchor contract that maps reduced\n"
+              "  prefix tactile/proprioceptive evidence into displacement-equivalent rows,\n"
+              "  preserves sensor correlation and optional bias, and attaches to the existing\n"
+              "  gauge-aware solver without treating raw taxels as independent measurements.\n"
+              "- A locked official-Hub Deform360 Stage-0 selector that excludes every prior\n"
+              "  cohort and cache-touched object, resolves the exact public dataset revision,\n"
+              "  and selects fresh calibration/confirmation objects from names and metadata\n"
+              "  before any camera, tactile, robot, or geometry payload access.\n",
+          )
+
+          index = Path("docs/experiment_index.md")
+          replace_once(
+              index,
+              "This is a negative prospective result, not a target evaluation.\n\n",
+              "This is a negative prospective result, not a target evaluation.\n\n"
+              "The [official-Hub Deform360 visuotactile v1 protocol]"
+              "(deform360_official_hub_visuotactile_v1.md) is the next independent-object\n"
+              "gate. It replaces contaminated mounted-cache trajectories with an exact\n"
+              "official raw-data revision, adds an independent contact anchor to the existing\n"
+              "explicit-gauge solver, and remains locked before selected raw payload access.\n\n",
+          )
+
+          Path(
+              ".github/workflows/apply-deform360-visuotactile-ci.yml"
+          ).unlink()
+          PY
+
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m ruff format \
+            src/bayesian_phystwin/__init__.py \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py
+          python -m ruff check \
+            src/bayesian_phystwin/__init__.py \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py
+          python -m pytest -q \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_hub_selection.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            scripts/science/build_deform360_hub_selection.py
+          git diff --check
+
+      - name: Publish clean product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add official Deform360 visuotactile validation gate"
+          git push origin HEAD:agent/deform360-official-hub-visuotactile-v1
