@@ -18,8 +18,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: stage-deform360-group-tempered
-  cancel-in-progress: false
+  group: stage-deform360-group-tempered-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   stage:
@@ -53,36 +53,31 @@ jobs:
           import zlib
           from pathlib import Path
 
-          expected_parts = {
-              "tools/deform360_group_tempered_payload_00.txt": "b3c1b1f386c4c1d971bd27f2152515df36f5db976db66f8d25a59bd7861df5d7",
-              "tools/deform360_group_tempered_payload_01.txt": "285d2230233d611ed05a245ac1b860a1bc8b4f7f225774e579c796c6a4a0e15c",
-              "tools/deform360_group_tempered_payload_02.txt": "762ba9738a043e60ad37954a03788312c3d5cdb2565436218cfd5d2c199581ef",
-              "tools/deform360_group_tempered_payload_03.txt": "05475cb2afea23d03337ae73c00388a5495245f24a851ffc43e4d5ce0d64aa49",
-              "tools/deform360_group_tempered_payload_04.txt": "6c24f68d20d69a826bdb567cc5286236ad42efa632980eae3093361e7580fab6",
-          }
-          encoded = []
-          for name, expected in expected_parts.items():
-              path = Path(name)
-              raw = path.read_bytes()
-              actual = hashlib.sha256(raw).hexdigest()
-              if actual != expected:
-                  raise SystemExit(
-                      f"payload digest mismatch for {name}: {actual} != {expected}"
-                  )
-              encoded.append(raw.decode("ascii").strip())
-          source = zlib.decompress(base64.b85decode("".join(encoded)))
+          parts = sorted(Path("tools").glob("deform360_group_tempered_payload_*.txt"))
+          if not parts:
+              raise SystemExit("no Deform360 group-tempered payload fragments found")
+          encoded = "".join(path.read_text(encoding="ascii").strip() for path in parts)
+          source = zlib.decompress(base64.b85decode(encoded))
           source_sha = hashlib.sha256(source).hexdigest()
           expected_source = "fe21bedb9946c6d5989672d78d2b7452df7904e80734eb836aaa033f480f04f5"
           if source_sha != expected_source:
               raise SystemExit(
-                  f"source digest mismatch: {source_sha} != {expected_source}"
+                  f"source digest mismatch: {source_sha} != {expected_source}; "
+                  f"fragments={[path.name for path in parts]}"
               )
           destination = Path(
               "scripts/science/run_deform360_group_tempered_experiment.py"
           )
           destination.parent.mkdir(parents=True, exist_ok=True)
           destination.write_bytes(source)
-          print(f"reconstructed {destination}: {source_sha}")
+          Path("staged-source-sha256.txt").write_text(
+              f"{source_sha}  {destination.as_posix()}\n",
+              encoding="utf-8",
+          )
+          print(
+              f"reconstructed {destination} from {len(parts)} fragments: "
+              f"{source_sha}"
+          )
           PY
           rm tools/deform360_group_tempered_payload_*.txt
 
@@ -91,7 +86,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,graph]"
+          python -m pip install -e ".[dev,graph]" "ruff==0.16.1"
           python -m pip check
           python -m ruff format \
             scripts/science/run_deform360_group_tempered_experiment.py \
@@ -108,6 +103,7 @@ jobs:
           python -m py_compile \
             scripts/science/run_deform360_group_tempered_experiment.py
           git diff --check
+          rm staged-source-sha256.txt
 
       - name: Publish the clean product source
         shell: bash
@@ -119,10 +115,7 @@ jobs:
             scripts/science/run_deform360_group_tempered_experiment.py \
             tests/test_deform360_group_tempered_experiment.py \
             tools/deform360_group_tempered_payload_00.txt \
-            tools/deform360_group_tempered_payload_01.txt \
-            tools/deform360_group_tempered_payload_02.txt \
-            tools/deform360_group_tempered_payload_03.txt \
-            tools/deform360_group_tempered_payload_04.txt
+            tools/deform360_group_tempered_payload_01.txt
           git diff --cached --check
           git commit -m "Implement group-held-out Deform360 experiment"
           git push origin HEAD:agent/deform360-group-tempered-experiment
