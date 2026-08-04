@@ -11,7 +11,7 @@ permissions:
 jobs:
   format:
     if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     steps:
       - name: Check out PR branch
         uses: actions/checkout@v4
@@ -19,6 +19,7 @@ jobs:
           ref: agent/deform360-normalized-evidence-external-v1
           fetch-depth: 0
           persist-credentials: true
+          clean: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
