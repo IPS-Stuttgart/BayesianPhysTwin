@@ -1,0 +1,130 @@
+{
+  "schema": "bayesian-phystwin-prob4d-cross-window-identity-development",
+  "schema_version": 1,
+  "protocol_id": "prob4d-cross-window-identity-development-v1",
+  "status": "development-only-before-confirmatory-target-lock",
+  "repository_pins": {
+    "bayesian_phystwin_base": "60551a12de96da7dbaeefe4c6c83cd5c923427e6",
+    "prob4d": "2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1"
+  },
+  "question": "Can Prob4D source-only association of material tracks across overlapping prediction windows improve a guarded BayesianPhysTwin future-state query relative to using only the newest internally persistent window?",
+  "methods": [
+    "B0_physical_fallback",
+    "B1_newest_frame_explicit_gauge",
+    "P0_newest_window_persistent",
+    "P1_naive_local_id_cross_window_merge",
+    "P2_source_linked_cross_window_identity",
+    "P3_oracle_cross_window_identity"
+  ],
+  "primary_method": "P2_source_linked_cross_window_identity",
+  "reference_method": "P0_newest_window_persistent",
+  "scenarios": [
+    "nominal_correlated",
+    "common_mode_bias",
+    "outlier_groups",
+    "weak_identifiability",
+    "large_gauge_uncertainty",
+    "mixed_stress"
+  ],
+  "geometry": {
+    "point_count": 24,
+    "frame_count": 4,
+    "state_count": 3,
+    "bias_mode_count": 2,
+    "factor_windows": [[0, 1], [2, 3]],
+    "association_windows": [[0, 1, 2], [1, 2, 3]]
+  },
+  "generator": {
+    "conditional_noise_std_m": 0.0015,
+    "state_mode_maximum_m": 0.012,
+    "query_progress": 1.25,
+    "state_prior_std": 0.75,
+    "right_window_local_ids_are_randomly_permuted": true,
+    "right_window_support_may_be_incomplete": true,
+    "association_uses_only_overlapping_source_geometry": true,
+    "association_uses_no_physical_innovation": true,
+    "oracle_links_are_evaluation_only": true
+  },
+  "development_partitions": {
+    "association_configuration": {
+      "groups_per_scenario": 8,
+      "seed_start": 71260805,
+      "truth_use": "material identity labels for source-association configuration selection only"
+    },
+    "pilot_guard_calibration": {
+      "groups_per_scenario": 6,
+      "seed_start": 171260805,
+      "truth_use": "guard threshold calibration only"
+    },
+    "pilot_evaluation": {
+      "groups_per_scenario": 16,
+      "seed_start": 271260805,
+      "truth_use": "development endpoint evaluation only"
+    }
+  },
+  "association_grid": {
+    "use_covariance": [false, true],
+    "isotropic_distance_scale_m": [0.006, 0.012, 0.024],
+    "maximum_weighted_rms_m": [0.008, 0.016, 0.032],
+    "minimum_compatibility_score": [0.05, 0.15],
+    "minimum_score_margin": [0.02, 0.08, 0.15],
+    "fixed": {
+      "minimum_shared_frames": 2,
+      "minimum_effective_support": 1.5,
+      "covariance_floor_m2": 1e-10,
+      "minimum_spatial_gate_m": 0.04,
+      "spatial_gate_multiplier": 3.0,
+      "maximum_spatial_candidate_pairs": 1000000
+    },
+    "selection_rule": "eligible precision and recall gate first; then maximum micro F1, recall, precision, minimum false links, and canonical configuration ID"
+  },
+  "guard_calibration": {
+    "risk_inputs": [
+      "posterior query width",
+      "posterior nominal probability",
+      "prior-aware identifiable fraction",
+      "query sensitivity fraction",
+      "fixed-point convergence"
+    ],
+    "risk_inputs_exclude_evaluation_truth": true,
+    "harmful_accepted_rate_at_most": 0.05,
+    "minimum_accepted_groups": 4,
+    "selection": "lowest pilot-calibration deployed mean among thresholds satisfying the harmful-update constraint; exact physical fallback otherwise"
+  },
+  "endpoints": {
+    "association": [
+      "micro precision",
+      "micro recall",
+      "micro F1",
+      "scenario-stratified precision and recall"
+    ],
+    "downstream": [
+      "equal-group deployed future-query RMSE",
+      "paired source-linked-minus-newest-window bootstrap interval",
+      "harmful accepted-update rate",
+      "worst-scenario deployed regression",
+      "exact fallback on every rejection",
+      "naive-link and oracle-link mechanism bounds"
+    ],
+    "harmful_margin_m": 0.0005
+  },
+  "bootstrap": {
+    "resamples": 1000,
+    "seed": 20260805,
+    "unit": "synthetic physical object/session group"
+  },
+  "development_gates": {
+    "association_precision_at_least": 0.97,
+    "association_recall_at_least": 0.35,
+    "source_vs_newest_improvement_fraction_at_least": 0.02,
+    "source_vs_newest_paired_upper_95_below_zero": true,
+    "harmful_accepted_rate_at_most": 0.10,
+    "all_rejections_exact_fallback": true
+  },
+  "confirmatory_target": {
+    "seeds_committed": false,
+    "rule": "No target seed, margin, or target workflow may be committed unless all development gates pass. The confirmatory protocol must use disjoint association-development, guard-calibration, and target groups."
+  },
+  "decision_rule": "Development may select one source-association configuration by the registered source-label rule. It may not support a scientific claim. Passing all development gates authorizes one new commit that freezes disjoint guard-calibration and confirmatory target seeds before execution.",
+  "claim_boundary": "Development-only calibration-separated synthetic mechanism study. It can select a source-only cross-window association rule and assess whether a confirmatory study is justified. It does not establish target performance, real Prob4D provider competence, physical-object benefit, deployment calibration, or Causal4D intervention benefit."
+}
