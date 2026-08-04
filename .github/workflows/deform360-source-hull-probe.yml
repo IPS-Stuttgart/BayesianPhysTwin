@@ -9,6 +9,7 @@ on:
       - "protocols/deform360_source_hull_contract_probe_v2.json"
       - "scripts/science/probe_deform360_source_hulls.py"
       - "tests/test_probe_deform360_source_hulls.py"
+      - "tests/test_probe_deform360_source_hulls_amendment.py"
       - "docs/deform360_source_hull_contract_probe.md"
   workflow_dispatch:
 
@@ -74,11 +75,15 @@ jobs:
           set -euo pipefail
           python -m ruff check \
             scripts/science/probe_deform360_source_hulls.py \
-            tests/test_probe_deform360_source_hulls.py
+            tests/test_probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls_amendment.py
           python -m ruff format --check \
             scripts/science/probe_deform360_source_hulls.py \
-            tests/test_probe_deform360_source_hulls.py
-          python -m pytest -q tests/test_probe_deform360_source_hulls.py
+            tests/test_probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls_amendment.py
+          python -m pytest -q \
+            tests/test_probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls_amendment.py
 
       - name: Probe the exact locked source cohort
         shell: bash
