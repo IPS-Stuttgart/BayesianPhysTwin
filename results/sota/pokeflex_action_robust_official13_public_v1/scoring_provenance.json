@@ -1,0 +1,55 @@
+{
+  "artifact_kind": "PokeFlexActionRobustOfficial13PublicV1ScoringProvenance",
+  "barrier": {
+    "barrier_file_sha256": "666ffe0df7f485ee48864598337e5671fcc43169a97a223f12ef6442208cd3e5",
+    "barrier_sha256": "f855ba6fd08931d5c0bf039ee49194a1046284f65101f2c920cb32b6c1be1da2",
+    "prediction_count": 13,
+    "scoring_authorized": true,
+    "target_mesh_opened": false
+  },
+  "historical_exposure": {
+    "all_thirteen_target_outcomes_previously_opened_under_prior_method": true,
+    "new_method_is_prospective": false,
+    "public_subset_result_is_retrospective": true
+  },
+  "implementation_revision": "a9e38c287d31330cd16b7148dfc4a96f888befe5",
+  "prediction": {
+    "environment_freeze_sha256": "63a281969629d9a7d53f02854ae5588e62d25d492fbe1d292f54900afb4b8c89",
+    "host": "gpuserver4090",
+    "host_ip": "129.69.102.139",
+    "prediction_count": 13,
+    "python_version": "3.10.12",
+    "root": "/home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2",
+    "seal_count": 13,
+    "seals_implementation_clean": true,
+    "seals_report_future_mesh_read": false,
+    "seals_report_global_fallback_mismatch": false,
+    "seals_report_primary_fallback_mismatch": false
+  },
+  "protocol_file_sha256": "194d1d15c04660110e21d9c802b48d321cbc1b6025921e5c4de59aa0d442dcba",
+  "protocol_sha256": "fe3199f72822ff384ce5e304c0afa85c7913f973055aaae06b88d62bdbc49349",
+  "provenance_sha256": "a6ab77204215e1e7691cdf34399b28d6db753e278392796e3d83c02b29541835",
+  "schema_version": 1,
+  "scoring": {
+    "environment_freeze_sha256": "bea2a2447b758dce8cc399dee5a49e4393cba53f3dd85ee9f846f0e37cc7a117",
+    "host": "gpuserver6000",
+    "host_ip": "129.69.102.145",
+    "python_version": "3.12.3",
+    "root": "/home/florianpfaff/pokeflex-action-robust-official13-v1-a9e38c2-scoring",
+    "target_mesh_geometry_decoded_after_complete_barrier": true,
+    "target_mesh_geometry_decoded_before_new_barrier": false,
+    "target_result_file_sha256": "619c46726aab0f7e81d2e943bd44820e521c9fe6285906add28af87203c15ebd"
+  },
+  "transfer": {
+    "byte_count": 803068398,
+    "destination": "gpuserver6000 (129.69.102.145)",
+    "direct_lan": true,
+    "elapsed_seconds": 85.4,
+    "jump_server_used_for_data": false,
+    "post_transfer_canonical_tar_sha256": "2cbe15a92d0cae9493903bb43157509f8e95532147ede4e1e374fe37ff05f130",
+    "post_transfer_rehash_passed": true,
+    "receiver_pipeline_status": "0:0",
+    "source": "gpuserver4090 (129.69.102.139)",
+    "transport": "one-shot uncompressed tar stream over direct LAN TCP"
+  }
+}
