@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexPriorAwareBeliefSourcePanelVerification",
+  "pre_outcome_method_commit": "6f708e5b3eff840df810d4575c7c560f889a8498",
+  "pre_outcome_panel_commit": "fcc36509333ad469665a91781cf01314c020b0e3",
+  "post_result_import_hygiene_commit": "5d5e5c5",
+  "source_run": {
+    "host": "gpuserver6000",
+    "device": "cpu",
+    "root": "/mnt/corsair/florianpfaff/pokeflex-prior-aware-source-panel-v1-fcc3650",
+    "cohort_complete": true,
+    "take_count": 25,
+    "replacement_count": 0,
+    "target_frame_count": 1479
+  },
+  "tests": {
+    "server_focused_at_pre_outcome_panel_commit": {
+      "passed": 70,
+      "failed": 0
+    },
+    "clean_installed_distribution_full_suite_after_lazy_optional_import_fix": {
+      "passed": 1543,
+      "skipped": 29,
+      "failed": 0,
+      "python": "3.11.15",
+      "distribution_version": "0.4.0"
+    }
+  },
+  "lint": {
+    "tool": "ruff",
+    "scope": [
+      "src/bayesian_phystwin/pokeflex_prior_aware_belief.py",
+      "tests/test_pokeflex_prior_aware_belief.py",
+      "scripts/remote/run_pokeflex_prior_aware_belief_smoke.py",
+      "scripts/remote/run_pokeflex_prior_aware_belief_source_panel.py",
+      "tests/test_pokeflex_prior_aware_source_panel.py"
+    ],
+    "passed": true,
+    "git_diff_check_passed": true,
+    "repository_wide_note": "The repository contains pre-existing Ruff findings in historical implementation snapshots and unrelated files; they were not modified."
+  },
+  "final_file_sha256": {
+    "src/bayesian_phystwin/pokeflex_prior_aware_belief.py": "344b2a168fa66a8cfbb685ba5fcbb7b25137f9774d95acc1877a4be9f4b34d52",
+    "scripts/remote/run_pokeflex_prior_aware_belief_source_panel.py": "88b2dd8301addf9e60da3d06523b70d1e23ba166c66b75ddfffccdf6e6c79bcd",
+    "configs/sota/pokeflex_prior_aware_belief_source_panel_v1.json": "f3deed734819a59c3aea8789a39b0144e16b262b347c5848c0e9b9653512c46b"
+  },
+  "result_sha256": {
+    "summary.json": "d93889b9869f34f6b81c9ce9a8fe475b9f1f65bd5e208b21396b834ad7fea63d",
+    "progress.json": "ba4d3f3a72b710c16ef2f39917cd889caec96bd2b0580a7ad6315eb4f79cad4b",
+    "oracle_audit.json": "7a5adc61b5d9dffb3f6a448820a3fa0d096c292d4331281ce7d9cb21c7e10d1f",
+    "take_summaries.json": "b7344e06f9a3bcdcb6a05448f022ded00e27d49d3a2d88f3512deb9c61870b27"
+  },
+  "decision": "source gate failed and post-open selective oracle headroom stayed below threshold; no calibration or target evaluation is authorized"
+}

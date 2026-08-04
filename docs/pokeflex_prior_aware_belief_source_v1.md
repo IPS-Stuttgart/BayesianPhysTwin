@@ -100,6 +100,53 @@ Evidence:
 - server run root:
   `/mnt/corsair/florianpfaff/pokeflex-prior-aware-source-smoke-v1-6f708e5`.
 
+## Source-Panel Result
+
+The frozen 25-take source panel completed all 1,479 registered active target
+frames without replacement or technical failure. The fixed posterior admitted
+900 frames (60.85%), but 474 admissions were harmful. It therefore failed the
+accuracy, object-transfer, worst-object, and false-safe gates.
+
+| Object | Released checkpoint | Prior-aware selected | Relative improvement | Selective oracle |
+| --- | ---: | ---: | ---: | ---: |
+| `3dPrintedHeart` | 4.698 mm | 4.739 mm | -0.89% | +0.69% |
+| `FoamDice` | 5.725 mm | 5.739 mm | -0.24% | +0.60% |
+| `MemoryFoam` | 2.413 mm | 2.473 mm | -2.47% | +0.31% |
+| `PlushOctopus` | 5.372 mm | 5.354 mm | +0.34% | +0.70% |
+| `ToiletPaperRoll` | 6.244 mm | 6.245 mm | -0.03% | +0.48% |
+| **Object-balanced** | **4.890 mm** | **4.910 mm** | **-0.40%** | **+0.58%** |
+
+Only one of five object means improved, the worst object regressed by 2.47%,
+and the false-safe rate among admitted frames was 52.67%. The post-open
+per-frame accept/reject oracle reaches only 0.58% object-balanced improvement;
+every object remains below 0.71%. This ceiling is already below the registered
+1% source-advancement threshold, before estimating any selector.
+
+The nearest-surface covariance diagnostic reports 86.3% to 100.0% nominal 90%
+coverage across objects, but it includes a fixed 4 mm readout floor and does not
+provide material identities. It is therefore a diagnostic, not a calibration
+claim. Together with the negative mean, it indicates that wide uncertainty did
+not repair the candidate's weak and object-dependent point estimate.
+
+The result closes this candidate family. Explicit shared and centered-view
+translation nuisances prevent a simple camera gauge from being forced entirely
+into state, but they do not identify object-dependent, non-rigid D405 bias well
+enough to improve the checkpoint. No source-trained regret guard is justified:
+even its perfect selective oracle lacks the registered headroom. Calibration
+and target objects remain unauthorized and unopened for this method.
+
+Panel evidence:
+
+- pre-outcome panel commit: `fcc36509333ad469665a91781cf01314c020b0e3`;
+- summary SHA-256: `d93889b9869f34f6b81c9ce9a8fe475b9f1f65bd5e208b21396b834ad7fea63d`;
+- progress SHA-256: `ba4d3f3a72b710c16ef2f39917cd889caec96bd2b0580a7ad6315eb4f79cad4b`;
+- post-open oracle audit SHA-256:
+  `7a5adc61b5d9dffb3f6a448820a3fa0d096c292d4331281ce7d9cb21c7e10d1f`;
+- take summaries SHA-256:
+  `b7344e06f9a3bcdcb6a05448f022ded00e27d49d3a2d88f3512deb9c61870b27`;
+- server run root:
+  `/mnt/corsair/florianpfaff/pokeflex-prior-aware-source-panel-v1-fcc3650`.
+
 ## Relationship to Causal4D
 
 This is a Bayesian-PhysTwin observation/state-belief experiment. It neither

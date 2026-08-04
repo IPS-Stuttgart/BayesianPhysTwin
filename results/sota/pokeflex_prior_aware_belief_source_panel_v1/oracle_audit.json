@@ -1,0 +1,94 @@
+{
+  "admitted": {
+    "false_safe_rate": 0.5266666666666666,
+    "frame_count": 900,
+    "loss_count": 474,
+    "mean_delta_mm": 0.03168174054393443,
+    "median_delta_mm": 0.008123214207924612,
+    "p10_p90_delta_mm": [
+      -0.17502382255871107,
+      0.27621184285702993
+    ],
+    "win_count": 426
+  },
+  "artifact_kind": "PokeFlexPriorAwareBeliefSourcePanelPostOpenOracleAudit",
+  "claim_boundary": "Post-open source-only capacity audit. It cannot tune this closed method or authorize calibration/target evaluation.",
+  "cohort_complete": true,
+  "decision": "closed-below-source-advancement-and-oracle-headroom-gates",
+  "object_balanced": {
+    "baseline_mm": 4.8904732852077,
+    "selected_mm": 4.910052017697406,
+    "selected_relative_improvement": -0.004003443296362657,
+    "selective_oracle_mm": 4.862102451834071,
+    "selective_oracle_relative_improvement": 0.005801244934604427
+  },
+  "objects": {
+    "3dPrintedHeart": {
+      "admitted_frames": 224,
+      "admitted_losses": 134,
+      "admitted_wins": 90,
+      "baseline_mm": 4.697840764410733,
+      "selected_mm": 4.739423308396492,
+      "selected_relative_improvement": -0.008851416229509966,
+      "selective_oracle_mm": 4.665463941679914,
+      "selective_oracle_relative_improvement": 0.006891851885677931,
+      "surface_proxy_NEES": 1.1603956466033978,
+      "surface_proxy_coverage_90": 0.9640156273130195,
+      "take_count": 5
+    },
+    "FoamDice": {
+      "admitted_frames": 194,
+      "admitted_losses": 92,
+      "admitted_wins": 102,
+      "baseline_mm": 5.725179258819382,
+      "selected_mm": 5.738777330957357,
+      "selected_relative_improvement": -0.00237513473783871,
+      "selective_oracle_mm": 5.690726755711692,
+      "selective_oracle_relative_improvement": 0.006017716048736312,
+      "surface_proxy_NEES": 1.3737571561053303,
+      "surface_proxy_coverage_90": 0.9649488647580163,
+      "take_count": 5
+    },
+    "MemoryFoam": {
+      "admitted_frames": 121,
+      "admitted_losses": 98,
+      "admitted_wins": 23,
+      "baseline_mm": 2.4133780666702487,
+      "selected_mm": 2.472930571043444,
+      "selected_relative_improvement": -0.024675994696247566,
+      "selective_oracle_mm": 2.405920462812326,
+      "selective_oracle_relative_improvement": 0.0030901100664315396,
+      "surface_proxy_NEES": 0.2171761479299382,
+      "surface_proxy_coverage_90": 0.9999804799152271,
+      "take_count": 5
+    },
+    "PlushOctopus": {
+      "admitted_frames": 225,
+      "admitted_losses": 84,
+      "admitted_wins": 141,
+      "baseline_mm": 5.372280490911574,
+      "selected_mm": 5.353766187901992,
+      "selected_relative_improvement": 0.003446265145854297,
+      "selective_oracle_mm": 5.334444696642159,
+      "selective_oracle_relative_improvement": 0.007042780869953229,
+      "surface_proxy_NEES": 1.200019681902328,
+      "surface_proxy_coverage_90": 0.9720972046907794,
+      "take_count": 5
+    },
+    "ToiletPaperRoll": {
+      "admitted_frames": 136,
+      "admitted_losses": 66,
+      "admitted_wins": 70,
+      "baseline_mm": 6.243687845226566,
+      "selected_mm": 6.245362690187743,
+      "selected_relative_improvement": -0.00026824610754002304,
+      "selective_oracle_mm": 6.21395640232426,
+      "selective_oracle_relative_improvement": 0.004761840059803154,
+      "surface_proxy_NEES": 3.68086991310006,
+      "surface_proxy_coverage_90": 0.8631006426735333,
+      "take_count": 5
+    }
+  },
+  "pre_outcome_commit": "fcc36509333ad469665a91781cf01314c020b0e3",
+  "schema_version": 1
+}

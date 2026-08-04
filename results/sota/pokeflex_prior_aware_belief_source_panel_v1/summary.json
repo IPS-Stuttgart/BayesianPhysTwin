@@ -1,0 +1,61 @@
+{
+  "artifact_kind": "PokeFlexPriorAwareBeliefSourcePanelSummary",
+  "cohort_complete": true,
+  "gate_checks": {
+    "cohort_complete": true,
+    "finite_posterior_diagnostics": true,
+    "maximum_false_safe_rate_among_admitted_frames": false,
+    "maximum_object_losses": false,
+    "maximum_per_object_relative_regression": false,
+    "minimum_admitted_frame_fraction": true,
+    "minimum_object_balanced_relative_improvement": false,
+    "minimum_object_wins": false
+  },
+  "gate_passed": false,
+  "object_balanced": {
+    "admitted_frame_count": 900,
+    "admitted_frame_fraction": 0.6085192697768763,
+    "false_safe_rate": 0.5266666666666666,
+    "maximum_object_regression": 0.024675994696247566,
+    "object_losses": 4,
+    "object_wins": 1,
+    "prior_aware_selected_CD_UL1_mm": 4.910052017697406,
+    "relative_improvement": -0.004003443296362657,
+    "released_checkpoint_CD_UL1_mm": 4.8904732852077
+  },
+  "object_count": 5,
+  "objects": {
+    "3dPrintedHeart": {
+      "prior_aware_selected_CD_UL1_mm": 4.739423308396492,
+      "relative_improvement": -0.008851416229509966,
+      "released_checkpoint_CD_UL1_mm": 4.697840764410733,
+      "take_count": 5
+    },
+    "FoamDice": {
+      "prior_aware_selected_CD_UL1_mm": 5.738777330957357,
+      "relative_improvement": -0.00237513473783871,
+      "released_checkpoint_CD_UL1_mm": 5.725179258819382,
+      "take_count": 5
+    },
+    "MemoryFoam": {
+      "prior_aware_selected_CD_UL1_mm": 2.472930571043444,
+      "relative_improvement": -0.024675994696247566,
+      "released_checkpoint_CD_UL1_mm": 2.4133780666702487,
+      "take_count": 5
+    },
+    "PlushOctopus": {
+      "prior_aware_selected_CD_UL1_mm": 5.353766187901992,
+      "relative_improvement": 0.003446265145854297,
+      "released_checkpoint_CD_UL1_mm": 5.372280490911574,
+      "take_count": 5
+    },
+    "ToiletPaperRoll": {
+      "prior_aware_selected_CD_UL1_mm": 6.245362690187743,
+      "relative_improvement": -0.00026824610754002304,
+      "released_checkpoint_CD_UL1_mm": 6.243687845226566,
+      "take_count": 5
+    }
+  },
+  "schema_version": 1,
+  "take_count": 25
+}
