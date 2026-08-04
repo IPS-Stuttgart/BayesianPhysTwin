@@ -17,9 +17,7 @@ import numpy as np
 
 PROBE_SCHEMA = "bayesian-phystwin/deform360-source-hull-probe-v1"
 PROTOCOL_SCHEMA = "bayesian-phystwin/deform360-source-hull-contract-probe-protocol-v1"
-AMENDMENT_SCHEMA = (
-    "bayesian-phystwin/deform360-source-hull-contract-probe-amendment-v2"
-)
+AMENDMENT_SCHEMA = "bayesian-phystwin/deform360-source-hull-contract-probe-amendment-v2"
 _REQUIRED_MEMBERS = (
     "frame_indices.npy",
     "point_offsets.npy",
@@ -254,9 +252,7 @@ def load_probe_amendment(
     _require(isinstance(trigger, dict), "amendment trigger evidence is missing")
     _require(
         _is_lower_hex_identity(trigger.get("artifact_sha256"), lengths=(64,))
-        and _is_lower_hex_identity(
-            trigger.get("evaluated_merge_sha"), lengths=(40, 64)
-        )
+        and _is_lower_hex_identity(trigger.get("evaluated_merge_sha"), lengths=(40, 64))
         and _positive_integer(trigger.get("workflow_run_id"))
         and _positive_integer(trigger.get("workflow_job_id"))
         and _positive_integer(trigger.get("artifact_id")),
@@ -438,9 +434,7 @@ def probe_locked_source_hulls(
     else:
         policy = amendment["config"]["policy"]
         allow_empty_frames = policy["point_offsets_order"] == "nondecreasing"
-        minimum_points_for_usable_frame = int(
-            policy["minimum_points_for_usable_frame"]
-        )
+        minimum_points_for_usable_frame = int(policy["minimum_points_for_usable_frame"])
         minimum_usable_frames = int(
             policy["minimum_usable_frames_for_rolling_prediction"]
         )
