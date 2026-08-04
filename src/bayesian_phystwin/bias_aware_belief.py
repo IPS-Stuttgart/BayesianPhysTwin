@@ -27,15 +27,20 @@ def _finite_matrix(value: np.ndarray, name: str) -> np.ndarray:
     return result
 
 
+def _cholesky_solve(cholesky: np.ndarray, right: np.ndarray) -> np.ndarray:
+    return np.linalg.solve(cholesky.T, np.linalg.solve(cholesky, right))
+
+
 def _positive_definite_inverse(value: np.ndarray, name: str) -> np.ndarray:
     matrix = _finite_matrix(value, name)
     _require(matrix.shape[0] == matrix.shape[1], f"{name} must be square")
     _require(np.allclose(matrix, matrix.T), f"{name} must be symmetric")
     try:
-        np.linalg.cholesky(matrix)
+        cholesky = np.linalg.cholesky(matrix)
     except np.linalg.LinAlgError as error:
         raise ValueError(f"{name} must be positive definite") from error
-    return np.linalg.inv(matrix)
+    inverse = _cholesky_solve(cholesky, np.eye(len(matrix), dtype=np.float64))
+    return 0.5 * (inverse + inverse.T)
 
 
 @dataclass(frozen=True)
@@ -732,38 +737,46 @@ def update_bias_aware_state(
             posterior_right += anchor_design.T @ (
                 anchor_precision_weight[:, None] * anchor_target
             )
+        posterior_normal = 0.5 * (posterior_normal + posterior_normal.T)
         return posterior_normal, posterior_right
+
+    def solve_posterior(
+        posterior_normal: np.ndarray,
+        posterior_right: np.ndarray,
+    ) -> tuple[np.ndarray | None, np.ndarray | None, float, str | None]:
+        condition_number = float(np.linalg.cond(posterior_normal))
+        if not np.isfinite(condition_number) or condition_number > (
+            cfg.maximum_condition_number
+        ):
+            return None, None, condition_number, "ill-conditioned-posterior"
+        try:
+            cholesky = np.linalg.cholesky(posterior_normal)
+        except np.linalg.LinAlgError:
+            return None, None, condition_number, "singular-posterior"
+        return (
+            _cholesky_solve(cholesky, posterior_right),
+            cholesky,
+            condition_number,
+            None,
+        )
 
     normal = prior_precision.copy()
     for iteration in range(cfg.maximum_iterations):
         previous = solution.copy()
         normal, right = posterior_system()
-        condition_number = float(np.linalg.cond(normal))
-        if not np.isfinite(condition_number) or condition_number > (
-            cfg.maximum_condition_number
-        ):
+        solved, _, condition_number, failure = solve_posterior(normal, right)
+        if failure is not None or solved is None:
             diagnostics["condition_number"] = condition_number
             return _fallback_result(
                 state_count,
                 shared_bias_count,
                 view_count,
                 reliability,
-                "ill-conditioned-posterior",
+                failure or "singular-posterior",
                 diagnostics,
                 anchor_count=len(anchor_target),
             )
-        try:
-            solution = np.linalg.solve(normal, right)
-        except np.linalg.LinAlgError:
-            return _fallback_result(
-                state_count,
-                shared_bias_count,
-                view_count,
-                reliability,
-                "singular-posterior",
-                diagnostics,
-                anchor_count=len(anchor_target),
-            )
+        solution = solved
         camera_residual = camera_target - camera_design @ solution
         camera_robust = _student_t_weight(
             camera_residual,
@@ -783,7 +796,19 @@ def update_bias_aware_state(
             break
 
     normal, right = posterior_system()
-    solution = np.linalg.solve(normal, right)
+    solved, cholesky, condition_number, failure = solve_posterior(normal, right)
+    if failure is not None or solved is None or cholesky is None:
+        diagnostics["condition_number"] = condition_number
+        return _fallback_result(
+            state_count,
+            shared_bias_count,
+            view_count,
+            reliability,
+            failure or "singular-posterior",
+            diagnostics,
+            anchor_count=len(anchor_target),
+        )
+    solution = solved
 
     state_coefficients = solution[:state_count]
     state_update = state @ state_coefficients
@@ -791,7 +816,7 @@ def update_bias_aware_state(
     diagnostics.update(
         {
             "iterations": iteration + 1,
-            "condition_number": float(np.linalg.cond(normal)),
+            "condition_number": condition_number,
             "effective_camera_information_mass": float(
                 np.sum(camera_base_weight)
             ),
@@ -802,6 +827,8 @@ def update_bias_aware_state(
                 float(np.mean(camera_robust < 1.0)) if len(camera_robust) else 0.0
             ),
             "maximum_state_update_m": maximum_update,
+            "posterior_solver": "cholesky",
+            "final_system_uses_returned_robust_weights": True,
         }
     )
     if not np.all(np.isfinite(solution)) or maximum_update > cfg.maximum_state_update_m:
@@ -815,7 +842,11 @@ def update_bias_aware_state(
             anchor_count=len(anchor_target),
         )
 
-    covariance = np.linalg.inv(normal)
+    covariance = _cholesky_solve(
+        cholesky,
+        np.eye(dimension, dtype=np.float64),
+    )
+    covariance = 0.5 * (covariance + covariance.T)
     bias_indices = np.arange(state_count, dimension)
     state_indices = np.arange(state_count)
     if len(bias_indices):

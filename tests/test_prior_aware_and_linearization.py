@@ -9,6 +9,10 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin._gauge_aware_contracts import GaugeAwareObservationBatch
+from bayesian_phystwin.bias_aware_belief import (
+    BiasAwareStateUpdateConfig,
+    update_bias_aware_state,
+)
 from bayesian_phystwin.complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
     CompleteBeliefSelectionV1,
@@ -591,6 +595,100 @@ def test_complete_belief_metadata_is_immutable_and_ids_are_stable() -> None:
     assert selection.selection_id == selection_id
     with pytest.raises(TypeError):
         selection.metadata["routing"]["reasons"].append("mutated")
+
+
+def _one_step_bias_aware_problem() -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+]:
+    point_count = 9
+    state_basis = np.linspace(-1.0, 1.0, point_count)[:, None]
+    innovation = np.zeros((1, point_count, 3), dtype=np.float64)
+    innovation[0, :, 0] = 0.01 * state_basis[:, 0]
+    return (
+        innovation,
+        np.ones((1, point_count), dtype=bool),
+        state_basis,
+        np.zeros((point_count, 0), dtype=np.float64),
+    )
+
+
+def test_bias_aware_final_system_rechecks_condition_number(monkeypatch) -> None:
+    conditions = iter((1.0, 1e6))
+    monkeypatch.setattr(np.linalg, "cond", lambda _: next(conditions))
+    innovation, available, state_basis, bias_basis = _one_step_bias_aware_problem()
+
+    result = update_bias_aware_state(
+        innovation,
+        available,
+        state_basis,
+        bias_basis,
+        config=BiasAwareStateUpdateConfig(
+            maximum_iterations=1,
+            maximum_condition_number=10.0,
+        ),
+    )
+
+    assert not result.accepted
+    assert result.reason == "ill-conditioned-posterior"
+    assert result.diagnostics["condition_number"] == pytest.approx(1e6)
+    np.testing.assert_array_equal(result.state_coefficients_m, 0.0)
+
+
+def test_bias_aware_final_cholesky_failure_falls_back(monkeypatch) -> None:
+    innovation, available, state_basis, bias_basis = _one_step_bias_aware_problem()
+    original_cholesky = np.linalg.cholesky
+    call_count = 0
+
+    def fail_second_cholesky(matrix: np.ndarray) -> np.ndarray:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise np.linalg.LinAlgError("forced final-system failure")
+        return original_cholesky(matrix)
+
+    monkeypatch.setattr(np.linalg, "cholesky", fail_second_cholesky)
+    result = update_bias_aware_state(
+        innovation,
+        available,
+        state_basis,
+        bias_basis,
+        config=BiasAwareStateUpdateConfig(maximum_iterations=1),
+    )
+
+    assert call_count == 2
+    assert not result.accepted
+    assert result.reason == "singular-posterior"
+    np.testing.assert_array_equal(result.state_coefficients_m, 0.0)
+
+
+def test_bias_aware_spd_paths_do_not_use_numpy_inverse(monkeypatch) -> None:
+    innovation, available, state_basis, bias_basis = _one_step_bias_aware_problem()
+
+    def fail_inverse(*_args: object, **_kwargs: object) -> np.ndarray:
+        raise AssertionError("np.linalg.inv must not be used for SPD systems")
+
+    monkeypatch.setattr(np.linalg, "inv", fail_inverse)
+    result = update_bias_aware_state(
+        innovation,
+        available,
+        state_basis,
+        bias_basis,
+        state_prior_covariance_m2=np.asarray([[4e-4]]),
+        config=BiasAwareStateUpdateConfig(maximum_iterations=1),
+    )
+
+    assert result.accepted
+    assert result.diagnostics["posterior_solver"] == "cholesky"
+    assert result.diagnostics["final_system_uses_returned_robust_weights"] is True
+    np.testing.assert_allclose(
+        result.posterior_covariance_m2,
+        result.posterior_covariance_m2.T,
+        atol=0.0,
+        rtol=0.0,
+    )
 
 
 def _one_step_propagated_state_problem() -> tuple[
