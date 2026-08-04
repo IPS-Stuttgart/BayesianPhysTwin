@@ -1,4 +1,4 @@
-name: Repair Deform360 source-hull provenance contract
+name: Finalize Deform360 source-hull feasibility report
 
 on:
   push:
@@ -11,13 +11,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: repair-deform360-source-hull-probe
+  group: finalize-deform360-source-hull-probe
   cancel-in-progress: false
 
 jobs:
-  repair:
+  finalize:
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out mutable probe branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -25,147 +25,354 @@ jobs:
           ref: agent/deform360-source-hull-contract-probe
           fetch-depth: 0
 
-      - name: Correct identity families and bind the final inventory
+      - name: Add the complete-cohort feasibility decision
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from __future__ import annotations
 
-          import hashlib
-          import json
           from pathlib import Path
 
+
+          def replace_once(text: str, old: str, new: str, *, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"expected one {label} replacement target, found {count}"
+                  )
+              return text.replace(old, new, 1)
+
+
           source_path = Path("scripts/science/probe_deform360_source_hulls.py")
-          source_lines = source_path.read_text(encoding="utf-8").splitlines()
-          inventory_index = source_lines.index(
-              '    source_inventory = config.get("source_inventory")'
+          source = source_path.read_text(encoding="utf-8")
+          source = replace_once(
+              source,
+              '    all_constant = all(record["constant_frame_stride"] for record in stride_records)\n',
+              '    all_constant = bool(stride_records) and all(\n'
+              '        record["constant_frame_stride"] for record in stride_records\n'
+              '    )\n',
+              label="constant-stride",
           )
-          start = source_lines.index("    for field in (", inventory_index)
-          end = source_lines.index("    return payload", start)
-          replacement = [
-              "    identity_lengths = {",
-              '        "content_inventory_sha256": 64,',
-              '        "inventory_sha256": 64,',
-              '        "product_head_sha": 40,',
-              '        "evaluated_merge_sha": 40,',
-              '        "workflow_artifact_sha256": 64,',
-              "    }",
-              "    for field, expected_length in identity_lengths.items():",
-              "        identity = source_inventory.get(field)",
-              "        _require(",
-              "            isinstance(identity, str)",
-              "            and len(identity) == expected_length",
-              '            and all(character in "0123456789abcdef" for character in identity),',
-              '            f"source inventory {field} is invalid",',
-              "        )",
-          ]
-          source_lines[start:end] = replacement
-          source_path.write_text(
-              "\n".join(source_lines) + "\n",
-              encoding="utf-8",
+          source = replace_once(
+              source,
+              '    empty_frame_archives = [\n'
+              '        str(record["relative_path"])\n'
+              '        for record in records\n'
+              '        if int(record["empty_frame_count"]) > 0\n'
+              '    ]\n'
+              '    result: dict[str, Any] = {\n',
+              '    empty_frame_archives = [\n'
+              '        str(record["relative_path"])\n'
+              '        for record in records\n'
+              '        if int(record["empty_frame_count"]) > 0\n'
+              '    ]\n'
+              '    scoring_feasible = len(prediction_ineligible) == 0\n'
+              '    scoring_infeasibility_reasons = (\n'
+              '        []\n'
+              '        if scoring_feasible\n'
+              '        else [\n'
+              '            f"{len(prediction_ineligible)} locked archive(s) have fewer "\n'
+              '            f"than {minimum_usable_frames} usable sampled hulls"\n'
+              '        ]\n'
+              '    )\n'
+              '    result: dict[str, Any] = {\n',
+              label="feasibility-computation",
           )
+          source = replace_once(
+              source,
+              '        "prediction_ineligible_archives": prediction_ineligible,\n'
+              '        "empty_frame_archive_count": len(empty_frame_archives),\n',
+              '        "prediction_ineligible_archives": prediction_ineligible,\n'
+              '        "all_locked_archives_prediction_eligible": scoring_feasible,\n'
+              '        "scoring_feasible": scoring_feasible,\n'
+              '        "scoring_decision": (\n'
+              '            "complete-cohort-source-scoring-supported"\n'
+              '            if scoring_feasible\n'
+              '            else "complete-cohort-source-scoring-infeasible"\n'
+              '        ),\n'
+              '        "scoring_infeasibility_reasons": scoring_infeasibility_reasons,\n'
+              '        "empty_frame_archive_count": len(empty_frame_archives),\n',
+              label="feasibility-result",
+          )
+          source = replace_once(
+              source,
+              '        "all_stride_observable_archives_constant_frame_stride": all_constant,\n'
+              '        "constant_frame_stride_counts": dict(sorted(constant_stride_counts.items())),\n',
+              '        "all_stride_observable_archives_constant_frame_stride": all_constant,\n'
+              '        "all_archives_constant_frame_stride": (\n'
+              '            all_constant and no_transition_count == 0\n'
+              '        ),\n'
+              '        "constant_frame_stride_counts": dict(sorted(constant_stride_counts.items())),\n',
+              label="compatibility-stride-result",
+          )
+          source = replace_once(
+              source,
+              '        "empty_frame_archive_count": result["empty_frame_archive_count"],\n',
+              '        "scoring_feasible": result["scoring_feasible"],\n'
+              '        "scoring_decision": result["scoring_decision"],\n'
+              '        "scoring_infeasibility_reasons": result[\n'
+              '            "scoring_infeasibility_reasons"\n'
+              '        ],\n'
+              '        "empty_frame_archive_count": result["empty_frame_archive_count"],\n',
+              label="summary-feasibility",
+          )
+          source_path.write_text(source, encoding="utf-8")
 
           test_path = Path("tests/test_probe_deform360_source_hulls.py")
           tests = test_path.read_text(encoding="utf-8")
-          fixture_changes = {
-              '"product_head_sha": "3" * 64': '"product_head_sha": "3" * 40',
-              '"evaluated_merge_sha": "4" * 64': (
-                  '"evaluated_merge_sha": "4" * 40'
-              ),
-          }
-          for old, new in fixture_changes.items():
-              if old in tests:
-                  tests = tests.replace(old, new)
-          if "def test_repository_protocol_is_valid()" not in tests:
-              tests += r'''
+          tests = replace_once(
+              tests,
+              'load_probe_protocol = _MODULE.load_probe_protocol\n',
+              'load_probe_protocol = _MODULE.load_probe_protocol\n'
+              'load_probe_amendment = _MODULE.load_probe_amendment\n',
+              label="amendment-loader-export",
+          )
+          tests = replace_once(
+              tests,
+              'def _resign_protocol(path: Path, payload: dict[str, object]) -> None:\n',
+              '''def _write_amendment(path: Path, protocol: Path) -> None:
+              base = json.loads(protocol.read_text(encoding="utf-8"))
+              config = {
+                  "amendment_id": "deform360-source-hull-contract-probe-v2",
+                  "base_protocol": {
+                      "config_sha256": base["config_sha256"],
+                      "path": str(protocol),
+                  },
+                  "claim_boundary": "synthetic amendment fixture",
+                  "information_boundary": {
+                      "model_prediction_run": False,
+                      "points_world_m_coordinate_values_decoded": False,
+                      "reserved_target_outcomes_opened": False,
+                      "score_bearing_outcome_computed": False,
+                  },
+                  "locked_at": "2026-08-04",
+                  "policy": {
+                      "cadence_basis": (
+                          "strictly increasing frame_indices after empty-frame exclusion"
+                      ),
+                      "empty_frame_handling": (
+                          "retain in archive custody; exclude from the prediction sequence"
+                      ),
+                      "minimum_points_for_usable_frame": 1,
+                      "minimum_usable_frames_for_rolling_prediction": 3,
+                      "object_balancing_for_future_scoring": True,
+                      "point_offsets_order": "nondecreasing",
+                  },
+                  "status": (
+                      "locked-after-v1-structural-failure-before-coordinate-access"
+                  ),
+                  "trigger_evidence": {
+                      "artifact_id": 1,
+                      "artifact_sha256": "a" * 64,
+                      "evaluated_merge_sha": "b" * 40,
+                      "failure": "point_offsets must be strictly increasing",
+                      "workflow_job_id": 2,
+                      "workflow_run_id": 3,
+                  },
+              }
+              payload = {
+                  "config": config,
+                  "config_sha256": __import__("hashlib")
+                  .sha256(_canonical_bytes(config))
+                  .hexdigest(),
+                  "schema": (
+                      "bayesian-phystwin/"
+                      "deform360-source-hull-contract-probe-amendment-v2"
+                  ),
+                  "schema_version": 1,
+              }
+              path.write_text(
+                  json.dumps(payload, indent=2, sort_keys=True) + "\\n",
+                  encoding="utf-8",
+              )
 
 
-def test_repository_protocol_is_valid() -> None:
-    protocol = (
-        Path(__file__).resolve().parents[1]
-        / "protocols"
-        / "deform360_source_hull_contract_probe_v1.json"
-    )
+              def _resign_protocol(path: Path, payload: dict[str, object]) -> None:
+              ''',
+              label="amendment-fixture",
+          )
+          tests = tests.replace(
+              '    assert result["prediction_ineligible_episode_count"] == 0\n',
+              '    assert result["prediction_ineligible_episode_count"] == 0\n'
+              '    assert result["scoring_feasible"] is True\n'
+              '    assert result["scoring_decision"] == (\n'
+              '        "complete-cohort-source-scoring-supported"\n'
+              '    )\n',
+              1,
+          )
+          tests = replace_once(
+              tests,
+              '    assert result["prediction_ineligible_episode_count"] == 1\n'
+              '    assert result["prediction_ineligible_archives"] == [\n',
+              '    assert result["prediction_ineligible_episode_count"] == 1\n'
+              '    assert result["scoring_feasible"] is False\n'
+              '    assert result["scoring_decision"] == (\n'
+              '        "complete-cohort-source-scoring-infeasible"\n'
+              '    )\n'
+              '    assert result["prediction_ineligible_archives"] == [\n',
+              label="short-archive-decision",
+          )
+          insertion = '''
 
-    payload = load_probe_protocol(protocol)
+              def test_empty_frame_amendment_retains_custody_and_uses_only_nonempty_frames(
+                  tmp_path: Path,
+              ) -> None:
+                  root, protocol = _fixture(tmp_path)
+                  archive = next(root.rglob("sampled_hulls.npz"))
+                  _write_hulls(
+                      archive,
+                      frames=np.array([0, 2, 4, 6], dtype=np.int32),
+                      point_counts=(4, 0, 5, 6),
+                  )
+                  amendment = tmp_path / "amendment.json"
+                  _write_amendment(amendment, protocol)
 
-    inventory = payload["config"]["source_inventory"]
-    assert len(inventory["product_head_sha"]) == 40
-    assert len(inventory["evaluated_merge_sha"]) == 40
+                  with pytest.raises(ValueError, match="strictly increasing"):
+                      probe_locked_source_hulls(root, protocol_path=protocol)
+
+                  result = probe_locked_source_hulls(
+                      root,
+                      protocol_path=protocol,
+                      amendment_path=amendment,
+                  )
+
+                  assert result["amendment_id"] == (
+                      "deform360-source-hull-contract-probe-v2"
+                  )
+                  assert result["empty_frame_archive_count"] == 1
+                  assert result["total_empty_frame_count"] == 1
+                  assert result["prediction_eligible_episode_count"] == 1
+                  assert result["scoring_feasible"] is True
+                  record = result["archives"][0]
+                  assert record["frame_indices"] == [0, 2, 4, 6]
+                  assert record["usable_frame_indices"] == [0, 4, 6]
+                  assert record["empty_frame_indices"] == [2]
+                  assert record["empty_frame_policy"] == (
+                      "retained-and-excluded-from-prediction"
+                  )
+                  assert record["points_world_m_header"][
+                      "coordinate_values_decoded"
+                  ] is False
 
 
-@pytest.mark.parametrize(
-    ("field", "replacement"),
-    (
-        ("product_head_sha", "a" * 64),
-        ("evaluated_merge_sha", "b" * 64),
-        ("workflow_artifact_sha256", "c" * 40),
-    ),
-)
-def test_protocol_rejects_wrong_identity_family(
-    tmp_path: Path,
-    field: str,
-    replacement: str,
-) -> None:
-    _root, protocol = _fixture(tmp_path)
-    payload = json.loads(protocol.read_text(encoding="utf-8"))
-    payload["config"]["source_inventory"][field] = replacement
-    payload["config_sha256"] = (
-        __import__("hashlib")
-        .sha256(_canonical_bytes(payload["config"]))
-        .hexdigest()
-    )
-    protocol.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+              def test_repository_amendment_is_bound_to_repository_protocol() -> None:
+                  repository = Path(__file__).resolve().parents[1]
+                  protocol_path = (
+                      repository
+                      / "protocols"
+                      / "deform360_source_hull_contract_probe_v1.json"
+                  )
+                  amendment_path = (
+                      repository
+                      / "protocols"
+                      / "deform360_source_hull_contract_probe_v2.json"
+                  )
+                  protocol = load_probe_protocol(protocol_path)
 
-    with pytest.raises(ValueError, match=field):
-        load_probe_protocol(protocol)
-'''
+                  amendment = load_probe_amendment(
+                      amendment_path,
+                      base_protocol=protocol,
+                  )
+
+                  assert amendment["config"]["base_protocol"][
+                      "config_sha256"
+                  ] == protocol["config_sha256"]
+              '''
+          marker = '\n\ndef test_probe_fails_closed_on_offset_contract(tmp_path: Path) -> None:\n'
+          tests = replace_once(
+              tests,
+              marker,
+              insertion + marker,
+              label="amendment-tests",
+          )
           test_path.write_text(tests, encoding="utf-8")
 
-          protocol_path = Path(
-              "protocols/deform360_source_hull_contract_probe_v1.json"
+          workflow_path = Path(".github/workflows/deform360-source-hull-probe.yml")
+          workflow = workflow_path.read_text(encoding="utf-8")
+          workflow = replace_once(
+              workflow,
+              '          if result["prediction_eligible_episode_count"] < 1:\n'
+              '              raise SystemExit("no source archive supports rolling prediction")\n',
+              '          eligible = result["prediction_eligible_episode_count"]\n'
+              '          ineligible = result["prediction_ineligible_episode_count"]\n'
+              '          if eligible + ineligible != 36:\n'
+              '              raise SystemExit("prediction eligibility accounting changed")\n'
+              '          expected_feasible = ineligible == 0\n'
+              '          if result["scoring_feasible"] is not expected_feasible:\n'
+              '              raise SystemExit("scoring feasibility is inconsistent")\n'
+              '          expected_decision = (\n'
+              '              "complete-cohort-source-scoring-supported"\n'
+              '              if expected_feasible\n'
+              '              else "complete-cohort-source-scoring-infeasible"\n'
+              '          )\n'
+              '          if result["scoring_decision"] != expected_decision:\n'
+              '              raise SystemExit("scoring decision is inconsistent")\n',
+              label="workflow-feasibility-verifier",
           )
-          payload = json.loads(protocol_path.read_text(encoding="utf-8"))
-          inventory = payload["config"]["source_inventory"]
-          inventory.update(
-              {
-                  "content_inventory_sha256": (
-                      "0089c45afb323e6d2e4312dd71d6e5a2cb359c056f007b5aeb09da33e03b7974"
-                  ),
-                  "inventory_sha256": (
-                      "2b34d3b0df71f85218e76f384b7ac4f381e2ed941eab3189b6ccb01c688d174b"
-                  ),
-                  "product_head_sha": (
-                      "26d8bf5b0d4592e2cd0d9f2611d5814b30c904fb"
-                  ),
-                  "evaluated_merge_sha": (
-                      "6d67e52582d20693f1ca7a46fb2f6c6ac9c53c9d"
-                  ),
-                  "workflow_artifact_id": 8891878436,
-                  "workflow_artifact_sha256": (
-                      "69dc3d8628e98fb9d5112a8dfb456abc58de0111475f67f20ca2efbe9ddba904"
-                  ),
-              }
+          workflow = replace_once(
+              workflow,
+              '          print(\n'
+              '              "- Empty-frame archives / frames: "\n',
+              '          print(f"- Complete-cohort scoring feasible: "\n'
+              '                f"`{str(result[\'scoring_feasible\']).lower()}`")\n'
+              '          print(f"- Scoring decision: `{result[\'scoring_decision\']}`")\n'
+              '          print(\n'
+              '              "- Empty-frame archives / frames: "\n',
+              label="workflow-summary",
           )
-          payload["config_sha256"] = hashlib.sha256(
-              json.dumps(
-                  payload["config"],
-                  sort_keys=True,
-                  separators=(",", ":"),
-                  allow_nan=False,
-              ).encode("utf-8")
-          ).hexdigest()
-          protocol_path.write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+          workflow_path.write_text(workflow, encoding="utf-8")
+
+          Path("docs/deform360_source_hull_contract_probe.md").write_text(
+              '''# Deform360 source-hull contract and feasibility probe
+
+## Purpose
+
+This target-blind preflight binds 36 `sampled_hulls.npz` archives from six
+already-open source objects before any point-coordinate value or score is
+opened. It determines whether the complete locked archive family can support a
+later rolling source diagnostic.
+
+## Information boundary
+
+The probe reads ZIP member names, integer frame indices, integer point offsets,
+the NumPy header of `points_world_m`, and complete compressed archive bytes for
+SHA-256. It does not decode point coordinates, run BayesianPhysTwin, compute a
+prediction score, read RGB/depth/tactile data, or open a reserved target.
+
+## Versioned structural policy
+
+Version 1 required every sampled hull to be nonempty. The v1 preflight failed
+before coordinate access when a locked archive contained repeated point
+offsets. Version 2 was then locked against that exact failure artifact, still
+before coordinate or score access. It keeps every frame in archive custody but
+allows nondecreasing offsets, marks zero-point frames explicitly, and excludes
+only those frames from the future prediction sequence. Cadence is computed from
+the retained nonempty frame indices.
+
+This amendment does not authorize dropping an archive. Every locked archive is
+reported exactly once. An archive is prediction-eligible only with at least
+three usable sampled hulls. Complete-cohort scoring is feasible only when all 36
+locked archives are prediction-eligible; otherwise the completed result is a
+negative feasibility finding.
+
+Protocol, cohort, source-inventory, path, ZIP-member, array-shape, dtype, final
+offset, and reserved-target violations remain hard failures.
+
+## Evidence boundary
+
+A completed probe establishes only structural/cadence feasibility and exact
+archive identities. It does not establish prediction accuracy, physical-state
+benefit, calibrated uncertainty, official Deform360 parity, new-object transfer,
+or any target result. A later scoring protocol may be created only after this
+result is frozen and must preserve its complete-cohort decision or explicitly
+register a different, weaker source-only estimand before coordinate access.
+''',
               encoding="utf-8",
           )
           PY
 
-      - name: Validate and publish the clean repair
+      - name: Validate and publish plain reviewable source
         shell: bash
         run: |
           set -euo pipefail
@@ -189,9 +396,12 @@ def test_protocol_rejects_wrong_identity_family(
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
-            scripts/science/probe_deform360_source_hulls.py \
-            tests/test_probe_deform360_source_hulls.py \
+            .github/workflows/deform360-source-hull-probe.yml \
+            .github/workflows/repair-deform360-source-hull-probe.yml \
+            docs/deform360_source_hull_contract_probe.md \
             protocols/deform360_source_hull_contract_probe_v1.json \
-            .github/workflows/repair-deform360-source-hull-probe.yml
-          git commit -m "Fix source-inventory identity validation"
+            protocols/deform360_source_hull_contract_probe_v2.json \
+            scripts/science/probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls.py
+          git commit -m "Complete source-hull feasibility reporting"
           git push origin HEAD:agent/deform360-source-hull-contract-probe
