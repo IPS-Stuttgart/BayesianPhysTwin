@@ -1,0 +1,193 @@
+name: Deform360 exploratory source-hull inventory
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-exploratory-source-hull-inventory.yml"
+      - "protocols/deform360_exploratory_source_hull_inventory_v1.json"
+      - "scripts/science/inventory_deform360_source_hulls.py"
+      - "tests/test_inventory_deform360_source_hulls.py"
+      - "docs/deform360_exploratory_source_hull_inventory_v1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-source-inventory-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  inventory:
+    name: Inventory locked non-fresh source hulls
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 90
+    steps:
+      - name: Check out BayesianPhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Record runner and mounted-root identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deform360-source-hull-inventory
+          test -d "${DEFORM360_ROOT}"
+          resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
+          echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "dataset_root=${resolved_root}"
+            uname -a
+            python --version
+          } | tee deform360-source-hull-inventory/environment.txt
+          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee deform360-source-hull-inventory/gpus.csv
+
+      - name: Install development environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate implementation and synthetic contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/inventory_deform360_source_hulls.py \
+            tests/test_inventory_deform360_source_hulls.py
+          python -m ruff format --check \
+            scripts/science/inventory_deform360_source_hulls.py \
+            tests/test_inventory_deform360_source_hulls.py
+          python -m pytest -q tests/test_inventory_deform360_source_hulls.py \
+            | tee deform360-source-hull-inventory/tests.log
+
+      - name: Inventory the exact source-only cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/inventory_deform360_source_hulls.py \
+            --data-root "${DEFORM360_ROOT}" \
+            --protocol \
+              protocols/deform360_exploratory_source_hull_inventory_v1.json \
+            --output deform360-source-hull-inventory/result.json \
+            | tee deform360-source-hull-inventory/inventory.log
+
+      - name: Verify information and cohort boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path("deform360-source-hull-inventory/result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if result["classification"] != (
+              "exploratory-non-fresh-source-only-metadata"
+          ):
+              raise SystemExit("inventory classification changed")
+          if len(result["archives"]) != 36:
+              raise SystemExit("the locked inventory omitted an archive")
+          summary = result["summary"]
+          if summary["object_count"] != 6 or summary["episode_count"] != 36:
+              raise SystemExit("the locked source cohort changed")
+          if summary["scoring_cohort_frozen"]:
+              raise SystemExit("the exploratory inventory froze a scoring cohort")
+          boundary = result["information_boundary"]
+          for field in (
+              "points_world_m_coordinate_values_decoded",
+              "model_prediction_run",
+              "score_bearing_outcome_computed",
+              "reserved_target_outcomes_opened",
+          ):
+              if boundary[field]:
+                  raise SystemExit(f"forbidden operation recorded: {field}")
+          for archive in result["archives"]:
+              if archive["points_world_m_header"]["coordinate_values_decoded"]:
+                  raise SystemExit("a point-coordinate payload was decoded")
+          PY
+
+      - name: Verify tracked tree remained clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git status --porcelain=v1 --untracked-files=no \
+            | tee deform360-source-hull-inventory/git-status.txt
+          test ! -s deform360-source-hull-inventory/git-status.txt
+
+      - name: Publish concise feasibility summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f deform360-source-hull-inventory/result.json ]]; then
+            python - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path("deform360-source-hull-inventory/result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          summary = result["summary"]
+          print("### Deform360 exploratory source-hull inventory")
+          print()
+          print(f"- Content SHA-256: `{result['content_inventory_sha256']}`")
+          print(f"- Provenance SHA-256: `{result['inventory_sha256']}`")
+          print(f"- Objects / archives: `6 / {summary['episode_count']}`")
+          print(
+              "- Prediction-candidate archives / objects: "
+              f"`{summary['prediction_candidate_archive_count']} / "
+              f"{summary['prediction_candidate_object_count']}`"
+          )
+          print(
+              "- Archives with empty hulls / empty frames: "
+              f"`{summary['archives_with_empty_hulls']} / "
+              f"{summary['total_empty_hull_frames']}`"
+          )
+          print(
+              "- Prediction-ineligible archives: "
+              f"`{summary['prediction_ineligible_archive_count']}`"
+          )
+          print("- Coordinate values decoded: `false`")
+          print("- Predictor or score executed: `false`")
+          print("- Scoring cohort frozen: `false`")
+          PY
+          else
+            echo "### Deform360 exploratory source-hull inventory" \
+              >> "${GITHUB_STEP_SUMMARY}"
+            echo >> "${GITHUB_STEP_SUMMARY}"
+            echo "No inventory result was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload inventory evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-source-hull-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deform360-source-hull-inventory
+          if-no-files-found: error
+          retention-days: 30
