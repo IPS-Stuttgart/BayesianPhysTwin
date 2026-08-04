@@ -33,4 +33,5 @@ def test_numpy_integer_iteration_count_is_normalized() -> None:
     config = PriorAwareGaugeConfigV1(maximum_iterations=cast(int, np.int64(3)))
 
     assert config.maximum_iterations == 3
-    assert type(config.maximum_iterations) is int
+    assert isinstance(config.maximum_iterations, int)
+    assert not isinstance(config.maximum_iterations, np.integer)
