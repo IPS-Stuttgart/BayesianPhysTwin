@@ -122,6 +122,25 @@ def _read_frame_zero_ply(path: Path) -> tuple[np.ndarray, np.ndarray]:
     return points, colors
 
 
+def _slice_known_action(source: Path, destination: Path) -> None:
+    """Materialize the frozen 76-row prediction action from the 81-row window."""
+
+    with np.load(source, allow_pickle=False) as stored:
+        required = {"format_version", "actions", "T_worlds", "openings", "bimanual"}
+        _require(required <= set(stored.files), "known-action archive is incomplete")
+        arrays = {name: np.asarray(stored[name]).copy() for name in stored.files}
+    for name in ("actions", "T_worlds", "openings"):
+        _require(len(arrays[name]) == 81, f"{name} does not span the raw window")
+        arrays[name] = arrays[name][:76]
+    _require(
+        np.asarray(arrays["format_version"]).shape == ()
+        and np.asarray(arrays["bimanual"]).shape == (),
+        "known-action scalar metadata changed",
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(destination, **arrays)
+
+
 def _run_logged(
     command: Sequence[str],
     *,
@@ -324,9 +343,9 @@ def main() -> int:
     _require(not root.exists(), "physical work directory already exists")
     root.mkdir(parents=True)
     frame_zero_source = processed / "start_obj_pcd.ply"
-    known_action = processed / "robot" / "robot.npz"
+    known_action_source = processed / "robot" / "robot.npz"
     _require(frame_zero_source.is_file(), "frame-zero PLY is missing")
-    _require(known_action.is_file(), "known action is missing")
+    _require(known_action_source.is_file(), "known action is missing")
     points, colors = _read_frame_zero_ply(frame_zero_source)
     expected_point_count = disposition["admission"]["observed_source_contract"][
         "frame_zero_point_count"
@@ -338,6 +357,8 @@ def main() -> int:
     )
     geometry = root / "frame_zero_points.npz"
     np.savez_compressed(geometry, points_m=points, colors=colors)
+    known_action = root / "known_action_76.npz"
+    _slice_known_action(known_action_source, known_action)
     prediction_data = root / "prediction_only_input.pkl"
     prediction_summary = build_prediction_only_bundle(
         geometry,
@@ -409,6 +430,7 @@ def main() -> int:
         "source_admission": processed / "fresh_pairwise_admission.json",
         "frame_zero_source": frame_zero_source,
         "frame_zero_geometry": geometry,
+        "known_action_source": known_action_source,
         "known_action": known_action,
         "prediction_only_input": prediction_data,
         "prediction_only_summary": prediction_summary_path,
