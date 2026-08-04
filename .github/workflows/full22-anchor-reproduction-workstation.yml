@@ -49,21 +49,12 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Create isolated system-Python environment
-        shell: bash
-        run: |
-          set -euo pipefail
-          python_version="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${python_version}" != "3.12" ]]; then
-            echo "::error title=Unexpected system Python::Expected Python 3.12, found ${python_version}"
-            exit 1
-          fi
-          venv="${RUNNER_TEMP}/bpt-full22-python-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf "${venv}"
-          python3 -m venv "${venv}"
-          echo "${venv}/bin" >> "${GITHUB_PATH}"
-          "${venv}/bin/python" -m pip install --upgrade pip
-          "${venv}/bin/python" --version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Resolve isolated paths
         shell: bash
@@ -102,6 +93,7 @@ jobs:
 
       - name: Install locked evaluation dependencies
         run: |
+          python -m pip install --upgrade pip
           python -m pip install -e ".[dev,data]"
           python -m pip check
           python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
