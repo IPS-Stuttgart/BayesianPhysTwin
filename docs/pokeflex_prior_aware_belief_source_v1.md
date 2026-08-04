@@ -57,6 +57,39 @@ justify freezing a separate object-held-out source protocol over the already
 opened PokeFlex source objects. It cannot authorize opening calibration or
 target objects, and it cannot support a state-of-the-art claim.
 
+## Smoke Result
+
+The frozen smoke completed on source frame 7 and predicted frame 8. Kinect
+registration was admissible, with 797 associated points and a 5.86 mm RMS
+proposal update. The D405 belief retained 512 clustered rows in two capped
+sensor groups. Static calibration assigned prior reliabilities of 0.05 and
+0.926 to the two groups; the lower value reflects a 27.33 mm calibration p90
+residual in the first camera rather than the current state innovation.
+
+The unconstrained fixed-point solution implied a maximum 4.20 mm query update.
+The released checkpoint's one-step physical response admitted only 2.58 mm
+under the locked two-times-response bound. Inference therefore returned
+`implausible-state-update`, and the selected prediction was the released
+checkpoint exactly:
+
+| Method | CD_UL1 at frame 8 | Relative change |
+| --- | ---: | ---: |
+| Released checkpoint | 4.427 mm | reference |
+| Prior-aware selected result | 4.427 mm | 0.00% |
+
+This is a successful exact-fallback check but supplies no accuracy evidence.
+It does not justify loosening the trust region. Later source frames have larger
+physical responses, so a source-panel run with the identical frozen method is
+the next diagnostic; calibration and target objects remain sealed.
+
+Evidence:
+
+- pre-outcome implementation commit: `6f708e5b3eff840df810d4575c7c560f889a8498`;
+- result SHA-256: `07530a1c7e30af2b609aa0db3d03f24806039f4b306e9e9f3315ac1cda8d800e`;
+- prediction-seal SHA-256: `92cd0f2eb5a249b956a6edddd0092bfafae5290b7f8d742c659213495139cae1`;
+- server run root:
+  `/mnt/corsair/florianpfaff/pokeflex-prior-aware-source-smoke-v1-6f708e5`.
+
 ## Relationship to Causal4D
 
 This is a Bayesian-PhysTwin observation/state-belief experiment. It neither

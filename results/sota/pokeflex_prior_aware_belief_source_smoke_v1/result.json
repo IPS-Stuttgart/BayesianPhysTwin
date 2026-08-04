@@ -1,0 +1,307 @@
+{
+  "artifact_kind": "PokeFlexPriorAwareBeliefSourceSmokeResult",
+  "belief": {
+    "config": {
+      "assignment_candidates": 4,
+      "assignment_temperature_m": 0.008,
+      "calibration_reliability_scale_m": 0.01,
+      "effective_samples_per_sensor": 16.0,
+      "maximum_association_m": 0.025,
+      "maximum_calibration_median_residual_m": 0.01,
+      "maximum_state_rank": 4,
+      "maximum_state_update_m": 0.03,
+      "maximum_update_to_physical_response_ratio": 2.0,
+      "minimum_local_std_m": 0.001,
+      "minimum_points_per_sensor": 16,
+      "minimum_sensor_reliability": 0.05,
+      "minimum_singular_fraction": 0.001,
+      "prior_nominal_probability": 0.9,
+      "shared_bias_prior_std_m": 0.005,
+      "state_prior_std_m": 0.01,
+      "view_bias_prior_std_m": 0.005
+    },
+    "diagnostics": {
+      "active_state_update_limit_m": 0.002580399507586626,
+      "anchor_composite_weight_mode": "consumer-effective-sample-cap-v1",
+      "anchor_group_ids": [],
+      "anchor_group_posterior_nominal_probability": [],
+      "anchor_group_power": [],
+      "anchor_group_precision_floor_active": [],
+      "association_probability_used_as_reliability": false,
+      "condition_number": 449822.49018743867,
+      "exact_reduced_mixture_hessian_maximum_eigenvalue": 7217987.798152844,
+      "exact_reduced_mixture_hessian_minimum_eigenvalue": 16.04336260034007,
+      "exact_reduced_mixture_hessian_positive_definite": true,
+      "group_composite_weight_semantics": "generalized-Bayes likelihood power",
+      "identifiability_mode": "prior-aware-schur-v1",
+      "iterations": 6,
+      "maximum_conditional_information_eigenvalue": 7.1880370248121785,
+      "maximum_query_sensitivity_norm": 0.12585896636839705,
+      "maximum_query_state_update_m": 0.004200476152789234,
+      "minimum_robust_precision": 0.0,
+      "mixture_fixed_point_converged": true,
+      "mixture_solution_delta": 4.249849703718756e-10,
+      "mixture_stationarity_norm": 2.0736043403625746e-09,
+      "observation_composite_weight_mode": "provider-final-per-row-v1",
+      "observation_group_ids": [
+        "pokeflex:d405-prior-aware-v1:correlation-group-0",
+        "pokeflex:d405-prior-aware-v1:correlation-group-1"
+      ],
+      "observation_group_posterior_nominal_probability": [
+        1.0,
+        1.0
+      ],
+      "observation_group_power": [
+        0.0625,
+        0.0625
+      ],
+      "observation_group_precision_floor_active": [
+        false,
+        false
+      ],
+      "posterior_covariance_kind": "working-gauss-newton-irls-not-exact-mixture-hessian",
+      "prior_nominal_probability_used_inside_mixture": true,
+      "robust_likelihood": "grouped nominal/outlier Student-t mixture",
+      "robust_likelihood_objective": "exact-group-mixture-gradient",
+      "row_reliability_semantics": "conditional-covariance-precision-scaling"
+    },
+    "field_names": [
+      "force_parallel_local_state_relative_0.25",
+      "action_axis_local_state_relative_0.25",
+      "force_action_plane_local_state_relative_0.25",
+      "force_mean_local_state_relative_0.25"
+    ],
+    "group_count": 2,
+    "inference_admissible": false,
+    "maximum_query_update_mm": 0.0,
+    "mean_query_posterior_std_mm": 0.40491679702159183,
+    "observation_count": 512,
+    "prior_reliability_by_group": {
+      "0": 0.05000000000000001,
+      "1": 0.9258797991195208
+    },
+    "reason": "implausible-state-update",
+    "robust_weight_mean": 0.0,
+    "robust_weight_minimum": 0.0,
+    "shared_bias_coefficients_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "state_coefficients_m": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "state_mode_names": [
+      "physical-span-mode-0",
+      "physical-span-mode-1",
+      "physical-span-mode-2",
+      "physical-span-mode-3"
+    ],
+    "view_bias_coefficients_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "checkpoint": {
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    },
+    "source_history": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "source_history_retained_point_counts": [
+      3900,
+      3911,
+      3952,
+      3947,
+      4999
+    ],
+    "target_history": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "target_history_retained_point_counts": [
+      3911,
+      3952,
+      3947,
+      4999,
+      3937
+    ]
+  },
+  "claim_boundary": "This smoke tests numerical and causal operation of a bias-aware Bayesian update on one already-open PokeFlex development take. It is not confirmation, not a target-object result, and not a state-of-the-art claim.",
+  "future_observation_used": false,
+  "independent_depth": {
+    "anchor": {
+      "artifact_kind": "PokeFlexIndependentDepthAnchor",
+      "calibration_sha256": [
+        "81adc91a5b6c4cf8a14f9c3657f3a71983ae936544f6336c6f5d796704e47fc7",
+        "3ff145bf0bbfee143152e77464cbc6884a6f09f5e67e4c994cd9dce462492033"
+      ],
+      "causal_cutoff_frame": 7,
+      "frame_id": 7,
+      "metadata": {
+        "calibration_median_residual_m": [
+          0.0023912819735701345,
+          0.002199162067468259
+        ],
+        "calibration_p90_residual_m": [
+          0.027327059006036603,
+          0.003924560085613458
+        ],
+        "maximum_template_distance_m": 0.015,
+        "template_frame": 1
+      },
+      "outcome_independent": true,
+      "point_count": 512,
+      "schema_version": 1,
+      "sensor_names": [
+        "realsense0",
+        "realsense1"
+      ],
+      "source_kind": "realsense_d405_depth",
+      "take_id": "FoamDice_T1",
+      "variance_unit": "m^2"
+    },
+    "calibration_median_residual_mm": [
+      2.3912819735701345,
+      2.199162067468259
+    ],
+    "calibration_p90_residual_mm": [
+      27.327059006036603,
+      3.9245600856134577
+    ],
+    "calibration_translation_m": [
+      [
+        -0.0012473557841015115,
+        0.0006190009578298239,
+        0.001377801576620881
+      ],
+      [
+        6.916183452909674e-05,
+        0.0016957886320722038,
+        0.0010602588830985332
+      ]
+    ],
+    "source_manifest": {
+      "anchor_arrays_sha256": "bc47b5c55e3546e37c2363ca59a2c589e61f291bf95f51d8cdc1c42f29ca7084",
+      "anchor_metadata": {
+        "artifact_kind": "PokeFlexIndependentDepthAnchor",
+        "calibration_sha256": [
+          "81adc91a5b6c4cf8a14f9c3657f3a71983ae936544f6336c6f5d796704e47fc7",
+          "3ff145bf0bbfee143152e77464cbc6884a6f09f5e67e4c994cd9dce462492033"
+        ],
+        "causal_cutoff_frame": 7,
+        "frame_id": 7,
+        "metadata": {
+          "calibration_median_residual_m": [
+            0.0023912819735701345,
+            0.002199162067468259
+          ],
+          "calibration_p90_residual_m": [
+            0.027327059006036603,
+            0.003924560085613458
+          ],
+          "maximum_template_distance_m": 0.015,
+          "template_frame": 1
+        },
+        "outcome_independent": true,
+        "point_count": 512,
+        "schema_version": 1,
+        "sensor_names": [
+          "realsense0",
+          "realsense1"
+        ],
+        "source_kind": "realsense_d405_depth",
+        "take_id": "FoamDice_T1",
+        "variance_unit": "m^2"
+      },
+      "source_files": {
+        "realsense-0-parameters": "81adc91a5b6c4cf8a14f9c3657f3a71983ae936544f6336c6f5d796704e47fc7",
+        "realsense-0-source-depth": "490f7b61c68e65b85c9c35e584bcda775209226341fc520f67b066608cdfc99d",
+        "realsense-0-template-depth": "0331768bae3062433e9c9af7121869b9dfd9a491cacce808573e8f0f59c16059",
+        "realsense-1-parameters": "3ff145bf0bbfee143152e77464cbc6884a6f09f5e67e4c994cd9dce462492033",
+        "realsense-1-source-depth": "061d626507b0d38606f41d81149262aa2b117ecea0c7f0a4a18a1a03b4c9cd21",
+        "realsense-1-template-depth": "1aeff0c2b940150b9e2074ca3e1ba2368bab7cd970191d6398b7160a05760dc0"
+      }
+    }
+  },
+  "prediction_npz_sha256": "abbd09fc4bc446dd8a77dea8a74051be86b0a0a82e3eef9d867be9e6eb79e182",
+  "prediction_seal_sha256": "92cd0f2eb5a249b956a6edddd0092bfafae5290b7f8d742c659213495139cae1",
+  "prediction_sealed_before_target_mesh": true,
+  "protocol_file_sha256": "882ebf736c67317fe8bbd64292a89f52eb0d313bef2fd50f87e70ef9af845a76",
+  "robot_prefix_sha256": "7ef54f068352e2ad3d72a546e433cde4ff9b60e5c268f3eb9e663edf770df57e",
+  "schema_version": 1,
+  "score": {
+    "absolute_change_mm": 0.0,
+    "metric": "CD_UL1_mm",
+    "prior_aware_selected_mm": 4.427361122800049,
+    "relative_change_percent": 0.0,
+    "released_checkpoint_mm": 4.427361122800049
+  },
+  "source_frame": 7,
+  "source_registration": {
+    "accepted": true,
+    "diagnostics": {
+      "action_supported": true,
+      "assignment_variance_m2_mean": 7.350553588175083e-06,
+      "associated_points_per_supported_view": [
+        345,
+        452
+      ],
+      "association_count": 797,
+      "clustered_points_per_view": [
+        512,
+        512
+      ],
+      "condition_number": 712.6898702197689,
+      "correlation_treatment": "voxel clusters within view; covariance intersection across views",
+      "downweighted_fraction": 0.03262233375156838,
+      "effective_information_mass": 128.0,
+      "innovation_uses_prior_reliability": false,
+      "maximum_update_m": 0.02138016085104493,
+      "median_robust_weight": 1.0,
+      "minimum_robust_weight": 0.5598113737544917,
+      "raw_points_per_view": [
+        5580,
+        1906
+      ],
+      "residual_geometry": "point_to_point",
+      "rms_update_m": 0.005862021171635865,
+      "source_reliabilities": [
+        1.0,
+        1.0
+      ],
+      "supported_view_count": 2,
+      "voxel_clusters_per_view": [
+        4485,
+        1884
+      ]
+    },
+    "reason": "accepted"
+  },
+  "source_revision": "6f708e5b3eff840df810d4575c7c560f889a8498",
+  "take_id": "FoamDice_T1",
+  "target_frame": 8,
+  "template_frame": 1,
+  "template_preprocessing": {
+    "decimated": true,
+    "input_face_count": 26452,
+    "input_vertex_count": 13670,
+    "output_face_count": 19000,
+    "output_vertex_count": 9938
+  },
+  "template_sha256": "b45fc1561924b4c017eb37f2ec4d8d1a26b42d6c0e60e58c6738f4c5a06a3596"
+}
