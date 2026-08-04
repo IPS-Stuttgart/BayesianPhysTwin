@@ -1,0 +1,196 @@
+name: Deform360 source-hull contract probe
+
+on:
+  pull_request:
+    branches: ["agent/deform360-metadata-preflight"]
+    paths:
+      - ".github/workflows/deform360-source-hull-probe.yml"
+      - "protocols/deform360_source_hull_contract_probe_v1.json"
+      - "scripts/science/probe_deform360_source_hulls.py"
+      - "tests/test_probe_deform360_source_hulls.py"
+      - "docs/deform360_source_hull_contract_probe.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-hull-probe-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Probe contracts and formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out BayesianPhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development environment
+        run: python -m pip install -e ".[dev]"
+
+      - name: Validate probe source and synthetic contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls.py
+          python -m ruff format --check \
+            scripts/science/probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls.py
+          python -m pytest -q tests/test_probe_deform360_source_hulls.py
+          python -m pip check
+
+  probe:
+    name: Locked source-hull cadence and header probe
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 90
+    steps:
+      - name: Check out BayesianPhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Record runner and mounted-root identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deform360-source-hull-probe
+          test -d "${DEFORM360_ROOT}"
+          resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
+          echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "dataset_root=${resolved_root}"
+            uname -a
+            python --version
+          } | tee deform360-source-hull-probe/environment.txt
+          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee deform360-source-hull-probe/gpus.csv
+
+      - name: Install NumPy-only package
+        run: |
+          python -m pip install -e .
+          python -m pip check
+
+      - name: Probe the exact locked source cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/probe_deform360_source_hulls.py \
+            --data-root "${DEFORM360_ROOT}" \
+            --protocol protocols/deform360_source_hull_contract_probe_v1.json \
+            --output deform360-source-hull-probe/result.json \
+            | tee deform360-source-hull-probe/probe.log
+
+      - name: Verify the information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path("deform360-source-hull-probe/result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          boundary = result["information_boundary"]
+          if result["object_count"] != 6 or result["episode_count"] != 36:
+              raise SystemExit("locked source cohort count changed")
+          if boundary["points_world_m_coordinate_values_decoded"]:
+              raise SystemExit("point-coordinate values were decoded")
+          if boundary["model_prediction_run"]:
+              raise SystemExit("the contract probe ran a model")
+          if boundary["score_bearing_outcome_computed"]:
+              raise SystemExit("the contract probe computed an outcome score")
+          if boundary["reserved_target_outcomes_opened"]:
+              raise SystemExit("the contract probe opened a reserved target")
+          if len(result["archives"]) != 36:
+              raise SystemExit("the probe omitted a locked archive")
+          PY
+
+      - name: Verify tracked tree remained clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git status --porcelain=v1 --untracked-files=no \
+            | tee deform360-source-hull-probe/git-status.txt
+          test ! -s deform360-source-hull-probe/git-status.txt
+
+      - name: Publish concise cadence summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f deform360-source-hull-probe/result.json ]]; then
+            python - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path("deform360-source-hull-probe/result.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print("### Deform360 source-hull contract probe")
+          print()
+          print(f"- Content SHA-256: `{result['content_probe_sha256']}`")
+          print(f"- Provenance SHA-256: `{result['probe_sha256']}`")
+          print(f"- Objects / episodes: `{result['object_count']} / {result['episode_count']}`")
+          print(
+              "- Constant-stride archives: "
+              f"`{result['constant_frame_stride_counts']}`"
+          )
+          print(
+              "- Irregular-stride archives: "
+              f"`{result['irregular_frame_stride_archive_count']}`"
+          )
+          print("- Point-coordinate values decoded: `false`")
+          print("- Prediction or score computed: `false`")
+          PY
+          else
+            echo "### Deform360 source-hull contract probe" \
+              >> "${GITHUB_STEP_SUMMARY}"
+            echo >> "${GITHUB_STEP_SUMMARY}"
+            echo "No probe result was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload probe evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-source-hull-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deform360-source-hull-probe
+          if-no-files-found: error
+          retention-days: 30
