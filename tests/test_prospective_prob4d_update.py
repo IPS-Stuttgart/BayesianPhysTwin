@@ -49,6 +49,26 @@ def _result(lineage: dict[str, object]) -> GaugeAwareBeliefResult:
     )
 
 
+def _update(
+    *,
+    result: GaugeAwareBeliefResult | None = None,
+    calibration_artifact_ids: object = CALIBRATION_IDS,
+    runtime_revision_source: object = "independent-vcs-check",
+    runtime_revision_independently_verified: object = True,
+) -> ClaimBearingProb4DUpdateV1:
+    return ClaimBearingProb4DUpdateV1(
+        result=_result(_lineage()) if result is None else result,
+        observation_artifact_id=OBSERVATION_ID,
+        linearization_artifact_id=LINEARIZATION_ID,
+        provider_manifest_id=PROVIDER_ID,
+        calibration_artifact_ids=calibration_artifact_ids,  # type: ignore[arg-type]
+        runtime_revision_source=runtime_revision_source,  # type: ignore[arg-type]
+        runtime_revision_independently_verified=(
+            runtime_revision_independently_verified  # type: ignore[arg-type]
+        ),
+    )
+
+
 def test_one_call_path_admits_before_solving_and_binds_lineage(monkeypatch) -> None:
     events: list[str] = []
     lineage = _lineage()
@@ -136,93 +156,123 @@ def test_unverified_runtime_fails_before_solver(monkeypatch) -> None:
     assert events == ["adapt"]
 
 
+def test_nonstring_runtime_source_fails_before_solver(monkeypatch) -> None:
+    events: list[str] = []
+    lineage = {
+        **_lineage(),
+        "prob4d_claim_bearing_runtime_revision_source": 7,
+    }
+    adapted = SimpleNamespace(
+        batch=SimpleNamespace(metadata=lineage),
+        observation_artifact_id=OBSERVATION_ID,
+    )
+
+    def adapt(*args, **kwargs):
+        events.append("adapt")
+        return adapted
+
+    def solve(*args, **kwargs):
+        events.append("solve")
+        raise AssertionError("solver must not run")
+
+    monkeypatch.setattr(
+        update_module,
+        "build_claim_bearing_gauge_aware_batch_from_artifacts",
+        adapt,
+    )
+    monkeypatch.setattr(
+        update_module,
+        "update_prior_aware_gauge_belief",
+        solve,
+    )
+
+    with pytest.raises(TypeError, match="runtime_revision_source must be a string"):
+        update_claim_bearing_prob4d_from_artifacts(
+            object(),
+            SimpleNamespace(artifact_id=LINEARIZATION_ID),
+            physical_prediction_xyz_m=np.zeros((1, 3)),
+        )
+    assert events == ["adapt"]
+
+
 def test_update_contract_rejects_lineage_mismatch() -> None:
     lineage = _lineage()
     result = _result({**lineage, "observation_artifact_id": "f" * 64})
     with pytest.raises(ValueError, match="observation_artifact_id"):
-        ClaimBearingProb4DUpdateV1(
-            result=result,
-            observation_artifact_id=OBSERVATION_ID,
-            linearization_artifact_id=LINEARIZATION_ID,
-            provider_manifest_id=PROVIDER_ID,
-            calibration_artifact_ids=CALIBRATION_IDS,
-            runtime_revision_source="independent-vcs-check",
-            runtime_revision_independently_verified=True,
+        _update(result=result)
+
+
+def test_update_contract_rejects_calibration_lineage_mismatch() -> None:
+    with pytest.raises(ValueError, match="calibration_artifact_ids"):
+        _update(
+            calibration_artifact_ids={
+                "gauge": "d" * 64,
+                "point": "f" * 64,
+            }
         )
+
+
+def test_update_contract_rejects_runtime_source_lineage_mismatch() -> None:
+    with pytest.raises(ValueError, match="runtime_revision_source"):
+        _update(runtime_revision_source="different-independent-check")
+
+
+def test_update_contract_requires_true_verification_flag() -> None:
+    with pytest.raises(ValueError, match="must be True"):
+        _update(runtime_revision_independently_verified=False)
+
+
+def test_update_contract_freezes_calibration_mapping() -> None:
+    supplied = dict(CALIBRATION_IDS)
+    update = _update(calibration_artifact_ids=supplied)
+    update_id = update.update_id
+
+    supplied["gauge"] = "f" * 64
+
+    assert dict(update.calibration_artifact_ids) == CALIBRATION_IDS
+    assert update.update_id == update_id
+    with pytest.raises(TypeError):
+        update.calibration_artifact_ids["gauge"] = "f" * 64  # type: ignore[index]
 
 
 def test_update_contract_rejects_invalid_calibration_digest() -> None:
-    lineage = _lineage()
     with pytest.raises(ValueError, match="calibration artifact"):
-        ClaimBearingProb4DUpdateV1(
-            result=_result(lineage),
-            observation_artifact_id=OBSERVATION_ID,
-            linearization_artifact_id=LINEARIZATION_ID,
-            provider_manifest_id=PROVIDER_ID,
-            calibration_artifact_ids={"gauge": "invalid"},
-            runtime_revision_source="independent-vcs-check",
-            runtime_revision_independently_verified=True,
-        )
+        _update(calibration_artifact_ids={"gauge": "invalid"})
 
 
 def test_update_contract_rejects_missing_and_unnamed_calibration_ids() -> None:
-    lineage = _lineage()
     for calibration_ids, message in (({}, "missing"), ({"": "d" * 64}, "nonempty")):
         with pytest.raises(ValueError, match=message):
-            ClaimBearingProb4DUpdateV1(
-                result=_result(lineage),
-                observation_artifact_id=OBSERVATION_ID,
-                linearization_artifact_id=LINEARIZATION_ID,
-                provider_manifest_id=PROVIDER_ID,
-                calibration_artifact_ids=calibration_ids,
-                runtime_revision_source="independent-vcs-check",
-                runtime_revision_independently_verified=True,
-            )
+            _update(calibration_artifact_ids=calibration_ids)
+
+
+@pytest.mark.parametrize(
+    ("calibration_ids", "message"),
+    [
+        ({1: "d" * 64}, "names must be strings"),
+        ({"gauge": 1}, "digest must be a string"),
+    ],
+)
+def test_update_contract_rejects_nonstring_calibration_entries(
+    calibration_ids: object,
+    message: str,
+) -> None:
+    with pytest.raises(TypeError, match=message):
+        _update(calibration_artifact_ids=calibration_ids)
 
 
 def test_update_contract_rejects_wrong_result_and_runtime_types() -> None:
-    lineage = _lineage()
     with pytest.raises(TypeError, match="GaugeAwareBeliefResult"):
-        ClaimBearingProb4DUpdateV1(
-            result=object(),  # type: ignore[arg-type]
-            observation_artifact_id=OBSERVATION_ID,
-            linearization_artifact_id=LINEARIZATION_ID,
-            provider_manifest_id=PROVIDER_ID,
-            calibration_artifact_ids=CALIBRATION_IDS,
-            runtime_revision_source="independent-vcs-check",
-            runtime_revision_independently_verified=True,
-        )
+        _update(result=object())  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="runtime_revision_source"):
-        ClaimBearingProb4DUpdateV1(
-            result=_result(lineage),
-            observation_artifact_id=OBSERVATION_ID,
-            linearization_artifact_id=LINEARIZATION_ID,
-            provider_manifest_id=PROVIDER_ID,
-            calibration_artifact_ids=CALIBRATION_IDS,
-            runtime_revision_source="",
-            runtime_revision_independently_verified=True,
-        )
+        _update(runtime_revision_source="")
+    with pytest.raises(TypeError, match="runtime_revision_source must be a string"):
+        _update(runtime_revision_source=7)
     with pytest.raises(TypeError, match="must be a bool"):
-        ClaimBearingProb4DUpdateV1(
-            result=_result(lineage),
-            observation_artifact_id=OBSERVATION_ID,
-            linearization_artifact_id=LINEARIZATION_ID,
-            provider_manifest_id=PROVIDER_ID,
-            calibration_artifact_ids=CALIBRATION_IDS,
-            runtime_revision_source="independent-vcs-check",
-            runtime_revision_independently_verified=1,  # type: ignore[arg-type]
-        )
+        _update(runtime_revision_independently_verified=1)
 
 
 def test_update_contract_rejects_unverified_result_lineage() -> None:
     lineage = _lineage(runtime_verified=False)
     with pytest.raises(ValueError, match="lacks independently verified"):
-        ClaimBearingProb4DUpdateV1(
-            result=_result(lineage),
-            observation_artifact_id=OBSERVATION_ID,
-            linearization_artifact_id=LINEARIZATION_ID,
-            provider_manifest_id=PROVIDER_ID,
-            calibration_artifact_ids=CALIBRATION_IDS,
-            runtime_revision_source="independent-vcs-check",
-            runtime_revision_independently_verified=True,
-        )
+        _update(result=_result(lineage))
