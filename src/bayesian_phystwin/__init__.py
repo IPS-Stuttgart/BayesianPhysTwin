@@ -59,8 +59,13 @@ from .grouped_conformal import (
     grouped_conformal_upper_bounds,
 )
 from .grouped_likelihood import (
+    CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS,
+    COVARIANCE_MARGINAL_SCORE_SEMANTICS,
+    ConditionalGroupedStudentTObjectiveConfig,
+    ConditionalGroupedStudentTObjectiveResult,
     GroupedStudentTLikelihoodConfig,
     GroupedStudentTLikelihoodResult,
+    conditional_grouped_student_t_mixture_objective,
     grouped_student_t_mixture_likelihood,
 )
 from .nuisance_aware_information import (
@@ -145,12 +150,17 @@ from .synthetic_benchmark import (
 )
 
 __all__ = [
+    "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
+    "CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS",
+    "COVARIANCE_MARGINAL_SCORE_SEMANTICS",
     "BinaryCalibrationMetrics",
     "BiasAwareStateUpdateConfig",
     "BiasAwareStateUpdateResult",
+    "ClaimBearingProb4DUpdateV1",
     "CompleteBeliefGuardDecisionV1",
     "CompleteBeliefSelectionV1",
-    "ClaimBearingProb4DUpdateV1",
+    "ConditionalGroupedStudentTObjectiveConfig",
+    "ConditionalGroupedStudentTObjectiveResult",
     "ConformalScore",
     "DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1",
     "GaugeAwareBeliefConfig",
@@ -178,7 +188,6 @@ __all__ = [
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefGaugeAdapterResult",
     "ObservationBeliefV1",
-    "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
     "PROB4D_CAUSAL_LINEAGE_VERSION",
     "PROB4D_CAUSAL_STREAM_ID",
     "PROB4D_SOURCE_REPOSITORY",
@@ -209,6 +218,7 @@ __all__ = [
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
     "centered_view_translation_bias_jacobian",
+    "conditional_grouped_student_t_mixture_objective",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
     "evaluate_nonlinear_closure",
@@ -228,8 +238,8 @@ __all__ = [
     "load_physical_linearization",
     "markov_log_evidence_batch",
     "measurement_variance",
-    "reliability_weighted_loss",
     "predict_model_averaged_endpoint",
+    "reliability_weighted_loss",
     "replay_residual_csv",
     "restrict_state_basis_to_identifiable_subspace",
     "robust_mixture_likelihood",
