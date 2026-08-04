@@ -149,10 +149,25 @@ jobs:
           "${PYTHON_BASE}" -m pip install \
             --target "${PYTHON_TARGET}" \
             --upgrade-strategy only-if-needed \
+            "numpy==2.2.6" \
+            "scipy==1.17.1" \
             ".[dev,data]"
           python - <<'PY'
           import importlib.metadata
+          import os
+          from pathlib import Path
 
+          import numpy
+          import scipy
+
+          target = Path(os.environ["PYTHON_TARGET"]).resolve()
+          for module in (numpy, scipy):
+              origin = Path(module.__file__).resolve()
+              if target not in origin.parents:
+                  raise SystemExit(
+                      f"{module.__name__} escaped the isolated target: {origin}"
+                  )
+              print(f"{module.__name__}_origin={origin}")
           for name in ("bayesian-phystwin", "numpy", "pytest", "ruff", "scipy"):
               print(f"{name}=={importlib.metadata.version(name)}")
           PY
