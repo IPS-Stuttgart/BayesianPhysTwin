@@ -17,6 +17,9 @@ import numpy as np
 
 PROBE_SCHEMA = "bayesian-phystwin/deform360-source-hull-probe-v1"
 PROTOCOL_SCHEMA = "bayesian-phystwin/deform360-source-hull-contract-probe-protocol-v1"
+AMENDMENT_SCHEMA = (
+    "bayesian-phystwin/deform360-source-hull-contract-probe-amendment-v2"
+)
 _REQUIRED_MEMBERS = (
     "frame_indices.npy",
     "point_offsets.npy",
@@ -35,6 +38,10 @@ def _is_lower_hex_identity(value: object, *, lengths: tuple[int, ...]) -> bool:
         and len(value) in lengths
         and all(character in "0123456789abcdef" for character in value)
     )
+
+
+def _positive_integer(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -183,13 +190,78 @@ def load_probe_protocol(path: Path) -> dict[str, Any]:
             f"source inventory {field} is invalid",
         )
     for field in ("workflow_run_id", "workflow_artifact_id"):
-        identity = source_inventory.get(field)
         _require(
-            isinstance(identity, int)
-            and not isinstance(identity, bool)
-            and identity > 0,
+            _positive_integer(source_inventory.get(field)),
             f"source inventory {field} is invalid",
         )
+    return payload
+
+
+def load_probe_amendment(
+    path: Path,
+    *,
+    base_protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Load the empty-frame amendment without changing the locked cohort."""
+
+    payload = _load_json(path.resolve())
+    _require(payload.get("schema") == AMENDMENT_SCHEMA, "unexpected amendment schema")
+    _require(payload.get("schema_version") == 1, "unsupported amendment version")
+    config = payload.get("config")
+    _require(isinstance(config, dict), "probe amendment lacks config")
+    expected = payload.get("config_sha256")
+    _require(
+        _is_lower_hex_identity(expected, lengths=(64,))
+        and hashlib.sha256(_canonical_bytes(config)).hexdigest() == expected,
+        "probe amendment config checksum changed",
+    )
+    _require(
+        config.get("amendment_id") == "deform360-source-hull-contract-probe-v2",
+        "unexpected probe amendment identity",
+    )
+    _require(
+        config.get("status")
+        == "locked-after-v1-structural-failure-before-coordinate-access",
+        "probe amendment status changed",
+    )
+    base = config.get("base_protocol")
+    _require(isinstance(base, dict), "probe amendment base binding is missing")
+    _require(
+        base.get("config_sha256") == base_protocol.get("config_sha256"),
+        "probe amendment base protocol checksum changed",
+    )
+    policy = config.get("policy")
+    _require(isinstance(policy, dict), "probe amendment policy is missing")
+    _require(
+        policy.get("point_offsets_order") == "nondecreasing"
+        and policy.get("minimum_points_for_usable_frame") == 1
+        and policy.get("minimum_usable_frames_for_rolling_prediction") == 3
+        and policy.get("cadence_basis")
+        == "strictly increasing frame_indices after empty-frame exclusion"
+        and policy.get("object_balancing_for_future_scoring") is True,
+        "probe amendment policy changed",
+    )
+    boundary = config.get("information_boundary")
+    _require(isinstance(boundary, dict), "amendment information boundary is missing")
+    _require(
+        boundary.get("points_world_m_coordinate_values_decoded") is False
+        and boundary.get("model_prediction_run") is False
+        and boundary.get("score_bearing_outcome_computed") is False
+        and boundary.get("reserved_target_outcomes_opened") is False,
+        "probe amendment information boundary changed",
+    )
+    trigger = config.get("trigger_evidence")
+    _require(isinstance(trigger, dict), "amendment trigger evidence is missing")
+    _require(
+        _is_lower_hex_identity(trigger.get("artifact_sha256"), lengths=(64,))
+        and _is_lower_hex_identity(
+            trigger.get("evaluated_merge_sha"), lengths=(40, 64)
+        )
+        and _positive_integer(trigger.get("workflow_run_id"))
+        and _positive_integer(trigger.get("workflow_job_id"))
+        and _positive_integer(trigger.get("artifact_id")),
+        "probe amendment trigger evidence is invalid",
+    )
     return payload
 
 
@@ -223,6 +295,9 @@ def _probe_archive(
     object_id: str,
     episode_id: int,
     relative_path: str,
+    allow_empty_frames: bool,
+    minimum_points_for_usable_frame: int,
+    minimum_usable_frames: int,
 ) -> dict[str, Any]:
     _require(path.is_file(), f"locked hull archive is missing: {relative_path}")
     with zipfile.ZipFile(path, "r") as archive:
@@ -244,9 +319,8 @@ def _probe_archive(
     _require(frame_indices.ndim == 1, "frame_indices must be one-dimensional")
     _require(len(frame_indices) >= 1, "frame_indices must contain at least one row")
     _require(frame_indices[0] >= 0, "frame_indices must be nonnegative")
-    frame_differences = np.diff(frame_indices)
     _require(
-        np.all(frame_differences > 0),
+        np.all(np.diff(frame_indices) > 0),
         "frame_indices must be strictly increasing",
     )
     _require(point_offsets.ndim == 1, "point_offsets must be one-dimensional")
@@ -255,10 +329,17 @@ def _probe_archive(
         "point_offsets length must equal frame count plus one",
     )
     _require(point_offsets[0] == 0, "point_offsets must start at zero")
-    _require(
-        np.all(np.diff(point_offsets) > 0),
-        "point_offsets must be strictly increasing",
-    )
+    offset_differences = np.diff(point_offsets)
+    if allow_empty_frames:
+        _require(
+            np.all(offset_differences >= 0),
+            "point_offsets must be nondecreasing",
+        )
+    else:
+        _require(
+            np.all(offset_differences > 0),
+            "point_offsets must be strictly increasing",
+        )
     _require(
         len(points_shape) == 2 and points_shape[1] == 3,
         "points_world_m must have shape (N, 3)",
@@ -271,13 +352,17 @@ def _probe_archive(
         int(point_offsets[-1]) == points_shape[0],
         "point_offsets final value differs from points_world_m row count",
     )
-    point_counts = np.diff(point_offsets)
-    _require(
-        np.all(point_counts >= 1),
-        "every sampled visual hull must contain at least one point",
+    point_counts = offset_differences
+    usable_mask = point_counts >= minimum_points_for_usable_frame
+    usable_frame_indices = frame_indices[usable_mask]
+    empty_frame_indices = frame_indices[~usable_mask]
+    usable_differences = np.diff(usable_frame_indices)
+    unique_strides, stride_counts = np.unique(
+        usable_differences,
+        return_counts=True,
     )
-    unique_strides, stride_counts = np.unique(frame_differences, return_counts=True)
-    transition_count = len(frame_differences)
+    transition_count = len(usable_differences)
+    prediction_eligible = len(usable_frame_indices) >= minimum_usable_frames
     return {
         "object_id": object_id,
         "episode_id": episode_id,
@@ -286,21 +371,33 @@ def _probe_archive(
         "archive_size_bytes": int(path.stat().st_size),
         "archive_members": list(members),
         "frame_count": int(len(frame_indices)),
+        "usable_frame_count": int(len(usable_frame_indices)),
+        "empty_frame_count": int(len(empty_frame_indices)),
         "transition_count": int(transition_count),
         "frame_start": int(frame_indices[0]),
         "frame_stop_inclusive": int(frame_indices[-1]),
         "frame_indices": frame_indices.astype(int).tolist(),
+        "usable_frame_indices": usable_frame_indices.astype(int).tolist(),
+        "empty_frame_indices": empty_frame_indices.astype(int).tolist(),
         "frame_stride_counts": {
             str(int(stride)): int(count)
             for stride, count in zip(unique_strides, stride_counts, strict=True)
         },
         "stride_observable": transition_count > 0,
         "constant_frame_stride": len(unique_strides) == 1,
-        "prediction_eligible": len(frame_indices) >= 3,
+        "prediction_eligible": prediction_eligible,
         "prediction_ineligibility_reason": (
             None
-            if len(frame_indices) >= 3
-            else "rolling one-step evaluation requires at least three sampled hulls"
+            if prediction_eligible
+            else (
+                "rolling one-step evaluation requires at least "
+                f"{minimum_usable_frames} nonempty sampled hulls"
+            )
+        ),
+        "empty_frame_policy": (
+            "retained-and-excluded-from-prediction"
+            if allow_empty_frames
+            else "forbidden"
         ),
         "points_world_m_header": {
             "shape": list(points_shape),
@@ -318,6 +415,7 @@ def probe_locked_source_hulls(
     data_root: Path,
     *,
     protocol_path: Path,
+    amendment_path: Path | None = None,
     revision: str | None = None,
 ) -> dict[str, Any]:
     """Probe locked archive contracts and cadence without reading geometry values."""
@@ -327,6 +425,26 @@ def probe_locked_source_hulls(
         raise FileNotFoundError(f"Deform360 data root is missing: {root}")
     protocol_file = protocol_path.expanduser().resolve()
     protocol = load_probe_protocol(protocol_file)
+    amendment: dict[str, Any] | None = None
+    if amendment_path is not None:
+        amendment = load_probe_amendment(
+            amendment_path.expanduser().resolve(),
+            base_protocol=protocol,
+        )
+    if amendment is None:
+        allow_empty_frames = False
+        minimum_points_for_usable_frame = 1
+        minimum_usable_frames = 3
+    else:
+        policy = amendment["config"]["policy"]
+        allow_empty_frames = policy["point_offsets_order"] == "nondecreasing"
+        minimum_points_for_usable_frame = int(
+            policy["minimum_points_for_usable_frame"]
+        )
+        minimum_usable_frames = int(
+            policy["minimum_usable_frames_for_rolling_prediction"]
+        )
+
     config = protocol["config"]
     records: list[dict[str, Any]] = []
     for entry in config["cohort"]["entries"]:
@@ -342,6 +460,9 @@ def probe_locked_source_hulls(
                 object_id=str(entry["object_id"]),
                 episode_id=int(entry["episode_id"]),
                 relative_path=relative_path,
+                allow_empty_frames=allow_empty_frames,
+                minimum_points_for_usable_frame=minimum_points_for_usable_frame,
+                minimum_usable_frames=minimum_usable_frames,
             )
         )
 
@@ -364,11 +485,22 @@ def probe_locked_source_hulls(
         for record in records
         if not record["prediction_eligible"]
     ]
+    empty_frame_archives = [
+        str(record["relative_path"])
+        for record in records
+        if int(record["empty_frame_count"]) > 0
+    ]
     result: dict[str, Any] = {
         "schema": PROBE_SCHEMA,
         "schema_version": 1,
         "protocol_id": config["protocol_id"],
         "protocol_config_sha256": protocol["config_sha256"],
+        "amendment_id": (
+            None if amendment is None else amendment["config"]["amendment_id"]
+        ),
+        "amendment_config_sha256": (
+            None if amendment is None else amendment["config_sha256"]
+        ),
         "repository_revision": revision,
         "dataset_root": str(root),
         "information_boundary": {
@@ -385,6 +517,11 @@ def probe_locked_source_hulls(
         "prediction_eligible_episode_count": len(records) - len(prediction_ineligible),
         "prediction_ineligible_episode_count": len(prediction_ineligible),
         "prediction_ineligible_archives": prediction_ineligible,
+        "empty_frame_archive_count": len(empty_frame_archives),
+        "empty_frame_archives": empty_frame_archives,
+        "total_empty_frame_count": int(
+            sum(int(record["empty_frame_count"]) for record in records)
+        ),
         "all_stride_observable_archives_constant_frame_stride": all_constant,
         "constant_frame_stride_counts": dict(sorted(constant_stride_counts.items())),
         "irregular_frame_stride_archive_count": irregular_count,
@@ -417,6 +554,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
+    parser.add_argument("--amendment", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -426,12 +564,14 @@ def main() -> int:
     result = probe_locked_source_hulls(
         args.data_root,
         protocol_path=args.protocol,
+        amendment_path=args.amendment,
         revision=os.environ.get("GITHUB_SHA"),
     )
     write_probe(args.output, result)
     summary = {
         "content_probe_sha256": result["content_probe_sha256"],
         "probe_sha256": result["probe_sha256"],
+        "amendment_id": result["amendment_id"],
         "object_count": result["object_count"],
         "episode_count": result["episode_count"],
         "prediction_eligible_episode_count": result[
@@ -440,6 +580,8 @@ def main() -> int:
         "prediction_ineligible_episode_count": result[
             "prediction_ineligible_episode_count"
         ],
+        "empty_frame_archive_count": result["empty_frame_archive_count"],
+        "total_empty_frame_count": result["total_empty_frame_count"],
         "all_stride_observable_archives_constant_frame_stride": result[
             "all_stride_observable_archives_constant_frame_stride"
         ],
