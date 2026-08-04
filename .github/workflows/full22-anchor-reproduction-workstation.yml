@@ -30,6 +30,7 @@ env:
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
   FROZEN_SOURCE_REVISION: e393bb6ff61d44815afd8d09dfc5334cb55d5524
+  SOURCE_PROTOCOL_ID: ee11310a84b92ff2158018a13ef09989e641e7c0ea84733fe8a6abf267093c65
   PORTABLE_PROTOCOL_ID: 5d31b04c464478d839ac3919ec04209b5ff22c75cf7fe8de54a6d189a4802872
 
 jobs:
@@ -87,6 +88,7 @@ jobs:
             echo "repository=${GITHUB_REPOSITORY}"
             echo "evaluated_revision=${GITHUB_SHA}"
             echo "frozen_source_revision=${FROZEN_SOURCE_REVISION}"
+            echo "source_protocol_id=${SOURCE_PROTOCOL_ID}"
             echo "portable_protocol_id=${PORTABLE_PROTOCOL_ID}"
             python --version
             uname -a
@@ -192,7 +194,8 @@ jobs:
           method_lock = json.loads(
               (root / "method_lock.json").read_text(encoding="utf-8")
           )
-          expected_protocol_id = os.environ["PORTABLE_PROTOCOL_ID"]
+          expected_source_protocol_id = os.environ["SOURCE_PROTOCOL_ID"]
+          expected_portable_protocol_id = os.environ["PORTABLE_PROTOCOL_ID"]
           if verification["status"] != "verified":
               raise SystemExit("metric verification did not pass")
           if verification["check_count"] != 8:
@@ -201,15 +204,18 @@ jobs:
               "f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc"
           ):
               raise SystemExit("portable data identity changed")
-          if method_lock["protocol_id"] != expected_protocol_id:
+          if method_lock["source_protocol_id"] != expected_source_protocol_id:
+              raise SystemExit("historical source protocol identity changed")
+          if method_lock["portable_protocol_id"] != expected_portable_protocol_id:
               raise SystemExit("portable protocol identity changed")
-          if method_lock["raw_runtime_protocol_id"] == expected_protocol_id:
+          if method_lock["runtime_protocol_id"] == expected_portable_protocol_id:
               raise SystemExit("raw path-bound protocol ID was not retained separately")
           summary = {
               "data_identity_sha256": identity["identity_sha256"],
               "metric_check_count": verification["check_count"],
-              "portable_protocol_id": method_lock["protocol_id"],
-              "raw_runtime_protocol_id": method_lock["raw_runtime_protocol_id"],
+              "portable_protocol_id": method_lock["portable_protocol_id"],
+              "runtime_protocol_id": method_lock["runtime_protocol_id"],
+              "source_protocol_id": method_lock["source_protocol_id"],
               "status": verification["status"],
           }
           (Path(os.environ["OUTPUT_ROOT"]) / "scientific-readout.json").write_text(
