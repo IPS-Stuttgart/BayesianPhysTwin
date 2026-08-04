@@ -47,30 +47,39 @@ def _load_frozen_upstream(repo: Path) -> dict[str, Any]:
     """Load numerical modules only from the separately checksummed runtime."""
 
     upstream_root = repo.resolve() / "src"
-    if str(upstream_root) not in sys.path:
-        sys.path.insert(0, str(upstream_root))
-    import causal4d_public
-
     import bayesian_phystwin
 
     causal_path = upstream_root / "causal4d_public"
     bayesian_path = upstream_root / "bayesian_phystwin"
     _require(causal_path.is_dir(), "frozen causal4d_public package is missing")
     _require(bayesian_path.is_dir(), "frozen bayesian_phystwin package is missing")
-    _require(
-        "bayesian_phystwin.phystwin_graph" not in sys.modules,
-        "local PhysTwin graph loaded before frozen runtime binding",
-    )
-    if str(causal_path) not in causal4d_public.__path__:
-        causal4d_public.__path__.insert(0, str(causal_path))
     if str(bayesian_path) not in bayesian_phystwin.__path__:
         bayesian_phystwin.__path__.insert(0, str(bayesian_path))
+    loaded_graph = sys.modules.get("bayesian_phystwin.phystwin_graph")
+    if loaded_graph is not None:
+        loaded_path = Path(str(getattr(loaded_graph, "__file__", ""))).resolve()
+        _require(
+            loaded_path == (bayesian_path / "phystwin_graph.py").resolve(),
+            "nonfrozen PhysTwin graph loaded before runtime binding",
+        )
+    if str(upstream_root) not in sys.path:
+        sys.path.insert(0, str(upstream_root))
+    import causal4d_public
+
+    if str(causal_path) not in causal4d_public.__path__:
+        causal4d_public.__path__.insert(0, str(causal_path))
     dense = importlib.import_module("causal4d_public.deform360_dense_reusable_panel")
     independent = importlib.import_module(
         "causal4d_public.deform360_independent_source"
     )
     partial = importlib.import_module("causal4d_public.deform360_partial_graph_state")
     graph = importlib.import_module("causal4d_public.deform360_reusable_graph")
+    graph_runtime = importlib.import_module("bayesian_phystwin.phystwin_graph")
+    _require(
+        Path(str(graph_runtime.__file__)).resolve()
+        == (bayesian_path / "phystwin_graph.py").resolve(),
+        "PhysTwin graph did not bind to the frozen numerical tree",
+    )
     return {
         "load_dense_reusable_panel_config": dense.load_dense_reusable_panel_config,
         "validate_prediction_only_bundle": independent.validate_prediction_only_bundle,
