@@ -1,0 +1,64 @@
+name: Materialize controlled decisive study
+
+on:
+  push:
+    branches:
+      - agent/prob4d-bpt-controlled-decisive-v1
+    paths:
+      - ".publisher/**"
+      - ".github/workflows/materialize-prob4d-bpt-controlled-decisive.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out publication branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/prob4d-bpt-controlled-decisive-v1
+          fetch-depth: 0
+      - name: Materialize reviewed product files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          from pathlib import Path
+          import zlib
+
+          outputs = {
+              "core": "scripts/science/prob4d_bpt_controlled_decisive_core_v1.py",
+              "runner": "scripts/science/run_prob4d_bpt_controlled_decisive_v1.py",
+              "workflow": ".github/workflows/prob4d-bpt-controlled-decisive.yml",
+              "protocol": "protocols/prob4d_bpt_controlled_decisive_v1.json",
+              "test": "tests/test_prob4d_bpt_controlled_decisive_v1.py",
+              "doc": "docs/prob4d_bpt_controlled_decisive_v1.md",
+          }
+          for name, destination_text in outputs.items():
+              destination = Path(destination_text)
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              payload = Path(f".publisher/{name}.zlib.b64")
+              destination.write_bytes(
+                  zlib.decompress(base64.b64decode(payload.read_bytes()))
+              )
+          PY
+          rm -rf .publisher
+          rm .github/workflows/materialize-prob4d-bpt-controlled-decisive.yml
+          python -m py_compile \
+            scripts/science/prob4d_bpt_controlled_decisive_core_v1.py \
+            scripts/science/run_prob4d_bpt_controlled_decisive_v1.py \
+            tests/test_prob4d_bpt_controlled_decisive_v1.py
+          git diff --check
+      - name: Publish clean product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Materialize controlled Prob4D-to-BPT study"
+          git push origin HEAD:agent/prob4d-bpt-controlled-decisive-v1
