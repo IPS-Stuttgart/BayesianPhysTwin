@@ -6,6 +6,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_artifacts import (
+    build_fresh_prediction_cohort,
+    build_fresh_prediction_failure_seal,
+    build_fresh_processing_cohort,
+)
 from bayesian_phystwin.deform360_pairwise_regret_guard_fresh_processing import (
     build_fresh_processing_protocol,
     validate_fresh_processing_protocol,
@@ -67,6 +72,25 @@ def _parser() -> argparse.ArgumentParser:
     runtime.add_argument("--failed-log", required=True, type=Path)
     runtime.add_argument("--runtime-identity", required=True, type=Path)
     runtime.add_argument("--validator-commit", required=True)
+
+    cohort = subparsers.add_parser("processing-cohort")
+    cohort.add_argument("output", type=Path)
+    cohort.add_argument("--technical-lock", required=True, type=Path)
+    cohort.add_argument("--processing-protocol", required=True, type=Path)
+    cohort.add_argument("--processed-root", required=True, type=Path)
+
+    failure = subparsers.add_parser("prediction-failure")
+    failure.add_argument("output", type=Path)
+    failure.add_argument("--technical-lock", required=True, type=Path)
+    failure.add_argument("--processing-protocol", required=True, type=Path)
+    failure.add_argument("--processing-cohort", required=True, type=Path)
+    failure.add_argument("--object-id", required=True)
+    failure.add_argument("--episode-id", required=True, type=int)
+
+    barrier = subparsers.add_parser("prediction-cohort")
+    barrier.add_argument("output", type=Path)
+    barrier.add_argument("--technical-lock", required=True, type=Path)
+    barrier.add_argument("--prediction-root", required=True, type=Path)
     return parser
 
 
@@ -104,7 +128,7 @@ def main() -> None:
             implementation_commit=args.implementation_commit,
         )
         validate_fresh_processing_protocol(artifact)
-    else:
+    elif args.command == "runtime-lock":
         artifact = build_fresh_runtime_amendment(
             args.processing_protocol,
             args.failed_artifact,
@@ -113,6 +137,27 @@ def main() -> None:
             validator_commit=args.validator_commit,
         )
         validate_fresh_runtime_amendment(artifact)
+    elif args.command == "processing-cohort":
+        artifact = build_fresh_processing_cohort(
+            args.technical_lock,
+            args.processing_protocol,
+            args.processed_root,
+        )
+    elif args.command == "prediction-failure":
+        artifact = build_fresh_prediction_failure_seal(
+            args.technical_lock,
+            args.processing_protocol,
+            args.processing_cohort,
+            args.output,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+        )
+        return
+    else:
+        artifact = build_fresh_prediction_cohort(
+            args.technical_lock,
+            args.prediction_root,
+        )
     write_json_artifact(artifact, args.output)
 
 
