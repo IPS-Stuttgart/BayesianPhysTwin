@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import csv
+import hashlib
 import importlib.util
+import json
 from pathlib import Path
 from types import ModuleType
 
@@ -11,6 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = (
     ROOT / "scripts" / "science" / "run_full22_endpoint_model_average_diagnostic.py"
 )
+RESULT_ROOT = ROOT / "results" / "diagnostics" / "full22_endpoint_model_average_v1"
+PROTOCOL = ROOT / "protocols" / "full22_endpoint_model_average_diagnostic_v1.json"
+PROTOCOL_SHA256 = "8c4021f082b03ef761bc97300eeac11b6f3f92a2bdc52c1941020f6c1f340217"
+HOSTED_CSV_SHA256 = "19184cfefe707ed49739a18ee667402cfea24b46297f0217d2edcd85d5fc3b31"
+REPOSITORY_CSV_SHA256 = "ac37b5004987f94145dbca6ea8e08d60582f4fac323a5b5ae9cdcaa578eafa1d"
 
 
 def _load_script() -> ModuleType:
@@ -119,3 +127,42 @@ def test_case_csv_uses_repository_stable_lf_line_endings(
     raw = output.read_bytes()
     assert b"\r\n" not in raw
     assert raw.count(b"\n") == 2
+
+
+def test_committed_evidence_has_locked_byte_identity_and_claim_boundary() -> None:
+    protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    protocol_digest = hashlib.sha256(
+        json.dumps(
+            protocol,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    assert protocol_digest == PROTOCOL_SHA256
+
+    manifest = json.loads(
+        (RESULT_ROOT / "artifact_manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["protocol_sha256"] == PROTOCOL_SHA256
+    assert manifest["repository_per_case_csv_line_endings"] == "LF"
+
+    per_case = RESULT_ROOT / "per_case.csv"
+    raw = per_case.read_bytes()
+    assert b"\r\n" not in raw
+    repository_digest = hashlib.sha256(raw).hexdigest()
+    hosted_digest = hashlib.sha256(raw.replace(b"\n", b"\r\n")).hexdigest()
+    assert repository_digest == REPOSITORY_CSV_SHA256
+    assert repository_digest == manifest["repository_per_case_csv_sha256"]
+    assert hosted_digest == HOSTED_CSV_SHA256
+    assert hosted_digest == manifest["hosted_per_case_csv_sha256"]
+    assert hosted_digest == manifest["per_case_csv_sha256"]
+
+    with per_case.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    assert len(rows) == 22
+
+    readout = json.loads((RESULT_ROOT / "readout.json").read_text(encoding="utf-8"))
+    assert readout["protocol_sha256"] == PROTOCOL_SHA256
+    assert readout["classification"] == "retrospective-non-claim-bearing-diagnostic"
+    assert readout["confirmation_19"]["case_count"] == 19
