@@ -1,0 +1,216 @@
+{
+  "action": "squeeze side",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshMeasurementPanel",
+  "bimanual": "yes",
+  "calibration": {
+    "source_extrinsics_file_sha256": "3cdfe824b3b4dd0b48f993c0b1961e8a5a67ffb25e4414483afae6f77cf1566b",
+    "source_intrinsics_file_sha256": "c161e7b2ebc72da57f666706066203b2b5936ab3d6a8a16ab395fc1d34691d0f",
+    "staged_extrinsics_file_sha256": "4cc963df5efa9b98b03cf2d914474ee67609edcbed0c4c9299f7454f02e5d401",
+    "staged_intrinsics_file_sha256": "258e06e3061fbbb55ce0391ec7b4f5dfa2e58663edf59b48147c0073d8e6f794"
+  },
+  "camera_count": 10,
+  "camera_inputs": {
+    "brics-odroid-001_cam0": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-001_cam0/mask_refined.h5",
+        "source_size_bytes": 217093,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-001_cam0/rendered_depth.h5",
+        "source_size_bytes": 157337,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-001_cam0/undistorted.mp4",
+        "source_size_bytes": 2911706,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-006_cam0": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-006_cam0/mask_refined.h5",
+        "source_size_bytes": 249033,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-006_cam0/rendered_depth.h5",
+        "source_size_bytes": 169340,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-006_cam0/undistorted.mp4",
+        "source_size_bytes": 3246747,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-007_cam0": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-007_cam0/mask_refined.h5",
+        "source_size_bytes": 172480,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-007_cam0/rendered_depth.h5",
+        "source_size_bytes": 157337,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-007_cam0/undistorted.mp4",
+        "source_size_bytes": 2133856,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-008_cam0": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-008_cam0/mask_refined.h5",
+        "source_size_bytes": 253426,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-008_cam0/rendered_depth.h5",
+        "source_size_bytes": 313741,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-008_cam0/undistorted.mp4",
+        "source_size_bytes": 1788718,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-010_cam0": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-010_cam0/mask_refined.h5",
+        "source_size_bytes": 394164,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-010_cam0/rendered_depth.h5",
+        "source_size_bytes": 1672519,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-010_cam0/undistorted.mp4",
+        "source_size_bytes": 2388418,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-013_cam0": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-013_cam0/mask_refined.h5",
+        "source_size_bytes": 170774,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-013_cam0/rendered_depth.h5",
+        "source_size_bytes": 157337,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-013_cam0/undistorted.mp4",
+        "source_size_bytes": 1513426,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-014_cam1": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-014_cam1/mask_refined.h5",
+        "source_size_bytes": 303238,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-014_cam1/rendered_depth.h5",
+        "source_size_bytes": 323427,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-014_cam1/undistorted.mp4",
+        "source_size_bytes": 2462041,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-015_cam1": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-015_cam1/mask_refined.h5",
+        "source_size_bytes": 310586,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-015_cam1/rendered_depth.h5",
+        "source_size_bytes": 1010034,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-015_cam1/undistorted.mp4",
+        "source_size_bytes": 2197376,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-019_cam1": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-019_cam1/mask_refined.h5",
+        "source_size_bytes": 380003,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-019_cam1/rendered_depth.h5",
+        "source_size_bytes": 2266235,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-019_cam1/undistorted.mp4",
+        "source_size_bytes": 1926598,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    },
+    "brics-odroid-021_cam1": {
+      "mask_refined.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-021_cam1/mask_refined.h5",
+        "source_size_bytes": 254672,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "rendered_depth.h5": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-021_cam1/rendered_depth.h5",
+        "source_size_bytes": 333677,
+        "whole_file_hashed_or_read_during_staging": false
+      },
+      "undistorted.mp4": {
+        "source_path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/brics-odroid-021_cam1/undistorted.mp4",
+        "source_size_bytes": 2232628,
+        "whole_file_hashed_or_read_during_staging": false
+      }
+    }
+  },
+  "cameras": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-006_cam0",
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam0",
+    "brics-odroid-010_cam0",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1"
+  ],
+  "case": "197-hand-sanitizer-ep0008",
+  "episode_id": 8,
+  "information_boundary": {
+    "camera_panel_derived_from_outcome_blind_processing": true,
+    "future_video_or_hdf5_bytes_read_during_staging": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_manifest_read": false,
+    "target_or_metric_read": false
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "result_sha256": "6091727345917c62c23e881071d85e681f29f1232512276fe266f253972028bc",
+  "schema_version": 1,
+  "source_processing": {
+    "file_sha256": "5616f4aa48e110d0fdd409d8d8e7fc05511cd32dbcefca553989fe4a7c74072c",
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/fresh_pairwise_processing.json",
+    "result_sha256": "fc8e50d680baf3dbe4e22344202f644d98a6dffc69c52b2f6cd0d5f2e2e771a7"
+  },
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}

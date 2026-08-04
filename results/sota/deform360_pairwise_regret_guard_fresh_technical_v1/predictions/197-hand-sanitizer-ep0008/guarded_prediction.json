@@ -1,0 +1,495 @@
+{
+  "action": "squeeze side",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshPrediction",
+  "bimanual": "yes",
+  "candidate": {
+    "arm": "selected_pairwise_causal_regret_candidate",
+    "baseline_selection": {
+      "information_boundary": {
+        "future_observation_read": false,
+        "selection_uses_current_update_observation_only": true,
+        "target_argument_accepted": false
+      },
+      "minimum_support": 3,
+      "tie_break": "physical_prior",
+      "updates": [
+        {
+          "available_center_count": 1,
+          "current_observation_chamfer_m": {
+            "persistence": 0.0017657660321480906,
+            "physical_prior": 0.0017678597287886784
+          },
+          "decision": "insufficient_support_persistence_default",
+          "frame": 19,
+          "interval_end_exclusive": 38,
+          "selected_backbone": "persistence",
+          "support_sufficient": false
+        },
+        {
+          "available_center_count": 1,
+          "current_observation_chamfer_m": {
+            "persistence": 0.015657540298961724,
+            "physical_prior": 0.015656897416605288
+          },
+          "decision": "insufficient_support_persistence_default",
+          "frame": 38,
+          "interval_end_exclusive": 57,
+          "selected_backbone": "persistence",
+          "support_sufficient": false
+        },
+        {
+          "available_center_count": 0,
+          "current_observation_chamfer_m": {
+            "persistence": null,
+            "physical_prior": null
+          },
+          "decision": "insufficient_support_persistence_default",
+          "frame": 57,
+          "interval_end_exclusive": 76,
+          "selected_backbone": "persistence",
+          "support_sufficient": false
+        }
+      ]
+    },
+    "candidate_available_count": 0,
+    "config": {
+      "maximum_correction_to_physical_response": 2.0,
+      "minimum_camera_panel_count": 3,
+      "minimum_motion_center_count": 3,
+      "minimum_observed_motion_m": 0.0005,
+      "minimum_physical_agreement_gain": 0.0,
+      "minimum_physical_support_m": 0.0005,
+      "minimum_redundant_center_count": 0,
+      "minimum_triangulation_view_count": 2,
+      "redundant_view_count": 3,
+      "reprojection_scale_px": 3.0,
+      "update_frames": [
+        19,
+        38,
+        57
+      ]
+    },
+    "feature_names": [
+      "physical_response_rms_over_scale",
+      "observed_motion_rms_over_scale",
+      "future_physical_response_rms_over_scale",
+      "innovation_rms_over_scale",
+      "correction_rms_over_scale",
+      "correction_to_physical_response",
+      "physical_to_observed_motion_ratio",
+      "physical_agreement_gain",
+      "physical_observed_cosine",
+      "common_mode_fraction",
+      "redundant_center_fraction",
+      "median_reprojection_over_scale",
+      "pairwise_inlier_fraction",
+      "pairwise_compatible_pair_fraction",
+      "selected_backbone_is_physical",
+      "selected_backbone_chamfer_margin_over_scale"
+    ],
+    "information_boundary": {
+      "camera_panel_is_bound_by_unique_identity": true,
+      "future_observation_read": false,
+      "future_physical_rollout_read": true,
+      "future_physical_rollout_role": "action-conditioned support and correction bound only",
+      "outcome_argument_accepted": false,
+      "target_argument_accepted": false,
+      "two_view_rows_are_not_counted_as_three_view_redundancy": true
+    },
+    "pairwise_candidate": {
+      "arm": "persistence_full_blend_rbf_pairwise_clique",
+      "belief_config": {
+        "degrees_of_freedom": 4.0,
+        "global_prior_std_m": 0.1,
+        "length_scale_fraction": 0.1,
+        "local_blend": 1.0,
+        "local_prior_std_m": 0.02,
+        "maximum_correction_m": 0.1,
+        "minimum_length_scale_m": 0.0001,
+        "minimum_reliability": 0.02,
+        "observation_std_m": 0.005,
+        "process_std_m_per_sqrt_frame": 0.003
+      },
+      "center_ids": [
+        17,
+        333,
+        170,
+        248,
+        69,
+        199,
+        196,
+        259,
+        293,
+        238,
+        104,
+        55,
+        50,
+        294,
+        290,
+        79
+      ],
+      "gate_config": {
+        "absolute_pair_strain_m": 0.03,
+        "maximum_exact_center_count": 24,
+        "minimum_inlier_count": 9,
+        "minimum_inlier_fraction": 0.7,
+        "relative_pair_strain": 0.1
+      },
+      "information_boundary": {
+        "future_dense_reconstruction_read": false,
+        "future_particle_tracks_read": false,
+        "physical_prior_argument_accepted": false,
+        "target_argument_accepted": false
+      },
+      "update_frames": [
+        19,
+        38,
+        57
+      ],
+      "updates": [
+        {
+          "accepted": false,
+          "available_center_count": 1,
+          "belief_reliability": null,
+          "bit_exact_persistence_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient_selector_support",
+          "frame": 19,
+          "inlier_count": 0,
+          "inlier_fraction": 0.0,
+          "interval_end_exclusive": 38,
+          "selector_support_sufficient": false
+        },
+        {
+          "accepted": false,
+          "available_center_count": 1,
+          "belief_reliability": null,
+          "bit_exact_persistence_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient_selector_support",
+          "frame": 38,
+          "inlier_count": 0,
+          "inlier_fraction": 0.0,
+          "interval_end_exclusive": 57,
+          "selector_support_sufficient": false
+        },
+        {
+          "accepted": false,
+          "available_center_count": 0,
+          "belief_reliability": null,
+          "bit_exact_persistence_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient_selector_support",
+          "frame": 57,
+          "inlier_count": 0,
+          "inlier_fraction": 0.0,
+          "interval_end_exclusive": 76,
+          "selector_support_sufficient": false
+        }
+      ]
+    },
+    "updates": [
+      {
+        "applied_correction_scale": 1.0,
+        "bit_exact_baseline_fallback": true,
+        "candidate_available": false,
+        "causal_motion_center_count": 1,
+        "common_mode_fraction": 1.0,
+        "correction_rms_m": 0.0,
+        "correction_to_physical_response": 0.0,
+        "decision": "causal-support-exact-baseline-fallback",
+        "feature_names": [
+          "physical_response_rms_over_scale",
+          "observed_motion_rms_over_scale",
+          "future_physical_response_rms_over_scale",
+          "innovation_rms_over_scale",
+          "correction_rms_over_scale",
+          "correction_to_physical_response",
+          "physical_to_observed_motion_ratio",
+          "physical_agreement_gain",
+          "physical_observed_cosine",
+          "common_mode_fraction",
+          "redundant_center_fraction",
+          "median_reprojection_over_scale",
+          "pairwise_inlier_fraction",
+          "pairwise_compatible_pair_fraction",
+          "selected_backbone_is_physical",
+          "selected_backbone_chamfer_margin_over_scale"
+        ],
+        "features": [
+          3.468260946477282e-05,
+          0.0030946791144006087,
+          0.001633296156938115,
+          0.0030983485242474136,
+          0.0,
+          0.0,
+          0.01120717469652433,
+          0.0,
+          -0.10025884174910932,
+          1.0,
+          0.0,
+          0.5007725556691488,
+          0.0,
+          0.0,
+          0.0,
+          3.6694098468048214e-06
+        ],
+        "frame": 19,
+        "future_physical_response_rms_m": 0.0009319282444952068,
+        "interval_end_exclusive": 38,
+        "observed_motion_rms_m": 0.0017657660321480906,
+        "pairwise_update": {
+          "accepted": false,
+          "available_center_count": 1,
+          "belief_reliability": null,
+          "bit_exact_persistence_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient_selector_support",
+          "frame": 19,
+          "inlier_count": 0,
+          "inlier_fraction": 0.0,
+          "interval_end_exclusive": 38,
+          "selector_support_sufficient": false
+        },
+        "physical_agreement_gain": 0.0,
+        "physical_response_rms_m": 1.9789248395472248e-05,
+        "redundant_center_count": 0,
+        "rejection_reasons": [
+          "pairwise-consensus-rejected",
+          "insufficient-causal-motion-support"
+        ],
+        "selected_backbone": "persistence"
+      },
+      {
+        "applied_correction_scale": 1.0,
+        "bit_exact_baseline_fallback": true,
+        "candidate_available": false,
+        "causal_motion_center_count": 1,
+        "common_mode_fraction": 1.0,
+        "correction_rms_m": 0.0,
+        "correction_to_physical_response": 0.0,
+        "decision": "causal-support-exact-baseline-fallback",
+        "feature_names": [
+          "physical_response_rms_over_scale",
+          "observed_motion_rms_over_scale",
+          "future_physical_response_rms_over_scale",
+          "innovation_rms_over_scale",
+          "correction_rms_over_scale",
+          "correction_to_physical_response",
+          "physical_to_observed_motion_ratio",
+          "physical_agreement_gain",
+          "physical_observed_cosine",
+          "common_mode_fraction",
+          "redundant_center_fraction",
+          "median_reprojection_over_scale",
+          "pairwise_inlier_fraction",
+          "pairwise_compatible_pair_fraction",
+          "selected_backbone_is_physical",
+          "selected_backbone_chamfer_margin_over_scale"
+        ],
+        "features": [
+          1.1557322412372502e-05,
+          0.02477395821004353,
+          0.00855546578498992,
+          0.02744025683433103,
+          0.0,
+          0.0,
+          0.0004665109351676829,
+          0.0,
+          0.3806469998923187,
+          1.0,
+          0.0,
+          0.6247657934824625,
+          0.0,
+          0.0,
+          0.0,
+          -1.126714731883529e-06
+        ],
+        "frame": 38,
+        "future_physical_response_rms_m": 0.004881588789623631,
+        "interval_end_exclusive": 57,
+        "observed_motion_rms_m": 0.014135557281396493,
+        "pairwise_update": {
+          "accepted": false,
+          "available_center_count": 1,
+          "belief_reliability": null,
+          "bit_exact_persistence_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient_selector_support",
+          "frame": 38,
+          "inlier_count": 0,
+          "inlier_fraction": 0.0,
+          "interval_end_exclusive": 57,
+          "selector_support_sufficient": false
+        },
+        "physical_agreement_gain": 0.0,
+        "physical_response_rms_m": 6.594392046460627e-06,
+        "redundant_center_count": 0,
+        "rejection_reasons": [
+          "pairwise-consensus-rejected",
+          "insufficient-causal-motion-support"
+        ],
+        "selected_backbone": "persistence"
+      },
+      {
+        "applied_correction_scale": 1.0,
+        "bit_exact_baseline_fallback": true,
+        "candidate_available": false,
+        "causal_motion_center_count": 0,
+        "common_mode_fraction": 0.0,
+        "correction_rms_m": 0.0,
+        "correction_to_physical_response": 0.0,
+        "decision": "causal-support-exact-baseline-fallback",
+        "feature_names": [
+          "physical_response_rms_over_scale",
+          "observed_motion_rms_over_scale",
+          "future_physical_response_rms_over_scale",
+          "innovation_rms_over_scale",
+          "correction_rms_over_scale",
+          "correction_to_physical_response",
+          "physical_to_observed_motion_ratio",
+          "physical_agreement_gain",
+          "physical_observed_cosine",
+          "common_mode_fraction",
+          "redundant_center_fraction",
+          "median_reprojection_over_scale",
+          "pairwise_inlier_fraction",
+          "pairwise_compatible_pair_fraction",
+          "selected_backbone_is_physical",
+          "selected_backbone_chamfer_margin_over_scale"
+        ],
+        "features": [
+          0.0,
+          0.0,
+          0.02577062533168083,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "frame": 57,
+        "future_physical_response_rms_m": 0.014704236903318076,
+        "interval_end_exclusive": 76,
+        "observed_motion_rms_m": 0.0,
+        "pairwise_update": {
+          "accepted": false,
+          "available_center_count": 0,
+          "belief_reliability": null,
+          "bit_exact_persistence_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient_selector_support",
+          "frame": 57,
+          "inlier_count": 0,
+          "inlier_fraction": 0.0,
+          "interval_end_exclusive": 76,
+          "selector_support_sufficient": false
+        },
+        "physical_agreement_gain": 0.0,
+        "physical_response_rms_m": 0.0,
+        "redundant_center_count": 0,
+        "rejection_reasons": [
+          "pairwise-consensus-rejected",
+          "insufficient-causal-motion-support",
+          "observed-motion-too-small"
+        ],
+        "selected_backbone": "persistence"
+      }
+    ]
+  },
+  "case": "197-hand-sanitizer-ep0008",
+  "episode_id": 8,
+  "episode_key": "197-hand-sanitizer/8",
+  "information_boundary": {
+    "fresh_data_refit": false,
+    "future_camera_or_object_observation_used": false,
+    "future_physical_rollout_used_for_action_support_only": true,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_manifest_read": false,
+    "prediction_hashed_before_outcome": true,
+    "target_or_metric_argument_accepted": false
+  },
+  "inputs": {
+    "measurement_archive_file_sha256": "9d300f742f4c5c1487942686a0cbdc3f391e213d96c373a46e269dd5e78f1ffb",
+    "measurement_manifest_file_sha256": "a6b6059ce8880fb53971eb3c7c9fb5428ad00e9bb4c36536ed9cd8ab99ab066b",
+    "measurement_result_sha256": "29ee3fd9131c3aa0d11579762e9b0e1dd6d02c4cc1ba3b8da13295918898c393",
+    "physical_seal_file_sha256": "a49f6a93a2cdcbce16d2f207d99cd93490df3f23970c2484a2ddddec43ecddfc",
+    "physical_seal_result_sha256": "152b5f58ec9fe2cc9e2949d6a5d18e521c11fc5d41a7157f7dcef81883903bc2",
+    "processing_protocol_file_sha256": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b",
+    "technical_lock_file_sha256": "b1c481c09d3d51ab3bf23a585dda4a9ea730bfd9292165e00a976a6c6ab10c03"
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "output": {
+    "accepted_interval_count": 0,
+    "baseline_array_sha256": "6aa9f0ee67a80a3a11a37c26f09a4daf4102f8a9c518dbfa7855636c6612eb09",
+    "candidate_array_sha256": "6aa9f0ee67a80a3a11a37c26f09a4daf4102f8a9c518dbfa7855636c6612eb09",
+    "exact_fallback_interval_count": 3,
+    "file_sha256": "9be3e15b7b5505277f46a31b9249010a5441f67466a684defafdd8d7e1542a8d",
+    "prediction_archive": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/predictions-v1/197-hand-sanitizer-ep0008/guarded_prediction.npz",
+    "prediction_array_sha256": "6aa9f0ee67a80a3a11a37c26f09a4daf4102f8a9c518dbfa7855636c6612eb09"
+  },
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "regret_guard": {
+    "accepted_count": 0,
+    "arm": "selected_pairwise_causal_regret_guarded",
+    "decisions": [
+      {
+        "bit_exact_baseline_fallback": true,
+        "candidate_accepted": false,
+        "candidate_available": false,
+        "frame": 19,
+        "in_source_support": null,
+        "interval_end_exclusive": 38,
+        "predicted_regret_m": null,
+        "reason": "candidate-unavailable-exact-baseline-fallback",
+        "upper_regret_m": null
+      },
+      {
+        "bit_exact_baseline_fallback": true,
+        "candidate_accepted": false,
+        "candidate_available": false,
+        "frame": 38,
+        "in_source_support": null,
+        "interval_end_exclusive": 57,
+        "predicted_regret_m": null,
+        "reason": "candidate-unavailable-exact-baseline-fallback",
+        "upper_regret_m": null
+      },
+      {
+        "bit_exact_baseline_fallback": true,
+        "candidate_accepted": false,
+        "candidate_available": false,
+        "frame": 57,
+        "in_source_support": null,
+        "interval_end_exclusive": 76,
+        "predicted_regret_m": null,
+        "reason": "candidate-unavailable-exact-baseline-fallback",
+        "upper_regret_m": null
+      }
+    ],
+    "exact_fallback_count": 3,
+    "information_boundary": {
+      "missing_certificate_policy": "bit-exact baseline fallback",
+      "outcome_argument_accepted": false,
+      "target_argument_accepted": false
+    }
+  },
+  "result_sha256": "1a39ffb3bcdd192f11578ac4d0dd9ac944ec1f52d5f99ac886710b2326be660d",
+  "schema_version": 1,
+  "source_certificate": {
+    "calibrated_safety_claim_allowed": false,
+    "finite_sample_coverage": 0.5,
+    "qualification_file_sha256": "9fbc744deada239b1279827e762bfbabb32abe8b9d3a6ff68bd984ad22e710a3",
+    "refit_on_fresh_data": false
+  },
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}

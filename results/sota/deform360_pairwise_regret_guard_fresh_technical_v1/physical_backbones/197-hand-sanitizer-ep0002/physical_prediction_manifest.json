@@ -1,0 +1,150 @@
+{
+  "action": "lift center",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshPhysicalPrediction",
+  "bimanual": "no",
+  "case": "197-hand-sanitizer-ep0002",
+  "episode_id": 2,
+  "episode_key": "197-hand-sanitizer/2",
+  "fallback_diagnostics": null,
+  "information_boundary": {
+    "future_object_geometry_read": false,
+    "future_object_rgb_read": false,
+    "future_object_track_read": false,
+    "future_tactile_read": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "known_future_robot_action_read": true,
+    "object_observation_frames_used": [
+      0
+    ],
+    "outcome_read": false,
+    "prediction_hashed_before_future_outcome_scoring": true
+  },
+  "input_files": {
+    "automatic_twin_log": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/logs/automatic_twin.log",
+      "sha256": "abc27e5ce2aaa1cf46a07fb6e3ccd95ea9e91f81fc68f8aae894d1ccade22d1a"
+    },
+    "driven_result": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/warp_driven/official_phystwin_smoke.json",
+      "sha256": "065f02201510a5ce03a3b00e89c8f6624692fe8a90c0e8e1d0bcf987450c2e7b"
+    },
+    "driven_trajectory": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/warp_driven/official_phystwin_trajectory.npz",
+      "sha256": "dd3e87138287cc8458d51f008a3630806c39b7d305200e0892af5c854e77336a"
+    },
+    "episode_graph": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/episode_graph.npz",
+      "sha256": "969e7099af2cd09afaa84e7836b7cf2b98681b2cfc257b7e0b32c9052bdf3c28"
+    },
+    "frame_zero_geometry": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/frame_zero_points.npz",
+      "sha256": "bd9224af26607eb4a3d3d5af8eed0d6be2fbbd35473305ad2088c87d34a2553e"
+    },
+    "frame_zero_source": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0002/start_obj_pcd.ply",
+      "sha256": "2caa65462d7cf721167ec151a05d7312fbe0da7ebe819c65a7de8c652e28c2a3"
+    },
+    "known_action": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/known_action_76.npz",
+      "sha256": "414e1c459cb58cad322defee69c25c28194d46e729ec077f36d0babcc9de4617"
+    },
+    "known_action_source": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0002/robot/robot.npz",
+      "sha256": "5d4e78f1f6826e9ae56dc2ae24c76bdee6d06aa1e89874c2dcc543a737f2b3e9"
+    },
+    "prediction_only_input": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/prediction_only_input.pkl",
+      "sha256": "19a0d4aba2f7f3fa0c4cc02baa741bf7db05cfab1526e6e0a0bcf965480bafd6"
+    },
+    "prediction_only_summary": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/prediction_only_input.json",
+      "sha256": "db6c7631c39e685802ad4cac97078647bb5a77be10580d6166a83bccaae496e2"
+    },
+    "processing_cohort": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/admissions-runtime-v1/processing_cohort.json",
+      "sha256": "13bd0efeaca0967fe17181ef6766eb844034fb165257ca265ae110bfde21d763"
+    },
+    "processing_protocol": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/code-2eb2c04/configs/sota/deform360_pairwise_regret_guard_fresh_processing_v1.json",
+      "sha256": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b"
+    },
+    "simulator_final_data": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/simulator_final_data.pkl",
+      "sha256": "c55f566cf1e2a9092f978eb2cb0faad36f0cca808c3ac9b96c758340e5911f82"
+    },
+    "source_admission": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0002/fresh_pairwise_admission.json",
+      "sha256": "b75f2a83c1df0cb94bb5463e8c01c77268c772e7ba706ba324c1e38302f761fa"
+    },
+    "source_processing": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0002/fresh_pairwise_processing.json",
+      "sha256": "efa555908c734a257e6523918139ce98d416722fa9a666f0ce60c2040d54eea6"
+    },
+    "state_artifact": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/state_artifact.npz",
+      "sha256": "36e390d245325f4ebe9d861583c8553851b556651cb8023e449252985084622d"
+    },
+    "technical_lock": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/code-2eb2c04/configs/sota/deform360_pairwise_regret_guard_fresh_technical_v1.json",
+      "sha256": "b1c481c09d3d51ab3bf23a585dda4a9ea730bfd9292165e00a976a6c6ab10c03"
+    },
+    "twin_summary": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/twin_summary.json",
+      "sha256": "abc27e5ce2aaa1cf46a07fb6e3ccd95ea9e91f81fc68f8aae894d1ccade22d1a"
+    },
+    "zero_action_result": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/warp_zero_action/official_phystwin_smoke.json",
+      "sha256": "84672d39ca83bca1bbe6b3582ffc81a9179f72a451c0a92895abab12d1f70750"
+    },
+    "zero_action_trajectory": {
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/warp_zero_action/official_phystwin_trajectory.npz",
+      "sha256": "ee277d664074a69d9213a4141d4e8995c8dddf3a990a08852bc10a63c88643a5"
+    }
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "passed": true,
+  "physical_admitted": true,
+  "physical_mode": "warp_twin",
+  "physical_prediction_archive": {
+    "array_sha256": {
+      "action_support": "997a900430e931d9bc30eb934952b804f74e8ceef1d28f444f0590806d891611",
+      "driven_readout_m": "21a88cebefde17c0275d4c0e30a8cb0e326d010443cb97cddbbc128979c4f5fc",
+      "frame_zero_points_m": "26c97d6e2dafbcc41c6a03ea2afa9f0c27cd37538bcce548932aa9ff7aa50863",
+      "persistence_m": "1db3c03747c2f185615d0a039c153f179e4437c3fc22f7cd78d95f9c25eca176",
+      "prediction_m": "9e8e2647e8c8c98572c4e81e50ab516a26d93218b254badfebda3650bc35e80c",
+      "zero_action_readout_m": "67e2acf876548e1571edc21b783a9af4c20c5c07129aba93e995e92b83f2915b"
+    },
+    "file_sha256": "04643b6c1218b42d5988043c083dca7540ca11a15a6d393f58ebbbcdd9d3a7f7",
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/physical-work-v4/197-hand-sanitizer-ep0002/physical_prediction_source.npz"
+  },
+  "processing_protocol_sha256": "c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f",
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "result_sha256": "c2f6d6eb2f88defe1ec6ad8b1ce0a307f821d75e561ad3a36961d3474f364dfe",
+  "runtime_provenance": {
+    "automatic_twin_wrapper_sha256": "24f40479147208c6916af64dc1413d3a535ccbd2198c7c0535d8a4f4779d9ca3",
+    "bayesian_phystwin_revision": "2eb2c0414873b96ef552cfb60de1f7df30318f0b",
+    "official_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "physical_runner_sha256": "6b2c7be91cb6dddd33f9dfc66ce5af13d81dd1ef907c6cd1c9e610608dc25c4b",
+    "runtime_seconds": {
+      "automatic_twin": 0.38118174485862255,
+      "warp_driven": 7.825616549700499,
+      "warp_zero_action": 7.987477668561041
+    },
+    "upstream_file_sha256": {
+      "configs/causal4d_public/deform360_dense_reusable_panel_v1.json": "8a90705dd38c6c90b042ed8f450e2bc7e3cffc54b965765b004d0385999d40ea",
+      "configs/causal4d_public/deform360_independent_source_split_v1.json": "c150b2c8ea3947fe2ffe359c5da45d321b5086cd67141c2da9f912aac154ff4a",
+      "scripts/remote/run_deform360_official_phystwin_smoke.py": "e7bf6a6c06e074ac3cdefe259c1cf5eecf8cd905dae1b710a81107ab166ca535",
+      "src/bayesian_phystwin/phystwin_graph.py": "f6f1ef8d3a1fb95fc069a550ae7db12d6b32efe80582f479efb411452062b6fb",
+      "src/causal4d_public/deform360_action_support.py": "132283722400ac102ec84e9b7d21974edcdac0ff750168d70860cd89c8446783",
+      "src/causal4d_public/deform360_contact_conditioned_action.py": "1d4e2bbd4389d8d7055d0803f3feda3ea540d45123e0aa3f646bccf2cfa6c57e",
+      "src/causal4d_public/deform360_dense_reusable_panel.py": "0861831b9ab3cf6d64833efe533073f4f444f2315c04057377f243efffd8b17e",
+      "src/causal4d_public/deform360_dense_source.py": "6c9ffa0043302079acf303f23af9e9ebb895f0aa8cf03930effe8936a879bb29",
+      "src/causal4d_public/deform360_partial_graph_state.py": "81536d81ce4cfd0e61074d2f4096b3160624b6afa2e1dda1d0dab16c113192a3",
+      "src/causal4d_public/deform360_reusable_graph.py": "97b93e32c5009f5783b2f36be7e03d4acda33f0608c9694797e8e5c72d3dd8a5"
+    }
+  },
+  "schema_version": 1,
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}

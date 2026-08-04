@@ -1,0 +1,70 @@
+{
+  "action": "lift top",
+  "admission": {
+    "accepted": false,
+    "file_sha256": "4a31039ab5575b6c8d595f049290dc99f73dc541136494b65c4474358d9451e9",
+    "observed_source_contract": {
+      "active_frame_count": 76,
+      "camera_count": 12,
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-006_cam0",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-010_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-015_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-021_cam1",
+        "brics-odroid-024_cam1",
+        "brics-odroid-027_cam0"
+      ],
+      "contact_end_frame": 75,
+      "contact_start_frame": 0,
+      "frame_zero_point_count": 69,
+      "split_frame_count": 76,
+      "stage_inputs_valid": true,
+      "test": [
+        60,
+        76
+      ],
+      "train": [
+        0,
+        60
+      ]
+    },
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0001/fresh_pairwise_admission.json",
+    "rejection_reasons": [
+      "frame-zero point count is outside backend admission"
+    ],
+    "result_sha256": "a60f161daedd70e989be776881a65ea15152fd49b46333657c9451cf40eb69b1"
+  },
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshFailureSeal",
+  "bimanual": "no",
+  "case": "197-hand-sanitizer-ep0001",
+  "disposition": "source_rejected",
+  "episode_id": 1,
+  "error": null,
+  "information_boundary": {
+    "failure_sealed_before_outcome": true,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_manifest_read": false,
+    "target_or_metric_read": false
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "ordinary_prediction_created": false,
+  "processing": {
+    "file_sha256": "5af665347c21a6b60b6679d02e0f1013a028cf8d9f068e2b69c70df88df5eb14",
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0001/fresh_pairwise_processing.json",
+    "result_sha256": "089158165dbe59bbf0c2fb90f95538a8c5781ba2bea19e76cf724f8866458642"
+  },
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "replacement_allowed": false,
+  "result_sha256": "979b430e8c0daeecc746efc24af0d8a8069ce60c4c1161c08fc8f36e24f20384",
+  "retry_allowed": false,
+  "schema_version": 1,
+  "stage": "source-processing",
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}

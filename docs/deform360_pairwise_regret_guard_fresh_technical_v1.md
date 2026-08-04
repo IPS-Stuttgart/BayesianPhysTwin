@@ -166,6 +166,85 @@ RTX 4090 compute capability 8.9, and compiled `gsplat_cuda.so` SHA-256
 Certification includes a finite, nonzero synthetic rasterization and reads no
 source image or target artifact.
 
+## Pre-outcome execution result
+
+The technical campaign is complete at its prediction barrier. It did **not**
+reach outcome opening and therefore provides no accuracy, transfer, safety, or
+state-of-the-art evidence for the guarded update.
+
+The source-processing cohort is archived at
+`results/sota/deform360_pairwise_regret_guard_fresh_technical_v1/processing_cohort.json`:
+
+| Field | Value |
+|---|---:|
+| Admitted episodes | 7 |
+| Source rejections | 1 |
+| Processing technical failures | 1 |
+| Cohort SHA-256 | `d103c6e4dd86e0923b54ab4785e44a317f45e227233c480f54e5376d4ce21889` |
+| Cohort file SHA-256 | `13bd0efeaca0967fe17181ef6766eb844034fb165257ca265ae110bfde21d763` |
+
+Episode 1 was rejected because its 69 reconstructed frame-zero nodes were
+below the frozen 128-node physical-backend minimum. Episode 3 retained its
+first processing failure (`NoSuchProcess`) without retry or replacement. The
+official PhysTwin/Warp physical and persistence backbones completed for all
+seven admitted episodes; their source-only manifests and seals are archived
+under `physical_backbones/`.
+
+The first admitted camera-prediction attempt, episode 0, failed before a
+prediction was created. Its calibration dictionary advertised the frozen
+12-camera panel, while outcome-blind preprocessing had produced valid
+mask/depth assets for only its nine admitted cameras. The missing-asset error
+was sealed as a terminal prediction failure and episode 0 was not retried.
+Before any other camera prediction or outcome access, commit
+`d6ecc32f7583e92a641497613c3fdefc65193b1c` added a staged measurement panel
+that:
+
+- validates the processing artifact against the physical seal;
+- exposes exactly the admitted cameras and filters calibration accordingly;
+- reads no video or HDF5 payload while staging; and
+- leaves RGB access prefix-causal and mask/depth access at frame zero.
+
+The six previously unattempted admitted episodes then produced ordinary
+guarded prediction seals at that exact clean revision. Five returned the
+selected baseline exactly. Episode 7 admitted one update interval. This
+admission is target-free and is not evidence of benefit because its outcome
+remains sealed.
+
+| Episode | Terminal disposition | Accepted intervals |
+|---:|---|---:|
+| 0 | Prediction technical failure | 0 |
+| 1 | Source rejection | 0 |
+| 2 | Ordinary prediction | 0 |
+| 3 | Processing technical failure | 0 |
+| 4 | Ordinary prediction | 0 |
+| 5 | Ordinary prediction | 0 |
+| 7 | Ordinary prediction | 1 |
+| 8 | Ordinary prediction | 0 |
+| 9 | Ordinary prediction | 0 |
+
+The formal execution contract is stricter than merely sealing all nine
+dispositions: it requires nine **ordinary predictions** before any outcome may
+be opened. The validated barrier at
+`results/sota/deform360_pairwise_regret_guard_fresh_technical_v1/prediction_cohort.json`
+therefore reports:
+
+| Field | Value |
+|---|---:|
+| All terminal dispositions sealed | yes |
+| Ordinary predictions | 6 / 9 required |
+| Retained failures | 3 |
+| Outcome opening allowed | no |
+| Status | `predictions_incomplete_outcome_barrier_blocked` |
+| Barrier SHA-256 | `9f2c84cc7dbef491702244e9544007c5602f5b3527454f7dc8ad627689810629` |
+| Barrier file SHA-256 | `37abe81d087e8c6d78fc819dee1031d97c5b56a52ad40038be40c48ff9b127e7` |
+
+No future object trajectory, target metric, outcome manifest, or held-v8
+artifact was opened. The public fresh-object route is operationally
+incomplete under its frozen contract and must not be repaired, retried, or
+reported as a positive or negative model result. A future evaluation needs a
+new preregistered cohort with backend admissibility and camera-panel contracts
+validated before selection.
+
 ## Execution boundary
 
 The execution order is frozen:
@@ -177,7 +256,8 @@ The execution order is frozen:
 3. construct prefix-only camera measurements and physical rollouts;
 4. create an ordinary success or retained technical-failure seal for each of
    the nine episodes;
-5. require all nine seals before opening any future object trajectory;
+5. require all nine ordinary predictions, not merely nine terminal
+   dispositions, before opening any future object trajectory;
 6. score the selected baseline and frozen guarded update without refitting;
 7. report every episode and failure, with no replacement.
 

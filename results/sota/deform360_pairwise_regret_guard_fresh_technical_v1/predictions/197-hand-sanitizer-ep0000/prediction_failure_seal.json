@@ -1,0 +1,42 @@
+{
+  "action": "lift side",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshFailureSeal",
+  "bimanual": "no",
+  "case": "197-hand-sanitizer-ep0000",
+  "disposition": "technical_failure",
+  "episode_id": 0,
+  "error": {
+    "message": "[Errno 2] Unable to synchronously open file (unable to open file: name = '/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0000/brics-odroid-001_cam0/mask_refined.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)",
+    "type": "FileNotFoundError"
+  },
+  "information_boundary": {
+    "failure_sealed_before_outcome": true,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_manifest_read": false,
+    "target_or_metric_read": false
+  },
+  "inputs": {
+    "physical_seal": {
+      "file_sha256": "adc4593930941a9095415522feb79149567ae38512c839febc522bf5572ebf95",
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/backbones-v4/197-hand-sanitizer-ep0000/prediction_seal.json"
+    },
+    "processing_protocol": {
+      "file_sha256": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b",
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/code-2eb2c04/configs/sota/deform360_pairwise_regret_guard_fresh_processing_v1.json"
+    },
+    "technical_lock": {
+      "file_sha256": "b1c481c09d3d51ab3bf23a585dda4a9ea730bfd9292165e00a976a6c6ab10c03",
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/code-2eb2c04/configs/sota/deform360_pairwise_regret_guard_fresh_technical_v1.json"
+    }
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "ordinary_prediction_created": false,
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "replacement_allowed": false,
+  "result_sha256": "654d11dff7bc5192b0a72cd7e354a165d6c9279d10521a03b0f07a34d124d6b4",
+  "retry_allowed": false,
+  "schema_version": 1,
+  "stage": "prefix-camera-measurement",
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}

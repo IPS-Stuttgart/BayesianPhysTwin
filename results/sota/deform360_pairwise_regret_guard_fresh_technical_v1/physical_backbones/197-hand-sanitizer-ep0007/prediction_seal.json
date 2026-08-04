@@ -1,0 +1,53 @@
+{
+  "action": "drag",
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshPhysicalSeal",
+  "bimanual": "yes",
+  "case": "197-hand-sanitizer-ep0007",
+  "episode_id": 7,
+  "episode_key": "197-hand-sanitizer/7",
+  "frame_count": 76,
+  "information_boundary": {
+    "future_object_geometry_read": false,
+    "future_object_rgb_read": false,
+    "future_object_track_read": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "known_future_robot_action_read": true,
+    "object_observation_frames_used": [
+      0
+    ],
+    "prediction_hashed_before_future_outcome_scoring": true,
+    "target_metric_read": false
+  },
+  "inputs": {
+    "processing_cohort_file_sha256": "13bd0efeaca0967fe17181ef6766eb844034fb165257ca265ae110bfde21d763",
+    "processing_protocol_file_sha256": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b",
+    "technical_lock_file_sha256": "b1c481c09d3d51ab3bf23a585dda4a9ea730bfd9292165e00a976a6c6ab10c03"
+  },
+  "material_identity_sha256": "ddcd4a203072e7ccc3f4ad3817c8400e4bfaa29cd35759b92fbd9d72ea762311",
+  "material_point_count": 860,
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "physical_manifest": {
+    "file_sha256": "db8098ac3492a887065ecaf5f4209a55262a30f003922e84514532c6d275d118",
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/backbones-v4/197-hand-sanitizer-ep0007/physical_prediction_manifest.json",
+    "result_sha256": "20937d6dce788769de67cd7629d91c120e16f800224535480bfe30ad537543e8"
+  },
+  "prediction_archive": {
+    "array_sha256": {
+      "action_support": "e357daf08a2ca466b3c11cbeec64fb1cb5870e11caf954325f97175877100dde",
+      "driven_readout_m": "37fec113f62413679559a590b17a45ea2a30ba8e1a719cfc0bdb5dbb31867bf8",
+      "frame_zero_points_m": "ddcd4a203072e7ccc3f4ad3817c8400e4bfaa29cd35759b92fbd9d72ea762311",
+      "persistence_m": "d04c8628dec13ffd26a0cfc029d7ee0307f6d8ab32b1ba32a8f322c7fc583ee8",
+      "prediction_m": "b2909014166deb88cac444ef3a82751908442fa99b547f57e88d660d05a553f7",
+      "zero_action_readout_m": "6147a5b5f7e5889994b9315c4bb316902964b64f2f5fcaa1a3dce916f2d1de92"
+    },
+    "file_sha256": "69eabcc62aed37f30397833f6a1a003ce020b623c3964fb38775d5f1371e4fb1",
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/backbones-v4/197-hand-sanitizer-ep0007/physical_prediction.npz"
+  },
+  "processing_protocol_sha256": "c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f",
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "result_sha256": "3e66d43a5df09c36fb2c67dcbff6ad8c38e1c121b28f625bcf9c7595794a2045",
+  "schema_version": 1,
+  "source_processing_result_sha256": "2bd866a79b773d1f4250c7adc9d49af3c9800d8d242cc60009e51eca41e2cbe5",
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}

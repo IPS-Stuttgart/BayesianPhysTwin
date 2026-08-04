@@ -1,0 +1,34 @@
+{
+  "action": "drag",
+  "admission": null,
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshFailureSeal",
+  "bimanual": "no",
+  "case": "197-hand-sanitizer-ep0003",
+  "disposition": "technical_failure",
+  "episode_id": 3,
+  "error": {
+    "message": "process no longer exists (pid=4089146)",
+    "type": "NoSuchProcess"
+  },
+  "information_boundary": {
+    "failure_sealed_before_outcome": true,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_manifest_read": false,
+    "target_or_metric_read": false
+  },
+  "nonprehensile": "no",
+  "object_id": "197-hand-sanitizer",
+  "ordinary_prediction_created": false,
+  "processing": {
+    "file_sha256": "e90e80ecef004dcef3191bf9ee9ce395889943104e526f3403c4aba27120cc62",
+    "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0003/fresh_pairwise_processing.json",
+    "result_sha256": "69f6218c162d95e0c314a3747efc6568bf667fb1206dc3ecce3748850a349248"
+  },
+  "protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1",
+  "replacement_allowed": false,
+  "result_sha256": "d476e3dfc639f077a7e4a010c137cdf20dae912e4f1413e154417f45ff557290",
+  "retry_allowed": false,
+  "schema_version": 1,
+  "stage": "source-processing",
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2"
+}
