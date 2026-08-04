@@ -16,9 +16,7 @@ from typing import Any, BinaryIO
 import numpy as np
 
 PROBE_SCHEMA = "bayesian-phystwin/deform360-source-hull-probe-v1"
-PROTOCOL_SCHEMA = (
-    "bayesian-phystwin/deform360-source-hull-contract-probe-protocol-v1"
-)
+PROTOCOL_SCHEMA = "bayesian-phystwin/deform360-source-hull-contract-probe-protocol-v1"
 _REQUIRED_MEMBERS = (
     "frame_indices.npy",
     "point_offsets.npy",
@@ -89,8 +87,7 @@ def load_probe_protocol(path: Path) -> dict[str, Any]:
         "unexpected probe protocol identity",
     )
     _require(
-        config.get("status")
-        == "locked-before-source-hull-payload-metadata-access",
+        config.get("status") == "locked-before-source-hull-payload-metadata-access",
         "probe protocol is not locked before payload metadata access",
     )
     cohort = config.get("cohort")
