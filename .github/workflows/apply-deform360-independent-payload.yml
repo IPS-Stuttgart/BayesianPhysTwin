@@ -78,21 +78,19 @@ jobs:
             scripts/science/run_deform360_public_evaluation.py \
             tests/test_deform360_public_evaluation.py
 
-      - name: Verify clean product and locked information boundary
+      - name: Verify exact clean product and locked information boundary
         shell: bash
         run: |
           set -euo pipefail
-          cat > expected-unchanged-sha256.txt <<'EOF'
+          cat > expected-product-sha256.txt <<'EOF'
           9f63bc8b212b8b7f9484c3879496b9523065e4577b2c9e964a078a849a79946f  .github/workflows/deform360-independent-session-evaluation.yml
           5c3d001daa979ee8d5a3014c9b9a75844f60a91898c1800f281797af1bc8eba5  docs/deform360_public_evaluation_v1.md
           aec8d50dd02c7255c58abd497f796705439ec705c799233a9752f07edd0a1a0b  protocols/deform360_independent_normalized_evidence_v1.json
+          7c223152cca0f786d732e30687d4bc32c66fae5bbb0d219d8b6cef32123ee805  scripts/science/run_deform360_public_evaluation.py
+          78b6b0e18d930e079d85094dbfe492cd7b92a49c0940b8a6eaf32f5b18e3fc31  tests/test_deform360_public_evaluation.py
           EOF
-          sha256sum --check --strict expected-unchanged-sha256.txt
-          rm expected-unchanged-sha256.txt
-          sha256sum \
-            scripts/science/run_deform360_public_evaluation.py \
-            tests/test_deform360_public_evaluation.py \
-            | tee formatted-python-sha256.txt
+          sha256sum --check --strict expected-product-sha256.txt
+          rm expected-product-sha256.txt
           python -m ruff check \
             scripts/science/run_deform360_public_evaluation.py \
             tests/test_deform360_public_evaluation.py
@@ -135,16 +133,18 @@ jobs:
               raise SystemExit("unsupported filament claim entered the protocol")
           print(f"locked protocol: {actual}")
           PY
-          rm formatted-python-sha256.txt
           git diff --check
 
-      - name: Publish clean product commit
+      - name: Publish clean non-workflow product commit
         shell: bash
         run: |
           set -euo pipefail
+          cp .github/workflows/deform360-independent-session-evaluation.yml \
+            "${RUNNER_TEMP}/deform360-independent-session-evaluation.yml"
+          rm .github/workflows/deform360-independent-session-evaluation.yml
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "Add locked independent Deform360 evaluation"
+          git commit -m "Add locked independent Deform360 evaluation core"
           git push origin HEAD:agent/deform360-independent-normalized-evidence-v1
