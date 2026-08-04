@@ -1,0 +1,202 @@
+name: Frozen full-22 Bayesian anchor reproduction
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/full22-anchor-reproduction.yml"
+      - "reproductions/full22_anchor_v1/**"
+      - "tests/test_full22_reproduction_capsule.py"
+      - "scripts/science/run_full22_endpoint_model_average_diagnostic.py"
+      - "src/bayesian_phystwin/phystwin_data.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/cli/run_manifest.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full22-anchor-reproduction-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  FROZEN_SOURCE_REVISION: e393bb6ff61d44815afd8d09dfc5334cb55d5524
+
+jobs:
+  reproduce:
+    name: Hosted public-data reproduction
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out current capsule
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Restore public PhysTwin trajectory subset
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/bayesian-phystwin/trajectory-evaluation-v1
+          key: >-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{
+            hashFiles('src/bayesian_phystwin/phystwin_data.py') }}
+          restore-keys: |
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-
+
+      - name: Resolve isolated paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/bpt-full22-anchor-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${root}/evidence"
+          {
+            echo "DATA_ROOT=${HOME}/.cache/bayesian-phystwin/trajectory-evaluation-v1"
+            echo "FROZEN_SOURCE=${root}/frozen-source"
+            echo "OUTPUT_ROOT=${root}/evidence"
+          } >> "${GITHUB_ENV}"
+
+      - name: Install locked evaluation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,data]"
+          python -m pip check
+          python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
+
+      - name: Verify capsule before data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            reproductions/full22_anchor_v1/reproduce.py \
+            tests/test_full22_reproduction_capsule.py
+          python -m ruff format --check \
+            reproductions/full22_anchor_v1/reproduce.py \
+            tests/test_full22_reproduction_capsule.py
+          python -m pytest -q tests/test_full22_reproduction_capsule.py
+
+      - name: Create exact frozen source worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach "${FROZEN_SOURCE}" "${FROZEN_SOURCE_REVISION}"
+          test "$(git -C "${FROZEN_SOURCE}" rev-parse HEAD)" = \
+            "${FROZEN_SOURCE_REVISION}"
+          test -z "$(git -C "${FROZEN_SOURCE}" status --porcelain=v1)"
+
+      - name: Retrieve the public trajectory subset
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts.science.run_full22_endpoint_model_average_diagnostic import (
+              _download_trajectory_subset,
+          )
+
+          manifest = _download_trajectory_subset(Path(os.environ["DATA_ROOT"]))
+          print(
+              json.dumps(
+                  {
+                      "manifest_path": manifest["manifest_path"],
+                      "manifest_sha256": manifest["manifest_sha256"],
+                      "selected_case_count": len(manifest["selected_cases"]),
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+          )
+          PY
+
+      - name: Execute frozen full-22 reproduction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python reproductions/full22_anchor_v1/reproduce.py \
+            "${FROZEN_SOURCE}" \
+            "${DATA_ROOT}" \
+            "${OUTPUT_ROOT}/result" \
+            --workers 2 \
+            --force \
+            | tee "${OUTPUT_ROOT}/console.txt"
+
+      - name: Verify retained evidence and clean repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m bayesian_phystwin.cli.run_manifest validate \
+            "${OUTPUT_ROOT}/result/run_manifest.json" \
+            --artifact-root "${OUTPUT_ROOT}/result"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"]) / "result"
+          verification = json.loads(
+              (root / "verification.json").read_text(encoding="utf-8")
+          )
+          identity = json.loads(
+              (root / "input" / "data_identity.json").read_text(encoding="utf-8")
+          )
+          if verification["status"] != "verified":
+              raise SystemExit("metric verification did not pass")
+          if verification["check_count"] != 8:
+              raise SystemExit("unexpected full-22 metric check count")
+          if identity["identity_sha256"] != (
+              "f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc"
+          ):
+              raise SystemExit("portable data identity changed")
+          print(
+              json.dumps(
+                  {
+                      "data_identity_sha256": identity["identity_sha256"],
+                      "metric_check_count": verification["check_count"],
+                      "status": verification["status"],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+          )
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Remove frozen worktree
+        if: always()
+        shell: bash
+        run: |
+          git worktree remove --force "${FROZEN_SOURCE}" 2>/dev/null || true
+          git worktree prune
+
+      - name: Upload full-22 reproduction evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: bpt-full22-anchor-reproduction-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/bpt-full22-anchor-${{ github.run_id }}-${{ github.run_attempt }}/evidence
+          if-no-files-found: error
+          retention-days: 90
