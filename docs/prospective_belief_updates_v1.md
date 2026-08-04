@@ -96,6 +96,13 @@ sampled streams may opt into `time_delta_mode="integer-steps"`; each transition
 is then raised to the positive integer number of elapsed `time_step` intervals.
 Unit-spaced inputs remain exactly equivalent to the historical behavior.
 
+Sequence identities are validated as nonempty strings or genuine integers
+without lossy coercion. Integer identities retain the historical string keys in
+`sequence_log_evidence`, but a mixed pair such as `1` and `"1"` now fails closed
+instead of silently merging two independent tracks. Prior reliability must lie
+in `[0, 1]`, and returned posterior arrays and sequence-evidence mappings are
+defensively owned and immutable.
+
 ## Validation boundary
 
 The self-hosted workflow `Prospective belief validation` exercises these
