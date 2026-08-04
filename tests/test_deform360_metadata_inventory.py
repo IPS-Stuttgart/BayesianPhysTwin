@@ -47,14 +47,10 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
                     "filament": ["075-leather"],
                 },
                 "calibration_cohort": {
-                    "sheet": [
-                        {"object_id": "010-orange-cloth", "episode_ids": [2]}
-                    ]
+                    "sheet": [{"object_id": "010-orange-cloth", "episode_ids": [2]}]
                 },
                 "target_cohort": {
-                    "filament": [
-                        {"object_id": "075-leather", "episode_ids": [3]}
-                    ]
+                    "filament": [{"object_id": "075-leather", "episode_ids": [3]}]
                 },
             },
         },
@@ -65,14 +61,10 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
             "config_sha256": v2_hash,
             "config": {
                 "calibration_cohort": {
-                    "sheet": [
-                        {"object_id": "010-orange-cloth", "episode_ids": [2]}
-                    ]
+                    "sheet": [{"object_id": "010-orange-cloth", "episode_ids": [2]}]
                 },
                 "target_cohort": {
-                    "filament": [
-                        {"object_id": "075-leather", "episode_ids": [3]}
-                    ]
+                    "filament": [{"object_id": "075-leather", "episode_ids": [3]}]
                 },
             },
         },
