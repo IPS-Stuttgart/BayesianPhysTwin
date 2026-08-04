@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
 ]
 dependencies = [
     "numpy>=1.23",
@@ -69,6 +70,9 @@ pyrecest = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+bayesian_phystwin = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
