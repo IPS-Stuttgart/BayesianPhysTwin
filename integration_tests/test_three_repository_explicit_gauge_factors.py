@@ -36,7 +36,7 @@ def _producer_bundle() -> ObservationFactorBundle:
         GaugeEstimate("window-1", Sim3.identity(), covariance_1),
     )
     common = {
-        "valid_mask": np.asarray([True, True]),
+        "valid_mask": np.asarray([True, False]),
         "local_covariance_m2": np.repeat(
             np.eye(3, dtype=np.float64)[None] * 1.0e-3,
             2,
@@ -145,6 +145,7 @@ def test_three_repository_explicit_gauge_factor_bridge() -> None:
     sparse = stack_sparse_observation_factors(bundle)
     validated = _claim_wrapper(bundle)
     count = sparse.observation_count
+    assert count == 2
     state_jacobian = np.zeros((count, 3, 1), dtype=np.float64)
     state_jacobian[:, 2, 0] = 1.0
     query_jacobian = np.zeros((1, 3, 1), dtype=np.float64)
@@ -203,3 +204,11 @@ def test_three_repository_explicit_gauge_factor_bridge() -> None:
         update.result.input_lineage["prob4d_marginal_point_covariance_consumed"]
         is False
     )
+    assert (
+        update.result.input_lineage[
+            "prob4d_sparse_stack_rederived_from_validated_bundle"
+        ]
+        is True
+    )
+    assert update.result.input_lineage["prob4d_bundle_observation_count"] == 4
+    assert update.result.input_lineage["prob4d_selected_observation_count"] == 2
