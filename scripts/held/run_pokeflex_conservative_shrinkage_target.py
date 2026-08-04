@@ -36,8 +36,10 @@ from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
 )
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: E402
     CHECKPOINT_SHA256,
+    FRESH12_PUBLIC_ZIP_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
+    TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
@@ -96,12 +98,14 @@ def _predict(
     source_result_path: Path,
     upstream_checkout: Path,
     checkpoint_root: Path,
+    source_archive: Path | None,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
     if protocol["protocol_id"] not in {
         TARGET_PROTOCOL_V2,
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     }:
         raise ValueError("new predictions require a robot-history-aware protocol")
     target_take_ids = target_take_ids_for_protocol(protocol)
@@ -109,6 +113,20 @@ def _predict(
     output_dir = output_dir.resolve()
     if take_root.name not in target_take_ids:
         raise ValueError(f"take is outside the target lock: {take_root.name}")
+    source_archive_record = None
+    if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        if source_archive is None:
+            raise ValueError("fresh public prediction requires its registered archive")
+        source_archive = source_archive.resolve()
+        if source_archive.name != f"{take_root.name}.zip":
+            raise ValueError("fresh public archive name changed")
+        archive_sha256 = file_sha256(source_archive)
+        if archive_sha256 != FRESH12_PUBLIC_ZIP_SHA256[take_root.name]:
+            raise ValueError("fresh public archive bytes changed")
+        source_archive_record = {
+            "source_archive_name": source_archive.name,
+            "source_archive_sha256": archive_sha256,
+        }
     if output_dir.exists():
         raise FileExistsError(f"prediction output already exists: {output_dir}")
     if file_sha256(source_result_path) != SOURCE_RESULT_SHA256:
@@ -368,6 +386,8 @@ def _predict(
         "inputs": [_input_record(path, take_root) for path in input_paths],
         "updates": diagnostics,
     }
+    if source_archive_record is not None:
+        seal.update(source_archive_record)
     seal["seal_sha256"] = prediction_seal_sha256(seal)
     _write_json(output_dir / "seal.json", seal)
     print(
@@ -501,6 +521,7 @@ def main() -> None:
     predict.add_argument("--source-result", type=Path, required=True)
     predict.add_argument("--upstream-checkout", type=Path, required=True)
     predict.add_argument("--checkpoint-root", type=Path, required=True)
+    predict.add_argument("--source-archive", type=Path)
 
     barrier = subparsers.add_parser("barrier")
     barrier.add_argument("prediction_root", type=Path)
@@ -521,6 +542,7 @@ def main() -> None:
             args.source_result,
             args.upstream_checkout,
             args.checkpoint_root,
+            args.source_archive,
         )
     elif args.command == "barrier":
         _barrier(args.prediction_root, args.output, args.protocol)

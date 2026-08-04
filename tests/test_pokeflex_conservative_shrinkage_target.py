@@ -8,6 +8,9 @@ import pytest
 
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     CHECKPOINT_SHA256,
+    FRESH12_EXCLUSION_AUDIT_SHA256,
+    FRESH12_PUBLIC_TARGET_TAKE_IDS,
+    FRESH12_PUBLIC_ZIP_SHA256,
     OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS,
     OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS,
     OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
@@ -18,6 +21,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
+    TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
@@ -25,6 +29,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     UPSTREAM_COMMIT,
     action_field_history_is_supported,
     build_prediction_barrier,
+    canonical_payload_sha256,
     evaluate_target_metrics,
     file_sha256,
     load_pokeflex_shrinkage_target_protocol,
@@ -55,6 +60,15 @@ OFFICIAL13_PUBLIC_PROTOCOL_PATH = (
     / "sota"
     / "pokeflex_conservative_shrinkage_official13_public_v1.json"
 )
+FRESH12_PUBLIC_PROTOCOL_PATH = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "pokeflex_conservative_shrinkage_fresh12_public_v1.json"
+)
+FRESH12_AUDIT_PATH = (
+    ROOT / "configs" / "sota" / "pokeflex_fresh12_exclusion_audit_v1.json"
+)
 RUNNER_PATH = (
     ROOT / "scripts" / "held" / "run_pokeflex_conservative_shrinkage_target.py"
 )
@@ -74,6 +88,10 @@ def _official18_protocol() -> dict[str, object]:
 
 def _official13_public_protocol() -> dict[str, object]:
     return json.loads(OFFICIAL13_PUBLIC_PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+
+def _fresh12_public_protocol() -> dict[str, object]:
+    return json.loads(FRESH12_PUBLIC_PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
 def _write_prediction(
@@ -147,6 +165,9 @@ def _write_prediction(
         seal["missing_robot_history_frame_count"] = int(
             np.sum(~np.asarray(robot_history_supported, dtype=np.bool_))
         )
+    if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        seal["source_archive_name"] = f"{take_id}.zip"
+        seal["source_archive_sha256"] = FRESH12_PUBLIC_ZIP_SHA256[take_id]
     seal["seal_sha256"] = prediction_seal_sha256(seal)
     seal_path = case_root / "seal.json"
     seal_path.write_text(json.dumps(seal), encoding="utf-8")
@@ -209,6 +230,40 @@ def test_official13_public_protocol_locks_public_subset_and_claim_boundary() -> 
     assert loaded["gates"]["direct_metric_reference"][
         "published_aggregate_is_gating"
     ] is False
+
+
+def test_fresh12_public_protocol_locks_all_prospective_archives() -> None:
+    loaded = load_pokeflex_shrinkage_target_protocol(FRESH12_PUBLIC_PROTOCOL_PATH)
+
+    assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
+    assert loaded["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
+    assert tuple(loaded["target_cohort"]["take_ids"]) == FRESH12_PUBLIC_TARGET_TAKE_IDS
+    assert (
+        tuple(loaded["target_cohort"]["prospective_take_ids"])
+        == FRESH12_PUBLIC_TARGET_TAKE_IDS
+    )
+    assert loaded["target_cohort"]["development_overlap_take_ids"] == []
+    assert (
+        loaded["freshness_audit"]["selected_zip_sha256"]
+        == FRESH12_PUBLIC_ZIP_SHA256
+    )
+
+
+def test_fresh12_exclusion_audit_is_canonical_and_disjoint() -> None:
+    audit = json.loads(FRESH12_AUDIT_PATH.read_text(encoding="utf-8"))
+    excluded = tuple(audit["prior_exposure_audit"]["take_ids"])
+    selected = tuple(audit["selection"]["take_ids"])
+
+    assert audit["audit_sha256"] == FRESH12_EXCLUSION_AUDIT_SHA256
+    assert audit["audit_sha256"] == canonical_payload_sha256(
+        audit,
+        digest_field="audit_sha256",
+    )
+    assert len(excluded) == 84
+    assert len(selected) == 12
+    assert set(excluded).isdisjoint(selected)
+    assert selected == FRESH12_PUBLIC_TARGET_TAKE_IDS
+    assert audit["selection"]["zip_sha256"] == FRESH12_PUBLIC_ZIP_SHA256
 
 
 def test_action_field_history_rejects_missing_end_effector_pose() -> None:
@@ -307,6 +362,37 @@ def test_official13_public_barrier_requires_all_public_takes(tmp_path: Path) -> 
     assert tuple(barrier["target_take_ids"]) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     with pytest.raises(ValueError, match="incomplete"):
         build_prediction_barrier(paths[:-1], protocol)
+
+
+def test_fresh12_barrier_requires_all_registered_archives(tmp_path: Path) -> None:
+    protocol = _fresh12_public_protocol()
+    paths = [
+        _write_prediction(tmp_path, take_id, protocol=protocol)
+        for take_id in FRESH12_PUBLIC_TARGET_TAKE_IDS
+    ]
+
+    barrier = build_prediction_barrier(paths, protocol)
+
+    assert barrier["prediction_count"] == 12
+    assert tuple(barrier["target_take_ids"]) == FRESH12_PUBLIC_TARGET_TAKE_IDS
+    with pytest.raises(ValueError, match="incomplete"):
+        build_prediction_barrier(paths[:-1], protocol)
+
+
+def test_fresh12_seal_rejects_wrong_source_archive(tmp_path: Path) -> None:
+    protocol = _fresh12_public_protocol()
+    seal_path = _write_prediction(
+        tmp_path,
+        FRESH12_PUBLIC_TARGET_TAKE_IDS[0],
+        protocol=protocol,
+    )
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    seal["source_archive_sha256"] = "0" * 64
+    seal["seal_sha256"] = prediction_seal_sha256(seal)
+    seal_path.write_text(json.dumps(seal), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="source archive changed"):
+        validate_prediction_seal(seal_path, protocol)
 
 
 def test_prediction_function_has_no_target_mesh_loader() -> None:
@@ -444,6 +530,40 @@ def test_official13_public_aggregation_gates_only_prospective_pairing() -> None:
     assert result["prospective_take_count"] == 10
     assert result["development_overlap_take_count"] == 3
     assert result["prospective_object_win_count"] == 10
+    assert result["paired_transfer_passed"] is True
+    assert result["all_target_gates_passed"] is True
+    assert result["published_reference_is_contextual_only"] is True
+    assert result["published_direct_comparison_authorized"] is False
+
+
+def test_fresh12_aggregation_gates_all_twelve_against_checkpoint() -> None:
+    rows = []
+    for take_id in FRESH12_PUBLIC_TARGET_TAKE_IDS:
+        object_name, _, _ = take_id.rpartition("_T")
+        rows.append(
+            {
+                "object_name": object_name,
+                "take_id": take_id,
+                "baseline_mean_CD_UL1_mm": 6.5,
+                "candidate_mean_CD_UL1_mm": 6.4,
+                "candidate_jaccard_valid_count": 0,
+                "candidate_mean_jaccard_valid": None,
+                "scored_frame_count": 1,
+                "frames": [
+                    {
+                        "baseline_CD_UL1_mm": 6.5,
+                        "candidate_CD_UL1_mm": 6.4,
+                        "candidate_jaccard": None,
+                    }
+                ],
+            }
+        )
+
+    result = evaluate_target_metrics(rows, _fresh12_public_protocol())
+
+    assert result["fresh_public_take_count"] == 12
+    assert result["development_overlap_take_count"] == 0
+    assert result["fresh12_object_win_count"] == 12
     assert result["paired_transfer_passed"] is True
     assert result["all_target_gates_passed"] is True
     assert result["published_reference_is_contextual_only"] is True

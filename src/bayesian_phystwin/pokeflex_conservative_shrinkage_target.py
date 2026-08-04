@@ -32,6 +32,9 @@ TARGET_PROTOCOL_OFFICIAL18_V1 = "pokeflex-conservative-shrinkage-official18-v1"
 TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1 = (
     "pokeflex-conservative-shrinkage-official13-public-v1"
 )
+TARGET_PROTOCOL_FRESH12_PUBLIC_V1 = (
+    "pokeflex-conservative-shrinkage-fresh12-public-v1"
+)
 OFFICIAL18_TARGET_TAKE_IDS = (
     "MemoryFoam_T2",
     "PlushVolleyball_T4",
@@ -84,6 +87,74 @@ OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS = tuple(
     for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     if take_id not in OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
 )
+FRESH12_PUBLIC_TARGET_TAKE_IDS = (
+    "3dPrintedCylinder_T5",
+    "3dPrintedPizza_T6",
+    "3dPrintedPyramid_T4",
+    "Beanbag_T3",
+    "FoamCylinder_T3",
+    "FoamHalfSphere_T5",
+    "Pillow_T7",
+    "PlushDice_T1",
+    "PlushMoon_T5",
+    "PlushTurtle_T5",
+    "PlushVolleyball_T3",
+    "Sponge_T4",
+)
+FRESH12_EXCLUSION_AUDIT_SHA256 = (
+    "fa2062f97e3ae496705717b7e2851b64b748a0417c270fea5649b9aa8cc96bbc"
+)
+FRESH12_PUBLIC_INVENTORY_SHA256 = (
+    "90121a8d060f50288bb52872556e38ce808de4d2a642d1691ff1cff20b5b1e96"
+)
+FRESH12_PRIOR_EXCLUSION_UNION_SHA256 = (
+    "3157950b1422d9e210103f5f01bb55cda705fe54fc32926892d6ea2a40d7f62a"
+)
+FRESH12_ELIGIBLE_INVENTORY_SHA256 = (
+    "f4b605ac1fdf36f341789698d47c8657f32861426766a1e882996abe713e4923"
+)
+FRESH12_SELECTED_INVENTORY_SHA256 = (
+    "ca4c2b3006167bbbb973060ee799a4e1811fc07baa5584e098885bf3d38bff1e"
+)
+FRESH12_SELECTION_SALT = "pokeflex-fresh12-selection-v1"
+FRESH12_PUBLIC_ZIP_SHA256 = {
+    "3dPrintedCylinder_T5": (
+        "2545cfd8c671e5f6b8af1884b216ff7f486de5fe45d00927142a9b4ca6a37691"
+    ),
+    "3dPrintedPizza_T6": (
+        "b320295970f695a7ee0e97faa2dc3b8f05198f5e8b36e73af92b0b0af7fba966"
+    ),
+    "3dPrintedPyramid_T4": (
+        "f0b807274e6217010bd75eca72a322ee5cf326e6cb9cc2c0a67ddd1a3c746652"
+    ),
+    "Beanbag_T3": (
+        "3fbc0995e9777bd83650fe0f7e197c6bd6fea8347fddcc9f6a0b78f62f85d386"
+    ),
+    "FoamCylinder_T3": (
+        "c7e7c1c23dbc9e65fa554434b64b6cfcba376bc761123a48519ffc00ff6fe9c0"
+    ),
+    "FoamHalfSphere_T5": (
+        "6abad03c0c3d17e690f0555c72d6d555fba0e3040fe3601f1b8577c854102cbf"
+    ),
+    "Pillow_T7": (
+        "2b4fff35524e35bb81540e42cd1d27f83b1f6a698ff900dd01c935b88d254560"
+    ),
+    "PlushDice_T1": (
+        "978212f8e67c01e3ae318021080b3f88aa2dfefbeee479c31aedd61eefe6a248"
+    ),
+    "PlushMoon_T5": (
+        "3c06a03c0e82d0b89e194be18d4d965b5f1529bbc70ee6a012ed38ba4afabb81"
+    ),
+    "PlushTurtle_T5": (
+        "6f74f5371cd415fc213699832bb53be75d28687ca867be61c533be50557d0ccb"
+    ),
+    "PlushVolleyball_T3": (
+        "6b7668947e84e93f8f0439810fb5ba9b3e6d06fefa3589a558e4f9d2681a7412"
+    ),
+    "Sponge_T4": (
+        "eea7d0a0f124700e89162e54fa40e6a3336e510e7a1a24eb6581278c5358e9a2"
+    ),
+}
 OFFICIAL_EVALUATOR_SHA256 = (
     "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60"
 )
@@ -154,6 +225,8 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
         return OFFICIAL18_TARGET_TAKE_IDS
     if protocol.get("protocol_id") == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
         return OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        return FRESH12_PUBLIC_TARGET_TAKE_IDS
     return TARGET_TAKE_IDS
 
 
@@ -164,6 +237,7 @@ def protocol_requires_robot_history(protocol_id: str) -> bool:
         TARGET_PROTOCOL_V2,
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     }
 
 
@@ -205,6 +279,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_V2,
             TARGET_PROTOCOL_OFFICIAL18_V1,
             TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+            TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         },
         "target protocol id changed",
     )
@@ -260,6 +335,55 @@ def validate_pokeflex_shrinkage_target_protocol(
             tuple(cohort.get("missing_official_take_ids", ()))
             == OFFICIAL18_MISSING_PUBLIC_TAKE_IDS,
             "missing official take inventory changed",
+        )
+    elif protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        _require(
+            tuple(cohort.get("take_ids", ())) == FRESH12_PUBLIC_TARGET_TAKE_IDS,
+            "fresh public take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ()))
+            == FRESH12_PUBLIC_TARGET_TAKE_IDS,
+            "fresh prospective take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("development_overlap_take_ids", ())) == (),
+            "fresh cohort gained development overlap",
+        )
+        audit = payload.get("freshness_audit")
+        _require(isinstance(audit, Mapping), "freshness audit is missing")
+        _require(
+            audit.get("audit_sha256") == FRESH12_EXCLUSION_AUDIT_SHA256,
+            "freshness audit changed",
+        )
+        _require(
+            audit.get("public_inventory_sha256")
+            == FRESH12_PUBLIC_INVENTORY_SHA256,
+            "public inventory changed",
+        )
+        _require(
+            audit.get("prior_exclusion_union_sha256")
+            == FRESH12_PRIOR_EXCLUSION_UNION_SHA256,
+            "prior exclusion union changed",
+        )
+        _require(
+            audit.get("eligible_inventory_sha256")
+            == FRESH12_ELIGIBLE_INVENTORY_SHA256,
+            "eligible inventory changed",
+        )
+        _require(
+            audit.get("selected_inventory_sha256")
+            == FRESH12_SELECTED_INVENTORY_SHA256,
+            "selected inventory changed",
+        )
+        _require(
+            audit.get("selection_salt") == FRESH12_SELECTION_SALT,
+            "fresh cohort selection salt changed",
+        )
+        _require(
+            dict(audit.get("selected_zip_sha256", {}))
+            == FRESH12_PUBLIC_ZIP_SHA256,
+            "fresh cohort archive bytes changed",
         )
     else:
         _require(
@@ -351,11 +475,16 @@ def validate_pokeflex_shrinkage_target_protocol(
     if protocol_id in {
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     }:
         expected_aggregation = (
             "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic"
             if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1
-            else "equal scored frames over the 13 publicly materializable official validation takes; object-balanced prospective values drive transfer gates"
+            else (
+                "equal scored frames over the 13 publicly materializable official validation takes; object-balanced prospective values drive transfer gates"
+                if protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1
+                else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+            )
         )
         _require(
             evaluation.get("aggregation") == expected_aggregation,
@@ -416,6 +545,15 @@ def validate_pokeflex_shrinkage_target_protocol(
             "official Jaccard unexpectedly became gating",
         )
     elif protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
+        _require(
+            direct.get("published_aggregate_is_gating") is False,
+            "incomparable published aggregate became gating",
+        )
+        _require(
+            direct.get("released_checkpoint_pairing_is_primary") is True,
+            "released-checkpoint pairing changed",
+        )
+    elif protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
         _require(
             direct.get("published_aggregate_is_gating") is False,
             "incomparable published aggregate became gating",
@@ -556,8 +694,19 @@ def validate_prediction_seal(
     if protocol_id not in {
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     }:
         _require(take == "T2", "prediction take changed")
+    if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        _require(
+            seal.get("source_archive_sha256")
+            == FRESH12_PUBLIC_ZIP_SHA256[str(take_id)],
+            "fresh source archive changed",
+        )
+        _require(
+            seal.get("source_archive_name") == f"{take_id}.zip",
+            "fresh source archive name changed",
+        )
     _require(
         dict(seal.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
         "prediction checkpoint changed",
@@ -1127,6 +1276,119 @@ def _evaluate_official13_public_metrics(
     }
 
 
+def _evaluate_fresh12_public_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Gate all twelve prospectively selected takes against the checkpoint."""
+
+    _require(
+        len(per_take) == len(FRESH12_PUBLIC_TARGET_TAKE_IDS),
+        "fresh public result set is incomplete",
+    )
+    by_take = {str(row["take_id"]): row for row in per_take}
+    _require(
+        tuple(sorted(by_take)) == tuple(sorted(FRESH12_PUBLIC_TARGET_TAKE_IDS)),
+        "fresh public result cohort changed",
+    )
+    ordered = [by_take[take_id] for take_id in FRESH12_PUBLIC_TARGET_TAKE_IDS]
+    for row in ordered:
+        frames = row.get("frames")
+        _require(isinstance(frames, list), "fresh public frame scores are missing")
+        _require(
+            len(frames) == int(row["scored_frame_count"]),
+            "fresh public scored-frame inventory changed",
+        )
+
+    baseline_frames = np.asarray(
+        [frame["baseline_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    candidate_frames = np.asarray(
+        [frame["candidate_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    _require(len(baseline_frames) > 0, "fresh public cohort has no scored frames")
+    _require(np.all(np.isfinite(baseline_frames)), "baseline scores are non-finite")
+    _require(np.all(np.isfinite(candidate_frames)), "candidate scores are non-finite")
+
+    baseline_object = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    candidate_object = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    _require(np.all(np.isfinite(baseline_object)), "baseline objects are invalid")
+    _require(np.all(np.isfinite(candidate_object)), "candidate objects are invalid")
+    _require(np.all(baseline_object > 0.0), "baseline object score is zero")
+    relative_by_object = (baseline_object - candidate_object) / baseline_object
+    baseline_balanced = float(np.mean(baseline_object))
+    candidate_balanced = float(np.mean(candidate_object))
+    relative_balanced = float(
+        (baseline_balanced - candidate_balanced) / baseline_balanced
+    )
+
+    paired = protocol["gates"]["paired_transfer"]
+    upper_difference = paired_object_bootstrap_upper_difference(
+        candidate_object - baseline_object,
+        replicates=int(paired["bootstrap_replicates"]),
+        seed=int(paired["bootstrap_seed"]),
+        upper_quantile=float(paired["bootstrap_upper_quantile"]),
+    )
+    paired_pass = bool(
+        relative_balanced
+        > float(paired["relative_CD_UL1_improvement_above"])
+        and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
+        and float(np.min(relative_by_object))
+        >= -float(paired["maximum_per_object_relative_regression"])
+    )
+
+    candidate_jaccard = [
+        float(frame["candidate_jaccard"])
+        for row in ordered
+        for frame in row["frames"]
+        if frame["candidate_jaccard"] is not None
+    ]
+    return {
+        "published_kinect_CD_UL1_mm": float(
+            protocol["official_reference"]["published_kinect_CD_UL1_mm"]
+        ),
+        "published_reference_is_contextual_only": True,
+        "published_direct_comparison_authorized": False,
+        "fresh_public_take_count": len(FRESH12_PUBLIC_TARGET_TAKE_IDS),
+        "development_overlap_take_count": 0,
+        "baseline_fresh12_frame_balanced_CD_UL1_mm": float(
+            np.mean(baseline_frames)
+        ),
+        "candidate_fresh12_frame_balanced_CD_UL1_mm": float(
+            np.mean(candidate_frames)
+        ),
+        "baseline_fresh12_object_balanced_CD_UL1_mm": baseline_balanced,
+        "candidate_fresh12_object_balanced_CD_UL1_mm": candidate_balanced,
+        "fresh12_object_balanced_relative_CD_UL1_improvement": relative_balanced,
+        "fresh12_object_win_count": int(np.sum(candidate_object < baseline_object)),
+        "fresh12_exact_fallback_tie_count": int(
+            np.sum(candidate_object == baseline_object)
+        ),
+        "fresh12_minimum_per_object_relative_improvement": float(
+            np.min(relative_by_object)
+        ),
+        "fresh12_bootstrap_upper_candidate_minus_baseline_CD_UL1_mm": (
+            upper_difference
+        ),
+        "candidate_global_jaccard_valid": (
+            float(np.mean(candidate_jaccard)) if candidate_jaccard else None
+        ),
+        "candidate_jaccard_valid_fraction": float(
+            len(candidate_jaccard) / len(candidate_frames)
+        ),
+        "jaccard_is_gating": False,
+        "released_checkpoint_pairing_is_primary": True,
+        "paired_transfer_passed": paired_pass,
+        "all_target_gates_passed": paired_pass,
+    }
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -1138,6 +1400,8 @@ def evaluate_target_metrics(
         return _evaluate_official18_metrics(per_object, protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
         return _evaluate_official13_public_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        return _evaluate_fresh12_public_metrics(per_object, protocol)
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
