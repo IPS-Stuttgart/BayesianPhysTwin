@@ -53,11 +53,16 @@ jobs:
 
           import base64
           import hashlib
+          import struct
           import sys
           import tarfile
+          import zlib
           from pathlib import Path, PurePosixPath
 
           expected_archive_sha256 = (
+              "446332a40b0d54f10140113e939e1a16bf0a04d39f419a5e1c891820939ae6c5"
+          )
+          committed_prefix_sha256 = (
               "17c2d0749f2de3c925cf5d94d136a8f6076f67e15c5dd41e38a51fac976d66e2"
           )
           allowed = {
@@ -84,11 +89,39 @@ jobs:
               for path in part_paths
           )
           encoded += "=" * ((-len(encoded)) % 4)
-          payload = base64.b64decode(encoded, validate=True)
-          digest = hashlib.sha256(payload).hexdigest()
-          print(f"decoded archive bytes={len(payload)} sha256={digest}")
-          if digest != expected_archive_sha256:
-              raise SystemExit("decoded source-bundle digest changed")
+          committed = base64.b64decode(encoded, validate=True)
+          committed_digest = hashlib.sha256(committed).hexdigest()
+          print(
+              f"decoded committed bytes={len(committed)} "
+              f"sha256={committed_digest}"
+          )
+          if committed_digest != committed_prefix_sha256:
+              raise SystemExit("committed source-bundle prefix changed")
+
+          decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+          unpacked = decoder.decompress(committed)
+          unpacked += decoder.flush()
+          trailer = struct.pack(
+              "<II",
+              zlib.crc32(unpacked) & 0xFFFFFFFF,
+              len(unpacked) & 0xFFFFFFFF,
+          )
+          matches: list[tuple[int, bytes]] = []
+          for missing_trailer_bytes in range(0, len(trailer) + 1):
+              suffix = trailer[len(trailer) - missing_trailer_bytes :]
+              candidate = committed + suffix
+              if hashlib.sha256(candidate).hexdigest() == expected_archive_sha256:
+                  matches.append((missing_trailer_bytes, candidate))
+          if len(matches) != 1:
+              raise SystemExit(
+                  "the truncated committed gzip cannot be uniquely repaired to "
+                  "the original locked archive digest"
+              )
+          missing_trailer_bytes, payload = matches[0]
+          print(
+              "recovered original locked gzip by appending "
+              f"{missing_trailer_bytes} deterministic trailer bytes"
+          )
 
           bundle = Path(sys.argv[1])
           source_root = Path(sys.argv[2])
@@ -109,7 +142,9 @@ jobs:
                       raise SystemExit(f"unexpected archive member: {member.name}")
                   relative = PurePosixPath(*raw.parts[1:]).as_posix()
                   if relative not in allowed or relative in files:
-                      raise SystemExit(f"unexpected or duplicate product file: {relative}")
+                      raise SystemExit(
+                          f"unexpected or duplicate product file: {relative}"
+                      )
                   files[relative] = member
               if set(files) != allowed:
                   missing = sorted(allowed - set(files))
