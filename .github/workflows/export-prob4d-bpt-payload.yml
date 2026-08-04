@@ -1,0 +1,95 @@
+name: Export regenerated decisive payload
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/export-prob4d-bpt-payload.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: export-prob4d-bpt-payload-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact regenerated implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 59256a124c4df1d780b79d1c31d6c1d01e63d10f
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Export and deterministically regenerate payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = \
+            "59256a124c4df1d780b79d1c31d6c1d01e63d10f"
+          root="${RUNNER_TEMP}/bpt-payload-export"
+          rm -rf "${root}"
+          mkdir -p "${root}"
+          python - <<'PY'
+          import base64
+          import hashlib
+          from pathlib import Path
+          import os
+          import zlib
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "bpt-payload-export"
+          science = Path("scripts/science")
+          specifications = {
+              "runner": (
+                  science / "run_prob4d_bpt_controlled_decisive_v1.py",
+                  "83af55e5744531110df5744031ab30b570bb5a0b9aa0bbb246961db783e166f5",
+              ),
+              "verifier": (
+                  science / "verify_prob4d_bpt_controlled_decisive_v1.py",
+                  "4a206f1bf15b85e47cbe1f13c3095d7531b17c8d32c9ddb68f26ca0d099778ad",
+              ),
+          }
+          manifest = []
+          for name, (path, expected) in specifications.items():
+              source = path.read_bytes()
+              actual = hashlib.sha256(source).hexdigest()
+              manifest.append(f"{name}_source_sha256={actual}")
+              if actual != expected:
+                  raise SystemExit(
+                      f"{name} source hash mismatch: {actual} != {expected}"
+                  )
+              encoded = base64.b64encode(zlib.compress(source, level=9))
+              decoded = zlib.decompress(base64.b64decode(encoded, validate=True))
+              if decoded != source:
+                  raise SystemExit(f"{name} deterministic round-trip failed")
+              (root / f"{name}-part00.txt").write_bytes(encoded + b"\n")
+              manifest.append(
+                  f"{name}_transport_sha256="
+                  f"{hashlib.sha256(encoded + b'\n').hexdigest()}"
+              )
+          (root / "manifest.txt").write_text(
+              "\n".join(manifest) + "\n", encoding="utf-8"
+          )
+          PY
+          tar -czf "${root}/source.tar.gz" \
+            scripts/science/prob4d_bpt_controlled_decisive_payload \
+            scripts/science/prob4d_bpt_controlled_decisive_verifier_payload \
+            scripts/science/run_prob4d_bpt_controlled_decisive_v1.py \
+            scripts/science/verify_prob4d_bpt_controlled_decisive_v1.py \
+            tests/test_prob4d_bpt_controlled_decisive_v1.py \
+            tests/test_prob4d_bpt_controlled_decisive_verifier_v1.py
+          sha256sum "${root}"/* > "${root}/SHA256SUMS"
+
+      - name: Upload exact export
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: regenerated-bpt-payload-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/bpt-payload-export
+          if-no-files-found: error
+          retention-days: 1
