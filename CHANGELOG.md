@@ -59,6 +59,7 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Random-walk drift-bias inference now preserves typed track identities, rejects serialized ID collisions, malformed probabilities, non-finite timestamps and numerical updates, and returns defensively owned immutable result/evidence artifacts.
 - Markov reliability now validates typed sequence identities without lossy string
   coercion, rejects mixed identities such as `1` and `"1"` instead of merging
   tracks, requires priors in `[0, 1]`, rejects invalid falsey configurations, and
