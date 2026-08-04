@@ -11,6 +11,15 @@ identity `f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc`,
 validate `RunManifestV2`, and require all eight registered metric checks to pass
 within the frozen absolute tolerance of `5e-7 m`.
 
-The two executions are compared through their frozen source, portable input
-identity, and numerical verification contract. Byte-identical floating-point
-serialization across runtimes is not required.
+The source revision's historical protocol ID includes the absolute path of the
+retrieval manifest and therefore changes across runners. Each execution retains
+that raw source ID as provenance. Admission and cross-run comparison use the
+path-independent protocol identity
+`5d31b04c464478d839ac3919ec04209b5ff22c75cf7fe8de54a6d189a4802872`,
+which replaces only that absolute path with the already verified portable data
+identity while retaining the method, hyperparameters, ordered cohort, and
+confirmation/development split.
+
+The two executions are compared through their frozen source, portable input and
+protocol identities, and numerical verification contract. Byte-identical
+floating-point serialization across runtimes is not required.
