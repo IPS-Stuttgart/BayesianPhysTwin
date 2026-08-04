@@ -5,6 +5,7 @@ import pytest
 
 from bayesian_phystwin.gauge_aware_belief import (
     GaugeAwareBeliefConfig,
+    GaugeAwareBeliefResult,
     GaugeAwareObservationBatch,
     decode_gauge_aware_query,
     select_gauge_aware_candidate,
@@ -33,6 +34,7 @@ def _batch(
     anchor_innovation_x: np.ndarray | None = None,
     anchor_groups: tuple[str, ...] | None = None,
     anchor_bias_mode: np.ndarray | None = None,
+    metadata: dict[str, object] | None = None,
 ) -> GaugeAwareObservationBatch:
     count = len(mode)
     gauge = _empty_design(count) if gauge_mode is None else _design(gauge_mode)
@@ -67,7 +69,9 @@ def _batch(
         prior_reliability=np.ones(count),
         physical_response_scale_m=physical_response_scale_m,
         state_prior_covariance_m2=np.asarray([[0.01]]),
-        metadata={"observation_artifact_id": "a" * 64},
+        metadata=(
+            {"observation_artifact_id": "a" * 64} if metadata is None else metadata
+        ),
         **kwargs,
     )
 
@@ -494,3 +498,59 @@ def test_regret_decision_must_be_bound_to_exact_candidate() -> None:
                 candidate_accepted=True,
             ),
         )
+
+
+def test_gauge_aware_batch_recursively_owns_and_freezes_metadata() -> None:
+    nested = {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    metadata: dict[str, object] = {"provider": nested}
+    batch = _batch(
+        np.asarray([1.0]),
+        np.asarray([0.0]),
+        metadata=metadata,
+    )
+
+    nested["calibration_ids"].append("mutated")
+    metadata["late"] = True
+
+    assert batch.metadata == {
+        "provider": {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    }
+    assert batch.metadata is not None
+    with pytest.raises(TypeError, match="immutable"):
+        batch.metadata["provider"] = {}  # type: ignore[index]
+    with pytest.raises(TypeError, match="immutable"):
+        batch.metadata["provider"]["calibration_ids"].append("mutated")
+
+
+def test_gauge_aware_result_recursively_owns_and_freezes_provenance() -> None:
+    diagnostic_details = {"iterations": [1, 2]}
+    lineage_details = {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    result = GaugeAwareBeliefResult(
+        inference_admissible=True,
+        reason="inference-admissible",
+        state_coefficients=np.asarray([0.0]),
+        gauge_delta=np.zeros(0),
+        shared_bias_coefficients=np.zeros(0),
+        view_bias_coefficients=np.zeros(0),
+        anchor_bias_coefficients=np.zeros(0),
+        posterior_covariance=np.asarray([[1.0]]),
+        identifiable_state_transform=np.asarray([[1.0]]),
+        identifiable_fractions=np.asarray([1.0]),
+        query_sensitivity_fractions=np.asarray([1.0]),
+        robust_weights=np.asarray([1.0]),
+        anchor_robust_weights=np.zeros(0),
+        diagnostics={"solver": diagnostic_details},
+        input_lineage={"provider": lineage_details},
+    )
+
+    diagnostic_details["iterations"].append(3)
+    lineage_details["calibration_ids"].append("mutated")
+
+    assert result.diagnostics == {"solver": {"iterations": [1, 2]}}
+    assert result.input_lineage == {
+        "provider": {"calibration_ids": ["gauge-v1", "camera-v2"]}
+    }
+    with pytest.raises(TypeError, match="immutable"):
+        result.diagnostics["solver"]["iterations"].append(3)
+    with pytest.raises(TypeError, match="immutable"):
+        result.input_lineage["provider"]["calibration_ids"][0] = "mutated"
