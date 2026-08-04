@@ -25,11 +25,14 @@ from .prior_aware_gauge_belief import (
 CLAIM_BEARING_PROB4D_UPDATE_VERSION = 1
 
 
-def _validate_sha256(value: str, *, name: str) -> None:
+def _validated_sha256(value: object, *, name: str) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a string")
     if len(value) != 64 or any(
         character not in "0123456789abcdef" for character in value
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+    return value
 
 
 def _validated_calibration_ids(value: object) -> Mapping[str, str]:
@@ -43,8 +46,10 @@ def _validated_calibration_ids(value: object) -> Mapping[str, str]:
             raise TypeError(f"calibration artifact {name!r} digest must be a string")
         if not name:
             raise ValueError("calibration artifact names must be nonempty")
-        _validate_sha256(digest, name=f"calibration artifact {name}")
-        result[name] = digest
+        result[name] = _validated_sha256(
+            digest,
+            name=f"calibration artifact {name}",
+        )
     return MappingProxyType(dict(sorted(result.items())))
 
 
@@ -87,7 +92,11 @@ class ClaimBearingProb4DUpdateV1:
             ("linearization_artifact_id", self.linearization_artifact_id),
             ("provider_manifest_id", self.provider_manifest_id),
         ):
-            _validate_sha256(value, name=name)
+            object.__setattr__(
+                self,
+                name,
+                _validated_sha256(value, name=name),
+            )
         calibration_ids = _validated_calibration_ids(
             self.calibration_artifact_ids
         )
@@ -203,8 +212,9 @@ def update_claim_bearing_prob4d_from_artifacts(
         **anchor_dependence,
     )
     metadata = adapted.batch.metadata or {}
-    provider_manifest_id = str(
-        metadata.get("prob4d_claim_bearing_provider_manifest_id", "")
+    provider_manifest_id = _validated_sha256(
+        metadata.get("prob4d_claim_bearing_provider_manifest_id"),
+        name="provider_manifest_id",
     )
     calibration_ids = _validated_calibration_ids(
         metadata.get("prob4d_claim_bearing_calibration_artifact_ids")
