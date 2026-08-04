@@ -7,17 +7,26 @@ on:
     paths:
       - .github/workflows/apply-tempered-v2-payload.yml
       - .github/patches/tempered-v2/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-tempered-v2-payload.yml
+      - .github/patches/tempered-v2/**
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: apply-tempered-v2-payload
-  cancel-in-progress: false
+  group: apply-tempered-v2-payload-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -106,8 +115,11 @@ jobs:
               raise SystemExit(
                   f"protocol digest changed: expected {expected}, received {digest}"
               )
-          if payload["information_boundary"]["confirmation_outcomes_allowed"]:
+          target_access = payload["target_access"]
+          if target_access["confirmation_outcomes_allowed"]:
               raise SystemExit("source-only protocol permits confirmation outcomes")
+          if not target_access["retrieve_only_source_cases"]:
+              raise SystemExit("source-only protocol may retrieve target cases")
           expected_cases = {
               "single_lift_sloth",
               "double_lift_sloth",
