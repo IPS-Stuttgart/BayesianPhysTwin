@@ -4,6 +4,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 
@@ -17,6 +18,7 @@ if str(SCIENCE) not in sys.path:
     sys.path.insert(0, str(SCIENCE))
 
 from prob4d_cross_window_identity_development_v1 import (  # noqa: E402
+    NEWEST_WINDOW,
     SOURCE_LINKED,
     AssociationCandidateConfig,
     GroupAssociation,
@@ -31,6 +33,27 @@ from prob4d_bpt_controlled_decisive_core_v1 import generate_group  # noqa: E402
 
 
 PROTOCOL = ROOT / "protocols" / "prob4d_cross_window_identity_development_v1.json"
+
+
+def _candidate(
+    *,
+    minimum_score: float = 0.01,
+    minimum_margin: float = 0.0,
+) -> AssociationCandidateConfig:
+    return AssociationCandidateConfig(
+        use_covariance=False,
+        configuration=CrossWindowAssociationConfig(
+            minimum_shared_frames=2,
+            minimum_effective_support=1.5,
+            isotropic_distance_scale_m=0.024,
+            covariance_floor_m2=1e-10,
+            maximum_weighted_rms_m=0.032,
+            maximum_shared_frame_distance_m=0.096,
+            maximum_spatial_candidate_pairs=1_000_000,
+            minimum_compatibility_score=minimum_score,
+            minimum_score_margin=minimum_margin,
+        ),
+    )
 
 
 def test_development_protocol_has_no_confirmatory_target_seed() -> None:
@@ -66,30 +89,16 @@ def test_nominal_source_association_recovers_permuted_material_ids() -> None:
         group_prefix="test",
     )
     context = build_association_context(group)
-    candidate = AssociationCandidateConfig(
-        use_covariance=False,
-        configuration=CrossWindowAssociationConfig(
-            minimum_shared_frames=2,
-            minimum_effective_support=1.5,
-            isotropic_distance_scale_m=0.024,
-            covariance_floor_m2=1e-10,
-            maximum_weighted_rms_m=0.032,
-            maximum_shared_frame_distance_m=0.096,
-            maximum_spatial_candidate_pairs=1_000_000,
-            minimum_compatibility_score=0.01,
-            minimum_score_margin=0.0,
-        ),
-    )
 
-    result = run_association(context, candidate)
+    result = run_association(context, _candidate())
     metrics = association_counts(context, result).metrics()
 
     assert metrics["precision"] == pytest.approx(1.0)
     assert metrics["recall"] >= 0.80
-    assert result.result_id == run_association(context, candidate).result_id
+    assert result.result_id == run_association(context, _candidate()).result_id
 
 
-def test_source_linked_batch_uses_only_admitted_cross_window_rows() -> None:
+def test_source_linked_batch_uses_only_admitted_older_rows() -> None:
     protocol = load_protocol(PROTOCOL)
     group = generate_group(
         8801002,
@@ -98,21 +107,7 @@ def test_source_linked_batch_uses_only_admitted_cross_window_rows() -> None:
         group_prefix="test",
     )
     context = build_association_context(group)
-    candidate = AssociationCandidateConfig(
-        use_covariance=False,
-        configuration=CrossWindowAssociationConfig(
-            minimum_shared_frames=2,
-            minimum_effective_support=1.5,
-            isotropic_distance_scale_m=0.024,
-            covariance_floor_m2=1e-10,
-            maximum_weighted_rms_m=0.032,
-            maximum_shared_frame_distance_m=0.096,
-            maximum_spatial_candidate_pairs=1_000_000,
-            minimum_compatibility_score=0.01,
-            minimum_score_margin=0.0,
-        ),
-    )
-    result = run_association(context, candidate)
+    result = run_association(context, _candidate())
     association = GroupAssociation(
         context=context,
         result=result,
@@ -126,10 +121,60 @@ def test_source_linked_batch_uses_only_admitted_cross_window_rows() -> None:
         protocol.base_config,
     )
 
-    point_count = protocol.base_config.point_count
-    assert len(batch.innovation_m) == 2 * point_count + 2 * len(result.links)
+    retained_count = len(context.right_local_to_true)
+    assert len(batch.innovation_m) == 2 * retained_count + 2 * len(result.links)
     assert batch.metadata["accepted_cross_window_links"] == len(result.links)
     assert batch.metadata["target_identity_labels_used_for_batch"] is False
+
+
+def test_zero_links_reproduce_newest_window_batch_exactly() -> None:
+    protocol = load_protocol(PROTOCOL)
+    group = generate_group(
+        8801003,
+        "nominal_correlated",
+        protocol.base_config,
+        group_prefix="test",
+    )
+    context = build_association_context(group)
+    result = run_association(
+        context,
+        _candidate(minimum_score=1.0, minimum_margin=1.0),
+    )
+    assert not result.links
+    association = GroupAssociation(
+        context=context,
+        result=result,
+        counts=association_counts(context, result),
+    )
+
+    source = _batch_for_method(
+        group,
+        association,
+        SOURCE_LINKED,
+        protocol.base_config,
+    )
+    newest = _batch_for_method(
+        group,
+        association,
+        NEWEST_WINDOW,
+        protocol.base_config,
+    )
+
+    for field in (
+        "innovation_m",
+        "observation_covariance_m2",
+        "state_jacobian",
+        "gauge_jacobian",
+        "shared_bias_jacobian",
+        "view_bias_jacobian",
+        "query_state_jacobian",
+        "gauge_prior_covariance",
+        "prior_reliability",
+        "prior_nominal_probability",
+        "composite_weight",
+    ):
+        assert np.array_equal(getattr(source, field), getattr(newest, field))
+    assert source.correlation_group_ids == newest.correlation_group_ids
 
 
 def test_protocol_loader_rejects_target_seed_in_development(tmp_path: Path) -> None:
@@ -138,5 +183,5 @@ def test_protocol_loader_rejects_target_seed_in_development(tmp_path: Path) -> N
     path = tmp_path / "invalid.json"
     path.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(RuntimeError, match="target seeds"):
+    with pytest.raises(ValueError, match="target seeds"):
         load_protocol(path)
