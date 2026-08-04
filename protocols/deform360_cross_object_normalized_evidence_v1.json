@@ -1,0 +1,264 @@
+{
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20260804,
+    "unit": "target object"
+  },
+  "claim_boundary": "Leave-one-object-out mechanism diagnostic on six Deform360 objects and packed visual-hull artifacts that prior repository work has already used. Each target object is excluded from its own evidence-scale selection, but the release is not globally unseen. Results must not be presented as fresh independent validation, official Deform360 benchmark parity, calibrated deployment uncertainty, or a state-of-the-art claim.",
+  "cross_fitting": {
+    "folds": "one fold per target object",
+    "same_object_used_as_source_in_other_folds": true,
+    "source_objects": "all other five objects",
+    "target_outcome_used_for_own_selection": false
+  },
+  "diagnostic_readout": {
+    "coverage_target": 0.9,
+    "no_automatic_claim_promotion": true,
+    "point_reference": "last_residual",
+    "uncertainty_reference": "cumulative_model_average"
+  },
+  "episodes": [
+    {
+      "expected_frame_count": 65,
+      "object_id": "002-rope-silk",
+      "path": "data-7fea8e2/replication-v1/observations/002-rope-silk/episode_0000/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 64,
+      "object_id": "002-rope-silk",
+      "path": "data-7fea8e2/replication-v1/observations/002-rope-silk/episode_0002/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 70,
+      "object_id": "002-rope-silk",
+      "path": "data-7fea8e2/replication-v1/observations/002-rope-silk/episode_0005/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 61,
+      "object_id": "002-rope-silk",
+      "path": "data-7fea8e2/replication-v1/observations/002-rope-silk/episode_0006/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 55,
+      "object_id": "002-rope-silk",
+      "path": "data-7fea8e2/replication-v1/observations/002-rope-silk/episode_0007/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 54,
+      "object_id": "002-rope-silk",
+      "path": "data-7fea8e2/replication-v1/observations/002-rope-silk/episode_0009/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 41,
+      "object_id": "081-stripe-rope",
+      "path": "data-7fea8e2/replication-v1/observations/081-stripe-rope/episode_0001/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 33,
+      "object_id": "081-stripe-rope",
+      "path": "data-7fea8e2/replication-v1/observations/081-stripe-rope/episode_0003/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 54,
+      "object_id": "081-stripe-rope",
+      "path": "data-7fea8e2/replication-v1/observations/081-stripe-rope/episode_0004/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 45,
+      "object_id": "081-stripe-rope",
+      "path": "data-7fea8e2/replication-v1/observations/081-stripe-rope/episode_0006/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 44,
+      "object_id": "081-stripe-rope",
+      "path": "data-7fea8e2/replication-v1/observations/081-stripe-rope/episode_0007/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 36,
+      "object_id": "081-stripe-rope",
+      "path": "data-7fea8e2/replication-v1/observations/081-stripe-rope/episode_0009/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 69,
+      "object_id": "083-blanket-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/083-blanket-cloth/episode_0001/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 56,
+      "object_id": "083-blanket-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/083-blanket-cloth/episode_0002/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 70,
+      "object_id": "083-blanket-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/083-blanket-cloth/episode_0004/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 73,
+      "object_id": "083-blanket-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/083-blanket-cloth/episode_0005/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 69,
+      "object_id": "083-blanket-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/083-blanket-cloth/episode_0008/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 58,
+      "object_id": "083-blanket-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/083-blanket-cloth/episode_0009/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 46,
+      "object_id": "085-scarf-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/085-scarf-cloth/episode_0001/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 68,
+      "object_id": "085-scarf-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/085-scarf-cloth/episode_0003/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 69,
+      "object_id": "085-scarf-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/085-scarf-cloth/episode_0004/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 53,
+      "object_id": "085-scarf-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/085-scarf-cloth/episode_0006/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 57,
+      "object_id": "085-scarf-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/085-scarf-cloth/episode_0008/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 54,
+      "object_id": "085-scarf-cloth",
+      "path": "data-7fea8e2/replication-v1/observations/085-scarf-cloth/episode_0009/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 52,
+      "object_id": "092-squirrel",
+      "path": "data-7fea8e2/replication-v1/observations/092-squirrel/episode_0000/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 54,
+      "object_id": "092-squirrel",
+      "path": "data-7fea8e2/replication-v1/observations/092-squirrel/episode_0004/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 63,
+      "object_id": "092-squirrel",
+      "path": "data-7fea8e2/replication-v1/observations/092-squirrel/episode_0005/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 48,
+      "object_id": "170-spider",
+      "path": "data-7fea8e2/replication-v1/observations/170-spider/episode_0000/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 50,
+      "object_id": "170-spider",
+      "path": "data-7fea8e2/replication-v1/observations/170-spider/episode_0001/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 38,
+      "object_id": "170-spider",
+      "path": "data-7fea8e2/replication-v1/observations/170-spider/episode_0003/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 52,
+      "object_id": "170-spider",
+      "path": "data-7fea8e2/replication-v1/observations/170-spider/episode_0005/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 40,
+      "object_id": "170-spider",
+      "path": "data-7fea8e2/replication-v1/observations/170-spider/episode_0008/sampled_hulls.npz"
+    },
+    {
+      "expected_frame_count": 65,
+      "object_id": "170-spider",
+      "path": "data-7fea8e2/replication-v1/observations/170-spider/episode_0009/sampled_hulls.npz"
+    }
+  ],
+  "information_boundary": {
+    "all_objects_previously_used_by_repository": true,
+    "array_payloads_opened_when_protocol_locked": false,
+    "fold_local_target_exclusion": true,
+    "globally_sealed_target_cohort": false,
+    "npz_headers_previously_inspected": true,
+    "official_deform360_task": false
+  },
+  "max_points_per_hull": 128,
+  "methods": [
+    "persistence",
+    "last_residual",
+    "cumulative_model_average",
+    "normalized_kappa_1",
+    "cross_fitted_normalized"
+  ],
+  "metrics": {
+    "aggregation": "episode means followed by equal-object means",
+    "point": [
+      "centroid_rmse_m",
+      "translated_hull_chamfer_rmse_m"
+    ],
+    "uncertainty": [
+      "raw_coverage_90",
+      "mean_gaussian_nll",
+      "effective_component_count"
+    ]
+  },
+  "minimum_prefix_displacements": 3,
+  "normalized_evidence": {
+    "boundary_selection_is_inconclusive": true,
+    "kappa_candidates": [
+      0.00390625,
+      0.0078125,
+      0.015625,
+      0.03125,
+      0.0625,
+      0.125,
+      0.25,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0,
+      16.0,
+      32.0,
+      64.0,
+      128.0,
+      256.0
+    ],
+    "selection_objective": "one-step Gaussian negative log likelihood",
+    "selection_unit": "equal source-object mean",
+    "tie_break": [
+      "lower equal-source-object centroid RMSE",
+      "kappa closest to one",
+      "lower kappa"
+    ],
+    "weight_rule": "softmax(log_uniform_prior + kappa * cumulative_component_log_evidence / update_count)"
+  },
+  "objects": [
+    "002-rope-silk",
+    "081-stripe-rope",
+    "083-blanket-cloth",
+    "085-scarf-cloth",
+    "092-squirrel",
+    "170-spider"
+  ],
+  "protocol_id": "deform360-cross-object-normalized-evidence-v1",
+  "provenance_locks": {
+    "allowed_relative_root": "data-7fea8e2/replication-v1/observations",
+    "metadata_content_inventory_sha256": "0089c45afb323e6d2e4312dd71d6e5a2cb359c056f007b5aeb09da33e03b7974",
+    "metadata_preflight_commit": "60551a12de96da7dbaeefe4c6c83cd5c923427e6",
+    "npz_header_inventory_sha256": "fddc3e3aad2c5f1f6c87028adae6ba569c1916c8c3cd34398a98a1ac28623996"
+  },
+  "schema": "bayesian-phystwin/deform360-cross-object-normalized-evidence-v1",
+  "schema_version": 1,
+  "status": "retrospective-non-fresh-cross-fitted-diagnostic"
+}
