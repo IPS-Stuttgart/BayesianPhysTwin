@@ -51,13 +51,26 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
+      - name: Restore public PhysTwin trajectory subset
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/bayesian-phystwin/trajectory-evaluation-v1
+          key: >-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{
+            hashFiles('src/bayesian_phystwin/phystwin_data.py') }}-${{
+            github.sha }}
+          restore-keys: |
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{ hashFiles('src/bayesian_phystwin/phystwin_data.py') }}-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-
+
       - name: Resolve isolated paths
         shell: bash
         run: |
           set -euo pipefail
           root="${RUNNER_TEMP}/bpt-full22-model-average-hosted-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${root}/data" "${root}/evidence"
-          echo "DATA_ROOT=${root}/data" >> "${GITHUB_ENV}"
+          data_root="${HOME}/.cache/bayesian-phystwin/trajectory-evaluation-v1"
+          mkdir -p "${data_root}" "${root}/evidence"
+          echo "DATA_ROOT=${data_root}" >> "${GITHUB_ENV}"
           echo "OUTPUT_ROOT=${root}/evidence" >> "${GITHUB_ENV}"
 
       - name: Record independent runtime
