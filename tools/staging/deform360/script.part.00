@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""Run a target-blind grouped evaluation on mounted public Deform360 data.
+
+The experiment has three explicit phases:
+
+``inventory``
+    Inspect NPZ headers, select a balanced archive subset, hash every selected
+    archive, and freeze disjoint tuning, conformal-calibration, and target object
+    partitions without decoding numerical array values.
+
+``prepare``
+    Open only tuning and calibration objects. Select a per-observation evidence
+    scale, a smooth horizon multiplier, and an outcome-free regret guard on the
+    tuning objects; calibrate one simultaneous scaled conformal score per accepted
+    calibration object; then serialize a content-addressed frozen selection.
+
+``evaluate``
+    Verify the inventory and frozen selection, open only target objects, apply the
+    frozen predictor/guard/conformal rule once, and report equal-object metrics and
+    paired object-level bootstrap intervals. Rejected objects use the exact
+    last-supported-increment fallback.
+
+This remains an external, group-separated diagnostic rather than official
+Deform360 benchmark parity or deployment-calibration evidence.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import re
+import zipfile
+from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+from numpy.lib import format as npformat
+
+from bayesian_phystwin.endpoint_model_average import (
+    ModelAveragedEndpointPosteriorV1,
+    infer_model_averaged_endpoint,
+)
+from bayesian_phystwin.grouped_conformal import finite_group_conformal_quantile
+
+PROTOCOL_SCHEMA = "bayesian-phystwin-deform360-grouped-public-experiment"
+INVENTORY_SCHEMA = "bayesian-phystwin/deform360-grouped-inventory-v1"
+SELECTION_SCHEMA = "bayesian-phystwin/deform360-grouped-selection-v1"
+RESULT_SCHEMA = "bayesian-phystwin/deform360-grouped-result-v1"
+
+METHODS = (
+    "persistence",
+    "last_residual",
+    "raw_model_average",
+    "normalized_model_average",
+    "guarded_normalized_model_average",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ArchiveHeaders:
+    """Target-blind array metadata extracted from one NPZ container."""
+
+    arrays: Mapping[str, Mapping[str, Any]]
+    archive_size_bytes: int
+
+
+@dataclass(frozen=True, slots=True)
+class SequenceData:
+    """One selected fixed-identity or correspondence-free trajectory."""
+
+    path: str
+    object_id: str
+    session_id: str
+    representation: str
+    positions_m: np.ndarray | None
+    validity: np.ndarray | None
+    hulls_m: tuple[np.ndarray, ...] | None
+
+    @property
+    def frame_count(self) -> int:
+        if self.positions_m is not None:
+            return int(len(self.positions_m))
+        assert self.hulls_m is not None
+        return len(self.hulls_m)
+
+
+@dataclass(frozen=True, slots=True)
+class FittedSequence:
+    """Causal-prefix fit and held-out future inputs for one sequence."""
+
+    data: SequenceData
+    prefix_frames: int
+    anchor_points_m: np.ndarray
+    anchor_valid: np.ndarray
+    targets_m: tuple[np.ndarray, ...]
+    target_validity: tuple[np.ndarray, ...]
+    anchor_hull_m: np.ndarray | None
+    target_hulls_m: tuple[np.ndarray, ...] | None
+    last_increment_m: np.ndarray
+    posterior: ModelAveragedEndpointPosteriorV1
+
+    @property
+    def future_count(self) -> int:
+        return len(self.targets_m)
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateEvidence:
+    """Object-level point, score, and uncertainty evidence for one candidate."""
+
+    representation_rmse_m: Mapping[str, float]
+    chamfer_rmse_m: Mapping[str, float]
+    model_mean_nll: float
+    model_endpoint_error_m: np.ndarray
+    model_endpoint_radius_m: np.ndarray
+    guard_score: float
+    effective_component_count: float
+    archive_count: int
+    representation_counts: Mapping[str, int]
+
+
+# ---------------------------------------------------------------------------
+# Canonical JSON identities
+
+
+def _canonical_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def _sha256_json(value: Any) -> str:
+    return hashlib.sha256(_canonical_bytes(value)).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise TypeError(f"{path} must contain a JSON object")
+    return value
+
+
+def _identity_without(value: Mapping[str, Any], *keys: str) -> dict[str, Any]:
+    return {key: item for key, item in value.items() if key not in set(keys)}
+
+
+def _require_content_id(value: object, *, name: str) -> str:
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+    return value
+
+
+# ---------------------------------------------------------------------------
+# Protocol validation
+
+
+def _positive_integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise TypeError(f"{name} must be an integer")
+    result = int(value)
+    if result < 1:
+        raise ValueError(f"{name} must be positive")
+    return result
+
+
+def _probability(value: object, *, name: str) -> float:
+    result = float(value)
+    if not math.isfinite(result) or not 0.0 < result < 1.0:
+        raise ValueError(f"{name} must lie in (0, 1)")
+    return result
+
+
+def _load_protocol(path: Path) -> tuple[dict[str, Any], str]:
+    protocol = _load_json(path)
+    if protocol.get("schema") != PROTOCOL_SCHEMA:
+        raise ValueError("unexpected Deform360 grouped protocol schema")
+    if protocol.get("schema_version") != 1:
+        raise ValueError("unsupported Deform360 grouped protocol version")
+    if protocol.get("status") != "external-group-separated-non-claim-bearing":
+        raise ValueError("the protocol claim boundary changed")
+
+    dataset = protocol["dataset"]
+    for key in (
+        "minimum_frames",
+        "maximum_archives_per_object",
+        "maximum_frames_per_archive",
+        "maximum_tracks_per_archive",
+    ):
+        _positive_integer(dataset[key], name=f"dataset.{key}")
+    if dataset.get("extension") != ".npz":
+        raise ValueError("only target-blind NPZ header inventory is supported")
+    fixed_keys = tuple(dataset["fixed_identity_keys"])
+    if len(fixed_keys) != len(set(fixed_keys)) or not fixed_keys:
+        raise ValueError("fixed_identity_keys must be nonempty and unique")
+    if any(not isinstance(key, str) or not key for key in fixed_keys):
+        raise TypeError("fixed_identity_keys must contain nonempty strings")
+    if tuple(dataset["packed_hull_keys"]) != (
+        "frame_indices",
+        "point_offsets",
+        "points_world_m",
+    ):
+        raise ValueError("the packed visual-hull array contract changed")
+    validity_keys = tuple(dataset["validity_keys"])
+    if not validity_keys or len(validity_keys) != len(set(validity_keys)):
+        raise ValueError("validity_keys must be nonempty and unique")
+    representation_priority = tuple(dataset["representation_priority"])
+    if representation_priority != (
+        "fixed_identity_trajectory",
+        "packed_visual_hulls",
+    ):
+        raise ValueError("the registered representation priority changed")
+
+    exclusions = protocol["prior_evidence_exclusions"]
+    if exclusions.get("policy") != (
+        "exclude-object-if-media-or-outcome-was-opened-or-reserved"
+    ):
+        raise ValueError("the prior-evidence exclusion policy changed")
+    expected_sources = (
+        (
+            "configs/sota/"
+            "deform360_bias_aware_guarded_belief_prospective_v1.json",
+            (
+                "open_or_reserved_objects",
+                "calibration_cohort",
+                "target_cohort",
+            ),
+        ),
+        (
+            "configs/sota/"
+            "deform360_bias_aware_guarded_belief_prospective_v2.json",
+            (
+                "calibration_cohort",
+                "target_cohort",
+                "repair.fresh_calibration",
+                "repair.prior_path_open_objects_excluded",
+            ),
+        ),
+    )
+    source_records = tuple(exclusions.get("source_files", ()))
+    actual_sources = tuple(
+        (str(record.get("path")), tuple(record.get("fields", ())))
+        for record in source_records
+        if isinstance(record, dict)
+    )
+    if actual_sources != expected_sources or len(actual_sources) != len(
+        source_records
+    ):
+        raise ValueError("the prior-evidence exclusion registry changed")
+
+    grouping = protocol["grouping"]
+    if grouping.get("statistical_unit") != "object":
+        raise ValueError("the registered statistical unit must be one object")
+    re.compile(str(grouping["object_pattern"]))
+    re.compile(str(grouping["session_pattern"]), re.IGNORECASE)
+    if grouping.get("unknown_object_policy") != "ineligible":
+        raise ValueError("unknown-object archives must remain ineligible")
+
+    split = protocol["split"]
+    tuning_fraction = _probability(
+        split["tuning_fraction"], name="split.tuning_fraction"
+    )
+    calibration_fraction = _probability(
+        split["calibration_fraction"], name="split.calibration_fraction"
+    )
+    if tuning_fraction + calibration_fraction >= 1.0:
+        raise ValueError("tuning and calibration fractions must leave target objects")
+    for key in (
+        "minimum_tuning_objects",
+        "minimum_calibration_objects",
+        "minimum_target_objects",
+    ):
+        _positive_integer(split[key], name=f"split.{key}")
+    if not isinstance(split.get("salt"), str) or not split["salt"]:
+        raise ValueError("split.salt must be a nonempty string")
+
+    forecast = protocol["forecast"]
