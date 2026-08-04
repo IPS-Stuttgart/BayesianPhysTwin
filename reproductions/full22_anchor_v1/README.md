@@ -13,21 +13,32 @@ the existing evidence artifacts.
   `ee11310a84b92ff2158018a13ef09989e641e7c0ea84733fe8a6abf267093c65`
 - PhysTwin source revision:
   `2b6630528141b9cba5a7677c8b88b2129b4a8390`
-- Evaluation-subset manifest SHA-256:
+- Portable trajectory-data identity SHA-256:
+  `f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc`
+- Historical full retrieval-manifest SHA-256:
   `c986f9fffe99e63f842bb48eb1d394a6b87663f5c4a4fb99f2a58855875fb125`
 
 The source checkout must be clean and at the exact recorded revision. The data
-manifest must have the exact digest and ordered 22-case content. The capsule
-fails before fitting when either identity differs.
+identity binds the two public archive sources, the ordered 22-case cohort, and
+the archive member, byte count, CRC32, and SHA-256 of every required
+`final_data.pkl`, `gt_track_3d.pkl`, `split.json`, and `inference.pkl` file. The
+capsule also hashes the actual files before fitting.
+
+The raw historical manifest digest is retained for provenance, but it is no
+longer used as the portable admission key: retrieval timestamps, cache-reuse
+flags, and unused checkpoint/optimization records do not change the scientific
+data identity. Both `evaluation_subset_manifest.json` and the minimal
+`trajectory_evaluation_manifest.json` are accepted when their normalized
+scientific content is identical.
 
 ## Run
 
-Install the current checkout with its graph and development dependencies. Then
+Install the current checkout with its data and development dependencies. Then
 use that checkout containing this capsule, a separate checkout at the frozen
 source revision, and the retrieved evaluation subset:
 
 ```bash
-python -m pip install -e ".[dev,graph]"
+python -m pip install -e ".[dev,data]"
 python reproductions/full22_anchor_v1/reproduce.py \
   /path/to/Bayesian-PhysTwin-e393bb6 \
   /path/to/phystwin-eval \
@@ -41,7 +52,14 @@ before starting rather than mixing artifacts from two executions.
 
 The frozen source checkout executes the historical confirmation and absolute
 22-case comparison modules through `PYTHONPATH`. The current checkout is used
-only to create and validate the strict `RunManifestV2` evidence record.
+only to validate the portable data identity and create the strict
+`RunManifestV2` evidence record.
+
+The hosted workflow `.github/workflows/full22-anchor-reproduction.yml` restores
+or selectively downloads the public trajectory subset, creates a detached
+worktree at the frozen source revision, runs the capsule with two CPU workers,
+validates the evidence bundle, and uploads the result. No self-hosted runner or
+private dataset path is required.
 
 ## Produced bundle
 
@@ -49,7 +67,7 @@ The output contains:
 
 - the exact two-stage source command in `source-command.txt`;
 - a copied capsule and expected-metric contract;
-- the frozen data-manifest copy and method/configuration locks;
+- the source retrieval manifest and a stable `data_identity.json`;
 - all 22 per-case Bayesian-anchor trajectories and summaries;
 - `full22_comparison.json` with released and Bayesian-anchor metrics;
 - `verification.json`, which fails closed on metric drift beyond `5e-7 m`;
