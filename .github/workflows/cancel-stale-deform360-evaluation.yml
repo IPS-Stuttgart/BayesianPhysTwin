@@ -1,0 +1,20 @@
+name: Deform360 public-data evaluation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cancel-stale-deform360-evaluation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-public-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  supersede:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Superseding the stale unrestricted Deform360 run before dataset access."
