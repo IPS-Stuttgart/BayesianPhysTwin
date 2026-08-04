@@ -1,0 +1,54 @@
+{
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20260804,
+    "statistical_unit": "PhysTwin case with paired resampling"
+  },
+  "claim_boundary": "Retrospective diagnostic on the released official 22-case PhysTwin cohort. The cohort and its development/confirmation split have already informed BayesianPhysTwin development. Results may diagnose point accuracy, raw predictive calibration, horizon degradation, and selective risk, but must not be promoted as fresh independent validation, calibrated deployment uncertainty, or a new state-of-the-art claim.",
+  "coverage_levels": [
+    0.5,
+    0.9,
+    0.95
+  ],
+  "development_cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "fit_fraction": 0.75,
+  "interpolation_neighbors": 4,
+  "maximum_residual_m": 0.01,
+  "methods": [
+    "released_phystwin",
+    "selected_bayesian_anchor",
+    "model_average",
+    "model_average_anchor_guard",
+    "last_residual"
+  ],
+  "model_average": {
+    "component_prior": "uniform",
+    "components": "the frozen 5 x 3 process/observation standard-deviation grid from the Bayesian anchor",
+    "mean": "per-track predictive-evidence-weighted endpoint mean",
+    "uncertainty": "within-component covariance plus between-component mean disagreement",
+    "uses_future_target_for_weighting": false
+  },
+  "point_metrics": [
+    "official one-way L1 Chamfer distance",
+    "official manual-track Euclidean error"
+  ],
+  "predictive_metrics": [
+    "3D NEES",
+    "Gaussian negative log likelihood",
+    "50/90/95 percent ellipsoid coverage",
+    "uncertainty-ranked selective residual risk"
+  ],
+  "schema": "bayesian-phystwin-full22-model-average-diagnostic",
+  "schema_version": 1,
+  "selective_fractions": [
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "status": "retrospective-non-claim-bearing"
+}
