@@ -385,6 +385,25 @@ def validate_pokeflex_shrinkage_target_protocol(
             == FRESH12_PUBLIC_ZIP_SHA256,
             "fresh cohort archive bytes changed",
         )
+        amendment = payload.get("preoutcome_storage_amendment")
+        _require(isinstance(amendment, Mapping), "storage amendment is missing")
+        _require(
+            amendment.get("supersedes_protocol_sha256")
+            == "38cfafdbf92d66d3dc3bb5bf346df89f0cc00d5d5ed928aacf8ddb3469e5adcc",
+            "superseded fresh protocol changed",
+        )
+        _require(
+            amendment.get("target_mesh_geometry_decoded") is False,
+            "storage amendment followed geometry access",
+        )
+        _require(
+            amendment.get("target_metric_computed") is False,
+            "storage amendment followed outcome access",
+        )
+        _require(
+            amendment.get("cohort_or_method_changed") is False,
+            "storage amendment changed the experiment",
+        )
     else:
         _require(
             tuple(cohort.get("objects", ())) == TARGET_OBJECTS,
@@ -444,10 +463,25 @@ def validate_pokeflex_shrinkage_target_protocol(
         == len(target_take_ids_for_protocol(payload)),
         "prediction barrier count changed",
     )
+    target_mesh_boundary = (
+        "geometry decoding and scoring forbidden; opaque byte-preserving archive extraction allowed"
+        if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
+        else "forbidden"
+    )
     _require(
-        custody.get("target_mesh_access_before_barrier") == "forbidden",
+        custody.get("target_mesh_access_before_barrier") == target_mesh_boundary,
         "target mesh custody weakened",
     )
+    if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        _require(
+            custody.get("registered_source_archive_required") is True,
+            "registered source archive requirement changed",
+        )
+        _require(
+            custody.get("registered_source_archive_evidence")
+            == "canonical opaque-stage manifest binds the registered ZIP hash and every transferred member hash",
+            "registered source evidence changed",
+        )
     _require(
         custody.get("prediction_observation_history") == "f-5 through f-1",
         "causal history changed",
@@ -707,6 +741,19 @@ def validate_prediction_seal(
             seal.get("source_archive_name") == f"{take_id}.zip",
             "fresh source archive name changed",
         )
+        _require(
+            seal.get("source_stage_manifest_name") == "source_stage_manifest.json",
+            "fresh stage manifest name changed",
+        )
+        for field in (
+            "source_stage_manifest_sha256",
+            "source_stage_manifest_file_sha256",
+        ):
+            value = seal.get(field)
+            _require(
+                isinstance(value, str) and len(value) == 64,
+                f"fresh {field} is invalid",
+            )
     _require(
         dict(seal.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
         "prediction checkpoint changed",

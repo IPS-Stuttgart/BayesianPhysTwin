@@ -168,6 +168,9 @@ def _write_prediction(
     if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
         seal["source_archive_name"] = f"{take_id}.zip"
         seal["source_archive_sha256"] = FRESH12_PUBLIC_ZIP_SHA256[take_id]
+        seal["source_stage_manifest_name"] = "source_stage_manifest.json"
+        seal["source_stage_manifest_sha256"] = "2" * 64
+        seal["source_stage_manifest_file_sha256"] = "3" * 64
     seal["seal_sha256"] = prediction_seal_sha256(seal)
     seal_path = case_root / "seal.json"
     seal_path.write_text(json.dumps(seal), encoding="utf-8")
@@ -243,6 +246,7 @@ def test_fresh12_public_protocol_locks_all_prospective_archives() -> None:
         == FRESH12_PUBLIC_TARGET_TAKE_IDS
     )
     assert loaded["target_cohort"]["development_overlap_take_ids"] == []
+    assert loaded["preoutcome_storage_amendment"]["target_metric_computed"] is False
     assert (
         loaded["freshness_audit"]["selected_zip_sha256"]
         == FRESH12_PUBLIC_ZIP_SHA256

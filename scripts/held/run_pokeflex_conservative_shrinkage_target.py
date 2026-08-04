@@ -7,6 +7,7 @@ import argparse
 import json
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -36,7 +37,6 @@ from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
 )
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: E402
     CHECKPOINT_SHA256,
-    FRESH12_PUBLIC_ZIP_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
@@ -54,6 +54,11 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     target_take_ids_for_protocol,
     validate_prediction_barrier,
     validate_prediction_seal,
+)
+from bayesian_phystwin.pokeflex_fresh12_staging import (  # noqa: E402
+    STAGE_MANIFEST_NAME,
+    validate_pokeflex_fresh12_stage_manifest,
+    validate_staged_file,
 )
 from bayesian_phystwin.pokeflex_released_checkpoint import (  # noqa: E402
     PokeFlexReleasedCheckpoint,
@@ -98,7 +103,7 @@ def _predict(
     source_result_path: Path,
     upstream_checkout: Path,
     checkpoint_root: Path,
-    source_archive: Path | None,
+    source_stage_manifest: Path | None,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
     if protocol["protocol_id"] not in {
@@ -114,18 +119,26 @@ def _predict(
     if take_root.name not in target_take_ids:
         raise ValueError(f"take is outside the target lock: {take_root.name}")
     source_archive_record = None
+    stage = None
     if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
-        if source_archive is None:
-            raise ValueError("fresh public prediction requires its registered archive")
-        source_archive = source_archive.resolve()
-        if source_archive.name != f"{take_root.name}.zip":
-            raise ValueError("fresh public archive name changed")
-        archive_sha256 = file_sha256(source_archive)
-        if archive_sha256 != FRESH12_PUBLIC_ZIP_SHA256[take_root.name]:
-            raise ValueError("fresh public archive bytes changed")
+        if source_stage_manifest is None:
+            raise ValueError("fresh public prediction requires its stage manifest")
+        stage = validate_pokeflex_fresh12_stage_manifest(
+            source_stage_manifest,
+            protocol,
+            expected_take_id=take_root.name,
+        )
+        if stage["path"].parent != take_root:
+            raise ValueError("fresh stage manifest is outside the take root")
+        stage_payload = stage["payload"]
         source_archive_record = {
-            "source_archive_name": source_archive.name,
-            "source_archive_sha256": archive_sha256,
+            "source_archive_name": stage_payload["archive_name"],
+            "source_archive_sha256": stage_payload["archive_sha256"],
+            "source_stage_manifest_name": Path(source_stage_manifest).name,
+            "source_stage_manifest_sha256": stage["stage_manifest_sha256"],
+            "source_stage_manifest_file_sha256": file_sha256(
+                Path(source_stage_manifest)
+            ),
         }
     if output_dir.exists():
         raise FileExistsError(f"prediction output already exists: {output_dir}")
@@ -357,6 +370,12 @@ def _predict(
         for frame in range(1, frame_limit)
     )
     object_name, _, _ = take_root.name.rpartition("_T")
+    input_records = [_input_record(path, take_root) for path in input_paths]
+    if stage is not None:
+        expected_files = stage["files_by_path"]
+        for path in input_paths:
+            validate_staged_file(path, take_root, expected_files)
+
     seal: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "PokeFlexConservativeShrinkagePredictionSeal",
@@ -383,7 +402,7 @@ def _predict(
         "causal_history": "each prediction f uses Kinect frames f-5 through f-1",
         "future_mesh_read": False,
         "future_mesh_read_count": 0,
-        "inputs": [_input_record(path, take_root) for path in input_paths],
+        "inputs": input_records,
         "updates": diagnostics,
     }
     if source_archive_record is not None:
@@ -425,9 +444,14 @@ def _locate_take(dataset_root: Path, take_id: str) -> Path:
     return candidates[0]
 
 
-def _target_mesh_loader(take_root: Path):
+def _target_mesh_loader(
+    take_root: Path,
+    staged_files: Mapping[str, Mapping[str, object]] | None = None,
+):
     def load(frame: int) -> tuple[np.ndarray, np.ndarray]:
         path = take_root / "meshes" / f"mesh-f{frame:05d}.obj"
+        if staged_files is not None:
+            validate_staged_file(path, take_root, staged_files)
         mesh = _load_mesh(path)
         return (
             np.asarray(mesh.vertices, dtype=np.float64) / 1000.0,
@@ -465,7 +489,26 @@ def _score(
         if file_sha256(archive.npz_path) != barrier_prediction["prediction_npz_sha256"]:
             raise ValueError(f"prediction archive changed after barrier: {take_id}")
         take_root = _locate_take(dataset_root, take_id)
+        staged_files = None
+        if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+            seal_payload = json.loads(archive.seal_path.read_text(encoding="utf-8"))
+            stage_path = take_root / STAGE_MANIFEST_NAME
+            stage = validate_pokeflex_fresh12_stage_manifest(
+                stage_path,
+                protocol,
+                expected_take_id=take_id,
+            )
+            if (
+                file_sha256(stage_path)
+                != seal_payload["source_stage_manifest_file_sha256"]
+                or stage["stage_manifest_sha256"]
+                != seal_payload["source_stage_manifest_sha256"]
+            ):
+                raise ValueError(f"stage manifest changed after prediction: {take_id}")
+            staged_files = stage["files_by_path"]
         robot_path = take_root / "robot_data.json"
+        if staged_files is not None:
+            validate_staged_file(robot_path, take_root, staged_files)
         robot_records = json.loads(robot_path.read_text(encoding="utf-8"))
         active_frames = [
             int(row["frame"])
@@ -476,7 +519,7 @@ def _score(
         row = score_one_prediction(
             archive,
             active_frames,
-            _target_mesh_loader(take_root),
+            _target_mesh_loader(take_root, staged_files),
             protocol,
         )
         row["prediction_seal_sha256"] = file_sha256(archive.seal_path)
@@ -521,7 +564,7 @@ def main() -> None:
     predict.add_argument("--source-result", type=Path, required=True)
     predict.add_argument("--upstream-checkout", type=Path, required=True)
     predict.add_argument("--checkpoint-root", type=Path, required=True)
-    predict.add_argument("--source-archive", type=Path)
+    predict.add_argument("--source-stage-manifest", type=Path)
 
     barrier = subparsers.add_parser("barrier")
     barrier.add_argument("prediction_root", type=Path)
@@ -542,7 +585,7 @@ def main() -> None:
             args.source_result,
             args.upstream_checkout,
             args.checkpoint_root,
-            args.source_archive,
+            args.source_stage_manifest,
         )
     elif args.command == "barrier":
         _barrier(args.prediction_root, args.output, args.protocol)

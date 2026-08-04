@@ -25,6 +25,12 @@ ZIP hashes are bound by
 the same physical objects were used during source development. Therefore the
 claim is prospective new-take transfer, not unseen-object transfer.
 
+A pre-outcome storage amendment permits opaque extraction of only robot data,
+Kinect calibration/depth, and mesh OBJ bytes on the source server. A canonical
+stage manifest binds the original ZIP hash and every transferred member. Mesh
+geometry remains undecoded and unscored until the all-case barrier; this changes
+storage provenance, not the cohort or method.
+
 ## Frozen method
 
 The method remains
