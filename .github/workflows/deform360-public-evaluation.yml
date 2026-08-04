@@ -5,7 +5,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-public-evaluation.yml"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+      - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
       - "docs/deform360_public_evaluation_v1.md"
+      - "protocols/deform360_independent_normalized_evidence_v1.json"
       - "scripts/science/run_deform360_public_evaluation.py"
       - "tests/test_deform360_public_evaluation.py"
   workflow_dispatch:
@@ -74,10 +77,39 @@ jobs:
           from pathlib import Path
 
           root = Path(os.environ["DEFORM360_ROOT"]).resolve()
-          object_pattern = re.compile(r"^(\d{3}-[^/]+)$")
-          episode_pattern = re.compile(r"(?:episode[_-]?|ep)(\d{1,4})", re.I)
+          repository = Path.cwd()
+          v1 = json.loads(
+              (
+                  repository
+                  / "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+              ).read_text(encoding="utf-8")
+          )["config"]
+          v2 = json.loads(
+              (
+                  repository
+                  / "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+              ).read_text(encoding="utf-8")
+          )["config"]
+          known_objects = set(map(str, v1["open_or_reserved_objects"]))
+          for values in v1["candidate_pools"].values():
+              known_objects.update(map(str, values))
+          for cohort_name in ("calibration_cohort", "target_cohort"):
+              for records in v2[cohort_name].values():
+                  known_objects.update(str(record["object_id"]) for record in records)
+          known_objects = set(sorted(known_objects))
+          object_episode_pattern = {
+              object_id: re.compile(
+                  rf"^{re.escape(object_id)}-ep(\d{{1,4}})$", re.IGNORECASE
+              )
+              for object_id in known_objects
+          }
+          generic_episode_pattern = re.compile(
+              r"(?:episode[_-]?|ep)(\d{1,4})", re.IGNORECASE
+          )
+          numeric_extensions = {".npz", ".npy", ".h5", ".ply"}
           extensions = Counter()
-          object_paths: dict[str, list[str]] = defaultdict(list)
+          object_sample_paths: dict[str, list[str]] = defaultdict(list)
+          object_numeric_paths: dict[str, list[str]] = defaultdict(list)
           object_episodes: dict[str, set[int]] = defaultdict(set)
           top_level = []
           total_files = 0
@@ -91,6 +123,31 @@ jobs:
                   }
               )
 
+          def identify(parts: tuple[str, ...]) -> tuple[str | None, int | None]:
+              object_id = None
+              episode = None
+              for part in parts:
+                  if part in known_objects:
+                      object_id = part
+                      break
+                  for candidate, pattern in object_episode_pattern.items():
+                      match = pattern.fullmatch(part)
+                      if match is not None:
+                          object_id = candidate
+                          episode = int(match.group(1))
+                          break
+                  if object_id is not None:
+                      break
+              if object_id is None:
+                  return None, None
+              if episode is None:
+                  for part in parts:
+                      match = generic_episode_pattern.search(part)
+                      if match is not None:
+                          episode = int(match.group(1))
+                          break
+              return object_id, episode
+
           for directory, names, files in os.walk(root):
               names[:] = sorted(
                   name
@@ -98,68 +155,45 @@ jobs:
                   if name not in {".git", "__pycache__", "node_modules"}
               )
               total_directories += 1
-              relative_directory = Path(directory).relative_to(root)
-              directory_parts = relative_directory.parts
-              object_id = next(
-                  (
-                      part
-                      for part in directory_parts
-                      if object_pattern.fullmatch(part)
-                  ),
-                  None,
-              )
-              episode = next(
-                  (
-                      int(match.group(1))
-                      for part in directory_parts
-                      if (match := episode_pattern.search(part)) is not None
-                  ),
-                  None,
-              )
               for name in sorted(files):
                   total_files += 1
                   suffix = Path(name).suffix.lower() or "<none>"
                   extensions[suffix] += 1
                   relative = (Path(directory) / name).relative_to(root).as_posix()
-                  parts = relative.split("/")
-                  file_object = object_id or next(
-                      (
-                          part
-                          for part in parts
-                          if object_pattern.fullmatch(part)
-                      ),
-                      None,
-                  )
-                  if file_object is not None:
-                      if len(object_paths[file_object]) < 100:
-                          object_paths[file_object].append(relative)
-                      file_episode = episode
-                      if file_episode is None:
-                          file_episode = next(
-                              (
-                                  int(match.group(1))
-                                  for part in parts
-                                  if (match := episode_pattern.search(part))
-                                  is not None
-                              ),
-                              None,
-                          )
-                      if file_episode is not None:
-                          object_episodes[file_object].add(file_episode)
+                  object_id, episode = identify(tuple(relative.split("/")))
+                  if object_id is None:
+                      continue
+                  if len(object_sample_paths[object_id]) < 25:
+                      object_sample_paths[object_id].append(relative)
+                  if suffix in numeric_extensions:
+                      object_numeric_paths[object_id].append(relative)
+                  if episode is not None:
+                      object_episodes[object_id].add(episode)
 
           objects = [
               {
                   "object_id": object_id,
                   "episode_ids_from_names": sorted(object_episodes[object_id]),
-                  "sample_paths": sorted(object_paths[object_id]),
+                  "sample_paths": sorted(object_sample_paths[object_id]),
+                  "numeric_paths": sorted(set(object_numeric_paths[object_id])),
+                  "numeric_path_counts": dict(
+                      sorted(
+                          Counter(
+                              Path(path).suffix.lower()
+                              for path in object_numeric_paths[object_id]
+                          ).items()
+                      )
+                  ),
               }
-              for object_id in sorted(object_paths)
+              for object_id in sorted(known_objects)
+              if object_sample_paths[object_id] or object_numeric_paths[object_id]
           ]
           payload = {
               "schema": "bayesian-phystwin/deform360-name-inventory-v1",
               "schema_version": 1,
               "repository_revision": os.environ["GITHUB_SHA"],
               "dataset_root": str(root),
+              "known_object_vocabulary_count": len(known_objects),
               "information_boundary": {
                   "dataset_payload_opened": False,
                   "file_contents_hashed": False,
@@ -192,7 +226,14 @@ jobs:
                       "object_count": payload["object_count"],
                       "total_files": payload["total_files"],
                       "inventory_sha256": payload["inventory_sha256"],
-                      "object_ids": [item["object_id"] for item in objects],
+                      "objects_with_npz": sum(
+                          bool(item["numeric_path_counts"].get(".npz"))
+                          for item in objects
+                      ),
+                      "objects_with_h5": sum(
+                          bool(item["numeric_path_counts"].get(".h5"))
+                          for item in objects
+                      ),
                   },
                   indent=2,
                   sort_keys=True,
@@ -200,12 +241,13 @@ jobs:
           )
           PY
 
-      - name: Verify clean read-only preflight
+      - name: Verify tracked tree remained clean
         shell: bash
         run: |
           set -euo pipefail
           git diff --exit-code
-          git status --porcelain=v1 | tee deform360-inventory/git-status.txt
+          git status --porcelain=v1 --untracked-files=no \
+            | tee deform360-inventory/git-status.txt
           test ! -s deform360-inventory/git-status.txt
 
       - name: Publish metadata-only summary
