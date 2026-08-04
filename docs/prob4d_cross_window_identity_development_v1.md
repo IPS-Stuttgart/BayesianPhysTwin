@@ -27,7 +27,7 @@ likelihood powers, state prior, and target-blind BayesianPhysTwin guard.
 | `B1_newest_frame_explicit_gauge` | Newest factor frame only |
 | `P0_newest_window_persistent` | Both frames of the newest window; no cross-window identity |
 | `P1_naive_local_id_cross_window_merge` | Treat window-local IDs as globally stable despite a hidden permutation |
-| `P2_source_linked_cross_window_identity` | Merge only unambiguous mutual-best Prob4D links |
+| `P2_source_linked_cross_window_identity` | Newest-window reference plus only unambiguous mutual-best older-window links; zero links equal `P0` exactly |
 | `P3_oracle_cross_window_identity` | Evaluation-only true material links |
 
 The primary development method is `P2`; the scientific reference is `P0`. The

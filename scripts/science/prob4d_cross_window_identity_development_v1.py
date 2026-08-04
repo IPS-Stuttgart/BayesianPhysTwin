@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import itertools
 import json
 import shutil
@@ -16,6 +15,14 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from prob4d.causal_tracklets import CausalTrackletSet
+from prob4d.cross_window_tracklets import (
+    CrossWindowAssociationConfig,
+    CrossWindowAssociationResult,
+    associate_cross_window_tracklets,
+)
+from prob4d.sim3 import Sim3
+
 from bayesian_phystwin._gauge_aware_contracts import (
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
     GaugeAwareObservationBatch,
@@ -24,13 +31,6 @@ from bayesian_phystwin._prior_aware_gauge_math import PriorAwareGaugeConfigV1
 from bayesian_phystwin.prior_aware_gauge_belief import (
     update_prior_aware_gauge_belief,
 )
-from prob4d.causal_tracklets import CausalTrackletSet
-from prob4d.cross_window_tracklets import (
-    CrossWindowAssociationConfig,
-    CrossWindowAssociationResult,
-    associate_cross_window_tracklets,
-)
-from prob4d.sim3 import Sim3
 
 _SCIENCE_DIRECTORY = Path(__file__).resolve().parent
 if str(_SCIENCE_DIRECTORY) not in sys.path:
@@ -129,9 +129,7 @@ class AssociationCounts:
         )
 
     def metrics(self) -> dict[str, float | int]:
-        precision = (
-            self.true_positive / self.accepted if self.accepted else 1.0
-        )
+        precision = self.true_positive / self.accepted if self.accepted else 1.0
         recall = self.true_positive / self.truth if self.truth else 0.0
         f1 = (
             2.0 * precision * recall / (precision + recall)
@@ -493,9 +491,7 @@ def build_association_context(group: GroupData) -> AssociationContext:
     _require(frame_count == 4, "development study requires four factor frames")
     state_grid = group.state_jacobian.reshape(frame_count, point_count, 3, -1)
     physical_grid = group.physical_prediction_m.reshape(frame_count, point_count, 3)
-    state_signal = np.einsum(
-        "tncs,s->tnc", state_grid, group.true_state, optimize=True
-    )
+    state_signal = np.einsum("tncs,s->tnc", state_grid, group.true_state, optimize=True)
     trajectory = physical_grid + state_signal
     parameters = _scenario_association_parameters(group.scenario)
 
@@ -504,12 +500,8 @@ def build_association_context(group: GroupData) -> AssociationContext:
         int(np.ceil(parameters["retain_fraction"] * point_count)),
     )
     retain_count = min(retain_count, point_count)
-    retained_true = np.sort(
-        rng.choice(point_count, size=retain_count, replace=False)
-    )
-    right_local_to_true = tuple(
-        int(value) for value in rng.permutation(retained_true)
-    )
+    retained_true = np.sort(rng.choice(point_count, size=retain_count, replace=False))
+    right_local_to_true = tuple(int(value) for value in rng.permutation(retained_true))
 
     left_frames = (0, 1, 2)
     right_frames = (1, 2, 3)
@@ -538,9 +530,7 @@ def build_association_context(group: GroupData) -> AssociationContext:
                 own_fraction * second_points + (1.0 - own_fraction) * first_points
             )
 
-    outlier_count = int(
-        np.ceil(parameters["outlier_fraction"] * retain_count)
-    )
+    outlier_count = int(np.ceil(parameters["outlier_fraction"] * retain_count))
     if outlier_count:
         for local_id in rng.choice(
             retain_count,
@@ -589,8 +579,7 @@ def build_association_context(group: GroupData) -> AssociationContext:
     )
     true_pairs = tuple(
         sorted(
-            (true_id, local_id)
-            for local_id, true_id in enumerate(right_local_to_true)
+            (true_id, local_id) for local_id, true_id in enumerate(right_local_to_true)
         )
     )
     return AssociationContext(
@@ -611,14 +600,18 @@ def association_configurations(
     grid = protocol["association_grid"]
     fixed = grid["fixed"]
     configurations: list[AssociationCandidateConfig] = []
-    for use_covariance, scale, maximum_rms, minimum_score, minimum_margin in (
-        itertools.product(
-            grid["use_covariance"],
-            grid["isotropic_distance_scale_m"],
-            grid["maximum_weighted_rms_m"],
-            grid["minimum_compatibility_score"],
-            grid["minimum_score_margin"],
-        )
+    for (
+        use_covariance,
+        scale,
+        maximum_rms,
+        minimum_score,
+        minimum_margin,
+    ) in itertools.product(
+        grid["use_covariance"],
+        grid["isotropic_distance_scale_m"],
+        grid["maximum_weighted_rms_m"],
+        grid["minimum_compatibility_score"],
+        grid["minimum_score_margin"],
     ):
         maximum_distance = max(
             float(fixed["minimum_spatial_gate_m"]),
@@ -629,9 +622,7 @@ def association_configurations(
                 use_covariance=bool(use_covariance),
                 configuration=CrossWindowAssociationConfig(
                     minimum_shared_frames=int(fixed["minimum_shared_frames"]),
-                    minimum_effective_support=float(
-                        fixed["minimum_effective_support"]
-                    ),
+                    minimum_effective_support=float(fixed["minimum_effective_support"]),
                     isotropic_distance_scale_m=float(scale),
                     covariance_floor_m2=float(fixed["covariance_floor_m2"]),
                     maximum_weighted_rms_m=float(maximum_rms),
@@ -692,9 +683,7 @@ def select_association_configuration(
     dict[str, Any],
     dict[str, AssociationContext],
 ]:
-    contexts = {
-        group.group_id: build_association_context(group) for group in groups
-    }
+    contexts = {group.group_id: build_association_context(group) for group in groups}
     summaries: list[dict[str, Any]] = []
     selected_candidate: AssociationCandidateConfig | None = None
     selected_key: tuple[Any, ...] | None = None
@@ -710,8 +699,7 @@ def select_association_configuration(
             by_scenario[group.scenario] = by_scenario[group.scenario].add(counts)
         metrics = total.metrics()
         scenario_metrics = {
-            scenario: counts.metrics()
-            for scenario, counts in by_scenario.items()
+            scenario: counts.metrics() for scenario, counts in by_scenario.items()
         }
         eligible = bool(
             metrics["precision"] >= protocol.minimum_precision
@@ -765,40 +753,34 @@ def _selected_rows(
     point_count = len(np.unique(group.stack.point_ids))
     specifications: list[tuple[int, int, int]] = []
     right_true = association.context.right_local_to_true
+
+    def add_newest_window() -> None:
+        for frame in (2, 3):
+            specifications.extend((frame, true_id, true_id) for true_id in right_true)
+
     if method_id == FRAMEWISE:
         specifications.extend((3, true_id, true_id) for true_id in right_true)
     elif method_id == NEWEST_WINDOW:
-        for frame in (2, 3):
-            specifications.extend((frame, true_id, true_id) for true_id in right_true)
-    else:
+        add_newest_window()
+    elif method_id == NAIVE_MERGE:
+        add_newest_window()
         for frame in (0, 1):
             specifications.extend(
-                (frame, true_id, true_id) for true_id in range(point_count)
+                (frame, local_id, true_id)
+                for local_id, true_id in enumerate(right_true)
             )
-        if method_id == NAIVE_MERGE:
-            for frame in (2, 3):
-                specifications.extend(
-                    (frame, true_id, local_id)
-                    for local_id, true_id in enumerate(right_true)
-                )
-        elif method_id == SOURCE_LINKED:
-            right_to_left = {
-                right_id: left_id
-                for left_id, right_id in association.result.accepted_pairs
-            }
-            for frame in (2, 3):
-                specifications.extend(
-                    (frame, true_id, right_to_left[local_id])
-                    for local_id, true_id in enumerate(right_true)
-                    if local_id in right_to_left
-                )
-        elif method_id == ORACLE_LINKED:
-            for frame in (2, 3):
-                specifications.extend(
-                    (frame, true_id, true_id) for true_id in right_true
-                )
-        else:
-            raise ValueError(f"unknown observation method: {method_id}")
+    elif method_id == SOURCE_LINKED:
+        add_newest_window()
+        for left_id, right_id in association.result.accepted_pairs:
+            true_id = right_true[right_id]
+            specifications.extend((frame, left_id, true_id) for frame in (0, 1))
+    elif method_id == ORACLE_LINKED:
+        add_newest_window()
+        for true_id in right_true:
+            specifications.extend((frame, true_id, true_id) for frame in (0, 1))
+    else:
+        raise ValueError(f"unknown observation method: {method_id}")
+
     row_indices = np.asarray(
         [frame * point_count + true_id for frame, true_id, _ in specifications],
         dtype=np.int64,
@@ -829,8 +811,7 @@ def _batch_for_method(
     selected_frames = group.stack.frame_indices[row_indices]
     state = state_grid[selected_frames, assigned_ids]
     innovation = (
-        group.stack.world_mean_m[row_indices]
-        - group.physical_prediction_m[row_indices]
+        group.stack.world_mean_m[row_indices] - group.physical_prediction_m[row_indices]
     )
     gauge = group.stack.dense_gauge_jacobian()[row_indices]
     return GaugeAwareObservationBatch(
@@ -848,9 +829,7 @@ def _batch_for_method(
             group.stack.correlation_group_ids[index] for index in row_indices
         ),
         prior_reliability=group.stack.prior_reliability[row_indices],
-        prior_nominal_probability=(
-            group.stack.prior_nominal_probability[row_indices]
-        ),
+        prior_nominal_probability=(group.stack.prior_nominal_probability[row_indices]),
         composite_weight=group.stack.composite_weight[row_indices],
         state_prior_covariance_m2=(
             np.eye(config.state_count, dtype=np.float64) * config.state_prior_std**2
@@ -1018,12 +997,8 @@ def _aggregate_trials(
         by_scenario: dict[str, Any] = {}
         for scenario in protocol.scenarios:
             selected = [trial for trial in rows if trial.scenario == scenario]
-            selected_newest = [
-                trial for trial in newest if trial.scenario == scenario
-            ]
-            method_mean = float(
-                np.mean([trial.deployed_rmse_m for trial in selected])
-            )
+            selected_newest = [trial for trial in newest if trial.scenario == scenario]
+            method_mean = float(np.mean([trial.deployed_rmse_m for trial in selected]))
             newest_mean = float(
                 np.mean([trial.deployed_rmse_m for trial in selected_newest])
             )
@@ -1041,9 +1016,7 @@ def _aggregate_trials(
             }
         output[method_id] = {
             "group_count": len(rows),
-            "raw_mean_rmse_m": float(
-                np.mean([trial.raw_rmse_m for trial in rows])
-            ),
+            "raw_mean_rmse_m": float(np.mean([trial.raw_rmse_m for trial in rows])),
             "deployed_mean_rmse_m": float(np.mean(deployed)),
             "physical_baseline_mean_rmse_m": float(np.mean(baseline)),
             "newest_window_mean_rmse_m": float(np.mean(newest_rmse)),
@@ -1061,9 +1034,7 @@ def _aggregate_trials(
                 np.mean([trial.guard_accepted for trial in rows])
             ),
             "accepted_group_count": len(accepted),
-            "harmful_accepted_count": sum(
-                trial.harmful_accepted for trial in rows
-            ),
+            "harmful_accepted_count": sum(trial.harmful_accepted for trial in rows),
             "harmful_accepted_rate": (
                 sum(trial.harmful_accepted for trial in rows) / len(accepted)
                 if accepted

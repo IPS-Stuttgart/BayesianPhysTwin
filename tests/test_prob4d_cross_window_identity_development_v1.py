@@ -7,16 +7,15 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-
 pytest.importorskip("prob4d.cross_window_tracklets")
 from prob4d.cross_window_tracklets import CrossWindowAssociationConfig  # noqa: E402
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCIENCE = ROOT / "scripts" / "science"
 if str(SCIENCE) not in sys.path:
     sys.path.insert(0, str(SCIENCE))
 
+from prob4d_bpt_controlled_decisive_core_v1 import generate_group  # noqa: E402
 from prob4d_cross_window_identity_development_v1 import (  # noqa: E402
     NEWEST_WINDOW,
     SOURCE_LINKED,
@@ -29,8 +28,6 @@ from prob4d_cross_window_identity_development_v1 import (  # noqa: E402
     load_protocol,
     run_association,
 )
-from prob4d_bpt_controlled_decisive_core_v1 import generate_group  # noqa: E402
-
 
 PROTOCOL = ROOT / "protocols" / "prob4d_cross_window_identity_development_v1.json"
 
