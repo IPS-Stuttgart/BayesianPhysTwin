@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Execute the exact embedded build with source diagnostics
+      - name: Execute the exact embedded build with generated-escape repair
         shell: bash
         run: |
           set -euo pipefail
@@ -60,6 +60,69 @@ jobs:
               body.append(line[10:] if line.startswith("          ") else "")
           if not body:
               raise SystemExit("embedded build body is empty")
+          body_text = "\n".join(body)
+          insertion_point = (
+              "python /tmp/harden_pr120.py\n\n"
+              "python -m pip install --upgrade pip"
+          )
+          repair = r'''python /tmp/harden_pr120.py
+
+python - <<'PY'
+from pathlib import Path
+
+text_paths = (
+    Path("scripts/science/run_deform360_normalized_evidence_external.py"),
+    Path("tests/test_deform360_normalized_evidence_external.py"),
+    Path(".github/workflows/deform360-normalized-evidence-external.yml"),
+    Path("docs/deform360_normalized_evidence_external_v1.md"),
+)
+for path in text_paths:
+    raw = path.read_bytes()
+    if b"\x00" in raw:
+        path.write_bytes(raw.replace(b"\x00", b"\\0"))
+
+source = text_paths[0]
+lines = source.read_text(encoding="utf-8").splitlines()
+repair_count = 0
+index = 0
+while index + 1 < len(lines):
+    if lines[index].strip() == '"' and lines[index + 1].lstrip().startswith('".join('):
+        indentation = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+        lines[index] = indentation + '"\\n' + lines[index + 1].lstrip()
+        del lines[index + 1]
+        repair_count += 1
+        continue
+    index += 1
+if repair_count < 1:
+    raise SystemExit("generated newline-escape defect was not found")
+source.write_text("\n".join(lines) + "\n", encoding="utf-8")
+print(f"normalized_generated_escape_count={repair_count}")
+PY
+
+PYTHONPYCACHEPREFIX="${RUNNER_TEMP}/pycache" \
+  python -m py_compile \
+    scripts/science/run_deform360_normalized_evidence_external.py
+
+python -m pip install --upgrade pip'''
+          if body_text.count(insertion_point) != 1:
+              raise SystemExit(
+                  "embedded generator execution point changed: "
+                  f"{body_text.count(insertion_point)}"
+              )
+          body_text = body_text.replace(insertion_point, repair, 1)
+          cleanup = (
+              "rm -f .github/workflows/"
+              "temporary-build-deform360-hardening.yml"
+          )
+          cleanup_replacement = (
+              cleanup
+              + "\nrm -f .github/workflows/"
+              "temporary-diagnose-deform360-hardening.yml"
+          )
+          if body_text.count(cleanup) != 1:
+              raise SystemExit("temporary-workflow cleanup point changed")
+          body_text = body_text.replace(cleanup, cleanup_replacement, 1)
+
           destination = Path("/tmp/exact-deform360-hardening-build.sh")
           destination.write_text(
               "set -Eeuo pipefail\n"
@@ -68,8 +131,8 @@ jobs:
               "run_deform360_normalized_evidence_external.py ]]; then "
               "nl -ba scripts/science/"
               "run_deform360_normalized_evidence_external.py "
-              "| sed -n \"285,335p\" >&2; fi; exit ${status}' ERR\n"
-              + "\n".join(body)
+              "| sed -n \"285,355p\" >&2; fi; exit ${status}' ERR\n"
+              + body_text
               + "\n",
               encoding="utf-8",
           )
