@@ -29,6 +29,14 @@ def _require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def _is_lower_hex_identity(value: object, *, lengths: tuple[int, ...]) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) in lengths
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def _canonical_bytes(value: Any) -> bytes:
     return json.dumps(
         value,
@@ -163,15 +171,23 @@ def load_probe_protocol(path: Path) -> dict[str, Any]:
     for field in (
         "content_inventory_sha256",
         "inventory_sha256",
-        "product_head_sha",
-        "evaluated_merge_sha",
         "workflow_artifact_sha256",
     ):
+        _require(
+            _is_lower_hex_identity(source_inventory.get(field), lengths=(64,)),
+            f"source inventory {field} is invalid",
+        )
+    for field in ("product_head_sha", "evaluated_merge_sha"):
+        _require(
+            _is_lower_hex_identity(source_inventory.get(field), lengths=(40, 64)),
+            f"source inventory {field} is invalid",
+        )
+    for field in ("workflow_run_id", "workflow_artifact_id"):
         identity = source_inventory.get(field)
         _require(
-            isinstance(identity, str)
-            and len(identity) == 64
-            and all(character in "0123456789abcdef" for character in identity),
+            isinstance(identity, int)
+            and not isinstance(identity, bool)
+            and identity > 0,
             f"source inventory {field} is invalid",
         )
     return payload
