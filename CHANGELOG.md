@@ -40,6 +40,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - Nuisance-aware marginalized information gain and deterministic greedy candidate
   selection for active observations with explicit camera, gauge, or shared-bias
   coefficients, covariance whitening, reliability weighting, and exact fallback.
+- An explicit conditional grouped Student-t objective that uses the same mixture
+  kernel, reliability semantics, zero-support behavior, and provider-final versus
+  consumer-owned information powers as prior-aware gauge inference.
 - An evidence-weighted robust endpoint model average that retains the fixed
   Bayesian endpoint as a one-component special case, exposes per-track component
   evidence, includes between-model disagreement in covariance, and propagates
@@ -56,9 +59,16 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- The historical grouped Student-t operation now identifies itself explicitly as
+  a covariance-marginalized diagnostic that does not use prior reliability. Its
+  component densities and responsibilities share the prior-aware solver's mixture
+  kernel, while the new conditional operation exposes the solver-aligned objective.
 - `ParameterEnsemble` now defensively owns its arrays and rejects empty,
   non-finite, negative-residual, invalid-reliability, corrupted-weight, and
   invalid-jitter inputs instead of silently clipping or propagating them.
+- Claim-bearing Prob4D update identities now require literal string SHA-256
+  content IDs; provider manifest IDs are no longer string-coerced before solver
+  admission.
 - Release, citation, README, and companion-repository links now use the canonical
   `IPS-Stuttgart` repository locations after the organization transfer.
 - Observation identities, physical-linearization identities, causal cutoffs, and
