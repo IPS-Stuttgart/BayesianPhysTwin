@@ -41,15 +41,13 @@ jobs:
           python - <<'PY'
           import base64
           import hashlib
+          import json
           import zlib
           from pathlib import Path
 
           expected_parts = {
-              "tools/deform360_group_tempered_payload_00.txt": "b3c1b1f386c4c1d971bd27f2152515df36f5db976db66f8d25a59bd7861df5d7",
-              "tools/deform360_group_tempered_payload_01.txt": "285d2230233d611ed05a245ac1b860a1bc8b4f7f225774e579c796c6a4a0e15c",
-              "tools/deform360_group_tempered_payload_02.txt": "762ba9738a043e60ad37954a03788312c3d5cdb2565436218cfd5d2c199581ef",
-              "tools/deform360_group_tempered_payload_03.txt": "05475cb2afea23d03337ae73c00388a5495245f24a851ffc43e4d5ce0d64aa49",
-              "tools/deform360_group_tempered_payload_04.txt": "6c24f68d20d69a826bdb567cc5286236ad42efa632980eae3093361e7580fab6",
+              "tools/deform360_group_tempered_payload_00.txt": "b3333c8a42f6287347f2eb1c7a15d151385bac25e6572635f830c975ac2317a9",
+              "tools/deform360_group_tempered_payload_01.txt": "0e2093cc1f4d60fa67e28a16afa1c70c2133b677fbd40f14e40b98486dd38f78",
           }
           encoded = []
           for name, expected in expected_parts.items():
@@ -63,7 +61,7 @@ jobs:
               encoded.append(raw.decode("ascii").strip())
           source = zlib.decompress(base64.b85decode("".join(encoded)))
           source_sha = hashlib.sha256(source).hexdigest()
-          expected_source = "fe21bedb9946c6d5989672d78d2b7452df7904e80734eb836aaa033f480f04f5"
+          expected_source = "09fe0236978114b910a529c54cf98a2e112d2ec3384094fb46976091f003ee9f"
           if source_sha != expected_source:
               raise SystemExit(
                   f"source digest mismatch: {source_sha} != {expected_source}"
@@ -73,7 +71,29 @@ jobs:
           )
           destination.parent.mkdir(parents=True, exist_ok=True)
           destination.write_bytes(source)
+
+          protocol = json.loads(
+              Path(
+                  "protocols/deform360_group_tempered_experiment_v1.json"
+              ).read_text(encoding="utf-8")
+          )
+          protocol_sha = hashlib.sha256(
+              json.dumps(
+                  protocol,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected_protocol = (
+              "666146d54e67b9e61eda91d3585fd925e2a47638546b17eddf27f1f8465b39aa"
+          )
+          if protocol_sha != expected_protocol:
+              raise SystemExit(
+                  f"protocol digest mismatch: {protocol_sha} != {expected_protocol}"
+              )
           print(f"reconstructed {destination}: {source_sha}")
+          print(f"locked protocol: {protocol_sha}")
           PY
 
       - name: Install and validate the candidate
@@ -105,19 +125,12 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/cli-entrypoints.yml
-          git rm .github/workflows/stage-deform360-group-tempered.yml
-          rm tools/deform360_group_tempered_payload_*.txt
-          git add \
-            .github/workflows/cli-entrypoints.yml \
-            scripts/science/run_deform360_group_tempered_experiment.py \
-            tests/test_deform360_group_tempered_experiment.py \
+          git rm \
             tools/deform360_group_tempered_payload_00.txt \
-            tools/deform360_group_tempered_payload_01.txt \
-            tools/deform360_group_tempered_payload_02.txt \
-            tools/deform360_group_tempered_payload_03.txt \
-            tools/deform360_group_tempered_payload_04.txt
+            tools/deform360_group_tempered_payload_01.txt
+          git add \
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
           git diff --cached --check
-          git commit -m "Implement group-held-out Deform360 experiment"
+          git commit -m "Implement object-held-out Deform360 experiment"
           git push origin HEAD:agent/deform360-group-tempered-experiment
