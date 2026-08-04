@@ -1,0 +1,128 @@
+{
+  "schema": "bayesian-phystwin/deform360-normalized-evidence-external-v1",
+  "schema_version": 1,
+  "status": "locked-before-numeric-payload-access",
+  "protocol_id": "deform360-normalized-evidence-external-v1",
+  "locked_at_utc": "2026-08-04T00:00:00Z",
+  "dataset": {
+    "name": "Deform360",
+    "upstream_repository": "brownu/deform360",
+    "upstream_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "mounted_root": "/home/github-runner/.cache/datasets/deform360",
+    "access_mode": "read-only"
+  },
+  "information_order": [
+    "commit this protocol and evaluator before a workflow is permitted to open numeric dataset payloads",
+    "inventory names and directory structure only",
+    "derive the repository-mentioned exclusion set from committed text plus the explicit exclusion list",
+    "select exact object and archive paths deterministically from names only",
+    "serialize and hash the selection seal",
+    "start a separate evaluator process that may open only the sealed archive paths",
+    "score every selected archive without replacement or target-dependent tuning"
+  ],
+  "cohort_selection": {
+    "unit_of_replication": "Deform360 object identity",
+    "selection_seed": "deform360-normalized-evidence-external-v1",
+    "requested_object_count": 12,
+    "minimum_selected_object_count_before_numeric_access": 6,
+    "archives_per_object": 1,
+    "replacement_allowed": false,
+    "selection_rule": "ascending SHA-256 rank of protocol_id, object_id, and relative archive path",
+    "object_eligibility": "mounted object identifier is absent from every Git-tracked repository text file and from explicit_excluded_object_ids",
+    "archive_name_hints": [
+      "control",
+      "hull",
+      "particle",
+      "position",
+      "track",
+      "trajectory"
+    ],
+    "archive_suffixes": [
+      ".npz"
+    ],
+    "unsupported_selected_archive_action": "retain as a support failure without replacement",
+    "minimum_supported_object_count_for_scientific_readout": 6
+  },
+  "explicit_excluded_object_ids": [
+    "002-rope-silk",
+    "011-green-cloth",
+    "015-airbag-cloth",
+    "066-glove-half-black-cloth",
+    "072-cotton-clohesline",
+    "075-leather",
+    "076-rubber-bands",
+    "078-fishing-line",
+    "080-wool",
+    "083-blanket-cloth",
+    "085-scarf-cloth",
+    "088-snake",
+    "091-net-cloth",
+    "100-puppet",
+    "112-wristband-cloth",
+    "120-bread-plush",
+    "121-croissant-plush",
+    "123-pipe-cleaner",
+    "139-rubber-ball",
+    "143-silicone-wristband",
+    "160-hose",
+    "161-tube",
+    "163-bear",
+    "164-sheep",
+    "165-glove-yellow-cloth",
+    "168-cat-big",
+    "170-spider",
+    "174-chain",
+    "175-plastic-bag-cloth"
+  ],
+  "representations": {
+    "fixed_identity_trajectory": {
+      "required_contract": "finite array with shape (frames >= 4, tracks >= 1, 3) under a trajectory-hint key",
+      "optional_validity_contract": "boolean array matching the first two trajectory dimensions",
+      "point_metrics": [
+        "identity RMSE",
+        "symmetric Chamfer RMSE"
+      ]
+    },
+    "packed_visual_hulls": {
+      "required_contract": "frame_indices, point_offsets, and points_world_m arrays with valid packed offsets",
+      "prediction_scope": "global centroid translation only",
+      "point_metrics": [
+        "centroid error",
+        "symmetric Chamfer RMSE"
+      ]
+    }
+  },
+  "methods": [
+    "persistence",
+    "last_supported_residual",
+    "cumulative_evidence_model_average_v1",
+    "per_observation_normalized_evidence_model_average_v1"
+  ],
+  "normalized_evidence": {
+    "component_bank": "unchanged frozen 15-component robust random-walk endpoint grid",
+    "weight_rule": "softmax(log component prior + cumulative component log evidence / max(valid update count, 1))",
+    "future_horizon_steps": 1,
+    "target_outcomes_used_for_weighting": false,
+    "temperature_or_scale_tuned": false,
+    "motivation": "remove the implicit independent-observation multiplication diagnosed by the temperature-128 boundary result"
+  },
+  "predictive_metrics": [
+    "Gaussian negative log likelihood",
+    "nominal 90 percent ellipsoid coverage",
+    "mean effective component count",
+    "between-model covariance fraction"
+  ],
+  "aggregation": {
+    "within_archive": "mean over rolling one-step predictions",
+    "within_object": "mean over the single sealed archive",
+    "across_objects": "equal object weight",
+    "paired_uncertainty": "object-level paired bootstrap with 10000 resamples and seed 20260804"
+  },
+  "success_gates": {
+    "support": "at least 6 sealed objects satisfy one declared numeric representation",
+    "normalized_vs_cumulative_uncertainty": "normalized evidence improves equal-object mean Gaussian NLL and absolute 90-percent coverage error",
+    "normalized_vs_cumulative_point_non_regression": "both available representation-specific point metrics have upper paired 95-percent delta bounds no greater than zero",
+    "baseline_reporting": "persistence and last-supported-residual results are always reported and never hidden by a model-average comparison"
+  },
+  "claim_boundary": "Prospective external-data diagnostic on repository-unmentioned mounted Deform360 object identities selected from names only before numeric payload access. It tests rolling one-step endpoint-motion transfer and normalized evidence scaling. It is not official Deform360 benchmark parity, not proof that the objects were globally unseen outside this repository, not deployment calibration, not intervention prediction, and not a state-of-the-art claim."
+}
