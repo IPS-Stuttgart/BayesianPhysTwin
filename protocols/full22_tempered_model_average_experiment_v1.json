@@ -1,0 +1,103 @@
+{
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20260804,
+    "statistical_unit": "PhysTwin case with paired resampling"
+  },
+  "claim_boundary": "Retrospective source-only tuning and confirmation-cohort diagnosis on the released official 22-case PhysTwin cohort. The cohort and its frozen three-case development / nineteen-case confirmation split have already informed BayesianPhysTwin development. Results may diagnose evidence tempering, a model-average-specific fallback guard, and case-blocked covariance inflation, but must not be promoted as fresh independent validation, calibrated deployment uncertainty, or a new state-of-the-art claim.",
+  "coverage_levels": [
+    0.5,
+    0.9,
+    0.95
+  ],
+  "development_cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "fit_fraction": 0.75,
+  "group_conformal": {
+    "across_case_rule": "maximum development-case quantile within each horizon",
+    "calibration_support": "future events on tracks updated before the prediction interval",
+    "covariance_action": "multiply tempered covariance by max(1, group_quantile / chi_square_reference)",
+    "horizons": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "minimum_scale": 1.0,
+    "reference_distribution": "chi-square with 3 degrees of freedom",
+    "target_coverage": 0.9,
+    "uses_confirmation_outcomes": false,
+    "within_case_quantile": "finite-sample higher quantile ceil((n+1)*coverage)"
+  },
+  "interpolation_neighbors": 4,
+  "maximum_residual_m": 0.01,
+  "point_methods": [
+    "released_phystwin",
+    "selected_bayesian_anchor",
+    "last_residual",
+    "temperature_1_model_average",
+    "tempered_model_average",
+    "tempered_model_average_guard"
+  ],
+  "point_metrics": [
+    "official one-way L1 Chamfer distance",
+    "official manual-track Euclidean error"
+  ],
+  "predictive_metrics": [
+    "3D NEES",
+    "Gaussian negative log likelihood",
+    "50/90/95 percent ellipsoid coverage",
+    "uncertainty-ranked selective residual risk"
+  ],
+  "predictive_posteriors": [
+    "selected_bayesian_anchor_raw",
+    "temperature_1_model_average_raw",
+    "tempered_model_average_raw",
+    "tempered_model_average_group_conformal"
+  ],
+  "regret_guard": {
+    "direction": "accept tempered model average when score is less than or equal to the selected threshold",
+    "fallback": "last_residual",
+    "maximum_development_relative_regret": 0.0,
+    "objective": "minimum equal-development-case mean of the arithmetic mean of Chamfer and track ratios to fallback",
+    "score": "within-case 90th percentile endpoint disagreement norm between tempered model average and last-supported residual over updated tracks",
+    "score_quantile": 0.9,
+    "tie_break": [
+      "lower maximum development-case regret",
+      "higher accepted development-case count",
+      "lower threshold"
+    ],
+    "uses_confirmation_outcomes": false
+  },
+  "schema": "bayesian-phystwin-full22-tempered-model-average-experiment",
+  "schema_version": 1,
+  "selective_fractions": [
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "status": "retrospective-non-claim-bearing",
+  "temperature_candidates": [
+    1.0,
+    2.0,
+    4.0,
+    8.0,
+    16.0,
+    32.0,
+    64.0,
+    128.0
+  ],
+  "temperature_selection": {
+    "hierarchical_component_weights": "not fitted because three development groups do not support a stable 15-component prior",
+    "objective": "equal-development-case mean updated-only Gaussian negative log likelihood over future residual events",
+    "tie_break": [
+      "lower equal-case combined point loss relative to last-supported residual",
+      "lower temperature"
+    ],
+    "uses_confirmation_outcomes": false,
+    "weight_rule": "softmax(log_uniform_prior + cumulative_component_log_evidence / temperature)"
+  }
+}
