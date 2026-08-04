@@ -43,7 +43,8 @@
     "right_window_support_may_be_incomplete": true,
     "association_uses_only_overlapping_source_geometry": true,
     "association_uses_no_physical_innovation": true,
-    "oracle_links_are_evaluation_only": true
+    "oracle_links_are_evaluation_only": true,
+    "source_linked_abstention_semantics": "newest-window reference plus only admitted older rows; zero admitted links equals the newest-window reference exactly"
   },
   "development_partitions": {
     "association_configuration": {
