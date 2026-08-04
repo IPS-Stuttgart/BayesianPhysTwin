@@ -1,0 +1,105 @@
+{
+  "schema": "bayesian-phystwin-prob4d-controlled-decisive-study",
+  "schema_version": 1,
+  "protocol_id": "prob4d-bpt-controlled-decisive-v1",
+  "status": "locked-before-target-seed-execution",
+  "repository_pins": {
+    "bayesian_phystwin_base": "b2da5df5eddd5437d444b60b11130262d115e264",
+    "prob4d": "aa8ffc6541011d044561e09870569a14ab3f586f"
+  },
+  "question": "Do Prob4D joint-gauge factors and persistent causal identities improve a guarded Bayesian physical-state query relative to the physical fallback and simpler visual interfaces under fresh controlled target groups?",
+  "methods": [
+    "B0_physical_fallback",
+    "B1_naive_last_frame_state",
+    "P1_marginal_gauge_persistent",
+    "P2_explicit_gauge_framewise",
+    "P3_explicit_gauge_persistent",
+    "P4_explicit_gauge_persistent_metric_anchor"
+  ],
+  "primary_method": "P3_explicit_gauge_persistent",
+  "reference_method": "B0_physical_fallback",
+  "scenarios": [
+    "nominal_correlated",
+    "common_mode_bias",
+    "outlier_groups",
+    "weak_identifiability",
+    "large_gauge_uncertainty",
+    "mixed_stress"
+  ],
+  "geometry": {
+    "point_count": 24,
+    "frame_count": 4,
+    "state_count": 3,
+    "bias_mode_count": 2,
+    "window_count": 2
+  },
+  "generator": {
+    "conditional_noise_std_m": 0.0015,
+    "state_mode_maximum_m": 0.012,
+    "query_progress": 1.25,
+    "state_prior_std": 0.75,
+    "shared_bias_is_explicit": true,
+    "joint_cross_window_gauge_covariance_is_explicit": true,
+    "persistent_point_identity_is_reused_across_frames": true,
+    "metric_anchor_is_independent_of_object_response": true
+  },
+  "calibration": {
+    "groups_per_scenario": 8,
+    "seed_start": 90420804,
+    "truth_use": "guard-threshold fitting only",
+    "target_outcomes_available": false
+  },
+  "target": {
+    "groups_per_scenario": 64,
+    "seed_start": 318420804,
+    "seeds_disjoint_from_calibration": true,
+    "target_truth_read_after_guard_freeze": true
+  },
+  "guard_calibration": {
+    "risk_inputs": [
+      "posterior query width",
+      "posterior nominal probability",
+      "prior-aware identifiable fraction",
+      "query sensitivity fraction",
+      "fixed-point convergence"
+    ],
+    "risk_inputs_exclude_target_truth": true,
+    "harmful_accepted_rate_at_most": 0.05,
+    "minimum_accepted_groups": 4,
+    "selection": "lowest calibration deployed mean among thresholds satisfying the harmful-update constraint; exact fallback when no threshold qualifies"
+  },
+  "endpoints": {
+    "primary": [
+      "equal-group deployed future-query RMSE",
+      "paired deployed-minus-physical bootstrap interval",
+      "harmful accepted-update rate",
+      "worst-scenario deployed regression",
+      "exact fallback on every rejection"
+    ],
+    "secondary": [
+      "raw candidate RMSE",
+      "acceptance fraction",
+      "90-percent pointwise ellipsoid coverage",
+      "predictive width",
+      "risk-coverage ordering",
+      "explicit-versus-marginal gauge comparison",
+      "metric-anchor ablation"
+    ],
+    "harmful_margin_m": 0.0005
+  },
+  "bootstrap": {
+    "resamples": 2000,
+    "seed": 20260804,
+    "unit": "synthetic physical object/session group"
+  },
+  "acceptance_criteria": {
+    "mean_improvement_fraction_at_least": 0.1,
+    "paired_deployed_minus_baseline_upper_95_below_zero": true,
+    "harmful_accepted_rate_at_most": 0.05,
+    "worst_scenario_regression_fraction_at_most": 0.02,
+    "all_rejections_exact_fallback": true,
+    "explicit_vs_marginal_noninferiority_fraction": 0.02
+  },
+  "decision_rule": "All registered primary criteria must pass. Exit code 3 is a valid completed negative result and does not authorize retuning on the opened target seeds.",
+  "claim_boundary": "Controlled calibration/target-separated synthetic evidence only. A pass authorizes a fresh physical-object or acquisition-session experiment; it does not establish real-world Prob4D provider competence, calibrated deployment uncertainty, BayesianPhysTwin physical benefit on an independent cohort, or Causal4D intervention benefit."
+}

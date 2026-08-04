@@ -1,4 +1,4 @@
-name: Full-22 tempered model-average self-hosted replication
+name: Full-22 tempered model-average replication
 
 on:
   pull_request:
@@ -13,10 +13,18 @@ on:
       - "src/bayesian_phystwin/endpoint_model_average.py"
   workflow_dispatch:
     inputs:
+      runner:
+        description: Runner type
+        required: true
+        default: github-hosted
+        type: choice
+        options:
+          - github-hosted
+          - self-hosted
       workers:
         description: Independent PhysTwin cases evaluated concurrently
         required: false
-        default: "8"
+        default: "2"
         type: string
 
 permissions:
@@ -37,11 +45,16 @@ env:
 
 jobs:
   experiment:
-    name: Source-tuned workstation2 replication
+    name: Source-tuned replication
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: >-
+      ${{
+        inputs.runner == 'self-hosted' &&
+        fromJSON('["self-hosted","Linux","X64","nvidia-smi"]') ||
+        'ubuntu-latest'
+      }}
     timeout-minutes: 360
     steps:
       - name: Check out BayesianPhysTwin
@@ -56,11 +69,26 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Restore public PhysTwin trajectory subset
+        if: ${{ inputs.runner != 'self-hosted' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/bayesian-phystwin/trajectory-evaluation-v1
+          key: >-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{
+            hashFiles('src/bayesian_phystwin/phystwin_data.py') }}-${{
+            github.sha }}
+          restore-keys: |
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{ hashFiles('src/bayesian_phystwin/phystwin_data.py') }}-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-
+
       - name: Resolve cache, output, and worker settings
         shell: bash
         env:
-          CONFIGURED_CACHE: ${{ vars.PHYSTWIN_EVALUATION_CACHE }}
-          REQUESTED_WORKERS: ${{ inputs.workers || '8' }}
+          CONFIGURED_CACHE: >-
+            ${{ inputs.runner == 'self-hosted' &&
+            vars.PHYSTWIN_EVALUATION_CACHE || '' }}
+          REQUESTED_WORKERS: ${{ inputs.workers || '2' }}
         run: |
           set -euo pipefail
           if [[ -n "${CONFIGURED_CACHE}" ]]; then
@@ -92,11 +120,16 @@ jobs:
             uname -a
             lscpu
           } | tee "${OUTPUT_ROOT}/runner.txt"
-          nvidia-smi -L | tee "${OUTPUT_ROOT}/nvidia-smi-L.txt"
-          nvidia-smi \
-            --query-gpu=index,name,uuid,driver_version,memory.total \
-            --format=csv,noheader \
-            | tee "${OUTPUT_ROOT}/nvidia-smi.csv"
+          if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi -L | tee "${OUTPUT_ROOT}/nvidia-smi-L.txt"
+            nvidia-smi \
+              --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader \
+              | tee "${OUTPUT_ROOT}/nvidia-smi.csv"
+          else
+            echo "nvidia-smi is unavailable on this CPU runner" \
+              | tee "${OUTPUT_ROOT}/nvidia-smi.txt"
+          fi
 
       - name: Install the locked evaluation environment
         run: |
@@ -199,11 +232,11 @@ jobs:
           git status --porcelain=v1 | tee "${OUTPUT_ROOT}/git-status.txt"
           test ! -s "${OUTPUT_ROOT}/git-status.txt"
 
-      - name: Upload compact self-hosted evidence
+      - name: Upload compact replication evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: bpt-full22-tempered-self-hosted-${{ github.run_id }}-${{ github.run_attempt }}
+          name: bpt-full22-tempered-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/bpt-full22-tempered-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
           retention-days: 30

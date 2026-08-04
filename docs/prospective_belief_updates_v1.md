@@ -120,9 +120,10 @@ robust-mixture equations for valid inputs.
 
 ## Validation boundary
 
-The self-hosted workflow `Prospective belief validation` exercises these
-interfaces on the registered `workstation2` runner, records GPU/environment
-identity, runs focused numerical and contract tests, and publishes a compact
-stress-test artifact. Passing that workflow is implementation evidence only.
-It does not establish target accuracy, calibration, or Causal4D intervention
-benefit.
+The `Prospective belief validation` workflow exercises these interfaces on a
+GitHub-hosted CPU runner by default, records its environment identity, runs
+focused numerical and contract tests, and publishes a compact stress-test
+artifact. Manual runs can select the registered `workstation2` self-hosted
+runner when an independent host comparison is useful. Passing that workflow is
+implementation evidence only. It does not establish target accuracy,
+calibration, or Causal4D intervention benefit.
