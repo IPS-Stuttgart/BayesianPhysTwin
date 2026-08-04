@@ -130,9 +130,7 @@ def _fixture(tmp_path: Path, *, irregular: bool = False) -> tuple[Path, Path]:
 
 def _resign_protocol(path: Path, payload: dict[str, object]) -> None:
     payload["config_sha256"] = (
-        __import__("hashlib")
-        .sha256(_canonical_bytes(payload["config"]))
-        .hexdigest()
+        __import__("hashlib").sha256(_canonical_bytes(payload["config"])).hexdigest()
     )
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
