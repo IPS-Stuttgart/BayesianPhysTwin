@@ -9,7 +9,7 @@ on:
       - "tools/deform360_group_tempered_payload_*.txt"
   pull_request:
     branches:
-      - agent/deform360-public-evaluation
+      - main
     paths:
       - ".github/workflows/stage-deform360-group-tempered.yml"
       - "tools/deform360_group_tempered_payload_*.txt"
