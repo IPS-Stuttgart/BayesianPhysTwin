@@ -6,10 +6,7 @@ on:
       - agent/deform360-group-evaluation-v2
     paths:
       - ".github/workflows/materialize-deform360-v2-recovered.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/materialize-deform360-v2-recovered.yml"
+      - ".github/scripts/recover_deform360_v2_source.py"
 
 permissions:
   contents: write
@@ -20,175 +17,35 @@ concurrency:
 
 jobs:
   materialize:
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Check out the exact staging branch
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: agent/deform360-group-evaluation-v2
           fetch-depth: 0
           persist-credentials: true
           clean: true
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-
-      - name: Recover and verify the deterministic source bundle
-        shell: bash
+      - name: Recover the exact declared product members
         run: |
           set -euo pipefail
-          source_root="${RUNNER_TEMP}/deform360-v2-recovered"
-          python - "${source_root}" <<'PY'
-          from __future__ import annotations
-
-          import base64
-          import gzip
-          import hashlib
-          import io
-          import struct
-          import sys
-          import tarfile
-          import zlib
-          from pathlib import Path, PurePosixPath
-
-          committed_prefix_sha256 = (
-              "17c2d0749f2de3c925cf5d94d136a8f6076f67e15c5dd41e38a51fac976d66e2"
-          )
-          allowed = {
-              ".github/workflows/deform360-group-evaluation.yml",
-              ".github/workflows/deform360-public-evaluation.yml",
-              "docs/deform360_group_evaluation_v2.md",
-              "scripts/science/prepare_deform360_archive_manifest.py",
-              "scripts/science/prepare_deform360_name_inventory.py",
-              "scripts/science/prepare_deform360_public_protocol.py",
-              "scripts/science/run_deform360_group_evaluation.py",
-              "tests/test_deform360_archive_manifest.py",
-              "tests/test_deform360_group_evaluation.py",
-              "tests/test_deform360_name_inventory.py",
-              "tests/test_deform360_preflight_workflow.py",
-              "tests/test_deform360_public_protocol.py",
-          }
-          parts = tuple(
-              Path(f"tools/deform360-v2-bundle-{index:02d}.b64")
-              for index in range(3)
-          )
-          if any(not path.is_file() for path in parts):
-              raise SystemExit("one or more locked source-bundle chunks are missing")
-          encoded = "".join(
-              "".join(path.read_text(encoding="ascii").split())
-              for path in parts
-          )
-          encoded += "=" * ((-len(encoded)) % 4)
-          committed = base64.b64decode(encoded, validate=True)
-          committed_digest = hashlib.sha256(committed).hexdigest()
-          print(
-              f"decoded committed bytes={len(committed)} "
-              f"sha256={committed_digest}"
-          )
-          if committed_digest != committed_prefix_sha256:
-              raise SystemExit("committed source-bundle prefix changed")
-
-          decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
-          unpacked_prefix = decoder.decompress(committed)
-          unpacked_prefix += decoder.flush()
-          trailer = struct.pack(
-              "<II",
-              zlib.crc32(unpacked_prefix) & 0xFFFFFFFF,
-              len(unpacked_prefix) & 0xFFFFFFFF,
-          )
-          matches: list[tuple[int, bytes, bytes]] = []
-          for missing_trailer_bytes in range(len(trailer) + 1):
-              suffix = trailer[len(trailer) - missing_trailer_bytes :]
-              candidate = committed + suffix
-              try:
-                  unpacked = gzip.decompress(candidate)
-              except (EOFError, gzip.BadGzipFile, OSError):
-                  continue
-              if unpacked != unpacked_prefix:
-                  continue
-              try:
-                  with tarfile.open(fileobj=io.BytesIO(candidate), mode="r:gz") as archive:
-                      archive.getmembers()
-              except (EOFError, OSError, tarfile.TarError):
-                  continue
-              matches.append((missing_trailer_bytes, candidate, unpacked))
-          if len(matches) != 1:
-              raise SystemExit(
-                  "locked gzip recovery is not unique: "
-                  f"valid_candidate_count={len(matches)}"
-              )
-          missing_trailer_bytes, payload, unpacked = matches[0]
-          print(
-              "recovered locked gzip by appending "
-              f"{missing_trailer_bytes} deterministic trailer bytes; "
-              f"archive_sha256={hashlib.sha256(payload).hexdigest()}; "
-              f"tar_sha256={hashlib.sha256(unpacked).hexdigest()}"
-          )
-
-          source_root = Path(sys.argv[1])
-          source_root.mkdir(parents=True, exist_ok=True)
-          with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as archive:
-              files: dict[str, tarfile.TarInfo] = {}
-              for member in archive.getmembers():
-                  raw = PurePosixPath(member.name)
-                  if raw.is_absolute() or ".." in raw.parts:
-                      raise SystemExit(f"unsafe archive path: {member.name}")
-                  if member.issym() or member.islnk() or member.isdev():
-                      raise SystemExit(f"unsafe archive member type: {member.name}")
-                  if member.isdir():
-                      continue
-                  if not member.isfile() or len(raw.parts) < 2:
-                      raise SystemExit(f"unexpected archive member: {member.name}")
-                  relative = PurePosixPath(*raw.parts[1:]).as_posix()
-                  if relative not in allowed or relative in files:
-                      raise SystemExit(
-                          f"unexpected or duplicate product file: {relative}"
-                      )
-                  files[relative] = member
-              if set(files) != allowed:
-                  raise SystemExit(
-                      "source bundle file set changed: "
-                      f"missing={sorted(allowed - set(files))}, "
-                      f"extra={sorted(set(files) - allowed)}"
-                  )
-              for relative in sorted(allowed):
-                  stream = archive.extractfile(files[relative])
-                  if stream is None:
-                      raise SystemExit(f"cannot read archive member: {relative}")
-                  data = stream.read()
-                  if len(data) != files[relative].size:
-                      raise SystemExit(f"short archive member: {relative}")
-                  target = source_root / relative
-                  target.parent.mkdir(parents=True, exist_ok=True)
-                  target.write_bytes(data)
-                  print(
-                      f"product {relative} bytes={len(data)} "
-                      f"sha256={hashlib.sha256(data).hexdigest()}"
-                  )
-          print(f"verified exact product file count: {len(allowed)}")
-          PY
-
+          python .github/scripts/recover_deform360_v2_source.py \
+            "${RUNNER_TEMP}/deform360-v2-source"
       - name: Install focused validation dependencies
-        shell: bash
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,graph]"
           python -m pip check
-
-      - name: Copy and validate only the ordinary product source
-        shell: bash
+      - name: Copy and validate only ordinary product source
         run: |
           set -euo pipefail
-          source_root="${RUNNER_TEMP}/deform360-v2-recovered"
+          source_root="${RUNNER_TEMP}/deform360-v2-source"
           files=(
             ".github/workflows/deform360-group-evaluation.yml"
             ".github/workflows/deform360-public-evaluation.yml"
@@ -208,7 +65,6 @@ jobs:
             mkdir -p "$(dirname "${path}")"
             cp -a "${source_root}/${path}" "${path}"
           done
-
           python -m py_compile \
             scripts/science/prepare_deform360_archive_manifest.py \
             scripts/science/prepare_deform360_name_inventory.py \
@@ -243,12 +99,11 @@ jobs:
             tests/test_endpoint_model_average.py \
             tests/test_group_conformal.py
           git diff --check
-
-      - name: Remove staging machinery and publish reviewable source
-        shell: bash
+      - name: Remove all staging machinery and publish reviewable source
         run: |
           set -euo pipefail
           rm -f \
+            .github/scripts/recover_deform360_v2_source.py \
             .github/workflows/materialize-deform360-v2.yml \
             .github/workflows/materialize-deform360-v2-recovered.yml \
             .github/workflows/temporary-export-deform360-v2-bundle.yml \
@@ -256,6 +111,7 @@ jobs:
             tools/deform360-v2-bundle-01.b64 \
             tools/deform360-v2-bundle-02.b64
           git add -A -- \
+            .github/scripts/recover_deform360_v2_source.py \
             .github/workflows \
             tools/deform360-v2-bundle-00.b64 \
             tools/deform360-v2-bundle-01.b64 \
