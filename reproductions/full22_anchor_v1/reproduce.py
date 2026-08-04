@@ -131,9 +131,7 @@ def _data_manifest_path(data_root: Path) -> Path:
     if len(present) > 1:
         identities = {
             _canonical_sha256(
-                _normalized_data_manifest(
-                    json.loads(path.read_text(encoding="utf-8"))
-                )
+                _normalized_data_manifest(json.loads(path.read_text(encoding="utf-8")))
             )
             for path in present
         }
@@ -159,9 +157,7 @@ def _manifest_hex(value: object, *, name: str, length: int) -> str:
     if len(text) != length or any(
         character not in "0123456789abcdef" for character in text
     ):
-        raise ValueError(
-            f"{name} must be {length} lowercase hexadecimal characters"
-        )
+        raise ValueError(f"{name} must be {length} lowercase hexadecimal characters")
     return text
 
 

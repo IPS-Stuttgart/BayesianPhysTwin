@@ -135,9 +135,7 @@ def test_data_manifest_identity_ignores_retrieval_metadata(
 ) -> None:
     capsule = _load_capsule()
     manifest, payload, identity = _write_data_root(tmp_path, capsule)
-    monkeypatch.setattr(
-        capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity
-    )
+    monkeypatch.setattr(capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity)
 
     assert capsule.validate_data_root(tmp_path) == (manifest, identity)
 
@@ -159,9 +157,7 @@ def test_data_manifest_identity_binds_order_and_file_bytes(
         capsule,
         manifest_name="evaluation_subset_manifest.json",
     )
-    monkeypatch.setattr(
-        capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity
-    )
+    monkeypatch.setattr(capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity)
 
     payload["available_cases"] = list(reversed(payload["selected_cases"]))
     manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
@@ -181,9 +177,7 @@ def test_multiple_manifests_must_agree_semantically(
 ) -> None:
     capsule = _load_capsule()
     _, payload, identity = _write_data_root(tmp_path, capsule)
-    monkeypatch.setattr(
-        capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity
-    )
+    monkeypatch.setattr(capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity)
     second = tmp_path / "evaluation_subset_manifest.json"
     payload["cases"][payload["selected_cases"][0]]["files"]["split.json"][
         "archive_member"
