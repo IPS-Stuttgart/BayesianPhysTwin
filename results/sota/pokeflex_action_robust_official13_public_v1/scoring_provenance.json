@@ -28,7 +28,7 @@
   },
   "protocol_file_sha256": "194d1d15c04660110e21d9c802b48d321cbc1b6025921e5c4de59aa0d442dcba",
   "protocol_sha256": "fe3199f72822ff384ce5e304c0afa85c7913f973055aaae06b88d62bdbc49349",
-  "provenance_sha256": "a6ab77204215e1e7691cdf34399b28d6db753e278392796e3d83c02b29541835",
+  "provenance_sha256": "799298829b36526a2fae3a5fe75f20f908d4146de1e602071dc97deb6f99f69c",
   "schema_version": 1,
   "scoring": {
     "environment_freeze_sha256": "bea2a2447b758dce8cc399dee5a49e4393cba53f3dd85ee9f846f0e37cc7a117",
@@ -51,5 +51,14 @@
     "receiver_pipeline_status": "0:0",
     "source": "gpuserver4090 (129.69.102.139)",
     "transport": "one-shot uncompressed tar stream over direct LAN TCP"
+  },
+  "verification": {
+    "changed_python_ruff": "passed",
+    "focused_protocol_and_result_tests": "13 passed",
+    "git_diff_check": "passed",
+    "installed_package_repository_suite": "1834 passed; one NumPy-2 private-namespace check failed under the NumPy-1 scoring environment",
+    "numpy_2_private_namespace_check": "1 passed under local NumPy 2.2.6",
+    "prob4d_dependency_commit": "996c1d93dc748a078b2a849fa6142cf432c5c000",
+    "repository_wide_ruff": "not asserted; pre-existing archived snapshots and unrelated scripts contain findings"
   }
 }

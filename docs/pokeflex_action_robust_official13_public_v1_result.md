@@ -68,11 +68,16 @@ No payload traversed the jump server.
 - Summary canonical SHA-256:
   `a7797cb5b318cb54e84c3cee16f33206a39fed81d5de0090409e2dc4ca00e6cf`
 - Provenance canonical SHA-256:
-  `a6ab77204215e1e7691cdf34399b28d6db753e278392796e3d83c02b29541835`
+  `799298829b36526a2fae3a5fe75f20f908d4146de1e602071dc97deb6f99f69c`
 
 The full raw result, compact summary, barrier, provenance, and prediction seals are
 stored in
 `results/sota/pokeflex_action_robust_official13_public_v1/`.
+
+The installed-package repository suite passes 1,834 tests. Its sole remaining
+failure is the known NumPy-2 private-namespace check under the NumPy-1 scoring
+environment; that exact check passes separately under NumPy 2.2.6. All changed
+Python files pass Ruff.
 
 ## Recommendation
 

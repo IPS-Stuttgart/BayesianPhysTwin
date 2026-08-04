@@ -103,14 +103,14 @@ def test_action_robust_official13_provenance_is_canonical() -> None:
     payload = _load(path)
 
     assert file_sha256(path) == (
-        "79fb1ffae8b2e37415af933ef2b231cbc75fd35b56f927f8e922ad92e8a28821"
+        "e308fa552fc7aaf474cee0515cfc4f6b565c0766b3532e1921674dbc47beba6a"
     )
     assert payload["provenance_sha256"] == canonical_payload_sha256(
         payload,
         digest_field="provenance_sha256",
     )
     assert payload["provenance_sha256"] == (
-        "a6ab77204215e1e7691cdf34399b28d6db753e278392796e3d83c02b29541835"
+        "799298829b36526a2fae3a5fe75f20f908d4146de1e602071dc97deb6f99f69c"
     )
     assert payload["transfer"]["direct_lan"] is True
     assert payload["transfer"]["jump_server_used_for_data"] is False
@@ -122,3 +122,7 @@ def test_action_robust_official13_provenance_is_canonical() -> None:
         is True
     )
     assert payload["historical_exposure"]["new_method_is_prospective"] is False
+    assert payload["verification"]["focused_protocol_and_result_tests"] == ("13 passed")
+    assert payload["verification"]["numpy_2_private_namespace_check"] == (
+        "1 passed under local NumPy 2.2.6"
+    )
