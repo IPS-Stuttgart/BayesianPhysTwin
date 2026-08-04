@@ -103,6 +103,21 @@ instead of silently merging two independent tracks. Prior reliability must lie
 in `[0, 1]`, and returned posterior arrays and sequence-evidence mappings are
 defensively owned and immutable.
 
+## Fail-closed drift-bias evidence
+
+The random-walk nuisance-bias filter follows the same typed sequence-identity
+boundary. A string and an integer that serialize to the same evidence key are
+rejected instead of sharing one bias trajectory and evidence accumulator.
+Valid integer identities retain their historical string evidence keys.
+
+Prior reliability and optional bias probabilities must lie in `[0, 1]` rather
+than being repaired by clipping. Numeric timestamps must be finite, empty
+particle or measurement batches are rejected, and non-finite likelihood or
+state-update numerics raise an explicit error. Returned bias trajectories,
+variances, inlier responsibilities, and scalar or batched evidence are
+defensively owned and immutable. These checks do not change the random-walk or
+robust-mixture equations for valid inputs.
+
 ## Validation boundary
 
 The self-hosted workflow `Prospective belief validation` exercises these
