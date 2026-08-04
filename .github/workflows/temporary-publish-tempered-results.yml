@@ -1,0 +1,172 @@
+name: Temporary publish tempered result evidence
+
+on:
+  push:
+    branches:
+      - agent/tempered-model-average-results
+    paths:
+      - .github/workflows/temporary-publish-tempered-results.yml
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: temporary-publish-tempered-results
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out result branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/tempered-model-average-results
+          fetch-depth: 0
+
+      - name: Download exact self-hosted evidence artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --output "${RUNNER_TEMP}/tempered-evidence.zip" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/8887837678/zip"
+          mkdir -p "${RUNNER_TEMP}/tempered-evidence"
+          unzip -q "${RUNNER_TEMP}/tempered-evidence.zip" \
+            -d "${RUNNER_TEMP}/tempered-evidence"
+          result_root="$(find "${RUNNER_TEMP}/tempered-evidence" \
+            -type f -path '*/result/readout.json' -printf '%h\n' | head -n 1)"
+          if [[ -z "${result_root}" ]]; then
+            echo "result/readout.json not found in artifact" >&2
+            exit 1
+          fi
+          echo "RESULT_ROOT=${result_root}" >> "${GITHUB_ENV}"
+
+      - name: Verify and materialize durable evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "${RESULT_ROOT}/selection.json" | cut -d' ' -f1)" = \
+            "5dac806ab91a5709215bd3572b04361b5a541cfe81987c9385455f8ba7420b5f"
+          test "$(sha256sum "${RESULT_ROOT}/readout.json" | cut -d' ' -f1)" = \
+            "b110e0ef65f90a982ee0b2968ded4fa6ea3650342eedceb4e11ffa3bcabfdb69"
+          test "$(sha256sum "${RESULT_ROOT}/per_case.csv" | cut -d' ' -f1)" = \
+            "439d3a91bfe071d9e1455435134e86d33ad6e7da0c4e6fc95f9213a8429fdb34"
+          test "$(sha256sum "${RESULT_ROOT}/summary.json" | cut -d' ' -f1)" = \
+            "2e8c9cd6cf1787c6cc6c8e0af77cd235cd0fc511facdbbe93d45db41b98c1c08"
+
+          destination="results/diagnostics/full22_tempered_model_average_v1"
+          mkdir -p "${destination}"
+          cp "${RESULT_ROOT}/selection.json" "${destination}/selection.json"
+          cp "${RESULT_ROOT}/readout.json" "${destination}/readout.json"
+          cp "${RESULT_ROOT}/per_case.csv" "${destination}/per_case.csv"
+          cp "${RESULT_ROOT}/artifact_manifest.json" \
+            "${destination}/self_hosted_artifact_manifest.json"
+
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("results/diagnostics/full22_tempered_model_average_v1")
+          selection_path = root / "selection.json"
+          full = json.loads(selection_path.read_text(encoding="utf-8"))
+          selection_sha256 = hashlib.sha256(selection_path.read_bytes()).hexdigest()
+          compact = {
+              "classification": full["classification"],
+              "confirmation_outcomes_opened": full[
+                  "confirmation_outcomes_opened"
+              ],
+              "development_cases": full["development_cases"],
+              "group_conformal": full["group_conformal"],
+              "guard": {
+                  key: full["guard"][key]
+                  for key in (
+                      "development_scores_m",
+                      "fallback",
+                      "maximum_development_relative_regret",
+                      "score",
+                      "selected_record",
+                      "selected_threshold_m",
+                      "temperature",
+                  )
+              },
+              "protocol_sha256": full["protocol_sha256"],
+              "schema": (
+                  "bayesian-phystwin-tempered-model-average-selection-readout"
+              ),
+              "schema_version": 1,
+              "selection_id": full["selection_id"],
+              "selection_sha256": selection_sha256,
+              "temperature": full["temperature"],
+          }
+          (root / "selection_readout.json").write_text(
+              json.dumps(compact, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          replication = {
+              "classification": (
+                  "retrospective-non-claim-bearing-experiment"
+              ),
+              "per_case_csv_sha256": hashlib.sha256(
+                  (root / "per_case.csv").read_bytes()
+              ).hexdigest(),
+              "protocol_sha256": full["protocol_sha256"],
+              "readout_sha256": hashlib.sha256(
+                  (root / "readout.json").read_bytes()
+              ).hexdigest(),
+              "schema": (
+                  "bayesian-phystwin-tempered-model-average-"
+                  "replication-manifest"
+              ),
+              "schema_version": 1,
+              "selection_id": full["selection_id"],
+              "selection_sha256": selection_sha256,
+              "self_hosted": {
+                  "artifact_digest": (
+                      "sha256:91af2dca7ada3c8dbdb606af9b872dcd0d7ec16703f317bd2d4f7e3824e241c0"
+                  ),
+                  "artifact_id": 8887837678,
+                  "repository_revision": (
+                      "d5e75db975acc9bc5b587d7b747dbf9d02180eba"
+                  ),
+                  "run_id": 30897954787,
+                  "summary_sha256": (
+                      "2e8c9cd6cf1787c6cc6c8e0af77cd235cd0fc511facdbbe93d45db41b98c1c08"
+                  ),
+              },
+          }
+          (root / "replication_manifest.json").write_text(
+              json.dumps(replication, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          assert json.loads((root / "readout.json").read_text())[
+              "confirmation_case_count"
+          ] == 19
+          assert full["confirmation_outcomes_opened"] is False
+          PY
+
+          python -m json.tool "${destination}/selection.json" >/dev/null
+          python -m json.tool "${destination}/selection_readout.json" >/dev/null
+          python -m json.tool "${destination}/readout.json" >/dev/null
+          python -m json.tool "${destination}/replication_manifest.json" >/dev/null
+          git diff --check
+
+      - name: Commit exact durable evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/diagnostics/full22_tempered_model_average_v1
+          git diff --cached --check
+          git commit -m "Publish locked tempered model-average evidence"
+          git push origin HEAD:agent/tempered-model-average-results
