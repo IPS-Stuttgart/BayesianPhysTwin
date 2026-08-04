@@ -77,7 +77,14 @@ class PriorAwareGaugeConfigV1:
             and self.minimum_robust_precision >= 0.0,
             "minimum_robust_precision must be finite and nonnegative",
         )
-        _require(self.maximum_iterations >= 1, "maximum_iterations must be positive")
+        _require(
+            not isinstance(self.maximum_iterations, (bool, np.bool_))
+            and isinstance(self.maximum_iterations, (int, np.integer)),
+            "maximum_iterations must be an integer",
+        )
+        maximum_iterations = int(self.maximum_iterations)
+        _require(maximum_iterations >= 1, "maximum_iterations must be positive")
+        object.__setattr__(self, "maximum_iterations", maximum_iterations)
         _require(
             0.0 <= self.minimum_conditional_information_fraction <= 1.0,
             "minimum_conditional_information_fraction must lie in [0, 1]",
