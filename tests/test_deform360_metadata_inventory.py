@@ -176,10 +176,11 @@ def test_inventory_is_deterministic_and_writable(tmp_path: Path) -> None:
         data_root,
         repository=repository,
         protocol_path=protocol_path,
-        revision="revision-test",
+        revision="revision-test-2",
     )
 
-    assert first["inventory_sha256"] == second["inventory_sha256"]
+    assert first["content_inventory_sha256"] == second["content_inventory_sha256"]
+    assert first["inventory_sha256"] != second["inventory_sha256"]
     output = tmp_path / "inventory.json"
     write_inventory(output, first)
     stored = json.loads(output.read_text(encoding="utf-8"))
