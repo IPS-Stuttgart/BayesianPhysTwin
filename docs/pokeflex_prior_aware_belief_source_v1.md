@@ -82,6 +82,16 @@ It does not justify loosening the trust region. Later source frames have larger
 physical responses, so a source-panel run with the identical frozen method is
 the next diagnostic; calibration and target objects remain sealed.
 
+The source panel is locked in
+`configs/sota/pokeflex_prior_aware_belief_source_panel_v1.json`. It covers the
+five previously opened source objects and takes `T1`, `T3`, `T4`, `T5`, and
+`T6`; `T3` remains restricted to its historical 40-frame design interval. Each
+candidate uses D405 only at `f-1`, is content-sealed before mesh `f` is read,
+and retains the smoke's method bytes and parameters. Advancement requires at
+least 1% object-balanced improvement, four object wins with no losses, at most
+1% regression on any object, at most 10% harmful admitted frames, and at least
+5% numerical admission. These are source-development gates only.
+
 Evidence:
 
 - pre-outcome implementation commit: `6f708e5b3eff840df810d4575c7c560f889a8498`;

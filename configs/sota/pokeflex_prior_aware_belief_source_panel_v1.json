@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexPriorAwareBeliefSourcePanelProtocol",
+  "protocol_id": "pokeflex-prior-aware-belief-source-panel-v1",
+  "locked_at_utc": "2026-08-04T00:00:00Z",
+  "status": "exploratory source-only panel locked after the one-frame exact-fallback smoke and before any additional prior-aware outcomes",
+  "claim_boundary": "This panel evaluates one fixed bias-aware Bayesian update on already-open PokeFlex source objects. It is not independent confirmation, not a target-object evaluation, and not a state-of-the-art claim.",
+  "predecessor": {
+    "smoke_protocol_id": "pokeflex-prior-aware-belief-source-smoke-v1",
+    "smoke_protocol_file_sha256": "882ebf736c67317fe8bbd64292a89f52eb0d313bef2fd50f87e70ef9af845a76",
+    "smoke_result_sha256": "07530a1c7e30af2b609aa0db3d03f24806039f4b306e9e9f3315ac1cda8d800e",
+    "smoke_result": "exact checkpoint fallback after the locked physical-response trust region rejected a 4.20 mm proposed update"
+  },
+  "method_lock": {
+    "implementation_commit": "6f708e5b3eff840df810d4575c7c560f889a8498",
+    "belief_module_sha256": "61561172d95fb520cee922eb97b94d53587f66c1d04fe8c73765dc9083faca98",
+    "association_covariance_nuisance_and_trust_settings": "identical to pokeflex-prior-aware-belief-source-smoke-v1",
+    "correction_fields": [
+      "force_parallel_local_state_relative_0.25",
+      "action_axis_local_state_relative_0.25",
+      "force_action_plane_local_state_relative_0.25",
+      "force_mean_local_state_relative_0.25"
+    ],
+    "candidate_policy": "apply the posterior mean only when numerical inference passes the frozen physical-response trust region; otherwise return the released checkpoint object exactly",
+    "post_smoke_parameter_changes": false
+  },
+  "cohort": {
+    "development_objects": [
+      "FoamDice",
+      "MemoryFoam",
+      "PlushOctopus",
+      "3dPrintedHeart",
+      "ToiletPaperRoll"
+    ],
+    "take_suffixes": ["T1", "T3", "T4", "T5", "T6"],
+    "maximum_frame_by_take_suffix": {
+      "T1": null,
+      "T3": 40,
+      "T4": null,
+      "T5": null,
+      "T6": null
+    },
+    "outcome_status": "all listed source intervals were opened by predecessor source studies",
+    "calibration_or_target_objects_allowed": false,
+    "replacement_allowed": false
+  },
+  "causal_input_contract": {
+    "target_frame": "f",
+    "checkpoint_history": "Kinect frames f-5 through f-1",
+    "state_proposal": "Kinect registration, measured robot transforms, and force through f-1",
+    "metric_likelihood": "D405 depth at f-1 only",
+    "forbidden_before_prediction_seal": "mesh, Kinect, D405, or robot observations at f or later",
+    "target_mesh_role": "outcome scoring only after each frame prediction seal exists"
+  },
+  "evaluation": {
+    "metric": "CD_UL1_mm",
+    "surface_points": 10000,
+    "seed": 20260720,
+    "aggregation": "equal active frames within take, equal takes within object, equal objects",
+    "posterior_diagnostic": "nearest-surface coordinate coverage and NEES with a fixed 4 mm outcome/readout floor; diagnostic only, not material-identity calibration"
+  },
+  "source_advancement_gate": {
+    "minimum_object_balanced_relative_improvement": 0.01,
+    "minimum_object_wins": 4,
+    "maximum_object_losses": 0,
+    "maximum_per_object_relative_regression": 0.01,
+    "maximum_false_safe_rate_among_admitted_frames": 0.10,
+    "minimum_admitted_frame_fraction": 0.05,
+    "require_finite_posterior_diagnostics": true,
+    "failure_policy": "do not open or authorize calibration/target objects; retain the exact released checkpoint baseline"
+  }
+}
