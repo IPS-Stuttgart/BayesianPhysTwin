@@ -6,13 +6,21 @@ on:
       - agent/portable-full22-anchor-reproduction
     paths:
       - .github/workflows/temporary-format-full22-pr118.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/temporary-format-full22-pr118.yml
 
 permissions:
   contents: write
 
 jobs:
   format:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
