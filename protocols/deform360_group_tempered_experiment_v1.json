@@ -1,0 +1,83 @@
+{
+  "bootstrap": {
+    "samples": 2000,
+    "seed": 20260804,
+    "unit": "path-defined object/session group"
+  },
+  "claim_boundary": "External group-held-out evaluation on released Deform360 trajectory artifacts using a path-defined object/session split that is locked before arrays are opened. The adapter evaluates endpoint displacement transfer and raw/corrected predictive uncertainty, not the official action-conditioned Deform360 world-model task or Table-4 protocol. A positive registered decision would justify an official-adapter study; it is not by itself an official benchmark or deployment-calibration claim.",
+  "decision": {
+    "maximum_absolute_coverage_error": 0.05,
+    "maximum_harmful_accepted_rate": 0.05,
+    "point_candidate": "normalized_selected_guard",
+    "point_reference": "last_residual",
+    "requires_paired_group_bootstrap_upper_95_below_zero": true
+  },
+  "guard": {
+    "fallback": "last_residual",
+    "maximum_source_group_regret_m": 0.0,
+    "score": "finite-sample 90th percentile of endpoint disagreement divided by predictive standard deviation",
+    "score_quantile": 0.9,
+    "selection": "minimize equal-source-group archive-balanced regret subject to no positive source-group regret"
+  },
+  "schema": "bayesian-phystwin/deform360-group-tempered-v1",
+  "schema_version": 1,
+  "split": {
+    "calibration_fraction": 0.2,
+    "group_identity": "object directory plus first non-generic nested acquisition/session path; archive stem fallback",
+    "hash_salt": "deform360-group-tempered-v1-20260804",
+    "minimum_calibration_groups": 2,
+    "minimum_source_groups": 2,
+    "minimum_target_groups": 3,
+    "source_fraction": 0.3
+  },
+  "status": "external-group-held-out-nonofficial",
+  "temperature": {
+    "evidence_normalization": "per-track-update-count",
+    "log2_exponents": [
+      -16,
+      -15,
+      -14,
+      -13,
+      -12,
+      -11,
+      -10,
+      -9,
+      -8,
+      -7,
+      -6,
+      -5,
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "objective": "equal-source-group-one-step-nll",
+    "require_interior_selection": true,
+    "tie_break": "closest-to-one-then-smaller-temperature"
+  },
+  "uncertainty": {
+    "calibration_rule": "finite-sample higher quantile of calibration-group 90th-percentile adjusted NEES ratios",
+    "maximum_horizon": 8,
+    "minimum_scale": 1.0,
+    "source_shape": "weighted nonnegative log-linear scale in log1p(horizon) fitted to median source-group finite-sample scales",
+    "target_coverage": 0.9,
+    "target_use": "frozen source shape times frozen calibration multiplier"
+  }
+}
