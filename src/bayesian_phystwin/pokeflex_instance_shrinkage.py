@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from collections.abc import Mapping, Sequence
@@ -9,8 +10,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-
-from .pokeflex_conservative_shrinkage_target import canonical_payload_sha256
 
 INSTANCE_SCALE_CALIBRATION_KIND = "PokeFlexInstanceScaleCalibration"
 INSTANCE_SCALE_CALIBRATION_ID = "pokeflex-instance-scale-calibration-v2"
@@ -45,7 +44,15 @@ def _object_name(take_id: str) -> str:
 def calibration_sha256(payload: Mapping[str, Any]) -> str:
     """Return the canonical digest of an instance-scale calibration."""
 
-    return canonical_payload_sha256(payload, digest_field="calibration_sha256")
+    canonical = dict(payload)
+    canonical.pop("calibration_sha256", None)
+    encoded = json.dumps(
+        canonical,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def select_source_multiplier(

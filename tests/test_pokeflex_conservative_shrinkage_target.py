@@ -11,6 +11,8 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     FRESH12_EXCLUSION_AUDIT_SHA256,
     FRESH12_PUBLIC_TARGET_TAKE_IDS,
     FRESH12_PUBLIC_ZIP_SHA256,
+    INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
+    INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
     OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS,
     OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS,
     OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
@@ -22,6 +24,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     SOURCE_RESULT_SHA256,
     TARGET_OBJECTS,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+    TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
@@ -40,6 +43,11 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
     validate_pokeflex_shrinkage_target_protocol,
     validate_prediction_seal,
 )
+from bayesian_phystwin.pokeflex_instance_shrinkage import (
+    BASE_EFFECTIVE_SCALE,
+    INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
+    INSTANCE_SCALE_CALIBRATION_SHA256,
+)
 
 ROOT = Path(__file__).parents[1]
 PROTOCOL_PATH = (
@@ -49,10 +57,7 @@ PROTOCOL_V2_PATH = (
     ROOT / "configs" / "sota" / "pokeflex_conservative_shrinkage_target_v2.json"
 )
 OFFICIAL18_PROTOCOL_PATH = (
-    ROOT
-    / "configs"
-    / "sota"
-    / "pokeflex_conservative_shrinkage_official18_v1.json"
+    ROOT / "configs" / "sota" / "pokeflex_conservative_shrinkage_official18_v1.json"
 )
 OFFICIAL13_PUBLIC_PROTOCOL_PATH = (
     ROOT
@@ -61,10 +66,10 @@ OFFICIAL13_PUBLIC_PROTOCOL_PATH = (
     / "pokeflex_conservative_shrinkage_official13_public_v1.json"
 )
 FRESH12_PUBLIC_PROTOCOL_PATH = (
-    ROOT
-    / "configs"
-    / "sota"
-    / "pokeflex_conservative_shrinkage_fresh12_public_v1.json"
+    ROOT / "configs" / "sota" / "pokeflex_conservative_shrinkage_fresh12_public_v1.json"
+)
+INSTANCE_FRESH12_PROTOCOL_PATH = (
+    ROOT / "configs" / "sota" / "pokeflex_instance_shrinkage_fresh12_v2.json"
 )
 FRESH12_AUDIT_PATH = (
     ROOT / "configs" / "sota" / "pokeflex_fresh12_exclusion_audit_v1.json"
@@ -92,6 +97,10 @@ def _official13_public_protocol() -> dict[str, object]:
 
 def _fresh12_public_protocol() -> dict[str, object]:
     return json.loads(FRESH12_PUBLIC_PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+
+def _instance_fresh12_protocol() -> dict[str, object]:
+    return json.loads(INSTANCE_FRESH12_PROTOCOL_PATH.read_text(encoding="utf-8"))
 
 
 def _write_prediction(
@@ -140,6 +149,10 @@ def _write_prediction(
         if robot_history_supported is None:
             robot_history_supported = np.asarray([False, True], dtype=np.bool_)
         arrays["robot_history_supported"] = robot_history_supported
+    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        global_candidate = baseline.copy()
+        global_candidate[1, :, 0] = 0.0005
+        arrays["global_candidate_vertices_m"] = global_candidate
     np.savez_compressed(npz_path, **arrays)
     object_name, _, _ = take_id.rpartition("_T")
     seal = {
@@ -165,12 +178,31 @@ def _write_prediction(
         seal["missing_robot_history_frame_count"] = int(
             np.sum(~np.asarray(robot_history_supported, dtype=np.bool_))
         )
-    if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+    if protocol["protocol_id"] in {
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    }:
+        archive_sha256 = (
+            FRESH12_PUBLIC_ZIP_SHA256
+            if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
+            else INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
+        )
         seal["source_archive_name"] = f"{take_id}.zip"
-        seal["source_archive_sha256"] = FRESH12_PUBLIC_ZIP_SHA256[take_id]
+        seal["source_archive_sha256"] = archive_sha256[take_id]
         seal["source_stage_manifest_name"] = "source_stage_manifest.json"
         seal["source_stage_manifest_sha256"] = "2" * 64
         seal["source_stage_manifest_file_sha256"] = "3" * 64
+    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        multiplier = float(
+            protocol["method"]["instance_scale_calibration"]["multipliers"][object_name]
+        )
+        seal["correction_multiplier"] = multiplier
+        seal["effective_scale"] = BASE_EFFECTIVE_SCALE * multiplier
+        seal["instance_scale_calibration_sha256"] = INSTANCE_SCALE_CALIBRATION_SHA256
+        seal["instance_scale_calibration_file_sha256"] = (
+            INSTANCE_SCALE_CALIBRATION_FILE_SHA256
+        )
+        seal["global_fallback_mismatch_count"] = 0
     seal["seal_sha256"] = prediction_seal_sha256(seal)
     seal_path = case_root / "seal.json"
     seal_path.write_text(json.dumps(seal), encoding="utf-8")
@@ -215,8 +247,7 @@ def test_official13_public_protocol_locks_public_subset_and_claim_boundary() -> 
     assert loaded["protocol_sha256"] == target_protocol_sha256(loaded)
     assert loaded["protocol_id"] == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1
     assert (
-        tuple(loaded["target_cohort"]["take_ids"])
-        == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
+        tuple(loaded["target_cohort"]["take_ids"]) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     )
     assert (
         tuple(loaded["target_cohort"]["prospective_take_ids"])
@@ -230,9 +261,10 @@ def test_official13_public_protocol_locks_public_subset_and_claim_boundary() -> 
         tuple(loaded["target_cohort"]["missing_official_take_ids"])
         == OFFICIAL18_MISSING_PUBLIC_TAKE_IDS
     )
-    assert loaded["gates"]["direct_metric_reference"][
-        "published_aggregate_is_gating"
-    ] is False
+    assert (
+        loaded["gates"]["direct_metric_reference"]["published_aggregate_is_gating"]
+        is False
+    )
 
 
 def test_fresh12_public_protocol_locks_all_prospective_archives() -> None:
@@ -247,10 +279,7 @@ def test_fresh12_public_protocol_locks_all_prospective_archives() -> None:
     )
     assert loaded["target_cohort"]["development_overlap_take_ids"] == []
     assert loaded["preoutcome_storage_amendment"]["target_metric_computed"] is False
-    assert (
-        loaded["freshness_audit"]["selected_zip_sha256"]
-        == FRESH12_PUBLIC_ZIP_SHA256
-    )
+    assert loaded["freshness_audit"]["selected_zip_sha256"] == FRESH12_PUBLIC_ZIP_SHA256
 
 
 def test_fresh12_exclusion_audit_is_canonical_and_disjoint() -> None:
@@ -282,7 +311,9 @@ def test_action_field_history_rejects_missing_end_effector_pose() -> None:
     assert action_field_history_is_supported(complete, 5) is False
 
 
-def test_v2_prediction_requires_robot_support_and_exact_fallback(tmp_path: Path) -> None:
+def test_v2_prediction_requires_robot_support_and_exact_fallback(
+    tmp_path: Path,
+) -> None:
     protocol = _protocol_v2()
     seal = _write_prediction(tmp_path, TARGET_TAKE_IDS[0], protocol=protocol)
     archive = validate_prediction_seal(seal, protocol)
@@ -399,6 +430,36 @@ def test_fresh12_seal_rejects_wrong_source_archive(tmp_path: Path) -> None:
         validate_prediction_seal(seal_path, protocol)
 
 
+def test_instance_seal_and_scorer_preserve_three_arms(tmp_path: Path) -> None:
+    protocol = _instance_fresh12_protocol()
+    seal_path = _write_prediction(
+        tmp_path,
+        INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS[0],
+        protocol=protocol,
+    )
+    archive = validate_prediction_seal(seal_path, protocol)
+    assert archive.global_candidate_vertices_m is not None
+    assert np.array_equal(
+        archive.global_candidate_vertices_m[~archive.update_supported],
+        archive.baseline_vertices_m[~archive.update_supported],
+    )
+
+    tetrahedron = np.asarray(
+        [[0.0, 0.0, 0.0], [0.01, 0.0, 0.0], [0.0, 0.01, 0.0], [0.0, 0.0, 0.01]],
+        dtype=np.float64,
+    )
+    result = score_one_prediction(
+        archive,
+        [7],
+        lambda _: (tetrahedron + np.asarray([0.002, 0.0, 0.0]), archive.faces),
+        protocol,
+        jaccard=lambda *_: 0.9,
+    )
+
+    assert "global_candidate_mean_CD_UL1_mm" in result
+    assert "global_candidate_CD_UL1_mm" in result["frames"][0]
+
+
 def test_prediction_function_has_no_target_mesh_loader() -> None:
     tree = ast.parse(RUNNER_PATH.read_text(encoding="utf-8"))
     prediction = next(
@@ -505,9 +566,7 @@ def test_official13_public_aggregation_gates_only_prospective_pairing() -> None:
     for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS:
         object_name, _, _ = take_id.rpartition("_T")
         candidate = (
-            7.0
-            if take_id in OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
-            else 6.0
+            7.0 if take_id in OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS else 6.0
         )
         rows.append(
             {

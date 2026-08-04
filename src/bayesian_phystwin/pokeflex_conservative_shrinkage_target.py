@@ -15,6 +15,26 @@ from typing import Any
 
 import numpy as np
 
+from .pokeflex_instance_freshness import (
+    FRESHNESS_AUDIT_FILE_SHA256 as INSTANCE_FRESHNESS_AUDIT_FILE_SHA256,
+)
+from .pokeflex_instance_freshness import (
+    FRESHNESS_AUDIT_SHA256 as INSTANCE_FRESHNESS_AUDIT_SHA256,
+)
+from .pokeflex_instance_freshness import (
+    SELECTED_ZIP_SHA256 as INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
+)
+from .pokeflex_instance_freshness import (
+    SELECTION_SALT as INSTANCE_FRESH12_SELECTION_SALT,
+)
+from .pokeflex_instance_shrinkage import (
+    BASE_EFFECTIVE_SCALE as INSTANCE_BASE_EFFECTIVE_SCALE,
+)
+from .pokeflex_instance_shrinkage import (
+    INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
+    INSTANCE_SCALE_CALIBRATION_SHA256,
+)
+
 TARGET_OBJECTS = (
     "3dPrintedCylinder",
     "3dPrintedPizza",
@@ -32,8 +52,10 @@ TARGET_PROTOCOL_OFFICIAL18_V1 = "pokeflex-conservative-shrinkage-official18-v1"
 TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1 = (
     "pokeflex-conservative-shrinkage-official13-public-v1"
 )
-TARGET_PROTOCOL_FRESH12_PUBLIC_V1 = (
-    "pokeflex-conservative-shrinkage-fresh12-public-v1"
+TARGET_PROTOCOL_FRESH12_PUBLIC_V1 = "pokeflex-conservative-shrinkage-fresh12-public-v1"
+TARGET_PROTOCOL_INSTANCE_FRESH12_V2 = "pokeflex-instance-shrinkage-fresh12-v2"
+TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256 = (
+    "ee2b4379d087c71a13a570a07d1acccfb881c7ad91479de42713265d47d225d3"
 )
 OFFICIAL18_TARGET_TAKE_IDS = (
     "MemoryFoam_T2",
@@ -101,6 +123,16 @@ FRESH12_PUBLIC_TARGET_TAKE_IDS = (
     "PlushVolleyball_T3",
     "Sponge_T4",
 )
+INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS = tuple(INSTANCE_FRESH12_PUBLIC_ZIP_SHA256)
+INSTANCE_FRESH12_PRIOR_EXCLUSION_UNION_SHA256 = (
+    "6cb1c809f70411fd0c35f30ae5bf891c8d1f87646e9cbf2ad27b5c428c3ac615"
+)
+INSTANCE_FRESH12_ELIGIBLE_INVENTORY_SHA256 = (
+    "89b7b30a6325dc1789984c1101dd98b9e8ef2b7349946d7bab9a913d0f7baa9f"
+)
+INSTANCE_FRESH12_SELECTED_INVENTORY_SHA256 = (
+    "e5020f7dc9bcc2a47a35bdc6b6c0b24f55f20ee43b5ebd10d7af08983a25fa43"
+)
 FRESH12_EXCLUSION_AUDIT_SHA256 = (
     "fa2062f97e3ae496705717b7e2851b64b748a0417c270fea5649b9aa8cc96bbc"
 )
@@ -127,18 +159,14 @@ FRESH12_PUBLIC_ZIP_SHA256 = {
     "3dPrintedPyramid_T4": (
         "f0b807274e6217010bd75eca72a322ee5cf326e6cb9cc2c0a67ddd1a3c746652"
     ),
-    "Beanbag_T3": (
-        "3fbc0995e9777bd83650fe0f7e197c6bd6fea8347fddcc9f6a0b78f62f85d386"
-    ),
+    "Beanbag_T3": ("3fbc0995e9777bd83650fe0f7e197c6bd6fea8347fddcc9f6a0b78f62f85d386"),
     "FoamCylinder_T3": (
         "c7e7c1c23dbc9e65fa554434b64b6cfcba376bc761123a48519ffc00ff6fe9c0"
     ),
     "FoamHalfSphere_T5": (
         "6abad03c0c3d17e690f0555c72d6d555fba0e3040fe3601f1b8577c854102cbf"
     ),
-    "Pillow_T7": (
-        "2b4fff35524e35bb81540e42cd1d27f83b1f6a698ff900dd01c935b88d254560"
-    ),
+    "Pillow_T7": ("2b4fff35524e35bb81540e42cd1d27f83b1f6a698ff900dd01c935b88d254560"),
     "PlushDice_T1": (
         "978212f8e67c01e3ae318021080b3f88aa2dfefbeee479c31aedd61eefe6a248"
     ),
@@ -151,9 +179,7 @@ FRESH12_PUBLIC_ZIP_SHA256 = {
     "PlushVolleyball_T3": (
         "6b7668947e84e93f8f0439810fb5ba9b3e6d06fefa3589a558e4f9d2681a7412"
     ),
-    "Sponge_T4": (
-        "eea7d0a0f124700e89162e54fa40e6a3336e510e7a1a24eb6581278c5358e9a2"
-    ),
+    "Sponge_T4": ("eea7d0a0f124700e89162e54fa40e6a3336e510e7a1a24eb6581278c5358e9a2"),
 }
 OFFICIAL_EVALUATOR_SHA256 = (
     "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60"
@@ -227,6 +253,8 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
         return OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     if protocol.get("protocol_id") == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
         return FRESH12_PUBLIC_TARGET_TAKE_IDS
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        return INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS
     return TARGET_TAKE_IDS
 
 
@@ -238,6 +266,7 @@ def protocol_requires_robot_history(protocol_id: str) -> bool:
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     }
 
 
@@ -280,6 +309,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_OFFICIAL18_V1,
             TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
             TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+            TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         },
         "target protocol id changed",
     )
@@ -298,6 +328,30 @@ def validate_pokeflex_shrinkage_target_protocol(
     )
     _require(source.get("passed") is True, "source gate did not pass")
     _require(source.get("selected_arm") == SELECTED_ARM, "selected arm changed")
+    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        source_calibration = source.get("instance_scale_calibration")
+        _require(
+            isinstance(source_calibration, Mapping),
+            "source instance calibration is missing",
+        )
+        _require(
+            source_calibration.get("calibration_sha256")
+            == INSTANCE_SCALE_CALIBRATION_SHA256,
+            "source instance calibration changed",
+        )
+        _require(
+            source_calibration.get("calibration_file_sha256")
+            == INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
+            "source instance calibration bytes changed",
+        )
+        _require(
+            int(source_calibration.get("source_object_count", -1)) == 12,
+            "source instance object count changed",
+        )
+        _require(
+            source_calibration.get("future_take_outcomes_opened") is False,
+            "source instance calibration opened future takes",
+        )
 
     cohort = payload.get("target_cohort")
     _require(isinstance(cohort, Mapping), "target cohort is missing")
@@ -357,8 +411,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             "freshness audit changed",
         )
         _require(
-            audit.get("public_inventory_sha256")
-            == FRESH12_PUBLIC_INVENTORY_SHA256,
+            audit.get("public_inventory_sha256") == FRESH12_PUBLIC_INVENTORY_SHA256,
             "public inventory changed",
         )
         _require(
@@ -367,13 +420,11 @@ def validate_pokeflex_shrinkage_target_protocol(
             "prior exclusion union changed",
         )
         _require(
-            audit.get("eligible_inventory_sha256")
-            == FRESH12_ELIGIBLE_INVENTORY_SHA256,
+            audit.get("eligible_inventory_sha256") == FRESH12_ELIGIBLE_INVENTORY_SHA256,
             "eligible inventory changed",
         )
         _require(
-            audit.get("selected_inventory_sha256")
-            == FRESH12_SELECTED_INVENTORY_SHA256,
+            audit.get("selected_inventory_sha256") == FRESH12_SELECTED_INVENTORY_SHA256,
             "selected inventory changed",
         )
         _require(
@@ -381,8 +432,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             "fresh cohort selection salt changed",
         )
         _require(
-            dict(audit.get("selected_zip_sha256", {}))
-            == FRESH12_PUBLIC_ZIP_SHA256,
+            dict(audit.get("selected_zip_sha256", {})) == FRESH12_PUBLIC_ZIP_SHA256,
             "fresh cohort archive bytes changed",
         )
         amendment = payload.get("preoutcome_storage_amendment")
@@ -404,6 +454,59 @@ def validate_pokeflex_shrinkage_target_protocol(
             amendment.get("cohort_or_method_changed") is False,
             "storage amendment changed the experiment",
         )
+    elif protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        _require(
+            tuple(cohort.get("take_ids", ()))
+            == INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
+            "instance fresh take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ()))
+            == INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
+            "instance prospective cohort changed",
+        )
+        _require(
+            tuple(cohort.get("development_overlap_take_ids", ())) == (),
+            "instance cohort gained take overlap",
+        )
+        audit = payload.get("freshness_audit")
+        _require(isinstance(audit, Mapping), "instance freshness audit is missing")
+        _require(
+            audit.get("audit_sha256") == INSTANCE_FRESHNESS_AUDIT_SHA256,
+            "instance freshness audit changed",
+        )
+        _require(
+            audit.get("audit_file_sha256") == INSTANCE_FRESHNESS_AUDIT_FILE_SHA256,
+            "instance freshness audit bytes changed",
+        )
+        _require(
+            audit.get("public_inventory_sha256") == FRESH12_PUBLIC_INVENTORY_SHA256,
+            "instance public inventory changed",
+        )
+        _require(
+            audit.get("prior_exclusion_union_sha256")
+            == INSTANCE_FRESH12_PRIOR_EXCLUSION_UNION_SHA256,
+            "instance prior exclusion union changed",
+        )
+        _require(
+            audit.get("eligible_inventory_sha256")
+            == INSTANCE_FRESH12_ELIGIBLE_INVENTORY_SHA256,
+            "instance eligible inventory changed",
+        )
+        _require(
+            audit.get("selected_inventory_sha256")
+            == INSTANCE_FRESH12_SELECTED_INVENTORY_SHA256,
+            "instance selected inventory changed",
+        )
+        _require(
+            audit.get("selection_salt") == INSTANCE_FRESH12_SELECTION_SALT,
+            "instance selection salt changed",
+        )
+        _require(
+            dict(audit.get("selected_zip_sha256", {}))
+            == INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
+            "instance archive bytes changed",
+        )
     else:
         _require(
             tuple(cohort.get("objects", ())) == TARGET_OBJECTS,
@@ -416,7 +519,60 @@ def validate_pokeflex_shrinkage_target_protocol(
     _require(isinstance(method, Mapping), "method lock is missing")
     _require(method.get("selected_arm") == SELECTED_ARM, "target arm changed")
     _require(method.get("field") == "action_local_state_relative_0.4", "field changed")
-    _require(float(method.get("scale", -1.0)) == 0.125, "scale changed")
+    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        _require(
+            method.get("scale_policy")
+            == "source-calibrated per physical object with frozen capped bank",
+            "instance scale policy changed",
+        )
+        _require(
+            float(method.get("base_scale", -1.0)) == INSTANCE_BASE_EFFECTIVE_SCALE,
+            "instance base scale changed",
+        )
+        calibration = method.get("instance_scale_calibration")
+        _require(isinstance(calibration, Mapping), "instance calibration is missing")
+        _require(
+            calibration.get("calibration_sha256") == INSTANCE_SCALE_CALIBRATION_SHA256,
+            "instance calibration changed",
+        )
+        _require(
+            calibration.get("calibration_file_sha256")
+            == INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
+            "instance calibration bytes changed",
+        )
+        expected_multipliers = {
+            "3dPrintedCylinder": 2.0,
+            "3dPrintedPizza": 0.5,
+            "3dPrintedPyramid": 0.5,
+            "Beanbag": 2.0,
+            "FoamCylinder": 2.0,
+            "FoamHalfSphere": 2.0,
+            "Pillow": 2.0,
+            "PlushDice": 2.0,
+            "PlushMoon": 2.0,
+            "PlushTurtle": 2.0,
+            "PlushVolleyball": 1.0,
+            "Sponge": 1.5,
+        }
+        _require(
+            dict(calibration.get("multipliers", {})) == expected_multipliers,
+            "instance multiplier map changed",
+        )
+        expected_effective_scales = {
+            name: INSTANCE_BASE_EFFECTIVE_SCALE * multiplier
+            for name, multiplier in expected_multipliers.items()
+        }
+        _require(
+            dict(method.get("effective_scale_by_object", {}))
+            == expected_effective_scales,
+            "instance effective scale map changed",
+        )
+        _require(
+            method.get("target_outcome_adaptation") == "forbidden",
+            "target outcome adaptation was enabled",
+        )
+    else:
+        _require(float(method.get("scale", -1.0)) == 0.125, "scale changed")
     _require(
         method.get("unsupported_frame_action") == "byte-identical released checkpoint",
         "fallback changed",
@@ -465,14 +621,18 @@ def validate_pokeflex_shrinkage_target_protocol(
     )
     target_mesh_boundary = (
         "geometry decoding and scoring forbidden; opaque byte-preserving archive extraction allowed"
-        if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
+        if protocol_id
+        in {TARGET_PROTOCOL_FRESH12_PUBLIC_V1, TARGET_PROTOCOL_INSTANCE_FRESH12_V2}
         else "forbidden"
     )
     _require(
         custody.get("target_mesh_access_before_barrier") == target_mesh_boundary,
         "target mesh custody weakened",
     )
-    if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+    if protocol_id in {
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    }:
         _require(
             custody.get("registered_source_archive_required") is True,
             "registered source archive requirement changed",
@@ -510,6 +670,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     }:
         expected_aggregation = (
             "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic"
@@ -587,7 +748,10 @@ def validate_pokeflex_shrinkage_target_protocol(
             direct.get("released_checkpoint_pairing_is_primary") is True,
             "released-checkpoint pairing changed",
         )
-    elif protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+    elif protocol_id in {
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    }:
         _require(
             direct.get("published_aggregate_is_gating") is False,
             "incomparable published aggregate became gating",
@@ -627,6 +791,38 @@ def validate_pokeflex_shrinkage_target_protocol(
         float(paired.get("bootstrap_upper_quantile", -1.0)) == 0.975,
         "bootstrap quantile changed",
     )
+    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        advancement = gates.get("instance_advancement")
+        _require(isinstance(advancement, Mapping), "instance advancement gate missing")
+        _require(
+            float(advancement.get("relative_CD_UL1_improvement_above", -1.0)) == 0.0,
+            "instance advancement threshold changed",
+        )
+        _require(
+            float(advancement.get("bootstrap_upper_difference_mm_below", 1.0)) == 0.0,
+            "instance advancement bootstrap changed",
+        )
+        _require(
+            float(advancement.get("maximum_per_object_relative_regression", 1.0))
+            == 0.0,
+            "instance advancement regression tolerance changed",
+        )
+        _require(
+            int(advancement.get("bootstrap_replicates", -1)) == 20000,
+            "instance advancement bootstrap count changed",
+        )
+        _require(
+            int(advancement.get("bootstrap_seed", -1)) == 20260720,
+            "instance advancement bootstrap seed changed",
+        )
+        _require(
+            float(advancement.get("bootstrap_upper_quantile", -1.0)) == 0.975,
+            "instance advancement quantile changed",
+        )
+        _require(
+            observed == TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256,
+            "instance target protocol lock changed",
+        )
     return {
         "passed": True,
         "protocol_sha256": observed,
@@ -653,6 +849,7 @@ class PredictionArchive:
     faces: np.ndarray
     target_frames: np.ndarray
     update_supported: np.ndarray
+    global_candidate_vertices_m: np.ndarray | None = None
 
 
 def prediction_seal_sha256(payload: Mapping[str, Any]) -> str:
@@ -679,6 +876,8 @@ def _load_prediction_arrays(
     }
     if protocol_requires_robot_history(protocol_id):
         required.add("robot_history_supported")
+    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        required.add("global_candidate_vertices_m")
     with np.load(path, allow_pickle=False) as archive:
         _require(set(archive.files) == required, "prediction array schema changed")
         return {name: np.asarray(archive[name]) for name in archive.files}
@@ -729,12 +928,20 @@ def validate_prediction_seal(
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     }:
         _require(take == "T2", "prediction take changed")
-    if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+    if protocol_id in {
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    }:
+        archive_sha256 = (
+            FRESH12_PUBLIC_ZIP_SHA256
+            if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1
+            else INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
+        )
         _require(
-            seal.get("source_archive_sha256")
-            == FRESH12_PUBLIC_ZIP_SHA256[str(take_id)],
+            seal.get("source_archive_sha256") == archive_sha256[str(take_id)],
             "fresh source archive changed",
         )
         _require(
@@ -754,6 +961,33 @@ def validate_prediction_seal(
                 isinstance(value, str) and len(value) == 64,
                 f"fresh {field} is invalid",
             )
+    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        expected_multiplier = float(
+            protocol["method"]["instance_scale_calibration"]["multipliers"][object_name]
+        )
+        _require(
+            float(seal.get("correction_multiplier", -1.0)) == expected_multiplier,
+            "prediction instance multiplier changed",
+        )
+        _require(
+            float(seal.get("effective_scale", -1.0))
+            == INSTANCE_BASE_EFFECTIVE_SCALE * expected_multiplier,
+            "prediction effective scale changed",
+        )
+        _require(
+            seal.get("instance_scale_calibration_sha256")
+            == INSTANCE_SCALE_CALIBRATION_SHA256,
+            "prediction instance calibration changed",
+        )
+        _require(
+            seal.get("instance_scale_calibration_file_sha256")
+            == INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
+            "prediction instance calibration bytes changed",
+        )
+        _require(
+            int(seal.get("global_fallback_mismatch_count", -1)) == 0,
+            "prediction global fallback mismatch was recorded",
+        )
     _require(
         dict(seal.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
         "prediction checkpoint changed",
@@ -771,6 +1005,11 @@ def validate_prediction_seal(
     arrays = _load_prediction_arrays(npz_path, protocol_id=protocol_id)
     baseline = np.asarray(arrays["baseline_vertices_m"], dtype=np.float64)
     candidate = np.asarray(arrays["candidate_vertices_m"], dtype=np.float64)
+    global_candidate = (
+        np.asarray(arrays["global_candidate_vertices_m"], dtype=np.float64)
+        if "global_candidate_vertices_m" in arrays
+        else None
+    )
     faces = np.asarray(arrays["faces"])
     frames = np.asarray(arrays["target_frames"])
     source_frames = np.asarray(arrays["source_frames"])
@@ -782,6 +1021,15 @@ def validate_prediction_seal(
         "baseline vertices must be FxNx3",
     )
     _require(candidate.shape == baseline.shape, "candidate vertex shape changed")
+    if global_candidate is not None:
+        _require(
+            global_candidate.shape == baseline.shape,
+            "global candidate vertex shape changed",
+        )
+        _require(
+            np.all(np.isfinite(global_candidate)),
+            "global candidate contains non-finite values",
+        )
     _require(np.all(np.isfinite(baseline)), "baseline contains non-finite values")
     _require(np.all(np.isfinite(candidate)), "candidate contains non-finite values")
     _require(faces.ndim == 2 and faces.shape[1] == 3, "faces must be Mx3")
@@ -811,6 +1059,11 @@ def validate_prediction_seal(
         np.array_equal(candidate[~supported], baseline[~supported]),
         "unsupported prediction is not an exact fallback",
     )
+    if global_candidate is not None:
+        _require(
+            np.array_equal(global_candidate[~supported], baseline[~supported]),
+            "unsupported global prediction is not an exact fallback",
+        )
     _require(
         int(seal.get("fallback_mismatch_count", -1)) == 0,
         "prediction fallback mismatch was recorded",
@@ -824,6 +1077,7 @@ def validate_prediction_seal(
         npz_path=npz_path,
         implementation_revision=revision,
         baseline_vertices_m=baseline,
+        global_candidate_vertices_m=global_candidate,
         candidate_vertices_m=candidate,
         faces=np.asarray(faces, dtype=np.int64),
         target_frames=np.asarray(frames, dtype=np.int64),
@@ -1108,9 +1362,7 @@ def _evaluate_official18_metrics(
         seed=int(paired["bootstrap_seed"]),
         upper_quantile=float(paired["bootstrap_upper_quantile"]),
     )
-    published = float(
-        protocol["official_reference"]["published_kinect_CD_UL1_mm"]
-    )
+    published = float(protocol["official_reference"]["published_kinect_CD_UL1_mm"])
     reproduction_relative_error = abs(baseline_global - published) / published
     reproduction_pass = bool(
         reproduction_relative_error
@@ -1121,8 +1373,7 @@ def _evaluate_official18_metrics(
         < float(gates["direct_metric_reference"]["candidate_CD_UL1_mm_below"])
     )
     paired_pass = bool(
-        prospective_relative
-        > float(paired["relative_CD_UL1_improvement_above"])
+        prospective_relative > float(paired["relative_CD_UL1_improvement_above"])
         and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
         and float(np.min(prospective_object_relative))
         >= -float(paired["maximum_per_object_relative_regression"])
@@ -1154,9 +1405,7 @@ def _evaluate_official18_metrics(
         ),
         "full18_object_win_count": int(np.sum(candidate_object < baseline_object)),
         "prospective_take_count": len(OFFICIAL18_PROSPECTIVE_TAKE_IDS),
-        "development_overlap_take_count": len(
-            OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS
-        ),
+        "development_overlap_take_count": len(OFFICIAL18_DEVELOPMENT_OVERLAP_TAKE_IDS),
         "prospective_object_balanced_baseline_CD_UL1_mm": prospective_baseline_mean,
         "prospective_object_balanced_candidate_CD_UL1_mm": prospective_candidate_mean,
         "prospective_object_balanced_relative_CD_UL1_improvement": prospective_relative,
@@ -1260,8 +1509,7 @@ def _evaluate_official13_public_metrics(
         upper_quantile=float(paired["bootstrap_upper_quantile"]),
     )
     paired_pass = bool(
-        prospective_relative
-        > float(paired["relative_CD_UL1_improvement_above"])
+        prospective_relative > float(paired["relative_CD_UL1_improvement_above"])
         and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
         and float(np.min(prospective_object_relative))
         >= -float(paired["maximum_per_object_relative_regression"])
@@ -1287,9 +1535,7 @@ def _evaluate_official13_public_metrics(
         "public13_global_relative_CD_UL1_improvement": float(
             (baseline_global - candidate_global) / baseline_global
         ),
-        "baseline_public13_object_balanced_CD_UL1_mm": float(
-            np.mean(baseline_object)
-        ),
+        "baseline_public13_object_balanced_CD_UL1_mm": float(np.mean(baseline_object)),
         "candidate_public13_object_balanced_CD_UL1_mm": float(
             np.mean(candidate_object)
         ),
@@ -1383,8 +1629,7 @@ def _evaluate_fresh12_public_metrics(
         upper_quantile=float(paired["bootstrap_upper_quantile"]),
     )
     paired_pass = bool(
-        relative_balanced
-        > float(paired["relative_CD_UL1_improvement_above"])
+        relative_balanced > float(paired["relative_CD_UL1_improvement_above"])
         and upper_difference < float(paired["bootstrap_upper_difference_mm_below"])
         and float(np.min(relative_by_object))
         >= -float(paired["maximum_per_object_relative_regression"])
@@ -1404,12 +1649,8 @@ def _evaluate_fresh12_public_metrics(
         "published_direct_comparison_authorized": False,
         "fresh_public_take_count": len(FRESH12_PUBLIC_TARGET_TAKE_IDS),
         "development_overlap_take_count": 0,
-        "baseline_fresh12_frame_balanced_CD_UL1_mm": float(
-            np.mean(baseline_frames)
-        ),
-        "candidate_fresh12_frame_balanced_CD_UL1_mm": float(
-            np.mean(candidate_frames)
-        ),
+        "baseline_fresh12_frame_balanced_CD_UL1_mm": float(np.mean(baseline_frames)),
+        "candidate_fresh12_frame_balanced_CD_UL1_mm": float(np.mean(candidate_frames)),
         "baseline_fresh12_object_balanced_CD_UL1_mm": baseline_balanced,
         "candidate_fresh12_object_balanced_CD_UL1_mm": candidate_balanced,
         "fresh12_object_balanced_relative_CD_UL1_improvement": relative_balanced,
@@ -1436,6 +1677,160 @@ def _evaluate_fresh12_public_metrics(
     }
 
 
+def _paired_object_gate(
+    candidate: np.ndarray,
+    reference: np.ndarray,
+    gate: Mapping[str, Any],
+) -> dict[str, Any]:
+    _require(candidate.shape == reference.shape, "paired object shape changed")
+    _require(np.all(np.isfinite(candidate)), "paired candidate is non-finite")
+    _require(np.all(np.isfinite(reference)), "paired reference is non-finite")
+    _require(np.all(reference > 0.0), "paired reference score is zero")
+    relative_by_object = (reference - candidate) / reference
+    reference_mean = float(np.mean(reference))
+    candidate_mean = float(np.mean(candidate))
+    relative_mean = float((reference_mean - candidate_mean) / reference_mean)
+    upper_difference = paired_object_bootstrap_upper_difference(
+        candidate - reference,
+        replicates=int(gate["bootstrap_replicates"]),
+        seed=int(gate["bootstrap_seed"]),
+        upper_quantile=float(gate["bootstrap_upper_quantile"]),
+    )
+    passed = bool(
+        relative_mean > float(gate["relative_CD_UL1_improvement_above"])
+        and upper_difference < float(gate["bootstrap_upper_difference_mm_below"])
+        and float(np.min(relative_by_object))
+        >= -float(gate["maximum_per_object_relative_regression"])
+    )
+    return {
+        "reference_mean_CD_UL1_mm": reference_mean,
+        "candidate_mean_CD_UL1_mm": candidate_mean,
+        "relative_CD_UL1_improvement": relative_mean,
+        "win_count": int(np.sum(candidate < reference)),
+        "tie_count": int(np.sum(candidate == reference)),
+        "minimum_per_object_relative_improvement": float(np.min(relative_by_object)),
+        "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": upper_difference,
+        "passed": passed,
+    }
+
+
+def _evaluate_instance_fresh12_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Gate the instance scale against both checkpoint and global shrinkage."""
+
+    _require(
+        len(per_take) == len(INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS),
+        "instance fresh result set is incomplete",
+    )
+    by_take = {str(row["take_id"]): row for row in per_take}
+    _require(
+        tuple(sorted(by_take))
+        == tuple(sorted(INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS)),
+        "instance fresh result cohort changed",
+    )
+    ordered = [by_take[take_id] for take_id in INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS]
+    for row in ordered:
+        frames = row.get("frames")
+        _require(isinstance(frames, list), "instance frame scores are missing")
+        _require(
+            len(frames) == int(row["scored_frame_count"]),
+            "instance scored-frame inventory changed",
+        )
+        _require(
+            "global_candidate_mean_CD_UL1_mm" in row,
+            "global candidate score is missing",
+        )
+
+    baseline_frames = np.asarray(
+        [frame["baseline_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    global_frames = np.asarray(
+        [
+            frame["global_candidate_CD_UL1_mm"]
+            for row in ordered
+            for frame in row["frames"]
+        ],
+        dtype=np.float64,
+    )
+    candidate_frames = np.asarray(
+        [frame["candidate_CD_UL1_mm"] for row in ordered for frame in row["frames"]],
+        dtype=np.float64,
+    )
+    baseline_object = np.asarray(
+        [row["baseline_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    global_object = np.asarray(
+        [row["global_candidate_mean_CD_UL1_mm"] for row in ordered],
+        dtype=np.float64,
+    )
+    candidate_object = np.asarray(
+        [row["candidate_mean_CD_UL1_mm"] for row in ordered], dtype=np.float64
+    )
+    _require(len(baseline_frames) > 0, "instance fresh cohort has no scored frames")
+    for name, values in (
+        ("baseline frames", baseline_frames),
+        ("global frames", global_frames),
+        ("instance frames", candidate_frames),
+        ("baseline objects", baseline_object),
+        ("global objects", global_object),
+        ("instance objects", candidate_object),
+    ):
+        _require(np.all(np.isfinite(values)), f"{name} are non-finite")
+    _require(np.all(baseline_object > 0.0), "baseline object score is zero")
+    _require(np.all(global_object > 0.0), "global object score is zero")
+    global_checkpoint_gate = _paired_object_gate(
+        global_object,
+        baseline_object,
+        protocol["gates"]["paired_transfer"],
+    )
+    checkpoint_gate = _paired_object_gate(
+        candidate_object,
+        baseline_object,
+        protocol["gates"]["paired_transfer"],
+    )
+    advancement_gate = _paired_object_gate(
+        candidate_object,
+        global_object,
+        protocol["gates"]["instance_advancement"],
+    )
+    candidate_jaccard = [
+        float(frame["candidate_jaccard"])
+        for row in ordered
+        for frame in row["frames"]
+        if frame["candidate_jaccard"] is not None
+    ]
+    return {
+        "published_kinect_CD_UL1_mm": float(
+            protocol["official_reference"]["published_kinect_CD_UL1_mm"]
+        ),
+        "published_reference_is_contextual_only": True,
+        "published_direct_comparison_authorized": False,
+        "instance_fresh_take_count": len(INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS),
+        "development_overlap_take_count": 0,
+        "baseline_frame_balanced_CD_UL1_mm": float(np.mean(baseline_frames)),
+        "global_scale_frame_balanced_CD_UL1_mm": float(np.mean(global_frames)),
+        "instance_scale_frame_balanced_CD_UL1_mm": float(np.mean(candidate_frames)),
+        "global_scale_checkpoint_pairing": global_checkpoint_gate,
+        "checkpoint_pairing": checkpoint_gate,
+        "global_scale_advancement": advancement_gate,
+        "candidate_global_jaccard_valid": (
+            float(np.mean(candidate_jaccard)) if candidate_jaccard else None
+        ),
+        "candidate_jaccard_valid_fraction": float(
+            len(candidate_jaccard) / len(candidate_frames)
+        ),
+        "jaccard_is_gating": False,
+        "released_checkpoint_pairing_is_primary": True,
+        "global_scale_is_advancement_baseline": True,
+        "all_target_gates_passed": bool(
+            checkpoint_gate["passed"] and advancement_gate["passed"]
+        ),
+    }
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -1449,6 +1844,8 @@ def evaluate_target_metrics(
         return _evaluate_official13_public_metrics(per_object, protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
         return _evaluate_fresh12_public_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        return _evaluate_instance_fresh12_metrics(per_object, protocol)
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
@@ -1561,6 +1958,16 @@ def score_one_prediction(
         candidate_sample = surface_sample(
             archive.candidate_vertices_m[index], archive.faces, count, seed + frame
         )
+        global_candidate_sample = (
+            surface_sample(
+                archive.global_candidate_vertices_m[index],
+                archive.faces,
+                count,
+                seed + frame,
+            )
+            if archive.global_candidate_vertices_m is not None
+            else None
+        )
         row: dict[str, Any] = {
             "target_frame": frame,
             "update_supported": bool(archive.update_supported[index]),
@@ -1571,6 +1978,11 @@ def score_one_prediction(
             "baseline_jaccard_error": None,
             "candidate_jaccard_error": None,
         }
+        if global_candidate_sample is not None:
+            row["global_candidate_CD_UL1_mm"] = cd_ul1_mm(
+                global_candidate_sample,
+                target_sample,
+            )
         try:
             row["baseline_jaccard"] = jaccard_function(
                 archive.baseline_vertices_m[index],
@@ -1595,6 +2007,11 @@ def score_one_prediction(
     candidate_errors = np.asarray([row["candidate_CD_UL1_mm"] for row in rows])
     baseline_mean = float(np.mean(baseline_errors))
     candidate_mean = float(np.mean(candidate_errors))
+    global_candidate_mean = (
+        float(np.mean([row["global_candidate_CD_UL1_mm"] for row in rows]))
+        if archive.global_candidate_vertices_m is not None
+        else None
+    )
     _require(baseline_mean > 0.0, "baseline target error is zero")
     baseline_jaccard = [
         row["baseline_jaccard"] for row in rows if row["baseline_jaccard"] is not None
@@ -1603,7 +2020,7 @@ def score_one_prediction(
         row["candidate_jaccard"] for row in rows if row["candidate_jaccard"] is not None
     ]
     object_name, _ = _take_identity(archive.take_id)
-    return {
+    result = {
         "object_name": object_name,
         "take_id": archive.take_id,
         "scored_frame_count": len(rows),
@@ -1623,3 +2040,9 @@ def score_one_prediction(
         ),
         "frames": rows,
     }
+    if global_candidate_mean is not None:
+        result["global_candidate_mean_CD_UL1_mm"] = global_candidate_mean
+        result["instance_minus_global_mean_CD_UL1_mm"] = (
+            candidate_mean - global_candidate_mean
+        )
+    return result

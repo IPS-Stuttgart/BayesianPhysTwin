@@ -40,6 +40,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+    TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_OFFICIAL18_V1,
     TARGET_PROTOCOL_V2,
@@ -59,6 +60,12 @@ from bayesian_phystwin.pokeflex_fresh12_staging import (  # noqa: E402
     STAGE_MANIFEST_NAME,
     validate_pokeflex_fresh12_stage_manifest,
     validate_staged_file,
+)
+from bayesian_phystwin.pokeflex_instance_shrinkage import (  # noqa: E402
+    BASE_EFFECTIVE_SCALE,
+    INSTANCE_SCALE_CALIBRATION_FILE_SHA256,
+    load_instance_scale_calibration,
+    validate_instance_scale_calibration,
 )
 from bayesian_phystwin.pokeflex_released_checkpoint import (  # noqa: E402
     PokeFlexReleasedCheckpoint,
@@ -104,6 +111,7 @@ def _predict(
     upstream_checkout: Path,
     checkpoint_root: Path,
     source_stage_manifest: Path | None,
+    instance_scale_calibration: Path | None,
 ) -> None:
     protocol = load_pokeflex_shrinkage_target_protocol(protocol_path)
     if protocol["protocol_id"] not in {
@@ -111,6 +119,7 @@ def _predict(
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     }:
         raise ValueError("new predictions require a robot-history-aware protocol")
     target_take_ids = target_take_ids_for_protocol(protocol)
@@ -120,7 +129,10 @@ def _predict(
         raise ValueError(f"take is outside the target lock: {take_root.name}")
     source_archive_record = None
     stage = None
-    if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+    if protocol["protocol_id"] in {
+        TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+        TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    }:
         if source_stage_manifest is None:
             raise ValueError("fresh public prediction requires its stage manifest")
         stage = validate_pokeflex_fresh12_stage_manifest(
@@ -140,6 +152,35 @@ def _predict(
                 Path(source_stage_manifest)
             ),
         }
+    object_name, _, _ = take_root.name.rpartition("_T")
+    correction_multiplier = 1.0
+    calibration_record = None
+    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        if instance_scale_calibration is None:
+            raise ValueError("instance protocol requires its scale calibration")
+        if (
+            file_sha256(instance_scale_calibration)
+            != INSTANCE_SCALE_CALIBRATION_FILE_SHA256
+        ):
+            raise ValueError("instance scale calibration bytes changed")
+        calibration = load_instance_scale_calibration(instance_scale_calibration)
+        validation = validate_instance_scale_calibration(calibration)
+        correction_multiplier = float(validation["multipliers"][object_name])
+        protocol_multiplier = float(
+            protocol["method"]["instance_scale_calibration"]["multipliers"][object_name]
+        )
+        if correction_multiplier != protocol_multiplier:
+            raise ValueError("protocol and calibration multiplier differ")
+        calibration_record = {
+            "instance_scale_calibration_sha256": calibration["calibration_sha256"],
+            "instance_scale_calibration_file_sha256": file_sha256(
+                instance_scale_calibration
+            ),
+            "correction_multiplier": correction_multiplier,
+            "effective_scale": BASE_EFFECTIVE_SCALE * correction_multiplier,
+        }
+    elif instance_scale_calibration is not None:
+        raise ValueError("instance scale calibration is not allowed for this protocol")
     if output_dir.exists():
         raise FileExistsError(f"prediction output already exists: {output_dir}")
     if file_sha256(source_result_path) != SOURCE_RESULT_SHA256:
@@ -221,6 +262,7 @@ def _predict(
 
     target_frames = np.arange(6, frame_limit + 1, dtype=np.int64)
     baseline_rows = []
+    global_candidate_rows = []
     candidate_rows = []
     update_supported = []
     update_accepted = []
@@ -280,9 +322,13 @@ def _predict(
                 ),
             )
             field = fields["action_local_state_relative_0.4"]
-            candidate = target_prior + 0.125 * field
+            global_candidate = target_prior + BASE_EFFECTIVE_SCALE * field
+            candidate = (
+                target_prior + BASE_EFFECTIVE_SCALE * correction_multiplier * field
+            )
             field_rms = float(np.sqrt(np.mean(np.sum(np.square(field), axis=1))))
         else:
+            global_candidate = target_prior.copy()
             candidate = target_prior.copy()
             field_rms = 0.0
         if not supported and not np.array_equal(candidate, target_prior):
@@ -290,6 +336,7 @@ def _predict(
                 "unsupported target prediction changed checkpoint bytes"
             )
         baseline_rows.append(target_prior)
+        global_candidate_rows.append(global_candidate)
         candidate_rows.append(candidate)
         update_supported.append(supported)
         update_accepted.append(accepted)
@@ -324,6 +371,7 @@ def _predict(
         )
 
     baseline = np.asarray(baseline_rows, dtype=np.float64)
+    global_candidate = np.asarray(global_candidate_rows, dtype=np.float64)
     candidate = np.asarray(candidate_rows, dtype=np.float64)
     supported_array = np.asarray(update_supported, dtype=np.bool_)
     fallback_mismatches = int(
@@ -337,26 +385,44 @@ def _predict(
     )
     if fallback_mismatches:
         raise AssertionError("one or more fallback frames changed checkpoint bytes")
+    global_fallback_mismatches = int(
+        np.sum(
+            np.any(
+                global_candidate[~supported_array].view(np.uint64)
+                != baseline[~supported_array].view(np.uint64),
+                axis=(1, 2),
+            )
+        )
+    )
+    if global_fallback_mismatches:
+        raise AssertionError(
+            "one or more global fallback frames changed checkpoint bytes"
+        )
 
     output_dir.mkdir(parents=True, exist_ok=False)
     npz_path = output_dir / "prediction.npz"
-    np.savez_compressed(
-        npz_path,
-        baseline_vertices_m=baseline,
-        candidate_vertices_m=candidate,
-        faces=np.asarray(template_faces, dtype=np.int64),
-        target_frames=target_frames,
-        source_frames=target_frames - 1,
-        history_start_frames=target_frames - 5,
-        history_end_frames=target_frames - 1,
-        update_supported=supported_array,
-        update_accepted=np.asarray(update_accepted, dtype=np.bool_),
-        action_supported=np.asarray(action_supported_rows, dtype=np.bool_),
-        robot_history_supported=np.asarray(
+    prediction_arrays = {
+        "baseline_vertices_m": baseline,
+        "candidate_vertices_m": candidate,
+        "faces": np.asarray(template_faces, dtype=np.int64),
+        "target_frames": target_frames,
+        "source_frames": target_frames - 1,
+        "history_start_frames": target_frames - 5,
+        "history_end_frames": target_frames - 1,
+        "update_supported": supported_array,
+        "update_accepted": np.asarray(update_accepted, dtype=np.bool_),
+        "action_supported": np.asarray(action_supported_rows, dtype=np.bool_),
+        "robot_history_supported": np.asarray(
             robot_history_supported_rows,
             dtype=np.bool_,
         ),
-        correction_rms_m=np.asarray(correction_rms, dtype=np.float64),
+        "correction_rms_m": np.asarray(correction_rms, dtype=np.float64),
+    }
+    if protocol["protocol_id"] == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        prediction_arrays["global_candidate_vertices_m"] = global_candidate
+    np.savez_compressed(
+        npz_path,
+        **prediction_arrays,
     )
 
     input_paths = [robot_path, template_path]
@@ -369,7 +435,6 @@ def _predict(
         for camera in (0, 1)
         for frame in range(1, frame_limit)
     )
-    object_name, _, _ = take_root.name.rpartition("_T")
     input_records = [_input_record(path, take_root) for path in input_paths]
     if stage is not None:
         expected_files = stage["files_by_path"]
@@ -407,6 +472,9 @@ def _predict(
     }
     if source_archive_record is not None:
         seal.update(source_archive_record)
+    if calibration_record is not None:
+        seal.update(calibration_record)
+        seal["global_fallback_mismatch_count"] = global_fallback_mismatches
     seal["seal_sha256"] = prediction_seal_sha256(seal)
     _write_json(output_dir / "seal.json", seal)
     print(
@@ -490,7 +558,10 @@ def _score(
             raise ValueError(f"prediction archive changed after barrier: {take_id}")
         take_root = _locate_take(dataset_root, take_id)
         staged_files = None
-        if protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        if protocol["protocol_id"] in {
+            TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+            TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        }:
             seal_payload = json.loads(archive.seal_path.read_text(encoding="utf-8"))
             stage_path = take_root / STAGE_MANIFEST_NAME
             stage = validate_pokeflex_fresh12_stage_manifest(
@@ -565,6 +636,7 @@ def main() -> None:
     predict.add_argument("--upstream-checkout", type=Path, required=True)
     predict.add_argument("--checkpoint-root", type=Path, required=True)
     predict.add_argument("--source-stage-manifest", type=Path)
+    predict.add_argument("--instance-scale-calibration", type=Path)
 
     barrier = subparsers.add_parser("barrier")
     barrier.add_argument("prediction_root", type=Path)
@@ -586,6 +658,7 @@ def main() -> None:
             args.upstream_checkout,
             args.checkpoint_root,
             args.source_stage_manifest,
+            args.instance_scale_calibration,
         )
     elif args.command == "barrier":
         _barrier(args.prediction_root, args.output, args.protocol)

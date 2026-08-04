@@ -14,7 +14,10 @@ from typing import Any
 from .pokeflex_conservative_shrinkage_target import (
     FRESH12_PUBLIC_TARGET_TAKE_IDS,
     FRESH12_PUBLIC_ZIP_SHA256,
+    INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
+    INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
+    TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     canonical_payload_sha256,
     file_sha256,
     load_pokeflex_shrinkage_target_protocol,
@@ -35,6 +38,19 @@ def _require(condition: bool, message: str) -> None:
 
 def _bytes_sha256(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
+
+
+def _registered_archives(
+    protocol_id: str,
+) -> tuple[tuple[str, ...], Mapping[str, str]]:
+    if protocol_id == TARGET_PROTOCOL_FRESH12_PUBLIC_V1:
+        return FRESH12_PUBLIC_TARGET_TAKE_IDS, FRESH12_PUBLIC_ZIP_SHA256
+    if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
+        return (
+            INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS,
+            INSTANCE_FRESH12_PUBLIC_ZIP_SHA256,
+        )
+    raise ValueError("stage protocol family changed")
 
 
 def stage_manifest_sha256(payload: Mapping[str, Any]) -> str:
@@ -119,21 +135,20 @@ def validate_pokeflex_fresh12_stage_manifest(
         payload.get("stage_manifest_sha256") == stage_manifest_sha256(payload),
         "stage manifest checksum mismatch",
     )
-    _require(
-        protocol.get("protocol_id") == TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-        "stage protocol family changed",
+    target_take_ids, archive_sha256 = _registered_archives(
+        str(protocol.get("protocol_id"))
     )
     _require(
         payload.get("protocol_sha256") == protocol.get("protocol_sha256"),
         "stage protocol changed",
     )
     take_id = str(payload.get("take_id", ""))
-    _require(take_id in FRESH12_PUBLIC_TARGET_TAKE_IDS, "stage take is not registered")
+    _require(take_id in target_take_ids, "stage take is not registered")
     if expected_take_id is not None:
         _require(take_id == expected_take_id, "stage take changed")
     _require(payload.get("archive_name") == f"{take_id}.zip", "archive name changed")
     _require(
-        payload.get("archive_sha256") == FRESH12_PUBLIC_ZIP_SHA256[take_id],
+        payload.get("archive_sha256") == archive_sha256[take_id],
         "archive digest changed",
     )
     _require(int(payload.get("archive_byte_count", -1)) > 0, "archive size changed")
@@ -192,15 +207,12 @@ def stage_pokeflex_fresh12_archive(
     archive = Path(archive_path).resolve()
     destination_root = Path(destination_root).resolve()
     protocol = load_pokeflex_shrinkage_target_protocol(Path(protocol_path))
-    _require(
-        protocol["protocol_id"] == TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-        "staging requires the fresh12 protocol",
-    )
+    target_take_ids, archive_sha256 = _registered_archives(protocol["protocol_id"])
     take_id = archive.stem
-    _require(take_id in FRESH12_PUBLIC_TARGET_TAKE_IDS, "archive is not registered")
+    _require(take_id in target_take_ids, "archive is not registered")
     archive_digest = file_sha256(archive)
     _require(
-        archive_digest == FRESH12_PUBLIC_ZIP_SHA256[take_id],
+        archive_digest == archive_sha256[take_id],
         "archive bytes changed",
     )
     destination = destination_root / take_id
