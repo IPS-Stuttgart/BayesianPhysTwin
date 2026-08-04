@@ -5,7 +5,10 @@ import sys
 from pathlib import Path
 
 import pytest
-from prob4d.cross_window_tracklets import CrossWindowAssociationConfig
+
+
+pytest.importorskip("prob4d.cross_window_tracklets")
+from prob4d.cross_window_tracklets import CrossWindowAssociationConfig  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
