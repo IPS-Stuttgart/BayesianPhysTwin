@@ -324,7 +324,7 @@ def main() -> int:
     _require(not root.exists(), "physical work directory already exists")
     root.mkdir(parents=True)
     frame_zero_source = processed / "start_obj_pcd.ply"
-    known_action = processed / "robot.npz"
+    known_action = processed / "robot" / "robot.npz"
     _require(frame_zero_source.is_file(), "frame-zero PLY is missing")
     _require(known_action.is_file(), "known action is missing")
     points, colors = _read_frame_zero_ply(frame_zero_source)
