@@ -52,6 +52,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - A one-call claim-bearing Prob4D update that validates stream-v2/provider-v2
   evidence and a content-bound physical linearization before invoking the
   prior-aware grouped-mixture solver.
+- A native block-sparse explicit-gauge Prob4D update that preserves the complete
+  correlated gauge prior and dense-solver posterior semantics without allocating
+  per-observation dense zero blocks.
 - An explicit integer-step time-gap mode for Markov reliability while preserving
   the historical order-only behavior by default.
 - Focused self-hosted `workstation2` validation for prospective belief contracts,

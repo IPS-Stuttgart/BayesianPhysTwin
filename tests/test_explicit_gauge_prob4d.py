@@ -12,12 +12,17 @@ import pytest
 from bayesian_phystwin import explicit_gauge_prob4d as _explicit
 from bayesian_phystwin._gauge_aware_contracts import (
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
+    GaugeAwareBeliefResult,
 )
 from bayesian_phystwin.explicit_gauge_prob4d import (
     build_claim_bearing_explicit_gauge_batch,
     update_claim_bearing_explicit_gauge_from_artifacts,
 )
 from bayesian_phystwin.physical_linearization import PhysicalLinearizationV1
+from bayesian_phystwin.sparse_explicit_gauge_prob4d import (
+    build_claim_bearing_sparse_explicit_gauge_batch,
+    update_claim_bearing_sparse_explicit_gauge_from_artifacts,
+)
 
 ARTIFACT_ID = "a" * 64
 PROVIDER_MANIFEST_ID = "b" * 64
@@ -231,6 +236,33 @@ def _changed_array(
     return changed
 
 
+def _assert_belief_results_close(
+    first: GaugeAwareBeliefResult,
+    second: GaugeAwareBeliefResult,
+) -> None:
+    assert first.inference_admissible is second.inference_admissible
+    assert first.reason == second.reason
+    for name in (
+        "state_coefficients",
+        "gauge_delta",
+        "shared_bias_coefficients",
+        "view_bias_coefficients",
+        "anchor_bias_coefficients",
+        "posterior_covariance",
+        "identifiable_state_transform",
+        "identifiable_fractions",
+        "query_sensitivity_fractions",
+        "robust_weights",
+        "anchor_robust_weights",
+    ):
+        np.testing.assert_allclose(
+            getattr(first, name),
+            getattr(second, name),
+            rtol=1e-9,
+            atol=1e-12,
+        )
+
+
 def test_explicit_gauge_bridge_preserves_factor_semantics() -> None:
     validated, stack, linearization, physical_prediction = _fixture()
 
@@ -393,6 +425,125 @@ def test_explicit_gauge_bridge_fails_before_excessive_expansion() -> None:
             physical_prediction_xyz_m=physical_prediction,
             maximum_dense_gauge_design_bytes=required_bytes - 1,
         )
+
+
+def test_native_sparse_bridge_preserves_local_gauge_blocks_without_expansion() -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+
+    adapted = build_claim_bearing_sparse_explicit_gauge_batch(
+        validated,
+        stack,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction,
+    )
+
+    np.testing.assert_array_equal(
+        adapted.batch.local_gauge_jacobian,
+        stack.local_gauge_jacobian,
+    )
+    np.testing.assert_array_equal(adapted.batch.gauge_indices, stack.gauge_indices)
+    np.testing.assert_array_equal(
+        adapted.batch.gauge_prior_covariance,
+        stack.gauge_prior_covariance,
+    )
+    assert adapted.batch.base.gauge_jacobian.shape == (4, 3, 0)
+    assert adapted.batch.base.gauge_prior_covariance.shape == (0, 0)
+    assert adapted.batch.base.metadata["prob4d_dense_compatibility_bridge"] is False
+    assert adapted.batch.base.metadata["prob4d_native_sparse_gauge_solver"] is True
+    assert adapted.batch.base.metadata["prob4d_dense_gauge_design_allocated"] is False
+    assert adapted.dense_equivalent_gauge_design_bytes == 4 * 3 * 14 * 8
+
+
+def test_native_sparse_update_matches_dense_joint_gauge_solver() -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    correlated_prior = np.asarray(stack.gauge_prior_covariance).copy()
+    correlated_prior[0, 7] = correlated_prior[7, 0] = 2e-7
+    stack.gauge_prior_covariance = correlated_prior
+    validated.bundle.joint_gauge_covariance = correlated_prior
+
+    dense = update_claim_bearing_explicit_gauge_from_artifacts(
+        validated,
+        stack,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction,
+    ).result
+    sparse = update_claim_bearing_sparse_explicit_gauge_from_artifacts(
+        validated,
+        stack,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction,
+    ).result
+
+    _assert_belief_results_close(sparse, dense)
+    assert sparse.diagnostics["dense_gauge_design_allocated"] is False
+    assert sparse.diagnostics["gauge_storage"] == "native-block-sparse-v1"
+
+
+def test_native_sparse_update_matches_dense_with_every_bias_channel() -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    count = len(stack.world_mean_m)
+    shared = np.zeros((count, 3, 1), dtype=np.float64)
+    shared[:, 0, 0] = 1.0
+    view = np.zeros((count, 3, 2), dtype=np.float64)
+    view[:2, 1, 0] = 1.0
+    view[2:, 1, 1] = 1.0
+    anchor_innovation = np.asarray([[0.0, 0.0, 0.004], [0.0, 0.0, 0.006]])
+    anchor_covariance = np.repeat((np.eye(3, dtype=np.float64) * 1e-4)[None], 2, axis=0)
+    anchor_state = np.zeros((2, 3, 1), dtype=np.float64)
+    anchor_state[:, 2, 0] = 1.0
+    anchor_bias = np.zeros((2, 3, 1), dtype=np.float64)
+    anchor_bias[:, 2, 0] = 1.0
+    kwargs = {
+        "physical_prediction_xyz_m": physical_prediction,
+        "shared_bias_jacobian": shared,
+        "view_bias_jacobian": view,
+        "anchor_innovation_m": anchor_innovation,
+        "anchor_covariance_m2": anchor_covariance,
+        "anchor_state_jacobian": anchor_state,
+        "anchor_correlation_group_ids": ("anchor-0", "anchor-1"),
+        "anchor_prior_reliability": np.asarray([0.8, 0.7]),
+        "anchor_prior_nominal_probability": np.asarray([0.95, 0.95]),
+        "anchor_composite_weight": np.asarray([1.0, 1.0]),
+        "anchor_bias_jacobian": anchor_bias,
+        "anchor_bias_prior_covariance": np.asarray([[1e-6]]),
+    }
+
+    dense = update_claim_bearing_explicit_gauge_from_artifacts(
+        validated,
+        stack,
+        linearization,
+        **kwargs,
+    ).result
+    sparse = update_claim_bearing_sparse_explicit_gauge_from_artifacts(
+        validated,
+        stack,
+        linearization,
+        **kwargs,
+    ).result
+
+    _assert_belief_results_close(sparse, dense)
+
+
+def test_native_sparse_bridge_bypasses_dense_memory_limit() -> None:
+    validated, stack, linearization, physical_prediction = _fixture()
+    required_bytes = 4 * 3 * 14 * np.dtype(np.float64).itemsize
+
+    with pytest.raises(MemoryError, match="exceeding the declared"):
+        build_claim_bearing_explicit_gauge_batch(
+            validated,
+            stack,
+            linearization,
+            physical_prediction_xyz_m=physical_prediction,
+            maximum_dense_gauge_design_bytes=required_bytes - 1,
+        )
+
+    adapted = build_claim_bearing_sparse_explicit_gauge_batch(
+        validated,
+        stack,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction,
+    )
+    assert adapted.dense_equivalent_gauge_design_bytes == required_bytes
 
 
 def test_explicit_gauge_bridge_rejects_row_identity_drift() -> None:

@@ -108,6 +108,10 @@ from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
 )
+from .prior_aware_sparse_gauge_belief import (
+    SparseGaugeAwareObservationBatch,
+    update_prior_aware_sparse_gauge_belief,
+)
 from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_LINEAGE_VERSION,
     PROB4D_CAUSAL_STREAM_ID,
@@ -252,10 +256,12 @@ __all__ = [
     "select_complete_belief",
     "select_gauge_aware_candidate",
     "smooth_markov_reliability",
+    "SparseGaugeAwareObservationBatch",
     "update_bias_aware_state",
     "update_claim_bearing_prob4d_from_artifacts",
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",
+    "update_prior_aware_sparse_gauge_belief",
     "validate_claim_bearing_prob4d_observation_belief",
     "validate_observation_linearization_alignment",
     "validate_prob4d_causal_observation_belief",

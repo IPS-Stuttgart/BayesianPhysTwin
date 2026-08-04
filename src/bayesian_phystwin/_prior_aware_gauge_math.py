@@ -369,11 +369,6 @@ def _prior_aware_basis(
     query: np.ndarray,
     config: PriorAwareGaugeConfigV1,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, float]]:
-    state_sqrt = _positive_semidefinite_square_root(
-        state_prior,
-        "state prior covariance",
-        eigenvalue_floor=config.prior_eigenvalue_floor,
-    )
     hx = np.concatenate(
         (
             np.sqrt(observation_weight)[:, None, None] * state_design,
@@ -405,6 +400,38 @@ def _prior_aware_basis(
         conditional = known - cross @ np.linalg.solve(nuisance_information, cross.T)
     else:
         conditional = known
+    return _prior_aware_basis_from_information(
+        known,
+        conditional,
+        state_prior,
+        query,
+        config,
+    )
+
+
+def _prior_aware_basis_from_information(
+    known: np.ndarray,
+    conditional: np.ndarray,
+    state_prior: np.ndarray,
+    query: np.ndarray,
+    config: PriorAwareGaugeConfigV1,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, float]]:
+    """Select identifiable state directions from Schur-complement information."""
+
+    state_count = len(state_prior)
+    _require(
+        known.shape == conditional.shape == (state_count, state_count),
+        "state information matrices have changed shape",
+    )
+    _require(
+        query.ndim == 3 and query.shape[1:] == (3, state_count),
+        "query state Jacobian has changed shape",
+    )
+    state_sqrt = _positive_semidefinite_square_root(
+        state_prior,
+        "state prior covariance",
+        eigenvalue_floor=config.prior_eigenvalue_floor,
+    )
     standardized = _symmetric(state_sqrt.T @ conditional @ state_sqrt)
     eigenvalues, eigenvectors = np.linalg.eigh(standardized)
     order = np.argsort(eigenvalues)[::-1]
@@ -447,9 +474,7 @@ def _prior_aware_basis(
             retained.append(direction)
             identifiable_fractions.append(min(1.0, max(0.0, identifiable)))
             query_fractions.append(min(1.0, max(0.0, query_fraction)))
-    mapping = (
-        np.column_stack(retained) if retained else np.zeros((state_design.shape[2], 0))
-    )
+    mapping = np.column_stack(retained) if retained else np.zeros((state_count, 0))
     return (
         mapping,
         np.asarray(identifiable_fractions),
@@ -491,6 +516,7 @@ __all__ = [
     "_group_layout",
     "_mixture_precision",
     "_prior_aware_basis",
+    "_prior_aware_basis_from_information",
     "_prior_covariances",
     "_solve_spd_posterior",
     "_solve_spd_system",

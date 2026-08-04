@@ -125,10 +125,15 @@ default limit is exactly 268,435,456 bytes (256 MiB), and every result records
 both the required allocation and the enforced limit.
 
 This closes the strict installed-wheel interoperability path while keeping the
-remaining limitation visible. A future native sparse solver should accumulate
-state/gauge normal-equation blocks directly from local Jacobians and gauge
-indices. That future solver must preserve exact parity with this bridge and the
-complete cross-window gauge prior before replacing it.
+dense bridge available as a reference implementation. The optional native
+block-sparse path in `bayesian_phystwin.sparse_explicit_gauge_prob4d`
+accumulates state/gauge normal-equation blocks directly from local Jacobians and
+gauge indices. It preserves the complete cross-window gauge prior and is tested
+for posterior parity with this bridge without allocating the dense zero blocks.
+
+See `docs/native_sparse_explicit_gauge_prob4d.md` for the API and claim
+boundary. The native solver removes a memory bottleneck; it does not by itself
+establish better physical prediction or calibrated uncertainty.
 
 ## Causal4D boundary
 
