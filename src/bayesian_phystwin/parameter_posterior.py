@@ -42,9 +42,7 @@ class ParameterEnsemble:
     def from_prior_samples(cls, particles: np.ndarray) -> ParameterEnsemble:
         values = np.asarray(particles)
         if values.ndim != 2:
-            raise ValueError(
-                f"particles must have shape (n, d), got {values.shape}"
-            )
+            raise ValueError(f"particles must have shape (n, d), got {values.shape}")
         if values.shape[0] < 1 or values.shape[1] < 1:
             raise ValueError("particles must contain at least one nonempty sample")
         if not np.all(np.isfinite(values)):
@@ -142,10 +140,7 @@ class ParameterEnsemble:
         with np.errstate(over="raise", invalid="raise"):
             try:
                 log_likelihood = (
-                    -0.5
-                    * reliability_array
-                    * residual_array
-                    / variance_value
+                    -0.5 * reliability_array * residual_array / variance_value
                 )
             except FloatingPointError as error:
                 raise FloatingPointError(
@@ -212,9 +207,7 @@ class ParameterEnsemble:
         particles = np.asarray(self.particles)
         log_weights = np.asarray(self.log_weights)
         if particles.ndim != 2:
-            raise ValueError(
-                f"particles must have shape (n, d), got {particles.shape}"
-            )
+            raise ValueError(f"particles must have shape (n, d), got {particles.shape}")
         if particles.shape[0] < 1 or particles.shape[1] < 1:
             raise ValueError("particles must contain at least one nonempty sample")
         if log_weights.shape != (particles.shape[0],):

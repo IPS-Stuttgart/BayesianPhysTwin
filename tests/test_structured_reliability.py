@@ -45,8 +45,7 @@ def test_sequences_are_smoothed_independently_and_returned_in_input_order() -> N
     assert result.posterior_inlier_probability.shape == (4,)
     assert set(result.sequence_log_evidence) == {"a", "b"}
     assert (
-        result.posterior_inlier_probability[1]
-        < result.posterior_inlier_probability[0]
+        result.posterior_inlier_probability[1] < result.posterior_inlier_probability[0]
     )
     assert result.posterior_inlier_probability[2] > 0.9
 

@@ -97,31 +97,21 @@ class ClaimBearingProb4DUpdateV1:
                 name,
                 _validated_sha256(value, name=name),
             )
-        calibration_ids = _validated_calibration_ids(
-            self.calibration_artifact_ids
-        )
+        calibration_ids = _validated_calibration_ids(self.calibration_artifact_ids)
         runtime_revision_source = _validated_runtime_revision_source(
             self.runtime_revision_source
         )
         if not isinstance(self.runtime_revision_independently_verified, bool):
-            raise TypeError(
-                "runtime_revision_independently_verified must be a bool"
-            )
+            raise TypeError("runtime_revision_independently_verified must be a bool")
         if self.runtime_revision_independently_verified is not True:
-            raise ValueError(
-                "runtime_revision_independently_verified must be True"
-            )
+            raise ValueError("runtime_revision_independently_verified must be True")
 
         lineage = self.result.input_lineage
         expected = {
             "observation_artifact_id": self.observation_artifact_id,
             "linearization_artifact_id": self.linearization_artifact_id,
-            "prob4d_claim_bearing_provider_manifest_id": (
-                self.provider_manifest_id
-            ),
-            "prob4d_claim_bearing_runtime_revision_source": (
-                runtime_revision_source
-            ),
+            "prob4d_claim_bearing_provider_manifest_id": (self.provider_manifest_id),
+            "prob4d_claim_bearing_runtime_revision_source": (runtime_revision_source),
         }
         for key, value in expected.items():
             if lineage.get(key) != value:
@@ -131,12 +121,11 @@ class ClaimBearingProb4DUpdateV1:
             lineage.get("prob4d_claim_bearing_calibration_artifact_ids")
         )
         if dict(lineage_calibration_ids) != dict(calibration_ids):
-            raise ValueError(
-                "result lineage does not bind calibration_artifact_ids"
-            )
-        if lineage.get(
-            "prob4d_claim_bearing_runtime_revision_independently_verified"
-        ) is not True:
+            raise ValueError("result lineage does not bind calibration_artifact_ids")
+        if (
+            lineage.get("prob4d_claim_bearing_runtime_revision_independently_verified")
+            is not True
+        ):
             raise ValueError(
                 "result lineage lacks independently verified runtime evidence"
             )
@@ -165,9 +154,7 @@ class ClaimBearingProb4DUpdateV1:
                 "observation_artifact_id": self.observation_artifact_id,
                 "linearization_artifact_id": self.linearization_artifact_id,
                 "provider_manifest_id": self.provider_manifest_id,
-                "calibration_artifact_ids": dict(
-                    self.calibration_artifact_ids
-                ),
+                "calibration_artifact_ids": dict(self.calibration_artifact_ids),
                 "runtime_revision_source": self.runtime_revision_source,
                 "runtime_revision_independently_verified": (
                     self.runtime_revision_independently_verified

@@ -57,10 +57,7 @@ def _validate_config(config: MarkovReliabilityConfig) -> None:
     if not 0.0 < config.probability_floor < 0.5:
         raise ValueError("probability_floor must be in (0, 0.5)")
     if config.time_delta_mode not in _MARKOV_TIME_MODES:
-        raise ValueError(
-            "time_delta_mode must be one of "
-            f"{sorted(_MARKOV_TIME_MODES)}"
-        )
+        raise ValueError(f"time_delta_mode must be one of {sorted(_MARKOV_TIME_MODES)}")
     if not np.isfinite(config.time_step) or config.time_step <= 0.0:
         raise ValueError("time_step must be finite and positive")
 
@@ -101,20 +98,12 @@ def _backward(
     for time in range(length - 2, -1, -1):
         transition = _transition_at(log_transition, time)
         beta[time, 0] = np.logaddexp(
-            transition[0, 0]
-            + unary_log_potential[time + 1, 0]
-            + beta[time + 1, 0],
-            transition[0, 1]
-            + unary_log_potential[time + 1, 1]
-            + beta[time + 1, 1],
+            transition[0, 0] + unary_log_potential[time + 1, 0] + beta[time + 1, 0],
+            transition[0, 1] + unary_log_potential[time + 1, 1] + beta[time + 1, 1],
         )
         beta[time, 1] = np.logaddexp(
-            transition[1, 0]
-            + unary_log_potential[time + 1, 0]
-            + beta[time + 1, 0],
-            transition[1, 1]
-            + unary_log_potential[time + 1, 1]
-            + beta[time + 1, 1],
+            transition[1, 0] + unary_log_potential[time + 1, 0] + beta[time + 1, 0],
+            transition[1, 1] + unary_log_potential[time + 1, 1] + beta[time + 1, 1],
         )
     return beta
 
@@ -172,9 +161,7 @@ def _transition_logs_for_times(
         rtol=1e-10,
         atol=1e-10,
     ):
-        raise ValueError(
-            "time gaps must be positive integer multiples of time_step"
-        )
+        raise ValueError("time gaps must be positive integer multiples of time_step")
     logs = np.empty((transition_count, 2, 2), dtype=np.float64)
     for index, step_count in enumerate(steps):
         powered = np.linalg.matrix_power(transition, int(step_count))
@@ -340,9 +327,7 @@ def markov_log_evidence_batch(
         )
 
         alpha = np.empty((particle_count, 2), dtype=float)
-        alpha[:, 0] = (
-            log_initial[0] + cue_sequence[0, 0] + log_outlier[:, indexes[0]]
-        )
+        alpha[:, 0] = log_initial[0] + cue_sequence[0, 0] + log_outlier[:, indexes[0]]
         alpha[:, 1] = log_initial[1] + cue_sequence[0, 1] + log_inlier[:, indexes[0]]
         for offset in range(1, indexes.size):
             index = indexes[offset]

@@ -47,11 +47,7 @@ def infer_model_averaged_bayesian_anchor_endpoint(
 ) -> ModelAveragedEndpointPosteriorV1:
     """Infer an evidence-weighted robust endpoint from a causal prefix."""
 
-    settings = (
-        DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1
-        if config is None
-        else config
-    )
+    settings = DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1 if config is None else config
     if not isinstance(settings, ModelAveragedEndpointConfigV1):
         raise TypeError("config must be a ModelAveragedEndpointConfigV1")
     return infer_model_averaged_endpoint(
@@ -89,9 +85,7 @@ def causal4d_belief_provider_v2_manifest(
         "metadata": {
             "provider_api": "bayesian_phystwin.causal4d_belief_provider_v2",
             "provider_api_version": CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION,
-            "inference_role": (
-                "model-averaged robust readout-discrepancy endpoint"
-            ),
+            "inference_role": ("model-averaged robust readout-discrepancy endpoint"),
             "compatibility": (
                 "additive provider; causal4d_belief_provider_v1 is unchanged"
             ),

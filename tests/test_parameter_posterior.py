@@ -95,9 +95,7 @@ def test_public_state_corruption_fails_closed() -> None:
 
 
 def test_resampling_rejects_invalid_jitter() -> None:
-    ensemble = ParameterEnsemble.from_prior_samples(
-        np.array([[0.0, 1.0], [2.0, 3.0]])
-    )
+    ensemble = ParameterEnsemble.from_prior_samples(np.array([[0.0, 1.0], [2.0, 3.0]]))
     with pytest.raises(ValueError, match="jitter_std"):
         ensemble.systematic_resample(jitter_std=np.ones(3))
     with pytest.raises(ValueError, match="nonnegative"):
@@ -136,9 +134,7 @@ def test_update_rejects_shape_mismatches_and_overflow() -> None:
 
 
 def test_positive_jitter_path_is_exercised() -> None:
-    ensemble = ParameterEnsemble.from_prior_samples(
-        np.array([[0.0, 0.0], [1.0, 1.0]])
-    )
+    ensemble = ParameterEnsemble.from_prior_samples(np.array([[0.0, 0.0], [1.0, 1.0]]))
     ensemble.systematic_resample(
         np.random.default_rng(7),
         jitter_std=np.array([0.1, 0.2]),

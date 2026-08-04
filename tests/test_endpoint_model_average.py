@@ -98,10 +98,7 @@ def test_between_model_disagreement_increases_covariance() -> None:
     )
 
     weighted_within_x = float(
-        np.sum(
-            posterior.component_weights[0]
-            * posterior.component_variance_m2[:, 0]
-        )
+        np.sum(posterior.component_weights[0] * posterior.component_variance_m2[:, 0])
     )
     assert posterior.covariance_m2[0, 0, 0] >= weighted_within_x
     assert posterior.covariance_m2[0, 0, 0] > posterior.covariance_m2[0, 1, 1]
@@ -171,9 +168,7 @@ def test_invalid_configurations_fail() -> None:
     with pytest.raises(ValueError, match="at least one"):
         ModelAveragedEndpointConfigV1(components=())
     with pytest.raises(ValueError, match="unique"):
-        ModelAveragedEndpointConfigV1(
-            components=(FixedBayesianAnchorConfigV1(),) * 2
-        )
+        ModelAveragedEndpointConfigV1(components=(FixedBayesianAnchorConfigV1(),) * 2)
     with pytest.raises(ValueError, match="component count"):
         ModelAveragedEndpointConfigV1(
             components=(FixedBayesianAnchorConfigV1(),),
@@ -188,9 +183,7 @@ def test_provider_v2_wraps_endpoint_and_declares_calibration_boundary() -> None:
         end_frame=2,
         config=_single_config(FixedBayesianAnchorConfigV1()),
     )
-    manifest = causal4d_belief_provider_v2_manifest(
-        provider_revision="revision-test"
-    )
+    manifest = causal4d_belief_provider_v2_manifest(provider_revision="revision-test")
 
     assert posterior.update_count[0] == 2
     assert manifest["schema_version"] == CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION
