@@ -30,6 +30,7 @@ env:
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
   FROZEN_SOURCE_REVISION: e393bb6ff61d44815afd8d09dfc5334cb55d5524
+  PORTABLE_PROTOCOL_ID: 5d31b04c464478d839ac3919ec04209b5ff22c75cf7fe8de54a6d189a4802872
 
 jobs:
   reproduce:
@@ -47,12 +48,21 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+      - name: Create isolated system-Python environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_version="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+          if [[ "${python_version}" != "3.12" ]]; then
+            echo "::error title=Unexpected system Python::Expected Python 3.12, found ${python_version}"
+            exit 1
+          fi
+          venv="${RUNNER_TEMP}/bpt-full22-python-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${venv}"
+          python3 -m venv "${venv}"
+          echo "${venv}/bin" >> "${GITHUB_PATH}"
+          "${venv}/bin/python" -m pip install --upgrade pip
+          "${venv}/bin/python" --version
 
       - name: Resolve isolated paths
         shell: bash
@@ -77,6 +87,8 @@ jobs:
             echo "repository=${GITHUB_REPOSITORY}"
             echo "evaluated_revision=${GITHUB_SHA}"
             echo "frozen_source_revision=${FROZEN_SOURCE_REVISION}"
+            echo "portable_protocol_id=${PORTABLE_PROTOCOL_ID}"
+            python --version
             uname -a
             lscpu
           } | tee "${OUTPUT_ROOT}/runner.txt"
@@ -88,7 +100,6 @@ jobs:
 
       - name: Install locked evaluation dependencies
         run: |
-          python -m pip install --upgrade pip
           python -m pip install -e ".[dev,data]"
           python -m pip check
           python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
@@ -178,6 +189,10 @@ jobs:
           identity = json.loads(
               (root / "input" / "data_identity.json").read_text(encoding="utf-8")
           )
+          method_lock = json.loads(
+              (root / "method_lock.json").read_text(encoding="utf-8")
+          )
+          expected_protocol_id = os.environ["PORTABLE_PROTOCOL_ID"]
           if verification["status"] != "verified":
               raise SystemExit("metric verification did not pass")
           if verification["check_count"] != 8:
@@ -186,9 +201,15 @@ jobs:
               "f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc"
           ):
               raise SystemExit("portable data identity changed")
+          if method_lock["protocol_id"] != expected_protocol_id:
+              raise SystemExit("portable protocol identity changed")
+          if method_lock["raw_runtime_protocol_id"] == expected_protocol_id:
+              raise SystemExit("raw path-bound protocol ID was not retained separately")
           summary = {
               "data_identity_sha256": identity["identity_sha256"],
               "metric_check_count": verification["check_count"],
+              "portable_protocol_id": method_lock["protocol_id"],
+              "raw_runtime_protocol_id": method_lock["raw_runtime_protocol_id"],
               "status": verification["status"],
           }
           (Path(os.environ["OUTPUT_ROOT"]) / "scientific-readout.json").write_text(
@@ -212,6 +233,7 @@ jobs:
             echo "- Frozen source revision: \`${FROZEN_SOURCE_REVISION}\`"
             if [[ -f "${OUTPUT_ROOT}/scientific-readout.json" ]]; then
               echo "- Portable data identity: \`$(python -c 'import json,os; print(json.load(open(os.environ["OUTPUT_ROOT"] + "/scientific-readout.json"))["data_identity_sha256"])')\`"
+              echo "- Portable protocol identity: \`$(python -c 'import json,os; print(json.load(open(os.environ["OUTPUT_ROOT"] + "/scientific-readout.json"))["portable_protocol_id"])')\`"
               echo "- Metric verification: \`verified (8/8)\`"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
