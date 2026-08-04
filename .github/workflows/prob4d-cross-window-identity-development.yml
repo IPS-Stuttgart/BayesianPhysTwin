@@ -21,9 +21,14 @@ concurrency:
 env:
   BPT_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
   PROB4D_SOURCE_REVISION: 2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1
-  PROTOCOL_SHA256: 23e9e9c209defaaf54af9e463dc8b66dc1d4825830fed8108e265ec5d6bb04c6
+  PROB4D_CONTROLLED_BASE_REVISION: aa8ffc6541011d044561e09870569a14ab3f586f
+  PROB4D_CROSS_WINDOW_BLOB: 1c90c67c68a42189aabf5fe26ef06a75c6c48065
+  PROB4D_CAUSAL_TRACKLETS_BLOB: 81a44bf6a767464149fe8e60661d7ef699ff3e40
+  PROB4D_SIM3_BLOB: 1c3f443774f92d7fd580087aa393d793d6704c23
+  PROTOCOL_SHA256: a9f8514bbf9ff27b393122a7f811d765c8edf4fe6fc867d4b883b5283058a9fd
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
   OMP_NUM_THREADS: "1"
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
@@ -37,8 +42,6 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 360
-    env:
-      PROB4D_READ_TOKEN: ${{ secrets.PROB4D_READ_TOKEN }}
     steps:
       - name: Check out exact BayesianPhysTwin head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,38 +56,74 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Resolve exact Prob4D source
+      - name: Compose exact Prob4D science source
         id: prob4d
         shell: bash
         run: |
           set -euo pipefail
-          destination="${RUNNER_TEMP}/prob4d-cross-window-identity-source"
+          destination="${RUNNER_TEMP}/prob4d-cross-window-composed-source"
           rm -rf "${destination}"
+
+          base_repository=""
+          additive_repository=""
           runner_root="${GITHUB_WORKSPACE%/*/*}"
-          for candidate in \
-            "${runner_root}/Prob4D/Prob4D" \
-            "${RUNNER_WORKSPACE}/Prob4D/Prob4D" \
-            "${HOME}/Prob4D" \
-            "${HOME}/src/Prob4D"; do
-            if [[ -d "${candidate}/.git" ]] && git -C "${candidate}" cat-file -e \
-              "${PROB4D_SOURCE_REVISION}^{commit}" 2>/dev/null; then
-              git clone --no-hardlinks --quiet "${candidate}" "${destination}"
-              break
+          candidates=(
+            "${runner_root}/Prob4D/Prob4D"
+            "${RUNNER_WORKSPACE}/Prob4D/Prob4D"
+            "${HOME}/Prob4D"
+            "${HOME}/src/Prob4D"
+            "/home/github-runner/src/Prob4D"
+          )
+          for candidate in "${candidates[@]}"; do
+            [[ -d "${candidate}/.git" ]] || continue
+            if [[ -z "${base_repository}" ]] &&
+              git -C "${candidate}" cat-file -e \
+                "${PROB4D_CONTROLLED_BASE_REVISION}^{commit}" 2>/dev/null &&
+              [[ "$(git -C "${candidate}" rev-parse \
+                "${PROB4D_CONTROLLED_BASE_REVISION}:src/prob4d/causal_tracklets.py")" = \
+                "${PROB4D_CAUSAL_TRACKLETS_BLOB}" ]] &&
+              [[ "$(git -C "${candidate}" rev-parse \
+                "${PROB4D_CONTROLLED_BASE_REVISION}:src/prob4d/sim3.py")" = \
+                "${PROB4D_SIM3_BLOB}" ]]; then
+              base_repository="${candidate}"
+            fi
+            if [[ -z "${additive_repository}" ]] &&
+              git -C "${candidate}" cat-file -e \
+                "${PROB4D_SOURCE_REVISION}^{commit}" 2>/dev/null &&
+              [[ "$(git -C "${candidate}" rev-parse \
+                "${PROB4D_SOURCE_REVISION}:src/prob4d/cross_window_tracklets.py")" = \
+                "${PROB4D_CROSS_WINDOW_BLOB}" ]]; then
+              additive_repository="${candidate}"
             fi
           done
-          if [[ ! -d "${destination}/.git" && -n "${PROB4D_READ_TOKEN}" ]]; then
-            basic="$(printf 'x-access-token:%s' "${PROB4D_READ_TOKEN}" | base64 -w0)"
-            git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${basic}" \
-              clone --filter=blob:none --no-checkout --quiet \
-              https://github.com/IPS-Stuttgart/Prob4D.git "${destination}"
-          fi
-          test -d "${destination}/.git"
-          git -C "${destination}" cat-file -e "${PROB4D_SOURCE_REVISION}^{commit}"
+          test -n "${base_repository}"
+          test -n "${additive_repository}"
+
+          git clone --no-hardlinks --quiet "${base_repository}" "${destination}"
           git -C "${destination}" checkout --quiet --detach \
-            "${PROB4D_SOURCE_REVISION}"
+            "${PROB4D_CONTROLLED_BASE_REVISION}"
+          git -C "${additive_repository}" show \
+            "${PROB4D_SOURCE_REVISION}:src/prob4d/cross_window_tracklets.py" \
+            > "${destination}/src/prob4d/cross_window_tracklets.py"
+
           test "$(git -C "${destination}" rev-parse HEAD)" = \
-            "${PROB4D_SOURCE_REVISION}"
-          test -z "$(git -C "${destination}" status --porcelain=v1)"
+            "${PROB4D_CONTROLLED_BASE_REVISION}"
+          test "$(git -C "${destination}" hash-object \
+            src/prob4d/cross_window_tracklets.py)" = \
+            "${PROB4D_CROSS_WINDOW_BLOB}"
+          test "$(git -C "${destination}" hash-object \
+            src/prob4d/causal_tracklets.py)" = \
+            "${PROB4D_CAUSAL_TRACKLETS_BLOB}"
+          test "$(git -C "${destination}" hash-object src/prob4d/sim3.py)" = \
+            "${PROB4D_SIM3_BLOB}"
+
+          {
+            echo "controlled_generator_base=${PROB4D_CONTROLLED_BASE_REVISION}"
+            echo "cross_window_revision=${PROB4D_SOURCE_REVISION}"
+            echo "cross_window_blob=${PROB4D_CROSS_WINDOW_BLOB}"
+            echo "causal_tracklets_blob=${PROB4D_CAUSAL_TRACKLETS_BLOB}"
+            echo "sim3_blob=${PROB4D_SIM3_BLOB}"
+          } | tee "${destination}/SCIENCE_SOURCE_COMPOSITION.txt"
           echo "path=${destination}" >> "${GITHUB_OUTPUT}"
 
       - name: Install exact producer and consumer
@@ -96,6 +135,8 @@ jobs:
           rm -rf "${root}"
           mkdir -p "${root}/evidence"
           echo "EVIDENCE_ROOT=${root}/evidence" >> "${GITHUB_ENV}"
+          cp "${{ steps.prob4d.outputs.path }}/SCIENCE_SOURCE_COMPOSITION.txt" \
+            "${root}/evidence/science-source-composition.txt"
           python -m pip install --upgrade pip
           python -m pip install -e "${{ steps.prob4d.outputs.path }}"
           python -m pip install -e ".[dev]"
@@ -127,15 +168,35 @@ jobs:
               ).encode("utf-8")
           ).hexdigest()
           if digest != os.environ["PROTOCOL_SHA256"]:
-              raise SystemExit("development protocol changed")
-          if protocol["confirmatory_target"] != {
-              "seeds_committed": False,
-              "rule": protocol["confirmatory_target"]["rule"],
-          }:
+              raise SystemExit(f"development protocol changed: {digest}")
+
+          target = protocol["confirmatory_target"]
+          if target["seeds_committed"] is not False or "seed_start" in target:
               raise SystemExit("confirmatory target seeds were committed")
-          if protocol["repository_pins"]["prob4d"] != \
-              os.environ["PROB4D_SOURCE_REVISION"]:
-              raise SystemExit("Prob4D pin changed")
+
+          pins = protocol["repository_pins"]
+          composition = protocol["execution_source_composition"]
+          expected = {
+              "prob4d": os.environ["PROB4D_SOURCE_REVISION"],
+              "controlled_generator_base_revision": os.environ[
+                  "PROB4D_CONTROLLED_BASE_REVISION"
+              ],
+              "cross_window_tracklets_revision": os.environ[
+                  "PROB4D_SOURCE_REVISION"
+              ],
+              "cross_window_tracklets_blob": os.environ[
+                  "PROB4D_CROSS_WINDOW_BLOB"
+              ],
+              "causal_tracklets_blob": os.environ[
+                  "PROB4D_CAUSAL_TRACKLETS_BLOB"
+              ],
+              "sim3_blob": os.environ["PROB4D_SIM3_BLOB"],
+          }
+          if pins["prob4d"] != expected.pop("prob4d"):
+              raise SystemExit("Prob4D revision pin changed")
+          for key, value in expected.items():
+              if composition[key] != value:
+                  raise SystemExit(f"Prob4D composition changed: {key}")
           print(f"target-free protocol={digest}")
           PY
           python -m ruff check \
@@ -182,8 +243,8 @@ jobs:
           root = Path(os.environ["EVIDENCE_ROOT"]) / "result"
           protocol = json.loads((root / "protocol.json").read_text())
           report = json.loads((root / "report.json").read_text())
-          expected = report.pop("report_id")
-          actual = hashlib.sha256(
+          expected_report_id = report.pop("report_id")
+          actual_report_id = hashlib.sha256(
               json.dumps(
                   report,
                   sort_keys=True,
@@ -191,14 +252,19 @@ jobs:
                   allow_nan=False,
               ).encode("utf-8")
           ).hexdigest()
-          if expected != actual:
+          if expected_report_id != actual_report_id:
               raise SystemExit("report identity changed")
           if report["protocol_sha256"] != os.environ["PROTOCOL_SHA256"]:
               raise SystemExit("protocol identity changed")
+          if report["repository_revision"] != os.environ["BPT_SOURCE_REVISION"]:
+              raise SystemExit("BayesianPhysTwin revision changed")
+          if report["prob4d_revision"] != os.environ["PROB4D_SOURCE_REVISION"]:
+              raise SystemExit("Prob4D revision changed")
           if report["partition_semantics"][
               "confirmatory_target_seeds_committed"
           ] is not False:
-              raise SystemExit("target boundary changed")
+              raise SystemExit("target information boundary changed")
+
           with (root / "pilot_trials.csv").open(newline="") as handle:
               row_count = sum(1 for _ in csv.DictReader(handle))
           expected_rows = (
@@ -209,7 +275,10 @@ jobs:
               ]
           )
           if row_count != expected_rows:
-              raise SystemExit("pilot row count changed")
+              raise SystemExit(
+                  f"pilot row count changed: {row_count} != {expected_rows}"
+              )
+
           decision = report["development_decision"]
           expected_exit = 0 if decision["overall_passed"] else 3
           actual_exit = int("${{ steps.experiment.outputs.decision_exit_code }}")
@@ -218,7 +287,7 @@ jobs:
           print(json.dumps(decision, indent=2, sort_keys=True))
           PY
           git diff --exit-code
-          test -z "$(git status --porcelain=v1)"
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
 
       - name: Publish development summary
         if: always()
