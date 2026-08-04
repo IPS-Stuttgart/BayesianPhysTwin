@@ -85,11 +85,15 @@ TARGET_PROTOCOL_INSTANCE_FRESH12_V2 = "pokeflex-instance-shrinkage-fresh12-v2"
 TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256 = (
     "ee2b4379d087c71a13a570a07d1acccfb881c7ad91479de42713265d47d225d3"
 )
-TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3 = (
-    "pokeflex-action-robust-shrinkage-fresh6-v3"
-)
+TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3 = "pokeflex-action-robust-shrinkage-fresh6-v3"
 TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256 = (
     "3e85d8fc89b16cdc2aceb13e9bf49d0c9e47f0a2761550323ec13b9b1bda8157"
+)
+TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1 = (
+    "pokeflex-action-robust-official13-public-v1"
+)
+TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1_SHA256 = (
+    "fe3199f72822ff384ce5e304c0afa85c7913f973055aaae06b88d62bdbc49349"
 )
 OFFICIAL18_TARGET_TAKE_IDS = (
     "MemoryFoam_T2",
@@ -143,6 +147,22 @@ OFFICIAL13_PUBLIC_PROSPECTIVE_TAKE_IDS = tuple(
     for take_id in OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     if take_id not in OFFICIAL13_PUBLIC_DEVELOPMENT_OVERLAP_TAKE_IDS
 )
+ACTION_ROBUST_OFFICIAL13_PUBLIC_MULTIPLIERS = {
+    "MemoryFoam": 1.0,
+    "PlushVolleyball": 1.0,
+    "FoamHalfSphere": 2.0,
+    "3dPrintedBunny": 1.0,
+    "3dPrintedPyramid": 1.0,
+    "FoamDice": 1.0,
+    "PlushMoon": 4.0,
+    "PlushOctopus": 1.0,
+    "PlushDice": 4.0,
+    "PlushTurtle": 4.0,
+    "Beanbag": 4.0,
+    "FoamCylinder": 3.0,
+    "ToiletPaperRoll": 1.0,
+}
+OFFICIAL13_GLOBAL_FRAME_BALANCED_CD_UL1_MM = 6.4993172114797195
 FRESH12_PUBLIC_TARGET_TAKE_IDS = (
     "3dPrintedCylinder_T5",
     "3dPrintedPizza_T6",
@@ -244,10 +264,16 @@ CHECKPOINT_SHA256 = {
 CALIBRATED_SCALE_PROTOCOLS = {
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
+}
+ACTION_ROBUST_PROTOCOLS = {
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
 }
 STAGED_FRESH_PROTOCOLS = {
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
-    *CALIBRATED_SCALE_PROTOCOLS,
+    TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
 }
 
 
@@ -303,6 +329,11 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
         return INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS
     if protocol.get("protocol_id") == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
         return ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS
+    if (
+        protocol.get("protocol_id")
+        == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1
+    ):
+        return OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     return TARGET_TAKE_IDS
 
 
@@ -313,6 +344,7 @@ def protocol_requires_robot_history(protocol_id: str) -> bool:
         TARGET_PROTOCOL_V2,
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
         *STAGED_FRESH_PROTOCOLS,
     }
 
@@ -360,6 +392,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
             TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
             TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+            TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
         },
         "target protocol id changed",
     )
@@ -404,8 +437,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             "source scale calibration changed",
         )
         _require(
-            source_calibration.get("calibration_file_sha256")
-            == expected_file_sha256,
+            source_calibration.get("calibration_file_sha256") == expected_file_sha256,
             "source scale calibration bytes changed",
         )
         _require(
@@ -416,7 +448,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             source_calibration.get("future_take_outcomes_opened") is False,
             "source scale calibration opened future takes",
         )
-        if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+        if protocol_id in ACTION_ROBUST_PROTOCOLS:
             _require(
                 int(source_calibration.get("source_action_count", -1)) == 24,
                 "action-robust source action count changed",
@@ -609,8 +641,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             "action-robust freshness audit changed",
         )
         _require(
-            audit.get("audit_file_sha256")
-            == ACTION_ROBUST_FRESHNESS_AUDIT_FILE_SHA256,
+            audit.get("audit_file_sha256") == ACTION_ROBUST_FRESHNESS_AUDIT_FILE_SHA256,
             "action-robust freshness audit bytes changed",
         )
         _require(
@@ -640,6 +671,25 @@ def validate_pokeflex_shrinkage_target_protocol(
             dict(audit.get("selected_zip_sha256", {}))
             == ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
             "action-robust archive bytes changed",
+        )
+    elif protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1:
+        _require(
+            tuple(cohort.get("take_ids", ())) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
+            "action-robust public official-subset cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ())) == (),
+            "retrospective public subset gained prospective status",
+        )
+        _require(
+            tuple(cohort.get("previously_opened_take_ids", ()))
+            == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
+            "opened public official-subset inventory changed",
+        )
+        _require(
+            tuple(cohort.get("missing_official_take_ids", ()))
+            == OFFICIAL18_MISSING_PUBLIC_TAKE_IDS,
+            "missing official take inventory changed",
         )
     else:
         _require(
@@ -718,20 +768,24 @@ def validate_pokeflex_shrinkage_target_protocol(
                 "Sponge": 1.5,
             }
             if is_instance_v2
-            else {
-                "3dPrintedCylinder": 3.0,
-                "3dPrintedPizza": 0.5,
-                "3dPrintedPyramid": 1.0,
-                "Beanbag": 4.0,
-                "FoamCylinder": 3.0,
-                "FoamHalfSphere": 2.0,
-                "Pillow": 2.0,
-                "PlushDice": 4.0,
-                "PlushMoon": 4.0,
-                "PlushTurtle": 4.0,
-                "PlushVolleyball": 1.0,
-                "Sponge": 1.5,
-            }
+            else (
+                ACTION_ROBUST_OFFICIAL13_PUBLIC_MULTIPLIERS
+                if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1
+                else {
+                    "3dPrintedCylinder": 3.0,
+                    "3dPrintedPizza": 0.5,
+                    "3dPrintedPyramid": 1.0,
+                    "Beanbag": 4.0,
+                    "FoamCylinder": 3.0,
+                    "FoamHalfSphere": 2.0,
+                    "Pillow": 2.0,
+                    "PlushDice": 4.0,
+                    "PlushMoon": 4.0,
+                    "PlushTurtle": 4.0,
+                    "PlushVolleyball": 1.0,
+                    "Sponge": 1.5,
+                }
+            )
         )
         _require(
             dict(calibration.get("multipliers", {})) == expected_multipliers,
@@ -798,12 +852,18 @@ def validate_pokeflex_shrinkage_target_protocol(
         == len(target_take_ids_for_protocol(payload)),
         "prediction barrier count changed",
     )
-    target_mesh_boundary = (
-        "geometry decoding and scoring forbidden; opaque byte-preserving archive extraction allowed"
-        if protocol_id
-        in STAGED_FRESH_PROTOCOLS
-        else "forbidden"
-    )
+    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1:
+        target_mesh_boundary = (
+            "historically opened under a prior protocol; this rerun forbids "
+            "target-mesh access until all new prediction seals pass"
+        )
+    elif protocol_id in STAGED_FRESH_PROTOCOLS:
+        target_mesh_boundary = (
+            "geometry decoding and scoring forbidden; opaque byte-preserving "
+            "archive extraction allowed"
+        )
+    else:
+        target_mesh_boundary = "forbidden"
     _require(
         custody.get("target_mesh_access_before_barrier") == target_mesh_boundary,
         "target mesh custody weakened",
@@ -845,6 +905,7 @@ def validate_pokeflex_shrinkage_target_protocol(
     if protocol_id in {
         TARGET_PROTOCOL_OFFICIAL18_V1,
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
@@ -856,9 +917,13 @@ def validate_pokeflex_shrinkage_target_protocol(
                 "equal scored frames over the 13 publicly materializable official validation takes; object-balanced prospective values drive transfer gates"
                 if protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1
                 else (
-                    "equal-weight physical objects over six prospectively selected public takes; frame-level values are diagnostic"
-                    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
-                    else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+                    "equal scored frames over the 13 publicly materializable official validation takes; all results are retrospective for this scale rule"
+                    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1
+                    else (
+                        "equal-weight physical objects over six prospectively selected public takes; frame-level values are diagnostic"
+                        if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
+                        else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+                    )
                 )
             )
         )
@@ -920,7 +985,10 @@ def validate_pokeflex_shrinkage_target_protocol(
             direct.get("jaccard_is_gating") is False,
             "official Jaccard unexpectedly became gating",
         )
-    elif protocol_id == TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1:
+    elif protocol_id in {
+        TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
+        TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
+    }:
         _require(
             direct.get("published_aggregate_is_gating") is False,
             "incomparable published aggregate became gating",
@@ -1001,20 +1069,18 @@ def validate_pokeflex_shrinkage_target_protocol(
             observed == TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256,
             "instance target protocol lock changed",
         )
-    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+    if protocol_id in ACTION_ROBUST_PROTOCOLS:
         advancement = gates.get("action_robust_advancement")
         _require(
             isinstance(advancement, Mapping),
             "action-robust advancement gate missing",
         )
         _require(
-            float(advancement.get("relative_CD_UL1_improvement_above", -1.0))
-            == 0.0,
+            float(advancement.get("relative_CD_UL1_improvement_above", -1.0)) == 0.0,
             "action-robust advancement threshold changed",
         )
         _require(
-            float(advancement.get("bootstrap_upper_difference_mm_below", 1.0))
-            == 0.0,
+            float(advancement.get("bootstrap_upper_difference_mm_below", 1.0)) == 0.0,
             "action-robust advancement bootstrap changed",
         )
         _require(
@@ -1034,13 +1100,47 @@ def validate_pokeflex_shrinkage_target_protocol(
             float(advancement.get("bootstrap_upper_quantile", -1.0)) == 0.975,
             "action-robust advancement quantile changed",
         )
-        if bind_action_robust_digest:
+        if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1:
+            reproduction = gates.get("global_scale_reproduction")
             _require(
-                bool(TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256),
+                isinstance(reproduction, Mapping),
+                "global-scale reproduction gate missing",
+            )
+            _require(
+                float(reproduction.get("expected_CD_UL1_mm", -1.0))
+                == OFFICIAL13_GLOBAL_FRAME_BALANCED_CD_UL1_MM,
+                "global-scale reproduction reference changed",
+            )
+            _require(
+                float(reproduction.get("absolute_tolerance_mm", -1.0)) == 1e-9,
+                "global-scale reproduction tolerance changed",
+            )
+            numeric_reference = gates.get("public_subset_numeric_reference")
+            _require(
+                isinstance(numeric_reference, Mapping),
+                "public-subset numeric reference gate missing",
+            )
+            _require(
+                float(numeric_reference.get("candidate_CD_UL1_mm_below", -1.0))
+                == PUBLISHED_KINECT_CD_UL1_MM,
+                "public-subset numeric threshold changed",
+            )
+            _require(
+                numeric_reference.get("direct_full18_comparison_authorized") is False,
+                "public-subset numeric gate gained full-split authority",
+            )
+        if bind_action_robust_digest:
+            expected_action_robust_digest = (
+                TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256
+                if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
+                else TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1_SHA256
+            )
+            _require(
+                bool(expected_action_robust_digest),
                 "registered action-robust protocol is unset",
             )
             _require(
-                observed == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256,
+                observed == expected_action_robust_digest,
                 "action-robust target protocol lock changed",
             )
     return {
@@ -1150,6 +1250,7 @@ def validate_prediction_seal(
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+        TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     }:
         _require(take == "T2", "prediction take changed")
     if protocol_id in STAGED_FRESH_PROTOCOLS:
@@ -2106,6 +2207,44 @@ def _evaluate_action_robust_fresh6_metrics(
     )
 
 
+def _evaluate_action_robust_official13_public_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    result = _evaluate_calibrated_scale_metrics(
+        per_take,
+        protocol,
+        target_take_ids=OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
+        candidate_prefix="action_robust",
+        advancement_gate_key="action_robust_advancement",
+    )
+    result.pop("action_robust_fresh_take_count")
+    result.pop("development_overlap_take_count")
+    result["public_official_subset_take_count"] = len(OFFICIAL13_PUBLIC_TARGET_TAKE_IDS)
+    result["retrospective_take_count"] = len(OFFICIAL13_PUBLIC_TARGET_TAKE_IDS)
+    result["missing_official_take_count"] = len(OFFICIAL18_MISSING_PUBLIC_TAKE_IDS)
+    observed_global = float(result["global_scale_frame_balanced_CD_UL1_mm"])
+    reproduction = protocol["gates"]["global_scale_reproduction"]
+    expected_global = float(reproduction["expected_CD_UL1_mm"])
+    reproduction_passed = bool(
+        abs(observed_global - expected_global)
+        <= float(reproduction["absolute_tolerance_mm"])
+    )
+    candidate_frame_mean = float(result["action_robust_scale_frame_balanced_CD_UL1_mm"])
+    numeric_reference = protocol["gates"]["public_subset_numeric_reference"]
+    numeric_reference_passed = bool(
+        candidate_frame_mean < float(numeric_reference["candidate_CD_UL1_mm_below"])
+    )
+    result["global_scale_reproduction_passed"] = reproduction_passed
+    result["public_subset_numeric_reference_passed"] = numeric_reference_passed
+    result["all_target_gates_passed"] = bool(
+        result["all_target_gates_passed"]
+        and reproduction_passed
+        and numeric_reference_passed
+    )
+    return result
+
+
 def evaluate_target_metrics(
     per_object: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -2123,6 +2262,11 @@ def evaluate_target_metrics(
         return _evaluate_instance_fresh12_metrics(per_object, protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
         return _evaluate_action_robust_fresh6_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1:
+        return _evaluate_action_robust_official13_public_metrics(
+            per_object,
+            protocol,
+        )
     _require(len(per_object) == len(TARGET_OBJECTS), "target result set is incomplete")
     by_object = {str(row["object_name"]): row for row in per_object}
     _require(
@@ -2321,7 +2465,7 @@ def score_one_prediction(
         result["global_candidate_mean_CD_UL1_mm"] = global_candidate_mean
         comparison_key = (
             "action_robust_minus_global_mean_CD_UL1_mm"
-            if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
+            if protocol["protocol_id"] in ACTION_ROBUST_PROTOCOLS
             else "instance_minus_global_mean_CD_UL1_mm"
         )
         result[comparison_key] = candidate_mean - global_candidate_mean

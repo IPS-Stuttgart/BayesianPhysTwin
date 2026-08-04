@@ -44,10 +44,12 @@ from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
     register_pokeflex_graph_posterior,
 )
 from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: E402
+    ACTION_ROBUST_PROTOCOLS,
     CHECKPOINT_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
     TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
@@ -131,6 +133,7 @@ def _predict(
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+        TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     }:
         raise ValueError("new predictions require a robot-history-aware protocol")
     target_take_ids = target_take_ids_for_protocol(protocol)
@@ -193,11 +196,9 @@ def _predict(
         }
     elif instance_scale_calibration is not None:
         raise ValueError("instance scale calibration is not allowed for this protocol")
-    if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
+    if protocol["protocol_id"] in ACTION_ROBUST_PROTOCOLS:
         if action_robust_scale_calibration is None:
-            raise ValueError(
-                "action-robust protocol requires its scale calibration"
-            )
+            raise ValueError("action-robust protocol requires its scale calibration")
         if (
             file_sha256(action_robust_scale_calibration)
             != ACTION_ROBUST_SCALE_FILE_SHA256
@@ -207,17 +208,16 @@ def _predict(
             action_robust_scale_calibration
         )
         validation = validate_action_robust_scale_calibration(calibration)
-        correction_multiplier = float(validation["multipliers"][object_name])
+        correction_multiplier = float(validation["multipliers"].get(object_name, 1.0))
         protocol_multiplier = float(
-            protocol["method"]["action_robust_scale_calibration"]["multipliers"]
-            [object_name]
+            protocol["method"]["action_robust_scale_calibration"]["multipliers"][
+                object_name
+            ]
         )
         if correction_multiplier != protocol_multiplier:
             raise ValueError("protocol and action-robust multiplier differ")
         calibration_record = {
-            "action_robust_scale_calibration_sha256": calibration[
-                "calibration_sha256"
-            ],
+            "action_robust_scale_calibration_sha256": calibration["calibration_sha256"],
             "action_robust_scale_calibration_file_sha256": file_sha256(
                 action_robust_scale_calibration
             ),
@@ -470,6 +470,7 @@ def _predict(
     if protocol["protocol_id"] in {
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+        TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     }:
         prediction_arrays["global_candidate_vertices_m"] = global_candidate
     np.savez_compressed(
