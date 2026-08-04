@@ -1,0 +1,68 @@
+name: One-shot inspect local Prob4D sources
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-prob4d-local-source-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-shot-inspect-local-prob4d-sources
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 15
+    steps:
+      - name: Check out diagnostic head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Inventory probable Prob4D repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="${RUNNER_TEMP}/prob4d-local-source-inventory.txt"
+          : > "${output}"
+          while IFS= read -r gitdir; do
+            repository="${gitdir%/.git}"
+            remote="$(git -C "${repository}" remote get-url origin 2>/dev/null || true)"
+            case "${remote}" in
+              *Prob4D*|*prob4d*) ;;
+              *) continue ;;
+            esac
+            {
+              echo "repository=${repository}"
+              echo "remote=${remote}"
+              echo "head=$(git -C "${repository}" rev-parse HEAD 2>/dev/null || true)"
+              echo "shallow=$(git -C "${repository}" rev-parse --is-shallow-repository 2>/dev/null || true)"
+              echo "status=$(git -C "${repository}" status --porcelain=v1 --untracked-files=no 2>/dev/null | wc -l)"
+              echo "cross_window_blob=$(git -C "${repository}" hash-object src/prob4d/cross_window_tracklets.py 2>/dev/null || true)"
+              echo "causal_tracklets_blob=$(git -C "${repository}" hash-object src/prob4d/causal_tracklets.py 2>/dev/null || true)"
+              echo "sim3_blob=$(git -C "${repository}" hash-object src/prob4d/sim3.py 2>/dev/null || true)"
+              echo
+            } >> "${output}"
+          done < <(
+            find /home/github-runner /home/oai/share \
+              -type d -name .git -prune 2>/dev/null | sort
+          )
+          cat "${output}"
+          test -s "${output}"
+
+      - name: Upload source inventory
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: prob4d-local-source-inventory-${{ github.run_id }}
+          path: ${{ runner.temp }}/prob4d-local-source-inventory.txt
+          if-no-files-found: error
+          retention-days: 7
