@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -125,3 +126,25 @@ def test_self_hosted_workflow_is_read_only_and_pinned() -> None:
         "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     )
     assert all(pin in workflow for pin in pins)
+
+
+def test_completed_controlled_result_is_bound_and_passes() -> None:
+    result_root = ROOT / "results" / "diagnostics" / "prob4d_bpt_controlled_decisive_v1"
+    checksums = {}
+    for line in (result_root / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+        digest, name = line.split("  ", maxsplit=1)
+        checksums[name] = digest
+    for name, expected in checksums.items():
+        actual = hashlib.sha256((result_root / name).read_bytes()).hexdigest()
+        assert actual == expected
+
+    report = json.loads((result_root / "report.json").read_text(encoding="utf-8"))
+    primary = report["aggregate"][MODULE.PRIMARY_METHOD]
+    assert report["report_id"] == (
+        "c592807d62e9f5121acf85747432574601264160de67b15e9a1c8e48a12cc040"
+    )
+    assert report["decision"]["overall_passed"] is True
+    assert all(report["decision"]["criteria"].values())
+    assert primary["deployed_improvement_fraction"] > 0.91
+    assert primary["harmful_accepted_count"] == 0
+    assert primary["all_rejections_exact_fallback"] is True
