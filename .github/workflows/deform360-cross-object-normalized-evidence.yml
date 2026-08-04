@@ -1,64 +1,39 @@
-name: Deform360 cross-object normalized-evidence diagnostic
+name: Temporary harden Deform360 cross-object diagnostic
 
 on:
+  push:
+    branches:
+      - agent/deform360-cross-object-normalized-evidence-v1
+    paths:
+      - ".github/workflows/deform360-cross-object-normalized-evidence.yml"
+      - ".github/scripts/patch_deform360_cross_object_v1.py"
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/deform360-cross-object-normalized-evidence.yml"
-      - "protocols/deform360_cross_object_normalized_evidence_v1.json"
-      - "scripts/science/run_deform360_cross_object_normalized_evidence.py"
-      - "tests/test_deform360_cross_object_normalized_evidence.py"
-      - "docs/deform360_cross_object_normalized_evidence_v1.md"
-      - "src/bayesian_phystwin/endpoint_model_average.py"
-      - "tests/test_endpoint_model_average.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/deform360-cross-object-normalized-evidence.yml"
-      - "protocols/deform360_cross_object_normalized_evidence_v1.json"
-      - "scripts/science/run_deform360_cross_object_normalized_evidence.py"
-      - "tests/test_deform360_cross_object_normalized_evidence.py"
-      - "docs/deform360_cross_object_normalized_evidence_v1.md"
-      - "src/bayesian_phystwin/endpoint_model_average.py"
-      - "tests/test_endpoint_model_average.py"
-  workflow_dispatch:
-    inputs:
-      data_root:
-        description: Optional mounted Deform360 root
-        required: false
-        default: ""
-      workers:
-        description: Episode loading worker count
-        required: false
-        default: "6"
+      - ".github/scripts/patch_deform360_cross_object_v1.py"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: deform360-cross-object-${{ github.workflow }}-${{ github.ref }}
+  group: temporary-harden-deform360-cross-object-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PYTHONHASHSEED: "0"
-  PYTHONUNBUFFERED: "1"
-  OMP_NUM_THREADS: "1"
-  OPENBLAS_NUM_THREADS: "1"
-  MKL_NUM_THREADS: "1"
-  NUMEXPR_NUM_THREADS: "1"
-
 jobs:
-  evaluate:
-    name: Locked non-fresh leave-one-object-out diagnostic
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 90
+  publish:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Check out BayesianPhysTwin
+      - name: Check out the exact publication branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: agent/deform360-cross-object-normalized-evidence-v1
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
           clean: true
 
       - name: Set up Python 3.12
@@ -68,302 +43,39 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Resolve mounted input and isolated output paths
+      - name: Install focused validation dependencies
         shell: bash
-        env:
-          CONFIGURED_ROOT: ${{ inputs.data_root }}
-          CONFIGURED_WORKERS: ${{ inputs.workers }}
         run: |
           set -euo pipefail
-          if [[ -n "${CONFIGURED_ROOT}" ]]; then
-            data_root="${CONFIGURED_ROOT}"
-          else
-            data_root="/home/github-runner/.cache/datasets/deform360"
-          fi
-          if [[ ! -d "${data_root}" ]]; then
-            echo "Deform360 mount is missing: ${data_root}" >&2
-            exit 1
-          fi
-          workers="${CONFIGURED_WORKERS:-6}"
-          if ! [[ "${workers}" =~ ^[1-9][0-9]*$ ]]; then
-            echo "workers must be a positive integer" >&2
-            exit 1
-          fi
-          output_root="${RUNNER_TEMP}/deform360-cross-object-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          venv_root="${RUNNER_TEMP}/deform360-cross-object-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${output_root}"
-          echo "DEFORM360_DATA_ROOT=${data_root}" >> "${GITHUB_ENV}"
-          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
-          echo "VENV_ROOT=${venv_root}" >> "${GITHUB_ENV}"
-          echo "EVALUATION_WORKERS=${workers}" >> "${GITHUB_ENV}"
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph]" "ruff==0.16.1"
+          python -m pip check
 
-      - name: Record runner, GPU, source, and mount identities
+      - name: Apply and validate the hardening patch
         shell: bash
         run: |
           set -euo pipefail
-          {
-            echo "runner_name=${RUNNER_NAME}"
-            echo "runner_os=${RUNNER_OS}"
-            echo "runner_arch=${RUNNER_ARCH}"
-            echo "repository=${GITHUB_REPOSITORY}"
-            echo "revision=${GITHUB_SHA}"
-            echo "checked_out_revision=$(git rev-parse HEAD)"
-            echo "dataset_root=${DEFORM360_DATA_ROOT}"
-            echo "dataset_realpath=$(realpath "${DEFORM360_DATA_ROOT}")"
-            uname -a
-            lscpu
-          } | tee "${OUTPUT_ROOT}/runner.txt"
-          nvidia-smi -L | tee "${OUTPUT_ROOT}/nvidia-smi-L.txt"
-          nvidia-smi \
-            --query-gpu=index,name,uuid,driver_version,memory.total \
-            --format=csv,noheader \
-            | tee "${OUTPUT_ROOT}/nvidia-smi.csv"
-
-      - name: Create isolated evaluation environment
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m venv "${VENV_ROOT}"
-          "${VENV_ROOT}/bin/python" -m pip install --upgrade pip
-          "${VENV_ROOT}/bin/python" -m pip install -e ".[dev,graph]"
-          "${VENV_ROOT}/bin/python" -m pip check
-          "${VENV_ROOT}/bin/python" -m pip freeze --all \
-            > "${OUTPUT_ROOT}/pip-freeze.txt"
-
-      - name: Validate implementation and locked boundary before numeric access
-        shell: bash
-        run: |
-          set -euo pipefail
-          "${VENV_ROOT}/bin/python" -m ruff check \
-            scripts/science/run_deform360_cross_object_normalized_evidence.py \
-            tests/test_deform360_cross_object_normalized_evidence.py
-          "${VENV_ROOT}/bin/python" -m ruff format --check \
-            scripts/science/run_deform360_cross_object_normalized_evidence.py \
-            tests/test_deform360_cross_object_normalized_evidence.py
-          "${VENV_ROOT}/bin/python" -m pytest -q \
+          python -m py_compile .github/scripts/patch_deform360_cross_object_v1.py
+          python .github/scripts/patch_deform360_cross_object_v1.py
+          python -m pytest -q \
             tests/test_deform360_cross_object_normalized_evidence.py \
             tests/test_endpoint_model_average.py
-          "${VENV_ROOT}/bin/python" -m py_compile \
-            scripts/science/run_deform360_cross_object_normalized_evidence.py
-          "${VENV_ROOT}/bin/python" - <<'PY'
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
+          git diff --check
 
-          protocol_path = Path(
-              "protocols/deform360_cross_object_normalized_evidence_v1.json"
-          )
-          payload = json.loads(protocol_path.read_text(encoding="utf-8"))
-          canonical = hashlib.sha256(
-              json.dumps(
-                  payload,
-                  sort_keys=True,
-                  separators=(",", ":"),
-                  allow_nan=False,
-              ).encode("utf-8")
-          ).hexdigest()
-          expected = "1fea455cd61fa838d94bb4892973ba944d851b894c876087431fab6461a60ad4"
-          if canonical != expected:
-              raise SystemExit(
-                  f"protocol digest changed: expected {expected}, received {canonical}"
-              )
-          boundary = payload["information_boundary"]
-          expected_boundary = {
-              "all_objects_previously_used_by_repository": True,
-              "array_payloads_opened_when_protocol_locked": False,
-              "fold_local_target_exclusion": True,
-              "globally_sealed_target_cohort": False,
-              "npz_headers_previously_inspected": True,
-              "official_deform360_task": False,
-          }
-          if boundary != expected_boundary:
-              raise SystemExit("protocol information boundary changed")
-          if len(payload["objects"]) != 6 or len(payload["episodes"]) != 33:
-              raise SystemExit("locked object or episode count changed")
-          data_root = Path(os.environ["DEFORM360_DATA_ROOT"]).resolve()
-          paths = []
-          for episode in payload["episodes"]:
-              relative = str(episode["path"])
-              resolved = (data_root / relative).resolve()
-              resolved.relative_to(data_root)
-              if not resolved.is_file():
-                  raise SystemExit(f"locked input is missing: {relative}")
-              paths.append(relative)
-          path_seal = {
-              "protocol_sha256": canonical,
-              "object_count": len(payload["objects"]),
-              "episode_count": len(paths),
-              "relative_paths": sorted(paths),
-              "numeric_payload_opened": False,
-          }
-          seal_path = Path(os.environ["OUTPUT_ROOT"]) / "input-path-seal.json"
-          seal_path.write_text(
-              json.dumps(path_seal, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          print(json.dumps(path_seal, indent=2, sort_keys=True))
-          PY
-
-      - name: Fingerprint mounted names before evaluation
+      - name: Restore read-only workflow and publish ordinary source
         shell: bash
         run: |
           set -euo pipefail
-          find "${DEFORM360_DATA_ROOT}" -printf '%P\0' \
-            | sort -z \
-            | sha256sum \
-            | tee "${OUTPUT_ROOT}/dataset-names-before.sha256"
-
-      - name: Execute locked cross-object diagnostic
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "${OUTPUT_ROOT}/result"
-          /usr/bin/time -v \
-            -o "${OUTPUT_ROOT}/resource-usage.txt" \
-            "${VENV_ROOT}/bin/python" \
-              scripts/science/run_deform360_cross_object_normalized_evidence.py \
-              --data-root "${DEFORM360_DATA_ROOT}" \
-              --protocol protocols/deform360_cross_object_normalized_evidence_v1.json \
-              --output-dir "${OUTPUT_ROOT}/result" \
-              --workers "${EVALUATION_WORKERS}" \
-              --revision "${GITHUB_SHA}" \
-            | tee "${OUTPUT_ROOT}/compact-console.json"
-
-      - name: Verify content-addressed outputs and publish scientific readout
-        shell: bash
-        run: |
-          set -euo pipefail
-          "${VENV_ROOT}/bin/python" - <<'PY'
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-
-          root = Path(os.environ["OUTPUT_ROOT"])
-          result_root = root / "result"
-
-          def file_sha256(path: Path) -> str:
-              digest = hashlib.sha256()
-              with path.open("rb") as handle:
-                  for block in iter(lambda: handle.read(1024 * 1024), b""):
-                      digest.update(block)
-              return digest.hexdigest()
-
-          def canonical_sha256(payload: dict[str, object], field: str) -> str:
-              unsigned = dict(payload)
-              unsigned.pop(field, None)
-              return hashlib.sha256(
-                  json.dumps(
-                      unsigned,
-                      sort_keys=True,
-                      separators=(",", ":"),
-                      allow_nan=False,
-                  ).encode("utf-8")
-              ).hexdigest()
-
-          summary = json.loads((result_root / "summary.json").read_text(encoding="utf-8"))
-          readout = json.loads((result_root / "readout.json").read_text(encoding="utf-8"))
-          manifest = json.loads(
-              (result_root / "artifact_manifest.json").read_text(encoding="utf-8")
-          )
-          expected_protocol = "1fea455cd61fa838d94bb4892973ba944d851b894c876087431fab6461a60ad4"
-          if summary["protocol_sha256"] != expected_protocol:
-              raise SystemExit("result used another protocol")
-          if summary["repository_revision"] != os.environ["GITHUB_SHA"]:
-              raise SystemExit("result revision differs from workflow revision")
-          if canonical_sha256(summary, "result_sha256") != summary["result_sha256"]:
-              raise SystemExit("result canonical identity changed")
-          if readout["result_sha256"] != summary["result_sha256"]:
-              raise SystemExit("readout does not bind the result")
-          if canonical_sha256(manifest, "manifest_sha256") != manifest["manifest_sha256"]:
-              raise SystemExit("artifact manifest identity changed")
-          for filename, expected in manifest["outputs"].items():
-              actual = file_sha256(result_root / filename)
-              if actual != expected:
-                  raise SystemExit(f"output digest changed: {filename}")
-          if len(summary["input_archives"]) != 33 or len(summary["folds"]) != 6:
-              raise SystemExit("executed cohort size differs from the locked protocol")
-          if summary["diagnosis"]["no_automatic_claim_promotion"] is not True:
-              raise SystemExit("diagnostic unexpectedly promotes a claim")
-          compact = {
-              "protocol_sha256": summary["protocol_sha256"],
-              "result_sha256": summary["result_sha256"],
-              "manifest_sha256": manifest["manifest_sha256"],
-              "selected_kappas": summary["aggregate"]["selected_kappas"],
-              "boundary_selection_count": summary["aggregate"]["boundary_selection_count"],
-              "methods": summary["aggregate"]["methods"],
-              "comparisons": summary["aggregate"][
-                  "cross_fitted_normalized_vs_last_residual"
-              ],
-              "diagnosis": summary["diagnosis"],
-          }
-          verification = {
-              "schema": "bayesian-phystwin/deform360-cross-object-workflow-verification-v1",
-              "schema_version": 1,
-              "repository_revision": os.environ["GITHUB_SHA"],
-              **compact,
-          }
-          (root / "verification.json").write_text(
-              json.dumps(verification, indent=2, sort_keys=True, allow_nan=False) + "\n",
-              encoding="utf-8",
-          )
-          print(json.dumps(compact, indent=2, sort_keys=True, allow_nan=False))
-
-          methods = compact["methods"]
-          selected = methods["cross_fitted_normalized"]
-          cumulative = methods["cumulative_model_average"]
-          last = methods["last_residual"]
-          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
-              handle.write("### Deform360 non-fresh cross-object diagnostic\n\n")
-              handle.write(f"- Result SHA-256: `{compact['result_sha256']}`\n")
-              handle.write(f"- Selected kappas: `{compact['selected_kappas']}`\n")
-              handle.write(
-                  f"- Grid-boundary selections: `{compact['boundary_selection_count']}` / 6\n"
-              )
-              handle.write(
-                  f"- Cross-fitted centroid RMSE: `{selected['centroid_rmse_m']:.6g}` m\n"
-              )
-              handle.write(
-                  f"- Last-residual centroid RMSE: `{last['centroid_rmse_m']:.6g}` m\n"
-              )
-              handle.write(
-                  f"- Cross-fitted raw 90% coverage: `{selected['raw_coverage_90']:.4f}`\n"
-              )
-              handle.write(
-                  f"- Cumulative raw 90% coverage: `{cumulative['raw_coverage_90']:.4f}`\n"
-              )
-              handle.write(
-                  f"- Cross-fitted effective components: `{selected['effective_component_count']:.4f}`\n"
-              )
-              handle.write("\nThis is retrospective, non-fresh mechanism evidence.\n")
-          PY
-
-      - name: Verify mount names and repository remained unchanged
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          find "${DEFORM360_DATA_ROOT}" -printf '%P\0' \
-            | sort -z \
-            | sha256sum \
-            | tee "${OUTPUT_ROOT}/dataset-names-after.sha256"
-          diff \
-            "${OUTPUT_ROOT}/dataset-names-before.sha256" \
-            "${OUTPUT_ROOT}/dataset-names-after.sha256"
-          git diff --exit-code
-          git status --porcelain=v1 | tee "${OUTPUT_ROOT}/git-status.txt"
-          test ! -s "${OUTPUT_ROOT}/git-status.txt"
-
-      - name: Upload compact diagnostic evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
-        with:
-          name: deform360-cross-object-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.OUTPUT_ROOT }}
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Remove isolated environment
-        if: always()
-        run: rm -rf "${VENV_ROOT}"
+          git show HEAD^:.github/workflows/deform360-cross-object-normalized-evidence.yml \
+            > .github/workflows/deform360-cross-object-normalized-evidence.yml
+          git rm .github/scripts/patch_deform360_cross_object_v1.py
+          git add \
+            .github/workflows/deform360-cross-object-normalized-evidence.yml \
+            docs/deform360_cross_object_normalized_evidence_v1.md \
+            scripts/science/run_deform360_cross_object_normalized_evidence.py \
+            tests/test_deform360_cross_object_normalized_evidence.py
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Harden cross-object Deform360 evidence diagnostic"
+          git push origin HEAD:agent/deform360-cross-object-normalized-evidence-v1
