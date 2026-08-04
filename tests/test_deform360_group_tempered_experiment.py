@@ -34,18 +34,43 @@ def test_protocol_is_locked_and_well_formed() -> None:
     assert len(digest) == 64
     assert payload["temperature"]["log2_exponents"][0] < 0
     assert payload["temperature"]["log2_exponents"][-1] > 0
+    assert payload["split"]["group_identity"] == "canonical-object-directory"
+    assert payload["split"]["minimum_calibration_groups"] == 1
+    assert len(payload["cohort"]["expected_object_ids"]) == 6
+    assert payload["cohort"]["expected_archive_count"] == 36
 
 
-def test_group_identity_uses_object_and_nested_session(tmp_path: Path) -> None:
+def test_group_identity_uses_locked_archive_layout(tmp_path: Path) -> None:
     module = _load_script()
-    path = tmp_path / "processed" / "001-rope" / "episode_0004" / "tracks.npz"
+    path = tmp_path / "001-rope" / "episode_0004" / "sampled_hulls.npz"
     path.parent.mkdir(parents=True)
     path.touch()
 
     identity = module._group_identity(path, tmp_path)
 
-    assert identity == ("001-rope", "001-rope/episode_0004")
+    assert identity == ("001-rope", "001-rope")
     assert module._group_identity(tmp_path / "unscoped.npz", tmp_path) is None
+    wrong = tmp_path / "001-rope" / "episode_0004" / "tracks.npz"
+    wrong.touch()
+    assert module._group_identity(wrong, tmp_path) is None
+
+
+def test_discovery_accepts_only_locked_sampled_hull_layout(tmp_path: Path) -> None:
+    module = _load_script()
+    accepted = tmp_path / "001-rope" / "episode_0004" / "sampled_hulls.npz"
+    accepted.parent.mkdir(parents=True)
+    accepted.touch()
+    contaminated = tmp_path / "results" / "001-rope" / "episode_0004" / "x.npz"
+    contaminated.parent.mkdir(parents=True)
+    contaminated.touch()
+
+    specs, excluded = module._discover_specs(tmp_path, maximum_paths=10)
+
+    assert [spec.relative_path for spec in specs] == [
+        "001-rope/episode_0004/sampled_hulls.npz"
+    ]
+    assert [spec.group_id for spec in specs] == ["001-rope"]
+    assert excluded == ("results/001-rope/episode_0004/x.npz",)
 
 
 def test_group_split_is_disjoint_and_deterministic() -> None:
@@ -63,6 +88,9 @@ def test_group_split_is_disjoint_and_deterministic() -> None:
     assert set(first["source"] + first["calibration"] + first["target"]) == set(
         groups
     )
+    assert len(first["source"]) >= 2
+    assert len(first["calibration"]) >= 1
+    assert len(first["target"]) >= 3
 
 
 def test_archive_cap_preserves_group_diversity(tmp_path: Path) -> None:
