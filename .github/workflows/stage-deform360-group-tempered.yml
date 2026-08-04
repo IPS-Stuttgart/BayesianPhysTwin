@@ -7,6 +7,12 @@ on:
     paths:
       - ".github/workflows/stage-deform360-group-tempered.yml"
       - "tools/deform360_group_tempered_payload_*.txt"
+  pull_request:
+    branches:
+      - agent/deform360-public-evaluation
+    paths:
+      - ".github/workflows/stage-deform360-group-tempered.yml"
+      - "tools/deform360_group_tempered_payload_*.txt"
 
 permissions:
   contents: write
@@ -17,7 +23,10 @@ concurrency:
 
 jobs:
   stage:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
