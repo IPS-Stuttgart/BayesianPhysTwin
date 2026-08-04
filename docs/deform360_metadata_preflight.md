@@ -65,13 +65,17 @@ The result records both
 }
 ```
 
-and a canonical `inventory_sha256`.
+and two canonical identities. `content_inventory_sha256` binds the dataset names,
+classifications, paths, and prior-protocol identities independently of the Git
+revision that executed the inventory. `inventory_sha256` additionally binds that
+execution revision. A later cohort lock should cite both, using the content
+identity to distinguish harmless reruns from a changed cache tree.
 
 ## Gate for the actual evaluation
 
 No public-data scoring workflow should run until a follow-up commit binds:
 
-- the exact inventory identity;
+- the exact inventory identities;
 - an explicit allowed object and episode cohort;
 - an exact allowed path list;
 - one adapter and representation contract per path family;
