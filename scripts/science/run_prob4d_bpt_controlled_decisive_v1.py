@@ -1,1 +1,719 @@
-eNrFPGtz20aS3/krsEhdGZBJWJTj7IZlpqLYSqwr2/FK3rtK8VhYiBxSiEGAAUDJiuP/ft3z7BkMSDp1t+ty2SCmp6en39MzmK/+8mTX1E9u8vIJK++C7UN7W5VPB2EYXu3KoL1lQVEtPrBlsKjKtq6KAh7f1dXN1y9HbTX6IXtgTZ6V724fmvf3eRks2SJv8qoMmna3fEgAzWCwqqtNkKarXburWZoG+WZb1W2QlWXVZi0AN4OBfNc8NAJ8m7W3RX6jYN/BzyBrghQfBoP0+sXlxdsXF+nLy6uLF+9/vvolmIq2CMbJCxglTmrWVMUdi+Jkm9WsbAf5Cqiqo27nOABKAqAehk9w5MkggD/qV5KXDavb6HTY1z+Wk9wiY5bpzbZNDbtSwZM7Bu9g/ndjNakoCL6CkX/LJsHF16dnfMzz8mHIH344v754ffn2In1z8f7Vzy/FyxevLtPrv//j/OoifZp+eypfZuUyX2Ytc35e43Di3Y+Xby/fX6SXb/nDL+LlT3W1277M2kz+3GX18kUGTK+5UMTbN+dXP12+PX9tkSGer+WPbLvNy7X48e7qEnr8YkGjWORTnVf1+T1I46dst2YvqnKVr/9rLBqvLv4TuJmev36dvn91dXH96ufXL1XLu5+v3gPbX128ORevrtlvO1Yu5PSuUdcENvHi/dUlkEw7vK/zrLhiza5oxYv0JmsXt+mqqtMNA51fyteLrKzKfJEVaXObnT37Rr2ugKvIlnSNpKdbnIpsA/VqWJrV60a+ANrqB+hyl8Gomsq0BqLzWv/Kmw8pag28J2RZo97XecvSXxslDRiDDyZ/Nct8IfstmjvxsGYlAwGydI3iFe8MgqLKlkB71VaLqhCvNlo8pQRvbndtLlt3W1QlMd00Q9FJBtywImer4QBUf8lWnG9C7VD7I0EKUjBx9UxwO82XE7QmST2X3cQWZByMvjPaLEySCw1t3ZVeJKZrsA8l0pj3EyyGjgfmIwjXIw31T4Fs2qPBphvnX2uGaNplupmK3onTMLR73QJW8B151lh9T5PT8ZkNepezez/gqQ3IViu2aNH1NNlmWzDowGp0QzUrMqHNyLbp+Cxxei7ZumYAX61ARxlbVpvpMxem2rXAs5ooeroBLudbfDt9+o0Lv8k+5pvdJgWdFi6mmZ71gBhzK3ebG8A2ZuOnDmhe2qBgsnkJGrERM1vV2QIfoOvomb9rvoSwkK/y7AYihoYHPp754YVdN6xsYMC7vH2wBvnaPxUhdKl3XErfPPNDSpi2SrcQTrkPAr3dAp9Yyhk2/ZqyNBaPQsEhtgkdh2C1YjX6xjRbbvKmyWFyE6LHIHtOMhhDuU0YxLbdxtbfsFw0w2b0XbkIbUK5siSSC3xav2aLChSxtOEkJQJkUYEW5oscWN04+rNt803+O5u+r3eMzIs/saLZQ/bvrK6atMg/MGH4SQsotN9VsOlG4FKEKDUFHJLEbdWAMqINmdaZHnUSWIa7qHZlO/S+5V3m0peRYTqhwHD6GGa6hFOJY/wYQvoAypkVw4DqMuQpRke5I7xj9RoSt2k37DgEmbFpVLLnZVHBIKkrjZs26LQnnhqfrBt9Sjq9qaoi2qPFMSUug5g2xXRMdhBv4qFHZbgDVj98E0o3Z1N3eorFaYNp1JRzWzdIrmMkvclu8gLYPFWSMHP0ehdLThp2j2ehotTwq/wjxIptlZc80xTineonJaFObC6ypkXUG2k3NDr7orAvBoNSLj6AKgkF5r/Ee1YAi7mW8ZcJHwd8MmQprAmm3HDB10WeVunEYEVwl0krj6gVAPx9VRcQ5lgG8gxGcnTtKLcQO3MpbTH5maJHmOUS1inrkpJNLM6BhQhS5x8BVnTClcRttmXRaDz02L6gvYXcjGGGYSZB+imTXa7RK2CwEBkXRqsC3ogRk/fB92rwxxL6hHvpBxb1DVzn69vWRiFoUZmVFUgBcAVJYBsB1gL1dZ0gSCQoieVc6gfqeo3/Fs5X9hOrK9FxKMiQrvvjgm1bAvk6L8+L9UVdV/U+vNyp988TZLHccW5JXo8Ur763kFnQKXHGqHvGghQXUKPw/+Y3WACxSHWM49jN/hKaapRVDmGZZ14nJ2fUJfqjjUPNCWFPXt4p/g+OidHe+HxMOPGHYk8Yjv+lkew+X7a3VDGb32pLNC34QjQA3TmAjKkZT8fi4Wx6BtKSzAd75TrSi0zKWeiQ7qclVG+aI3oTLTHR2HJaFsInXPcEbUM0//FZrCEfSwYIIMev6QSwgV8QqDy9cQGXFNV6fBohAtfioUdyGseA/gxyT8J2E1iBcB57TXzbJllR4HzzZgXJb4vcN7oTm+EhNHR9zHMgcnxmwUjXb5QeFT4iYZlLcjoGQp9PA54k29ktVmiOSWhJZmiajs9Vwh/GaZnhismESqHU4YHsxTx20pSQYxwhxhHHODLAIU6OiALz3kB2WIEQbiD2hf++rGZMVxz+jAZAfHM4pT33rZyO6O5Pd6i/EpnOJvvATLbz/1aFAHJ1f8xrnFrdhMi/T+MOZsi9evZjVjTMXW8JNVNeQyvOqGYSg7OSs9ToS9ZTLhqqbDqEWzD4JzrZizXhadJsMp4Pg6fw1xmFp2/tw5bhCNwzf+OstZ0ORMO9lc+jFb5f6U9dsD0a3oE9pM6W47M0bY976mjdnrTfLY658FjC6y+oyVUFBDbwsdoy0PmWy6yuM1hygqDbW/qKmxGX3YSOeSjOavSQ7HGcPOCqZU0FnMvWYB3lMuUxVGgeocmpjXfIkvbd7rYFm3Figj+Ct1UJKQb9NZ/QMKTxH6i1yDkKdPivyqqgD/idIm/aGcbdOUSu2dykQo1s4xSQxlVVB2adAxFz0e4wnyB5Wl4Gv+dbY4CGVGpvRss4Q4ZecGLZNI2rYXTqeSeeyBNgBH8GOS7J2SBRMT+S97G/mwUvFz5PY8DEs55OcgU9BBNAPQxnyOzIOoYbPGMmu9NIvu8samiqaVI9jeq4BU5nwBDUJbQmjoqQZNstwxUYgkLu4+zxGHihGwq8YzlukkxSW9vUuInJwWGR4zSIUbSRcS96XEjtN7vbrN6sdkW6gZw7B/2biDHd4Mo3rFSdH1bkecn+TLVP9eUOipe80FGpt8PgCBR1dm/37rGjY3ApLzXU65xex2Vx0V3a9QyyrxjHGeqs0zDdEAjVT2LdC1aC9lQSQP0cevJkwxBP7qIbp57ZWOKB7MP6TbJUKQKAUI+mUSkUtOjW4DtH8o87eje0bQ8l8O3pVAtItypXAmGWSwfxAR382U44F3K/lKVr3D4VvOY2A05cbVLObIHMD2Wb7k7sxM5Ysb7GR5idzg33vywxJfZlm//sLit2LHGExEMPb+G75Hz0OXGIUvFcwr8w3eVpW3uLVbOqWE77N4T1wnKBfhhSKaHKvFg0dXItpQMa9jgolGk3cVuybVE9MFmGdBTYBtUcPAy6MByzZlKwMhK8dvJbld6nVVk8ePNGk46IPBiDUFPVMDMjk082Tq4GQvrGuE0mHdvQXX2wk+ZV4KLy5Uq2NEWZQFccjqHlM/F+WnNwsjOv9gQnHcaI1OqGNe2EpoFDmJj6R76Q6ZjICGEIndFZov4/sChs0pPBZjMzY8FKU3Gu9uYwIv2XCKtfQJjHaKJ1v3mHeKHoMAVUdfUy7rh5BYVVUDEoCQD29PqRoEUDDhvnE5cUrETYb1Q1YkDY5YAgM5xXz1XNmMeFVO0g2x6rmTiraVholkR4MJJF/Xc2UtqWZm26qZr2AEblwPxak5ig+29RELXvG3hN5midng+8/rpjmaqVBDKzBP7AHqx6bged7ZJHtvz90cXTJCjSrIj9HWsrg4qpgqDnCvJGOCVgij2D58Kz2ZEJe0xtwIEHG8kWRI/IcnTD4JT/9TtaMJh40OUZLIjWWSvOwvHNdJs1RieGrt0iDQOv7xjZOAdHJSR7kxEnETFEDfZmHn0q0JOC9GiFPxXxa4I3H+nR0r0JiQP7RRmJnY244pkGp3bKDOvX4qGTLk+85xYJHRPPAUWeLZOTfRN7HaoSZeOBBk7ktHc9jvRufMujx6cRghNbi0ii0ru49a8ybTuilmuB0bgkvKgaR27KZos2VbLqzF33BBeihkra6uahZU0UoxgVNvOWTEmdbYzsYYZByAUNOpLjweG2UpbJ4QJVsNY6FDpOQy7ChRhNdOrOVUD4Igbhdj8Qos432xqWghvGvQpuS4y6Az8x+NBdqmcrSdDU+zDaUzsGneQY0XNyNGJxyzbZtHve1Vrvi1nsWe8LgH3rfQHh8ZW8YFbTDYr9ZtTpKTcviEXxF979KhEtvUsCMm2eHBn3rTr1WWanq9Is7cuGpPJH1XvqaHtvjcOreN5ah6twHl/vuvlu3UQGC4mM5Mr9UUYcvtI2hT6u0zu2RyHabfY6nAYP+d5uvlZ/tUZ6dPPmYNlG9PA37t/8NIrmaT20LUrMwNd+1N6owdEPdPBQmMbhbXeOim2zHE8hAwirIb8WnmaZr6QhN/bmCTaeDNUBCnHEeMIXzfJEGO5z8J/uNotaTsvdoHItgmENxFabBEjJwM+l8D5CJOp4mDxJhvAJkrhmNdltJKqAiQqhmmhugyddIk3tsANqHavFtEieThJLBgM4k+TM9dEF6q35VKNNto3kdEs8IZOBHuBrxDoMZnjS+Bnmyt/+9dmcbGxx/6RUXMyvru5pRZEEg7lkLmr3DPeyfTtXWgl4bUQsnKwlFOI367yOU587WBIsJkWwcJgW2eZmmYl+E7WMdCo14ojmpI9EIOnTZ135UHqNVEWniWDQM1xrJH99Jg6z0D0nsQbAsyVjXq6J+HGYBcuLSGM64UI21OutEefYooGYTTjmuXMadrYKi+oeViJCRJ9wvPHpKQygxoo/4xH7BTo34afDeWcZ6a0PkRzDXtuqk4lx7K7JVVN3/axLU529ATEPlYqv1zWunZg8CyxtqUXl6te2/cVrI+Pz8kFqnx5n4jTbklfZRblkH8nGM3KBlbsN/6wlkt8eER3gquvXajETo9dWcVz/mPvKI3gEquFuTknICcBd+5nHvvp6F9HeUqCDiDgcfh5V0jeyk3vhHYXLxg0mrxf3oOwc2xdOUX2vAjlBC7LKtqnxl/Y3K0ycOraB8S2eS6Pi9BQvaAXzoEeyM7N5JzXoKWiRPKG/fKSw9tS8DAqsjOABAMu85vYGbQ8h/vTjz9Lkx3aAvBvIH2SG32+HihAFibSoE7nylVO1JP7ziMCi0E6neoi5jU6+TYktCofZORPkeNC99mncqH1wyD92Z3vs0Nj7q/vHjE2kM9OcQbl0hg5JRSac8NCmRvAcnAp9NSLo1uGzp6uvZES7+rez7FF96T7g6HIU/6hFt6sCT7pjdvr75i6siJ9iIWP3iNQjVtvrHCXVPlL8RUDkpvv5le043H5+Ig6RYIxbx+KZiX8dNfOoGNqxgzTEnMVWjeOspS/XcWKfZx592txX2Hd69yi03VsBxb1j9+h0z+SFUndoA6XujLh36jKoGw7k5a7R9pB++4zPBU+ORSrwuyg6ef0R5Duy66D4YhF+kVF+gUEePbRdtpf6rTcOnS5fZrfH2CzSuZdK7w6A12d2N0T7h0SF82+zejY2O22dXVAvewv8YOFXUZFuUrs6BhPAbwp6WOaUp7+MYUQ2OlfjJu5lmucgHHSJY5y/Tie7y6i9A/sTsiOG59BibJE+HjewVSGAYZySgc9ZkwQDOpBfQ+c0hVwp6kChqhLqao/IXdPJGyBMOikwqmsGvAC9a8VtnW+yGvdeTaSyb5VQ3+jhmS5xBFQDOrdVyKoFXqIAC8FU5LHQQVE2o75IgYXyJG5VwzJfpx01fg/fNOIzE+tDMuuQkNXC94XJuZrZgQgy33PGRrJlZolxnvB2tRXT+ShcTcmK7yGPfZSArE0LhifEYZI5fg/Nlh3N1eMfmILV6bupy/xZd3TVV5NBkBAdVuFvt8UrDG7ACS/xzobqPsUNtH56j4ma89l4Hjy33Bsd2euP1YGLo5jm9+g2s557mLV35B4+9SruMRT3dj5Iav+wVMB76D4UPBQzvyTkmFUwGYh93Bb5Im+xUNcgI0AJ8c4X3KzCmwDaKlXO5QgzoJlkR6DeZLDz7nGHm971gCH8rtEUUsrprkDYQTHfs/g80e704MykyKxQQZyLZJC8lQX457sRSIQw9WmSgfXeecSBtXOeaF6RVh72QBG2WdNwpcZEQ8FpH3mckZCUtBdoSJ0pX0Sp2NhRmDBb3mF4wcuyVrjhONIfaVU3qLZPGoFzhAEsdMs9/ol0C77AzTbLy1HWjMzFU/pgzKiqR9usbnMYVVR6w648ZZS37w+SFWFvuZds/ljnNHAnUQZ4/hmL/kxARniBmN9EY8pBhG3qY2v3DIrdhZ6BIqADiy0SlfjWtxdLrDer8FOqmh+O6tLAq5r2YL5BEEwmMmzFLxEISY/QiyEUfUPCnonLO/szIK2UslhOy3WmVu4W7kjRHJFUq1XD+L1ndVau5bcVNn/iSafei+coDKseB+NT/AMuxKYJWgT+7g0y+huWjo+ylc9fFsHBh/6WTkLrnIXUatsZly8HhcSm4r8uoK96Jx2gmJYyIfHNDLUfJVO9o2Lkevx+ClcI51MCaVLVrt3uUG8/ke9aZ3NrV4Xvo8jdE7PnwinDFvdAal9X54ApOWvlfHy7/0IucocUUE5qUb264f0SySvIHvl3P0XpqkfS/8nIEWogJiPVoN6Bz0BxRodXQ8f42JptqyZvKwiuNbvj0YZ8uyxvHnRayK67vdaS2kQ39qQq6ZNc5FiFhRpL98qxVLt6wXSLlWOxxa6FWcq7IgPdW+w+NQG/LxH++Z2VmjehtXjp+H/c2XLDk7RqCs0/iOji0N9B2PbZHcZWVNLeWOsoYmnuV0DdYYmCd+2gz9RUYDbXy3whI/in4vR6mj4mWNhtAuUWKt3Voic4ORprVDrXI+doohoeo8R9W0rtzNmondv1B1oA0PvYgmp7Jvpq0impZeiuQ62FsTa3uvVtlBktF6fvIOfz3FBJANI7XGjw5HBMF7RyPJgYX96omgR9P/fBiysiserjXlYZ6TlYiXbHcUBfz1t7LGrzgj76hubmnMc7meBM5LWUUiEpITQPmjg7DsSaVH8D3a2L0KhCsincrCSamEDivKHVkc90vakkjyRrLRiQar9O6dUjnUuR5RtRhoDljiU/p2luL5hQq2ah+J9LmH8Q6spRtDsnN/DVUBqkyjXEDaHiXcSvrhX3re4/xMHjgjnjv8pZsSyzDfcMfANBykAgmZ2qwyf3eXvLr+ZNKgjSUXgf4on+e6ykTEN4hoGqJXj9abhrV6O/hTHe2XsLgZd+Fs9JxouoFs1d8hKG+W/+IhJwQ0LN1DzGTveE/3fLsiX0tN0MJ9qc/rATlrq6R4dBpmcrF8UOsFhJjW1eQ2bwYVndlxa3lbfoxHaH09RrKV0wiig8G3LTdrjhV8GLP3H7MrnzIyTPq/ClBJsEJyefHr07v75+JC6Q5AQ9UlgezWeP7KX1o7lYsDz68fzy9aPPJyc9Q4R/BG+4hQZ/BC/VJu7Vm+sL+H1JDkX/EZzzyhY8vBKJlzkV8oeNbzQaBfzfSc9/Enw+OC57lYrg2Q01hwhREN58FOixl+rmtMvSeb8KgcJPY7FEgkGRvd0Cy6P5JHm6+hxsNmFf/053XxEV8DxOzlaf/+MgGs8uHBIx7u3Le/l3wx7NPwP/nSM+gnvsY4vcm6F3CL/6KrjStUddyMEWVftGuaG9QzTmCscXp9JOtEOez0w9aK58/MQvtlU4CoiKS6xUiSfBPz/hkJ//Ge4j/AV69UB7daR5qEnruHwzI+4tpZcGnFH4P2WY/FrlZcTHiT1O0/Y3kEIsPjQ7mKNYXqTLvBZux/EtCjDFIUG3DXjwJAivX51DYLn+x5vrUPr8wvEy2M1ypBwPHjIQHw4bfMjzGv6npSjOXLwrveEXsEcxP0POXyF3g79MbQL5W3ptqtVIGEYcjODbKvyk0x3kwucg+KQxfgb2WsTzeZIsxOW2ff5ZrFtYhJd5T/R128lbDEHbbME4y/OynVhrOpVnYvSkF2xzNImdVxKpTAPeTviqr6xX3+ORNvYRDMdSdHUrGiKBKS+YE+qyHLT8R5j/Be/KrychUiRHYPmF30m9aWvGOhCEhs0HlLq4Tr8h6yw7N8HYZi9+LWYN+ioynpSU3/DKJ+hpjId9a1TTzWmwtsfI9eqRbSxiPgm2aCu3+siEy+4lXiaQ1oSKFVYnnTnY3UDpsWSebJb+sTz0KV4qCm0V2+M4YrXHWrYR9k2Wuw2s/7ouFs9S42cL07Mht3/8SFRK3MpKT0niYHlopyYvE4en+qI2MGTHfwl9vX6A8LABjW0jZYzkgv1InJKHMdMUzT1N+a1YaYoI01RegiWwD/4Xj/Gd4w==
+#!/usr/bin/env python3
+"""Run the locked controlled Prob4D-to-BayesianPhysTwin decision study."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+import shutil
+import sys
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+
+from bayesian_phystwin._prior_aware_gauge_math import PriorAwareGaugeConfigV1
+from bayesian_phystwin.prior_aware_gauge_belief import (
+    update_prior_aware_gauge_belief,
+)
+
+_SCIENCE_DIRECTORY = Path(__file__).resolve().parent
+if str(_SCIENCE_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(_SCIENCE_DIRECTORY))
+
+from prob4d_bpt_controlled_decisive_core_v1 import (  # noqa: E402
+    BASELINE_METHOD,
+    CHI_SQUARE_3_90,
+    FINITE_INFINITY,
+    MARGINAL_METHOD,
+    METHODS,
+    PRIMARY_METHOD,
+    REJECT_ALL_THRESHOLD,
+    REPORT_SCHEMA,
+    TRIAL_SCHEMA,
+    Candidate,
+    CandidateScore,
+    GroupData,
+    GuardCalibration,
+    StudyConfig,
+    TrialResult,
+    _batch_for_method,
+    _canonical_sha256,
+    _parse_args,
+    _query_covariance,
+    _require,
+    _risk_from_result,
+    _sha256,
+    _write_json,
+    generate_group,
+    load_protocol,
+)
+from prob4d_bpt_controlled_decisive_core_v1 import (  # noqa: E402
+    _condition_gauge_prior as _condition_gauge_prior,
+)
+
+
+def _candidate_bpt(
+    group: GroupData,
+    method_id: str,
+    config: StudyConfig,
+) -> Candidate:
+    batch = _batch_for_method(group, method_id, config)
+    result = update_prior_aware_gauge_belief(
+        batch,
+        config=PriorAwareGaugeConfigV1(
+            state_prior_std_m=config.state_prior_std,
+            shared_bias_prior_std_m=0.012,
+            view_bias_prior_std_m=0.010,
+            effective_samples_per_correlation_group=12.0,
+            degrees_of_freedom=5.0,
+            outlier_covariance_multiplier=36.0,
+            maximum_iterations=20,
+            maximum_condition_number=1e13,
+            minimum_conditional_information_fraction=1e-5,
+            minimum_identifiable_fraction=0.02,
+            minimum_query_sensitivity_fraction=1e-4,
+            maximum_state_update_m=0.065,
+            maximum_update_to_physical_response_ratio=4.0,
+        ),
+    )
+    if result.inference_admissible:
+        correction = np.einsum(
+            "ncs,s->nc",
+            group.query_state_jacobian,
+            result.state_coefficients,
+            optimize=True,
+        )
+    else:
+        correction = np.zeros_like(group.true_query_correction_m)
+    state_covariance = result.posterior_covariance[
+        : config.state_count, : config.state_count
+    ]
+    covariance = _query_covariance(
+        group.query_state_jacobian,
+        state_covariance,
+    )
+    risk, nominal, identifiable, sensitivity, converged = _risk_from_result(
+        group,
+        result,
+        covariance,
+    )
+    return Candidate(
+        method_id=method_id,
+        inference_admissible=bool(result.inference_admissible),
+        reason=str(result.reason),
+        correction_m=correction,
+        covariance_m2=covariance,
+        risk_score=risk,
+        nominal_probability=nominal,
+        identifiable_fraction=identifiable,
+        query_sensitivity_fraction=sensitivity,
+        fixed_point_converged=converged,
+    )
+
+
+def _candidate_last_frame(group: GroupData, config: StudyConfig) -> Candidate:
+    stack = group.stack
+    selected = stack.frame_indices == np.max(stack.frame_indices)
+    innovation = (stack.world_mean_m - group.physical_prediction_m)[selected]
+    design = group.state_jacobian[selected]
+    matrix = design.reshape(-1, config.state_count)
+    target = innovation.reshape(-1)
+    ridge = 1e-4
+    normal = matrix.T @ matrix + ridge * np.eye(config.state_count)
+    right = matrix.T @ target
+    condition_number = float(np.linalg.cond(normal))
+    try:
+        coefficients = np.linalg.solve(normal, right)
+    except np.linalg.LinAlgError:
+        coefficients = np.zeros(config.state_count)
+    residual = target - matrix @ coefficients
+    residual_variance = max(
+        float(np.mean(np.square(residual))),
+        config.conditional_noise_std_m**2,
+    )
+    state_covariance = residual_variance * np.linalg.inv(normal)
+    correction = np.einsum(
+        "ncs,s->nc",
+        group.query_state_jacobian,
+        coefficients,
+        optimize=True,
+    )
+    covariance = _query_covariance(
+        group.query_state_jacobian,
+        state_covariance,
+    )
+    width = float(np.sqrt(np.mean(np.trace(covariance, axis1=1, axis2=2))))
+    signal = float(np.sqrt(np.mean(np.square(target))))
+    residual_rms = float(np.sqrt(np.mean(np.square(residual))))
+    risk = (
+        residual_rms / max(signal, 1e-12)
+        + width / max(group.physical_response_scale_m, 1e-12)
+        + math.log10(max(condition_number, 1.0)) / 20.0
+    )
+    admissible = bool(
+        np.all(np.isfinite(coefficients))
+        and condition_number < 1e12
+        and np.max(np.linalg.norm(correction, axis=1)) <= 0.065
+    )
+    if not admissible:
+        correction = np.zeros_like(correction)
+    return Candidate(
+        method_id="B1_naive_last_frame_state",
+        inference_admissible=admissible,
+        reason="naive-last-frame-admissible" if admissible else "naive-fallback",
+        correction_m=correction,
+        covariance_m2=covariance,
+        risk_score=risk,
+        nominal_probability=1.0,
+        identifiable_fraction=1.0 if admissible else 0.0,
+        query_sensitivity_fraction=1.0 if admissible else 0.0,
+        fixed_point_converged=True,
+    )
+
+
+def make_candidate(
+    group: GroupData,
+    method_id: str,
+    config: StudyConfig,
+) -> Candidate:
+    if method_id == BASELINE_METHOD:
+        return Candidate(
+            method_id=method_id,
+            inference_admissible=False,
+            reason="physical-fallback-reference",
+            correction_m=np.zeros_like(group.true_query_correction_m),
+            covariance_m2=np.zeros(
+                (*group.true_query_correction_m.shape[:1], 3, 3),
+                dtype=np.float64,
+            ),
+            risk_score=FINITE_INFINITY,
+            nominal_probability=1.0,
+            identifiable_fraction=0.0,
+            query_sensitivity_fraction=0.0,
+            fixed_point_converged=True,
+        )
+    if method_id == "B1_naive_last_frame_state":
+        return _candidate_last_frame(group, config)
+    return _candidate_bpt(group, method_id, config)
+
+
+def _rmse(candidate: np.ndarray, truth: np.ndarray) -> float:
+    return float(np.sqrt(np.mean(np.square(candidate - truth))))
+
+
+def _coverage_and_width(
+    candidate: Candidate,
+    truth: np.ndarray,
+) -> tuple[float | None, float | None]:
+    if not candidate.inference_admissible:
+        return None, None
+    covered: list[bool] = []
+    widths: list[float] = []
+    for prediction, actual, covariance in zip(
+        candidate.correction_m,
+        truth,
+        candidate.covariance_m2,
+        strict=True,
+    ):
+        covariance = 0.5 * (covariance + covariance.T)
+        covariance = covariance + np.eye(3) * 1e-12
+        residual = actual - prediction
+        try:
+            nees = float(residual @ np.linalg.solve(covariance, residual))
+        except np.linalg.LinAlgError:
+            nees = float("inf")
+        covered.append(nees <= CHI_SQUARE_3_90)
+        widths.append(float(np.sqrt(np.trace(covariance))))
+    return float(np.mean(covered)), float(np.mean(widths))
+
+
+def score_candidate(
+    group: GroupData,
+    candidate: Candidate,
+    harmful_margin_m: float,
+) -> CandidateScore:
+    baseline = np.zeros_like(group.true_query_correction_m)
+    baseline_rmse = _rmse(baseline, group.true_query_correction_m)
+    raw_rmse = _rmse(candidate.correction_m, group.true_query_correction_m)
+    coverage, width = _coverage_and_width(
+        candidate,
+        group.true_query_correction_m,
+    )
+    return CandidateScore(
+        group_id=group.group_id,
+        scenario=group.scenario,
+        method_id=candidate.method_id,
+        candidate=candidate,
+        baseline_rmse_m=baseline_rmse,
+        raw_rmse_m=raw_rmse,
+        harmful_raw=raw_rmse > baseline_rmse + harmful_margin_m,
+        coverage_90=coverage,
+        predictive_width_rms_m=width,
+    )
+
+
+def calibrate_guard(
+    scores: Sequence[CandidateScore],
+    config: StudyConfig,
+) -> GuardCalibration:
+    method_id = scores[0].method_id
+    if method_id == BASELINE_METHOD:
+        baseline = float(np.mean([value.baseline_rmse_m for value in scores]))
+        return GuardCalibration(
+            method_id=method_id,
+            risk_threshold=REJECT_ALL_THRESHOLD,
+            accepted_group_count=0,
+            harmful_accepted_count=0,
+            harmful_accepted_rate=0.0,
+            deployed_mean_rmse_m=baseline,
+            baseline_mean_rmse_m=baseline,
+            calibration_group_count=len(scores),
+            fallback_only=True,
+        )
+    admissible_scores = sorted(
+        {
+            float(value.candidate.risk_score)
+            for value in scores
+            if value.candidate.inference_admissible
+            and np.isfinite(value.candidate.risk_score)
+        }
+    )
+    thresholds = [REJECT_ALL_THRESHOLD, *admissible_scores]
+    best: tuple[float, int, int, float, float] | None = None
+    baseline_mean = float(np.mean([value.baseline_rmse_m for value in scores]))
+    for threshold in thresholds:
+        accepted = [
+            value
+            for value in scores
+            if value.candidate.inference_admissible
+            and value.candidate.risk_score <= threshold
+        ]
+        accepted_count = len(accepted)
+        harmful_count = sum(value.harmful_raw for value in accepted)
+        harmful_rate = harmful_count / accepted_count if accepted_count else 0.0
+        if accepted_count and accepted_count < config.guard_minimum_accepted_groups:
+            continue
+        if harmful_rate > config.guard_harmful_rate_at_most:
+            continue
+        deployed = [
+            value.raw_rmse_m
+            if value.candidate.inference_admissible
+            and value.candidate.risk_score <= threshold
+            else value.baseline_rmse_m
+            for value in scores
+        ]
+        deployed_mean = float(np.mean(deployed))
+        candidate_key = (
+            deployed_mean,
+            -accepted_count,
+            harmful_count,
+            float(threshold),
+            harmful_rate,
+        )
+        if best is None or candidate_key < best:
+            best = candidate_key
+    if best is None:
+        best = (baseline_mean, 0, 0, REJECT_ALL_THRESHOLD, 0.0)
+    deployed_mean, negative_count, harmful_count, threshold, harmful_rate = best
+    accepted_count = -negative_count
+    return GuardCalibration(
+        method_id=method_id,
+        risk_threshold=threshold,
+        accepted_group_count=accepted_count,
+        harmful_accepted_count=harmful_count,
+        harmful_accepted_rate=harmful_rate,
+        deployed_mean_rmse_m=deployed_mean,
+        baseline_mean_rmse_m=baseline_mean,
+        calibration_group_count=len(scores),
+        fallback_only=accepted_count == 0,
+    )
+
+
+def apply_guard(
+    score: CandidateScore,
+    calibration: GuardCalibration,
+) -> TrialResult:
+    candidate = score.candidate
+    accepted = bool(
+        candidate.inference_admissible
+        and candidate.risk_score <= calibration.risk_threshold
+    )
+    baseline = np.zeros_like(candidate.correction_m)
+    deployed = candidate.correction_m if accepted else baseline
+    exact_fallback = bool(accepted or deployed.tobytes() == baseline.tobytes())
+    _require(exact_fallback, "guard failed to return exact physical fallback")
+    deployed_rmse = score.raw_rmse_m if accepted else score.baseline_rmse_m
+    baseline = score.baseline_rmse_m
+    raw_improvement = 1.0 - score.raw_rmse_m / baseline if baseline else 0.0
+    deployed_improvement = 1.0 - deployed_rmse / baseline if baseline else 0.0
+    return TrialResult(
+        schema=TRIAL_SCHEMA,
+        group_id=score.group_id,
+        scenario=score.scenario,
+        method_id=score.method_id,
+        solver_admissible=candidate.inference_admissible,
+        solver_reason=candidate.reason,
+        risk_score=float(candidate.risk_score),
+        guard_threshold=float(calibration.risk_threshold),
+        guard_accepted=accepted,
+        exact_fallback=exact_fallback,
+        baseline_rmse_m=score.baseline_rmse_m,
+        raw_rmse_m=score.raw_rmse_m,
+        deployed_rmse_m=deployed_rmse,
+        raw_harmful=score.harmful_raw,
+        harmful_accepted=bool(accepted and score.harmful_raw),
+        raw_improvement_fraction=raw_improvement,
+        deployed_improvement_fraction=deployed_improvement,
+        coverage_90=score.coverage_90,
+        predictive_width_rms_m=score.predictive_width_rms_m,
+        nominal_probability=candidate.nominal_probability,
+        identifiable_fraction=candidate.identifiable_fraction,
+        query_sensitivity_fraction=candidate.query_sensitivity_fraction,
+        fixed_point_converged=candidate.fixed_point_converged,
+    )
+
+
+def _paired_interval(
+    differences: np.ndarray,
+    *,
+    resamples: int,
+    seed: int,
+) -> tuple[float, float]:
+    rng = np.random.default_rng(seed)
+    indices = rng.integers(
+        0,
+        len(differences),
+        size=(resamples, len(differences)),
+    )
+    means = np.mean(differences[indices], axis=1)
+    return tuple(map(float, np.quantile(means, [0.025, 0.975])))
+
+
+def _risk_coverage(
+    rows: Sequence[TrialResult],
+) -> dict[str, float | None]:
+    candidates = [value for value in rows if value.solver_admissible]
+    candidates.sort(key=lambda value: value.risk_score)
+    result: dict[str, float | None] = {}
+    for fraction in (0.25, 0.50, 0.75, 1.0):
+        count = max(1, int(math.ceil(fraction * len(candidates))))
+        selected = candidates[:count]
+        result[f"lowest_risk_{int(100 * fraction)}_percent_rmse_m"] = (
+            float(np.mean([value.raw_rmse_m for value in selected]))
+            if selected
+            else None
+        )
+    return result
+
+
+def aggregate_results(
+    trials: Sequence[TrialResult],
+    config: StudyConfig,
+) -> dict[str, Any]:
+    aggregate: dict[str, Any] = {}
+    for method_index, method_id in enumerate(METHODS):
+        rows = [value for value in trials if value.method_id == method_id]
+        deployed = np.asarray([value.deployed_rmse_m for value in rows])
+        baseline = np.asarray([value.baseline_rmse_m for value in rows])
+        differences = deployed - baseline
+        interval = _paired_interval(
+            differences,
+            resamples=config.bootstrap_resamples,
+            seed=config.bootstrap_seed + method_index,
+        )
+        accepted = [value for value in rows if value.guard_accepted]
+        coverage = [
+            value.coverage_90 for value in accepted if value.coverage_90 is not None
+        ]
+        width = [
+            value.predictive_width_rms_m
+            for value in accepted
+            if value.predictive_width_rms_m is not None
+        ]
+        by_scenario: dict[str, Any] = {}
+        for scenario in config.scenarios:
+            selected = [value for value in rows if value.scenario == scenario]
+            scenario_deployed = float(
+                np.mean([value.deployed_rmse_m for value in selected])
+            )
+            scenario_baseline = float(
+                np.mean([value.baseline_rmse_m for value in selected])
+            )
+            by_scenario[scenario] = {
+                "group_count": len(selected),
+                "deployed_mean_rmse_m": scenario_deployed,
+                "baseline_mean_rmse_m": scenario_baseline,
+                "deployed_improvement_fraction": (
+                    1.0 - scenario_deployed / scenario_baseline
+                ),
+                "acceptance_fraction": float(
+                    np.mean([value.guard_accepted for value in selected])
+                ),
+                "harmful_accepted_count": sum(
+                    value.harmful_accepted for value in selected
+                ),
+            }
+        aggregate[method_id] = {
+            "group_count": len(rows),
+            "raw_mean_rmse_m": float(np.mean([value.raw_rmse_m for value in rows])),
+            "deployed_mean_rmse_m": float(np.mean(deployed)),
+            "baseline_mean_rmse_m": float(np.mean(baseline)),
+            "deployed_improvement_fraction": float(
+                1.0 - np.mean(deployed) / np.mean(baseline)
+            ),
+            "paired_deployed_minus_baseline_95_m": list(interval),
+            "solver_admissible_fraction": float(
+                np.mean([value.solver_admissible for value in rows])
+            ),
+            "acceptance_fraction": float(
+                np.mean([value.guard_accepted for value in rows])
+            ),
+            "accepted_group_count": len(accepted),
+            "harmful_accepted_count": sum(value.harmful_accepted for value in rows),
+            "harmful_accepted_rate": (
+                sum(value.harmful_accepted for value in rows) / len(accepted)
+                if accepted
+                else 0.0
+            ),
+            "all_rejections_exact_fallback": all(
+                value.exact_fallback for value in rows
+            ),
+            "accepted_coverage_90_mean": (
+                float(np.mean(coverage)) if coverage else None
+            ),
+            "accepted_predictive_width_rms_m": (
+                float(np.mean(width)) if width else None
+            ),
+            "risk_coverage": _risk_coverage(rows),
+            "by_scenario": by_scenario,
+        }
+    return aggregate
+
+
+def _decision(
+    aggregate: Mapping[str, Any],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    primary = aggregate[PRIMARY_METHOD]
+    marginal = aggregate[MARGINAL_METHOD]
+    criteria_config = protocol["acceptance_criteria"]
+    worst_scenario_regression = max(
+        0.0,
+        max(
+            -float(value["deployed_improvement_fraction"])
+            for value in primary["by_scenario"].values()
+        ),
+    )
+    criteria = {
+        "mean_improvement_at_least_registered": (
+            primary["deployed_improvement_fraction"]
+            >= criteria_config["mean_improvement_fraction_at_least"]
+        ),
+        "paired_upper_bound_below_zero": (
+            primary["paired_deployed_minus_baseline_95_m"][1] < 0.0
+        ),
+        "harmful_accepted_rate_at_most_registered": (
+            primary["harmful_accepted_rate"]
+            <= criteria_config["harmful_accepted_rate_at_most"]
+        ),
+        "worst_scenario_regression_at_most_registered": (
+            worst_scenario_regression
+            <= criteria_config["worst_scenario_regression_fraction_at_most"]
+        ),
+        "all_rejections_exact_fallback": primary["all_rejections_exact_fallback"],
+        "explicit_persistent_noninferior_to_marginal": (
+            primary["deployed_mean_rmse_m"]
+            <= (1.0 + criteria_config["explicit_vs_marginal_noninferiority_fraction"])
+            * marginal["deployed_mean_rmse_m"]
+        ),
+    }
+    return {
+        "primary_method": PRIMARY_METHOD,
+        "reference_method": BASELINE_METHOD,
+        "criteria": criteria,
+        "overall_passed": all(criteria.values()),
+        "worst_scenario_regression_fraction": worst_scenario_regression,
+        "method_decision": (
+            "advance-to-fresh-physical-object/session-gate"
+            if all(criteria.values())
+            else "retain-as-controlled-negative-or-partial-result"
+        ),
+    }
+
+
+def _generate_groups(
+    config: StudyConfig,
+    *,
+    calibration: bool,
+) -> list[GroupData]:
+    groups_per_scenario = (
+        config.calibration_groups_per_scenario
+        if calibration
+        else config.target_groups_per_scenario
+    )
+    seed_start = config.calibration_seed if calibration else config.target_seed
+    prefix = "calibration" if calibration else "target"
+    groups: list[GroupData] = []
+    for scenario_index, scenario in enumerate(config.scenarios):
+        for offset in range(groups_per_scenario):
+            seed = seed_start + 100000 * scenario_index + offset
+            groups.append(
+                generate_group(
+                    seed,
+                    scenario,
+                    config,
+                    group_prefix=prefix,
+                )
+            )
+    return groups
+
+
+def _score_groups(
+    groups: Sequence[GroupData],
+    config: StudyConfig,
+) -> dict[str, list[CandidateScore]]:
+    output = {method_id: [] for method_id in METHODS}
+    for group in groups:
+        for method_id in METHODS:
+            candidate = make_candidate(group, method_id, config)
+            output[method_id].append(
+                score_candidate(
+                    group,
+                    candidate,
+                    config.harmful_margin_m,
+                )
+            )
+    return output
+
+
+def run_study(
+    protocol: Mapping[str, Any],
+    config: StudyConfig,
+    *,
+    repository_revision: str,
+    prob4d_revision: str,
+) -> tuple[dict[str, Any], list[TrialResult]]:
+    _require(
+        prob4d_revision == config.source_revision,
+        "executing Prob4D revision differs from frozen protocol",
+    )
+    calibration_groups = _generate_groups(config, calibration=True)
+    calibration_scores = _score_groups(calibration_groups, config)
+    calibrations = {
+        method_id: calibrate_guard(calibration_scores[method_id], config)
+        for method_id in METHODS
+    }
+
+    target_groups = _generate_groups(config, calibration=False)
+    target_scores = _score_groups(target_groups, config)
+    trials = [
+        apply_guard(score, calibrations[method_id])
+        for method_id in METHODS
+        for score in target_scores[method_id]
+    ]
+    aggregate = aggregate_results(trials, config)
+    decision = _decision(aggregate, protocol)
+    report: dict[str, Any] = {
+        "schema": REPORT_SCHEMA,
+        "schema_version": 1,
+        "protocol_id": protocol["protocol_id"],
+        "protocol_sha256": _canonical_sha256(protocol),
+        "repository_revision": repository_revision,
+        "prob4d_revision": prob4d_revision,
+        "configuration": asdict(config),
+        "calibration": {
+            method_id: asdict(calibration)
+            for method_id, calibration in calibrations.items()
+        },
+        "aggregate": aggregate,
+        "decision": decision,
+        "claim_boundary": protocol["claim_boundary"],
+    }
+    report["report_id"] = _canonical_sha256(report)
+    return report, trials
+
+
+def _write_trials(path: Path, trials: Sequence[TrialResult]) -> None:
+    fieldnames = list(asdict(trials[0]))
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for trial in trials:
+            row = asdict(trial)
+            writer.writerow(row)
+
+
+def _write_markdown(path: Path, report: Mapping[str, Any]) -> None:
+    aggregate = report["aggregate"]
+    lines = [
+        "# Controlled Prob4D-to-BayesianPhysTwin decision study",
+        "",
+        f"Decision: **{'PASS' if report['decision']['overall_passed'] else 'FAIL'}**",
+        "",
+        "| Method | Deployed RMSE | Improvement | Accept | Harmful accepted |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for method_id in METHODS:
+        row = aggregate[method_id]
+        lines.append(
+            "| "
+            + method_id
+            + f" | {1000 * row['deployed_mean_rmse_m']:.3f} mm"
+            + f" | {100 * row['deployed_improvement_fraction']:+.2f}%"
+            + f" | {100 * row['acceptance_fraction']:.1f}%"
+            + f" | {row['harmful_accepted_count']} |"
+        )
+    lines.extend(["", "## Registered criteria", ""])
+    for name, passed in report["decision"]["criteria"].items():
+        lines.append(f"- {'PASS' if passed else 'FAIL'}: `{name}`")
+    lines.extend(["", "## Claim boundary", "", report["claim_boundary"], ""])
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_checksums(output_dir: Path) -> None:
+    checksum_path = output_dir / "SHA256SUMS"
+    files = [
+        path
+        for path in sorted(output_dir.iterdir())
+        if path.is_file() and path.name != checksum_path.name
+    ]
+    checksum_path.write_text(
+        "".join(f"{_sha256(path)}  {path.name}\n" for path in files),
+        encoding="utf-8",
+    )
+
+
+def execute(args: argparse.Namespace) -> int:
+    protocol, config = load_protocol(args.protocol)
+    output_dir = args.output_dir.resolve()
+    if output_dir.exists():
+        if not args.force:
+            raise FileExistsError(output_dir)
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True)
+    report, trials = run_study(
+        protocol,
+        config,
+        repository_revision=str(args.repository_revision),
+        prob4d_revision=str(args.prob4d_revision),
+    )
+    _write_json(output_dir / "report.json", report)
+    _write_trials(output_dir / "trials.csv", trials)
+    _write_markdown(output_dir / "summary.md", report)
+    _write_json(output_dir / "protocol.json", protocol)
+    _write_checksums(output_dir)
+    print(json.dumps(report["decision"], indent=2, sort_keys=True))
+    return 0 if report["decision"]["overall_passed"] else 3
+
+
+def main() -> None:
+    raise SystemExit(execute(_parse_args()))
+
+
+if __name__ == "__main__":
+    main()

@@ -4,25 +4,14 @@
 from __future__ import annotations
 
 import argparse
-import csv
-from dataclasses import asdict, dataclass
 import hashlib
 import json
-import math
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
-import shutil
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 import numpy as np
-
-from bayesian_phystwin._gauge_aware_contracts import (
-    COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
-    GaugeAwareObservationBatch,
-)
-from bayesian_phystwin._prior_aware_gauge_math import PriorAwareGaugeConfigV1
-from bayesian_phystwin.prior_aware_gauge_belief import (
-    update_prior_aware_gauge_belief,
-)
 from prob4d.gauge import GaugeEstimate
 from prob4d.observation_factors import ObservationFactor, ObservationFactorBundle
 from prob4d.sim3 import Sim3
@@ -31,6 +20,10 @@ from prob4d.sparse_observation_factors import (
     stack_sparse_observation_factors,
 )
 
+from bayesian_phystwin._gauge_aware_contracts import (
+    COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
+    GaugeAwareObservationBatch,
+)
 
 PROTOCOL_SCHEMA = "bayesian-phystwin-prob4d-controlled-decisive-study"
 REPORT_SCHEMA = "bayesian-phystwin-prob4d-controlled-decisive-report"
@@ -217,18 +210,14 @@ def load_protocol(path: Path) -> tuple[dict[str, Any], StudyConfig]:
         state_count=int(geometry["state_count"]),
         bias_mode_count=int(geometry["bias_mode_count"]),
         window_count=int(geometry["window_count"]),
-        calibration_groups_per_scenario=int(
-            calibration["groups_per_scenario"]
-        ),
+        calibration_groups_per_scenario=int(calibration["groups_per_scenario"]),
         target_groups_per_scenario=int(target["groups_per_scenario"]),
         calibration_seed=int(calibration["seed_start"]),
         target_seed=int(target["seed_start"]),
         bootstrap_resamples=int(protocol["bootstrap"]["resamples"]),
         bootstrap_seed=int(protocol["bootstrap"]["seed"]),
         harmful_margin_m=float(protocol["endpoints"]["harmful_margin_m"]),
-        guard_harmful_rate_at_most=float(
-            guard["harmful_accepted_rate_at_most"]
-        ),
+        guard_harmful_rate_at_most=float(guard["harmful_accepted_rate_at_most"]),
         guard_minimum_accepted_groups=int(guard["minimum_accepted_groups"]),
         conditional_noise_std_m=float(generator["conditional_noise_std_m"]),
         state_mode_maximum_m=float(generator["state_mode_maximum_m"]),
@@ -276,7 +265,7 @@ def _orthogonal_state_modes(
     modes = modes.reshape(point_count, 3, state_count)
     for state in range(state_count):
         maximum = float(np.max(np.linalg.norm(modes[:, :, state], axis=1)))
-        modes {, :, state] *= maximum_m / maximum
+        modes[:, :, state] *= maximum_m / maximum
     return modes
 
 
@@ -346,10 +335,13 @@ def _joint_gauge_covariance(
     correlation: float,
     scale: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    standard_deviation = np.asarray(
-        [0.004, 0.007, 0.007, 0.007, 0.0035, 0.0035, 0.0035],
-        dtype=np.float64,
-    ) * scale
+    standard_deviation = (
+        np.asarray(
+            [0.004, 0.007, 0.007, 0.007, 0.0035, 0.0035, 0.0035],
+            dtype=np.float64,
+        )
+        * scale
+    )
     block = np.diag(np.square(standard_deviation))
     cross = correlation * block
     joint = np.block([[block, cross], [cross, block]])
@@ -462,12 +454,8 @@ def generate_group(
         scale=parameters["bias_scale_m"],
         size=3 * config.bias_mode_count,
     )
-    shared_bias = np.einsum(
-        "nck,k->nc", bias_design, bias_coefficients, optimize=True
-    )
-    state_signal = np.einsum(
-        "tncs,s->tnc", state_jacobian, true_state, optimize=True
-    )
+    shared_bias = np.einsum("nck,k->nc", bias_design, bias_coefficients, optimize=True)
+    state_signal = np.einsum("tncs,s->tnc", state_jacobian, true_state, optimize=True)
 
     conditional_variance = config.conditional_noise_std_m**2
     local_covariance = np.repeat(
@@ -551,13 +539,10 @@ def generate_group(
         dtype=np.float64,
     )
     anchor_covariance = np.diag(np.square(anchor_std))
-    anchor_observation = (
-        true_gauge_delta[:7]
-        + rng.multivariate_normal(np.zeros(7), anchor_covariance)
+    anchor_observation = true_gauge_delta[:7] + rng.multivariate_normal(
+        np.zeros(7), anchor_covariance
     )
-    true_query = np.einsum(
-        "ncs,s->nc", query_state_jacobian, true_state, optimize=True
-    )
+    true_query = np.einsum("ncs,s->nc", query_state_jacobian, true_state, optimize=True)
     response_scale = float(
         np.max(
             np.linalg.norm(
@@ -572,9 +557,9 @@ def generate_group(
         stack=stack,
         physical_prediction_m=physical_prediction.reshape(-1, 3),
         state_jacobian=state_jacobian.reshape(-1, 3, config.state_count),
-        shared_bias_jacobian=np.repeat(
-            bias_design[None], frame_count, axis=0
-        ).reshape(-1, 3, 3 * config.bias_mode_count),
+        shared_bias_jacobian=np.repeat(bias_design[None], frame_count, axis=0).reshape(
+            -1, 3, 3 * config.bias_mode_count
+        ),
         query_state_jacobian=query_state_jacobian,
         true_state=true_state,
         true_query_correction_m=true_query,
@@ -601,12 +586,8 @@ def _condition_gauge_prior(
         observation @ prior_covariance,
     ).T
     posterior_mean = gain @ anchor_observation
-    posterior_covariance = (
-        prior_covariance - gain @ observation @ prior_covariance
-    )
-    posterior_covariance = 0.5 * (
-        posterior_covariance + posterior_covariance.T
-    )
+    posterior_covariance = prior_covariance - gain @ observation @ prior_covariance
+    posterior_covariance = 0.5 * (posterior_covariance + posterior_covariance.T)
     eigenvalues = np.linalg.eigvalsh(posterior_covariance)
     _require(np.min(eigenvalues) >= -1e-12, "conditioned gauge prior is not PSD")
     return posterior_mean, posterior_covariance
@@ -624,9 +605,7 @@ def _batch_for_method(
         if framewise
         else np.ones(stack.observation_count, dtype=bool)
     )
-    innovation = (
-        stack.world_mean_m - group.physical_prediction_m
-    )[selected]
+    innovation = (stack.world_mean_m - group.physical_prediction_m)[selected]
     state = group.state_jacobian[selected]
     shared = group.shared_bias_jacobian[selected]
     query = group.query_state_jacobian
@@ -671,8 +650,7 @@ def _batch_for_method(
         prior_nominal_probability=nominal,
         composite_weight=composite,
         state_prior_covariance_m2=(
-            np.eye(config.state_count, dtype=np.float64)
-            * config.state_prior_std**2
+            np.eye(config.state_count, dtype=np.float64) * config.state_prior_std**2
         ),
         physical_response_scale_m=group.physical_response_scale_m,
         composite_weight_mode=COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
@@ -734,5 +712,3 @@ def _risk_from_result(
         + (0.0 if converged else 0.35)
     )
     return risk, nominal, identifiable, sensitivity, converged
-
-

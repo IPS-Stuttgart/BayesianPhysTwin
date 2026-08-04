@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import importlib.util
 import json
-from pathlib import Path
 import sys
+from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "science" / "run_prob4d_bpt_controlled_decisive_v1.py"
@@ -20,9 +19,9 @@ SPEC.loader.exec_module(MODULE)
 
 def _protocol() -> dict:
     return json.loads(
-        (
-            ROOT / "protocols" / "prob4d_bpt_controlled_decisive_v1.json"
-        ).read_text(encoding="utf-8")
+        (ROOT / "protocols" / "prob4d_bpt_controlled_decisive_v1.json").read_text(
+            encoding="utf-8"
+        )
     )
 
 
