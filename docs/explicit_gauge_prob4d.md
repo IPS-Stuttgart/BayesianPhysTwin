@@ -105,7 +105,9 @@ identity behavior as the observation-belief path.
 Prob4D's sparse stack stores `M x 3 x 7` local Jacobians and `M` gauge indices.
 The current BayesianPhysTwin solver still accepts a dense `M x 3 x 7K` nuisance
 design. The adapter computes the required byte count and raises `MemoryError`
-before allocation when it exceeds `maximum_dense_gauge_design_bytes`.
+before allocation when it exceeds `maximum_dense_gauge_design_bytes`. The
+default limit is exactly 268,435,456 bytes (256 MiB), and every result records
+both the required allocation and the enforced limit.
 
 This closes the strict installed-wheel interoperability path while keeping the
 remaining limitation visible. A future native sparse solver should accumulate
