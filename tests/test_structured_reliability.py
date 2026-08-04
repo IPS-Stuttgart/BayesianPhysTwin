@@ -6,6 +6,7 @@ from bayesian_phystwin import (
     markov_log_evidence_batch,
     smooth_markov_reliability,
 )
+from bayesian_phystwin.structured_reliability import MarkovReliabilityResult
 
 
 def test_markov_smoothing_uses_future_evidence_for_persistent_corruption() -> None:
@@ -326,4 +327,147 @@ def test_batched_markov_input_validation(
             log_outlier,
             ids,
             times,
+        )
+
+
+def test_mixed_type_sequence_ids_fail_instead_of_merging_tracks() -> None:
+    with pytest.raises(ValueError, match="distinct typed identities"):
+        smooth_markov_reliability(
+            np.full(2, 0.5),
+            np.zeros(2),
+            np.zeros(2),
+            [1, "1"],
+            [0, 1],
+        )
+    with pytest.raises(ValueError, match="distinct typed identities"):
+        markov_log_evidence_batch(
+            np.full(2, 0.5),
+            np.zeros((1, 2)),
+            np.zeros((1, 2)),
+            ["1", 1],
+            [0, 1],
+        )
+
+
+def test_integer_sequence_ids_retain_the_historical_string_output_key() -> None:
+    result = smooth_markov_reliability(
+        np.array([0.5]),
+        np.array([0.0]),
+        np.array([0.0]),
+        [np.int64(7)],
+        [0],
+    )
+
+    assert set(result.sequence_log_evidence) == {"7"}
+
+
+@pytest.mark.parametrize("sequence_id", [True, np.bool_(False), 1.5, object(), ""])
+def test_sequence_ids_fail_closed_on_unsupported_values(sequence_id: object) -> None:
+    with pytest.raises((TypeError, ValueError), match="sequence_ids"):
+        smooth_markov_reliability(
+            np.array([0.5]),
+            np.array([0.0]),
+            np.array([0.0]),
+            [sequence_id],  # type: ignore[list-item]
+            [0],
+        )
+
+
+@pytest.mark.parametrize("prior", [-0.1, 1.1])
+def test_prior_reliability_outside_probability_range_is_rejected(
+    prior: float,
+) -> None:
+    with pytest.raises(ValueError, match=r"\[0, 1\]"):
+        smooth_markov_reliability(
+            np.array([prior]),
+            np.zeros(1),
+            np.zeros(1),
+            ["track"],
+            [0],
+        )
+    with pytest.raises(ValueError, match=r"\[0, 1\]"):
+        markov_log_evidence_batch(
+            np.array([prior]),
+            np.zeros((1, 1)),
+            np.zeros((1, 1)),
+            ["track"],
+            [0],
+        )
+
+
+def test_falsey_invalid_config_is_not_replaced_by_the_default() -> None:
+    with pytest.raises(TypeError, match="MarkovReliabilityConfig"):
+        smooth_markov_reliability(
+            np.array([0.5]),
+            np.zeros(1),
+            np.zeros(1),
+            ["track"],
+            [0],
+            config=0,  # type: ignore[arg-type]
+        )
+    with pytest.raises(TypeError, match="MarkovReliabilityConfig"):
+        markov_log_evidence_batch(
+            np.array([0.5]),
+            np.zeros((1, 1)),
+            np.zeros((1, 1)),
+            ["track"],
+            [0],
+            config=False,  # type: ignore[arg-type]
+        )
+
+
+def test_markov_result_defensively_owns_and_freezes_outputs() -> None:
+    posterior = np.array([0.25, 0.75])
+    evidence = {"track": -1.5}
+    result = MarkovReliabilityResult(posterior, evidence)
+
+    posterior[:] = 0.5
+    evidence["track"] = 0.0
+
+    np.testing.assert_array_equal(
+        result.posterior_inlier_probability,
+        [0.25, 0.75],
+    )
+    assert result.sequence_log_evidence == {"track": -1.5}
+    with pytest.raises(ValueError):
+        result.posterior_inlier_probability[0] = 0.0
+    with pytest.raises(TypeError):
+        result.sequence_log_evidence["track"] = 0.0  # type: ignore[index]
+
+
+@pytest.mark.parametrize(
+    ("posterior", "evidence", "error", "message"),
+    [
+        (np.zeros((1, 1)), {"track": 0.0}, ValueError, "nonempty vector"),
+        (np.array([np.nan]), {"track": 0.0}, ValueError, "finite values"),
+        (np.array([1.1]), {"track": 0.0}, ValueError, r"\[0, 1\]"),
+        (np.array([0.5]), [], TypeError, "mapping"),
+        (np.array([0.5]), {"": 0.0}, ValueError, "nonempty strings"),
+        (np.array([0.5]), {"track": np.inf}, ValueError, "finite numbers"),
+        (np.array([0.5]), {"track": True}, ValueError, "finite numbers"),
+        (np.array([0.5]), {"track": object()}, ValueError, "finite numbers"),
+    ],
+)
+def test_markov_result_rejects_invalid_manual_construction(
+    posterior: np.ndarray,
+    evidence: object,
+    error: type[Exception],
+    message: str,
+) -> None:
+    with pytest.raises(error, match=message):
+        MarkovReliabilityResult(
+            posterior,
+            evidence,  # type: ignore[arg-type]
+        )
+
+
+def test_integer_step_mode_rejects_unrepresentable_scaled_gap() -> None:
+    with pytest.raises(ValueError, match="supported integer-step range"):
+        smooth_markov_reliability(
+            np.array([0.5, 0.5]),
+            np.zeros(2),
+            np.zeros(2),
+            ["track", "track"],
+            [0.0, 1e20],
+            config=MarkovReliabilityConfig(time_delta_mode="integer-steps"),
         )
