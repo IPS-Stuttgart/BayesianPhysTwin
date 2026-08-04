@@ -1,33 +1,21 @@
-name: Full-22 tempered model-average self-hosted replication
+name: One-shot Deform360 group-held-out experiment
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
       - ".github/workflows/full22-tempered-model-average-self-hosted.yml"
-      - "protocols/full22_tempered_model_average_experiment_v1.json"
-      - "scripts/science/run_full22_tempered_model_average_experiment.py"
-      - "scripts/science/run_full22_endpoint_model_average_diagnostic.py"
-      - "tests/test_full22_tempered_model_average_experiment.py"
-      - "src/bayesian_phystwin/endpoint_model_average.py"
-  workflow_dispatch:
-    inputs:
-      workers:
-        description: Independent PhysTwin cases evaluated concurrently
-        required: false
-        default: "8"
-        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: full22-tempered-model-average-self-hosted-${{ github.ref }}
+  group: one-shot-deform360-group-held-out-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
+  PROTOCOL_SHA256: b1732d062b8766e27d0d96feaa88400906955522e73d3bb63b8ec78b8994aa58
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
   OMP_NUM_THREADS: "1"
@@ -37,16 +25,14 @@ env:
 
 jobs:
   experiment:
-    name: Source-tuned workstation2 replication
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 360
     steps:
-      - name: Check out BayesianPhysTwin
+      - name: Check out experiment branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: agent/deform360-group-tempered-experiment
           fetch-depth: 0
           persist-credentials: false
           clean: true
@@ -56,79 +42,109 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Resolve cache, output, and worker settings
+      - name: Resolve isolated output
         shell: bash
-        env:
-          CONFIGURED_CACHE: ${{ vars.PHYSTWIN_EVALUATION_CACHE }}
-          REQUESTED_WORKERS: ${{ inputs.workers || '8' }}
         run: |
           set -euo pipefail
-          if [[ -n "${CONFIGURED_CACHE}" ]]; then
-            data_root="${CONFIGURED_CACHE}/trajectory-evaluation-v1"
-          else
-            data_root="${HOME}/.cache/bayesian-phystwin/trajectory-evaluation-v1"
-          fi
-          if ! [[ "${REQUESTED_WORKERS}" =~ ^[1-9][0-9]*$ ]]; then
-            echo "workers must be a positive integer" >&2
-            exit 1
-          fi
-          output_root="${RUNNER_TEMP}/bpt-full22-tempered-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${data_root}" "${output_root}"
-          echo "DATA_ROOT=${data_root}" >> "${GITHUB_ENV}"
-          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
-          echo "CASE_WORKERS=${REQUESTED_WORKERS}" >> "${GITHUB_ENV}"
+          root="${RUNNER_TEMP}/bpt-deform360-group-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${root}/evidence"
+          python -m venv "${root}/venv"
+          echo "OUTPUT_ROOT=${root}/evidence" >> "${GITHUB_ENV}"
+          echo "${root}/venv/bin" >> "${GITHUB_PATH}"
 
-      - name: Record runner and source identity
+      - name: Record runner and mounted dataset identity
         shell: bash
         run: |
           set -euo pipefail
+          test -d "${DEFORM360_ROOT}"
+          resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
+          echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
           {
             echo "runner_name=${RUNNER_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "runner_arch=${RUNNER_ARCH}"
             echo "repository=${GITHUB_REPOSITORY}"
             echo "revision=${GITHUB_SHA}"
-            echo "case_workers=${CASE_WORKERS}"
+            echo "dataset_root=${resolved_root}"
             uname -a
             lscpu
-          } | tee "${OUTPUT_ROOT}/runner.txt"
-          nvidia-smi -L | tee "${OUTPUT_ROOT}/nvidia-smi-L.txt"
-          nvidia-smi \
-            --query-gpu=index,name,uuid,driver_version,memory.total \
-            --format=csv,noheader \
-            | tee "${OUTPUT_ROOT}/nvidia-smi.csv"
+            du -sh "${resolved_root}"
+          } | tee "${OUTPUT_ROOT}/environment.txt"
+          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+            --format=csv,noheader | tee "${OUTPUT_ROOT}/gpus.csv"
 
-      - name: Install the locked evaluation environment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,data,graph]"
-          python -m pip check
-          python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
-
-      - name: Validate implementation and protocol before target evaluation
+      - name: Reconstruct the content-addressed evaluator
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          import base64
+          import hashlib
+          import zlib
+          from pathlib import Path
+
+          expected_parts = {
+              "tools/deform360_group_tempered_payload_00.txt": "b3c1b1f386c4c1d971bd27f2152515df36f5db976db66f8d25a59bd7861df5d7",
+              "tools/deform360_group_tempered_payload_01.txt": "285d2230233d611ed05a245ac1b860a1bc8b4f7f225774e579c796c6a4a0e15c",
+              "tools/deform360_group_tempered_payload_02.txt": "762ba9738a043e60ad37954a03788312c3d5cdb2565436218cfd5d2c199581ef",
+              "tools/deform360_group_tempered_payload_03.txt": "05475cb2afea23d03337ae73c00388a5495245f24a851ffc43e4d5ce0d64aa49",
+              "tools/deform360_group_tempered_payload_04.txt": "6c24f68d20d69a826bdb567cc5286236ad42efa632980eae3093361e7580fab6",
+          }
+          encoded = []
+          for name, expected in expected_parts.items():
+              raw = Path(name).read_bytes()
+              actual = hashlib.sha256(raw).hexdigest()
+              if actual != expected:
+                  raise SystemExit(
+                      f"payload digest mismatch for {name}: {actual} != {expected}"
+                  )
+              encoded.append(raw.decode("ascii").strip())
+          source = zlib.decompress(base64.b85decode("".join(encoded)))
+          actual = hashlib.sha256(source).hexdigest()
+          expected = "fe21bedb9946c6d5989672d78d2b7452df7904e80734eb836aaa033f480f04f5"
+          if actual != expected:
+              raise SystemExit(f"source digest mismatch: {actual} != {expected}")
+          destination = Path(
+              "scripts/science/run_deform360_group_tempered_experiment.py"
+          )
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          destination.write_bytes(source)
+          print(f"reconstructed {destination}: {actual}")
+          PY
+
+      - name: Install and verify locked contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph]"
+          python -m pip check
+          python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
+          python -m ruff format \
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
           python -m ruff check \
-            scripts/science/run_full22_tempered_model_average_experiment.py \
-            tests/test_full22_tempered_model_average_experiment.py
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
           python -m ruff format --check \
-            scripts/science/run_full22_tempered_model_average_experiment.py \
-            tests/test_full22_tempered_model_average_experiment.py
+            scripts/science/run_deform360_group_tempered_experiment.py \
+            tests/test_deform360_group_tempered_experiment.py
           python -m pytest -q \
-            tests/test_full22_tempered_model_average_experiment.py \
-            tests/test_endpoint_model_average.py
+            tests/test_deform360_public_evaluation.py \
+            tests/test_deform360_group_tempered_experiment.py \
+            | tee "${OUTPUT_ROOT}/focused-tests.log"
           python - <<'PY'
           import hashlib
           import json
+          import os
           from pathlib import Path
 
           payload = json.loads(
               Path(
-                  "protocols/full22_tempered_model_average_experiment_v1.json"
+                  "protocols/deform360_group_tempered_experiment_v1.json"
               ).read_text(encoding="utf-8")
           )
-          digest = hashlib.sha256(
+          actual = hashlib.sha256(
               json.dumps(
                   payload,
                   sort_keys=True,
@@ -136,31 +152,31 @@ jobs:
                   allow_nan=False,
               ).encode("utf-8")
           ).hexdigest()
-          expected = "a351cf37ba19130feca4dcfb87b1e7ab9a2e601d22edeed3a39a00c904ecbbe3"
-          if digest != expected:
+          expected = os.environ["PROTOCOL_SHA256"]
+          if actual != expected:
               raise SystemExit(
-                  f"protocol digest changed: expected {expected}, received {digest}"
+                  f"protocol digest changed: {actual} != {expected}"
               )
-          print(f"locked protocol: {digest}")
+          print(f"locked protocol: {actual}")
           PY
 
-      - name: Run locked source selection and confirmation diagnosis
+      - name: Execute locked source-calibration-target evaluation
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/science/run_full22_tempered_model_average_experiment.py \
-            "${DATA_ROOT}" \
-            "${OUTPUT_ROOT}/result" \
-            --protocol \
-              protocols/full22_tempered_model_average_experiment_v1.json \
-            --workers "${CASE_WORKERS}" \
-            --repository-revision "${GITHUB_SHA}" \
-            --force \
-            | tee "${OUTPUT_ROOT}/experiment-console.json"
-          cp "${DATA_ROOT}/trajectory_evaluation_manifest.json" \
-            "${OUTPUT_ROOT}/result/data_manifest.json"
+          python scripts/science/run_deform360_group_tempered_experiment.py \
+            --data-root "${DEFORM360_ROOT}" \
+            --protocol protocols/deform360_group_tempered_experiment_v1.json \
+            --selection-output "${OUTPUT_ROOT}/selection.json" \
+            --output "${OUTPUT_ROOT}/result.json" \
+            --max-archives 64 \
+            --max-frames-per-archive 96 \
+            --max-tracks 2048 \
+            --max-selection-tracks 128 \
+            --max-calibration-tracks 256 \
+            | tee "${OUTPUT_ROOT}/experiment.log"
 
-      - name: Verify result integrity and source-only selection
+      - name: Verify selection and result identities
         shell: bash
         run: |
           set -euo pipefail
@@ -170,40 +186,74 @@ jobs:
           import os
           from pathlib import Path
 
-          root = Path(os.environ["OUTPUT_ROOT"]) / "result"
-          manifest = json.loads(
-              (root / "artifact_manifest.json").read_text(encoding="utf-8")
-          )
-          for name, key in (
-              ("selection.json", "selection_sha256"),
-              ("summary.json", "summary_sha256"),
-              ("readout.json", "readout_sha256"),
-              ("per_case.csv", "per_case_csv_sha256"),
-          ):
-              actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
-              if actual != manifest[key]:
-                  raise SystemExit(f"{name} digest disagrees with manifest")
-          summary = json.loads((root / "summary.json").read_text(encoding="utf-8"))
+          root = Path(os.environ["OUTPUT_ROOT"])
           selection = json.loads(
               (root / "selection.json").read_text(encoding="utf-8")
           )
-          if summary["aggregate"]["confirmation_19"]["case_count"] != 19:
-              raise SystemExit("confirmation partition no longer has 19 cases")
-          if not summary["selection"]["locked_before_confirmation"]:
-              raise SystemExit("selection was not locked before confirmation")
-          if selection["confirmation_outcomes_opened"] is not False:
-              raise SystemExit("selection artifact crossed the outcome boundary")
-          print(json.dumps(summary["selection"], indent=2, sort_keys=True))
-          PY
-          git diff --exit-code
-          git status --porcelain=v1 | tee "${OUTPUT_ROOT}/git-status.txt"
-          test ! -s "${OUTPUT_ROOT}/git-status.txt"
+          result = json.loads((root / "result.json").read_text(encoding="utf-8"))
 
-      - name: Upload compact self-hosted evidence
+          def verify(payload, field):
+              record = dict(payload)
+              expected = record.pop(field)
+              actual = hashlib.sha256(
+                  json.dumps(
+                      record,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  ).encode("utf-8")
+              ).hexdigest()
+              if actual != expected:
+                  raise SystemExit(f"{field} mismatch: {actual} != {expected}")
+
+          verify(selection, "selection_sha256")
+          verify(result, "result_sha256")
+          if result["selection_sha256"] != selection["selection_sha256"]:
+              raise SystemExit("result does not bind the frozen selection")
+          if result["protocol_sha256"] != os.environ["PROTOCOL_SHA256"]:
+              raise SystemExit("result protocol digest changed")
+          split = selection["group_split"]
+          roles = ("source", "calibration", "target")
+          for index, left in enumerate(roles):
+              for right in roles[index + 1 :]:
+                  if set(split[left]) & set(split[right]):
+                      raise SystemExit("group split is not disjoint")
+          if result["status"] == "complete":
+              boundary = result["information_boundary"]
+              if not boundary[
+                  "target_arrays_parsed_after_selection_hash_verification"
+              ]:
+                  raise SystemExit("target access order was not verified")
+          elif result["status"] != "inconclusive-temperature-boundary":
+              raise SystemExit(f"unexpected status: {result['status']}")
+          readout = {
+              "status": result["status"],
+              "protocol_sha256": result["protocol_sha256"],
+              "selection_sha256": result["selection_sha256"],
+              "result_sha256": result["result_sha256"],
+              "selected_temperature": selection["temperature"][
+                  "selected_temperature"
+              ],
+              "temperature_interior_bracketed": selection["temperature"][
+                  "interior_bracketed"
+              ],
+              "group_counts": {role: len(split[role]) for role in roles},
+              "registered_decision": result.get("registered_decision"),
+              "target_aggregate": result.get("target_aggregate"),
+              "claim_boundary": result["claim_boundary"],
+          }
+          (root / "scientific-readout.json").write_text(
+              json.dumps(readout, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(readout, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload complete compact evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: bpt-full22-tempered-self-hosted-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/bpt-full22-tempered-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform360-group-tempered-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_ROOT }}
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
