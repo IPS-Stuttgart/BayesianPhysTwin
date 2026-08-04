@@ -1,0 +1,85 @@
+{
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20260804,
+    "statistical_unit": "physical object with paired resampling"
+  },
+  "claim_boundary": "External object-held-out Deform360 trajectory-displacement transfer on fresh sheet and volumetric objects only. This is not a filament result, official Deform360 Table-4 parity, a physical simulator-state correction, a state-of-the-art claim, or authorization to open the historically reserved Deform360 target cohort.",
+  "group_calibration": {
+    "across_object_coverage": 0.9,
+    "object_q90_interpretation": "Across-object conformal quantile of each calibration object's registered 90th percentile NEES ratio within each horizon.",
+    "simultaneous_interpretation": "Across-object conformal quantile of each calibration object's maximum NEES ratio within each horizon.",
+    "target_reference": "chi-square 3D 90 percent radius",
+    "within_object_event_quantile": 0.9
+  },
+  "horizons_frames": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "information_boundary": {
+    "calibration_payloads_open_before_confirmation": true,
+    "calibration_serialized_before_confirmation": true,
+    "confirmation_parameters_refit": false,
+    "future_used_for_scoring_only": true,
+    "historical_reserved_targets_must_remain_unopened": true,
+    "replacement_after_payload_access_allowed": false,
+    "selection_uses_names_only": true
+  },
+  "limits": {
+    "max_evaluation_prefixes_per_horizon": 12,
+    "max_frames_per_archive": 96,
+    "max_tracks_per_archive": 512,
+    "minimum_prefix_displacements": 6
+  },
+  "locked_at_utc": "2026-08-04T11:00:00Z",
+  "methods": [
+    "persistence",
+    "last_displacement",
+    "cumulative_evidence",
+    "normalized_evidence"
+  ],
+  "normalized_evidence": {
+    "component_bank": "frozen historical 5 x 3 process/observation standard-deviation grid",
+    "mean_rule": "component log evidence divided by each track's supported prefix-observation count",
+    "prior": "uniform frozen component prior",
+    "target_outcome_tuning": false,
+    "weight_rule": "softmax(log prior plus mean log evidence per supported observation)"
+  },
+  "protocol_id": "deform360-independent-normalized-evidence-v1",
+  "schema": "bayesian-phystwin/deform360-independent-protocol-v1",
+  "schema_version": 1,
+  "selection": {
+    "calibration_objects_per_stratum": 6,
+    "confirmation_objects_per_stratum": 6,
+    "episodes_per_object": 1,
+    "historical_exclusions": "union of the frozen V1 open_or_reserved list, V1/V2 calibration cohorts, V1/V2 reserved target cohorts, and explicit prior-path-open objects",
+    "maximum_locked_archive_paths_per_object": 8,
+    "object_rule": "SHA-256 rank within the frozen V1 name-only deformation stratum among mounted objects with a named episode and NPZ candidate path",
+    "seed": "deform360-independent-normalized-evidence-v1",
+    "target_replacement": "forbidden after numerical payload access"
+  },
+  "status": "locked-before-numerical-payload-access",
+  "strata": [
+    "sheet",
+    "volumetric"
+  ],
+  "success_gates": {
+    "normalized_effective_components_exceed_cumulative_each_horizon": true,
+    "normalized_raw_nll_better_than_cumulative_each_horizon": true,
+    "object_q90_calibrated_coverage_range": [
+      0.85,
+      0.97
+    ],
+    "point_results_reported_against_last_displacement": true
+  },
+  "support_gate": {
+    "confirmation_action_if_calibration_fails": "do not open confirmation payloads",
+    "minimum_supported_calibration_objects": 9,
+    "minimum_supported_calibration_objects_per_stratum": 4,
+    "minimum_supported_confirmation_objects": 9,
+    "minimum_supported_confirmation_objects_per_stratum": 4,
+    "unsupported_object_action": "retain without replacement"
+  }
+}
