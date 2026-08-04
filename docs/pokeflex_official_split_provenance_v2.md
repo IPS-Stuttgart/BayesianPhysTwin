@@ -68,3 +68,15 @@ If authoritative data arrive, regenerate this audit. Only
 evaluation. Until then, the strongest reproducible evidence is the paired
 13-case public-subset result; it must not be described as full-split state of
 the art.
+
+## Verification
+
+An isolated Python environment with NumPy 2.2.6 and SciPy 1.15.3 passed all 48
+official-split, target-custody, public-subset-result, and action-robust protocol
+tests. Ruff passed for every added Python file, `compileall` passed, and
+`git diff --check` reported no whitespace errors.
+
+The host Python installation separately has an old SciPy binary built for NumPy
+below 1.25 and cannot import `scipy.spatial.cKDTree` with the installed NumPy
+2.2.6. That host-only ABI error was reproduced in two scorer tests and is not a
+failure of this source audit.
