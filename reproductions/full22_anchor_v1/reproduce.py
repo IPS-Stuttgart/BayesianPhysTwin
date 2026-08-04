@@ -24,9 +24,19 @@ EXPECTED_SOURCE_REVISION = "e393bb6ff61d44815afd8d09dfc5334cb55d5524"
 EXPECTED_PROTOCOL_ID = (
     "ee11310a84b92ff2158018a13ef09989e641e7c0ea84733fe8a6abf267093c65"
 )
-EXPECTED_DATA_MANIFEST_SHA256 = (
+EXPECTED_DATA_MANIFEST_IDENTITY_SHA256 = (
+    "f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc"
+)
+LEGACY_DATA_MANIFEST_SHA256 = (
     "c986f9fffe99e63f842bb48eb1d394a6b87663f5c4a4fb99f2a58855875fb125"
 )
+REQUIRED_DATA_FILENAMES = (
+    "final_data.pkl",
+    "gt_track_3d.pkl",
+    "split.json",
+    "inference.pkl",
+)
+REQUIRED_DATA_SOURCES = ("data", "experiments")
 OFFICIAL_PHYSTWIN_REVISION = "2b6630528141b9cba5a7677c8b88b2129b4a8390"
 PAPER_EVIDENCE_REVISION = "71729c6cab784d7471995457269fbec0a2b9ea33"
 
@@ -39,10 +49,20 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _canonical_sha256(payload: object) -> str:
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _json_write(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
 
@@ -97,28 +117,149 @@ def validate_source_checkout(source_checkout: Path) -> None:
         raise ValueError("the frozen source checkout must be clean")
 
 
-def validate_data_root(data_root: Path) -> Path:
-    manifest = data_root / "evaluation_subset_manifest.json"
-    if not manifest.is_file():
-        raise FileNotFoundError(manifest)
-    actual_digest = _sha256(manifest)
-    if actual_digest != EXPECTED_DATA_MANIFEST_SHA256:
-        raise ValueError(
-            "evaluation subset manifest digest changed: "
-            f"expected {EXPECTED_DATA_MANIFEST_SHA256}, received {actual_digest}"
+def _data_manifest_path(data_root: Path) -> Path:
+    candidates = (
+        data_root / "evaluation_subset_manifest.json",
+        data_root / "trajectory_evaluation_manifest.json",
+    )
+    present = [path for path in candidates if path.is_file()]
+    if not present:
+        raise FileNotFoundError(
+            "expected evaluation_subset_manifest.json or "
+            "trajectory_evaluation_manifest.json"
         )
-    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    if len(present) > 1:
+        identities = {
+            _canonical_sha256(
+                _normalized_data_manifest(
+                    json.loads(path.read_text(encoding="utf-8"))
+                )
+            )
+            for path in present
+        }
+        if len(identities) != 1:
+            raise ValueError("multiple data manifests disagree semantically")
+    return present[0]
+
+
+def _manifest_text(value: object, *, name: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{name} must be a nonempty string")
+    return value
+
+
+def _manifest_nonnegative_integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return value
+
+
+def _manifest_hex(value: object, *, name: str, length: int) -> str:
+    text = _manifest_text(value, name=name).lower()
+    if len(text) != length or any(
+        character not in "0123456789abcdef" for character in text
+    ):
+        raise ValueError(
+            f"{name} must be {length} lowercase hexadecimal characters"
+        )
+    return text
+
+
+def _normalized_data_manifest(payload: Mapping[str, Any]) -> dict[str, Any]:
     selected = payload.get("selected_cases")
-    available = payload.get("available_cases")
     if not isinstance(selected, list) or len(selected) != 22:
         raise ValueError("the frozen data manifest must select exactly 22 cases")
-    if available != selected:
+    if any(not isinstance(case, str) or not case for case in selected):
+        raise ValueError("selected case names must be nonempty strings")
+    if len(set(selected)) != 22:
+        raise ValueError("the frozen data manifest contains duplicate cases")
+
+    available = payload.get("available_cases")
+    if available is not None and available != selected:
         raise ValueError(
             "available_cases must equal the ordered selected 22-case cohort"
         )
-    if len(set(map(str, selected))) != 22:
-        raise ValueError("the frozen data manifest contains duplicate cases")
-    return manifest
+
+    sources = payload.get("sources")
+    if not isinstance(sources, Mapping):
+        raise ValueError("the data manifest must define archive sources")
+    normalized_sources = {
+        name: _manifest_text(sources.get(name), name=f"sources.{name}")
+        for name in REQUIRED_DATA_SOURCES
+    }
+
+    cases = payload.get("cases")
+    if not isinstance(cases, Mapping):
+        raise ValueError("the data manifest must define case records")
+    if set(cases) != set(selected):
+        raise ValueError("the data manifest case records must match selected_cases")
+
+    normalized_cases: dict[str, Any] = {}
+    for case in selected:
+        case_record = cases.get(case)
+        if not isinstance(case_record, Mapping):
+            raise ValueError(f"case record {case!r} must be a mapping")
+        files = case_record.get("files")
+        if not isinstance(files, Mapping):
+            raise ValueError(f"case record {case!r} must define files")
+        normalized_files: dict[str, Any] = {}
+        for filename in REQUIRED_DATA_FILENAMES:
+            record = files.get(filename)
+            if not isinstance(record, Mapping):
+                raise ValueError(f"{case}/{filename} has no manifest record")
+            normalized_files[filename] = {
+                "archive_member": _manifest_text(
+                    record.get("archive_member"),
+                    name=f"{case}/{filename}.archive_member",
+                ),
+                "bytes": _manifest_nonnegative_integer(
+                    record.get("bytes"), name=f"{case}/{filename}.bytes"
+                ),
+                "crc32": _manifest_hex(
+                    record.get("crc32"),
+                    name=f"{case}/{filename}.crc32",
+                    length=8,
+                ),
+                "sha256": _manifest_hex(
+                    record.get("sha256"),
+                    name=f"{case}/{filename}.sha256",
+                    length=64,
+                ),
+            }
+        normalized_cases[case] = {"files": normalized_files}
+
+    return {
+        "schema": "bayesian-phystwin-full22-trajectory-data-lock",
+        "schema_version": 1,
+        "sources": normalized_sources,
+        "selected_cases": selected,
+        "cases": normalized_cases,
+    }
+
+
+def validate_data_root(data_root: Path) -> tuple[Path, str]:
+    manifest = _data_manifest_path(data_root)
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    if not isinstance(payload, Mapping):
+        raise ValueError("the data manifest root must be a mapping")
+    normalized = _normalized_data_manifest(payload)
+    identity = _canonical_sha256(normalized)
+    if identity != EXPECTED_DATA_MANIFEST_IDENTITY_SHA256:
+        raise ValueError(
+            "evaluation subset semantic identity changed: "
+            f"expected {EXPECTED_DATA_MANIFEST_IDENTITY_SHA256}, received {identity}"
+        )
+
+    for case in normalized["selected_cases"]:
+        for filename, record in normalized["cases"][case]["files"].items():
+            path = data_root / case / filename
+            if not path.is_file():
+                raise FileNotFoundError(path)
+            if path.stat().st_size != record["bytes"]:
+                raise ValueError(f"data file size changed: {case}/{filename}")
+            if _sha256(path) != record["sha256"]:
+                raise ValueError(f"data file digest changed: {case}/{filename}")
+    return manifest, identity
 
 
 def _cohort_metric(
@@ -230,7 +371,7 @@ def _runtime_payload(source_checkout: Path, workers: int) -> dict[str, Any]:
         except importlib.metadata.PackageNotFoundError:
             packages[package] = None
     return {
-        "capsule_schema_version": 1,
+        "capsule_schema_version": 2,
         "orchestrator_python": platform.python_version(),
         "platform": platform.platform(),
         "source_checkout": str(source_checkout),
@@ -293,7 +434,9 @@ def _manifest_command(
         "--input",
         "expected_metrics=reproduction_capsule/expected_metrics.json",
         "--input",
-        "data_manifest=input/evaluation_subset_manifest.json",
+        "source_data_manifest=input/source_data_manifest.json",
+        "--input",
+        "data_identity=input/data_identity.json",
         "--input",
         "method_lock=method_lock.json",
         "--output-artifact",
@@ -340,7 +483,7 @@ def reproduce(args: argparse.Namespace) -> None:
         )
 
     validate_source_checkout(source_checkout)
-    data_manifest = validate_data_root(data_root)
+    data_manifest, data_identity = validate_data_root(data_root)
     if output.exists() and args.force:
         shutil.rmtree(output)
     output.mkdir(parents=True, exist_ok=True)
@@ -349,8 +492,13 @@ def reproduce(args: argparse.Namespace) -> None:
         raise ValueError("expected metrics source revision changed")
     if expected.get("source_protocol_id") != EXPECTED_PROTOCOL_ID:
         raise ValueError("expected metrics protocol ID changed")
-    if expected.get("data_manifest_sha256") != EXPECTED_DATA_MANIFEST_SHA256:
-        raise ValueError("expected metrics data-manifest digest changed")
+    if (
+        expected.get("data_manifest_identity_sha256")
+        != EXPECTED_DATA_MANIFEST_IDENTITY_SHA256
+    ):
+        raise ValueError("expected metrics data identity changed")
+    if expected.get("legacy_data_manifest_sha256") != LEGACY_DATA_MANIFEST_SHA256:
+        raise ValueError("expected metrics legacy data-manifest digest changed")
 
     capsule_copy = output / "reproduction_capsule"
     capsule_copy.mkdir(parents=True)
@@ -358,7 +506,18 @@ def reproduce(args: argparse.Namespace) -> None:
     shutil.copy2(EXPECTED_PATH, capsule_copy / "expected_metrics.json")
     input_dir = output / "input"
     input_dir.mkdir(parents=True)
-    shutil.copy2(data_manifest, input_dir / data_manifest.name)
+    shutil.copy2(data_manifest, input_dir / "source_data_manifest.json")
+    _json_write(
+        input_dir / "data_identity.json",
+        {
+            "schema": "bayesian-phystwin-full22-trajectory-data-identity",
+            "schema_version": 1,
+            "identity_sha256": data_identity,
+            "source_manifest_filename": data_manifest.name,
+            "source_manifest_sha256": _sha256(data_manifest),
+            "legacy_full_manifest_sha256": LEGACY_DATA_MANIFEST_SHA256,
+        },
+    )
 
     run_dir = output / "run"
     comparison_path = output / "full22_comparison.json"
@@ -417,11 +576,13 @@ def reproduce(args: argparse.Namespace) -> None:
     _json_write(
         output / "configuration.lock.json",
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "workers": args.workers,
             "source_checkout": str(source_checkout),
             "data_root": str(data_root),
+            "data_manifest_filename": data_manifest.name,
             "data_manifest_sha256": _sha256(data_manifest),
+            "data_manifest_identity_sha256": data_identity,
             "metric_tolerance_m": expected["absolute_tolerance_m"],
         },
     )
