@@ -4,11 +4,6 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from bayesian_phystwin.explicit_gauge_prob4d import (
-    build_claim_bearing_explicit_gauge_batch,
-    update_claim_bearing_explicit_gauge_from_artifacts,
-)
-from bayesian_phystwin.physical_linearization import PhysicalLinearizationV1
 from prob4d.gauge import GaugeEstimate
 from prob4d.provider_v2_factors import (
     PROVIDER_FACTOR_API_VERSION,
@@ -17,6 +12,12 @@ from prob4d.provider_v2_factors import (
     stack_sparse_observation_factors,
 )
 from prob4d.sim3 import Sim3
+
+from bayesian_phystwin.explicit_gauge_prob4d import (
+    build_claim_bearing_explicit_gauge_batch,
+    update_claim_bearing_explicit_gauge_from_artifacts,
+)
+from bayesian_phystwin.physical_linearization import PhysicalLinearizationV1
 
 ARTIFACT_ID = "a" * 64
 PROVIDER_MANIFEST_ID = "b" * 64
