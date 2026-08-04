@@ -1,11 +1,6 @@
 name: Recover and materialize Deform360 V2 source
 
 on:
-  push:
-    branches:
-      - agent/deform360-group-evaluation-v2
-    paths:
-      - ".github/workflows/materialize-deform360-v2-recovered.yml"
   pull_request:
     branches: [main]
     paths:
@@ -15,14 +10,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: recover-materialize-deform360-v2
-  cancel-in-progress: true
+  group: recover-materialize-deform360-v2-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   materialize:
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -271,7 +264,6 @@ jobs:
             tests/test_deform360_preflight_workflow.py \
             tests/test_deform360_public_protocol.py
           git diff --cached --check
-          test -z "$(git status --porcelain=v1 --untracked-files=all)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Harden staged Deform360 group evaluation"
