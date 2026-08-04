@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
+import zlib
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -47,6 +50,50 @@ def _comparison(expected: dict[str, object]) -> dict[str, object]:
     return {"schema_version": 2, "methods": methods}
 
 
+def _write_data_root(
+    root: Path,
+    capsule: ModuleType,
+    *,
+    manifest_name: str = "trajectory_evaluation_manifest.json",
+) -> tuple[Path, dict[str, Any], str]:
+    cases = [f"case-{index:02d}" for index in range(22)]
+    records: dict[str, Any] = {}
+    for case in cases:
+        files: dict[str, Any] = {}
+        case_dir = root / case
+        case_dir.mkdir(parents=True)
+        for filename in capsule.REQUIRED_DATA_FILENAMES:
+            payload = f"{case}:{filename}\n".encode()
+            path = case_dir / filename
+            path.write_bytes(payload)
+            source = "experiments" if filename == "inference.pkl" else "data"
+            files[filename] = {
+                "archive_member": f"{source}/{case}/{filename}",
+                "bytes": len(payload),
+                "crc32": f"{zlib.crc32(payload) & 0xFFFFFFFF:08x}",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "reused": False,
+            }
+        records[case] = {"files": files}
+    manifest: dict[str, Any] = {
+        "schema": "test-source-manifest",
+        "schema_version": 1,
+        "created_at_utc": "volatile",
+        "sources": {
+            "data": "https://example.test/data.zip",
+            "experiments": "https://example.test/experiments.zip",
+            "optimization": "https://example.test/ignored.zip",
+        },
+        "available_cases": cases,
+        "selected_cases": cases,
+        "cases": records,
+    }
+    path = root / manifest_name
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    identity = capsule._canonical_sha256(capsule._normalized_data_manifest(manifest))
+    return path, manifest, identity
+
+
 def test_full22_expected_metrics_are_verified() -> None:
     capsule = _load_capsule()
     expected = json.loads(EXPECTED_PATH.read_text(encoding="utf-8"))
@@ -83,35 +130,67 @@ def test_confirmation_summary_requires_protocol_and_complete_cohort() -> None:
         capsule.verify_confirmation_summary(summary)
 
 
-def test_data_manifest_validation_binds_digest_and_case_order(
+def test_data_manifest_identity_ignores_retrieval_metadata(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     capsule = _load_capsule()
-    cases = [f"case-{index:02d}" for index in range(22)]
-    manifest = tmp_path / "evaluation_subset_manifest.json"
-    manifest.write_text(
-        json.dumps(
-            {
-                "selected_cases": cases,
-                "available_cases": cases,
-            },
-            sort_keys=True,
-        ),
-        encoding="utf-8",
-    )
+    manifest, payload, identity = _write_data_root(tmp_path, capsule)
     monkeypatch.setattr(
-        capsule, "EXPECTED_DATA_MANIFEST_SHA256", capsule._sha256(manifest)
+        capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity
     )
 
-    assert capsule.validate_data_root(tmp_path) == manifest
+    assert capsule.validate_data_root(tmp_path) == (manifest, identity)
 
-    payload = json.loads(manifest.read_text(encoding="utf-8"))
-    payload["available_cases"] = list(reversed(cases))
-    manifest.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
-    monkeypatch.setattr(
-        capsule, "EXPECTED_DATA_MANIFEST_SHA256", capsule._sha256(manifest)
+    payload["created_at_utc"] = "different"
+    for case in payload["selected_cases"]:
+        for record in payload["cases"][case]["files"].values():
+            record["reused"] = True
+    manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+    assert capsule.validate_data_root(tmp_path) == (manifest, identity)
+
+
+def test_data_manifest_identity_binds_order_and_file_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    capsule = _load_capsule()
+    manifest, payload, identity = _write_data_root(
+        tmp_path,
+        capsule,
+        manifest_name="evaluation_subset_manifest.json",
     )
+    monkeypatch.setattr(
+        capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity
+    )
+
+    payload["available_cases"] = list(reversed(payload["selected_cases"]))
+    manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     with pytest.raises(ValueError, match="available_cases"):
+        capsule.validate_data_root(tmp_path)
+
+    payload["available_cases"] = payload["selected_cases"]
+    manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    damaged = tmp_path / payload["selected_cases"][0] / "split.json"
+    damaged.write_bytes(b"changed but not declared\n")
+    with pytest.raises(ValueError, match="data file (size|digest) changed"):
+        capsule.validate_data_root(tmp_path)
+
+
+def test_multiple_manifests_must_agree_semantically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    capsule = _load_capsule()
+    _, payload, identity = _write_data_root(tmp_path, capsule)
+    monkeypatch.setattr(
+        capsule, "EXPECTED_DATA_MANIFEST_IDENTITY_SHA256", identity
+    )
+    second = tmp_path / "evaluation_subset_manifest.json"
+    payload["cases"][payload["selected_cases"][0]]["files"]["split.json"][
+        "archive_member"
+    ] = "changed/member"
+    second.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+    with pytest.raises(ValueError, match="multiple data manifests disagree"):
         capsule.validate_data_root(tmp_path)
 
 
@@ -121,6 +200,7 @@ def test_manifest_command_binds_claim_protocol_and_outputs(tmp_path: Path) -> No
 
     assert "bpt.full22_anchor_released_contract" in command
     assert capsule.EXPECTED_PROTOCOL_ID in command
+    assert "data_identity=input/data_identity.json" in command
     assert "full22_comparison=full22_comparison.json" in command
     assert "verification=verification.json" in command
 
