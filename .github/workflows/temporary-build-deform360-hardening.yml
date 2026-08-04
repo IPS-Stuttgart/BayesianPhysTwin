@@ -20,8 +20,8 @@ jobs:
       github.actor != 'github-actions[bot]' &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out the clean hardening branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,10 +34,8 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
 
-      - name: Import the exact completed experiment source and patch payload
+      - name: Build, validate, and publish ordinary source
         shell: bash
         run: |
           set -euo pipefail
@@ -60,10 +58,6 @@ jobs:
             origin/agent/deform360-normalized-evidence-external-v1:tools/pr120_hardening_payload_01.txt \
             > /tmp/pr120_hardening_payload_01.txt
 
-      - name: Reconstruct and apply the content-addressed hardening patch
-        shell: bash
-        run: |
-          set -euo pipefail
           python - <<'PY'
           import base64
           import hashlib
@@ -90,45 +84,32 @@ jobs:
                   )
               encoded.append(raw.decode("ascii").strip())
           patch = zlib.decompress(base64.b85decode("".join(encoded)))
-          expected_patch = (
+          original_sha = hashlib.sha256(patch).hexdigest()
+          expected_original = (
               "84740cb685c5db27f09f142ced0140df45ff28d40638ffdaedb862d4cea0be07"
           )
-          actual_patch = hashlib.sha256(patch).hexdigest()
-          if actual_patch != expected_patch:
+          if original_sha != expected_original:
               raise SystemExit(
-                  f"patch digest mismatch: {actual_patch} != {expected_patch}"
+                  f"patch digest mismatch: {original_sha} != {expected_original}"
               )
           destination = Path("/tmp/harden_pr120.py")
           destination.write_bytes(patch)
-          print(f"reconstructed {destination}: {actual_patch}")
-          PY
-          python - <<'PY'
-          import hashlib
-          from pathlib import Path
 
-          path = Path("/tmp/harden_pr120.py")
-          lines = path.read_text(encoding="utf-8").splitlines()
-
+          lines = destination.read_text(encoding="utf-8").splitlines()
           result_label = '        label="result structure identity",'
-          try:
-              result_label_index = lines.index(result_label)
-          except ValueError as error:
-              raise SystemExit("result-identity patch label is missing") from error
+          result_label_index = lines.index(result_label)
           selection_needle = (
               '        \'\'\'        "selection_sha256": '
               'seal["selection_sha256"],'
           )
           selection_matches = [
               index
-              for index in range(
-                  max(0, result_label_index - 20), result_label_index
-              )
+              for index in range(result_label_index - 20, result_label_index)
               if lines[index] == selection_needle
           ]
           if len(selection_matches) != 2:
               raise SystemExit(
-                  "generator amendment expected two selection lines, "
-                  f"found {len(selection_matches)}"
+                  f"expected two selection lines, found {len(selection_matches)}"
               )
           protocol_triple = (
               '        \'\'\'        "protocol_file_sha256": '
@@ -144,21 +125,16 @@ jobs:
           result_label_index = lines.index(result_label)
           protocol_matches = [
               index
-              for index in range(
-                  max(0, result_label_index - 30), result_label_index
-              )
+              for index in range(result_label_index - 30, result_label_index)
               if lines[index] == protocol_triple
           ]
           if len(protocol_matches) != 2:
               raise SystemExit(
-                  "generator amendment expected two protocol lines, "
-                  f"found {len(protocol_matches)}"
+                  f"expected two protocol lines, found {len(protocol_matches)}"
               )
           schema_line = '        \'\'\'        "schema": RESULT_SCHEMA,'
           schema_version_line = '        "schema_version": 1,'
-          protocol_id_line = (
-              '        "protocol_id": protocol["protocol_id"],'
-          )
+          protocol_id_line = '        "protocol_id": protocol["protocol_id"],'
           protocol_plain = (
               '        "protocol_file_sha256": '
               'seal["protocol_file_sha256"],'
@@ -170,25 +146,19 @@ jobs:
               lines.insert(index + 3, protocol_plain)
 
           workflow_label = '        label="workflow structure argument",'
-          try:
-              workflow_label_index = lines.index(workflow_label)
-          except ValueError as error:
-              raise SystemExit("workflow-argument patch label is missing") from error
+          workflow_label_index = lines.index(workflow_label)
           workflow_prefix = (
               '        \'\'\'            --seal '
               '"${OUTPUT_ROOT}/selection.json"'
           )
           workflow_matches = [
               index
-              for index in range(
-                  max(0, workflow_label_index - 20), workflow_label_index
-              )
+              for index in range(workflow_label_index - 20, workflow_label_index)
               if lines[index].startswith(workflow_prefix)
           ]
           if len(workflow_matches) != 2:
               raise SystemExit(
-                  "generator amendment expected two workflow seal lines, "
-                  f"found {len(workflow_matches)}"
+                  f"expected two workflow seal lines, found {len(workflow_matches)}"
               )
           continuation = chr(92) * 2
           command_triple = (
@@ -209,27 +179,25 @@ jobs:
               lines.insert(index + 1, evaluate_line)
               lines.insert(index + 2, seal_line)
 
-          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-          actual = hashlib.sha256(path.read_bytes()).hexdigest()
-          expected = "dbdb5153c32814481dfdb6195fca65afdfebd8186646d56a93994778c0e2d369"
-          if actual != expected:
-              raise SystemExit(f"amended generator digest mismatch: {actual} != {expected}")
-          print(f"amended {path}: {actual}")
+          destination.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          amended_sha = hashlib.sha256(destination.read_bytes()).hexdigest()
+          expected_amended = (
+              "dbdb5153c32814481dfdb6195fca65afdfebd8186646d56a93994778c0e2d369"
+          )
+          if amended_sha != expected_amended:
+              raise SystemExit(
+                  f"amended generator mismatch: {amended_sha} != {expected_amended}"
+              )
+          print(f"generator={amended_sha}")
           PY
+
           PYTHONPYCACHEPREFIX="${RUNNER_TEMP}/pycache" \
             python -m py_compile /tmp/harden_pr120.py
           python /tmp/harden_pr120.py
 
-      - name: Install the focused development environment
-        run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,graph]"
           python -m pip check
-
-      - name: Format, lint, and test the hardened experiment
-        shell: bash
-        run: |
-          set -euo pipefail
           python -m ruff format \
             scripts/science/run_deform360_normalized_evidence_external.py \
             tests/test_deform360_normalized_evidence_external.py
@@ -243,13 +211,7 @@ jobs:
             python -m py_compile \
               scripts/science/run_deform360_normalized_evidence_external.py
 
-      - name: Remove the one-shot transport
-        run: rm -f .github/workflows/temporary-build-deform360-hardening.yml
-
-      - name: Commit the ordinary reviewable source
-        shell: bash
-        run: |
-          set -euo pipefail
+          rm -f .github/workflows/temporary-build-deform360-hardening.yml
           git diff --check
           git status --short
           git config user.name "github-actions[bot]"
