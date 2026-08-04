@@ -24,43 +24,8 @@ env:
   PYTHONUNBUFFERED: "1"
 
 jobs:
-  contracts:
-    name: Probe contracts and formatting
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Check out BayesianPhysTwin
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install development environment
-        run: python -m pip install -e ".[dev]"
-
-      - name: Validate probe source and synthetic contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m ruff check \
-            scripts/science/probe_deform360_source_hulls.py \
-            tests/test_probe_deform360_source_hulls.py
-          python -m ruff format --check \
-            scripts/science/probe_deform360_source_hulls.py \
-            tests/test_probe_deform360_source_hulls.py
-          python -m pytest -q tests/test_probe_deform360_source_hulls.py
-          python -m pip check
-
   probe:
     name: Locked source-hull cadence and header probe
-    needs: contracts
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 90
     steps:
@@ -97,10 +62,22 @@ jobs:
             --format=csv,noheader \
             | tee deform360-source-hull-probe/gpus.csv
 
-      - name: Install NumPy-only package
+      - name: Install development environment
         run: |
-          python -m pip install -e .
+          python -m pip install -e ".[dev]"
           python -m pip check
+
+      - name: Validate probe source and synthetic contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls.py
+          python -m ruff format --check \
+            scripts/science/probe_deform360_source_hulls.py \
+            tests/test_probe_deform360_source_hulls.py
+          python -m pytest -q tests/test_probe_deform360_source_hulls.py
 
       - name: Probe the exact locked source cohort
         shell: bash
