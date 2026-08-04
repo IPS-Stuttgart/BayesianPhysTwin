@@ -1,0 +1,70 @@
+name: One-shot finalize cross-window study via trigger PR
+
+on:
+  pull_request:
+    branches: [agent/prob4d-cross-window-identity-study]
+    paths:
+      - ".github/finalize-cross-window-trigger"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-finalize-cross-window-via-pr
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
+    steps:
+      - name: Check out experiment base branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/prob4d-cross-window-identity-study
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Finalize ordinary source and workflow files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff>=0.6"
+          python tools/finalize_cross_window_identity_study.py
+          python -m ruff check --fix \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m ruff format \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m ruff check \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m py_compile \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          rm -f \
+            tools/finalize_cross_window_identity_study.py \
+            .github/workflows/temporary-finalize-cross-window-push.yml \
+            .github/workflows/temporary-finalize-cross-window-via-pr.yml
+          git diff --check
+          git status --short
+
+      - name: Commit finalized experiment branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize cross-window identity development execution"
+          git push origin HEAD:agent/prob4d-cross-window-identity-study
