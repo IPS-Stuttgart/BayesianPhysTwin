@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   export:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 10
     steps:
       - name: Check out branch
@@ -26,6 +26,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          clean: true
       - name: Export exact source tree
         run: git archive --format=tar.gz --output=bayesian-phystwin-source.tar.gz HEAD
       - name: Upload source tree
