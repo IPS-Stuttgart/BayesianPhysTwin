@@ -60,9 +60,11 @@ def _write_protocol(
         "source_inventory": {
             "content_inventory_sha256": "1" * 64,
             "inventory_sha256": "2" * 64,
-            "product_head_sha": "3" * 64,
-            "evaluated_merge_sha": "4" * 64,
+            "product_head_sha": "3" * 40,
+            "evaluated_merge_sha": "4" * 40,
             "workflow_artifact_sha256": "5" * 64,
+            "workflow_run_id": 123,
+            "workflow_artifact_id": 456,
         },
     }
     payload = {
@@ -126,6 +128,18 @@ def _fixture(tmp_path: Path, *, irregular: bool = False) -> tuple[Path, Path]:
     return root, protocol
 
 
+def _resign_protocol(path: Path, payload: dict[str, object]) -> None:
+    payload["config_sha256"] = (
+        __import__("hashlib")
+        .sha256(_canonical_bytes(payload["config"]))
+        .hexdigest()
+    )
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def test_probe_reads_cadence_and_headers_without_reporting_coordinates(
     tmp_path: Path,
 ) -> None:
@@ -186,18 +200,47 @@ def test_protocol_rejects_reserved_target(tmp_path: Path) -> None:
     payload = json.loads(protocol.read_text(encoding="utf-8"))
     payload["config"]["cohort"]["entries"][0]["classification"] = "reserved_target"
     payload["config"]["cohort"]["reserved_target_object_count"] = 1
-    payload["config_sha256"] = (
-        __import__("hashlib").sha256(_canonical_bytes(payload["config"])).hexdigest()
-    )
-    protocol.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    _resign_protocol(protocol, payload)
 
     with pytest.raises(ValueError, match="reserved targets"):
         load_probe_protocol(protocol)
 
     assert root.is_dir()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("content_inventory_sha256", "a" * 40),
+        ("product_head_sha", "b" * 39),
+        ("workflow_run_id", 0),
+        ("workflow_artifact_id", True),
+    ),
+)
+def test_protocol_rejects_malformed_source_identity(
+    tmp_path: Path,
+    field: str,
+    value: object,
+) -> None:
+    _, protocol = _fixture(tmp_path)
+    payload = json.loads(protocol.read_text(encoding="utf-8"))
+    payload["config"]["source_inventory"][field] = value
+    _resign_protocol(protocol, payload)
+
+    with pytest.raises(ValueError, match=field):
+        load_probe_protocol(protocol)
+
+
+def test_protocol_accepts_64_character_git_object_ids(tmp_path: Path) -> None:
+    _, protocol = _fixture(tmp_path)
+    payload = json.loads(protocol.read_text(encoding="utf-8"))
+    payload["config"]["source_inventory"]["product_head_sha"] = "a" * 64
+    payload["config"]["source_inventory"]["evaluated_merge_sha"] = "b" * 64
+    _resign_protocol(protocol, payload)
+
+    loaded = load_probe_protocol(protocol)
+
+    assert loaded["config"]["source_inventory"]["product_head_sha"] == "a" * 64
 
 
 def test_probe_output_is_newline_terminated(tmp_path: Path) -> None:
