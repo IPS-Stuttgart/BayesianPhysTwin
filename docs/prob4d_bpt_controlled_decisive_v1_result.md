@@ -33,11 +33,11 @@ updates reproduce the physical fallback exactly.
 Accepted primary predictions have mean nominal-90% coverage of 98.68% and a
 mean predictive width of 0.946 mm. The explicit joint-gauge formulation also
 avoids the eight harmful accepted updates observed under covariance
-marginalization. This is the decisive controlled evidence that shared gauge
-dependence and persistent causal identity should be represented jointly rather
-than folded into rowwise covariance.
+marginalization. Within this controlled generator, the evidence supports
+representing shared gauge dependence and persistent causal identity jointly
+rather than folding the gauge nuisance into rowwise covariance.
 
-## Registered Decision
+## Registered decision
 
 All six criteria pass:
 
@@ -51,24 +51,47 @@ All six criteria pass:
 The registered decision is
 `advance-to-fresh-physical-object/session-gate`.
 
-## Reproducibility
+## Retained evidence
 
-- BayesianPhysTwin revision:
-  `04cc243aea82bfec1b8a2481ef99b38b357e4123`
-- Prob4D revision:
-  `aa8ffc6541011d044561e09870569a14ab3f586f`
-- Canonical protocol SHA-256:
-  `921da8a6f14f9430b3f4861d68326d904f61b922e3aedd2b35882ea97bc63111`
-- Report ID:
-  `c592807d62e9f5121acf85747432574601264160de67b15e9a1c8e48a12cc040`
-- Pre-outcome verification: 5 focused tests and 1,677 full-suite tests passed;
-  29 full-suite tests were skipped; Ruff and protocol-hash checks passed.
+The repository-retained evidence was recorded in BayesianPhysTwin commit
+`db0f0119a3a4220f5489566829846681e844627d`. Its report records the original
+execution revision `04cc243aea82bfec1b8a2481ef99b38b357e4123`, the exact
+Prob4D revision `aa8ffc6541011d044561e09870569a14ab3f586f`, canonical protocol
+SHA-256
+`921da8a6f14f9430b3f4861d68326d904f61b922e3aedd2b35882ea97bc63111`,
+and report ID
+`c592807d62e9f5121acf85747432574601264160de67b15e9a1c8e48a12cc040`.
 
 The checksummed report, complete 2,304-row target trial table, protocol copy,
-and compact summary are in
+and compact summary are retained in
 `results/diagnostics/prob4d_bpt_controlled_decisive_v1/`.
 
-## Claim Boundary and Next Gate
+## Fresh confirmation
+
+A clean self-hosted confirmation at BayesianPhysTwin revision
+`07e6f2fe85eb3f1dc9d454ecaf1cb2f83a447131` re-resolved and installed the
+exact Prob4D producer, verified the frozen protocol, passed the focused
+regressions, reran all calibration and target groups, verified every generated
+SHA-256 entry, reparsed all 2,304 target-method rows, recomputed the six
+registered criteria and decision exit code, and uploaded the complete result
+bundle.
+
+The confirmation is GitHub Actions run
+[30907109833](https://github.com/IPS-Stuttgart/BayesianPhysTwin/actions/runs/30907109833).
+Its artifact is
+`prob4d-bpt-controlled-decisive-30907109833-1`, with GitHub artifact digest
+`sha256:aa71e7dd68b96a8ee45c284441a1c12766ddcb02fe275129d9d6a42d5c7cb94e`.
+The fresh report identifies revision `07e6f2fe85eb3f1dc9d454ecaf1cb2f83a447131`,
+report ID
+`0b94125189ee8c7cdccd6ca799bb576bf344c8983a420dc7b128ac9b291f0707`,
+and the same registered PASS, method-level metrics, and primary bootstrap
+interval reported above.
+
+The confirmation establishes decision-level reproducibility under the frozen
+protocol. It is not represented as byte-identical reproduction of every
+floating-point target row across execution environments.
+
+## Claim boundary and next gate
 
 This controlled generator uses the real Prob4D observation-factor types and
 the real BayesianPhysTwin prior-aware gauge-and-bias solver, but it does not
