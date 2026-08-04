@@ -23,7 +23,7 @@ jobs:
           ref: agent/deform360-official-hub-visuotactile-v1
           fetch-depth: 0
 
-      - name: Repair current-main CI anchor count
+      - name: Route the corrected publisher to workstation2
         shell: bash
         run: |
           set -euo pipefail
@@ -34,23 +34,14 @@ jobs:
               ".github/workflows/apply-deform360-visuotactile-ci.yml"
           )
           text = publisher.read_text(encoding="utf-8")
-          replacements = {
-              "if tests.count(test_anchor) != 2:": (
-                  "if tests.count(test_anchor) != 3:"
-              ),
-              "tests.yml: expected two gauge-aware suite anchors, ": (
-                  "tests.yml: expected three gauge-aware suite anchors, "
-              ),
-              "    if: github.actor != 'github-actions[bot]'\n": "",
-          }
-          for old, new in replacements.items():
-              if text.count(old) != 1:
-                  raise SystemExit(
-                      f"publisher repair source changed for {old!r}: "
-                      f"count={text.count(old)}"
-                  )
-              text = text.replace(old, new)
-          publisher.write_text(text, encoding="utf-8")
+          old = "    runs-on: ubuntu-latest\n"
+          new = "    runs-on: [self-hosted, Linux, X64, nvidia-smi]\n"
+          if text.count(old) != 1:
+              raise SystemExit(
+                  "publisher runner source changed: "
+                  f"count={text.count(old)}"
+              )
+          publisher.write_text(text.replace(old, new), encoding="utf-8")
           Path(
               ".github/workflows/repair-deform360-visuotactile-publisher.yml"
           ).unlink()
@@ -59,5 +50,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Repair staged Deform360 publication gate"
+          git commit -m "Route corrected Deform360 publisher to workstation2"
           git push origin HEAD:agent/deform360-official-hub-visuotactile-v1
