@@ -192,9 +192,7 @@ def test_normalized_evidence_prevents_synthetic_component_collapse() -> None:
 
 def test_packed_hull_contract_evaluates_centroid_translation() -> None:
     frames = np.arange(8, dtype=np.int64)
-    base = np.array(
-        [[-0.01, 0.0, 0.0], [0.01, 0.0, 0.0], [0.0, 0.01, 0.0]]
-    )
+    base = np.array([[-0.01, 0.0, 0.0], [0.01, 0.0, 0.0], [0.0, 0.01, 0.0]])
     hulls = tuple(base + np.array([0.001 * frame, 0.0, 0.0]) for frame in frames)
 
     result = _evaluate_hulls(

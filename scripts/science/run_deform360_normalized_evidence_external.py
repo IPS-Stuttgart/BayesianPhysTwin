@@ -146,11 +146,7 @@ def _load_protocol(path: Path) -> tuple[dict[str, Any], str]:
     )
     requested = selection.get("requested_object_count")
     minimum = selection.get("minimum_selected_object_count_before_numeric_access")
-    if (
-        isinstance(requested, bool)
-        or not isinstance(requested, int)
-        or requested < 1
-    ):
+    if isinstance(requested, bool) or not isinstance(requested, int) or requested < 1:
         raise ValueError("requested_object_count must be a positive integer")
     if (
         isinstance(minimum, bool)
@@ -191,9 +187,7 @@ def _tracked_paths(repository_root: Path) -> tuple[Path, ...]:
         capture_output=True,
     )
     return tuple(
-        repository_root / os.fsdecode(raw)
-        for raw in result.stdout.split(b"\0")
-        if raw
+        repository_root / os.fsdecode(raw) for raw in result.stdout.split(b"\0") if raw
     )
 
 
@@ -231,8 +225,7 @@ def _repository_evidence_mentions(
             if _OBJECT_PATTERN.fullmatch(object_id):
                 mentions[object_id].add(relative)
     return {
-        object_id: tuple(sorted(paths))
-        for object_id, paths in sorted(mentions.items())
+        object_id: tuple(sorted(paths)) for object_id, paths in sorted(mentions.items())
     }
 
 
@@ -309,9 +302,7 @@ def seal_selection(
         raise FileNotFoundError(f"Deform360 root is missing: {root}")
     repository = repository_root.expanduser().resolve()
     protocol, protocol_sha256 = _load_protocol(protocol_path.resolve())
-    selection = _require_mapping(
-        protocol["cohort_selection"], name="cohort_selection"
-    )
+    selection = _require_mapping(protocol["cohort_selection"], name="cohort_selection")
     suffixes = _require_string_sequence(
         selection["archive_suffixes"], name="archive_suffixes"
     )
@@ -345,9 +336,7 @@ def seal_selection(
                 "candidate_archive_count": len(paths),
             }
         )
-    per_object.sort(
-        key=lambda item: (item["object_rank_sha256"], item["object_id"])
-    )
+    per_object.sort(key=lambda item: (item["object_rank_sha256"], item["object_id"]))
     requested = int(selection["requested_object_count"])
     selected = per_object[:requested]
     minimum = int(selection["minimum_selected_object_count_before_numeric_access"])
@@ -380,8 +369,7 @@ def seal_selection(
         "selected": selected,
         "excluded_object_ids": sorted(excluded),
         "evidence_mention_paths": {
-            object_id: list(paths)
-            for object_id, paths in evidence_mentions.items()
+            object_id: list(paths) for object_id, paths in evidence_mentions.items()
         },
     }
     body["selection_sha256"] = _canonical_sha256(body)
@@ -433,9 +421,7 @@ def _trajectory(stored: Any) -> tuple[str, np.ndarray] | None:
     for key in stored.files:
         lowered = key.lower()
         ranks = [
-            index
-            for index, hint in enumerate(_TRAJECTORY_HINTS)
-            if hint in lowered
+            index for index, hint in enumerate(_TRAJECTORY_HINTS) if hint in lowered
         ]
         if not ranks:
             continue
@@ -486,8 +472,7 @@ def _packed_hulls(stored: Any) -> tuple[np.ndarray, tuple[np.ndarray, ...]] | No
     if not valid:
         raise ValueError("packed visual-hull contract is malformed")
     hulls = tuple(
-        points[offsets[index] : offsets[index + 1]]
-        for index in range(len(frames))
+        points[offsets[index] : offsets[index + 1]] for index in range(len(frames))
     )
     return frames, hulls
 
@@ -519,7 +504,12 @@ def _chamfer_rmse(
 ) -> float:
     left = np.asarray(first, dtype=np.float64)
     right = np.asarray(second, dtype=np.float64)
-    if left.ndim != 2 or right.ndim != 2 or left.shape[1:] != (3,) or right.shape[1:] != (3,):
+    if (
+        left.ndim != 2
+        or right.ndim != 2
+        or left.shape[1:] != (3,)
+        or right.shape[1:] != (3,)
+    ):
         raise ValueError("Chamfer inputs must have shape (N, 3)")
     if len(left) == 0 or len(right) == 0:
         raise ValueError("Chamfer inputs must be nonempty")
@@ -530,15 +520,12 @@ def _chamfer_rmse(
         minimum = np.full(len(source), np.inf, dtype=np.float64)
         for start in range(0, len(target), 128):
             block = target[start : start + 128]
-            squared = np.sum(
-                np.square(source[:, None, :] - block[None, :, :]), axis=2
-            )
+            squared = np.sum(np.square(source[:, None, :] - block[None, :, :]), axis=2)
             minimum = np.minimum(minimum, np.min(squared, axis=1))
         return minimum
 
     mean_squared = 0.5 * (
-        float(np.mean(directed(left, right)))
-        + float(np.mean(directed(right, left)))
+        float(np.mean(directed(left, right))) + float(np.mean(directed(right, left)))
     )
     return float(np.sqrt(max(mean_squared, 0.0)))
 
@@ -582,9 +569,7 @@ def _weight_diagnostics(
     within_trace = 3.0 * np.einsum("nk,kn->n", weights, component_variance)
     total_trace = np.trace(covariance, axis1=1, axis2=2)
     centered = component_mean - mixture_mean[None, :, :]
-    direct_between = np.einsum(
-        "nk,knc,knc->n", weights, centered, centered
-    )
+    direct_between = np.einsum("nk,knc,knc->n", weights, centered, centered)
     between_fraction = direct_between / np.maximum(total_trace, 1e-30)
     return {
         "mean_effective_component_count": float(np.mean(effective)),
@@ -599,9 +584,7 @@ def _weight_diagnostics(
 def _normalized_weights(
     posterior: ModelAveragedEndpointPosteriorV1,
 ) -> np.ndarray:
-    prior = np.asarray(
-        posterior.config.component_prior_probability, dtype=np.float64
-    )
+    prior = np.asarray(posterior.config.component_prior_probability, dtype=np.float64)
     denominator = np.maximum(posterior.update_count, 1)[:, None]
     logits = np.log(prior)[None, :] + posterior.component_log_evidence / denominator
     logits -= np.max(logits, axis=1, keepdims=True)
@@ -709,9 +692,7 @@ def _evaluate_fixed(
         target_valid = validity[current] & validity[current + 1]
         if not np.any(target_valid):
             continue
-        predictions = _rolling_prediction(
-            residual, residual_valid, end_frame=current
-        )
+        predictions = _rolling_prediction(residual, residual_valid, end_frame=current)
         target = points[current + 1]
         positions = {
             METHODS[0]: points[current],
@@ -828,16 +809,10 @@ def _case_metric(case: Mapping[str, Any], metric: str, method: str) -> float | N
     steps = case.get("steps")
     if not isinstance(steps, list):
         raise ValueError("case steps are malformed")
-    return _mean(
-        float(step[metric][method])
-        for step in steps
-        if metric in step
-    )
+    return _mean(float(step[metric][method]) for step in steps if metric in step)
 
 
-def _case_predictive(
-    case: Mapping[str, Any], metric: str, method: str
-) -> float | None:
+def _case_predictive(case: Mapping[str, Any], metric: str, method: str) -> float | None:
     steps = case.get("steps")
     if not isinstance(steps, list):
         raise ValueError("case steps are malformed")
@@ -876,9 +851,7 @@ def _aggregate(cases: list[dict[str, Any]], limits: EvaluationLimits) -> dict[st
     comparisons: dict[str, Any] = {}
     point_non_regression = True
     for representation in sorted({case["representation"] for case in cases}):
-        selected = [
-            case for case in cases if case["representation"] == representation
-        ]
+        selected = [case for case in cases if case["representation"] == representation]
         report: dict[str, Any] = {
             "object_count": len(selected),
             "step_count": sum(len(case["steps"]) for case in selected),
@@ -912,7 +885,9 @@ def _aggregate(cases: list[dict[str, Any]], limits: EvaluationLimits) -> dict[st
                 samples=limits.bootstrap_samples,
                 seed=limits.bootstrap_seed,
             )
-            comparisons[f"{representation}/{metric}/normalized_vs_cumulative"] = comparison
+            comparisons[f"{representation}/{metric}/normalized_vs_cumulative"] = (
+                comparison
+            )
             point_non_regression = point_non_regression and (
                 comparison["upper_95_delta"] <= 0.0
             )
@@ -1019,27 +994,29 @@ def evaluate_selection(
         if case is not None:
             cases.append(case)
     minimum_supported = int(
-        _require_mapping(
-            protocol["cohort_selection"], name="cohort_selection"
-        )["minimum_supported_object_count_for_scientific_readout"]
+        _require_mapping(protocol["cohort_selection"], name="cohort_selection")[
+            "minimum_supported_object_count_for_scientific_readout"
+        ]
     )
     support_passed = len(cases) >= minimum_supported
-    summary = _aggregate(cases, settings) if cases else {
-        "representations": {},
-        "predictive": {},
-        "paired_comparisons": {},
-        "gates": {
-            "normalized_vs_cumulative_uncertainty_passed": False,
-            "normalized_vs_cumulative_point_non_regression_passed": False,
-        },
-    }
+    summary = (
+        _aggregate(cases, settings)
+        if cases
+        else {
+            "representations": {},
+            "predictive": {},
+            "paired_comparisons": {},
+            "gates": {
+                "normalized_vs_cumulative_uncertainty_passed": False,
+                "normalized_vs_cumulative_point_non_regression_passed": False,
+            },
+        }
+    )
     summary["gates"]["support_passed"] = support_passed
     summary["gates"]["overall_passed"] = bool(
         support_passed
         and summary["gates"]["normalized_vs_cumulative_uncertainty_passed"]
-        and summary["gates"][
-            "normalized_vs_cumulative_point_non_regression_passed"
-        ]
+        and summary["gates"]["normalized_vs_cumulative_point_non_regression_passed"]
     )
     result: dict[str, Any] = {
         "schema": RESULT_SCHEMA,
