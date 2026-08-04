@@ -49,24 +49,75 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
       - name: Resolve isolated paths
         shell: bash
         run: |
           set -euo pipefail
           root="${RUNNER_TEMP}/bpt-full22-anchor-workstation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${root}/evidence"
+          rm -rf "${root}"
+          mkdir -p "${root}/evidence" "${root}/bin" "${root}/python-packages"
           {
             echo "DATA_ROOT=${HOME}/.cache/bayesian-phystwin/trajectory-evaluation-v1"
             echo "FROZEN_SOURCE=${root}/frozen-source"
             echo "OUTPUT_ROOT=${root}/evidence"
+            echo "PYTHON_TARGET=${root}/python-packages"
+            echo "PYTHON_WRAPPER_DIR=${root}/bin"
           } >> "${GITHUB_ENV}"
+
+      - name: Create isolated Python dependency path
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidates=()
+          if [[ -n "${RUNNER_TOOL_CACHE:-}" && -d "${RUNNER_TOOL_CACHE}/Python" ]]; then
+            while IFS= read -r candidate; do
+              candidates+=("${candidate}")
+            done < <(
+              find "${RUNNER_TOOL_CACHE}/Python" -type f \
+                -path '*/x64/bin/python' -print 2>/dev/null | sort -Vr
+            )
+          fi
+          if command -v python3.12 >/dev/null 2>&1; then
+            candidates+=("$(command -v python3.12)")
+          fi
+          if command -v python3 >/dev/null 2>&1; then
+            candidates+=("$(command -v python3)")
+          fi
+
+          python_bin=""
+          for candidate in "${candidates[@]}"; do
+            version="$(
+              "${candidate}" -c \
+                'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' \
+                2>/dev/null || true
+            )"
+            if [[ "${version}" != "3.12" ]]; then
+              continue
+            fi
+            if ! "${candidate}" -m pip --version >/dev/null 2>&1; then
+              continue
+            fi
+            python_bin="${candidate}"
+            break
+          done
+          if [[ -z "${python_bin}" ]]; then
+            echo "::error title=Python bootstrap unavailable::No Python 3.12 interpreter with pip is installed on workstation2"
+            exit 1
+          fi
+
+          cat > "${PYTHON_WRAPPER_DIR}/python" <<EOF
+          #!/usr/bin/env bash
+          export PYTHONPATH="${GITHUB_WORKSPACE}/src:${PYTHON_TARGET}\${PYTHONPATH:+:\${PYTHONPATH}}"
+          exec "${python_bin}" "\$@"
+          EOF
+          chmod +x "${PYTHON_WRAPPER_DIR}/python"
+          echo "${PYTHON_WRAPPER_DIR}" >> "${GITHUB_PATH}"
+          echo "PYTHON_BASE=${python_bin}" >> "${GITHUB_ENV}"
+          {
+            echo "python_base=${python_bin}"
+            "${python_bin}" --version
+            "${python_bin}" -m pip --version
+          } | tee "${OUTPUT_ROOT}/python-bootstrap.txt"
 
       - name: Record runner and accelerator identities
         shell: bash
@@ -92,11 +143,22 @@ jobs:
             | tee "${OUTPUT_ROOT}/nvidia-smi.csv"
 
       - name: Install locked evaluation dependencies
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,data]"
-          python -m pip check
-          python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
+          set -euo pipefail
+          "${PYTHON_BASE}" -m pip install \
+            --target "${PYTHON_TARGET}" \
+            --upgrade-strategy only-if-needed \
+            ".[dev,data]"
+          python - <<'PY'
+          import importlib.metadata
+
+          for name in ("bayesian-phystwin", "numpy", "pytest", "ruff", "scipy"):
+              print(f"{name}=={importlib.metadata.version(name)}")
+          PY
+          "${PYTHON_BASE}" -m pip freeze \
+            --path "${PYTHON_TARGET}" \
+            > "${OUTPUT_ROOT}/pip-freeze.txt"
 
       - name: Verify capsule before data access
         shell: bash
