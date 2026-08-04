@@ -1,4 +1,4 @@
-name: One-shot Deform360 group-held-out experiment
+name: One-shot Deform360 NPZ header inventory
 
 on:
   pull_request:
@@ -15,25 +15,20 @@ concurrency:
 
 env:
   DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
-  PROTOCOL_SHA256: b1732d062b8766e27d0d96feaa88400906955522e73d3bb63b8ec78b8994aa58
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
-  OMP_NUM_THREADS: "1"
-  OPENBLAS_NUM_THREADS: "1"
-  MKL_NUM_THREADS: "1"
-  NUMEXPR_NUM_THREADS: "1"
 
 jobs:
-  experiment:
+  inventory:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 360
+    timeout-minutes: 60
     steps:
       - name: Check out experiment branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: agent/deform360-group-tempered-experiment
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
           clean: true
 
@@ -42,218 +37,183 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Resolve isolated output
-        shell: bash
-        run: |
-          set -euo pipefail
-          root="${RUNNER_TEMP}/bpt-deform360-group-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${root}/evidence"
-          python -m venv "${root}/venv"
-          echo "OUTPUT_ROOT=${root}/evidence" >> "${GITHUB_ENV}"
-          echo "${root}/venv/bin" >> "${GITHUB_PATH}"
-
-      - name: Record runner and mounted dataset identity
+      - name: Inventory NPZ headers without reading array payloads
         shell: bash
         run: |
           set -euo pipefail
           test -d "${DEFORM360_ROOT}"
-          resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
-          echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
-          {
-            echo "runner_name=${RUNNER_NAME}"
-            echo "runner_os=${RUNNER_OS}"
-            echo "runner_arch=${RUNNER_ARCH}"
-            echo "repository=${GITHUB_REPOSITORY}"
-            echo "revision=${GITHUB_SHA}"
-            echo "dataset_root=${resolved_root}"
-            uname -a
-            lscpu
-            du -sh "${resolved_root}"
-          } | tee "${OUTPUT_ROOT}/environment.txt"
-          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
-            --format=csv,noheader | tee "${OUTPUT_ROOT}/gpus.csv"
-
-      - name: Reconstruct the content-addressed evaluator
-        shell: bash
-        run: |
-          set -euo pipefail
+          mkdir -p deform360-npz-inventory
           python - <<'PY'
-          import base64
-          import hashlib
-          import zlib
-          from pathlib import Path
-
-          expected_parts = {
-              "tools/deform360_group_tempered_payload_00.txt": "b3c1b1f386c4c1d971bd27f2152515df36f5db976db66f8d25a59bd7861df5d7",
-              "tools/deform360_group_tempered_payload_01.txt": "285d2230233d611ed05a245ac1b860a1bc8b4f7f225774e579c796c6a4a0e15c",
-              "tools/deform360_group_tempered_payload_02.txt": "762ba9738a043e60ad37954a03788312c3d5cdb2565436218cfd5d2c199581ef",
-              "tools/deform360_group_tempered_payload_03.txt": "05475cb2afea23d03337ae73c00388a5495245f24a851ffc43e4d5ce0d64aa49",
-              "tools/deform360_group_tempered_payload_04.txt": "6c24f68d20d69a826bdb567cc5286236ad42efa632980eae3093361e7580fab6",
-          }
-          encoded = []
-          for name, expected in expected_parts.items():
-              raw = Path(name).read_bytes()
-              actual = hashlib.sha256(raw).hexdigest()
-              if actual != expected:
-                  raise SystemExit(
-                      f"payload digest mismatch for {name}: {actual} != {expected}"
-                  )
-              encoded.append(raw.decode("ascii").strip())
-          source = zlib.decompress(base64.b85decode("".join(encoded)))
-          actual = hashlib.sha256(source).hexdigest()
-          expected = "fe21bedb9946c6d5989672d78d2b7452df7904e80734eb836aaa033f480f04f5"
-          if actual != expected:
-              raise SystemExit(f"source digest mismatch: {actual} != {expected}")
-          destination = Path(
-              "scripts/science/run_deform360_group_tempered_experiment.py"
-          )
-          destination.parent.mkdir(parents=True, exist_ok=True)
-          destination.write_bytes(source)
-          print(f"reconstructed {destination}: {actual}")
-          PY
-
-      - name: Install and verify locked contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,graph]"
-          python -m pip check
-          python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
-          python -m ruff format \
-            scripts/science/run_deform360_group_tempered_experiment.py \
-            tests/test_deform360_group_tempered_experiment.py
-          python -m ruff check \
-            scripts/science/run_deform360_group_tempered_experiment.py \
-            tests/test_deform360_group_tempered_experiment.py
-          python -m ruff format --check \
-            scripts/science/run_deform360_group_tempered_experiment.py \
-            tests/test_deform360_group_tempered_experiment.py
-          python -m pytest -q \
-            tests/test_deform360_public_evaluation.py \
-            tests/test_deform360_group_tempered_experiment.py \
-            | tee "${OUTPUT_ROOT}/focused-tests.log"
-          python - <<'PY'
+          import ast
           import hashlib
           import json
           import os
+          import re
+          import struct
+          import zipfile
+          from collections import Counter
           from pathlib import Path
 
-          payload = json.loads(
-              Path(
-                  "protocols/deform360_group_tempered_experiment_v1.json"
-              ).read_text(encoding="utf-8")
+          root = Path(os.environ["DEFORM360_ROOT"]).resolve()
+          object_pattern = re.compile(r"^\d{3}-.+")
+          trajectory_hints = (
+              "positions_world_m",
+              "points_world_m",
+              "positions_m",
+              "control_points",
+              "particle_tracks",
+              "particles",
+              "tracks",
+              "trajectory",
+              "positions",
+              "points",
           )
-          actual = hashlib.sha256(
-              json.dumps(
-                  payload,
-                  sort_keys=True,
-                  separators=(",", ":"),
-                  allow_nan=False,
-              ).encode("utf-8")
-          ).hexdigest()
-          expected = os.environ["PROTOCOL_SHA256"]
-          if actual != expected:
-              raise SystemExit(
-                  f"protocol digest changed: {actual} != {expected}"
+
+          def npy_header(stream):
+              if stream.read(6) != b"\x93NUMPY":
+                  raise ValueError("not an NPY member")
+              major, minor = stream.read(2)
+              if (major, minor) == (1, 0):
+                  size = struct.unpack("<H", stream.read(2))[0]
+              elif major in {2, 3}:
+                  size = struct.unpack("<I", stream.read(4))[0]
+              else:
+                  raise ValueError(f"unsupported NPY version {(major, minor)}")
+              header = ast.literal_eval(stream.read(size).decode("latin1").strip())
+              return {
+                  "shape": list(header["shape"]),
+                  "dtype": str(header["descr"]),
+                  "fortran_order": bool(header["fortran_order"]),
+              }
+
+          records = []
+          failures = []
+          top_level_npz = Counter()
+          top_level_compatible = Counter()
+          for directory, names, files in os.walk(root):
+              names[:] = sorted(
+                  name
+                  for name in names
+                  if name not in {".git", "__pycache__", "node_modules"}
               )
-          print(f"locked protocol: {actual}")
-          PY
+              for name in sorted(files):
+                  if not name.lower().endswith(".npz"):
+                      continue
+                  path = Path(directory) / name
+                  relative = path.relative_to(root).as_posix()
+                  top_level = relative.split("/", 1)[0]
+                  top_level_npz[top_level] += 1
+                  try:
+                      arrays = {}
+                      with zipfile.ZipFile(path) as archive:
+                          for member in sorted(archive.namelist()):
+                              if not member.endswith(".npy"):
+                                  continue
+                              key = member[:-4]
+                              with archive.open(member) as stream:
+                                  arrays[key] = npy_header(stream)
+                      trajectory = []
+                      for key, metadata in arrays.items():
+                          lowered = key.lower()
+                          shape = metadata["shape"]
+                          if (
+                              any(hint in lowered for hint in trajectory_hints)
+                              and len(shape) == 3
+                              and shape[-1] == 3
+                              and shape[0] >= 4
+                          ):
+                              trajectory.append(key)
+                      packed = {
+                          "frame_indices",
+                          "point_offsets",
+                          "points_world_m",
+                      }.issubset(arrays)
+                      compatible = bool(trajectory or packed)
+                      if compatible:
+                          top_level_compatible[top_level] += 1
+                      parts = relative.split("/")
+                      object_id = next(
+                          (part for part in parts if object_pattern.match(part)),
+                          None,
+                      )
+                      records.append(
+                          {
+                              "path": relative,
+                              "size_bytes": path.stat().st_size,
+                              "top_level": top_level,
+                              "object_id": object_id,
+                              "arrays": arrays,
+                              "trajectory_keys": trajectory,
+                              "packed_visual_hull_contract": packed,
+                              "compatible_sequence_contract": compatible,
+                          }
+                      )
+                  except Exception as error:
+                      failures.append(
+                          {
+                              "path": relative,
+                              "error_type": type(error).__name__,
+                              "error": str(error),
+                          }
+                      )
 
-      - name: Execute locked source-calibration-target evaluation
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/science/run_deform360_group_tempered_experiment.py \
-            --data-root "${DEFORM360_ROOT}" \
-            --protocol protocols/deform360_group_tempered_experiment_v1.json \
-            --selection-output "${OUTPUT_ROOT}/selection.json" \
-            --output "${OUTPUT_ROOT}/result.json" \
-            --max-archives 64 \
-            --max-frames-per-archive 96 \
-            --max-tracks 2048 \
-            --max-selection-tracks 128 \
-            --max-calibration-tracks 256 \
-            | tee "${OUTPUT_ROOT}/experiment.log"
-
-      - name: Verify selection and result identities
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-
-          root = Path(os.environ["OUTPUT_ROOT"])
-          selection = json.loads(
-              (root / "selection.json").read_text(encoding="utf-8")
-          )
-          result = json.loads((root / "result.json").read_text(encoding="utf-8"))
-
-          def verify(payload, field):
-              record = dict(payload)
-              expected = record.pop(field)
-              actual = hashlib.sha256(
-                  json.dumps(
-                      record,
-                      sort_keys=True,
-                      separators=(",", ":"),
-                      allow_nan=False,
-                  ).encode("utf-8")
-              ).hexdigest()
-              if actual != expected:
-                  raise SystemExit(f"{field} mismatch: {actual} != {expected}")
-
-          verify(selection, "selection_sha256")
-          verify(result, "result_sha256")
-          if result["selection_sha256"] != selection["selection_sha256"]:
-              raise SystemExit("result does not bind the frozen selection")
-          if result["protocol_sha256"] != os.environ["PROTOCOL_SHA256"]:
-              raise SystemExit("result protocol digest changed")
-          split = selection["group_split"]
-          roles = ("source", "calibration", "target")
-          for index, left in enumerate(roles):
-              for right in roles[index + 1 :]:
-                  if set(split[left]) & set(split[right]):
-                      raise SystemExit("group split is not disjoint")
-          if result["status"] == "complete":
-              boundary = result["information_boundary"]
-              if not boundary[
-                  "target_arrays_parsed_after_selection_hash_verification"
-              ]:
-                  raise SystemExit("target access order was not verified")
-          elif result["status"] != "inconclusive-temperature-boundary":
-              raise SystemExit(f"unexpected status: {result['status']}")
-          readout = {
-              "status": result["status"],
-              "protocol_sha256": result["protocol_sha256"],
-              "selection_sha256": result["selection_sha256"],
-              "result_sha256": result["result_sha256"],
-              "selected_temperature": selection["temperature"][
-                  "selected_temperature"
-              ],
-              "temperature_interior_bracketed": selection["temperature"][
-                  "interior_bracketed"
-              ],
-              "group_counts": {role: len(split[role]) for role in roles},
-              "registered_decision": result.get("registered_decision"),
-              "target_aggregate": result.get("target_aggregate"),
-              "claim_boundary": result["claim_boundary"],
+          payload = {
+              "schema": "bayesian-phystwin/deform360-npz-header-inventory-v1",
+              "schema_version": 1,
+              "repository_revision": os.environ["GITHUB_SHA"],
+              "dataset_root": str(root),
+              "information_boundary": {
+                  "array_payload_values_read": False,
+                  "npy_headers_read": True,
+                  "target_outcomes_opened": False,
+              },
+              "npz_count": len(records),
+              "failure_count": len(failures),
+              "compatible_sequence_count": sum(
+                  record["compatible_sequence_contract"] for record in records
+              ),
+              "top_level_npz_counts": dict(sorted(top_level_npz.items())),
+              "top_level_compatible_counts": dict(
+                  sorted(top_level_compatible.items())
+              ),
+              "records": records,
+              "failures": failures,
           }
-          (root / "scientific-readout.json").write_text(
+          canonical = json.dumps(
+              payload,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          payload["inventory_sha256"] = hashlib.sha256(canonical).hexdigest()
+          destination = Path("deform360-npz-inventory/inventory.json")
+          destination.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          readout = {
+              "npz_count": payload["npz_count"],
+              "failure_count": payload["failure_count"],
+              "compatible_sequence_count": payload[
+                  "compatible_sequence_count"
+              ],
+              "top_level_compatible_counts": payload[
+                  "top_level_compatible_counts"
+              ],
+              "inventory_sha256": payload["inventory_sha256"],
+          }
+          Path("deform360-npz-inventory/readout.json").write_text(
               json.dumps(readout, indent=2, sort_keys=True) + "\n",
               encoding="utf-8",
           )
           print(json.dumps(readout, indent=2, sort_keys=True))
           PY
 
-      - name: Upload complete compact evidence
+      - name: Upload header-only inventory
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: deform360-group-tempered-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.OUTPUT_ROOT }}
+          name: deform360-npz-header-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deform360-npz-inventory
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 30
