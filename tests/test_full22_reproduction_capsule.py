@@ -117,17 +117,117 @@ def test_full22_metric_drift_fails_closed() -> None:
         capsule.verify_comparison(comparison, expected)
 
 
-def test_confirmation_summary_requires_protocol_and_complete_cohort() -> None:
+def _locked_protocol(
+    capsule: ModuleType,
+    *,
+    manifest_path: str,
+) -> dict[str, object]:
+    cases = [f"case-{index:02d}" for index in range(22)]
+    specification = {
+        "method": "robust Bayesian random-walk endpoint anchoring",
+        "protocol": {
+            "bootstrap_block_length": 5,
+            "bootstrap_samples": 10000,
+            "bootstrap_seed": 20260710,
+            "development_cases": [
+                "single_lift_sloth",
+                "double_lift_sloth",
+                "double_stretch_sloth",
+            ],
+            "fit_fraction": 0.75,
+            "initial_std_m": 0.01,
+            "inlier_prior": 0.95,
+            "interpolation_neighbors": 4,
+            "maximum_residual_m": 0.01,
+            "minimum_validation_improvement": 0.0,
+            "observation_std_candidates_m": [0.001, 0.0025, 0.005],
+            "outlier_variance_multiplier": 100.0,
+            "process_std_candidates_m": [0.0, 0.0005, 0.001, 0.0025, 0.005],
+        },
+        "data_manifest": {
+            "path": manifest_path,
+            "selected_cases": cases,
+        },
+        "cohorts": {
+            "development": [
+                "double_lift_sloth",
+                "double_stretch_sloth",
+                "single_lift_sloth",
+            ],
+            "confirmation": [case for case in cases if "sloth" not in case],
+        },
+        "status": "exploratory extension after the deterministic confirmation",
+    }
+    return {
+        "schema_version": 1,
+        "protocol_id": capsule._canonical_sha256(specification),
+        "specification": specification,
+    }
+
+
+def test_confirmation_summary_uses_path_normalized_protocol_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     capsule = _load_capsule()
+    first = _locked_protocol(capsule, manifest_path="/cache-a/manifest.json")
+    second = _locked_protocol(capsule, manifest_path="/cache-b/manifest.json")
+    first_portable = capsule._portable_protocol_id(
+        first["specification"],
+        data_manifest_identity=capsule.EXPECTED_DATA_MANIFEST_IDENTITY_SHA256,
+    )
+    second_portable = capsule._portable_protocol_id(
+        second["specification"],
+        data_manifest_identity=capsule.EXPECTED_DATA_MANIFEST_IDENTITY_SHA256,
+    )
+    assert first_portable == second_portable
+    monkeypatch.setattr(capsule, "EXPECTED_PORTABLE_PROTOCOL_ID", first_portable)
+
     summary = {
-        "protocol_id": capsule.EXPECTED_PROTOCOL_ID,
+        "protocol_id": first["protocol_id"],
         "case_results": {f"case-{index:02d}": {} for index in range(22)},
     }
-    capsule.verify_confirmation_summary(summary)
+    assert (
+        capsule.verify_confirmation_summary(
+            summary,
+            first,
+            data_manifest_identity=capsule.EXPECTED_DATA_MANIFEST_IDENTITY_SHA256,
+        )
+        == first_portable
+    )
 
-    summary["protocol_id"] = "changed"
-    with pytest.raises(ValueError, match="protocol ID changed"):
-        capsule.verify_confirmation_summary(summary)
+    summary["protocol_id"] = second["protocol_id"]
+    with pytest.raises(ValueError, match="summary and locked protocol IDs disagree"):
+        capsule.verify_confirmation_summary(
+            summary,
+            first,
+            data_manifest_identity=capsule.EXPECTED_DATA_MANIFEST_IDENTITY_SHA256,
+        )
+
+
+def test_confirmation_summary_rejects_portable_protocol_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capsule = _load_capsule()
+    locked = _locked_protocol(capsule, manifest_path="/cache/manifest.json")
+    portable = capsule._portable_protocol_id(
+        locked["specification"],
+        data_manifest_identity=capsule.EXPECTED_DATA_MANIFEST_IDENTITY_SHA256,
+    )
+    monkeypatch.setattr(capsule, "EXPECTED_PORTABLE_PROTOCOL_ID", portable)
+    summary = {
+        "protocol_id": locked["protocol_id"],
+        "case_results": {f"case-{index:02d}": {} for index in range(22)},
+    }
+    changed = json.loads(json.dumps(locked))
+    changed["specification"]["protocol"]["fit_fraction"] = 0.5
+    changed["protocol_id"] = capsule._canonical_sha256(changed["specification"])
+    summary["protocol_id"] = changed["protocol_id"]
+    with pytest.raises(ValueError, match="portable protocol ID changed"):
+        capsule.verify_confirmation_summary(
+            summary,
+            changed,
+            data_manifest_identity=capsule.EXPECTED_DATA_MANIFEST_IDENTITY_SHA256,
+        )
 
 
 def test_data_manifest_identity_ignores_retrieval_metadata(
@@ -193,7 +293,8 @@ def test_manifest_command_binds_claim_protocol_and_outputs(tmp_path: Path) -> No
     command = capsule._manifest_command(tmp_path, tmp_path / "source", "run command")
 
     assert "bpt.full22_anchor_released_contract" in command
-    assert capsule.EXPECTED_PROTOCOL_ID in command
+    assert capsule.EXPECTED_PORTABLE_PROTOCOL_ID in command
+    assert capsule.EXPECTED_SOURCE_PROTOCOL_ID not in command
     assert "data_identity=input/data_identity.json" in command
     assert "full22_comparison=full22_comparison.json" in command
     assert "verification=verification.json" in command

@@ -21,8 +21,11 @@ CAPSULE_DIR = Path(__file__).resolve().parent
 REPOSITORY_ROOT = CAPSULE_DIR.parents[1]
 EXPECTED_PATH = CAPSULE_DIR / "expected_metrics.json"
 EXPECTED_SOURCE_REVISION = "e393bb6ff61d44815afd8d09dfc5334cb55d5524"
-EXPECTED_PROTOCOL_ID = (
+EXPECTED_SOURCE_PROTOCOL_ID = (
     "ee11310a84b92ff2158018a13ef09989e641e7c0ea84733fe8a6abf267093c65"
+)
+EXPECTED_PORTABLE_PROTOCOL_ID = (
+    "5d31b04c464478d839ac3919ec04209b5ff22c75cf7fe8de54a6d189a4802872"
 )
 EXPECTED_DATA_MANIFEST_IDENTITY_SHA256 = (
     "f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc"
@@ -57,6 +60,59 @@ def _canonical_sha256(payload: object) -> str:
         allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _portable_protocol_specification(
+    specification: Mapping[str, Any],
+    *,
+    data_manifest_identity: str,
+) -> dict[str, Any]:
+    """Remove the retrieval path while retaining every scientific choice."""
+
+    normalized = json.loads(
+        json.dumps(
+            dict(specification),
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    )
+    data_manifest = normalized.get("data_manifest")
+    if not isinstance(data_manifest, dict):
+        raise ValueError("locked protocol has no data_manifest mapping")
+    path = data_manifest.get("path")
+    if not isinstance(path, str) or not path:
+        raise ValueError("locked protocol data-manifest path is missing")
+    selected_cases = data_manifest.get("selected_cases")
+    if (
+        not isinstance(selected_cases, list)
+        or len(selected_cases) != 22
+        or any(not isinstance(case, str) or not case for case in selected_cases)
+        or len(set(selected_cases)) != 22
+    ):
+        raise ValueError("locked protocol must bind 22 ordered selected cases")
+    if len(data_manifest_identity) != 64 or any(
+        character not in "0123456789abcdef" for character in data_manifest_identity
+    ):
+        raise ValueError("data manifest identity must be a lowercase SHA-256 digest")
+    normalized["data_manifest"] = {
+        "identity_sha256": data_manifest_identity,
+        "selected_cases": selected_cases,
+    }
+    return normalized
+
+
+def _portable_protocol_id(
+    specification: Mapping[str, Any],
+    *,
+    data_manifest_identity: str,
+) -> str:
+    return _canonical_sha256(
+        _portable_protocol_specification(
+            specification,
+            data_manifest_identity=data_manifest_identity,
+        )
+    )
 
 
 def _json_write(path: Path, payload: object) -> None:
@@ -342,16 +398,40 @@ def verify_comparison(
     }
 
 
-def verify_confirmation_summary(summary: Mapping[str, Any]) -> None:
+def verify_confirmation_summary(
+    summary: Mapping[str, Any],
+    locked_protocol: Mapping[str, Any],
+    *,
+    data_manifest_identity: str,
+) -> str:
+    """Bind the source output to a path-normalized scientific protocol."""
+
     protocol_id = summary.get("protocol_id")
-    if protocol_id != EXPECTED_PROTOCOL_ID:
+    locked_protocol_id = locked_protocol.get("protocol_id")
+    if protocol_id != locked_protocol_id:
         raise ValueError(
-            "Bayesian anchor protocol ID changed: "
-            f"expected {EXPECTED_PROTOCOL_ID}, received {protocol_id}"
+            "confirmation summary and locked protocol IDs disagree: "
+            f"{protocol_id!r} != {locked_protocol_id!r}"
+        )
+    specification = locked_protocol.get("specification")
+    if not isinstance(specification, Mapping):
+        raise ValueError("locked protocol specification is missing")
+    if locked_protocol_id != _canonical_sha256(specification):
+        raise ValueError("locked protocol raw ID does not bind its specification")
+    portable_protocol_id = _portable_protocol_id(
+        specification,
+        data_manifest_identity=data_manifest_identity,
+    )
+    if portable_protocol_id != EXPECTED_PORTABLE_PROTOCOL_ID:
+        raise ValueError(
+            "Bayesian anchor portable protocol ID changed: "
+            f"expected {EXPECTED_PORTABLE_PROTOCOL_ID}, "
+            f"received {portable_protocol_id}"
         )
     case_results = summary.get("case_results")
     if not isinstance(case_results, Mapping) or len(case_results) != 22:
         raise ValueError("Bayesian anchor confirmation must contain all 22 cases")
+    return portable_protocol_id
 
 
 def _shell_command(command: Sequence[str], *, pythonpath: Path) -> str:
@@ -416,7 +496,7 @@ def _manifest_command(
         "--method-freeze-id",
         "full22-anchor-method-v1",
         "--protocol-id",
-        EXPECTED_PROTOCOL_ID,
+        EXPECTED_PORTABLE_PROTOCOL_ID,
         "--split-id",
         "development3-confirmation19-v1",
         "--baseline-id",
@@ -486,8 +566,8 @@ def reproduce(args: argparse.Namespace) -> None:
     expected = json.loads(EXPECTED_PATH.read_text(encoding="utf-8"))
     if expected.get("source_revision") != EXPECTED_SOURCE_REVISION:
         raise ValueError("expected metrics source revision changed")
-    if expected.get("source_protocol_id") != EXPECTED_PROTOCOL_ID:
-        raise ValueError("expected metrics protocol ID changed")
+    if expected.get("source_protocol_id") != EXPECTED_SOURCE_PROTOCOL_ID:
+        raise ValueError("expected metrics source protocol ID changed")
     if (
         expected.get("data_manifest_identity_sha256")
         != EXPECTED_DATA_MANIFEST_IDENTITY_SHA256
@@ -550,7 +630,13 @@ def reproduce(args: argparse.Namespace) -> None:
     _run(confirm_command, cwd=source_checkout, env=source_env)
     summary_path = run_dir / "bayesian_anchor_confirmation_summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    verify_confirmation_summary(summary)
+    locked_protocol_path = run_dir / "locked_protocol.json"
+    locked_protocol = json.loads(locked_protocol_path.read_text(encoding="utf-8"))
+    portable_protocol_id = verify_confirmation_summary(
+        summary,
+        locked_protocol,
+        data_manifest_identity=data_identity,
+    )
     _run(compare_command, cwd=source_checkout, env=source_env)
     comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
     verification = verify_comparison(comparison, expected)
@@ -562,7 +648,9 @@ def reproduce(args: argparse.Namespace) -> None:
             "schema_version": 1,
             "method": "robust Bayesian random-walk endpoint anchoring",
             "source_revision": EXPECTED_SOURCE_REVISION,
-            "protocol_id": EXPECTED_PROTOCOL_ID,
+            "source_protocol_id": EXPECTED_SOURCE_PROTOCOL_ID,
+            "runtime_protocol_id": summary["protocol_id"],
+            "portable_protocol_id": portable_protocol_id,
             "maximum_residual_m": 0.01,
             "fit_fraction": 0.75,
             "development_case_count": 3,
@@ -579,6 +667,8 @@ def reproduce(args: argparse.Namespace) -> None:
             "data_manifest_filename": data_manifest.name,
             "data_manifest_sha256": _sha256(data_manifest),
             "data_manifest_identity_sha256": data_identity,
+            "runtime_protocol_id": summary["protocol_id"],
+            "portable_protocol_id": portable_protocol_id,
             "metric_tolerance_m": expected["absolute_tolerance_m"],
         },
     )
