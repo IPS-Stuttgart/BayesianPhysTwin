@@ -1,24 +1,14 @@
-name: Deform360 public-data evaluation
+name: Deform360 metadata-only inventory
 
 on:
   pull_request:
     branches: [main]
     paths:
+      - ".github/workflows/deform360-public-evaluation.yml"
+      - "docs/deform360_public_evaluation_v1.md"
       - "scripts/science/run_deform360_public_evaluation.py"
       - "tests/test_deform360_public_evaluation.py"
-      - "docs/deform360_public_evaluation_v1.md"
-      - ".github/workflows/deform360-public-evaluation.yml"
   workflow_dispatch:
-    inputs:
-      profile:
-        description: Evaluation scale
-        required: true
-        default: standard
-        type: choice
-        options:
-          - smoke
-          - standard
-          - full
 
 permissions:
   contents: read
@@ -29,15 +19,14 @@ concurrency:
 
 env:
   DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
-  EVAL_PROFILE: ${{ inputs.profile || 'standard' }}
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
 
 jobs:
-  evaluate:
-    name: Rolling public Deform360 benchmark
+  inventory:
+    name: Metadata-only cohort inventory
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 360
+    timeout-minutes: 60
     steps:
       - name: Check out BayesianPhysTwin
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,18 +39,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Create isolated environment
-        shell: bash
-        run: |
-          python -m venv .venv
-          echo "VIRTUAL_ENV=${PWD}/.venv" >> "${GITHUB_ENV}"
-          echo "${PWD}/.venv/bin" >> "${GITHUB_PATH}"
-
-      - name: Record runner and dataset identity
+      - name: Record runner and mounted-root identity
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p deform360-evaluation
+          mkdir -p deform360-inventory
           test -d "${DEFORM360_ROOT}"
           resolved_root="$(readlink -f "${DEFORM360_ROOT}")"
           echo "DEFORM360_ROOT=${resolved_root}" >> "${GITHUB_ENV}"
@@ -71,30 +53,36 @@ jobs:
             echo "runner_arch=${RUNNER_ARCH}"
             echo "repository=${GITHUB_REPOSITORY}"
             echo "revision=${GITHUB_SHA}"
-            echo "profile=${EVAL_PROFILE}"
             echo "dataset_root=${resolved_root}"
             uname -a
             python --version
-            du -sh "${resolved_root}"
-          } | tee deform360-evaluation/environment.txt
+          } | tee deform360-inventory/environment.txt
           nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
             --format=csv,noheader \
-            | tee deform360-evaluation/gpus.csv
+            | tee deform360-inventory/gpus.csv
 
-      - name: Inventory mounted Deform360 release
+      - name: Inventory names only without opening dataset payloads
         shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
+          import hashlib
           import json
           import os
-          from collections import Counter
+          import re
+          from collections import Counter, defaultdict
           from pathlib import Path
 
           root = Path(os.environ["DEFORM360_ROOT"]).resolve()
+          object_pattern = re.compile(r"^(\d{3}-[^/]+)$")
+          episode_pattern = re.compile(r"(?:episode[_-]?|ep)(\d{1,4})", re.I)
           extensions = Counter()
+          object_paths: dict[str, list[str]] = defaultdict(list)
+          object_episodes: dict[str, set[int]] = defaultdict(set)
           top_level = []
-          sample_paths = []
           total_files = 0
+          total_directories = 0
+
           for path in sorted(root.iterdir()):
               top_level.append(
                   {
@@ -102,125 +90,157 @@ jobs:
                       "kind": "directory" if path.is_dir() else "file",
                   }
               )
+
           for directory, names, files in os.walk(root):
-              names[:] = sorted(name for name in names if name != ".git")
+              names[:] = sorted(
+                  name
+                  for name in names
+                  if name not in {".git", "__pycache__", "node_modules"}
+              )
+              total_directories += 1
+              relative_directory = Path(directory).relative_to(root)
+              directory_parts = relative_directory.parts
+              object_id = next(
+                  (
+                      part
+                      for part in directory_parts
+                      if object_pattern.fullmatch(part)
+                  ),
+                  None,
+              )
+              episode = next(
+                  (
+                      int(match.group(1))
+                      for part in directory_parts
+                      if (match := episode_pattern.search(part)) is not None
+                  ),
+                  None,
+              )
               for name in sorted(files):
                   total_files += 1
                   suffix = Path(name).suffix.lower() or "<none>"
                   extensions[suffix] += 1
-                  if len(sample_paths) < 500:
-                      sample_paths.append(
-                          str((Path(directory) / name).relative_to(root))
-                      )
+                  relative = (Path(directory) / name).relative_to(root).as_posix()
+                  parts = relative.split("/")
+                  file_object = object_id or next(
+                      (
+                          part
+                          for part in parts
+                          if object_pattern.fullmatch(part)
+                      ),
+                      None,
+                  )
+                  if file_object is not None:
+                      if len(object_paths[file_object]) < 100:
+                          object_paths[file_object].append(relative)
+                      file_episode = episode
+                      if file_episode is None:
+                          file_episode = next(
+                              (
+                                  int(match.group(1))
+                                  for part in parts
+                                  if (match := episode_pattern.search(part))
+                                  is not None
+                              ),
+                              None,
+                          )
+                      if file_episode is not None:
+                          object_episodes[file_object].add(file_episode)
+
+          objects = [
+              {
+                  "object_id": object_id,
+                  "episode_ids_from_names": sorted(object_episodes[object_id]),
+                  "sample_paths": sorted(object_paths[object_id]),
+              }
+              for object_id in sorted(object_paths)
+          ]
           payload = {
-              "root": str(root),
+              "schema": "bayesian-phystwin/deform360-name-inventory-v1",
+              "schema_version": 1,
+              "repository_revision": os.environ["GITHUB_SHA"],
+              "dataset_root": str(root),
+              "information_boundary": {
+                  "dataset_payload_opened": False,
+                  "file_contents_hashed": False,
+                  "names_and_directory_structure_only": True,
+                  "reserved_target_outcomes_opened": False,
+              },
               "total_files": total_files,
+              "total_directories": total_directories,
+              "object_count": len(objects),
               "top_level": top_level,
               "extension_counts": dict(sorted(extensions.items())),
-              "sample_paths": sample_paths,
+              "objects": objects,
           }
-          destination = Path("deform360-evaluation/dataset-inventory.json")
+          canonical = json.dumps(
+              payload,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          payload["inventory_sha256"] = hashlib.sha256(canonical).hexdigest()
+          destination = Path("deform360-inventory/inventory.json")
           destination.write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              json.dumps(payload, indent=2, sort_keys=True, allow_nan=False)
+              + "\n",
               encoding="utf-8",
           )
-          print(json.dumps(payload, indent=2, sort_keys=True))
+          print(
+              json.dumps(
+                  {
+                      "object_count": payload["object_count"],
+                      "total_files": payload["total_files"],
+                      "inventory_sha256": payload["inventory_sha256"],
+                      "object_ids": [item["object_id"] for item in objects],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+          )
           PY
 
-      - name: Install evaluation environment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,graph]"
-          python -m pip check
-
-      - name: Run focused evaluation tests
-        shell: bash
-        run: |
-          set -o pipefail
-          python -m pytest -q tests/test_deform360_public_evaluation.py \
-            | tee deform360-evaluation/tests.log
-
-      - name: Run rolling public-data evaluation
+      - name: Verify clean read-only preflight
         shell: bash
         run: |
           set -euo pipefail
-          case "${EVAL_PROFILE}" in
-            smoke)
-              max_archives=8
-              max_frames=32
-              max_tracks=512
-              ;;
-            standard)
-              max_archives=64
-              max_frames=96
-              max_tracks=2048
-              ;;
-            full)
-              max_archives=256
-              max_frames=256
-              max_tracks=4096
-              ;;
-            *)
-              echo "Unsupported profile: ${EVAL_PROFILE}" >&2
-              exit 2
-              ;;
-          esac
-          python scripts/science/run_deform360_public_evaluation.py \
-            --data-root "${DEFORM360_ROOT}" \
-            --output deform360-evaluation/result.json \
-            --max-archives "${max_archives}" \
-            --max-frames-per-archive "${max_frames}" \
-            --max-tracks "${max_tracks}" \
-            | tee deform360-evaluation/evaluation.log
+          git diff --exit-code
+          git status --porcelain=v1 | tee deform360-inventory/git-status.txt
+          test ! -s deform360-inventory/git-status.txt
 
-      - name: Render concise result summary
+      - name: Publish metadata-only summary
         if: always()
         shell: bash
         run: |
-          python - <<'PY'
+          if [[ -f deform360-inventory/inventory.json ]]; then
+            python - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
           import json
           from pathlib import Path
 
-          result_path = Path("deform360-evaluation/result.json")
-          output = Path("deform360-evaluation/summary.md")
-          if not result_path.is_file():
-              output.write_text(
-                  "# Deform360 evaluation\n\nNo result JSON was produced.\n",
-                  encoding="utf-8",
+          payload = json.loads(
+              Path("deform360-inventory/inventory.json").read_text(
+                  encoding="utf-8"
               )
-              raise SystemExit(0)
-          result = json.loads(result_path.read_text(encoding="utf-8"))
-          lines = [
-              "# Deform360 public-data evaluation",
-              "",
-              f"- Result SHA-256: `{result['result_sha256']}`",
-              "- Dataset access: read-only",
-              "- Prediction: rolling causal prefix",
-              "- Claim: external diagnostic, not official Table-4 parity",
-              "",
-              "```json",
-              json.dumps(result["summary"], indent=2, sort_keys=True),
-              "```",
-              "",
-          ]
-          output.write_text("\n".join(lines), encoding="utf-8")
+          )
+          print("### Deform360 metadata-only inventory")
+          print()
+          print(f"- Objects found: `{payload['object_count']}`")
+          print(f"- Files named: `{payload['total_files']}`")
+          print(f"- Inventory SHA-256: `{payload['inventory_sha256']}`")
+          print("- Dataset payloads opened: `false`")
+          print("- Reserved target outcomes opened: `false`")
           PY
-          cat deform360-evaluation/summary.md >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "### Deform360 metadata-only inventory" >> "${GITHUB_STEP_SUMMARY}"
+            echo >> "${GITHUB_STEP_SUMMARY}"
+            echo "No inventory artifact was produced." >> "${GITHUB_STEP_SUMMARY}"
+          fi
 
-      - name: Record resolved environment
-        if: always()
-        shell: bash
-        run: |
-          python -m pip freeze \
-            | tee deform360-evaluation/pip-freeze.txt
-          git status --short \
-            | tee deform360-evaluation/git-status.txt
-
-      - name: Upload evaluation evidence
+      - name: Upload metadata-only inventory
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: deform360-public-${{ github.run_id }}-${{ github.run_attempt }}
-          path: deform360-evaluation
+          name: deform360-name-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deform360-inventory
           if-no-files-found: error
           retention-days: 30
