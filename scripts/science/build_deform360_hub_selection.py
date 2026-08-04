@@ -427,7 +427,14 @@ def build_selection(
     content["selection_sha256"] = _sha256_json(bound)
     content["content_selection_sha256"] = _sha256_json(content)
     result = dict(content)
-    result["implementation_revision"] = implementation_revision
+    result["implementation_revision"] = (
+        None
+        if implementation_revision is None
+        else _require_revision(
+            implementation_revision,
+            name="BayesianPhysTwin implementation revision",
+        )
+    )
     result["selection_artifact_sha256"] = _sha256_json(result)
     return result
 
@@ -541,6 +548,17 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         help="offline names/metadata fixture; omit for the official Hugging Face Hub",
     )
+    parser.add_argument(
+        "--implementation-revision",
+        default=(
+            os.environ.get("BPT_IMPLEMENTATION_REVISION")
+            or os.environ.get("GITHUB_SHA")
+        ),
+        help=(
+            "exact BayesianPhysTwin head revision; live PR workflows must pass "
+            "github.event.pull_request.head.sha explicitly"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -561,7 +579,7 @@ def main() -> int:
         snapshot,
         repository=args.repository,
         protocol_path=args.protocol,
-        implementation_revision=os.environ.get("GITHUB_SHA"),
+        implementation_revision=args.implementation_revision,
     )
     write_selection(args.output, result)
     summary = {

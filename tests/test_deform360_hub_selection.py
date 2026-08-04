@@ -175,6 +175,8 @@ def test_official_hub_selection_is_deterministic_disjoint_and_target_blind(
 
     assert first["content_selection_sha256"] == second["content_selection_sha256"]
     assert first["selection_artifact_sha256"] != second["selection_artifact_sha256"]
+    assert first["implementation_revision"] == "b" * 40
+    assert second["implementation_revision"] == "c" * 40
     calibration = {record["object_id"] for record in first["selection"]["calibration"]}
     confirmation = {
         record["object_id"] for record in first["selection"]["confirmation"]
@@ -343,3 +345,41 @@ def test_episode_binding_rejects_invalid_sequence_contracts() -> None:
             metadata_sha256_by_object={"s3": "1" * 64},
             seed="seed",
         )
+
+
+def test_selection_rejects_nonexact_implementation_revision(tmp_path: Path) -> None:
+    repository, protocol_path, snapshot = _fixture(tmp_path)
+
+    with pytest.raises(ValueError, match="implementation revision"):
+        build_selection(
+            snapshot,
+            repository=repository,
+            protocol_path=protocol_path,
+            implementation_revision="main",
+        )
+
+
+def test_stage0_workflow_binds_exact_head_and_protects_self_hosted_runner() -> None:
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "deform360-official-hub-visuotactile.yml"
+    ).read_text(encoding="utf-8")
+
+    assert (
+        "BPT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}"
+        in workflow
+    )
+    assert "ref: ${{ env.BPT_HEAD_SHA }}" in workflow
+    assert '--implementation-revision "${BPT_HEAD_SHA}"' in workflow
+    assert (
+        "github.event.pull_request.head.repo.full_name == github.repository"
+        in workflow
+    )
+    assert "permissions:\n      contents: write" in workflow
+    assert (
+        "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+        in workflow
+    )
+    assert 'git push origin "HEAD:${BPT_HEAD_REF}"' in workflow

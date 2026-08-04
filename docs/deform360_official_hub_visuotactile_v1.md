@@ -159,5 +159,12 @@ merge protocol, contract, tests, and Stage-0 workflow
 ```
 
 The Stage-0 workflow is
-`.github/workflows/deform360-official-hub-visuotactile.yml`. Its artifact is a
-selection proposal, not empirical evidence.
+`.github/workflows/deform360-official-hub-visuotactile.yml`. It checks out and
+records the exact pull-request head rather than GitHub's synthetic merge commit.
+The self-hosted metadata job is disabled for fork pull requests. On a trusted
+same-repository pull request, the workflow commits the exact generated selection
+to
+`protocols/locks/deform360_official_hub_visuotactile_v1_selection.json`; a
+concurrent branch change makes that push fail rather than publishing a stale
+lock. The uploaded Stage-0 artifact remains selection and provenance evidence,
+not an empirical model result.
