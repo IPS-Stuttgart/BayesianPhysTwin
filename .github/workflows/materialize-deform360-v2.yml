@@ -17,8 +17,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: materialize-deform360-v2
-  cancel-in-progress: false
+  group: materialize-deform360-v2-${{ github.sha }}
+  cancel-in-progress: true
 
 jobs:
   materialize:
