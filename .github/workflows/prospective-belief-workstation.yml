@@ -14,8 +14,18 @@ on:
       - "tests/test_prospective_prob4d_update.py"
       - "tests/test_structured_reliability.py"
       - "tests/test_parameter_posterior.py"
+      - "docs/prospective_belief_updates_v1.md"
       - ".github/workflows/prospective-belief-workstation.yml"
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner type
+        required: true
+        default: github-hosted
+        type: choice
+        options:
+          - github-hosted
+          - self-hosted
 
 permissions:
   contents: read
@@ -27,7 +37,12 @@ concurrency:
 jobs:
   workstation2:
     name: Focused contracts and numerical stress
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: >-
+      ${{
+        inputs.runner == 'self-hosted' &&
+        fromJSON('["self-hosted","Linux","X64","nvidia-smi"]') ||
+        'ubuntu-latest'
+      }}
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
@@ -38,7 +53,7 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: Record runner and GPU identity
+      - name: Record runner identity
         shell: bash
         run: |
           set -euo pipefail
@@ -49,9 +64,14 @@ jobs:
             uname -a
             python --version
           } | tee prospective-belief-environment.txt
-          nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
-            --format=csv,noheader \
-            | tee prospective-belief-gpus.csv
+          if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi --query-gpu=name,uuid,driver_version,memory.total \
+              --format=csv,noheader \
+              | tee prospective-belief-gpus.csv
+          else
+            echo "nvidia-smi is unavailable on this CPU runner" \
+              | tee prospective-belief-gpus.csv
+          fi
       - name: Archive repository context for reproducible review
         run: |
           tar -czf prospective-belief-source-context.tgz \
@@ -146,7 +166,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: prospective-belief-workstation2
+          name: prospective-belief-validation
           path: |
             prospective-belief-environment.txt
             prospective-belief-gpus.csv
