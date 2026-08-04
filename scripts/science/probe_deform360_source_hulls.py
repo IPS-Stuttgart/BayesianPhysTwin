@@ -242,8 +242,8 @@ def _probe_archive(
             points_shape, fortran_order, points_dtype = _read_npy_header(stream)
 
     _require(frame_indices.ndim == 1, "frame_indices must be one-dimensional")
+    _require(len(frame_indices) >= 1, "frame_indices must contain at least one row")
     _require(frame_indices[0] >= 0, "frame_indices must be nonnegative")
-    _require(len(frame_indices) >= 3, "frame_indices must contain at least three rows")
     frame_differences = np.diff(frame_indices)
     _require(
         np.all(frame_differences > 0),
@@ -277,6 +277,7 @@ def _probe_archive(
         "every sampled visual hull must contain at least one point",
     )
     unique_strides, stride_counts = np.unique(frame_differences, return_counts=True)
+    transition_count = len(frame_differences)
     return {
         "object_id": object_id,
         "episode_id": episode_id,
@@ -285,6 +286,7 @@ def _probe_archive(
         "archive_size_bytes": int(path.stat().st_size),
         "archive_members": list(members),
         "frame_count": int(len(frame_indices)),
+        "transition_count": int(transition_count),
         "frame_start": int(frame_indices[0]),
         "frame_stop_inclusive": int(frame_indices[-1]),
         "frame_indices": frame_indices.astype(int).tolist(),
@@ -292,7 +294,14 @@ def _probe_archive(
             str(int(stride)): int(count)
             for stride, count in zip(unique_strides, stride_counts, strict=True)
         },
+        "stride_observable": transition_count > 0,
         "constant_frame_stride": len(unique_strides) == 1,
+        "prediction_eligible": len(frame_indices) >= 3,
+        "prediction_ineligibility_reason": (
+            None
+            if len(frame_indices) >= 3
+            else "rolling one-step evaluation requires at least three sampled hulls"
+        ),
         "points_world_m_header": {
             "shape": list(points_shape),
             "dtype": points_dtype.str,
@@ -336,16 +345,25 @@ def probe_locked_source_hulls(
             )
         )
 
-    all_constant = all(record["constant_frame_stride"] for record in records)
+    stride_records = [record for record in records if record["stride_observable"]]
+    all_constant = all(record["constant_frame_stride"] for record in stride_records)
     object_counts = Counter(record["object_id"] for record in records)
     constant_stride_counts: Counter[str] = Counter()
     irregular_count = 0
+    no_transition_count = 0
     for record in records:
-        if record["constant_frame_stride"]:
+        if not record["stride_observable"]:
+            no_transition_count += 1
+        elif record["constant_frame_stride"]:
             stride = next(iter(record["frame_stride_counts"]))
             constant_stride_counts[stride] += 1
         else:
             irregular_count += 1
+    prediction_ineligible = [
+        str(record["relative_path"])
+        for record in records
+        if not record["prediction_eligible"]
+    ]
     result: dict[str, Any] = {
         "schema": PROBE_SCHEMA,
         "schema_version": 1,
@@ -364,9 +382,13 @@ def probe_locked_source_hulls(
         "object_count": len(object_counts),
         "episode_count": len(records),
         "episodes_per_object": dict(sorted(object_counts.items())),
-        "all_archives_constant_frame_stride": all_constant,
+        "prediction_eligible_episode_count": len(records) - len(prediction_ineligible),
+        "prediction_ineligible_episode_count": len(prediction_ineligible),
+        "prediction_ineligible_archives": prediction_ineligible,
+        "all_stride_observable_archives_constant_frame_stride": all_constant,
         "constant_frame_stride_counts": dict(sorted(constant_stride_counts.items())),
         "irregular_frame_stride_archive_count": irregular_count,
+        "no_transition_archive_count": no_transition_count,
         "frame_stride_patterns": dict(
             sorted(
                 Counter(
@@ -412,13 +434,20 @@ def main() -> int:
         "probe_sha256": result["probe_sha256"],
         "object_count": result["object_count"],
         "episode_count": result["episode_count"],
-        "all_archives_constant_frame_stride": (
-            result["all_archives_constant_frame_stride"]
-        ),
+        "prediction_eligible_episode_count": result[
+            "prediction_eligible_episode_count"
+        ],
+        "prediction_ineligible_episode_count": result[
+            "prediction_ineligible_episode_count"
+        ],
+        "all_stride_observable_archives_constant_frame_stride": result[
+            "all_stride_observable_archives_constant_frame_stride"
+        ],
         "constant_frame_stride_counts": result["constant_frame_stride_counts"],
         "irregular_frame_stride_archive_count": (
             result["irregular_frame_stride_archive_count"]
         ),
+        "no_transition_archive_count": result["no_transition_archive_count"],
         "frame_stride_patterns": result["frame_stride_patterns"],
     }
     print(json.dumps(summary, indent=2, sort_keys=True, allow_nan=False))
