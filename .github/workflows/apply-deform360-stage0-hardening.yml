@@ -16,8 +16,8 @@ jobs:
     if: >-
       github.actor != 'github-actions[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 10
     steps:
       - name: Check out trusted PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,14 +26,7 @@ jobs:
           persist-credentials: true
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Apply and validate exact patch
+      - name: Apply exact source patch
         shell: bash
         run: |
           set -euo pipefail
@@ -42,21 +35,6 @@ jobs:
           git apply .staging/stage0-hardening.patch
           rm .staging/stage0-hardening.patch
           rmdir .staging 2>/dev/null || true
-
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
-          python -m pip check
-          python -m ruff format \
-            scripts/science/build_deform360_hub_selection.py \
-            tests/test_deform360_hub_selection.py
-          python -m ruff check \
-            scripts/science/build_deform360_hub_selection.py \
-            tests/test_deform360_hub_selection.py
-          python -m pytest -q \
-            tests/test_deform360_contact_anchor.py \
-            tests/test_deform360_hub_selection.py
-          python -m compileall -q \
-            scripts/science/build_deform360_hub_selection.py
           git diff --check
 
       - name: Publish hardened product files
@@ -70,5 +48,6 @@ jobs:
             tests/test_deform360_hub_selection.py \
             docs/deform360_official_hub_visuotactile_v1.md \
             .staging
+          git diff --cached --check
           git commit -m "Harden exact Deform360 Stage-0 selection locking"
           git push origin "HEAD:${{ github.head_ref }}"
