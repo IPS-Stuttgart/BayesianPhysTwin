@@ -1,0 +1,37 @@
+{
+  "config": {
+    "amendment_id": "deform360-source-hull-contract-probe-v2",
+    "base_protocol": {
+      "config_sha256": "a78aa19f636f621a4f1b8a1d574c0f58cd2c36b520313b85735889c2479dff16",
+      "path": "protocols/deform360_source_hull_contract_probe_v1.json"
+    },
+    "claim_boundary": "Target-blind structural amendment after the v1 probe established that at least one locked source archive contains an empty sampled hull. The amendment classifies empty frames and short archives without decoding point coordinates, running a model, computing a score, or opening a reserved target.",
+    "information_boundary": {
+      "model_prediction_run": false,
+      "points_world_m_coordinate_values_decoded": false,
+      "reserved_target_outcomes_opened": false,
+      "score_bearing_outcome_computed": false
+    },
+    "locked_at": "2026-08-04",
+    "policy": {
+      "cadence_basis": "strictly increasing frame_indices after empty-frame exclusion",
+      "empty_frame_handling": "retain in archive custody; exclude from the prediction sequence",
+      "minimum_points_for_usable_frame": 1,
+      "minimum_usable_frames_for_rolling_prediction": 3,
+      "object_balancing_for_future_scoring": true,
+      "point_offsets_order": "nondecreasing"
+    },
+    "status": "locked-after-v1-structural-failure-before-coordinate-access",
+    "trigger_evidence": {
+      "artifact_id": 8892431565,
+      "artifact_sha256": "99f451b109e05fc50fbc95af5d5ab7b1c214711cdcf4a09d80d2fff940b1bd70",
+      "evaluated_merge_sha": "6dfd07da75fd0e2eb1dc67108ff50471be4c3a46",
+      "failure": "point_offsets must be strictly increasing",
+      "workflow_job_id": 91992411933,
+      "workflow_run_id": 30909498317
+    }
+  },
+  "config_sha256": "5d7e762cb168a88e034693816e68cf1c29364c5ec0ef3128ec22b59b803e9852",
+  "schema": "bayesian-phystwin/deform360-source-hull-contract-probe-amendment-v2",
+  "schema_version": 1
+}
