@@ -1,8 +1,8 @@
 name: One-shot harden PR 120
 
 on:
-  push:
-    branches: ["agent/deform360-normalized-evidence-external-v1"]
+  pull_request:
+    branches: ["main"]
     paths:
       - ".github/workflows/temporary-harden-pr120.yml"
   workflow_dispatch:
@@ -16,7 +16,10 @@ concurrency:
 
 jobs:
   harden:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -119,16 +122,6 @@ jobs:
           git status --short
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            .github/workflows/deform360-normalized-evidence-external.yml \
-            .github/workflows/temporary-format-deform360-normalized.yml \
-            .github/workflows/temporary-format-pr120.yml \
-            .github/workflows/temporary-harden-pr120.yml \
-            docs/deform360_normalized_evidence_external_v1.md \
-            protocols/deform360_normalized_evidence_external_v1.json \
-            scripts/science/run_deform360_normalized_evidence_external.py \
-            tests/test_deform360_normalized_evidence_external.py \
-            tools/pr120_hardening_payload_00.txt \
-            tools/pr120_hardening_payload_01.txt
+          git add -A
           git commit -m "Harden Deform360 provenance and cadence contracts"
           git push origin HEAD:agent/deform360-normalized-evidence-external-v1
