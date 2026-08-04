@@ -1,0 +1,73 @@
+name: One-shot format cross-window identity study
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/temporary-format-cross-window-identity-study.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-format-cross-window-identity-study
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the experiment branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/prob4d-cross-window-identity-study
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install formatting tools
+        run: python -m pip install "ruff>=0.6"
+
+      - name: Remove the audited unused import and format changed Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i '/^import hashlib$/d' \
+            scripts/science/prob4d_cross_window_identity_development_v1.py
+          python -m ruff check --fix \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m ruff format \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m ruff check \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m py_compile \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+
+      - name: Remove one-shot transport and commit ordinary source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/temporary-format-cross-window-identity-study.yml
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Format cross-window identity development study"
+          git push origin HEAD:agent/prob4d-cross-window-identity-study
