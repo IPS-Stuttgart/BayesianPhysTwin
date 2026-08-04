@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: recover-materialize-deform360-v2-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   materialize:
@@ -264,6 +264,8 @@ jobs:
             tests/test_deform360_preflight_workflow.py \
             tests/test_deform360_public_protocol.py
           git diff --cached --check
+          test -z "$(git diff --name-only)"
+          test -z "$(git ls-files --others --exclude-standard)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Harden staged Deform360 group evaluation"
