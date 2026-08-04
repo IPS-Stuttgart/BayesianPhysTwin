@@ -66,6 +66,9 @@ jobs:
 
       - name: Format and validate the focused patch
         run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/drift_bias.py \
+            tests/test_drift_bias.py
           python -m ruff format \
             src/bayesian_phystwin/drift_bias.py \
             tests/test_drift_bias.py
