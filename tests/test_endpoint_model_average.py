@@ -12,8 +12,11 @@ from bayesian_phystwin.endpoint_model_average import (
     ModelAveragedEndpointConfigV1,
     ModelAveragedEndpointPosteriorV1,
     ModelAveragedEndpointPredictionV1,
+    TemperedModelAveragedEndpointConfigV2,
     infer_model_averaged_endpoint,
+    infer_tempered_model_averaged_endpoint,
     predict_model_averaged_endpoint,
+    predict_tempered_model_averaged_endpoint,
 )
 from bayesian_phystwin.phystwin_bayesian_anchor import robust_random_walk_endpoint
 
@@ -162,6 +165,104 @@ def test_default_configuration_uses_historical_noise_grid() -> None:
     config = ModelAveragedEndpointConfigV1()
     assert len(config.components) == 15
     assert np.isclose(sum(config.component_prior_probability), 1.0)
+
+
+def test_tempered_large_cap_matches_historical_mixture() -> None:
+    residual = np.array(
+        [
+            [[0.0, 0.0, 0.0], [0.01, 0.0, 0.0]],
+            [[0.004, 0.0, 0.0], [0.012, 0.0, 0.0]],
+            [[0.009, 0.0, 0.0], [0.011, 0.0, 0.0]],
+        ]
+    )
+    valid = np.ones((3, 2), dtype=bool)
+    base = infer_model_averaged_endpoint(residual, valid, end_frame=3)
+    tempered = infer_tempered_model_averaged_endpoint(
+        residual,
+        valid,
+        end_frame=3,
+        config=TemperedModelAveragedEndpointConfigV2(
+            effective_evidence_count_cap=100.0
+        ),
+    )
+
+    assert np.array_equal(tempered.evidence_power, np.ones(2))
+    assert np.allclose(tempered.component_weights, base.component_weights)
+    assert np.allclose(tempered.mean_m, base.mean_m)
+    assert np.allclose(tempered.covariance_m2, base.covariance_m2)
+
+
+def test_tempered_evidence_power_tracks_effective_observation_count() -> None:
+    residual = np.zeros((5, 3, 3))
+    valid = np.array(
+        [
+            [True, True, False],
+            [True, True, False],
+            [True, False, False],
+            [True, False, False],
+            [True, False, False],
+        ]
+    )
+    prior = tuple(float(value) for value in np.arange(1, 16) / 120.0)
+    base_config = ModelAveragedEndpointConfigV1(
+        component_prior_probability=prior
+    )
+    posterior = infer_tempered_model_averaged_endpoint(
+        residual,
+        valid,
+        end_frame=5,
+        config=TemperedModelAveragedEndpointConfigV2(
+            base_config=base_config,
+            effective_evidence_count_cap=2.0,
+        ),
+    )
+
+    assert np.allclose(posterior.evidence_power, [0.4, 1.0, 1.0])
+    assert np.allclose(posterior.component_weights[2], prior)
+    assert np.array_equal(posterior.update_count, [5, 2, 0])
+
+
+def test_tempering_preserves_component_diversity_and_predictive_growth() -> None:
+    residual = np.linspace(0.0, 0.03, 20)[:, None, None] * np.array(
+        [[[1.0, 0.0, 0.0]]]
+    )
+    valid = np.ones((20, 1), dtype=bool)
+    historical = infer_model_averaged_endpoint(residual, valid, end_frame=20)
+    tempered = infer_tempered_model_averaged_endpoint(
+        residual,
+        valid,
+        end_frame=20,
+        config=TemperedModelAveragedEndpointConfigV2(
+            effective_evidence_count_cap=2.0
+        ),
+    )
+    historical_effective = 1.0 / np.sum(np.square(historical.component_weights[0]))
+    tempered_effective = 1.0 / np.sum(np.square(tempered.component_weights[0]))
+
+    assert tempered_effective > historical_effective
+    now = predict_tempered_model_averaged_endpoint(tempered, horizon_steps=0)
+    future = predict_tempered_model_averaged_endpoint(tempered, horizon_steps=20)
+    assert np.trace(future.covariance_m2[0]) > np.trace(now.covariance_m2[0])
+    assert not tempered.mean_m.flags.writeable
+    assert not future.covariance_m2.flags.writeable
+
+
+def test_tempered_configuration_and_prediction_fail_closed() -> None:
+    with pytest.raises(TypeError, match="base_config"):
+        TemperedModelAveragedEndpointConfigV2(base_config=object())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="finite and positive"):
+        TemperedModelAveragedEndpointConfigV2(
+            effective_evidence_count_cap=float("inf")
+        )
+    with pytest.raises(TypeError, match="TemperedModelAveragedEndpointPosteriorV2"):
+        predict_tempered_model_averaged_endpoint(object(), horizon_steps=0)  # type: ignore[arg-type]
+    posterior = infer_tempered_model_averaged_endpoint(
+        np.zeros((1, 1, 3)),
+        np.ones((1, 1), dtype=bool),
+        end_frame=1,
+    )
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        predict_tempered_model_averaged_endpoint(posterior, horizon_steps=-1)
 
 
 def test_invalid_configurations_fail() -> None:

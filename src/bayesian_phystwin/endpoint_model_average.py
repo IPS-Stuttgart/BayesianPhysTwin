@@ -9,6 +9,7 @@ import numpy as np
 from .contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 
 MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION = 1
+TEMPERED_MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION = 2
 
 
 def _historical_component_grid() -> tuple[FixedBayesianAnchorConfigV1, ...]:
@@ -79,6 +80,35 @@ class ModelAveragedEndpointConfigV1:
 
 
 DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1 = ModelAveragedEndpointConfigV1()
+
+
+@dataclass(frozen=True, slots=True)
+class TemperedModelAveragedEndpointConfigV2:
+    """Correlation-aware power posterior over the frozen endpoint family.
+
+    ``effective_evidence_count_cap`` limits how many conditionally independent
+    prefix observations the model-selection likelihood is allowed to claim for
+    one track.  Component filtering itself remains unchanged; only the evidence
+    used to select among complete filters is tempered.
+    """
+
+    base_config: ModelAveragedEndpointConfigV1 = field(
+        default_factory=ModelAveragedEndpointConfigV1
+    )
+    effective_evidence_count_cap: float = 4.0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.base_config, ModelAveragedEndpointConfigV1):
+            raise TypeError("base_config must be a ModelAveragedEndpointConfigV1")
+        cap = float(self.effective_evidence_count_cap)
+        if not np.isfinite(cap) or cap <= 0.0:
+            raise ValueError("effective_evidence_count_cap must be finite and positive")
+        object.__setattr__(self, "effective_evidence_count_cap", cap)
+
+
+DEFAULT_TEMPERED_MODEL_AVERAGED_ENDPOINT_CONFIG_V2 = (
+    TemperedModelAveragedEndpointConfigV2()
+)
 
 
 def _readonly(value: np.ndarray, *, dtype: np.dtype | type = np.float64) -> np.ndarray:
@@ -251,6 +281,86 @@ class ModelAveragedEndpointPredictionV1:
         object.__setattr__(self, "horizon_steps", int(self.horizon_steps))
 
 
+@dataclass(frozen=True, slots=True)
+class TemperedModelAveragedEndpointPosteriorV2:
+    """Endpoint posterior with correlation-aware component evidence weights."""
+
+    base_posterior: ModelAveragedEndpointPosteriorV1
+    mean_m: np.ndarray
+    covariance_m2: np.ndarray
+    component_weights: np.ndarray
+    evidence_power: np.ndarray
+    config: TemperedModelAveragedEndpointConfigV2
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.base_posterior, ModelAveragedEndpointPosteriorV1):
+            raise TypeError("base_posterior must be a ModelAveragedEndpointPosteriorV1")
+        if not isinstance(self.config, TemperedModelAveragedEndpointConfigV2):
+            raise TypeError("config must be a TemperedModelAveragedEndpointConfigV2")
+        if self.base_posterior.config != self.config.base_config:
+            raise ValueError("base posterior and tempered configuration disagree")
+        mean = np.asarray(self.mean_m, dtype=np.float64)
+        covariance = np.asarray(self.covariance_m2, dtype=np.float64)
+        weights = np.asarray(self.component_weights, dtype=np.float64)
+        power = np.asarray(self.evidence_power, dtype=np.float64)
+        track_count = len(self.base_posterior.mean_m)
+        component_count = len(self.config.base_config.components)
+        if mean.shape != (track_count, 3):
+            raise ValueError("mean_m shape changed")
+        _validate_covariance(covariance, name="covariance_m2")
+        if len(covariance) != track_count:
+            raise ValueError("covariance_m2 track count changed")
+        if weights.shape != (track_count, component_count):
+            raise ValueError("component_weights shape changed")
+        if power.shape != (track_count,):
+            raise ValueError("evidence_power shape changed")
+        if not np.all(np.isfinite(mean)) or not np.all(np.isfinite(weights)):
+            raise ValueError("tempered posterior contains non-finite values")
+        if np.any(weights < 0.0) or not np.allclose(
+            np.sum(weights, axis=1),
+            1.0,
+            atol=1e-12,
+            rtol=1e-12,
+        ):
+            raise ValueError("component_weights must be row-normalized")
+        if not np.all(np.isfinite(power)) or np.any((power <= 0.0) | (power > 1.0)):
+            raise ValueError("evidence_power must lie in (0, 1]")
+        object.__setattr__(self, "mean_m", _readonly(mean))
+        object.__setattr__(self, "covariance_m2", _readonly(covariance))
+        object.__setattr__(self, "component_weights", _readonly(weights))
+        object.__setattr__(self, "evidence_power", _readonly(power))
+
+    @property
+    def updated_mask(self) -> np.ndarray:
+        return self.base_posterior.updated_mask
+
+    @property
+    def update_count(self) -> np.ndarray:
+        return self.base_posterior.update_count
+
+
+@dataclass(frozen=True, slots=True)
+class TemperedModelAveragedEndpointPredictionV2:
+    """Horizon-propagated moments of a tempered endpoint posterior."""
+
+    mean_m: np.ndarray
+    covariance_m2: np.ndarray
+    component_weights: np.ndarray
+    horizon_steps: int
+
+    def __post_init__(self) -> None:
+        validated = ModelAveragedEndpointPredictionV1(
+            mean_m=self.mean_m,
+            covariance_m2=self.covariance_m2,
+            component_weights=self.component_weights,
+            horizon_steps=self.horizon_steps,
+        )
+        object.__setattr__(self, "mean_m", validated.mean_m)
+        object.__setattr__(self, "covariance_m2", validated.covariance_m2)
+        object.__setattr__(self, "component_weights", validated.component_weights)
+        object.__setattr__(self, "horizon_steps", validated.horizon_steps)
+
+
 def _validated_inputs(
     residual_m: np.ndarray,
     valid: np.ndarray,
@@ -414,6 +524,59 @@ def infer_model_averaged_endpoint(
     )
 
 
+def infer_tempered_model_averaged_endpoint(
+    residual_m: np.ndarray,
+    valid: np.ndarray,
+    *,
+    end_frame: int,
+    config: TemperedModelAveragedEndpointConfigV2 | None = None,
+) -> TemperedModelAveragedEndpointPosteriorV2:
+    """Infer a power posterior with capped effective model-selection evidence.
+
+    The cap is applied independently to each material track.  A track with
+    ``n`` accepted prefix observations uses evidence power
+    ``min(1, cap / max(n, 1))``.  This keeps the historical component filters
+    intact while preventing a long correlated prefix from masquerading as
+    arbitrarily many independent model-selection trials.
+    """
+
+    settings = (
+        DEFAULT_TEMPERED_MODEL_AVERAGED_ENDPOINT_CONFIG_V2
+        if config is None
+        else config
+    )
+    if not isinstance(settings, TemperedModelAveragedEndpointConfigV2):
+        raise TypeError("config must be a TemperedModelAveragedEndpointConfigV2")
+    base = infer_model_averaged_endpoint(
+        residual_m,
+        valid,
+        end_frame=end_frame,
+        config=settings.base_config,
+    )
+    count = np.maximum(base.update_count.astype(np.float64), 1.0)
+    power = np.minimum(1.0, settings.effective_evidence_count_cap / count)
+    log_prior = np.log(
+        np.asarray(settings.base_config.component_prior_probability, dtype=np.float64)
+    )
+    unnormalized = base.component_log_evidence * power[:, None] + log_prior[None, :]
+    normalizer = np.logaddexp.reduce(unnormalized, axis=1)
+    weights = np.exp(unnormalized - normalizer[:, None])
+    mean = np.einsum("nk,knc->nc", weights, base.component_mean_m)
+    centered = base.component_mean_m - mean[None, :, :]
+    outer = centered[:, :, :, None] * centered[:, :, None, :]
+    within = base.component_variance_m2[:, :, None, None] * np.eye(3)
+    covariance = np.einsum("nk,knij->nij", weights, within + outer)
+    covariance = 0.5 * (covariance + covariance.transpose(0, 2, 1))
+    return TemperedModelAveragedEndpointPosteriorV2(
+        base_posterior=base,
+        mean_m=mean,
+        covariance_m2=covariance,
+        component_weights=weights,
+        evidence_power=power,
+        config=settings,
+    )
+
+
 def predict_model_averaged_endpoint(
     posterior: ModelAveragedEndpointPosteriorV1,
     *,
@@ -451,12 +614,59 @@ def predict_model_averaged_endpoint(
     )
 
 
+def predict_tempered_model_averaged_endpoint(
+    posterior: TemperedModelAveragedEndpointPosteriorV2,
+    *,
+    horizon_steps: int,
+) -> TemperedModelAveragedEndpointPredictionV2:
+    """Propagate tempered endpoint uncertainty without future observations."""
+
+    if not isinstance(posterior, TemperedModelAveragedEndpointPosteriorV2):
+        raise TypeError(
+            "posterior must be a TemperedModelAveragedEndpointPosteriorV2"
+        )
+    if (
+        isinstance(horizon_steps, bool)
+        or int(horizon_steps) != horizon_steps
+        or horizon_steps < 0
+    ):
+        raise ValueError("horizon_steps must be a nonnegative integer")
+    horizon = int(horizon_steps)
+    base = posterior.base_posterior
+    component_variance = (
+        base.component_variance_m2
+        + horizon * base.component_process_variance_m2[:, None]
+    )
+    centered = base.component_mean_m - posterior.mean_m[None, :, :]
+    outer = centered[:, :, :, None] * centered[:, :, None, :]
+    within = component_variance[:, :, None, None] * np.eye(3)
+    covariance = np.einsum(
+        "nk,knij->nij",
+        posterior.component_weights,
+        within + outer,
+    )
+    covariance = 0.5 * (covariance + covariance.transpose(0, 2, 1))
+    return TemperedModelAveragedEndpointPredictionV2(
+        mean_m=posterior.mean_m,
+        covariance_m2=covariance,
+        component_weights=posterior.component_weights,
+        horizon_steps=horizon,
+    )
+
+
 __all__ = [
     "DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1",
+    "DEFAULT_TEMPERED_MODEL_AVERAGED_ENDPOINT_CONFIG_V2",
     "MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION",
+    "TEMPERED_MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION",
     "ModelAveragedEndpointConfigV1",
     "ModelAveragedEndpointPosteriorV1",
     "ModelAveragedEndpointPredictionV1",
+    "TemperedModelAveragedEndpointConfigV2",
+    "TemperedModelAveragedEndpointPosteriorV2",
+    "TemperedModelAveragedEndpointPredictionV2",
     "infer_model_averaged_endpoint",
+    "infer_tempered_model_averaged_endpoint",
     "predict_model_averaged_endpoint",
+    "predict_tempered_model_averaged_endpoint",
 ]
