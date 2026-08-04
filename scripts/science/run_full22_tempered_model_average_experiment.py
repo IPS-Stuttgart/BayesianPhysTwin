@@ -22,6 +22,7 @@ import shutil
 import sys
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -128,11 +129,31 @@ def _load_protocol(path: Path) -> tuple[dict[str, Any], str]:
     return payload, BASE._canonical_sha256(payload)
 
 
+@dataclass(frozen=True, slots=True)
+class _TemperedEndpointPosterior:
+    """Internal reweighted moments without inventing component probabilities."""
+
+    mean_m: np.ndarray
+    covariance_m2: np.ndarray
+    update_count: np.ndarray
+    component_weights: np.ndarray
+    component_log_evidence: np.ndarray
+    component_mean_m: np.ndarray
+    component_variance_m2: np.ndarray
+    component_process_variance_m2: np.ndarray
+    config: Any
+    end_frame: int
+
+    @property
+    def updated_mask(self) -> np.ndarray:
+        return np.asarray(self.update_count > 0, dtype=bool)
+
+
 def _tempered_posterior(
     posterior: ModelAveragedEndpointPosteriorV1,
     *,
     temperature: float,
-) -> ModelAveragedEndpointPosteriorV1:
+) -> _TemperedEndpointPosterior:
     """Reweight a fitted component bank without reopening observations."""
 
     if not isinstance(posterior, ModelAveragedEndpointPosteriorV1):
@@ -154,20 +175,48 @@ def _tempered_posterior(
     within = posterior.component_variance_m2[:, :, None, None] * np.eye(3)
     covariance = np.einsum("nk,knij->nij", weights, within + outer)
     covariance = 0.5 * (covariance + covariance.transpose(0, 2, 1))
-    final_probability = posterior.final_nominal_probability
-    return ModelAveragedEndpointPosteriorV1(
+    return _TemperedEndpointPosterior(
         mean_m=mean,
         covariance_m2=covariance,
-        final_nominal_probability=final_probability,
         update_count=posterior.update_count,
         component_weights=weights,
         component_log_evidence=posterior.component_log_evidence,
         component_mean_m=posterior.component_mean_m,
         component_variance_m2=posterior.component_variance_m2,
-        component_process_variance_m2=(posterior.component_process_variance_m2),
+        component_process_variance_m2=posterior.component_process_variance_m2,
         config=posterior.config,
         end_frame=posterior.end_frame,
     )
+
+
+def _predict_tempered_endpoint(
+    posterior: _TemperedEndpointPosterior,
+    *,
+    horizon_steps: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    if not isinstance(posterior, _TemperedEndpointPosterior):
+        raise TypeError("posterior must be a _TemperedEndpointPosterior")
+    if (
+        isinstance(horizon_steps, bool)
+        or int(horizon_steps) != horizon_steps
+        or horizon_steps < 0
+    ):
+        raise ValueError("horizon_steps must be a nonnegative integer")
+    horizon = int(horizon_steps)
+    component_variance = (
+        posterior.component_variance_m2
+        + horizon * posterior.component_process_variance_m2[:, None]
+    )
+    centered = posterior.component_mean_m - posterior.mean_m[None, :, :]
+    outer = centered[:, :, :, None] * centered[:, :, None, :]
+    within = component_variance[:, :, None, None] * np.eye(3)
+    covariance = np.einsum(
+        "nk,knij->nij",
+        posterior.component_weights,
+        within + outer,
+    )
+    covariance = 0.5 * (covariance + covariance.transpose(0, 2, 1))
+    return posterior.mean_m, covariance
 
 
 def _horizon_lookup(future_count: int) -> dict[int, str]:
@@ -385,9 +434,14 @@ def _trajectory_metrics(
 
 
 def _posterior_predictor(
-    posterior: ModelAveragedEndpointPosteriorV1,
+    posterior: ModelAveragedEndpointPosteriorV1 | _TemperedEndpointPosterior,
 ) -> Any:
     def predictor(horizon_steps: int) -> tuple[np.ndarray, np.ndarray]:
+        if isinstance(posterior, _TemperedEndpointPosterior):
+            return _predict_tempered_endpoint(
+                posterior,
+                horizon_steps=horizon_steps,
+            )
         prediction = predict_model_averaged_endpoint(
             posterior,
             horizon_steps=horizon_steps,
@@ -736,11 +790,10 @@ def _final_case(
         return prediction.mean_m, prediction.covariance_m2
 
     def tempered_predictor(horizon_steps: int) -> tuple[np.ndarray, np.ndarray]:
-        prediction = predict_model_averaged_endpoint(
+        return _predict_tempered_endpoint(
             posterior,
             horizon_steps=horizon_steps,
         )
-        return prediction.mean_m, prediction.covariance_m2
 
     future_count = int(state["frame_count"]) - int(state["train_end"])
     horizon_lookup = _horizon_lookup(future_count)
