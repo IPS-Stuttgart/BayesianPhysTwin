@@ -1,0 +1,73 @@
+name: Stage controlled-study source
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/stage-prob4d-bpt-result-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage-prob4d-bpt-result-source-workstation2
+  cancel-in-progress: true
+
+env:
+  BPT_EXECUTION_REVISION: db0f0119a3a4220f5489566829846681e844627d
+
+jobs:
+  stage:
+    name: Persist exact BPT controlled-study source
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact controlled-study revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_EXECUTION_REVISION }}
+          path: exact-bpt-source
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Persist source outside the Actions workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C exact-bpt-source rev-parse HEAD)" = \
+            "${BPT_EXECUTION_REVISION}"
+          test -z "$(git -C exact-bpt-source status --porcelain=v1)"
+          git -C exact-bpt-source merge-base --is-ancestor \
+            b2da5df5eddd5437d444b60b11130262d115e264 \
+            "${BPT_EXECUTION_REVISION}"
+          git -C exact-bpt-source fsck --no-dangling
+
+          persistent="${HOME}/src/BayesianPhysTwin"
+          marker="${persistent}/.git/bpt-controlled-decisive-cache"
+          if [[ -e "${persistent}" ]]; then
+            if [[ ! -f "${marker}" ]]; then
+              echo "Refusing to replace an unowned BayesianPhysTwin checkout" >&2
+              exit 1
+            fi
+            rm -rf "${persistent}"
+          fi
+          mkdir -p "$(dirname "${persistent}")"
+          git clone --no-local --no-checkout --quiet \
+            exact-bpt-source "${persistent}"
+          git -C "${persistent}" checkout --quiet --detach \
+            "${BPT_EXECUTION_REVISION}"
+          touch "${persistent}/.git/bpt-controlled-decisive-cache"
+          test "$(git -C "${persistent}" rev-parse HEAD)" = \
+            "${BPT_EXECUTION_REVISION}"
+          test -z "$(git -C "${persistent}" status --porcelain=v1)"
+          git -C "${persistent}" fsck --no-dangling
+
+          {
+            echo "### Controlled-study source staged"
+            echo
+            echo "Revision: \`${BPT_EXECUTION_REVISION}\`"
+            echo
+            echo "Persistent path: \`${persistent}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
