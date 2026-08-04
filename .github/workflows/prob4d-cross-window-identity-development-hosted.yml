@@ -1,0 +1,242 @@
+name: Prob4D cross-window identity development hosted
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/prob4d-cross-window-identity-development-hosted.yml"
+      - "protocols/prob4d_cross_window_identity_development_v1.json"
+      - "scripts/science/prob4d_cross_window_identity_development_v1.py"
+      - "tests/test_prob4d_cross_window_identity_development_v1.py"
+      - "docs/prob4d_cross_window_identity_development_v1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prob4d-cross-window-identity-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BPT_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+  PROB4D_SOURCE_REVISION: 2d6df37b84b24bd57bb936b9d3eac6d6a6a55ae1
+  PROTOCOL_SHA256: 23e9e9c209defaaf54af9e463dc8b66dc1d4825830fed8108e265ec5d6bb04c6
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  development:
+    name: Select identity rule and run disjoint pilot
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact BayesianPhysTwin head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_SOURCE_REVISION }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact private Prob4D producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: ${{ env.PROB4D_SOURCE_REVISION }}
+          token: ${{ secrets.PROB4D_READ_TOKEN }}
+          path: prob4d-source
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            prob4d-source/pyproject.toml
+
+      - name: Resolve isolated evidence path
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/prob4d-cross-window-identity-"
+          root+="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${root}/evidence"
+          echo "EVIDENCE_ROOT=${root}/evidence" >> "${GITHUB_ENV}"
+
+      - name: Install exact producer and consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C prob4d-source rev-parse HEAD)" = \
+            "${PROB4D_SOURCE_REVISION}"
+          test -z "$(git -C prob4d-source status --porcelain=v1)"
+          python -m pip install --upgrade pip
+          python -m pip install -e prob4d-source
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "bpt_revision=${BPT_SOURCE_REVISION}"
+            echo "prob4d_revision=${PROB4D_SOURCE_REVISION}"
+            echo "runner_name=${RUNNER_NAME}"
+            uname -a
+            lscpu
+            free -b
+            python -VV
+          } > "${EVIDENCE_ROOT}/environment.txt" 2>&1
+          python -m pip freeze --all > "${EVIDENCE_ROOT}/pip-freeze.txt"
+
+      - name: Verify target-free protocol and focused contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(
+              "protocols/prob4d_cross_window_identity_development_v1.json"
+          )
+          protocol = json.loads(path.read_text(encoding="utf-8"))
+          digest = hashlib.sha256(
+              json.dumps(
+                  protocol,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          if digest != os.environ["PROTOCOL_SHA256"]:
+              raise SystemExit(
+                  f"development protocol changed: {digest}"
+              )
+          target = protocol["confirmatory_target"]
+          if target["seeds_committed"] is not False or "seed_start" in target:
+              raise SystemExit("confirmatory target seeds were committed")
+          if protocol["repository_pins"]["prob4d"] != \
+              os.environ["PROB4D_SOURCE_REVISION"]:
+              raise SystemExit("Prob4D pin changed")
+          print(f"target-free protocol={digest}")
+          PY
+          python -m ruff check \
+            scripts/science/prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_cross_window_identity_development_v1.py
+          python -m pytest -q \
+            tests/test_prob4d_cross_window_identity_development_v1.py \
+            tests/test_prob4d_bpt_controlled_decisive_v1.py
+
+      - name: Execute development partitions
+        id: experiment
+        shell: bash
+        run: |
+          set +e
+          python scripts/science/prob4d_cross_window_identity_development_v1.py \
+            --protocol \
+              protocols/prob4d_cross_window_identity_development_v1.json \
+            --output-dir "${EVIDENCE_ROOT}/result" \
+            --repository-revision "${BPT_SOURCE_REVISION}" \
+            --prob4d-revision "${PROB4D_SOURCE_REVISION}" \
+            --force 2>&1 | tee "${EVIDENCE_ROOT}/console.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ "${status}" -ne 0 && "${status}" -ne 3 ]]; then
+            exit "${status}"
+          fi
+          echo "decision_exit_code=${status}" >> "${GITHUB_OUTPUT}"
+
+      - name: Independently verify development evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd "${EVIDENCE_ROOT}/result" && sha256sum --check SHA256SUMS)
+          python - <<'PY'
+          import csv
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["EVIDENCE_ROOT"]) / "result"
+          protocol = json.loads((root / "protocol.json").read_text())
+          report = json.loads((root / "report.json").read_text())
+          expected = report.pop("report_id")
+          actual = hashlib.sha256(
+              json.dumps(
+                  report,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          if expected != actual:
+              raise SystemExit("report identity changed")
+          if report["protocol_sha256"] != os.environ["PROTOCOL_SHA256"]:
+              raise SystemExit("protocol identity changed")
+          if report["repository_revision"] != os.environ["BPT_SOURCE_REVISION"]:
+              raise SystemExit("BayesianPhysTwin revision changed")
+          if report["prob4d_revision"] != os.environ["PROB4D_SOURCE_REVISION"]:
+              raise SystemExit("Prob4D revision changed")
+          if report["partition_semantics"][
+              "confirmatory_target_seeds_committed"
+          ] is not False:
+              raise SystemExit("target information boundary changed")
+          with (root / "pilot_trials.csv").open(newline="") as handle:
+              row_count = sum(1 for _ in csv.DictReader(handle))
+          expected_rows = (
+              len(protocol["methods"])
+              * len(protocol["scenarios"])
+              * protocol["development_partitions"]["pilot_evaluation"][
+                  "groups_per_scenario"
+              ]
+          )
+          if row_count != expected_rows:
+              raise SystemExit(
+                  f"pilot row count changed: {row_count} != {expected_rows}"
+              )
+          decision = report["development_decision"]
+          expected_exit = 0 if decision["overall_passed"] else 3
+          actual_exit = int("${{ steps.experiment.outputs.decision_exit_code }}")
+          if expected_exit != actual_exit:
+              raise SystemExit("scientific decision exit changed")
+          print(json.dumps(decision, indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Publish development summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "${EVIDENCE_ROOT}/result/summary.md" ]]; then
+            cat "${EVIDENCE_ROOT}/result/summary.md" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          {
+            echo
+            echo "Development decision exit code:"
+            echo "\`${{ steps.experiment.outputs.decision_exit_code }}\`"
+            echo
+            echo "No confirmatory target seed was committed or executed."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload complete development evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: prob4d-cross-window-identity-hosted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 90
