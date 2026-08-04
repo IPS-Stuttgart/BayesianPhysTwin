@@ -1,0 +1,218 @@
+{
+  "artifact_kind": "PokeFlexOfficialSplitSourceAudit",
+  "audit_sha256": "c62f496ffea3e0dc9551cd7c9eb993ddf50eedea5f407d5a4fb51c7b153095c9",
+  "author_data_request": {
+    "alternative_response": "The processed validation set used for the paper, accompanied by a file manifest and SHA-256 digests.",
+    "minimum_unresolved_legacy_take_ids": [
+      "Fjadrar_T8",
+      "Cylinder_T7",
+      "Heart_T14",
+      "Sponge_T10",
+      "Pizza_T13"
+    ],
+    "minimum_unresolved_public_identity_projections": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ],
+    "not_acceptable": "A guessed lower-numbered public take, outcome-selected replacement, or unverified filename alias.",
+    "preferred_response": "A mapping for all 18 legacy evaluator IDs to public archive IDs, with SHA-256 for every archive.",
+    "purpose": "Reproduce the published 18-object validation aggregate without guessing recording identities."
+  },
+  "decision": "author_mapping_or_processed_validation_set_required",
+  "evidence_boundary": "Archive names and upstream source only; no target mesh, prediction, or metric outcome is read.",
+  "official_split": {
+    "case_count": 18,
+    "cases": [
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "MemoryFoam_T2",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "MemoryFoam_T2",
+        "requested_take_number": 2
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Volleyball_T4",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "PlushVolleyball_T4",
+        "requested_take_number": 4
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "HalfSphere_T3",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "FoamHalfSphere_T3",
+        "requested_take_number": 3
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Bunny_T1",
+        "maximum_available_take_number": 7,
+        "public_identity_projection": "3dPrintedBunny_T1",
+        "requested_take_number": 1
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Pyramid_T6",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "3dPrintedPyramid_T6",
+        "requested_take_number": 6
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Dice_T3",
+        "maximum_available_take_number": 8,
+        "public_identity_projection": "FoamDice_T3",
+        "requested_take_number": 3
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Moon_T1",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "PlushMoon_T1",
+        "requested_take_number": 1
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Octopus_T6",
+        "maximum_available_take_number": 7,
+        "public_identity_projection": "PlushOctopus_T6",
+        "requested_take_number": 6
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "PlushDice_T8",
+        "maximum_available_take_number": 8,
+        "public_identity_projection": "PlushDice_T8",
+        "requested_take_number": 8
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Turtle_T3",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "PlushTurtle_T3",
+        "requested_take_number": 3
+      },
+      {
+        "exact_public_filename_present": false,
+        "legacy_evaluator_take_id": "Fjadrar_T8",
+        "maximum_available_take_number": 7,
+        "public_identity_projection": "Pillow_T8",
+        "requested_take_number": 8
+      },
+      {
+        "exact_public_filename_present": false,
+        "legacy_evaluator_take_id": "Cylinder_T7",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "3dPrintedCylinder_T7",
+        "requested_take_number": 7
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Beanbag_T6",
+        "maximum_available_take_number": 7,
+        "public_identity_projection": "Beanbag_T6",
+        "requested_take_number": 6
+      },
+      {
+        "exact_public_filename_present": false,
+        "legacy_evaluator_take_id": "Heart_T14",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "3dPrintedHeart_T14",
+        "requested_take_number": 14
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "Foam_T1",
+        "maximum_available_take_number": 7,
+        "public_identity_projection": "FoamCylinder_T1",
+        "requested_take_number": 1
+      },
+      {
+        "exact_public_filename_present": true,
+        "legacy_evaluator_take_id": "ToiletPaper_T1",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "ToiletPaperRoll_T1",
+        "requested_take_number": 1
+      },
+      {
+        "exact_public_filename_present": false,
+        "legacy_evaluator_take_id": "Sponge_T10",
+        "maximum_available_take_number": 5,
+        "public_identity_projection": "Sponge_T10",
+        "requested_take_number": 10
+      },
+      {
+        "exact_public_filename_present": false,
+        "legacy_evaluator_take_id": "Pizza_T13",
+        "maximum_available_take_number": 6,
+        "public_identity_projection": "3dPrintedPizza_T13",
+        "requested_take_number": 13
+      }
+    ],
+    "exact_public_match_count": 13,
+    "exact_public_match_take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "FoamDice_T3",
+      "PlushMoon_T1",
+      "PlushOctopus_T6",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Beanbag_T6",
+      "FoamCylinder_T1",
+      "ToiletPaperRoll_T1"
+    ],
+    "exact_public_split_materializable": false,
+    "unresolved_count": 5,
+    "unresolved_public_identity_projections": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ]
+  },
+  "public_inventory": {
+    "maximum_take_number_by_object": {
+      "3dPrintedBunny": 7,
+      "3dPrintedCylinder": 6,
+      "3dPrintedHeart": 6,
+      "3dPrintedPizza": 6,
+      "3dPrintedPyramid": 6,
+      "Beanbag": 7,
+      "FoamCylinder": 7,
+      "FoamDice": 8,
+      "FoamHalfSphere": 6,
+      "MemoryFoam": 6,
+      "Pillow": 7,
+      "PlushDice": 8,
+      "PlushMoon": 6,
+      "PlushOctopus": 7,
+      "PlushTurtle": 6,
+      "PlushVolleyball": 6,
+      "Sponge": 5,
+      "ToiletPaperRoll": 6
+    },
+    "take_count": 116
+  },
+  "schema_version": 1,
+  "upstream": {
+    "main_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "main_evaluator_sha256": "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60",
+    "public_alignment_branch_commit": "fa484b0fa94f59f51e8c5f2293a6b1bc378b7375",
+    "public_alignment_evaluation_take_ids": [
+      "FoamDice_T3"
+    ],
+    "public_alignment_evaluator_sha256": "44df8ddb288a30882bdc4bd1e809ee4d0a805e96e7fb80bbabf2665b87371267",
+    "public_alignment_preprocessing_sha256": "fd0eb5b9d7129f575734f906af4481596779f893fd5af76b5e0d230b68201b8a",
+    "public_alignment_scope": "The official testing-scripts branch replaces the internal 18-take evaluation list with FoamDice_T3; it does not publish an internal-to-public mapping for the remaining recordings.",
+    "repository": "https://github.com/pokeflex-dataset/reconstruction"
+  }
+}
