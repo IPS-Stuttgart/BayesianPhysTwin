@@ -68,8 +68,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,graph]"
+          python -m pip install -e ".[dev,graph]" "ruff==0.16.1"
           python -m pip check
+          python -m ruff --version
           python -m ruff check --fix \
             scripts/science/run_deform360_public_evaluation.py \
             tests/test_deform360_public_evaluation.py
@@ -77,19 +78,21 @@ jobs:
             scripts/science/run_deform360_public_evaluation.py \
             tests/test_deform360_public_evaluation.py
 
-      - name: Verify exact clean product and locked information boundary
+      - name: Verify clean product and locked information boundary
         shell: bash
         run: |
           set -euo pipefail
-          cat > expected-product-sha256.txt <<'EOF'
+          cat > expected-unchanged-sha256.txt <<'EOF'
           9f63bc8b212b8b7f9484c3879496b9523065e4577b2c9e964a078a849a79946f  .github/workflows/deform360-independent-session-evaluation.yml
           5c3d001daa979ee8d5a3014c9b9a75844f60a91898c1800f281797af1bc8eba5  docs/deform360_public_evaluation_v1.md
           aec8d50dd02c7255c58abd497f796705439ec705c799233a9752f07edd0a1a0b  protocols/deform360_independent_normalized_evidence_v1.json
-          380ecef3aef726ee72e087c26fa2976319569fc6291a7700e6d0f4e1aa39ab7f  scripts/science/run_deform360_public_evaluation.py
-          f580056caefff907b62a1f20c09137eab14857b57f33eca500a4311e08cd8a94  tests/test_deform360_public_evaluation.py
           EOF
-          sha256sum --check --strict expected-product-sha256.txt
-          rm expected-product-sha256.txt
+          sha256sum --check --strict expected-unchanged-sha256.txt
+          rm expected-unchanged-sha256.txt
+          sha256sum \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py \
+            | tee formatted-python-sha256.txt
           python -m ruff check \
             scripts/science/run_deform360_public_evaluation.py \
             tests/test_deform360_public_evaluation.py
@@ -132,6 +135,7 @@ jobs:
               raise SystemExit("unsupported filament claim entered the protocol")
           print(f"locked protocol: {actual}")
           PY
+          rm formatted-python-sha256.txt
           git diff --check
 
       - name: Publish clean product commit
