@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexPriorAwareBeliefSourceSmokeProtocol",
+  "protocol_id": "pokeflex-prior-aware-belief-source-smoke-v1",
+  "locked_at_utc": "2026-08-04T00:00:00Z",
+  "status": "source-only development smoke locked before opening the selected target-frame mesh",
+  "claim_boundary": "This smoke tests numerical and causal operation of a bias-aware Bayesian update on one already-open PokeFlex development take. It is not confirmation, not a target-object result, and not a state-of-the-art claim.",
+  "parent_protocol": {
+    "protocol_id": "pokeflex-bayesian-registration-v1",
+    "protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33"
+  },
+  "independent_depth_predecessor": {
+    "protocol_id": "pokeflex-independent-depth-source-validation-v2",
+    "protocol_sha256": "04ecf64f4b15e543825732b4f9296119ebd5fe47d99dcfc8230cfb70f0c86051"
+  },
+  "source_take": "FoamDice_T1",
+  "source_frame_selection": {
+    "rule": "earliest frame s >= 6 with measured force-y above threshold and an available next frame; predict s+1",
+    "minimum_source_frame": 6,
+    "force_y_threshold_n": 3.0,
+    "target_offset_frames": 1
+  },
+  "causal_input_contract": {
+    "checkpoint_source_prediction": "Kinect frames s-5 through s-1",
+    "checkpoint_target_prediction": "Kinect frames s-4 through s",
+    "state_proposal": "Kinect registration and measured robot data through s only",
+    "metric_likelihood": "D405 depth at s only, with translation calibration from the allowed static template",
+    "forbidden_before_prediction_seal": "mesh, Kinect, D405, or robot observations at s+1 or later",
+    "target_mesh_role": "outcome scoring only after the prediction NPZ and seal JSON exist"
+  },
+  "physical_state_span": {
+    "description": "rank-reduced span of four source-causal, force/action-reachable Kinect correction fields",
+    "relative_support_radius": 0.25,
+    "correction_fields": [
+      "force_parallel_local_state_relative_0.25",
+      "action_axis_local_state_relative_0.25",
+      "force_action_plane_local_state_relative_0.25",
+      "force_mean_local_state_relative_0.25"
+    ]
+  },
+  "independent_depth": {
+    "static_template_support_radius_mm": 15.0,
+    "sensor_variance_mm2": 16.0,
+    "voxel_size_mm": 4.0,
+    "maximum_clusters_per_sensor": 256
+  },
+  "belief_config": {
+    "assignment_candidates": 4,
+    "maximum_association_m": 0.025,
+    "assignment_temperature_m": 0.008,
+    "minimum_points_per_sensor": 16,
+    "effective_samples_per_sensor": 16.0,
+    "minimum_local_std_m": 0.001,
+    "maximum_calibration_median_residual_m": 0.010,
+    "calibration_reliability_scale_m": 0.010,
+    "minimum_sensor_reliability": 0.05,
+    "prior_nominal_probability": 0.90,
+    "state_prior_std_m": 0.010,
+    "shared_bias_prior_std_m": 0.005,
+    "view_bias_prior_std_m": 0.005,
+    "maximum_state_rank": 4,
+    "minimum_singular_fraction": 0.001,
+    "maximum_state_update_m": 0.030,
+    "maximum_update_to_physical_response_ratio": 2.0
+  },
+  "evaluation": {
+    "metric": "CD_UL1_mm",
+    "surface_points": 10000,
+    "seed": 20260720,
+    "smoke_decision": "report the fixed candidate and exact baseline; do not tune this lock from the one-frame outcome"
+  },
+  "invariants": {
+    "association_probability_is_prior_reliability": false,
+    "kinect_innovation_reused_in_metric_likelihood": false,
+    "state_innovation_processed_once": true,
+    "unknown_camera_correlation_treated_as_independent": false,
+    "assignment_spread_in_metric_covariance": true,
+    "rejection_returns_exact_checkpoint_object": true
+  }
+}

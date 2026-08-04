@@ -104,6 +104,13 @@ from .phystwin_adapter import (
     export_phystwin_residuals,
     write_export_summary,
 )
+from .pokeflex_prior_aware_belief import (
+    PokeFlexPriorAwareConfigV1,
+    PokeFlexPriorAwareFrameArtifactsV1,
+    PokeFlexPriorAwareInferenceV1,
+    build_pokeflex_prior_aware_frame_artifacts,
+    infer_pokeflex_prior_aware_frame,
+)
 from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
@@ -196,6 +203,9 @@ __all__ = [
     "PhysicalResponseBasis",
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
+    "PokeFlexPriorAwareConfigV1",
+    "PokeFlexPriorAwareFrameArtifactsV1",
+    "PokeFlexPriorAwareInferenceV1",
     "PriorAwareGaugeConfigV1",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
@@ -217,6 +227,7 @@ __all__ = [
     "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
+    "build_pokeflex_prior_aware_frame_artifacts",
     "centered_view_translation_bias_jacobian",
     "conditional_grouped_student_t_mixture_objective",
     "decode_bias_aware_state",
@@ -233,6 +244,7 @@ __all__ = [
     "grouped_conformal_upper_bounds",
     "grouped_student_t_mixture_likelihood",
     "infer_model_averaged_endpoint",
+    "infer_pokeflex_prior_aware_frame",
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
     "load_physical_linearization",
