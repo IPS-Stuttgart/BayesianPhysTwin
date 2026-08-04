@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: validate-provenance-hardening-pr95
@@ -54,3 +54,39 @@ jobs:
             --show-missing \
             --fail-under=95
           python -m pip check
+      - name: Publish successful validation marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p validation
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          payload = {
+              "schema": "bayesian-phystwin-provenance-hardening-validation-v1",
+              "validated_revision": os.environ["GITHUB_SHA"],
+              "runner": os.environ["RUNNER_NAME"],
+              "completed_at": datetime.now(timezone.utc).isoformat(),
+              "checks": [
+                  "ruff",
+                  "mypy",
+                  "focused-pytest",
+                  "branch-coverage-at-least-95-percent",
+                  "pip-check",
+              ],
+              "result": "success",
+          }
+          Path("validation/provenance-hardening-pr95.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add validation/provenance-hardening-pr95.json
+          git commit -m "Record provenance hardening validation"
+          git push origin HEAD:agent/prospective-belief-hardening
