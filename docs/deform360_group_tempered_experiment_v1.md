@@ -1,4 +1,4 @@
-# Deform360 group-held-out tempered endpoint experiment v1
+# Deform360 object-held-out tempered endpoint experiment v1
 
 ## Scientific motivation
 
@@ -12,23 +12,48 @@ claim-bearing calibration conclusion.
 
 This experiment tests the resulting low-dimensional hypothesis on released
 Deform360 trajectory artifacts. It does **not** reuse the historical three-case
-PhysTwin development split. Instead, it creates disjoint path-defined
-object/session groups and freezes source, calibration, and target roles before
-any archive array is parsed.
+PhysTwin development split. Instead, it creates disjoint canonical object
+groups and freezes source, calibration, and target roles before any archive
+array is parsed.
 
 The implementation is
 `scripts/science/run_deform360_group_tempered_experiment.py`; its locked protocol
 is `protocols/deform360_group_tempered_experiment_v1.json` with canonical
 SHA-256
-`b1732d062b8766e27d0d96feaa88400906955522e73d3bb63b8ec78b8994aa58`.
+`666146d54e67b9e61eda91d3585fd925e2a47638546b17eddf27f1f8465b39aa`.
+
+## Locked cohort boundary
+
+A header-only audit of the mounted cache found 4,858 NPZ archives. Only 69
+matched the generic sequence contract, and 27 of those were prior result files.
+The experiment therefore does **not** scan the mounted root. It accepts only the
+36 archives under
+`data-7fea8e2/replication-v1/observations/<object>/episode_####/sampled_hulls.npz`
+and locks the exact six canonical objects before parsing arrays:
+
+- `002-rope-silk`;
+- `081-stripe-rope`;
+- `083-blanket-cloth`;
+- `085-scarf-cloth`;
+- `092-squirrel`; and
+- `170-spider`.
+
+Three one-frame archives remain in the byte manifest but are unsupported by the
+rolling evaluator. The remaining 33 multi-frame episodes form the numerical
+cohort. The sampled hulls are a prior replication artifact derived from the
+public release, and source outcomes have previously been opened in this
+repository. Consequently, the experiment protects only the **within-run**
+source/calibration/target boundary; it does not claim the release is globally
+unseen.
 
 ## Information boundary
 
 The experiment proceeds in five ordered phases.
 
-1. Discover candidate NPZ paths and derive a group identity from the object
-   directory plus the first non-generic nested acquisition/session directory.
-   A deterministic archive cap is applied round-robin across groups.
+1. Discover only archives with the exact locked
+   `<object>/episode_####/sampled_hulls.npz` layout, verify the six-object set and
+   the 36-archive count, and use the canonical object directory as the group.
+   A deterministic archive cap is applied round-robin across objects.
 2. Hash every selected archive byte-for-byte and derive a deterministic,
    salted source/calibration/target split from group names. Hashing binds the
    target inputs but does not parse target arrays or expose outcomes.
@@ -58,8 +83,8 @@ one residual frame, the experiment compares:
 For fixed-identity trajectories, identity RMSE and correspondence-free symmetric
 Chamfer RMSE are reported. Packed visual hulls are evaluated through centroid
 translation error and symmetric Chamfer RMSE. Metrics are averaged within an
-archive, then within a path-defined group, and target inference uses paired
-group bootstrap resampling.
+archive, then within a canonical object group, and target inference uses paired
+object bootstrap resampling.
 
 ## Evidence normalization and temperature
 
@@ -114,11 +139,12 @@ make the workflow fail.
 
 ## Claim boundary
 
-This is an external, group-held-out diagnostic on released Deform360 trajectory
-artifacts. It is narrower than the official action-conditioned Deform360 world
-model and does not reproduce the official Table-4 protocol. Prior repository
-work has touched Deform360, so the path-hash split protects this execution from
-target-informed fitting but does not retroactively make the release globally
-unseen. A positive result justifies a separately locked official-adapter study;
-it is not itself an official benchmark, state-of-the-art, tactile-benefit, or
-deployment-calibration claim.
+This is a within-run, object-held-out diagnostic on a provenance-specific
+Deform360 replication subset. It is narrower than the official
+action-conditioned Deform360 world model and does not reproduce the official
+Table-4 protocol. Prior repository work has touched the release and some source
+outcomes, so the path-hash split protects this execution from target-informed
+fitting but does not retroactively make the release globally unseen. A positive
+result justifies a separately locked official-adapter study; it is not itself an
+official benchmark, state-of-the-art, tactile-benefit, or deployment-calibration
+claim.
