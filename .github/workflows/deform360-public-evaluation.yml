@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "src/bayesian_phystwin/deform360_public_evaluation.py"
       - "scripts/science/run_deform360_public_evaluation.py"
       - "tests/test_deform360_public_evaluation.py"
       - "docs/deform360_public_evaluation_v1.md"
@@ -26,7 +25,7 @@ permissions:
 
 concurrency:
   group: deform360-public-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   DEFORM360_ROOT: /home/github-runner/.cache/datasets/deform360
