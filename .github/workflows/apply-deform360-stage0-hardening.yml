@@ -35,6 +35,20 @@ jobs:
           git apply .staging/stage0-hardening.patch
           rm .staging/stage0-hardening.patch
           rmdir .staging 2>/dev/null || true
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for name in (
+              "scripts/science/build_deform360_hub_selection.py",
+              "tests/test_deform360_hub_selection.py",
+              "docs/deform360_official_hub_visuotactile_v1.md",
+          ):
+              path = Path(name)
+              path.write_text(
+                  path.read_text(encoding="utf-8").rstrip() + "\n",
+                  encoding="utf-8",
+              )
+          PY
           git diff --check
 
       - name: Publish hardened product files
