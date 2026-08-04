@@ -100,6 +100,21 @@ Accepted and fallback results bind the same immutable lineage:
 The returned `ClaimBearingProb4DUpdateV1` therefore has the same fail-closed
 identity behavior as the observation-belief path.
 
+## Exact sparse-stack binding
+
+The factor envelope identifies the serialized neutral bundle, while the sparse
+stack is a separately supplied in-memory projection. Before any physical
+innovation is formed, BayesianPhysTwin now relinearizes the validated bundle and
+reconstructs the producer's active-row selection. Every numerical array and row
+identity in the supplied stack must match that independent reconstruction
+exactly, including the complete joint gauge prior. Shape-preserving finite
+changes therefore fail closed rather than inheriting the envelope identity.
+
+The envelope `observation_count` counts all serialized factor rows. The sparse
+stack contains only rows whose validity, association probability, and prior
+reliability admit them. Both counts and a canonical digest of the exact selected
+stack are retained in accepted and fallback lineage.
+
 ## Bounded compatibility bridge
 
 Prob4D's sparse stack stores `M x 3 x 7` local Jacobians and `M` gauge indices.

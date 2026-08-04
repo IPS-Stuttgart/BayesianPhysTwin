@@ -53,6 +53,40 @@ class _GaugeDescriptor(Protocol):
     window_id: str
 
 
+class _FactorProtocol(Protocol):
+    factor_id: str
+    frame_index: int
+    view_id: str
+    window_id: str
+    gauge_id: str
+    correlation_group_id: str
+    point_ids: np.ndarray
+    valid_mask: np.ndarray
+    association_probability: np.ndarray
+    prior_reliability: np.ndarray
+    prior_nominal_probability: float
+    composite_weight: float
+
+
+class _LinearizedFactorProtocol(Protocol):
+    factor_id: str
+    frame_index: int
+    view_id: str
+    window_id: str
+    gauge_id: str
+    correlation_group_id: str
+    point_ids: np.ndarray
+    world_mean_m: np.ndarray
+    conditional_world_covariance_m2: np.ndarray
+    marginal_world_covariance_m2: np.ndarray
+    gauge_jacobian: np.ndarray
+    valid_mask: np.ndarray
+    association_probability: np.ndarray
+    prior_reliability: np.ndarray
+    prior_nominal_probability: float
+    composite_weight: float
+
+
 class _BundleProtocol(Protocol):
     sequence_id: str
     case_id: str
@@ -60,8 +94,11 @@ class _BundleProtocol(Protocol):
     source_repository: str
     source_revision: str
     causal_frame_stop: int
-    factors: Sequence[object]
+    factors: Sequence[_FactorProtocol]
     gauges: Sequence[_GaugeDescriptor]
+    joint_gauge_covariance: np.ndarray
+
+    def linearize(self, factor: _FactorProtocol) -> _LinearizedFactorProtocol: ...
 
 
 class _EnvelopeProtocol(Protocol):
@@ -197,6 +234,275 @@ def _canonical_view_indices(view_ids: tuple[str, ...]) -> np.ndarray:
     names = tuple(sorted(set(view_ids)))
     positions = {name: index for index, name in enumerate(names)}
     return np.asarray([positions[name] for name in view_ids], dtype=np.int64)
+
+
+def _expected_sparse_stack(
+    bundle: _BundleProtocol,
+    *,
+    gauge_ids: tuple[str, ...],
+) -> dict[str, Any]:
+    """Rederive the active sparse stack from the validated neutral bundle."""
+
+    gauge_positions = {gauge_id: index for index, gauge_id in enumerate(gauge_ids)}
+    means: list[np.ndarray] = []
+    conditional_covariances: list[np.ndarray] = []
+    marginal_covariances: list[np.ndarray] = []
+    local_gauge_jacobians: list[np.ndarray] = []
+    gauge_indices: list[np.ndarray] = []
+    associations: list[np.ndarray] = []
+    reliabilities: list[np.ndarray] = []
+    nominal_probabilities: list[np.ndarray] = []
+    composite_weights: list[np.ndarray] = []
+    point_ids: list[np.ndarray] = []
+    frame_indices: list[np.ndarray] = []
+    view_ids: list[str] = []
+    factor_ids: list[str] = []
+    correlation_group_ids: list[str] = []
+    bundle_observation_count = 0
+
+    for factor_position, factor in enumerate(bundle.factors):
+        linearized = bundle.linearize(factor)
+        for name in (
+            "factor_id",
+            "frame_index",
+            "view_id",
+            "window_id",
+            "gauge_id",
+            "correlation_group_id",
+        ):
+            if getattr(linearized, name) != getattr(factor, name):
+                raise ValueError(
+                    "factor bundle linearization changed identity field "
+                    f"{name} at factor {factor_position}"
+                )
+
+        source_point_ids = integer_array(
+            factor.point_ids,
+            name=f"factor {factor_position} point_ids",
+        )
+        linearized_point_ids = integer_array(
+            linearized.point_ids,
+            name=f"linearized factor {factor_position} point_ids",
+        )
+        if not np.array_equal(source_point_ids, linearized_point_ids):
+            raise ValueError(
+                "factor bundle linearization changed point identities at factor "
+                f"{factor_position}"
+            )
+        count = len(linearized_point_ids)
+        bundle_observation_count += count
+
+        source_valid = np.asarray(factor.valid_mask)
+        linearized_valid = np.asarray(linearized.valid_mask)
+        if source_valid.dtype.kind != "b" or linearized_valid.dtype.kind != "b":
+            raise TypeError("factor validity masks must contain booleans")
+        if source_valid.shape != (count,) or not np.array_equal(
+            source_valid,
+            linearized_valid,
+        ):
+            raise ValueError(
+                "factor bundle linearization changed validity at factor "
+                f"{factor_position}"
+            )
+
+        source_association = np.asarray(
+            factor.association_probability,
+            dtype=np.float64,
+        )
+        association = np.asarray(
+            linearized.association_probability,
+            dtype=np.float64,
+        )
+        source_reliability = np.asarray(
+            factor.prior_reliability,
+            dtype=np.float64,
+        )
+        reliability = np.asarray(
+            linearized.prior_reliability,
+            dtype=np.float64,
+        )
+        for name, source, derived in (
+            ("association_probability", source_association, association),
+            ("prior_reliability", source_reliability, reliability),
+        ):
+            if source.shape != (count,) or not np.array_equal(source, derived):
+                raise ValueError(
+                    "factor bundle linearization changed "
+                    f"{name} at factor {factor_position}"
+                )
+        if float(linearized.prior_nominal_probability) != float(
+            factor.prior_nominal_probability
+        ) or float(linearized.composite_weight) != float(factor.composite_weight):
+            raise ValueError(
+                "factor bundle linearization changed group probabilities at factor "
+                f"{factor_position}"
+            )
+
+        mean = np.asarray(linearized.world_mean_m, dtype=np.float64)
+        conditional = np.asarray(
+            linearized.conditional_world_covariance_m2,
+            dtype=np.float64,
+        )
+        marginal = np.asarray(
+            linearized.marginal_world_covariance_m2,
+            dtype=np.float64,
+        )
+        local_gauge = np.asarray(linearized.gauge_jacobian, dtype=np.float64)
+        if mean.shape != (count, 3):
+            raise ValueError("linearized world_mean_m changed shape")
+        if conditional.shape != (count, 3, 3):
+            raise ValueError("linearized conditional covariance changed shape")
+        if marginal.shape != (count, 3, 3):
+            raise ValueError("linearized marginal covariance changed shape")
+        if local_gauge.shape != (count, 3, 7):
+            raise ValueError("linearized local gauge Jacobian changed shape")
+
+        selected = linearized_valid & (association > 0.0) & (reliability > 0.0)
+        selected_count = int(np.count_nonzero(selected))
+        if selected_count == 0:
+            continue
+        gauge_id = _require_string(
+            linearized.gauge_id,
+            name=f"factor {factor_position} gauge_id",
+        )
+        if gauge_id not in gauge_positions:
+            raise ValueError("factor bundle linearization references an unknown gauge")
+
+        means.append(mean[selected])
+        conditional_covariances.append(conditional[selected])
+        marginal_covariances.append(marginal[selected])
+        local_gauge_jacobians.append(local_gauge[selected])
+        gauge_indices.append(
+            np.full(selected_count, gauge_positions[gauge_id], dtype=np.int64)
+        )
+        associations.append(association[selected])
+        reliabilities.append(reliability[selected])
+        nominal_probabilities.append(
+            np.full(
+                selected_count,
+                float(linearized.prior_nominal_probability),
+                dtype=np.float64,
+            )
+        )
+        composite_weights.append(
+            np.full(
+                selected_count,
+                float(linearized.composite_weight),
+                dtype=np.float64,
+            )
+        )
+        point_ids.append(np.asarray(linearized_point_ids[selected], dtype=np.int64))
+        frame_indices.append(
+            np.full(
+                selected_count,
+                _require_integer(
+                    linearized.frame_index,
+                    name=f"factor {factor_position} frame_index",
+                    minimum=0,
+                ),
+                dtype=np.int64,
+            )
+        )
+        view_ids.extend([str(linearized.view_id)] * selected_count)
+        factor_ids.extend([str(linearized.factor_id)] * selected_count)
+        correlation_group_ids.extend(
+            [str(linearized.correlation_group_id)] * selected_count
+        )
+
+    if not means:
+        raise ValueError("claim-bearing factor bundle has no active observation rows")
+
+    mean = np.concatenate(means, axis=0)
+    return {
+        "mean": mean,
+        "conditional": np.concatenate(conditional_covariances, axis=0),
+        "marginal": np.concatenate(marginal_covariances, axis=0),
+        "local_gauge": np.concatenate(local_gauge_jacobians, axis=0),
+        "gauge_indices": np.concatenate(gauge_indices),
+        "gauge_prior": np.asarray(bundle.joint_gauge_covariance, dtype=np.float64),
+        "association": np.concatenate(associations),
+        "reliability": np.concatenate(reliabilities),
+        "nominal": np.concatenate(nominal_probabilities),
+        "composite": np.concatenate(composite_weights),
+        "point_ids": np.concatenate(point_ids),
+        "frame_indices": np.concatenate(frame_indices),
+        "view_ids": tuple(view_ids),
+        "factor_ids": tuple(factor_ids),
+        "groups": tuple(correlation_group_ids),
+        "gauge_ids": gauge_ids,
+        "causal_frame_stop": int(bundle.causal_frame_stop),
+        "bundle_observation_count": bundle_observation_count,
+        "selected_observation_count": len(mean),
+    }
+
+
+def _assert_stack_matches_bundle(
+    stack: Mapping[str, Any],
+    expected: Mapping[str, Any],
+) -> None:
+    array_fields = {
+        "mean": "world_mean_m",
+        "conditional": "conditional_world_covariance_m2",
+        "marginal": "marginal_world_covariance_m2",
+        "local_gauge": "local_gauge_jacobian",
+        "gauge_indices": "gauge_indices",
+        "gauge_prior": "gauge_prior_covariance",
+        "association": "association_probability",
+        "reliability": "prior_reliability",
+        "nominal": "prior_nominal_probability",
+        "composite": "composite_weight",
+        "point_ids": "point_ids",
+        "frame_indices": "frame_indices",
+    }
+    for key, public_name in array_fields.items():
+        if not np.array_equal(stack[key], expected[key]):
+            raise ValueError(
+                f"sparse factor stack {public_name} differs from validated factor bundle"
+            )
+    for key, public_name in (
+        ("view_ids", "view_ids"),
+        ("factor_ids", "factor_ids"),
+        ("groups", "correlation_group_ids"),
+        ("gauge_ids", "gauge_ids"),
+    ):
+        if stack[key] != expected[key]:
+            raise ValueError(
+                f"sparse factor stack {public_name} differs from validated factor bundle"
+            )
+
+
+def _sparse_stack_sha256(stack: Mapping[str, Any]) -> str:
+    array_fields = (
+        "mean",
+        "conditional",
+        "marginal",
+        "local_gauge",
+        "gauge_indices",
+        "gauge_prior",
+        "association",
+        "reliability",
+        "nominal",
+        "composite",
+        "point_ids",
+        "frame_indices",
+    )
+    record = {
+        "schema": "bayesian-phystwin-prob4d-sparse-stack-binding-v1",
+        "arrays": {name: _array_sha256(stack[name]) for name in array_fields},
+        "view_ids": list(stack["view_ids"]),
+        "factor_ids": list(stack["factor_ids"]),
+        "correlation_group_ids": list(stack["groups"]),
+        "gauge_ids": list(stack["gauge_ids"]),
+        "causal_frame_stop": int(stack["causal_frame_stop"]),
+    }
+    return hashlib.sha256(
+        json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 def _validate_provider_attestation(
@@ -377,7 +683,7 @@ def _validate_stack(
     *,
     gauge_ids: tuple[str, ...],
     causal_frame_stop: int,
-    observation_count: int,
+    selected_observation_count: int,
 ) -> dict[str, Any]:
     mean = np.asarray(stack.world_mean_m, dtype=np.float64)
     conditional = np.asarray(
@@ -426,8 +732,10 @@ def _validate_stack(
     gauge_count = len(gauge_ids)
     gauge_dimension = 7 * gauge_count
 
-    if count != observation_count:
-        raise ValueError("sparse factor stack differs from envelope observation_count")
+    if count != selected_observation_count:
+        raise ValueError(
+            "sparse factor stack differs from bundle-derived active row count"
+        )
     if mean.shape != (count, 3):
         raise ValueError("world_mean_m must have shape (M, 3)")
     if conditional.shape != (count, 3, 3):
@@ -530,6 +838,8 @@ def _validate_stack(
         "view_ids": view_ids,
         "factor_ids": factor_ids,
         "groups": groups,
+        "gauge_ids": stack_gauge_ids,
+        "causal_frame_stop": causal_frame_stop,
     }
 
 
@@ -716,12 +1026,20 @@ def build_claim_bearing_explicit_gauge_batch(
         name="causal_frame_stop",
         minimum=1,
     )
+    expected_stack = _expected_sparse_stack(
+        validated_bundle.bundle,
+        gauge_ids=gauge_ids,
+    )
+    if expected_stack["bundle_observation_count"] != observation_count:
+        raise ValueError("factor bundle differs from envelope observation_count")
+    selected_observation_count = int(expected_stack["selected_observation_count"])
     stack = _validate_stack(
         sparse_stack,
         gauge_ids=gauge_ids,
         causal_frame_stop=causal_frame_stop,
-        observation_count=observation_count,
+        selected_observation_count=selected_observation_count,
     )
+    _assert_stack_matches_bundle(stack, expected_stack)
     _validate_linearization(
         linearization,
         observation_artifact_id=artifact_id,
@@ -746,17 +1064,17 @@ def build_claim_bearing_explicit_gauge_batch(
         physical_prediction_xyz_m,
         dtype=np.float64,
     )
-    if physical_prediction.shape != (observation_count, 3):
+    if physical_prediction.shape != (selected_observation_count, 3):
         raise ValueError("physical_prediction_xyz_m must have shape (M, 3)")
     if not np.all(np.isfinite(physical_prediction)):
         raise ValueError("physical_prediction_xyz_m must be finite")
     shared = (
-        np.zeros((observation_count, 3, 0), dtype=np.float64)
+        np.zeros((selected_observation_count, 3, 0), dtype=np.float64)
         if shared_bias_jacobian is None
         else np.asarray(shared_bias_jacobian, dtype=np.float64)
     )
     view = (
-        np.zeros((observation_count, 3, 0), dtype=np.float64)
+        np.zeros((selected_observation_count, 3, 0), dtype=np.float64)
         if view_bias_jacobian is None
         else np.asarray(view_bias_jacobian, dtype=np.float64)
     )
@@ -778,6 +1096,10 @@ def build_claim_bearing_explicit_gauge_batch(
             PROB4D_FACTOR_BUNDLE_SCHEMA_VERSION
         ),
         "prob4d_claim_bearing_factor_bundle_envelope_artifact_id": (artifact_id),
+        "prob4d_claim_bearing_sparse_stack_sha256": _sparse_stack_sha256(stack),
+        "prob4d_sparse_stack_rederived_from_validated_bundle": True,
+        "prob4d_bundle_observation_count": observation_count,
+        "prob4d_selected_observation_count": selected_observation_count,
         "prob4d_claim_bearing_provider_manifest_id": (provider_manifest_id),
         "prob4d_claim_bearing_calibration_artifact_ids": dict(calibration_ids),
         "prob4d_claim_bearing_runtime_revision_source": runtime_source,
