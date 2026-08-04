@@ -1,4 +1,4 @@
-name: Port full-22 diagnostic onto main
+name: Port full-22 diagnostic data onto main
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Verify and copy the science-only source delta
+      - name: Verify the science-only source delta
         shell: bash
         run: |
           set -euo pipefail
@@ -51,33 +51,24 @@ jobs:
           LC_ALL=C sort -o /tmp/expected-files.txt /tmp/expected-files.txt
           diff -u /tmp/expected-files.txt /tmp/actual-files.txt
 
-          mapfile -t files < /tmp/expected-files.txt
-          git checkout "${source_head}" -- "${files[@]}"
-
-      - name: Rebind workflows to current main
+      - name: Restore the seven non-workflow artifacts
+        shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          hosted = Path(
-              '.github/workflows/full22-model-average-hosted-reference.yml'
-          )
-          text = hosted.read_text(encoding='utf-8')
-          old = '      - agent/prospective-belief-hardening\n'
-          if text.count(old) != 1:
-              raise RuntimeError('unexpected hosted-reference base trigger')
-          hosted.write_text(text.replace(old, '      - main\n'), encoding='utf-8')
-
-          science = Path('.github/workflows/full22-model-average-science.yml')
-          text = science.read_text(encoding='utf-8')
-          push_start = text.index('  push:\n')
-          pull_start = text.index('  pull_request:\n')
-          text = text[:push_start] + text[pull_start:]
-          old = '      - agent/prospective-belief-hardening\n'
-          if text.count(old) != 1:
-              raise RuntimeError('unexpected self-hosted base trigger')
-          science.write_text(text.replace(old, '      - main\n'), encoding='utf-8')
-          PY
+          set -euo pipefail
+          source_head=b25abb2014ab54d07113eaf4a84205fa6c12c739
+          cat > /tmp/data-files.txt <<'EOF'
+          protocols/full22_endpoint_model_average_diagnostic_v1.json
+          results/diagnostics/full22_endpoint_model_average_v1/README.md
+          results/diagnostics/full22_endpoint_model_average_v1/artifact_manifest.json
+          results/diagnostics/full22_endpoint_model_average_v1/per_case.csv
+          results/diagnostics/full22_endpoint_model_average_v1/readout.json
+          scripts/science/run_full22_endpoint_model_average_diagnostic.py
+          tests/test_full22_endpoint_model_average_diagnostic.py
+          EOF
+          while IFS= read -r file; do
+            mkdir -p "$(dirname "${file}")"
+            git show "${source_head}:${file}" > "${file}"
+          done < /tmp/data-files.txt
 
       - name: Make the CSV evidence byte-stable
         run: |
@@ -286,16 +277,13 @@ jobs:
           PY
           git diff --check
 
-      - name: Commit the clean port and remove this one-shot workflow
+      - name: Commit the validated non-workflow artifacts
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/port-full22-model-average-diagnostic.yml
           git add \
-            .github/workflows/full22-model-average-hosted-reference.yml \
-            .github/workflows/full22-model-average-science.yml \
             protocols/full22_endpoint_model_average_diagnostic_v1.json \
             results/diagnostics/full22_endpoint_model_average_v1/README.md \
             results/diagnostics/full22_endpoint_model_average_v1/artifact_manifest.json \
@@ -304,5 +292,5 @@ jobs:
             scripts/science/run_full22_endpoint_model_average_diagnostic.py \
             tests/test_full22_endpoint_model_average_diagnostic.py
           git diff --cached --check
-          git commit -m 'Publish locked full-22 model-average diagnostic'
+          git commit -m 'Publish locked full-22 model-average diagnostic data'
           git push origin HEAD:${{ github.head_ref }}
