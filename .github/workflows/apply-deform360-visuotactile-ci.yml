@@ -16,8 +16,7 @@ concurrency:
 
 jobs:
   apply:
-    if: github.actor != 'github-actions[bot]'
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Check out publication branch
@@ -48,12 +47,47 @@ jobs:
           from pathlib import Path, PurePosixPath
 
           archive = Path(os.environ["RUNNER_TEMP"]) / "deform360-visuotactile-product.tar.gz"
+          allowed = {
+              ".github/workflows/deform360-official-hub-visuotactile.yml",
+              "docs/deform360_official_hub_visuotactile_v1.md",
+              "protocols/deform360_official_hub_visuotactile_v1.json",
+              "scripts/science/build_deform360_hub_selection.py",
+              "src/bayesian_phystwin/deform360_contact_anchor.py",
+              "tests/test_deform360_contact_anchor.py",
+              "tests/test_deform360_hub_selection.py",
+          }
           with tarfile.open(archive, "r:gz") as handle:
+              members = {}
               for member in handle.getmembers():
                   path = PurePosixPath(member.name)
-                  if path.is_absolute() or ".." in path.parts or member.issym() or member.islnk():
+                  if (
+                      path.is_absolute()
+                      or ".." in path.parts
+                      or member.issym()
+                      or member.islnk()
+                      or member.isdev()
+                  ):
                       raise SystemExit(f"unsafe staged path: {member.name}")
-              handle.extractall(".", filter="data")
+                  if member.isdir():
+                      continue
+                  if not member.isfile():
+                      raise SystemExit(f"unexpected staged member: {member.name}")
+                  relative = path.as_posix()
+                  if relative not in allowed or relative in members:
+                      raise SystemExit(
+                          f"unexpected or duplicate product file: {relative}"
+                      )
+                  members[relative] = member
+              if set(members) != allowed:
+                  missing = sorted(allowed - set(members))
+                  raise SystemExit(f"staged product lacks declared files: {missing}")
+              for relative in sorted(allowed):
+                  stream = handle.extractfile(members[relative])
+                  if stream is None:
+                      raise SystemExit(f"cannot read staged file: {relative}")
+                  target = Path(relative)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(stream.read())
           PY
           rm -rf .staging
 
@@ -115,9 +149,9 @@ jobs:
           tests_path = Path(".github/workflows/tests.yml")
           tests = tests_path.read_text(encoding="utf-8")
           test_anchor = "            tests/test_gauge_aware_belief.py \\\n"
-          if tests.count(test_anchor) != 2:
+          if tests.count(test_anchor) != 3:
               raise SystemExit(
-                  "tests.yml: expected two gauge-aware suite anchors, "
+                  "tests.yml: expected three gauge-aware suite anchors, "
                   f"found {tests.count(test_anchor)}"
               )
           tests = tests.replace(
@@ -163,9 +197,11 @@ jobs:
               "explicit-gauge solver, and remains locked before selected raw payload access.\n\n",
           )
 
-          Path(
-              ".github/workflows/apply-deform360-visuotactile-ci.yml"
-          ).unlink()
+          for temporary in (
+              ".github/workflows/apply-deform360-visuotactile-ci.yml",
+              ".github/workflows/repair-deform360-visuotactile-publisher.yml",
+          ):
+              Path(temporary).unlink(missing_ok=True)
           PY
 
           python -m pip install --upgrade pip
