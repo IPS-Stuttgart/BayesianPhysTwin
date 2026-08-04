@@ -3,7 +3,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import numpy as np
-
 from prob4d.gauge import GaugeEstimate
 from prob4d.provider_v2_factors import (
     PROVIDER_FACTOR_API_VERSION,
