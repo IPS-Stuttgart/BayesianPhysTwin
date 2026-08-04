@@ -1,0 +1,464 @@
+{
+  "artifact_kind": "Deform360PairwiseRegretGuardFreshProcessingCohort",
+  "cases": [
+    {
+      "action": "lift side",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "7701227ea52f17231b658584443e51b88f0dc3f48121ec4c105aedf73b412ba9",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 9,
+          "cameras": [
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1",
+            "brics-odroid-027_cam0"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 187,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0000/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "3b0268ccc48bbbcb2997f0717aceca889dfa25cf0df7a3721adff33eb99c729e"
+      },
+      "bimanual": "no",
+      "case": "197-hand-sanitizer-ep0000",
+      "episode_id": 0,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "899bfa592cf61c2f73a2e4134a8546bab06d1aa48cbac7807969d1047e61e69f",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0000/fresh_pairwise_processing.json",
+        "result_sha256": "3b04f256129d1ff65cc9bca386b2214198ec3ecd2bc75cce0aa72f26e68d15ea"
+      },
+      "status": "admitted"
+    },
+    {
+      "action": "lift top",
+      "admission": {
+        "accepted": false,
+        "file_sha256": "4a31039ab5575b6c8d595f049290dc99f73dc541136494b65c4474358d9451e9",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 12,
+          "cameras": [
+            "brics-odroid-001_cam0",
+            "brics-odroid-006_cam0",
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1",
+            "brics-odroid-024_cam1",
+            "brics-odroid-027_cam0"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 69,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0001/fresh_pairwise_admission.json",
+        "rejection_reasons": [
+          "frame-zero point count is outside backend admission"
+        ],
+        "result_sha256": "a60f161daedd70e989be776881a65ea15152fd49b46333657c9451cf40eb69b1"
+      },
+      "bimanual": "no",
+      "case": "197-hand-sanitizer-ep0001",
+      "episode_id": 1,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "5af665347c21a6b60b6679d02e0f1013a028cf8d9f068e2b69c70df88df5eb14",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0001/fresh_pairwise_processing.json",
+        "result_sha256": "089158165dbe59bbf0c2fb90f95538a8c5781ba2bea19e76cf724f8866458642"
+      },
+      "status": "source_rejected"
+    },
+    {
+      "action": "lift center",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "b75f2a83c1df0cb94bb5463e8c01c77268c772e7ba706ba324c1e38302f761fa",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 11,
+          "cameras": [
+            "brics-odroid-006_cam0",
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1",
+            "brics-odroid-024_cam1",
+            "brics-odroid-027_cam0"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 759,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0002/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "766fda57f0e24cd846535c754612d1c0c75cc3c7d705ab3520f42030f1a0fac7"
+      },
+      "bimanual": "no",
+      "case": "197-hand-sanitizer-ep0002",
+      "episode_id": 2,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "efa555908c734a257e6523918139ce98d416722fa9a666f0ce60c2040d54eea6",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0002/fresh_pairwise_processing.json",
+        "result_sha256": "4d1ee3210c679270c052e58aa886a0262b07e28858f9aa1be8fbeea299410edc"
+      },
+      "status": "admitted"
+    },
+    {
+      "action": "drag",
+      "admission": null,
+      "bimanual": "no",
+      "case": "197-hand-sanitizer-ep0003",
+      "episode_id": 3,
+      "error": {
+        "message": "process no longer exists (pid=4089146)",
+        "type": "NoSuchProcess"
+      },
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "e90e80ecef004dcef3191bf9ee9ce395889943104e526f3403c4aba27120cc62",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0003/fresh_pairwise_processing.json",
+        "result_sha256": "69f6218c162d95e0c314a3747efc6568bf667fb1206dc3ecce3748850a349248"
+      },
+      "status": "technical_failure"
+    },
+    {
+      "action": "squeeze",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "8bb97cb05f6ea83e6572beaab279eed7b135f79ac28557bf4a2e8c6b1865b216",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 10,
+          "cameras": [
+            "brics-odroid-006_cam0",
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1",
+            "brics-odroid-027_cam0"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 310,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0004/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "7aff85fb938a0d4b5ab23ab804981975ab600de01695ea547fcd9147d279fcfc"
+      },
+      "bimanual": "no",
+      "case": "197-hand-sanitizer-ep0004",
+      "episode_id": 4,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "ef0239bb67841befec277c43c71093c4414c01970dd945be4e95ae40e9dc15a9",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0004/fresh_pairwise_processing.json",
+        "result_sha256": "cb5858c3e886a9ac97c71ccda63edc17a688bf46d259cb360a110fdab7fd74f7"
+      },
+      "status": "admitted"
+    },
+    {
+      "action": "lift vertical",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "4617c0f7e93e285d47434bbc9d6a2615f153124a04493750d0ac41637cb9566b",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 9,
+          "cameras": [
+            "brics-odroid-001_cam0",
+            "brics-odroid-006_cam0",
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 2802,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0005/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "a3c3a95afe837fda1906608849f969e60b93574cc69113bab1bbce3ca84624b0"
+      },
+      "bimanual": "yes",
+      "case": "197-hand-sanitizer-ep0005",
+      "episode_id": 5,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "ebc0b014fb12a61e025bd383132db40c018259f87a8749fe713f4b59675c101e",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0005/fresh_pairwise_processing.json",
+        "result_sha256": "b63148b07283638b41ddc6402152158d401c830bd571936a67f5bb15ef8b4a47"
+      },
+      "status": "admitted"
+    },
+    {
+      "action": "drag",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "c6a33d3badd8a44473ae16f1e9e88af0a02e570087535890010ea7ad5d014073",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 8,
+          "cameras": [
+            "brics-odroid-007_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1",
+            "brics-odroid-027_cam0"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 860,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0007/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "843f274d390fed74bbf0e8ccc2dcda93a5128107113f67e342feba89f766b816"
+      },
+      "bimanual": "yes",
+      "case": "197-hand-sanitizer-ep0007",
+      "episode_id": 7,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "96a3f2107af3ee30e550335dc1a282513531b36258ade150265530eb8bcbfb11",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0007/fresh_pairwise_processing.json",
+        "result_sha256": "2bd866a79b773d1f4250c7adc9d49af3c9800d8d242cc60009e51eca41e2cbe5"
+      },
+      "status": "admitted"
+    },
+    {
+      "action": "squeeze side",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "0fa1e335a3bac2e774a6df8a67ee695082718b123a8a6bffd3a65dd6129ccd7a",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 10,
+          "cameras": [
+            "brics-odroid-001_cam0",
+            "brics-odroid-006_cam0",
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 350,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "f8e2ecb7558c6b9d448de61fcd646ddeb90b2d1b10738278324d307c6d62b0b2"
+      },
+      "bimanual": "yes",
+      "case": "197-hand-sanitizer-ep0008",
+      "episode_id": 8,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "5616f4aa48e110d0fdd409d8d8e7fc05511cd32dbcefca553989fe4a7c74072c",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0008/fresh_pairwise_processing.json",
+        "result_sha256": "fc8e50d680baf3dbe4e22344202f644d98a6dffc69c52b2f6cd0d5f2e2e771a7"
+      },
+      "status": "admitted"
+    },
+    {
+      "action": "squeeze front",
+      "admission": {
+        "accepted": true,
+        "file_sha256": "3f9d4ad42784545ba25797777298e5ee0b01a6575dac81dbf8223064498a5630",
+        "observed_source_contract": {
+          "active_frame_count": 76,
+          "camera_count": 11,
+          "cameras": [
+            "brics-odroid-001_cam0",
+            "brics-odroid-007_cam0",
+            "brics-odroid-008_cam0",
+            "brics-odroid-010_cam0",
+            "brics-odroid-013_cam0",
+            "brics-odroid-014_cam1",
+            "brics-odroid-015_cam1",
+            "brics-odroid-019_cam1",
+            "brics-odroid-021_cam1",
+            "brics-odroid-024_cam1",
+            "brics-odroid-027_cam0"
+          ],
+          "contact_end_frame": 75,
+          "contact_start_frame": 0,
+          "frame_zero_point_count": 939,
+          "split_frame_count": 76,
+          "stage_inputs_valid": true,
+          "test": [
+            60,
+            76
+          ],
+          "train": [
+            0,
+            60
+          ]
+        },
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0009/fresh_pairwise_admission.json",
+        "rejection_reasons": [],
+        "result_sha256": "6310cbe50e019c9571d4af81a3242663b85238723eea0fa3b38f1ff5ba53fda0"
+      },
+      "bimanual": "yes",
+      "case": "197-hand-sanitizer-ep0009",
+      "episode_id": 9,
+      "error": null,
+      "nonprehensile": "no",
+      "object_id": "197-hand-sanitizer",
+      "processing": {
+        "file_sha256": "69c78f17eb7c29a78d4830c02b9f0cc440ec76690c50b7effe2ab986abb97d5f",
+        "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/processed-runtime-v1/197-hand-sanitizer/episode_0009/fresh_pairwise_processing.json",
+        "result_sha256": "027c49355b35c98fc81c2357d5d5838fbbd6043b450c403d8ffbbddec5bde96b"
+      },
+      "status": "admitted"
+    }
+  ],
+  "complete": true,
+  "counts": {
+    "admitted": 7,
+    "source_rejected": 1,
+    "technical_failure": 1
+  },
+  "expected_case_count": 9,
+  "information_boundary": {
+    "future_object_positions_deserialized": false,
+    "held_v8_runtime_or_target_artifact_access": false,
+    "outcome_or_metric_read": false,
+    "source_rejections_retained_without_replacement": true,
+    "technical_failures_retained_without_retry": true
+  },
+  "inputs": {
+    "processing_protocol": {
+      "file_sha256": "fefbd09e0ba1675dbd2c6d9016a213101495477a9b056d2b32a0b26984beaa7b",
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/code-7d5e3e8/configs/sota/deform360_pairwise_regret_guard_fresh_processing_v1.json"
+    },
+    "technical_lock": {
+      "file_sha256": "b1c481c09d3d51ab3bf23a585dda4a9ea730bfd9292165e00a976a6c6ab10c03",
+      "path": "/home/florianpfaff/bpt-pairwise-fresh-technical-v1/code-7d5e3e8/configs/sota/deform360_pairwise_regret_guard_fresh_technical_v1.json"
+    }
+  },
+  "processing_protocol_id": "deform360-pairwise-regret-guard-fresh-processing-v1",
+  "processing_protocol_sha256": "c7185ea4fb333d29bc7853d304fb679d01efc98bd4915c9148b259e094e94e7f",
+  "result_sha256": "d103c6e4dd86e0923b54ab4785e44a317f45e227233c480f54e5376d4ce21889",
+  "schema_version": 1,
+  "technical_lock_sha256": "4fc95fc3a430cde2a3d81edd50dfc7a8dae9b9580b54d8b9c90751151a2caed2",
+  "technical_protocol_id": "deform360-pairwise-regret-guard-fresh-technical-v1"
+}
