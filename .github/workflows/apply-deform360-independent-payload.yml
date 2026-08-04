@@ -1,0 +1,150 @@
+name: Apply locked Deform360 independent-evaluation payload
+
+on:
+  push:
+    branches:
+      - agent/deform360-independent-normalized-evidence-v1
+    paths:
+      - ".github/workflows/apply-deform360-independent-payload.yml"
+      - ".github/patches/deform360-independent/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-deform360-independent-payload.yml"
+      - ".github/patches/deform360-independent/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-deform360-independent-payload-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact publication branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-independent-normalized-evidence-v1
+          fetch-depth: 0
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Reconstruct and verify exact payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/patches/deform360-independent/part-* \
+            > deform360-independent-payload.b64
+          base64 --decode deform360-independent-payload.b64 \
+            > deform360-independent-payload.tar.gz
+          echo "527becf42a18f390d58408b9f80c52290f428050d79e7cc7a52c30d7c4d60311  deform360-independent-payload.tar.gz" \
+            | sha256sum --check --strict
+          tar --extract --gzip --file deform360-independent-payload.tar.gz
+          rm deform360-independent-payload.b64 \
+            deform360-independent-payload.tar.gz
+
+      - name: Remove publication-only staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .github/patches/deform360-independent
+          rm .github/workflows/apply-deform360-independent-payload.yml
+
+      - name: Apply deterministic quality-only normalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph]" "ruff==0.16.1"
+          python -m pip check
+          python -m ruff --version
+          python -m ruff check --fix \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m ruff format \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+
+      - name: Verify exact clean product and locked information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > expected-product-sha256.txt <<'EOF'
+          9f63bc8b212b8b7f9484c3879496b9523065e4577b2c9e964a078a849a79946f  .github/workflows/deform360-independent-session-evaluation.yml
+          5c3d001daa979ee8d5a3014c9b9a75844f60a91898c1800f281797af1bc8eba5  docs/deform360_public_evaluation_v1.md
+          aec8d50dd02c7255c58abd497f796705439ec705c799233a9752f07edd0a1a0b  protocols/deform360_independent_normalized_evidence_v1.json
+          7c223152cca0f786d732e30687d4bc32c66fae5bbb0d219d8b6cef32123ee805  scripts/science/run_deform360_public_evaluation.py
+          78b6b0e18d930e079d85094dbfe492cd7b92a49c0940b8a6eaf32f5b18e3fc31  tests/test_deform360_public_evaluation.py
+          EOF
+          sha256sum --check --strict expected-product-sha256.txt
+          rm expected-product-sha256.txt
+          python -m ruff check \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m ruff format --check \
+            scripts/science/run_deform360_public_evaluation.py \
+            tests/test_deform360_public_evaluation.py
+          python -m pytest -q tests/test_deform360_public_evaluation.py
+          python -m compileall -q \
+            scripts/science/run_deform360_public_evaluation.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/deform360_independent_normalized_evidence_v1.json"
+          )
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          actual = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = (
+              "744ac7281f590c8d158c10632bb864b4141bddf370b757ae5f56f93aadfbefc9"
+          )
+          if actual != expected:
+              raise SystemExit(
+                  f"protocol digest changed: expected {expected}, received {actual}"
+              )
+          boundary = payload["information_boundary"]
+          if boundary["historical_reserved_targets_must_remain_unopened"] is not True:
+              raise SystemExit("historical reserved targets are no longer sealed")
+          if boundary["selection_uses_names_only"] is not True:
+              raise SystemExit("selection is no longer metadata-only")
+          if payload["strata"] != ["sheet", "volumetric"]:
+              raise SystemExit("unsupported filament claim entered the protocol")
+          print(f"locked protocol: {actual}")
+          PY
+          git diff --check
+
+      - name: Publish clean non-workflow product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/workflows/deform360-independent-session-evaluation.yml \
+            "${RUNNER_TEMP}/deform360-independent-session-evaluation.yml"
+          rm .github/workflows/deform360-independent-session-evaluation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "Add locked independent Deform360 evaluation core"
+          git push origin HEAD:agent/deform360-independent-normalized-evidence-v1
