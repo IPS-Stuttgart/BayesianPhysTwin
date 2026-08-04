@@ -19,7 +19,7 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,20 +51,18 @@ jobs:
             tests/test_full22_reproduction_capsule.py
           python -m pytest -q tests/test_full22_reproduction_capsule.py
           python -m py_compile reproductions/full22_anchor_v1/reproduce.py
-          rm \
+          rm -f \
             .github/scripts/patch_full22_portable_protocol.py \
-            .github/workflows/temporary-patch-full22-portable-protocol.yml
+            .github/workflows/temporary-patch-full22-portable-protocol.yml \
+            .github/workflows/temporary-fix-full22-protocol-identity.yml \
+            .github/workflows/temporary-fix-full22-protocol-identity-v2.yml
           git diff --check
       - name: Publish clean capsule correction
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            .github/scripts/patch_full22_portable_protocol.py \
-            .github/workflows/temporary-patch-full22-portable-protocol.yml \
-            reproductions/full22_anchor_v1/reproduce.py \
-            tests/test_full22_reproduction_capsule.py
+          git add -A
           git diff --cached --check
           git commit -m "Normalize full-22 source protocol identity"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
