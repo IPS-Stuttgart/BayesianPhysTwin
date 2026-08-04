@@ -85,6 +85,17 @@ def test_temperature_one_reproduces_untempered_moments() -> None:
     np.testing.assert_allclose(tempered.component_weights, posterior.component_weights)
     np.testing.assert_allclose(tempered.mean_m, posterior.mean_m)
     np.testing.assert_allclose(tempered.covariance_m2, posterior.covariance_m2)
+    assert not hasattr(tempered, "final_nominal_probability")
+    baseline_prediction = module.predict_model_averaged_endpoint(
+        posterior,
+        horizon_steps=3,
+    )
+    mean, covariance = module._predict_tempered_endpoint(
+        tempered,
+        horizon_steps=3,
+    )
+    np.testing.assert_allclose(mean, baseline_prediction.mean_m)
+    np.testing.assert_allclose(covariance, baseline_prediction.covariance_m2)
 
 
 def test_higher_temperature_flattens_nonuniform_component_weights() -> None:
