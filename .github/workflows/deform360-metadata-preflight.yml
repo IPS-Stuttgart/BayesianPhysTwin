@@ -100,7 +100,11 @@ jobs:
           )
           print("### Deform360 metadata-only preflight")
           print()
-          print(f"- Inventory SHA-256: `{payload['inventory_sha256']}`")
+          print(
+              "- Content inventory SHA-256: "
+              f"`{payload['content_inventory_sha256']}`"
+          )
+          print(f"- Provenance SHA-256: `{payload['inventory_sha256']}`")
           print(f"- Recognized objects: `{payload['recognized_object_count']}`")
           print(f"- Classification counts: `{payload['classification_counts']}`")
           print(
