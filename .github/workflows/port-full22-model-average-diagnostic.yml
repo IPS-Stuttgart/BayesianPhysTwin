@@ -79,6 +79,115 @@ jobs:
           science.write_text(text.replace(old, '      - main\n'), encoding='utf-8')
           PY
 
+      - name: Make the CSV evidence byte-stable
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          script = Path(
+              'scripts/science/run_full22_endpoint_model_average_diagnostic.py'
+          )
+          text = script.read_text(encoding='utf-8')
+          old = '        writer = csv.DictWriter(handle, fieldnames=fieldnames)\n'
+          new = (
+              '        writer = csv.DictWriter(\n'
+              '            handle, fieldnames=fieldnames, lineterminator="\\n"\n'
+              '        )\n'
+          )
+          if text.count(old) != 1:
+              raise RuntimeError('unexpected full-22 CSV writer implementation')
+          script.write_text(text.replace(old, new), encoding='utf-8')
+
+          tests = Path('tests/test_full22_endpoint_model_average_diagnostic.py')
+          text = tests.read_text(encoding='utf-8')
+          marker = 'def test_case_csv_uses_repository_stable_lf_line_endings'
+          if marker not in text:
+              text += '''
+
+          def test_case_csv_uses_repository_stable_lf_line_endings(
+              tmp_path: Path,
+          ) -> None:
+              module = _load_script()
+              point = {
+                  method: {
+                      "chamfer_distance_m": 1.0,
+                      "track_error_m": 2.0,
+                  }
+                  for method in module.METHODS
+              }
+              output = tmp_path / "per_case.csv"
+
+              module._write_case_csv(
+                  output,
+                  {
+                      "case": {
+                          "cohort": "confirmation",
+                          "anchor_validation": {"accepted": True},
+                          "point": point,
+                      }
+                  },
+              )
+
+              raw = output.read_bytes()
+              assert b"\\r\\n" not in raw
+              assert raw.count(b"\\n") == 2
+          '''
+              tests.write_text(text, encoding='utf-8')
+
+          root = Path('results/diagnostics/full22_endpoint_model_average_v1')
+          manifest_path = root / 'artifact_manifest.json'
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          raw = (root / 'per_case.csv').read_bytes()
+          if b'\r\n' in raw:
+              raise RuntimeError('repository CSV unexpectedly retains CRLF bytes')
+          repository_digest = hashlib.sha256(raw).hexdigest()
+          reconstructed_hosted_digest = hashlib.sha256(
+              raw.replace(b'\n', b'\r\n')
+          ).hexdigest()
+          if reconstructed_hosted_digest != manifest['per_case_csv_sha256']:
+              raise RuntimeError(
+                  'the hosted/repository CSV mismatch is not explained solely '
+                  'by Git line-ending normalization'
+              )
+          manifest['hosted_per_case_csv_sha256'] = manifest[
+              'per_case_csv_sha256'
+          ]
+          manifest['repository_per_case_csv_sha256'] = repository_digest
+          manifest['repository_per_case_csv_line_endings'] = 'LF'
+          manifest_path.write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+
+          readme = root / 'README.md'
+          text = readme.read_text(encoding='utf-8')
+          summary_line = (
+              '- Summary SHA-256: '
+              '`6b2baa1d1cddb941c7682aebc360e3fc9622bbd553849dbb95696c7afba7f672`\n'
+          )
+          addition = (
+              '- Hosted per-case CSV SHA-256: '
+              f'`{manifest["hosted_per_case_csv_sha256"]}`\n'
+              '- Repository LF per-case CSV SHA-256: '
+              f'`{repository_digest}`\n'
+          )
+          if addition not in text:
+              if text.count(summary_line) != 1:
+                  raise RuntimeError('unexpected result README hash section')
+              text = text.replace(summary_line, summary_line + addition)
+              note = (
+                  '\nThe hosted artifact was emitted with CSV `CRLF` row endings, '
+                  'whereas Git normalized the committed snapshot to `LF`. '
+                  'Reconstructing `CRLF` from the committed rows reproduces the '
+                  'hosted manifest hash exactly. Both byte identities are retained '
+                  'above, and the evaluator now emits `LF` explicitly.\n'
+              )
+              text = text.replace('\n## Main point result', note + '\n## Main point result')
+              readme.write_text(text, encoding='utf-8')
+          PY
+
       - name: Install locked development dependencies
         run: |
           python -m pip install --upgrade pip
@@ -89,6 +198,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python -m ruff check --fix \
+            scripts/science/run_full22_endpoint_model_average_diagnostic.py \
+            tests/test_full22_endpoint_model_average_diagnostic.py
+          python -m ruff format \
+            scripts/science/run_full22_endpoint_model_average_diagnostic.py \
+            tests/test_full22_endpoint_model_average_diagnostic.py
           python -m ruff check \
             scripts/science/run_full22_endpoint_model_average_diagnostic.py \
             tests/test_full22_endpoint_model_average_diagnostic.py
@@ -132,9 +247,17 @@ jobs:
               raise SystemExit('manifest protocol digest disagrees with protocol')
 
           per_case = root / 'per_case.csv'
-          per_case_digest = hashlib.sha256(per_case.read_bytes()).hexdigest()
-          if per_case_digest != manifest['per_case_csv_sha256']:
-              raise SystemExit('per-case CSV digest disagrees with manifest')
+          raw = per_case.read_bytes()
+          repository_digest = hashlib.sha256(raw).hexdigest()
+          if repository_digest != manifest['repository_per_case_csv_sha256']:
+              raise SystemExit('repository CSV digest disagrees with manifest')
+          hosted_digest = hashlib.sha256(raw.replace(b'\n', b'\r\n')).hexdigest()
+          if hosted_digest != manifest['hosted_per_case_csv_sha256']:
+              raise SystemExit('hosted CSV digest is not reproduced by CRLF rows')
+          if manifest['per_case_csv_sha256'] != hosted_digest:
+              raise SystemExit('legacy per-case digest no longer identifies hosted CSV')
+          if manifest['repository_per_case_csv_line_endings'] != 'LF':
+              raise SystemExit('repository CSV line-ending contract changed')
           with per_case.open(newline='', encoding='utf-8') as stream:
               rows = list(csv.DictReader(stream))
           if len(rows) != 22:
@@ -151,7 +274,8 @@ jobs:
               json.dumps(
                   {
                       'protocol_sha256': protocol_digest,
-                      'per_case_sha256': per_case_digest,
+                      'repository_per_case_sha256': repository_digest,
+                      'hosted_per_case_sha256': hosted_digest,
                       'case_count': len(rows),
                       'classification': readout['classification'],
                   },
