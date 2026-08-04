@@ -77,7 +77,7 @@ jobs:
       - name: Install locked evaluation dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,data]"
+          python -m pip install -e ".[dev,data,graph]"
           python -m pip check
           python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
 
