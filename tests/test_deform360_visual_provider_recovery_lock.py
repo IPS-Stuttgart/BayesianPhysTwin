@@ -19,6 +19,7 @@ from bayesian_phystwin.deform360_visual_provider_recovery_lock import (
     first_deform360_contact_frame,
     load_deform360_visual_provider_recovery_lock,
     save_deform360_visual_provider_recovery_lock,
+    select_deform360_camera_panel,
 )
 from bayesian_phystwin.prob4d_provider_attestation import (
     compute_prob4d_provider_manifest_id,
@@ -207,6 +208,35 @@ def test_causal_window_fails_without_contact_or_required_context() -> None:
             _tactile(70, 50),
             total_episode_frames=70,
         )
+
+
+def test_camera_panel_uses_only_pose_geometry_with_lexicographic_ties() -> None:
+    poses: dict[str, np.ndarray] = {}
+    for name, center in {
+        "camera-a": (1.0, 0.0, 0.0),
+        "camera-b": (0.0, 1.0, 0.0),
+        "camera-c": (-1.0, 0.0, 0.0),
+        "camera-d": (0.0, -1.0, 0.0),
+    }.items():
+        pose = np.eye(4)
+        pose[:3, 3] = center
+        poses[name] = pose
+
+    assert select_deform360_camera_panel(poses) == (
+        "camera-a",
+        "camera-b",
+        "camera-c",
+    )
+
+
+def test_camera_panel_rejects_invalid_or_insufficient_calibration() -> None:
+    with pytest.raises(ValueError, match="insufficient calibrated"):
+        select_deform360_camera_panel({"a": np.eye(4), "b": np.eye(4)})
+
+    invalid = {name: np.eye(4) for name in ("a", "b", "c")}
+    invalid["c"][3, 3] = 0.0
+    with pytest.raises(ValueError, match="homogeneous"):
+        select_deform360_camera_panel(invalid)
 
 
 def test_recovery_lock_record_is_plain_finite_json() -> None:

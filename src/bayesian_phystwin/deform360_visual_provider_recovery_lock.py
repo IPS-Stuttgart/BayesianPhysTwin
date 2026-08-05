@@ -10,6 +10,7 @@ calibration score, provider comparison, or confirmation-payload access.
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -54,6 +55,7 @@ DEFORM360_OBSERVED_HISTORY_FRAMES = DEFORM360_PROVIDER_WINDOW_SIZE + (
 ) * (DEFORM360_PROVIDER_WINDOW_SIZE - DEFORM360_PROVIDER_OVERLAP)
 DEFORM360_OBSERVED_CONTACT_FRAMES = 6
 DEFORM360_FUTURE_FRAMES = 24
+DEFORM360_CAMERA_PANEL_SIZE = 3
 
 _RECOVERY_FIELDS = frozenset(
     {
@@ -318,6 +320,56 @@ def derive_deform360_causal_window(
         future_stop_frame=future_stop,
         total_episode_frames=total_episode_frames,
     )
+
+
+def select_deform360_camera_panel(
+    camera_to_world: Mapping[str, np.ndarray],
+) -> tuple[str, ...]:
+    """Select the locked three-view panel from camera pose geometry only."""
+
+    if len(camera_to_world) < DEFORM360_CAMERA_PANEL_SIZE:
+        raise ValueError("insufficient calibrated cameras for the frozen panel")
+    centers: dict[str, np.ndarray] = {}
+    for camera_name, value in camera_to_world.items():
+        name = _literal_string(camera_name, name="camera name")
+        matrix = np.asarray(value, dtype=np.float64)
+        if matrix.shape != (4, 4) or not np.isfinite(matrix).all():
+            raise ValueError(
+                f"camera-to-world for {name!r} must be a finite 4x4 matrix"
+            )
+        if not np.allclose(matrix[3], (0.0, 0.0, 0.0, 1.0), atol=1e-9):
+            raise ValueError(f"camera-to-world for {name!r} is not homogeneous")
+        rotation = matrix[:3, :3]
+        if not np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-6):
+            raise ValueError(f"camera-to-world for {name!r} has a non-rigid rotation")
+        if not np.isclose(np.linalg.det(rotation), 1.0, atol=1e-6):
+            raise ValueError(f"camera-to-world for {name!r} has invalid handedness")
+        centers[name] = matrix[:3, 3]
+
+    names = sorted(centers)
+    center_array = np.stack([centers[name] for name in names])
+    centered = center_array - center_array.mean(axis=0, keepdims=True)
+    radii = np.linalg.norm(centered, axis=1)
+    if np.any(radii <= 1e-9):
+        raise ValueError("camera-center geometry cannot define spherical directions")
+    directions = {
+        name: centered[index] / radii[index] for index, name in enumerate(names)
+    }
+
+    best_names: tuple[str, ...] | None = None
+    best_score: tuple[float, float] | None = None
+    for candidate in itertools.combinations(names, DEFORM360_CAMERA_PANEL_SIZE):
+        distances = [
+            float(np.linalg.norm(directions[left] - directions[right]))
+            for left, right in itertools.combinations(candidate, 2)
+        ]
+        score = (round(min(distances), 12), round(sum(distances), 12))
+        if best_score is None or score > best_score:
+            best_names = candidate
+            best_score = score
+    if best_names is None:
+        raise AssertionError("camera-panel enumeration unexpectedly produced no result")
+    return best_names
 
 
 @dataclass(frozen=True)
@@ -745,6 +797,7 @@ def load_deform360_visual_provider_recovery_lock(
 
 __all__ = [
     "DEFORM360_FUTURE_FRAMES",
+    "DEFORM360_CAMERA_PANEL_SIZE",
     "DEFORM360_OBSERVED_CONTACT_FRAMES",
     "DEFORM360_OBSERVED_HISTORY_FRAMES",
     "DEFORM360_PROVIDER_OVERLAP",
@@ -759,4 +812,5 @@ __all__ = [
     "first_deform360_contact_frame",
     "load_deform360_visual_provider_recovery_lock",
     "save_deform360_visual_provider_recovery_lock",
+    "select_deform360_camera_panel",
 ]

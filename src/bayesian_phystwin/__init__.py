@@ -73,6 +73,7 @@ from .deform360_visual_provider_recovery_lock import (
     first_deform360_contact_frame,
     load_deform360_visual_provider_recovery_lock,
     save_deform360_visual_provider_recovery_lock,
+    select_deform360_camera_panel,
 )
 from .drift_bias import (
     RandomWalkBiasConfig,
@@ -346,6 +347,7 @@ __all__ = [
     "save_deform360_visual_calibration_lock",
     "save_deform360_visual_provider_lock",
     "save_deform360_visual_provider_recovery_lock",
+    "select_deform360_camera_panel",
     "save_observation_belief",
     "save_physical_linearization",
     "score_reliability",
