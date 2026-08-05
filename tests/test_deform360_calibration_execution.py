@@ -69,13 +69,17 @@ def _provider() -> Deform360VisualProviderLockV1:
     )
 
 
-def _artifacts(stage0) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
+def _artifacts(
+    stage0,
+    *,
+    implementation_revision: str = "c" * 40,
+) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
     groups = tuple(unit.object_id for unit in stage0.calibration_units)
     return tuple(
         Deform360CalibrationArtifactRefV1(
             role=role,
             artifact_id=f"{index + 1:064x}",
-            implementation_revision="a" * 40,
+            implementation_revision=implementation_revision,
             selection_evidence_id=f"{index + 101:064x}",
             selected_candidate_id=f"candidate-{index}",
             candidate_count=index + 2,
@@ -402,7 +406,11 @@ def test_independent_verifier_rejects_cross_artifact_substitution() -> None:
         )
 
 
-def _write_cli_inputs(tmp_path: Path):
+def _write_cli_inputs(
+    tmp_path: Path,
+    *,
+    implementation_revision: str,
+):
     stage0 = _stage0()
     provider_path = tmp_path / "provider.json"
     save_deform360_visual_provider_lock(provider_path, _provider())
@@ -410,7 +418,7 @@ def _write_cli_inputs(tmp_path: Path):
     save_evidence_use_ledger(_ledger(stage0), ledger_path)
 
     artifact_args: list[str] = []
-    for artifact in _artifacts(stage0):
+    for artifact in _artifacts(stage0, implementation_revision=implementation_revision):
         path = tmp_path / f"{artifact.role}.json"
         write_atomic_json(artifact.to_record(), path, overwrite=False)
         artifact_args.extend(("--artifact", f"{artifact.role}={path}"))
@@ -431,7 +439,9 @@ def test_cli_publishes_one_atomic_portable_seal(tmp_path: Path) -> None:
         / "locks"
         / "deform360_official_hub_visuotactile_v1_selection.json"
     )
-    provider, ledger, artifact_args = _write_cli_inputs(tmp_path)
+    provider, ledger, artifact_args = _write_cli_inputs(
+        tmp_path, implementation_revision=revision
+    )
     output = tmp_path / "sealed"
     arguments = [
         "--selection-lock",
@@ -469,3 +479,43 @@ def test_cli_publishes_one_atomic_portable_seal(tmp_path: Path) -> None:
 
     with pytest.raises(FileExistsError):
         main(arguments)
+
+
+def test_stage0_loader_recomputes_declared_identities(tmp_path: Path) -> None:
+    root = _repository_root()
+    source = (
+        root
+        / "protocols"
+        / "locks"
+        / "deform360_official_hub_visuotactile_v1_selection.json"
+    )
+    protocol = root / "protocols/deform360_official_hub_visuotactile_v1.json"
+    base = json.loads(source.read_text(encoding="utf-8"))
+
+    selection_drift = json.loads(json.dumps(base))
+    selection_drift["selection"]["calibration"][0]["episode_id"] += 1
+    changed = tmp_path / "selection-drift.json"
+    changed.write_text(json.dumps(selection_drift), encoding="utf-8")
+    with pytest.raises(ValueError, match="selection_sha256"):
+        load_deform360_stage0_selection(changed)
+
+    content_drift = json.loads(json.dumps(base))
+    content_drift["available_raw_object_count"] += 1
+    changed = tmp_path / "content-drift.json"
+    changed.write_text(json.dumps(content_drift), encoding="utf-8")
+    with pytest.raises(ValueError, match="content_selection_sha256"):
+        load_deform360_stage0_selection(changed)
+
+    artifact_drift = json.loads(json.dumps(base))
+    artifact_drift["implementation_revision"] = "f" * 40
+    changed = tmp_path / "artifact-drift.json"
+    changed.write_text(json.dumps(artifact_drift), encoding="utf-8")
+    with pytest.raises(ValueError, match="selection_artifact_sha256"):
+        load_deform360_stage0_selection(changed)
+
+    protocol_payload = json.loads(protocol.read_text(encoding="utf-8"))
+    protocol_payload["status"] = "changed-after-selection"
+    changed_protocol = tmp_path / "protocol-drift.json"
+    changed_protocol.write_text(json.dumps(protocol_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="protocol_sha256"):
+        load_deform360_stage0_selection(source, protocol_path=changed_protocol)

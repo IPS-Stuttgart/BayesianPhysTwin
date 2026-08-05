@@ -357,3 +357,40 @@ def test_target_blind_protocol_amendment_binds_stage_order_and_boundaries() -> N
         "create and commit one exact visual-provider lock before downloading "
         "selected calibration payloads"
     ) < amendment["stage_order"].index("download and process calibration objects only")
+
+
+def test_visual_lock_writes_are_non_overwriting(tmp_path: Path) -> None:
+    provider_path = tmp_path / "provider.json"
+    provider = _provider_lock()
+    save_deform360_visual_provider_lock(provider_path, provider)
+    with pytest.raises(FileExistsError):
+        save_deform360_visual_provider_lock(provider_path, provider)
+    save_deform360_visual_provider_lock(
+        provider_path,
+        provider,
+        overwrite=True,
+    )
+    assert load_deform360_visual_provider_lock(provider_path) == provider
+
+    calibration_path = tmp_path / "calibration.json"
+    calibration = _calibration_lock()
+    save_deform360_visual_calibration_lock(calibration_path, calibration)
+    with pytest.raises(FileExistsError):
+        save_deform360_visual_calibration_lock(calibration_path, calibration)
+    save_deform360_visual_calibration_lock(
+        calibration_path,
+        calibration,
+        overwrite=True,
+    )
+    assert load_deform360_visual_calibration_lock(calibration_path) == calibration
+
+    with pytest.raises(TypeError, match="Deform360VisualProviderLockV1"):
+        save_deform360_visual_provider_lock(
+            tmp_path / "bad-provider.json",
+            object(),  # type: ignore[arg-type]
+        )
+    with pytest.raises(TypeError, match="Deform360VisualCalibrationLockV1"):
+        save_deform360_visual_calibration_lock(
+            tmp_path / "bad-calibration.json",
+            object(),  # type: ignore[arg-type]
+        )

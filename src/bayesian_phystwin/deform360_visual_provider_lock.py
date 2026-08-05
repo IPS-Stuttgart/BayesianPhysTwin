@@ -26,6 +26,7 @@ from ._canonical_contracts import (
     literal_lower_hex,
     plain_json,
 )
+from ._portable_contracts import write_atomic_json
 
 DEFORM360_VISUAL_PROVIDER_LOCK_SCHEMA = (
     "bayesian-phystwin.deform360-visual-provider-lock"
@@ -748,13 +749,14 @@ class Deform360VisualCalibrationLockV1:
 def save_deform360_visual_provider_lock(
     path: str | Path,
     lock: Deform360VisualProviderLockV1,
+    *,
+    overwrite: bool = False,
 ) -> None:
-    """Serialize a canonical human-readable visual-provider lock."""
+    """Atomically persist a visual-provider lock without silent replacement."""
 
-    Path(path).write_text(
-        json.dumps(lock.to_record(), indent=2, sort_keys=True, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    if not isinstance(lock, Deform360VisualProviderLockV1):
+        raise TypeError("lock must be a Deform360VisualProviderLockV1")
+    write_atomic_json(lock.to_record(), path, overwrite=overwrite)
 
 
 def load_deform360_visual_provider_lock(
@@ -769,13 +771,14 @@ def load_deform360_visual_provider_lock(
 def save_deform360_visual_calibration_lock(
     path: str | Path,
     lock: Deform360VisualCalibrationLockV1,
+    *,
+    overwrite: bool = False,
 ) -> None:
-    """Serialize a canonical human-readable Stage-1 calibration lock."""
+    """Atomically persist a Stage-1 lock without silent replacement."""
 
-    Path(path).write_text(
-        json.dumps(lock.to_record(), indent=2, sort_keys=True, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    if not isinstance(lock, Deform360VisualCalibrationLockV1):
+        raise TypeError("lock must be a Deform360VisualCalibrationLockV1")
+    write_atomic_json(lock.to_record(), path, overwrite=overwrite)
 
 
 def load_deform360_visual_calibration_lock(

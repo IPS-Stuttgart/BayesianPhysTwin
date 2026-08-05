@@ -488,6 +488,11 @@ class Deform360CalibrationBundleV1:
         expected_groups = tuple(sorted(calibration_ids))
         for artifact in calibration_artifacts:
             _require(
+                artifact.implementation_revision == implementation_revision,
+                f"calibration artifact {artifact.role} implementation revision "
+                "differs from bundle",
+            )
+            _require(
                 artifact.calibration_group_ids == expected_groups,
                 f"calibration artifact {artifact.role} does not retain every "
                 "calibration object",

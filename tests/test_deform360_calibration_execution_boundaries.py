@@ -66,13 +66,15 @@ def _provider() -> Deform360VisualProviderLockV1:
 
 def _artifacts(
     stage0: execution.Deform360Stage0SelectionV1,
+    *,
+    implementation_revision: str = "c" * 40,
 ) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
     groups = tuple(unit.object_id for unit in stage0.calibration_units)
     return tuple(
         Deform360CalibrationArtifactRefV1(
             role=role,
             artifact_id=f"{index + 1:064x}",
-            implementation_revision="a" * 40,
+            implementation_revision=implementation_revision,
             selection_evidence_id=f"{index + 101:064x}",
             selected_candidate_id=f"candidate-{index}",
             candidate_count=index + 2,
@@ -476,6 +478,12 @@ def test_cli_run_rejects_unacknowledged_and_in_checkout_outputs(
     repository = tmp_path / "repository"
     repository.mkdir()
     monkeypatch.setattr(cli, "_verify_repository", lambda *_args, **_kwargs: "a" * 40)
+    monkeypatch.setattr(cli, "_verify_runtime_sources", lambda _repository: None)
+    monkeypatch.setattr(
+        cli,
+        "_verify_committed_selection_lock",
+        lambda _repository, _selection: None,
+    )
     with pytest.raises(ValueError, match="outside the Git checkout"):
         cli._run(  # noqa: SLF001
             _run_args(
@@ -493,6 +501,12 @@ def test_cli_run_cleans_temporary_output_after_failure(
     repository.mkdir()
     output = tmp_path / "outputs" / "sealed"
     monkeypatch.setattr(cli, "_verify_repository", lambda *_args, **_kwargs: "a" * 40)
+    monkeypatch.setattr(cli, "_verify_runtime_sources", lambda _repository: None)
+    monkeypatch.setattr(
+        cli,
+        "_verify_committed_selection_lock",
+        lambda _repository, _selection: None,
+    )
     monkeypatch.setattr(cli, "_artifact_mapping", lambda _values: {})
 
     def fail_copy(**_kwargs: Any) -> dict[str, str]:
@@ -519,3 +533,28 @@ def test_cli_module_main_help_branch(monkeypatch: pytest.MonkeyPatch) -> None:
             run_name="__main__",
         )
     assert error.value.code == 0
+
+
+def test_cli_rejects_unreviewed_selection_and_runtime_code(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _repository_root()
+    committed = _stage0_path()
+    substituted = tmp_path / "selection.json"
+    substituted.write_bytes(committed.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="committed lock"):
+        cli._verify_committed_selection_lock(  # noqa: SLF001
+            root,
+            substituted,
+        )
+
+    cli._verify_runtime_sources(root)  # noqa: SLF001
+    module_name = next(iter(cli._RUNTIME_MODULE_SOURCES))  # noqa: SLF001
+    monkeypatch.setitem(
+        cli._RUNTIME_MODULE_SOURCES,  # noqa: SLF001
+        module_name,
+        "pyproject.toml",
+    )
+    with pytest.raises(ValueError, match="runtime source bytes"):
+        cli._verify_runtime_sources(root)  # noqa: SLF001

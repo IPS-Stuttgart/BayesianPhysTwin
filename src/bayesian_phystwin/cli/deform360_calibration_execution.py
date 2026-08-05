@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import shutil
@@ -37,9 +38,13 @@ from bayesian_phystwin.evidence_use_ledger import (
     load_evidence_use_ledger,
 )
 
+_COMMITTED_SELECTION = (
+    "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+)
 _REPOSITORY_SOURCES = (
     ".github/workflows/deform360-calibration-seal.yml",
     "protocols/deform360_official_hub_visuotactile_v1.json",
+    _COMMITTED_SELECTION,
     (
         "protocols/amendments/"
         "deform360_official_hub_visuotactile_v1_visual_provider_lock.json"
@@ -48,6 +53,8 @@ _REPOSITORY_SOURCES = (
         "protocols/amendments/"
         "deform360_official_hub_visuotactile_v1_calibration_separation.json"
     ),
+    "src/bayesian_phystwin/_canonical_contracts.py",
+    "src/bayesian_phystwin/_portable_contracts.py",
     "src/bayesian_phystwin/deform360_calibration_execution.py",
     "src/bayesian_phystwin/deform360_calibration_bundle.py",
     "src/bayesian_phystwin/deform360_visual_provider_lock.py",
@@ -55,6 +62,29 @@ _REPOSITORY_SOURCES = (
     "src/bayesian_phystwin/cli/deform360_calibration_execution.py",
     "src/bayesian_phystwin/cli/experiments.py",
 )
+_RUNTIME_MODULE_SOURCES = {
+    "bayesian_phystwin._canonical_contracts": (
+        "src/bayesian_phystwin/_canonical_contracts.py"
+    ),
+    "bayesian_phystwin._portable_contracts": (
+        "src/bayesian_phystwin/_portable_contracts.py"
+    ),
+    "bayesian_phystwin.deform360_calibration_execution": (
+        "src/bayesian_phystwin/deform360_calibration_execution.py"
+    ),
+    "bayesian_phystwin.deform360_calibration_bundle": (
+        "src/bayesian_phystwin/deform360_calibration_bundle.py"
+    ),
+    "bayesian_phystwin.deform360_visual_provider_lock": (
+        "src/bayesian_phystwin/deform360_visual_provider_lock.py"
+    ),
+    "bayesian_phystwin.evidence_use_ledger": (
+        "src/bayesian_phystwin/evidence_use_ledger.py"
+    ),
+    "bayesian_phystwin.cli.deform360_calibration_execution": (
+        "src/bayesian_phystwin/cli/deform360_calibration_execution.py"
+    ),
+}
 
 
 def _named_path(value: str) -> tuple[str, Path]:
@@ -137,6 +167,46 @@ def _verify_repository(
     if dirty:
         raise ValueError("repository checkout must be clean before sealing")
     return observed
+
+
+def _verify_runtime_sources(repository: Path) -> None:
+    """Require the imported sealer code to match the reviewed checkout."""
+
+    for module_name, relative_path in _RUNTIME_MODULE_SOURCES.items():
+        module = importlib.import_module(module_name)
+        runtime_name = getattr(module, "__file__", None)
+        if type(runtime_name) is not str or not runtime_name:
+            raise ValueError(f"cannot identify runtime source for module {module_name}")
+        runtime = _ordinary_file(
+            Path(runtime_name),
+            name=f"runtime source for {module_name}",
+        )
+        reviewed = _ordinary_file(
+            repository / relative_path,
+            name=f"reviewed source for {module_name}",
+        )
+        if file_sha256(runtime) != file_sha256(reviewed):
+            raise ValueError(
+                f"runtime source bytes differ from reviewed checkout: {module_name}"
+            )
+
+
+def _verify_committed_selection_lock(
+    repository: Path,
+    supplied_selection: Path,
+) -> None:
+    """Reject a structurally valid but unreviewed Stage-0 cohort."""
+
+    committed = _ordinary_file(
+        repository / _COMMITTED_SELECTION,
+        name="committed Stage-0 selection",
+    )
+    supplied = _ordinary_file(
+        supplied_selection,
+        name="supplied Stage-0 selection",
+    )
+    if file_sha256(committed) != file_sha256(supplied):
+        raise ValueError("supplied Stage-0 selection bytes differ from committed lock")
 
 
 def _copy_source(source: Path, destination: Path) -> str:
@@ -306,6 +376,8 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         repository_root,
         expected_revision=args.implementation_revision,
     )
+    _verify_runtime_sources(repository_root)
+    _verify_committed_selection_lock(repository_root, args.selection_lock)
     output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(output)
@@ -332,7 +404,11 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
             additional_sources=args.additional_source,
         )
         stage0 = load_deform360_stage0_selection(
-            temporary / "sources/stage0/selection.json"
+            temporary / "sources/stage0/selection.json",
+            protocol_path=(
+                temporary / "sources/repository/protocols/"
+                "deform360_official_hub_visuotactile_v1.json"
+            ),
         )
         provider = load_deform360_visual_provider_lock(
             temporary / "sources/locks/visual-provider-lock.json"
