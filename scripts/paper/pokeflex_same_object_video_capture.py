@@ -81,9 +81,7 @@ def capture_frozen_predictions(
     decisions, decision_by_frame = take_decisions(prospective_result, take_id)
     target_frames = [int(value["target_frame"]) for value in decisions]
     calls_per_target = 4 + len(candidate_order)
-    captured: dict[int, dict[str, np.ndarray]] = {
-        frame: {} for frame in target_frames
-    }
+    captured: dict[int, dict[str, np.ndarray]] = {frame: {} for frame in target_frames}
     original_surface_sample = runner._surface_sample
     call_count = 0
 
