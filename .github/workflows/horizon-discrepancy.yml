@@ -1,0 +1,56 @@
+name: Horizon discrepancy contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/horizon-discrepancy.yml"
+      - "src/bayesian_phystwin/horizon_discrepancy.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "tests/test_horizon_discrepancy.py"
+      - "tests/test_horizon_discrepancy_workflow.py"
+      - "docs/horizon_discrepancy.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: horizon-discrepancy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Source-only horizon contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install contract environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate focused contracts
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/horizon_discrepancy.py \
+            tests/test_horizon_discrepancy.py \
+            tests/test_horizon_discrepancy_workflow.py
+          python -m pytest -q \
+            tests/test_horizon_discrepancy.py \
+            tests/test_endpoint_model_average.py \
+            tests/test_horizon_discrepancy_workflow.py
+          python -m compileall -q src/bayesian_phystwin
