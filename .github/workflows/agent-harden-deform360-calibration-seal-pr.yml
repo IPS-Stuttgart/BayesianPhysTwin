@@ -43,6 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           python .agent/harden_deform360_calibration_seal.py
+          python .agent/fix_component_role_types.py
           files=(
             src/bayesian_phystwin/deform360_calibration_execution.py
             src/bayesian_phystwin/deform360_calibration_bundle.py
@@ -55,6 +56,7 @@ jobs:
           )
           python -m ruff format "${files[@]}"
           rm .agent/harden_deform360_calibration_seal.py
+          rm .agent/fix_component_role_types.py
           rm .github/workflows/agent-harden-deform360-calibration-seal.yml
           rm .github/workflows/agent-harden-deform360-calibration-seal-pr.yml
 
