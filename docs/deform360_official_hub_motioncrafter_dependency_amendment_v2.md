@@ -93,8 +93,14 @@ The current dependency-complete assets are:
   `d3d68423a6c1a19e5cab5651ef4f08921652757fc565539227c06bd8e7dfcbce`.
 
 The v2 and v3 job manifests remain immutable pre-inference failure records. The
-next job manifest must bind the selective-snapshot implementation commit and use
-a fresh output root.
+active replacement is
+`protocols/locks/deform360_official_hub_visuotactile_v4_motioncrafter_jobs.json`,
+with manifest ID
+`4a6b7ab8547b88a5332928c30bd52bbc1f74e91e42efbbb8ae5e453c2078fd5c`.
+It binds Bayesian-PhysTwin implementation
+`7085d4722bb61a93ca1c8632ffca5790f965e444` and the unchanged runner SHA-256
+`62fdb997ebfcf30ec2906117a02a31cf14777678a023225db70149626c417052`.
+Execution must use a fresh output root.
 
 ## Claim boundary
 

@@ -118,6 +118,10 @@ def test_seed_derivation_matches_prob4d_canonical_descriptor() -> None:
             "deform360_official_hub_visuotactile_v3_motioncrafter_jobs.json",
             "8cf8df7629d4f2a17ec4d5dcb992a65fca638acb8420a7cca79a91c5ecb80682",
         ),
+        (
+            "deform360_official_hub_visuotactile_v4_motioncrafter_jobs.json",
+            "4a6b7ab8547b88a5332928c30bd52bbc1f74e91e42efbbb8ae5e453c2078fd5c",
+        ),
     ],
 )
 def test_committed_job_manifests_remain_valid(
