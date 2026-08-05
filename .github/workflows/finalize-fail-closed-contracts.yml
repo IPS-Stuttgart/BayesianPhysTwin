@@ -129,6 +129,8 @@ jobs:
             tests/test_pseudo_measurements.py
             tests/test_robust_likelihood.py
           )
+          python -m ruff check --fix -- "${files[@]}"
+          python -m ruff format -- "${files[@]}"
           python -m ruff check -- "${files[@]}"
           python -m ruff format --check -- "${files[@]}"
           python -m mypy \
@@ -143,6 +145,7 @@ jobs:
             src/bayesian_phystwin/calibration.py \
             src/bayesian_phystwin/pseudo_measurements.py \
             src/bayesian_phystwin/robust_likelihood.py
+          git diff --check
 
       - name: Publish ordinary source commit
         shell: bash
