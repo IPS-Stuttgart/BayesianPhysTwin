@@ -69,7 +69,7 @@ def _find_exact_candidate(
         seen.add(key)
         try:
             if not path.is_file():
-                attempts.append(f"{path}: missing")
+                attempts.append(f"{path}: missing or unreadable")
                 continue
             observed = asset_resolver._sha256(path)
         except OSError as error:
@@ -80,6 +80,114 @@ def _find_exact_candidate(
             continue
         return path, source_kind, attempts
     return None, None, attempts
+
+
+def _archive_verification(record: Mapping[str, Any]) -> dict[str, Any]:
+    path = Path(str(record["path"]))
+    expected_size = int(record["size_bytes"])
+    expected_sha = str(record["sha256"])
+    try:
+        if not path.is_file():
+            return {
+                "status": "unavailable",
+                "path": str(path.absolute()),
+                "expected_size_bytes": expected_size,
+                "expected_sha256": expected_sha,
+                "error": "archive is missing or unreadable",
+            }
+        observed_size = path.stat().st_size
+    except OSError as error:
+        return {
+            "status": "unavailable",
+            "path": str(path.absolute()),
+            "expected_size_bytes": expected_size,
+            "expected_sha256": expected_sha,
+            "error": str(error),
+        }
+    asset_resolver._require(
+        observed_size == expected_size,
+        f"PokeFlex archive size changed: {path}",
+    )
+    try:
+        observed_sha = asset_resolver._sha256(path)
+    except OSError as error:
+        return {
+            "status": "unavailable",
+            "path": str(path.absolute()),
+            "expected_size_bytes": expected_size,
+            "expected_sha256": expected_sha,
+            "observed_size_bytes": observed_size,
+            "error": str(error),
+        }
+    asset_resolver._require(
+        observed_sha == expected_sha,
+        f"PokeFlex archive checksum changed: {path}",
+    )
+    return {
+        "status": "verified",
+        "path": str(path.resolve()),
+        "expected_size_bytes": expected_size,
+        "expected_sha256": expected_sha,
+        "observed_size_bytes": observed_size,
+        "observed_sha256": observed_sha,
+    }
+
+
+def _replace_staged_take(staged_take: Path, take_root: Path) -> None:
+    if staged_take.is_symlink() or staged_take.is_file():
+        staged_take.unlink()
+    elif staged_take.exists():
+        shutil.rmtree(staged_take)
+    staged_take.symlink_to(take_root, target_is_directory=True)
+    asset_resolver._require(
+        (staged_take / "robot_data.json").is_file(),
+        "staged take is invalid",
+    )
+
+
+def _stage_take_for_regeneration(
+    *,
+    take_id: str,
+    archive: Mapping[str, Any],
+    archive_verification: Mapping[str, Any],
+    configured_dataset_root: Path | None,
+    search_roots: tuple[Path, ...],
+    stage_root: Path,
+) -> tuple[Path, dict[str, Any]]:
+    if archive_verification["status"] == "verified":
+        staged_take, evidence = asset_resolver._stage_take(
+            take_id=take_id,
+            archive=archive,
+            configured_dataset_root=configured_dataset_root,
+            search_roots=search_roots,
+            stage_root=stage_root,
+        )
+        return staged_take, {
+            **evidence,
+            "archive_validation": "verified",
+        }
+
+    take_root = asset_resolver._find_take_root(
+        take_id,
+        configured_dataset_root=configured_dataset_root,
+        search_roots=search_roots,
+    )
+    asset_resolver._require(
+        take_root is not None,
+        f"no readable extracted take is available for {take_id}",
+    )
+    stage_root.mkdir(parents=True, exist_ok=True)
+    staged_take = stage_root / take_id
+    _replace_staged_take(staged_take, take_root)
+    return staged_take, {
+        "take_id": take_id,
+        "archive": str(archive_verification["path"]),
+        "archive_validation": "unavailable-exact-regeneration-required",
+        "archive_verification": dict(archive_verification),
+        "take_root": str(take_root),
+        "staged_take": str(staged_take),
+        "extraction_performed": False,
+    }
 
 
 def _validated_inputs(
@@ -216,11 +324,18 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
             take_id in archive_by_take,
             f"candidate take has no frozen archive: {take_id}",
         )
+        archive = archive_by_take[take_id]
+        archive_verification = _archive_verification(archive)
+        regeneration_required = archive_verification["status"] != "verified"
         frozen = Path(str(record["path"]))
         target = output_root / frozen.name
         expected_sha = str(record["sha256"])
 
-        if target.is_file() and asset_resolver._sha256(target) == expected_sha:
+        if (
+            not regeneration_required
+            and target.is_file()
+            and asset_resolver._sha256(target) == expected_sha
+        ):
             prepared.append(
                 {
                     "take_id": take_id,
@@ -229,6 +344,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                     "staged": str(target),
                     "sha256": expected_sha,
                     "regenerated": False,
+                    "archive_verification": archive_verification,
                 }
             )
             continue
@@ -240,7 +356,11 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
             candidate_root=candidate_root,
             search_roots=search_roots,
         )
-        if source is not None and source_kind is not None:
+        if (
+            not regeneration_required
+            and source is not None
+            and source_kind is not None
+        ):
             shutil.copy2(source, target)
             observed = asset_resolver._sha256(target)
             asset_resolver._require(
@@ -256,9 +376,15 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                     "sha256": observed,
                     "regenerated": False,
                     "failed_attempts": attempts,
+                    "archive_verification": archive_verification,
                 }
             )
             continue
+        if source is not None:
+            attempts.append(
+                "exact candidate copy found, but exact regeneration is required "
+                "because the frozen archive is unavailable"
+            )
 
         if runtime is None:
             runtime = _resolve_runtime(
@@ -269,9 +395,10 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 software_root=software_root,
             )
         upstream, checkpoints, _ = runtime
-        _, take_evidence = asset_resolver._stage_take(
+        _, take_evidence = _stage_take_for_regeneration(
             take_id=take_id,
-            archive=archive_by_take[take_id],
+            archive=archive,
+            archive_verification=archive_verification,
             configured_dataset_root=configured_dataset,
             search_roots=search_roots,
             stage_root=dataset_stage,
@@ -313,6 +440,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 "sha256": observed,
                 "regenerated": True,
                 "failed_attempts": attempts,
+                "archive_verification": archive_verification,
                 "take": take_evidence,
                 "command": command,
             }
