@@ -1,0 +1,50 @@
+{
+  "artifact_id": "56a6ebc0ac65e19c098ccfa83cda1be9990c579b396d46cfdd13c52bc5f0530e",
+  "claim_boundary": "Calibration-derived schedule recovery after the v1 feasibility failure and before provider inference or scoring. It preserves the frozen provider and camera policy but is not a pre-payload preregistration and establishes no provider competence, calibration, physical improvement, confirmation performance, or state-of-the-art result.",
+  "information_boundary": {
+    "calibration_camera_images_opened_for_provider_inference": false,
+    "calibration_policy_fit": false,
+    "calibration_provider_outputs_opened": false,
+    "calibration_scores_opened": false,
+    "calibration_tactile_schedule_values_used_for_v2_design": true,
+    "confirmation_payloads_opened": false,
+    "target_outcomes_used": false,
+    "v1_schedule_feasibility_opened": true
+  },
+  "insufficient_context_policy": "retained-technical-failure-no-replacement",
+  "parent_provider_recovery_lock": {
+    "artifact_id": "02d90e58f4f21d052073e098469ff8a7cd991f48b895d7496cebdb84dd10cb3d",
+    "path": "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json"
+  },
+  "parent_visual_execution_lock": {
+    "artifact_id": "87b1efe7dc7e9a8f1fd4163e0a4164b5ba45e6bcc47d66e2fba2a2526c6f51e9",
+    "path": "protocols/locks/deform360_official_hub_visuotactile_v1_visual_execution_lock_v1.json"
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "schedule": {
+    "causal_cutoff_convention": "exclusive",
+    "causal_cutoff_rule": "max(first_contact_frame + 6, 42)",
+    "event_clock": "official-processed-tactile-first-contact-v1",
+    "future_frames": 24,
+    "future_use_for_prediction": "forbidden",
+    "minimum_post_contact_frames": 6,
+    "observed_history_frames": 42,
+    "overlap": 8,
+    "source_start_rule": "causal_cutoff_frame - 42",
+    "version": "earliest-fully-observed-two-window-v2",
+    "window_count": 2,
+    "window_size": 25
+  },
+  "schema": "bayesian-phystwin.deform360-causal-schedule-recovery-lock",
+  "schema_version": 1,
+  "source_feasibility": {
+    "calibration_scores_opened": false,
+    "file_sha256": "3367947f2c6d78c67d5c0c2691f302a4a1838d9b069ffd30773da5d9c8e04a8b",
+    "manifest_id": "9a23701c8181b89ba5b09cb545ca750513fb1e3f9a8d360099d00582d8b9f406",
+    "provider_inference_run": false,
+    "required_supported_objects": 8,
+    "retained_technical_failures": 6,
+    "supported_objects": 4
+  },
+  "status": "locked-post-v1-feasibility-pre-provider-score"
+}

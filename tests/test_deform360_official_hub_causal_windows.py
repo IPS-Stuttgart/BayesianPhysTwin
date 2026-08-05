@@ -11,8 +11,12 @@ from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_official_hub_causal_windows import (
     Deform360CustodyError,
     build_deform360_official_hub_causal_window_manifest,
+    derive_deform360_causal_window_v2,
     load_deform360_official_hub_causal_window_manifest,
+    load_deform360_official_hub_causal_window_manifest_v2,
     save_deform360_official_hub_causal_window_manifest,
+    save_deform360_official_hub_causal_window_manifest_v2,
+    validate_deform360_causal_schedule_recovery_lock,
     validate_deform360_visual_execution_lock,
 )
 from bayesian_phystwin.deform360_visual_provider_recovery_lock import (
@@ -61,10 +65,20 @@ def _locks() -> tuple[object, dict[str, object]]:
     return provider, execution
 
 
+def _schedule_lock() -> dict[str, object]:
+    return json.loads(
+        (
+            _repository() / "protocols/locks/"
+            "deform360_official_hub_visuotactile_v2_causal_schedule_recovery.json"
+        ).read_text(encoding="utf-8")
+    )
+
+
 def _fixture(
     root: Path,
     *,
     no_contact_object: int | None = None,
+    contact_frame: int = 50,
 ) -> tuple[
     dict[str, object],
     dict[str, tuple[dict[str, np.ndarray], dict[str, np.ndarray]]],
@@ -92,7 +106,7 @@ def _fixture(
         for sensor_index, sensor in enumerate(sensors):
             tactile = np.zeros((100, 16, 32), dtype=np.float32)
             if index != no_contact_object and sensor_index == 0:
-                tactile[50, 0, :2] = 1.0
+                tactile[contact_frame, 0, :2] = 1.0
             path = episode_root / sensor / "synced_tactile.npy"
             path.parent.mkdir(parents=True, exist_ok=True)
             np.save(path, tactile, allow_pickle=False)
@@ -197,6 +211,8 @@ def _build(
     root: Path,
     report: dict[str, object],
     calibration: dict[str, tuple[dict[str, np.ndarray], dict[str, np.ndarray]]],
+    *,
+    schedule_recovery_lock: dict[str, object] | None = None,
 ) -> dict[str, object]:
     provider, execution = _locks()
     return build_deform360_official_hub_causal_window_manifest(
@@ -206,6 +222,7 @@ def _build(
         execution_lock=execution,
         implementation_revision="a" * 40,
         camera_calibration_loader=lambda path: calibration[str(path)],
+        schedule_recovery_lock=schedule_recovery_lock,
     )
 
 
@@ -261,6 +278,51 @@ def test_no_contact_is_retained_without_replacement(tmp_path: Path) -> None:
     assert failure["error_type"] == "ValueError"
     assert "no tactile contact" in failure["error_message"]
     assert manifest["replacement_performed"] is False
+
+
+def test_v2_schedule_waits_for_full_history_after_early_contact() -> None:
+    tactile = np.zeros((80, 16, 32), dtype=np.float32)
+    tactile[3, 0, :2] = 1.0
+
+    window = derive_deform360_causal_window_v2(
+        {"left_left": tactile},
+        total_episode_frames=80,
+    )
+
+    assert window.contact_start_frame == 3
+    assert window.source_start_frame == 0
+    assert window.causal_cutoff_frame == 42
+    assert window.future_stop_frame == 66
+
+
+def test_v2_manifest_is_separately_locked_and_supports_early_contact(
+    tmp_path: Path,
+) -> None:
+    report, calibration = _fixture(tmp_path, contact_frame=3)
+    schedule_lock = _schedule_lock()
+
+    manifest = _build(
+        tmp_path,
+        report,
+        calibration,
+        schedule_recovery_lock=schedule_lock,
+    )
+
+    assert (
+        validate_deform360_causal_schedule_recovery_lock(schedule_lock)
+        == (schedule_lock["artifact_id"])
+    )
+    assert manifest["status"] == "complete"
+    assert manifest["success_count"] == 10
+    assert manifest["causal_schedule_recovery_lock_id"] == schedule_lock["artifact_id"]
+    first = manifest["cases"][0]
+    assert first["causal_window"]["contact_start_frame"] == 3
+    assert first["causal_window"]["source_start_frame"] == 0
+    assert first["causal_window"]["causal_cutoff_frame"] == 42
+
+    output = tmp_path / "manifest-v2.json"
+    save_deform360_official_hub_causal_window_manifest_v2(output, manifest)
+    assert load_deform360_official_hub_causal_window_manifest_v2(output) == manifest
 
 
 def test_file_drift_is_fatal_custody_error(tmp_path: Path) -> None:

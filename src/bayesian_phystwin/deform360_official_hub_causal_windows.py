@@ -20,11 +20,16 @@ from ._portable_contracts import (
     write_atomic_json,
 )
 from .deform360_visual_provider_recovery_lock import (
+    DEFORM360_FUTURE_FRAMES,
+    DEFORM360_OBSERVED_CONTACT_FRAMES,
+    DEFORM360_OBSERVED_HISTORY_FRAMES,
     DEFORM360_PROVIDER_OVERLAP,
     DEFORM360_PROVIDER_WINDOW_COUNT,
     DEFORM360_PROVIDER_WINDOW_SIZE,
+    Deform360CausalWindowV1,
     Deform360VisualProviderRecoveryLockV1,
     derive_deform360_causal_window,
+    first_deform360_contact_frame,
     select_deform360_camera_panel,
 )
 
@@ -32,6 +37,9 @@ DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA = (
     "bayesian-phystwin.deform360-official-hub-causal-window-manifest"
 )
 DEFORM360_CAUSAL_WINDOW_MANIFEST_VERSION = 1
+DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA_V2 = (
+    "bayesian-phystwin.deform360-official-hub-causal-window-manifest-v2"
+)
 DEFORM360_STAGE1_PROCESSING_REPORT_SCHEMA = (
     "bayesian-phystwin/deform360-official-hub-stage1-processing-report-v1"
 )
@@ -43,6 +51,15 @@ DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID = (
 )
 DEFORM360_CAMERA_PANEL_POLICY_ID = (
     "ec8d7f56bb59731b6c5eec03fd627f79ef5864a447257f198a5c8d3b4869ffb5"
+)
+DEFORM360_CAUSAL_SCHEDULE_RECOVERY_LOCK_ID = (
+    "56a6ebc0ac65e19c098ccfa83cda1be9990c579b396d46cfdd13c52bc5f0530e"
+)
+DEFORM360_V1_CAUSAL_WINDOW_MANIFEST_ID = (
+    "9a23701c8181b89ba5b09cb545ca750513fb1e3f9a8d360099d00582d8b9f406"
+)
+DEFORM360_V1_CAUSAL_WINDOW_MANIFEST_FILE_SHA256 = (
+    "3367947f2c6d78c67d5c0c2691f302a4a1838d9b069ffd30773da5d9c8e04a8b"
 )
 
 CameraCalibrationLoader = Callable[
@@ -141,6 +158,115 @@ def validate_deform360_visual_execution_lock(
     ):
         _require(boundary.get(field) is False, f"execution lock opened {field}")
     return lock_id
+
+
+def validate_deform360_causal_schedule_recovery_lock(
+    value: Mapping[str, Any],
+) -> str:
+    """Validate the post-v1-feasibility, pre-score v2 schedule lock."""
+
+    lock_id = _validated_content_address(
+        value,
+        id_field="artifact_id",
+        expected_id=DEFORM360_CAUSAL_SCHEDULE_RECOVERY_LOCK_ID,
+        name="causal schedule recovery lock",
+    )
+    _require(
+        value.get("schema")
+        == "bayesian-phystwin.deform360-causal-schedule-recovery-lock"
+        and value.get("schema_version") == 1,
+        "unsupported causal schedule recovery lock",
+    )
+    _require(
+        value.get("status") == "locked-post-v1-feasibility-pre-provider-score",
+        "causal schedule lock has the wrong information boundary",
+    )
+    parent_execution = value.get("parent_visual_execution_lock")
+    parent_provider = value.get("parent_provider_recovery_lock")
+    source = value.get("source_feasibility")
+    schedule = value.get("schedule")
+    _require(isinstance(parent_execution, Mapping), "parent execution lock is missing")
+    _require(isinstance(parent_provider, Mapping), "parent provider lock is missing")
+    _require(isinstance(source, Mapping), "v1 feasibility binding is missing")
+    _require(isinstance(schedule, Mapping), "v2 schedule is missing")
+    _require(
+        parent_execution.get("artifact_id") == DEFORM360_VISUAL_EXECUTION_LOCK_ID,
+        "v2 schedule changed the visual execution lock",
+    )
+    _require(
+        parent_provider.get("artifact_id")
+        == DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID,
+        "v2 schedule changed the provider recovery lock",
+    )
+    _require(
+        source.get("manifest_id") == DEFORM360_V1_CAUSAL_WINDOW_MANIFEST_ID
+        and source.get("file_sha256") == DEFORM360_V1_CAUSAL_WINDOW_MANIFEST_FILE_SHA256
+        and source.get("supported_objects") == 4
+        and source.get("required_supported_objects") == 8
+        and source.get("retained_technical_failures") == 6
+        and source.get("provider_inference_run") is False
+        and source.get("calibration_scores_opened") is False,
+        "v2 schedule changed the v1 feasibility evidence",
+    )
+    expected_schedule = {
+        "version": "earliest-fully-observed-two-window-v2",
+        "event_clock": "official-processed-tactile-first-contact-v1",
+        "observed_history_frames": 42,
+        "minimum_post_contact_frames": 6,
+        "causal_cutoff_rule": "max(first_contact_frame + 6, 42)",
+        "source_start_rule": "causal_cutoff_frame - 42",
+        "future_frames": 24,
+        "window_size": 25,
+        "overlap": 8,
+        "window_count": 2,
+        "causal_cutoff_convention": "exclusive",
+        "future_use_for_prediction": "forbidden",
+    }
+    _require(dict(schedule) == expected_schedule, "v2 schedule changed")
+    boundary = value.get("information_boundary")
+    _require(isinstance(boundary, Mapping), "v2 information boundary is missing")
+    _require(
+        boundary.get("v1_schedule_feasibility_opened") is True
+        and boundary.get("calibration_tactile_schedule_values_used_for_v2_design")
+        is True
+        and boundary.get("calibration_camera_images_opened_for_provider_inference")
+        is False
+        and boundary.get("calibration_provider_outputs_opened") is False
+        and boundary.get("calibration_scores_opened") is False
+        and boundary.get("calibration_policy_fit") is False
+        and boundary.get("confirmation_payloads_opened") is False
+        and boundary.get("target_outcomes_used") is False,
+        "v2 schedule crossed its information boundary",
+    )
+    return lock_id
+
+
+def derive_deform360_causal_window_v2(
+    tactile_by_sensor: Mapping[str, np.ndarray],
+    *,
+    total_episode_frames: int,
+) -> Deform360CausalWindowV1:
+    """Derive the earliest full two-window prefix with six contact frames."""
+
+    contact_start = first_deform360_contact_frame(
+        tactile_by_sensor,
+        total_episode_frames=total_episode_frames,
+    )
+    cutoff = max(
+        contact_start + DEFORM360_OBSERVED_CONTACT_FRAMES,
+        DEFORM360_OBSERVED_HISTORY_FRAMES,
+    )
+    source_start = cutoff - DEFORM360_OBSERVED_HISTORY_FRAMES
+    future_stop = cutoff + DEFORM360_FUTURE_FRAMES
+    if future_stop > total_episode_frames:
+        raise ValueError("insufficient untouched future for the v2 evaluation")
+    return Deform360CausalWindowV1(
+        contact_start_frame=contact_start,
+        source_start_frame=source_start,
+        causal_cutoff_frame=cutoff,
+        future_stop_frame=future_stop,
+        total_episode_frames=total_episode_frames,
+    )
 
 
 def validate_deform360_stage1_processing_report(
@@ -272,6 +398,7 @@ def build_deform360_official_hub_causal_window_manifest(
     execution_lock: Mapping[str, Any],
     implementation_revision: str,
     camera_calibration_loader: CameraCalibrationLoader,
+    schedule_recovery_lock: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the target-free calibration window and camera-panel manifest."""
 
@@ -279,6 +406,16 @@ def build_deform360_official_hub_causal_window_manifest(
         processing_report
     )
     execution_lock_id = validate_deform360_visual_execution_lock(execution_lock)
+    if schedule_recovery_lock is None:
+        manifest_schema = DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA
+        window_deriver = derive_deform360_causal_window
+        schedule_recovery_lock_id = None
+    else:
+        manifest_schema = DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA_V2
+        window_deriver = derive_deform360_causal_window_v2
+        schedule_recovery_lock_id = validate_deform360_causal_schedule_recovery_lock(
+            schedule_recovery_lock
+        )
     _require(
         provider_lock.artifact_id == DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID,
         "unexpected visual-provider recovery lock",
@@ -379,7 +516,7 @@ def build_deform360_official_hub_causal_window_manifest(
                             inventory=inventory,
                         )
                     )
-            window = derive_deform360_causal_window(
+            window = window_deriver(
                 tactile_by_sensor,
                 total_episode_frames=frame_count,
             )
@@ -418,7 +555,7 @@ def build_deform360_official_hub_causal_window_manifest(
     cases.sort(key=lambda row: row["object_id"])
     success_count = sum(case["status"] == "success" for case in cases)
     descriptor: dict[str, Any] = {
-        "schema": DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA,
+        "schema": manifest_schema,
         "schema_version": DEFORM360_CAUSAL_WINDOW_MANIFEST_VERSION,
         "protocol_id": provider_lock.protocol_id,
         "role": "calibration",
@@ -453,14 +590,30 @@ def build_deform360_official_hub_causal_window_manifest(
             "calibration, confirmation performance, or state-of-the-art performance."
         ),
     }
+    if schedule_recovery_lock_id is not None:
+        descriptor.update(
+            {
+                "causal_schedule_recovery_lock_id": schedule_recovery_lock_id,
+                "parent_v1_causal_window_manifest_id": (
+                    DEFORM360_V1_CAUSAL_WINDOW_MANIFEST_ID
+                ),
+            }
+        )
+        descriptor["information_boundary"].update(
+            {
+                "v1_schedule_feasibility_opened": True,
+                "calibration_tactile_schedule_values_used_for_v2_design": True,
+            }
+        )
     return {"manifest_sha256": content_id(descriptor), **descriptor}
 
 
-def validate_deform360_official_hub_causal_window_manifest(
+def _validate_deform360_official_hub_causal_window_manifest(
     value: Mapping[str, Any],
+    *,
+    schema: str,
+    schedule_recovery_lock_id: str | None,
 ) -> str:
-    """Validate a completed causal-window manifest and return its identity."""
-
     manifest_id = _validated_content_address(
         value,
         id_field="manifest_sha256",
@@ -468,7 +621,7 @@ def validate_deform360_official_hub_causal_window_manifest(
         name="causal-window manifest",
     )
     _require(
-        value.get("schema") == DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA
+        value.get("schema") == schema
         and value.get("schema_version") == DEFORM360_CAUSAL_WINDOW_MANIFEST_VERSION,
         "unsupported causal-window manifest",
     )
@@ -490,6 +643,22 @@ def validate_deform360_official_hub_causal_window_manifest(
         value.get("camera_panel_policy_id") == DEFORM360_CAMERA_PANEL_POLICY_ID,
         "manifest camera-panel policy changed",
     )
+    if schedule_recovery_lock_id is None:
+        _require(
+            "causal_schedule_recovery_lock_id" not in value
+            and "parent_v1_causal_window_manifest_id" not in value,
+            "v1 manifest unexpectedly binds a later schedule",
+        )
+    else:
+        _require(
+            value.get("causal_schedule_recovery_lock_id") == schedule_recovery_lock_id,
+            "manifest schedule recovery lock changed",
+        )
+        _require(
+            value.get("parent_v1_causal_window_manifest_id")
+            == DEFORM360_V1_CAUSAL_WINDOW_MANIFEST_ID,
+            "manifest v1 feasibility parent changed",
+        )
     _require(value.get("object_count") == 10, "manifest object count changed")
     cases = value.get("cases")
     _require(isinstance(cases, list) and len(cases) == 10, "manifest cases changed")
@@ -518,11 +687,43 @@ def validate_deform360_official_hub_causal_window_manifest(
             )
             causal_window = case.get("causal_window")
             _require(isinstance(causal_window, Mapping), "causal window is missing")
+            contact_start = causal_window.get("contact_start_frame")
+            source_start = causal_window.get("source_start_frame")
+            cutoff = causal_window.get("causal_cutoff_frame")
+            future_stop = causal_window.get("future_stop_frame")
+            _require(
+                all(
+                    type(item) is int
+                    for item in (contact_start, source_start, cutoff, future_stop)
+                ),
+                "causal window indices changed type",
+            )
+            expected_cutoff = int(contact_start) + DEFORM360_OBSERVED_CONTACT_FRAMES
+            if schedule_recovery_lock_id is not None:
+                expected_cutoff = max(
+                    expected_cutoff,
+                    DEFORM360_OBSERVED_HISTORY_FRAMES,
+                )
             _require(
                 causal_window.get("observed_frame_count") == 42
                 and causal_window.get("future_frame_count") == 24
-                and causal_window.get("processing_frame_count") == 66,
+                and causal_window.get("processing_frame_count") == 66
+                and cutoff == expected_cutoff
+                and source_start == int(cutoff) - 42
+                and future_stop == int(cutoff) + 24,
                 "causal window dimensions changed",
+            )
+            _require(
+                case.get("provider_windows") == _provider_windows(int(source_start)),
+                "provider windows changed",
+            )
+            _require(
+                case.get("untouched_future")
+                == {
+                    "frame_start": cutoff,
+                    "frame_stop_exclusive": future_stop,
+                },
+                "untouched future changed",
             )
         else:
             _require(
@@ -558,7 +759,38 @@ def validate_deform360_official_hub_causal_window_manifest(
         and boundary.get("future_frames_used_for_prediction") is False,
         "manifest information boundary changed",
     )
+    if schedule_recovery_lock_id is not None:
+        _require(
+            boundary.get("v1_schedule_feasibility_opened") is True
+            and boundary.get("calibration_tactile_schedule_values_used_for_v2_design")
+            is True,
+            "v2 manifest omitted its schedule-development boundary",
+        )
     return manifest_id
+
+
+def validate_deform360_official_hub_causal_window_manifest(
+    value: Mapping[str, Any],
+) -> str:
+    """Validate a completed v1 causal-window manifest and return its identity."""
+
+    return _validate_deform360_official_hub_causal_window_manifest(
+        value,
+        schema=DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA,
+        schedule_recovery_lock_id=None,
+    )
+
+
+def validate_deform360_official_hub_causal_window_manifest_v2(
+    value: Mapping[str, Any],
+) -> str:
+    """Validate a completed v2 causal-window manifest and return its identity."""
+
+    return _validate_deform360_official_hub_causal_window_manifest(
+        value,
+        schema=DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA_V2,
+        schedule_recovery_lock_id=DEFORM360_CAUSAL_SCHEDULE_RECOVERY_LOCK_ID,
+    )
 
 
 def load_deform360_official_hub_causal_window_manifest(
@@ -568,6 +800,16 @@ def load_deform360_official_hub_causal_window_manifest(
 
     value = load_strict_json_object(path, label="causal-window manifest")
     validate_deform360_official_hub_causal_window_manifest(value)
+    return value
+
+
+def load_deform360_official_hub_causal_window_manifest_v2(
+    path: str | Path,
+) -> Mapping[str, Any]:
+    """Load and validate a strict v2 causal-window manifest."""
+
+    value = load_strict_json_object(path, label="v2 causal-window manifest")
+    validate_deform360_official_hub_causal_window_manifest_v2(value)
     return value
 
 
@@ -583,17 +825,36 @@ def save_deform360_official_hub_causal_window_manifest(
     write_atomic_json(value, path, overwrite=overwrite)
 
 
+def save_deform360_official_hub_causal_window_manifest_v2(
+    path: str | Path,
+    value: Mapping[str, Any],
+    *,
+    overwrite: bool = False,
+) -> None:
+    """Validate and atomically save one v2 causal-window manifest."""
+
+    validate_deform360_official_hub_causal_window_manifest_v2(value)
+    write_atomic_json(value, path, overwrite=overwrite)
+
+
 __all__ = [
     "DEFORM360_CAMERA_PANEL_POLICY_ID",
+    "DEFORM360_CAUSAL_SCHEDULE_RECOVERY_LOCK_ID",
     "DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA",
+    "DEFORM360_CAUSAL_WINDOW_MANIFEST_SCHEMA_V2",
     "DEFORM360_CAUSAL_WINDOW_MANIFEST_VERSION",
     "DEFORM360_VISUAL_EXECUTION_LOCK_ID",
     "DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID",
     "Deform360CustodyError",
     "build_deform360_official_hub_causal_window_manifest",
+    "derive_deform360_causal_window_v2",
     "load_deform360_official_hub_causal_window_manifest",
+    "load_deform360_official_hub_causal_window_manifest_v2",
     "save_deform360_official_hub_causal_window_manifest",
+    "save_deform360_official_hub_causal_window_manifest_v2",
+    "validate_deform360_causal_schedule_recovery_lock",
     "validate_deform360_official_hub_causal_window_manifest",
+    "validate_deform360_official_hub_causal_window_manifest_v2",
     "validate_deform360_stage1_processing_report",
     "validate_deform360_visual_execution_lock",
 ]
