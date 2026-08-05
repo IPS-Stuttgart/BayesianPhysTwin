@@ -121,7 +121,9 @@ def _select_take(result: Mapping[str, Any], requested: str | None) -> str:
     _require(isinstance(takes, list) and takes, "prospective takes are missing")
     available = {str(value["take_id"]): value for value in takes}
     if requested:
-        _require(requested in available, f"take is outside the frozen panel: {requested}")
+        _require(
+            requested in available, f"take is outside the frozen panel: {requested}"
+        )
         return requested
     return str(
         max(available.values(), key=lambda value: value["relative_improvement"])[
@@ -288,7 +290,16 @@ def _resolve_upstream(
     checkout = software_root / "reconstruction"
     if checkout.exists():
         shutil.rmtree(checkout)
-    _run(["git", "clone", "--filter=blob:none", "--no-checkout", repository, str(checkout)])
+    _run(
+        [
+            "git",
+            "clone",
+            "--filter=blob:none",
+            "--no-checkout",
+            repository,
+            str(checkout),
+        ]
+    )
     _run(["git", "checkout", "--detach", expected_commit], cwd=checkout)
     _require(_valid_upstream(checkout, expected_commit), "cloned upstream is invalid")
     return checkout.resolve(), {
@@ -329,7 +340,9 @@ def _resolve_checkpoints(
     try:
         import gdown
     except ImportError as error:
-        raise RuntimeError("gdown is required to retrieve released checkpoints") from error
+        raise RuntimeError(
+            "gdown is required to retrieve released checkpoints"
+        ) from error
 
     root = software_root / "checkpoints"
     root.mkdir(parents=True, exist_ok=True)
@@ -341,7 +354,9 @@ def _resolve_checkpoints(
             output=str(target),
             quiet=False,
         )
-        _require(result is not None and target.is_file(), f"download failed: {filename}")
+        _require(
+            result is not None and target.is_file(), f"download failed: {filename}"
+        )
         digest = _sha256(target)
         _require(digest == str(metadata["sha256"]), f"checksum failed: {filename}")
         downloads.append({"filename": filename, "sha256": digest})
@@ -412,9 +427,7 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
         search_roots=search_roots,
         software_root=software_root,
     )
-    checkpoint_records = registration_payload["upstream"][
-        "released_kinect_checkpoint"
-    ]
+    checkpoint_records = registration_payload["upstream"]["released_kinect_checkpoint"]
     checkpoints, checkpoint_evidence = _resolve_checkpoints(
         checkpoint_records,
         configured_root=configured_checkpoints,
@@ -506,8 +519,7 @@ def main() -> None:
         "--registration-protocol",
         type=Path,
         default=(
-            repository_root
-            / "configs/sota/pokeflex_bayesian_registration_v1.json"
+            repository_root / "configs/sota/pokeflex_bayesian_registration_v1.json"
         ),
     )
     parser.add_argument("--output-root", type=Path, required=True)
