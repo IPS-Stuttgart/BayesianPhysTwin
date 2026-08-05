@@ -132,15 +132,14 @@ def causal4d_belief_provider_v2_manifest(
             "provider_api": "bayesian_phystwin.causal4d_belief_provider_v2",
             "provider_api_version": CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION,
             "inference_role": (
-                "model-averaged robust endpoint and recursively routed complete belief"
+                "model-averaged robust readout-discrepancy endpoint"
             ),
             "compatibility": (
                 "additive provider; causal4d_belief_provider_v1 is unchanged"
             ),
             "raw_covariance_claim": (
-                "working covariance semantics are explicit and content-addressed; "
-                "source-calibrated horizon dynamics and interval calibration "
-                "remain separate gates"
+                "model-based predictive covariance; source-calibrated horizon "
+                "dynamics and interval calibration remain separate gates"
             ),
             "recursive_stream_claim": (
                 "causal ordering, member bytes, row identities, policy locks, and "
