@@ -15,7 +15,6 @@ from bayesian_phystwin.horizon_conditioned_discrepancy import (
     HorizonDiscrepancyCalibrationV1,
     fit_horizon_discrepancy_calibration,
     load_horizon_discrepancy_calibration,
-    mean_retention_at_horizon,
     predict_horizon_conditioned_endpoint,
     save_horizon_discrepancy_calibration,
 )
