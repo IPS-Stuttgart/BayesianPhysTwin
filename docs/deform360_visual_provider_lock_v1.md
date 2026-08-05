@@ -116,3 +116,18 @@ portable provenance. They are not evidence that Prob4D observations are accurate
 that contact anchors are informative, that the Bayesian update improves a
 physical query, that predictive intervals are calibrated, that exact fallback is
 a universal safety theorem, or that Causal4D interventions improve.
+
+## Finite-group calibration binding
+
+The Stage-1 calibration lock must bind the exact content identity of
+`deform360_official_hub_visuotactile_v1_calibration_separation.json`.
+That design fixes the physical object as the statistical unit, pools all
+ten calibration objects for the primary nominal-90% interval, records
+conformal rank 10, and forbids a nominal-95% or five-object-stratum
+nominal-90% split-conformal claim.
+
+The deployed predictor, score, guard, grouping rule, and endpoint set
+must be fixed from external or source-only evidence before interval
+scores are inspected. Calibration outcomes cannot also select the policy
+under this split-conformal contract. CV+ or jackknife+ would require a
+separately versioned design.

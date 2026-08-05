@@ -7,6 +7,9 @@ from pathlib import Path
 import pytest
 
 from bayesian_phystwin.deform360_visual_provider_lock import (
+    DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID,
+    DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT,
+    DEFORM360_FINITE_GROUP_CONFORMAL_RANK,
     DEFORM360_VISUAL_PROVIDER_AMENDMENT_ID,
     DEFORM360_VISUOTACTILE_PROTOCOL_ID,
     Deform360VisualCalibrationLockV1,
@@ -51,6 +54,7 @@ def _calibration_lock(**updates: object) -> Deform360VisualCalibrationLockV1:
         "contact_anchor_calibration_id": "d" * 64,
         "guard_calibration_id": "e" * 64,
         "interval_calibration_id": "f" * 64,
+        "calibration_design_id": (DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID),
         "calibration_group_count": 10,
         "conformal_rank": 10,
         "metadata": {"finite_sample_miscoverage_increment": 1.0 / 11.0},
@@ -220,8 +224,11 @@ def test_visual_calibration_lock_binds_object_level_finite_sample_rank(
     loaded = load_deform360_visual_calibration_lock(path)
 
     assert loaded == lock
-    assert loaded.calibration_group_count == 10
-    assert loaded.conformal_rank == 10
+    assert loaded.calibration_design_id == DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID
+    assert (
+        loaded.calibration_group_count == DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT
+    )
+    assert loaded.conformal_rank == DEFORM360_FINITE_GROUP_CONFORMAL_RANK
     assert loaded.confirmation_payloads_opened is False
     assert loaded.target_outcomes_used is False
 
@@ -231,7 +238,8 @@ def test_visual_calibration_lock_rejects_target_access_and_pseudoreplication() -
         ({"confirmation_payloads_opened": True}, "unopened confirmation"),
         ({"target_outcomes_used": True}, "target blind"),
         ({"calibration_group_count": 9}, "number of calibration objects"),
-        ({"conformal_rank": 11}, "exceeds"),
+        ({"conformal_rank": 11}, "registered finite-group"),
+        ({"calibration_design_id": "9" * 64}, "finite-group design"),
         (
             {
                 "calibration_object_ids": (
@@ -260,6 +268,7 @@ def test_visual_calibration_lock_rejects_malformed_descriptors() -> None:
         {"contact_anchor_calibration_id": int("4" * 64)},
         {"guard_calibration_id": int("5" * 64)},
         {"interval_calibration_id": int("6" * 64)},
+        {"calibration_design_id": int("7" * 64)},
         {"calibration_group_count": True},
         {"conformal_rank": 0},
         {"confirmation_payloads_opened": 0},
@@ -333,6 +342,15 @@ def test_target_blind_protocol_amendment_binds_stage_order_and_boundaries() -> N
     assert amendment["parent_protocol"]["id"] == DEFORM360_VISUOTACTILE_PROTOCOL_ID
     assert amendment["visual_provider_lock"]["schema_version"] == 1
     assert amendment["calibration_lock"]["schema_version"] == 1
+    design = amendment["finite_group_calibration_design"]
+    assert design["artifact_id"] == DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID
+    assert design["must_be_bound_by_calibration_lock"] is True
+    design_record = json.loads(
+        (Path(__file__).resolve().parents[1] / design["path"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert design_record["artifact_id"] == design["artifact_id"]
     assert amendment["status"] == "locked-before-selected-calibration-payload-access"
     assert not any(amendment["information_boundary"].values())
     assert amendment["stage_order"].index(

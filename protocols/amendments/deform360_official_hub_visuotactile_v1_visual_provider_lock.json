@@ -5,6 +5,7 @@
     "required_bindings": [
       "visual_provider_lock_id",
       "official Stage-0 selection_lock_id",
+      "exact finite-group calibration-design artifact ID",
       "exact calibration object IDs",
       "visual covariance, reliability, and identity calibration ID",
       "contact-anchor mapping, covariance, grouping, and bias calibration ID",
@@ -16,6 +17,15 @@
     "target_outcomes_used": false
   },
   "claim_boundary": "This amendment closes the visual-producer ambiguity before selected raw payload access. It is protocol and contract infrastructure, not observation-quality, physical-prediction, calibration, safety, state-of-the-art, or Causal4D evidence.",
+  "finite_group_calibration_design": {
+    "artifact_id": "697261131ae83a08a0ce437c7b837f32ab4870c6c0cc4256784373b3ce19f1c8",
+    "calibration_group_count": 10,
+    "conformal_rank": 10,
+    "must_be_bound_by_calibration_lock": true,
+    "nominal_coverage": 0.9,
+    "path": "protocols/amendments/deform360_official_hub_visuotactile_v1_calibration_separation.json",
+    "policy_selection_uses_calibration_outcomes": false
+  },
   "information_boundary": {
     "camera_media_opened": false,
     "confirmation_payloads_opened": false,
@@ -44,6 +54,7 @@
   "stage_order": [
     "merge this target-blind amendment and lock-contract implementation",
     "create and commit one exact visual-provider lock before downloading selected calibration payloads",
+    "freeze the deployed predictor, score, guard, grouping rule, and endpoint set from external or source-only evidence before interval-calibration scores are inspected",
     "download and process calibration objects only",
     "create and commit one exact calibration lock before opening confirmation payloads",
     "open confirmation payloads exactly once and publish the registered positive or negative result"

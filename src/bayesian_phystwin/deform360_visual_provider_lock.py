@@ -39,7 +39,7 @@ DEFORM360_VISUAL_CALIBRATION_LOCK_SCHEMA = (
 )
 DEFORM360_VISUAL_CALIBRATION_LOCK_VERSION = 1
 DEFORM360_VISUAL_CALIBRATION_LOCK_SEMANTICS = (
-    "calibration-only-visual-contact-guard-interval-lock-v1"
+    "calibration-only-visual-contact-guard-interval-finite-group-lock-v1"
 )
 DEFORM360_VISUOTACTILE_PROTOCOL_ID = "deform360-official-hub-visuotactile-v1"
 DEFORM360_VISUAL_PROVIDER_AMENDMENT_ID = (
@@ -47,6 +47,11 @@ DEFORM360_VISUAL_PROVIDER_AMENDMENT_ID = (
 )
 DEFORM360_PROB4D_REPOSITORY = "IPS-Stuttgart/Prob4D"
 DEFORM360_MOTIONCRAFTER_REPOSITORY = "TencentARC/MotionCrafter"
+DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID = (
+    "697261131ae83a08a0ce437c7b837f32ab4870c6c0cc4256784373b3ce19f1c8"
+)
+DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT = 10
+DEFORM360_FINITE_GROUP_CONFORMAL_RANK = 10
 
 _VISUAL_PROVIDER_FIELDS = frozenset(
     {
@@ -99,6 +104,7 @@ _VISUAL_CALIBRATION_FIELDS = frozenset(
         "contact_anchor_calibration_id",
         "guard_calibration_id",
         "interval_calibration_id",
+        "calibration_design_id",
         "calibration_group_count",
         "conformal_rank",
         "confirmation_payloads_opened",
@@ -508,6 +514,7 @@ class Deform360VisualCalibrationLockV1:
     contact_anchor_calibration_id: str
     guard_calibration_id: str
     interval_calibration_id: str
+    calibration_design_id: str
     calibration_group_count: int
     conformal_rank: int
     confirmation_payloads_opened: bool = False
@@ -554,6 +561,14 @@ class Deform360VisualCalibrationLockV1:
             self.interval_calibration_id,
             name="interval_calibration_id",
         )
+        calibration_design_id = _sha256(
+            self.calibration_design_id,
+            name="calibration_design_id",
+        )
+        if calibration_design_id != DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID:
+            raise ValueError(
+                "calibration_design_id changed the registered finite-group design"
+            )
         calibration_group_count = genuine_integer(
             self.calibration_group_count,
             name="calibration_group_count",
@@ -563,13 +578,20 @@ class Deform360VisualCalibrationLockV1:
             raise ValueError(
                 "calibration_group_count must equal the number of calibration objects"
             )
+        if calibration_group_count != DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT:
+            raise ValueError(
+                "calibration_group_count must equal the registered "
+                "finite-group design count"
+            )
         conformal_rank = genuine_integer(
             self.conformal_rank,
             name="conformal_rank",
             minimum=1,
         )
-        if conformal_rank > calibration_group_count:
-            raise ValueError("conformal_rank exceeds calibration_group_count")
+        if conformal_rank != DEFORM360_FINITE_GROUP_CONFORMAL_RANK:
+            raise ValueError(
+                "conformal_rank must equal the registered finite-group design rank"
+            )
         confirmation_payloads_opened = genuine_boolean(
             self.confirmation_payloads_opened,
             name="confirmation_payloads_opened",
@@ -616,6 +638,11 @@ class Deform360VisualCalibrationLockV1:
         )
         object.__setattr__(
             self,
+            "calibration_design_id",
+            calibration_design_id,
+        )
+        object.__setattr__(
+            self,
             "calibration_group_count",
             calibration_group_count,
         )
@@ -649,6 +676,7 @@ class Deform360VisualCalibrationLockV1:
             "contact_anchor_calibration_id": self.contact_anchor_calibration_id,
             "guard_calibration_id": self.guard_calibration_id,
             "interval_calibration_id": self.interval_calibration_id,
+            "calibration_design_id": self.calibration_design_id,
             "calibration_group_count": self.calibration_group_count,
             "conformal_rank": self.conformal_rank,
             "confirmation_payloads_opened": self.confirmation_payloads_opened,
@@ -697,6 +725,7 @@ class Deform360VisualCalibrationLockV1:
             ),
             guard_calibration_id=cast(str, value["guard_calibration_id"]),
             interval_calibration_id=cast(str, value["interval_calibration_id"]),
+            calibration_design_id=cast(str, value["calibration_design_id"]),
             calibration_group_count=cast(int, value["calibration_group_count"]),
             conformal_rank=cast(int, value["conformal_rank"]),
             confirmation_payloads_opened=cast(
