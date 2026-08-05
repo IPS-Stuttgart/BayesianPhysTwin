@@ -343,9 +343,7 @@ def _candidate_preparation_attestation(
         "prospective_result_sha256": _sha256(result_path),
         "execution_manifest_sha256": _sha256(manifest_path),
         "prospective_protocol_sha256": _sha256(prospective_protocol_path),
-        "independent_depth_protocol_sha256": _sha256(
-            independent_depth_protocol_path
-        ),
+        "independent_depth_protocol_sha256": _sha256(independent_depth_protocol_path),
         "registration_protocol_sha256": _sha256(registration_protocol_path),
     }
     for name, expected in expected_hashes.items():
@@ -371,7 +369,9 @@ def _candidate_preparation_attestation(
         f"candidate preparation source changed for {take_id}",
     )
     take = record.get("take")
-    _require(isinstance(take, Mapping), f"candidate take evidence is missing: {take_id}")
+    _require(
+        isinstance(take, Mapping), f"candidate take evidence is missing: {take_id}"
+    )
     _require(take.get("take_id") == take_id, "candidate take identity changed")
     return {
         "path": str(evidence_path.resolve()),
@@ -628,9 +628,7 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
         "prospective_protocol": str(prospective_protocol_path),
         "prospective_protocol_sha256": _sha256(prospective_protocol_path),
         "independent_depth_protocol": str(independent_depth_protocol_path),
-        "independent_depth_protocol_sha256": _sha256(
-            independent_depth_protocol_path
-        ),
+        "independent_depth_protocol_sha256": _sha256(independent_depth_protocol_path),
         "registration_protocol": str(protocol_path),
         "registration_protocol_sha256": protocol["protocol_sha256"],
     }
