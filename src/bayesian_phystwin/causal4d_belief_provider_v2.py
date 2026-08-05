@@ -19,6 +19,12 @@ from .endpoint_model_average import (
     infer_model_averaged_endpoint,
     predict_model_averaged_endpoint,
 )
+from .horizon_conditioned_discrepancy import (
+    HORIZON_DISCREPANCY_CALIBRATION_VERSION,
+    HorizonConditionedEndpointPredictionV1,
+    HorizonDiscrepancyCalibrationV1,
+    predict_horizon_conditioned_endpoint,
+)
 
 CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION = 2
 CAUSAL4D_BELIEF_PROVIDER_V2_PACKAGE_VERSION = "0.4.0"
@@ -26,6 +32,8 @@ CAUSAL4D_BELIEF_PROVIDER_V2_CAPABILITIES = (
     "causal_prefix_endpoint_inference",
     "evidence_weighted_endpoint_model_average",
     "horizon_dependent_predictive_covariance",
+    "source_calibrated_horizon_discrepancy",
+    "mean_reverting_discrepancy_prediction",
     "immutable_endpoint_posterior",
     "numpy_only_endpoint_inference",
     "per_track_component_evidence",
@@ -35,6 +43,8 @@ CAUSAL4D_BELIEF_PROVIDER_V2_ARTIFACT_SCHEMA_VERSIONS = {
     "ModelAveragedEndpointConfig": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
     "ModelAveragedEndpointPosterior": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
     "ModelAveragedEndpointPrediction": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+    "HorizonDiscrepancyCalibration": HORIZON_DISCREPANCY_CALIBRATION_VERSION,
+    "HorizonConditionedEndpointPrediction": (HORIZON_DISCREPANCY_CALIBRATION_VERSION),
 }
 
 
@@ -90,8 +100,8 @@ def causal4d_belief_provider_v2_manifest(
                 "additive provider; causal4d_belief_provider_v1 is unchanged"
             ),
             "raw_covariance_claim": (
-                "model-based predictive covariance; calibration remains a "
-                "separate prospective gate"
+                "model-based predictive covariance; source-calibrated horizon "
+                "dynamics and interval calibration remain separate gates"
             ),
         },
     }
@@ -105,8 +115,11 @@ __all__ = [
     "DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1",
     "ModelAveragedEndpointConfigV1",
     "ModelAveragedEndpointPosteriorV1",
+    "HorizonConditionedEndpointPredictionV1",
+    "HorizonDiscrepancyCalibrationV1",
     "ModelAveragedEndpointPredictionV1",
     "causal4d_belief_provider_v2_manifest",
     "infer_model_averaged_bayesian_anchor_endpoint",
+    "predict_horizon_conditioned_endpoint",
     "predict_model_averaged_endpoint",
 ]
