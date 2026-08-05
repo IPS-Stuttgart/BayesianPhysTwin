@@ -17,7 +17,9 @@ from ._horizon_discrepancy_common import (
 from ._horizon_discrepancy_contract import HorizonDiscrepancyCalibrationV1
 
 
-def _retention(half_life: float | None, floor: float, horizons: np.ndarray) -> np.ndarray:
+def _retention(
+    half_life: float | None, floor: float, horizons: np.ndarray
+) -> np.ndarray:
     if half_life is None:
         return np.ones(len(horizons), dtype=np.float64)
     return floor + (1.0 - floor) * np.power(
