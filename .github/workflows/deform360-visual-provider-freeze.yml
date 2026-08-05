@@ -80,7 +80,8 @@ jobs:
             --break-system-packages \
             --target "${PYTHON_SITE}" \
             ".[dev]" \
-            "huggingface_hub>=0.24"
+            "huggingface_hub>=0.24" \
+            "numpy>=1.23,<1.28"
           "${PYTHON_BIN}" -m pip check
 
       - name: Validate reviewable source
@@ -177,7 +178,8 @@ jobs:
             --target "${PYTHON_SITE}" \
             ".[dev]" \
             ./_prob4d \
-            "huggingface_hub>=0.24"
+            "huggingface_hub>=0.24" \
+            "numpy>=1.23,<1.28"
           "${PYTHON_BIN}" -m pip check
 
       - name: Prepare exact cache and output roots
