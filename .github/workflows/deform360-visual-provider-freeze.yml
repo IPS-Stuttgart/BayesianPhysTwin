@@ -1,0 +1,315 @@
+name: Deform360 visual-provider freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-visual-provider-freeze.yml"
+      - "scripts/science/bootstrap_deform360_visual_provider_models.py"
+      - "scripts/science/build_deform360_visual_provider_freeze.py"
+      - "tests/test_deform360_visual_provider_bootstrap.py"
+      - "tests/test_deform360_visual_provider_freeze.py"
+      - "docs/deform360_visual_provider_freeze.md"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/**"
+  workflow_dispatch:
+    inputs:
+      hf_cache_dir:
+        description: Exact Hugging Face hub cache; defaults to repository variable or the runner cache
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-visual-provider-freeze-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BPT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
+  MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
+  INPUT_HF_CACHE_DIR: ${{ inputs.hf_cache_dir }}
+  VAR_HF_CACHE_DIR: ${{ vars.MOTIONCRAFTER_HF_CACHE_DIR }}
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Data-free lock contracts / workstation2
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_HEAD_SHA }}
+          persist-credentials: false
+          clean: true
+
+      - name: Prepare isolated dependency target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3.12 || command -v python3)"
+          test -x "${python_bin}"
+          site="${RUNNER_TEMP}/deform360-contracts-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${site}"
+          mkdir -p "${site}"
+          "${python_bin}" - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.executable)
+          print(sys.version)
+          PY
+          {
+            echo "PYTHON_BIN=${python_bin}"
+            echo "PYTHON_SITE=${site}"
+            echo "PYTHONPATH=${site}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Install development environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" -m pip install \
+            --break-system-packages \
+            --target "${PYTHON_SITE}" \
+            ".[dev]" \
+            "huggingface_hub>=0.24" \
+            "numpy>=1.23,<1.28"
+          "${PYTHON_BIN}" -m pip check
+
+      - name: Validate reviewable source
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/bootstrap_deform360_visual_provider_models.py
+            scripts/science/build_deform360_visual_provider_freeze.py
+            tests/test_deform360_visual_provider_bootstrap.py
+            tests/test_deform360_visual_provider_freeze.py
+          )
+          "${PYTHON_BIN}" -m ruff check "${files[@]}"
+          "${PYTHON_BIN}" -m ruff format --check "${files[@]}"
+          "${PYTHON_BIN}" -m pytest -q \
+            tests/test_deform360_visual_provider_bootstrap.py \
+            tests/test_deform360_visual_provider_freeze.py \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_release_metadata.py
+          "${PYTHON_BIN}" -m compileall -q \
+            scripts/science/bootstrap_deform360_visual_provider_models.py \
+            scripts/science/build_deform360_visual_provider_freeze.py
+          git diff --check
+
+  preflight:
+    name: Freeze exact producer / workstation2
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 180
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - name: Check out exact BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_HEAD_SHA }}
+          persist-credentials: false
+          fetch-depth: 0
+          clean: true
+
+      - name: Check out exact Prob4D source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: ${{ env.PROB4D_REVISION }}
+          path: _prob4d
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Check out exact MotionCrafter source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: TencentARC/MotionCrafter
+          ref: ${{ env.MOTIONCRAFTER_REVISION }}
+          path: _motioncrafter
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Prepare isolated dependency target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3.12 || command -v python3)"
+          test -x "${python_bin}"
+          site="${RUNNER_TEMP}/deform360-preflight-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${site}"
+          mkdir -p "${site}"
+          "${python_bin}" - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.executable)
+          print(sys.version)
+          PY
+          {
+            echo "PYTHON_BIN=${python_bin}"
+            echo "PYTHON_SITE=${site}"
+            echo "PYTHONPATH=${site}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Install data-free producer environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" -m pip install \
+            --break-system-packages \
+            --target "${PYTHON_SITE}" \
+            ".[dev]" \
+            ./_prob4d \
+            "huggingface_hub>=0.24" \
+            "numpy>=1.23,<1.28"
+          "${PYTHON_BIN}" -m pip check
+
+      - name: Prepare exact cache and output roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/deform360-visual-provider-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cache="${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-${HOME}/.cache/huggingface/hub}}"
+          cache="$(realpath -m "${cache}")"
+          rm -rf "${root}"
+          mkdir -p "${root}" "${cache}"
+          {
+            echo "DEFORM360_MODEL_CACHE=${cache}"
+            echo "DEFORM360_PREFLIGHT_ROOT=${root}"
+            echo "DEFORM360_PREFLIGHT_OUTPUT=${root}/candidate"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "requested_cache=${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-<runner-default>}}"
+            echo "resolved_cache=${cache}"
+          } > "${root}/cache-selection.txt"
+
+      - name: Bootstrap exact immutable model members
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" scripts/science/bootstrap_deform360_visual_provider_models.py \
+            --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --cache-dir "${DEFORM360_MODEL_CACHE}" \
+            --output "${DEFORM360_PREFLIGHT_ROOT}/model-bootstrap.json" \
+            | tee "${DEFORM360_PREFLIGHT_ROOT}/model-bootstrap.log"
+
+      - name: Build and compare exact producer lock candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider
+          "${PYTHON_BIN}" scripts/science/build_deform360_visual_provider_freeze.py \
+            --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json \
+            --prob4d-checkout _prob4d \
+            --motioncrafter-checkout _motioncrafter \
+            --cache-dir "${DEFORM360_MODEL_CACHE}" \
+            --output-dir "${DEFORM360_PREFLIGHT_OUTPUT}" \
+            | tee "${DEFORM360_PREFLIGHT_ROOT}/console.log"
+          if [[ -d "${expected}" ]]; then
+            diff -ru --no-dereference \
+              "${expected}" \
+              "${DEFORM360_PREFLIGHT_OUTPUT}" \
+              | tee "${DEFORM360_PREFLIGHT_ROOT}/bundle.diff"
+          fi
+
+      - name: Verify closed information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence_root = Path(os.environ["DEFORM360_PREFLIGHT_ROOT"])
+          candidate_root = Path(os.environ["DEFORM360_PREFLIGHT_OUTPUT"])
+          bootstrap = json.loads(
+              (evidence_root / "model-bootstrap.json").read_text(encoding="utf-8")
+          )
+          summary = json.loads(
+              (candidate_root / "summary.json").read_text(encoding="utf-8")
+          )
+          forbidden = (
+              "selected_raw_payloads_opened",
+              "calibration_payloads_opened",
+              "confirmation_payloads_opened",
+              "target_outcomes_used",
+          )
+          for label, payload in (("bootstrap", bootstrap), ("preflight", summary)):
+              changed = [name for name in forbidden if payload.get(name) is not False]
+              if changed:
+                  raise SystemExit(
+                      f"{label} exceeded the information boundary: {changed}"
+                  )
+          for line in (candidate_root / "SHA256SUMS").read_text(
+              encoding="utf-8"
+          ).splitlines():
+              digest, relative = line.split("  ", 1)
+              observed = hashlib.sha256((candidate_root / relative).read_bytes()).hexdigest()
+              if observed != digest:
+                  raise SystemExit(f"checksum mismatch: {relative}")
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Record execution environment
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${DEFORM360_PREFLIGHT_ROOT:-}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "bpt_revision=${BPT_HEAD_SHA}"
+            echo "prob4d_revision=${PROB4D_REVISION}"
+            echo "motioncrafter_revision=${MOTIONCRAFTER_REVISION}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            "${PYTHON_BIN}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader
+          } > "${DEFORM360_PREFLIGHT_ROOT}/environment.txt"
+
+      - name: Upload target-blind producer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-visual-provider-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/cache-selection.txt
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/model-bootstrap.json
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/model-bootstrap.log
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/console.log
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/bundle.diff
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/environment.txt
+            ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/provider-manifest.json
+            ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/provider-attestation.json
+            ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/motioncrafter-model-set.json
+            ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/visual-provider-lock.json
+            ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/summary.json
+            ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/SHA256SUMS
+          if-no-files-found: warn
+          retention-days: 90
