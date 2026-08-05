@@ -1,0 +1,308 @@
+name: Deform360 official-Hub calibration source
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-official-hub-calibration-source.yml"
+      - "protocols/deform360_official_hub_calibration_source_v1.json"
+      - "scripts/science/run_deform360_official_hub_calibration_source.py"
+      - "scripts/science/deform360_calibration_source/**"
+      - "tests/test_deform360_official_hub_calibration_source.py"
+      - "docs/deform360_official_hub_calibration_source_v1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-official-calibration-source-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  prepare-calibration-source:
+    name: Open and prepare the ten locked calibration sources
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 360
+    steps:
+      - name: Check out BayesianPhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Resolve isolated and persistent paths
+        shell: bash
+        env:
+          CONFIGURED_DATA_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_DATA_ROOT }}
+          CONFIGURED_PROCESSED_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_PROCESSED_ROOT }}
+        run: |
+          set -euo pipefail
+          data_root="${CONFIGURED_DATA_ROOT:-/home/github-runner/.cache/datasets/deform360-official-hub-visuotactile-v1-calibration-source}"
+          processed_root="${CONFIGURED_PROCESSED_ROOT:-/home/github-runner/.cache/datasets/deform360-official-hub-visuotactile-v1-calibration-processed}"
+          staged_root="${processed_root}/staged-raw"
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          processing_repo="${RUNNER_TEMP}/deform360-processing-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv_root="${RUNNER_TEMP}/deform360-calibration-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${data_root}" "${processed_root}" "${evidence_root}"
+          {
+            echo "DATA_ROOT=${data_root}"
+            echo "PROCESSED_ROOT=${processed_root}"
+            echo "STAGED_ROOT=${staged_root}"
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "PROCESSING_REPO=${processing_repo}"
+            echo "VENV_ROOT=${venv_root}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Record runner and source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "event_revision=${GITHUB_SHA}"
+            echo "checked_out_revision=$(git rev-parse HEAD)"
+            echo "data_root=${DATA_ROOT}"
+            echo "processed_root=${PROCESSED_ROOT}"
+            uname -a
+            lscpu
+          } | tee "${EVIDENCE_ROOT}/runner.txt"
+          nvidia-smi -L | tee "${EVIDENCE_ROOT}/nvidia-smi-L.txt"
+          nvidia-smi \
+            --query-gpu=index,name,uuid,driver_version,memory.total \
+            --format=csv,noheader \
+            | tee "${EVIDENCE_ROOT}/nvidia-smi.csv"
+
+      - name: Check out the exact official processing source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none \
+            https://github.com/lhy0807/deform360.git \
+            "${PROCESSING_REPO}"
+          git -C "${PROCESSING_REPO}" checkout --detach \
+            d8522a4403b766aeb387510c04e89032a56fdf35
+          test "$(git -C "${PROCESSING_REPO}" rev-parse HEAD)" = \
+            d8522a4403b766aeb387510c04e89032a56fdf35
+          test -z "$(git -C "${PROCESSING_REPO}" status --porcelain)"
+
+      - name: Create the calibration-source environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "${VENV_ROOT}"
+          python="${VENV_ROOT}/bin/python"
+          "${python}" -m pip install --upgrade pip
+          "${python}" -m pip install ".[dev,graph]" build scipy matplotlib
+          "${python}" -m pip install -e "${PROCESSING_REPO}[all]"
+          git clean -ffdx
+          git reset --hard HEAD
+          git -C "${PROCESSING_REPO}" clean -ffdx
+          git -C "${PROCESSING_REPO}" reset --hard HEAD
+          test -z "$(git -C "${PROCESSING_REPO}" status --porcelain)"
+          "${python}" -m pip check
+          "${python}" -m pip freeze --all \
+            > "${EVIDENCE_ROOT}/pip-freeze.txt"
+
+      - name: Validate the exact source before dataset access
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/deform360_calibration_source/__init__.py
+            scripts/science/deform360_calibration_source/contracts.py
+            scripts/science/deform360_calibration_source/planning.py
+            scripts/science/deform360_calibration_source/download.py
+            scripts/science/deform360_calibration_source/prepare.py
+            scripts/science/deform360_calibration_source/cli.py
+            scripts/science/run_deform360_official_hub_calibration_source.py
+            tests/test_deform360_official_hub_calibration_source.py
+          )
+          "${VENV_ROOT}/bin/python" -m ruff check "${files[@]}"
+          "${VENV_ROOT}/bin/python" -m ruff format --check "${files[@]}"
+          "${VENV_ROOT}/bin/python" -m pytest -q \
+            tests/test_deform360_official_hub_calibration_source.py \
+            tests/test_deform360_calibration_execution.py \
+            tests/test_deform360_visual_provider_freeze.py
+          "${VENV_ROOT}/bin/python" -m compileall -q \
+            scripts/science/deform360_calibration_source \
+            scripts/science/run_deform360_official_hub_calibration_source.py
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+
+      - name: Seal exact calibration filenames without payload access
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          "${VENV_ROOT}/bin/python" \
+            scripts/science/run_deform360_official_hub_calibration_source.py plan \
+            --protocol protocols/deform360_official_hub_calibration_source_v1.json \
+            --selection-lock protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --output "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            | tee "${EVIDENCE_ROOT}/plan-console.json"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ "${status}" -eq 0 ]]; then
+            echo "proceed=true" >> "${GITHUB_OUTPUT}"
+          elif [[ "${status}" -eq 3 ]]; then
+            echo "proceed=false" >> "${GITHUB_OUTPUT}"
+            echo "::warning::The names-only calibration-source support gate did not pass."
+          else
+            exit "${status}"
+          fi
+
+      - name: Download and hash only planned calibration files
+        if: steps.plan.outputs.proceed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_ROOT}/bin/python" \
+            scripts/science/run_deform360_official_hub_calibration_source.py download \
+            --protocol protocols/deform360_official_hub_calibration_source_v1.json \
+            --selection-lock protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --plan "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            --data-root "${DATA_ROOT}" \
+            --output "${EVIDENCE_ROOT}/calibration-download-manifest.json" \
+            --workers 8 \
+            | tee "${EVIDENCE_ROOT}/download-console.json"
+
+      - name: Prepare synchronized calibration RGB, tactile, and robot source
+        id: prepare
+        if: steps.plan.outputs.proceed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          "${VENV_ROOT}/bin/python" \
+            scripts/science/run_deform360_official_hub_calibration_source.py prepare \
+            --protocol protocols/deform360_official_hub_calibration_source_v1.json \
+            --selection-lock protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --plan "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            --download-manifest "${EVIDENCE_ROOT}/calibration-download-manifest.json" \
+            --data-root "${DATA_ROOT}" \
+            --staged-raw-root "${STAGED_ROOT}" \
+            --processed-root "${PROCESSED_ROOT}/aligned" \
+            --processing-repository "${PROCESSING_REPO}" \
+            --output "${EVIDENCE_ROOT}/calibration-source-result.json" \
+            | tee "${EVIDENCE_ROOT}/prepare-console.json"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ "${status}" -eq 0 ]]; then
+            echo "proceed=true" >> "${GITHUB_OUTPUT}"
+          elif [[ "${status}" -eq 3 ]]; then
+            echo "proceed=false" >> "${GITHUB_OUTPUT}"
+            echo "::warning::The calibration-source support gate did not pass."
+          else
+            exit "${status}"
+          fi
+
+      - name: Verify the confirmation cohort remains absent
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_ROOT}/bin/python" - <<'PY'
+          import os
+          from pathlib import Path
+
+          from bayesian_phystwin.deform360_calibration_execution import (
+              load_deform360_stage0_selection,
+          )
+
+          selection = load_deform360_stage0_selection(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_visuotactile_v1_selection.json"
+              )
+          )
+          confirmation = {
+              unit.object_id for unit in selection.confirmation_units
+          }
+          raw = Path(os.environ["DATA_ROOT"]) / "raw"
+          present = {path.name for path in raw.iterdir() if path.is_dir()} if raw.exists() else set()
+          overlap = sorted(present & confirmation)
+          if overlap:
+              raise SystemExit(f"confirmation payloads appeared: {overlap}")
+          print("confirmation_payloads_opened=false")
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+
+      - name: Publish compact calibration-source evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-official-calibration-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Official-Hub Deform360 calibration source"
+            echo
+            echo "- Runner: \`${RUNNER_NAME}\`"
+            echo "- Names-only support: \`${{ steps.plan.outputs.proceed }}\`"
+            echo "- Source-preparation support: \`${{ steps.prepare.outputs.proceed }}\`"
+            if [[ -f "${EVIDENCE_ROOT}/calibration-source-result.json" ]]; then
+              "${VENV_ROOT}/bin/python" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["EVIDENCE_ROOT"]) / "calibration-source-result.json")
+              .read_text(encoding="utf-8")
+          )
+          gate = result["gate"]
+          print(f"- Prepared objects: `{gate['supported_object_count']}`")
+          print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
+          print(f"- Result digest: `{result['result_sha256']}`")
+          PY
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Enforce the registered support gate
+        if: >-
+          always() &&
+          (steps.plan.outputs.proceed == 'false' ||
+           steps.prepare.outputs.proceed == 'false')
+        run: |
+          echo "The registered calibration-source support gate did not pass." >&2
+          exit 1
+
+      - name: Remove the isolated environment and source checkout
+        if: always()
+        run: rm -rf "${VENV_ROOT}" "${PROCESSING_REPO}"
