@@ -35,9 +35,7 @@ DEFORM360_CALIBRATION_UNIT_SCHEMA = "bayesian-phystwin.deform360-cohort-unit"
 DEFORM360_CALIBRATION_ARTIFACT_SCHEMA = (
     "bayesian-phystwin.deform360-calibration-artifact-ref"
 )
-DEFORM360_CALIBRATION_BUNDLE_SCHEMA = (
-    "bayesian-phystwin.deform360-calibration-bundle"
-)
+DEFORM360_CALIBRATION_BUNDLE_SCHEMA = "bayesian-phystwin.deform360-calibration-bundle"
 DEFORM360_CALIBRATION_VERSION = 1
 DEFORM360_CALIBRATION_SEMANTICS = (
     "calibration-only-choices-sealed-before-confirmation-payload-v1"
@@ -223,11 +221,14 @@ class Deform360CohortUnitV1:
         require_exact_fields(value, expected=_UNIT_FIELDS, name=name)
         if value["schema"] != DEFORM360_CALIBRATION_UNIT_SCHEMA:
             raise ValueError(f"{name} schema changed")
-        if genuine_integer(
-            value["schema_version"],
-            name=f"{name} schema_version",
-            minimum=1,
-        ) != DEFORM360_CALIBRATION_VERSION:
+        if (
+            genuine_integer(
+                value["schema_version"],
+                name=f"{name} schema_version",
+                minimum=1,
+            )
+            != DEFORM360_CALIBRATION_VERSION
+        ):
             raise ValueError(f"{name} schema_version changed")
         result = cls(
             object_id=value["object_id"],
@@ -362,11 +363,14 @@ class Deform360CalibrationArtifactRefV1:
         require_exact_fields(value, expected=_ARTIFACT_FIELDS, name=name)
         if value["schema"] != DEFORM360_CALIBRATION_ARTIFACT_SCHEMA:
             raise ValueError(f"{name} schema changed")
-        if genuine_integer(
-            value["schema_version"],
-            name=f"{name} schema_version",
-            minimum=1,
-        ) != DEFORM360_CALIBRATION_VERSION:
+        if (
+            genuine_integer(
+                value["schema_version"],
+                name=f"{name} schema_version",
+                minimum=1,
+            )
+            != DEFORM360_CALIBRATION_VERSION
+        ):
             raise ValueError(f"{name} schema_version changed")
         if value["semantics"] != DEFORM360_CALIBRATION_SEMANTICS:
             raise ValueError(f"{name} semantics changed")
@@ -566,9 +570,7 @@ class Deform360CalibrationBundleV1:
         if isinstance(values, (str, bytes)):
             raise ValueError(f"{name} must be a sequence")
         units = tuple(values)
-        invalid = any(
-            not isinstance(unit, Deform360CohortUnitV1) for unit in units
-        )
+        invalid = any(not isinstance(unit, Deform360CohortUnitV1) for unit in units)
         if not units or invalid:
             raise ValueError(f"{name} must contain Deform360CohortUnitV1 objects")
         units = tuple(sorted(units, key=lambda unit: (unit.stratum, unit.object_id)))
@@ -690,11 +692,14 @@ class Deform360CalibrationBundleV1:
         require_exact_fields(value, expected=_BUNDLE_FIELDS, name=name)
         if value["schema"] != DEFORM360_CALIBRATION_BUNDLE_SCHEMA:
             raise ValueError(f"{name} schema changed")
-        if genuine_integer(
-            value["schema_version"],
-            name=f"{name} schema_version",
-            minimum=1,
-        ) != DEFORM360_CALIBRATION_VERSION:
+        if (
+            genuine_integer(
+                value["schema_version"],
+                name=f"{name} schema_version",
+                minimum=1,
+            )
+            != DEFORM360_CALIBRATION_VERSION
+        ):
             raise ValueError(f"{name} schema_version changed")
         if value["semantics"] != DEFORM360_CALIBRATION_SEMANTICS:
             raise ValueError(f"{name} semantics changed")
