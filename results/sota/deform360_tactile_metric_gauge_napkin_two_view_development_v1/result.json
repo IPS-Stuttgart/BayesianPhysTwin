@@ -1,0 +1,100 @@
+{
+  "artifact_id": "4c270d2d14a3ea808aecdeb279a39145f4fa3dc9486d2b80d4538df50b099569",
+  "camera_results": [
+    {
+      "assignments": [
+        {
+          "admitted": false,
+          "assignment_hypothesis": 0,
+          "maximum_held_frame_error_m": 0.08852160040838312,
+          "median_held_frame_error_m": 0.003102416788827304,
+          "percentile_90_held_frame_error_m": 0.08179731898265982,
+          "reason_codes": [
+            "tail-held-frame-error-too-large"
+          ],
+          "supported_frame_count": 6,
+          "supported_row_count": 17
+        },
+        {
+          "admitted": false,
+          "assignment_hypothesis": 1,
+          "maximum_held_frame_error_m": 0.20049932544441307,
+          "median_held_frame_error_m": 0.003853369669497625,
+          "percentile_90_held_frame_error_m": 0.18800954426068162,
+          "reason_codes": [
+            "tail-held-frame-error-too-large"
+          ],
+          "supported_frame_count": 6,
+          "supported_row_count": 17
+        }
+      ],
+      "camera": "brics-odroid-019_cam1"
+    },
+    {
+      "assignments": [
+        {
+          "admitted": false,
+          "assignment_hypothesis": 0,
+          "maximum_held_frame_error_m": 0.08463291669300009,
+          "median_held_frame_error_m": 0.007642915184072671,
+          "percentile_90_held_frame_error_m": 0.08131113681088371,
+          "reason_codes": [
+            "median-held-frame-error-too-large",
+            "tail-held-frame-error-too-large"
+          ],
+          "supported_frame_count": 6,
+          "supported_row_count": 17
+        },
+        {
+          "admitted": false,
+          "assignment_hypothesis": 1,
+          "maximum_held_frame_error_m": 0.04888118598566131,
+          "median_held_frame_error_m": 0.005898459042192034,
+          "percentile_90_held_frame_error_m": 0.04689193413500866,
+          "reason_codes": [
+            "median-held-frame-error-too-large",
+            "tail-held-frame-error-too-large"
+          ],
+          "supported_frame_count": 6,
+          "supported_row_count": 17
+        }
+      ],
+      "camera": "brics-odroid-022_cam1"
+    }
+  ],
+  "claim_boundary": "Development-only source feasibility result on a previously opened geometry case. No independent validation, score, state update, confirmation, target, or SOTA claim.",
+  "gate": {
+    "admitted_camera_count": 0,
+    "carrier_authorized": false,
+    "metric_gauge_authorized": false,
+    "required_camera_count": 2
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_opened": true,
+    "calibration_motioncrafter_arrays_opened": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "metric_gauge_artifact": {
+    "artifact_id": "ee86d827c4ecee90630ef013306e5e9b3a3c38899fc7912691056f6c17bcda11",
+    "file_sha256": "9274c5278d9e3b18945d342b14838393a14ca4f7e4986a23cf383fcafd25aad6"
+  },
+  "protocol": {
+    "lock_file_sha256": "682ed1cef459a1fd742087b772859ef6066154a34bc39a37f7dc0b12f72269ba",
+    "lock_id": "3faf5199e58f9f9d2b005887b4efd3dc215433eff23ff3f53cb1312cdc632be6",
+    "repository_revision": "15250a15bc6db0efc924c9266d8c9f671ea8e92b"
+  },
+  "schema": "bayesian-phystwin.deform360-tactile-metric-gauge-two-view-development-result",
+  "schema_version": 1,
+  "source_case": {
+    "causal_frame_stop": 120,
+    "object_id": "036-napkin-cloth",
+    "processing_episode_index": 0,
+    "source_episode_id": 9
+  },
+  "status": "exact-fallback-before-carrier"
+}
