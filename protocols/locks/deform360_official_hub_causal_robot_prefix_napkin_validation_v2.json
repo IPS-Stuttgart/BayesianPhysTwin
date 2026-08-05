@@ -1,0 +1,101 @@
+{
+  "artifact_id": "52242ebf25233736da5d9c5194c9b18e85f6c3cef5d34571148ee046f4b7dfaf",
+  "bindings": {
+    "causal_window_manifest_file_sha256": "7398575f32ea8868f241da9356264d5b44b815f41425f6f259afcbbd10f336de",
+    "causal_window_manifest_id": "9fe5fdf4ae6449182d2e5064ad99417b4252dd04b76831df722b44614c2351dd",
+    "causal_window_manifest_path": "results/sota/deform360_official_hub_causal_window_feasibility_v2/causal_window_manifest.json",
+    "parent_failed_lock_file_sha256": "a40be04aee69fc375a13a0591dd04504b01e4646894ef1ca06141d042ab63ac6",
+    "parent_failed_lock_id": "6aac132f1a6c5fcc54bec12c80407ac9e214a662329c292835ee0e9497bbd6d9",
+    "preflight_change": "carrier-camera-panel-replaced-by-all-discovered-cameras-for-robot-estimation-only",
+    "stage1_processing_report_file_sha256": "f8d55418e470164c234339464b9704103d1cef09176df013ec910b4e9b8db496",
+    "stage1_processing_report_path": "docs/deform360_official_hub_stage1_result.md"
+  },
+  "causal_window": {
+    "causal_frame_stop": 120,
+    "contact_start_frame": 114,
+    "observed_frame_count": 42,
+    "source_frame_start": 78,
+    "untouched_future_frame_start": 120
+  },
+  "claim_boundary": {
+    "contact_anchor_claim_requires_admission": true,
+    "prediction_accuracy_claim": false,
+    "purpose": "independent carrier-validation contact-gauge feasibility after camera-panel preflight repair",
+    "sota_claim": false
+  },
+  "estimator": {
+    "camera_policy": "all-calibrated-cameras",
+    "decode_policy": "sequential-read-discard-before-start-stop-before-future",
+    "implementation_revision": "62c44bef54b05661e3c7be41d17e601512524cd2",
+    "repository": "lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "seed": 0
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_allowed": true,
+    "calibration_scores_opened": false,
+    "calibration_tactile_prefix_allowed": true,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_frames_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "quality_gate": {
+    "contact_tail_frame_count": 6,
+    "maximum_opening_m": 0.112,
+    "maximum_rotation_step_deg": 20.0,
+    "maximum_translation_step_m": 0.05,
+    "minimum_both_fingers_fraction": 0.5,
+    "minimum_contact_ready_frames": 4,
+    "minimum_direct_wrist_fraction": 0.75,
+    "minimum_inlier_cameras_per_part": 2,
+    "minimum_opening_m": 0.04,
+    "rotation_matrix_tolerance": 0.001
+  },
+  "schema": "bayesian-phystwin.deform360-causal-robot-prefix-lock",
+  "schema_version": 1,
+  "source_case": {
+    "bimanual": true,
+    "cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-002_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-007_cam1",
+      "brics-odroid-008_cam0",
+      "brics-odroid-008_cam1",
+      "brics-odroid-010_cam0",
+      "brics-odroid-010_cam1",
+      "brics-odroid-011_cam0",
+      "brics-odroid-012_cam0",
+      "brics-odroid-012_cam1",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam0",
+      "brics-odroid-015_cam1",
+      "brics-odroid-016_cam0",
+      "brics-odroid-017_cam0",
+      "brics-odroid-017_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam0",
+      "brics-odroid-021_cam1",
+      "brics-odroid-022_cam0",
+      "brics-odroid-022_cam1",
+      "brics-odroid-023_cam0",
+      "brics-odroid-024_cam0",
+      "brics-odroid-024_cam1",
+      "brics-odroid-025_cam0",
+      "brics-odroid-025_cam1",
+      "brics-odroid-027_cam0",
+      "brics-odroid-027_cam1",
+      "brics-odroid-028_cam0"
+    ],
+    "object_id": "036-napkin-cloth",
+    "processing_episode_index": 0,
+    "source_episode_id": 9,
+    "source_output_tree_sha256": "cddcf43f6f973e1bf2f003553a3a1b4a08c0ce17d193a1da3639100eccfabba0"
+  },
+  "status": "locked-source-only-pre-estimation"
+}

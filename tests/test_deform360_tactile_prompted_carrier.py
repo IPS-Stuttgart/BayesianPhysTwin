@@ -152,13 +152,20 @@ def test_checked_in_independent_validation_locks_are_valid() -> None:
         / "protocols/locks/"
         "deform360_tactile_prompted_carrier_napkin_validation_v1.json"
     )
-    robot = load_deform360_causal_robot_prefix_lock(
+    failed_robot = load_deform360_causal_robot_prefix_lock(
         root
         / "protocols/locks/"
         "deform360_official_hub_causal_robot_prefix_napkin_validation_v1.json"
     )
+    robot = load_deform360_causal_robot_prefix_lock(
+        root
+        / "protocols/locks/"
+        "deform360_official_hub_causal_robot_prefix_napkin_validation_v2.json"
+    )
     assert carrier["source_case"]["object_id"] == "036-napkin-cloth"
+    assert failed_robot["source_case"]["object_id"] == "036-napkin-cloth"
     assert robot["source_case"]["object_id"] == "036-napkin-cloth"
+    assert len(robot["source_case"]["cameras"]) == 32
 
 
 def test_object_facing_normals_point_to_opposite_gripper_sides() -> None:

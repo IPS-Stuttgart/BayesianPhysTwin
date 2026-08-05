@@ -27,18 +27,25 @@ array, or prediction score from either candidate was inspected.
 
 The permitted prefix is source frames `[78,120)`, with registered contact
 beginning at frame 114. Frames `[120,144)` remain untouched future. The fixed
-camera panel is:
+MotionCrafter carrier camera panel is:
 
 - `brics-odroid-010_cam0`;
 - `brics-odroid-019_cam1`;
 - `brics-odroid-022_cam1`.
+
+The first robot-prefix invocation stopped before frame decoding because this
+three-camera carrier panel is not the processed episode's all-camera panel.
+The failed v1 lock and zero-output failure are retained. A pre-outcome v2
+operational lock binds all 32 discovered calibrated cameras for robot-pose
+recovery only. It does not change the three carrier cameras, frame bounds,
+quality gates, or any model decision.
 
 ## Frozen stages
 
 The source-only pipeline is staged, and each failure terminates in exact
 fallback:
 
-1. Recover the two-gripper causal robot prefix using all three calibrated
+1. Recover the two-gripper causal robot prefix using all 32 calibrated
    cameras. The existing robot quality gate must pass unchanged.
 2. Preserve direct and swapped tactile-to-gripper assignments at equal prior
    mass. The existing tactile geometry gate must pass unchanged.
@@ -57,8 +64,8 @@ fallback:
 
 The complete gates and policies are content-addressed in
 `protocols/locks/deform360_tactile_prompted_carrier_napkin_validation_v1.json`.
-The first operational stage is separately locked in
-`protocols/locks/deform360_official_hub_causal_robot_prefix_napkin_validation_v1.json`.
+The corrected first operational stage is separately locked in
+`protocols/locks/deform360_official_hub_causal_robot_prefix_napkin_validation_v2.json`.
 
 ## MotionCrafter provenance
 

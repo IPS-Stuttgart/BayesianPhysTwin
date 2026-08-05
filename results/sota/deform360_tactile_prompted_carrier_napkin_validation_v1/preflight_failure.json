@@ -1,0 +1,26 @@
+{
+  "artifact_kind": "Deform360TactilePromptedCarrierNapkinValidationPreflightFailure",
+  "failed_lock_file_sha256": "a40be04aee69fc375a13a0591dd04504b01e4646894ef1ca06141d042ab63ac6",
+  "failed_lock_id": "6aac132f1a6c5fcc54bec12c80407ac9e214a662329c292835ee0e9497bbd6d9",
+  "failure_stage": "causal-robot-prefix-source-preflight",
+  "information_boundary": {
+    "calibration_scores_opened": false,
+    "camera_frames_decoded": 0,
+    "confirmation_payloads_opened": false,
+    "future_frames_used": false,
+    "held_v8_accessed": false,
+    "motioncrafter_arrays_opened": false,
+    "output_artifacts_written": 0,
+    "tactile_arrays_opened": false,
+    "target_outcomes_used": false
+  },
+  "observed_contract": {
+    "carrier_camera_count": 3,
+    "discovered_robot_camera_count": 32,
+    "required_robot_camera_policy": "all-calibrated-cameras"
+  },
+  "reason": "processed all-camera panel changed",
+  "repair_scope": "Replace the three-camera carrier panel with the 32-camera preflight inventory only for robot-pose recovery. Preserve the carrier panel, all frame bounds, gates, and information boundaries.",
+  "schema_version": 1,
+  "status": "technical-preflight-failure-no-output"
+}
