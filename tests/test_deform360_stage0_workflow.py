@@ -86,3 +86,20 @@ def test_stage0_workflow_verifies_lock_without_mutating_the_branch() -> None:
     assert "contents: write" not in selection_job
     assert "git push" not in selection_job
     assert "git commit" not in selection_job
+
+
+def test_stage0_checksum_manifest_uses_extractable_relative_paths() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    selection_job = workflow.split("\n  official-hub-selection:\n", 1)[1]
+    checksum_block = selection_job.split(
+        "\n      - name: Finalize evidence checksums\n",
+        1,
+    )[1].split("\n      - name: Publish Stage-0 summary\n", 1)[0]
+
+    assert 'cd "${EVIDENCE_DIR}"' in checksum_block
+    assert "find . -maxdepth 1 -type f" in checksum_block
+    assert "! -name SHA256SUMS" in checksum_block
+    assert "-printf '%P\\0'" in checksum_block
+    assert "sort -z" in checksum_block
+    assert "xargs -0 -r sha256sum" in checksum_block
+    assert 'sha256sum "${EVIDENCE_DIR}"/*' not in checksum_block
