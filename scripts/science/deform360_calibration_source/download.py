@@ -94,9 +94,7 @@ def download_plan(
         "confirmation payload exists in calibration root",
     )
     planned_objects = {
-        row["object_id"]
-        for row in plan["objects"]
-        if row.get("status") == "planned"
+        row["object_id"] for row in plan["objects"] if row.get("status") == "planned"
     }
     require(
         not (present - planned_objects),
@@ -207,8 +205,7 @@ def verify_download(
         )
         require(
             not any(
-                relative.startswith(f"raw/{object_id}/")
-                for object_id in confirmations
+                relative.startswith(f"raw/{object_id}/") for object_id in confirmations
             ),
             "download contains confirmation payload",
         )
