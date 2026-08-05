@@ -188,6 +188,11 @@ state-update and exact-fallback boundaries.
 - [Prospective belief updates](docs/prospective_belief_updates_v1.md):
   evidence-weighted endpoint uncertainty, strict Prob4D update composition,
   gap-aware reliability, and their empirical claim boundaries.
+- [Deform360 visual-provider locks](docs/deform360_visual_provider_lock_v1.md):
+  target-blind producer identity before calibration data and calibration-derived
+  method locks before confirmation data.
+- [Finite-group calibration design](docs/finite_group_calibration_design.md):
+  independent-object rank limits, information order, and fail-closed planning.
 - [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
   surface and provenance boundary.
 - [PhysTwin integration](docs/phystwin_integration.md): upstream artifacts,

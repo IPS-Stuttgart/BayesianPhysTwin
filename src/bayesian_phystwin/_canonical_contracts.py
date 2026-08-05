@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
+from pathlib import PurePosixPath
 from typing import Any
 
 import numpy as np
@@ -119,6 +120,55 @@ def frozen_finite_json_mapping(
     return _freeze_json(normalized)
 
 
+def literal_lower_hex(
+    value: object,
+    *,
+    name: str,
+    lengths: Collection[int],
+) -> str:
+    """Require a literal lowercase hexadecimal string of an allowed length.
+
+    Content-addressed public contracts must not accept integers, bytes, or custom
+    string subclasses merely because ``str(value)`` happens to resemble a digest.
+    """
+
+    allowed_lengths = frozenset(lengths)
+    if not allowed_lengths or any(
+        isinstance(length, bool) or not isinstance(length, int) or length <= 0
+        for length in allowed_lengths
+    ):
+        raise ValueError("lengths must contain positive integers")
+    if type(value) is not str:
+        raise ValueError(f"{name} must be a literal string")
+    if len(value) not in allowed_lengths or any(
+        character not in "0123456789abcdef" for character in value
+    ):
+        expected = ", ".join(str(length) for length in sorted(allowed_lengths))
+        raise ValueError(
+            f"{name} must be lowercase hexadecimal with length in {{{expected}}}"
+        )
+    return value
+
+
+def canonical_relative_posix_path(value: object, *, name: str) -> str:
+    """Require one portable, canonical, repository-relative POSIX path."""
+
+    if type(value) is not str or not value:
+        raise ValueError(f"{name} must be a nonempty literal string")
+    if "\x00" in value or "\\" in value:
+        raise ValueError(f"{name} must be a canonical relative POSIX path")
+    if len(value) >= 2 and value[0].isalpha() and value[1] == ":":
+        raise ValueError(f"{name} must be a canonical relative POSIX path")
+
+    path = PurePosixPath(value)
+    if path.is_absolute() or any(part in {".", ".."} for part in path.parts):
+        raise ValueError(f"{name} must be a canonical relative POSIX path")
+    canonical = path.as_posix()
+    if canonical != value or canonical in {"", "."}:
+        raise ValueError(f"{name} must be a canonical relative POSIX path")
+    return canonical
+
+
 def genuine_boolean(value: object, *, name: str) -> bool:
     """Require a real Python or NumPy boolean and return a Python bool."""
 
@@ -181,10 +231,12 @@ def canonical_string_tuple(
 __all__ = [
     "FrozenDict",
     "FrozenList",
+    "canonical_relative_posix_path",
     "canonical_string_tuple",
     "frozen_finite_json_mapping",
     "genuine_boolean",
     "genuine_integer",
     "integer_array",
+    "literal_lower_hex",
     "plain_json",
 ]
