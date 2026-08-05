@@ -70,3 +70,19 @@ def test_stage0_workflow_keeps_hosted_and_self_hosted_validation() -> None:
     assert workflow.count("tests/test_deform360_stage0_workflow.py") >= 3
     assert "name: Contact-anchor and selection contracts" in workflow
     assert "name: Names and metadata only / workstation2" in workflow
+
+
+def test_stage0_workflow_verifies_lock_without_mutating_the_branch() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    selection_job = workflow.split("\n  official-hub-selection:\n", 1)[1]
+
+    assert "- name: Verify committed Stage-0 selection lock" in selection_job
+    assert "if: github.event_name == 'pull_request'" in selection_job
+    assert "lock-verification.json" in selection_job
+    assert "merge-base" in selection_job
+    assert "--is-ancestor" in selection_job
+    assert "persist-credentials: true" not in selection_job
+    assert "persist-credentials: false" in selection_job
+    assert "contents: write" not in selection_job
+    assert "git push" not in selection_job
+    assert "git commit" not in selection_job
