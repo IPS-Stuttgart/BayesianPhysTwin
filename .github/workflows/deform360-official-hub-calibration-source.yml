@@ -100,9 +100,7 @@ jobs:
     env:
       DATA_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_DATA_ROOT || '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-source' }}
       PROCESSED_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_PROCESSED_ROOT || '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed' }}
-      EVIDENCE_ROOT: ${{ runner.temp }}/deform360-calibration-source-${{ github.run_id }}-${{ github.run_attempt }}
       PROCESSING_REPO: ${{ github.workspace }}/_deform360_processing
-      VENV_ROOT: ${{ runner.temp }}/deform360-calibration-venv-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out exact BayesianPhysTwin source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -126,9 +124,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf "${EVIDENCE_ROOT}" "${VENV_ROOT}"
-          mkdir -p "${DATA_ROOT}" "${PROCESSED_ROOT}" "${EVIDENCE_ROOT}"
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv_root="${RUNNER_TEMP}/deform360-calibration-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           staged_root="${PROCESSED_ROOT}/staged-raw"
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "VENV_ROOT=${venv_root}"
+            echo "STAGED_ROOT=${staged_root}"
+          } >> "${GITHUB_ENV}"
+          rm -rf "${evidence_root}" "${venv_root}"
+          mkdir -p "${DATA_ROOT}" "${PROCESSED_ROOT}" "${evidence_root}"
           printf '/_deform360_processing/\n' >> .git/info/exclude
 
           base_python=""
@@ -151,11 +156,8 @@ jobs:
             exit 1
           fi
 
-          {
-            echo "BASE_PYTHON=${base_python}"
-            echo "STAGED_ROOT=${staged_root}"
-          } >> "${GITHUB_ENV}"
-          "${base_python}" --version | tee "${EVIDENCE_ROOT}/base-python.txt"
+          echo "BASE_PYTHON=${base_python}" >> "${GITHUB_ENV}"
+          "${base_python}" --version | tee "${evidence_root}/base-python.txt"
 
       - name: Record runner and source identity
         shell: bash
