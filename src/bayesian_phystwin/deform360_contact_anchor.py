@@ -14,7 +14,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import Any, Protocol, TypeVar, cast
 
 import numpy as np
 
@@ -26,9 +26,6 @@ from ._canonical_contracts import (
     plain_json,
 )
 
-if TYPE_CHECKING:
-    pass
-
 DEFORM360_CONTACT_ANCHOR_SCHEMA = "bayesian-phystwin.deform360-contact-anchor"
 DEFORM360_CONTACT_ANCHOR_VERSION = 1
 DEFORM360_CONTACT_ANCHOR_SEMANTICS = (
@@ -38,7 +35,12 @@ DEFORM360_TACTILE_SOURCE_UNITS = "unitless-peak-relative"
 DEFORM360_CONTACT_ANCHOR_UNITS = "displacement-equivalent-m"
 DEFORM360_SOURCE_REPOSITORY = "brownu/deform360"
 
-_BatchT = TypeVar("_BatchT")
+
+class _ContactAnchorBatch(Protocol):
+    state_jacobian: np.ndarray
+
+
+_BatchT = TypeVar("_BatchT", bound=_ContactAnchorBatch)
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -438,18 +440,21 @@ def attach_deform360_contact_anchor(
             "visual and contact causal cutoffs differ",
         )
     batch_metadata["deform360_contact_anchor"] = anchor.summary()
-    return replace(
-        batch,
-        anchor_innovation_m=anchor.innovation_m,
-        anchor_covariance_m2=anchor.covariance_m2,
-        anchor_state_jacobian=anchor.state_jacobian,
-        anchor_correlation_group_ids=anchor.correlation_group_ids,
-        anchor_prior_reliability=anchor.prior_reliability,
-        anchor_prior_nominal_probability=anchor.prior_nominal_probability,
-        anchor_composite_weight=anchor.composite_weight,
-        anchor_bias_jacobian=anchor.bias_jacobian,
-        anchor_bias_prior_covariance=anchor.bias_prior_covariance,
-        metadata=batch_metadata,
+    return cast(
+        _BatchT,
+        replace(
+            cast(Any, batch),
+            anchor_innovation_m=anchor.innovation_m,
+            anchor_covariance_m2=anchor.covariance_m2,
+            anchor_state_jacobian=anchor.state_jacobian,
+            anchor_correlation_group_ids=anchor.correlation_group_ids,
+            anchor_prior_reliability=anchor.prior_reliability,
+            anchor_prior_nominal_probability=anchor.prior_nominal_probability,
+            anchor_composite_weight=anchor.composite_weight,
+            anchor_bias_jacobian=anchor.bias_jacobian,
+            anchor_bias_prior_covariance=anchor.bias_prior_covariance,
+            metadata=batch_metadata,
+        ),
     )
 
 
