@@ -7,9 +7,14 @@ on:
     paths:
       - ".github/workflows/apply-deform360-hardening-patch.yml"
       - ".github/patches/bpt-improvements.patch.gz.b64.part*"
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: apply-deform360-hardening-patch
@@ -17,6 +22,9 @@ concurrency:
 
 jobs:
   apply:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.ref == 'agent/harden-deform360-provider-lock'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
