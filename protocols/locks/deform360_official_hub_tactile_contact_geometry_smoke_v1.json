@@ -1,0 +1,79 @@
+{
+  "artifact_id": "9f3fb26568d4bf9269ad35ce792ebd8739cd397d82f806b63b265f54f42879f9",
+  "claim_boundary": {
+    "contact_anchor_authorized": false,
+    "geometry_only": true,
+    "metric_covariance_calibrated": false,
+    "object_association_fitted": false,
+    "prediction_score_authorized": false
+  },
+  "geometry": {
+    "active_threshold": 0.0,
+    "assignment_prior_probability": [
+      0.5,
+      0.5
+    ],
+    "assignments": [
+      {
+        "name": "direct",
+        "tactilel_gripper": 0,
+        "tactiler_gripper": 1
+      },
+      {
+        "name": "swapped",
+        "tactilel_gripper": 1,
+        "tactiler_gripper": 0
+      }
+    ],
+    "implementation_revision": "af100b02c8a71e9c61ea8c48b8e73241236916a4",
+    "processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "taxel_columns": 32,
+    "taxel_rows_used": 12
+  },
+  "information_boundary": {
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "metric_covariance_calibrated": false,
+    "object_association_fitted": false,
+    "target_outcomes_used": false
+  },
+  "quality_gate": {
+    "minimum_active_frames": 3,
+    "minimum_active_taxels": 6,
+    "minimum_assignment_separation_m": 0.05
+  },
+  "schema": "bayesian-phystwin.deform360-tactile-contact-geometry-lock",
+  "schema_version": 1,
+  "source": {
+    "bimanual": true,
+    "causal_frame_stop": 150,
+    "contact_frame_start": 144,
+    "object_id": "026-sock-cloth",
+    "processing_episode_index": 0,
+    "robot_prefix_anchor_authorized": true,
+    "robot_prefix_archive_sha256": "eed8e713d3159ec110002cb0281544c3afed350d8e657ac645174a981799d802",
+    "robot_prefix_artifact_id": "555943b0614e211e9c4d0fb5e2928c5499d695f5d6a020b6d26c2646d536297e",
+    "robot_prefix_manifest_sha256": "95256bbfffc11268b1c9044b9a1f0b76616221a39e707fe414674923906cd6d0",
+    "tactile_files": {
+      "brics-odroid_tactilel_left": {
+        "relative_path": "brics-odroid_tactilel_left/synced_tactile.npy",
+        "sha256": "b3be7526286e739bc793e111e5ea5fc18c8b70432183b5623e9715b8fcf7b359"
+      },
+      "brics-odroid_tactilel_right": {
+        "relative_path": "brics-odroid_tactilel_right/synced_tactile.npy",
+        "sha256": "27cf42e91b615c36c862a098da3635c37973d6a6509f9a20a57cbdf12770534c"
+      },
+      "brics-odroid_tactiler_left": {
+        "relative_path": "brics-odroid_tactiler_left/synced_tactile.npy",
+        "sha256": "f9cb24c0ba5a2840eb5721fe5127c81ff78889c383f2f922b03aa5d6b670de72"
+      },
+      "brics-odroid_tactiler_right": {
+        "relative_path": "brics-odroid_tactiler_right/synced_tactile.npy",
+        "sha256": "3ded61e7940232449bf3ee952d5e7c366a120e277ea7867aaf82bc1495a7f091"
+      }
+    }
+  },
+  "status": "locked-source-only-pre-geometry"
+}

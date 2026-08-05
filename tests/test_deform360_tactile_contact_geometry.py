@@ -231,3 +231,18 @@ def test_lock_roundtrip(tmp_path: Path) -> None:
     assert load_deform360_tactile_contact_geometry_lock(path)["source"][
         "object_id"
     ] == "026-sock-cloth"
+
+
+def test_committed_geometry_smoke_lock_remains_valid() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "protocols/locks/"
+        "deform360_official_hub_tactile_contact_geometry_smoke_v1.json"
+    )
+
+    lock = load_deform360_tactile_contact_geometry_lock(path)
+
+    assert lock["artifact_id"] == (
+        "9f3fb26568d4bf9269ad35ce792ebd8739cd397d82f806b63b265f54f42879f9"
+    )
+    assert lock["claim_boundary"]["contact_anchor_authorized"] is False
