@@ -36,23 +36,52 @@ DEFORM360_V2_CAUSAL_WINDOW_MANIFEST_ID = (
     "9fe5fdf4ae6449182d2e5064ad99417b4252dd04b76831df722b44614c2351dd"
 )
 DEFORM360_AMENDED_PROVIDER_RECOVERY_LOCK_ID = (
+    "d3d68423a6c1a19e5cab5651ef4f08921652757fc565539227c06bd8e7dfcbce"
+)
+DEFORM360_FIRST_AMENDED_PROVIDER_RECOVERY_LOCK_ID = (
     "ce48b2a8823b81cd697f63355b84a5cd48ee3e0024022b782417e832947240ea"
 )
 DEFORM360_MOTIONCRAFTER_MODEL_SET_ID = (
-    "466f5197722a0c77e5d5e0b70b110d302484e162b6e926c84f7b610c1c4df775"
+    "b072956636612ca1a31d1edb83bd7d1bd27b8962cb617c6e615b9b310a16de6e"
 )
 DEFORM360_V2_CAUSAL_WINDOW_MANIFEST_FILE_SHA256 = (
     "7398575f32ea8868f241da9356264d5b44b815f41425f6f259afcbbd10f336de"
 )
 DEFORM360_PROVIDER_LOCK_FILE_SHA256 = (
-    "ded13f37b49b1542172be6ff4308025d037c2daef31380df50dfcbedafa7ac02"
+    "67d1898ee78734fcba595be11cad6cc8ac6a458853ddcd83bba7e3684cc55958"
 )
 DEFORM360_MODEL_SET_MANIFEST_FILE_SHA256 = (
-    "7227422b42f94811c4c6ec9f7d81446f60cd91ca9c0af7194b1becec1ef52b07"
+    "90233d8caae7ae37c2b6489f38b5a40706f4e8f638f345ae1d4ff251f2e55aa2"
 )
-DEFORM360_PROB4D_REVISION = "8aa18c9f2aca3ef089adc3a23c06643e1c4cd79f"
+DEFORM360_PROB4D_REVISION = "25d90ef7f78ba4307f4555cb636d666004e1bf66"
 DEFORM360_MOTIONCRAFTER_REVISION = "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257"
 MOTIONCRAFTER_SEED_SCHEDULE_SCHEMA = "prob4d.motioncrafter-seed-schedule.v1"
+
+_KNOWN_RUNTIME_BINDINGS = frozenset(
+    {
+        (
+            "02d90e58f4f21d052073e098469ff8a7cd991f48b895d7496cebdb84dd10cb3d",
+            "ca60602a799f42d151f58de80d71bda2966f7e01eeedbeca911fb82860aa2656",
+            "364f216c14f7770c1b360bb1b836b11ecf0c18b8",
+            "2e5cf9bbf1fa0a61b985ed440a437ba8ea736ae643964d8449429e75a836de02",
+            "5968a8664ab1dd936a1609a5581d6bde7d40b16d929b7f1bbef7bc042b6c52f5",
+        ),
+        (
+            DEFORM360_FIRST_AMENDED_PROVIDER_RECOVERY_LOCK_ID,
+            "ded13f37b49b1542172be6ff4308025d037c2daef31380df50dfcbedafa7ac02",
+            "8aa18c9f2aca3ef089adc3a23c06643e1c4cd79f",
+            "466f5197722a0c77e5d5e0b70b110d302484e162b6e926c84f7b610c1c4df775",
+            "7227422b42f94811c4c6ec9f7d81446f60cd91ca9c0af7194b1becec1ef52b07",
+        ),
+        (
+            DEFORM360_AMENDED_PROVIDER_RECOVERY_LOCK_ID,
+            DEFORM360_PROVIDER_LOCK_FILE_SHA256,
+            DEFORM360_PROB4D_REVISION,
+            DEFORM360_MOTIONCRAFTER_MODEL_SET_ID,
+            DEFORM360_MODEL_SET_MANIFEST_FILE_SHA256,
+        ),
+    }
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -198,11 +227,20 @@ def build_deform360_motioncrafter_job_manifest(
         causal_window_manifest["visual_provider_recovery_lock_id"]
     )
     amendment_parent = provider_lock.metadata.get("amendment_parent")
+    amendment_root = provider_lock.metadata.get("amendment_chain_root")
     _require(
         causal_provider_id == DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID
         and isinstance(amendment_parent, Mapping)
-        and amendment_parent.get("artifact_id") == causal_provider_id
+        and amendment_parent.get("artifact_id")
+        == DEFORM360_FIRST_AMENDED_PROVIDER_RECOVERY_LOCK_ID
         and amendment_parent.get("path")
+        == (
+            "protocols/locks/"
+            "deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json"
+        )
+        and isinstance(amendment_root, Mapping)
+        and amendment_root.get("artifact_id") == causal_provider_id
+        and amendment_root.get("path")
         == (
             "protocols/locks/"
             "deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json"
@@ -430,24 +468,25 @@ def validate_deform360_motioncrafter_job_manifest(
         == DEFORM360_V2_CAUSAL_WINDOW_MANIFEST_FILE_SHA256,
         "v2 causal-window binding changed",
     )
-    _require(
-        provider.get("artifact_id") == DEFORM360_AMENDED_PROVIDER_RECOVERY_LOCK_ID
-        and provider.get("file_sha256") == DEFORM360_PROVIDER_LOCK_FILE_SHA256
-        and provider.get("provider_revision") == DEFORM360_PROB4D_REVISION,
-        "provider binding changed",
+    runtime_binding = (
+        provider.get("artifact_id"),
+        provider.get("file_sha256"),
+        provider.get("provider_revision"),
+        motioncrafter.get("model_set_id"),
+        motioncrafter.get("model_set_manifest_file_sha256"),
     )
+    _require(runtime_binding in _KNOWN_RUNTIME_BINDINGS, "runtime binding changed")
     _require(
         motioncrafter.get("repository") == "TencentARC/MotionCrafter"
         and motioncrafter.get("revision") == DEFORM360_MOTIONCRAFTER_REVISION
-        and motioncrafter.get("model_set_id") == DEFORM360_MOTIONCRAFTER_MODEL_SET_ID
-        and motioncrafter.get("model_set_manifest_file_sha256")
-        == DEFORM360_MODEL_SET_MANIFEST_FILE_SHA256,
+        and type(motioncrafter.get("model_set_id")) is str
+        and type(motioncrafter.get("model_set_manifest_file_sha256")) is str,
         "MotionCrafter binding changed",
     )
+    model_set_id = str(motioncrafter["model_set_id"])
     model_set = motioncrafter.get("model_set_manifest")
     _require(
-        isinstance(model_set, Mapping)
-        and content_id(model_set) == DEFORM360_MOTIONCRAFTER_MODEL_SET_ID,
+        isinstance(model_set, Mapping) and content_id(model_set) == model_set_id,
         "embedded MotionCrafter model set changed",
     )
     jobs = value.get("jobs")
@@ -469,7 +508,7 @@ def validate_deform360_motioncrafter_job_manifest(
         "seed_policy": "derived-per-call",
         "low_memory_usage": True,
         "frame_stride": 1,
-        "model_source_set_sha256": DEFORM360_MOTIONCRAFTER_MODEL_SET_ID,
+        "model_source_set_sha256": model_set_id,
         "products": [
             "disjoint_baseline",
             "latent_linear_baseline",

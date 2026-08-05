@@ -251,6 +251,7 @@ def test_recovery_lock_record_is_plain_finite_json() -> None:
     [
         "deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json",
         "deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json",
+        "deform360_official_hub_visuotactile_v3_visual_provider_recovery_v1.json",
     ],
 )
 def test_committed_recovery_lock_binds_exact_provider_assets(

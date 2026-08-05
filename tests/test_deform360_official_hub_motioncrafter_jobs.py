@@ -39,12 +39,12 @@ def _manifest() -> dict[str, object]:
     provider_path = (
         repository
         / "protocols/locks/"
-        "deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json"
+        "deform360_official_hub_visuotactile_v3_visual_provider_recovery_v1.json"
     )
     model_path = (
         repository
         / "protocols/locks/"
-        "deform360_official_hub_visuotactile_v2_motioncrafter_model_set.json"
+        "deform360_official_hub_visuotactile_v3_motioncrafter_model_set.json"
     )
     return build_deform360_motioncrafter_job_manifest(
         causal_window_manifest=(
@@ -107,24 +107,28 @@ def test_seed_derivation_matches_prob4d_canonical_descriptor() -> None:
     )
 
 
-def test_committed_v3_job_manifest_binds_amended_runtime() -> None:
-    path = (
-        _repository()
-        / "protocols/locks/"
-        "deform360_official_hub_visuotactile_v3_motioncrafter_jobs.json"
-    )
+@pytest.mark.parametrize(
+    ("filename", "manifest_id"),
+    [
+        (
+            "deform360_official_hub_visuotactile_v2_motioncrafter_jobs.json",
+            "bba14f34b884dcc214273e54fb0a9bbb190acfc49633c54bd4e596665385ba22",
+        ),
+        (
+            "deform360_official_hub_visuotactile_v3_motioncrafter_jobs.json",
+            "8cf8df7629d4f2a17ec4d5dcb992a65fca638acb8420a7cca79a91c5ecb80682",
+        ),
+    ],
+)
+def test_committed_job_manifests_remain_valid(
+    filename: str,
+    manifest_id: str,
+) -> None:
+    path = _repository() / "protocols/locks" / filename
 
     manifest = load_deform360_motioncrafter_job_manifest(path)
 
-    assert manifest["manifest_sha256"] == (
-        "8cf8df7629d4f2a17ec4d5dcb992a65fca638acb8420a7cca79a91c5ecb80682"
-    )
-    assert manifest["implementation"]["revision"] == (
-        "55982e89596ce8a19af977d2d9924d3f7e210809"
-    )
-    assert manifest["implementation"]["runner_source_sha256"] == (
-        "62fdb997ebfcf30ec2906117a02a31cf14777678a023225db70149626c417052"
-    )
+    assert manifest["manifest_sha256"] == manifest_id
 
 
 @pytest.mark.parametrize(

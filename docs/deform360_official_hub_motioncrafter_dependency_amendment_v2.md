@@ -59,8 +59,8 @@ The dependency-complete assets are:
 - `protocols/locks/deform360_official_hub_visuotactile_v2_prob4d_provider_manifest.json`
 - `protocols/locks/deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json`
 
-The earlier v2 job manifest remains the record of the failed pre-inference
-attempt. The replacement manifest is
+The earlier v2 job manifest remains the record of the first failed
+pre-inference attempt. Its replacement was
 `protocols/locks/deform360_official_hub_visuotactile_v3_motioncrafter_jobs.json`.
 It binds:
 
@@ -71,8 +71,30 @@ It binds:
 - manifest ID
   `8cf8df7629d4f2a17ec4d5dcb992a65fca638acb8420a7cca79a91c5ecb80682`.
 
-Execution must use a fresh output root; the failed attempt may not be resumed
-under the new dependency set.
+That second smoke loaded the pinned image VAE and then stopped before inference
+because the current Hugging Face resolver treated the exact selective SVD cache
+as an incomplete full-repository snapshot. Completing the repository would have
+downloaded roughly 31 GB of unused alternative weights. No provider prediction
+or calibration score completed.
+
+Prob4D revision `25d90ef7f78ba4307f4555cb636d666004e1bf66` now resolves an
+exact-revision local snapshot only when all seven base-pipeline members consumed
+by MotionCrafter are present. Otherwise it retains the exact remote revision and
+fails closed when offline. The source identity remains the pinned SVD revision;
+the cache path is only a runtime resolution of that source.
+
+The current dependency-complete assets are:
+
+- model-set ID
+  `b072956636612ca1a31d1edb83bd7d1bd27b8962cb617c6e615b9b310a16de6e`;
+- provider-manifest ID
+  `112e1c9debe1d947b6352193497053ed8d1528b7c0a755b26888e16a7bc74ba3`;
+- provider-recovery-lock ID
+  `d3d68423a6c1a19e5cab5651ef4f08921652757fc565539227c06bd8e7dfcbce`.
+
+The v2 and v3 job manifests remain immutable pre-inference failure records. The
+next job manifest must bind the selective-snapshot implementation commit and use
+a fresh output root.
 
 ## Claim boundary
 
