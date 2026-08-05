@@ -34,13 +34,15 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          python3 -m venv "$RUNNER_TEMP/deform360-ruff"
-          ruff_python="$RUNNER_TEMP/deform360-ruff/bin/python"
-          "$ruff_python" -m pip install --upgrade pip
-          "$ruff_python" -m pip install "ruff==0.16.1"
-          "$ruff_python" -m ruff check --fix \
+          python3 -m pip install \
+            --user \
+            --break-system-packages \
+            "ruff==0.16.1"
+          ruff_bin="$HOME/.local/bin/ruff"
+          test -x "$ruff_bin"
+          "$ruff_bin" check --fix \
             tests/test_deform360_calibration_execution_boundaries.py
-          "$ruff_python" -m ruff format \
+          "$ruff_bin" format \
             tests/test_deform360_calibration_execution_boundaries.py
           git config user.name "github-actions[bot]"
           git config user.email \
