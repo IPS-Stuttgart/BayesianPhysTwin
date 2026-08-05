@@ -145,9 +145,22 @@ def test_committed_policy_and_spec_are_content_addressed() -> None:
         "27d26c15784e46c5baedc4fab3d3cf9ac44cbb572799878956c24eaea9312a1d"
     )
     assert spec["artifact_id"] == (
-        "59494adff6f594c268e0513d010a6cd39561c42cd4654895f80ab019f5254dae"
+        "65ad9fa1d3a176f663ff4ba720db15ebd92a0f0eccd27818bba5dba0b32ff7bc"
     )
     assert spec["metric_frame_prior_policy"]["artifact_id"] == policy["artifact_id"]
+    sources = spec["motioncrafter"]["model_sources"]
+    assert sources["unet"]["expected_revision"] == (
+        "fc7b18d5657184607bf4501b02d64ada7540b4e3"
+    )
+    assert sources["vae"]["expected_revision"] == sources["unet"][
+        "expected_revision"
+    ]
+    assert sources["image_vae"]["expected_revision"] == (
+        "451f4fe16113bff5a5d2269ed5ad43b0592e9a14"
+    )
+    assert sources["base_pipeline"]["expected_revision"] == (
+        "9e43909513c6714f1bc78bcb44d96e733cd242aa"
+    )
 
 
 def test_cached_snapshot_resolution_is_exact_and_ambiguity_fails(
@@ -249,20 +262,12 @@ def test_complete_preflight_builds_and_replays_exact_bundle(
     motioncrafter.mkdir()
     cache = tmp_path / "cache"
     sources = spec["motioncrafter"]["model_sources"]
-    shared_revision = "4" * 40
-    image_revision = "5" * 40
-    base_revision = "6" * 40
-    for role, revision in (
-        ("unet", shared_revision),
-        ("vae", shared_revision),
-        ("image_vae", image_revision),
-        ("base_pipeline", base_revision),
-    ):
+    for role in ("unet", "vae", "image_vae", "base_pipeline"):
         source = sources[role]
         _snapshot(
             cache,
             source["repository"],
-            revision,
+            source["expected_revision"],
             tuple(source["required_members"]),
         )
 
@@ -305,10 +310,8 @@ def test_complete_preflight_builds_and_replays_exact_bundle(
         "27d26c15784e46c5baedc4fab3d3cf9ac44cbb572799878956c24eaea9312a1d"
     )
     assert lock["metadata"]["model_source_revisions"] == {
-        "base_pipeline": base_revision,
-        "image_vae": image_revision,
-        "unet": shared_revision,
-        "vae": shared_revision,
+        role: sources[role]["expected_revision"]
+        for role in ("base_pipeline", "image_vae", "unet", "vae")
     }
 
     second = tmp_path / "second"
