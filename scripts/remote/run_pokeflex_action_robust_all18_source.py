@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -26,6 +27,47 @@ from bayesian_phystwin.pokeflex_action_robust_scale import (  # noqa: E402
     BASE_EFFECTIVE_SCALE,
     CANDIDATE_MULTIPLIERS,
 )
+
+
+def _run_source_smoke(
+    runner_module,
+    *,
+    selected_take_ids: tuple[str, ...],
+    take_root: Path,
+    registration_protocol: Path,
+    upstream_checkout: Path,
+    checkpoint_root: Path,
+    scales: tuple[float, ...],
+):
+    """Authorize the v4 source cohort without changing the frozen legacy runner."""
+
+    original_loader = runner_module.load_pokeflex_registration_protocol
+    source_objects = {take_id.rpartition("_T")[0] for take_id in selected_take_ids}
+
+    def load_with_source_authorization(path: Path):
+        protocol = deepcopy(original_loader(path))
+        development = protocol["payload"]["cohort"]["development_objects"]
+        protocol["payload"]["cohort"]["development_objects"] = sorted(
+            set(development) | source_objects
+        )
+        return protocol
+
+    runner_module.load_pokeflex_registration_protocol = load_with_source_authorization
+    try:
+        return runner_module.run_smoke(
+            take_root,
+            registration_protocol,
+            upstream_checkout,
+            checkpoint_root,
+            correction_scales=scales,
+            correction_fields=(SOURCE_FIELD,),
+            residual_geometry="point_to_point",
+            maximum_frame=None,
+            include_frozen_action_guard=False,
+            record_online_observation_regret=False,
+        )
+    finally:
+        runner_module.load_pokeflex_registration_protocol = original_loader
 
 
 def main() -> None:
@@ -56,7 +98,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    from run_pokeflex_checkpoint_registration_smoke import run_smoke
+    import run_pokeflex_checkpoint_registration_smoke as runner_module
 
     source_protocol = load_all18_source_protocol(args.source_protocol)
     validation = validate_all18_source_protocol(source_protocol)
@@ -66,18 +108,14 @@ def main() -> None:
     scales = (0.0,) + tuple(
         BASE_EFFECTIVE_SCALE * value for value in CANDIDATE_MULTIPLIERS
     )
-    result = run_smoke(
-        take_root,
-        args.registration_protocol.resolve(),
-        args.upstream_checkout.resolve(),
-        args.checkpoint_root.resolve(),
-        correction_scales=scales,
-        correction_fields=(SOURCE_FIELD,),
-        residual_geometry="point_to_point",
-        maximum_frame=None,
-        include_frozen_action_guard=False,
-        record_online_observation_regret=False,
-        additional_authorized_take_ids=tuple(validation["selected_take_ids"]),
+    result = _run_source_smoke(
+        runner_module,
+        selected_take_ids=tuple(validation["selected_take_ids"]),
+        take_root=take_root,
+        registration_protocol=args.registration_protocol.resolve(),
+        upstream_checkout=args.upstream_checkout.resolve(),
+        checkpoint_root=args.checkpoint_root.resolve(),
+        scales=scales,
     )
     result["all18_source_protocol_sha256"] = source_protocol["protocol_sha256"]
     result["source_prediction_role"] = (
