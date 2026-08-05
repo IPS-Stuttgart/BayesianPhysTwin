@@ -1,0 +1,46 @@
+{
+  "config": {
+    "coefficient_prior_std_m": 0.03,
+    "constant_velocity_history": 6,
+    "future_frames": 60,
+    "graph_rank": 4,
+    "maximum_correction_m": 0.1,
+    "minimum_action_scale_m": 0.005,
+    "minimum_validation_improvement": 0.1,
+    "nominal_coverage": 0.9,
+    "observation_std_m": 0.005,
+    "observed_identity_fraction": 0.25,
+    "pbd_iterations": 40,
+    "prefix_frames": 60,
+    "validation_frames": 20
+  },
+  "gate": {
+    "admitted": true,
+    "calibration_frame_rank": 19,
+    "calibration_variance_scale": 6.5365501075660015,
+    "fallback": "bit_exact_physical",
+    "fit_frames": [
+      0,
+      40
+    ],
+    "minimum_validation_improvement": 0.1,
+    "validation_candidate_last5_rmse_m": 0.01830726976048652,
+    "validation_candidate_rmse_m": 0.010589809236357108,
+    "validation_frames": [
+      40,
+      60
+    ],
+    "validation_improvement_fraction": 0.5937157182141262,
+    "validation_physical_last5_rmse_m": 0.026562382141201397,
+    "validation_physical_rmse_m": 0.026065023214307644
+  },
+  "information_boundary": {
+    "evaluator_target_opened": false,
+    "future_object_trajectory_accepted_by_predictor": false
+  },
+  "manifest_sha256": "8103acfd650a2b471d8d2c225bd80e83003de4eaf48e0ec23ea6dd41319b9854",
+  "prediction_input_sha256": "da07b609e0988d298c8d49e4d0a82cb37c321acadb519d0d342afbfd6d82d52f",
+  "prediction_sha256": "7df7628cd8869b3aa3fb2fddd909b031de33006f327f7d6cd54c0e1715e08c38",
+  "protocol_id": "trackdeform3d-public-smoke-v1",
+  "schema_version": 1
+}

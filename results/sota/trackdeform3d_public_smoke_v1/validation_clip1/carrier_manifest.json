@@ -1,0 +1,35 @@
+{
+  "clip_start": 300,
+  "config": {
+    "coefficient_prior_std_m": 0.03,
+    "constant_velocity_history": 6,
+    "future_frames": 60,
+    "graph_rank": 4,
+    "maximum_correction_m": 0.1,
+    "minimum_action_scale_m": 0.005,
+    "minimum_validation_improvement": 0.1,
+    "nominal_coverage": 0.9,
+    "observation_std_m": 0.005,
+    "observed_identity_fraction": 0.25,
+    "pbd_iterations": 40,
+    "prefix_frames": 60,
+    "validation_frames": 20
+  },
+  "evaluator_target_sha256": "b0726a66ac972d27ba591213cb96aec78a86e1fce46ae197ffac3505f1b8f488",
+  "information_boundary": {
+    "future_robot_action_is_known": true,
+    "prediction_input_contains_hidden_future": false,
+    "prediction_process_requires_evaluator_target": false,
+    "tracker_output_is_pseudo_observation": true
+  },
+  "manifest_sha256": "ee83dbbf031f6bc18f32b01767fdc0fb6b79a8ce047b845110128b71dfc44911",
+  "prediction_input_sha256": "da07b609e0988d298c8d49e4d0a82cb37c321acadb519d0d342afbfd6d82d52f",
+  "protocol_id": "trackdeform3d-public-smoke-v1",
+  "schema_version": 1,
+  "source": {
+    "calibration_sha256": "6fa7bcc61e9bf4befd30c966dac7686dfe381c67c191336414cc89604f9baf88",
+    "left_arm_poses_sha256": "c59b5fbfaf94d1b6e56da7ae0de8f4c89e548bd7b08c5171c3fd3792cdbfdead",
+    "right_arm_poses_sha256": "7a2bc19e3053598194b38e84440de5f15c9b96e28f1ce38e52eae25e42945a3b",
+    "tracker_npz_sha256": "e7788ceafc5ddd2ef00f79b2a87625de26f1c12a4f66b7a803588ce7cd12158e"
+  }
+}
