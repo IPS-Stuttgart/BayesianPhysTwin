@@ -123,10 +123,14 @@ def _query_moments(
         relative_tolerance=relative_tolerance,
         absolute_tolerance=absolute_tolerance,
     )
-    query_covariance = query @ _inverse_spd(
-        state_precision,
-        name="marginal_state_precision",
-    ) @ query.T
+    query_covariance = (
+        query
+        @ _inverse_spd(
+            state_precision,
+            name="marginal_state_precision",
+        )
+        @ query.T
+    )
     query_covariance = _spd(query_covariance, name="query_covariance")
     query_precision = _inverse_spd(query_covariance, name="query_covariance")
     return query, query_covariance, query_precision
@@ -188,9 +192,7 @@ class MarginalObservabilitySummary:
             "observability summary contains a non-finite scalar",
         )
         _require(
-            1.0 - 1e-12
-            <= self.effective_rank
-            <= self.query_dimension + 1e-12,
+            1.0 - 1e-12 <= self.effective_rank <= self.query_dimension + 1e-12,
             "effective_rank is outside the query dimension",
         )
         _require(self.trace_precision > 0.0, "trace_precision must be positive")
@@ -321,9 +323,7 @@ class MarginalObservabilityComparison:
             "weakest_direction_precision_ratio": (
                 self.weakest_direction_precision_ratio
             ),
-            "mean_variance_reduction_fraction": (
-                self.mean_variance_reduction_fraction
-            ),
+            "mean_variance_reduction_fraction": (self.mean_variance_reduction_fraction),
             "maximum_variance_reduction_fraction": (
                 self.maximum_variance_reduction_fraction
             ),
@@ -446,10 +446,7 @@ def compare_marginal_observability(
     )
     increment_eigenvalues = np.maximum(increment_eigenvalues, 0.0)
 
-    log_gain = (
-        candidate.log_determinant_precision
-        - reference.log_determinant_precision
-    )
+    log_gain = candidate.log_determinant_precision - reference.log_determinant_precision
     trace_gain = candidate.trace_precision - reference.trace_precision
     _require(
         log_gain >= -unitless_tolerance and trace_gain >= -tolerance,
@@ -467,8 +464,7 @@ def compare_marginal_observability(
     )
     variance_reduction = np.clip(variance_reduction, 0.0, 1.0)
     weakest_ratio = (
-        candidate.minimum_precision_eigenvalue
-        / reference.minimum_precision_eigenvalue
+        candidate.minimum_precision_eigenvalue / reference.minimum_precision_eigenvalue
     )
     if weakest_ratio < 1.0 and weakest_ratio >= 1.0 - unitless_tolerance:
         weakest_ratio = 1.0
