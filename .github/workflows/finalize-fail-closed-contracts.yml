@@ -106,6 +106,21 @@ jobs:
                   raise SystemExit('unexpected changelog Changed heading')
               text = text.replace(anchor, anchor + entry, 1)
           changelog.write_text(text, encoding='utf-8')
+
+          calibration = Path('src/bayesian_phystwin/calibration.py')
+          text = calibration.read_text(encoding='utf-8')
+          replacements = {
+              '    ranks = np.empty(probability.size, dtype=float)\n':
+                  '    ranks: np.ndarray = np.empty(probability.size, dtype=float)\n',
+              '    target_float = target_array.astype(float)\n':
+                  '    target_float: np.ndarray = target_array.astype(float)\n',
+          }
+          for old, new in replacements.items():
+              if new not in text:
+                  if text.count(old) != 1:
+                      raise SystemExit(f'unexpected calibration typing anchor: {old!r}')
+                  text = text.replace(old, new)
+          calibration.write_text(text, encoding='utf-8')
           PY
 
           rm -f "$payload" .github/workflows/finalize-fail-closed-contracts.yml
