@@ -4,6 +4,16 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from test_group_sandwich_covariance import (
+    test_arrays_are_immutable,
+    test_duplicate_rows_stay_inside_one_group,
+    test_matches_manual_group_cr1_covariance,
+    test_rejects_invalid_bread_and_scores,
+    test_rejects_too_few_or_malformed_groups,
+    test_result_rejects_covariance_not_generated_by_declared_scores,
+    test_row_and_group_permutation_is_content_invariant,
+    test_splitting_a_group_changes_the_claim_identity,
+)
 
 from bayesian_phystwin import BinaryCalibrationMetrics, binary_calibration_metrics
 from bayesian_phystwin.calibration import (
@@ -12,6 +22,17 @@ from bayesian_phystwin.calibration import (
     maximum_finite_group_coverage,
     minimum_groups_for_finite_conformal,
     plan_finite_group_calibration,
+)
+
+_GROUP_SANDWICH_COVARIANCE_STABLE_TESTS = (
+    test_arrays_are_immutable,
+    test_duplicate_rows_stay_inside_one_group,
+    test_matches_manual_group_cr1_covariance,
+    test_rejects_invalid_bread_and_scores,
+    test_rejects_too_few_or_malformed_groups,
+    test_result_rejects_covariance_not_generated_by_declared_scores,
+    test_row_and_group_permutation_is_content_invariant,
+    test_splitting_a_group_changes_the_claim_identity,
 )
 
 

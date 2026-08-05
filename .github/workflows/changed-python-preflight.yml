@@ -1,0 +1,88 @@
+name: Changed Python source preflight
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.py"
+      - ".pre-commit-config.yaml"
+      - ".github/workflows/changed-python-preflight.yml"
+      - "pyproject.toml"
+  workflow_dispatch:
+    inputs:
+      base_revision:
+        description: Exact base commit; defaults to HEAD^
+        required: false
+        type: string
+      head_revision:
+        description: Exact head commit; defaults to HEAD
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: changed-python-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Ruff and compile changed Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install source-check environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m pre_commit validate-config .pre-commit-config.yaml
+
+      - name: Resolve exact comparison revisions
+        id: revisions
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          INPUT_BASE_SHA: ${{ inputs.base_revision }}
+          INPUT_HEAD_SHA: ${{ inputs.head_revision }}
+        run: |
+          set -euo pipefail
+          base="${PR_BASE_SHA:-${INPUT_BASE_SHA:-}}"
+          head="${PR_HEAD_SHA:-${INPUT_HEAD_SHA:-}}"
+          if [[ -z "${head}" ]]; then
+            head="$(git rev-parse HEAD)"
+          fi
+          if [[ -z "${base}" ]]; then
+            base="$(git rev-parse HEAD^)"
+          fi
+          git cat-file -e "${base}^{commit}"
+          git cat-file -e "${head}^{commit}"
+          {
+            echo "base=${base}"
+            echo "head=${head}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Check only changed Python source
+        run: |
+          python scripts/ci/check_changed_python.py \
+            --base "${{ steps.revisions.outputs.base }}" \
+            --head "${{ steps.revisions.outputs.head }}"
+
+      - name: Test the preflight itself
+        run: python -m pytest -q tests/test_changed_python_preflight.py

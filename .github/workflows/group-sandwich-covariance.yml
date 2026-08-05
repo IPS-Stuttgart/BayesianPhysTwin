@@ -1,0 +1,59 @@
+name: Group-sandwich covariance contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/group-sandwich-covariance.yml"
+      - "src/bayesian_phystwin/group_sandwich_covariance.py"
+      - "src/bayesian_phystwin/posterior_covariance_semantics.py"
+      - "tests/test_group_sandwich_covariance.py"
+      - "docs/group_sandwich_covariance.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: group-sandwich-covariance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Group-robust covariance implementation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install lightweight development environment
+        run: python -m pip install -e ".[dev]"
+
+      - name: Check source quality
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/group_sandwich_covariance.py \
+            tests/test_group_sandwich_covariance.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/group_sandwich_covariance.py \
+            tests/test_group_sandwich_covariance.py
+          python -m mypy \
+            src/bayesian_phystwin/group_sandwich_covariance.py
+
+      - name: Run focused covariance contracts
+        run: |
+          python -m pytest -q tests/test_group_sandwich_covariance.py
+          python -m compileall -q \
+            src/bayesian_phystwin/group_sandwich_covariance.py

@@ -90,6 +90,14 @@ from .gauge_aware_belief import (
     select_gauge_aware_candidate,
     update_gauge_aware_belief,
 )
+from .group_sandwich_covariance import (
+    GROUP_SANDWICH_COVARIANCE_SCHEMA,
+    GROUP_SANDWICH_COVARIANCE_VERSION,
+    SMALL_SAMPLE_CORRECTIONS,
+    GroupSandwichCovarianceResultV1,
+    SmallSampleCorrection,
+    estimate_group_sandwich_covariance,
+)
 from .grouped_conformal import (
     ConformalScore,
     GroupedConformalResult,
@@ -220,6 +228,9 @@ __all__ = [
     "DEFORM360_VISUAL_PROVIDER_LOCK_SEMANTICS",
     "DEFORM360_VISUAL_PROVIDER_LOCK_VERSION",
     "DEFORM360_VISUOTACTILE_PROTOCOL_ID",
+    "GROUP_SANDWICH_COVARIANCE_SCHEMA",
+    "GROUP_SANDWICH_COVARIANCE_VERSION",
+    "SMALL_SAMPLE_CORRECTIONS",
     "BinaryCalibrationMetrics",
     "FiniteGroupCalibrationDesign",
     "BiasAwareStateUpdateConfig",
@@ -239,6 +250,7 @@ __all__ = [
     "GaugeAwareObservationBatch",
     "GaugeAwareSelection",
     "GreedyNuisanceAwareSelection",
+    "GroupSandwichCovarianceResultV1",
     "GroupedConformalResult",
     "GroupedStudentTLikelihoodConfig",
     "GroupedStudentTLikelihoodResult",
@@ -279,6 +291,7 @@ __all__ = [
     "ResidualReplayResult",
     "RobustLikelihoodConfig",
     "RobustLikelihoodResult",
+    "SmallSampleCorrection",
     "SourceGroupRegretBound",
     "SourceRegretCertificate",
     "SyntheticBenchmarkConfig",
@@ -297,6 +310,7 @@ __all__ = [
     "conditional_grouped_student_t_mixture_objective",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
+    "estimate_group_sandwich_covariance",
     "evaluate_nonlinear_closure",
     "export_phystwin_residuals",
     "filter_random_walk_bias",
