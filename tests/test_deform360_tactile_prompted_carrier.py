@@ -6,6 +6,9 @@ from pathlib import Path
 import numpy as np
 
 from bayesian_phystwin._portable_contracts import content_id
+from bayesian_phystwin.deform360_causal_robot_prefix import (
+    load_deform360_causal_robot_prefix_lock,
+)
 from bayesian_phystwin.deform360_tactile_metric_gauge import SimilarityTransform
 from bayesian_phystwin.deform360_tactile_prompted_carrier import (
     DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_SCHEMA,
@@ -140,6 +143,22 @@ def test_validation_lock_rejects_policy_change() -> None:
         assert "stage gates changed" in str(error)
     else:
         raise AssertionError("changed carrier policy was accepted")
+
+
+def test_checked_in_independent_validation_locks_are_valid() -> None:
+    root = Path(__file__).parents[1]
+    carrier = load_tactile_prompted_carrier_validation_lock(
+        root
+        / "protocols/locks/"
+        "deform360_tactile_prompted_carrier_napkin_validation_v1.json"
+    )
+    robot = load_deform360_causal_robot_prefix_lock(
+        root
+        / "protocols/locks/"
+        "deform360_official_hub_causal_robot_prefix_napkin_validation_v1.json"
+    )
+    assert carrier["source_case"]["object_id"] == "036-napkin-cloth"
+    assert robot["source_case"]["object_id"] == "036-napkin-cloth"
 
 
 def test_object_facing_normals_point_to_opposite_gripper_sides() -> None:
