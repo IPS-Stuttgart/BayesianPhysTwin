@@ -356,11 +356,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
             candidate_root=candidate_root,
             search_roots=search_roots,
         )
-        if (
-            not regeneration_required
-            and source is not None
-            and source_kind is not None
-        ):
+        if not regeneration_required and source is not None and source_kind is not None:
             shutil.copy2(source, target)
             observed = asset_resolver._sha256(target)
             asset_resolver._require(
