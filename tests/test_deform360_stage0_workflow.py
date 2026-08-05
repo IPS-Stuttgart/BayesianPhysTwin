@@ -40,19 +40,21 @@ def test_self_hosted_stage0_publication_has_an_independent_contract_gate() -> No
         assert test_path in selection_job
 
 
-def test_stage0_workflow_uses_portable_python_and_static_artifact_path() -> None:
+def test_stage0_workflow_uses_portable_python_and_runner_scoped_artifacts() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     selection_job = workflow.split("\n  official-hub-selection:\n", 1)[1]
+    job_header = selection_job.split("\n    steps:\n", 1)[0]
 
     evidence_declaration = (
         "EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0"
     )
     setup_action = "uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
-    assert evidence_declaration in selection_job
+    assert "runner.temp" not in job_header
+    assert selection_job.count(evidence_declaration) >= 6
     assert setup_action in selection_job
     assert "python3 -m venv" not in selection_job
     assert 'echo "EVIDENCE_DIR=' not in selection_job
-    assert "path: ${{ env.EVIDENCE_DIR }}" in selection_job
+    assert "path: ${{ runner.temp }}/deform360-official-hub-stage0" in selection_job
 
 
 def test_stage0_workflow_keeps_hosted_and_self_hosted_validation() -> None:
