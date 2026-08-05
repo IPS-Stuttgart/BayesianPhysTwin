@@ -53,7 +53,7 @@
     ],
     "limitations": {
       "dense_alignment_edge_fusion_claim": false,
-      "deployment_environment_revision_is_indepent_vcs_evidence": false,
+      "deployment_environment_revision_is_independent_vcs_evidence": false,
       "fixed_lag_boundary_covariance_exactness_claim": false,
       "joint_cross_window_gauge_covariance_in_observation_belief_v1": true,
       "physical_twin_improvement_claim": false,
@@ -67,7 +67,7 @@
       "alignment_covariance_fallback_semantics": "provider exports reject fewer than eight spatial clusters by default; pointwise fallback requires explicit opt-in and is recorded",
       "calibration_compatibility_semantics": "claim-bearing export validates source repository, MotionCrafter revision, canonical model configuration, image resolution, window geometry, covariance cluster size, and gauge/point covariance methods before opening prediction payloads",
       "calibration_semantics": "content-addressed held-out gauge and point covariance artifacts; claim-bearing provider export requires both and records their IDs",
-      "claim_bearing_loading_semantics": "prob4d.provider_v2 re-exports a strict loader that requires causal stream-v2 joint covariance, complete calibration metadata, and an indepently verified provider-v2 attestation before admission",
+      "claim_bearing_loading_semantics": "prob4d.provider_v2 re-exports a strict loader that requires causal stream-v2 joint covariance, complete calibration metadata, and an independently verified provider-v2 attestation before admission",
       "composition_jacobian_semantics": "provider-v2 sequential joint-gauge propagation uses closed-form derivatives in log-scale, axis-angle, and translation coordinates; the SO(3) log branch cut fails closed, while provider v1 and the exploratory fixed-lag reconstruction path retain frozen finite-difference behavior",
       "covariance_root_semantics": "version 2 uses a context-local canonical basis for numerically repeated covariance eigenspaces and fails closed if a rank boundary would split one; provider v1 retains its frozen legacy basis",
       "export_mode_semantics": "exploratory and calibrated entry points are distinct; calibrated export fixes sequential gauge propagation, uses canonical repeated-eigenspace covariance roots, and forbids pointwise covariance fallback",
