@@ -8,7 +8,6 @@ from typing import Any
 
 import numpy as np
 
-
 ERROR_REPRODUCTION_ATOL_MM = 5e-4
 
 
@@ -21,12 +20,13 @@ sys.path.insert(0, str(_REPOSITORY_ROOT / "src"))
 sys.path.insert(0, str(_REPOSITORY_ROOT / "scripts" / "remote"))
 
 import run_pokeflex_checkpoint_registration_independent_depth as runner  # noqa: E402
-from bayesian_phystwin.pokeflex_same_object_reporting import (  # noqa: E402
-    load_json_object,
-)
 from run_pokeflex_checkpoint_registration_independent_depth import (  # noqa: E402
     _candidate_name,
     run_smoke,
+)
+
+from bayesian_phystwin.pokeflex_same_object_reporting import (  # noqa: E402
+    load_json_object,
 )
 
 
