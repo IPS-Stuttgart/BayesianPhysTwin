@@ -75,9 +75,17 @@ def test_third_party_notice_records_pinned_restrictions() -> None:
         "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
         "Creative Commons Attribution-NonCommercial 4.0",
         "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257",
+        "9cb4e9679f5f34e249945544052464ef46324bc2",
+        "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+        "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+        "9e43909513c6714f1bc78bcb44d96e733cd242aa",
+        "CreativeML Open RAIL-M",
+        "stable-video-diffusion-community",
         "academic purposes",
         "commercial or production use",
         "European Union",
+        "never included in this repository",
+        "never redistributed by Bayesian PhysTwin",
     )
     for term in required:
         assert term in notice
