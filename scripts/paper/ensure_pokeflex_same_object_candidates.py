@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Stage exact frozen PokeFlex candidates, regenerating unreadable copies."""
+"""Stage exact frozen PokeFlex candidates and attest the video take."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -284,6 +285,10 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
         execution_manifest=execution_manifest,
         prospective_protocol=prospective_protocol,
     )
+    requested_attestation = (
+        args.attest_take_id.strip() if args.attest_take_id else None
+    )
+    attested_take_id = asset_resolver._select_take(result, requested_attestation)
 
     output_root = args.output_root.resolve()
     workspace_root = args.workspace_root.resolve()
@@ -326,13 +331,16 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
         )
         archive = archive_by_take[take_id]
         archive_verification = _archive_verification(archive)
-        regeneration_required = archive_verification["status"] != "verified"
+        raw_take_attestation_required = (
+            take_id == attested_take_id
+            and archive_verification["status"] != "verified"
+        )
         frozen = Path(str(record["path"]))
         target = output_root / frozen.name
         expected_sha = str(record["sha256"])
 
         if (
-            not regeneration_required
+            not raw_take_attestation_required
             and target.is_file()
             and asset_resolver._sha256(target) == expected_sha
         ):
@@ -344,6 +352,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                     "staged": str(target),
                     "sha256": expected_sha,
                     "regenerated": False,
+                    "raw_take_attestation_required": False,
                     "archive_verification": archive_verification,
                 }
             )
@@ -356,7 +365,11 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
             candidate_root=candidate_root,
             search_roots=search_roots,
         )
-        if not regeneration_required and source is not None and source_kind is not None:
+        if (
+            not raw_take_attestation_required
+            and source is not None
+            and source_kind is not None
+        ):
             shutil.copy2(source, target)
             observed = asset_resolver._sha256(target)
             asset_resolver._require(
@@ -371,15 +384,16 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                     "staged": str(target),
                     "sha256": observed,
                     "regenerated": False,
+                    "raw_take_attestation_required": False,
                     "failed_attempts": attempts,
                     "archive_verification": archive_verification,
                 }
             )
             continue
-        if source is not None:
+        if source is not None and raw_take_attestation_required:
             attempts.append(
-                "exact candidate copy found, but exact regeneration is required "
-                "because the frozen archive is unavailable"
+                "exact candidate copy found, but the selected video take requires "
+                "raw-take attestation because its frozen archive is unavailable"
             )
 
         if runtime is None:
@@ -435,6 +449,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 "staged": str(target),
                 "sha256": observed,
                 "regenerated": True,
+                "raw_take_attestation_required": raw_take_attestation_required,
                 "failed_attempts": attempts,
                 "archive_verification": archive_verification,
                 "take": take_evidence,
@@ -445,6 +460,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
     evidence: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": "PokeFlexSameObjectCandidatePreparationV1",
+        "attested_take_id": attested_take_id,
         "regeneration_performed": regeneration_performed,
         "candidate_artifacts": prepared,
         "inputs": {
@@ -540,6 +556,14 @@ def main() -> None:
     parser.add_argument("--upstream-checkout", type=_optional_path)
     parser.add_argument("--checkpoint-root", type=_optional_path)
     parser.add_argument("--search-root", type=Path, action="append")
+    parser.add_argument(
+        "--attest-take-id",
+        default=os.environ.get("INPUT_TAKE_ID", ""),
+        help=(
+            "Take requiring raw-data attestation; blank selects the strongest "
+            "prospective take"
+        ),
+    )
     parser.add_argument("--github-env", type=Path)
     args = parser.parse_args()
     try:
