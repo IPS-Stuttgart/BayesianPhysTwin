@@ -285,3 +285,50 @@ def test_recovery_amendment_records_corrected_information_order() -> None:
     assert boundary["calibration_scores_opened"] is False
     assert boundary["confirmation_payloads_opened"] is False
     assert boundary["target_outcomes_used"] is False
+
+
+def test_visual_execution_lock_binds_target_free_camera_panel() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    execution_path = repository / (
+        "protocols/locks/"
+        "deform360_official_hub_visuotactile_v1_visual_execution_lock_v1.json"
+    )
+    execution = json.loads(execution_path.read_text(encoding="utf-8"))
+    execution_id = execution.pop("artifact_id")
+    assert (
+        hashlib.sha256(
+            json.dumps(
+                execution,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode()
+        ).hexdigest()
+        == execution_id
+    )
+
+    panel_path = repository / execution["camera_panel_policy"]["path"]
+    panel = json.loads(panel_path.read_text(encoding="utf-8"))
+    panel_id = panel.pop("artifact_id")
+    assert (
+        hashlib.sha256(
+            json.dumps(
+                panel,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode()
+        ).hexdigest()
+        == panel_id
+    )
+    assert panel_id == execution["camera_panel_policy"]["artifact_id"]
+    assert panel["panel_size"] == 3
+    assert panel["candidate_contract"]["image_values_used"] is False
+    assert panel["candidate_contract"]["outcomes_used"] is False
+
+    provider_path = repository / execution["visual_provider_recovery_lock"]["path"]
+    provider = load_deform360_visual_provider_recovery_lock(provider_path)
+    assert (
+        provider.artifact_id
+        == execution["visual_provider_recovery_lock"]["artifact_id"]
+    )

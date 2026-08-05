@@ -41,6 +41,15 @@ calibration IDs. It is therefore generated during calibration and must be bound
 by the pre-confirmation calibration bundle; it is not fabricated in this earlier
 lock.
 
+Stage 1 retained 32 calibrated cameras per object. The transitive execution lock
+`deform360_official_hub_visuotactile_v1_visual_execution_lock_v1.json` also binds
+a three-camera policy before any image value or score is used: select the camera
+triple with the largest minimum spherical baseline, then largest total baseline,
+then lexicographically smallest name tuple. Cross-view factors retain a shared
+camera-bias nuisance and use equal-weight covariance intersection because their
+correlation is unknown. The later calibration bundle must bind this execution-lock
+ID, not merely the lower-level provider-recovery ID.
+
 ## Frozen causal window
 
 The event clock exactly follows the official processing rule: over taxel rows
