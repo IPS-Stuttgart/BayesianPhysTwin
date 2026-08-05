@@ -68,6 +68,15 @@ from .grouped_likelihood import (
     conditional_grouped_student_t_mixture_objective,
     grouped_student_t_mixture_likelihood,
 )
+from .material_identity_marginalization import (
+    MaterialIdentityLikelihoodEvidenceV1,
+    MaterialIdentityStatePosteriorV1,
+    Prob4DMaterialIdentityMixtureV1,
+    load_prob4d_material_identity_mixture,
+    marginalize_material_identity_state,
+    material_identity_candidate_lineage,
+    validate_prob4d_material_identity_mixture,
+)
 from .nuisance_aware_information import (
     GreedyNuisanceAwareSelection,
     NuisanceAwareInformationState,
@@ -178,6 +187,8 @@ __all__ = [
     "MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION",
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
+    "MaterialIdentityLikelihoodEvidenceV1",
+    "MaterialIdentityStatePosteriorV1",
     "ModelAveragedEndpointConfigV1",
     "ModelAveragedEndpointPosteriorV1",
     "ModelAveragedEndpointPredictionV1",
@@ -197,6 +208,7 @@ __all__ = [
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
     "PriorAwareGaugeConfigV1",
+    "Prob4DMaterialIdentityMixtureV1",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
     "RandomWalkBiasResult",
@@ -236,7 +248,10 @@ __all__ = [
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
     "load_physical_linearization",
+    "load_prob4d_material_identity_mixture",
+    "marginalize_material_identity_state",
     "markov_log_evidence_batch",
+    "material_identity_candidate_lineage",
     "measurement_variance",
     "predict_model_averaged_endpoint",
     "reliability_weighted_loss",
@@ -259,5 +274,6 @@ __all__ = [
     "validate_claim_bearing_prob4d_observation_belief",
     "validate_observation_linearization_alignment",
     "validate_prob4d_causal_observation_belief",
+    "validate_prob4d_material_identity_mixture",
     "write_export_summary",
 ]
