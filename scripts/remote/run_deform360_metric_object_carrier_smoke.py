@@ -14,6 +14,7 @@ import sys
 import zipfile
 from io import BytesIO
 from pathlib import Path
+from types import ModuleType
 
 import cv2
 import numpy as np
@@ -58,6 +59,12 @@ def _json(path: Path) -> dict[str, object]:
 
 
 def _load_selector(source: Path):
+    package_name = "causal4d_public"
+    if package_name not in sys.modules:
+        package = ModuleType(package_name)
+        package.__path__ = [str(source.parent)]
+        package.__package__ = package_name
+        sys.modules[package_name] = package
     name = "causal4d_public.deform360_object_sam2"
     spec = importlib.util.spec_from_file_location(name, source)
     _require(spec is not None and spec.loader is not None, "cannot load SAM2 selector")
