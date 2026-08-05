@@ -25,7 +25,7 @@ jobs:
       github.actor != 'github-actions[bot]' &&
       (github.event_name == 'push' ||
        github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 30
     steps:
       - name: Check out exact transport commit
