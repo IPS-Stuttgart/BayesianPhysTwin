@@ -67,6 +67,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Stable pseudo-measurement, robust-mixture, and binary-calibration inputs now
+  reject nonnumeric, non-finite, and out-of-domain measurements, cues, labels,
+  and probabilities instead of clipping or truth-value coercing them.
+  Reliability and likelihood results also defensively own immutable arrays.
 - Random-walk drift-bias inference now preserves typed track identities, rejects serialized ID collisions, malformed probabilities, non-finite timestamps and numerical updates, and returns defensively owned immutable result/evidence artifacts.
 - Markov reliability now validates typed sequence identities without lossy string
   coercion, rejects mixed identities such as `1` and `"1"` instead of merging
