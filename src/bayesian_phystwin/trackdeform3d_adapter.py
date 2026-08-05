@@ -202,19 +202,23 @@ def inspect_trackdeform3d_chunk(
     _require(frame_count >= 2, "chunk is too short")
 
     calibration_map = _member_map(calibration_members)
+    transform_names = {
+        "T_left_base2cam",
+        "T_right_base2cam",
+        "T_cam2right",
+        "T_left2right",
+        "T_cam2left",
+    }
     _require(
-        set(calibration_map) == {"K", "T_left_base2cam", "T_right_base2cam"},
+        set(calibration_map) == {"K", *transform_names},
         "calibration member set changed",
     )
     _require(calibration_map["K"].shape == (3, 3), "intrinsics shape changed")
-    _require(
-        calibration_map["T_left_base2cam"].shape == (4, 4),
-        "left transform shape changed",
-    )
-    _require(
-        calibration_map["T_right_base2cam"].shape == (4, 4),
-        "right transform shape changed",
-    )
+    for transform_name in transform_names:
+        _require(
+            calibration_map[transform_name].shape == (4, 4),
+            f"{transform_name} shape changed",
+        )
     _require(
         all(np.dtype(member.dtype).kind == "f" for member in calibration_members),
         "calibration dtype changed",

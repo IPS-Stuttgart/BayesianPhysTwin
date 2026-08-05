@@ -46,6 +46,9 @@ def _write_chunk(root: Path, *, pose_frame_count: int = 4) -> tuple[Path, Path]:
         K=np.eye(3, dtype=np.float64),
         T_left_base2cam=np.eye(4, dtype=np.float64),
         T_right_base2cam=np.eye(4, dtype=np.float64),
+        T_cam2right=np.eye(4, dtype=np.float64),
+        T_left2right=np.eye(4, dtype=np.float64),
+        T_cam2left=np.eye(4, dtype=np.float64),
     )
     return chunk, calibration
 
