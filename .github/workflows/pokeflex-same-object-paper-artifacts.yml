@@ -40,64 +40,17 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
   OMP_NUM_THREADS: "1"
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
+  MPLBACKEND: Agg
+  PYVISTA_OFF_SCREEN: "true"
 
 jobs:
-  contracts:
-    name: Reporting and workflow contracts
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 30
-    env:
-      VAR_PYTHON: ${{ vars.POKEFLEX_PYTHON }}
-    steps:
-      - name: Check out reviewed source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          clean: true
-
-      - name: Create isolated contract environment
-        shell: bash
-        run: |
-          set -euo pipefail
-          python_bin="${VAR_PYTHON:-python3}"
-          venv="${RUNNER_TEMP}/pokeflex-paper-contract-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf "${venv}"
-          "${python_bin}" -m venv --system-site-packages "${venv}"
-          echo "${venv}/bin" >> "${GITHUB_PATH}"
-          "${venv}/bin/python" -m pip install \
-            -e ".[dev,graph,vision]" matplotlib pillow
-
-      - name: Validate focused source and result contracts
-        run: |
-          python -m ruff check \
-            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
-            scripts/paper/make_pokeflex_same_object_figure.py \
-            scripts/paper/pokeflex_same_object_video_capture.py \
-            scripts/paper/pokeflex_same_object_video_encode.py \
-            scripts/paper/pokeflex_same_object_video_plot.py \
-            scripts/paper/render_pokeflex_same_object_video.py \
-            tests/test_pokeflex_same_object_reporting.py
-          python -m ruff format --check \
-            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
-            scripts/paper/make_pokeflex_same_object_figure.py \
-            scripts/paper/pokeflex_same_object_video_capture.py \
-            scripts/paper/pokeflex_same_object_video_encode.py \
-            scripts/paper/pokeflex_same_object_video_plot.py \
-            scripts/paper/render_pokeflex_same_object_video.py \
-            tests/test_pokeflex_same_object_reporting.py
-          python -m mypy \
-            src/bayesian_phystwin/pokeflex_same_object_reporting.py
-          python -m pytest -q tests/test_pokeflex_same_object_reporting.py
-          python scripts/paper/make_pokeflex_same_object_figure.py --help
-          python scripts/paper/render_pokeflex_same_object_video.py --help
-
-  render:
-    name: Reproduce figure and render video on workstation2
-    needs: contracts
+  artifacts:
+    name: Validate, reproduce figure, and render video on workstation2
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -113,21 +66,20 @@ jobs:
       VAR_PYTHON: ${{ vars.POKEFLEX_PYTHON }}
       VAR_CANDIDATE_ROOT: ${{ vars.POKEFLEX_PROSPECTIVE_ARTIFACT_ROOT }}
     steps:
-      - name: Check out exact evaluated revision
+      - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
           clean: true
 
-      - name: Resolve isolated runtime and opened evidence paths
+      - name: Resolve opened evidence paths
         shell: bash
         run: |
           set -euo pipefail
           data_root="${VAR_DATASET_ROOT:-}"
           upstream_checkout="${VAR_UPSTREAM_CHECKOUT:-}"
           checkpoint_root="${VAR_CHECKPOINT_ROOT:-}"
-          python_bin="${VAR_PYTHON:-python3}"
           candidate_root="${INPUT_CANDIDATE_ROOT:-${VAR_CANDIDATE_ROOT:-}}"
           if [[ -z "${candidate_root}" ]]; then
             candidate_root="/mnt/corsair/florianpfaff/pokeflex-regret-prospective-v1"
@@ -145,26 +97,50 @@ jobs:
             echo "POKEFLEX_DATA_ROOT=${data_root}"
             echo "POKEFLEX_UPSTREAM_CHECKOUT=${upstream_checkout}"
             echo "POKEFLEX_CHECKPOINT_ROOT=${checkpoint_root}"
-            echo "POKEFLEX_BASE_PYTHON=${python_bin}"
             echo "POKEFLEX_CANDIDATE_ROOT=${candidate_root}"
             echo "POKEFLEX_RUN_ROOT=${root}"
             echo "POKEFLEX_CANDIDATES=${root}/candidates"
             echo "POKEFLEX_OUTPUT=${root}/output"
             echo "POKEFLEX_EVIDENCE=${root}/evidence"
-            echo "POKEFLEX_VENV=${root}/venv"
           } >> "${GITHUB_ENV}"
 
-      - name: Create isolated rendering environment
+      - name: Discover the existing CUDA scientific Python
         shell: bash
         run: |
           set -euo pipefail
-          "${POKEFLEX_BASE_PYTHON}" -m venv --system-site-packages "${POKEFLEX_VENV}"
-          echo "${POKEFLEX_VENV}/bin" >> "${GITHUB_PATH}"
-          "${POKEFLEX_VENV}/bin/python" -m pip install \
-            -e ".[dev,graph,vision]" matplotlib pillow imageio-ffmpeg
-          "${POKEFLEX_VENV}/bin/python" - <<'PY'
+          candidates=()
+          if [[ -n "${VAR_PYTHON:-}" ]]; then
+            candidates+=("${VAR_PYTHON}")
+          fi
+          for command_name in python3 python; do
+            if command -v "${command_name}" >/dev/null 2>&1; then
+              candidates+=("$(command -v "${command_name}")")
+            fi
+          done
+          for fixed in \
+            /home/github-runner/miniconda3/bin/python \
+            /home/github-runner/anaconda3/bin/python \
+            /opt/conda/bin/python; do
+            candidates+=("${fixed}")
+          done
+          mapfile -t discovered < <(
+            find /home/github-runner /opt -maxdepth 7 -type f \
+              \( -name python -o -name python3 -o -name 'python3.*' \) \
+              -perm -u+x 2>/dev/null | sort
+          )
+          candidates+=("${discovered[@]}")
+
+          declare -A seen=()
+          selected=""
+          for candidate in "${candidates[@]}"; do
+            [[ -x "${candidate}" ]] || continue
+            resolved="$(readlink -f "${candidate}")"
+            [[ -z "${seen[${resolved}]:-}" ]] || continue
+            seen["${resolved}"]=1
+            echo "Probing ${resolved}"
+            if "${resolved}" -m pip --version >/dev/null 2>&1 && \
+              "${resolved}" - <<'PY'
           import cv2
-          import matplotlib
           import numpy
           import pyvista
           import scipy
@@ -172,24 +148,89 @@ jobs:
           import trimesh
 
           if not torch.cuda.is_available():
-              raise SystemExit("PokeFlex rendering runtime cannot see CUDA")
-          for module in (
-              cv2,
-              matplotlib,
-              numpy,
-              pyvista,
-              scipy,
-              torch,
-              trimesh,
-          ):
-              print(f"{module.__name__}={module.__version__}")
+              raise SystemExit(1)
           PY
+            then
+              selected="${resolved}"
+              break
+            fi
+          done
+          if [[ -z "${selected}" ]]; then
+            echo "::error title=No PokeFlex Python::No executable Python with pip, CUDA torch, cv2, numpy, scipy, pyvista, and trimesh was found"
+            exit 1
+          fi
+          echo "Selected ${selected}"
+          echo "BPT_PYTHON=${selected}" >> "${GITHUB_ENV}"
+          echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${GITHUB_WORKSPACE}/scripts/paper:${GITHUB_WORKSPACE}/scripts/remote" >> "${GITHUB_ENV}"
+
+      - name: Ensure focused test and media tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! "${BPT_PYTHON}" -m ruff --version >/dev/null 2>&1 || \
+            ! "${BPT_PYTHON}" -m mypy --version >/dev/null 2>&1 || \
+            ! "${BPT_PYTHON}" -m pytest --version >/dev/null 2>&1 || \
+            ! "${BPT_PYTHON}" -c 'import imageio_ffmpeg, matplotlib, PIL'; then
+            pip_args=(install --user)
+            if "${BPT_PYTHON}" -m pip install --help \
+              | grep -q break-system-packages; then
+              pip_args+=(--break-system-packages)
+            fi
+            "${BPT_PYTHON}" -m pip "${pip_args[@]}" \
+              imageio-ffmpeg matplotlib mypy pillow pytest ruff
+          fi
+          "${BPT_PYTHON}" -m ruff --version
+          "${BPT_PYTHON}" -m mypy --version
+          "${BPT_PYTHON}" -m pytest --version
+          "${BPT_PYTHON}" -c 'import imageio_ffmpeg, matplotlib, PIL'
+
+      - name: Validate focused source and result contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BPT_PYTHON}" -m ruff check \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
+            scripts/paper/make_pokeflex_same_object_figure.py \
+            scripts/paper/pokeflex_same_object_video_capture.py \
+            scripts/paper/pokeflex_same_object_video_encode.py \
+            scripts/paper/pokeflex_same_object_video_plot.py \
+            scripts/paper/render_pokeflex_same_object_video.py \
+            tests/test_pokeflex_same_object_reporting.py
+          "${BPT_PYTHON}" -m ruff format --check \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
+            scripts/paper/make_pokeflex_same_object_figure.py \
+            scripts/paper/pokeflex_same_object_video_capture.py \
+            scripts/paper/pokeflex_same_object_video_encode.py \
+            scripts/paper/pokeflex_same_object_video_plot.py \
+            scripts/paper/render_pokeflex_same_object_video.py \
+            tests/test_pokeflex_same_object_reporting.py
+          "${BPT_PYTHON}" -m mypy \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py
+          "${BPT_PYTHON}" -m pytest -q \
+            tests/test_pokeflex_same_object_reporting.py
+          "${BPT_PYTHON}" scripts/paper/make_pokeflex_same_object_figure.py --help
+          "${BPT_PYTHON}" scripts/paper/render_pokeflex_same_object_video.py --help
+
+      - name: Record rendering environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "python=${BPT_PYTHON}"
+            "${BPT_PYTHON}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader
+          } | tee "${POKEFLEX_EVIDENCE}/environment.txt"
 
       - name: Stage immutable prospective candidate artifacts
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          "${BPT_PYTHON}" - <<'PY'
           import hashlib
           import json
           import os
@@ -237,7 +278,8 @@ jobs:
           for take_id in FoamDice_T7 FoamDice_T8 PlushOctopus_T7; do
             output="${POKEFLEX_CANDIDATES}/${take_id}_candidates.json"
             if [[ ! -f "${output}" ]]; then
-              python scripts/remote/run_pokeflex_independent_depth_regret_guard_prospective.py \
+              "${BPT_PYTHON}" \
+                scripts/remote/run_pokeflex_independent_depth_regret_guard_prospective.py \
                 "${POKEFLEX_DATA_ROOT}/${take_id}" \
                 "${output}" \
                 --upstream-checkout "${POKEFLEX_UPSTREAM_CHECKOUT}" \
@@ -249,7 +291,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/paper/make_pokeflex_same_object_figure.py \
+          "${BPT_PYTHON}" scripts/paper/make_pokeflex_same_object_figure.py \
             --prospective-result \
               results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/prospective_evaluation.json \
             --candidate-artifact "${POKEFLEX_CANDIDATES}/FoamDice_T7_candidates.json" \
@@ -275,14 +317,15 @@ jobs:
           if [[ -n "${INPUT_TAKE_ID}" ]]; then
             args+=(--take-id "${INPUT_TAKE_ID}")
           fi
-          python scripts/paper/render_pokeflex_same_object_video.py "${args[@]}" \
+          "${BPT_PYTHON}" \
+            scripts/paper/render_pokeflex_same_object_video.py "${args[@]}" \
             | tee "${POKEFLEX_EVIDENCE}/video-console.log"
 
       - name: Verify paper artifacts and record checksums
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          "${BPT_PYTHON}" - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -325,19 +368,14 @@ jobs:
             echo
             echo "The claim is limited to new takes of previously seen objects."
             echo "Independent-object calibration failed and is not rescued by this run."
-            if [[ -f "${POKEFLEX_OUTPUT}/pokeflex_same_object_diagnostic.json" ]]; then
-              echo
-              echo '```json'
-              python -c '
-          import json, os
-          from pathlib import Path
-          path = Path(os.environ["POKEFLEX_OUTPUT"]) / "pokeflex_same_object_diagnostic.json"
-          value = json.loads(path.read_text())
-          print(json.dumps(value["bounded_result"], indent=2, sort_keys=True))
-          '
-              echo '```'
-            fi
           } >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -f "${POKEFLEX_OUTPUT}/pokeflex_same_object_diagnostic.json" ]]; then
+            echo '```json' >> "${GITHUB_STEP_SUMMARY}"
+            "${BPT_PYTHON}" -c \
+              'import json, os; from pathlib import Path; p=Path(os.environ["POKEFLEX_OUTPUT"])/"pokeflex_same_object_diagnostic.json"; print(json.dumps(json.loads(p.read_text())["bounded_result"], indent=2, sort_keys=True))' \
+              >> "${GITHUB_STEP_SUMMARY}"
+            echo '```' >> "${GITHUB_STEP_SUMMARY}"
+          fi
 
       - name: Upload figure, video, and compact evidence
         if: always()
@@ -346,6 +384,7 @@ jobs:
           name: pokeflex-same-object-paper-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ env.POKEFLEX_OUTPUT }}
+            ${{ env.POKEFLEX_EVIDENCE }}/environment.txt
             ${{ env.POKEFLEX_EVIDENCE }}/candidate_staging.json
             ${{ env.POKEFLEX_EVIDENCE }}/figure-console.log
             ${{ env.POKEFLEX_EVIDENCE }}/video-console.log
