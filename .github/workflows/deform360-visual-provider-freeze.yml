@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-visual-provider-freeze.yml"
+      - "scripts/science/bootstrap_deform360_visual_provider_models.py"
       - "scripts/science/build_deform360_visual_provider_freeze.py"
+      - "tests/test_deform360_visual_provider_bootstrap.py"
       - "tests/test_deform360_visual_provider_freeze.py"
       - "docs/deform360_visual_provider_freeze.md"
       - "protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json"
@@ -14,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       hf_cache_dir:
-        description: Exact Hugging Face hub cache; defaults to repository variable or unique workstation cache
+        description: Exact Hugging Face hub cache; defaults to repository variable or the runner cache
         required: false
         type: string
 
@@ -56,7 +58,7 @@ jobs:
 
       - name: Install development environment
         run: |
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev]" "huggingface_hub>=0.24"
           python -m pip check
 
       - name: Validate reviewable source
@@ -64,27 +66,33 @@ jobs:
         run: |
           set -euo pipefail
           files=(
+            scripts/science/bootstrap_deform360_visual_provider_models.py
             scripts/science/build_deform360_visual_provider_freeze.py
+            tests/test_deform360_visual_provider_bootstrap.py
             tests/test_deform360_visual_provider_freeze.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m pytest -q \
+            tests/test_deform360_visual_provider_bootstrap.py \
             tests/test_deform360_visual_provider_freeze.py \
             tests/test_deform360_visual_provider_lock.py \
             tests/test_pull_request_workflow_integrity.py
           python -m compileall -q \
+            scripts/science/bootstrap_deform360_visual_provider_models.py \
             scripts/science/build_deform360_visual_provider_freeze.py
           git diff --check
 
   preflight:
-    name: Resolve exact cached producer / workstation2
+    name: Freeze exact producer / workstation2
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     needs: contracts
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 90
+    timeout-minutes: 180
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
     steps:
       - name: Check out exact BayesianPhysTwin source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -123,77 +131,40 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install -e ".[dev]" -e ./_prob4d
+          python -m pip install \
+            -e ".[dev]" \
+            -e ./_prob4d \
+            "huggingface_hub>=0.24"
           python -m pip check
 
-      - name: Resolve unique model cache and output roots
+      - name: Prepare exact cache and output roots
         shell: bash
         run: |
           set -euo pipefail
           root="${RUNNER_TEMP}/deform360-visual-provider-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cache="${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-${HOME}/.cache/huggingface/hub}}"
+          cache="$(realpath -m "${cache}")"
           rm -rf "${root}"
-          mkdir -p "${root}"
-          discovery="${root}/cache-discovery.txt"
-
-          requested="${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-}}"
-          candidates=()
-          if [[ -n "${requested}" ]]; then
-            candidates+=("${requested}")
-          else
-            candidates+=("${HOME}/.cache/huggingface/hub")
-            if [[ -n "${HUGGINGFACE_HUB_CACHE:-}" ]]; then
-              candidates+=("${HUGGINGFACE_HUB_CACHE}")
-            fi
-            if [[ -n "${HF_HOME:-}" ]]; then
-              candidates+=("${HF_HOME}/hub")
-            fi
-            if [[ -n "${TRANSFORMERS_CACHE:-}" ]]; then
-              candidates+=("${TRANSFORMERS_CACHE}")
-            fi
-            while IFS= read -r repository_dir; do
-              candidates+=("$(dirname "${repository_dir}")")
-            done < <(
-              find /home/github-runner /mnt \
-                -maxdepth 9 -type d \
-                -name 'models--TencentARC--MotionCrafter' \
-                -print 2>/dev/null || true
-            )
-          fi
-
-          declare -A seen=()
-          complete=()
-          {
-            echo "requested_cache=${requested:-<auto>}"
-            echo "candidate_roots:"
-          } > "${discovery}"
-          for candidate in "${candidates[@]}"; do
-            [[ -n "${candidate}" ]] || continue
-            candidate="$(realpath -m "${candidate}")"
-            [[ -z "${seen[${candidate}]:-}" ]] || continue
-            seen["${candidate}"]=1
-            printf '  %s\n' "${candidate}" >> "${discovery}"
-            if [[ -d "${candidate}/models--TencentARC--MotionCrafter/snapshots" ]]; then
-              complete+=("${candidate}")
-            fi
-          done
-          {
-            echo "motioncrafter_cache_roots:"
-            for candidate in "${complete[@]}"; do
-              printf '  %s\n' "${candidate}"
-            done
-          } >> "${discovery}"
-
-          if [[ ${#complete[@]} -ne 1 ]]; then
-            echo "::error title=Ambiguous MotionCrafter cache::Expected exactly one cache root, found ${#complete[@]}"
-            cat "${discovery}"
-            exit 1
-          fi
-          cache="${complete[0]}"
+          mkdir -p "${root}" "${cache}"
           {
             echo "DEFORM360_MODEL_CACHE=${cache}"
             echo "DEFORM360_PREFLIGHT_ROOT=${root}"
             echo "DEFORM360_PREFLIGHT_OUTPUT=${root}/candidate"
           } >> "${GITHUB_ENV}"
+          {
+            echo "requested_cache=${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-<runner-default>}}"
+            echo "resolved_cache=${cache}"
+          } > "${root}/cache-selection.txt"
+
+      - name: Bootstrap exact immutable model members
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/bootstrap_deform360_visual_provider_models.py \
+            --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --cache-dir "${DEFORM360_MODEL_CACHE}" \
+            --output "${DEFORM360_PREFLIGHT_ROOT}/model-bootstrap.json" \
+            | tee "${DEFORM360_PREFLIGHT_ROOT}/model-bootstrap.log"
 
       - name: Build exact producer lock candidate
         shell: bash
@@ -227,20 +198,31 @@ jobs:
           import os
           from pathlib import Path
 
-          root = Path(os.environ["DEFORM360_PREFLIGHT_OUTPUT"])
-          summary = json.loads((root / "summary.json").read_text(encoding="utf-8"))
+          evidence_root = Path(os.environ["DEFORM360_PREFLIGHT_ROOT"])
+          candidate_root = Path(os.environ["DEFORM360_PREFLIGHT_OUTPUT"])
+          bootstrap = json.loads(
+              (evidence_root / "model-bootstrap.json").read_text(encoding="utf-8")
+          )
+          summary = json.loads(
+              (candidate_root / "summary.json").read_text(encoding="utf-8")
+          )
           forbidden = (
               "selected_raw_payloads_opened",
               "calibration_payloads_opened",
               "confirmation_payloads_opened",
               "target_outcomes_used",
           )
-          changed = [name for name in forbidden if summary.get(name) is not False]
-          if changed:
-              raise SystemExit(f"preflight exceeded information boundary: {changed}")
-          for line in (root / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+          for label, payload in (("bootstrap", bootstrap), ("preflight", summary)):
+              changed = [name for name in forbidden if payload.get(name) is not False]
+              if changed:
+                  raise SystemExit(
+                      f"{label} exceeded the information boundary: {changed}"
+                  )
+          for line in (candidate_root / "SHA256SUMS").read_text(
+              encoding="utf-8"
+          ).splitlines():
               digest, relative = line.split("  ", 1)
-              observed = hashlib.sha256((root / relative).read_bytes()).hexdigest()
+              observed = hashlib.sha256((candidate_root / relative).read_bytes()).hexdigest()
               if observed != digest:
                   raise SystemExit(f"checksum mismatch: {relative}")
           print(json.dumps(summary, indent=2, sort_keys=True))
@@ -249,9 +231,11 @@ jobs:
           test -z "$(git status --porcelain=v1 --untracked-files=no)"
 
       - name: Record execution environment
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
+          test -n "${DEFORM360_PREFLIGHT_ROOT:-}"
           {
             echo "repository=${GITHUB_REPOSITORY}"
             echo "bpt_revision=${BPT_HEAD_SHA}"
@@ -272,7 +256,9 @@ jobs:
         with:
           name: deform360-visual-provider-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/cache-discovery.txt
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/cache-selection.txt
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/model-bootstrap.json
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/model-bootstrap.log
             ${{ env.DEFORM360_PREFLIGHT_ROOT }}/console.log
             ${{ env.DEFORM360_PREFLIGHT_ROOT }}/environment.txt
             ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/provider-manifest.json
