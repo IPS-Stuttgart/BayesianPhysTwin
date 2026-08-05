@@ -80,7 +80,9 @@ class HorizonDiscrepancyCalibrationV1:
         if half_life is None and retention != 1.0:
             raise ValueError("no mean reversion requires minimum_mean_retention=1")
         if half_life is not None and retention >= 1.0:
-            raise ValueError("finite mean reversion requires minimum_mean_retention < 1")
+            raise ValueError(
+                "finite mean reversion requires minimum_mean_retention < 1"
+            )
         stationary = axis_vector(self.stationary_std_m, name="stationary_std_m")
         process = axis_vector(
             self.additional_process_std_m_per_sqrt_step,
@@ -108,7 +110,9 @@ class HorizonDiscrepancyCalibrationV1:
         if not source_used:
             raise ValueError("horizon dynamics must identify their source outcomes")
         if interval_used:
-            raise ValueError("interval-calibration outcomes cannot select horizon dynamics")
+            raise ValueError(
+                "interval-calibration outcomes cannot select horizon dynamics"
+            )
         if confirmation_used or target_used:
             raise ValueError("horizon dynamics must be frozen before target outcomes")
 
