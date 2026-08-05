@@ -1,0 +1,60 @@
+{
+  "artifact_kind": "Deform360OfficialHubMotionCrafterProviderGenerationSummary",
+  "claim_boundary": "Provider inference and integrity only. No prediction score, calibration fit, confirmation payload, target outcome, physical improvement, or state-of-the-art result was opened or established.",
+  "execution": {
+    "completed_job_count": 30,
+    "durable_output_root": "/home/florianpfaff/source-only/deform360-official-hub-motioncrafter-calibration-v6",
+    "file_count": 181,
+    "json_file_count": 61,
+    "member_count": 120,
+    "npz_file_count": 120,
+    "prediction_manifest_count": 30,
+    "product_counts": {
+      "disjoint_baseline": 30,
+      "independently_decoded_overlap_window": 60,
+      "latent_linear_baseline": 30
+    },
+    "requested_job_count": 30,
+    "run_report_bytes": 23753,
+    "run_report_sha256": "db94d78c9b5acd2c1290976f1ff9647c525df0bad7ab62f4621175ec0fc75383",
+    "run_sha256": "61ace928b719ff1343b9e6656e5dd49a9e9012bf4e62715051baa9a31fd5726a",
+    "status": "complete",
+    "total_bytes": 17811595372,
+    "volatile_output_root": "/dev/shm/florianpfaff/deform360-official-hub-motioncrafter-calibration-v6"
+  },
+  "information_boundary": {
+    "calibration_policy_fit": false,
+    "calibration_provider_outputs_opened_for_integrity": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_frames_used_for_prediction": false,
+    "target_outcomes_used": false
+  },
+  "integrity": {
+    "durable_copy_reverified": true,
+    "forbidden_artifact_count": 0,
+    "member_hashes_verified": true,
+    "prediction_manifest_hashes_verified": true,
+    "unique_job_id_count": 30,
+    "unique_run_spec_count": 30
+  },
+  "protocol_id": "deform360-official-hub-motioncrafter-stage1-v6",
+  "provenance": {
+    "bayesian_phystwin_implementation_revision": "5b7f1c60546b814c1c34e56db397e4a0877dd36f",
+    "bayesian_phystwin_runtime_revision": "f186ca7bf844fc9f61a0c1e39fd763b2db9b134c",
+    "job_manifest_file_sha256": "b9302a27d779a6de619baffc04e624eee629a226a140b90278fa9dd06b213fe2",
+    "job_manifest_id": "9726e7ae12d442956ff81376fe52cdc2f8360fdcd3e5cccbc12543ca584b30f9",
+    "job_manifest_path": "protocols/locks/deform360_official_hub_visuotactile_v6_motioncrafter_jobs.json",
+    "motioncrafter_revision": "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257",
+    "prob4d_revision": "25d90ef7f78ba4307f4555cb636d666004e1bf66",
+    "runner_sha256": "2d3fe74d7d76ff1cf5766781879056ddfabaa1e5e1842ae776fdd01514846e65"
+  },
+  "schema_version": 1,
+  "verification": {
+    "bayesian_phystwin_focused_remote": "31 passed",
+    "bayesian_phystwin_focused_workstation": "31 passed",
+    "bayesian_phystwin_full_suite": "2099 passed, 31 skipped, and one isolated-import harness failure that passed under the editable-package invocation",
+    "changed_file_ruff": "passed",
+    "prob4d_focused_remote": "21 passed"
+  }
+}
