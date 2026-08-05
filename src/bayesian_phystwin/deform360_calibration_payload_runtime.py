@@ -231,9 +231,7 @@ def validate_calibrated_camera_coverage(
     records: dict[str, object] = {}
     for plan in plans:
         try:
-            calibration = module.load_calibration(
-                dataset_root / "raw" / plan.object_id
-            )
+            calibration = module.load_calibration(dataset_root / "raw" / plan.object_id)
         except Exception as error:
             records[plan.object_id] = {
                 "status": "technical_failure",
@@ -315,8 +313,7 @@ def build_manifest(
         "runtime_failures": sorted(set(runtime_failures)),
         "technical_failure_object_count": len(technical_failure_ids),
         "units": [
-            plan.to_record()
-            for plan in sorted(plans, key=lambda item: item.object_id)
+            plan.to_record() for plan in sorted(plans, key=lambda item: item.object_id)
         ],
         "downloaded_files": [dict(item) for item in downloaded_files],
         "calibrated_camera_coverage": dict(calibrated_camera_coverage or {}),

@@ -11,12 +11,7 @@ from typing import Any
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = (
-    ROOT
-    / "scripts"
-    / "science"
-    / "materialize_deform360_calibration_payloads.py"
-)
+SCRIPT = ROOT / "scripts" / "science" / "materialize_deform360_calibration_payloads.py"
 
 
 def _module() -> Any:
@@ -84,9 +79,7 @@ def test_plan_selects_only_locked_episode_and_excludes_video_downloads() -> None
     assert len(plan.camera_recordings) == 2
     assert len(plan.tactile_recordings) == 2
     assert all("_01." in media.path for _, media, _ in plan.camera_recordings)
-    camera_downloads = [
-        path for path in plan.materialization_paths if "cam" in path
-    ]
+    camera_downloads = [path for path in plan.materialization_paths if "cam" in path]
     assert all(path.endswith(".txt") for path in camera_downloads)
     assert not any(path.endswith(".mp4") for path in plan.materialization_paths)
     assert all(path.endswith(".mp4") for path in plan.planned_camera_media_paths)
@@ -227,6 +220,5 @@ def test_unpaired_camera_sidecar_is_retained_as_technical_failure() -> None:
         in plan.technical_failures
     )
     assert not any(
-        camera == "brics-odroid-001_cam0"
-        for camera, _, _ in plan.camera_recordings
+        camera == "brics-odroid-001_cam0" for camera, _, _ in plan.camera_recordings
     )

@@ -204,14 +204,8 @@ def _pair_recordings(
     timestamp_stems = set(timestamps_by_stem)
     common = sorted(data_stems & timestamp_stems)
     issues = (
-        *(
-            f"missing_timestamp:{stem}"
-            for stem in sorted(data_stems - timestamp_stems)
-        ),
-        *(
-            f"orphan_timestamp:{stem}"
-            for stem in sorted(timestamp_stems - data_stems)
-        ),
+        *(f"missing_timestamp:{stem}" for stem in sorted(data_stems - timestamp_stems)),
+        *(f"orphan_timestamp:{stem}" for stem in sorted(timestamp_stems - data_stems)),
     )
     pairs = tuple((data_by_stem[stem], timestamps_by_stem[stem]) for stem in common)
     return pairs, tuple(issues)
@@ -247,9 +241,7 @@ def build_unit_plan(unit: Any, files: Sequence[HubFile]) -> UnitPlan:
             key=lambda item: item.path,
         )
     )
-    observed_calibration = {
-        PurePosixPath(item.path).name for item in calibration_files
-    }
+    observed_calibration = {PurePosixPath(item.path).name for item in calibration_files}
     if observed_calibration != CALIBRATION_FILENAMES:
         failures.append("calibration_files_incomplete")
 
@@ -269,9 +261,7 @@ def build_unit_plan(unit: Any, files: Sequence[HubFile]) -> UnitPlan:
             streams[camera],
             data_suffix=".mp4",
         )
-        failures.extend(
-            f"camera_pairing:{camera}:{issue}" for issue in pairing_issues
-        )
+        failures.extend(f"camera_pairing:{camera}:{issue}" for issue in pairing_issues)
         if pairing_issues:
             continue
         if unit.episode_id >= len(pairs):
@@ -290,9 +280,7 @@ def build_unit_plan(unit: Any, files: Sequence[HubFile]) -> UnitPlan:
             data_suffix=".npy",
             exclude_data_prefixes=("median_",),
         )
-        failures.extend(
-            f"tactile_pairing:{sensor}:{issue}" for issue in pairing_issues
-        )
+        failures.extend(f"tactile_pairing:{sensor}:{issue}" for issue in pairing_issues)
         if pairing_issues:
             continue
         baselines = sorted(
