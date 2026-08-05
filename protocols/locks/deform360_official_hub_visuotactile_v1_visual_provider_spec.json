@@ -1,7 +1,7 @@
 {
   "additional_metric_anchor_policy": "none",
   "amendment_id": "deform360-official-hub-visuotactile-v1-visual-provider-lock",
-  "artifact_id": "59494adff6f594c268e0513d010a6cd39561c42cd4654895f80ab019f5254dae",
+  "artifact_id": "65ad9fa1d3a176f663ff4ba720db15ebd92a0f0eccd27818bba5dba0b32ff7bc",
   "claim_boundary": "Data-free producer preflight only. A valid result freezes executable Prob4D/MotionCrafter provenance before selected calibration payload access; it does not establish observation quality, calibration, tactile benefit, physical-query improvement, Causal4D benefit, safety, or state of the art.",
   "gauge_covariance": {
     "max_rank": 64,
@@ -21,7 +21,7 @@
     "height": 320,
     "model_sources": {
       "base_pipeline": {
-        "expected_revision": null,
+        "expected_revision": "9e43909513c6714f1bc78bcb44d96e733cd242aa",
         "repository": "stabilityai/stable-video-diffusion-img2vid-xt",
         "required_members": [
           "model_index.json",
@@ -34,24 +34,27 @@
         ]
       },
       "image_vae": {
-        "expected_revision": null,
+        "expected_revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
         "repository": "stable-diffusion-v1-5/stable-diffusion-v1-5",
         "required_members": [
-          "vae/config.json"
+          "vae/config.json",
+          "vae/diffusion_pytorch_model.fp16.safetensors"
         ]
       },
       "unet": {
-        "expected_revision": null,
+        "expected_revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
         "repository": "TencentARC/MotionCrafter",
         "required_members": [
-          "unet_determ"
+          "unet_determ/config.json",
+          "unet_determ/diffusion_pytorch_model.safetensors"
         ]
       },
       "vae": {
-        "expected_revision": null,
+        "expected_revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
         "repository": "TencentARC/MotionCrafter",
         "required_members": [
-          "geometry_motion_vae"
+          "geometry_motion_vae/config.json",
+          "geometry_motion_vae/diffusion_pytorch_model.safetensors"
         ]
       }
     },
