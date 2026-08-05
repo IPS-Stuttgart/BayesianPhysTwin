@@ -1,0 +1,59 @@
+{
+  "artifact_kind": "Deform360TactilePromptedCarrierNapkinValidationSourceGateResult",
+  "camera_visibility": [
+    {
+      "admitted": false,
+      "camera": "brics-odroid-010_cam0",
+      "minimum_assignment_coverage": 0.47058823529411764,
+      "minimum_margin_px": 19.7602924174048
+    },
+    {
+      "admitted": true,
+      "camera": "brics-odroid-019_cam1",
+      "minimum_assignment_coverage": 1.0,
+      "minimum_margin_px": 75.42732563976404
+    },
+    {
+      "admitted": true,
+      "camera": "brics-odroid-022_cam1",
+      "minimum_assignment_coverage": 1.0,
+      "minimum_margin_px": 72.19078709125927
+    }
+  ],
+  "gate": {
+    "admitted_camera_count": 2,
+    "decision": "exact-fallback",
+    "reason": "fixed carrier panel failed three-camera assignment-visibility gate",
+    "required_camera_count": 3
+  },
+  "information_boundary": {
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "motioncrafter_arrays_opened": false,
+    "physical_state_residual_used": false,
+    "target_outcomes_used": false
+  },
+  "parents": {
+    "carrier_validation_lock_id": "0de23f14d7882bfae2e3f8caae08eb53c4eef18241d4e71a36651dd368c1bd96",
+    "robot": {
+      "archive_sha256": "56a001d584c8bc3f64176b167b5c2ff4dfb413e54a59896ab6b53582dbb268d0",
+      "artifact_id": "a2601582c5dd712d2adef4b599e3fd909dc39204e4b4fa7aa01be73c45b07215",
+      "manifest_sha256": "22aecb46d0eceb0411bef01eba8fb4441210d03952bd0179915d8315b052ca5b"
+    },
+    "tactile_geometry": {
+      "archive_sha256": "aabb645505c261ea91bd01c5c5297eb4cadff4785b4cbadce6684a84d14ac0c4",
+      "artifact_id": "ebdbee93c38254758c3c53fe02de3b85256f554ed1d27d684d5f4ea346fc3e39",
+      "manifest_sha256": "a6479de2b9fa4c85aa6a477316be0905e7b132034bbc588706dd14f3422703ab"
+    }
+  },
+  "schema_version": 1,
+  "source_case": {
+    "object_id": "036-napkin-cloth",
+    "processing_episode_index": 0,
+    "source_episode_id": 9
+  },
+  "status": "source-gate-rejected-exact-fallback"
+}
