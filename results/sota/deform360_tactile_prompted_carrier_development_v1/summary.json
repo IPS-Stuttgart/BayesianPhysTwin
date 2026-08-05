@@ -1,0 +1,60 @@
+{
+  "artifact_kind": "Deform360TactilePromptedCarrierDevelopmentSummary",
+  "claim_boundary": "Exploratory source-only carrier feasibility on an already-open case. No state update, calibration score, confirmation payload, target outcome, or SOTA gain was opened or established.",
+  "information_boundary": {
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "physical_state_residual_used_for_reliability": false,
+    "target_outcomes_used": false
+  },
+  "protocol_id": "deform360-tactile-prompted-carrier-development-v1",
+  "provenance": {
+    "arrays_sha256": "697cdf3fae0b3792c7d62e1abc7e0844d92c28d35fd96b9e8441368090877a17",
+    "full_result_artifact_id": "d6e51e9ae69de981f41cce66771b59b441a3ed2ebf93f8405146786e9d184ccc",
+    "full_result_file_sha256": "73d5301d759b4bb9c21f9e282c6bb073827774fa79f4713c7ac5bd280ad0bb8d",
+    "implementation_revision": "f3aa067bc5dc75bfd7bef4718c24db43d055ac28",
+    "replay_byte_identical": true,
+    "verification": {
+      "focused_tests_passed_local": 6,
+      "focused_tests_passed_remote": 6
+    }
+  },
+  "result": {
+    "assignment_branches": [
+      {
+        "assignment_index": 0,
+        "status": "exact-fallback"
+      },
+      {
+        "assignment_index": 1,
+        "cross_view_bias_m": [
+          0.0002753636720384256,
+          0.003498229924733212,
+          -0.0036459184222290414
+        ],
+        "effective_information_clusters": 117,
+        "mutual_block_matches": 7,
+        "percentile_90_block_distance_m": 0.01355770838685317,
+        "reference_camera": "brics-odroid-013_cam1",
+        "reference_candidate_index": 59,
+        "represented_nodes": 128,
+        "status": "admitted-development-carrier",
+        "support_camera": "brics-odroid-019_cam1",
+        "support_candidate_index": 39,
+        "supported_nodes": 45
+      }
+    ],
+    "minimum_added_covariance_eigenvalue_m2": 0.000025,
+    "state_update_authorized": false
+  },
+  "schema_version": 1,
+  "source_case": {
+    "object_id": "026-sock-cloth",
+    "processing_episode_index": 0,
+    "prompt_source_frame": 149
+  },
+  "status": "source-only-development-complete"
+}
