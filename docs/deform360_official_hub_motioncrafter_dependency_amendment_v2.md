@@ -117,6 +117,16 @@ provider products, or output validation. The next job manifest must bind the new
 runner digest and use a fresh output root; v4 must not be resumed under the
 amended runtime.
 
+That replacement is
+`protocols/locks/deform360_official_hub_visuotactile_v5_motioncrafter_jobs.json`,
+with manifest ID
+`202ac2b16e91a35538e3f61daae4017b6582a6bcef6a83ecac90674832136ac2` and
+file SHA-256
+`1c368d4a6ff9163c80b3831821e10193907fbd18ea2d0ab7ebc33f2e369fd8c2`.
+It binds Bayesian-PhysTwin implementation
+`4d662a3c48d063edaa420e9a10b94b365422c3f0` and runner SHA-256
+`56a9dc023692d2bdfc73cd60d624c4a9405145691222c5c0c6545a37e3f68d22`.
+
 ## Claim boundary
 
 This amendment establishes runtime completeness and provenance only. It is not
