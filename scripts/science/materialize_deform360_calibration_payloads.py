@@ -69,6 +69,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ImportError as error:
         raise SystemExit("huggingface_hub is required") from error
 
+    token = os.environ.get(arguments.token_environment_variable) or None
     manifest = execute_materialization(
         selection_lock=arguments.selection_lock.resolve(),
         protocol_path=arguments.protocol.resolve(),
@@ -80,7 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         implementation_revision=arguments.implementation_revision,
         workers=arguments.workers,
         open_calibration_payloads=arguments.open_calibration_payloads,
-        token=os.environ.get(arguments.token_environment_variable),
+        token=token,
         api=HfApi(),
         download_file=hf_hub_download,
     )
