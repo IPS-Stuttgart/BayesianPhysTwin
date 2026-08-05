@@ -85,10 +85,11 @@ def _artifact_record(path: Path, artifact_id: str) -> dict[str, str]:
 
 
 def _camera_record(candidate: Any) -> dict[str, Any]:
+    margin = float(candidate.minimum_margin_px)
     return {
         "camera": candidate.camera,
         "minimum_assignment_coverage": candidate.minimum_assignment_coverage,
-        "minimum_margin_px": candidate.minimum_margin_px,
+        "minimum_margin_px": margin if np.isfinite(margin) else None,
         "view_direction": candidate.view_direction.tolist(),
     }
 
