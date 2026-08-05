@@ -44,6 +44,10 @@ def test_stage0_workflow_uses_portable_python_and_runner_scoped_artifacts() -> N
     workflow = WORKFLOW.read_text(encoding="utf-8")
     selection_job = workflow.split("\n  official-hub-selection:\n", 1)[1]
     job_header = selection_job.split("\n    steps:\n", 1)[0]
+    setup_block = selection_job.split("\n      - name: Set up Python\n", 1)[1].split(
+        "\n      - name: Install metadata-only client\n",
+        1,
+    )[0]
 
     evidence_declaration = (
         "EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0"
@@ -51,7 +55,10 @@ def test_stage0_workflow_uses_portable_python_and_runner_scoped_artifacts() -> N
     setup_action = "uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
     assert "runner.temp" not in job_header
     assert selection_job.count(evidence_declaration) >= 6
-    assert setup_action in selection_job
+    assert setup_action in setup_block
+    assert "timeout-minutes: 10" in setup_block
+    assert "cache:" not in setup_block
+    assert "cache-dependency-path:" not in setup_block
     assert "python3 -m venv" not in selection_job
     assert 'echo "EVIDENCE_DIR=' not in selection_job
     assert "path: ${{ runner.temp }}/deform360-official-hub-stage0" in selection_job
