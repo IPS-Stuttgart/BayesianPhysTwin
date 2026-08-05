@@ -90,6 +90,15 @@ jobs:
           if code.count(old_remaining) != 1:
               raise SystemExit("Ruff anchor accounting block changed")
           code = code.replace(old_remaining, new_remaining, 1)
+          old_core = """count = tests_workflow.count(marker)
+          if count != 2:
+              raise SystemExit(f"expected two core-suite markers, found {count}")"""
+          new_core = """count = tests_workflow.count(marker)
+          if count < 1:
+              raise SystemExit(f"missing core-suite marker: {count}")"""
+          if code.count(old_core) != 1:
+              raise SystemExit("core-suite marker accounting block changed")
+          code = code.replace(old_core, new_core, 1)
           exec(compile(code, str(source_path), "exec"), {"__name__": "__main__"})
 
           Path(".github/agent-trigger-pr138").unlink(missing_ok=True)
