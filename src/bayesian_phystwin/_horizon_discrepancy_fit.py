@@ -134,7 +134,7 @@ def fit_horizon_discrepancy_calibration(
 
     candidates: list[tuple[float | None, float, np.ndarray, float]] = []
     for half_life in half_lives:
-        for floor in ((1.0,) if half_life is None else floors):
+        for floor in (1.0,) if half_life is None else floors:
             if half_life is not None and floor >= 1.0:
                 continue
             retention = _retention(half_life, floor, horizons)
@@ -177,9 +177,7 @@ def fit_horizon_discrepancy_calibration(
 
     return HorizonDiscrepancyCalibrationV1(
         source_group_ids=groups,
-        source_summary_sha256=source_summary_id(
-            groups, horizons, endpoint, future
-        ),
+        source_summary_sha256=source_summary_id(groups, horizons, endpoint, future),
         horizon_steps=horizons,
         mean_reversion_half_life_steps=half_life,
         minimum_mean_retention=floor,
