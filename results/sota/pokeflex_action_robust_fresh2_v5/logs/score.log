@@ -1,0 +1,46 @@
+{
+  "published_kinect_CD_UL1_mm": 6.498,
+  "published_reference_is_contextual_only": true,
+  "published_direct_comparison_authorized": false,
+  "action_robust_fresh_take_count": 2,
+  "development_overlap_take_count": 0,
+  "baseline_frame_balanced_CD_UL1_mm": 8.030826644933969,
+  "global_scale_frame_balanced_CD_UL1_mm": 8.009030828519329,
+  "action_robust_scale_frame_balanced_CD_UL1_mm": 7.963363649367421,
+  "global_scale_checkpoint_pairing": {
+    "reference_mean_CD_UL1_mm": 8.055714891374432,
+    "candidate_mean_CD_UL1_mm": 8.033182094421436,
+    "relative_CD_UL1_improvement": 0.00279711946820794,
+    "win_count": 2,
+    "tie_count": 0,
+    "minimum_per_object_relative_improvement": 0.0017647198381775177,
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.013689030492739285,
+    "passed": true
+  },
+  "checkpoint_pairing": {
+    "reference_mean_CD_UL1_mm": 8.055714891374432,
+    "candidate_mean_CD_UL1_mm": 7.983039644489136,
+    "relative_CD_UL1_improvement": 0.009021576342419057,
+    "win_count": 2,
+    "tie_count": 0,
+    "minimum_per_object_relative_improvement": 0.0013056797767585255,
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.010128231060324566,
+    "passed": true
+  },
+  "global_scale_advancement": {
+    "reference_mean_CD_UL1_mm": 8.033182094421436,
+    "candidate_mean_CD_UL1_mm": 7.983039644489136,
+    "relative_CD_UL1_improvement": 0.006241916259700046,
+    "win_count": 1,
+    "tie_count": 0,
+    "minimum_per_object_relative_improvement": -0.0004598515706082617,
+    "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": 0.0035607994324147185,
+    "passed": false
+  },
+  "candidate_global_jaccard_valid": null,
+  "candidate_jaccard_valid_fraction": 0.0,
+  "jaccard_is_gating": false,
+  "released_checkpoint_pairing_is_primary": true,
+  "global_scale_is_advancement_baseline": true,
+  "all_target_gates_passed": false
+}

@@ -1,0 +1,117 @@
+{
+  "aggregate": {
+    "action_robust_fresh_take_count": 2,
+    "action_robust_scale_frame_balanced_CD_UL1_mm": 7.963363649367421,
+    "all_target_gates_passed": false,
+    "baseline_frame_balanced_CD_UL1_mm": 8.030826644933969,
+    "candidate_global_jaccard_valid": null,
+    "candidate_jaccard_valid_fraction": 0.0,
+    "checkpoint_pairing": {
+      "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.010128231060324566,
+      "candidate_mean_CD_UL1_mm": 7.983039644489136,
+      "minimum_per_object_relative_improvement": 0.0013056797767585255,
+      "passed": true,
+      "reference_mean_CD_UL1_mm": 8.055714891374432,
+      "relative_CD_UL1_improvement": 0.009021576342419057,
+      "tie_count": 0,
+      "win_count": 2
+    },
+    "development_overlap_take_count": 0,
+    "global_scale_advancement": {
+      "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": 0.0035607994324147185,
+      "candidate_mean_CD_UL1_mm": 7.983039644489136,
+      "minimum_per_object_relative_improvement": -0.0004598515706082617,
+      "passed": false,
+      "reference_mean_CD_UL1_mm": 8.033182094421436,
+      "relative_CD_UL1_improvement": 0.006241916259700046,
+      "tie_count": 0,
+      "win_count": 1
+    },
+    "global_scale_checkpoint_pairing": {
+      "bootstrap_upper_candidate_minus_reference_CD_UL1_mm": -0.013689030492739285,
+      "candidate_mean_CD_UL1_mm": 8.033182094421436,
+      "minimum_per_object_relative_improvement": 0.0017647198381775177,
+      "passed": true,
+      "reference_mean_CD_UL1_mm": 8.055714891374432,
+      "relative_CD_UL1_improvement": 0.00279711946820794,
+      "tie_count": 0,
+      "win_count": 2
+    },
+    "global_scale_frame_balanced_CD_UL1_mm": 8.009030828519329,
+    "global_scale_is_advancement_baseline": true,
+    "jaccard_is_gating": false,
+    "published_direct_comparison_authorized": false,
+    "published_kinect_CD_UL1_mm": 6.498,
+    "published_reference_is_contextual_only": true,
+    "released_checkpoint_pairing_is_primary": true
+  },
+  "artifact_kind": "PokeFlexActionRobustFresh2ResultSummary",
+  "barrier_file_sha256": "0f8faa083e8c93f45d4caa966cf2a3928fb60ebc4a117b2dd446c50b417bf68f",
+  "barrier_sha256": "2e927fe1f4df38f9bd6f63130fedf8397791215a3d936b6fad9a533b6324387c",
+  "claim_boundary": "This protocol evaluates the frozen action-robust correction on the final two previously unscored takes in the 116-take public PokeFlex release. Both physical objects were studied earlier, so this is prospective new-action transfer, not unseen-object generalization or a reconstruction of the five unavailable records in the published validation split.",
+  "decision": {
+    "advance_as_strictly_superior_scale_rule": false,
+    "all_preregistered_gates_passed": false,
+    "beats_global_scale": false,
+    "beats_released_checkpoint": true,
+    "retuning_from_final_two_outcomes_authorized": false
+  },
+  "files": {
+    "logs/Pillow_T4.predict.log": "3d2b7073aaca2cc7df28d2276fd50ef1aa7af9235ac029e57c4ca145e041602d",
+    "logs/PlushDice_T3.predict.log": "6dbbdc754d71043c00a70389585a3c3bd8dfa480c5a92780fceb2d8e7b6c5697",
+    "logs/barrier.log": "e10803ceff3ac1b0e1a167dc2b0a357a3b3a0ea60183799512e6d22a6816d753",
+    "logs/score.log": "3877c1bd3f60eafb505541cf43e2d43c3c5dd4db5684d455e67896ddb24e8a2c",
+    "prediction_barrier.json": "0f8faa083e8c93f45d4caa966cf2a3928fb60ebc4a117b2dd446c50b417bf68f",
+    "prediction_seals/Pillow_T4/seal.json": "de162194d315216e791aeb6c744239fbbc5fec3b90484bbc5d787991c31d32f1",
+    "prediction_seals/PlushDice_T3/seal.json": "ba69399047c08e13501e41bd155ed8225bd8fa62458a9cc3209dc56ff7937739",
+    "stage_manifests/Pillow_T4.source_stage_manifest.json": "db26d6c6de5b7e2eff28b72dcb84aead21ce4ccefc347c107924b8d755e8d0e0",
+    "stage_manifests/PlushDice_T3.source_stage_manifest.json": "0ba457b45b3c29e4337bacba75a029431d96ae774a701992f4f59a8b4173ce2e",
+    "target_result.json": "e575b56923d68daa9119ac431d43be3f6a2e1bb3ce35c1186f011f7ec80a60c0"
+  },
+  "future_mesh_read_before_barrier": false,
+  "implementation_revision": "edd799ffaa3530e5b3641a6ff391afe7e766bee2",
+  "prediction_count": 2,
+  "protocol_sha256": "6b47542ba5ede7a1f04e35f4d453eeb55b8394a0b935018dc6dcf9a9c0174724",
+  "schema_version": 1,
+  "server_transfer": {
+    "destination_archives_rehashed": true,
+    "destination_host": "gpuserver4090",
+    "destination_ipv4": "129.69.102.139",
+    "jump_server_in_payload_path": false,
+    "payload_path": "direct server LAN HTTP",
+    "source_host": "gpuserver6000",
+    "source_ipv4": "129.69.102.145"
+  },
+  "summary_sha256": "da35b35fa2b6bbf13f079be5fa6b5705320ac351dbb8cfab06d7a27ec9687112",
+  "takes": [
+    {
+      "action_robust_CD_UL1_mm": 7.7469277030285575,
+      "action_robust_vs_checkpoint_relative_improvement": 0.0013056797767585255,
+      "action_robust_vs_global_relative_improvement": -0.0004598515706082617,
+      "checkpoint_CD_UL1_mm": 7.757055934088882,
+      "global_scale_CD_UL1_mm": 7.743366903596143,
+      "object_name": "Pillow",
+      "scored_frame_count": 78,
+      "supported_frame_count": 71,
+      "take_id": "Pillow_T4"
+    },
+    {
+      "action_robust_CD_UL1_mm": 8.219151585949714,
+      "action_robust_vs_checkpoint_relative_improvement": 0.016185804604848503,
+      "action_robust_vs_global_relative_improvement": 0.012476959409934048,
+      "checkpoint_CD_UL1_mm": 8.35437384865998,
+      "global_scale_CD_UL1_mm": 8.322997285246728,
+      "object_name": "PlushDice",
+      "scored_frame_count": 66,
+      "supported_frame_count": 62,
+      "take_id": "PlushDice_T3"
+    }
+  ],
+  "target_meshes_opened_after_complete_barrier": true,
+  "target_result_file_sha256": "e575b56923d68daa9119ac431d43be3f6a2e1bb3ce35c1186f011f7ec80a60c0",
+  "verification": {
+    "changed_file_ruff_passed": true,
+    "remote_pokeflex_tests_passed": 211,
+    "remote_pokeflex_tests_skipped": 3
+  }
+}

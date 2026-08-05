@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkagePredictionBarrier",
+  "protocol_sha256": "6b47542ba5ede7a1f04e35f4d453eeb55b8394a0b935018dc6dcf9a9c0174724",
+  "source_result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+  "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+  "implementation_revision": "edd799ffaa3530e5b3641a6ff391afe7e766bee2",
+  "prediction_count": 2,
+  "target_take_ids": [
+    "Pillow_T4",
+    "PlushDice_T3"
+  ],
+  "predictions": [
+    {
+      "take_id": "Pillow_T4",
+      "seal_path": "/home/florianpfaff/pokeflex-public-transfer-v5-edd799ff/predictions/Pillow_T4/seal.json",
+      "seal_file_sha256": "de162194d315216e791aeb6c744239fbbc5fec3b90484bbc5d787991c31d32f1",
+      "prediction_npz_sha256": "203446c3d58366faf41d78dbd012be7530492d12f5219b4feb25f08453c978e0"
+    },
+    {
+      "take_id": "PlushDice_T3",
+      "seal_path": "/home/florianpfaff/pokeflex-public-transfer-v5-edd799ff/predictions/PlushDice_T3/seal.json",
+      "seal_file_sha256": "ba69399047c08e13501e41bd155ed8225bd8fa62458a9cc3209dc56ff7937739",
+      "prediction_npz_sha256": "74fad1f20516e698ccd0c6f43abc45c8e54011e306c5d91e6a75fa684b6743ce"
+    }
+  ],
+  "target_mesh_opened": false,
+  "scoring_authorized": true,
+  "barrier_sha256": "2e927fe1f4df38f9bd6f63130fedf8397791215a3d936b6fad9a533b6324387c"
+}
