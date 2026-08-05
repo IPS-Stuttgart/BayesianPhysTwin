@@ -1,0 +1,131 @@
+name: Agent fix PR 163 exact-head validation
+
+on:
+  push:
+    branches:
+      - agent/fast-source-preflight
+    paths:
+      - .github/workflows/agent-fix-pr163-exact-head.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/fast-source-preflight
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Bind checks to the requested head tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          script = Path('scripts/ci/check_changed_python.py')
+          text = script.read_text(encoding='utf-8')
+          old = '''def _verify_revision(repository_root: Path, revision: str, *, name: str) -> None:
+              if not revision or revision.strip() != revision:
+                  raise ValueError(f"{name} must be a nonempty canonical revision")
+              try:
+                  _run_git(repository_root, ["cat-file", "-e", f"{revision}^{{commit}}"])
+              except subprocess.CalledProcessError as error:
+                  raise ValueError(f"{name} is not an available commit: {revision}") from error
+          '''
+          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
+          new = '''def _resolve_revision(repository_root: Path, revision: str, *, name: str) -> str:
+              if not revision or revision.strip() != revision:
+                  raise ValueError(f"{name} must be a nonempty canonical revision")
+              try:
+                  result = _run_git(
+                      repository_root,
+                      ["rev-parse", "--verify", f"{revision}^{{commit}}"],
+                      capture_output=True,
+                  )
+              except subprocess.CalledProcessError as error:
+                  raise ValueError(f"{name} is not an available commit: {revision}") from error
+              return result.stdout.decode("ascii").strip()
+          '''
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
+          if old not in text:
+              raise SystemExit('revision helper marker changed')
+          text = text.replace(old, new, 1)
+          old = '''    root = repository_root.resolve(strict=True)
+              _verify_revision(root, base_revision, name="base_revision")
+              _verify_revision(root, head_revision, name="head_revision")
+              result = _run_git(
+          '''
+          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines())
+          new = '''    root = repository_root.resolve(strict=True)
+              base_sha = _resolve_revision(root, base_revision, name="base_revision")
+              head_sha = _resolve_revision(root, head_revision, name="head_revision")
+              checkout_sha = _resolve_revision(root, "HEAD", name="repository HEAD")
+              if checkout_sha != head_sha:
+                  raise ValueError(
+                      "repository HEAD does not match head_revision; "
+                      "refusing to check files from a different tree"
+                  )
+              result = _run_git(
+          '''
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines())
+          if old not in text:
+              raise SystemExit('changed_python_files marker changed')
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              '            base_revision,\n            head_revision,\n',
+              '            base_sha,\n            head_sha,\n',
+              1,
+          )
+          script.write_text(text, encoding='utf-8')
+
+          tests = Path('tests/test_changed_python_preflight.py')
+          text = tests.read_text(encoding='utf-8')
+          marker = '@pytest.mark.skipif(not hasattr(Path, "is_symlink"), reason="symlinks unsupported")\n'
+          addition = '''def test_rejects_checkout_that_does_not_match_requested_head(
+              tmp_path: Path,
+          ) -> None:
+              repository = tmp_path / "repository"
+              _initialize_repository(repository)
+              (repository / "module.py").write_text("VALUE = 1\\n", encoding="utf-8")
+              _git(repository, "add", ".")
+              _git(repository, "commit", "-m", "base")
+              base = _git(repository, "rev-parse", "HEAD")
+
+              (repository / "module.py").write_text("VALUE = 2\\n", encoding="utf-8")
+              _git(repository, "add", "module.py")
+              _git(repository, "commit", "-m", "head")
+              head = _git(repository, "rev-parse", "HEAD")
+              _git(repository, "checkout", "--detach", base)
+
+              result = _run_preflight(repository, base=base, head=head)
+
+              assert result.returncode != 0
+              assert "repository HEAD does not match head_revision" in result.stderr
+
+
+          '''
+          addition = '\n'.join(line[10:] if line.startswith('          ') else line for line in addition.splitlines())
+          if marker not in text:
+              raise SystemExit('test insertion marker changed')
+          text = text.replace(marker, addition + marker, 1)
+          tests.write_text(text, encoding='utf-8')
+          PY
+          python -m pip install -e '.[dev]'
+          python -m ruff format scripts/ci/check_changed_python.py tests/test_changed_python_preflight.py
+          python -m ruff check scripts/ci/check_changed_python.py tests/test_changed_python_preflight.py
+          python -m ruff format --check scripts/ci/check_changed_python.py tests/test_changed_python_preflight.py
+          python -m pytest -q tests/test_changed_python_preflight.py
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/ci/check_changed_python.py tests/test_changed_python_preflight.py
+          git commit -m 'Bind source preflight to requested head'
+          git push origin HEAD:agent/fast-source-preflight
