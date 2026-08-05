@@ -38,9 +38,9 @@ env:
 
 jobs:
   contracts:
-    name: Data-free lock contracts
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: Data-free lock contracts / workstation2
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
     steps:
       - name: Check out exact proposed source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -77,7 +77,8 @@ jobs:
             tests/test_deform360_visual_provider_bootstrap.py \
             tests/test_deform360_visual_provider_freeze.py \
             tests/test_deform360_visual_provider_lock.py \
-            tests/test_pull_request_workflow_integrity.py
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_release_metadata.py
           python -m compileall -q \
             scripts/science/bootstrap_deform360_visual_provider_models.py \
             scripts/science/build_deform360_visual_provider_freeze.py
