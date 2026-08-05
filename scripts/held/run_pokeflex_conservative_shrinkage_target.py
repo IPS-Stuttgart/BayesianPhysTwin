@@ -48,6 +48,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (  # noqa: 
     CHECKPOINT_SHA256,
     SELECTED_ARM,
     SOURCE_RESULT_SHA256,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
     TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
@@ -132,6 +133,7 @@ def _predict(
         TARGET_PROTOCOL_OFFICIAL13_PUBLIC_V1,
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
         TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     }:
@@ -146,6 +148,7 @@ def _predict(
     if protocol["protocol_id"] in {
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
     }:
         if source_stage_manifest is None:
@@ -469,6 +472,7 @@ def _predict(
     }
     if protocol["protocol_id"] in {
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
         TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     }:
@@ -614,6 +618,7 @@ def _score(
         if protocol["protocol_id"] in {
             TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
             TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
+            TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
             TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
         }:
             seal_payload = json.loads(archive.seal_path.read_text(encoding="utf-8"))

@@ -15,6 +15,24 @@ from typing import Any
 
 import numpy as np
 
+from .pokeflex_action_robust_final_freshness import (
+    ELIGIBLE_INVENTORY_SHA256 as ACTION_ROBUST_FINAL_ELIGIBLE_INVENTORY_SHA256,
+)
+from .pokeflex_action_robust_final_freshness import (
+    FRESHNESS_AUDIT_FILE_SHA256 as ACTION_ROBUST_FINAL_FRESHNESS_AUDIT_FILE_SHA256,
+)
+from .pokeflex_action_robust_final_freshness import (
+    FRESHNESS_AUDIT_SHA256 as ACTION_ROBUST_FINAL_FRESHNESS_AUDIT_SHA256,
+)
+from .pokeflex_action_robust_final_freshness import (
+    PRIOR_EXCLUSION_UNION_SHA256 as ACTION_ROBUST_FINAL_PRIOR_EXCLUSION_UNION_SHA256,
+)
+from .pokeflex_action_robust_final_freshness import (
+    SELECTED_INVENTORY_SHA256 as ACTION_ROBUST_FINAL_SELECTED_INVENTORY_SHA256,
+)
+from .pokeflex_action_robust_final_freshness import (
+    SELECTED_ZIP_SHA256 as ACTION_ROBUST_FRESH2_PUBLIC_ZIP_SHA256,
+)
 from .pokeflex_action_robust_freshness import (
     ELIGIBLE_INVENTORY_SHA256 as ACTION_ROBUST_ELIGIBLE_INVENTORY_SHA256,
 )
@@ -88,6 +106,10 @@ TARGET_PROTOCOL_INSTANCE_FRESH12_V2_SHA256 = (
 TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3 = "pokeflex-action-robust-shrinkage-fresh6-v3"
 TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256 = (
     "3e85d8fc89b16cdc2aceb13e9bf49d0c9e47f0a2761550323ec13b9b1bda8157"
+)
+TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5 = "pokeflex-action-robust-shrinkage-fresh2-v5"
+TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5_SHA256 = (
+    "6b47542ba5ede7a1f04e35f4d453eeb55b8394a0b935018dc6dcf9a9c0174724"
 )
 TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1 = (
     "pokeflex-action-robust-official13-public-v1"
@@ -181,6 +203,9 @@ INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS = tuple(INSTANCE_FRESH12_PUBLIC_ZIP_SHA2
 ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS = tuple(
     ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256
 )
+ACTION_ROBUST_FRESH2_PUBLIC_TARGET_TAKE_IDS = tuple(
+    ACTION_ROBUST_FRESH2_PUBLIC_ZIP_SHA256
+)
 INSTANCE_FRESH12_PRIOR_EXCLUSION_UNION_SHA256 = (
     "6cb1c809f70411fd0c35f30ae5bf891c8d1f87646e9cbf2ad27b5c428c3ac615"
 )
@@ -264,16 +289,19 @@ CHECKPOINT_SHA256 = {
 CALIBRATED_SCALE_PROTOCOLS = {
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
     TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
 }
 ACTION_ROBUST_PROTOCOLS = {
     TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
     TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
 }
 STAGED_FRESH_PROTOCOLS = {
     TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
     TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
     TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+    TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
 }
 
 
@@ -329,6 +357,8 @@ def target_take_ids_for_protocol(protocol: Mapping[str, Any]) -> tuple[str, ...]
         return INSTANCE_FRESH12_PUBLIC_TARGET_TAKE_IDS
     if protocol.get("protocol_id") == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
         return ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS
+    if protocol.get("protocol_id") == TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5:
+        return ACTION_ROBUST_FRESH2_PUBLIC_TARGET_TAKE_IDS
     if (
         protocol.get("protocol_id")
         == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1
@@ -392,6 +422,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
             TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
             TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+            TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
             TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
         },
         "target protocol id changed",
@@ -672,6 +703,83 @@ def validate_pokeflex_shrinkage_target_protocol(
             == ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256,
             "action-robust archive bytes changed",
         )
+    elif protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5:
+        _require(
+            tuple(cohort.get("take_ids", ()))
+            == ACTION_ROBUST_FRESH2_PUBLIC_TARGET_TAKE_IDS,
+            "final action-robust fresh take cohort changed",
+        )
+        _require(
+            tuple(cohort.get("prospective_take_ids", ()))
+            == ACTION_ROBUST_FRESH2_PUBLIC_TARGET_TAKE_IDS,
+            "final action-robust prospective cohort changed",
+        )
+        _require(
+            tuple(cohort.get("development_overlap_take_ids", ())) == (),
+            "final action-robust cohort gained take overlap",
+        )
+        audit = payload.get("freshness_audit")
+        _require(
+            isinstance(audit, Mapping),
+            "final action-robust freshness audit is missing",
+        )
+        _require(
+            audit.get("audit_sha256")
+            == ACTION_ROBUST_FINAL_FRESHNESS_AUDIT_SHA256,
+            "final action-robust freshness audit changed",
+        )
+        _require(
+            audit.get("audit_file_sha256")
+            == ACTION_ROBUST_FINAL_FRESHNESS_AUDIT_FILE_SHA256,
+            "final action-robust freshness audit bytes changed",
+        )
+        _require(
+            audit.get("public_inventory_sha256") == FRESH12_PUBLIC_INVENTORY_SHA256,
+            "final action-robust public inventory changed",
+        )
+        _require(
+            audit.get("prior_exclusion_union_sha256")
+            == ACTION_ROBUST_FINAL_PRIOR_EXCLUSION_UNION_SHA256,
+            "final action-robust prior exclusion union changed",
+        )
+        _require(
+            audit.get("eligible_inventory_sha256")
+            == ACTION_ROBUST_FINAL_ELIGIBLE_INVENTORY_SHA256,
+            "final action-robust eligible inventory changed",
+        )
+        _require(
+            audit.get("selected_inventory_sha256")
+            == ACTION_ROBUST_FINAL_SELECTED_INVENTORY_SHA256,
+            "final action-robust selected inventory changed",
+        )
+        _require(
+            dict(audit.get("selected_zip_sha256", {}))
+            == ACTION_ROBUST_FRESH2_PUBLIC_ZIP_SHA256,
+            "final action-robust archive bytes changed",
+        )
+        extension = source.get("all18_source_extension")
+        _require(
+            isinstance(extension, Mapping),
+            "all-18 source extension is missing",
+        )
+        _require(
+            extension.get("calibration_sha256")
+            == "e94eeb9bdd2cc69e245b0bd48d843e5f64cb039e1eb02841e4a784cbe4dbc880",
+            "all-18 source extension changed",
+        )
+        _require(
+            extension.get("calibration_file_sha256")
+            == "00cdf5732f5dbf7eb0f899ebbb536260d9e66c0a151b41eec81ffaaef4aaf110",
+            "all-18 source extension bytes changed",
+        )
+        _require(
+            extension.get("parent_rows_used_by_target_unchanged") is True,
+            "target scale rows changed in the all-18 extension",
+        )
+        _require(
+            tuple(extension.get("target_objects", ())) == ("Pillow", "PlushDice"),
+            "all-18 extension target rows changed",
+        )
     elif protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1:
         _require(
             tuple(cohort.get("take_ids", ())) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS,
@@ -909,6 +1017,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
     }:
         expected_aggregation = (
             "equal scored frames over the exact official 18-take split; object-balanced values are diagnostic"
@@ -922,7 +1031,11 @@ def validate_pokeflex_shrinkage_target_protocol(
                     else (
                         "equal-weight physical objects over six prospectively selected public takes; frame-level values are diagnostic"
                         if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
-                        else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+                        else (
+                            "equal-weight physical objects over the final two prospectively sealed public takes; frame-level values are diagnostic"
+                            if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5
+                            else "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic"
+                        )
                     )
                 )
             )
@@ -1133,7 +1246,11 @@ def validate_pokeflex_shrinkage_target_protocol(
             expected_action_robust_digest = (
                 TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3_SHA256
                 if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
-                else TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1_SHA256
+                else (
+                    TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5_SHA256
+                    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5
+                    else TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1_SHA256
+                )
             )
             _require(
                 bool(expected_action_robust_digest),
@@ -1250,6 +1367,7 @@ def validate_prediction_seal(
         TARGET_PROTOCOL_FRESH12_PUBLIC_V1,
         TARGET_PROTOCOL_INSTANCE_FRESH12_V2,
         TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3,
+        TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5,
         TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1,
     }:
         _require(take == "T2", "prediction take changed")
@@ -1260,7 +1378,11 @@ def validate_prediction_seal(
             else (
                 INSTANCE_FRESH12_PUBLIC_ZIP_SHA256
                 if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2
-                else ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256
+                else (
+                    ACTION_ROBUST_FRESH6_PUBLIC_ZIP_SHA256
+                    if protocol_id == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3
+                    else ACTION_ROBUST_FRESH2_PUBLIC_ZIP_SHA256
+                )
             )
         )
         _require(
@@ -2207,6 +2329,19 @@ def _evaluate_action_robust_fresh6_metrics(
     )
 
 
+def _evaluate_action_robust_fresh2_metrics(
+    per_take: Sequence[Mapping[str, Any]],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    return _evaluate_calibrated_scale_metrics(
+        per_take,
+        protocol,
+        target_take_ids=ACTION_ROBUST_FRESH2_PUBLIC_TARGET_TAKE_IDS,
+        candidate_prefix="action_robust",
+        advancement_gate_key="action_robust_advancement",
+    )
+
+
 def _evaluate_action_robust_official13_public_metrics(
     per_take: Sequence[Mapping[str, Any]],
     protocol: Mapping[str, Any],
@@ -2262,6 +2397,8 @@ def evaluate_target_metrics(
         return _evaluate_instance_fresh12_metrics(per_object, protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
         return _evaluate_action_robust_fresh6_metrics(per_object, protocol)
+    if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH2_V5:
+        return _evaluate_action_robust_fresh2_metrics(per_object, protocol)
     if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_OFFICIAL13_PUBLIC_V1:
         return _evaluate_action_robust_official13_public_metrics(
             per_object,
