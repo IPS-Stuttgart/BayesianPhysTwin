@@ -19,11 +19,11 @@ reproduction, or Causal4D provider contracts.
 
 ## Upstream contract pin
 
-The consumer mirrors the portable contract introduced by
-`IPS-Stuttgart/Prob4D` pull request `#100` at source blob
-`f36726a26592397344ef113531f3c02a31878d90` on branch
-`agent/material-identity-marginalization` (head revision
-`f813a26288105e56c6d122123ae974be26662d3d` when this interface was written).
+The consumer mirrors the portable contract merged by
+`IPS-Stuttgart/Prob4D#100` as squash commit
+`db354dcead00568d3badce33fab2d89e98d13034`. The independently checked upstream
+source is `src/prob4d/material_identity_mixture.py` at blob
+`fcfca73b8e5e78fab9bf77fa52230fc0eeecd371`.
 
 The accepted upstream semantics are exact:
 
