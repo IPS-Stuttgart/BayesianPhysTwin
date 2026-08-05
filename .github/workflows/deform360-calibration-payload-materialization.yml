@@ -1,0 +1,293 @@
+name: Deform360 calibration payload materialization
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-payload-materialization.yml"
+      - "scripts/science/materialize_deform360_calibration_payloads.py"
+      - "src/bayesian_phystwin/deform360_calibration_payload_plan.py"
+      - "src/bayesian_phystwin/deform360_calibration_payload_runtime.py"
+      - "tests/test_deform360_calibration_payload_materialization.py"
+      - "docs/deform360_calibration_payload_materialization.md"
+      - "protocols/deform360_official_hub_visuotactile_v1.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-payload-materialization.yml"
+      - "scripts/science/materialize_deform360_calibration_payloads.py"
+      - "src/bayesian_phystwin/deform360_calibration_payload_plan.py"
+      - "src/bayesian_phystwin/deform360_calibration_payload_runtime.py"
+      - "tests/test_deform360_calibration_payload_materialization.py"
+      - "docs/deform360_calibration_payload_materialization.md"
+      - "protocols/deform360_official_hub_visuotactile_v1.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/**"
+  workflow_dispatch:
+    inputs:
+      data_root:
+        description: Persistent selected-calibration dataset root on workstation2
+        required: false
+        type: string
+      workers:
+        description: Parallel exact-file downloads
+        required: false
+        default: "4"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-calibration-payloads-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BPT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  DEFORM360_PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  INPUT_DATA_ROOT: ${{ inputs.data_root }}
+  INPUT_WORKERS: ${{ inputs.workers }}
+  VAR_DATA_ROOT: ${{ vars.DEFORM360_CALIBRATION_ROOT }}
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Exact selected-episode contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_SOURCE_SHA }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install contract environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]" "huggingface_hub>=0.24"
+          python -m pip check
+
+      - name: Validate reviewable source
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/materialize_deform360_calibration_payloads.py
+            src/bayesian_phystwin/deform360_calibration_payload_plan.py
+            src/bayesian_phystwin/deform360_calibration_payload_runtime.py
+            tests/test_deform360_calibration_payload_materialization.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check --diff "${files[@]}"
+          python -m pytest -q \
+            tests/test_deform360_calibration_payload_materialization.py \
+            tests/test_deform360_calibration_execution.py \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_pull_request_workflow_integrity.py
+          python -m compileall -q \
+            scripts/science/materialize_deform360_calibration_payloads.py \
+            src/bayesian_phystwin/deform360_calibration_payload_plan.py \
+            src/bayesian_phystwin/deform360_calibration_payload_runtime.py
+          git diff --check
+
+  materialize:
+    name: Open only locked calibration prefixes / workstation2
+    if: github.event_name != 'pull_request'
+    needs: contracts
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 360
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - name: Check out exact BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BPT_SOURCE_SHA }}
+          persist-credentials: false
+          fetch-depth: 0
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.DEFORM360_PROCESSING_REVISION }}
+          path: _deform360
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Keep the parent source checkout clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '/_deform360/\n' >> .git/info/exclude
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Prepare isolated runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3.12 || command -v python3)"
+          test -x "${python_bin}"
+          site="${RUNNER_TEMP}/deform360-calibration-payload-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${site}"
+          mkdir -p "${site}"
+          "${python_bin}" -m pip install \
+            --break-system-packages \
+            --target "${site}" \
+            "huggingface_hub>=0.24" \
+            "numpy>=1.23,<2.3" \
+            "opencv-contrib-python>=4.5"
+          {
+            echo "PYTHON_BIN=${python_bin}"
+            echo "PYTHON_SITE=${site}"
+            echo "PYTHONPATH=${site}:${GITHUB_WORKSPACE}/src"
+          } >> "${GITHUB_ENV}"
+          PYTHONPATH="${site}:${GITHUB_WORKSPACE}/src" "${python_bin}" - <<'PY'
+          import cv2
+          import huggingface_hub
+          import numpy
+          import bayesian_phystwin
+
+          print("numpy", numpy.__version__)
+          print("opencv", cv2.__version__)
+          print("huggingface_hub", huggingface_hub.__version__)
+          print("bayesian_phystwin", bayesian_phystwin.__file__)
+          PY
+
+      - name: Resolve persistent data and evidence roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          requested="${INPUT_DATA_ROOT:-${VAR_DATA_ROOT:-}}"
+          if [[ -z "${requested}" ]]; then
+            requested=/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1
+          fi
+          data_root="$(realpath -m "${requested}")"
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-payloads-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${data_root}" "${evidence_root}"
+          workers="${INPUT_WORKERS:-4}"
+          [[ "${workers}" =~ ^[1-9][0-9]*$ ]]
+          {
+            echo "DEFORM360_DATA_ROOT=${data_root}"
+            echo "DEFORM360_EVIDENCE_ROOT=${evidence_root}"
+            echo "DEFORM360_WORKERS=${workers}"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "requested_data_root=${requested}"
+            echo "resolved_data_root=${data_root}"
+            echo "workers=${workers}"
+          } > "${evidence_root}/storage-selection.txt"
+
+      - name: Materialize exact selected calibration-prefix payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" \
+            scripts/science/materialize_deform360_calibration_payloads.py \
+            --selection-lock \
+              protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --protocol protocols/deform360_official_hub_visuotactile_v1.json \
+            --visual-provider-lock \
+              protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --processing-checkout "${GITHUB_WORKSPACE}/_deform360" \
+            --dataset-root "${DEFORM360_DATA_ROOT}" \
+            --output "${DEFORM360_EVIDENCE_ROOT}/materialization.json" \
+            --implementation-revision "${BPT_SOURCE_SHA}" \
+            --workers "${DEFORM360_WORKERS}" \
+            --open-calibration-payloads \
+            | tee "${DEFORM360_EVIDENCE_ROOT}/console.log"
+
+      - name: Verify closed confirmation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["DEFORM360_EVIDENCE_ROOT"])
+          manifest = json.loads(
+              (root / "materialization.json").read_text(encoding="utf-8")
+          )
+          boundary = manifest["information_boundary"]
+          assert boundary["calibration_payloads_opened"] is True
+          assert boundary["camera_media_opened"] is False
+          assert boundary["confirmation_payloads_opened"] is False
+          assert boundary["target_outcomes_used"] is False
+          assert len(manifest["calibration_object_ids"]) == 10
+          assert len(manifest["confirmation_object_ids"]) == 12
+          confirmation = tuple(
+              f"raw/{object_id}/"
+              for object_id in manifest["confirmation_object_ids"]
+          )
+          opened = [item["path"] for item in manifest["downloaded_files"]]
+          forbidden = [
+              path
+              for path in opened
+              if any(path.startswith(prefix) for prefix in confirmation)
+          ]
+          if forbidden:
+              raise SystemExit(f"confirmation paths were opened: {forbidden}")
+          print(json.dumps(boundary, indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Record environment and evidence checksums
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${DEFORM360_EVIDENCE_ROOT:-}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "bpt_revision=${BPT_SOURCE_SHA}"
+            echo "processing_revision=${DEFORM360_PROCESSING_REVISION}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            "${PYTHON_BIN:-python3}" --version
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader
+            du -sh "${DEFORM360_DATA_ROOT:-/nonexistent}" || true
+          } > "${DEFORM360_EVIDENCE_ROOT}/environment.txt"
+          (
+            cd "${DEFORM360_EVIDENCE_ROOT}"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              > SHA256SUMS
+          )
+
+      - name: Upload compact calibration-access evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-calibration-payloads-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DEFORM360_EVIDENCE_ROOT }}/materialization.json
+            ${{ env.DEFORM360_EVIDENCE_ROOT }}/console.log
+            ${{ env.DEFORM360_EVIDENCE_ROOT }}/storage-selection.txt
+            ${{ env.DEFORM360_EVIDENCE_ROOT }}/environment.txt
+            ${{ env.DEFORM360_EVIDENCE_ROOT }}/SHA256SUMS
+          if-no-files-found: warn
+          retention-days: 90
