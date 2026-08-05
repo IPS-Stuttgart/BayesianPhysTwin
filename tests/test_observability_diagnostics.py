@@ -107,9 +107,7 @@ def test_query_basis_rotation_preserves_spectrum() -> None:
 
 def test_comparison_fails_closed_on_information_loss() -> None:
     reference = NuisanceAwareInformationState.from_independent_priors(np.eye(2))
-    candidate = NuisanceAwareInformationState.from_independent_priors(
-        0.5 * np.eye(2)
-    )
+    candidate = NuisanceAwareInformationState.from_independent_priors(0.5 * np.eye(2))
 
     with pytest.raises(ValueError, match="information is lower"):
         compare_marginal_observability(reference, candidate)
