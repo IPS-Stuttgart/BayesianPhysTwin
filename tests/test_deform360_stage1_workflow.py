@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-WORKFLOW = (
-    Path(__file__).resolve().parents[1]
-    / ".github"
-    / "workflows"
-    / "deform360-stage1-control.yml"
-)
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW = ROOT / ".github" / "workflows" / "deform360-stage1-control.yml"
+MAIN_TEST_WORKFLOW = ROOT / ".github" / "workflows" / "tests.yml"
 
 
 def test_workflow_uses_registered_command_and_isolated_self_hosted_roots() -> None:
@@ -84,3 +81,9 @@ def test_workflow_pins_every_third_party_action_to_a_full_sha() -> None:
         reference = stripped.split("@", 1)[1].split()[0]
         assert len(reference) == 40
         assert all(character in "0123456789abcdef" for character in reference)
+
+
+def test_main_coverage_lane_runs_stage1_adversarial_suite() -> None:
+    workflow = MAIN_TEST_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "tests/test_deform360_stage1_coverage.py" in workflow
