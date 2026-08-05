@@ -131,9 +131,7 @@ def causal4d_belief_provider_v2_manifest(
         "metadata": {
             "provider_api": "bayesian_phystwin.causal4d_belief_provider_v2",
             "provider_api_version": CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION,
-            "inference_role": (
-                "model-averaged robust readout-discrepancy endpoint"
-            ),
+            "inference_role": ("model-averaged robust readout-discrepancy endpoint"),
             "compatibility": (
                 "additive provider; causal4d_belief_provider_v1 is unchanged"
             ),
