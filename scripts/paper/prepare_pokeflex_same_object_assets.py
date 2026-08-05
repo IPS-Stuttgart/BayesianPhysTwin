@@ -132,6 +132,28 @@ def _select_take(result: Mapping[str, Any], requested: str | None) -> str:
     )
 
 
+def _candidate_take_id(record: Mapping[str, Any]) -> str:
+    frozen = Path(str(record["path"]))
+    suffix = "_candidates.json"
+    _require(
+        frozen.name.endswith(suffix),
+        f"candidate artifact name is not canonical: {frozen.name}",
+    )
+    return str(record.get("take_id", frozen.name.removesuffix(suffix)))
+
+
+def _candidate_record(
+    result: Mapping[str, Any],
+    *,
+    take_id: str,
+) -> Mapping[str, Any]:
+    records = result.get("candidate_artifacts")
+    _require(isinstance(records, list) and records, "candidate artifacts are missing")
+    matches = [record for record in records if _candidate_take_id(record) == take_id]
+    _require(len(matches) == 1, f"expected one candidate record for {take_id}")
+    return matches[0]
+
+
 def _stage_candidate_artifacts(
     result: Mapping[str, Any],
     *,
@@ -151,12 +173,7 @@ def _stage_candidate_artifacts(
     for record in records:
         frozen = Path(str(record["path"]))
         expected_sha = str(record["sha256"])
-        suffix = "_candidates.json"
-        _require(
-            frozen.name.endswith(suffix),
-            f"candidate artifact name is not canonical: {frozen.name}",
-        )
-        take_id = str(record.get("take_id", frozen.name.removesuffix(suffix)))
+        take_id = _candidate_take_id(record)
         _require(
             take_id in frozen_take_ids, f"candidate take is outside panel: {take_id}"
         )
@@ -246,6 +263,15 @@ def _locate_extracted_take(extract_root: Path, take_id: str) -> Path:
     return matches[0].resolve()
 
 
+def _replace_staged_take(staged_take: Path, take_root: Path) -> None:
+    if staged_take.is_symlink() or staged_take.is_file():
+        staged_take.unlink()
+    elif staged_take.exists():
+        shutil.rmtree(staged_take)
+    staged_take.symlink_to(take_root, target_is_directory=True)
+    _require((staged_take / "robot_data.json").is_file(), "staged take is invalid")
+
+
 def _stage_take(
     *,
     take_id: str,
@@ -282,18 +308,109 @@ def _stage_take(
         extraction_performed = True
 
     staged_take = stage_root / take_id
-    if staged_take.exists() or staged_take.is_symlink():
-        staged_take.unlink()
-    staged_take.symlink_to(take_root, target_is_directory=True)
-    _require((staged_take / "robot_data.json").is_file(), "staged take is invalid")
+    _replace_staged_take(staged_take, take_root)
     return staged_take, {
         "take_id": take_id,
         "archive": str(archive_path.resolve()),
         "archive_size_bytes": observed_size,
         "archive_sha256": observed_sha,
+        "archive_validation": "verified",
         "take_root": str(take_root),
         "staged_take": str(staged_take),
         "extraction_performed": extraction_performed,
+    }
+
+
+def _candidate_preparation_attestation(
+    *,
+    evidence_path: Path,
+    result: Mapping[str, Any],
+    result_path: Path,
+    manifest_path: Path,
+    prospective_protocol_path: Path,
+    independent_depth_protocol_path: Path,
+    registration_protocol_path: Path,
+    take_id: str,
+) -> dict[str, Any] | None:
+    evidence = _load_json(evidence_path)
+    _require(
+        evidence.get("artifact_kind") == "PokeFlexSameObjectCandidatePreparationV1",
+        "candidate preparation evidence has the wrong kind",
+    )
+    inputs = evidence.get("inputs")
+    _require(isinstance(inputs, Mapping), "candidate preparation inputs are missing")
+    expected_hashes = {
+        "prospective_result_sha256": _sha256(result_path),
+        "execution_manifest_sha256": _sha256(manifest_path),
+        "prospective_protocol_sha256": _sha256(prospective_protocol_path),
+        "independent_depth_protocol_sha256": _sha256(
+            independent_depth_protocol_path
+        ),
+        "registration_protocol_sha256": _sha256(registration_protocol_path),
+    }
+    for name, expected in expected_hashes.items():
+        _require(inputs.get(name) == expected, f"candidate preparation changed: {name}")
+
+    records = evidence.get("candidate_artifacts")
+    _require(
+        isinstance(records, list) and records,
+        "candidate preparation records are missing",
+    )
+    matches = [record for record in records if record.get("take_id") == take_id]
+    _require(len(matches) == 1, f"candidate preparation omitted {take_id}")
+    record = matches[0]
+    frozen = _candidate_record(result, take_id=take_id)
+    _require(
+        str(record.get("sha256")) == str(frozen["sha256"]),
+        f"candidate preparation checksum changed for {take_id}",
+    )
+    if record.get("regenerated") is not True:
+        return None
+    _require(
+        record.get("source_resolution") == "regenerated-from-frozen-inputs",
+        f"candidate preparation source changed for {take_id}",
+    )
+    take = record.get("take")
+    _require(isinstance(take, Mapping), f"candidate take evidence is missing: {take_id}")
+    _require(take.get("take_id") == take_id, "candidate take identity changed")
+    return {
+        "path": str(evidence_path.resolve()),
+        "sha256": _sha256(evidence_path),
+        "candidate_sha256": str(record["sha256"]),
+        "archive_verification": record.get("archive_verification"),
+        "take": dict(take),
+    }
+
+
+def _stage_attested_take(
+    *,
+    take_id: str,
+    archive: Mapping[str, Any],
+    attestation: Mapping[str, Any],
+    configured_dataset_root: Path | None,
+    search_roots: Iterable[Path],
+    stage_root: Path,
+) -> tuple[Path, dict[str, Any]]:
+    take_root = _find_take_root(
+        take_id,
+        configured_dataset_root=configured_dataset_root,
+        search_roots=search_roots,
+    )
+    _require(take_root is not None, f"attested extracted take is missing: {take_id}")
+    staged_take = stage_root / take_id
+    _replace_staged_take(staged_take, take_root)
+    return staged_take, {
+        "take_id": take_id,
+        "archive": str(Path(str(archive["path"])).absolute()),
+        "archive_size_bytes": None,
+        "archive_sha256": None,
+        "expected_archive_size_bytes": int(archive["size_bytes"]),
+        "expected_archive_sha256": str(archive["sha256"]),
+        "archive_validation": "attested-by-exact-candidate-regeneration",
+        "candidate_preparation": dict(attestation),
+        "take_root": str(take_root),
+        "staged_take": str(staged_take),
+        "extraction_performed": False,
     }
 
 
@@ -410,6 +527,8 @@ def _resolve_checkpoints(
 def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
     result_path = args.prospective_result.resolve()
     manifest_path = args.execution_manifest.resolve()
+    prospective_protocol_path = args.prospective_protocol.resolve()
+    independent_depth_protocol_path = args.independent_depth_protocol.resolve()
     protocol_path = args.registration_protocol.resolve()
     result = _load_json(result_path)
     manifest = _load_json(manifest_path)
@@ -423,7 +542,7 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
     )
     _require(
         manifest["protocol_sha256"]
-        == _load_json(args.prospective_protocol.resolve())["protocol_sha256"],
+        == _load_json(prospective_protocol_path)["protocol_sha256"],
         "prospective protocol checksum changed",
     )
 
@@ -457,13 +576,35 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
         search_roots=search_roots,
         output_root=candidate_stage,
     )
-    staged_take, take_evidence = _stage_take(
-        take_id=take_id,
-        archive=archive,
-        configured_dataset_root=configured_dataset,
-        search_roots=search_roots,
-        stage_root=dataset_stage,
-    )
+    candidate_preparation: dict[str, Any] | None = None
+    if args.candidate_preparation_evidence is not None:
+        candidate_preparation = _candidate_preparation_attestation(
+            evidence_path=args.candidate_preparation_evidence.resolve(),
+            result=result,
+            result_path=result_path,
+            manifest_path=manifest_path,
+            prospective_protocol_path=prospective_protocol_path,
+            independent_depth_protocol_path=independent_depth_protocol_path,
+            registration_protocol_path=protocol_path,
+            take_id=take_id,
+        )
+    if candidate_preparation is None:
+        staged_take, take_evidence = _stage_take(
+            take_id=take_id,
+            archive=archive,
+            configured_dataset_root=configured_dataset,
+            search_roots=search_roots,
+            stage_root=dataset_stage,
+        )
+    else:
+        staged_take, take_evidence = _stage_attested_take(
+            take_id=take_id,
+            archive=archive,
+            attestation=candidate_preparation,
+            configured_dataset_root=configured_dataset,
+            search_roots=search_roots,
+            stage_root=dataset_stage,
+        )
     registration_payload = protocol.get("payload", protocol)
     upstream, upstream_evidence = _resolve_upstream(
         registration_payload["upstream"],
@@ -478,6 +619,25 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
         search_roots=search_roots,
         software_root=software_root,
     )
+
+    inputs: dict[str, Any] = {
+        "prospective_result": str(result_path),
+        "prospective_result_sha256": _sha256(result_path),
+        "execution_manifest": str(manifest_path),
+        "execution_manifest_sha256": _sha256(manifest_path),
+        "prospective_protocol": str(prospective_protocol_path),
+        "prospective_protocol_sha256": _sha256(prospective_protocol_path),
+        "independent_depth_protocol": str(independent_depth_protocol_path),
+        "independent_depth_protocol_sha256": _sha256(
+            independent_depth_protocol_path
+        ),
+        "registration_protocol": str(protocol_path),
+        "registration_protocol_sha256": protocol["protocol_sha256"],
+    }
+    if args.candidate_preparation_evidence is not None:
+        evidence_path = args.candidate_preparation_evidence.resolve()
+        inputs["candidate_preparation_evidence"] = str(evidence_path)
+        inputs["candidate_preparation_evidence_sha256"] = _sha256(evidence_path)
 
     assets = {
         "schema_version": 1,
@@ -497,14 +657,7 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
                 for filename in sorted(checkpoint_records)
             },
         },
-        "inputs": {
-            "prospective_result": str(result_path),
-            "prospective_result_sha256": _sha256(result_path),
-            "execution_manifest": str(manifest_path),
-            "execution_manifest_sha256": _sha256(manifest_path),
-            "registration_protocol": str(protocol_path),
-            "registration_protocol_sha256": protocol["protocol_sha256"],
-        },
+        "inputs": inputs,
     }
     manifest_output = output_root / "workflow_assets.json"
     _write_json(manifest_output, assets)
@@ -560,6 +713,14 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--independent-depth-protocol",
+        type=Path,
+        default=(
+            repository_root
+            / "configs/sota/pokeflex_independent_depth_source_validation_v2.json"
+        ),
+    )
+    parser.add_argument(
         "--registration-protocol",
         type=Path,
         default=(
@@ -569,6 +730,7 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--take-id", default="")
     parser.add_argument("--candidate-root", type=_optional_path)
+    parser.add_argument("--candidate-preparation-evidence", type=_optional_path)
     parser.add_argument("--dataset-root", type=_optional_path)
     parser.add_argument("--upstream-checkout", type=_optional_path)
     parser.add_argument("--checkpoint-root", type=_optional_path)
