@@ -1,0 +1,38 @@
+name: Finalize horizon discrepancy branch
+
+on:
+  push:
+    branches:
+      - agent/deform360-horizon-calibration
+    paths:
+      - .github/workflows/finalize-horizon-tree.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Attach validated tree to current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EXPECTED_STAGING_SHA: ${{ github.sha }}
+          BASE_SHA: c37fc7aa7ba4a26313cb3a1f85d6df93c0608461
+          TREE_SHA: 28163a35e9f850556aa0de7bc8112a9571e7dbf0
+          BRANCH: agent/deform360-horizon-calibration
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/${GH_REPO}/git/ref/heads/${BRANCH}" --jq .object.sha)"
+          test "${current}" = "${EXPECTED_STAGING_SHA}"
+          commit="$(gh api --method POST "repos/${GH_REPO}/git/commits" \
+            -f message='Add source-calibrated horizon discrepancy dynamics' \
+            -f tree="${TREE_SHA}" \
+            -f 'parents[]'="${BASE_SHA}" \
+            --jq .sha)"
+          gh api --method PATCH "repos/${GH_REPO}/git/refs/heads/${BRANCH}" \
+            -f sha="${commit}" \
+            -F force=true >/dev/null
