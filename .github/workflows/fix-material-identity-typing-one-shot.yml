@@ -41,8 +41,12 @@ jobs:
               "FloatArray = NDArray[np.float64]\n": (
                   "FloatArray: TypeAlias = NDArray[np.float64]\n"
               ),
-              "            expected_probabilities = np.zeros(\n": (
-                  "            expected_probabilities: FloatArray = np.zeros(\n"
+              (
+                  "            expected_probabilities = np.zeros("
+                  "len(candidate_ids), dtype=np.float64)\n"
+              ): (
+                  "            expected_probabilities: FloatArray = np.zeros("
+                  "len(candidate_ids), dtype=np.float64)\n"
               ),
               "    probabilities = np.zeros(len(states), dtype=np.float64)\n": (
                   "    probabilities: FloatArray = np.zeros("
