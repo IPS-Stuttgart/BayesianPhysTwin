@@ -14,6 +14,13 @@ from bayesian_phystwin.decisive_evidence import (
     DEFAULT_TARGET_COVERAGES,
     analyze_decisive_evidence,
 )
+from bayesian_phystwin.decisive_evidence_bootstrap import (
+    DEFAULT_BOOTSTRAP_CONFIDENCE,
+    DEFAULT_BOOTSTRAP_REPLICATES,
+    DEFAULT_BOOTSTRAP_SEED,
+    GROUP_CLUSTERED_BOOTSTRAP_CONTRACT,
+    group_clustered_paired_bootstrap,
+)
 
 
 def _sha256(path: Path) -> str:
@@ -54,6 +61,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="reliability-bin edge; repeat from 0 through 1",
     )
     parser.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_REPLICATES,
+        help=(
+            "paired group-clustered bootstrap replicates; statistical groups "
+            "receive equal weight"
+        ),
+    )
+    parser.add_argument(
+        "--bootstrap-seed",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_SEED,
+        help="deterministic seed for paired group resampling",
+    )
+    parser.add_argument(
+        "--bootstrap-confidence",
+        type=float,
+        default=DEFAULT_BOOTSTRAP_CONFIDENCE,
+        help="two-sided percentile interval confidence in (0, 1)",
+    )
+    parser.add_argument(
         "--overwrite",
         action="store_true",
         help="replace an existing output instead of failing closed",
@@ -89,6 +117,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         reference_method=args.reference_method,
     )
+    bootstrap = group_clustered_paired_bootstrap(
+        payload,
+        replicates=args.bootstrap_replicates,
+        seed=args.bootstrap_seed,
+        confidence=args.bootstrap_confidence,
+        reference_method=args.reference_method,
+    )
+    summary["group_clustered_bootstrap"] = bootstrap
+    analysis_configuration = summary["analysis_configuration"]
+    if not isinstance(analysis_configuration, dict):
+        raise AssertionError("decisive-evidence analysis configuration changed")
+    analysis_configuration.update(
+        {
+            "group_clustered_bootstrap_contract": (
+                GROUP_CLUSTERED_BOOTSTRAP_CONTRACT
+            ),
+            "bootstrap_replicates": args.bootstrap_replicates,
+            "bootstrap_seed": args.bootstrap_seed,
+            "bootstrap_confidence": args.bootstrap_confidence,
+            "bootstrap_resampling_unit": "group_id",
+            "bootstrap_group_weighting": "equal",
+        }
+    )
     summary["input_artifact"] = {
         "path": str(input_path),
         "sha256": _sha256(input_path),
@@ -105,6 +156,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "protocol_id": summary["protocol_id"],
                 "metric_count": len(summary["metrics"]),
                 "reference_method": summary["reference_method"],
+                "bootstrap_replicates": bootstrap["replicates"],
             },
             indent=2,
             sort_keys=True,
