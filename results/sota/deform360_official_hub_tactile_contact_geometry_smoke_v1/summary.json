@@ -1,0 +1,77 @@
+{
+  "active_taxels_by_frame": {
+    "144": 2,
+    "145": 5,
+    "146": 7,
+    "147": 8,
+    "148": 11,
+    "149": 13
+  },
+  "active_taxels_by_sensor": {
+    "brics-odroid_tactilel_left": 2,
+    "brics-odroid_tactilel_right": 0,
+    "brics-odroid_tactiler_left": 4,
+    "brics-odroid_tactiler_right": 40
+  },
+  "artifact": {
+    "archive_sha256": "992fc413d85211ca8d47e910149f20701048ab70886c5bd45c068cc3794e4fc0",
+    "artifact_id": "4a00b4297b6ec8a61da6f1fbffcfe4c61787a3a1fcb90e70f0204eb665e76dc8",
+    "manifest_file_sha256": "e9ea31591baf60bf232db207c42cb36e612c65b3a341e7d6c46c2f9a11e902c0",
+    "server_path": "/home/florianpfaff/source-only/deform360-official-hub-tactile-contact-geometry-smoke-v1-97b19a89/026-sock-cloth"
+  },
+  "assignment_mixture": {
+    "hypotheses": [
+      "direct",
+      "swapped"
+    ],
+    "marginalized": true,
+    "prior_probability": [
+      0.5,
+      0.5
+    ]
+  },
+  "decision": {
+    "calibration_scores_authorized": false,
+    "confirmation_payloads_authorized": false,
+    "contact_anchor_authorized": false,
+    "contact_geometry_feasibility_passed": true,
+    "metric_covariance_calibration_required": true,
+    "object_association_required": true,
+    "sota_claim_authorized": false
+  },
+  "implementation_revision": "af100b02c8a71e9c61ea8c48b8e73241236916a4",
+  "information_boundary": {
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "lock_id": "9f3fb26568d4bf9269ad35ce792ebd8739cd397d82f806b63b265f54f42879f9",
+  "parent_robot_prefix_artifact_id": "555943b0614e211e9c4d0fb5e2928c5499d695f5d6a020b6d26c2646d536297e",
+  "quality": {
+    "active_frame_count": 6,
+    "active_taxel_count": 46,
+    "admitted": true,
+    "first_active_frame": 144,
+    "last_active_frame": 149,
+    "maximum_assignment_separation_m": 0.12887993261808683,
+    "median_assignment_separation_m": 0.10872543146415697,
+    "minimum_assignment_separation_m": 0.0913315631071688,
+    "reason_codes": [],
+    "tactile_value_maximum": 0.7285068035125732,
+    "tactile_value_minimum": 0.3031674325466156
+  },
+  "replay": {
+    "artifact_id_identical": true,
+    "independent_run_count": 2,
+    "manifest_byte_identical": true,
+    "npz_byte_identical": true
+  },
+  "runtime_revision": "97b19a897a75a554dab27a0212665512dcf2f477",
+  "schema": "bayesian-phystwin.deform360-tactile-contact-geometry-smoke-result",
+  "schema_version": 1,
+  "status": "passed-source-only-geometry-admission",
+  "summary_sha256": "aba0f04447063c36bcd619211080152eb9bcd703d3250fbd5059922b84bd7dd9",
+  "upstream_revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+}
