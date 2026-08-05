@@ -41,12 +41,7 @@ def _snapshot(
     revision: str,
     members: tuple[str, ...],
 ) -> None:
-    root = (
-        cache
-        / ("models--" + repository.replace("/", "--"))
-        / "snapshots"
-        / revision
-    )
+    root = cache / ("models--" + repository.replace("/", "--")) / "snapshots" / revision
     for member in members:
         path = root / member
         if "." in path.name:
@@ -155,24 +150,32 @@ def test_committed_policy_and_spec_are_content_addressed() -> None:
     assert spec["metric_frame_prior_policy"]["artifact_id"] == policy["artifact_id"]
 
 
-def test_cached_snapshot_resolution_is_exact_and_ambiguity_fails(tmp_path: Path) -> None:
+def test_cached_snapshot_resolution_is_exact_and_ambiguity_fails(
+    tmp_path: Path,
+) -> None:
     module = _module()
     repository = "owner/model"
     first = "1" * 40
     second = "2" * 40
     _snapshot(tmp_path, repository, first, ("model_index.json",))
 
-    assert module.resolve_cached_snapshot_revision(
-        tmp_path,
-        repository=repository,
-        required_members=("model_index.json",),
-    ) == first
-    assert module.resolve_cached_snapshot_revision(
-        tmp_path,
-        repository=repository,
-        required_members=("model_index.json",),
-        expected_revision=first,
-    ) == first
+    assert (
+        module.resolve_cached_snapshot_revision(
+            tmp_path,
+            repository=repository,
+            required_members=("model_index.json",),
+        )
+        == first
+    )
+    assert (
+        module.resolve_cached_snapshot_revision(
+            tmp_path,
+            repository=repository,
+            required_members=("model_index.json",),
+            expected_revision=first,
+        )
+        == first
+    )
 
     _snapshot(tmp_path, repository, second, ("model_index.json",))
     with pytest.raises(ValueError, match="unambiguous"):
@@ -181,12 +184,15 @@ def test_cached_snapshot_resolution_is_exact_and_ambiguity_fails(tmp_path: Path)
             repository=repository,
             required_members=("model_index.json",),
         )
-    assert module.resolve_cached_snapshot_revision(
-        tmp_path,
-        repository=repository,
-        required_members=("model_index.json",),
-        expected_revision=second,
-    ) == second
+    assert (
+        module.resolve_cached_snapshot_revision(
+            tmp_path,
+            repository=repository,
+            required_members=("model_index.json",),
+            expected_revision=second,
+        )
+        == second
+    )
 
 
 def test_cached_snapshot_requires_all_declared_members(tmp_path: Path) -> None:
