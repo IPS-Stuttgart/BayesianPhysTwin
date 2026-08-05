@@ -31,14 +31,10 @@ FloatArray = NDArray[np.float64]
 
 PROB4D_MATERIAL_IDENTITY_MIXTURE_SCHEMA = "prob4d.material-identity-mixture"
 PROB4D_MATERIAL_IDENTITY_MIXTURE_VERSION = 1
-PROB4D_MATERIAL_IDENTITY_HYPOTHESIS_SCHEMA = (
-    "prob4d.material-identity-hypothesis"
-)
+PROB4D_MATERIAL_IDENTITY_HYPOTHESIS_SCHEMA = "prob4d.material-identity-hypothesis"
 PROB4D_MATERIAL_IDENTITY_HYPOTHESIS_VERSION = 1
 PROB4D_MATERIAL_IDENTITY_WEIGHT_SEMANTICS = "source-calibrated-log-weight-v1"
-PROB4D_MATERIAL_IDENTITY_NULL_SEMANTICS = (
-    "newest-window-local-reference-v1"
-)
+PROB4D_MATERIAL_IDENTITY_NULL_SEMANTICS = "newest-window-local-reference-v1"
 PROB4D_MATERIAL_IDENTITY_CLAIM_BOUNDARY = (
     "Source-calibrated cross-window material-identity hypotheses only. Endpoints "
     "remain window-local, the null hypothesis preserves the newest-window "
@@ -51,16 +47,10 @@ IDENTITY_LIKELIHOOD_EVIDENCE_SCHEMA = (
 )
 IDENTITY_LIKELIHOOD_EVIDENCE_VERSION = 1
 IDENTITY_LIKELIHOOD_SEMANTICS = "prefix-only-candidate-log-likelihood-v1"
-IDENTITY_STATE_POSTERIOR_SCHEMA = (
-    "bayesian_phystwin.material_identity_state_posterior"
-)
+IDENTITY_STATE_POSTERIOR_SCHEMA = "bayesian_phystwin.material_identity_state_posterior"
 IDENTITY_STATE_POSTERIOR_VERSION = 1
-IDENTITY_MARGINALIZATION_SEMANTICS = (
-    "source-prior-times-prefix-likelihood-v1"
-)
-IDENTITY_STATE_MOMENT_SEMANTICS = (
-    "common-state-law-of-total-covariance-v1"
-)
+IDENTITY_MARGINALIZATION_SEMANTICS = "source-prior-times-prefix-likelihood-v1"
+IDENTITY_STATE_MOMENT_SEMANTICS = "common-state-law-of-total-covariance-v1"
 
 _LINEAGE_MIXTURE_ID = "prob4d_material_identity_mixture_id"
 _LINEAGE_CANDIDATE_ID = "prob4d_material_identity_candidate_id"
@@ -448,9 +438,7 @@ class Prob4DMaterialIdentityMixtureV1:
         if any(
             endpoint.window_id not in source_windows for endpoint in linked_endpoints
         ):
-            raise ValueError(
-                "linked source endpoint windows must precede the target"
-            )
+            raise ValueError("linked source endpoint windows must precede the target")
         for candidate in candidates:
             if (
                 candidate.expected_candidate_id(target_endpoint=self.target_endpoint)
@@ -459,10 +447,7 @@ class Prob4DMaterialIdentityMixtureV1:
                 raise ValueError("material-identity candidate ID mismatch")
         if self.weight_semantics != PROB4D_MATERIAL_IDENTITY_WEIGHT_SEMANTICS:
             raise ValueError("unsupported material-identity weight semantics")
-        if (
-            self.null_hypothesis_semantics
-            != PROB4D_MATERIAL_IDENTITY_NULL_SEMANTICS
-        ):
+        if self.null_hypothesis_semantics != PROB4D_MATERIAL_IDENTITY_NULL_SEMANTICS:
             raise ValueError("unsupported null-hypothesis semantics")
 
         object.__setattr__(self, "window_order", window_order)
@@ -665,9 +650,7 @@ class MaterialIdentityLikelihoodEvidenceV1:
         if log_likelihoods.shape != (len(candidate_ids),):
             raise ValueError("log_likelihoods must match candidate_ids")
         if np.any(np.isnan(log_likelihoods)) or np.any(np.isposinf(log_likelihoods)):
-            raise ValueError(
-                "log_likelihoods may not contain NaN or positive infinity"
-            )
+            raise ValueError("log_likelihoods may not contain NaN or positive infinity")
         if self.semantics != IDENTITY_LIKELIHOOD_SEMANTICS:
             raise ValueError("unsupported identity-likelihood semantics")
         target_outcomes_used = genuine_boolean(
@@ -709,10 +692,14 @@ class MaterialIdentityLikelihoodEvidenceV1:
         )
         expected_id = _content_id(self.identity_record())
         supplied_id = self.evidence_id
-        if supplied_id is not None and _sha256(
-            supplied_id,
-            name="evidence_id",
-        ) != expected_id:
+        if (
+            supplied_id is not None
+            and _sha256(
+                supplied_id,
+                name="evidence_id",
+            )
+            != expected_id
+        ):
             raise ValueError("identity-likelihood evidence ID mismatch")
         object.__setattr__(self, "evidence_id", expected_id)
 
@@ -925,8 +912,7 @@ class MaterialIdentityStatePosteriorV1:
         )
         expected_shape = (len(mean), len(mean))
         if any(
-            value.shape != expected_shape
-            for value in (covariance, within, between)
+            value.shape != expected_shape for value in (covariance, within, between)
         ):
             raise ValueError("state covariance dimensions do not match state_mean")
         if not np.allclose(covariance, within + between, atol=1e-12, rtol=1e-12):
@@ -1000,10 +986,14 @@ class MaterialIdentityStatePosteriorV1:
         )
         expected_id = _content_id(self.identity_record())
         supplied_id = self.posterior_id
-        if supplied_id is not None and _sha256(
-            supplied_id,
-            name="posterior_id",
-        ) != expected_id:
+        if (
+            supplied_id is not None
+            and _sha256(
+                supplied_id,
+                name="posterior_id",
+            )
+            != expected_id
+        ):
             raise ValueError("material-identity posterior ID mismatch")
         object.__setattr__(self, "posterior_id", expected_id)
 
@@ -1015,17 +1005,13 @@ class MaterialIdentityStatePosteriorV1:
             "likelihood_evidence_id": self.likelihood_evidence_id,
             "common_state_domain_id": self.common_state_domain_id,
             "candidate_ids": list(self.candidate_ids),
-            "candidate_inference_admissible": list(
-                self.candidate_inference_admissible
-            ),
+            "candidate_inference_admissible": list(self.candidate_inference_admissible),
             "identity_marginalization_admissible": (
                 self.identity_marginalization_admissible
             ),
             "deployed_reference_only": self.deployed_reference_only,
             "reason": self.reason,
-            "posterior_probabilities_sha256": _array_id(
-                self.posterior_probabilities
-            ),
+            "posterior_probabilities_sha256": _array_id(self.posterior_probabilities),
             "state_mean_sha256": _array_id(self.state_mean),
             "state_covariance_sha256": _array_id(self.state_covariance),
             "within_identity_covariance_sha256": _array_id(
@@ -1135,8 +1121,7 @@ def marginalize_material_identity_state(
             states=states,
             admissible=False,
             reason=(
-                "candidate-inference-inadmissible:"
-                f"{candidate_id}:{candidate_reason}"
+                f"candidate-inference-inadmissible:{candidate_id}:{candidate_reason}"
             ),
             metadata=metadata,
         )
@@ -1154,9 +1139,8 @@ def marginalize_material_identity_state(
     if evidence.likelihood_power == 0.0:
         log_terms = prior_log_weights
     else:
-        log_terms = (
-            prior_log_weights
-            + evidence.likelihood_power * np.asarray(evidence.log_likelihoods)
+        log_terms = prior_log_weights + evidence.likelihood_power * np.asarray(
+            evidence.log_likelihoods
         )
     log_normalizer = _logsumexp(log_terms)
     if np.isneginf(log_normalizer):
@@ -1189,9 +1173,7 @@ def marginalize_material_identity_state(
     between = 0.5 * (between + between.T)
     covariance = within + between
     active = probabilities > 0.0
-    entropy = float(
-        -np.sum(probabilities[active] * np.log(probabilities[active]))
-    )
+    entropy = float(-np.sum(probabilities[active] * np.log(probabilities[active])))
     return MaterialIdentityStatePosteriorV1(
         mixture_id=mixture.mixture_id,
         likelihood_evidence_id=evidence.evidence_id or "",

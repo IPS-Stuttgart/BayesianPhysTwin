@@ -485,9 +485,7 @@ def test_marginalization_adds_between_identity_covariance() -> None:
     expected_mean = np.array([2.0 * probabilities[1], 0.0])
     expected_within = np.eye(2) * (probabilities[0] + 3.0 * probabilities[1])
     centered = np.array([[0.0, 0.0], [2.0, 0.0]]) - expected_mean
-    expected_between = np.einsum(
-        "i,ij,ik->jk", probabilities, centered, centered
-    )
+    expected_between = np.einsum("i,ij,ik->jk", probabilities, centered, centered)
     np.testing.assert_allclose(posterior.posterior_probabilities, probabilities)
     np.testing.assert_allclose(posterior.state_mean, expected_mean)
     np.testing.assert_allclose(posterior.within_identity_covariance, expected_within)
