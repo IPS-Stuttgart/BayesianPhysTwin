@@ -60,9 +60,19 @@ The dependency-complete assets are:
 - `protocols/locks/deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json`
 
 The earlier v2 job manifest remains the record of the failed pre-inference
-attempt. A new job manifest must bind a post-amendment Bayesian-PhysTwin commit
-and the amended runner hash before inference resumes. It must use a fresh output
-root; the failed attempt may not be resumed under the new dependency set.
+attempt. The replacement manifest is
+`protocols/locks/deform360_official_hub_visuotactile_v3_motioncrafter_jobs.json`.
+It binds:
+
+- Bayesian-PhysTwin implementation
+  `55982e89596ce8a19af977d2d9924d3f7e210809`;
+- runner SHA-256
+  `62fdb997ebfcf30ec2906117a02a31cf14777678a023225db70149626c417052`;
+- manifest ID
+  `8cf8df7629d4f2a17ec4d5dcb992a65fca638acb8420a7cca79a91c5ecb80682`.
+
+Execution must use a fresh output root; the failed attempt may not be resumed
+under the new dependency set.
 
 ## Claim boundary
 
