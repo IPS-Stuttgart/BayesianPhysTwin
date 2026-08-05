@@ -248,11 +248,14 @@ class EvidenceUseV1:
         require_exact_fields(value, expected=_USE_FIELDS, name=name)
         if value["schema"] != EVIDENCE_USE_SCHEMA:
             raise ValueError(f"{name} schema changed")
-        if genuine_integer(
-            value["schema_version"],
-            name=f"{name} schema_version",
-            minimum=1,
-        ) != EVIDENCE_USE_VERSION:
+        if (
+            genuine_integer(
+                value["schema_version"],
+                name=f"{name} schema_version",
+                minimum=1,
+            )
+            != EVIDENCE_USE_VERSION
+        ):
             raise ValueError(f"{name} schema_version changed")
         if value["semantics"] != EVIDENCE_USE_SEMANTICS:
             raise ValueError(f"{name} semantics changed")
@@ -430,11 +433,14 @@ class EvidenceUseLedgerV1:
         require_exact_fields(value, expected=_LEDGER_FIELDS, name=name)
         if value["schema"] != EVIDENCE_USE_LEDGER_SCHEMA:
             raise ValueError(f"{name} schema changed")
-        if genuine_integer(
-            value["schema_version"],
-            name=f"{name} schema_version",
-            minimum=1,
-        ) != EVIDENCE_USE_LEDGER_VERSION:
+        if (
+            genuine_integer(
+                value["schema_version"],
+                name=f"{name} schema_version",
+                minimum=1,
+            )
+            != EVIDENCE_USE_LEDGER_VERSION
+        ):
             raise ValueError(f"{name} schema_version changed")
         if value["semantics"] != EVIDENCE_USE_SEMANTICS:
             raise ValueError(f"{name} semantics changed")
