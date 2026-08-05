@@ -49,19 +49,6 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          source_path = Path(".github/workflows/one-shot-finalize-pr138.yml")
-          source = source_path.read_text(encoding="utf-8")
-          start_marker = "          python - <<'PY'\n"
-          end_marker = "\n          PY\n\n      - name: Format and validate"
-          start = source.index(start_marker) + len(start_marker)
-          end = source.index(end_marker, start)
-          lines = source[start:end].splitlines()
-          code = "\n".join(
-              line[10:] if line.startswith("          ") else line for line in lines
-          )
-          exec(compile(code, str(source_path), "exec"), {"__name__": "__main__"})
-
-          Path(".github/agent-trigger-pr138").unlink(missing_ok=True)
           workflow_path = Path(
               ".github/workflows/deform360-visual-provider-lock.yml"
           )
@@ -76,6 +63,36 @@ jobs:
               1,
           )
           workflow_path.write_text(workflow, encoding="utf-8")
+
+          source_path = Path(".github/workflows/one-shot-finalize-pr138.yml")
+          source = source_path.read_text(encoding="utf-8")
+          start_marker = "          python - <<'PY'\n"
+          end_marker = "\n          PY\n\n      - name: Format and validate"
+          start = source.index(start_marker) + len(start_marker)
+          end = source.index(end_marker, start)
+          lines = source[start:end].splitlines()
+          code = "\n".join(
+              line[10:] if line.startswith("          ") else line for line in lines
+          )
+          guard = "    if count != 1:\n"
+          if code.count(guard) != 1:
+              raise SystemExit("replace_once guard changed")
+          code = code.replace(guard, "    if count < 1:\n", 1)
+          old_remaining = """remaining = workflow.count(anchor)
+          if remaining != 2:
+              raise SystemExit(
+                  f"expected two remaining Ruff test anchors, found {remaining}"
+              )
+          workflow = workflow.replace(anchor, desired)"""
+          new_remaining = """remaining = workflow.count(anchor)
+          if remaining:
+              workflow = workflow.replace(anchor, desired)"""
+          if code.count(old_remaining) != 1:
+              raise SystemExit("Ruff anchor accounting block changed")
+          code = code.replace(old_remaining, new_remaining, 1)
+          exec(compile(code, str(source_path), "exec"), {"__name__": "__main__"})
+
+          Path(".github/agent-trigger-pr138").unlink(missing_ok=True)
           PY
 
       - name: Format and validate the finalized branch
