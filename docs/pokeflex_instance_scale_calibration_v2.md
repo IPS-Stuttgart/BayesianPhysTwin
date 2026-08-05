@@ -54,4 +54,3 @@ the released checkpoint prediction byte for byte.
 
 The previous fresh12 outcomes may justify this method, but they cannot support
 its transfer claim. Only the next all-case sealed evaluation can do that.
-
