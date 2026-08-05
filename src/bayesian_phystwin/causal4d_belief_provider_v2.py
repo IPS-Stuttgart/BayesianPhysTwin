@@ -44,9 +44,7 @@ CAUSAL4D_BELIEF_PROVIDER_V2_ARTIFACT_SCHEMA_VERSIONS = {
     "ModelAveragedEndpointPosterior": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
     "ModelAveragedEndpointPrediction": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
     "HorizonDiscrepancyCalibration": HORIZON_DISCREPANCY_CALIBRATION_VERSION,
-    "HorizonConditionedEndpointPrediction": (
-        HORIZON_DISCREPANCY_CALIBRATION_VERSION
-    ),
+    "HorizonConditionedEndpointPrediction": (HORIZON_DISCREPANCY_CALIBRATION_VERSION),
 }
 
 
