@@ -130,9 +130,12 @@ def test_bootstrap_is_paired_equal_group_and_deterministic() -> None:
 
     reversed_payload = json.loads(json.dumps(_payload()))
     reversed_payload["records"].reverse()
-    assert group_clustered_paired_bootstrap(
-        reversed_payload, replicates=1000, seed=17, confidence=0.9
-    ) == result
+    assert (
+        group_clustered_paired_bootstrap(
+            reversed_payload, replicates=1000, seed=17, confidence=0.9
+        )
+        == result
+    )
 
 
 def test_bootstrap_averages_within_group_before_equal_weighting() -> None:
@@ -207,30 +210,79 @@ def test_single_group_is_reported_as_insufficient() -> None:
     assert comparison["bootstrap_probability_candidate_better"] is None
 
 
-def test_cli_embeds_bootstrap_configuration(tmp_path: Path) -> None:
+def test_zero_fallback_without_reference_omits_relative_intervals() -> None:
+    payload = _payload()
+    payload.pop("reference_method")
+    for record in payload["records"]:
+        record["fallback_loss"] = 0.0
+        if record["accepted"] is False:
+            record["deployed_loss"] = 0.0
+
+    result = group_clustered_paired_bootstrap(payload, replicates=50, seed=5)
+    assert result["reference_method"] is None
+    for method in result["metrics"]["track_error_m"]["methods"].values():
+        comparison = method["deployed_vs_fallback"]
+        assert comparison["observed"]["relative_change_of_means"] is None
+        assert comparison["relative_change_of_means_interval"] is None
+        assert comparison["valid_relative_change_replicates"] == 0
+        assert method["raw_vs_reference_method"] is None
+        assert method["deployed_vs_reference_method"] is None
+
+
+def test_bootstrap_controls_and_reference_fail_closed() -> None:
+    for kwargs in (
+        {"replicates": True},
+        {"replicates": 0},
+        {"seed": True},
+        {"seed": -1},
+        {"confidence": True},
+        {"confidence": float("nan")},
+        {"confidence": 0.0},
+        {"confidence": 1.0},
+        {"reference_method": ""},
+        {"reference_method": 17},
+        {"reference_method": "missing"},
+    ):
+        with pytest.raises(ValueError):
+            group_clustered_paired_bootstrap(_payload(), **kwargs)
+
+    result = group_clustered_paired_bootstrap(
+        _payload(), replicates=10, reference_method=" last_residual "
+    )
+    assert result["reference_method"] == "last_residual"
+
+
+def test_cli_embeds_bootstrap_configuration_and_fails_closed(tmp_path: Path) -> None:
     input_path = tmp_path / "evidence.json"
     output_path = tmp_path / "summary.json"
     input_path.write_text(json.dumps(_payload()), encoding="utf-8")
-    assert (
-        evidence_main(
-            [
-                str(input_path),
-                str(output_path),
-                "--bootstrap-replicates",
-                "250",
-                "--bootstrap-seed",
-                "23",
-                "--bootstrap-confidence",
-                "0.9",
-            ]
-        )
-        == 0
-    )
+    arguments = [
+        str(input_path),
+        str(output_path),
+        "--bootstrap-replicates",
+        "250",
+        "--bootstrap-seed",
+        "23",
+        "--bootstrap-confidence",
+        "0.9",
+    ]
+    assert evidence_main(arguments) == 0
     summary = json.loads(output_path.read_text(encoding="utf-8"))
     bootstrap = summary["group_clustered_bootstrap"]
     assert bootstrap["replicates"] == 250
     assert bootstrap["seed"] == 23
     assert bootstrap["confidence"] == 0.9
-    assert summary["analysis_configuration"][
-        "group_clustered_bootstrap_contract"
-    ] == GROUP_CLUSTERED_BOOTSTRAP_CONTRACT
+    assert (
+        summary["analysis_configuration"]["group_clustered_bootstrap_contract"]
+        == GROUP_CLUSTERED_BOOTSTRAP_CONTRACT
+    )
+
+    with pytest.raises(FileExistsError):
+        evidence_main(arguments)
+    assert evidence_main([*arguments, "--overwrite"]) == 0
+
+    invalid_input = tmp_path / "invalid.json"
+    invalid_output = tmp_path / "invalid-summary.json"
+    invalid_input.write_text("[]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="input JSON must contain an object"):
+        evidence_main([str(invalid_input), str(invalid_output)])
