@@ -1,0 +1,77 @@
+name: One-shot material identity typing fix
+
+on:
+  push:
+    branches:
+      - agent/prob4d-material-identity-consumer
+    paths:
+      - .github/workflows/fix-material-identity-typing-one-shot.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/prob4d-material-identity-consumer
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Apply explicit NumPy type aliases
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/material_identity_marginalization.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = {
+              "from typing import Any, Literal, Protocol\n": (
+                  "from typing import Any, Literal, Protocol, TypeAlias\n"
+              ),
+              "FloatArray = NDArray[np.float64]\n": (
+                  "FloatArray: TypeAlias = NDArray[np.float64]\n"
+              ),
+              "            expected_probabilities = np.zeros(\n": (
+                  "            expected_probabilities: FloatArray = np.zeros(\n"
+              ),
+              "    probabilities = np.zeros(len(states), dtype=np.float64)\n": (
+                  "    probabilities: FloatArray = np.zeros("
+                  "len(states), dtype=np.float64)\n"
+              ),
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f"unexpected replacement count for {old!r}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+      - name: Validate typing, formatting, and focused tests
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m ruff check \
+            src/bayesian_phystwin/material_identity_marginalization.py \
+            tests/test_material_identity_marginalization.py
+          python -m ruff format \
+            src/bayesian_phystwin/material_identity_marginalization.py \
+            tests/test_material_identity_marginalization.py
+          python -m mypy \
+            src/bayesian_phystwin/material_identity_marginalization.py
+          python -m pytest -q tests/test_material_identity_marginalization.py
+      - name: Remove one-shot workflow and publish fix
+        shell: bash
+        run: |
+          rm .github/workflows/fix-material-identity-typing-one-shot.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/material_identity_marginalization.py \
+            tests/test_material_identity_marginalization.py \
+            .github/workflows/fix-material-identity-typing-one-shot.yml
+          git diff --cached --check
+          git commit -m "Fix material identity typing"
+          git push origin HEAD:agent/prob4d-material-identity-consumer
