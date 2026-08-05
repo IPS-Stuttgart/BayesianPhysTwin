@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-WORKFLOW = Path(
-    ".github/workflows/deform360-official-hub-calibration-source.yml"
-)
+WORKFLOW = Path(".github/workflows/deform360-official-hub-calibration-source.yml")
 
 
 def _workflow_text() -> str:
@@ -42,9 +40,7 @@ def test_self_hosted_job_uses_a_fresh_runner_temp_virtual_environment() -> None:
 def test_failure_reporting_does_not_require_the_virtual_environment() -> None:
     text = _workflow_text()
     confirmation = text[text.index("      - name: Verify the confirmation cohort") :]
-    summary = confirmation[
-        confirmation.index("      - name: Publish job summary") :
-    ]
+    summary = confirmation[confirmation.index("      - name: Publish job summary") :]
 
     assert "${VENV_ROOT}/bin/python" not in confirmation
     assert "${VENV_ROOT}/bin/python" not in summary
