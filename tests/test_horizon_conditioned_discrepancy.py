@@ -58,9 +58,7 @@ def _calibration(**updates: object) -> HorizonDiscrepancyCalibrationV1:
         "mean_reversion_half_life_steps": 10.0,
         "minimum_mean_retention": 0.25,
         "stationary_std_m": np.array([0.003, 0.004, 0.005]),
-        "additional_process_std_m_per_sqrt_step": np.array(
-            [0.0001, 0.0002, 0.0003]
-        ),
+        "additional_process_std_m_per_sqrt_step": np.array([0.0001, 0.0002, 0.0003]),
         "component_process_variance_scale": 0.75,
         "metadata": {"split": "source-only"},
     }
@@ -122,9 +120,7 @@ def test_no_reversion_mode_keeps_mean_and_accumulates_variance() -> None:
 
     assert prediction.mean_retention == 1.0
     assert np.allclose(prediction.mean_m, posterior.mean_m)
-    assert np.trace(prediction.covariance_m2[0]) > np.trace(
-        posterior.covariance_m2[0]
-    )
+    assert np.trace(prediction.covariance_m2[0]) > np.trace(posterior.covariance_m2[0])
 
 
 def test_fit_recovers_source_mean_reversion_and_is_order_invariant() -> None:
