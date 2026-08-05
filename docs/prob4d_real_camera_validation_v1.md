@@ -48,5 +48,49 @@ is therefore a retrospective real-camera transfer test. A positive result can
 justify a fresh object/session protocol; it cannot itself confirm deployment
 calibration, future prediction, Causal4D benefit, or state of the art.
 
-Results will be appended only after the protocol, implementation, and tests are
-committed.
+## Result
+
+The implementation was locked at `231737ddeedc8a9c258e960f6e827d12b80008ed`
+before the complete 19-case run. Prob4D was fixed at
+`364f216c14f7770c1b360bb1b836b11ecf0c18b8`. All 19 cases scored, no case was
+replaced, and there were no technical failures.
+
+| Method | Raw RMSE | Deployed RMSE | Deployed change | Raw wins | Accepted | Accepted 90% coverage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Physical fallback | 6.899 mm | 6.899 mm | 0.00% | 0/19 | 0/19 | n/a |
+| Marginal gauge, persistent | 7.054 mm | 6.942 mm | +0.62% | 7/19 | 11/19 | 37.3% |
+| Explicit gauge, framewise | 6.899 mm | 6.899 mm | 0.00% | 0/19 | 0/19 | n/a |
+| Explicit gauge, persistent | 7.035 mm | 6.899 mm | 0.00% | 3/19 | 0/19 | n/a |
+
+Positive percentages in the deployed-change column denote regression. The
+marginal-gauge arm admitted two harmful updates among eleven accepted cases
+(18.2%), and its paired deployed-minus-physical 95% interval was
+`[-0.069, +0.176]` mm. The framewise arm had no query-frame row that passed the
+frozen graph-association support threshold. The primary explicit persistent arm
+was inference-admissible in 17 cases, but every risk score exceeded its
+controlled-calibration threshold; all 19 deployments therefore reproduced the
+physical fallback exactly.
+
+The registered decision is
+`do-not-advance-from-retrospective-real-camera-transfer`. The cohort-completion
+and exact-fallback checks passed. The improvement, paired interval, accepted
+case count, and coverage checks did not pass. The bound report SHA-256 is
+`63d933e01d4f26c186ed78c086b06f30a97d8b1badbca751418f24b91d3f5f99`.
+
+## Interpretation
+
+The controlled 91.33% RMSE reduction remains valid evidence that explicit
+correlated-gauge inference can work when its observation model is correct. It
+does not transfer through the present real MotionCrafter camera factors. The
+explicit model is safer than marginalization here because it abstains instead
+of overcounting uncertain gauge evidence, but abstention alone is not an
+accuracy improvement. The marginal arm's low coverage and harmful-admission
+rate show that its controlled uncertainty scale is not calibrated for these
+recordings.
+
+This result does not justify a larger preregistered run. The next admissible
+step is source-only observation-provider work with genuinely independent
+evidence against coherent camera bias, followed by a new lock. Candidate
+directions include material-identity tracks that pass a causal prefix
+competence gate or an independent sparse depth, LiDAR, or tactile anchor. The
+current 19 cases must not be reused to tune that provider.

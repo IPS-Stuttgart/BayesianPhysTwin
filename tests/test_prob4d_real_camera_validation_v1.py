@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import inspect
 import json
@@ -157,3 +158,33 @@ def test_protocol_keeps_real_camera_claim_and_transfer_gates_frozen() -> None:
         "deployed_mean_improvement_fraction_at_least"
     ] == 0.10
     assert "not prospective" in protocol["claim_boundary"]
+
+
+def test_completed_real_camera_result_is_bound_and_rejected() -> None:
+    result_root = (
+        ROOT / "results" / "diagnostics" / "prob4d_real_camera_validation_v1"
+    )
+    checksums = {}
+    for line in (result_root / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+        digest, name = line.split("  ", maxsplit=1)
+        checksums[name] = digest
+    for name, expected in checksums.items():
+        actual = hashlib.sha256((result_root / name).read_bytes()).hexdigest()
+        assert actual == expected
+
+    report_path = result_root / "report.json"
+    assert hashlib.sha256(report_path.read_bytes()).hexdigest() == (
+        "63d933e01d4f26c186ed78c086b06f30a97d8b1badbca751418f24b91d3f5f99"
+    )
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    primary = report["aggregate"][MODULE.PRIMARY_METHOD]
+    marginal = report["aggregate"]["P1_marginal_gauge_persistent"]
+
+    assert report["case_count_scored"] == 19
+    assert report["technical_failure_count"] == 0
+    assert report["decision"]["passed"] is False
+    assert primary["accepted_case_count"] == 0
+    assert primary["all_rejections_exact_fallback"] is True
+    assert primary["raw_improvement_fraction"] < 0.0
+    assert marginal["deployed_improvement_fraction"] < 0.0
+    assert marginal["accepted_coverage_90_mean"] < 0.40

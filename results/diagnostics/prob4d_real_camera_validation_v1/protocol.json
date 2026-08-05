@@ -1,0 +1,96 @@
+{
+  "schema": "bayesian-phystwin-prob4d-real-camera-validation",
+  "schema_version": 1,
+  "protocol_id": "prob4d-real-camera-validation-v1",
+  "status": "retrospective-source-locked-before-method-specific-scoring",
+  "claim_boundary": "Real public PhysTwin camera recordings on the previously opened 19-case development cohort. This is a retrospective mechanism-transfer test, not prospective physical-object confirmation or a state-of-the-art claim.",
+  "cohort": {
+    "runner_directory": "exploratory19_runner",
+    "evaluation_directory": "exploratory19_eval",
+    "expected_case_count": 19,
+    "statistical_unit": "physical interaction case"
+  },
+  "prob4d": {
+    "repository": "IPS-Stuttgart/Prob4D",
+    "revision": "364f216c14f7770c1b360bb1b836b11ecf0c18b8",
+    "camera_index": 0,
+    "complete_overlap_window_count": 2,
+    "alignment_stride_pixels": 4,
+    "alignment_trim_fraction": 0.8,
+    "alignment_iterations": 5,
+    "gauge_covariance": "joint-cross-window explicit Sim(3) nuisance",
+    "point_covariance": "uncalibrated exploratory depth-disagreement model",
+    "legacy_manifest_lineage": "reconstructed from immutable window bounds and config; selected payloads are hashed",
+    "future_payload_rule": "only the first two complete independently decoded windows are opened"
+  },
+  "identity": {
+    "segment_length_frames": 5,
+    "segment_step_frames": 4,
+    "seed_stride_pixels": 16,
+    "search_radius_pixels": 4,
+    "maximum_step_error_local": 0.05,
+    "association_sigma_local": 0.01,
+    "minimum_link_probability": 0.01,
+    "minimum_track_length": 2,
+    "target_deform_mask_policy": "allow",
+    "reserved_manual_identity_fraction": 0.5,
+    "reserved_identity_selection": "deterministic frame-zero farthest-point sampling",
+    "reserved_graph_nodes_excluded_from_camera_association": true
+  },
+  "physical_state": {
+    "graph_rank": 4,
+    "state_basis": "rigid-free low-frequency spring-graph modes normalized to unit maximum node displacement",
+    "state_prior_std_m": 0.015,
+    "shared_bias_prior_std_m": 0.012,
+    "view_bias_prior_std_m": 0.01,
+    "maximum_state_update_m": 0.03,
+    "maximum_update_to_physical_response_ratio": 4.0,
+    "association_neighbour_count": 4,
+    "association_distance_scale_m": 0.02,
+    "maximum_association_distance_m": 0.05,
+    "minimum_total_association_probability": 0.005,
+    "assignment_covariance_floor_m2": 2.5e-07,
+    "effective_samples_per_frame": 64.0
+  },
+  "methods": {
+    "B0_physical_fallback": {
+      "description": "unchanged released PhysTwin state",
+      "risk_threshold": -1e+300
+    },
+    "P1_marginal_gauge_persistent": {
+      "description": "persistent identities with gauge covariance folded into row marginals",
+      "risk_threshold": 0.9472718537065475
+    },
+    "P2_explicit_gauge_framewise": {
+      "description": "last-frame identities with complete explicit joint gauge nuisance",
+      "risk_threshold": 0.737265425866642
+    },
+    "P3_explicit_gauge_persistent": {
+      "description": "persistent causal identities with complete explicit joint gauge nuisance",
+      "risk_threshold": 0.6744605477155093
+    }
+  },
+  "risk_threshold_source": "frozen controlled Prob4D-to-BayesianPhysTwin calibration in results/diagnostics/prob4d_bpt_controlled_decisive_v1/report.json",
+  "scoring": {
+    "query_frame": "last frame of the second complete overlap window",
+    "metric": "coordinate RMSE on reserved real manual material identities",
+    "harmful_margin_m": 0.0005,
+    "coverage": "uncalibrated nominal-90% point ellipsoid diagnostic",
+    "prediction_sealed_before_query_truth_scoring": true,
+    "manual_track_pickle_is_monolithic": true
+  },
+  "bootstrap": {
+    "resamples": 2000,
+    "seed": 20260805,
+    "unit": "physical interaction case"
+  },
+  "advancement_gates": {
+    "primary_method": "P3_explicit_gauge_persistent",
+    "deployed_mean_improvement_fraction_at_least": 0.1,
+    "paired_deployed_minus_baseline_upper_95_below_zero": true,
+    "harmful_accepted_rate_at_most": 0.05,
+    "accepted_case_count_at_least": 8,
+    "accepted_coverage_90_at_least": 0.8,
+    "all_rejections_exact_fallback": true
+  }
+}

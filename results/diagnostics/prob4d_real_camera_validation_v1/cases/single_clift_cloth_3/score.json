@@ -1,0 +1,62 @@
+{
+  "case_id": "single_clift_cloth_3",
+  "methods": {
+    "B0_physical_fallback": {
+      "baseline_rmse_m": 0.002514840001302531,
+      "coverage_90": null,
+      "deployed_harmful": false,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_rmse_m": 0.002514840001302531,
+      "exact_fallback": true,
+      "guard_accepted": false,
+      "predictive_width_rms_m": null,
+      "raw_harmful": false,
+      "raw_improvement_fraction": 0.0,
+      "raw_rmse_m": 0.002514840001302531
+    },
+    "P1_marginal_gauge_persistent": {
+      "baseline_rmse_m": 0.002514840001302531,
+      "coverage_90": 0.8,
+      "deployed_harmful": false,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_rmse_m": 0.002514840001302531,
+      "exact_fallback": true,
+      "guard_accepted": false,
+      "predictive_width_rms_m": 0.014559661880073177,
+      "raw_harmful": false,
+      "raw_improvement_fraction": 0.10436097790608867,
+      "raw_rmse_m": 0.0022523888394892495
+    },
+    "P2_explicit_gauge_framewise": {
+      "baseline_rmse_m": 0.002514840001302531,
+      "coverage_90": null,
+      "deployed_harmful": false,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_rmse_m": 0.002514840001302531,
+      "exact_fallback": true,
+      "guard_accepted": false,
+      "predictive_width_rms_m": null,
+      "raw_harmful": false,
+      "raw_improvement_fraction": 0.0,
+      "raw_rmse_m": 0.002514840001302531
+    },
+    "P3_explicit_gauge_persistent": {
+      "baseline_rmse_m": 0.002514840001302531,
+      "coverage_90": 0.8,
+      "deployed_harmful": false,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_rmse_m": 0.002514840001302531,
+      "exact_fallback": true,
+      "guard_accepted": false,
+      "predictive_width_rms_m": 0.015176554670436266,
+      "raw_harmful": false,
+      "raw_improvement_fraction": -0.1330863670439304,
+      "raw_rmse_m": 0.002849530920772638
+    }
+  },
+  "prediction_sha256": "39ff7ea3e13685d87638b2a677f08b024194735bd7c46ae4548fe50d90dd25cf",
+  "query_frame": 41,
+  "schema": "bayesian-phystwin-prob4d-real-camera-case-score",
+  "schema_version": 1,
+  "scored_reserved_identity_count": 5
+}

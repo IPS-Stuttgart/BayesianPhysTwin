@@ -1,0 +1,675 @@
+{
+  "case_id": "single_clift_cloth_1",
+  "causal_frame_stop_exclusive": 42,
+  "future_motioncrafter_payloads_opened": 0,
+  "graph": {
+    "basis_diagnostics": {
+      "maximum_rigid_mode_overlap": 1.4106525170612092e-14,
+      "orthonormality_maximum_error": 4.440892098500626e-16,
+      "rank": 4,
+      "scalar_mode_count": 7,
+      "support_node_count": 0
+    },
+    "basis_frequencies": [
+      0.002052390138404511,
+      0.002052390138404511,
+      0.002052390138404511,
+      0.0023048139082015844
+    ],
+    "surface_node_count": 6490,
+    "surface_spring_count": 108506
+  },
+  "inputs": {
+    "baseline": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_clift_cloth_1/inference.pkl",
+      "sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1"
+    },
+    "final_data": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_clift_cloth_1/final_data.pkl",
+      "sha256": "945998ecd4127bb9acc96296202c25cc55454055603b3e2480a0e6346a6b546c"
+    },
+    "manual_tracks": {
+      "frame_zero_sha256": "83126d6c950c6b7fdbd916ea91e281ead2be478a672e4511e71c849aaea1431a",
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_clift_cloth_1/gt_track_3d.pkl",
+      "sha256": "10ad2022dc3de0539ca18e9c5e6c1adc0c73eba6cc49e62da25b0106ccebae6e"
+    },
+    "optimal_params": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_clift_cloth_1/optimal_params.pkl",
+      "sha256": "92d8dd6e16d4f8cebcb4a608c2d7889c6d3c2a4fb7ed0b97ff487fa36f29e573"
+    },
+    "prediction_manifest": {
+      "path": "/mnt/corsair/florianpfaff/bpt-prob4d-observation-v1/exploratory19_runner/single_clift_cloth_1/camera0_prob4d_uniform_o8/bundle/predictions.json",
+      "sha256": "f088b07db5016649996b20d9339943322b9b39e5e57afa19f2450b4932b8daf0"
+    },
+    "raw_case_dir": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1",
+    "video_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1/color/0.mp4"
+  },
+  "legacy_temporal_lineage_reconstructed": true,
+  "manual_frame_zero_used_only_for_reserved_identity_mapping": true,
+  "manual_track_pickle_is_monolithic": true,
+  "methods": {
+    "B0_physical_fallback": {
+      "diagnostics": {
+        "exact_fallback": true
+      },
+      "guard_accepted": false,
+      "inference_admissible": false,
+      "reason": "physical-fallback-reference",
+      "risk_score": 1e+300
+    },
+    "P1_marginal_gauge_persistent": {
+      "diagnostics": {
+        "exact_fallback": true,
+        "mean_prior_reliability": 0.6050421284188862,
+        "mean_total_association_probability": 0.034248768040169804,
+        "risk": {
+          "minimum_identifiable_fraction": 0.8374996185206015,
+          "minimum_query_sensitivity_fraction": 0.1991028053837653,
+          "mixture_fixed_point_converged": true,
+          "posterior_nominal_probability": 0.995841782234765,
+          "posterior_query_width_rms_m": 0.01230664086053661
+        },
+        "risk_threshold": 0.9472718537065475,
+        "selected_observation_count": 22,
+        "solver": {
+          "active_state_update_limit_m": 0.019997962352174915,
+          "anchor_composite_weight_mode": "consumer-effective-sample-cap-v1",
+          "anchor_group_ids": [],
+          "anchor_group_posterior_nominal_probability": [],
+          "anchor_group_power": [],
+          "anchor_group_precision_floor_active": [],
+          "association_probability_used_as_reliability": false,
+          "condition_number": 8968.476396556369,
+          "exact_reduced_mixture_hessian_maximum_eigenvalue": 8772.68755212742,
+          "exact_reduced_mixture_hessian_minimum_eigenvalue": 1.0024098509690091,
+          "exact_reduced_mixture_hessian_positive_definite": true,
+          "group_composite_weight_semantics": "generalized-Bayes likelihood power",
+          "identifiability_mode": "prior-aware-schur-v1",
+          "iterations": 14,
+          "maximum_conditional_information_eigenvalue": 0.1897353354822396,
+          "maximum_query_sensitivity_norm": 0.017193880281930186,
+          "maximum_query_state_update_m": 0.0021527730949505203,
+          "minimum_robust_precision": 0.0,
+          "mixture_fixed_point_converged": true,
+          "mixture_solution_delta": 3.584121511848119e-10,
+          "mixture_stationarity_norm": 2.0258846350442773e-08,
+          "observation_composite_weight_mode": "provider-final-per-row-v1",
+          "observation_group_ids": [
+            "single_clift_cloth_1:camera-frame:frame-0",
+            "single_clift_cloth_1:camera-frame:frame-1",
+            "single_clift_cloth_1:camera-frame:frame-5",
+            "single_clift_cloth_1:camera-frame:frame-13",
+            "single_clift_cloth_1:camera-frame:frame-17",
+            "single_clift_cloth_1:camera-frame:frame-18",
+            "single_clift_cloth_1:camera-frame:frame-22",
+            "single_clift_cloth_1:camera-frame:frame-34",
+            "single_clift_cloth_1:camera-frame:frame-38"
+          ],
+          "observation_group_posterior_nominal_probability": [
+            0.9823938791820531,
+            0.9817678292978138,
+            0.9999996064333783,
+            0.9999994507453457,
+            0.9999999998865885,
+            0.9999962298768892,
+            0.9999999999038796,
+            0.9999998043392808,
+            0.9984192404476558
+          ],
+          "observation_group_power": [
+            0.20052308034196098,
+            0.008812577990490813,
+            0.0099608810521519,
+            0.006245798869588467,
+            0.10136702420312672,
+            0.009028364671140477,
+            0.008680615042260233,
+            0.010423700626696411,
+            0.0059988105821449185
+          ],
+          "observation_group_precision_floor_active": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "posterior_covariance_kind": "working-gauss-newton-irls-not-exact-mixture-hessian",
+          "prior_nominal_probability_used_inside_mixture": true,
+          "robust_likelihood": "grouped nominal/outlier Student-t mixture",
+          "robust_likelihood_objective": "exact-group-mixture-gradient",
+          "row_reliability_semantics": "conditional-covariance-precision-scaling"
+        }
+      },
+      "guard_accepted": false,
+      "inference_admissible": true,
+      "reason": "inference-admissible",
+      "risk_score": 2.7472116708173937
+    },
+    "P2_explicit_gauge_framewise": {
+      "diagnostics": {
+        "exact_fallback": true,
+        "selected_observation_count": 0
+      },
+      "guard_accepted": false,
+      "inference_admissible": false,
+      "reason": "no-associated-camera-rows",
+      "risk_score": 1e+300
+    },
+    "P3_explicit_gauge_persistent": {
+      "diagnostics": {
+        "exact_fallback": true,
+        "mean_prior_reliability": 0.6050421284188862,
+        "mean_total_association_probability": 0.034248768040169804,
+        "risk": {
+          "minimum_identifiable_fraction": 0.15912989149367238,
+          "minimum_query_sensitivity_fraction": 0.21303936622587794,
+          "mixture_fixed_point_converged": false,
+          "posterior_nominal_probability": 0.6588973790072487,
+          "posterior_query_width_rms_m": 0.01150096745807381
+        },
+        "risk_threshold": 0.6744605477155093,
+        "selected_observation_count": 22,
+        "solver": {
+          "active_state_update_limit_m": 0.019997962352174915,
+          "anchor_composite_weight_mode": "consumer-effective-sample-cap-v1",
+          "anchor_group_ids": [],
+          "anchor_group_posterior_nominal_probability": [],
+          "anchor_group_power": [],
+          "anchor_group_precision_floor_active": [],
+          "association_probability_used_as_reliability": false,
+          "condition_number": 1020797752.9683402,
+          "exact_reduced_mixture_hessian_maximum_eigenvalue": 1033103394.0238891,
+          "exact_reduced_mixture_hessian_minimum_eigenvalue": 1.0017693521497864,
+          "exact_reduced_mixture_hessian_positive_definite": true,
+          "group_composite_weight_semantics": "generalized-Bayes likelihood power",
+          "identifiability_mode": "prior-aware-schur-v1",
+          "iterations": 20,
+          "maximum_conditional_information_eigenvalue": 0.6904472695996815,
+          "maximum_query_sensitivity_norm": 0.01696914597822039,
+          "maximum_query_state_update_m": 0.004168251073411788,
+          "minimum_robust_precision": 0.0,
+          "mixture_fixed_point_converged": false,
+          "mixture_solution_delta": 5.209148136654385e-07,
+          "mixture_stationarity_norm": 0.0005091161144094122,
+          "observation_composite_weight_mode": "provider-final-per-row-v1",
+          "observation_group_ids": [
+            "single_clift_cloth_1:camera-frame:frame-0",
+            "single_clift_cloth_1:camera-frame:frame-1",
+            "single_clift_cloth_1:camera-frame:frame-5",
+            "single_clift_cloth_1:camera-frame:frame-13",
+            "single_clift_cloth_1:camera-frame:frame-17",
+            "single_clift_cloth_1:camera-frame:frame-18",
+            "single_clift_cloth_1:camera-frame:frame-22",
+            "single_clift_cloth_1:camera-frame:frame-34",
+            "single_clift_cloth_1:camera-frame:frame-38"
+          ],
+          "observation_group_posterior_nominal_probability": [
+            0.9844581386506438,
+            0.9835659665019267,
+            0.006096853807445153,
+            0.006385632186370545,
+            0.9999999973403018,
+            0.9999921814361523,
+            0.9999998286796079,
+            0.03887901318322059,
+            0.9106987992795688
+          ],
+          "observation_group_power": [
+            0.20052308034196098,
+            0.008812577990490813,
+            0.0099608810521519,
+            0.006245798869588467,
+            0.10136702420312672,
+            0.009028364671140477,
+            0.008680615042260233,
+            0.010423700626696411,
+            0.0059988105821449185
+          ],
+          "observation_group_precision_floor_active": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "posterior_covariance_kind": "working-gauss-newton-irls-not-exact-mixture-hessian",
+          "prior_nominal_probability_used_inside_mixture": true,
+          "robust_likelihood": "grouped nominal/outlier Student-t mixture",
+          "robust_likelihood_objective": "exact-group-mixture-gradient",
+          "row_reliability_semantics": "conditional-covariance-precision-scaling"
+        }
+      },
+      "guard_accepted": false,
+      "inference_admissible": true,
+      "reason": "inference-admissible",
+      "risk_score": 3.6087056983959718
+    }
+  },
+  "metric_anchor": {
+    "covariance": [
+      [
+        0.01540370191175341,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.01540370191175341,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.01540370191175341,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.01540370191175341,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.8509254779383524e-05,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.8509254779383524e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.8509254779383524e-05
+      ]
+    ],
+    "inlier_rmse_m": 0.0062055825495583835,
+    "rotation": [
+      [
+        -0.038507286533574644,
+        -0.9983232131925532,
+        0.04321979737015708
+      ],
+      [
+        0.5873218973756182,
+        0.012380585821284039,
+        0.809258741045054
+      ],
+      [
+        -0.8084368730747782,
+        0.056546291616851735,
+        0.5858603410007004
+      ]
+    ],
+    "scale": 0.587909395852899,
+    "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1/pcd/0.npz",
+    "source_sha256": "04b59160de42955fe5f720c378619d4a55c945abe298ba4a7bcc4e930b7ac2fb",
+    "translation": [
+      -0.20421258153052843,
+      0.17470967063035914,
+      0.03830827408364686
+    ]
+  },
+  "physical_response_scale_m": 0.004999490588043729,
+  "prediction_npz": {
+    "path": "/mnt/corsair/florianpfaff/prob4d-real-camera-validation-v1/exploratory19-v1/cases/single_clift_cloth_1/prediction.npz",
+    "sha256": "a7572bfa195ce9bd40938a5551220268d4ef703bae954755a40bc62923eb738a"
+  },
+  "provider": {
+    "alignment_count": 1,
+    "alignment_residual_rms_m": [
+      0.017587275913192323
+    ],
+    "cross_window_gauge_covariance_preserved": true,
+    "factor_count": 50,
+    "joint_gauge_dimension": 14,
+    "tracklet_segments": [
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 535,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 486,
+        "retained_track_count": 185,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 0,
+        "segment_stop": 5,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 703,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 3,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 498,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 608,
+        "retained_track_count": 222,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 4,
+        "segment_stop": 9,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 692,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 4,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 571,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 390,
+        "retained_track_count": 149,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 8,
+        "segment_stop": 13,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 703,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 2,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 499,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 604,
+        "retained_track_count": 221,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 12,
+        "segment_stop": 17,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 690,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 3,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 555,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 463,
+        "retained_track_count": 165,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 16,
+        "segment_stop": 21,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 693,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 2,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 546,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 455,
+        "retained_track_count": 174,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 20,
+        "segment_stop": 25,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 703,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 5,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 524,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 523,
+        "retained_track_count": 196,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 0,
+        "segment_stop": 5,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 693,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 4,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 537,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 489,
+        "retained_track_count": 183,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 4,
+        "segment_stop": 9,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 699,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 3,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 550,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 440,
+        "retained_track_count": 170,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 8,
+        "segment_stop": 13,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 699,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 3,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 482,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 664,
+        "retained_track_count": 238,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 12,
+        "segment_stop": 17,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 694,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 4,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 559,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 460,
+        "retained_track_count": 161,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 16,
+        "segment_stop": 21,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 696,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 5,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 524,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 521,
+        "retained_track_count": 196,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 20,
+        "segment_stop": 25,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 693,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 5,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      }
+    ],
+    "window_ids": [
+      "window_0000",
+      "window_0001"
+    ]
+  },
+  "query_frame": 41,
+  "query_manual_coordinates_used": false,
+  "reserved_graph_nodes": [
+    1139,
+    5075,
+    5158,
+    1214,
+    3077
+  ],
+  "reserved_manual_indices": [
+    0,
+    8,
+    6,
+    2,
+    4
+  ],
+  "rows": {
+    "mean_graph_association_probability": 0.0031432673737392842,
+    "mean_prior_reliability": 0.8877630255126763,
+    "mean_total_association_probability": 0.00019631888696472575,
+    "mean_tracklet_association_probability": 0.1253491485353623,
+    "observation_count": 4224
+  },
+  "schema": "bayesian-phystwin-prob4d-real-camera-case-prediction",
+  "schema_version": 1,
+  "selected_window_lineage": [
+    {
+      "frame_indices_sha256": "055efa1b98bc4f6882417947ab257b0bfdedfe937c27bd80f84077e21d86b1c2",
+      "payload_sha256": "ca36685e4ffcb5daa9f854dcd0fffe12b438e9259e1ee0f977f969aaf07c93c7",
+      "source_frame_start": 0,
+      "source_frame_stop_exclusive": 25,
+      "window_id": "window_0000"
+    },
+    {
+      "frame_indices_sha256": "ebf311f55a0e58119b0ac3835b4a7df8703576a012a49fca1105f4905624bc0d",
+      "payload_sha256": "9efa6923ee24026e3e1fa9d34c35c5954482df82ec4ec73f91427346703b40ac",
+      "source_frame_start": 17,
+      "source_frame_stop_exclusive": 42,
+      "window_id": "window_0001"
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "aggregate": {
+    "B0_physical_fallback": {
+      "accepted_case_count": 0,
+      "accepted_coverage_90_mean": null,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006899132709351118,
+      "case_count": 19,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_mean_rmse_m": 0.006899132709351118,
+      "deployed_win_count": 0,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        0.0,
+        0.0
+      ],
+      "raw_improvement_fraction": 0.0,
+      "raw_mean_rmse_m": 0.006899132709351118,
+      "raw_win_count": 0
+    },
+    "P1_marginal_gauge_persistent": {
+      "accepted_case_count": 11,
+      "accepted_coverage_90_mean": 0.3727272727272727,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006899132709351118,
+      "case_count": 19,
+      "deployed_improvement_fraction": -0.006222634584465592,
+      "deployed_mean_rmse_m": 0.006942063491151144,
+      "deployed_win_count": 5,
+      "harmful_accepted_count": 2,
+      "harmful_accepted_rate": 0.18181818181818182,
+      "paired_deployed_minus_baseline_95_m": [
+        -6.913778728122232e-05,
+        0.00017624961887360404
+      ],
+      "raw_improvement_fraction": -0.022410124032329337,
+      "raw_mean_rmse_m": 0.007053743129083177,
+      "raw_win_count": 7
+    },
+    "P2_explicit_gauge_framewise": {
+      "accepted_case_count": 0,
+      "accepted_coverage_90_mean": null,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006899132709351118,
+      "case_count": 19,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_mean_rmse_m": 0.006899132709351118,
+      "deployed_win_count": 0,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        0.0,
+        0.0
+      ],
+      "raw_improvement_fraction": 0.0,
+      "raw_mean_rmse_m": 0.006899132709351118,
+      "raw_win_count": 0
+    },
+    "P3_explicit_gauge_persistent": {
+      "accepted_case_count": 0,
+      "accepted_coverage_90_mean": null,
+      "all_rejections_exact_fallback": true,
+      "baseline_mean_rmse_m": 0.006899132709351118,
+      "case_count": 19,
+      "deployed_improvement_fraction": 0.0,
+      "deployed_mean_rmse_m": 0.006899132709351118,
+      "deployed_win_count": 0,
+      "harmful_accepted_count": 0,
+      "harmful_accepted_rate": 0.0,
+      "paired_deployed_minus_baseline_95_m": [
+        0.0,
+        0.0
+      ],
+      "raw_improvement_fraction": -0.019716656061859794,
+      "raw_mean_rmse_m": 0.0070351605361065215,
+      "raw_win_count": 3
+    }
+  },
+  "case_count_requested": 19,
+  "case_count_scored": 19,
+  "claim_boundary": "Real public PhysTwin camera recordings on the previously opened 19-case development cohort. This is a retrospective mechanism-transfer test, not prospective physical-object confirmation or a state-of-the-art claim.",
+  "decision": {
+    "checks": {
+      "accepted_case_count": false,
+      "accepted_coverage": false,
+      "complete_expected_cohort": true,
+      "deployed_mean_improvement": false,
+      "exact_fallback": true,
+      "harmful_accepted_rate": true,
+      "paired_upper_below_zero": false
+    },
+    "decision": "do-not-advance-from-retrospective-real-camera-transfer",
+    "passed": false,
+    "primary_method": "P3_explicit_gauge_persistent"
+  },
+  "prob4d_revision": "364f216c14f7770c1b360bb1b836b11ecf0c18b8",
+  "protocol_id": "prob4d-real-camera-validation-v1",
+  "protocol_sha256": "e5f4948c48df3e82966c46af88be6f8b98dfc8e3108bab527ab1149f31fe10c4",
+  "repository_revision": "231737ddeedc8a9c258e960f6e827d12b80008ed",
+  "schema": "bayesian-phystwin-prob4d-real-camera-validation-report",
+  "schema_version": 1,
+  "technical_failure_count": 0,
+  "technical_failures": []
+}

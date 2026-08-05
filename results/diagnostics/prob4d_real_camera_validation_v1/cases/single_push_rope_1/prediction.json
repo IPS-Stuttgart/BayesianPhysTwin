@@ -1,0 +1,665 @@
+{
+  "case_id": "single_push_rope_1",
+  "causal_frame_stop_exclusive": 42,
+  "future_motioncrafter_payloads_opened": 0,
+  "graph": {
+    "basis_diagnostics": {
+      "maximum_rigid_mode_overlap": 1.3538275561842897e-14,
+      "orthonormality_maximum_error": 2.220446049250313e-16,
+      "rank": 4,
+      "scalar_mode_count": 7,
+      "support_node_count": 0
+    },
+    "basis_frequencies": [
+      0.0007202174013147683,
+      0.0007202174013147683,
+      0.0007202174013147683,
+      0.0031291817878278806
+    ],
+    "surface_node_count": 1940,
+    "surface_spring_count": 32769
+  },
+  "inputs": {
+    "baseline": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_push_rope_1/inference.pkl",
+      "sha256": "81c9d519d0dc88bde79ec78f380475a598cc23320b9116f0b109e2dcf09a57c0"
+    },
+    "final_data": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_push_rope_1/final_data.pkl",
+      "sha256": "675319bf30b4d6d91b833424e07d1ce1454efa027e710092ba4f29d51a4d434e"
+    },
+    "manual_tracks": {
+      "frame_zero_sha256": "3818c003026e3f6ccbf47d93f4ea1c33af019cc4a354a43eec5c5bfd2ecbb297",
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_push_rope_1/gt_track_3d.pkl",
+      "sha256": "139f006a2b6b8746ba9033a32c69113ca8c3f140b9f075e3e652f08676b0c2e2"
+    },
+    "optimal_params": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_push_rope_1/optimal_params.pkl",
+      "sha256": "3156d867a54259aaa03fceec20313910c0b31615e553fe8d7f2ec9598f6d228c"
+    },
+    "prediction_manifest": {
+      "path": "/mnt/corsair/florianpfaff/bpt-prob4d-observation-v1/exploratory19_runner/single_push_rope_1/camera0_prob4d_uniform_o8/bundle/predictions.json",
+      "sha256": "d093b8244c7fe2792a0770df2b5f626357a2cdf754834eeb51b7c6266eccb4f9"
+    },
+    "raw_case_dir": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_push_rope_1",
+    "video_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_push_rope_1/color/0.mp4"
+  },
+  "legacy_temporal_lineage_reconstructed": true,
+  "manual_frame_zero_used_only_for_reserved_identity_mapping": true,
+  "manual_track_pickle_is_monolithic": true,
+  "methods": {
+    "B0_physical_fallback": {
+      "diagnostics": {
+        "exact_fallback": true
+      },
+      "guard_accepted": false,
+      "inference_admissible": false,
+      "reason": "physical-fallback-reference",
+      "risk_score": 1e+300
+    },
+    "P1_marginal_gauge_persistent": {
+      "diagnostics": {
+        "exact_fallback": true,
+        "mean_prior_reliability": 0.556368488421881,
+        "mean_total_association_probability": 0.07394678211235503,
+        "risk": {
+          "minimum_identifiable_fraction": 0.9394390318628435,
+          "minimum_query_sensitivity_fraction": 0.18178328307552596,
+          "mixture_fixed_point_converged": true,
+          "posterior_nominal_probability": 0.9967987721483478,
+          "posterior_query_width_rms_m": 0.012464412330533163
+        },
+        "risk_threshold": 0.9472718537065475,
+        "selected_observation_count": 14,
+        "solver": {
+          "active_state_update_limit_m": 0.03,
+          "anchor_composite_weight_mode": "consumer-effective-sample-cap-v1",
+          "anchor_group_ids": [],
+          "anchor_group_posterior_nominal_probability": [],
+          "anchor_group_power": [],
+          "anchor_group_precision_floor_active": [],
+          "association_probability_used_as_reliability": false,
+          "condition_number": 9302.018802985636,
+          "exact_reduced_mixture_hessian_maximum_eigenvalue": 9061.529738552917,
+          "exact_reduced_mixture_hessian_minimum_eigenvalue": 1.0092402356942072,
+          "exact_reduced_mixture_hessian_positive_definite": true,
+          "group_composite_weight_semantics": "generalized-Bayes likelihood power",
+          "identifiability_mode": "prior-aware-schur-v1",
+          "iterations": 9,
+          "maximum_conditional_information_eigenvalue": 0.03918386748797913,
+          "maximum_query_sensitivity_norm": 0.018377106545774423,
+          "maximum_query_state_update_m": 0.00032255030681249886,
+          "minimum_robust_precision": 0.0,
+          "mixture_fixed_point_converged": true,
+          "mixture_solution_delta": 2.789262281681024e-11,
+          "mixture_stationarity_norm": 1.2655827682632988e-09,
+          "observation_composite_weight_mode": "provider-final-per-row-v1",
+          "observation_group_ids": [
+            "single_push_rope_1:camera-frame:frame-0",
+            "single_push_rope_1:camera-frame:frame-1",
+            "single_push_rope_1:camera-frame:frame-17",
+            "single_push_rope_1:camera-frame:frame-18",
+            "single_push_rope_1:camera-frame:frame-22",
+            "single_push_rope_1:camera-frame:frame-26",
+            "single_push_rope_1:camera-frame:frame-30",
+            "single_push_rope_1:camera-frame:frame-38"
+          ],
+          "observation_group_posterior_nominal_probability": [
+            0.9902163416274613,
+            0.9880221881367864,
+            0.9999999996019264,
+            0.9999999583076074,
+            0.9993392495943212,
+            0.9995704512587611,
+            0.9977629554501527,
+            0.9994790332097657
+          ],
+          "observation_group_power": [
+            0.1942731716717885,
+            0.015314559433173443,
+            0.1784552176696935,
+            0.013436474216294965,
+            0.032810181918858684,
+            0.012198736188720267,
+            0.005847717157099688,
+            0.008481553686950619
+          ],
+          "observation_group_precision_floor_active": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "posterior_covariance_kind": "working-gauss-newton-irls-not-exact-mixture-hessian",
+          "prior_nominal_probability_used_inside_mixture": true,
+          "robust_likelihood": "grouped nominal/outlier Student-t mixture",
+          "robust_likelihood_objective": "exact-group-mixture-gradient",
+          "row_reliability_semantics": "conditional-covariance-precision-scaling"
+        }
+      },
+      "guard_accepted": true,
+      "inference_admissible": true,
+      "reason": "inference-admissible",
+      "risk_score": 0.8978396042667753
+    },
+    "P2_explicit_gauge_framewise": {
+      "diagnostics": {
+        "exact_fallback": true,
+        "selected_observation_count": 0
+      },
+      "guard_accepted": false,
+      "inference_admissible": false,
+      "reason": "no-associated-camera-rows",
+      "risk_score": 1e+300
+    },
+    "P3_explicit_gauge_persistent": {
+      "diagnostics": {
+        "exact_fallback": true,
+        "mean_prior_reliability": 0.556368488421881,
+        "mean_total_association_probability": 0.07394678211235503,
+        "risk": {
+          "minimum_identifiable_fraction": 0.4938632347718328,
+          "minimum_query_sensitivity_fraction": 0.25925886202593434,
+          "mixture_fixed_point_converged": true,
+          "posterior_nominal_probability": 0.5771958740446376,
+          "posterior_query_width_rms_m": 0.012088292190068678
+        },
+        "risk_threshold": 0.6744605477155093,
+        "selected_observation_count": 14,
+        "solver": {
+          "active_state_update_limit_m": 0.03,
+          "anchor_composite_weight_mode": "consumer-effective-sample-cap-v1",
+          "anchor_group_ids": [],
+          "anchor_group_posterior_nominal_probability": [],
+          "anchor_group_power": [],
+          "anchor_group_precision_floor_active": [],
+          "association_probability_used_as_reliability": false,
+          "condition_number": 489090095.2827938,
+          "exact_reduced_mixture_hessian_maximum_eigenvalue": 495801840.0689753,
+          "exact_reduced_mixture_hessian_minimum_eigenvalue": 1.0115620515820845,
+          "exact_reduced_mixture_hessian_positive_definite": true,
+          "group_composite_weight_semantics": "generalized-Bayes likelihood power",
+          "identifiability_mode": "prior-aware-schur-v1",
+          "iterations": 15,
+          "maximum_conditional_information_eigenvalue": 0.2351810134514521,
+          "maximum_query_sensitivity_norm": 0.01787787804352015,
+          "maximum_query_state_update_m": 0.0004242296454351673,
+          "minimum_robust_precision": 0.0,
+          "mixture_fixed_point_converged": true,
+          "mixture_solution_delta": 6.023859385680944e-10,
+          "mixture_stationarity_norm": 1.1676860506860247e-07,
+          "observation_composite_weight_mode": "provider-final-per-row-v1",
+          "observation_group_ids": [
+            "single_push_rope_1:camera-frame:frame-0",
+            "single_push_rope_1:camera-frame:frame-1",
+            "single_push_rope_1:camera-frame:frame-17",
+            "single_push_rope_1:camera-frame:frame-18",
+            "single_push_rope_1:camera-frame:frame-22",
+            "single_push_rope_1:camera-frame:frame-26",
+            "single_push_rope_1:camera-frame:frame-30",
+            "single_push_rope_1:camera-frame:frame-38"
+          ],
+          "observation_group_posterior_nominal_probability": [
+            0.009372499568034515,
+            0.00826844583105469,
+            0.9999991276676233,
+            0.9999913099711065,
+            0.9972411805345497,
+            0.014638083304014882,
+            0.6402538149018644,
+            0.9478025305788526
+          ],
+          "observation_group_power": [
+            0.1942731716717885,
+            0.015314559433173443,
+            0.1784552176696935,
+            0.013436474216294965,
+            0.032810181918858684,
+            0.012198736188720267,
+            0.005847717157099688,
+            0.008481553686950619
+          ],
+          "observation_group_precision_floor_active": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "posterior_covariance_kind": "working-gauss-newton-irls-not-exact-mixture-hessian",
+          "prior_nominal_probability_used_inside_mixture": true,
+          "robust_likelihood": "grouped nominal/outlier Student-t mixture",
+          "robust_likelihood_objective": "exact-group-mixture-gradient",
+          "row_reliability_semantics": "conditional-covariance-precision-scaling"
+        }
+      },
+      "guard_accepted": false,
+      "inference_admissible": true,
+      "reason": "inference-admissible",
+      "risk_score": 1.500951585142798
+    }
+  },
+  "metric_anchor": {
+    "covariance": [
+      [
+        0.008873107067767326,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.008873107067767326,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.008873107067767326,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.008873107067767326,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.2182767669418317e-05,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.2182767669418317e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.2182767669418317e-05
+      ]
+    ],
+    "inlier_rmse_m": 0.004709858561508861,
+    "rotation": [
+      [
+        -0.006270584768964359,
+        -0.9995513066409831,
+        0.029289335242690152
+      ],
+      [
+        0.5228504968967606,
+        0.021690014062692532,
+        0.8521484032636395
+      ],
+      [
+        -0.8524013360274992,
+        0.020657412283818642,
+        0.522479888279224
+      ]
+    ],
+    "scale": 0.6044137630844899,
+    "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_push_rope_1/pcd/0.npz",
+    "source_sha256": "acf72c7c38e7475c83975a1769bd017a01dfec06b090016fe68a5955fef47369",
+    "translation": [
+      -0.21688857904552178,
+      0.13550568118874323,
+      0.018031745004192728
+    ]
+  },
+  "physical_response_scale_m": 0.018891091521263736,
+  "prediction_npz": {
+    "path": "/mnt/corsair/florianpfaff/prob4d-real-camera-validation-v1/exploratory19-v1/cases/single_push_rope_1/prediction.npz",
+    "sha256": "ae8fc9b9de6318d827e43aba22486889faf815b9c9bb63a2e0e1b2f484de012c"
+  },
+  "provider": {
+    "alignment_count": 1,
+    "alignment_residual_rms_m": [
+      0.017714092288207087
+    ],
+    "cross_window_gauge_covariance_preserved": true,
+    "factor_count": 50,
+    "joint_gauge_dimension": 14,
+    "tracklet_segments": [
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 577,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 385,
+        "retained_track_count": 143,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 0,
+        "segment_stop": 5,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 700,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 2,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 552,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 497,
+        "retained_track_count": 168,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 4,
+        "segment_stop": 9,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 688,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 4,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 565,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 415,
+        "retained_track_count": 155,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 8,
+        "segment_stop": 13,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 696,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 3,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 559,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 459,
+        "retained_track_count": 161,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 12,
+        "segment_stop": 17,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 695,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 1,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 522,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 498,
+        "retained_track_count": 198,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 16,
+        "segment_stop": 21,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 705,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 0,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 519,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 526,
+        "retained_track_count": 201,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 20,
+        "segment_stop": 25,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 703,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 1,
+        "terminated_target_mask": 0,
+        "window_id": "window_0000"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 555,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 472,
+        "retained_track_count": 165,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 0,
+        "segment_stop": 5,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 690,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 0,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 545,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 495,
+        "retained_track_count": 175,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 4,
+        "segment_stop": 9,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 694,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 1,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 523,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 521,
+        "retained_track_count": 197,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 8,
+        "segment_stop": 13,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 693,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 1,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 500,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 596,
+        "retained_track_count": 220,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 12,
+        "segment_stop": 17,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 693,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 3,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 517,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 538,
+        "retained_track_count": 203,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 16,
+        "segment_stop": 21,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 698,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 0,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      },
+      {
+        "association_sigma_local": 0.01,
+        "collision_rejections": 0,
+        "dropped_short_tracks": 507,
+        "maximum_step_error_local": 0.05,
+        "minimum_link_probability": 0.01,
+        "minimum_track_length": 2,
+        "observation_count": 543,
+        "retained_track_count": 213,
+        "search_radius_pixels": 4,
+        "seed_count": 720,
+        "seed_stride": 16,
+        "segment_start": 20,
+        "segment_stop": 25,
+        "target_deform_mask_policy": "allow",
+        "terminated_invalid_source": 0,
+        "terminated_low_probability": 698,
+        "terminated_no_candidate": 0,
+        "terminated_step_error": 2,
+        "terminated_target_mask": 0,
+        "window_id": "window_0001"
+      }
+    ],
+    "window_ids": [
+      "window_0000",
+      "window_0001"
+    ]
+  },
+  "query_frame": 41,
+  "query_manual_coordinates_used": false,
+  "reserved_graph_nodes": [
+    1249,
+    1095,
+    1594,
+    1004
+  ],
+  "reserved_manual_indices": [
+    0,
+    8,
+    4,
+    2
+  ],
+  "rows": {
+    "mean_graph_association_probability": 0.0018793451708116768,
+    "mean_prior_reliability": 0.8574379394955409,
+    "mean_total_association_probability": 0.0002627298227303774,
+    "mean_tracklet_association_probability": 0.11721299807179485,
+    "observation_count": 4054
+  },
+  "schema": "bayesian-phystwin-prob4d-real-camera-case-prediction",
+  "schema_version": 1,
+  "selected_window_lineage": [
+    {
+      "frame_indices_sha256": "055efa1b98bc4f6882417947ab257b0bfdedfe937c27bd80f84077e21d86b1c2",
+      "payload_sha256": "42a2de609025024fd861903d108429722da756ae108bf421ceb514888b8251f3",
+      "source_frame_start": 0,
+      "source_frame_stop_exclusive": 25,
+      "window_id": "window_0000"
+    },
+    {
+      "frame_indices_sha256": "ebf311f55a0e58119b0ac3835b4a7df8703576a012a49fca1105f4905624bc0d",
+      "payload_sha256": "f37a2f2214aa0c629bef83ac9e7f2d31912049d1481425624a503ef403b8d10d",
+      "source_frame_start": 17,
+      "source_frame_stop_exclusive": 42,
+      "window_id": "window_0001"
+    }
+  ]
+}
