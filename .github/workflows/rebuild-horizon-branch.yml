@@ -1,0 +1,266 @@
+name: Rebuild horizon discrepancy branch
+
+on:
+  push:
+    branches:
+      - agent/deform360-horizon-calibration
+    paths:
+      - .github/workflows/rebuild-horizon-branch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out staging revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Rebuild clean horizon-only tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EXPECTED_STAGING_SHA: ${{ github.sha }}
+          BASE_SHA: c37fc7aa7ba4a26313cb3a1f85d6df93c0608461
+          PAYLOAD_COMMIT: 779a2d0c3fc8a39316869ceae956f03c9b852b6d
+          EXPECTED_ARCHIVE_SHA256: 355eeb5b84453f4d8fbe064d1bcdb49e810f7d02ed2d35ca66ebdc20b2eb05c3
+          BRANCH: agent/deform360-horizon-calibration
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/horizon-rebuild"
+          chunks="${root}/chunks"
+          extracted="${root}/extracted"
+          mkdir -p "${chunks}" "${extracted}"
+
+          gh api "repos/${GH_REPO}/contents/.github/agent/deform360-payload?ref=${PAYLOAD_COMMIT}" \
+            --jq '.[].name' | LC_ALL=C sort > "${root}/chunk-names.txt"
+          while IFS= read -r name; do
+            case "${name}" in
+              chunk*) ;;
+              *) continue ;;
+            esac
+            gh api "repos/${GH_REPO}/contents/.github/agent/deform360-payload/${name}?ref=${PAYLOAD_COMMIT}" \
+              --jq .content | tr -d '\n' | base64 --decode > "${chunks}/${name}"
+          done < "${root}/chunk-names.txt"
+          cat "${chunks}"/chunk* > "${root}/changed-files.zip"
+          echo "${EXPECTED_ARCHIVE_SHA256}  ${root}/changed-files.zip" | sha256sum --check --strict
+          unzip -q "${root}/changed-files.zip" -d "${extracted}"
+
+          current="$(gh api "repos/${GH_REPO}/git/ref/heads/${BRANCH}" --jq .object.sha)"
+          test "${current}" = "${EXPECTED_STAGING_SHA}"
+          git reset --hard "${BASE_SHA}"
+
+          cp "${extracted}/src/bayesian_phystwin/horizon_conditioned_discrepancy.py" \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py
+          cp "${extracted}/src/bayesian_phystwin/causal4d_belief_provider_v2.py" \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py
+          cp "${extracted}/tests/test_horizon_conditioned_discrepancy.py" \
+            tests/test_horizon_conditioned_discrepancy.py
+          cp "${extracted}/docs/horizon_conditioned_discrepancy.md" \
+            docs/horizon_conditioned_discrepancy.md
+
+          python - <<'PY'
+          from pathlib import Path
+
+          init_path = Path("src/bayesian_phystwin/__init__.py")
+          init_text = init_path.read_text(encoding="utf-8")
+          import_block = '''from .horizon_conditioned_discrepancy import (
+              HORIZON_DISCREPANCY_CALIBRATION_SCHEMA,
+              HORIZON_DISCREPANCY_CALIBRATION_SEMANTICS,
+              HORIZON_DISCREPANCY_CALIBRATION_VERSION,
+              HorizonConditionedEndpointPredictionV1,
+              HorizonDiscrepancyCalibrationV1,
+              fit_horizon_discrepancy_calibration,
+              load_horizon_discrepancy_calibration,
+              mean_retention_at_horizon,
+              predict_horizon_conditioned_endpoint,
+              save_horizon_discrepancy_calibration,
+          )
+          '''
+          if "from .horizon_conditioned_discrepancy import (" not in init_text:
+              marker = "from .gauge_aware_belief import ("
+              if marker not in init_text:
+                  raise SystemExit("cannot locate public import insertion point")
+              init_text = init_text.replace(marker, import_block + marker, 1)
+
+          exports = (
+              "HORIZON_DISCREPANCY_CALIBRATION_SCHEMA",
+              "HORIZON_DISCREPANCY_CALIBRATION_SEMANTICS",
+              "HORIZON_DISCREPANCY_CALIBRATION_VERSION",
+              "HorizonConditionedEndpointPredictionV1",
+              "HorizonDiscrepancyCalibrationV1",
+              "fit_horizon_discrepancy_calibration",
+              "load_horizon_discrepancy_calibration",
+              "mean_retention_at_horizon",
+              "predict_horizon_conditioned_endpoint",
+              "save_horizon_discrepancy_calibration",
+          )
+          missing = [name for name in exports if f'    "{name}",' not in init_text]
+          if missing:
+              marker = "__all__ = [\n"
+              if marker not in init_text:
+                  raise SystemExit("cannot locate __all__ insertion point")
+              block = "".join(f'    "{name}",\n' for name in missing)
+              init_text = init_text.replace(marker, marker + block, 1)
+          init_path.write_text(init_text, encoding="utf-8")
+
+          manifest = Path("MANIFEST.in")
+          manifest_text = manifest.read_text(encoding="utf-8")
+          line = "include docs/horizon_conditioned_discrepancy.md\n"
+          if line not in manifest_text:
+              manifest.write_text(manifest_text.rstrip() + "\n" + line, encoding="utf-8")
+
+          readme = Path("README.md")
+          readme_text = readme.read_text(encoding="utf-8")
+          entry = (
+              "- [Horizon-conditioned discrepancy](docs/horizon_conditioned_discrepancy.md):\n"
+              "  source-group-selected mean retention and process growth for new prospective\n"
+              "  model-averaged endpoint predictions.\n"
+          )
+          if "docs/horizon_conditioned_discrepancy.md" not in readme_text:
+              anchor = "- [Finite-group calibration design](docs/finite_group_calibration_design.md):"
+              if anchor in readme_text:
+                  readme_text = readme_text.replace(anchor, entry + anchor, 1)
+              else:
+                  readme_text = readme_text.rstrip() + "\n\n" + entry
+              readme.write_text(readme_text, encoding="utf-8")
+
+          support = Path("SUPPORT.md")
+          support_text = support.read_text(encoding="utf-8")
+          paragraph = (
+              "\nThe additive `causal4d_belief_provider_v2` also exposes an optional "
+              "source-calibrated horizon-discrepancy contract with mean retention and "
+              "explicit process growth. Adopting it is an explicit consumer decision; "
+              "it does not change provider v1 or imply prospective covariance calibration.\n"
+          )
+          if "source-calibrated horizon-discrepancy contract" not in support_text:
+              support.write_text(support_text.rstrip() + "\n" + paragraph, encoding="utf-8")
+          PY
+
+          mkdir -p .github/workflows
+          cat > .github/workflows/horizon-conditioned-discrepancy.yml <<'YAML'
+          name: Horizon-conditioned discrepancy contracts
+
+          on:
+            pull_request:
+              branches: [main]
+              paths:
+                - ".github/workflows/horizon-conditioned-discrepancy.yml"
+                - "src/bayesian_phystwin/horizon_conditioned_discrepancy.py"
+                - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+                - "src/bayesian_phystwin/endpoint_model_average.py"
+                - "src/bayesian_phystwin/__init__.py"
+                - "tests/test_horizon_conditioned_discrepancy.py"
+                - "tests/test_horizon_conditioned_discrepancy_workflow.py"
+                - "docs/horizon_conditioned_discrepancy.md"
+                - "README.md"
+                - "MANIFEST.in"
+                - "SUPPORT.md"
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          concurrency:
+            group: horizon-discrepancy-${{ github.workflow }}-${{ github.ref }}
+            cancel-in-progress: true
+
+          jobs:
+            contracts:
+              name: Source-only horizon contracts
+              runs-on: ubuntu-latest
+              timeout-minutes: 20
+              steps:
+                - name: Check out exact revision
+                  uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+                  with:
+                    persist-credentials: false
+                    clean: true
+
+                - name: Set up Python 3.12
+                  uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+                  with:
+                    python-version: "3.12"
+                    cache: pip
+                    cache-dependency-path: pyproject.toml
+
+                - name: Install contract environment
+                  run: |
+                    python -m pip install -e ".[dev]"
+                    python -m pip check
+
+                - name: Validate formatting, typing, and focused contracts
+                  run: |
+                    python -m ruff check \
+                      src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+                      src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+                      tests/test_horizon_conditioned_discrepancy.py \
+                      tests/test_horizon_conditioned_discrepancy_workflow.py
+                    python -m ruff format --check \
+                      src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+                      src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+                      tests/test_horizon_conditioned_discrepancy.py \
+                      tests/test_horizon_conditioned_discrepancy_workflow.py
+                    python -m mypy \
+                      src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+                      src/bayesian_phystwin/causal4d_belief_provider_v2.py
+                    python -m pytest -q \
+                      tests/test_horizon_conditioned_discrepancy.py \
+                      tests/test_endpoint_model_average.py \
+                      tests/test_horizon_conditioned_discrepancy_workflow.py
+                    python -m compileall -q src/bayesian_phystwin
+          YAML
+
+          cat > tests/test_horizon_conditioned_discrepancy_workflow.py <<'PY'
+          from pathlib import Path
+
+
+          def test_horizon_workflow_is_read_only_and_pinned() -> None:
+              text = Path(
+                  ".github/workflows/horizon-conditioned-discrepancy.yml"
+              ).read_text(encoding="utf-8")
+              assert "contents: read" in text
+              assert "contents: write" not in text
+              assert "persist-credentials: false" in text
+              assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in text
+              assert "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97" in text
+              assert "tests/test_horizon_conditioned_discrepancy.py" in text
+              assert "python -m mypy" in text
+          PY
+
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            tests/test_horizon_conditioned_discrepancy.py \
+            tests/test_horizon_conditioned_discrepancy_workflow.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            tests/test_horizon_conditioned_discrepancy.py \
+            tests/test_horizon_conditioned_discrepancy_workflow.py
+          python -m mypy \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py
+          python -m pytest -q \
+            tests/test_horizon_conditioned_discrepancy.py \
+            tests/test_endpoint_model_average.py \
+            tests/test_horizon_conditioned_discrepancy_workflow.py
+          python -m compileall -q src/bayesian_phystwin
+
+          git add -A
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add source-calibrated horizon discrepancy dynamics"
+          git push \
+            --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_STAGING_SHA}" \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" \
+            "HEAD:refs/heads/${BRANCH}"
