@@ -49,17 +49,26 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+      - name: Select runner Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3.12 || command -v python3)"
+          test -x "${python_bin}"
+          "${python_bin}" - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.version)
+          PY
+          echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
+          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
 
       - name: Install development environment
         run: |
-          python -m pip install -e ".[dev]" "huggingface_hub>=0.24"
-          python -m pip check
+          "${PYTHON_BIN}" -m pip install -e ".[dev]" "huggingface_hub>=0.24"
+          "${PYTHON_BIN}" -m pip check
 
       - name: Validate reviewable source
         shell: bash
@@ -71,15 +80,15 @@ jobs:
             tests/test_deform360_visual_provider_bootstrap.py
             tests/test_deform360_visual_provider_freeze.py
           )
-          python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
-          python -m pytest -q \
+          "${PYTHON_BIN}" -m ruff check "${files[@]}"
+          "${PYTHON_BIN}" -m ruff format --check "${files[@]}"
+          "${PYTHON_BIN}" -m pytest -q \
             tests/test_deform360_visual_provider_bootstrap.py \
             tests/test_deform360_visual_provider_freeze.py \
             tests/test_deform360_visual_provider_lock.py \
             tests/test_pull_request_workflow_integrity.py \
             tests/test_release_metadata.py
-          python -m compileall -q \
+          "${PYTHON_BIN}" -m compileall -q \
             scripts/science/bootstrap_deform360_visual_provider_models.py \
             scripts/science/build_deform360_visual_provider_freeze.py
           git diff --check
@@ -123,20 +132,31 @@ jobs:
           fetch-depth: 1
           clean: true
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
+      - name: Select runner Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3.12 || command -v python3)"
+          test -x "${python_bin}"
+          "${python_bin}" - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.version)
+          PY
+          echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
+          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
 
       - name: Install data-free producer environment
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install \
+          "${PYTHON_BIN}" -m pip install \
             -e ".[dev]" \
             -e ./_prob4d \
             "huggingface_hub>=0.24"
-          python -m pip check
+          "${PYTHON_BIN}" -m pip check
 
       - name: Prepare exact cache and output roots
         shell: bash
@@ -161,7 +181,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/science/bootstrap_deform360_visual_provider_models.py \
+          "${PYTHON_BIN}" scripts/science/bootstrap_deform360_visual_provider_models.py \
             --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
             --cache-dir "${DEFORM360_MODEL_CACHE}" \
             --output "${DEFORM360_PREFLIGHT_ROOT}/model-bootstrap.json" \
@@ -185,7 +205,7 @@ jobs:
           if [[ -d "${expected}" ]]; then
             args+=(--expected-bundle-dir "${expected}")
           fi
-          python scripts/science/build_deform360_visual_provider_freeze.py \
+          "${PYTHON_BIN}" scripts/science/build_deform360_visual_provider_freeze.py \
             "${args[@]}" \
             | tee "${DEFORM360_PREFLIGHT_ROOT}/console.log"
 
@@ -193,7 +213,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          "${PYTHON_BIN}" - <<'PY'
           import hashlib
           import json
           import os
@@ -245,7 +265,7 @@ jobs:
             echo "runner_name=${RUNNER_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "runner_arch=${RUNNER_ARCH}"
-            python --version
+            "${PYTHON_BIN}" --version
             uname -a
             nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
               --format=csv,noheader
