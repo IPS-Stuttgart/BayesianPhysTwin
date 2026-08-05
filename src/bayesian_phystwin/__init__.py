@@ -45,6 +45,13 @@ from .deform360_contact_anchor import (
     Deform360ContactAnchorV1,
     attach_deform360_contact_anchor,
 )
+from .deform360_official_hub_causal_windows import (
+    Deform360CustodyError,
+    build_deform360_official_hub_causal_window_manifest,
+    load_deform360_official_hub_causal_window_manifest,
+    save_deform360_official_hub_causal_window_manifest,
+    validate_deform360_official_hub_causal_window_manifest,
+)
 from .deform360_visual_provider_lock import (
     DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID,
     DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT,
@@ -240,6 +247,7 @@ __all__ = [
     "ConditionalGroupedStudentTObjectiveResult",
     "Deform360ContactAnchorV1",
     "Deform360CausalWindowV1",
+    "Deform360CustodyError",
     "Deform360VisualCalibrationLockV1",
     "Deform360VisualProviderLockV1",
     "Deform360VisualProviderRecoveryLockV1",
@@ -300,6 +308,7 @@ __all__ = [
     "finite_group_conformal_rank",
     "build_claim_bearing_gauge_aware_batch_from_artifacts",
     "build_claim_bearing_gauge_aware_batch_from_observation_belief",
+    "build_deform360_official_hub_causal_window_manifest",
     "build_gauge_aware_batch_from_artifacts",
     "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
@@ -324,6 +333,7 @@ __all__ = [
     "infer_model_averaged_endpoint",
     "is_prob4d_causal_observation_belief",
     "load_deform360_visual_calibration_lock",
+    "load_deform360_official_hub_causal_window_manifest",
     "load_deform360_visual_provider_lock",
     "load_deform360_visual_provider_recovery_lock",
     "load_observation_belief",
@@ -345,6 +355,7 @@ __all__ = [
     "run_synthetic_benchmark",
     "run_synthetic_case",
     "save_deform360_visual_calibration_lock",
+    "save_deform360_official_hub_causal_window_manifest",
     "save_deform360_visual_provider_lock",
     "save_deform360_visual_provider_recovery_lock",
     "select_deform360_camera_panel",
@@ -358,6 +369,7 @@ __all__ = [
     "update_claim_bearing_prob4d_from_artifacts",
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",
+    "validate_deform360_official_hub_causal_window_manifest",
     "validate_claim_bearing_prob4d_observation_belief",
     "validate_observation_linearization_alignment",
     "validate_prob4d_causal_observation_belief",
