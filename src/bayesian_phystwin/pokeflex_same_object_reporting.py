@@ -17,9 +17,7 @@ from .pokeflex_independent_depth_regret_guard import (
     extract_pokeflex_regret_guard_rows,
 )
 
-EXPECTED_ARTIFACT_KIND = (
-    "PokeFlexIndependentDepthRegretGuardProspectiveEvaluation"
-)
+EXPECTED_ARTIFACT_KIND = "PokeFlexIndependentDepthRegretGuardProspectiveEvaluation"
 EXPECTED_CLAIM_STATUS = "prospective development-take replication"
 BOUNDED_CLAIM = (
     "A source-calibrated independent-depth regret guard improved the released "
@@ -99,8 +97,7 @@ def validate_bounded_result(result: Mapping[str, Any]) -> dict[str, Any]:
         "accept/fallback accounting changed",
     )
     _require(
-        int(result["accepted_frame_wins"])
-        + int(result["accepted_frame_losses"])
+        int(result["accepted_frame_wins"]) + int(result["accepted_frame_losses"])
         == accepted_count,
         "accepted-frame accounting changed",
     )
