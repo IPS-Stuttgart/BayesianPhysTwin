@@ -14,6 +14,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from pathlib import PurePosixPath
 from typing import Any, Protocol, TypeVar, cast
 
 import numpy as np
@@ -106,7 +107,11 @@ def _validate_square_psd(values: np.ndarray, *, name: str) -> None:
 
 
 def _require_sha256(value: object, *, name: str) -> str:
-    result = str(value)
+    _require(
+        isinstance(value, str),
+        f"{name} must be a lowercase SHA-256 digest",
+    )
+    result = cast(str, value)
     _require(
         len(result) == 64
         and all(character in "0123456789abcdef" for character in result),
@@ -116,11 +121,39 @@ def _require_sha256(value: object, *, name: str) -> str:
 
 
 def _require_revision(value: object, *, name: str) -> str:
-    result = str(value)
+    _require(
+        isinstance(value, str),
+        f"{name} must be an exact lowercase revision",
+    )
+    result = cast(str, value)
     _require(
         len(result) in {40, 64}
         and all(character in "0123456789abcdef" for character in result),
         f"{name} must be an exact lowercase revision",
+    )
+    return result
+
+
+def _require_canonical_relative_path(value: object, *, name: str) -> str:
+    message = f"{name} must be a canonical relative POSIX path"
+    _require(isinstance(value, str), message)
+    result = cast(str, value)
+    path = PurePosixPath(result)
+    drive_like = bool(path.parts) and (
+        len(path.parts[0]) == 2
+        and path.parts[0][0].isalpha()
+        and path.parts[0][1] == ":"
+    )
+    _require(
+        bool(result)
+        and "\x00" not in result
+        and "\\" not in result
+        and not path.is_absolute()
+        and bool(path.parts)
+        and all(part not in {".", ".."} for part in path.parts)
+        and not drive_like
+        and path.as_posix() == result,
+        message,
     )
     return result
 
@@ -242,8 +275,8 @@ class Deform360ContactAnchorV1:
         else:
             bias = _finite_array(self.bias_jacobian, name="bias_jacobian", ndim=3)
             _require(
-                bias.shape[:2] == (count, 3),
-                "bias_jacobian must have shape (A, 3, B)",
+                bias.shape[:2] == (count, 3) and bias.shape[2] >= 1,
+                "bias_jacobian must have shape (A, 3, B) with B >= 1",
             )
             _require(
                 self.bias_prior_covariance is not None,
@@ -269,10 +302,10 @@ class Deform360ContactAnchorV1:
             "source_artifacts must be a nonempty mapping",
         )
         source_artifacts: dict[str, str] = {}
-        for path, digest in self.source_artifacts.items():
-            _require(
-                isinstance(path, str) and bool(path),
-                "source_artifacts keys must be nonempty paths",
+        for raw_path, digest in self.source_artifacts.items():
+            path = _require_canonical_relative_path(
+                raw_path,
+                name="source_artifacts key",
             )
             source_artifacts[path] = _require_sha256(
                 digest,

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 WORKFLOW = (
@@ -81,6 +82,13 @@ def test_stage0_workflow_verifies_lock_without_mutating_the_branch() -> None:
     assert "lock-verification.json" in selection_job
     assert "merge-base" in selection_job
     assert "--is-ancestor" in selection_job
+    assert "deform360_official_hub_visuotactile_v1_integration.json" in workflow
+    assert 'f"refs/pull/{pull_request}/head"' in selection_job
+    assert '"diff", "--name-status", "--no-renames"' in selection_job
+    assert 'f"{pull_request_head}:{path}"' in selection_job
+    assert 'f"{integration_revision}:{path}"' in selection_job
+    assert '"squash-merged-pr"' in selection_job
+    assert "deform360-stage0-lock-verification-v2" in selection_job
     assert "persist-credentials: true" not in selection_job
     assert "persist-credentials: false" in selection_job
     assert "contents: write" not in selection_job
@@ -103,3 +111,23 @@ def test_stage0_checksum_manifest_uses_extractable_relative_paths() -> None:
     assert "sort -z" in checksum_block
     assert "xargs -0 -r sha256sum" in checksum_block
     assert 'sha256sum "${EVIDENCE_DIR}"/*' not in checksum_block
+
+
+def test_stage0_squash_integration_attestation_is_exact() -> None:
+    path = (
+        WORKFLOW.parents[2]
+        / "protocols"
+        / "locks"
+        / "deform360_official_hub_visuotactile_v1_integration.json"
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload == {
+        "integration_revision": "022fb911812f5481e5cadc1d28592144ae4dd619",
+        "lock_implementation_revision": ("8b5c065ed06ff4f94bcc2367f0d7e08f9b8c85a7"),
+        "pull_request_base_revision": ("886bdf21762d1d7c8fef9e338098726376df7954"),
+        "pull_request_head_revision": ("c03b73f4d03a141a28e5b7b8d23847251441b7a1"),
+        "pull_request_number": 127,
+        "schema": ("bayesian-phystwin/deform360-stage0-squash-integration-v1"),
+        "schema_version": 1,
+    }

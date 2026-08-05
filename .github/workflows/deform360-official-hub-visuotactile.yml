@@ -7,6 +7,7 @@ on:
       - ".github/workflows/deform360-official-hub-visuotactile.yml"
       - "protocols/deform360_official_hub_visuotactile_v1.json"
       - "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+      - "protocols/locks/deform360_official_hub_visuotactile_v1_integration.json"
       - "scripts/science/build_deform360_hub_selection.py"
       - "src/bayesian_phystwin/deform360_contact_anchor.py"
       - "tests/test_deform360_contact_anchor.py"
@@ -221,6 +222,56 @@ jobs:
           import subprocess
           from pathlib import Path
 
+          def git_success(*arguments: str) -> bool:
+              return (
+                  subprocess.run(
+                      ["git", *arguments],
+                      check=False,
+                      stdout=subprocess.DEVNULL,
+                      stderr=subprocess.DEVNULL,
+                  ).returncode
+                  == 0
+              )
+
+          def git_output(*arguments: str) -> str:
+              return subprocess.run(
+                  ["git", *arguments],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.strip()
+
+          def exact_revision(value: object, *, name: str) -> str:
+              if (
+                  not isinstance(value, str)
+                  or len(value) not in {40, 64}
+                  or any(
+                      character not in "0123456789abcdef"
+                      for character in value
+                  )
+              ):
+                  raise SystemExit(f"{name} is not an exact revision")
+              return value
+
+          def changed_paths(
+              base_revision: str,
+              head_revision: str,
+          ) -> tuple[tuple[str, str], ...]:
+              output = git_output(
+                  "diff", "--name-status", "--no-renames", base_revision, head_revision
+              )
+              records: list[tuple[str, str]] = []
+              for line in output.splitlines():
+                  status, separator, path = line.partition("\t")
+                  if separator != "\t" or not path:
+                      raise SystemExit("git emitted a malformed changed-path record")
+                  if status not in {"A", "M", "D"}:
+                      raise SystemExit(
+                          f"unsupported Stage-0 integration status {status!r}"
+                      )
+                  records.append((status, path))
+              return tuple(records)
+
           evidence_dir = Path(os.environ["EVIDENCE_DIR"])
           generated_path = evidence_dir / "selection.json"
           lock_path = Path(
@@ -258,19 +309,193 @@ jobs:
                   "committed Stage-0 lock differs from fresh metadata-only "
                   f"selection in fields: {differing_fields}"
               )
-          ancestry = subprocess.run(
-              ["git", "merge-base", "--is-ancestor", lock_revision, current_revision],
-              check=False,
-          )
-          if ancestry.returncode != 0:
-              raise SystemExit(
-                  "committed lock implementation revision is not an ancestor "
-                  "of the current head"
+
+          integration: dict[str, object] = {
+              "mode": "direct-ancestor",
+              "pull_request": None,
+              "pull_request_base": None,
+              "pull_request_head": None,
+              "integration_revision": None,
+              "integration_parent": None,
+              "integrated_change_count": 0,
+              "integrated_paths": [],
+          }
+          if not git_success(
+              "merge-base",
+              "--is-ancestor",
+              lock_revision,
+              current_revision,
+          ):
+              attestation_path = Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_visuotactile_v1_integration.json"
               )
+              if not attestation_path.is_file():
+                  raise SystemExit(
+                      "squash-integrated Stage-0 lock lacks an integration "
+                      "attestation"
+                  )
+              attestation = json.loads(
+                  attestation_path.read_text(encoding="utf-8")
+              )
+              expected_attestation_keys = {
+                  "schema",
+                  "schema_version",
+                  "lock_implementation_revision",
+                  "pull_request_number",
+                  "pull_request_base_revision",
+                  "pull_request_head_revision",
+                  "integration_revision",
+              }
+              if (
+                  not isinstance(attestation, dict)
+                  or set(attestation) != expected_attestation_keys
+                  or attestation.get("schema")
+                  != (
+                      "bayesian-phystwin/"
+                      "deform360-stage0-squash-integration-v1"
+                  )
+                  or attestation.get("schema_version") != 1
+              ):
+                  raise SystemExit(
+                      "Stage-0 squash integration attestation is malformed"
+                  )
+              if attestation["lock_implementation_revision"] != lock_revision:
+                  raise SystemExit(
+                      "Stage-0 integration attestation names a different lock"
+                  )
+              pull_request = attestation["pull_request_number"]
+              if (
+                  not isinstance(pull_request, int)
+                  or isinstance(pull_request, bool)
+                  or pull_request < 1
+              ):
+                  raise SystemExit(
+                      "Stage-0 integration pull request is invalid"
+                  )
+              pull_request_base = exact_revision(
+                  attestation["pull_request_base_revision"],
+                  name="Stage-0 pull-request base",
+              )
+              pull_request_head = exact_revision(
+                  attestation["pull_request_head_revision"],
+                  name="Stage-0 pull-request head",
+              )
+              integration_revision = exact_revision(
+                  attestation["integration_revision"],
+                  name="Stage-0 integration revision",
+              )
+              if not git_success(
+                  "cat-file",
+                  "-e",
+                  f"{pull_request_head}^{{commit}}",
+              ):
+                  subprocess.run(
+                      [
+                          "git",
+                          "fetch",
+                          "--no-tags",
+                          "origin",
+                          f"refs/pull/{pull_request}/head",
+                      ],
+                      check=True,
+                  )
+              if not git_success(
+                  "merge-base",
+                  "--is-ancestor",
+                  pull_request_base,
+                  pull_request_head,
+              ):
+                  raise SystemExit(
+                      "attested Stage-0 pull-request base is not an ancestor "
+                      "of its head"
+                  )
+              if not git_success(
+                  "merge-base",
+                  "--is-ancestor",
+                  lock_revision,
+                  pull_request_head,
+              ):
+                  raise SystemExit(
+                      "locked implementation is not an ancestor of the "
+                      "attested pull-request head"
+                  )
+              if not git_success(
+                  "merge-base",
+                  "--is-ancestor",
+                  integration_revision,
+                  current_revision,
+              ):
+                  raise SystemExit(
+                      "attested squash integration revision is not an "
+                      "ancestor of the current head"
+                  )
+              parent_record = git_output(
+                  "rev-list",
+                  "--parents",
+                  "-n",
+                  "1",
+                  integration_revision,
+              ).split()
+              if len(parent_record) != 2 or parent_record[0] != integration_revision:
+                  raise SystemExit(
+                      "attested Stage-0 integration is not a single-parent commit"
+                  )
+              integration_parent = parent_record[1]
+              pull_request_changes = changed_paths(
+                  pull_request_base,
+                  pull_request_head,
+              )
+              integrated_changes = changed_paths(
+                  integration_parent,
+                  integration_revision,
+              )
+              if not pull_request_changes:
+                  raise SystemExit("attested Stage-0 pull request has no changes")
+              if pull_request_changes != integrated_changes:
+                  raise SystemExit(
+                      "squash integration changed a different path/status set "
+                      "than the verified Stage-0 pull request"
+                  )
+              for status, path in pull_request_changes:
+                  if status == "D":
+                      if git_success(
+                          "cat-file", "-e", f"{pull_request_head}:{path}"
+                      ) or git_success(
+                          "cat-file", "-e", f"{integration_revision}:{path}"
+                      ):
+                          raise SystemExit(
+                              f"deleted Stage-0 path still exists: {path}"
+                          )
+                      continue
+                  pull_request_blob = git_output(
+                      "rev-parse",
+                      f"{pull_request_head}:{path}",
+                  )
+                  integration_blob = git_output(
+                      "rev-parse",
+                      f"{integration_revision}:{path}",
+                  )
+                  if pull_request_blob != integration_blob:
+                      raise SystemExit(
+                          "squash integration blob differs from verified "
+                          f"Stage-0 pull-request path: {path}"
+                      )
+              integration = {
+                  "mode": "squash-merged-pr",
+                  "pull_request": pull_request,
+                  "pull_request_base": pull_request_base,
+                  "pull_request_head": pull_request_head,
+                  "integration_revision": integration_revision,
+                  "integration_parent": integration_parent,
+                  "integrated_change_count": len(integrated_changes),
+                  "integrated_paths": [path for _, path in integrated_changes],
+              }
+
           verification = {
               "schema": (
                   "bayesian-phystwin/"
-                  "deform360-stage0-lock-verification-v1"
+                  "deform360-stage0-lock-verification-v2"
               ),
               "current_revision": current_revision,
               "lock_implementation_revision": lock_revision,
@@ -278,7 +503,10 @@ jobs:
               "content_selection_sha256": committed["content_selection_sha256"],
               "selection_sha256": committed["selection_sha256"],
               "normalized_payload_match": True,
-              "lock_revision_is_ancestor": True,
+              "lock_revision_is_ancestor": (
+                  integration["mode"] == "direct-ancestor"
+              ),
+              "lock_revision_integration": integration,
           }
           (evidence_dir / "lock-verification.json").write_text(
               json.dumps(verification, indent=2, sort_keys=True) + "\n",
@@ -336,6 +564,10 @@ jobs:
                   "- Lock implementation revision: "
                   f"`{verification['lock_implementation_revision']}`"
               )
+              print(
+                  "- Lock integration mode: "
+                  f"`{verification['lock_revision_integration']['mode']}`"
+              )
           print("- Camera media opened: `false`")
           print("- Tactile arrays opened: `false`")
           print("- Target outcomes opened: `false`")
@@ -343,7 +575,8 @@ jobs:
           if verified:
               print(
                   "The committed lock matches the fresh metadata-only selection; "
-                  "its implementation revision is an ancestor of this head."
+                  "its implementation revision is directly or squash-integrated "
+                  "into this head."
               )
           else:
               print(
