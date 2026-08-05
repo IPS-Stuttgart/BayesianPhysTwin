@@ -359,13 +359,14 @@ def test_selection_rejects_nonexact_implementation_revision(tmp_path: Path) -> N
         )
 
 
-def test_stage0_workflow_binds_exact_head_and_protects_self_hosted_runner() -> None:
+def test_stage0_workflow_binds_exact_head_and_verifies_read_only_lock() -> None:
     workflow = (
         Path(__file__).resolve().parents[1]
         / ".github"
         / "workflows"
         / "deform360-official-hub-visuotactile.yml"
     ).read_text(encoding="utf-8")
+    selection_job = workflow.split("\n  official-hub-selection:\n", 1)[1]
 
     assert (
         "BPT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}"
@@ -376,9 +377,16 @@ def test_stage0_workflow_binds_exact_head_and_protects_self_hosted_runner() -> N
     assert (
         "github.event.pull_request.head.repo.full_name == github.repository" in workflow
     )
-    assert "permissions:\n      contents: write" in workflow
+    assert "permissions:\n      contents: write" not in workflow
     assert (
         "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
         in workflow
     )
-    assert 'git push origin "HEAD:${BPT_HEAD_REF}"' in workflow
+    assert "- name: Verify committed Stage-0 selection lock" in selection_job
+    assert "merge-base" in selection_job
+    assert "--is-ancestor" in selection_job
+    assert "lock-verification.json" in selection_job
+    assert "persist-credentials: true" not in selection_job
+    assert "persist-credentials: false" in selection_job
+    assert "git push origin" not in workflow
+    assert "git commit" not in workflow
