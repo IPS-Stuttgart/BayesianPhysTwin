@@ -152,9 +152,7 @@ def test_committed_policy_and_spec_are_content_addressed() -> None:
     assert sources["unet"]["expected_revision"] == (
         "fc7b18d5657184607bf4501b02d64ada7540b4e3"
     )
-    assert sources["vae"]["expected_revision"] == sources["unet"][
-        "expected_revision"
-    ]
+    assert sources["vae"]["expected_revision"] == sources["unet"]["expected_revision"]
     assert sources["image_vae"]["expected_revision"] == (
         "451f4fe16113bff5a5d2269ed5ad43b0592e9a14"
     )
