@@ -23,7 +23,7 @@ def test_registry_is_complete_and_unambiguous() -> None:
     assert len(COMMANDS) == 82
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
-    assert len(COMMANDS_BY_LEGACY_ALIAS) == 80
+    assert len(COMMANDS_BY_LEGACY_ALIAS) == 81
     assert len(COMMANDS_BY_PREVIOUS_ROUTE) == 42
     assert set(STABLE_ROUTES) == {
         command.command_id
