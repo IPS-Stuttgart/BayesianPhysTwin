@@ -43,11 +43,13 @@ jobs:
           )
           text = path.read_text(encoding="utf-8")
           needle = (
-              '        or ".." in path.parts\n'
-              '        or "." in path.parts\n'
-              '    ):\n'
+              '    if path.is_absolute() or not path.parts or ".." '
+              'in path.parts or "." in path.parts:\n'
           )
           replacement = (
+              '    if (\n'
+              '        path.is_absolute()\n'
+              '        or not path.parts\n'
               '        or ".." in path.parts\n'
               '        or "." in path.parts\n'
               '        or path.as_posix() != value\n'
