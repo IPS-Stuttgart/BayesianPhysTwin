@@ -262,3 +262,40 @@ def test_shared_contact_sensor_bias_does_not_fake_identifiability() -> None:
 
     assert not result.inference_admissible
     assert result.reason == "no-identifiable-query-state"
+
+
+def test_contact_anchor_requires_literal_provenance_strings() -> None:
+    with pytest.raises(ValueError, match="source_revision"):
+        _anchor(source_revision=int("1" * 40))
+    with pytest.raises(ValueError, match="SHA-256"):
+        _anchor(
+            source_artifacts={
+                "raw/200-fresh-object/tactile.npy": int("1" * 64),
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "./raw/200-fresh-object/tactile.npy",
+        "raw//200-fresh-object/tactile.npy",
+        "raw/../200-fresh-object/tactile.npy",
+        "/raw/200-fresh-object/tactile.npy",
+        "C:/raw/200-fresh-object/tactile.npy",
+        "raw\\200-fresh-object\\tactile.npy",
+    ],
+)
+def test_contact_anchor_requires_canonical_relative_source_paths(
+    path: str,
+) -> None:
+    with pytest.raises(ValueError, match="canonical relative POSIX path"):
+        _anchor(source_artifacts={path: "1" * 64})
+
+
+def test_contact_anchor_rejects_zero_parameter_bias_block() -> None:
+    with pytest.raises(ValueError, match="B >= 1"):
+        _anchor(
+            bias_jacobian=np.zeros((2, 3, 0)),
+            bias_prior_covariance=np.zeros((0, 0)),
+        )
