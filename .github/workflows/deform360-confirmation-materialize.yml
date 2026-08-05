@@ -41,8 +41,21 @@ jobs:
         run: |
           set -euo pipefail
           archive="${RUNNER_TEMP}/bpt-confirmation-clean.tar.gz"
-          cat .agent/bpt-confirmation-clean.b64.* \
-            | base64 --decode --ignore-garbage > "${archive}"
+          ARCHIVE="${archive}" python - <<'PY'
+          import base64
+          import os
+          import re
+          from pathlib import Path
+
+          chunks = sorted(Path(".agent").glob("bpt-confirmation-clean.b64.*"))
+          if not chunks:
+              raise SystemExit("no confirmation source chunks found")
+          encoded = b"".join(path.read_bytes() for path in chunks)
+          encoded = re.sub(rb"[^A-Za-z0-9+/=]", b"", encoded)
+          encoded = encoded.replace(b"=", b"")
+          encoded += b"=" * (-len(encoded) % 4)
+          Path(os.environ["ARCHIVE"]).write_bytes(base64.b64decode(encoded))
+          PY
           actual_sha256="$(sha256sum "${archive}" | cut -d ' ' -f 1)"
           echo "assembled_archive_sha256=${actual_sha256}"
           printf '%s  %s\n' \
