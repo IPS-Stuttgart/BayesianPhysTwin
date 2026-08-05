@@ -88,6 +88,33 @@ itself. The resulting complete candidate belief must still pass nonlinear
 closure, the source-frozen baseline-relative regret guard, and complete-belief
 selection. Rejection must return the exact baseline belief object.
 
+## Cross-window material-identity marginalization
+
+`bayesian_phystwin.material_identity_marginalization` consumes Prob4D's portable
+source-calibrated identity alternatives without adding Prob4D as a package
+dependency. It independently revalidates the exact schema, content addresses,
+canonical candidate order, source-window causality, null-reference semantics,
+and upstream claim boundary.
+
+Each candidate solver result must bind the mixture ID, candidate ID, causal
+prefix, source calibration, and one content-addressed common state domain. A
+separate target-blind artifact supplies candidate-aligned prefix log likelihoods
+and a frozen likelihood power. Only after every candidate is inference
+admissible does the interface moment-match the common state block using
+
+```text
+within-candidate covariance + between-identity covariance.
+```
+
+An inadmissible candidate, an all-impossible likelihood set, a null-only mixture,
+or exactly zero linked posterior mass returns the newest-window null state mean
+and covariance exactly. Complete-belief selection and the regret guard remain
+separate deployment layers.
+
+See [Prob4D material-identity marginalization](material_identity_marginalization.md)
+for the contract pin, equations, lineage requirements, fallback behavior, and
+the calibration-separated `P2m` experiment boundary.
+
 ## Gap-aware reliability
 
 The historical `MarkovReliabilityConfig` uses `time_values` only for ordering.
