@@ -63,14 +63,10 @@ def predict_horizon_conditioned_endpoint(
     centered = component_mean - mean[None, :, :]
     outer = centered[:, :, :, None] * centered[:, :, None, :]
     within = component_variance[:, :, None, None] * np.eye(3)
-    covariance = np.einsum(
-        "nk,knij->nij", posterior.component_weights, within + outer
-    )
-    additional = (
-        (1.0 - retention**2) * np.square(calibration.stationary_std_m)
-        + horizon
-        * np.square(calibration.additional_process_std_m_per_sqrt_step)
-    )
+    covariance = np.einsum("nk,knij->nij", posterior.component_weights, within + outer)
+    additional = (1.0 - retention**2) * np.square(
+        calibration.stationary_std_m
+    ) + horizon * np.square(calibration.additional_process_std_m_per_sqrt_step)
     covariance += np.diag(additional)[None, :, :]
     covariance = 0.5 * (covariance + covariance.transpose(0, 2, 1))
     return HorizonConditionedEndpointPredictionV1(
