@@ -260,8 +260,7 @@ def main() -> None:
             "sha256": sha256_file(result_path),
         },
         "candidate_artifacts": [
-            {"path": str(path), "sha256": sha256_file(path)}
-            for path in candidate_paths
+            {"path": str(path), "sha256": sha256_file(path)} for path in candidate_paths
         ],
         "outputs": {
             path.name: sha256_file(path)
