@@ -85,8 +85,6 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
-    env:
-      EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
     steps:
       - name: Check out exact trusted head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -96,6 +94,8 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize evidence directory
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           set -euo pipefail
@@ -152,6 +152,8 @@ jobs:
             scripts/science/build_deform360_hub_selection.py
 
       - name: Record environment outside the checkout
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           set -euo pipefail
@@ -164,6 +166,8 @@ jobs:
             | tee "${EVIDENCE_DIR}/gpus.csv"
 
       - name: Resolve official revision and select from names/metadata only
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           set -euo pipefail
@@ -175,6 +179,8 @@ jobs:
             | tee "${EVIDENCE_DIR}/selection.log"
 
       - name: Verify exact head, information boundary, and clean source tree
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           set -euo pipefail
@@ -211,6 +217,8 @@ jobs:
 
       - name: Commit exact Stage-0 selection lock
         if: github.event_name == 'pull_request'
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           set -euo pipefail
@@ -233,6 +241,8 @@ jobs:
 
       - name: Publish Stage-0 summary
         if: always()
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           if [[ -f "${EVIDENCE_DIR}/selection.json" ]]; then
@@ -270,6 +280,6 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: deform360-official-hub-stage0-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.EVIDENCE_DIR }}
+          path: ${{ runner.temp }}/deform360-official-hub-stage0
           if-no-files-found: error
           retention-days: 90
