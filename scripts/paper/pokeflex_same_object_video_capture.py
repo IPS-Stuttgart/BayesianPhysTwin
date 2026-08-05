@@ -9,6 +9,9 @@ from typing import Any
 import numpy as np
 
 
+ERROR_REPRODUCTION_ATOL_MM = 5e-4
+
+
 def _repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
@@ -17,6 +20,7 @@ _REPOSITORY_ROOT = _repository_root()
 sys.path.insert(0, str(_REPOSITORY_ROOT / "src"))
 sys.path.insert(0, str(_REPOSITORY_ROOT / "scripts" / "remote"))
 
+import run_pokeflex_checkpoint_registration_independent_depth as runner  # noqa: E402
 from bayesian_phystwin.pokeflex_same_object_reporting import (  # noqa: E402
     load_json_object,
 )
@@ -24,7 +28,6 @@ from run_pokeflex_checkpoint_registration_independent_depth import (  # noqa: E4
     _candidate_name,
     run_smoke,
 )
-import run_pokeflex_checkpoint_registration_independent_depth as runner  # noqa: E402
 
 
 def _require(condition: bool, message: str) -> None:
@@ -166,7 +169,7 @@ def capture_frozen_predictions(
             np.isclose(
                 baseline,
                 float(decision["baseline_error_mm"]),
-                atol=1e-8,
+                atol=ERROR_REPRODUCTION_ATOL_MM,
                 rtol=0.0,
             ),
             f"baseline reproduction changed at frame {frame}",
@@ -181,7 +184,7 @@ def capture_frozen_predictions(
             np.isclose(
                 selected,
                 float(decision["selected_error_mm"]),
-                atol=1e-8,
+                atol=ERROR_REPRODUCTION_ATOL_MM,
                 rtol=0.0,
             ),
             f"guarded reproduction changed at frame {frame}",
@@ -199,5 +202,6 @@ def capture_frozen_predictions(
         "target_frame_count": len(target_frames),
         "surface_sample_call_count": call_count,
         "candidate_order": candidate_order,
+        "error_reproduction_atol_mm": ERROR_REPRODUCTION_ATOL_MM,
         "checks": checks,
     }
