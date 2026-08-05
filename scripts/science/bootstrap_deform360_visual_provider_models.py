@@ -32,7 +32,9 @@ def _load_preflight_module() -> Any:
     return module
 
 
-def _exact_source_groups(spec: Mapping[str, Any]) -> dict[tuple[str, str], tuple[str, ...]]:
+def _exact_source_groups(
+    spec: Mapping[str, Any],
+) -> dict[tuple[str, str], tuple[str, ...]]:
     motion = spec.get("motioncrafter")
     if not isinstance(motion, Mapping):
         raise ValueError("preflight motioncrafter specification must be an object")
@@ -69,12 +71,11 @@ def _exact_source_groups(spec: Mapping[str, Any]) -> dict[tuple[str, str], tuple
             )
             path = Path(relative)
             if path.is_absolute() or ".." in path.parts or path.as_posix() != relative:
-                raise ValueError(f"{role} required member is not a canonical relative path")
+                raise ValueError(
+                    f"{role} required member is not a canonical relative path"
+                )
             grouped[(repository, revision)].add(relative)
-    return {
-        key: tuple(sorted(members))
-        for key, members in sorted(grouped.items())
-    }
+    return {key: tuple(sorted(members)) for key, members in sorted(grouped.items())}
 
 
 def bootstrap_exact_model_snapshots(
