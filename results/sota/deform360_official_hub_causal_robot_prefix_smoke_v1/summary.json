@@ -1,0 +1,78 @@
+{
+  "all_camera_quality": {
+    "admitted": true,
+    "both_fingers_fraction_by_gripper": [
+      0.7380952380952381,
+      0.9761904761904762
+    ],
+    "contact_ready_frames_by_gripper": [
+      6,
+      6
+    ],
+    "direct_wrist_fraction_by_gripper": [
+      1.0,
+      1.0
+    ],
+    "maximum_opening_observed_m": 0.09478514161543691,
+    "maximum_rotation_determinant_error": 1.9984014443252818e-15,
+    "maximum_rotation_orthogonality_error": 2.4424906541753444e-15,
+    "maximum_rotation_step_observed_deg": 0.961243500057708,
+    "maximum_translation_step_observed_m": 0.002111677515229418,
+    "minimum_opening_observed_m": 0.04436721485651684,
+    "reason_codes": []
+  },
+  "artifact": {
+    "archive_sha256": "eed8e713d3159ec110002cb0281544c3afed350d8e657ac645174a981799d802",
+    "artifact_id": "555943b0614e211e9c4d0fb5e2928c5499d695f5d6a020b6d26c2646d536297e",
+    "manifest_file_sha256": "95256bbfffc11268b1c9044b9a1f0b76616221a39e707fe414674923906cd6d0",
+    "server_path": "/home/florianpfaff/source-only/deform360-official-hub-contact-prefix-smoke-v1-1b83ba49/026-sock-cloth",
+    "source_artifact_count": 110
+  },
+  "decision": {
+    "calibration_scores_authorized": false,
+    "confirmation_payloads_authorized": false,
+    "contact_anchor_authorized_for_scoring": false,
+    "contact_geometry_feasibility_authorized": true,
+    "sota_claim_authorized": false
+  },
+  "implementation_revision": "2b55280ecbccf77dfeafde3ba86191294c162670",
+  "information_boundary": {
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_decoded": false,
+    "future_tactile_frames_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "lock_id": "7e4f7a30d9ad00da9f47d2c0debd42fea704c0985e65f78f8cd4f584dc52bc34",
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "replay": {
+    "artifact_id_identical": true,
+    "independent_run_count": 2,
+    "manifest_byte_identical": true,
+    "npz_byte_identical": true
+  },
+  "runtime_revision": "1b83ba49aed6e442e9c73c5d2d4002ca7c2fdd56",
+  "schema": "bayesian-phystwin.deform360-causal-robot-prefix-smoke-result",
+  "schema_version": 1,
+  "source_case": {
+    "bimanual": true,
+    "camera_count": 36,
+    "causal_frame_stop": 150,
+    "contact_start_frame": 144,
+    "object_id": "026-sock-cloth",
+    "processing_episode_index": 0,
+    "source_episode_id": 7,
+    "source_frame_start": 108
+  },
+  "status": "passed-source-only-technical-admission",
+  "summary_sha256": "28f13353b07a0855ef05bff7d1c3641f0d2c7a2be68175051375ef14d8044523",
+  "three_camera_control": {
+    "admitted": false,
+    "camera_count": 3,
+    "interpretation": "visual-provider camera panel is not a valid proprioception panel",
+    "maximum_opening_observed_m": 0.4169,
+    "released_maximum_opening_m": 0.112
+  },
+  "upstream_revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+}
