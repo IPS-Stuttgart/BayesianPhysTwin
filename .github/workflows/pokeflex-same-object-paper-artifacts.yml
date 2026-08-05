@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/pokeflex-same-object-paper-artifacts.yml"
       - "src/bayesian_phystwin/pokeflex_same_object_reporting.py"
+      - "scripts/paper/ensure_pokeflex_same_object_candidates.py"
       - "scripts/paper/make_pokeflex_same_object_figure.py"
       - "scripts/paper/prepare_pokeflex_same_object_assets.py"
       - "scripts/paper/render_pokeflex_same_object_video.py"
@@ -91,7 +92,8 @@ jobs:
             echo "POKEFLEX_CANDIDATES=${root}/resolved/candidates"
             echo "POKEFLEX_EVIDENCE=${root}/evidence"
             echo "POKEFLEX_OUTPUT=${root}/output"
-            echo "POKEFLEX_CANDIDATE_ROOT=${candidate_root}"
+            echo "POKEFLEX_SOURCE_CANDIDATE_ROOT=${candidate_root}"
+            echo "POKEFLEX_VERIFIED_CANDIDATE_ROOT=${root}/verified-candidates"
             echo "MPLCONFIGDIR=${root}/matplotlib"
             echo "XDG_CACHE_HOME=${root}/cache"
           } >> "${GITHUB_ENV}"
@@ -158,6 +160,7 @@ jobs:
           set -euo pipefail
           files=(
             src/bayesian_phystwin/pokeflex_same_object_reporting.py
+            scripts/paper/ensure_pokeflex_same_object_candidates.py
             scripts/paper/make_pokeflex_same_object_figure.py
             scripts/paper/prepare_pokeflex_same_object_assets.py
             scripts/paper/pokeflex_same_object_video_capture.py
@@ -173,20 +176,25 @@ jobs:
             src/bayesian_phystwin/pokeflex_same_object_reporting.py
           "${BPT_PYTHON}" -m pytest -q -p no:cacheprovider \
             tests/test_pokeflex_same_object_reporting.py
+          "${BPT_PYTHON}" \
+            scripts/paper/ensure_pokeflex_same_object_candidates.py --help
           "${BPT_PYTHON}" scripts/paper/prepare_pokeflex_same_object_assets.py --help
           "${BPT_PYTHON}" scripts/paper/make_pokeflex_same_object_figure.py --help
           "${BPT_PYTHON}" scripts/paper/render_pokeflex_same_object_video.py --help
 
-      - name: Resolve and verify immutable PokeFlex assets
+      - name: Stage or reproduce exact candidate artifacts
         shell: bash
         run: |
           set -euo pipefail
           args=(
-            --output-root "${POKEFLEX_RESOLVED}"
-            --candidate-root "${POKEFLEX_CANDIDATE_ROOT}"
-            --take-id "${INPUT_TAKE_ID:-}"
+            --output-root "${POKEFLEX_VERIFIED_CANDIDATE_ROOT}"
+            --workspace-root "${POKEFLEX_RUN_ROOT}/candidate-preparation"
+            --evidence-output "${POKEFLEX_EVIDENCE}/candidate-preparation.json"
             --github-env "${GITHUB_ENV}"
           )
+          if [[ -n "${POKEFLEX_SOURCE_CANDIDATE_ROOT:-}" ]]; then
+            args+=(--candidate-root "${POKEFLEX_SOURCE_CANDIDATE_ROOT}")
+          fi
           if [[ -n "${VAR_DATASET_ROOT:-}" ]]; then
             args+=(--dataset-root "${VAR_DATASET_ROOT}")
           fi
@@ -195,6 +203,32 @@ jobs:
           fi
           if [[ -n "${VAR_CHECKPOINT_ROOT:-}" ]]; then
             args+=(--checkpoint-root "${VAR_CHECKPOINT_ROOT}")
+          fi
+          "${BPT_PYTHON}" \
+            scripts/paper/ensure_pokeflex_same_object_candidates.py "${args[@]}" \
+            | tee "${POKEFLEX_EVIDENCE}/candidate-preparation.log"
+
+      - name: Resolve and verify immutable PokeFlex assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          dataset_root="${POKEFLEX_REGENERATED_DATA_ROOT:-${VAR_DATASET_ROOT:-}}"
+          upstream_checkout="${POKEFLEX_REGENERATED_UPSTREAM_CHECKOUT:-${VAR_UPSTREAM_CHECKOUT:-}}"
+          checkpoint_root="${POKEFLEX_REGENERATED_CHECKPOINT_ROOT:-${VAR_CHECKPOINT_ROOT:-}}"
+          args=(
+            --output-root "${POKEFLEX_RESOLVED}"
+            --candidate-root "${POKEFLEX_VERIFIED_CANDIDATE_ROOT}"
+            --take-id "${INPUT_TAKE_ID:-}"
+            --github-env "${GITHUB_ENV}"
+          )
+          if [[ -n "${dataset_root}" ]]; then
+            args+=(--dataset-root "${dataset_root}")
+          fi
+          if [[ -n "${upstream_checkout}" ]]; then
+            args+=(--upstream-checkout "${upstream_checkout}")
+          fi
+          if [[ -n "${checkpoint_root}" ]]; then
+            args+=(--checkpoint-root "${checkpoint_root}")
           fi
           "${BPT_PYTHON}" \
             scripts/paper/prepare_pokeflex_same_object_assets.py "${args[@]}" \
@@ -309,6 +343,8 @@ jobs:
           name: pokeflex-same-object-paper-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ env.POKEFLEX_OUTPUT }}
+            ${{ env.POKEFLEX_EVIDENCE }}/candidate-preparation.log
+            ${{ env.POKEFLEX_EVIDENCE }}/candidate-preparation.json
             ${{ env.POKEFLEX_EVIDENCE }}/asset-resolution.log
             ${{ env.POKEFLEX_EVIDENCE }}/workflow_assets.json
             ${{ env.POKEFLEX_EVIDENCE }}/environment.txt
