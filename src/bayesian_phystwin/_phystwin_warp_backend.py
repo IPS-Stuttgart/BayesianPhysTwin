@@ -18,7 +18,7 @@ import warp as wp
 @wp.func
 def _smooth_l1_component(residual: float):
     distance = wp.abs(residual)
-    result = 0.0
+    result = float(0.0)  # noqa: UP018 - Warp requires a mutable typed scalar.
     if distance < 1.0:
         result = 0.5 * distance * distance
     else:
@@ -120,7 +120,7 @@ def expand_spring_basis_log_y(
 ):
     spring = wp.tid()
     offset = spring * basis_parameter_count
-    log_scale = 0.0
+    log_scale = float(0.0)  # noqa: UP018 - Warp dynamic-loop accumulator.
     for parameter in range(basis_parameter_count):
         log_scale += (
             basis_weights[offset + parameter]
@@ -140,7 +140,7 @@ def expand_sparse_spring_basis_log_y(
 ):
     spring = wp.tid()
     offset = spring * basis_support_count
-    log_scale = 0.0
+    log_scale = float(0.0)  # noqa: UP018 - Warp dynamic-loop accumulator.
     for support in range(basis_support_count):
         parameter = basis_parameter_indices[offset + support]
         log_scale += basis_weights[offset + support] * basis_log_coefficients[parameter]
