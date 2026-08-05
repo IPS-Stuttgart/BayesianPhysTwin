@@ -33,18 +33,28 @@ jobs:
           source = Path('src/bayesian_phystwin/group_sandwich_covariance.py')
           text = source.read_text(encoding='utf-8')
           old = '''def _immutable(array: FloatArray) -> FloatArray:
-              owned = np.array(array, dtype=np.float64, copy=True, order="C")
+              owned: FloatArray = np.array(
+                  array,
+                  dtype=np.float64,
+                  copy=True,
+                  order="C",
+              )
               owned.setflags(write=False)
               return owned
           '''
           old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
           new = '''def _immutable(array: FloatArray) -> FloatArray:
-              canonical = np.array(array, dtype=np.dtype("<f8"), copy=True, order="C")
-              frozen = np.frombuffer(
+              canonical: FloatArray = np.array(
+                  array,
+                  dtype=np.dtype("<f8"),
+                  copy=True,
+                  order="C",
+              )
+              frozen: FloatArray = np.frombuffer(
                   canonical.tobytes(order="C"),
                   dtype=np.dtype("<f8"),
-              )
-              return frozen.reshape(canonical.shape)
+              ).reshape(canonical.shape)
+              return frozen
           '''
           new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
           if old not in text:
