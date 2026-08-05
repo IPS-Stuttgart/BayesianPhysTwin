@@ -26,7 +26,7 @@ jobs:
       github.event_name == 'push' ||
       github.event.pull_request.head.ref == 'agent/harden-deform360-provider-lock'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Check out staging branch
         uses: actions/checkout@v7
@@ -45,18 +45,89 @@ jobs:
             > "$RUNNER_TEMP/bayesian-phystwin-all.patch"
           echo "3e8404758c43136bd236cff243ab28dd8deff7abb21b17fc1fd0c5ebef96a329  $RUNNER_TEMP/bayesian-phystwin-all.patch" \
             | sha256sum --check
-          git apply --check "$RUNNER_TEMP/bayesian-phystwin-all.patch"
 
-      - name: Apply patch and remove transport files
+      - name: Reset onto current main and apply implementation
         shell: bash
         run: |
           set -euo pipefail
-          git apply --index "$RUNNER_TEMP/bayesian-phystwin-all.patch"
-          rm -f .github/patches/bpt-improvements.patch.gz.b64.part{1,2,3,4}
-          rm -f .github/workflows/apply-deform360-hardening-patch.yml
-          rmdir .github/patches 2>/dev/null || true
+          git fetch origin main
+          git reset --hard origin/main
+          git apply --3way --index \
+            --exclude=docs/experiment_index.md \
+            --exclude=.github/workflows/tests.yml \
+            "$RUNNER_TEMP/bayesian-phystwin-all.patch"
+
+          python - <<'PY'
+          from pathlib import Path
+
+          index_path = Path("docs/experiment_index.md")
+          index_text = index_path.read_text(encoding="utf-8")
+          old_capsule = """The
+          [frozen full-22 reproduction capsule](../reproductions/full22_anchor_v1/README.md)
+          records the exact source revision, protocol and data identities, two-stage
+          source command, expected paper-facing metrics, fail-closed verification, and a
+          strict `RunManifestV2` bundle. Executing that capsule is the remaining action
+          before the paper registry may remove its source-command promotion blocker.
+          """
+          new_capsule = """The
+          [frozen full-22 reproduction capsule](../reproductions/full22_anchor_v1/README.md)
+          records the exact source revision, protocol and data identities, two-stage
+          source command, expected paper-facing metrics, fail-closed verification, and
+          strict `RunManifestV2` bundles. Independent `workstation2` and fresh
+          GitHub-hosted executions completed with identical aggregate metrics, and the
+          paper registry now binds the retained evidence capsule rather than carrying a
+          source-command promotion blocker.
+          """
+          if old_capsule in index_text:
+              index_text = index_text.replace(old_capsule, new_capsule, 1)
+          elif new_capsule not in index_text:
+              raise SystemExit("full-22 capsule status block changed unexpectedly")
+          index_text = index_text.replace(
+              "https://github.com/FlorianPfaff/Prob4D",
+              "https://github.com/IPS-Stuttgart/Prob4D",
+          )
+          index_text = index_text.replace(
+              "https://github.com/FlorianPfaff/Causal4D",
+              "https://github.com/IPS-Stuttgart/Causal4D",
+          )
+          index_path.write_text(index_text, encoding="utf-8")
+
+          workflow_path = Path(".github/workflows/tests.yml")
+          lines = workflow_path.read_text(encoding="utf-8").splitlines(keepends=True)
+          output: list[str] = []
+          added_tests = 0
+          added_source = 0
+          for line in lines:
+              output.append(line)
+              stripped = line.strip()
+              if stripped == "tests/test_deform360_contact_anchor.py \\":
+                  output.append(
+                      line[: len(line) - len(line.lstrip())]
+                      + "tests/test_deform360_visual_provider_lock.py \\\n"
+                  )
+                  added_tests += 1
+              elif stripped == "src/bayesian_phystwin/deform360_contact_anchor.py":
+                  output.append(
+                      line[: len(line) - len(line.lstrip())]
+                      + "src/bayesian_phystwin/deform360_visual_provider_lock.py\n"
+                  )
+                  added_source += 1
+          rendered = "".join(output)
+          if rendered.count("tests/test_deform360_visual_provider_lock.py") != 3:
+              raise SystemExit(
+                  f"expected three visual-provider test registrations; added={added_tests}"
+              )
+          if rendered.count("src/bayesian_phystwin/deform360_visual_provider_lock.py") != 1:
+              raise SystemExit(
+                  f"expected one visual-provider stable source registration; added={added_source}"
+              )
+          workflow_path.write_text(rendered, encoding="utf-8")
+          PY
+
           git add -A
           git diff --cached --check
+          test ! -e .github/workflows/apply-deform360-hardening-patch.yml
+          test ! -e .github/patches/bpt-improvements.patch.gz.b64.part1
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -103,4 +174,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Harden Deform360 provider locks"
-          git push origin HEAD:agent/harden-deform360-provider-lock
+          git push --force-with-lease origin HEAD:agent/harden-deform360-provider-lock
