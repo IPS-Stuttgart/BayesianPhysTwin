@@ -82,7 +82,9 @@ evidence ledger, eight calibration references, registered protocol amendments,
 and implementation files. Every source is copied byte-for-byte and recorded in
 the bundle. Symlinks, missing roles, duplicate paths, a dirty checkout, a
 revision mismatch, an existing output directory, and output inside the Git
-checkout are rejected.
+checkout are rejected. Logical source names must already be canonical relative
+POSIX paths; spellings with `./`, redundant separators, traversal, or Windows
+separators are not normalized into accepted identities.
 
 All files are written in a temporary sibling directory. The complete directory
 is atomically renamed only after nested contract validation, independent
