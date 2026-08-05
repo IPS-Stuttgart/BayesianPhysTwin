@@ -211,9 +211,7 @@ def test_calibration_artifact_rejects_malformed_inputs(
         "selection_evidence_id": "3" * 64,
         "selected_candidate_id": "candidate",
         "candidate_count": 2,
-        "calibration_group_ids": tuple(
-            unit.object_id for unit in calibration_units
-        ),
+        "calibration_group_ids": tuple(unit.object_id for unit in calibration_units),
         "source_artifacts": {"selection.json": "4" * 64},
     }
     values.update(updates)
