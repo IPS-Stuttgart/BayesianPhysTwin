@@ -1,4 +1,4 @@
-"""NumPy-only model-averaged discrepancy endpoint for Causal4D consumers."""
+"""NumPy-only model-averaged and recursive belief surface for Causal4D."""
 
 from __future__ import annotations
 
@@ -25,6 +25,29 @@ from .horizon_conditioned_discrepancy import (
     HorizonDiscrepancyCalibrationV1,
     predict_horizon_conditioned_endpoint,
 )
+from .posterior_covariance_semantics import (
+    POSTERIOR_COVARIANCE_SEMANTICS_VERSION,
+    PosteriorCovarianceSemanticsV1,
+    working_irls_covariance_semantics,
+)
+from .prob4d_factor_stream import (
+    CLAIM_BEARING_PROB4D_STREAM_RUN_VERSION,
+    CLAIM_BEARING_PROB4D_STREAM_STEP_VERSION,
+    PROB4D_OBSERVATION_FACTOR_STREAM_VERSION,
+    PROB4D_STREAM_OBSERVATION_BINDING_VERSION,
+    RECURSIVE_NUISANCE_POLICY_VERSION,
+    ClaimBearingProb4DStreamRunV1,
+    ClaimBearingProb4DStreamStepV1,
+    Prob4DObservationFactorStreamV1,
+    Prob4DStreamObservationBindingV1,
+    RecursiveNuisancePolicyV1,
+    apply_claim_bearing_prob4d_stream_update,
+    bind_prob4d_stream_observation,
+    load_claim_bearing_prob4d_stream_run,
+    load_prob4d_observation_factor_stream,
+    start_claim_bearing_prob4d_stream_run,
+    write_claim_bearing_prob4d_stream_run,
+)
 
 CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION = 2
 CAUSAL4D_BELIEF_PROVIDER_V2_PACKAGE_VERSION = "0.4.0"
@@ -38,6 +61,13 @@ CAUSAL4D_BELIEF_PROVIDER_V2_CAPABILITIES = (
     "numpy_only_endpoint_inference",
     "per_track_component_evidence",
     "residual_finite_preflight",
+    "claim_bearing_prob4d_recursive_stream",
+    "append_only_complete_belief_routing",
+    "exact_recursive_complete_belief_fallback",
+    "explicit_posterior_covariance_semantics",
+    "provider_calibration_runtime_policy_lock",
+    "explicit_recursive_nuisance_policy",
+    "stream_member_and_identity_revalidation",
 )
 CAUSAL4D_BELIEF_PROVIDER_V2_ARTIFACT_SCHEMA_VERSIONS = {
     "ModelAveragedEndpointConfig": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
@@ -45,6 +75,12 @@ CAUSAL4D_BELIEF_PROVIDER_V2_ARTIFACT_SCHEMA_VERSIONS = {
     "ModelAveragedEndpointPrediction": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
     "HorizonDiscrepancyCalibration": HORIZON_DISCREPANCY_CALIBRATION_VERSION,
     "HorizonConditionedEndpointPrediction": (HORIZON_DISCREPANCY_CALIBRATION_VERSION),
+    "Prob4DObservationFactorStream": PROB4D_OBSERVATION_FACTOR_STREAM_VERSION,
+    "Prob4DStreamObservationBinding": PROB4D_STREAM_OBSERVATION_BINDING_VERSION,
+    "ClaimBearingProb4DStreamStep": CLAIM_BEARING_PROB4D_STREAM_STEP_VERSION,
+    "ClaimBearingProb4DStreamRun": CLAIM_BEARING_PROB4D_STREAM_RUN_VERSION,
+    "PosteriorCovarianceSemantics": POSTERIOR_COVARIANCE_SEMANTICS_VERSION,
+    "RecursiveNuisancePolicy": RECURSIVE_NUISANCE_POLICY_VERSION,
 }
 
 
@@ -72,7 +108,7 @@ def causal4d_belief_provider_v2_manifest(
     *,
     provider_revision: str | None = None,
 ) -> dict[str, object]:
-    """Return the additive model-averaged capability descriptor."""
+    """Return the additive endpoint and recursive-belief capability descriptor."""
 
     revision = (
         provider_revision
@@ -95,13 +131,21 @@ def causal4d_belief_provider_v2_manifest(
         "metadata": {
             "provider_api": "bayesian_phystwin.causal4d_belief_provider_v2",
             "provider_api_version": CAUSAL4D_BELIEF_PROVIDER_V2_API_VERSION,
-            "inference_role": ("model-averaged robust readout-discrepancy endpoint"),
+            "inference_role": (
+                "model-averaged robust endpoint and recursively routed complete belief"
+            ),
             "compatibility": (
                 "additive provider; causal4d_belief_provider_v1 is unchanged"
             ),
             "raw_covariance_claim": (
-                "model-based predictive covariance; source-calibrated horizon "
-                "dynamics and interval calibration remain separate gates"
+                "working covariance semantics are explicit and content-addressed; "
+                "source-calibrated horizon dynamics and interval calibration "
+                "remain separate gates"
+            ),
+            "recursive_stream_claim": (
+                "causal ordering, member bytes, row identities, policy locks, and "
+                "exact fallback are validated; provider competence and calibrated "
+                "physical benefit remain prospective gates"
             ),
         },
     }
@@ -113,13 +157,26 @@ __all__ = [
     "CAUSAL4D_BELIEF_PROVIDER_V2_CAPABILITIES",
     "CAUSAL4D_BELIEF_PROVIDER_V2_PACKAGE_VERSION",
     "DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1",
-    "ModelAveragedEndpointConfigV1",
-    "ModelAveragedEndpointPosteriorV1",
+    "ClaimBearingProb4DStreamRunV1",
+    "ClaimBearingProb4DStreamStepV1",
     "HorizonConditionedEndpointPredictionV1",
     "HorizonDiscrepancyCalibrationV1",
+    "ModelAveragedEndpointConfigV1",
+    "ModelAveragedEndpointPosteriorV1",
     "ModelAveragedEndpointPredictionV1",
+    "PosteriorCovarianceSemanticsV1",
+    "Prob4DObservationFactorStreamV1",
+    "Prob4DStreamObservationBindingV1",
+    "RecursiveNuisancePolicyV1",
+    "apply_claim_bearing_prob4d_stream_update",
+    "bind_prob4d_stream_observation",
     "causal4d_belief_provider_v2_manifest",
     "infer_model_averaged_bayesian_anchor_endpoint",
+    "load_claim_bearing_prob4d_stream_run",
+    "load_prob4d_observation_factor_stream",
     "predict_horizon_conditioned_endpoint",
     "predict_model_averaged_endpoint",
+    "start_claim_bearing_prob4d_stream_run",
+    "working_irls_covariance_semantics",
+    "write_claim_bearing_prob4d_stream_run",
 ]
