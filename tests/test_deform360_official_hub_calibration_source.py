@@ -95,10 +95,7 @@ class _Api:
 
 def _all_entries() -> dict[str, list[SimpleNamespace]]:
     units, _confirmations = load_units(SELECTION)
-    return {
-        unit.object_id: _object_entries(unit.object_id)
-        for unit in units
-    }
+    return {unit.object_id: _object_entries(unit.object_id) for unit in units}
 
 
 def test_protocol_digest_and_locked_boundaries() -> None:
@@ -152,9 +149,7 @@ def test_names_only_plan_excludes_every_confirmation_object(tmp_path: Path) -> N
     assert plan["information_boundary"]["calibration_payloads_opened"] is False
     _units, confirmations = load_units(SELECTION)
     paths = {
-        record["path"]
-        for row in plan["objects"]
-        for record in row["selected_files"]
+        record["path"] for row in plan["objects"] for record in row["selected_files"]
     }
     assert not any(
         path.startswith(f"raw/{object_id}/")
