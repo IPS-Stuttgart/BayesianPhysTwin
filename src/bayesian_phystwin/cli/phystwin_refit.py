@@ -51,6 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
             "regional",
             "part_pair",
             "canonical_basis",
+            "canonical_triplane",
         ),
         default="dense",
     )
@@ -62,6 +63,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--spring-basis-length-scale-multiplier",
         type=float,
         default=1.0,
+    )
+    parser.add_argument(
+        "--spring-triplane-resolution",
+        type=int,
+        default=0,
+        help="Zero uses round(0.85 * sqrt(object spring count)).",
+    )
+    parser.add_argument(
+        "--spring-triplane-smoothness-weight",
+        type=float,
+        default=0.0,
     )
     parser.add_argument("--spring-scale-weight-decay", type=float, default=0.0)
     parser.add_argument("--dashpot-log-scale", type=float, default=0.0)
@@ -139,6 +151,10 @@ def main() -> None:
             spring_basis_rank=args.spring_basis_rank,
             spring_basis_length_scale_multiplier=(
                 args.spring_basis_length_scale_multiplier
+            ),
+            spring_triplane_resolution=args.spring_triplane_resolution,
+            spring_triplane_smoothness_weight=(
+                args.spring_triplane_smoothness_weight
             ),
             spring_scale_weight_decay=args.spring_scale_weight_decay,
             dashpot_log_scale=args.dashpot_log_scale,

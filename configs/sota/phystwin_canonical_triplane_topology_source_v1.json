@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-canonical-triplane-topology-source-v1",
+  "locked_at_utc": "2026-08-06T00:00:00Z",
+  "status": "Source-only staged competence protocol; no 19-case future metric or held-v8 artifact is authorized.",
+  "motivation": "NeuSpring reports that continuously optimized canonical tri-plane spring properties and per-object five-region topology act synergistically. Earlier Bayesian-PhysTwin experiments tested low-rank RBF fields and small static topology banks, not this interaction.",
+  "claim_boundary": "This is an independent implementation of a paper-described mechanism, not an official NeuSpring reproduction. The official NeuSpring repository at commit 51d94f67ed1e2557fca29c1e86b418506e3d51ca contains no implementation or checkpoint.",
+  "evidence_boundary": {
+    "development_case": "single_lift_sloth",
+    "source_cases": [
+      "single_lift_zebra",
+      "single_lift_cloth",
+      "single_lift_rope",
+      "single_lift_dinosor"
+    ],
+    "fit_fraction_of_released_prefix": 0.75,
+    "selection_interval": "remaining 25 percent of the released observation prefix",
+    "future_object_observations": "forbidden",
+    "future_metrics": "forbidden until every source gate passes",
+    "held_v8": "all runtime, target, query, score, barrier, and outcome artifacts forbidden"
+  },
+  "stage_0_identity": {
+    "zero_coefficients": "must reproduce the same-run exact-teacher trajectory bit for bit",
+    "future_mutation": "mutating observations after train_end_frame must not change fitted parameters or prefix selection",
+    "controller_separation": "controller springs use one parameter outside the object tri-planes",
+    "gradient_check": "one finite-difference direction must agree in sign with the Warp gradient"
+  },
+  "stage_1_field_competence": {
+    "topology": "exact released topology",
+    "coordinate_frame": "deterministic right-handed PCA frame over canonical object-spring midpoints",
+    "representation": "three scalar XY/YZ/XZ planes with bilinear interpolation; the three queried values are averaged",
+    "resolution": "round(0.85 * sqrt(number of object springs)), minimum 2",
+    "epochs": 20,
+    "learning_rate": 0.003,
+    "spring_scale_weight_decay": 0.0,
+    "triplane_smoothness_weight": 0.0001,
+    "collision_parameters": "frozen",
+    "damping_parameters": "frozen",
+    "loss": "existing hard observation loss; state innovation is used once",
+    "checkpoint_selection": "balanced official CD/track ratio on the permitted prefix suffix",
+    "plausibility": {
+      "maximum_absolute_object_log_scale": 1.0986122886681098,
+      "maximum_absolute_controller_log_scale": 1.0986122886681098
+    },
+    "development_gate": {
+      "minimum_balanced_improvement": 0.03,
+      "both_metrics_must_improve": true,
+      "plausibility_must_pass": true
+    }
+  },
+  "stage_2_piecewise_topology": {
+    "authorized_only_if": "stage_1 development gate passes",
+    "region_count": 5,
+    "region_assignment": "deterministic agglomerative clustering in the same canonical frame",
+    "candidate_count_including_teacher": 25,
+    "candidate_generation": "deterministic Latin hypercube fixed before source suffix scoring",
+    "radius_multiplier_bounds": [
+      0.7,
+      1.3
+    ],
+    "neighbour_multiplier_bounds": [
+      0.65,
+      1.35
+    ],
+    "homogeneous_initialization": "fit object and controller log scales on the inner prefix before topology selection",
+    "topology_selection": "balanced official CD/track ratio on an inner prefix suffix",
+    "field_fit": "fit the unchanged stage_1 tri-plane field on the selected topology",
+    "fallback": "exact released topology and exact teacher spring field"
+  },
+  "source_gate": {
+    "authorized_only_if": "stage_1 development gate and all stage_0 checks pass",
+    "minimum_both_metric_win_count": 3,
+    "minimum_equal_case_balanced_improvement": 0.03,
+    "both_equal_case_metrics_must_improve": true,
+    "maximum_case_metric_regression": 0.05,
+    "all_selected_fields_must_be_plausible": true,
+    "failure": "close this mechanism family without a 19-case future run"
+  },
+  "forbidden": [
+    "changing field resolution, learning rate, smoothness, topology bank, split, or gates after seeing a permitted suffix",
+    "using the released future for fitting, checkpoint selection, fallback, or covariance calibration",
+    "calling this implementation NeuSpring without the qualifier paper-described or independent",
+    "using all-frame MatPhys, MotionCrafter, Prob4D, VGGT, or manual future identities",
+    "opening or deriving any held-v8 identity or outcome"
+  ]
+}

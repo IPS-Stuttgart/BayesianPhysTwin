@@ -18,7 +18,7 @@ import warp as wp
 @wp.func
 def _smooth_l1_component(residual: float):
     distance = wp.abs(residual)
-    result = float(0.0)
+    result = 0.0
     if distance < 1.0:
         result = 0.5 * distance * distance
     else:
@@ -120,12 +120,30 @@ def expand_spring_basis_log_y(
 ):
     spring = wp.tid()
     offset = spring * basis_parameter_count
-    log_scale = float(0.0)
+    log_scale = 0.0
     for parameter in range(basis_parameter_count):
         log_scale += (
             basis_weights[offset + parameter]
             * basis_log_coefficients[parameter]
         )
+    spring_log_y[spring] = reference_log_y[spring] + log_scale
+
+
+@wp.kernel
+def expand_sparse_spring_basis_log_y(
+    reference_log_y: wp.array(dtype=wp.float32),
+    basis_parameter_indices: wp.array(dtype=wp.int32),
+    basis_weights: wp.array(dtype=wp.float32),
+    basis_log_coefficients: wp.array(dtype=wp.float32),
+    basis_support_count: int,
+    spring_log_y: wp.array(dtype=wp.float32),
+):
+    spring = wp.tid()
+    offset = spring * basis_support_count
+    log_scale = 0.0
+    for support in range(basis_support_count):
+        parameter = basis_parameter_indices[offset + support]
+        log_scale += basis_weights[offset + support] * basis_log_coefficients[parameter]
     spring_log_y[spring] = reference_log_y[spring] + log_scale
 
 
@@ -287,6 +305,9 @@ def make_reliability_simulator_class(official_module: Any):
             num_object_springs: int,
             spring_group_ids: Any | None = None,
             spring_basis_weights: Any | None = None,
+            spring_sparse_basis_indices: Any | None = None,
+            spring_sparse_basis_weights: Any | None = None,
+            spring_sparse_parameter_count: int | None = None,
             deterministic_spring_forces: bool = False,
             **kwargs: Any,
         ) -> None:
@@ -297,10 +318,12 @@ def make_reliability_simulator_class(official_module: Any):
                 "regional",
                 "part_pair",
                 "canonical_basis",
+                "canonical_triplane",
             }:
                 raise ValueError(
                     "spring_parameterization must be 'dense', 'grouped', "
-                    "'regional', 'part_pair', or 'canonical_basis'"
+                    "'regional', 'part_pair', 'canonical_basis', or "
+                    "'canonical_triplane'"
                 )
             self.spring_parameterization = spring_parameterization
             self.deterministic_spring_forces = bool(deterministic_spring_forces)
@@ -371,10 +394,81 @@ def make_reliability_simulator_class(official_module: Any):
                 self.spring_basis_weights_tensor = (
                     basis_weights.contiguous().reshape(-1)
                 )
+                self.spring_sparse_basis_indices_tensor = torch.zeros(
+                    spring_count,
+                    dtype=torch.int32,
+                    device=device,
+                )
+                self.spring_sparse_basis_weights_tensor = torch.zeros(
+                    spring_count,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                self.spring_sparse_basis_support_count = 1
+            elif self.spring_parameterization == "canonical_triplane":
+                if (
+                    spring_sparse_basis_indices is None
+                    or spring_sparse_basis_weights is None
+                    or spring_sparse_parameter_count is None
+                ):
+                    raise ValueError(
+                        "canonical_triplane requires sparse basis indices, "
+                        "weights, and parameter count"
+                    )
+                sparse_indices = torch.as_tensor(
+                    spring_sparse_basis_indices,
+                    dtype=torch.int32,
+                    device=device,
+                )
+                sparse_weights = torch.as_tensor(
+                    spring_sparse_basis_weights,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                if (
+                    sparse_indices.ndim != 2
+                    or sparse_indices.shape[0] != spring_count
+                    or sparse_indices.shape != sparse_weights.shape
+                    or sparse_indices.shape[1] < 1
+                ):
+                    raise ValueError(
+                        "sparse spring basis arrays must share shape (S, K)"
+                    )
+                parameter_count = int(spring_sparse_parameter_count)
+                if parameter_count < 1:
+                    raise ValueError("sparse spring basis needs parameters")
+                if int(torch.min(sparse_indices).item()) < 0 or int(
+                    torch.max(sparse_indices).item()
+                ) >= parameter_count:
+                    raise ValueError("sparse spring basis index is out of range")
+                if not bool(torch.all(torch.isfinite(sparse_weights)).item()):
+                    raise ValueError("sparse spring basis weights must be finite")
+                self.spring_basis_weights_tensor = torch.zeros(
+                    spring_count,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                self.spring_sparse_basis_indices_tensor = (
+                    sparse_indices.contiguous().reshape(-1)
+                )
+                self.spring_sparse_basis_weights_tensor = (
+                    sparse_weights.contiguous().reshape(-1)
+                )
+                self.spring_sparse_basis_support_count = int(
+                    sparse_indices.shape[1]
+                )
             else:
                 if spring_basis_weights is not None:
                     raise ValueError(
                         "spring_basis_weights require canonical_basis"
+                    )
+                if (
+                    spring_sparse_basis_indices is not None
+                    or spring_sparse_basis_weights is not None
+                    or spring_sparse_parameter_count is not None
+                ):
+                    raise ValueError(
+                        "sparse spring basis inputs require canonical_triplane"
                     )
                 parameter_count = group_count
                 self.spring_basis_weights_tensor = torch.zeros(
@@ -382,6 +476,17 @@ def make_reliability_simulator_class(official_module: Any):
                     dtype=torch.float32,
                     device=device,
                 )
+                self.spring_sparse_basis_indices_tensor = torch.zeros(
+                    spring_count,
+                    dtype=torch.int32,
+                    device=device,
+                )
+                self.spring_sparse_basis_weights_tensor = torch.zeros(
+                    spring_count,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                self.spring_sparse_basis_support_count = 1
             self.spring_basis_parameter_count = parameter_count
             self.reference_spring_log_y_tensor = torch.zeros(
                 spring_count,
@@ -411,6 +516,16 @@ def make_reliability_simulator_class(official_module: Any):
             )
             self.wp_spring_basis_weights = wp.from_torch(
                 self.spring_basis_weights_tensor,
+                dtype=wp.float32,
+                requires_grad=False,
+            )
+            self.wp_spring_sparse_basis_indices = wp.from_torch(
+                self.spring_sparse_basis_indices_tensor,
+                dtype=wp.int32,
+                requires_grad=False,
+            )
+            self.wp_spring_sparse_basis_weights = wp.from_torch(
+                self.spring_sparse_basis_weights_tensor,
                 dtype=wp.float32,
                 requires_grad=False,
             )
@@ -497,6 +612,19 @@ def make_reliability_simulator_class(official_module: Any):
                         self.wp_spring_basis_weights,
                         self.wp_group_log_scales,
                         self.spring_basis_parameter_count,
+                    ],
+                    outputs=[self.wp_spring_Y],
+                )
+            elif self.spring_parameterization == "canonical_triplane":
+                wp.launch(
+                    expand_sparse_spring_basis_log_y,
+                    dim=self.n_springs,
+                    inputs=[
+                        self.wp_reference_spring_log_y,
+                        self.wp_spring_sparse_basis_indices,
+                        self.wp_spring_sparse_basis_weights,
+                        self.wp_group_log_scales,
+                        self.spring_sparse_basis_support_count,
                     ],
                     outputs=[self.wp_spring_Y],
                 )
@@ -629,6 +757,19 @@ def make_reliability_simulator_class(official_module: Any):
                         self.wp_spring_basis_weights,
                         self.wp_group_log_scales,
                         self.spring_basis_parameter_count,
+                    ],
+                    outputs=[self.wp_spring_Y],
+                )
+            elif self.spring_parameterization == "canonical_triplane":
+                wp.launch(
+                    expand_sparse_spring_basis_log_y,
+                    dim=self.n_springs,
+                    inputs=[
+                        self.wp_reference_spring_log_y,
+                        self.wp_spring_sparse_basis_indices,
+                        self.wp_spring_sparse_basis_weights,
+                        self.wp_group_log_scales,
+                        self.spring_sparse_basis_support_count,
                     ],
                     outputs=[self.wp_spring_Y],
                 )

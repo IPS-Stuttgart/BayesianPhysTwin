@@ -408,6 +408,33 @@ def test_refit_cli_accepts_canonical_spring_basis():
     assert args.spring_basis_length_scale_multiplier == pytest.approx(1.5)
 
 
+def test_refit_cli_accepts_canonical_triplane_spring_field():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "mixture",
+            "--train-end-frame",
+            "64",
+            "--spring-parameterization",
+            "canonical_triplane",
+            "--spring-triplane-resolution",
+            "24",
+            "--spring-triplane-smoothness-weight",
+            "1e-5",
+        ]
+    )
+
+    assert args.spring_parameterization == "canonical_triplane"
+    assert args.spring_triplane_resolution == 24
+    assert args.spring_triplane_smoothness_weight == pytest.approx(1e-5)
+
+
 def test_prior_evaluation_uses_target_visible_refit_support():
     visible, motion_valid = _masks()
     cues = {"flow_inconsistency": np.array([[0.0, 0.1], [0.02, 0.1], [0.0, 0.1]])}

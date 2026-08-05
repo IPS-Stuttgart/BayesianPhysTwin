@@ -22,21 +22,24 @@ from .phystwin_graph import (
     part_pair_spring_grouping,
     spatial_spring_region_ids,
 )
+from .phystwin_official_evaluation import evaluate_official_phystwin_interval
+from .phystwin_piecewise_topology import load_piecewise_topology_artifact
 from .phystwin_profile import (
     clustered_track_log_likelihood,
     grid_parameter_posterior,
     predictive_observation_calibration,
     truncate_profile_prediction_weights,
 )
-from .phystwin_official_evaluation import evaluate_official_phystwin_interval
-from .phystwin_piecewise_topology import load_piecewise_topology_artifact
-from .phystwin_spring_field import build_canonical_spring_basis
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
     evaluate_phystwin_trajectory,
     evaluate_phystwin_trajectory_splits,
     phystwin_tracking_metrics,
+)
+from .phystwin_spring_field import (
+    build_canonical_spring_basis,
+    build_canonical_triplane_spring_basis,
 )
 
 
@@ -67,6 +70,8 @@ class HeadlessPhysTwinRefitConfig:
     spring_region_count: int = 4
     spring_basis_rank: int = 16
     spring_basis_length_scale_multiplier: float = 1.0
+    spring_triplane_resolution: int = 0
+    spring_triplane_smoothness_weight: float = 0.0
     spring_scale_weight_decay: float = 0.0
     dashpot_log_scale: float = 0.0
     drag_log_scale: float = 0.0
@@ -256,10 +261,11 @@ def run_headless_phystwin_refit(
         "regional",
         "part_pair",
         "canonical_basis",
+        "canonical_triplane",
     }:
         raise ValueError(
             "spring_parameterization must be 'dense', 'grouped', 'regional', "
-            "'part_pair', or 'canonical_basis'"
+            "'part_pair', 'canonical_basis', or 'canonical_triplane'"
         )
     if (config.spring_parameterization == "part_pair") != (
         spring_partition_path is not None
@@ -271,6 +277,12 @@ def run_headless_phystwin_refit(
         raise ValueError("spring_region_count must be at least two")
     if config.spring_basis_rank < 1:
         raise ValueError("spring_basis_rank must be positive")
+    if config.spring_triplane_resolution < 0:
+        raise ValueError("spring_triplane_resolution must be nonnegative")
+    if config.spring_triplane_resolution == 1:
+        raise ValueError("spring_triplane_resolution must be zero or at least two")
+    if config.spring_triplane_smoothness_weight < 0.0:
+        raise ValueError("spring_triplane_smoothness_weight must be nonnegative")
     if (
         not np.isfinite(config.spring_basis_length_scale_multiplier)
         or config.spring_basis_length_scale_multiplier <= 0.0
@@ -432,6 +444,7 @@ def run_headless_phystwin_refit(
             raise ValueError("piecewise topology contains isolated object points")
     spring_group_ids = None
     canonical_spring_basis = None
+    canonical_triplane_basis = None
     part_pair_grouping: PartPairSpringGrouping | None = None
     if config.spring_parameterization == "regional":
         spring_group_ids = spatial_spring_region_ids(
@@ -464,6 +477,17 @@ def run_headless_phystwin_refit(
             num_object_springs=graph.num_object_springs,
             rank=config.spring_basis_rank,
             length_scale_multiplier=(config.spring_basis_length_scale_multiplier),
+        )
+    elif config.spring_parameterization == "canonical_triplane":
+        canonical_triplane_basis = build_canonical_triplane_spring_basis(
+            graph.vertices,
+            graph.springs,
+            num_object_springs=graph.num_object_springs,
+            resolution=(
+                None
+                if config.spring_triplane_resolution == 0
+                else config.spring_triplane_resolution
+            ),
         )
     checkpoint = _load_checkpoint(torch, checkpoint_path, config.device)
     checkpoint_spring_y = torch.as_tensor(
@@ -554,6 +578,21 @@ def run_headless_phystwin_refit(
         spring_group_ids=spring_group_ids,
         spring_basis_weights=(
             None if canonical_spring_basis is None else canonical_spring_basis.weights
+        ),
+        spring_sparse_basis_indices=(
+            None
+            if canonical_triplane_basis is None
+            else canonical_triplane_basis.parameter_indices
+        ),
+        spring_sparse_basis_weights=(
+            None
+            if canonical_triplane_basis is None
+            else canonical_triplane_basis.interpolation_weights
+        ),
+        spring_sparse_parameter_count=(
+            None
+            if canonical_triplane_basis is None
+            else canonical_triplane_basis.parameter_count
         ),
         deterministic_spring_forces=config.deterministic_spring_forces,
     )
@@ -700,10 +739,12 @@ def run_headless_phystwin_refit(
         selected_epoch = -1
     if config.epochs:
         optimizer_parameter_groups: list[dict[str, object]] = []
+        group_log_scale_parameter = None
         if config.spring_parameterization != "dense":
+            group_log_scale_parameter = wp.to_torch(simulator.wp_group_log_scales)
             optimizer_parameter_groups.append(
                 {
-                    "params": [wp.to_torch(simulator.wp_group_log_scales)],
+                    "params": [group_log_scale_parameter],
                     "weight_decay": config.spring_scale_weight_decay,
                 }
             )
@@ -735,7 +776,9 @@ def run_headless_phystwin_refit(
             )
             total_loss = 0.0
             total_track_loss = 0.0
+            total_spring_smoothness_loss = 0.0
             for frame in range(1, fit_end_frame):
+                optimizer.zero_grad(set_to_none=False)
                 simulator.set_controller_target(frame)
                 if simulator.object_collision_flag:
                     simulator.update_collision_graph()
@@ -743,6 +786,33 @@ def run_headless_phystwin_refit(
                 wp.synchronize()
                 total_loss += float(wp.to_torch(simulator.loss).item())
                 total_track_loss += float(wp.to_torch(simulator.track_loss).item())
+                if (
+                    canonical_triplane_basis is not None
+                    and config.spring_triplane_smoothness_weight > 0.0
+                ):
+                    assert group_log_scale_parameter is not None
+                    resolution = canonical_triplane_basis.resolution
+                    plane_parameter_count = 3 * resolution * resolution
+                    plane_parameters = group_log_scale_parameter[
+                        :plane_parameter_count
+                    ].reshape(3, resolution, resolution)
+                    horizontal = torch.mean(
+                        torch.square(
+                            plane_parameters[:, :, 1:]
+                            - plane_parameters[:, :, :-1]
+                        )
+                    )
+                    vertical = torch.mean(
+                        torch.square(
+                            plane_parameters[:, 1:, :]
+                            - plane_parameters[:, :-1, :]
+                        )
+                    )
+                    smoothness_loss = config.spring_triplane_smoothness_weight * (
+                        horizontal + vertical
+                    )
+                    smoothness_loss.backward()
+                    total_spring_smoothness_loss += float(smoothness_loss.item())
                 optimizer.step()
                 simulator.tape.zero()
                 simulator.clear_loss()
@@ -755,6 +825,9 @@ def run_headless_phystwin_refit(
                 "epoch": epoch,
                 "mean_loss": total_loss / denominator,
                 "mean_track_loss": total_track_loss / denominator,
+                "mean_spring_smoothness_loss": (
+                    total_spring_smoothness_loss / denominator
+                ),
             }
             if config.fit_end_frame is not None:
                 current_validation_metrics = validation_metrics(
@@ -1187,6 +1260,26 @@ def run_headless_phystwin_refit(
                 else canonical_spring_basis.controller_parameter_index
             ),
         )
+    triplane_basis_path = None
+    if canonical_triplane_basis is not None:
+        triplane_basis_path = output_path / "canonical_triplane_spring_basis.npz"
+        np.savez_compressed(
+            triplane_basis_path,
+            parameter_indices=canonical_triplane_basis.parameter_indices,
+            interpolation_weights=canonical_triplane_basis.interpolation_weights,
+            resolution=np.asarray(canonical_triplane_basis.resolution),
+            parameter_count=np.asarray(canonical_triplane_basis.parameter_count),
+            controller_parameter_index=np.asarray(
+                -1
+                if canonical_triplane_basis.controller_parameter_index is None
+                else canonical_triplane_basis.controller_parameter_index
+            ),
+            canonical_center=canonical_triplane_basis.canonical_center,
+            canonical_rotation=canonical_triplane_basis.canonical_rotation,
+            canonical_minimum=canonical_triplane_basis.canonical_minimum,
+            canonical_maximum=canonical_triplane_basis.canonical_maximum,
+            log_coefficients=final_group_log_scales,
+        )
     profile_path = None
     if profile_artifact is not None:
         profile_path = output_path / "parameter_profile.npz"
@@ -1233,6 +1326,26 @@ def run_headless_phystwin_refit(
                 None
                 if canonical_spring_basis is None
                 else torch.as_tensor(canonical_spring_basis.weights)
+            ),
+            "spring_sparse_basis_indices": (
+                None
+                if canonical_triplane_basis is None
+                else torch.as_tensor(canonical_triplane_basis.parameter_indices)
+            ),
+            "spring_sparse_basis_weights": (
+                None
+                if canonical_triplane_basis is None
+                else torch.as_tensor(canonical_triplane_basis.interpolation_weights)
+            ),
+            "spring_sparse_basis_log_coefficients": (
+                None
+                if canonical_triplane_basis is None
+                else torch.as_tensor(final_group_log_scales)
+            ),
+            "spring_triplane_resolution": (
+                None
+                if canonical_triplane_basis is None
+                else canonical_triplane_basis.resolution
             ),
             "spring_group_ids": (
                 None if spring_group_ids is None else torch.as_tensor(spring_group_ids)
@@ -1312,6 +1425,31 @@ def run_headless_phystwin_refit(
                     "sha256": _sha256(spring_basis_path),
                 }
             ),
+            "canonical_triplane_spring_basis": (
+                None
+                if canonical_triplane_basis is None
+                else {
+                    "path": str(triplane_basis_path.resolve()),
+                    "sha256": _sha256(triplane_basis_path),
+                    "resolution": canonical_triplane_basis.resolution,
+                    "parameter_count": canonical_triplane_basis.parameter_count,
+                    "support_count": int(
+                        canonical_triplane_basis.parameter_indices.shape[1]
+                    ),
+                    "controller_parameter_index": (
+                        canonical_triplane_basis.controller_parameter_index
+                    ),
+                    "parameter_indices_sha256": _array_hash(
+                        canonical_triplane_basis.parameter_indices
+                    ),
+                    "interpolation_weights_sha256": _array_hash(
+                        canonical_triplane_basis.interpolation_weights
+                    ),
+                    "canonical_rotation_sha256": _array_hash(
+                        canonical_triplane_basis.canonical_rotation
+                    ),
+                }
+            ),
         },
         "graph": {
             "vertex_count": int(len(graph.vertices)),
@@ -1367,7 +1505,8 @@ def run_headless_phystwin_refit(
             ),
             "group_log_scales": (
                 None
-                if config.spring_parameterization == "canonical_basis"
+                if config.spring_parameterization
+                in {"canonical_basis", "canonical_triplane"}
                 else (
                     {
                         "regions": [
@@ -1434,6 +1573,57 @@ def run_headless_phystwin_refit(
                     ),
                 }
             ),
+            "canonical_triplane_spring_field": (
+                None
+                if canonical_triplane_basis is None
+                else {
+                    "plane_log_coefficients_sha256": _array_hash(
+                        final_group_log_scales
+                    ),
+                    "coefficient_rms": float(
+                        np.sqrt(np.mean(np.square(final_group_log_scales)))
+                    ),
+                    "object_log_scale_min": float(
+                        np.min(
+                            np.sum(
+                                final_group_log_scales[
+                                    canonical_triplane_basis.parameter_indices[
+                                        : graph.num_object_springs
+                                    ]
+                                ]
+                                * canonical_triplane_basis.interpolation_weights[
+                                    : graph.num_object_springs
+                                ],
+                                axis=1,
+                            )
+                        )
+                    ),
+                    "object_log_scale_max": float(
+                        np.max(
+                            np.sum(
+                                final_group_log_scales[
+                                    canonical_triplane_basis.parameter_indices[
+                                        : graph.num_object_springs
+                                    ]
+                                ]
+                                * canonical_triplane_basis.interpolation_weights[
+                                    : graph.num_object_springs
+                                ],
+                                axis=1,
+                            )
+                        )
+                    ),
+                    "controller_log_scale": (
+                        None
+                        if canonical_triplane_basis.controller_parameter_index is None
+                        else float(
+                            final_group_log_scales[
+                                canonical_triplane_basis.controller_parameter_index
+                            ]
+                        )
+                    ),
+                }
+            ),
             "final_collision": final_collision,
             "fixed_dashpot_damping": float(
                 optimal["dashpot_damping"] * np.exp(config.dashpot_log_scale)
@@ -1496,6 +1686,11 @@ def run_headless_phystwin_refit(
             ),
             "canonical_spring_basis": (
                 None if spring_basis_path is None else str(spring_basis_path.resolve())
+            ),
+            "canonical_triplane_spring_basis": (
+                None
+                if triplane_basis_path is None
+                else str(triplane_basis_path.resolve())
             ),
         },
     }
