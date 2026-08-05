@@ -234,8 +234,10 @@ def _canonical_coordinates(
     rotation = eigenvectors[:, ::-1].copy()
     for axis in range(3):
         projections = centered @ rotation[:, axis]
-        extreme = int(np.argmax(np.abs(projections)))
-        if projections[extreme] < 0.0:
+        scale = float(np.max(np.abs(projections)))
+        tolerance = max(np.finfo(np.float64).eps, scale * 1.0e-10)
+        anchors = np.flatnonzero(np.abs(projections) > tolerance)
+        if len(anchors) and projections[int(anchors[0])] < 0.0:
             rotation[:, axis] *= -1.0
     if np.linalg.det(rotation) < 0.0:
         rotation[:, -1] *= -1.0

@@ -69,6 +69,15 @@ least 3% in balanced ratio, no case metric may regress by more than 5%, and
 every selected field must pass the geometric plausibility bound. Failure
 closes the family without a 19-case future run.
 
+The first native stage-0 run exposed a PCA sign ambiguity for symmetric
+spring-midpoint sets: orienting an eigenvector by its largest absolute
+projection left an exact positive/negative tie to eigensolver rounding. The
+implementation was amended before source transfer to orient each axis by the
+first nonzero spring-identity projection instead. This is a technical repair
+to the preregistered rigid-frame contract; no split, optimizer, field size, or
+acceptance gate changed. The development result produced before this check
+passed is inadmissible and is retained only as engineering provenance.
+
 ## Claim boundary
 
 The development and source suffixes are model-development evidence. A passing
