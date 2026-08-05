@@ -133,7 +133,13 @@ def test_records_are_json_compatible_and_arrays_are_immutable() -> None:
     comparison = compare_marginal_observability(state, candidate)
 
     json.dumps(comparison.to_record(), sort_keys=True)
-    assert not comparison.reference.precision_eigenvalues.flags.writeable
-    assert not comparison.reference.marginal_variances.flags.writeable
-    assert not comparison.reference.query_jacobian.flags.writeable
-    assert not comparison.information_increment_eigenvalues.flags.writeable
+    arrays = (
+        comparison.reference.precision_eigenvalues,
+        comparison.reference.marginal_variances,
+        comparison.reference.query_jacobian,
+        comparison.information_increment_eigenvalues,
+    )
+    assert all(not array.flags.writeable for array in arrays)
+    for array in arrays:
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
