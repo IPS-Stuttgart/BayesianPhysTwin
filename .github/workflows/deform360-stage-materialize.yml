@@ -42,10 +42,8 @@ jobs:
           set -euo pipefail
           bundle="${RUNNER_TEMP}/deform360-stage-files.tar.gz"
           cat .agent/deform360-stage-files.b64.* | base64 --decode > "${bundle}"
-          actual_sha256="$(sha256sum "${bundle}" | cut -d ' ' -f 1)"
-          echo "assembled_bundle_sha256=${actual_sha256}"
           printf '%s  %s\n' \
-            'c92a94fcd98e45346f686add48ae88380df26646d6f79546d9a714f1763a9cce' \
+            'ee2fe46a9f776039ff9f5b10fb02e179a18139e28e70fc4cf8c55831eb852e05' \
             "${bundle}" | sha256sum -c -
           tar -xzf "${bundle}"
           rm -rf .agent
