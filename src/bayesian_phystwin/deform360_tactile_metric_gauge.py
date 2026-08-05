@@ -23,6 +23,10 @@ DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA = (
     "bayesian-phystwin.deform360-tactile-metric-gauge-lock"
 )
 DEFORM360_TACTILE_METRIC_GAUGE_LOCK_VERSION = 1
+DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_SCHEMA = (
+    "bayesian-phystwin.deform360-tactile-metric-gauge-two-view-lock"
+)
+DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_VERSION = 1
 
 CONTACT_CAMERA_POLICY = {
     "panel_size": 3,
@@ -34,6 +38,19 @@ CONTACT_CAMERA_POLICY = {
     "selection_order": "maximum-margin-then-greedy-maximum-minimum-view-angle",
 }
 
+TWO_VIEW_CONTACT_CAMERA_POLICY = {
+    "panel_size": 2,
+    "minimum_assignment_coverage": 1.0,
+    "minimum_margin_px": 64.0,
+    "minimum_angular_separation_deg": 30.0,
+    "source_shape": [720, 1280],
+    "target_shape": [320, 640],
+    "candidate_scope": "locked-parent-provider-cameras-only",
+    "selection_order": (
+        "full-assignment-coverage-then-maximum-margin-then-maximum-view-angle"
+    ),
+}
+
 TACTILE_METRIC_GAUGE_QUALITY_GATE = {
     "huber_delta_m": 0.005,
     "covariance_floor_m": 0.005,
@@ -42,6 +59,17 @@ TACTILE_METRIC_GAUGE_QUALITY_GATE = {
     "minimum_admitted_cameras": 3,
     "assignment_admission": "both-direct-and-swapped-must-pass",
     "cross_view_correlation": "unknown-equal-weight-covariance-intersection",
+}
+
+TACTILE_METRIC_GAUGE_TWO_VIEW_QUALITY_GATE = {
+    "huber_delta_m": 0.005,
+    "covariance_floor_m": 0.01,
+    "maximum_median_held_frame_error_m": 0.005,
+    "maximum_percentile_90_held_frame_error_m": 0.015,
+    "minimum_admitted_cameras": 2,
+    "assignment_admission": "both-direct-and-swapped-must-pass",
+    "cross_view_correlation": "unknown-no-precision-gain-covariance-union",
+    "shared_bias_floor_m": 0.01,
 }
 
 TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY = {
@@ -117,11 +145,17 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
     _require(
         content_id(descriptor) == artifact_id, "metric-gauge lock identity changed"
     )
-    _require(
-        value.get("schema") == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA
-        and value.get("schema_version") == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_VERSION,
-        "unsupported metric-gauge lock",
+    schema = value.get("schema")
+    version = value.get("schema_version")
+    standard = (
+        schema == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA
+        and version == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_VERSION
     )
+    two_view = (
+        schema == DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_SCHEMA
+        and version == DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_VERSION
+    )
+    _require(standard or two_view, "unsupported metric-gauge lock")
     _require(
         value.get("status") == "locked-source-only-pre-supplement-provider",
         "metric-gauge lock has the wrong status",
@@ -156,7 +190,13 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
         assert isinstance(record, Mapping)
         _lower_sha256(record.get("sha256"), name=f"{name} sha256")
         _lower_sha256(record.get("artifact_id"), name=f"{name} artifact_id")
-    _require(selection.get("policy") == CONTACT_CAMERA_POLICY, "camera policy changed")
+    camera_policy = TWO_VIEW_CONTACT_CAMERA_POLICY if two_view else CONTACT_CAMERA_POLICY
+    quality_gate = (
+        TACTILE_METRIC_GAUGE_TWO_VIEW_QUALITY_GATE
+        if two_view
+        else TACTILE_METRIC_GAUGE_QUALITY_GATE
+    )
+    _require(selection.get("policy") == camera_policy, "camera policy changed")
     selected = selection.get("selected_cameras")
     reused = selection.get("reused_provider_cameras")
     supplemental = selection.get("supplemental_provider_cameras")
@@ -169,7 +209,7 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
     )
     _require(
         isinstance(selected, list)
-        and len(selected) == CONTACT_CAMERA_POLICY["panel_size"]
+        and len(selected) == camera_policy["panel_size"]
         and len(set(selected)) == len(selected)
         and all(type(item) is str for item in selected),
         "selected camera panel changed",
@@ -183,12 +223,12 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
     )
     _require(
         type(candidate_count) is int
-        and candidate_count >= CONTACT_CAMERA_POLICY["panel_size"],
+        and candidate_count >= camera_policy["panel_size"],
         "candidate camera count changed",
     )
     _require(
         type(eligible_camera_count) is int
-        and CONTACT_CAMERA_POLICY["panel_size"]
+        and camera_policy["panel_size"]
         <= eligible_camera_count
         <= candidate_count,
         "eligible camera count changed",
@@ -209,13 +249,13 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
         _require(
             type(coverage) in {int, float}
             and np.isfinite(coverage)
-            and float(coverage) >= CONTACT_CAMERA_POLICY["minimum_assignment_coverage"],
+            and float(coverage) >= camera_policy["minimum_assignment_coverage"],
             "selected camera coverage changed",
         )
         _require(
             type(margin) in {int, float}
             and np.isfinite(margin)
-            and float(margin) >= CONTACT_CAMERA_POLICY["minimum_margin_px"],
+            and float(margin) >= camera_policy["minimum_margin_px"],
             "selected camera margin changed",
         )
         _require(
@@ -233,7 +273,7 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
     )
     _require(len(jobs) == len(supplemental), "supplemental job count changed")
     _require(
-        provider.get("quality_gate") == TACTILE_METRIC_GAUGE_QUALITY_GATE,
+        provider.get("quality_gate") == quality_gate,
         "quality gate changed",
     )
     for job in jobs:
@@ -256,6 +296,40 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
         "metric-gauge information boundary changed",
     )
     return artifact_id
+
+
+def unknown_correlation_covariance_union(
+    covariances_m2: np.ndarray,
+    *,
+    shared_bias_floor_m: float,
+) -> np.ndarray:
+    """Return an isotropic covariance that dominates every correlated input."""
+
+    covariances = np.asarray(covariances_m2, dtype=np.float64)
+    _require(
+        covariances.ndim == 3
+        and covariances.shape[1:] == (3, 3)
+        and len(covariances) >= 2,
+        "at least two 3x3 covariances are required",
+    )
+    _require(
+        np.all(np.isfinite(covariances)) and shared_bias_floor_m > 0.0,
+        "invalid covariance union inputs",
+    )
+    symmetrized = 0.5 * (covariances + np.swapaxes(covariances, 1, 2))
+    eigenvalues = np.linalg.eigvalsh(symmetrized)
+    _require(np.min(eigenvalues) >= -1e-12, "input covariance is not PSD")
+    radius = float(np.max(eigenvalues)) + shared_bias_floor_m**2
+    result = np.eye(3, dtype=np.float64) * radius
+    _require(
+        all(
+            np.min(np.linalg.eigvalsh(result - covariance)) >= -1e-12
+            for covariance in symmetrized
+        ),
+        "covariance union does not dominate its inputs",
+    )
+    result.setflags(write=False)
+    return result
 
 
 def load_tactile_metric_gauge_lock(path: str | Path) -> Mapping[str, Any]:
@@ -765,10 +839,13 @@ __all__ = [
     "CONTACT_CAMERA_POLICY",
     "ContactCameraCandidate",
     "DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA",
+    "DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_SCHEMA",
     "HeldFrameGaugeQuality",
     "SimilarityTransform",
     "TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY",
     "TACTILE_METRIC_GAUGE_QUALITY_GATE",
+    "TACTILE_METRIC_GAUGE_TWO_VIEW_QUALITY_GATE",
+    "TWO_VIEW_CONTACT_CAMERA_POLICY",
     "apply_similarity",
     "contact_camera_candidates",
     "covariance_intersection_equal_weight",
@@ -776,6 +853,7 @@ __all__ = [
     "fit_robust_similarity",
     "held_frame_gauge_quality",
     "load_tactile_metric_gauge_lock",
+    "unknown_correlation_covariance_union",
     "project_world_points_to_target",
     "sample_point_map_bilinear",
     "select_contact_camera_panel",

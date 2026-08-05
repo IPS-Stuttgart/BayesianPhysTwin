@@ -6,8 +6,11 @@ from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_tactile_metric_gauge import (
     CONTACT_CAMERA_POLICY,
     DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA,
+    DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_SCHEMA,
     TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY,
     TACTILE_METRIC_GAUGE_QUALITY_GATE,
+    TACTILE_METRIC_GAUGE_TWO_VIEW_QUALITY_GATE,
+    TWO_VIEW_CONTACT_CAMERA_POLICY,
     ContactCameraCandidate,
     apply_similarity,
     contact_camera_candidates,
@@ -17,6 +20,7 @@ from bayesian_phystwin.deform360_tactile_metric_gauge import (
     project_world_points_to_target,
     sample_point_map_bilinear,
     select_contact_camera_panel,
+    unknown_correlation_covariance_union,
     validate_tactile_metric_gauge_lock,
 )
 
@@ -164,6 +168,23 @@ def test_unknown_correlation_is_less_confident_than_independence() -> None:
     assert np.all(np.linalg.eigvalsh(intersection - independent) >= -1e-12)
 
 
+def test_two_view_covariance_union_never_adds_precision() -> None:
+    values = np.asarray(
+        [
+            [[4.0, 1.0, 0.0], [1.0, 2.0, 0.0], [0.0, 0.0, 1.0]],
+            [[1.0, 0.0, 0.0], [0.0, 5.0, 1.0], [0.0, 1.0, 2.0]],
+        ]
+    ) * 1e-4
+    union = unknown_correlation_covariance_union(
+        values,
+        shared_bias_floor_m=0.01,
+    )
+    for covariance in values:
+        assert np.min(np.linalg.eigvalsh(union - covariance)) >= -1e-12
+    independent = np.linalg.inv(sum(np.linalg.inv(item) for item in values))
+    assert np.min(np.linalg.eigvalsh(union - independent)) >= -1e-12
+
+
 def _lock() -> dict[str, object]:
     job_descriptor = {
         "object_id": "source",
@@ -255,3 +276,26 @@ def test_metric_gauge_lock_rejects_selected_camera_below_margin() -> None:
         assert "margin" in str(error)
     else:
         raise AssertionError("under-margin selected camera was accepted")
+
+
+def test_two_view_metric_gauge_lock_requires_no_precision_gain_policy() -> None:
+    value = _lock()
+    value["schema"] = DEFORM360_TACTILE_METRIC_GAUGE_TWO_VIEW_LOCK_SCHEMA
+    selection = dict(value["camera_selection"])
+    selection["policy"] = TWO_VIEW_CONTACT_CAMERA_POLICY
+    selection["selected_cameras"] = ["old", "third"]
+    selection["reused_provider_cameras"] = ["old", "third"]
+    selection["supplemental_provider_cameras"] = []
+    selection["selected_candidate_records"] = [
+        selection["selected_candidate_records"][0],
+        selection["selected_candidate_records"][2],
+    ]
+    value["camera_selection"] = selection
+    value["provider"] = {
+        "quality_gate": TACTILE_METRIC_GAUGE_TWO_VIEW_QUALITY_GATE
+    }
+    value["supplemental_jobs"] = []
+    descriptor = dict(value)
+    descriptor.pop("artifact_id")
+    value["artifact_id"] = content_id(descriptor)
+    assert validate_tactile_metric_gauge_lock(value) == value["artifact_id"]

@@ -22,13 +22,13 @@ from bayesian_phystwin.deform360_tactile_contact_geometry import (
     verify_tactile_contact_geometry_artifact,
 )
 from bayesian_phystwin.deform360_tactile_metric_gauge import (
-    CONTACT_CAMERA_POLICY,
     covariance_intersection_equal_weight,
     fit_robust_similarity,
     held_frame_gauge_quality,
     load_tactile_metric_gauge_lock,
     project_world_points_to_target,
     sample_point_map_bilinear,
+    unknown_correlation_covariance_union,
 )
 
 
@@ -229,9 +229,11 @@ def _hypothesis_record(
 def _gate_summary(
     camera_records: Sequence[Mapping[str, Any]],
     *,
-    minimum_admitted_cameras: int,
+    quality_gate: Mapping[str, Any],
     assignment_probabilities: Sequence[float],
 ) -> dict[str, Any]:
+    minimum_admitted_cameras = int(quality_gate["minimum_admitted_cameras"])
+    correlation_policy = str(quality_gate["cross_view_correlation"])
     joint = [
         record
         for record in camera_records
@@ -246,19 +248,28 @@ def _gate_summary(
             ],
             dtype=np.float64,
         )
-        covariance = (
-            covariance_intersection_equal_weight(covariances).tolist()
-            if len(covariances) >= minimum_admitted_cameras
-            else None
-        )
-        assignment_records.append(
-            {
-                "assignment_hypothesis": hypothesis,
-                "prior_probability": float(probability),
-                "admitted_camera_count": len(joint),
-                "covariance_intersection_m2": covariance,
-            }
-        )
+        record: dict[str, Any] = {
+            "assignment_hypothesis": hypothesis,
+            "prior_probability": float(probability),
+            "admitted_camera_count": len(joint),
+        }
+        if len(covariances) < minimum_admitted_cameras:
+            record["covariance_intersection_m2"] = None
+        elif correlation_policy == "unknown-equal-weight-covariance-intersection":
+            record["covariance_intersection_m2"] = (
+                covariance_intersection_equal_weight(covariances).tolist()
+            )
+        elif correlation_policy == "unknown-no-precision-gain-covariance-union":
+            record["covariance_intersection_m2"] = None
+            record["conservative_covariance_union_m2"] = (
+                unknown_correlation_covariance_union(
+                    covariances,
+                    shared_bias_floor_m=float(quality_gate["shared_bias_floor_m"]),
+                ).tolist()
+            )
+        else:
+            raise ValueError("unsupported cross-view covariance policy")
+        assignment_records.append(record)
     admitted = len(joint) >= minimum_admitted_cameras
     return {
         "metric_gauge_authorized": admitted,
@@ -319,6 +330,7 @@ def main() -> None:
         raise ValueError("tactile geometry changed")
 
     source = lock["source_case"]
+    camera_policy = lock["camera_selection"]["policy"]
     object_id = str(source["object_id"])
     episode_index = int(source["processing_episode_index"])
     episode_dir = (
@@ -370,23 +382,28 @@ def main() -> None:
         != parent_manifest["manifest_sha256"]
     ):
         raise ValueError("parent provider run is incomplete or differently bound")
-    supplemental_report_path = (
-        args.supplemental_provider_root.resolve() / "run_report.json"
-    )
-    supplemental_report = _load_content_addressed_report(
-        supplemental_report_path,
-        id_field="run_id",
-    )
-    completed_job_ids = {
-        str(item["job_id"]) for item in supplemental_report.get("completed_jobs", ())
-    }
-    if (
-        supplemental_report.get("status") != "complete"
-        or supplemental_report.get("lock_id") != lock["artifact_id"]
-        or completed_job_ids
-        != {str(job["job_id"]) for job in lock["supplemental_jobs"]}
-    ):
-        raise ValueError("supplemental provider run is incomplete or differently bound")
+    supplemental_report_path: Path | None = None
+    if supplemental_jobs:
+        supplemental_report_path = (
+            args.supplemental_provider_root.resolve() / "run_report.json"
+        )
+        supplemental_report = _load_content_addressed_report(
+            supplemental_report_path,
+            id_field="run_id",
+        )
+        completed_job_ids = {
+            str(item["job_id"])
+            for item in supplemental_report.get("completed_jobs", ())
+        }
+        if (
+            supplemental_report.get("status") != "complete"
+            or supplemental_report.get("lock_id") != lock["artifact_id"]
+            or completed_job_ids
+            != {str(job["job_id"]) for job in lock["supplemental_jobs"]}
+        ):
+            raise ValueError(
+                "supplemental provider run is incomplete or differently bound"
+            )
     configuration = lock["provider"]["run_configuration"]
     quality_gate = lock["provider"]["quality_gate"]
     camera_records: list[dict[str, Any]] = []
@@ -425,8 +442,8 @@ def main() -> None:
                     target_points,
                     intrinsics=intrinsics[camera],
                     world_from_camera=extrinsics[camera],
-                    source_shape=tuple(CONTACT_CAMERA_POLICY["source_shape"]),
-                    target_shape=tuple(CONTACT_CAMERA_POLICY["target_shape"]),
+                    source_shape=tuple(camera_policy["source_shape"]),
+                    target_shape=tuple(camera_policy["target_shape"]),
                 )
                 sampled, provider_support = sample_point_map_bilinear(
                     point_map,
@@ -458,9 +475,22 @@ def main() -> None:
 
     gate = _gate_summary(
         camera_records,
-        minimum_admitted_cameras=int(quality_gate["minimum_admitted_cameras"]),
+        quality_gate=quality_gate,
         assignment_probabilities=assignment_probabilities,
     )
+    source_artifacts = {
+        "lock_sha256": _sha256(lock_path),
+        "parent_job_manifest_sha256": _sha256(parent_manifest_path),
+        "tactile_manifest_sha256": _sha256(tactile_path),
+        "tactile_archive_sha256": _sha256(tactile_archive_path),
+        "intrinsics_sha256": _sha256(intrinsics_path),
+        "extrinsics_sha256": _sha256(extrinsics_path),
+        "parent_provider_run_report_sha256": _sha256(parent_report_path),
+    }
+    if supplemental_report_path is not None:
+        source_artifacts["supplemental_provider_run_report_sha256"] = _sha256(
+            supplemental_report_path
+        )
     descriptor = {
         "schema": "bayesian-phystwin.deform360-tactile-metric-gauge-result",
         "schema_version": 1,
@@ -470,18 +500,7 @@ def main() -> None:
             "runtime_revision": runtime_revision,
             "evaluator_source_sha256": _sha256(evaluator_source),
         },
-        "source_artifacts": {
-            "lock_sha256": _sha256(lock_path),
-            "parent_job_manifest_sha256": _sha256(parent_manifest_path),
-            "tactile_manifest_sha256": _sha256(tactile_path),
-            "tactile_archive_sha256": _sha256(tactile_archive_path),
-            "intrinsics_sha256": _sha256(intrinsics_path),
-            "extrinsics_sha256": _sha256(extrinsics_path),
-            "parent_provider_run_report_sha256": _sha256(parent_report_path),
-            "supplemental_provider_run_report_sha256": _sha256(
-                supplemental_report_path
-            ),
-        },
+        "source_artifacts": source_artifacts,
         "sampling_policy": {
             "coordinate_mapping": "motioncrafter-cover-resize-center-crop",
             "point_map_sampling": "bilinear-all-four-neighbors-valid",
