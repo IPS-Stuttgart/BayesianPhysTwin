@@ -1,0 +1,68 @@
+name: Rebuild horizon discrepancy branch v2
+
+on:
+  push:
+    branches:
+      - agent/deform360-horizon-calibration
+    paths:
+      - .github/workflows/rebuild-horizon-branch-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out staging revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Extract deterministic rebuild script
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path(".github/workflows/rebuild-horizon-branch.yml").read_text(
+              encoding="utf-8"
+          )
+          anchor = "      - name: Rebuild clean horizon-only tree\n"
+          section = source[source.index(anchor) + len(anchor):]
+          marker = "        run: |\n"
+          section = section[section.index(marker) + len(marker):]
+          lines = section.splitlines()
+          script_lines = []
+          for line in lines:
+              if line and not line.startswith("          "):
+                  break
+              script_lines.append(line[10:] if line else "")
+          script = "\n".join(script_lines) + "\n"
+          quality_start = script.rfind('python -m pip install -e ".[dev]"')
+          publish_start = script.index("git add -A", quality_start)
+          focused = '''PYTHONPATH=src python -m pytest -q \\
+            tests/test_horizon_conditioned_discrepancy.py \\
+            tests/test_endpoint_model_average.py \\
+            tests/test_horizon_conditioned_discrepancy_workflow.py
+          python -m compileall -q src/bayesian_phystwin
+
+          '''
+          script = script[:quality_start] + focused + script[publish_start:]
+          Path("/tmp/rebuild-horizon.sh").write_text(script, encoding="utf-8")
+          PY
+          chmod +x /tmp/rebuild-horizon.sh
+
+      - name: Publish clean tested branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EXPECTED_STAGING_SHA: ${{ github.sha }}
+          BASE_SHA: c37fc7aa7ba4a26313cb3a1f85d6df93c0608461
+          PAYLOAD_COMMIT: 779a2d0c3fc8a39316869ceae956f03c9b852b6d
+          EXPECTED_ARCHIVE_SHA256: 355eeb5b84453f4d8fbe064d1bcdb49e810f7d02ed2d35ca66ebdc20b2eb05c3
+          BRANCH: agent/deform360-horizon-calibration
+        shell: bash
+        run: /tmp/rebuild-horizon.sh
