@@ -83,6 +83,12 @@ def _model_source(source: Mapping[str, Any]) -> tuple[str, str | None]:
     return str(source["repository"]), str(source["revision"])
 
 
+def _build_pinned_runner(model_set: Any, runner_type: Any, config: Any) -> Any:
+    """Build inference through the inspected model set's pinned adapter."""
+
+    return runner_type(config, adapter_factory=model_set.adapter_factory())
+
+
 def _validate_source(processed_root: Path, job: Mapping[str, Any]) -> Path:
     record = job["source_video"]
     path = _safe_member(processed_root, str(record["path"]))
@@ -127,7 +133,10 @@ def _validate_prediction(
     if {key: config.get(key) for key in expected} != expected:
         raise ValueError("supplement prediction configuration changed")
     schedule = payload.get("stochastic_seed_schedule")
-    if not isinstance(schedule, Mapping) or schedule.get("calls") != job["seed_schedule"]:
+    if (
+        not isinstance(schedule, Mapping)
+        or schedule.get("calls") != job["seed_schedule"]
+    ):
         raise ValueError("supplement prediction seed schedule changed")
     expected_windows = [
         {
@@ -323,7 +332,11 @@ def main() -> int:
     existing = output.exists() and any(output.iterdir())
     if existing and not args.resume:
         raise ValueError(f"supplement output exists: {output}")
-    prediction = SafeMotionCrafterRunner(config).run(resume=existing)
+    prediction = _build_pinned_runner(
+        model_set,
+        SafeMotionCrafterRunner,
+        config,
+    ).run(resume=existing)
     result = _validate_prediction(
         prediction,
         job=job,
