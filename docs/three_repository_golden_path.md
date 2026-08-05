@@ -7,9 +7,10 @@ checked-in producer-neutral fixture -> BayesianPhysTwin + Causal4D consumers
 current Prob4D wheel -> BayesianPhysTwin wheel -> Causal4D wheel
 ```
 
-The first layer always executes. The second layer is the evidence-bearing
-installed-wheel golden path and requires read access to the private
-`IPS-Stuttgart/Prob4D` repository.
+Both layers execute on every relevant event. The second layer is the
+claim-relevant installed-wheel golden path and uses the public canonical
+`IPS-Stuttgart/Prob4D` and `IPS-Stuttgart/Causal4D` repositories without
+repository secrets.
 
 ## Always-Executed Consumer Fixture
 
@@ -27,18 +28,19 @@ This gate detects:
 
 The fixture gate does not execute the current Prob4D implementation. It is a
 producer-neutral compatibility check and cannot by itself admit
-three-repository evidence.
+three-repository evidence. It also does not replace the installed-wheel path;
+both jobs are required.
 
-## Credentialed Installed-Wheel Golden Path
+## Public Installed-Wheel Golden Path
 
-The evidence-bearing gate executes the released package boundary
+The claim-relevant gate executes the released package boundary
 
 ```text
 Prob4D -> BayesianPhysTwin -> Causal4D
 ```
 
 without importing any repository from its source checkout. The runner requires
-three clean Git checkouts, records their exact commits, creates immutable
+three clean public Git checkouts, records their exact commits, creates immutable
 `git archive` source snapshots, builds one wheel from each snapshot, and
 installs only those wheels in a fresh virtual environment. It copies the
 integration tests outside every source tree, clears `PYTHONPATH`, and starts
@@ -80,15 +82,13 @@ test shares only immutable artifacts and expected accept/reject decisions.
 
 ## Transfer-Safe Repository Identity
 
-The workflow checks out the current canonical repository
-`IPS-Stuttgart/Prob4D`. The historical string `FlorianPfaff/Prob4D` is retained
-only where it is part of a frozen content-addressed observation or provider
-contract. Repository navigation and artifact semantics are therefore kept
-separate.
+The workflow checks out the current public canonical repository
+`IPS-Stuttgart/Prob4D` directly. The historical string `FlorianPfaff/Prob4D` is
+retained only where it is part of a frozen content-addressed observation or
+provider contract. Repository navigation and artifact semantics are therefore
+kept separate.
 
-Before checkout, the workflow probes whether `PROB4D_READ_TOKEN` can read the
-canonical repository through the GitHub API. If checkout proceeds, the installed
-wheel must independently report:
+The installed wheel must independently report:
 
 ```text
 project_id = github-repository-id:1295794737
@@ -100,6 +100,11 @@ A repository transfer must not rewrite an existing artifact, provider manifest,
 run manifest, or content identifier. A future artifact schema can bind the stable
 project ID explicitly; current frozen schemas continue to require their exact
 historical source string.
+
+Because all three repositories are public, missing checkout access is a real
+compatibility failure rather than a condition for skipping the golden path.
+Pull requests from forks receive the same read-only public integration coverage
+as organization branches.
 
 ## Triggering and Repository Refs
 
@@ -118,7 +123,9 @@ for a specific producer commit is not silently replaced by an unrelated ref.
 
 The receiver alone does not grant another repository permission to dispatch.
 A producer-side workflow or operator must use a credential that can invoke
-repository dispatch on `IPS-Stuttgart/BayesianPhysTwin`.
+repository dispatch on `IPS-Stuttgart/BayesianPhysTwin`; the integration job
+itself requires only the normal read-only `GITHUB_TOKEN` and public checkout
+access.
 
 ## Local Execution
 
@@ -136,20 +143,15 @@ The script requires a normal Linux or macOS Python installation with `venv`,
 removes all temporary source snapshots, wheels, and virtual environments on
 exit.
 
-## GitHub Actions Credential Policy
+## GitHub Actions Public-Repository Policy
 
-Configure a BayesianPhysTwin repository secret named `PROB4D_READ_TOKEN` with
-read-only contents access to `IPS-Stuttgart/Prob4D`.
+The workflow grants only `contents: read`, disables persisted checkout
+credentials, and checks out all three public repositories directly. It does not
+probe repository access with a personal token and does not accept a
+`PROB4D_READ_TOKEN` secret.
 
-Relevant pull requests and `main` pushes always execute the producer-neutral
-consumer fixture. When the access probe succeeds, they also execute the
-credentialed installed-wheel path. When the token is missing, stale, or
-unauthorized, continuous PR and `main` runs emit an explicit warning and admit no
-current-Prob4D evidence; they do not silently label the fixture as a full
-three-repository result.
-
-Scheduled, manual, and repository-dispatch runs are explicit compatibility
-validation events. They fail closed when the token cannot read the canonical
-Prob4D repository. External-fork pull requests cannot receive repository secrets,
-so they run only the producer-neutral fixture and receive the same explicit
-no-current-Prob4D-evidence status.
+Relevant pull requests, fork pull requests, `main` pushes, scheduled runs,
+manual runs, and repository-dispatch runs therefore execute the same
+installed-wheel boundary. Checkout, build, artifact, or compatibility failure
+fails the job explicitly; the producer-neutral fixture is never relabelled as a
+full three-repository result and cannot hide a skipped producer execution.

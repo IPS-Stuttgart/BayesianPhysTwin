@@ -35,17 +35,16 @@ def test_three_repository_workflow_pins_external_actions() -> None:
     assert "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97" in text
 
 
-def test_three_repository_workflow_probes_repository_access() -> None:
+def test_three_repository_workflow_requires_public_prob4d_execution() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
-    assert "id: prob4d-access" in text
-    assert "https://api.github.com/repos/IPS-Stuttgart/Prob4D" in text
-    assert "github.event_name != 'pull_request'" in text
-    assert "github.event_name != 'push'" in text
-    assert (
-        "Scheduled, manual, and repository-dispatch validation remains fail-closed"
-        in text
-    )
+    assert "Check out public Prob4D producer" in text
+    assert "PROB4D_READ_TOKEN" not in text
+    assert "prob4d-access" not in text
+    assert "https://api.github.com/repos/IPS-Stuttgart/Prob4D" not in text
+    assert "steps.prob4d-access.outputs.available" not in text
+    assert "permissions:\n  contents: read" in text
+    assert text.count("persist-credentials: false") >= 5
 
 
 def test_three_repository_workflow_tracks_prospective_belief_surfaces() -> None:
