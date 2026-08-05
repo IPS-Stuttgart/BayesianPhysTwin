@@ -38,6 +38,7 @@ from bayesian_phystwin.evidence_use_ledger import (
 )
 
 _REPOSITORY_SOURCES = (
+    ".github/workflows/deform360-calibration-seal.yml",
     "protocols/deform360_official_hub_visuotactile_v1.json",
     (
         "protocols/amendments/"
@@ -51,6 +52,8 @@ _REPOSITORY_SOURCES = (
     "src/bayesian_phystwin/deform360_calibration_bundle.py",
     "src/bayesian_phystwin/deform360_visual_provider_lock.py",
     "src/bayesian_phystwin/evidence_use_ledger.py",
+    "src/bayesian_phystwin/cli/deform360_calibration_execution.py",
+    "src/bayesian_phystwin/cli/experiments.py",
 )
 
 
@@ -85,8 +88,14 @@ def _logical_name(value: str) -> str:
 
 
 def _ordinary_file(path: Path, *, name: str) -> Path:
-    resolved = path.resolve()
-    if path.is_symlink() or not resolved.is_file():
+    absolute = path.absolute()
+    if any(candidate.is_symlink() for candidate in (absolute, *absolute.parents)):
+        raise ValueError(f"{name} path must not contain symlinks: {path}")
+    try:
+        resolved = absolute.resolve(strict=True)
+    except OSError as error:
+        raise ValueError(f"{name} does not exist: {path}") from error
+    if not resolved.is_file():
         raise ValueError(f"{name} must be an ordinary file: {path}")
     return resolved
 
