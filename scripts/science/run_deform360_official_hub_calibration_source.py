@@ -9,6 +9,5 @@ sys.path.insert(0, str(_REPOSITORY_ROOT))
 
 from scripts.science.deform360_calibration_source.cli import main  # noqa: E402
 
-
 if __name__ == "__main__":
     raise SystemExit(main())
