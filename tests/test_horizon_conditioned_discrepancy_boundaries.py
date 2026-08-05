@@ -28,9 +28,7 @@ def _calibration(**updates: object) -> HorizonDiscrepancyCalibrationV1:
         "mean_reversion_half_life_steps": 8.0,
         "minimum_mean_retention": 0.25,
         "stationary_std_m": np.array([0.003, 0.004, 0.005]),
-        "additional_process_std_m_per_sqrt_step": np.array(
-            [0.0001, 0.0002, 0.0003]
-        ),
+        "additional_process_std_m_per_sqrt_step": np.array([0.0001, 0.0002, 0.0003]),
     }
     values.update(updates)
     return HorizonDiscrepancyCalibrationV1(**values)  # type: ignore[arg-type]
@@ -87,9 +85,9 @@ def test_calibration_mapping_and_source_boundary_fail_closed() -> None:
     with pytest.raises(ValueError, match="semantics changed"):
         HorizonDiscrepancyCalibrationV1.from_mapping(record)
 
-    assert HORIZON_DISCREPANCY_CALIBRATION_SCHEMA in _calibration().descriptor()[
-        "schema"
-    ]
+    assert (
+        HORIZON_DISCREPANCY_CALIBRATION_SCHEMA in _calibration().descriptor()["schema"]
+    )
     assert (
         _calibration().descriptor()["semantics"]
         == HORIZON_DISCREPANCY_CALIBRATION_SEMANTICS
