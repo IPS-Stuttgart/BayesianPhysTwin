@@ -20,12 +20,6 @@ _REPOSITORY_ROOT = _repository_root()
 sys.path.insert(0, str(_REPOSITORY_ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from bayesian_phystwin.pokeflex_same_object_reporting import (  # noqa: E402
-    load_json_object,
-    sha256_file,
-    validate_bounded_result,
-    write_json,
-)
 from pokeflex_same_object_video_capture import (  # noqa: E402
     capture_frozen_predictions,
     choose_take,
@@ -36,6 +30,13 @@ from pokeflex_same_object_video_plot import (  # noqa: E402
     canonical_projection,
     render_rgb_frame,
     video_limits,
+)
+
+from bayesian_phystwin.pokeflex_same_object_reporting import (  # noqa: E402
+    load_json_object,
+    sha256_file,
+    validate_bounded_result,
+    write_json,
 )
 
 
