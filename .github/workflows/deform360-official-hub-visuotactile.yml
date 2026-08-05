@@ -12,7 +12,6 @@ on:
       - "tests/test_deform360_contact_anchor.py"
       - "tests/test_deform360_hub_selection.py"
       - "tests/test_deform360_stage0_workflow.py"
-      - "docs/deform360_official_hub_visuotactile_v1.md"
       - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
       - "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
   workflow_dispatch:
@@ -83,14 +82,12 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 60
-    permissions:
-      contents: write
     steps:
       - name: Check out exact trusted head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.BPT_HEAD_SHA }}
-          persist-credentials: true
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Initialize evidence directory
@@ -210,33 +207,96 @@ jobs:
           git status --porcelain=v1 --untracked-files=no \
             | tee "${EVIDENCE_DIR}/git-status.txt"
           test ! -s "${EVIDENCE_DIR}/git-status.txt"
-          sha256sum "${EVIDENCE_DIR}"/* \
-            | sort \
-            > "${EVIDENCE_DIR}/SHA256SUMS"
 
-      - name: Commit exact Stage-0 selection lock
+      - name: Verify committed Stage-0 selection lock
         if: github.event_name == 'pull_request'
         env:
           EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
         shell: bash
         run: |
           set -euo pipefail
-          lock="protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
-          mkdir -p "$(dirname "${lock}")"
-          cp "${EVIDENCE_DIR}/selection.json" "${lock}"
-          git add "${lock}"
-          if git diff --cached --quiet; then
-            echo "Exact selection lock is already committed."
-            exit 0
-          fi
-          # A self-hosted checkout may retain .git hooks from an earlier job.
-          # Publication must execute only the commands declared here.
-          git config --local core.hooksPath /dev/null
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -c core.hooksPath=/dev/null commit \
-            -m "Lock official Deform360 Stage-0 cohort"
-          git push origin "HEAD:${BPT_HEAD_REF}"
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          evidence_dir = Path(os.environ["EVIDENCE_DIR"])
+          generated_path = evidence_dir / "selection.json"
+          lock_path = Path(
+              "protocols/locks/"
+              "deform360_official_hub_visuotactile_v1_selection.json"
+          )
+          if not lock_path.is_file():
+              raise SystemExit(
+                  "committed Stage-0 lock is missing; publish the generated "
+                  "selection.json before opening selected raw payloads"
+              )
+          generated = json.loads(generated_path.read_text(encoding="utf-8"))
+          committed = json.loads(lock_path.read_text(encoding="utf-8"))
+          current_revision = os.environ["BPT_HEAD_SHA"]
+          if generated["implementation_revision"] != current_revision:
+              raise SystemExit("generated selection is not bound to the current head")
+          lock_revision = committed.get("implementation_revision")
+          if not isinstance(lock_revision, str) or len(lock_revision) not in {40, 64}:
+              raise SystemExit("committed lock has no exact implementation revision")
+          if any(character not in "0123456789abcdef" for character in lock_revision):
+              raise SystemExit("committed lock implementation revision is malformed")
+
+          comparable_generated = dict(generated)
+          comparable_committed = dict(committed)
+          for payload in (comparable_generated, comparable_committed):
+              payload.pop("implementation_revision", None)
+              payload.pop("selection_artifact_sha256", None)
+          differing_fields = sorted(
+              key
+              for key in set(comparable_generated) | set(comparable_committed)
+              if comparable_generated.get(key) != comparable_committed.get(key)
+          )
+          if differing_fields:
+              raise SystemExit(
+                  "committed Stage-0 lock differs from fresh metadata-only "
+                  f"selection in fields: {differing_fields}"
+              )
+          ancestry = subprocess.run(
+              ["git", "merge-base", "--is-ancestor", lock_revision, current_revision],
+              check=False,
+          )
+          if ancestry.returncode != 0:
+              raise SystemExit(
+                  "committed lock implementation revision is not an ancestor "
+                  "of the current head"
+              )
+          verification = {
+              "schema": (
+                  "bayesian-phystwin/"
+                  "deform360-stage0-lock-verification-v1"
+              ),
+              "current_revision": current_revision,
+              "lock_implementation_revision": lock_revision,
+              "dataset_revision": committed["dataset"]["resolved_revision"],
+              "content_selection_sha256": committed["content_selection_sha256"],
+              "selection_sha256": committed["selection_sha256"],
+              "normalized_payload_match": True,
+              "lock_revision_is_ancestor": True,
+          }
+          (evidence_dir / "lock-verification.json").write_text(
+              json.dumps(verification, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Finalize evidence checksums
+        if: always()
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/deform360-official-hub-stage0
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "${EVIDENCE_DIR}/SHA256SUMS"
+          sha256sum "${EVIDENCE_DIR}"/* \
+            | sort \
+            > "${EVIDENCE_DIR}/SHA256SUMS"
 
       - name: Publish Stage-0 summary
         if: always()
@@ -250,11 +310,12 @@ jobs:
           import os
           from pathlib import Path
 
+          evidence_dir = Path(os.environ["EVIDENCE_DIR"])
           payload = json.loads(
-              (Path(os.environ["EVIDENCE_DIR"]) / "selection.json").read_text(
-                  encoding="utf-8"
-              )
+              (evidence_dir / "selection.json").read_text(encoding="utf-8")
           )
+          verification_path = evidence_dir / "lock-verification.json"
+          verified = verification_path.is_file()
           print("### Official-Hub Deform360 Stage 0")
           print()
           print(f"- BayesianPhysTwin head: `{payload['implementation_revision']}`")
@@ -262,11 +323,29 @@ jobs:
           print(f"- Selection content SHA-256: `{payload['content_selection_sha256']}`")
           print(f"- Calibration objects: `{len(payload['selection']['calibration'])}`")
           print(f"- Confirmation objects: `{len(payload['selection']['confirmation'])}`")
+          print(f"- Committed lock verified: `{str(verified).lower()}`")
+          if verified:
+              verification = json.loads(
+                  verification_path.read_text(encoding="utf-8")
+              )
+              print(
+                  "- Lock implementation revision: "
+                  f"`{verification['lock_implementation_revision']}`"
+              )
           print("- Camera media opened: `false`")
           print("- Tactile arrays opened: `false`")
           print("- Target outcomes opened: `false`")
           print()
-          print("The exact selection lock was committed before selected raw payload access.")
+          if verified:
+              print(
+                  "The committed lock matches the fresh metadata-only selection; "
+                  "its implementation revision is an ancestor of this head."
+              )
+          else:
+              print(
+                  "This workflow-dispatch run produced evidence only and did not "
+                  "verify a pull-request lock."
+              )
           PY
           else
             echo "### Official-Hub Deform360 Stage 0" >> "${GITHUB_STEP_SUMMARY}"
