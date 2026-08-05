@@ -373,7 +373,9 @@ def test_stage0_workflow_binds_exact_head_and_protects_self_hosted_runner() -> N
     )
     assert "ref: ${{ env.BPT_HEAD_SHA }}" in workflow
     assert '--implementation-revision "${BPT_HEAD_SHA}"' in workflow
-    assert "github.event.pull_request.head.repo.full_name == github.repository" in workflow
+    assert (
+        "github.event.pull_request.head.repo.full_name == github.repository" in workflow
+    )
     assert "permissions:\n      contents: write" in workflow
     assert (
         "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
