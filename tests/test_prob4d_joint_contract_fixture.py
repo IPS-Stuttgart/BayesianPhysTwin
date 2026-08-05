@@ -165,3 +165,9 @@ def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
         validate_prob4d_causal_observation_belief(
             replace(belief, metadata=metadata)
         )
+
+
+# The stable-core coverage job invokes this file explicitly. Import the recursive
+# factor-stream contract cases here so their new package code is covered by the
+# same line and branch ratchets without duplicating the full-suite collection.
+from prob4d_factor_stream_contract_cases import *  # noqa: E402,F403
