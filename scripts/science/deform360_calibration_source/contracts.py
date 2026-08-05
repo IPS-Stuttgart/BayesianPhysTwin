@@ -16,9 +16,7 @@ from bayesian_phystwin.deform360_calibration_execution import (
     load_deform360_stage0_selection,
 )
 
-PROTOCOL_SCHEMA = (
-    "bayesian-phystwin/deform360-official-hub-calibration-source-v1"
-)
+PROTOCOL_SCHEMA = "bayesian-phystwin/deform360-official-hub-calibration-source-v1"
 PROTOCOL_VERSION = 1
 PLAN_SCHEMA = "bayesian-phystwin/deform360-calibration-source-plan-v1"
 DOWNLOAD_SCHEMA = "bayesian-phystwin/deform360-calibration-download-v1"
@@ -238,12 +236,8 @@ def summary_gate(
         stratum: sum(row.get("stratum") == stratum for row in supported)
         for stratum in ("sheet", "volumetric")
     }
-    passed = (
-        len(supported) >= MINIMUM_SUPPORTED_OBJECTS
-        and all(
-            count >= MINIMUM_SUPPORTED_PER_STRATUM
-            for count in by_stratum.values()
-        )
+    passed = len(supported) >= MINIMUM_SUPPORTED_OBJECTS and all(
+        count >= MINIMUM_SUPPORTED_PER_STRATUM for count in by_stratum.values()
     )
     return {
         "supported_object_count": len(supported),
