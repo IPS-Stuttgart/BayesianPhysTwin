@@ -9,6 +9,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+import numpy as np
+
 
 def _repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
@@ -42,6 +44,15 @@ def _run_smoke(
     """Authorize the fixed retrospective cohort without editing the legacy runner."""
 
     original_loader = runner_module.load_pokeflex_registration_protocol
+    original_json_loads = runner_module.json.loads
+    raw_robot = original_json_loads(
+        (take_root / "robot_data.json").read_text(encoding="utf-8")
+    )
+    missing_twe_frames = {
+        int(record["frame"])
+        for record in raw_robot
+        if not _valid_pose(record.get("T_WE"))
+    }
 
     def load_with_public_authorization(path: Path):
         protocol = deepcopy(original_loader(path))
@@ -51,9 +62,25 @@ def _run_smoke(
         )
         return protocol
 
+    def load_with_discarded_twe_sentinels(value: str, *args, **kwargs):
+        decoded = original_json_loads(value, *args, **kwargs)
+        if (
+            missing_twe_frames
+            and isinstance(decoded, list)
+            and decoded
+            and all(isinstance(record, dict) for record in decoded)
+            and all("frame" in record and "forces" in record for record in decoded)
+        ):
+            decoded = deepcopy(decoded)
+            for record in decoded:
+                if int(record["frame"]) in missing_twe_frames:
+                    record["T_WE"] = np.eye(4, dtype=np.float64).tolist()
+        return decoded
+
     runner_module.load_pokeflex_registration_protocol = load_with_public_authorization
+    runner_module.json.loads = load_with_discarded_twe_sentinels
     try:
-        return runner_module.run_smoke(
+        result = runner_module.run_smoke(
             take_root,
             registration_protocol,
             upstream_checkout,
@@ -65,8 +92,78 @@ def _run_smoke(
             include_frozen_action_guard=False,
             record_online_observation_regret=False,
         )
+        return _apply_missing_twe_fallback(
+            result,
+            missing_twe_frames=missing_twe_frames,
+            summary=runner_module._summary,
+        )
     finally:
         runner_module.load_pokeflex_registration_protocol = original_loader
+        runner_module.json.loads = original_json_loads
+
+
+def _valid_pose(value: object) -> bool:
+    try:
+        array = np.asarray(value, dtype=np.float64)
+    except (TypeError, ValueError):
+        return False
+    return array.shape == (4, 4) and bool(np.all(np.isfinite(array)))
+
+
+def _apply_missing_twe_fallback(
+    result: dict[str, object],
+    *,
+    missing_twe_frames: set[int],
+    summary,
+) -> dict[str, object]:
+    """Discard action corrections whose four-frame history lacks measured T_WE."""
+
+    prefix = f"checkpoint_{SOURCE_FIELD}_residual_scale_"
+    fallback_targets = set()
+    for target in result["targets"]:
+        target_frame = int(target["target_frame"])
+        source_frame = target_frame - 1
+        history = range(max(1, source_frame - 3), source_frame + 1)
+        if not missing_twe_frames.intersection(history):
+            continue
+        fallback_targets.add(target_frame)
+        checkpoint = float(target["released_checkpoint_CD_UL1_mm"])
+        for key in tuple(target):
+            if key.startswith(prefix):
+                target[key] = checkpoint
+
+    for update in result["updates"]:
+        if int(update["target_frame"]) in fallback_targets:
+            update["observation_update_accepted_before_action_fallback"] = bool(
+                update["accepted"]
+            )
+            update["accepted"] = False
+            update["action_supported"] = False
+            update["reason"] = "missing-required-T_WE-exact-checkpoint-fallback"
+
+    candidate_keys = tuple(
+        key for key in result["aggregates"] if key.startswith(prefix)
+    )
+    for key in candidate_keys:
+        values = [float(target[key]) for target in result["targets"]]
+        result["aggregates"][key] = summary(values)
+    result["best_development_candidate"] = min(
+        candidate_keys,
+        key=lambda key: result["aggregates"][key]["mean_CD_UL1_mm"],
+    )
+    result["missing_required_T_WE"] = {
+        "source_frame_count": len(missing_twe_frames),
+        "source_frames": sorted(missing_twe_frames),
+        "fallback_target_count": len(fallback_targets),
+        "fallback_target_frames": sorted(fallback_targets),
+        "sentinel_role": (
+            "nonphysical in-memory execution placeholder; every affected action "
+            "candidate is discarded and replaced by the exact checkpoint score"
+        ),
+        "source_robot_bytes_modified": False,
+        "pose_imputation_used_by_prediction": False,
+    }
+    return result
 
 
 def main() -> None:

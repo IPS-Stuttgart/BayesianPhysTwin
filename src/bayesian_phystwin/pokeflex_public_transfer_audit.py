@@ -23,7 +23,7 @@ from .pokeflex_instance_freshness import public_take_ids
 PROTOCOL_KIND = "PokeFlexActionRobustPublicTransferAuditProtocol"
 PROTOCOL_ID = "pokeflex-action-robust-public78-retrospective-v6"
 PROTOCOL_SHA256 = (
-    "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec"
+    "4dc9d5d5c45100e09e251ac042fd5fbf7f85b6d45b8dc558d5ce1bce15e9ae23"
 )
 RESULT_KIND = "PokeFlexActionRobustPublicTransferAuditResult"
 SMOKE_KIND = "PokeFlexCheckpointBayesianRegistrationDevelopmentSmoke"
@@ -32,7 +32,7 @@ GLOBAL_MULTIPLIER = 1.0
 BOOTSTRAP_REPLICATES = 20_000
 BOOTSTRAP_SEED = 20_260_720
 AUDIT_RUNNER_FILE_SHA256 = (
-    "75ce66d0d12620ff1d0eaf98787af6502cc1dfd0af4bb4b5dd7ed28653a823e5"
+    "4760ad950a71c242de1abf9dbf620641a0da819b4b154db1d434722d8689e600"
 )
 SOURCE_PROJECTION_RUNNER_FILE_SHA256 = (
     "08157ac8d232d0118ef8d29b6661c1855339c8ec76b2b37cf050e0438812abc5"
@@ -199,6 +199,24 @@ def build_public_transfer_protocol(
         "protocol_id": PROTOCOL_ID,
         "locked_at_utc": locked_at_utc,
         "status": "retrospective audit locked before the new 78-action rerun",
+        "technical_amendment": {
+            "previous_protocol_sha256": (
+                "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec"
+            ),
+            "trigger": (
+                "the legacy development runner raised before applying the already "
+                "registered missing-T_WE exact-fallback policy"
+            ),
+            "resolution": (
+                "use a nonphysical in-memory execution sentinel only on missing-T_WE "
+                "rows, discard every affected action correction, and replace its "
+                "score by the byte-identical released-checkpoint score"
+            ),
+            "source_robot_bytes_modified": False,
+            "pose_imputation_used_by_prediction": False,
+            "all_pre_amendment_artifacts_invalidated": True,
+            "method_scale_or_outcome_rule_changed": False,
+        },
         "claim_boundary": (
             "The 78 outcomes were exposed before this method-specific rerun. The "
             "audit measures broad public-action transfer but is not a prospective "
@@ -273,6 +291,9 @@ def build_public_transfer_protocol(
             ),
             "upstream_commit": UPSTREAM_COMMIT,
             "future_observation_used": False,
+            "missing_T_WE_action": (
+                "discard the affected action update and use the exact released checkpoint"
+            ),
             "per_take_scales": (
                 "released checkpoint, global 0.125, and the frozen object-specific "
                 "effective scale; duplicate scales are evaluated once"
@@ -340,6 +361,21 @@ def validate_public_transfer_protocol(
     )
     if bind_registered_digest:
         _require(payload.get("protocol_sha256") == PROTOCOL_SHA256, "protocol changed")
+    amendment = payload.get("technical_amendment")
+    _require(isinstance(amendment, Mapping), "technical amendment is missing")
+    _require(
+        amendment.get("previous_protocol_sha256")
+        == "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec",
+        "technical amendment lineage changed",
+    )
+    _require(
+        amendment.get("pose_imputation_used_by_prediction") is False,
+        "technical amendment enabled pose imputation",
+    )
+    _require(
+        amendment.get("all_pre_amendment_artifacts_invalidated") is True,
+        "pre-amendment artifacts were retained",
+    )
     cohort = payload.get("cohort")
     _require(isinstance(cohort, Mapping), "cohort is missing")
     retrospective = tuple(str(x) for x in cohort.get("retrospective_take_ids", ()))

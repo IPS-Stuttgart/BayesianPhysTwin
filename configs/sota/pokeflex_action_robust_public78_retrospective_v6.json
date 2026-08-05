@@ -562,10 +562,11 @@
   ],
   "implementation": {
     "audit_runner": "scripts/remote/run_pokeflex_public_transfer_audit_take.py",
-    "audit_runner_file_sha256": "75ce66d0d12620ff1d0eaf98787af6502cc1dfd0af4bb4b5dd7ed28653a823e5",
+    "audit_runner_file_sha256": "4760ad950a71c242de1abf9dbf620641a0da819b4b154db1d434722d8689e600",
     "future_observation_used": false,
     "legacy_runner": "scripts/remote/run_pokeflex_checkpoint_registration_smoke.py",
     "legacy_runner_file_sha256": "79ba8946653a55a70dc0b990e874754397e18948b9b7ba541158c6641cfc4b43",
+    "missing_T_WE_action": "discard the affected action update and use the exact released checkpoint",
     "per_take_scales": "released checkpoint, global 0.125, and the frozen object-specific effective scale; duplicate scales are evaluated once",
     "registration_protocol": "configs/sota/pokeflex_bayesian_registration_v1.json",
     "registration_protocol_file_sha256": "397dbe38abc91b901cc08849f16ef477af83ec3ef7c8b86054dc3bef9433002c",
@@ -583,7 +584,7 @@
     ],
     "role": "justify a genuinely fresh baseline-relative guarded evaluation"
   },
-  "locked_at_utc": "2026-08-05T02:27:23Z",
+  "locked_at_utc": "2026-08-05T03:25:39Z",
   "prospective_reference": {
     "protocol_sha256": "6b47542ba5ede7a1f04e35f4d453eeb55b8394a0b935018dc6dcf9a9c0174724",
     "retuning_from_these_outcomes": false,
@@ -591,7 +592,7 @@
     "summary_sha256": "da35b35fa2b6bbf13f079be5fa6b5705320ac351dbb8cfab06d7a27ec9687112"
   },
   "protocol_id": "pokeflex-action-robust-public78-retrospective-v6",
-  "protocol_sha256": "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec",
+  "protocol_sha256": "4dc9d5d5c45100e09e251ac042fd5fbf7f85b6d45b8dc558d5ce1bce15e9ae23",
   "schema_version": 1,
   "source_calibration": {
     "base_effective_scale": 0.125,
@@ -641,5 +642,14 @@
     },
     "path": "configs/sota/pokeflex_action_robust_scale_all18_v4.json"
   },
-  "status": "retrospective audit locked before the new 78-action rerun"
+  "status": "retrospective audit locked before the new 78-action rerun",
+  "technical_amendment": {
+    "all_pre_amendment_artifacts_invalidated": true,
+    "method_scale_or_outcome_rule_changed": false,
+    "pose_imputation_used_by_prediction": false,
+    "previous_protocol_sha256": "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec",
+    "resolution": "use a nonphysical in-memory execution sentinel only on missing-T_WE rows, discard every affected action correction, and replace its score by the byte-identical released-checkpoint score",
+    "source_robot_bytes_modified": false,
+    "trigger": "the legacy development runner raised before applying the already registered missing-T_WE exact-fallback policy"
+  }
 }

@@ -35,6 +35,17 @@ The legacy predictor is byte-bound. Historical smoke outputs are not reusable
 unless they contain this exact field, scale, upstream commit, and causal contract;
 the server inventory found none that met that complete contract.
 
+### Missing-`T_WE` technical amendment
+
+The first broad execution exposed a legacy-wrapper ordering bug: a public robot
+record can omit `T_WE`, and the development runner constructed the action field
+before applying the registered unsupported-update fallback. Protocol revision 2
+does not infer that pose. It supplies an in-memory nonphysical sentinel solely so
+the unchanged checkpoint path can execute, discards every action correction whose
+four-frame history touches the missing record, and replaces that candidate by the
+exact checkpoint score. Source `robot_data.json` bytes remain unchanged. All
+artifacts produced under the initial v6 digest were invalidated and are rerun.
+
 ## Reporting boundary
 
 Results must appear in this order:

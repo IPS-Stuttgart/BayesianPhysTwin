@@ -1,4 +1,5 @@
 import hashlib
+import importlib.util
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -37,6 +38,9 @@ FROZEN_PROTOCOL = (
 )
 ARCHIVE_INVENTORY = (
     ROOT / "configs" / "sota" / "pokeflex_public78_archive_inventory_v6.json"
+)
+REMOTE_RUNNER = (
+    ROOT / "scripts" / "remote" / "run_pokeflex_public_transfer_audit_take.py"
 )
 
 
@@ -103,7 +107,7 @@ def test_frozen_public_transfer_protocol_and_archive_inventory_are_exact() -> No
 
     assert protocol["protocol_sha256"] == PROTOCOL_SHA256
     assert hashlib.sha256(FROZEN_PROTOCOL.read_bytes()).hexdigest() == (
-        "924d5d81f55ec1b6d721f76a10e9d2f96bbb8924eae6c0ef917075c1814a9980"
+        "02a03d3a6ef4830fb807fae310b4d571b7e8a8daa0718ff8522fc5e6a8b31391"
     )
     assert hashlib.sha256(ARCHIVE_INVENTORY.read_bytes()).hexdigest() == (
         "428257e0915f27f09074d06b8871c2a739ce3413a7069cc29c2e080e12c7c057"
@@ -219,3 +223,39 @@ def test_summary_clusters_by_object_and_reports_losses() -> None:
     assert summary["candidate_vs_checkpoint"]["object_win_count"] == 2
     assert summary["candidate_vs_global"]["object_win_count"] == 1
     assert summary["candidate_vs_global"]["object_loss_count"] == 1
+
+
+def test_missing_twe_history_forces_exact_checkpoint_fallback() -> None:
+    spec = importlib.util.spec_from_file_location("public_transfer_runner", REMOTE_RUNNER)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    key = f"checkpoint_{SOURCE_FIELD}_residual_scale_0.375"
+    result = {
+        "targets": [
+            {
+                "target_frame": frame,
+                "released_checkpoint_CD_UL1_mm": float(frame),
+                key: float(frame) - 1.0,
+            }
+            for frame in (6, 7, 8, 9)
+        ],
+        "updates": [
+            {"target_frame": frame, "accepted": True, "action_supported": True}
+            for frame in (6, 7, 8, 9)
+        ],
+        "aggregates": {key: {"mean_CD_UL1_mm": 6.5}},
+        "best_development_candidate": key,
+    }
+
+    amended = module._apply_missing_twe_fallback(
+        result,
+        missing_twe_frames={4},
+        summary=lambda values: {"mean_CD_UL1_mm": sum(values) / len(values)},
+    )
+
+    assert [row[key] for row in amended["targets"]] == [6.0, 7.0, 8.0, 8.0]
+    assert [row["accepted"] for row in amended["updates"]] == [False, False, False, True]
+    assert amended["aggregates"][key]["mean_CD_UL1_mm"] == pytest.approx(7.25)
+    assert amended["missing_required_T_WE"]["fallback_target_frames"] == [6, 7, 8]
+    assert amended["missing_required_T_WE"]["pose_imputation_used_by_prediction"] is False
