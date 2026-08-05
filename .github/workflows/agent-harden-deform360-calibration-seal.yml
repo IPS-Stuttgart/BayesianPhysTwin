@@ -1,0 +1,720 @@
+name: Materialize Deform360 calibration seal hardening
+
+on:
+  push:
+    branches:
+      - agent/harden-deform360-calibration-seal
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-deform360-calibration-seal-hardening
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/harden-deform360-calibration-seal
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply provenance fixes and regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              source = Path(path)
+              text = source.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"expected one replacement anchor in {path}, found {count}"
+                  )
+              source.write_text(text.replace(old, new), encoding="utf-8")
+
+
+          execution_path = "src/bayesian_phystwin/deform360_calibration_execution.py"
+          replace_once(
+              execution_path,
+              "from ._portable_contracts import (\n"
+              "    canonical_sorted_strings,\n"
+              "    content_id,\n",
+              "from ._portable_contracts import (\n"
+              "    canonical_json_bytes,\n"
+              "    canonical_sorted_strings,\n"
+              "    content_id,\n",
+          )
+          replace_once(
+              execution_path,
+              "def load_deform360_stage0_selection(\n"
+              "    path: str | Path,\n"
+              ") -> Deform360Stage0SelectionV1:\n",
+              '''def _validate_stage0_content_ids(
+              value: Mapping[str, Any],
+              *,
+              protocol_path: str | Path | None,
+          ) -> None:
+              """Recompute every Stage-0 identity instead of trusting declarations."""
+
+              selection = value["selection"]
+              if not isinstance(selection, Mapping):
+                  raise ValueError("Stage-0 selection must be an object")
+              declared_selection = sha256_digest(
+                  value["selection_sha256"],
+                  name="Stage-0 selection_sha256",
+              )
+              observed_selection = content_id(selection)
+              if observed_selection != declared_selection:
+                  raise ValueError("Stage-0 selection_sha256 does not match selection")
+
+              content_payload = dict(value)
+              content_payload.pop("content_selection_sha256")
+              content_payload.pop("implementation_revision")
+              content_payload.pop("selection_artifact_sha256")
+              declared_content = sha256_digest(
+                  value["content_selection_sha256"],
+                  name="Stage-0 content_selection_sha256",
+              )
+              observed_content = content_id(content_payload)
+              if observed_content != declared_content:
+                  raise ValueError(
+                      "Stage-0 content_selection_sha256 does not match content"
+                  )
+
+              artifact_payload = dict(value)
+              artifact_payload.pop("selection_artifact_sha256")
+              declared_artifact = sha256_digest(
+                  value["selection_artifact_sha256"],
+                  name="Stage-0 selection_artifact_sha256",
+              )
+              observed_artifact = content_id(artifact_payload)
+              if observed_artifact != declared_artifact:
+                  raise ValueError(
+                      "Stage-0 selection_artifact_sha256 does not match content"
+                  )
+
+              if protocol_path is not None:
+                  protocol = load_strict_json_object(
+                      protocol_path,
+                      label="Deform360 Stage-0 protocol",
+                  )
+                  declared_protocol = sha256_digest(
+                      value["protocol_sha256"],
+                      name="Stage-0 protocol_sha256",
+                  )
+                  observed_protocol = content_id(protocol)
+                  if observed_protocol != declared_protocol:
+                      raise ValueError(
+                          "Stage-0 protocol_sha256 does not match protocol content"
+                      )
+
+
+          def load_deform360_stage0_selection(
+              path: str | Path,
+              *,
+              protocol_path: str | Path | None = None,
+          ) -> Deform360Stage0SelectionV1:
+          ''',
+          )
+          replace_once(
+              execution_path,
+              "    return Deform360Stage0SelectionV1(\n",
+              "    result = Deform360Stage0SelectionV1(\n",
+          )
+          replace_once(
+              execution_path,
+              '''        confirmation_units=tuple(
+                  _stage0_unit(item, name=f"Stage-0 confirmation unit {index}")
+                  for index, item in enumerate(confirmation_raw)
+              ),
+          )
+
+
+          def load_deform360_calibration_artifact_ref(
+          ''',
+              '''        confirmation_units=tuple(
+                  _stage0_unit(item, name=f"Stage-0 confirmation unit {index}")
+                  for index, item in enumerate(confirmation_raw)
+              ),
+          )
+              _validate_stage0_content_ids(value, protocol_path=protocol_path)
+              return result
+
+
+          def load_deform360_calibration_artifact_ref(
+          ''',
+          )
+
+          bundle_path = "src/bayesian_phystwin/deform360_calibration_bundle.py"
+          replace_once(
+              bundle_path,
+              '''        expected_groups = tuple(sorted(calibration_ids))
+              for artifact in calibration_artifacts:
+                  _require(
+                      artifact.calibration_group_ids == expected_groups,
+          ''',
+              '''        expected_groups = tuple(sorted(calibration_ids))
+              for artifact in calibration_artifacts:
+                  _require(
+                      artifact.implementation_revision == implementation_revision,
+                      f"calibration artifact {artifact.role} implementation revision "
+                      "differs from bundle",
+                  )
+                  _require(
+                      artifact.calibration_group_ids == expected_groups,
+          ''',
+          )
+
+          cli_path = "src/bayesian_phystwin/cli/deform360_calibration_execution.py"
+          replace_once(
+              cli_path,
+              "import argparse\nimport json\n",
+              "import argparse\nimport importlib\nimport json\n",
+          )
+          replace_once(
+              cli_path,
+              '''_REPOSITORY_SOURCES = (
+              ".github/workflows/deform360-calibration-seal.yml",
+              "protocols/deform360_official_hub_visuotactile_v1.json",
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_visuotactile_v1_visual_provider_lock.json"
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_visuotactile_v1_calibration_separation.json"
+              ),
+              "src/bayesian_phystwin/deform360_calibration_execution.py",
+              "src/bayesian_phystwin/deform360_calibration_bundle.py",
+              "src/bayesian_phystwin/deform360_visual_provider_lock.py",
+              "src/bayesian_phystwin/evidence_use_ledger.py",
+              "src/bayesian_phystwin/cli/deform360_calibration_execution.py",
+              "src/bayesian_phystwin/cli/experiments.py",
+          )
+          ''',
+              '''_COMMITTED_SELECTION = (
+              "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+          )
+          _REPOSITORY_SOURCES = (
+              ".github/workflows/deform360-calibration-seal.yml",
+              "protocols/deform360_official_hub_visuotactile_v1.json",
+              _COMMITTED_SELECTION,
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_visuotactile_v1_visual_provider_lock.json"
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_visuotactile_v1_calibration_separation.json"
+              ),
+              "src/bayesian_phystwin/_canonical_contracts.py",
+              "src/bayesian_phystwin/_portable_contracts.py",
+              "src/bayesian_phystwin/deform360_calibration_execution.py",
+              "src/bayesian_phystwin/deform360_calibration_bundle.py",
+              "src/bayesian_phystwin/deform360_visual_provider_lock.py",
+              "src/bayesian_phystwin/evidence_use_ledger.py",
+              "src/bayesian_phystwin/cli/deform360_calibration_execution.py",
+              "src/bayesian_phystwin/cli/experiments.py",
+          )
+          _RUNTIME_MODULE_SOURCES = {
+              "bayesian_phystwin._canonical_contracts": (
+                  "src/bayesian_phystwin/_canonical_contracts.py"
+              ),
+              "bayesian_phystwin._portable_contracts": (
+                  "src/bayesian_phystwin/_portable_contracts.py"
+              ),
+              "bayesian_phystwin.deform360_calibration_execution": (
+                  "src/bayesian_phystwin/deform360_calibration_execution.py"
+              ),
+              "bayesian_phystwin.deform360_calibration_bundle": (
+                  "src/bayesian_phystwin/deform360_calibration_bundle.py"
+              ),
+              "bayesian_phystwin.deform360_visual_provider_lock": (
+                  "src/bayesian_phystwin/deform360_visual_provider_lock.py"
+              ),
+              "bayesian_phystwin.evidence_use_ledger": (
+                  "src/bayesian_phystwin/evidence_use_ledger.py"
+              ),
+              "bayesian_phystwin.cli.deform360_calibration_execution": (
+                  "src/bayesian_phystwin/cli/deform360_calibration_execution.py"
+              ),
+          }
+          ''',
+          )
+          replace_once(
+              cli_path,
+              '''    return observed
+
+
+          def _copy_source(source: Path, destination: Path) -> str:
+          ''',
+              '''    return observed
+
+
+          def _verify_runtime_sources(repository: Path) -> None:
+              """Require the imported sealer code to match the reviewed checkout."""
+
+              for module_name, relative_path in _RUNTIME_MODULE_SOURCES.items():
+                  module = importlib.import_module(module_name)
+                  runtime_name = getattr(module, "__file__", None)
+                  if type(runtime_name) is not str or not runtime_name:
+                      raise ValueError(
+                          f"cannot identify runtime source for module {module_name}"
+                      )
+                  runtime = _ordinary_file(
+                      Path(runtime_name),
+                      name=f"runtime source for {module_name}",
+                  )
+                  reviewed = _ordinary_file(
+                      repository / relative_path,
+                      name=f"reviewed source for {module_name}",
+                  )
+                  if file_sha256(runtime) != file_sha256(reviewed):
+                      raise ValueError(
+                          f"runtime source bytes differ from reviewed checkout: "
+                          f"{module_name}"
+                      )
+
+
+          def _verify_committed_selection_lock(
+              repository: Path,
+              supplied_selection: Path,
+          ) -> None:
+              """Reject a structurally valid but unreviewed Stage-0 cohort."""
+
+              committed = _ordinary_file(
+                  repository / _COMMITTED_SELECTION,
+                  name="committed Stage-0 selection",
+              )
+              supplied = _ordinary_file(
+                  supplied_selection,
+                  name="supplied Stage-0 selection",
+              )
+              if file_sha256(committed) != file_sha256(supplied):
+                  raise ValueError(
+                      "supplied Stage-0 selection bytes differ from committed lock"
+                  )
+
+
+          def _copy_source(source: Path, destination: Path) -> str:
+          ''',
+          )
+          replace_once(
+              cli_path,
+              '''    revision = _verify_repository(
+                  repository_root,
+                  expected_revision=args.implementation_revision,
+              )
+              output = args.output_dir.resolve()
+          ''',
+              '''    revision = _verify_repository(
+                  repository_root,
+                  expected_revision=args.implementation_revision,
+              )
+              _verify_runtime_sources(repository_root)
+              _verify_committed_selection_lock(repository_root, args.selection_lock)
+              output = args.output_dir.resolve()
+          ''',
+          )
+          replace_once(
+              cli_path,
+              '''        stage0 = load_deform360_stage0_selection(
+                  temporary / "sources/stage0/selection.json"
+              )
+          ''',
+              '''        stage0 = load_deform360_stage0_selection(
+                  temporary / "sources/stage0/selection.json",
+                  protocol_path=(
+                      temporary
+                      / "sources/repository/protocols/"
+                      "deform360_official_hub_visuotactile_v1.json"
+                  ),
+              )
+          ''',
+          )
+
+          visual_path = "src/bayesian_phystwin/deform360_visual_provider_lock.py"
+          replace_once(
+              visual_path,
+              '''from ._canonical_contracts import (
+              canonical_string_tuple,
+              frozen_finite_json_mapping,
+              genuine_boolean,
+              genuine_integer,
+              literal_lower_hex,
+              plain_json,
+          )
+          ''',
+              '''from ._canonical_contracts import (
+              canonical_string_tuple,
+              frozen_finite_json_mapping,
+              genuine_boolean,
+              genuine_integer,
+              literal_lower_hex,
+              plain_json,
+          )
+          from ._portable_contracts import write_atomic_json
+          ''',
+          )
+          replace_once(
+              visual_path,
+              '''def save_deform360_visual_provider_lock(
+              path: str | Path,
+              lock: Deform360VisualProviderLockV1,
+          ) -> None:
+              """Serialize a canonical human-readable visual-provider lock."""
+
+              Path(path).write_text(
+                  json.dumps(lock.to_record(), indent=2, sort_keys=True, allow_nan=False) + "\\n",
+                  encoding="utf-8",
+              )
+          ''',
+              '''def save_deform360_visual_provider_lock(
+              path: str | Path,
+              lock: Deform360VisualProviderLockV1,
+              *,
+              overwrite: bool = False,
+          ) -> None:
+              """Atomically persist a visual-provider lock without silent replacement."""
+
+              if not isinstance(lock, Deform360VisualProviderLockV1):
+                  raise TypeError("lock must be a Deform360VisualProviderLockV1")
+              write_atomic_json(lock.to_record(), path, overwrite=overwrite)
+          ''',
+          )
+          replace_once(
+              visual_path,
+              '''def save_deform360_visual_calibration_lock(
+              path: str | Path,
+              lock: Deform360VisualCalibrationLockV1,
+          ) -> None:
+              """Serialize a canonical human-readable Stage-1 calibration lock."""
+
+              Path(path).write_text(
+                  json.dumps(lock.to_record(), indent=2, sort_keys=True, allow_nan=False) + "\\n",
+                  encoding="utf-8",
+              )
+          ''',
+              '''def save_deform360_visual_calibration_lock(
+              path: str | Path,
+              lock: Deform360VisualCalibrationLockV1,
+              *,
+              overwrite: bool = False,
+          ) -> None:
+              """Atomically persist a Stage-1 lock without silent replacement."""
+
+              if not isinstance(lock, Deform360VisualCalibrationLockV1):
+                  raise TypeError("lock must be a Deform360VisualCalibrationLockV1")
+              write_atomic_json(lock.to_record(), path, overwrite=overwrite)
+          ''',
+          )
+
+          bundle_test = "tests/test_deform360_calibration_bundle.py"
+          replace_once(
+              bundle_test,
+              '            implementation_revision="a" * 40,\n',
+              '            implementation_revision="5" * 40,\n',
+          )
+          bundle_text = Path(bundle_test).read_text(encoding="utf-8")
+          bundle_marker = "def test_bundle_rejects_artifact_revision_mismatch()"
+          if bundle_marker not in bundle_text:
+              Path(bundle_test).write_text(
+                  bundle_text
+                  + '''
+
+
+def test_bundle_rejects_artifact_revision_mismatch() -> None:
+              bundle = _bundle()
+              changed = replace(
+                  bundle.calibration_artifacts[0],
+                  implementation_revision="9" * 40,
+              )
+              with pytest.raises(ValueError, match="implementation revision"):
+                  _bundle(
+                      calibration_artifacts=(
+                          changed,
+                          *bundle.calibration_artifacts[1:],
+                      )
+                  )
+          ''',
+                  encoding="utf-8",
+              )
+
+          execution_test = "tests/test_deform360_calibration_execution.py"
+          replace_once(
+              execution_test,
+              '''def _artifacts(stage0) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
+              groups = tuple(unit.object_id for unit in stage0.calibration_units)
+          ''',
+              '''def _artifacts(
+              stage0,
+              *,
+              implementation_revision: str = "c" * 40,
+          ) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
+              groups = tuple(unit.object_id for unit in stage0.calibration_units)
+          ''',
+          )
+          replace_once(
+              execution_test,
+              '            implementation_revision="a" * 40,\n',
+              '            implementation_revision=implementation_revision,\n',
+          )
+          replace_once(
+              execution_test,
+              '''def _write_cli_inputs(tmp_path: Path):
+              stage0 = _stage0()
+          ''',
+              '''def _write_cli_inputs(
+              tmp_path: Path,
+              *,
+              implementation_revision: str,
+          ):
+              stage0 = _stage0()
+          ''',
+          )
+          replace_once(
+              execution_test,
+              "    for artifact in _artifacts(stage0):\n",
+              "    for artifact in _artifacts(\n"
+              "        stage0, implementation_revision=implementation_revision\n"
+              "    ):\n",
+          )
+          replace_once(
+              execution_test,
+              "    provider, ledger, artifact_args = _write_cli_inputs(tmp_path)\n",
+              "    provider, ledger, artifact_args = _write_cli_inputs(\n"
+              "        tmp_path, implementation_revision=revision\n"
+              "    )\n",
+          )
+          execution_text = Path(execution_test).read_text(encoding="utf-8")
+          execution_marker = "def test_stage0_loader_recomputes_declared_identities("
+          if execution_marker not in execution_text:
+              Path(execution_test).write_text(
+                  execution_text
+                  + '''
+
+
+def test_stage0_loader_recomputes_declared_identities(tmp_path: Path) -> None:
+              root = _repository_root()
+              source = (
+                  root
+                  / "protocols"
+                  / "locks"
+                  / "deform360_official_hub_visuotactile_v1_selection.json"
+              )
+              protocol = root / "protocols/deform360_official_hub_visuotactile_v1.json"
+              base = json.loads(source.read_text(encoding="utf-8"))
+
+              selection_drift = json.loads(json.dumps(base))
+              selection_drift["selection"]["calibration"][0]["episode_id"] += 1
+              path = tmp_path / "selection-drift.json"
+              path.write_text(json.dumps(selection_drift), encoding="utf-8")
+              with pytest.raises(ValueError, match="selection_sha256"):
+                  load_deform360_stage0_selection(path)
+
+              content_drift = json.loads(json.dumps(base))
+              content_drift["available_raw_object_count"] += 1
+              path = tmp_path / "content-drift.json"
+              path.write_text(json.dumps(content_drift), encoding="utf-8")
+              with pytest.raises(ValueError, match="content_selection_sha256"):
+                  load_deform360_stage0_selection(path)
+
+              artifact_drift = json.loads(json.dumps(base))
+              artifact_drift["implementation_revision"] = "f" * 40
+              path = tmp_path / "artifact-drift.json"
+              path.write_text(json.dumps(artifact_drift), encoding="utf-8")
+              with pytest.raises(ValueError, match="selection_artifact_sha256"):
+                  load_deform360_stage0_selection(path)
+
+              protocol_drift = json.loads(json.dumps(base))
+              protocol_drift["protocol_sha256"] = "0" * 64
+              path = tmp_path / "protocol-drift.json"
+              path.write_text(json.dumps(protocol_drift), encoding="utf-8")
+              with pytest.raises(ValueError, match="protocol_sha256"):
+                  load_deform360_stage0_selection(path, protocol_path=protocol)
+          ''',
+                  encoding="utf-8",
+              )
+
+          boundary_test = "tests/test_deform360_calibration_execution_boundaries.py"
+          replace_once(
+              boundary_test,
+              '''def _artifacts(
+              stage0: execution.Deform360Stage0SelectionV1,
+          ) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
+              groups = tuple(unit.object_id for unit in stage0.calibration_units)
+          ''',
+              '''def _artifacts(
+              stage0: execution.Deform360Stage0SelectionV1,
+              *,
+              implementation_revision: str = "c" * 40,
+          ) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
+              groups = tuple(unit.object_id for unit in stage0.calibration_units)
+          ''',
+          )
+          replace_once(
+              boundary_test,
+              '            implementation_revision="a" * 40,\n',
+              '            implementation_revision=implementation_revision,\n',
+          )
+          boundary_text = Path(boundary_test).read_text(encoding="utf-8")
+          boundary_marker = "def test_cli_rejects_unreviewed_selection_and_runtime_code("
+          if boundary_marker not in boundary_text:
+              Path(boundary_test).write_text(
+                  boundary_text
+                  + '''
+
+
+def test_cli_rejects_unreviewed_selection_and_runtime_code(
+              tmp_path: Path,
+              monkeypatch: pytest.MonkeyPatch,
+          ) -> None:
+              root = _repository_root()
+              committed = _stage0_path()
+              substituted = tmp_path / "selection.json"
+              substituted.write_bytes(committed.read_bytes() + b"\\n")
+              with pytest.raises(ValueError, match="committed lock"):
+                  cli._verify_committed_selection_lock(  # noqa: SLF001
+                      root,
+                      substituted,
+                  )
+
+              cli._verify_runtime_sources(root)  # noqa: SLF001
+              module_name = next(iter(cli._RUNTIME_MODULE_SOURCES))  # noqa: SLF001
+              monkeypatch.setitem(
+                  cli._RUNTIME_MODULE_SOURCES,  # noqa: SLF001
+                  module_name,
+                  "pyproject.toml",
+              )
+              with pytest.raises(ValueError, match="runtime source bytes"):
+                  cli._verify_runtime_sources(root)  # noqa: SLF001
+          ''',
+                  encoding="utf-8",
+              )
+
+          visual_test = "tests/test_deform360_visual_provider_lock.py"
+          visual_text = Path(visual_test).read_text(encoding="utf-8")
+          visual_marker = "def test_visual_lock_writes_are_non_overwriting("
+          if visual_marker not in visual_text:
+              Path(visual_test).write_text(
+                  visual_text
+                  + '''
+
+
+def test_visual_lock_writes_are_non_overwriting(tmp_path: Path) -> None:
+              provider_path = tmp_path / "provider.json"
+              provider = _provider_lock()
+              save_deform360_visual_provider_lock(provider_path, provider)
+              with pytest.raises(FileExistsError):
+                  save_deform360_visual_provider_lock(provider_path, provider)
+              save_deform360_visual_provider_lock(
+                  provider_path,
+                  provider,
+                  overwrite=True,
+              )
+              assert load_deform360_visual_provider_lock(provider_path) == provider
+
+              calibration_path = tmp_path / "calibration.json"
+              calibration = _calibration_lock()
+              save_deform360_visual_calibration_lock(calibration_path, calibration)
+              with pytest.raises(FileExistsError):
+                  save_deform360_visual_calibration_lock(
+                      calibration_path,
+                      calibration,
+                  )
+              save_deform360_visual_calibration_lock(
+                  calibration_path,
+                  calibration,
+                  overwrite=True,
+              )
+              assert (
+                  load_deform360_visual_calibration_lock(calibration_path)
+                  == calibration
+              )
+
+              with pytest.raises(TypeError, match="Deform360VisualProviderLockV1"):
+                  save_deform360_visual_provider_lock(
+                      tmp_path / "bad-provider.json",
+                      object(),  # type: ignore[arg-type]
+                  )
+              with pytest.raises(TypeError, match="Deform360VisualCalibrationLockV1"):
+                  save_deform360_visual_calibration_lock(
+                      tmp_path / "bad-calibration.json",
+                      object(),  # type: ignore[arg-type]
+                  )
+          ''',
+                  encoding="utf-8",
+              )
+
+          Path(".github/workflows/agent-harden-deform360-calibration-seal.yml").unlink()
+          PY
+
+      - name: Commit materialized fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Harden Deform360 calibration seal provenance"
+
+      - name: Install development dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate focused contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/deform360_calibration_execution.py
+            src/bayesian_phystwin/deform360_calibration_bundle.py
+            src/bayesian_phystwin/deform360_visual_provider_lock.py
+            src/bayesian_phystwin/cli/deform360_calibration_execution.py
+            tests/test_deform360_calibration_bundle.py
+            tests/test_deform360_visual_provider_lock.py
+            tests/test_deform360_calibration_execution.py
+            tests/test_deform360_calibration_execution_boundaries.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy --no-site-packages \
+            src/bayesian_phystwin/deform360_calibration_execution.py \
+            src/bayesian_phystwin/deform360_calibration_bundle.py \
+            src/bayesian_phystwin/deform360_visual_provider_lock.py \
+            src/bayesian_phystwin/cli/deform360_calibration_execution.py
+          python -m pytest -q \
+            tests/test_deform360_calibration_bundle.py \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_deform360_calibration_execution.py \
+            tests/test_deform360_calibration_execution_boundaries.py
+          python -m compileall -q src/bayesian_phystwin
+          git diff --check HEAD^
+
+      - name: Push validated commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin HEAD:agent/harden-deform360-calibration-seal
