@@ -1,0 +1,339 @@
+name: Deform360 calibration acquisition
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-acquisition.yml"
+      - "src/bayesian_phystwin/deform360_calibration_acquisition.py"
+      - "src/bayesian_phystwin/_deform360_calibration_acquisition_*.py"
+      - "scripts/science/run_deform360_calibration_acquisition.py"
+      - "scripts/science/_deform360_calibration_acquisition_runtime_*.py"
+      - "tests/deform360_calibration_acquisition_test_support.py"
+      - "tests/test_deform360_calibration_acquisition_*.py"
+      - "tests/test_deform360_calibration_acquisition_workflow.py"
+      - "docs/deform360_calibration_acquisition_v1.md"
+      - "docs/experiment_index.md"
+      - "MANIFEST.in"
+  workflow_dispatch:
+    inputs:
+      open_calibration_payloads:
+        description: Open exactly the ten locked calibration units; confirmation remains closed
+        required: true
+        default: false
+        type: boolean
+      data_root:
+        description: Dedicated persistent calibration-only data root
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-calibration-acquisition-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DEFORM360_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  INPUT_DATA_ROOT: ${{ inputs.data_root }}
+  VAR_DATA_ROOT: ${{ vars.DEFORM360_CALIBRATION_DATA_ROOT }}
+  HF_HUB_DISABLE_PROGRESS_BARS: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Calibration-only acquisition contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate source and adversarial contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/deform360_calibration_acquisition.py
+            src/bayesian_phystwin/_deform360_calibration_acquisition_common.py
+            src/bayesian_phystwin/_deform360_calibration_acquisition_plan.py
+            src/bayesian_phystwin/_deform360_calibration_acquisition_case.py
+            src/bayesian_phystwin/_deform360_calibration_acquisition_paths.py
+            src/bayesian_phystwin/_deform360_calibration_acquisition_result.py
+            scripts/science/run_deform360_calibration_acquisition.py
+            scripts/science/_deform360_calibration_acquisition_runtime_common.py
+            scripts/science/_deform360_calibration_acquisition_runtime_download.py
+            scripts/science/_deform360_calibration_acquisition_runtime_process.py
+            tests/deform360_calibration_acquisition_test_support.py
+            tests/test_deform360_calibration_acquisition_contracts.py
+            tests/test_deform360_calibration_acquisition_runtime.py
+            tests/test_deform360_calibration_acquisition_boundaries.py
+            tests/test_deform360_calibration_acquisition_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q \
+            tests/test_deform360_calibration_acquisition_contracts.py \
+            tests/test_deform360_calibration_acquisition_runtime.py \
+            tests/test_deform360_calibration_acquisition_boundaries.py \
+            tests/test_deform360_calibration_acquisition_workflow.py \
+            tests/test_deform360_calibration_execution.py \
+            tests/test_evidence_use_ledger.py \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_release_metadata.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_calibration_acquisition.py \
+            src/bayesian_phystwin/_deform360_calibration_acquisition_common.py \
+            src/bayesian_phystwin/_deform360_calibration_acquisition_plan.py \
+            src/bayesian_phystwin/_deform360_calibration_acquisition_case.py \
+            src/bayesian_phystwin/_deform360_calibration_acquisition_paths.py \
+            src/bayesian_phystwin/_deform360_calibration_acquisition_result.py \
+            scripts/science/run_deform360_calibration_acquisition.py \
+            scripts/science/_deform360_calibration_acquisition_runtime_common.py \
+            scripts/science/_deform360_calibration_acquisition_runtime_download.py \
+            scripts/science/_deform360_calibration_acquisition_runtime_process.py
+          git diff --check
+
+  authorize:
+    name: Authorize the locked calibration opening
+    if: github.event_name == 'workflow_dispatch'
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require main and explicit calibration-only acknowledgement
+        shell: bash
+        env:
+          OPEN_CALIBRATION_PAYLOADS: ${{ inputs.open_calibration_payloads }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          test "${OPEN_CALIBRATION_PAYLOADS}" = "true"
+
+  acquire:
+    name: Open and prepare ten calibration units / workstation2
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      needs.contracts.result == 'success' &&
+      needs.authorize.result == 'success'
+    needs: [contracts, authorize]
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 720
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - name: Check out exact main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.DEFORM360_REVISION }}
+          path: _deform360
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Prepare isolated dependency target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3.12 || command -v python3)"
+          test -x "${python_bin}"
+          site="${RUNNER_TEMP}/deform360-calibration-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${site}"
+          mkdir -p "${site}"
+          "${python_bin}" - <<'PY'
+          import sys
+
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.executable)
+          print(sys.version)
+          PY
+          {
+            echo "PYTHON_BIN=${python_bin}"
+            echo "PYTHON_SITE=${site}"
+            echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${GITHUB_WORKSPACE}/_deform360:${site}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Install exact acquisition environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" -m pip install \
+            --break-system-packages \
+            --target "${PYTHON_SITE}" \
+            "huggingface_hub==1.26.0" \
+            "numpy==1.26.4" \
+            "opencv-contrib-python==4.10.0.84"
+          "${PYTHON_BIN}" -m pip check
+
+      - name: Prepare dedicated data and compact evidence roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          requested="${INPUT_DATA_ROOT:-${VAR_DATA_ROOT:-}}"
+          if [[ -z "${requested}" ]]; then
+            requested="${HOME}/.cache/bayesian-phystwin/deform360-official-hub-calibration-v1"
+          fi
+          data_root="$(realpath -m "${requested}")"
+          case "${data_root}" in
+            "${GITHUB_WORKSPACE}"|"${GITHUB_WORKSPACE}"/*)
+              echo "::error title=Unsafe data root::Calibration data must remain outside Git"
+              exit 1
+              ;;
+          esac
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-acquisition-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${evidence_root}"
+          mkdir -p "${data_root}" "${evidence_root}"
+          {
+            echo "CALIBRATION_DATA_ROOT=${data_root}"
+            echo "ACQUISITION_EVIDENCE_ROOT=${evidence_root}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Acquire and prepare only the locked calibration cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" scripts/science/run_deform360_calibration_acquisition.py \
+            --repository . \
+            --stage0-selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --protocol protocols/deform360_official_hub_visuotactile_v1.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --deform360-checkout _deform360 \
+            --data-root "${CALIBRATION_DATA_ROOT}" \
+            --output-dir "${ACQUISITION_EVIDENCE_ROOT}/result" \
+            --implementation-revision "${GITHUB_SHA}" \
+            --open-calibration-payloads \
+            | tee "${ACQUISITION_EVIDENCE_ROOT}/console.log"
+
+      - name: Verify closed confirmation boundary and compact publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from bayesian_phystwin._portable_contracts import content_id
+          from bayesian_phystwin.deform360_calibration_acquisition import (
+              Deform360CalibrationAcquisitionCaseV1,
+              Deform360CalibrationAcquisitionPlanV1,
+              build_calibration_evidence_ledger,
+              validate_calibration_acquisition_result,
+          )
+          from bayesian_phystwin.evidence_use_ledger import EvidenceUseLedgerV1
+
+          root = Path(os.environ["ACQUISITION_EVIDENCE_ROOT"]) / "result"
+          result = validate_calibration_acquisition_result(
+              json.loads((root / "acquisition-result.json").read_text())
+          )
+          plan = Deform360CalibrationAcquisitionPlanV1.from_mapping(
+              json.loads((root / "acquisition-plan.json").read_text())
+          )
+          case_paths = sorted((root / "cases").glob("*.json"))
+          cases = [
+              Deform360CalibrationAcquisitionCaseV1.from_mapping(
+                  json.loads(path.read_text())
+              )
+              for path in case_paths
+          ]
+          if len(cases) != 10:
+              raise SystemExit(f"expected ten case records, found {len(cases)}")
+          ledger = EvidenceUseLedgerV1.from_mapping(
+              json.loads((root / "evidence-use-ledger.json").read_text())
+          )
+          expected_ledger = build_calibration_evidence_ledger(plan, cases)
+          if ledger.ledger_id != expected_ledger.ledger_id:
+              raise SystemExit("calibration evidence ledger differs from cases")
+          for filename, identity_key in (
+              ("payload-allowlist.json", "allowlist_id"),
+              ("download-manifest.json", "manifest_id"),
+          ):
+              payload = json.loads((root / filename).read_text())
+              declared = payload.pop(identity_key)
+              if content_id(payload) != declared:
+                  raise SystemExit(f"content identity changed: {filename}")
+          if result.get("calibration_payloads_opened") is not True:
+              raise SystemExit("result did not record calibration payload access")
+          for key in ("confirmation_payloads_opened", "target_outcomes_used"):
+              if result.get(key) is not False:
+                  raise SystemExit(f"closed information boundary changed: {key}")
+          if result.get("replacement_allowed") is not False:
+              raise SystemExit("object replacement was enabled")
+          PY
+          if find "${ACQUISITION_EVIDENCE_ROOT}" -type f \
+            \( -name '*.mp4' -o -name '*.npy' -o -name '*.npz' \
+               -o -name '*.png' -o -name '*.ply' -o -name '*.pcd' \) \
+            -print -quit | grep -q .; then
+            echo "::error title=Payload publication detected::Workflow evidence contains data bytes"
+            exit 1
+          fi
+          (
+            cd "${ACQUISITION_EVIDENCE_ROOT}/result"
+            sha256sum --check SHA256SUMS
+          )
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=all -- . ':(exclude)_deform360')"
+          test -z "$(git -C _deform360 status --porcelain=v1 --untracked-files=all)"
+
+      - name: Record execution environment
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ACQUISITION_EVIDENCE_ROOT:-}"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "implementation_revision=${GITHUB_SHA}"
+            echo "deform360_revision=${DEFORM360_REVISION}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            "${PYTHON_BIN}" --version
+            "${PYTHON_BIN}" -m pip freeze --all
+            uname -a
+            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader
+          } > "${ACQUISITION_EVIDENCE_ROOT}/environment.txt"
+
+      - name: Upload compact calibration-only evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-calibration-acquisition-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.ACQUISITION_EVIDENCE_ROOT }}/console.log
+            ${{ env.ACQUISITION_EVIDENCE_ROOT }}/environment.txt
+            ${{ env.ACQUISITION_EVIDENCE_ROOT }}/result/**
+          if-no-files-found: error
+          retention-days: 90

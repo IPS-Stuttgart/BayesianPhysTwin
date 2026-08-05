@@ -89,6 +89,14 @@ revisions, Prob4D provider manifest and attestation, metric-frame policy, and
 portable model-set identity before any of the ten selected calibration-object
 payloads may be opened.
 
+The
+[calibration acquisition lane](deform360_calibration_acquisition_v1.md) is the
+next empirical step. It opens only the ten locked calibration units, freezes an
+exact per-object file allowlist before downloading bytes, runs the pinned public
+camera/tactile/robot preparation, retains technical failures without
+replacement, and emits a calibration-only evidence ledger while all twelve
+confirmation objects remain closed.
+
 ## PhysTwin experiment families
 
 | Area | Primary document | Status and purpose |
