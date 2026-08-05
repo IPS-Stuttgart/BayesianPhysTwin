@@ -50,15 +50,11 @@ SELECTED_ZIP_SHA256 = {
     "3dPrintedPizza_T1": (
         "35ff95bd1fcc851359abfa662dc69c7554146badd22c1846554b2aed388d2ae1"
     ),
-    "Beanbag_T7": (
-        "29d8d2c2300521313b25a4faa2eec56cbe4c9a48fe875afde203afd47cda08be"
-    ),
+    "Beanbag_T7": ("29d8d2c2300521313b25a4faa2eec56cbe4c9a48fe875afde203afd47cda08be"),
     "FoamCylinder_T4": (
         "23e7bd666e63c2a68d4e1033d28e0b8c01a41f7b863b320f7467bd3419f4d02e"
     ),
-    "Pillow_T5": (
-        "3ffeb1c4a9536e32a35b3ffb4054e50502dfb57fac524a9133a9f03ada133b79"
-    ),
+    "Pillow_T5": ("3ffeb1c4a9536e32a35b3ffb4054e50502dfb57fac524a9133a9f03ada133b79"),
     "PlushDice_T7": (
         "bc137a01b50994f43a72b60c20241b16070d061b89bc9482c13e5b7c1956cc31"
     ),
@@ -265,7 +261,9 @@ def validate_action_robust_freshness_audit(
         scan.get("git_ref_snapshot_sha256") == GIT_REF_SNAPSHOT_SHA256,
         "Git ref snapshot changed",
     )
-    _require(int(scan.get("git_ref_count", -1)) == GIT_REF_COUNT, "Git ref count changed")
+    _require(
+        int(scan.get("git_ref_count", -1)) == GIT_REF_COUNT, "Git ref count changed"
+    )
     for key in (
         "git_unregistered_exact_matches",
         "gpuserver6000_recent_unregistered_exact_matches",

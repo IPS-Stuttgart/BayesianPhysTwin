@@ -227,8 +227,9 @@ def _write_prediction(
         seal["global_fallback_mismatch_count"] = 0
     if protocol["protocol_id"] == TARGET_PROTOCOL_ACTION_ROBUST_FRESH6_V3:
         multiplier = float(
-            protocol["method"]["action_robust_scale_calibration"]["multipliers"]
-            [object_name]
+            protocol["method"]["action_robust_scale_calibration"]["multipliers"][
+                object_name
+            ]
         )
         seal["correction_multiplier"] = multiplier
         seal["effective_scale"] = BASE_EFFECTIVE_SCALE * multiplier

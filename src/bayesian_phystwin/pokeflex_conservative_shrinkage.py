@@ -183,14 +183,18 @@ def _extract_take(payload: Mapping[str, Any], expected_arms: tuple[_Arm, ...]) -
     fallback_count = 0
     fallback_mismatch = {arm.name: 0 for arm in expected_arms}
     for target in targets:
-        _require(_candidate_arms(target) == expected_arms, "frame candidate bank changed")
+        _require(
+            _candidate_arms(target) == expected_arms, "frame candidate bank changed"
+        )
         frame = int(target["target_frame"])
         baseline = float(target["released_checkpoint_CD_UL1_mm"])
         _require(np.isfinite(baseline) and baseline > 0.0, "baseline error is invalid")
         baseline_values.append(baseline)
         update = updates_by_frame.get(frame)
         _require(update is not None, "target has no causal source update record")
-        supported = bool(update.get("accepted")) and bool(update.get("action_supported"))
+        supported = bool(update.get("accepted")) and bool(
+            update.get("action_supported")
+        )
         if not supported:
             fallback_count += 1
         for arm in expected_arms:
@@ -203,7 +207,9 @@ def _extract_take(payload: Mapping[str, Any], expected_arms: tuple[_Arm, ...]) -
         take_id=take_id,
         object_name=object_name,
         baseline_mean_mm=float(np.mean(baseline_values)),
-        arm_mean_mm={name: float(np.mean(values)) for name, values in arm_values.items()},
+        arm_mean_mm={
+            name: float(np.mean(values)) for name, values in arm_values.items()
+        },
         fallback_frame_count=fallback_count,
         fallback_mismatch_count=fallback_mismatch,
     )
@@ -361,7 +367,9 @@ def evaluate_pokeflex_conservative_shrinkage_source(
         "cross_fitted": {
             "folds": folds,
             "stable_selection": stable_selection,
-            "held_object_win_count": int(sum(value > 0.0 for value in held_improvements)),
+            "held_object_win_count": int(
+                sum(value > 0.0 for value in held_improvements)
+            ),
             "held_object_balanced_relative_improvement": float(
                 np.mean(held_improvements)
             ),

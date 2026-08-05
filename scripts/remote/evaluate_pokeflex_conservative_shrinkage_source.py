@@ -55,9 +55,7 @@ def main() -> None:
         ),
     )
     result["protocol_sha256"] = protocol["protocol_sha256"]
-    result["source_artifact_sha256s"] = {
-        str(path): _sha256(path) for path in paths
-    }
+    result["source_artifact_sha256s"] = {str(path): _sha256(path) for path in paths}
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     output = args.output.resolve()
     if output.exists() and output.read_text(encoding="utf-8") != rendered:

@@ -19,10 +19,7 @@ PREVIOUS = (
     ROOT / "configs" / "sota" / "pokeflex_instance_fresh12_exclusion_audit_v2.json"
 )
 FROZEN = (
-    ROOT
-    / "configs"
-    / "sota"
-    / "pokeflex_action_robust_fresh6_exclusion_audit_v3.json"
+    ROOT / "configs" / "sota" / "pokeflex_action_robust_fresh6_exclusion_audit_v3.json"
 )
 
 
@@ -41,9 +38,12 @@ def test_action_robust_freshness_selects_salted_third_panel() -> None:
     assert audit["eligibility"]["eligible_take_count"] == 8
     assert audit["eligibility"]["eligible_object_count"] == 6
     assert audit["prior_exposure_audit"]["excluded_take_count"] == 108
-    assert audit["post_v2_exact_exposure_scan"][
-        "gpuserver6000_recent_unregistered_exact_matches"
-    ] == []
+    assert (
+        audit["post_v2_exact_exposure_scan"][
+            "gpuserver6000_recent_unregistered_exact_matches"
+        ]
+        == []
+    )
 
 
 def test_action_robust_freshness_rejects_exposure_or_selection_change() -> None:

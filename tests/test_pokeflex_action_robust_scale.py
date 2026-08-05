@@ -82,12 +82,8 @@ def test_production_selector_controls_detect_signal_and_reject_placebo() -> None
 
 def test_builder_and_validator_bind_both_source_actions() -> None:
     objects = [f"Object{index}" for index in range(12)]
-    first_rows = [
-        _row(f"{name}_T1", {1.0: 10.0, 2.0: 9.8}) for name in objects
-    ]
-    second_rows = [
-        _row(f"{name}_T2", {1.0: 10.0, 2.0: 9.9}) for name in objects
-    ]
+    first_rows = [_row(f"{name}_T1", {1.0: 10.0, 2.0: 9.8}) for name in objects]
+    second_rows = [_row(f"{name}_T2", {1.0: 10.0, 2.0: 9.9}) for name in objects]
     first = {
         "schema_version": 1,
         "artifact_kind": "PokeFlexFresh12PostopenScaleHeadroomAudit",

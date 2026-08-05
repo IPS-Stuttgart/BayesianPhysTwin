@@ -106,9 +106,7 @@ def select_action_robust_multiplier(
     else:
         candidates = []
         for multiplier in CANDIDATE_MULTIPLIERS:
-            gains = tuple(
-                scale_relative_improvement(row, multiplier) for row in rows
-            )
+            gains = tuple(scale_relative_improvement(row, multiplier) for row in rows)
             candidates.append(
                 (
                     min(gains),
@@ -253,9 +251,7 @@ def build_action_robust_scale_calibration(
         for object_name in sorted(first_by_object)
     }
     source_action_gains = [
-        gain
-        for row in objects.values()
-        for gain in row["source_relative_improvements"]
+        gain for row in objects.values() for gain in row["source_relative_improvements"]
     ]
     controls = action_robust_control_summary()
     source_gate = {
@@ -267,12 +263,8 @@ def build_action_robust_scale_calibration(
         "source_action_regression_count": sum(
             gain < -1e-12 for gain in source_action_gains
         ),
-        "minimum_source_action_relative_improvement": float(
-            min(source_action_gains)
-        ),
-        "mean_source_action_relative_improvement": float(
-            np.mean(source_action_gains)
-        ),
+        "minimum_source_action_relative_improvement": float(min(source_action_gains)),
+        "mean_source_action_relative_improvement": float(np.mean(source_action_gains)),
         "controls_passed": controls["passed"],
     }
     source_gate["passed"] = bool(
@@ -346,8 +338,7 @@ def validate_action_robust_scale_calibration(
         "first source audit changed",
     )
     _require(
-        payload.get("first_source_audit_file_sha256")
-        == FIRST_SOURCE_AUDIT_FILE_SHA256,
+        payload.get("first_source_audit_file_sha256") == FIRST_SOURCE_AUDIT_FILE_SHA256,
         "first source audit bytes changed",
     )
     _require(

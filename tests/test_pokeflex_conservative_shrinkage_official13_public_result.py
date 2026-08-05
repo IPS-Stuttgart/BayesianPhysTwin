@@ -65,9 +65,9 @@ def test_official13_public_result_has_complete_nonregressing_accounting() -> Non
     assert tuple(by_take) == OFFICIAL13_PUBLIC_TARGET_TAKE_IDS
     assert len(frames) == 970
     assert sum(int(frame["update_supported"]) for frame in frames) == 835
-    assert {
-        frame["candidate_jaccard_error"] for frame in frames
-    } == {"ValueError: Not all meshes are volumes!"}
+    assert {frame["candidate_jaccard_error"] for frame in frames} == {
+        "ValueError: Not all meshes are volumes!"
+    }
     assert all(
         by_take[take_id]["candidate_mean_CD_UL1_mm"]
         <= by_take[take_id]["baseline_mean_CD_UL1_mm"]

@@ -49,9 +49,7 @@ def test_instance_fresh12_partial_positive_is_scoped_exactly() -> None:
     direct = summary["instance_vs_checkpoint"]
     advancement = summary["instance_vs_global"]
 
-    assert direct["relative_CD_UL1_improvement"] == pytest.approx(
-        0.01722968243835599
-    )
+    assert direct["relative_CD_UL1_improvement"] == pytest.approx(0.01722968243835599)
     assert direct["win_count"] == 11
     assert direct["tie_count"] == 1
     assert advancement["relative_CD_UL1_improvement"] == pytest.approx(

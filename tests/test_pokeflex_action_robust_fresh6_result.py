@@ -54,9 +54,7 @@ def test_action_robust_fresh6_advancement_is_no_regression() -> None:
     direct = summary["action_robust_vs_checkpoint"]
     advancement = summary["action_robust_vs_global"]
 
-    assert direct["relative_CD_UL1_improvement"] == pytest.approx(
-        0.02240165696467543
-    )
+    assert direct["relative_CD_UL1_improvement"] == pytest.approx(0.02240165696467543)
     assert direct["win_count"] == 6
     assert direct["tie_count"] == 0
     assert direct["minimum_per_object_relative_improvement"] > 0
@@ -88,8 +86,7 @@ def test_action_robust_fresh6_scoring_provenance_is_canonical() -> None:
     payload = _load("scoring_provenance.json")
     barrier = _load("prediction_barrier.json")
     barrier_seals = {
-        row["take_id"]: row["seal_file_sha256"]
-        for row in barrier["predictions"]
+        row["take_id"]: row["seal_file_sha256"] for row in barrier["predictions"]
     }
 
     assert file_sha256(payload_path) == (

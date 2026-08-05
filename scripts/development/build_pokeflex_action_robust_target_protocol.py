@@ -67,9 +67,7 @@ def build_protocol(
         "calibration_file_sha256": file_sha256(calibration_path),
         "source_object_count": calibration["source_gate"]["source_object_count"],
         "source_action_count": calibration["source_gate"]["source_action_count"],
-        "adjusted_object_count": calibration["source_gate"][
-            "adjusted_object_count"
-        ],
+        "adjusted_object_count": calibration["source_gate"]["adjusted_object_count"],
         "controls_passed": calibration["source_gate"]["controls_passed"],
         "future_take_outcomes_opened": False,
     }

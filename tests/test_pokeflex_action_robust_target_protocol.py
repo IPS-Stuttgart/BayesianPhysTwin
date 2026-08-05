@@ -16,9 +16,7 @@ from bayesian_phystwin.pokeflex_conservative_shrinkage_target import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-FROZEN = (
-    ROOT / "configs" / "sota" / "pokeflex_action_robust_shrinkage_fresh6_v3.json"
-)
+FROZEN = ROOT / "configs" / "sota" / "pokeflex_action_robust_shrinkage_fresh6_v3.json"
 FROZEN_FILE_SHA256 = "173434fe5916c57dd4e8809f098152b096c6cf09e7efdf37190b488ee5cc7263"
 
 
@@ -59,9 +57,12 @@ def test_frozen_action_robust_protocol_is_exact() -> None:
     assert tuple(protocol["target_cohort"]["take_ids"]) == (
         ACTION_ROBUST_FRESH6_PUBLIC_TARGET_TAKE_IDS
     )
-    assert protocol["method"]["action_robust_scale_calibration"]["multipliers"][
-        "3dPrintedPyramid"
-    ] == 1.0
+    assert (
+        protocol["method"]["action_robust_scale_calibration"]["multipliers"][
+            "3dPrintedPyramid"
+        ]
+        == 1.0
+    )
 
 
 def test_action_robust_metric_gate_requires_advancement_over_global() -> None:
@@ -79,9 +80,7 @@ def test_action_robust_metric_gate_requires_advancement_over_global() -> None:
 def test_action_robust_protocol_rejects_multiplier_change() -> None:
     protocol = json.loads(FROZEN.read_text(encoding="utf-8"))
     changed = deepcopy(protocol)
-    changed["method"]["action_robust_scale_calibration"]["multipliers"][
-        "Pillow"
-    ] = 4.0
+    changed["method"]["action_robust_scale_calibration"]["multipliers"]["Pillow"] = 4.0
     changed["protocol_sha256"] = target_protocol_sha256(changed)
     with pytest.raises(ValueError, match="multiplier map"):
         validate_pokeflex_shrinkage_target_protocol(
