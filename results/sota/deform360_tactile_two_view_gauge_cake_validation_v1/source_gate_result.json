@@ -1,0 +1,73 @@
+{
+  "artifact_id": "c549bbd896b262f9fa9459dcbcbfe112724972c905266a0d640ca44f1f3506af",
+  "claim_boundary": "Source-only technical admission result. The two-view metric gauge was not evaluated; no prediction score, confirmation payload, target outcome, or SOTA claim is authorized.",
+  "compatibility_replay": {
+    "new_result_sha256": "62867d90348f3a59ed895838e604b90560d04f82b2ca4b9413b3026262545939",
+    "old_result_sha256": "b6bbbfe118288ca6d75a2577cd679024876c166c048fdc87c9bfd3bbaf420f97",
+    "scientific_payload_exact_after_provenance_removal": true
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_opened": true,
+    "calibration_motioncrafter_arrays_opened": false,
+    "calibration_scores_opened": false,
+    "calibration_tactile_values_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "metric_gauge": {
+    "evaluated": false,
+    "reason": "parent-robot-prefix-source-gate-failed"
+  },
+  "protocol": {
+    "robot_lock_file_sha256": "d5717c988fcd52557be8cdca5b7bbc097bc2f5662bc9f14d2e63b264d2bbf22e",
+    "robot_lock_id": "994a056a440ab5e7c2021436559e8f27c4d1479cc0309fd138fc07c1c79ebfe1",
+    "validation_lock_file_sha256": "a5722451fdefd73bf455d881815b671d3e693df495b5f29dfb1bb9e3877ebd17",
+    "validation_lock_id": "e11efef16fe0d42039e2bb6f707a00e420a7fdecc1315bce8efa26343b0b95b5"
+  },
+  "robot_prefix": {
+    "anchor_authorized": false,
+    "archive_sha256": "3254b545203118e2fd538029d8eafd6cc9c240f20aedffe1d0f9eccc6c7a1d08",
+    "artifact_id": "d78cd59b726be5831525d89fe445920536f9690037e7ee9418d877d0ccfa46fe",
+    "manifest_sha256": "7c9387ee76f8c45d2336ceeea4813fa6ee3bc15db4b8f37de12278543680ebf7",
+    "quality": {
+      "both_fingers_fraction_by_gripper": [
+        0.0,
+        0.023809523809523808
+      ],
+      "contact_ready_frames_by_gripper": [
+        0,
+        1
+      ],
+      "direct_wrist_fraction_by_gripper": [
+        1.0,
+        0.9523809523809523
+      ],
+      "maximum_opening_observed_m": 0.15755036554809526,
+      "maximum_rotation_step_observed_deg": 3.557143482195743,
+      "maximum_translation_step_observed_m": 0.008402346986870847,
+      "minimum_opening_observed_m": 0.07191349180561102
+    },
+    "reason_codes": [
+      "insufficient-contact-tail-support",
+      "insufficient-finger-support",
+      "opening-outside-released-range"
+    ]
+  },
+  "runtime": {
+    "repository_revision": "779d8c2103f0e99f47f1d3ff392015e4a09a2c37",
+    "source_root": "/home/florianpfaff/source-only/deform360-tactile-two-view-gauge-cake-validation-v1-779d8c21"
+  },
+  "schema": "bayesian-phystwin.deform360-tactile-two-view-gauge-source-result",
+  "schema_version": 1,
+  "source_case": {
+    "causal_frame_stop": 42,
+    "object_id": "153-cake",
+    "processing_episode_index": 0,
+    "source_episode_id": 5,
+    "source_frame_start": 0
+  },
+  "status": "exact-fallback-before-tactile-and-metric-gauge"
+}
