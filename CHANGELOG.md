@@ -70,6 +70,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   design artifacts before confirmation payload access.
 - Decimal-exact finite-group split-conformal planning that rejects impossible
   coverage and adaptive reuse of calibration outcomes before target access.
+- A fail-closed Deform360 calibration execution sealer that verifies the exact
+  Stage-0 cohort, visual-provider lock, eight calibration decisions, cohort-wide
+  evidence-use ledger, clean implementation revision, and source bytes before
+  atomically publishing the Stage-1 lock, complete calibration bundle, and the
+  only authorized confirmation-opening token.
 
 ### Changed
 

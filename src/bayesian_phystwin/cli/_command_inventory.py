@@ -84,6 +84,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "deform360-bias-aware-result": (
         "aggregate the sealed Deform360 bias-aware prospective result"
     ),
+    "seal-deform360-calibration": (
+        "seal all target-blind Deform360 calibration choices before confirmation"
+    ),
     "fetch-phystwin-eval-data": "fetch the released PhysTwin evaluation subset",
 }
 
@@ -98,6 +101,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "calibrate-phystwin-discrepancy": "phystwin-discrepancy-calibration-v1",
     "phystwin-refit": "phystwin-refit-v1",
     "evaluate-deform360-online-belief": "deform360-online-belief-v1",
+    "seal-deform360-calibration": "deform360-official-hub-visuotactile-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
 }
 
@@ -166,6 +170,8 @@ def owner(command_id: str) -> str:
 
 
 def optional_dependencies(command_id: str) -> tuple[str, ...]:
+    if command_id == "seal-deform360-calibration":
+        return ()
     dependencies: list[str] = []
     if command_id == "evaluate-pokeflex-public":
         dependencies.extend(("graph", "vision"))
