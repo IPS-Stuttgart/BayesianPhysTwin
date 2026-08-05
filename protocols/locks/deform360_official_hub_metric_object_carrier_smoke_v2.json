@@ -1,0 +1,122 @@
+{
+  "artifact_id": "bab42f816d11b8f13e885698ab86f771c4d666367815fe3250cd0c6c88c89d45",
+  "cameras": [
+    "brics-odroid-019_cam1",
+    "brics-odroid-013_cam1",
+    "brics-odroid-006_cam0"
+  ],
+  "claim_boundary": "Source-only metric object-carrier feasibility. Admission does not authorize a contact/state update, calibration-score access, confirmation access, or a SOTA claim.",
+  "implementation": {
+    "module_source_sha256": "ca3e92f60a2e28aefd6277d6b14bdcba3784807abecfe7f4edcce194f8a97d70",
+    "revision": "9dd5c563921d8d25b211edd51e010344a6606b7b",
+    "runner_source_sha256": "aa2e54664bcc0cf0e32f0237ff15d3df5e373c4f189a6be936a3467be65ea78c"
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_allowed": true,
+    "calibration_provider_values_allowed_after_lock": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "physical_state_residual_used_for_reliability": false,
+    "target_outcomes_used": false
+  },
+  "parents": {
+    "metric_gauge_lock": {
+      "artifact_id": "f1259e69bb7f1cc7e5f3923376e8a6e6b3b26d40913098471f3cf550d6564bd3",
+      "sha256": "99a52142a62785e7b92a0ed44b6d28a9b7db2b1a56377b63d732df5353a65a51"
+    },
+    "metric_gauge_result": {
+      "artifact_id": "96dee634e43a869cf9a794fee14cd3ac4fae1825c988a7a3e008552061fca41f",
+      "sha256": "b6bbbfe118288ca6d75a2577cd679024876c166c048fdc87c9bfd3bbaf420f97"
+    }
+  },
+  "policy": {
+    "assignment_policy": "retain-direct-and-swapped-at-equal-prior-mass",
+    "block_size_px": 8,
+    "carrier_node_count": 128,
+    "carrier_source_frame": 149,
+    "cross_view_fusion": "equal-weight-covariance-intersection-plus-spread",
+    "cross_view_maximum_distance_m": 0.03,
+    "dense_correlation": "one-row-per-fixed-image-block-no-pixel-precision-sum",
+    "initial_mask_source_frame": 108,
+    "local_covariance_floor_m": 0.005,
+    "matching": "mutual-nearest-neighbor-under-each-assignment",
+    "maximum_pairwise_percentile_90_m": 0.025,
+    "minimum_deform_fraction_for_full_reliability": 0.5,
+    "minimum_mask_pixels_per_block": 16,
+    "minimum_valid_fraction_per_block": 0.5,
+    "node_selection": "deterministic-reference-image-farthest-point",
+    "required_assignment_count": 2,
+    "required_view_count": 3,
+    "source_frame_start": 108,
+    "source_frame_stop_exclusive": 150,
+    "source_shape": [
+      720,
+      1280
+    ],
+    "target_shape": [
+      320,
+      640
+    ]
+  },
+  "providers": [
+    {
+      "camera": "brics-odroid-019_cam1",
+      "prediction_manifest_path": "/home/florianpfaff/source-only/deform360-official-hub-motioncrafter-calibration-v6/026-sock-cloth/episode_0000/brics-odroid-019_cam1/predictions.json",
+      "prediction_manifest_sha256": "a63e9b28728c7453088a4dc5fe75255c461f27e8a76495c34c9c4c78dfee5032",
+      "video_path": "/home/florianpfaff/source-only/deform360-official-hub-visuotactile-stage1-processed-cc92a2a/026-sock-cloth/episode_0000/brics-odroid-019_cam1/undistorted.mp4",
+      "video_sha256": "165ffe173aa4148d52f5bf243a4e3c8a2390cb63d10fa5f907b56e0fe7eab483",
+      "window_path": "/home/florianpfaff/source-only/deform360-official-hub-motioncrafter-calibration-v6/026-sock-cloth/episode_0000/brics-odroid-019_cam1/windows/window_0001.npz",
+      "window_sha256": "5043bde11f95f72e13f3df75ab2f000bde55f46dc05122ed1fd6a39a413f9876",
+      "window_source_frames": [
+        125,
+        150
+      ]
+    },
+    {
+      "camera": "brics-odroid-013_cam1",
+      "prediction_manifest_path": "/home/florianpfaff/source-only/deform360-tactile-metric-gauge-provider-smoke-v1-bdcd0106/026-sock-cloth/episode_0000/brics-odroid-013_cam1/predictions.json",
+      "prediction_manifest_sha256": "f054a22ce9dc01f59cfc8b3934f9e76a568e6ce2d847d4dea610f591cf3eacb9",
+      "video_path": "/home/florianpfaff/source-only/deform360-official-hub-visuotactile-stage1-processed-cc92a2a/026-sock-cloth/episode_0000/brics-odroid-013_cam1/undistorted.mp4",
+      "video_sha256": "8c936dff0ab4287af2e2989c43eb4a620588db2863c2d5ab0a02c0dfe8088af8",
+      "window_path": "/home/florianpfaff/source-only/deform360-tactile-metric-gauge-provider-smoke-v1-bdcd0106/026-sock-cloth/episode_0000/brics-odroid-013_cam1/windows/window_0001.npz",
+      "window_sha256": "89658609f81943ee287adba8ad06732f6b2f1e897bdd982d434aa43cd78d4c26",
+      "window_source_frames": [
+        125,
+        150
+      ]
+    },
+    {
+      "camera": "brics-odroid-006_cam0",
+      "prediction_manifest_path": "/home/florianpfaff/source-only/deform360-tactile-metric-gauge-provider-smoke-v1-bdcd0106/026-sock-cloth/episode_0000/brics-odroid-006_cam0/predictions.json",
+      "prediction_manifest_sha256": "f9c8d278901959eb14473396a0a07b10198f1e0a216babd127b03b6d6168069d",
+      "video_path": "/home/florianpfaff/source-only/deform360-official-hub-visuotactile-stage1-processed-cc92a2a/026-sock-cloth/episode_0000/brics-odroid-006_cam0/undistorted.mp4",
+      "video_sha256": "516529038810895f628dc32629e04a44073e14f6b8b0ce3b7a2ca0a599a5bfd4",
+      "window_path": "/home/florianpfaff/source-only/deform360-tactile-metric-gauge-provider-smoke-v1-bdcd0106/026-sock-cloth/episode_0000/brics-odroid-006_cam0/windows/window_0001.npz",
+      "window_sha256": "fd78ea521eb7838dc9deb9bb7fd10c633d505d04903770e401c27e96568f0af9",
+      "window_source_frames": [
+        125,
+        150
+      ]
+    }
+  ],
+  "reference_camera": "brics-odroid-019_cam1",
+  "sam2": {
+    "checkpoint_path": "/home/florianpfaff/sam2-2b90b9f5/checkpoints/sam2.1_hiera_small.pt",
+    "checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "repository_path": "/home/florianpfaff/sam2-2b90b9f5",
+    "repository_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+    "selector_source_path": "/home/florianpfaff/deform360-penguin-source-outcomes-v1/code/src/causal4d_public/deform360_object_sam2.py",
+    "selector_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+  },
+  "schema": "bayesian-phystwin.deform360-metric-object-carrier-lock",
+  "schema_version": 1,
+  "source_case": {
+    "causal_frame_stop": 150,
+    "object_id": "026-sock-cloth",
+    "processing_episode_index": 0
+  },
+  "status": "locked-source-only-pre-mask"
+}
