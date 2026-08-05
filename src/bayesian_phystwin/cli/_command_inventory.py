@@ -121,6 +121,7 @@ def owner(command_id: str) -> str:
     if exact is not None:
         return exact
     rules = (
+        (("pokeflex",), "pokeflex-public-evaluation-v1"),
         (("deform360",), "deform360-bias-aware-v1"),
         (("matphys",), "matphys-causal-backbone-v1"),
         (("motioncrafter",), "phystwin-motioncrafter-v1"),
@@ -166,6 +167,8 @@ def owner(command_id: str) -> str:
 
 def optional_dependencies(command_id: str) -> tuple[str, ...]:
     dependencies: list[str] = []
+    if command_id == "evaluate-pokeflex-public":
+        dependencies.extend(("graph", "vision"))
     if command_id in {
         "download-deform360-selective-virtual-sensing",
         "fetch-phystwin-eval-data",

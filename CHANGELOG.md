@@ -64,9 +64,20 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   cohort and cache-touched object, resolves the exact public dataset revision,
   and selects fresh calibration/confirmation objects from names and metadata
   before any camera, tactile, robot, or geometry payload access.
+- Target-blind Deform360 visual-provider and Stage-1 calibration locks that
+  bind the exact Prob4D/MotionCrafter producer before calibration payload access
+  and calibration-derived visual, contact, guard, interval, and finite-group
+  design artifacts before confirmation payload access.
+- Decimal-exact finite-group split-conformal planning that rejects impossible
+  coverage and adaptive reuse of calibration outcomes before target access.
 
 ### Changed
 
+- Claim-bearing hexadecimal identifiers now require literal lowercase strings;
+  integers, bytes, and custom string subclasses are rejected instead of being
+  admitted through lossy `str(value)` coercion. Deform360 source artifacts also
+  require canonical relative POSIX paths, and a supplied contact-bias basis must
+  contain at least one parameter.
 - Stable pseudo-measurement, robust-mixture, and binary-calibration inputs now
   reject nonnumeric, non-finite, and out-of-domain measurements, cues, labels,
   and probabilities instead of clipping or truth-value coercing them.

@@ -89,7 +89,10 @@ jobs:
             tests/test_legacy_artifacts.py \
             tests/test_causal4d_artifacts_v2.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_canonical_contracts.py \
+            tests/test_claim_bearing_identifier_types.py \
             tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_visual_provider_lock.py \
             tests/test_deform360_calibration_bundle.py \
             tests/test_evidence_use_ledger.py \
             tests/test_observation_belief.py \
@@ -113,6 +116,7 @@ jobs:
             tests/test_prob4d_causal_lineage.py \
             tests/test_prob4d_joint_contract_fixture.py \
             tests/test_cli_main.py \
+            tests/test_pokeflex_public_evaluation_cli.py \
             tests/test_run_manifest.py \
             tests/test_run_manifest_v2.py \
             tests/test_run_manifest_cli.py \
@@ -211,7 +215,10 @@ jobs:
             tests/test_legacy_artifacts.py \
             tests/test_causal4d_artifacts_v2.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_canonical_contracts.py \
+            tests/test_claim_bearing_identifier_types.py \
             tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_visual_provider_lock.py \
             tests/test_deform360_calibration_bundle.py \
             tests/test_evidence_use_ledger.py \
             tests/test_observation_belief.py \
@@ -299,7 +306,10 @@ jobs:
             tests/test_causal4d_artifacts_v2.py \
             tests/test_endpoint_model_average.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_canonical_contracts.py \
+            tests/test_claim_bearing_identifier_types.py \
             tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_visual_provider_lock.py \
             tests/test_observation_belief_gauge_adapter.py \
             tests/test_observation_belief.py
           bpt provider manifest \

@@ -1,0 +1,91 @@
+name: Deform360 visual-provider lock
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-visual-provider-lock.yml"
+      - "protocols/amendments/deform360_official_hub_visuotactile_v1_visual_provider_lock.json"
+      - "protocols/amendments/deform360_official_hub_visuotactile_v1_calibration_separation.json"
+      - "docs/deform360_visual_provider_lock_v1.md"
+      - "docs/finite_group_calibration_design.md"
+      - "src/bayesian_phystwin/_canonical_contracts.py"
+      - "src/bayesian_phystwin/calibration.py"
+      - "src/bayesian_phystwin/deform360_contact_anchor.py"
+      - "src/bayesian_phystwin/deform360_visual_provider_lock.py"
+      - "src/bayesian_phystwin/prob4d_provider_attestation.py"
+      - "src/bayesian_phystwin/__init__.py"
+      - "tests/test_calibration.py"
+      - "tests/test_canonical_contracts.py"
+      - "tests/test_claim_bearing_identifier_types.py"
+      - "tests/test_deform360_contact_anchor.py"
+      - "tests/test_deform360_visual_provider_lock.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-visual-provider-lock-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Target-blind producer and calibration contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate formatting, contracts, and target-blind amendment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/calibration.py \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            src/bayesian_phystwin/deform360_visual_provider_lock.py \
+            src/bayesian_phystwin/prob4d_provider_attestation.py \
+            tests/test_calibration.py \
+            tests/test_canonical_contracts.py \
+            tests/test_claim_bearing_identifier_types.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_visual_provider_lock.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/calibration.py \
+            src/bayesian_phystwin/deform360_contact_anchor.py \
+            src/bayesian_phystwin/deform360_visual_provider_lock.py \
+            src/bayesian_phystwin/prob4d_provider_attestation.py \
+            tests/test_calibration.py \
+            tests/test_canonical_contracts.py \
+            tests/test_claim_bearing_identifier_types.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_visual_provider_lock.py
+          python -m pytest -q \
+            tests/test_calibration.py \
+            tests/test_canonical_contracts.py \
+            tests/test_claim_bearing_identifier_types.py \
+            tests/test_deform360_contact_anchor.py \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_prob4d_causal_lineage.py
+          python -m compileall -q src/bayesian_phystwin
