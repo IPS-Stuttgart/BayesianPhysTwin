@@ -72,7 +72,7 @@ class HorizonDiscrepancyCalibrationV1:
             half_life = finite_real(
                 half_life,
                 name="mean_reversion_half_life_steps",
-                minimum=np.finfo(np.float64).tiny,
+                minimum=float(np.finfo(np.float64).tiny),
             )
         retention = probability(
             self.minimum_mean_retention, name="minimum_mean_retention"
