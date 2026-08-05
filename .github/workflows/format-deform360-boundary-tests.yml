@@ -18,7 +18,7 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.head.ref == 'agent/deform360-calibration-seal'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 10
     steps:
       - name: Check out the exact pull-request branch
@@ -26,11 +26,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           persist-credentials: true
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
+          clean: true
 
       - name: Format and publish the boundary tests
         shell: bash
@@ -38,8 +34,10 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          python -m pip install "ruff==0.16.1"
-          python -m ruff format \
+          python3 -m pip install --user "ruff==0.16.1"
+          python3 -m ruff check --fix \
+            tests/test_deform360_calibration_execution_boundaries.py
+          python3 -m ruff format \
             tests/test_deform360_calibration_execution_boundaries.py
           git config user.name "github-actions[bot]"
           git config user.email \
