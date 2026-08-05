@@ -14,6 +14,8 @@ from bayesian_phystwin.deform360_tactile_metric_gauge import (
     covariance_intersection_equal_weight,
     fit_robust_similarity,
     held_frame_gauge_quality,
+    project_world_points_to_target,
+    sample_point_map_bilinear,
     select_contact_camera_panel,
     validate_tactile_metric_gauge_lock,
 )
@@ -64,6 +66,53 @@ def test_contact_projection_preserves_assignment_worst_case() -> None:
     )[0]
     assert candidate.minimum_assignment_coverage == 1.0
     assert candidate.minimum_margin_px > 0.0
+
+
+def test_world_projection_matches_cover_resize_geometry() -> None:
+    points = np.asarray([[0.0, 0.0, 1.0], [0.2, -0.1, 1.0]])
+    intrinsics = np.asarray([[100.0, 0.0, 99.5], [0.0, 100.0, 49.5], [0.0, 0.0, 1.0]])
+
+    xy, depth, visible = project_world_points_to_target(
+        points,
+        intrinsics=intrinsics,
+        world_from_camera=np.eye(4),
+        source_shape=(100, 200),
+        target_shape=(50, 100),
+    )
+
+    assert np.allclose(xy, [[49.5, 24.5], [59.5, 19.5]])
+    assert np.allclose(depth, 1.0)
+    assert np.all(visible)
+
+
+def test_bilinear_point_map_requires_all_four_valid_neighbors() -> None:
+    point_map = np.zeros((1, 2, 2, 3), dtype=np.float64)
+    point_map[0, 0, 0, 0] = 0.0
+    point_map[0, 0, 1, 0] = 2.0
+    point_map[0, 1, 0, 0] = 4.0
+    point_map[0, 1, 1, 0] = 6.0
+    valid = np.ones((1, 2, 2), dtype=bool)
+
+    sampled, support = sample_point_map_bilinear(
+        point_map,
+        valid,
+        np.asarray([125]),
+        np.asarray([125]),
+        np.asarray([[0.5, 0.5]]),
+    )
+    assert support.tolist() == [True]
+    assert np.allclose(sampled, [[3.0, 0.0, 0.0]])
+
+    valid[0, 1, 1] = False
+    sampled, support = sample_point_map_bilinear(
+        point_map,
+        valid,
+        np.asarray([125]),
+        np.asarray([125]),
+        np.asarray([[0.5, 0.5]]),
+    )
+    assert support.tolist() == [False]
+    assert np.all(np.isnan(sampled))
 
 
 def test_robust_similarity_recovers_transform_with_gross_outlier() -> None:

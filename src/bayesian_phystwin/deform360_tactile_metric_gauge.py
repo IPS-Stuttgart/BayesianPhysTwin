@@ -295,6 +295,152 @@ def cover_resize_source_to_target(
     return result
 
 
+def project_world_points_to_target(
+    world_points_m: np.ndarray,
+    *,
+    intrinsics: np.ndarray,
+    world_from_camera: np.ndarray,
+    source_shape: tuple[int, int],
+    target_shape: tuple[int, int],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Project world points into a MotionCrafter cover-resized image."""
+
+    points = np.asarray(world_points_m, dtype=np.float64)
+    matrix = np.asarray(intrinsics, dtype=np.float64)
+    pose = np.asarray(world_from_camera, dtype=np.float64)
+    _require(points.ndim >= 2 and points.shape[-1] == 3, "invalid world points")
+    _require(np.all(np.isfinite(points)), "world points contain non-finite values")
+    _require(matrix.shape == (3, 3), "invalid intrinsics")
+    _require(pose.shape == (4, 4), "invalid camera pose")
+    _require(
+        np.all(np.isfinite(matrix)) and np.all(np.isfinite(pose)),
+        "camera calibration contains non-finite values",
+    )
+    flat = points.reshape(-1, 3)
+    homogeneous = np.concatenate((flat, np.ones((len(flat), 1))), axis=1)
+    camera_points = (np.linalg.inv(pose) @ homogeneous.T).T[:, :3]
+    depth = camera_points[:, 2]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        source_xy = np.column_stack(
+            (
+                matrix[0, 0] * camera_points[:, 0] / depth + matrix[0, 2],
+                matrix[1, 1] * camera_points[:, 1] / depth + matrix[1, 2],
+            )
+        )
+    target_xy = cover_resize_source_to_target(
+        source_xy,
+        source_shape=source_shape,
+        target_shape=target_shape,
+    )
+    target_height, target_width = target_shape
+    visible = (
+        (depth > 0.0)
+        & np.all(np.isfinite(target_xy), axis=1)
+        & (target_xy[:, 0] >= 0.0)
+        & (target_xy[:, 0] <= target_width - 1)
+        & (target_xy[:, 1] >= 0.0)
+        & (target_xy[:, 1] <= target_height - 1)
+    )
+    output_shape = points.shape[:-1]
+    target_xy = target_xy.reshape(*output_shape, 2)
+    depth = depth.reshape(output_shape)
+    visible = visible.reshape(output_shape)
+    target_xy.setflags(write=False)
+    depth.setflags(write=False)
+    visible.setflags(write=False)
+    return target_xy, depth, visible
+
+
+def sample_point_map_bilinear(
+    point_map: np.ndarray,
+    valid_mask: np.ndarray,
+    frame_indices: np.ndarray,
+    source_frame_ids: np.ndarray,
+    target_xy: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Sample one 3D point per row using four valid bilinear neighbors."""
+
+    points = np.asarray(point_map)
+    valid = np.asarray(valid_mask, dtype=bool)
+    frames = np.asarray(frame_indices, dtype=np.int64)
+    requested = np.asarray(source_frame_ids, dtype=np.int64)
+    xy = np.asarray(target_xy, dtype=np.float64)
+    _require(
+        points.ndim == 4
+        and points.shape[-1] == 3
+        and valid.shape == points.shape[:-1]
+        and frames.shape == (len(points),),
+        "point-map arrays are incompatible",
+    )
+    _require(
+        requested.shape == (len(xy),) and xy.shape == (len(requested), 2),
+        "point-map queries are incompatible",
+    )
+    _require(len(set(frames.tolist())) == len(frames), "frame indices are not unique")
+    frame_lookup = {int(frame): index for index, frame in enumerate(frames)}
+    frame_rows = np.asarray(
+        [frame_lookup.get(int(frame), -1) for frame in requested],
+        dtype=np.int64,
+    )
+    height, width = points.shape[1:3]
+    finite_xy = np.all(np.isfinite(xy), axis=1)
+    safe_xy = np.where(finite_xy[:, None], xy, 0.0)
+    x0 = np.floor(safe_xy[:, 0]).astype(np.int64)
+    y0 = np.floor(safe_xy[:, 1]).astype(np.int64)
+    x1 = x0 + 1
+    y1 = y0 + 1
+    support = (
+        (frame_rows >= 0)
+        & finite_xy
+        & (x0 >= 0)
+        & (y0 >= 0)
+        & (x1 < width)
+        & (y1 < height)
+    )
+    sampled = np.full((len(requested), 3), np.nan, dtype=np.float64)
+    candidate_rows = np.flatnonzero(support)
+    if len(candidate_rows):
+        time = frame_rows[candidate_rows]
+        left = x0[candidate_rows]
+        right = x1[candidate_rows]
+        top = y0[candidate_rows]
+        bottom = y1[candidate_rows]
+        neighbors_valid = (
+            valid[time, top, left]
+            & valid[time, top, right]
+            & valid[time, bottom, left]
+            & valid[time, bottom, right]
+        )
+        neighbor_points = np.stack(
+            (
+                points[time, top, left],
+                points[time, top, right],
+                points[time, bottom, left],
+                points[time, bottom, right],
+            ),
+            axis=1,
+        ).astype(np.float64, copy=False)
+        neighbors_valid &= np.all(np.isfinite(neighbor_points), axis=(1, 2))
+        accepted = candidate_rows[neighbors_valid]
+        if len(accepted):
+            local = neighbor_points[neighbors_valid]
+            dx = safe_xy[accepted, 0] - x0[accepted]
+            dy = safe_xy[accepted, 1] - y0[accepted]
+            weights = np.column_stack(
+                (
+                    (1.0 - dx) * (1.0 - dy),
+                    dx * (1.0 - dy),
+                    (1.0 - dx) * dy,
+                    dx * dy,
+                )
+            )
+            sampled[accepted] = np.einsum("ni,nij->nj", weights, local)
+        support[candidate_rows] = neighbors_valid
+    sampled.setflags(write=False)
+    support.setflags(write=False)
+    return sampled, support
+
+
 def contact_camera_candidates(
     world_points_hypotheses_m: np.ndarray,
     *,
@@ -630,6 +776,8 @@ __all__ = [
     "fit_robust_similarity",
     "held_frame_gauge_quality",
     "load_tactile_metric_gauge_lock",
+    "project_world_points_to_target",
+    "sample_point_map_bilinear",
     "select_contact_camera_panel",
     "validate_tactile_metric_gauge_lock",
 ]
