@@ -103,7 +103,7 @@ def fit_horizon_discrepancy_calibration(
     process_std_floor = finite_real(
         minimum_process_std_m_per_sqrt_step,
         name="minimum_process_std_m_per_sqrt_step",
-        minimum=np.finfo(np.float64).tiny,
+        minimum=float(np.finfo(np.float64).tiny),
     )
 
     half_lives = []
@@ -114,7 +114,7 @@ def fit_horizon_discrepancy_calibration(
             else finite_real(
                 value,
                 name="half_life_candidates entry",
-                minimum=np.finfo(np.float64).tiny,
+                minimum=float(np.finfo(np.float64).tiny),
             )
         )
     if not half_lives:
@@ -178,7 +178,7 @@ def fit_horizon_discrepancy_calibration(
     return HorizonDiscrepancyCalibrationV1(
         source_group_ids=groups,
         source_summary_sha256=source_summary_id(groups, horizons, endpoint, future),
-        horizon_steps=horizons,
+        horizon_steps=tuple(int(value) for value in horizons),
         mean_reversion_half_life_steps=half_life,
         minimum_mean_retention=floor,
         stationary_std_m=np.sqrt(stationary_variance),
