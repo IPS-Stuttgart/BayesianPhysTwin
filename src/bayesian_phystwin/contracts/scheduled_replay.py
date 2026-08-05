@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from numbers import Real
-from typing import Iterable, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import numpy as np
-
 
 SCHEDULED_CONTACT_REPLAY_SCHEMA_VERSION = 1
 CONTACT_REGIME_SEMANTICS_V1 = (
