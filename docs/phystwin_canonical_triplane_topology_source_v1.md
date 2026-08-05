@@ -1,7 +1,7 @@
 # Canonical tri-plane spring field with piecewise topology
 
-Status: implementation and source-only protocol in progress. No benchmark
-future or held-v8 artifact is authorized by this protocol.
+Status: implementation checks passed; the locked development gate failed. No
+source-panel case, benchmark future, or held-v8 artifact was opened.
 
 ## Why this route remains open
 
@@ -77,6 +77,40 @@ first nonzero spring-identity projection instead. This is a technical repair
 to the preregistered rigid-frame contract; no split, optimizer, field size, or
 acceptance gate changed. The development result produced before this check
 passed is inadmissible and is retained only as engineering provenance.
+
+## Corrected development result
+
+The amended implementation passed 34 focused native tests, including exact
+controller separation, future-mutation invariance, cross-runtime rigid-frame
+invariance, and a Warp directional derivative checked against central finite
+differences. With zero coefficients, its same-run trajectory was bit-identical
+to the exact teacher over all 406,805 compared node-frames.
+
+The locked 20-epoch development run stopped after six epochs. Epoch 2 was
+selected from the permitted prefix suffix:
+
+| Metric | Exact teacher | Scalar tri-plane | Improvement |
+| --- | ---: | ---: | ---: |
+| Validation CD | 6.798687 mm | 6.797528 mm | 0.0170% |
+| Validation track | 9.157424 mm | 9.152951 mm | 0.0488% |
+| Balanced ratio | - | - | 0.0329% |
+
+Both metrics moved in the favorable direction and the field was plausible:
+object log scales ranged from `-0.00291` to `+0.00658`, while the controller
+log scale was `-0.00292`. The balanced improvement is nevertheless about two
+orders of magnitude below the locked 3% competence gate. Stage 1 therefore
+failed. The five-region topology stage, four-case source panel, and exploratory
+future cohort are not authorized.
+
+This result closes the direct scalar tri-plane capacity gate under the current
+prefix objective. It does not reproduce or falsify NeuSpring's unpublished
+32-channel tri-planes and nonlinear decoder, whose official repository still
+provides no executable implementation or checkpoint. Building that larger
+approximation after this failed gate would require a new protocol and a new
+scientific justification; it is not licensed as a continuation of this run.
+
+The compact decision record is
+`results/sota/diagnostics/phystwin_canonical_triplane_topology_source_v1/gate_summary.json`.
 
 ## Claim boundary
 

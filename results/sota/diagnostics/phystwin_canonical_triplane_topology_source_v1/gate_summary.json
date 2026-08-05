@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-canonical-triplane-topology-source-v1",
+  "status": "development_gate_failed",
+  "implementation_commit": "e1b355b5748f5ae0547c0386497ff84aef933ae6",
+  "protocol_sha256": "bd5996d8435ea13527c1bc4855406b428a5b9985e405dfb888e8a09a02068c68",
+  "claim_boundary": "Independent scalar tri-plane capacity gate; not an official NeuSpring reproduction and not evidence about its unpublished 32-channel MLP decoder.",
+  "information_boundary": {
+    "development_case": "single_lift_sloth",
+    "future_metrics_opened": false,
+    "source_panel_opened": false,
+    "held_v8_accessed": false
+  },
+  "stage_0": {
+    "same_run_identity_vector_rmse_m": 0.0,
+    "same_run_identity_max_norm_m": 0.0,
+    "future_mutation_test": "passed",
+    "controller_separation_test": "passed",
+    "rigid_transform_invariance_test": "passed_after_documented_technical_amendment",
+    "warp_finite_difference_gradient_test": "passed",
+    "focused_native_tests": {
+      "passed": 34,
+      "failed": 0
+    }
+  },
+  "development": {
+    "epochs_requested": 20,
+    "epochs_run_before_early_stopping": 6,
+    "selected_epoch": 2,
+    "baseline_chamfer_distance_m": 0.00679868654533843,
+    "selected_chamfer_distance_m": 0.006797528411909575,
+    "chamfer_improvement_fraction": 0.00017034664285986434,
+    "baseline_track_error_m": 0.009157423585278292,
+    "selected_track_error_m": 0.009152951323229856,
+    "track_improvement_fraction": 0.0004883755793088085,
+    "balanced_improvement_fraction": 0.0003293611110843919,
+    "required_balanced_improvement_fraction": 0.03,
+    "both_metrics_improved": true,
+    "plausibility_passed": true,
+    "object_log_scale_min": -0.002906086388975382,
+    "object_log_scale_max": 0.006580282002687454,
+    "controller_log_scale": -0.002922944026067853,
+    "gate_passed": false
+  },
+  "authorization": {
+    "piecewise_topology_stage": false,
+    "four_case_source_panel": false,
+    "exploratory_future_cohort": false
+  },
+  "artifacts": {
+    "identity_summary": {
+      "path": "identity_summary.json",
+      "sha256": "2e047c4878fc2b2d115734f21b9c7e853cfaba060fedf70f5627a88f42fd0fb7"
+    },
+    "development_summary": {
+      "path": "development_summary.json",
+      "sha256": "1c4deb668e6079cedbf68430b98fc01c78853da9e328fe4d46e24e95debc80f6"
+    },
+    "development_history": {
+      "path": "development_history.json",
+      "sha256": "e16157cd4f16c825e1b4f899804242e25130d3869b53b3fc5c3924bc28c82a7c"
+    }
+  }
+}
