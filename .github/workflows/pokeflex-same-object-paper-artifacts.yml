@@ -51,8 +51,58 @@ env:
   PYVISTA_OFF_SCREEN: "true"
 
 jobs:
+  source-preflight:
+    name: Hosted source and result contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install lightweight source-check environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate focused source and result contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py
+            scripts/paper/ensure_pokeflex_same_object_candidates.py
+            scripts/paper/make_pokeflex_same_object_figure.py
+            scripts/paper/prepare_pokeflex_same_object_assets.py
+            scripts/paper/pokeflex_same_object_video_capture.py
+            scripts/paper/pokeflex_same_object_video_encode.py
+            scripts/paper/pokeflex_same_object_video_plot.py
+            scripts/paper/render_pokeflex_same_object_video.py
+            tests/test_pokeflex_same_object_reporting.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            --cache-dir "${RUNNER_TEMP}/pokeflex-paper-mypy-cache" \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_pokeflex_same_object_reporting.py
+          python -m py_compile "${files[@]}"
+
   artifacts:
-    name: Validate, reproduce figure, and render video on workstation2
+    name: Reproduce figure and render video on workstation2
+    needs: source-preflight
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -71,6 +121,7 @@ jobs:
       - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
@@ -114,7 +165,7 @@ jobs:
             "torch==2.1.0" \
             --index-url https://download.pytorch.org/whl/cu121
           python -m pip install \
-            -e ".[dev,graph,vision]" \
+            -e ".[graph,vision]" \
             "numpy==1.26.4" \
             gdown \
             imageio-ffmpeg \
@@ -124,6 +175,7 @@ jobs:
             siren-pytorch \
             transformers==4.46.3 \
             trimesh
+          python -m pip check
           echo "BPT_PYTHON=$(command -v python)" >> "${GITHUB_ENV}"
           python - <<'PY'
           import cv2
@@ -154,28 +206,10 @@ jobs:
               print(f"{module.__name__}={module.__version__}")
           PY
 
-      - name: Validate focused source and result contracts
+      - name: Validate installed runtime entrypoints
         shell: bash
         run: |
           set -euo pipefail
-          files=(
-            src/bayesian_phystwin/pokeflex_same_object_reporting.py
-            scripts/paper/ensure_pokeflex_same_object_candidates.py
-            scripts/paper/make_pokeflex_same_object_figure.py
-            scripts/paper/prepare_pokeflex_same_object_assets.py
-            scripts/paper/pokeflex_same_object_video_capture.py
-            scripts/paper/pokeflex_same_object_video_encode.py
-            scripts/paper/pokeflex_same_object_video_plot.py
-            scripts/paper/render_pokeflex_same_object_video.py
-            tests/test_pokeflex_same_object_reporting.py
-          )
-          "${BPT_PYTHON}" -m ruff check "${files[@]}"
-          "${BPT_PYTHON}" -m ruff format --check "${files[@]}"
-          "${BPT_PYTHON}" -m mypy \
-            --cache-dir "${POKEFLEX_RUN_ROOT}/mypy-cache" \
-            src/bayesian_phystwin/pokeflex_same_object_reporting.py
-          "${BPT_PYTHON}" -m pytest -q -p no:cacheprovider \
-            tests/test_pokeflex_same_object_reporting.py
           "${BPT_PYTHON}" \
             scripts/paper/ensure_pokeflex_same_object_candidates.py --help
           "${BPT_PYTHON}" scripts/paper/prepare_pokeflex_same_object_assets.py --help
