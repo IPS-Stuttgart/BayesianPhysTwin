@@ -65,6 +65,16 @@ states that no camera media, tactile arrays, robot arrays, geometry annotations,
 or target outcomes were opened. Replacement remains forbidden after payload
 access.
 
+## Completed Stage-1 acquisition and alignment
+
+The ten calibration camera/tactile payloads have now been admitted, downloaded,
+verified, remapped to one local processing episode, and aligned with the pinned
+official processor. All ten succeeded, and an independent clean rerun produced
+byte-identical output trees for every object. Confirmation payloads remain
+unopened. Exact identities, released-data anomalies, the custody-order
+correction, and the remaining annotation boundary are documented in
+[`deform360_official_hub_stage1_result.md`](deform360_official_hub_stage1_result.md).
+
 ## Scientific model
 
 Visual rows retain the existing explicit-gauge model:
