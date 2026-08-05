@@ -30,6 +30,8 @@ The preflight specification fixes:
   `25d90ef7f78ba4307f4555cb636d666004e1bf66`;
 - `TencentARC/MotionCrafter` code at
   `9cb4e9679f5f34e249945544052464ef46324bc2`;
+- exact immutable Hugging Face revisions for the MotionCrafter model snapshot,
+  nested image VAE, and Stable Video Diffusion base pipeline;
 - provider API 2 with analytic Sim(3) composition Jacobians and canonical
   covariance roots;
 - the deterministic MotionCrafter model family;
@@ -46,19 +48,32 @@ source and frame rule, while each object's numerical prior remains a later
 calibration or observation artifact. This avoids pretending that the metric
 initialization is a monocular no-anchor method.
 
-## Cache resolution
+## Exact selective model bootstrap
 
-Every model source must already exist as a complete Hugging Face snapshot. The
-preflight recognizes:
+The preflight admits four model-source roles:
 
 1. MotionCrafter UNet;
 2. MotionCrafter geometry/motion VAE;
 3. the nested image VAE; and
 4. the Stable Video Diffusion base pipeline.
 
-Snapshot directory names must be exact 40- or 64-character revisions. A missing,
-incomplete, or ambiguous cache fails closed. The UNet and geometry/motion VAE
-must resolve to the same MotionCrafter model revision.
+Each role records an immutable repository revision and an explicit allowlist of
+required files. Before the producer lock is built, the self-hosted workflow runs:
+
+```bash
+python scripts/science/bootstrap_deform360_visual_provider_models.py \
+  --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+  --cache-dir /exact/huggingface/hub/cache \
+  --output model-bootstrap.json
+```
+
+The bootstrap retrieves only missing allowlisted members at the exact registered
+revisions. It does not accept a Deform360 path or inspect calibration or
+confirmation data. Existing complete snapshots are retained unchanged. After
+bootstrap, the ordinary preflight still resolves and validates every cached
+snapshot; a missing member, revision mismatch, ambiguous source, or changed
+information boundary fails closed. The UNet and geometry/motion VAE must resolve
+to the same MotionCrafter model revision.
 
 The script then uses Prob4D's `PinnedMotionCrafterModelSet` to derive the portable
 model-set identity. It emits a provider-v2 manifest and an independently
@@ -78,6 +93,9 @@ visual-provider-lock.json
 summary.json
 SHA256SUMS
 ```
+
+The workflow also retains compact `model-bootstrap.json`, cache-selection, log,
+and environment evidence. It does not upload model weights.
 
 When a committed bundle is present, `--expected-bundle-dir` requires byte-exact
 agreement for every substantive JSON file. This turns the self-hosted run from a
