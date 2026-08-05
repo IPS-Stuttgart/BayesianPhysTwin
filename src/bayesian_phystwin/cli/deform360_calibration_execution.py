@@ -77,7 +77,13 @@ def _logical_name(value: str) -> str:
     if "\\" in value:
         raise ValueError("source name must use POSIX separators")
     path = PurePosixPath(value)
-    if path.is_absolute() or not path.parts or ".." in path.parts or "." in path.parts:
+    if (
+        path.is_absolute()
+        or not path.parts
+        or ".." in path.parts
+        or "." in path.parts
+        or path.as_posix() != value
+    ):
         raise ValueError("source name must be a confined relative POSIX path")
     return path.as_posix()
 
