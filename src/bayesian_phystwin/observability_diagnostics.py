@@ -19,6 +19,7 @@ class MarginalInformationState(Protocol):
 
     def marginal_state_precision(self) -> np.ndarray:
         """Return the nuisance-marginalized physical-state precision."""
+        ...
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -187,11 +188,16 @@ class MarginalObservabilitySummary:
             "observability summary contains a non-finite scalar",
         )
         _require(
-            1.0 <= self.effective_rank <= self.query_dimension + 1e-12,
+            1.0 - 1e-12
+            <= self.effective_rank
+            <= self.query_dimension + 1e-12,
             "effective_rank is outside the query dimension",
         )
         _require(self.trace_precision > 0.0, "trace_precision must be positive")
-        _require(self.condition_number >= 1.0, "condition_number must be at least one")
+        _require(
+            self.condition_number >= 1.0 - 1e-12,
+            "condition_number must be at least one",
+        )
         _require(
             self.weakest_direction_variance > 0.0,
             "weakest_direction_variance must be positive",
@@ -350,6 +356,10 @@ def summarize_marginal_observability(
         absolute_tolerance=absolute_tolerance,
     )
     eigenvalues = np.linalg.eigvalsh(precision)
+    _require(
+        np.all(np.isfinite(eigenvalues)) and np.all(eigenvalues > 0.0),
+        "query precision spectrum must be finite and positive",
+    )
     threshold = max(
         absolute_tolerance,
         relative_tolerance * float(eigenvalues[-1]),
