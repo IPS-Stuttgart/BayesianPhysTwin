@@ -16,20 +16,22 @@ def pytest_configure(config: object) -> None:
     runs additionally collect the horizon contract test exactly once.
     """
 
-    if "coverage" not in sys.modules:
+    if sys.gettrace() is None:
         return
 
     args = getattr(config, "args", None)
     if not isinstance(args, list):
         return
 
-    horizon_test = Path(__file__).with_name(
-        "test_horizon_conditioned_discrepancy.py"
-    ).resolve()
+    horizon_test = (
+        Path(__file__).with_name("test_horizon_conditioned_discrepancy.py").resolve()
+    )
     resolved_args = [Path(argument).resolve() for argument in args]
     if horizon_test in resolved_args:
         return
-    if any(path.is_dir() and horizon_test.is_relative_to(path) for path in resolved_args):
+    if any(
+        path.is_dir() and horizon_test.is_relative_to(path) for path in resolved_args
+    ):
         return
 
     args.append(str(horizon_test))
