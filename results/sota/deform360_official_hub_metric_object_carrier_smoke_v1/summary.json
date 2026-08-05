@@ -1,0 +1,65 @@
+{
+  "artifact_kind": "Deform360OfficialHubMetricObjectCarrierSmokeSummary",
+  "claim_boundary": "Source-only metric object-carrier feasibility. No graph association, contact/state update, calibration score, confirmation payload, target outcome, or SOTA gain was opened or established.",
+  "gate": {
+    "assignment_mixture_preserved": [
+      0.5,
+      0.5
+    ],
+    "candidate_counts_by_assignment_camera": [
+      [
+        25,
+        15,
+        11
+      ],
+      [
+        25,
+        15,
+        11
+      ]
+    ],
+    "carrier_node_count": 0,
+    "contact_anchor_authorized": false,
+    "object_carrier_authorized": false,
+    "reason_codes": [
+      "carrier-construction:insufficient three-view carrier support"
+    ],
+    "required_carrier_node_count": 128,
+    "required_view_count": 3
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_allowed": true,
+    "calibration_provider_values_allowed_after_lock": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "physical_state_residual_used_for_reliability": false,
+    "target_outcomes_used": false
+  },
+  "protocol_id": "deform360-official-hub-metric-object-carrier-smoke-v1",
+  "provenance": {
+    "arrays_sha256": "53778f5bc03441c76e5875bcccbb0aed6c0084659b56477dd69ded7b7fa0c483",
+    "full_result_artifact_id": "76704e497b90ea28a6f707ea582a35fa06c7dfd6d04e7864cd4315090970fa78",
+    "full_result_file_sha256": "689685e5e9329e0edd6afafaaef9fa964f5b41612abf9243d9fed982fde4c351",
+    "implementation_revision": "9dd5c563921d8d25b211edd51e010344a6606b7b",
+    "lock_file_sha256": "9933bfbf6e97e90fae1473a74de20aed82dd098b3e8058d085f0a586cda0a0ae",
+    "lock_id": "bab42f816d11b8f13e885698ab86f771c4d666367815fe3250cd0c6c88c89d45",
+    "replay_byte_identical": true,
+    "runtime": {
+      "environment": "/home/florianpfaff/.venvs/deform360-processing-v1",
+      "python": "3.10.12",
+      "torch": "2.4.0+cu121"
+    },
+    "verification": {
+      "focused_tests_passed": 9,
+      "full_suite_environment_failures": 4,
+      "full_suite_passed": 2170,
+      "full_suite_skipped": 2,
+      "ruff_lint_passed": true
+    }
+  },
+  "schema_version": 1,
+  "status": "rejected-exact-fallback"
+}
