@@ -49,35 +49,38 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Select isolated Python 3.12 tool cache
+      - name: Prepare isolated dependency target
         shell: bash
         run: |
           set -euo pipefail
-          tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
-          python_bin="$(
-            find "${tool_root}" -path '*/3.12.*/x64/bin/python' -print 2>/dev/null \
-              | sort -V \
-              | tail -n 1
-          )"
+          python_bin="$(command -v python3.12 || command -v python3)"
           test -x "${python_bin}"
+          site="${RUNNER_TEMP}/deform360-contracts-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${site}"
+          mkdir -p "${site}"
           "${python_bin}" - <<'PY'
           import sys
 
-          if sys.version_info[:2] != (3, 12):
-              raise SystemExit(f"Python 3.12 is required, received {sys.version}")
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
           print(sys.executable)
           print(sys.version)
           PY
-          echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
-          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
+          {
+            echo "PYTHON_BIN=${python_bin}"
+            echo "PYTHON_SITE=${site}"
+            echo "PYTHONPATH=${site}"
+          } >> "${GITHUB_ENV}"
 
       - name: Install development environment
         shell: bash
         run: |
           set -euo pipefail
-          "${PYTHON_BIN}" -m ensurepip --upgrade
-          "${PYTHON_BIN}" -m pip install --upgrade pip
-          "${PYTHON_BIN}" -m pip install -e ".[dev]" "huggingface_hub>=0.24"
+          "${PYTHON_BIN}" -m pip install \
+            --break-system-packages \
+            --target "${PYTHON_SITE}" \
+            ".[dev]" \
+            "huggingface_hub>=0.24"
           "${PYTHON_BIN}" -m pip check
 
       - name: Validate reviewable source
@@ -142,37 +145,38 @@ jobs:
           fetch-depth: 1
           clean: true
 
-      - name: Select isolated Python 3.12 tool cache
+      - name: Prepare isolated dependency target
         shell: bash
         run: |
           set -euo pipefail
-          tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
-          python_bin="$(
-            find "${tool_root}" -path '*/3.12.*/x64/bin/python' -print 2>/dev/null \
-              | sort -V \
-              | tail -n 1
-          )"
+          python_bin="$(command -v python3.12 || command -v python3)"
           test -x "${python_bin}"
+          site="${RUNNER_TEMP}/deform360-preflight-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${site}"
+          mkdir -p "${site}"
           "${python_bin}" - <<'PY'
           import sys
 
-          if sys.version_info[:2] != (3, 12):
-              raise SystemExit(f"Python 3.12 is required, received {sys.version}")
+          if sys.version_info < (3, 10):
+              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
           print(sys.executable)
           print(sys.version)
           PY
-          echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
-          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
+          {
+            echo "PYTHON_BIN=${python_bin}"
+            echo "PYTHON_SITE=${site}"
+            echo "PYTHONPATH=${site}"
+          } >> "${GITHUB_ENV}"
 
       - name: Install data-free producer environment
         shell: bash
         run: |
           set -euo pipefail
-          "${PYTHON_BIN}" -m ensurepip --upgrade
-          "${PYTHON_BIN}" -m pip install --upgrade pip
           "${PYTHON_BIN}" -m pip install \
-            -e ".[dev]" \
-            -e ./_prob4d \
+            --break-system-packages \
+            --target "${PYTHON_SITE}" \
+            ".[dev]" \
+            ./_prob4d \
             "huggingface_hub>=0.24"
           "${PYTHON_BIN}" -m pip check
 
