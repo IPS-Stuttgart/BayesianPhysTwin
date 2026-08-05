@@ -285,9 +285,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
         execution_manifest=execution_manifest,
         prospective_protocol=prospective_protocol,
     )
-    requested_attestation = (
-        args.attest_take_id.strip() if args.attest_take_id else None
-    )
+    requested_attestation = args.attest_take_id.strip() if args.attest_take_id else None
     attested_take_id = asset_resolver._select_take(result, requested_attestation)
 
     output_root = args.output_root.resolve()
@@ -332,8 +330,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
         archive = archive_by_take[take_id]
         archive_verification = _archive_verification(archive)
         raw_take_attestation_required = (
-            take_id == attested_take_id
-            and archive_verification["status"] != "verified"
+            take_id == attested_take_id and archive_verification["status"] != "verified"
         )
         frozen = Path(str(record["path"]))
         target = output_root / frozen.name
