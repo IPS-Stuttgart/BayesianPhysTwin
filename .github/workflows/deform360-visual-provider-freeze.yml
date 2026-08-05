@@ -49,12 +49,16 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Select runner Python
+      - name: Create isolated runner Python
         shell: bash
         run: |
           set -euo pipefail
-          python_bin="$(command -v python3.12 || command -v python3)"
-          test -x "${python_bin}"
+          base_python="$(command -v python3.12 || command -v python3)"
+          test -x "${base_python}"
+          venv="${RUNNER_TEMP}/deform360-contracts-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${venv}"
+          "${base_python}" -m venv "${venv}"
+          python_bin="${venv}/bin/python"
           "${python_bin}" - <<'PY'
           import sys
 
@@ -63,7 +67,7 @@ jobs:
           print(sys.version)
           PY
           echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
-          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
+          echo "${venv}/bin" >> "${GITHUB_PATH}"
 
       - name: Install development environment
         run: |
@@ -132,12 +136,16 @@ jobs:
           fetch-depth: 1
           clean: true
 
-      - name: Select runner Python
+      - name: Create isolated runner Python
         shell: bash
         run: |
           set -euo pipefail
-          python_bin="$(command -v python3.12 || command -v python3)"
-          test -x "${python_bin}"
+          base_python="$(command -v python3.12 || command -v python3)"
+          test -x "${base_python}"
+          venv="${RUNNER_TEMP}/deform360-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${venv}"
+          "${base_python}" -m venv "${venv}"
+          python_bin="${venv}/bin/python"
           "${python_bin}" - <<'PY'
           import sys
 
@@ -146,7 +154,7 @@ jobs:
           print(sys.version)
           PY
           echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
-          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
+          echo "${venv}/bin" >> "${GITHUB_PATH}"
 
       - name: Install data-free producer environment
         shell: bash
