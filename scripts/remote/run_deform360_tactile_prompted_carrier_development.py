@@ -350,6 +350,19 @@ def main() -> int:
         implementation = validation["implementation"]
         _require(isinstance(implementation, dict), "validation implementation missing")
         _require_ancestor(repository, str(implementation["revision"]))
+        _require(
+            _sha256(
+                repository
+                / "src/bayesian_phystwin/deform360_tactile_prompted_carrier.py"
+            )
+            == implementation["module_source_sha256"],
+            "validation carrier implementation changed",
+        )
+        _require(
+            _sha256(Path(__file__).resolve())
+            == implementation["validation_runner_source_sha256"],
+            "validation runner changed",
+        )
         source = validation["source_case"]
         _require(isinstance(source, dict), "validation source missing")
         object_id = str(source["object_id"])
