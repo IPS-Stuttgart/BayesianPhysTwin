@@ -49,13 +49,13 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Select isolated tool-cache Python
+      - name: Select isolated Python 3.12 tool cache
         shell: bash
         run: |
           set -euo pipefail
           tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
           python_bin="$(
-            find "${tool_root}" -path '*/x64/bin/python' -print 2>/dev/null \
+            find "${tool_root}" -path '*/3.12.*/x64/bin/python' -print 2>/dev/null \
               | sort -V \
               | tail -n 1
           )"
@@ -63,8 +63,8 @@ jobs:
           "${python_bin}" - <<'PY'
           import sys
 
-          if sys.version_info < (3, 10):
-              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          if sys.version_info[:2] != (3, 12):
+              raise SystemExit(f"Python 3.12 is required, received {sys.version}")
           print(sys.executable)
           print(sys.version)
           PY
@@ -138,13 +138,13 @@ jobs:
           fetch-depth: 1
           clean: true
 
-      - name: Select isolated tool-cache Python
+      - name: Select isolated Python 3.12 tool cache
         shell: bash
         run: |
           set -euo pipefail
           tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
           python_bin="$(
-            find "${tool_root}" -path '*/x64/bin/python' -print 2>/dev/null \
+            find "${tool_root}" -path '*/3.12.*/x64/bin/python' -print 2>/dev/null \
               | sort -V \
               | tail -n 1
           )"
@@ -152,8 +152,8 @@ jobs:
           "${python_bin}" - <<'PY'
           import sys
 
-          if sys.version_info < (3, 10):
-              raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          if sys.version_info[:2] != (3, 12):
+              raise SystemExit(f"Python 3.12 is required, received {sys.version}")
           print(sys.executable)
           print(sys.version)
           PY
