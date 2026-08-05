@@ -20,7 +20,7 @@ from bayesian_phystwin.cli.command_registry import (
 
 def test_registry_is_complete_and_unambiguous() -> None:
     validate_registry()
-    assert len(COMMANDS) == 81
+    assert len(COMMANDS) == 82
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
     assert len(COMMANDS_BY_LEGACY_ALIAS) == 80
@@ -36,7 +36,7 @@ def test_registry_covers_all_lifecycle_states() -> None:
     counts = {status: len(iter_commands(status=status)) for status in CommandStatus}
     assert counts == {
         CommandStatus.STABLE: 6,
-        CommandStatus.EXPERIMENT: 33,
+        CommandStatus.EXPERIMENT: 34,
         CommandStatus.DIAGNOSTIC: 17,
         CommandStatus.ARCHIVED: 25,
     }
