@@ -136,35 +136,74 @@ def _stage_candidate_artifacts(
     result: Mapping[str, Any],
     *,
     candidate_root: Path | None,
+    search_roots: Iterable[Path],
     output_root: Path,
 ) -> list[dict[str, Any]]:
     records = result.get("candidate_artifacts")
     _require(isinstance(records, list) and records, "candidate artifacts are missing")
+    take_ids = result.get("take_ids")
+    _require(isinstance(take_ids, list) and take_ids, "prospective take IDs are missing")
+    frozen_take_ids = {str(value) for value in take_ids}
     output_root.mkdir(parents=True, exist_ok=True)
     staged: list[dict[str, Any]] = []
     for record in records:
         frozen = Path(str(record["path"]))
-        candidates = []
-        if candidate_root is not None:
-            candidates.append(candidate_root / frozen.name)
-        candidates.append(frozen)
-        source = next((path for path in candidates if path.is_file()), None)
-        if source is None:
-            raise FileNotFoundError(
-                "frozen candidate artifact is missing: "
-                + ", ".join(map(str, candidates))
-            )
-        digest = _sha256(source)
+        expected_sha = str(record["sha256"])
+        suffix = "_candidates.json"
         _require(
-            digest == str(record["sha256"]),
-            f"candidate artifact checksum changed: {source}",
+            frozen.name.endswith(suffix),
+            f"candidate artifact name is not canonical: {frozen.name}",
         )
+        take_id = str(record.get("take_id", frozen.name.removesuffix(suffix)))
+        _require(take_id in frozen_take_ids, f"candidate take is outside panel: {take_id}")
+
+        candidates: list[tuple[Path, str]] = []
+        if candidate_root is not None:
+            candidates.append((candidate_root / frozen.name, "configured"))
+        candidates.append((frozen, "frozen"))
+        candidates.extend(
+            (path, "discovered")
+            for path in _walk_files(search_roots, filename=frozen.name)
+        )
+
+        source: Path | None = None
+        digest: str | None = None
+        resolution: str | None = None
+        attempts: list[str] = []
+        seen: set[str] = set()
+        for path, source_kind in candidates:
+            key = str(path.absolute())
+            if key in seen:
+                continue
+            seen.add(key)
+            try:
+                if not path.is_file():
+                    attempts.append(f"{path}: missing")
+                    continue
+                observed = _sha256(path)
+            except OSError as error:
+                attempts.append(f"{path}: {error}")
+                continue
+            if observed != expected_sha:
+                attempts.append(f"{path}: sha256={observed}")
+                continue
+            source = path
+            digest = observed
+            resolution = source_kind
+            break
+        if source is None or digest is None or resolution is None:
+            detail = "; ".join(attempts) if attempts else "no candidate paths found"
+            raise FileNotFoundError(
+                f"no readable exact-SHA candidate artifact for {take_id}: {detail}"
+            )
+
         target = output_root / frozen.name
         shutil.copy2(source, target)
         staged.append(
             {
-                "take_id": record["take_id"],
+                "take_id": take_id,
                 "source": str(source.resolve()),
+                "source_resolution": resolution,
                 "staged": str(target.resolve()),
                 "sha256": digest,
                 "byte_identical_to_frozen": True,
@@ -411,6 +450,7 @@ def prepare_assets(args: argparse.Namespace) -> dict[str, Any]:
     staged_candidates = _stage_candidate_artifacts(
         result,
         candidate_root=candidate_root,
+        search_roots=search_roots,
         output_root=candidate_stage,
     )
     staged_take, take_evidence = _stage_take(
