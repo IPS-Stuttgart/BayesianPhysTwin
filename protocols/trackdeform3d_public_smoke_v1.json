@@ -14,22 +14,61 @@
     {"object_kind": "fabric", "chunk": "chunk_14"},
     {"object_kind": "cloth", "chunk": "chunk_0"}
   ],
-  "first_smoke": {
+  "development_clip": {
     "object_kind": "dlo",
     "chunk": "chunk_1",
     "clip_index": 0,
+    "global_start_frame": 0,
     "clip_frames": 300,
     "prefix_frames": 60,
     "future_frames": 60,
     "observed_identity_fraction": 0.25,
-    "identity_split_source": "frame_zero_geometry_only"
+    "identity_split_source": "frame_zero_geometry_only",
+    "status": "opened_for_method_development"
+  },
+  "untouched_validation_clip": {
+    "object_kind": "dlo",
+    "chunk": "chunk_1",
+    "clip_index": 1,
+    "global_start_frame": 300,
+    "clip_frames": 300,
+    "prefix_frames": 60,
+    "future_frames": 60,
+    "observed_identity_fraction": 0.25,
+    "identity_split_source": "frame_zero_geometry_only",
+    "status_at_lock": "prediction_unrun_and_future_unscored"
   },
   "frozen_arms": [
-    "exact_persistence",
-    "constant_velocity",
-    "shared_graph_physical_forward_model",
-    "bayesian_prefix_state_update"
+    "frame_zero_persistence",
+    "sparse_prefix_constant_velocity",
+    "known_action_inextensible_graph_prior",
+    "guarded_action_conditioned_bayesian_graph_discrepancy"
   ],
+  "physical_prior": {
+    "endpoint_assignment": "minimum_frame_zero_endpoint_to_end_effector_cost",
+    "action_transfer": "graph_geodesic_linear_blend",
+    "edge_projection": "40_iteration_position_based_inextensibility"
+  },
+  "bayesian_discrepancy": {
+    "graph_rank": 4,
+    "action_features": [
+      "intercept",
+      "left_and_right_displacement_from_frame_zero_m",
+      "left_and_right_frame_velocity_m"
+    ],
+    "observation_std_m": 0.005,
+    "coefficient_prior_std_m": 0.03,
+    "maximum_correction_m": 0.1,
+    "fit": "bayesian_linear_graph_mode_regression"
+  },
+  "prefix_gate": {
+    "fit_frames": [0, 40],
+    "validation_frames": [40, 60],
+    "minimum_rmse_improvement_fraction": 0.1,
+    "last_five_rmse_must_not_regress": true,
+    "fallback": "bit_exact_known_action_graph_prior",
+    "uncertainty_calibration": "frame_clustered_90_percent_simultaneous_prefix_score"
+  },
   "required_metrics": [
     "hidden_identity_rmse_m",
     "hidden_final_displacement_error_m",
@@ -42,6 +81,8 @@
     "future_rgbd_used_for_prediction": false,
     "future_keypoints_used_for_prediction": false,
     "observed_identities_scored": false,
+    "known_future_robot_action_used": true,
+    "upstream_tracker_trajectory_is_pseudo_observation_not_ground_truth": true,
     "sample_result_is_confirmation": false,
     "sample_result_is_sota_evidence": false
   }
