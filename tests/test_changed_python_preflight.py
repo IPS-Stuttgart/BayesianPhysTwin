@@ -120,6 +120,28 @@ def test_rejects_unavailable_revision(tmp_path: Path) -> None:
     assert "base_revision is not an available commit" in result.stderr
 
 
+def test_rejects_checkout_that_does_not_match_requested_head(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    _initialize_repository(repository)
+    (repository / "module.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _git(repository, "add", ".")
+    _git(repository, "commit", "-m", "base")
+    base = _git(repository, "rev-parse", "HEAD")
+
+    (repository / "module.py").write_text("VALUE = 2\n", encoding="utf-8")
+    _git(repository, "add", "module.py")
+    _git(repository, "commit", "-m", "head")
+    head = _git(repository, "rev-parse", "HEAD")
+    _git(repository, "checkout", "--detach", base)
+
+    result = _run_preflight(repository, base=base, head=head)
+
+    assert result.returncode != 0
+    assert "repository HEAD does not match head_revision" in result.stderr
+
+
 @pytest.mark.skipif(not hasattr(Path, "is_symlink"), reason="symlinks unsupported")
 def test_rejects_changed_python_symlink(tmp_path: Path) -> None:
     repository = tmp_path / "repository"

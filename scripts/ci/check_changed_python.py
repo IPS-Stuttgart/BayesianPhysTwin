@@ -28,13 +28,18 @@ def _run_git(
     )
 
 
-def _verify_revision(repository_root: Path, revision: str, *, name: str) -> None:
+def _resolve_revision(repository_root: Path, revision: str, *, name: str) -> str:
     if not revision or revision.strip() != revision:
         raise ValueError(f"{name} must be a nonempty canonical revision")
     try:
-        _run_git(repository_root, ["cat-file", "-e", f"{revision}^{{commit}}"])
+        result = _run_git(
+            repository_root,
+            ["rev-parse", "--verify", f"{revision}^{{commit}}"],
+            capture_output=True,
+        )
     except subprocess.CalledProcessError as error:
         raise ValueError(f"{name} is not an available commit: {revision}") from error
+    return result.stdout.decode("ascii").strip()
 
 
 def changed_python_files(
@@ -46,8 +51,14 @@ def changed_python_files(
     """Return ordinary repository-local Python files changed in one exact diff."""
 
     root = repository_root.resolve(strict=True)
-    _verify_revision(root, base_revision, name="base_revision")
-    _verify_revision(root, head_revision, name="head_revision")
+    base_sha = _resolve_revision(root, base_revision, name="base_revision")
+    head_sha = _resolve_revision(root, head_revision, name="head_revision")
+    checkout_sha = _resolve_revision(root, "HEAD", name="repository HEAD")
+    if checkout_sha != head_sha:
+        raise ValueError(
+            "repository HEAD does not match head_revision; "
+            "refusing to check files from a different tree"
+        )
     result = _run_git(
         root,
         [
@@ -55,8 +66,8 @@ def changed_python_files(
             "--name-only",
             "--diff-filter=ACMR",
             "-z",
-            base_revision,
-            head_revision,
+            base_sha,
+            head_sha,
             "--",
             "*.py",
         ],
