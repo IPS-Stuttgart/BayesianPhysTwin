@@ -286,3 +286,21 @@ def test_cli_embeds_bootstrap_configuration_and_fails_closed(tmp_path: Path) -> 
     invalid_input.write_text("[]\n", encoding="utf-8")
     with pytest.raises(ValueError, match="input JSON must contain an object"):
         evidence_main([str(invalid_input), str(invalid_output)])
+
+
+def test_cli_rejects_changed_analysis_configuration(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    input_path = tmp_path / "evidence.json"
+    output_path = tmp_path / "summary.json"
+    input_path.write_text(json.dumps(_payload()), encoding="utf-8")
+    monkeypatch.setattr(
+        "bayesian_phystwin.cli.decisive_evidence.analyze_decisive_evidence",
+        lambda *_args, **_kwargs: {"analysis_configuration": None},
+    )
+
+    with pytest.raises(
+        AssertionError,
+        match="decisive-evidence analysis configuration changed",
+    ):
+        evidence_main([str(input_path), str(output_path)])
