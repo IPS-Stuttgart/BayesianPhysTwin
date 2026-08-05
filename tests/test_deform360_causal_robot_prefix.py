@@ -159,6 +159,21 @@ def test_lock_roundtrip_rejects_future_use(tmp_path: Path) -> None:
         validate_deform360_causal_robot_prefix_lock(changed)
 
 
+def test_committed_source_only_smoke_lock_remains_valid() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "protocols/locks/deform360_official_hub_causal_robot_prefix_smoke_v1.json"
+    )
+
+    lock = load_deform360_causal_robot_prefix_lock(path)
+
+    assert lock["artifact_id"] == (
+        "7e4f7a30d9ad00da9f47d2c0debd42fea704c0985e65f78f8cd4f584dc52bc34"
+    )
+    assert len(lock["source_case"]["cameras"]) == 36
+    assert lock["information_boundary"]["calibration_scores_opened"] is False
+
+
 def test_causal_decoder_is_camera_order_invariant_and_never_reads_future() -> None:
     first = {
         "camera-b": _Capture([0, 1, 2, 3, 900, 901]),
