@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -25,6 +26,95 @@ def test_contract_profile_reports_custody_boundary(
     assert payload["replacement_allowed"] is False
     assert len(payload["analysis_runner_sha256"]) == 64
     assert "retrospective/exploratory" in payload["claim_boundary"]
+
+
+@pytest.mark.parametrize(
+    "mutation, message",
+    [
+        ("parent", "parent changed"),
+        ("causal", "causal contract changed"),
+        ("replacement", "may not be replaced"),
+        ("innovation", "processed once"),
+        ("reliability", "outcome-dependent"),
+        ("runner", "runner is missing"),
+    ],
+)
+def test_contract_profile_rejects_boundary_mutations(
+    mutation: str,
+    message: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = deepcopy(
+        load_pokeflex_independent_depth_protocol(cli._default_source_protocol())
+    )
+    _, registration = cli._load_contracts(
+        cli._default_source_protocol(), cli._default_registration_protocol()
+    )
+    registration = deepcopy(registration)
+    if mutation == "parent":
+        source["payload"]["parent_protocol"]["protocol_sha256"] = "changed"
+    elif mutation == "causal":
+        source["payload"]["causal_input_contract"]["robot_history"] = "future"
+    elif mutation == "replacement":
+        source["payload"]["evidence_boundary"]["replacement_allowed"] = True
+    elif mutation == "innovation":
+        source["payload"]["method_lock"]["state_innovation_processed_once"] = False
+    elif mutation == "reliability":
+        registration["payload"]["methods"]["candidate_constraints"][
+            "observation_reliability_is_residual_independent"
+        ] = False
+    else:
+        monkeypatch.setattr(cli, "_analysis_runner", lambda: tmp_path / "missing.py")
+    monkeypatch.setattr(
+        cli, "load_pokeflex_independent_depth_protocol", lambda _: source
+    )
+    monkeypatch.setattr(
+        cli, "load_pokeflex_registration_protocol", lambda _: registration
+    )
+    with pytest.raises((ValueError, FileNotFoundError), match=message):
+        cli._load_contracts(Path("source.json"), Path("registration.json"))
+
+
+def test_git_head_and_directory_validation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        cli.subprocess,
+        "run",
+        lambda *_, **__: SimpleNamespace(stdout="revision\n"),
+    )
+    assert cli._git_head(tmp_path) == "revision"
+    assert cli._require_directory(tmp_path, "dataset_root") == tmp_path.resolve()
+    with pytest.raises(ValueError, match="--dataset-root is required"):
+        cli._require_directory(None, "dataset_root")
+    with pytest.raises(ValueError, match="is not a directory"):
+        cli._require_directory(tmp_path / "missing", "dataset_root")
+
+
+def test_checkpoint_verification_accepts_exact_bytes_and_rejects_failures(
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.pth"
+    checkpoint.write_bytes(b"checkpoint")
+    registration = {
+        "payload": {
+            "upstream": {
+                "released_kinect_checkpoint": {
+                    checkpoint.name: {"sha256": cli._sha256(checkpoint)}
+                }
+            }
+        }
+    }
+    assert cli._verify_checkpoint_files(tmp_path, registration) == {
+        checkpoint.name: cli._sha256(checkpoint)
+    }
+    checkpoint.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="checksum changed"):
+        cli._verify_checkpoint_files(tmp_path, registration)
+    checkpoint.unlink()
+    with pytest.raises(FileNotFoundError, match="missing PokeFlex checkpoint"):
+        cli._verify_checkpoint_files(tmp_path, registration)
 
 
 def test_source_profile_runs_only_registered_source_take(
