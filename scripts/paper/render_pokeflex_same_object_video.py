@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Render one clear video for the frozen PokeFlex same-object replication."""
-# ruff: noqa: E402, I001
 
 from __future__ import annotations
 
@@ -103,7 +102,7 @@ def main() -> None:
         / "remote"
         / "run_pokeflex_checkpoint_registration_independent_depth.py"
     )
-    expected_runner = prospective_protocol["parent_method"][
+    expected_runner = prospective_protocol["payload"]["parent_method"][
         "candidate_runner_sha256"
     ]
     _require(
