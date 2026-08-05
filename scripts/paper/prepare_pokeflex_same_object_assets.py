@@ -142,7 +142,9 @@ def _stage_candidate_artifacts(
     records = result.get("candidate_artifacts")
     _require(isinstance(records, list) and records, "candidate artifacts are missing")
     take_ids = result.get("take_ids")
-    _require(isinstance(take_ids, list) and take_ids, "prospective take IDs are missing")
+    _require(
+        isinstance(take_ids, list) and take_ids, "prospective take IDs are missing"
+    )
     frozen_take_ids = {str(value) for value in take_ids}
     output_root.mkdir(parents=True, exist_ok=True)
     staged: list[dict[str, Any]] = []
@@ -155,7 +157,9 @@ def _stage_candidate_artifacts(
             f"candidate artifact name is not canonical: {frozen.name}",
         )
         take_id = str(record.get("take_id", frozen.name.removesuffix(suffix)))
-        _require(take_id in frozen_take_ids, f"candidate take is outside panel: {take_id}")
+        _require(
+            take_id in frozen_take_ids, f"candidate take is outside panel: {take_id}"
+        )
 
         candidates: list[tuple[Path, str]] = []
         if candidate_root is not None:
