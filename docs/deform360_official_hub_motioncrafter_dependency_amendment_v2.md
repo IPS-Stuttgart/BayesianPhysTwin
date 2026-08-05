@@ -140,6 +140,16 @@ Already complete predictions are hash-verified directly, and partial jobs resume
 only inside their own isolated worker. This changes orchestration only and must
 be bound by a new job manifest and fresh output root; v5 remains immutable.
 
+The process-isolated schedule is
+`protocols/locks/deform360_official_hub_visuotactile_v6_motioncrafter_jobs.json`,
+with manifest ID
+`9726e7ae12d442956ff81376fe52cdc2f8360fdcd3e5cccbc12543ca584b30f9` and
+file SHA-256
+`b9302a27d779a6de619baffc04e624eee629a226a140b90278fa9dd06b213fe2`.
+It binds Bayesian-PhysTwin implementation
+`5b7f1c60546b814c1c34e56db397e4a0877dd36f` and runner SHA-256
+`2d3fe74d7d76ff1cf5766781879056ddfabaa1e5e1842ae776fdd01514846e65`.
+
 ## Claim boundary
 
 This amendment establishes runtime completeness and provenance only. It is not
