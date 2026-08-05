@@ -49,25 +49,27 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Create isolated runner Python
+      - name: Select isolated tool-cache Python
         shell: bash
         run: |
           set -euo pipefail
-          base_python="$(command -v python3.12 || command -v python3)"
-          test -x "${base_python}"
-          venv="${RUNNER_TEMP}/deform360-contracts-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf "${venv}"
-          "${base_python}" -m venv "${venv}"
-          python_bin="${venv}/bin/python"
+          tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
+          python_bin="$(
+            find "${tool_root}" -type f -path '*/x64/bin/python' -print 2>/dev/null \
+              | sort -V \
+              | tail -n 1
+          )"
+          test -x "${python_bin}"
           "${python_bin}" - <<'PY'
           import sys
 
           if sys.version_info < (3, 10):
               raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.executable)
           print(sys.version)
           PY
           echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
-          echo "${venv}/bin" >> "${GITHUB_PATH}"
+          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
 
       - name: Install development environment
         run: |
@@ -136,25 +138,27 @@ jobs:
           fetch-depth: 1
           clean: true
 
-      - name: Create isolated runner Python
+      - name: Select isolated tool-cache Python
         shell: bash
         run: |
           set -euo pipefail
-          base_python="$(command -v python3.12 || command -v python3)"
-          test -x "${base_python}"
-          venv="${RUNNER_TEMP}/deform360-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf "${venv}"
-          "${base_python}" -m venv "${venv}"
-          python_bin="${venv}/bin/python"
+          tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
+          python_bin="$(
+            find "${tool_root}" -type f -path '*/x64/bin/python' -print 2>/dev/null \
+              | sort -V \
+              | tail -n 1
+          )"
+          test -x "${python_bin}"
           "${python_bin}" - <<'PY'
           import sys
 
           if sys.version_info < (3, 10):
               raise SystemExit(f"Python >=3.10 is required, received {sys.version}")
+          print(sys.executable)
           print(sys.version)
           PY
           echo "PYTHON_BIN=${python_bin}" >> "${GITHUB_ENV}"
-          echo "${venv}/bin" >> "${GITHUB_PATH}"
+          echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
 
       - name: Install data-free producer environment
         shell: bash
