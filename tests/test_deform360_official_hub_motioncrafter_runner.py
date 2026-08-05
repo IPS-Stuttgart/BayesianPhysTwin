@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -67,3 +68,36 @@ def test_memory_barrier_runs_after_failure(monkeypatch: pytest.MonkeyPatch) -> N
 
     assert runner.resume_calls == [False]
     assert releases == ["release"]
+
+
+def test_isolated_worker_command_binds_paths_and_resume(tmp_path: Path) -> None:
+    args = SimpleNamespace(
+        job_manifest=tmp_path / "jobs.json",
+        processed_root=tmp_path / "processed",
+        output_root=tmp_path / "outputs",
+        prob4d_root=tmp_path / "prob4d",
+        motioncrafter_root=tmp_path / "motioncrafter",
+        cache_dir=tmp_path / "cache",
+        repository_root=tmp_path / "bpt",
+    )
+    runner_source = tmp_path / "runner.py"
+
+    command = MODULE._isolated_worker_command(
+        args,
+        runner_source=runner_source,
+        job_id="job-001",
+        resume=True,
+    )
+
+    assert command[:2] == [sys.executable, str(runner_source)]
+    assert command[-3:] == ["--worker-job-id", "job-001", "--resume"]
+    for path in (
+        args.job_manifest,
+        args.processed_root,
+        args.output_root,
+        args.prob4d_root,
+        args.motioncrafter_root,
+        args.cache_dir,
+        args.repository_root,
+    ):
+        assert str(path.resolve()) in command

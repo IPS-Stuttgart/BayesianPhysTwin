@@ -155,6 +155,38 @@ def _run_with_memory_barrier(runner: Any, *, resume: bool) -> Path:
         _release_job_memory()
 
 
+def _isolated_worker_command(
+    args: argparse.Namespace,
+    *,
+    runner_source: Path,
+    job_id: str,
+    resume: bool,
+) -> list[str]:
+    command = [
+        sys.executable,
+        str(runner_source),
+        "--job-manifest",
+        str(args.job_manifest.resolve()),
+        "--processed-root",
+        str(args.processed_root.resolve()),
+        "--output-root",
+        str(args.output_root.resolve()),
+        "--prob4d-root",
+        str(args.prob4d_root.resolve()),
+        "--motioncrafter-root",
+        str(args.motioncrafter_root.resolve()),
+        "--cache-dir",
+        str(args.cache_dir.resolve()),
+        "--repository-root",
+        str(args.repository_root.resolve()),
+        "--worker-job-id",
+        job_id,
+    ]
+    if resume:
+        command.append("--resume")
+    return command
+
+
 def _validate_source(root: Path, job: Mapping[str, Any]) -> Path:
     source = job["source_video"]
     path = _safe_member(root, str(source["path"]))
@@ -272,7 +304,11 @@ def main() -> int:
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--smoke-only", action="store_true")
+    parser.add_argument("--worker-job-id", help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+    if args.smoke_only and args.worker_job_id is not None:
+        raise ValueError("smoke-only and worker-job-id are mutually exclusive")
 
     job_manifest = load_deform360_motioncrafter_job_manifest(args.job_manifest)
     implementation = job_manifest["implementation"]
@@ -326,11 +362,19 @@ def main() -> int:
 
     configuration = job_manifest["run_configuration"]
     jobs = list(job_manifest["jobs"])
-    if args.smoke_only:
+    if args.worker_job_id is not None:
+        jobs = [job for job in jobs if job["job_id"] == args.worker_job_id]
+        if len(jobs) != 1:
+            raise ValueError("worker job is not unique in the frozen manifest")
+    elif args.smoke_only:
         jobs = [job for job in jobs if job["job_id"] == job_manifest["smoke_job_id"]]
         if len(jobs) != 1:
             raise ValueError("frozen smoke job is not unique")
-    shared_factory = _SharedPinnedAdapterFactory(model_set)
+    shared_factory = (
+        _SharedPinnedAdapterFactory(model_set)
+        if args.worker_job_id is not None
+        else None
+    )
     completed: list[dict[str, object]] = []
     report_path = args.output_root.resolve() / "run_report.json"
     args.output_root.mkdir(parents=True, exist_ok=True)
@@ -365,8 +409,22 @@ def main() -> int:
             raise ValueError(
                 f"job output already exists; rerun with --resume: {output_directory}"
             )
-        runner = SafeMotionCrafterRunner(config, adapter_factory=shared_factory)
-        prediction_path = _run_with_memory_barrier(runner, resume=has_existing)
+        prediction_path = output_directory / "predictions.json"
+        if args.worker_job_id is not None:
+            if shared_factory is None:
+                raise AssertionError("worker lacks a pinned adapter factory")
+            runner = SafeMotionCrafterRunner(config, adapter_factory=shared_factory)
+            prediction_path = _run_with_memory_barrier(runner, resume=has_existing)
+        elif not prediction_path.is_file():
+            subprocess.run(
+                _isolated_worker_command(
+                    args,
+                    runner_source=runner_source,
+                    job_id=str(job["job_id"]),
+                    resume=has_existing,
+                ),
+                check=True,
+            )
         result = _validate_prediction(
             prediction_path,
             job=job,
@@ -376,6 +434,9 @@ def main() -> int:
             ),
         )
         completed.append({"job_id": job["job_id"], **result})
+        if args.worker_job_id is not None:
+            print(f"worker completed {job['job_id']}", flush=True)
+            continue
         write_atomic_json(
             _run_report(
                 job_manifest=job_manifest,

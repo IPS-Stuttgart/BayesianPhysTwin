@@ -127,6 +127,19 @@ It binds Bayesian-PhysTwin implementation
 `4d662a3c48d063edaa420e9a10b94b365422c3f0` and runner SHA-256
 `56a9dc023692d2bdfc73cd60d624c4a9405145691222c5c0c6545a37e3f68d22`.
 
+The v5 smoke completed, but the complete-cohort continuation again stopped on
+the third camera during VAE decoding. Explicit garbage collection and CUDA cache
+release reduced the retained allocation but did not remove non-releasable
+allocator state from the shared model process. Two of 30 jobs completed; scores,
+policy fitting, confirmation payloads, and target outcomes remained sealed.
+
+The next runtime isolates every independent camera job in a child process. The
+parent verifies the frozen schedule and each content-addressed prediction, while
+process exit provides a complete CUDA-context teardown before the next camera.
+Already complete predictions are hash-verified directly, and partial jobs resume
+only inside their own isolated worker. This changes orchestration only and must
+be bound by a new job manifest and fresh output root; v5 remains immutable.
+
 ## Claim boundary
 
 This amendment establishes runtime completeness and provenance only. It is not
