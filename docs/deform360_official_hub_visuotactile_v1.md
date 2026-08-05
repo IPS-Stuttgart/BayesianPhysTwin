@@ -37,6 +37,34 @@ files. Later stages must use the official preprocessing implementation pinned to
 A resolved Hub revision and exact object/episode selection must be committed and
 hash-bound before any selected raw payload is downloaded.
 
+## Completed Stage-0 lock
+
+The publication workflow completed on the hosted contract lane and on
+`workstation2`. The committed lock is
+[`protocols/locks/deform360_official_hub_visuotactile_v1_selection.json`](../protocols/locks/deform360_official_hub_visuotactile_v1_selection.json).
+It binds:
+
+- official dataset revision
+  `f804696d7a133908c7497ffdab43819d879b5cbc`;
+- selector implementation revision
+  `b3d0b0657fc183381a5705a28a26e2ee3a701d5c`;
+- content-selection SHA-256
+  `f3d3ac25020ec85cad3fadf097259930437baae2b50b4c7f21f61d4823fc649b`;
+- canonical selection SHA-256
+  `b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222`;
+- complete selection-artifact SHA-256
+  `47c577b6d08f8beba187a622b3555631a2a7f3d970cb1d2fde80fb5584173071`;
+- five calibration and six confirmation objects in each of the sheet and
+  volumetric strata; and
+- the exact metadata-file SHA-256 for all 22 selected object/episode pairs.
+
+The official inventory contained 192 raw object directories. Ninety-two objects
+were excluded by the frozen prior-protocol and contaminated-cache boundaries.
+Stage 0 opened the 22 selected `metadata.json` files only. Its recorded boundary
+states that no camera media, tactile arrays, robot arrays, geometry annotations,
+or target outcomes were opened. Replacement remains forbidden after payload
+access.
+
 ## Scientific model
 
 Visual rows retain the existing explicit-gauge model:
