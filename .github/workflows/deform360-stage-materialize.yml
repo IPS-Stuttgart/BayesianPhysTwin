@@ -4,24 +4,34 @@ on:
   push:
     branches:
       - agent/deform360-stage-authorization
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 concurrency:
-  group: deform360-stage-materialize-${{ github.ref }}
+  group: deform360-stage-materialize-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
+
+env:
+  TARGET_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
 jobs:
   materialize:
     name: Materialize and validate exact source
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name == 'push' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out exact transport commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -85,4 +95,4 @@ jobs:
           git reset --soft origin/main
           git add -A
           git commit -m 'Add fail-closed Deform360 stage authorization'
-          git push --force-with-lease origin "HEAD:${GITHUB_REF_NAME}"
+          git push --force-with-lease origin "HEAD:${TARGET_BRANCH}"
