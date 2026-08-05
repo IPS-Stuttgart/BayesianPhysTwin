@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
           python_bin="$(
-            find "${tool_root}" -type f -path '*/x64/bin/python' -print 2>/dev/null \
+            find "${tool_root}" -path '*/x64/bin/python' -print 2>/dev/null \
               | sort -V \
               | tail -n 1
           )"
@@ -144,7 +144,7 @@ jobs:
           set -euo pipefail
           tool_root="${RUNNER_TOOL_CACHE:-/home/github-runner/actions-runner/_work/_tool}/Python"
           python_bin="$(
-            find "${tool_root}" -type f -path '*/x64/bin/python' -print 2>/dev/null \
+            find "${tool_root}" -path '*/x64/bin/python' -print 2>/dev/null \
               | sort -V \
               | tail -n 1
           )"
