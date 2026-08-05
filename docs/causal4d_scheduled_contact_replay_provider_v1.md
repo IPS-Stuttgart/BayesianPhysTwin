@@ -67,18 +67,18 @@ For `K` paths, `G` contacts, `T` frames, `N` physical nodes, and maximum patch
 size `M`:
 
 ```text
-regime_paths              (K, G, T)
-controller_points_m       (T, C, 3)
-position_m                (N, 3)
-velocity_mps              (N, 3)
-frame_times_s             (T,)
-contact_node_indices      (K, G, T, M)
-contact_node_weights      (K, G, T, M)
-normal_stiffness_npm      (K, G, T) after validation/broadcast
- tangential_stiffness_npm (K, G, T) after validation/broadcast
-friction_coefficient      (K, G, T) after validation/broadcast
-positions_m               (K, T, N, 3)
-velocities_mps            (K, T, N, 3)
+regime_paths               (K, G, T)
+controller_points_m        (T, C, 3)
+position_m                 (N, 3)
+velocity_mps               (N, 3)
+frame_times_s              (T,)
+contact_node_indices       (K, G, T, M)
+contact_node_weights       (K, G, T, M)
+normal_stiffness_npm       (K, G, T) after validation/broadcast
+tangential_stiffness_npm   (K, G, T) after validation/broadcast
+friction_coefficient       (K, G, T) after validation/broadcast
+positions_m                (K, T, N, 3)
+velocities_mps             (K, T, N, 3)
 ```
 
 The conditional variance may be scalar or have shape `(N, 3)`, `(K, N, 3)`, or
