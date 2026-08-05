@@ -47,13 +47,13 @@ It binds:
 - official dataset revision
   `f804696d7a133908c7497ffdab43819d879b5cbc`;
 - selector implementation revision
-  `b3d0b0657fc183381a5705a28a26e2ee3a701d5c`;
+  `8b5c065ed06ff4f94bcc2367f0d7e08f9b8c85a7`;
 - content-selection SHA-256
   `f3d3ac25020ec85cad3fadf097259930437baae2b50b4c7f21f61d4823fc649b`;
 - canonical selection SHA-256
   `b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222`;
 - complete selection-artifact SHA-256
-  `47c577b6d08f8beba187a622b3555631a2a7f3d970cb1d2fde80fb5584173071`;
+  `dc1c2d192fbb841d2f0e290d77f21d697983b3f8bfbcae476e71fe902309cd82`;
 - five calibration and six confirmation objects in each of the sheet and
   volumetric strata; and
 - the exact metadata-file SHA-256 for all 22 selected object/episode pairs.
