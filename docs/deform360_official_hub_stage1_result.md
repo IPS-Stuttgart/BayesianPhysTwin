@@ -100,12 +100,14 @@ reproducibility for the completed upstream stages under the pinned environment.
 ## Ordering correction
 
 The finite-group calibration amendment at commit
-`7ecd7d44bde7f3fe8abab4aa57a2469ada868d77` was merged after the calibration
-preflight and payload download, but before any calibration score, provider
-selection, contact-map fit, or confirmation access. Its statistical design
-remains a valid pre-score freeze, but its
-`calibration_payloads_opened=false` field cannot describe the global project
-state at merge time.
+`7ecd7d44bde7f3fe8abab4aa57a2469ada868d77` and the visual-provider amendment at
+commit `dd62a73de8ad4a4a351c7da8c17b720a91bac8b7` were merged after the
+calibration preflight and payload download, but before any calibration score,
+provider selection, contact-map fit, or confirmation access. Their statistical
+and provider specifications can be used only as post-payload, pre-score freezes.
+Their fields claiming that selected calibration payloads were unopened cannot
+describe the global project state at merge time. No exact visual-provider lock
+has yet been committed.
 
 The immutable correction artifact is
 [`deform360_official_hub_visuotactile_v1_stage1_provenance.json`](../protocols/amendments/deform360_official_hub_visuotactile_v1_stage1_provenance.json).

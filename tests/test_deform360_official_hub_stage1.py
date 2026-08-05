@@ -149,14 +149,23 @@ def test_stage1_provenance_correction_preserves_actual_information_order() -> No
         ).encode()
     ).hexdigest()
     assert value["corrected_access_boundary"] == {
+        "calibration_camera_values_used_for_provider_selection": False,
         "calibration_payloads_opened": True,
         "calibration_policy_fit": False,
+        "calibration_robot_state_smoke_opened": True,
+        "calibration_robot_values_used_for_provider_selection": False,
         "calibration_scores_opened": False,
+        "calibration_tactile_values_used_for_provider_selection": False,
         "confirmation_payloads_opened": False,
+        "exact_visual_provider_lock_committed": False,
         "target_outcomes_used": False,
     }
     assert (
         value["information_order"]["finite_group_amendment_role"]
+        == "post-calibration-payload-pre-calibration-score"
+    )
+    assert (
+        value["information_order"]["visual_provider_amendment_role"]
         == "post-calibration-payload-pre-calibration-score"
     )
     assert value["finite_group_design_unchanged"] is True
