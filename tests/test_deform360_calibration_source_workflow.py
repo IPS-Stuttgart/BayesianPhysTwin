@@ -29,9 +29,12 @@ def test_pull_requests_validate_without_opening_payloads() -> None:
 def test_self_hosted_job_uses_a_fresh_runner_temp_virtual_environment() -> None:
     text = _workflow_text()
     empirical = text[text.index("  prepare-calibration-source:") :]
+    job_header = empirical[: empirical.index("    steps:")]
 
     assert "actions/setup-python" not in empirical
-    assert "${{ runner.temp }}/deform360-calibration-venv-" in empirical
+    assert "${{ runner.temp }}" not in job_header
+    assert "${RUNNER_TEMP}/deform360-calibration-venv-" in empirical
+    assert 'echo "VENV_ROOT=${venv_root}"' in empirical
     assert '"${BASE_PYTHON}" -m venv --copies "${VENV_ROOT}"' in empirical
     assert '"${python}" -m ensurepip --upgrade' in empirical
     assert "--no-cache-dir" in empirical
