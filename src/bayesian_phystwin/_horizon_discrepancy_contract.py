@@ -122,16 +122,10 @@ class HorizonDiscrepancyCalibrationV1:
         object.__setattr__(self, "mean_reversion_half_life_steps", half_life)
         object.__setattr__(self, "minimum_mean_retention", retention)
         object.__setattr__(self, "stationary_std_m", stationary)
-        object.__setattr__(
-            self, "additional_process_std_m_per_sqrt_step", process
-        )
-        object.__setattr__(
-            self, "component_process_variance_scale", component_scale
-        )
+        object.__setattr__(self, "additional_process_std_m_per_sqrt_step", process)
+        object.__setattr__(self, "component_process_variance_scale", component_scale)
         object.__setattr__(self, "source_outcomes_used", source_used)
-        object.__setattr__(
-            self, "interval_calibration_outcomes_used", interval_used
-        )
+        object.__setattr__(self, "interval_calibration_outcomes_used", interval_used)
         object.__setattr__(self, "confirmation_outcomes_used", confirmation_used)
         object.__setattr__(self, "target_outcomes_used", target_used)
         object.__setattr__(
@@ -156,9 +150,7 @@ class HorizonDiscrepancyCalibrationV1:
             "additional_process_std_m_per_sqrt_step": (
                 self.additional_process_std_m_per_sqrt_step.tolist()
             ),
-            "component_process_variance_scale": (
-                self.component_process_variance_scale
-            ),
+            "component_process_variance_scale": (self.component_process_variance_scale),
             "source_outcomes_used": self.source_outcomes_used,
             "interval_calibration_outcomes_used": (
                 self.interval_calibration_outcomes_used
@@ -210,9 +202,7 @@ class HorizonDiscrepancyCalibrationV1:
             interval_calibration_outcomes_used=cast(
                 bool, value["interval_calibration_outcomes_used"]
             ),
-            confirmation_outcomes_used=cast(
-                bool, value["confirmation_outcomes_used"]
-            ),
+            confirmation_outcomes_used=cast(bool, value["confirmation_outcomes_used"]),
             target_outcomes_used=cast(bool, value["target_outcomes_used"]),
             metadata=cast(Mapping[str, Any], value["metadata"]),
         )
@@ -243,9 +233,7 @@ class HorizonConditionedEndpointPredictionV1:
         component_mean = np.asarray(self.component_mean_m, dtype=np.float64)
         component_variance = np.asarray(self.component_variance_m2, dtype=np.float64)
         additional = np.asarray(self.additional_axis_variance_m2, dtype=np.float64)
-        horizon = genuine_integer(
-            self.horizon_steps, name="horizon_steps", minimum=0
-        )
+        horizon = genuine_integer(self.horizon_steps, name="horizon_steps", minimum=0)
         retention = probability(self.mean_retention, name="mean_retention")
         calibration_id = sha256_digest(self.calibration_id, name="calibration_id")
         if mean.ndim != 2 or mean.shape[1] != 3 or len(mean) < 1:
