@@ -91,7 +91,9 @@ def _validated_inputs(
     result = asset_resolver._load_json(prospective_result)
     manifest = asset_resolver._load_json(execution_manifest)
     protocol = asset_resolver._load_json(prospective_protocol)
-    asset_resolver._require(result.get("gate_passed") is True, "prospective result failed")
+    asset_resolver._require(
+        result.get("gate_passed") is True, "prospective result failed"
+    )
     asset_resolver._require(
         manifest.get("replacement_performed") is False,
         "prospective candidate replacement was recorded",
@@ -120,7 +122,9 @@ def _validated_inputs(
     }
     for record in result_records:
         name = Path(str(record["path"])).name
-        asset_resolver._require(name in manifest_by_name, f"candidate is unregistered: {name}")
+        asset_resolver._require(
+            name in manifest_by_name, f"candidate is unregistered: {name}"
+        )
         asset_resolver._require(
             str(record["sha256"]) == str(manifest_by_name[name]["sha256"]),
             f"candidate checksum differs between frozen records: {name}",
@@ -151,10 +155,14 @@ def _resolve_runtime(
         search_roots=search_roots,
         software_root=software_root,
     )
-    return upstream, checkpoints, {
-        "upstream": {**upstream_evidence, "checkout": str(upstream)},
-        "checkpoints": {**checkpoint_evidence, "root": str(checkpoints)},
-    }
+    return (
+        upstream,
+        checkpoints,
+        {
+            "upstream": {**upstream_evidence, "checkout": str(upstream)},
+            "checkpoints": {**checkpoint_evidence, "root": str(checkpoints)},
+        },
+    )
 
 
 def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
@@ -321,9 +329,7 @@ def ensure_candidates(args: argparse.Namespace) -> dict[str, Any]:
             "execution_manifest": str(execution_manifest),
             "execution_manifest_sha256": asset_resolver._sha256(execution_manifest),
             "prospective_protocol": str(prospective_protocol),
-            "prospective_protocol_sha256": asset_resolver._sha256(
-                prospective_protocol
-            ),
+            "prospective_protocol_sha256": asset_resolver._sha256(prospective_protocol),
             "independent_depth_protocol": str(independent_depth_protocol),
             "independent_depth_protocol_sha256": asset_resolver._sha256(
                 independent_depth_protocol
