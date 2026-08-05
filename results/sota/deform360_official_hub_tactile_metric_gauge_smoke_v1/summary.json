@@ -1,0 +1,143 @@
+{
+  "artifact_kind": "Deform360OfficialHubTactileMetricGaugeSmokeSummary",
+  "camera_results": [
+    {
+      "assignment_hypotheses": [
+        {
+          "admitted": true,
+          "maximum_held_frame_error_mm": 8.046721261244647,
+          "median_held_frame_error_mm": 2.220665285747555,
+          "percentile_90_held_frame_error_mm": 4.771154787922383,
+          "scale": 0.08849028304225655
+        },
+        {
+          "admitted": true,
+          "maximum_held_frame_error_mm": 14.851730939364588,
+          "median_held_frame_error_mm": 3.295414875871653,
+          "percentile_90_held_frame_error_mm": 7.80668768959732,
+          "scale": 0.07800572976714208
+        }
+      ],
+      "camera": "brics-odroid-019_cam1",
+      "provider_kind": "reused-parent",
+      "supported_frame_count": 6,
+      "supported_row_count": 46
+    },
+    {
+      "assignment_hypotheses": [
+        {
+          "admitted": true,
+          "maximum_held_frame_error_mm": 55.89876825006212,
+          "median_held_frame_error_mm": 3.773862269336201,
+          "percentile_90_held_frame_error_mm": 6.307175288020887,
+          "scale": 0.13249214568299372
+        },
+        {
+          "admitted": true,
+          "maximum_held_frame_error_mm": 17.722551658265195,
+          "median_held_frame_error_mm": 2.056609642786772,
+          "percentile_90_held_frame_error_mm": 4.64595896217927,
+          "scale": 0.1837728749863144
+        }
+      ],
+      "camera": "brics-odroid-013_cam1",
+      "provider_kind": "supplemental",
+      "supported_frame_count": 6,
+      "supported_row_count": 46
+    },
+    {
+      "assignment_hypotheses": [
+        {
+          "admitted": true,
+          "maximum_held_frame_error_mm": 12.13603579845624,
+          "median_held_frame_error_mm": 3.9267046654872,
+          "percentile_90_held_frame_error_mm": 7.056991887564543,
+          "scale": 0.1836467670479795
+        },
+        {
+          "admitted": true,
+          "maximum_held_frame_error_mm": 6.781360402175486,
+          "median_held_frame_error_mm": 2.6400794281347924,
+          "percentile_90_held_frame_error_mm": 4.697789369663283,
+          "scale": 0.19709236404549454
+        }
+      ],
+      "camera": "brics-odroid-006_cam0",
+      "provider_kind": "supplemental",
+      "supported_frame_count": 6,
+      "supported_row_count": 46
+    }
+  ],
+  "claim_boundary": "Source-only metric-gauge feasibility. No object association, tactile state update, calibration score, confirmation payload, target outcome, or SOTA gain was opened or established.",
+  "gate": {
+    "assignment_mixture_preserved": [
+      0.5,
+      0.5
+    ],
+    "contact_anchor_authorized": false,
+    "jointly_admitted_camera_count": 3,
+    "metric_gauge_authorized": true,
+    "minimum_admitted_camera_count": 3
+  },
+  "information_boundary": {
+    "calibration_provider_values_opened_for_registered_gate": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "metric_covariance": {
+    "assignment_0_covariance_intersection_m2": [
+      [
+        4.466172153079894e-05,
+        -2.9551966800970174e-06,
+        -2.984894974926753e-07
+      ],
+      [
+        -2.9551966800970174e-06,
+        2.9545145680053354e-05,
+        3.0835101595338954e-08
+      ],
+      [
+        -2.984894974926753e-07,
+        3.0835101595338954e-08,
+        2.6158041021450653e-05
+      ]
+    ],
+    "assignment_1_covariance_intersection_m2": [
+      [
+        3.427648881255034e-05,
+        1.555230572070673e-06,
+        -2.1124833841799085e-06
+      ],
+      [
+        1.555230572070673e-06,
+        2.875322826754839e-05,
+        1.9587698940665315e-07
+      ],
+      [
+        -2.1124833841799085e-06,
+        1.9587698940665315e-07,
+        2.783800336541265e-05
+      ]
+    ],
+    "cross_view_policy": "unknown-correlation-equal-weight-covariance-intersection"
+  },
+  "protocol_id": "deform360-official-hub-tactile-metric-gauge-smoke-v1",
+  "provenance": {
+    "evaluator_revision": "5369ab3317a01871577d048a8b413709b81cfd7d",
+    "evaluator_source_sha256": "cf8e16189520476e732e666a57d0253290597cf695f375cbc2eed40cf5d600c8",
+    "full_result_artifact_id": "96dee634e43a869cf9a794fee14cd3ac4fae1825c988a7a3e008552061fca41f",
+    "full_result_file_sha256": "b6bbbfe118288ca6d75a2577cd679024876c166c048fdc87c9bfd3bbaf420f97",
+    "lock_id": "f1259e69bb7f1cc7e5f3923376e8a6e6b3b26d40913098471f3cf550d6564bd3",
+    "lock_file_sha256": "99a52142a62785e7b92a0ed44b6d28a9b7db2b1a56377b63d732df5353a65a51",
+    "provider_run_id": "7dea7487b68f6aec98abd1859a9033035acae2446f863abeb3e472a84252670a",
+    "provider_run_report_sha256": "5e35e37095037624ea62c805227aecefe18a19cee816104c2374fde0e107854b",
+    "provider_total_bytes": 1193009914,
+    "replay_byte_identical": true
+  },
+  "schema_version": 1,
+  "status": "admitted"
+}
