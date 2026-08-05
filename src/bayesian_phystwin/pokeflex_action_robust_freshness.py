@@ -242,6 +242,7 @@ def validate_action_robust_freshness_audit(
     )
     public = payload.get("public_archive")
     _require(isinstance(public, Mapping), "public inventory is missing")
+    assert isinstance(public, Mapping)
     _require(int(public.get("take_count", -1)) == 116, "public take count changed")
     _require(
         public.get("sorted_newline_inventory_sha256") == PUBLIC_INVENTORY_SHA256,
@@ -249,6 +250,7 @@ def validate_action_robust_freshness_audit(
     )
     prior = payload.get("prior_exposure_audit")
     _require(isinstance(prior, Mapping), "prior exposure audit is missing")
+    assert isinstance(prior, Mapping)
     prior_ids = tuple(str(value) for value in prior.get("take_ids", ()))
     _require(len(prior_ids) == len(set(prior_ids)) == 108, "prior inventory changed")
     _require(
@@ -257,6 +259,7 @@ def validate_action_robust_freshness_audit(
     )
     scan = payload.get("post_v2_exact_exposure_scan")
     _require(isinstance(scan, Mapping), "exact exposure scan is missing")
+    assert isinstance(scan, Mapping)
     _require(
         scan.get("git_ref_snapshot_sha256") == GIT_REF_SNAPSHOT_SHA256,
         "Git ref snapshot changed",
@@ -272,6 +275,7 @@ def validate_action_robust_freshness_audit(
         _require(scan.get(key) == [], "candidate take was previously exposed")
     eligibility = payload.get("eligibility")
     _require(isinstance(eligibility, Mapping), "eligibility is missing")
+    assert isinstance(eligibility, Mapping)
     eligible = tuple(str(value) for value in eligibility.get("take_ids", ()))
     _require(len(eligible) == len(set(eligible)) == 8, "eligible inventory changed")
     _require(set(eligible).isdisjoint(prior_ids), "eligible take was exposed")
@@ -281,6 +285,7 @@ def validate_action_robust_freshness_audit(
     )
     selection = payload.get("selection")
     _require(isinstance(selection, Mapping), "selection is missing")
+    assert isinstance(selection, Mapping)
     selected = tuple(str(value) for value in selection.get("take_ids", ()))
     _require(selected == _select_per_object(set(eligible)), "selection changed")
     _require(

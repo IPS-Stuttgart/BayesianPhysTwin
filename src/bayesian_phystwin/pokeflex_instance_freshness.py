@@ -264,6 +264,7 @@ def validate_instance_freshness_audit(payload: Mapping[str, Any]) -> dict[str, A
     )
     public = payload.get("public_archive")
     _require(isinstance(public, Mapping), "public inventory is missing")
+    assert isinstance(public, Mapping)
     _require(
         public.get("sorted_newline_inventory_sha256") == PUBLIC_INVENTORY_SHA256,
         "public digest changed",
@@ -271,6 +272,7 @@ def validate_instance_freshness_audit(payload: Mapping[str, Any]) -> dict[str, A
     _require(int(public.get("take_count", -1)) == 116, "public take count changed")
     prior = payload.get("prior_exposure_audit")
     _require(isinstance(prior, Mapping), "prior exposure audit is missing")
+    assert isinstance(prior, Mapping)
     prior_take_ids = tuple(str(value) for value in prior.get("take_ids", ()))
     _require(len(prior_take_ids) == 96, "prior exclusion count changed")
     _require(len(set(prior_take_ids)) == 96, "prior exclusion contains duplicates")
@@ -284,6 +286,7 @@ def validate_instance_freshness_audit(payload: Mapping[str, Any]) -> dict[str, A
     )
     exposure = payload.get("post_v1_exact_exposure_scan")
     _require(isinstance(exposure, Mapping), "exposure scan is missing")
+    assert isinstance(exposure, Mapping)
     for key in (
         "git_exact_matches",
         "gpuserver6000_recent_exact_matches",
@@ -292,8 +295,10 @@ def validate_instance_freshness_audit(payload: Mapping[str, Any]) -> dict[str, A
         _require(exposure.get(key) == [], "second-cohort take was previously exposed")
     selection = payload.get("selection")
     _require(isinstance(selection, Mapping), "fresh selection is missing")
+    assert isinstance(selection, Mapping)
     eligibility = payload.get("eligibility")
     _require(isinstance(eligibility, Mapping), "fresh eligibility is missing")
+    assert isinstance(eligibility, Mapping)
     eligible = tuple(str(value) for value in eligibility.get("take_ids", ()))
     _require(len(eligible) == 20, "eligible take count changed")
     _require(len(set(eligible)) == 20, "eligible inventory contains duplicates")

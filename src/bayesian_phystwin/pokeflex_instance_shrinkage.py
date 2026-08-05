@@ -73,6 +73,7 @@ def select_source_multiplier(
 
     means = source_row.get("mean_CD_UL1_mm_by_multiplier")
     _require(isinstance(means, Mapping), "source scale scores are missing")
+    assert isinstance(means, Mapping)
     values = {multiplier: float(means[str(multiplier)]) for multiplier in bank}
     _require(
         all(np.isfinite(value) and value > 0.0 for value in values.values()),
@@ -111,6 +112,7 @@ def build_instance_scale_calibration(
     )
     rows = source_audit.get("takes")
     _require(isinstance(rows, list) and len(rows) == 12, "source cohort changed")
+    assert isinstance(rows, list)
 
     objects: dict[str, dict[str, Any]] = {}
     for raw in rows:
@@ -208,6 +210,7 @@ def validate_instance_scale_calibration(
     )
     objects = payload.get("objects")
     _require(isinstance(objects, Mapping) and len(objects) == 12, "object map changed")
+    assert isinstance(objects, Mapping)
     scales: dict[str, float] = {}
     for object_name, raw in objects.items():
         _require(isinstance(raw, Mapping), "object calibration row is invalid")

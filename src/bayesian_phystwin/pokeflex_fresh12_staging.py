@@ -84,6 +84,7 @@ def _authorized_kind(relative: PurePosixPath) -> tuple[str, str | None] | None:
 
 def _validate_file_inventory(files: object) -> tuple[dict[str, Any], ...]:
     _require(isinstance(files, list) and bool(files), "stage files are missing")
+    assert isinstance(files, list)
     records: list[dict[str, Any]] = []
     kinds: Counter[tuple[str, str | None]] = Counter()
     paths: set[str] = set()
@@ -95,6 +96,7 @@ def _validate_file_inventory(files: object) -> tuple[dict[str, Any], ...]:
         _require(".." not in relative.parts, "stage file path escapes the take")
         authorized = _authorized_kind(relative)
         _require(authorized is not None, "stage includes an unauthorized member")
+        assert authorized is not None
         _require(record.get("kind") == authorized[0], "stage file kind changed")
         _require(record.get("camera") == authorized[1], "stage camera changed")
         digest = str(record.get("sha256", ""))
@@ -193,6 +195,7 @@ def validate_staged_file(
         raise ValueError("staged file escapes the take root") from error
     record = files_by_path.get(relative)
     _require(record is not None, f"staged file is absent from manifest: {relative}")
+    assert record is not None
     _require(source.is_file(), f"staged file is missing: {relative}")
     _require(
         source.stat().st_size == int(record["byte_count"]),

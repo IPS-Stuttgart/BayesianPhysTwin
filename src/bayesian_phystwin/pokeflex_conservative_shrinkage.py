@@ -171,8 +171,10 @@ def _extract_take(payload: Mapping[str, Any], expected_arms: tuple[_Arm, ...]) -
     object_name, _ = _take_identity(take_id)
     targets = payload.get("targets")
     updates = payload.get("updates")
-    _require(isinstance(targets, list) and targets, "source targets are missing")
+    _require(isinstance(targets, list) and bool(targets), "source targets are missing")
     _require(isinstance(updates, list), "source updates are missing")
+    assert isinstance(targets, list)
+    assert isinstance(updates, list)
     updates_by_frame = {int(row["target_frame"]): row for row in updates}
     _require(len(updates_by_frame) == len(updates), "source update frames repeat")
 
@@ -192,6 +194,7 @@ def _extract_take(payload: Mapping[str, Any], expected_arms: tuple[_Arm, ...]) -
         baseline_values.append(baseline)
         update = updates_by_frame.get(frame)
         _require(update is not None, "target has no causal source update record")
+        assert update is not None
         supported = bool(update.get("accepted")) and bool(
             update.get("action_supported")
         )
@@ -295,7 +298,10 @@ def evaluate_pokeflex_conservative_shrinkage_source(
     _require(bool(payloads), "at least one source artifact is required")
     cfg = config or ConservativeShrinkageConfig()
     first_targets = payloads[0].get("targets")
-    _require(isinstance(first_targets, list) and first_targets, "targets are missing")
+    _require(
+        isinstance(first_targets, list) and bool(first_targets), "targets are missing"
+    )
+    assert isinstance(first_targets, list)
     arms = _candidate_arms(first_targets[0])
     takes = tuple(_extract_take(payload, arms) for payload in payloads)
     take_ids = tuple(take.take_id for take in takes)
@@ -309,6 +315,7 @@ def evaluate_pokeflex_conservative_shrinkage_source(
 
     selected, arm_statistics = _select_arm(takes, arms, cfg)
     _require(selected is not None, "no arm passes the whole-object source gate")
+    assert selected is not None
     selected_result = next(row for row in arm_statistics if row["arm"] == selected.name)
 
     folds = []
@@ -318,6 +325,7 @@ def evaluate_pokeflex_conservative_shrinkage_source(
         held = tuple(take for take in takes if take.object_name == held_object)
         fold_arm, _ = _select_arm(training, arms, cfg)
         _require(fold_arm is not None, f"fold {held_object} has no eligible arm")
+        assert fold_arm is not None
         held_result = _arm_statistics(held, fold_arm)
         held_improvement = float(held_result["object_balanced_relative_improvement"])
         held_improvements.append(held_improvement)

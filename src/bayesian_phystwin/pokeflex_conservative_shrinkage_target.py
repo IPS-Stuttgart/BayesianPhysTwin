@@ -401,6 +401,7 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     source = payload.get("source_gate")
     _require(isinstance(source, Mapping), "source gate is missing")
+    assert isinstance(source, Mapping)
     _require(
         source.get("protocol_sha256") == SOURCE_PROTOCOL_SHA256,
         "source protocol changed",
@@ -432,6 +433,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             isinstance(source_calibration, Mapping),
             "source scale calibration is missing",
         )
+        assert isinstance(source_calibration, Mapping)
         _require(
             source_calibration.get("calibration_sha256") == expected_sha256,
             "source scale calibration changed",
@@ -464,6 +466,7 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     cohort = payload.get("target_cohort")
     _require(isinstance(cohort, Mapping), "target cohort is missing")
+    assert isinstance(cohort, Mapping)
     if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1:
         _require(
             tuple(cohort.get("take_ids", ())) == OFFICIAL18_TARGET_TAKE_IDS,
@@ -515,6 +518,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         )
         audit = payload.get("freshness_audit")
         _require(isinstance(audit, Mapping), "freshness audit is missing")
+        assert isinstance(audit, Mapping)
         _require(
             audit.get("audit_sha256") == FRESH12_EXCLUSION_AUDIT_SHA256,
             "freshness audit changed",
@@ -546,6 +550,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         )
         amendment = payload.get("preoutcome_storage_amendment")
         _require(isinstance(amendment, Mapping), "storage amendment is missing")
+        assert isinstance(amendment, Mapping)
         _require(
             amendment.get("supersedes_protocol_sha256")
             == "38cfafdbf92d66d3dc3bb5bf346df89f0cc00d5d5ed928aacf8ddb3469e5adcc",
@@ -580,6 +585,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         )
         audit = payload.get("freshness_audit")
         _require(isinstance(audit, Mapping), "instance freshness audit is missing")
+        assert isinstance(audit, Mapping)
         _require(
             audit.get("audit_sha256") == INSTANCE_FRESHNESS_AUDIT_SHA256,
             "instance freshness audit changed",
@@ -636,6 +642,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             isinstance(audit, Mapping),
             "action-robust freshness audit is missing",
         )
+        assert isinstance(audit, Mapping)
         _require(
             audit.get("audit_sha256") == ACTION_ROBUST_FRESHNESS_AUDIT_SHA256,
             "action-robust freshness audit changed",
@@ -701,6 +708,7 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     method = payload.get("method")
     _require(isinstance(method, Mapping), "method lock is missing")
+    assert isinstance(method, Mapping)
     _require(method.get("selected_arm") == SELECTED_ARM, "target arm changed")
     _require(method.get("field") == "action_local_state_relative_0.4", "field changed")
     if protocol_id in CALIBRATED_SCALE_PROTOCOLS:
@@ -743,6 +751,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         )
         calibration = method.get(calibration_key)
         _require(isinstance(calibration, Mapping), "scale calibration is missing")
+        assert isinstance(calibration, Mapping)
         _require(
             calibration.get("calibration_sha256") == expected_calibration_sha256,
             "scale calibration changed",
@@ -819,6 +828,7 @@ def validate_pokeflex_shrinkage_target_protocol(
     if protocol_id == TARGET_PROTOCOL_V2:
         amendment = payload.get("preoutcome_amendment")
         _require(isinstance(amendment, Mapping), "pre-outcome amendment is missing")
+        assert isinstance(amendment, Mapping)
         _require(
             amendment.get("supersedes_protocol_sha256")
             == "7662ec3d92e2ae1d6872e32c218baaae27926924c730178d7477f98c684ff277",
@@ -835,6 +845,7 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     upstream = payload.get("upstream")
     _require(isinstance(upstream, Mapping), "upstream lock is missing")
+    assert isinstance(upstream, Mapping)
     _require(upstream.get("code_commit") == UPSTREAM_COMMIT, "upstream changed")
     _require(
         dict(upstream.get("checkpoint_sha256", {})) == CHECKPOINT_SHA256,
@@ -843,6 +854,7 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     custody = payload.get("custody")
     _require(isinstance(custody, Mapping), "custody lock is missing")
+    assert isinstance(custody, Mapping)
     _require(
         custody.get("prediction_and_scoring_are_separate") is True,
         "prediction/scoring separation changed",
@@ -885,6 +897,7 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     evaluation = payload.get("evaluation")
     _require(isinstance(evaluation, Mapping), "evaluation lock is missing")
+    assert isinstance(evaluation, Mapping)
     _require(evaluation.get("primary_metric") == "CD_UL1_mm", "primary metric changed")
     _require(
         int(evaluation.get("surface_sample_count", -1)) == 10000, "sample count changed"
@@ -938,6 +951,7 @@ def validate_pokeflex_shrinkage_target_protocol(
         )
         official = payload.get("official_reference")
         _require(isinstance(official, Mapping), "official reference is missing")
+        assert isinstance(official, Mapping)
         _require(
             official.get("code_commit") == UPSTREAM_COMMIT,
             "official evaluator commit changed",
@@ -965,13 +979,17 @@ def validate_pokeflex_shrinkage_target_protocol(
 
     gates = payload.get("gates")
     _require(isinstance(gates, Mapping), "target gates are missing")
+    assert isinstance(gates, Mapping)
     direct = gates.get("direct_metric_reference")
     paired = gates.get("paired_transfer")
     _require(isinstance(direct, Mapping), "direct gate is missing")
     _require(isinstance(paired, Mapping), "paired gate is missing")
+    assert isinstance(direct, Mapping)
+    assert isinstance(paired, Mapping)
     if protocol_id == TARGET_PROTOCOL_OFFICIAL18_V1:
         reproduction = gates.get("baseline_reproduction")
         _require(isinstance(reproduction, Mapping), "reproduction gate is missing")
+        assert isinstance(reproduction, Mapping)
         _require(
             float(reproduction.get("maximum_relative_CD_UL1_error", -1.0)) == 0.05,
             "baseline reproduction tolerance changed",
@@ -1040,6 +1058,7 @@ def validate_pokeflex_shrinkage_target_protocol(
     if protocol_id == TARGET_PROTOCOL_INSTANCE_FRESH12_V2:
         advancement = gates.get("instance_advancement")
         _require(isinstance(advancement, Mapping), "instance advancement gate missing")
+        assert isinstance(advancement, Mapping)
         _require(
             float(advancement.get("relative_CD_UL1_improvement_above", -1.0)) == 0.0,
             "instance advancement threshold changed",
@@ -1075,6 +1094,7 @@ def validate_pokeflex_shrinkage_target_protocol(
             isinstance(advancement, Mapping),
             "action-robust advancement gate missing",
         )
+        assert isinstance(advancement, Mapping)
         _require(
             float(advancement.get("relative_CD_UL1_improvement_above", -1.0)) == 0.0,
             "action-robust advancement threshold changed",
@@ -1106,6 +1126,7 @@ def validate_pokeflex_shrinkage_target_protocol(
                 isinstance(reproduction, Mapping),
                 "global-scale reproduction gate missing",
             )
+            assert isinstance(reproduction, Mapping)
             _require(
                 float(reproduction.get("expected_CD_UL1_mm", -1.0))
                 == OFFICIAL13_GLOBAL_FRAME_BALANCED_CD_UL1_MM,
@@ -1120,6 +1141,7 @@ def validate_pokeflex_shrinkage_target_protocol(
                 isinstance(numeric_reference, Mapping),
                 "public-subset numeric reference gate missing",
             )
+            assert isinstance(numeric_reference, Mapping)
             _require(
                 float(numeric_reference.get("candidate_CD_UL1_mm_below", -1.0))
                 == PUBLISHED_KINECT_CD_UL1_MM,
@@ -1520,6 +1542,7 @@ def validate_prediction_barrier(
         isinstance(predictions, list) and len(predictions) == len(target_take_ids),
         "barrier prediction inventory changed",
     )
+    assert isinstance(predictions, list)
     _require(
         tuple(row.get("take_id") for row in predictions) == target_take_ids,
         "barrier prediction order changed",
@@ -1650,6 +1673,7 @@ def _evaluate_official18_metrics(
     for row in ordered:
         frames = row.get("frames")
         _require(isinstance(frames, list), "official frame scores are missing")
+        assert isinstance(frames, list)
         _require(
             len(frames) == int(row["scored_frame_count"]),
             "official scored-frame inventory changed",
@@ -1795,6 +1819,7 @@ def _evaluate_official13_public_metrics(
     for row in ordered:
         frames = row.get("frames")
         _require(isinstance(frames, list), "public-subset frame scores are missing")
+        assert isinstance(frames, list)
         _require(
             len(frames) == int(row["scored_frame_count"]),
             "public-subset scored-frame inventory changed",
@@ -1933,6 +1958,7 @@ def _evaluate_fresh12_public_metrics(
     for row in ordered:
         frames = row.get("frames")
         _require(isinstance(frames, list), "fresh public frame scores are missing")
+        assert isinstance(frames, list)
         _require(
             len(frames) == int(row["scored_frame_count"]),
             "fresh public scored-frame inventory changed",
@@ -2082,6 +2108,7 @@ def _evaluate_calibrated_scale_metrics(
     for row in ordered:
         frames = row.get("frames")
         _require(isinstance(frames, list), "calibrated frame scores are missing")
+        assert isinstance(frames, list)
         _require(
             len(frames) == int(row["scored_frame_count"]),
             "calibrated scored-frame inventory changed",

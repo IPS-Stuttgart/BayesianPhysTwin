@@ -68,6 +68,7 @@ def calibration_sha256(payload: Mapping[str, Any]) -> str:
 def _scale_scores(row: Mapping[str, Any]) -> dict[float, float]:
     raw = row.get("mean_CD_UL1_mm_by_multiplier")
     _require(isinstance(raw, Mapping), "source scale scores are missing")
+    assert isinstance(raw, Mapping)
     scores = {value: float(raw[str(value)]) for value in CANDIDATE_MULTIPLIERS}
     _require(
         all(np.isfinite(score) and score > 0.0 for score in scores.values()),
@@ -167,6 +168,7 @@ def _validate_source_audit(
     )
     rows = payload.get("takes")
     _require(isinstance(rows, list) and len(rows) == 12, "source cohort changed")
+    assert isinstance(rows, list)
     _require(
         len({_object_name(str(row.get("take_id", ""))) for row in rows}) == 12,
         "source object inventory changed",
@@ -379,6 +381,7 @@ def validate_action_robust_scale_calibration(
     )
     objects = payload.get("objects")
     _require(isinstance(objects, Mapping) and len(objects) == 12, "object map changed")
+    assert isinstance(objects, Mapping)
     multipliers: dict[str, float] = {}
     for object_name, raw in objects.items():
         _require(isinstance(raw, Mapping), "object calibration row is invalid")
