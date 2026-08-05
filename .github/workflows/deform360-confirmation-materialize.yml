@@ -43,18 +43,47 @@ jobs:
           archive="${RUNNER_TEMP}/bpt-confirmation-clean.tar.gz"
           ARCHIVE="${archive}" python - <<'PY'
           import base64
+          import hashlib
           import os
           import re
           from pathlib import Path
 
+          expected_sha256 = (
+              "d37cef2b0d07ca923ac41c8d16f364ab334ab49821243a7a25786742838a1781"
+          )
           chunks = sorted(Path(".agent").glob("bpt-confirmation-clean.b64.*"))
           if not chunks:
               raise SystemExit("no confirmation source chunks found")
           encoded = b"".join(path.read_bytes() for path in chunks)
-          encoded = re.sub(rb"[^A-Za-z0-9+/=]", b"", encoded)
-          encoded = encoded.replace(b"=", b"")
-          encoded += b"=" * (-len(encoded) % 4)
-          Path(os.environ["ARCHIVE"]).write_bytes(base64.b64decode(encoded))
+          encoded = re.sub(rb"[^A-Za-z0-9+/=]", b"", encoded).replace(b"=", b"")
+
+          candidates: list[tuple[int | None, bytes]] = []
+          if len(encoded) % 4 == 1:
+              candidates.extend(
+                  (index, encoded[:index] + encoded[index + 1 :])
+                  for index in range(len(encoded))
+              )
+          else:
+              candidates.append((None, encoded))
+
+          matches: list[tuple[int | None, bytes]] = []
+          for removed_index, candidate in candidates:
+              padded = candidate + b"=" * (-len(candidate) % 4)
+              try:
+                  decoded = base64.b64decode(padded, validate=True)
+              except ValueError:
+                  continue
+              if hashlib.sha256(decoded).hexdigest() == expected_sha256:
+                  matches.append((removed_index, decoded))
+
+          if len(matches) != 1:
+              raise SystemExit(
+                  "expected one SHA-256-matching source recovery, "
+                  f"found {len(matches)}"
+              )
+          removed_index, decoded = matches[0]
+          print(f"recovered_extra_base64_character_index={removed_index}")
+          Path(os.environ["ARCHIVE"]).write_bytes(decoded)
           PY
           actual_sha256="$(sha256sum "${archive}" | cut -d ' ' -f 1)"
           echo "assembled_archive_sha256=${actual_sha256}"
