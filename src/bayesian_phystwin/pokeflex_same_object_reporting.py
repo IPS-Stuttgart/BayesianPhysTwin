@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -37,10 +37,58 @@ def _require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def _mapping_list(
+    value: object,
+    *,
+    name: str,
+    expected_length: int | None = None,
+    nonempty: bool = False,
+) -> list[Mapping[str, Any]]:
+    if not isinstance(value, list):
+        raise ValueError(f"{name} must be an array")
+    if expected_length is not None and len(value) != expected_length:
+        raise ValueError(f"{name} must contain exactly {expected_length} entries")
+    if nonempty and not value:
+        raise ValueError(f"{name} must not be empty")
+    if not all(isinstance(item, Mapping) for item in value):
+        raise ValueError(f"{name} entries must be objects")
+    return cast(list[Mapping[str, Any]], value)
+
+
+def _string_list(value: object, *, name: str) -> list[str]:
+    if not isinstance(value, list) or not all(
+        isinstance(item, str) and item for item in value
+    ):
+        raise ValueError(f"{name} must contain nonempty strings")
+    return cast(list[str], value)
+
+
+def _integer(value: object, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{name} must be an integer")
+    return value
+
+
+def _number(value: object, *, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be numeric")
+    result = float(value)
+    if not np.isfinite(result):
+        raise ValueError(f"{name} must be finite")
+    return result
+
+
 def _close(first: object, second: object, *, atol: float = 1e-10) -> bool:
     if first is None or second is None:
         return first is second
-    return bool(np.isclose(float(first), float(second), atol=atol, rtol=0.0))
+    return bool(
+        np.isclose(
+            _number(first, name="first comparison value"),
+            _number(second, name="second comparison value"),
+            atol=atol,
+            rtol=0.0,
+        )
+    )
 
 
 def sha256_file(path: Path) -> str:
@@ -74,45 +122,75 @@ def validate_bounded_result(result: Mapping[str, Any]) -> dict[str, Any]:
         "prospective claim status changed",
     )
     _require(result.get("gate_passed") is True, "prospective gate did not pass")
-    takes = result.get("takes")
-    objects = result.get("objects")
-    decisions = result.get("decisions")
-    _require(isinstance(takes, list) and len(takes) == 3, "take panel changed")
-    _require(isinstance(objects, list) and len(objects) == 2, "object panel changed")
-    _require(isinstance(decisions, list) and decisions, "frame decisions are missing")
-    _require(int(result.get("take_count", -1)) == len(takes), "take count changed")
+    takes = _mapping_list(result.get("takes"), name="takes", expected_length=3)
+    objects = _mapping_list(result.get("objects"), name="objects", expected_length=2)
+    decisions = _mapping_list(result.get("decisions"), name="decisions", nonempty=True)
     _require(
-        int(result.get("object_count", -1)) == len(objects),
+        _integer(result.get("take_count", -1), name="take_count") == len(takes),
+        "take count changed",
+    )
+    _require(
+        _integer(result.get("object_count", -1), name="object_count")
+        == len(objects),
         "object count changed",
     )
-    _require(int(result.get("object_wins", -1)) == 2, "object-win result changed")
-    _require(int(result.get("object_losses", -1)) == 0, "object-loss result changed")
+    _require(
+        _integer(result.get("object_wins", -1), name="object_wins") == 2,
+        "object-win result changed",
+    )
+    _require(
+        _integer(result.get("object_losses", -1), name="object_losses") == 0,
+        "object-loss result changed",
+    )
 
-    frame_count = sum(int(value["target_frame_count"]) for value in takes)
-    accepted_count = int(result["accepted_frame_count"])
-    fallback_count = int(result["exact_fallback_frame_count"])
+    frame_count = sum(
+        _integer(value.get("target_frame_count"), name="target_frame_count")
+        for value in takes
+    )
+    accepted_count = _integer(
+        result.get("accepted_frame_count"), name="accepted_frame_count"
+    )
+    fallback_count = _integer(
+        result.get("exact_fallback_frame_count"), name="exact_fallback_frame_count"
+    )
     _require(frame_count == len(decisions), "take/frame accounting changed")
     _require(
         accepted_count + fallback_count == frame_count,
         "accept/fallback accounting changed",
     )
+    accepted_wins = _integer(
+        result.get("accepted_frame_wins"), name="accepted_frame_wins"
+    )
+    accepted_losses = _integer(
+        result.get("accepted_frame_losses"), name="accepted_frame_losses"
+    )
     _require(
-        int(result["accepted_frame_wins"]) + int(result["accepted_frame_losses"])
-        == accepted_count,
+        accepted_wins + accepted_losses == accepted_count,
         "accepted-frame accounting changed",
     )
     for take in takes:
-        baseline = float(take["baseline_mean_CD_UL1_mm"])
-        selected = float(take["selected_mean_CD_UL1_mm"])
-        _require(
-            np.isfinite(baseline) and np.isfinite(selected),
-            "take metric is non-finite",
+        baseline = _number(
+            take.get("baseline_mean_CD_UL1_mm"),
+            name="baseline_mean_CD_UL1_mm",
+        )
+        selected = _number(
+            take.get("selected_mean_CD_UL1_mm"),
+            name="selected_mean_CD_UL1_mm",
         )
         _require(selected <= baseline + 1e-12, "a prospective take now regresses")
 
-    baseline = float(result["baseline_object_mean_CD_UL1_mm"])
-    selected = float(result["selected_object_mean_CD_UL1_mm"])
-    relative = float(result["object_balanced_relative_improvement"])
+    baseline = _number(
+        result.get("baseline_object_mean_CD_UL1_mm"),
+        name="baseline_object_mean_CD_UL1_mm",
+    )
+    selected = _number(
+        result.get("selected_object_mean_CD_UL1_mm"),
+        name="selected_object_mean_CD_UL1_mm",
+    )
+    relative = _number(
+        result.get("object_balanced_relative_improvement"),
+        name="object_balanced_relative_improvement",
+    )
     _require(
         _close(relative, (baseline - selected) / baseline),
         "object-balanced improvement is inconsistent",
@@ -127,11 +205,11 @@ def validate_bounded_result(result: Mapping[str, Any]) -> dict[str, Any]:
         "baseline_object_mean_CD_UL1_mm": baseline,
         "guarded_object_mean_CD_UL1_mm": selected,
         "object_balanced_relative_improvement": relative,
-        "object_wins": int(result["object_wins"]),
-        "object_losses": int(result["object_losses"]),
+        "object_wins": 2,
+        "object_losses": 0,
         "accepted_frame_count": accepted_count,
-        "accepted_frame_wins": int(result["accepted_frame_wins"]),
-        "accepted_frame_losses": int(result["accepted_frame_losses"]),
+        "accepted_frame_wins": accepted_wins,
+        "accepted_frame_losses": accepted_losses,
         "exact_fallback_frame_count": fallback_count,
         "takes": takes,
         "objects": objects,
@@ -145,13 +223,20 @@ def build_candidate_diagnostics(
     """Reconstruct frozen pre-fallback choices for a post-outcome diagnostic."""
 
     bounded = validate_bounded_result(prospective_result)
-    rows, frames = extract_pokeflex_regret_guard_rows(candidate_payloads)
+    extracted_rows, extracted_frames = extract_pokeflex_regret_guard_rows(
+        candidate_payloads
+    )
+    rows = cast(list[dict[str, Any]], extracted_rows)
+    frames = cast(list[dict[str, Any]], extracted_frames)
     observed_takes = sorted({str(frame["take_id"]) for frame in frames})
-    expected_takes = sorted(map(str, prospective_result["take_ids"]))
+    expected_takes = sorted(
+        _string_list(prospective_result.get("take_ids"), name="take_ids")
+    )
     _require(observed_takes == expected_takes, "candidate take inventory changed")
 
-    deployment = prospective_result.get("deployment_artifact")
-    _require(isinstance(deployment, Mapping), "deployment artifact is missing")
+    deployment_value = prospective_result.get("deployment_artifact")
+    _require(isinstance(deployment_value, Mapping), "deployment artifact is missing")
+    deployment = cast(Mapping[str, Any], deployment_value)
     certificate = _certificate_from_dict(deployment["candidate_certificate"])
     selector_bound = _bound_from_dict(deployment["selector_correction_bound"])
     upper_by_index = {
@@ -159,17 +244,19 @@ def build_candidate_diagnostics(
         for index, row in enumerate(rows)
     }
     selected = _select_candidates(rows, upper_by_index)
-    committed = {
-        str(value["frame_id"]): value for value in prospective_result["decisions"]
-    }
+    committed_records = _mapping_list(
+        prospective_result.get("decisions"), name="decisions", nonempty=True
+    )
+    committed = {str(value["frame_id"]): value for value in committed_records}
     _require(len(committed) == len(frames), "committed decision inventory changed")
 
     diagnostics: list[dict[str, Any]] = []
     for frame in frames:
         frame_id = str(frame["frame_id"])
         recorded = committed.get(frame_id)
-        _require(recorded is not None, f"missing committed decision: {frame_id}")
-        baseline = float(frame["baseline_error_mm"])
+        if recorded is None:
+            raise ValueError(f"missing committed decision: {frame_id}")
+        baseline = _number(frame.get("baseline_error_mm"), name="baseline_error_mm")
         candidate = selected.get(frame_id)
         if candidate is None:
             _require(recorded["accepted"] is False, "unsupported frame was accepted")
@@ -192,7 +279,9 @@ def build_candidate_diagnostics(
         candidate_upper, row_index = candidate
         row = rows[row_index]
         adjusted_upper = float(candidate_upper + selector_bound.upper_regret_m)
-        candidate_error = float(row["candidate_error_mm"])
+        candidate_error = _number(
+            row.get("candidate_error_mm"), name="candidate_error_mm"
+        )
         candidate_regret = candidate_error - baseline
         accepted = adjusted_upper < -certificate.minimum_improvement
         deployed_error = candidate_error if accepted else baseline
@@ -251,17 +340,29 @@ def build_candidate_diagnostics(
     conservative_fallbacks = [
         value for value in rejected_rows if value["candidate_regret_mm"] < -1e-12
     ]
-    coverage = [value["upper_bound_covered"] for value in supported]
+    coverage = [bool(value["upper_bound_covered"]) for value in supported]
     _require(
-        len(accepted_rows) == int(prospective_result["accepted_frame_count"]),
+        len(accepted_rows)
+        == _integer(
+            prospective_result.get("accepted_frame_count"),
+            name="accepted_frame_count",
+        ),
         "accepted diagnostic count changed",
     )
     _require(
-        len(safe_accepted) == int(prospective_result["accepted_frame_wins"]),
+        len(safe_accepted)
+        == _integer(
+            prospective_result.get("accepted_frame_wins"),
+            name="accepted_frame_wins",
+        ),
         "accepted-win diagnostic count changed",
     )
     _require(
-        len(harmful_accepted) == int(prospective_result["accepted_frame_losses"]),
+        len(harmful_accepted)
+        == _integer(
+            prospective_result.get("accepted_frame_losses"),
+            name="accepted_frame_losses",
+        ),
         "accepted-loss diagnostic count changed",
     )
 
