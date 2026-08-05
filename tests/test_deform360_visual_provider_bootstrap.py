@@ -10,12 +10,7 @@ from typing import Any
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = (
-    ROOT
-    / "scripts"
-    / "science"
-    / "bootstrap_deform360_visual_provider_models.py"
-)
+SCRIPT = ROOT / "scripts" / "science" / "bootstrap_deform360_visual_provider_models.py"
 SPEC = (
     ROOT
     / "protocols"
