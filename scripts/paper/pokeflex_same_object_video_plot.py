@@ -25,9 +25,7 @@ def _subsample(array: np.ndarray, maximum_count: int) -> np.ndarray:
     return array[indices]
 
 
-def _project(
-    vertices: np.ndarray, center: np.ndarray, basis: np.ndarray
-) -> np.ndarray:
+def _project(vertices: np.ndarray, center: np.ndarray, basis: np.ndarray) -> np.ndarray:
     return (vertices - center) @ basis
 
 
