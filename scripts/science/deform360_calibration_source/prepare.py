@@ -166,13 +166,11 @@ def prepare_one(
         cameras = alignment.get("cameras")
         frame_count = alignment.get("frame_count")
         require(
-            isinstance(cameras, list)
-            and len(cameras) >= MINIMUM_CAMERA_STREAMS,
+            isinstance(cameras, list) and len(cameras) >= MINIMUM_CAMERA_STREAMS,
             "fewer than eight aligned cameras",
         )
         require(
-            isinstance(frame_count, int)
-            and frame_count >= STAGING_FRAME_COUNT,
+            isinstance(frame_count, int) and frame_count >= STAGING_FRAME_COUNT,
             "aligned episode is too short",
         )
         require(len(tactile_outputs) >= 1, "no tactile stream was aligned")
@@ -193,9 +191,7 @@ def prepare_one(
                     "undistorted_intrinsics": file_sha256(
                         episode_dir / "undistorted_intrinsics.npy"
                     ),
-                    "extrinsics": file_sha256(
-                        episode_dir / "extrinsics.npy"
-                    ),
+                    "extrinsics": file_sha256(episode_dir / "extrinsics.npy"),
                     "robot": file_sha256(robot_path),
                     "tactile": {
                         sensor: file_sha256(path)
