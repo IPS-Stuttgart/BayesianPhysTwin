@@ -65,11 +65,18 @@ def _group_loss_vectors(
 
 def _interval(samples: np.ndarray, confidence: float) -> dict[str, float]:
     alpha = (1.0 - confidence) / 2.0
-    lower, upper = np.quantile(samples, (alpha, 1.0 - alpha), method="linear")
+    quantiles = np.asarray(
+        np.quantile(
+            samples,
+            np.asarray([alpha, 1.0 - alpha], dtype=float),
+            method="linear",
+        ),
+        dtype=float,
+    )
     return {
         "confidence": confidence,
-        "lower": float(lower),
-        "upper": float(upper),
+        "lower": float(quantiles[0]),
+        "upper": float(quantiles[1]),
     }
 
 
