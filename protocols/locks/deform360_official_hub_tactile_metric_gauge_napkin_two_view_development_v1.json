@@ -1,0 +1,150 @@
+{
+  "artifact_id": "3faf5199e58f9f9d2b005887b4efd3dc215433eff23ff3f53cb1312cdc632be6",
+  "calibration": {
+    "extrinsics_sha256": "538226bb03945afebdf035610b170126b48a782e3ca43e6b480dc24decb771e6",
+    "undistorted_intrinsics_sha256": "98bb40f5ec131d020e21339be6d3d10be47b586a4ad0ce943163226131385a3a"
+  },
+  "camera_selection": {
+    "candidate_count": 3,
+    "candidate_inventory_sha256": "1f545af01b9713a199a4eefa1f1209b767b5b9b0684e532f924bd20c61c4de38",
+    "eligible_camera_count": 2,
+    "policy": {
+      "candidate_scope": "locked-parent-provider-cameras-only",
+      "minimum_angular_separation_deg": 30.0,
+      "minimum_assignment_coverage": 1.0,
+      "minimum_margin_px": 64.0,
+      "panel_size": 2,
+      "selection_order": "full-assignment-coverage-then-maximum-margin-then-maximum-view-angle",
+      "source_shape": [
+        720,
+        1280
+      ],
+      "target_shape": [
+        320,
+        640
+      ]
+    },
+    "reused_provider_cameras": [
+      "brics-odroid-019_cam1",
+      "brics-odroid-022_cam1"
+    ],
+    "selected_cameras": [
+      "brics-odroid-019_cam1",
+      "brics-odroid-022_cam1"
+    ],
+    "selected_candidate_records": [
+      {
+        "camera": "brics-odroid-019_cam1",
+        "minimum_assignment_coverage": 1.0,
+        "minimum_margin_px": 75.42732563976404,
+        "view_direction": [
+          -0.8471767838764022,
+          -0.22214753653107278,
+          0.482640620828802
+        ]
+      },
+      {
+        "camera": "brics-odroid-022_cam1",
+        "minimum_assignment_coverage": 1.0,
+        "minimum_margin_px": 72.19078709125927,
+        "view_direction": [
+          0.044934837502113766,
+          -0.8953982317547023,
+          -0.4429930777666971
+        ]
+      }
+    ],
+    "selected_pair_angle_deg": 93.03601666688176,
+    "supplemental_provider_cameras": []
+  },
+  "claim_boundary": "Development-only source metric-gauge feasibility on a previously opened geometry case. No independent validation, calibration score, state update, confirmation payload, target outcome, or SOTA claim.",
+  "implementation": {
+    "revision": "4f7a15723117d6bdc0768dedc3750c9836f53930",
+    "runner_source_sha256": "494d2cb87496795a0899f40c7f80cfaaf4de61cb9104f2e824979f4a7a57252d"
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_allowed": true,
+    "calibration_provider_values_allowed_after_lock": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "parents": {
+    "motioncrafter_job_manifest": {
+      "artifact_id": "9726e7ae12d442956ff81376fe52cdc2f8360fdcd3e5cccbc12543ca584b30f9",
+      "path": "/home/florianpfaff/source-only/bpt-causal-robot-prefix-v1-1b83ba49/protocols/locks/deform360_official_hub_visuotactile_v6_motioncrafter_jobs.json",
+      "sha256": "b9302a27d779a6de619baffc04e624eee629a226a140b90278fa9dd06b213fe2"
+    },
+    "robot_prefix": {
+      "artifact_id": "a2601582c5dd712d2adef4b599e3fd909dc39204e4b4fa7aa01be73c45b07215",
+      "path": "/home/florianpfaff/source-only/deform360-tactile-prompted-carrier-napkin-validation-v1-7e17f860/robot/causal_robot_prefix.json",
+      "sha256": "22aecb46d0eceb0411bef01eba8fb4441210d03952bd0179915d8315b052ca5b"
+    },
+    "robot_prefix_lock": {
+      "artifact_id": "52242ebf25233736da5d9c5194c9b18e85f6c3cef5d34571148ee046f4b7dfaf",
+      "path": "protocols/locks/deform360_official_hub_causal_robot_prefix_napkin_validation_v2.json",
+      "sha256": "ac88feedfcf4517a685d6e64f7883ff4fac4771f021997079cbbbc29d48396e8"
+    },
+    "tactile_contact_geometry": {
+      "artifact_id": "ebdbee93c38254758c3c53fe02de3b85256f554ed1d27d684d5f4ea346fc3e39",
+      "path": "/home/florianpfaff/source-only/deform360-tactile-prompted-carrier-napkin-validation-v1-f48820b1/tactile/tactile_contact_geometry.json",
+      "sha256": "a6479de2b9fa4c85aa6a477316be0905e7b132034bbc588706dd14f3422703ab"
+    }
+  },
+  "provider": {
+    "motioncrafter": {
+      "model_set_id": "b072956636612ca1a31d1edb83bd7d1bd27b8962cb617c6e615b9b310a16de6e",
+      "repository": "TencentARC/MotionCrafter",
+      "revision": "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257"
+    },
+    "parent_manifest_id": "9726e7ae12d442956ff81376fe52cdc2f8360fdcd3e5cccbc12543ca584b30f9",
+    "provider_lock": {
+      "artifact_id": "d3d68423a6c1a19e5cab5651ef4f08921652757fc565539227c06bd8e7dfcbce",
+      "file_sha256": "67d1898ee78734fcba595be11cad6cc8ac6a458853ddcd83bba7e3684cc55958",
+      "provider_revision": "25d90ef7f78ba4307f4555cb636d666004e1bf66"
+    },
+    "quality_gate": {
+      "assignment_admission": "both-direct-and-swapped-must-pass",
+      "covariance_floor_m": 0.01,
+      "cross_view_correlation": "unknown-no-precision-gain-covariance-union",
+      "huber_delta_m": 0.005,
+      "maximum_median_held_frame_error_m": 0.005,
+      "maximum_percentile_90_held_frame_error_m": 0.015,
+      "minimum_admitted_cameras": 2,
+      "shared_bias_floor_m": 0.01
+    },
+    "run_configuration": {
+      "decode_chunk_size": 25,
+      "frame_stride": 1,
+      "guidance_scale": 1.0,
+      "height": 320,
+      "low_memory_usage": true,
+      "model_source_set_sha256": "b072956636612ca1a31d1edb83bd7d1bd27b8962cb617c6e615b9b310a16de6e",
+      "model_type": "determ",
+      "num_inference_steps": 5,
+      "overlap": 8,
+      "products": [
+        "disjoint_baseline",
+        "latent_linear_baseline",
+        "independently_decoded_overlap_windows"
+      ],
+      "provider_consumed_product": "independently_decoded_overlap_windows",
+      "seed": 20260805,
+      "seed_policy": "derived-per-call",
+      "width": 640,
+      "window_size": 25
+    }
+  },
+  "schema": "bayesian-phystwin.deform360-tactile-metric-gauge-two-view-lock",
+  "schema_version": 1,
+  "source_case": {
+    "causal_frame_stop": 120,
+    "object_id": "036-napkin-cloth",
+    "processing_episode_index": 0
+  },
+  "status": "locked-source-only-pre-supplement-provider",
+  "supplemental_jobs": []
+}
