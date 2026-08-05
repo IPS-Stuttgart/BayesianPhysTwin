@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from numbers import Real
 from typing import Protocol, runtime_checkable
@@ -32,12 +33,10 @@ def _identifiers(
     name: str,
     expected_count: int | None = None,
 ) -> tuple[str, ...]:
-    if isinstance(values, (str, bytes)):
+    if isinstance(values, (str, bytes)) or not isinstance(values, Iterable):
         raise ValueError(f"{name} must be a sequence of identifiers")
     try:
-        result = tuple(
-            _identifier(value, name=name) for value in values  # type: ignore[arg-type]
-        )
+        result = tuple(_identifier(value, name=name) for value in values)
     except TypeError as error:
         raise ValueError(f"{name} must be a sequence of identifiers") from error
     if expected_count is not None and len(result) != expected_count:
@@ -114,7 +113,7 @@ def _probability(value: object, *, name: str, positive: bool = False) -> float:
     return result
 
 
-def _array_record(values: np.ndarray, *, dtype: str) -> dict[str, object]:
+def _array_record(values: object, *, dtype: str) -> dict[str, object]:
     canonical = np.ascontiguousarray(np.asarray(values, dtype=np.dtype(dtype)))
     return {
         "dtype": canonical.dtype.str,
@@ -143,6 +142,7 @@ def _contact_parameter(
 ) -> np.ndarray:
     array = _float_array(values, name=name)
     target = (path_count, contact_count, frame_count)
+    broadcast: np.ndarray
     if array.shape == ():
         broadcast = np.full(target, float(array), dtype=np.float64)
     elif array.shape == (contact_count,):
