@@ -55,7 +55,7 @@ jobs:
           "$python" -m pip install -e ".[dev]" build
           "$python" -m pip check
 
-      - name: Check focused source quality
+      - name: Materialize deterministic formatter output for review
         shell: bash
         run: |
           set -euo pipefail
@@ -73,6 +73,10 @@ jobs:
             tests/prob4d_factor_stream_contract_cases.py
             tests/test_prob4d_joint_contract_fixture.py
           )
+          "$python" -m ruff check --fix "${files[@]}"
+          "$python" -m ruff format "${files[@]}"
+          git diff -- "${files[@]}" > recursive-prob4d-stream-format.patch
+          tar -czf recursive-prob4d-stream-formatted.tgz "${files[@]}"
           "$python" -m ruff check "${files[@]}"
           "$python" -m ruff format --check --diff "${files[@]}"
           "$python" -m mypy \
@@ -85,6 +89,17 @@ jobs:
             src/bayesian_phystwin/causal4d_belief_provider_v2.py \
             src/bayesian_phystwin/posterior_covariance_semantics.py \
             src/bayesian_phystwin/prob4d_factor_stream.py
+
+      - name: Upload deterministic formatter output
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: recursive-prob4d-stream-formatter-output
+          path: |
+            recursive-prob4d-stream-format.patch
+            recursive-prob4d-stream-formatted.tgz
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Run recursive and existing provider contract tests
         shell: bash
