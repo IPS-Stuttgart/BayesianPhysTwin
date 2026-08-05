@@ -1,0 +1,87 @@
+name: Materialize Deform360 stage authorization
+
+on:
+  push:
+    branches:
+      - agent/deform360-stage-authorization
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deform360-stage-materialize-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    name: Materialize and validate exact source
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact transport commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Verify and extract exact source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="${RUNNER_TEMP}/deform360-stage-files.tar.gz"
+          cat .agent/deform360-stage-files.b64.* | base64 --decode > "${bundle}"
+          printf '%s  %s\n' \
+            'c92a94fcd98e45346f686add48ae88380df26646d6f79546d9a714f1763a9cce' \
+            "${bundle}" | sha256sum -c -
+          tar -xzf "${bundle}"
+          rm -rf .agent
+          rm -f .github/workflows/deform360-stage-materialize.yml
+
+      - name: Install validation environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate exact staged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/__init__.py
+            src/bayesian_phystwin/deform360_stage_authorization.py
+            src/bayesian_phystwin/deform360_visual_provider_lock.py
+            src/bayesian_phystwin/cli/_command_inventory.py
+            src/bayesian_phystwin/cli/deform360_stage_authorization.py
+            src/bayesian_phystwin/cli/experiments.py
+            tests/test_command_registry.py
+            tests/test_deform360_visual_provider_lock.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_stage_authorization.py \
+            src/bayesian_phystwin/deform360_visual_provider_lock.py \
+            src/bayesian_phystwin/cli/deform360_stage_authorization.py
+          python -m pytest -q \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_deform360_calibration_bundle.py \
+            tests/test_evidence_use_ledger.py \
+            tests/test_command_registry.py \
+            tests/test_cli_main.py \
+            tests/test_release_metadata.py
+          bpt commands describe authorize-deform360-stage --json >/dev/null
+          bpt experiment run authorize-deform360-stage --help >/dev/null
+          python -m compileall -q src
+          git diff --check
+
+      - name: Publish one clean validated commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit --amend --no-edit
+          git push --force-with-lease origin "HEAD:${GITHUB_REF_NAME}"
