@@ -1,0 +1,18 @@
+{
+  "additional_metric_anchor_policy": "none",
+  "allowed_before_prediction": true,
+  "artifact_id": "27d26c15784e46c5baedc4fab3d3cf9ac44cbb572799878956c24eaea9312a1d",
+  "claim_boundary": "This policy fixes how each object obtains its mandatory initial metric-frame prior. It does not contain a numerical object prior, open selected payloads, establish monocular scale, provider competence, physical-query benefit, predictive calibration, or state of the art.",
+  "confirmation_payloads_opened": false,
+  "estimator": "source-frozen robust Sim(3) alignment",
+  "frame_selection": "first retained causal frame",
+  "future_frames_used": false,
+  "per_object_numeric_prior_is_calibration_artifact": true,
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "schema": "bayesian-phystwin/deform360-metric-frame-prior-policy-v1",
+  "schema_version": 1,
+  "semantics": "per-object-first-causal-frame-metric-sim3-prior-v1",
+  "source_family": "official Deform360 metric reconstruction prefix",
+  "statistical_unit": "physical object",
+  "target_outcomes_used": false
+}
