@@ -18,14 +18,6 @@ def _repository_root() -> Path:
 
 sys.path.insert(0, str(_repository_root() / "src"))
 
-from run_pokeflex_bayesian_registration_smoke import (  # noqa: E402
-    _cd_ul1_mm,
-    _load_mesh,
-    _surface_sample,
-    _template_frame,
-    _view_points,
-)
-
 from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
     PokeFlexActionGuardConfig,
     PokeFlexBayesianRegistrationConfig,
@@ -40,6 +32,13 @@ from bayesian_phystwin.pokeflex_registration_protocol import (  # noqa: E402
 )
 from bayesian_phystwin.pokeflex_released_checkpoint import (  # noqa: E402
     PokeFlexReleasedCheckpoint,
+)
+from run_pokeflex_bayesian_registration_smoke import (  # noqa: E402
+    _cd_ul1_mm,
+    _load_mesh,
+    _surface_sample,
+    _template_frame,
+    _view_points,
 )
 
 
@@ -228,22 +227,13 @@ def run_smoke(
     maximum_frame: int | None,
     include_frozen_action_guard: bool,
     record_online_observation_regret: bool,
-    additional_authorized_take_ids: tuple[str, ...] | None = None,
 ) -> dict[str, object]:
     protocol = load_pokeflex_registration_protocol(protocol_path)
     development_objects = set(
         protocol["payload"]["cohort"]["development_objects"]
     )
     object_name, separator, take_number = take_root.name.rpartition("_T")
-    additionally_authorized = (
-        additional_authorized_take_ids is not None
-        and take_root.name in additional_authorized_take_ids
-    )
-    if (
-        not separator
-        or not take_number.isdigit()
-        or (object_name not in development_objects and not additionally_authorized)
-    ):
+    if not separator or not take_number.isdigit() or object_name not in development_objects:
         raise ValueError(f"take is outside the locked development cohort: {take_root.name}")
     if 0.0 not in correction_scales:
         raise ValueError("correction scales must include exact checkpoint fallback 0")

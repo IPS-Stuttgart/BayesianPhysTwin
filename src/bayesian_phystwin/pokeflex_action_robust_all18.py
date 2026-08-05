@@ -269,7 +269,7 @@ def build_all18_calibration(
     source_protocol: Mapping[str, Any],
     source_artifacts: Mapping[str, Mapping[str, Any]],
     *,
-    source_artifact_file_sha256s: Mapping[str, str] | None = None,
+    source_artifact_file_sha256s: Mapping[str, str],
 ) -> dict[str, Any]:
     """Extend the frozen 12-object calibration with six source-only objects."""
 
@@ -277,21 +277,21 @@ def build_all18_calibration(
     protocol_validation = validate_all18_source_protocol(source_protocol)
     expected = tuple(protocol_validation["selected_take_ids"])
     _require(set(source_artifacts) == set(expected), "source artifact inventory changed")
-    if source_artifact_file_sha256s is not None:
+    _require(
+        set(source_artifact_file_sha256s) == set(expected),
+        "source artifact checksum inventory changed",
+    )
+    for digest in source_artifact_file_sha256s.values():
         _require(
-            set(source_artifact_file_sha256s) == set(expected),
-            "source artifact checksum inventory changed",
+            len(digest) == 64 and all(char in "0123456789abcdef" for char in digest),
+            "source artifact file checksum is invalid",
         )
     rows = {
         take_id: source_row_from_smoke(
             source_artifacts[take_id],
             expected_take_id=take_id,
             expected_protocol_sha256=str(source_protocol["protocol_sha256"]),
-            artifact_file_sha256=(
-                source_artifact_file_sha256s[take_id]
-                if source_artifact_file_sha256s is not None
-                else None
-            ),
+            artifact_file_sha256=source_artifact_file_sha256s[take_id],
         )
         for take_id in expected
     }
@@ -339,6 +339,9 @@ def build_all18_calibration(
         "parent_calibration_sha256": ACTION_ROBUST_SCALE_SHA256,
         "parent_calibration_file_sha256": ACTION_ROBUST_SCALE_FILE_SHA256,
         "source_protocol_sha256": source_protocol["protocol_sha256"],
+        "source_artifact_file_sha256s": dict(
+            sorted(source_artifact_file_sha256s.items())
+        ),
         "base_effective_scale": BASE_EFFECTIVE_SCALE,
         "global_multiplier": GLOBAL_MULTIPLIER,
         "candidate_multipliers": list(CANDIDATE_MULTIPLIERS),
@@ -385,12 +388,32 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         payload.get("official18_evaluation_authorized") is False,
         "official18 evaluation was prematurely authorized",
     )
+    source_hashes = payload.get("source_artifact_file_sha256s")
+    _require(isinstance(source_hashes, Mapping), "source artifact hashes are missing")
+    _require(len(source_hashes) == 12, "source artifact hash inventory changed")
+    for take_id, digest in source_hashes.items():
+        _require(
+            isinstance(take_id, str)
+            and isinstance(digest, str)
+            and len(digest) == 64
+            and all(char in "0123456789abcdef" for char in digest),
+            "source artifact file checksum is invalid",
+        )
     objects = payload.get("objects")
     _require(isinstance(objects, Mapping), "calibration object map is missing")
     _require(tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)), "all18 map changed")
     new_objects = payload.get("new_objects")
     _require(isinstance(new_objects, Mapping), "new object map is missing")
     _require(tuple(sorted(new_objects)) == tuple(sorted(NEW_OBJECTS)), "new objects changed")
+    expected_source_takes = {
+        str(take_id)
+        for row in new_objects.values()
+        for take_id in row.get("source_take_ids", ())
+    }
+    _require(
+        set(source_hashes) == expected_source_takes,
+        "source artifact hash inventory changed",
+    )
     gate = payload.get("source_gate")
     _require(isinstance(gate, Mapping) and gate.get("passed") is True, "source gate failed")
     return {
