@@ -1,0 +1,162 @@
+name: Recursive Prob4D stream self-hosted validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/recursive-prob4d-stream-self-hosted.yml"
+      - "MANIFEST.in"
+      - "docs/recursive_prob4d_factor_stream.md"
+      - "src/bayesian_phystwin/_prob4d_recursive_policy.py"
+      - "src/bayesian_phystwin/_prob4d_recursive_records.py"
+      - "src/bayesian_phystwin/_prob4d_recursive_update.py"
+      - "src/bayesian_phystwin/_prob4d_stream_binding.py"
+      - "src/bayesian_phystwin/_prob4d_stream_common.py"
+      - "src/bayesian_phystwin/_prob4d_stream_manifest.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/posterior_covariance_semantics.py"
+      - "src/bayesian_phystwin/prob4d_factor_stream.py"
+      - "tests/prob4d_factor_stream_contract_cases.py"
+      - "tests/test_prob4d_joint_contract_fixture.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recursive-prob4d-stream-self-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Stream, covariance, and complete-belief contracts
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact same-repository pull-request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Create isolated development environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/recursive-prob4d-stream-venv"
+          python="$RUNNER_TEMP/recursive-prob4d-stream-venv/bin/python"
+          "$python" -m pip install --upgrade pip
+          "$python" -m pip install -e ".[dev]" build
+          "$python" -m pip check
+
+      - name: Check focused source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TEMP/recursive-prob4d-stream-venv/bin/python"
+          files=(
+            src/bayesian_phystwin/_prob4d_recursive_policy.py
+            src/bayesian_phystwin/_prob4d_recursive_records.py
+            src/bayesian_phystwin/_prob4d_recursive_update.py
+            src/bayesian_phystwin/_prob4d_stream_binding.py
+            src/bayesian_phystwin/_prob4d_stream_common.py
+            src/bayesian_phystwin/_prob4d_stream_manifest.py
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py
+            src/bayesian_phystwin/posterior_covariance_semantics.py
+            src/bayesian_phystwin/prob4d_factor_stream.py
+            tests/prob4d_factor_stream_contract_cases.py
+            tests/test_prob4d_joint_contract_fixture.py
+          )
+          "$python" -m ruff check "${files[@]}"
+          "$python" -m ruff format --check --diff "${files[@]}"
+          "$python" -m mypy \
+            src/bayesian_phystwin/_prob4d_recursive_policy.py \
+            src/bayesian_phystwin/_prob4d_recursive_records.py \
+            src/bayesian_phystwin/_prob4d_recursive_update.py \
+            src/bayesian_phystwin/_prob4d_stream_binding.py \
+            src/bayesian_phystwin/_prob4d_stream_common.py \
+            src/bayesian_phystwin/_prob4d_stream_manifest.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            src/bayesian_phystwin/posterior_covariance_semantics.py \
+            src/bayesian_phystwin/prob4d_factor_stream.py
+
+      - name: Run recursive and existing provider contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TEMP/recursive-prob4d-stream-venv/bin/python"
+          "$python" -m pytest -q \
+            tests/test_prob4d_joint_contract_fixture.py \
+            tests/test_endpoint_model_average.py \
+            tests/test_prospective_prob4d_update.py \
+            tests/test_release_metadata.py
+          "$python" -m compileall -q src/bayesian_phystwin
+
+      - name: Build and inspect the wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python="$RUNNER_TEMP/recursive-prob4d-stream-venv/bin/python"
+          wheelhouse="$RUNNER_TEMP/recursive-prob4d-stream-wheelhouse"
+          mkdir -p "$wheelhouse"
+          "$python" -m build --wheel --outdir "$wheelhouse"
+          mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -name '*.whl' -print)
+          test "${#wheels[@]}" -eq 1
+          sha256sum "${wheels[0]}"
+          "$python" - "${wheels[0]}" <<'PY'
+          import sys
+          import zipfile
+
+          wheel = sys.argv[1]
+          required = {
+              "bayesian_phystwin/prob4d_factor_stream.py",
+              "bayesian_phystwin/posterior_covariance_semantics.py",
+              "bayesian_phystwin/_prob4d_stream_manifest.py",
+              "bayesian_phystwin/_prob4d_recursive_update.py",
+          }
+          with zipfile.ZipFile(wheel) as archive:
+              names = set(archive.namelist())
+          missing = sorted(required - names)
+          if missing:
+              raise SystemExit(f"wheel is missing recursive stream modules: {missing}")
+          PY
+
+      - name: Smoke-test isolated wheel imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheelhouse="$RUNNER_TEMP/recursive-prob4d-stream-wheelhouse"
+          wheel="$(find "$wheelhouse" -maxdepth 1 -name '*.whl' -print -quit)"
+          python -m venv "$RUNNER_TEMP/recursive-prob4d-stream-wheel-venv"
+          python="$RUNNER_TEMP/recursive-prob4d-stream-wheel-venv/bin/python"
+          "$python" -m pip install --upgrade pip
+          "$python" -m pip install "$wheel"
+          "$python" - <<'PY'
+          from bayesian_phystwin.causal4d_belief_provider_v2 import (
+              causal4d_belief_provider_v2_manifest,
+          )
+          from bayesian_phystwin.posterior_covariance_semantics import (
+              working_irls_covariance_semantics,
+          )
+          from bayesian_phystwin.prob4d_factor_stream import (
+              RecursiveNuisancePolicyV1,
+          )
+
+          manifest = causal4d_belief_provider_v2_manifest(
+              provider_revision="a" * 40
+          )
+          assert "claim_bearing_prob4d_recursive_stream" in manifest["capabilities"]
+          assert working_irls_covariance_semantics([[1.0]]).dimension == 1
+          assert RecursiveNuisancePolicyV1(
+              mode="persistent_explicit_state",
+              state_domain_id="b" * 64,
+              nuisance_family_ids=("prob4d-gauge",),
+          ).policy_id
+          PY
+          "$python" -m pip check
