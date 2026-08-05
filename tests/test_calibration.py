@@ -1,7 +1,191 @@
+import hashlib
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from bayesian_phystwin import BinaryCalibrationMetrics, binary_calibration_metrics
+from bayesian_phystwin.calibration import (
+    FiniteGroupCalibrationDesign,
+    finite_group_conformal_rank,
+    maximum_finite_group_coverage,
+    minimum_groups_for_finite_conformal,
+    plan_finite_group_calibration,
+)
+
+
+def test_finite_group_rank_and_capacity_are_object_level() -> None:
+    assert finite_group_conformal_rank(10, 0.9) == 10
+    assert finite_group_conformal_rank(10, 0.95) == 11
+    assert maximum_finite_group_coverage(10) == pytest.approx(10.0 / 11.0)
+    assert minimum_groups_for_finite_conformal(0.9) == 9
+    assert minimum_groups_for_finite_conformal(0.95) == 19
+
+
+def test_boundary_coverage_uses_decimal_exact_rank() -> None:
+    assert finite_group_conformal_rank(9, 0.9) == 9
+    assert minimum_groups_for_finite_conformal(0.9) == 9
+
+
+def test_valid_pooled_design_records_the_frozen_information_order() -> None:
+    design = plan_finite_group_calibration(
+        10,
+        0.9,
+        pooling="pooled",
+        predictor_frozen_before_scores=True,
+        calibration_outcomes_used_for_selection=False,
+    )
+
+    assert design.finite_sample_rank == 10
+    assert design.maximum_finite_coverage == pytest.approx(10.0 / 11.0)
+    assert design.as_dict()["pooling"] == "pooled"
+
+
+def test_impossible_finite_group_coverage_fails_before_target_access() -> None:
+    with pytest.raises(ValueError, match="infinite quantile"):
+        plan_finite_group_calibration(
+            10,
+            0.95,
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=False,
+        )
+
+    with pytest.raises(ValueError, match="coverage <="):
+        plan_finite_group_calibration(
+            5,
+            0.9,
+            pooling="stratum",
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=False,
+        )
+
+
+def test_split_conformal_design_rejects_adaptive_policy_selection() -> None:
+    with pytest.raises(ValueError, match="frozen"):
+        plan_finite_group_calibration(
+            10,
+            0.9,
+            predictor_frozen_before_scores=False,
+            calibration_outcomes_used_for_selection=False,
+        )
+
+    with pytest.raises(ValueError, match="cannot also select"):
+        plan_finite_group_calibration(
+            10,
+            0.9,
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=True,
+        )
+
+
+@pytest.mark.parametrize("count", [0, -1, True, 1.5])
+def test_finite_group_design_rejects_invalid_counts(count: object) -> None:
+    with pytest.raises(ValueError, match="positive integer"):
+        finite_group_conformal_rank(
+            count,  # type: ignore[arg-type]
+            0.9,
+        )
+
+
+@pytest.mark.parametrize("coverage", [0.0, 1.0, -0.1, np.nan, True, "0.9"])
+def test_finite_group_design_rejects_invalid_coverage(coverage: object) -> None:
+    with pytest.raises(ValueError, match="coverage"):
+        minimum_groups_for_finite_conformal(
+            coverage,  # type: ignore[arg-type]
+        )
+
+
+def test_design_contract_rejects_inconsistent_derived_fields() -> None:
+    with pytest.raises(ValueError, match="finite_sample_rank"):
+        FiniteGroupCalibrationDesign(
+            calibration_group_count=10,
+            nominal_coverage=0.9,
+            finite_sample_rank=9,
+            maximum_finite_coverage=10.0 / 11.0,
+            pooling="pooled",
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=False,
+        )
+
+    with pytest.raises(ValueError, match="maximum_finite_group_coverage|maximum"):
+        FiniteGroupCalibrationDesign(
+            calibration_group_count=10,
+            nominal_coverage=0.9,
+            finite_sample_rank=10,
+            maximum_finite_coverage=0.9,
+            pooling="pooled",
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=False,
+        )
+
+
+def test_design_contract_rejects_nonliteral_controls() -> None:
+    with pytest.raises(ValueError, match="pooling"):
+        plan_finite_group_calibration(
+            10,
+            0.9,
+            pooling="frame",  # type: ignore[arg-type]
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=False,
+        )
+
+    with pytest.raises(ValueError, match="boolean"):
+        plan_finite_group_calibration(
+            10,
+            0.9,
+            predictor_frozen_before_scores=np.bool_(True),  # type: ignore[arg-type]
+            calibration_outcomes_used_for_selection=False,
+        )
+
+    with pytest.raises(ValueError, match="boolean"):
+        plan_finite_group_calibration(
+            10,
+            0.9,
+            predictor_frozen_before_scores=True,
+            calibration_outcomes_used_for_selection=np.bool_(False),  # type: ignore[arg-type]
+        )
+
+
+def test_deform360_calibration_amendment_is_finite_and_target_blind() -> None:
+    root = Path(__file__).resolve().parents[1]
+    path = root / (
+        "protocols/amendments/"
+        "deform360_official_hub_visuotactile_v1_calibration_separation.json"
+    )
+    record = json.loads(path.read_text(encoding="utf-8"))
+    descriptor = dict(record)
+    declared_id = descriptor.pop("artifact_id")
+    canonical = json.dumps(
+        descriptor,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert declared_id == hashlib.sha256(canonical).hexdigest()
+
+    primary = descriptor["primary_interval"]
+    design = plan_finite_group_calibration(
+        primary["calibration_group_count"],
+        primary["nominal_coverage"],
+        pooling=primary["pooling"],
+        predictor_frozen_before_scores=descriptor["information_order"][
+            "predictor_score_guard_grouping_and_endpoints_frozen_before_scores"
+        ],
+        calibration_outcomes_used_for_selection=descriptor["information_order"][
+            "calibration_outcomes_used_for_policy_selection"
+        ],
+    )
+    assert design.finite_sample_rank == primary["finite_sample_rank"]
+    assert (
+        descriptor["stratum_reporting"]["nominal_90_percent_interval_claim"]
+        == "forbidden"
+    )
+    assert descriptor["access_boundary"] == {
+        "calibration_payloads_opened": False,
+        "confirmation_payloads_opened": False,
+        "target_outcomes_used": False,
+    }
 
 
 def test_binary_calibration_metrics_for_ranked_predictions() -> None:

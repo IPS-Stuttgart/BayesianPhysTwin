@@ -1,10 +1,14 @@
-"""Calibration metrics for reliability and inferred inlier probabilities."""
+"""Calibration metrics and finite-group calibration design utilities."""
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from fractions import Fraction
+from typing import Literal
 
 import numpy as np
+
+CalibrationPooling = Literal["pooled", "stratum"]
 
 
 def _finite_unit_interval(value: object, *, name: str) -> float:
@@ -17,6 +21,174 @@ def _finite_unit_interval(value: object, *, name: str) -> float:
     if not np.isfinite(scalar) or not 0.0 <= scalar <= 1.0:
         raise ValueError(f"{name} must be a finite number in [0, 1]")
     return scalar
+
+
+def _finite_open_unit_interval(value: object, *, name: str) -> float:
+    scalar = _finite_unit_interval(value, name=name)
+    if scalar <= 0.0 or scalar >= 1.0:
+        raise ValueError(f"{name} must be a finite number in (0, 1)")
+    return scalar
+
+
+def _positive_integer(value: object, *, name: str) -> int:
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, (int, np.integer))
+        or value < 1
+    ):
+        raise ValueError(f"{name} must be a positive integer")
+    return int(value)
+
+
+def _coverage_fraction(coverage: object) -> tuple[float, Fraction]:
+    nominal = _finite_open_unit_interval(coverage, name="coverage")
+    return nominal, Fraction(str(nominal))
+
+
+def finite_group_conformal_rank(
+    calibration_group_count: int,
+    coverage: float,
+) -> int:
+    """Return ``ceil((n + 1) * coverage)`` using decimal-exact arithmetic.
+
+    The count is the number of independent calibration units, not the number of
+    frames, views, tracks, points, or taxels. Decimal-exact arithmetic avoids a
+    floating-point boundary such as ``0.9 / 0.1`` accidentally increasing the
+    finite-sample rank.
+    """
+
+    count = _positive_integer(
+        calibration_group_count,
+        name="calibration_group_count",
+    )
+    _, nominal = _coverage_fraction(coverage)
+    numerator = (count + 1) * nominal.numerator
+    return (numerator + nominal.denominator - 1) // nominal.denominator
+
+
+def maximum_finite_group_coverage(calibration_group_count: int) -> float:
+    """Return the largest nominal coverage with a finite split-conformal rank."""
+
+    count = _positive_integer(
+        calibration_group_count,
+        name="calibration_group_count",
+    )
+    return count / (count + 1)
+
+
+def minimum_groups_for_finite_conformal(coverage: float) -> int:
+    """Return the minimum independent-group count permitting a finite quantile."""
+
+    _, nominal = _coverage_fraction(coverage)
+    remaining = nominal.denominator - nominal.numerator
+    return (nominal.numerator + remaining - 1) // remaining
+
+
+@dataclass(frozen=True)
+class FiniteGroupCalibrationDesign:
+    """Fail-closed design record for a split-conformal calibration stage.
+
+    The predictor, score, grouping rule, endpoint set, and any acceptance guard
+    must be frozen before the interval-calibration outcomes are inspected.
+    Calibration outcomes may not also select the deployed predictor under this
+    split-conformal contract. More elaborate CV+/jackknife+ procedures require
+    a separately versioned design and are intentionally not represented here.
+    """
+
+    calibration_group_count: int
+    nominal_coverage: float
+    finite_sample_rank: int
+    maximum_finite_coverage: float
+    pooling: CalibrationPooling
+    predictor_frozen_before_scores: bool
+    calibration_outcomes_used_for_selection: bool
+
+    def __post_init__(self) -> None:
+        count = _positive_integer(
+            self.calibration_group_count,
+            name="calibration_group_count",
+        )
+        nominal, _ = _coverage_fraction(self.nominal_coverage)
+        expected_rank = finite_group_conformal_rank(count, nominal)
+        rank = _positive_integer(
+            self.finite_sample_rank,
+            name="finite_sample_rank",
+        )
+        if rank != expected_rank:
+            raise ValueError(
+                "finite_sample_rank must equal ceil((group_count + 1) * coverage)"
+            )
+        expected_maximum = maximum_finite_group_coverage(count)
+        maximum = _finite_open_unit_interval(
+            self.maximum_finite_coverage,
+            name="maximum_finite_coverage",
+        )
+        if maximum != expected_maximum:
+            raise ValueError(
+                "maximum_finite_coverage must equal group_count / (group_count + 1)"
+            )
+        if self.pooling not in {"pooled", "stratum"}:
+            raise ValueError("pooling must be 'pooled' or 'stratum'")
+        if type(self.predictor_frozen_before_scores) is not bool:
+            raise ValueError("predictor_frozen_before_scores must be a boolean")
+        if type(self.calibration_outcomes_used_for_selection) is not bool:
+            raise ValueError(
+                "calibration_outcomes_used_for_selection must be a boolean"
+            )
+        if not self.predictor_frozen_before_scores:
+            raise ValueError(
+                "split-conformal calibration requires the deployed predictor, "
+                "score, guard, grouping rule, and endpoint set to be frozen "
+                "before calibration scores are inspected"
+            )
+        if self.calibration_outcomes_used_for_selection:
+            raise ValueError(
+                "split-conformal calibration outcomes cannot also select the "
+                "deployed predictor or guard"
+            )
+        if rank > count:
+            minimum = minimum_groups_for_finite_conformal(nominal)
+            raise ValueError(
+                f"{nominal:.12g} coverage requires an infinite quantile with "
+                f"{count} independent groups; use at least {minimum} groups or "
+                f"coverage <= {expected_maximum:.12g}"
+            )
+
+        object.__setattr__(self, "calibration_group_count", count)
+        object.__setattr__(self, "nominal_coverage", nominal)
+        object.__setattr__(self, "finite_sample_rank", rank)
+        object.__setattr__(self, "maximum_finite_coverage", maximum)
+
+    def as_dict(self) -> dict[str, int | float | str | bool]:
+        return asdict(self)
+
+
+def plan_finite_group_calibration(
+    calibration_group_count: int,
+    coverage: float,
+    *,
+    pooling: CalibrationPooling = "pooled",
+    predictor_frozen_before_scores: bool,
+    calibration_outcomes_used_for_selection: bool,
+) -> FiniteGroupCalibrationDesign:
+    """Build a valid finite split-conformal design or fail before target access."""
+
+    count = _positive_integer(
+        calibration_group_count,
+        name="calibration_group_count",
+    )
+    nominal, _ = _coverage_fraction(coverage)
+    return FiniteGroupCalibrationDesign(
+        calibration_group_count=count,
+        nominal_coverage=nominal,
+        finite_sample_rank=finite_group_conformal_rank(count, nominal),
+        maximum_finite_coverage=maximum_finite_group_coverage(count),
+        pooling=pooling,
+        predictor_frozen_before_scores=predictor_frozen_before_scores,
+        calibration_outcomes_used_for_selection=(
+            calibration_outcomes_used_for_selection
+        ),
+    )
 
 
 @dataclass(frozen=True)
