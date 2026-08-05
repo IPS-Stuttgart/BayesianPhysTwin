@@ -84,9 +84,7 @@ def _comparison(
     baseline_mean = float(np.mean(baseline))
     observed_difference = candidate_mean - baseline_mean
     observed_relative = (
-        None
-        if baseline_mean <= 0.0
-        else candidate_mean / baseline_mean - 1.0
+        None if baseline_mean <= 0.0 else candidate_mean / baseline_mean - 1.0
     )
     observed = {
         "candidate_mean_loss": candidate_mean,
@@ -121,9 +119,7 @@ def _comparison(
             if not len(relative_samples)
             else _interval(relative_samples, confidence)
         ),
-        "bootstrap_probability_candidate_better": float(
-            np.mean(differences < 0.0)
-        ),
+        "bootstrap_probability_candidate_better": float(np.mean(differences < 0.0)),
         "valid_relative_change_replicates": int(len(relative_samples)),
     }
 
@@ -189,7 +185,10 @@ def group_clustered_paired_bootstrap(
             endpoint=False,
         )
         fallback = np.asarray(
-            [group_losses[first_method][group_id]["fallback"] for group_id in group_ids],
+            [
+                group_losses[first_method][group_id]["fallback"]
+                for group_id in group_ids
+            ],
             dtype=float,
         )
         method_summaries: dict[str, object] = {}
