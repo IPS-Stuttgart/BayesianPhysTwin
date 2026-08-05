@@ -169,6 +169,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "search-phystwin-topology-field": (
         "bayesian_phystwin.cli.phystwin_zero_order_topology"
     ),
+    "seal-deform360-calibration": (
+        "bayesian_phystwin.cli.deform360_calibration_execution"
+    ),
     "select-phystwin-motioncrafter-view": (
         "bayesian_phystwin.cli.phystwin_motioncrafter_selection"
     ),
