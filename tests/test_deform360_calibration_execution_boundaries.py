@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import runpy
 import sys
@@ -78,9 +77,7 @@ def _artifacts(
             selected_candidate_id=f"candidate-{index}",
             candidate_count=index + 2,
             calibration_group_ids=groups,
-            source_artifacts={
-                f"calibration/{role}.json": f"{index + 201:064x}"
-            },
+            source_artifacts={f"calibration/{role}.json": f"{index + 201:064x}"},
         )
         for index, role in enumerate(DEFORM360_CALIBRATION_ROLES)
     )
