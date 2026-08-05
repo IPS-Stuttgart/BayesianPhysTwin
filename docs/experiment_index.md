@@ -63,8 +63,9 @@ The
 [frozen full-22 reproduction capsule](../reproductions/full22_anchor_v1/README.md)
 records the exact source revision, protocol and data identities, two-stage
 source command, expected paper-facing metrics, fail-closed verification, and a
-strict `RunManifestV2` bundle. Executing that capsule is the remaining action
-before the paper registry may remove its source-command promotion blocker.
+strict `RunManifestV2` bundle. The capsule has been reproduced independently on
+`workstation2` and a fresh GitHub-hosted runtime and is the current portable
+reproduction record.
 
 ### Deform360 prospective validation
 
@@ -79,9 +80,14 @@ prospective result, not a target evaluation.
 The
 [official-Hub Deform360 visuotactile v1 protocol](deform360_official_hub_visuotactile_v1.md)
 is the next independent-object gate. It replaces contaminated mounted-cache
-trajectories with an exact official raw-data revision, adds an independent
-contact anchor to the existing explicit-gauge solver, and remains locked before
-selected raw payload access.
+trajectories with an exact official raw-data revision and adds an independent
+contact anchor to the existing explicit-gauge solver.
+
+The [visual-provider freeze](deform360_visual_provider_freeze.md) is the next
+data-free execution step. It resolves the exact cached MotionCrafter model
+revisions, Prob4D provider manifest and attestation, metric-frame policy, and
+portable model-set identity before any of the ten selected calibration-object
+payloads may be opened.
 
 ## PhysTwin experiment families
 
