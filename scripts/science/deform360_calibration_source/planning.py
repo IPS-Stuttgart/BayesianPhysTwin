@@ -163,16 +163,13 @@ def select_object_files(
             if unit.episode_id >= len(pairs):
                 errors.append(f"{stream}: selected tactile episode is absent")
             elif len(baselines) != 1:
-                errors.append(
-                    f"{stream}: expected exactly one tactile baseline"
-                )
+                errors.append(f"{stream}: expected exactly one tactile baseline")
             else:
                 tactile[stream] = (*pairs[unit.episode_id], baselines[0])
 
     if len(cameras) < MINIMUM_CAMERA_STREAMS:
         errors.append(
-            f"only {len(cameras)} camera streams expose episode "
-            f"{unit.episode_id}"
+            f"only {len(cameras)} camera streams expose episode {unit.episode_id}"
         )
     if not tactile:
         errors.append("no exact tactile stream exposes the selected episode")
@@ -189,15 +186,11 @@ def select_object_files(
         "stratum": unit.stratum,
         "metadata_path": unit.metadata_path,
         "metadata_sha256": unit.metadata_sha256,
-        "status": (
-            "planned" if not errors else "unsupported_without_replacement"
-        ),
+        "status": ("planned" if not errors else "unsupported_without_replacement"),
         "errors": errors,
         "camera_streams": sorted(cameras),
         "tactile_streams": sorted(tactile),
-        "selected_files": [
-            selected[path].to_record() for path in sorted(selected)
-        ],
+        "selected_files": [selected[path].to_record() for path in sorted(selected)],
     }
 
 
