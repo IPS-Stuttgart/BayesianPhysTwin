@@ -213,10 +213,8 @@ def _load_processing_calibration_module(processing_checkout: Path) -> Any:
         "deform360_calibration_for_materialization",
         module_path,
     )
-    require(
-        specification is not None and specification.loader is not None,
-        "cannot load the pinned Deform360 calibration module",
-    )
+    if specification is None or specification.loader is None:
+        raise ValueError("cannot load the pinned Deform360 calibration module")
     module = importlib.util.module_from_spec(specification)
     sys.modules[specification.name] = module
     specification.loader.exec_module(module)
@@ -282,6 +280,21 @@ def build_manifest(
         "materialization plans do not cover the exact calibration cohort",
     )
 
+    technical_failure_ids = {
+        plan.object_id for plan in plans if plan.status == "technical_failure"
+    }
+    for object_id, record in (calibrated_camera_coverage or {}).items():
+        if isinstance(record, Mapping) and record.get("status") == "technical_failure":
+            technical_failure_ids.add(str(object_id))
+    if runtime_failures:
+        status = "failed"
+    elif not opened_payloads:
+        status = "planned"
+    elif technical_failure_ids:
+        status = "complete_with_technical_failures"
+    else:
+        status = "complete"
+
     descriptor: dict[str, object] = {
         "schema": MATERIALIZATION_SCHEMA,
         "schema_version": MATERIALIZATION_VERSION,
@@ -298,17 +311,9 @@ def build_manifest(
         "implementation_revision": implementation_revision,
         "calibration_object_ids": calibration_ids,
         "confirmation_object_ids": confirmation_ids,
-        "status": (
-            "failed"
-            if runtime_failures
-            else "complete"
-            if opened_payloads
-            else "planned"
-        ),
+        "status": status,
         "runtime_failures": sorted(set(runtime_failures)),
-        "technical_failure_object_count": sum(
-            plan.status == "technical_failure" for plan in plans
-        ),
+        "technical_failure_object_count": len(technical_failure_ids),
         "units": [
             plan.to_record()
             for plan in sorted(plans, key=lambda item: item.object_id)
