@@ -130,9 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise AssertionError("decisive-evidence analysis configuration changed")
     analysis_configuration.update(
         {
-            "group_clustered_bootstrap_contract": (
-                GROUP_CLUSTERED_BOOTSTRAP_CONTRACT
-            ),
+            "group_clustered_bootstrap_contract": (GROUP_CLUSTERED_BOOTSTRAP_CONTRACT),
             "bootstrap_replicates": args.bootstrap_replicates,
             "bootstrap_seed": args.bootstrap_seed,
             "bootstrap_confidence": args.bootstrap_confidence,
