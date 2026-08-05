@@ -89,6 +89,7 @@ jobs:
             tests/test_legacy_artifacts.py \
             tests/test_causal4d_artifacts_v2.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_deform360_contact_anchor.py \
             tests/test_observation_belief.py \
             tests/test_grouped_likelihood.py \
             tests/test_endpoint_model_average.py \
@@ -124,6 +125,7 @@ jobs:
             src/bayesian_phystwin/cli/main.py
             src/bayesian_phystwin/cli/run_manifest.py
             src/bayesian_phystwin/gauge_aware_belief.py
+            src/bayesian_phystwin/deform360_contact_anchor.py
             src/bayesian_phystwin/observation_belief.py
             src/bayesian_phystwin/observation_belief_gauge_adapter.py
             src/bayesian_phystwin/phystwin_profile.py
@@ -201,6 +203,7 @@ jobs:
             tests/test_legacy_artifacts.py \
             tests/test_causal4d_artifacts_v2.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_deform360_contact_anchor.py \
             tests/test_observation_belief.py \
             tests/test_grouped_likelihood.py \
             tests/test_endpoint_model_average.py \
@@ -283,6 +286,7 @@ jobs:
             tests/test_causal4d_artifacts_v2.py \
             tests/test_endpoint_model_average.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_deform360_contact_anchor.py \
             tests/test_observation_belief_gauge_adapter.py \
             tests/test_observation_belief.py
           bpt provider manifest \
