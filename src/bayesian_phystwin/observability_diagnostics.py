@@ -1,7 +1,7 @@
 """Nuisance-marginalized observability diagnostics for physical queries.
 
 The functions compare already constructed Gaussian information states after all
-declared nuisance variables have been marginalized.  An optional full-row-rank
+declared nuisance variables have been marginalized. An optional full-row-rank
 query Jacobian restricts the report to the physical quantity that will actually
 be deployed.
 """
@@ -48,6 +48,20 @@ def _matrix(value: object, *, name: str) -> np.ndarray:
     _require(result.ndim == 2, f"{name} must be a matrix")
     _require(np.all(np.isfinite(result)), f"{name} must be finite")
     return result
+
+
+def _immutable_array(value: object) -> np.ndarray:
+    canonical = np.array(
+        value,
+        dtype=np.dtype("<f8"),
+        copy=True,
+        order="C",
+    )
+    frozen = np.frombuffer(
+        canonical.tobytes(order="C"),
+        dtype=np.dtype("<f8"),
+    )
+    return frozen.reshape(canonical.shape)
 
 
 def _spd(value: object, *, name: str) -> np.ndarray:
@@ -102,8 +116,7 @@ def _query(
         int(np.sum(singular_values > threshold)) == result.shape[0],
         "query_jacobian rows must be numerically independent",
     )
-    result.setflags(write=False)
-    return result
+    return _immutable_array(result)
 
 
 def _query_moments(
@@ -209,8 +222,7 @@ class MarginalObservabilitySummary:
             ("marginal_variances", variances),
             ("query_jacobian", query),
         ):
-            array.setflags(write=False)
-            object.__setattr__(self, name, array)
+            object.__setattr__(self, name, _immutable_array(array))
 
     @property
     def minimum_precision_eigenvalue(self) -> float:
@@ -305,8 +317,11 @@ class MarginalObservabilityComparison:
             ),
         ):
             _require(0.0 <= value <= 1.0, f"{name} must lie in [0, 1]")
-        increments.setflags(write=False)
-        object.__setattr__(self, "information_increment_eigenvalues", increments)
+        object.__setattr__(
+            self,
+            "information_increment_eigenvalues",
+            _immutable_array(increments),
+        )
 
     def to_record(self) -> dict[str, object]:
         """Return a JSON-compatible comparison record."""
@@ -323,7 +338,9 @@ class MarginalObservabilityComparison:
             "weakest_direction_precision_ratio": (
                 self.weakest_direction_precision_ratio
             ),
-            "mean_variance_reduction_fraction": (self.mean_variance_reduction_fraction),
+            "mean_variance_reduction_fraction": (
+                self.mean_variance_reduction_fraction
+            ),
             "maximum_variance_reduction_fraction": (
                 self.maximum_variance_reduction_fraction
             ),
@@ -394,7 +411,7 @@ def compare_marginal_observability(
     """Compare a candidate observation family with a frozen reference state.
 
     The comparison fails closed if the candidate reduces query information
-    beyond the declared tolerance.  This normally indicates mismatched priors,
+    beyond the declared tolerance. This normally indicates mismatched priors,
     nuisance domains, query definitions, or evidence order.
     """
 
@@ -464,7 +481,8 @@ def compare_marginal_observability(
     )
     variance_reduction = np.clip(variance_reduction, 0.0, 1.0)
     weakest_ratio = (
-        candidate.minimum_precision_eigenvalue / reference.minimum_precision_eigenvalue
+        candidate.minimum_precision_eigenvalue
+        / reference.minimum_precision_eigenvalue
     )
     if weakest_ratio < 1.0 and weakest_ratio >= 1.0 - unitless_tolerance:
         weakest_ratio = 1.0
