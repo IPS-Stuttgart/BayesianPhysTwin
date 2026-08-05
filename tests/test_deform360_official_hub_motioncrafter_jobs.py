@@ -38,12 +38,12 @@ def _manifest() -> dict[str, object]:
     provider_path = (
         repository
         / "protocols/locks/"
-        "deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json"
+        "deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json"
     )
     model_path = (
         repository
         / "protocols/locks/"
-        "deform360_official_hub_visuotactile_v1_motioncrafter_model_set.json"
+        "deform360_official_hub_visuotactile_v2_motioncrafter_model_set.json"
     )
     return build_deform360_motioncrafter_job_manifest(
         causal_window_manifest=(
@@ -81,6 +81,15 @@ def test_builds_frozen_complete_product_schedule_for_all_cameras() -> None:
         "latent_linear_baseline",
         "independently_decoded_overlap_windows",
     ]
+    model_sources = manifest["motioncrafter"]["model_set_manifest"]["sources"]
+    assert set(model_sources) == {"unet", "vae", "image_vae", "base_pipeline"}
+    assert model_sources["image_vae"] == {
+        "kind": "huggingface_revision",
+        "repository": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+        "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+        "role": "image-vae",
+        "schema": "prob4d.motioncrafter-model-source.v1",
+    }
 
 
 def test_seed_derivation_matches_prob4d_canonical_descriptor() -> None:

@@ -35,19 +35,22 @@ DEFORM360_MOTIONCRAFTER_JOB_MANIFEST_VERSION = 1
 DEFORM360_V2_CAUSAL_WINDOW_MANIFEST_ID = (
     "9fe5fdf4ae6449182d2e5064ad99417b4252dd04b76831df722b44614c2351dd"
 )
+DEFORM360_AMENDED_PROVIDER_RECOVERY_LOCK_ID = (
+    "ce48b2a8823b81cd697f63355b84a5cd48ee3e0024022b782417e832947240ea"
+)
 DEFORM360_MOTIONCRAFTER_MODEL_SET_ID = (
-    "2e5cf9bbf1fa0a61b985ed440a437ba8ea736ae643964d8449429e75a836de02"
+    "466f5197722a0c77e5d5e0b70b110d302484e162b6e926c84f7b610c1c4df775"
 )
 DEFORM360_V2_CAUSAL_WINDOW_MANIFEST_FILE_SHA256 = (
     "7398575f32ea8868f241da9356264d5b44b815f41425f6f259afcbbd10f336de"
 )
 DEFORM360_PROVIDER_LOCK_FILE_SHA256 = (
-    "ca60602a799f42d151f58de80d71bda2966f7e01eeedbeca911fb82860aa2656"
+    "ded13f37b49b1542172be6ff4308025d037c2daef31380df50dfcbedafa7ac02"
 )
 DEFORM360_MODEL_SET_MANIFEST_FILE_SHA256 = (
-    "5968a8664ab1dd936a1609a5581d6bde7d40b16d929b7f1bbef7bc042b6c52f5"
+    "7227422b42f94811c4c6ec9f7d81446f60cd91ca9c0af7194b1becec1ef52b07"
 )
-DEFORM360_PROB4D_REVISION = "364f216c14f7770c1b360bb1b836b11ecf0c18b8"
+DEFORM360_PROB4D_REVISION = "8aa18c9f2aca3ef089adc3a23c06643e1c4cd79f"
 DEFORM360_MOTIONCRAFTER_REVISION = "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257"
 MOTIONCRAFTER_SEED_SCHEDULE_SCHEMA = "prob4d.motioncrafter-seed-schedule.v1"
 
@@ -188,9 +191,23 @@ def build_deform360_motioncrafter_job_manifest(
         "unexpected v2 causal-window manifest",
     )
     _require(
-        provider_lock.artifact_id
-        == str(causal_window_manifest["visual_provider_recovery_lock_id"]),
-        "provider lock differs from causal-window manifest",
+        provider_lock.artifact_id == DEFORM360_AMENDED_PROVIDER_RECOVERY_LOCK_ID,
+        "unexpected amended provider recovery lock",
+    )
+    causal_provider_id = str(
+        causal_window_manifest["visual_provider_recovery_lock_id"]
+    )
+    amendment_parent = provider_lock.metadata.get("amendment_parent")
+    _require(
+        causal_provider_id == DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID
+        and isinstance(amendment_parent, Mapping)
+        and amendment_parent.get("artifact_id") == causal_provider_id
+        and amendment_parent.get("path")
+        == (
+            "protocols/locks/"
+            "deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json"
+        ),
+        "provider dependency amendment does not bind the causal-window provider",
     )
     _require(
         provider_lock.seed_policy == "derived-per-call",
@@ -414,7 +431,7 @@ def validate_deform360_motioncrafter_job_manifest(
         "v2 causal-window binding changed",
     )
     _require(
-        provider.get("artifact_id") == DEFORM360_VISUAL_PROVIDER_RECOVERY_LOCK_ID
+        provider.get("artifact_id") == DEFORM360_AMENDED_PROVIDER_RECOVERY_LOCK_ID
         and provider.get("file_sha256") == DEFORM360_PROVIDER_LOCK_FILE_SHA256
         and provider.get("provider_revision") == DEFORM360_PROB4D_REVISION,
         "provider binding changed",

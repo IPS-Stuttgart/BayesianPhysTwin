@@ -287,6 +287,7 @@ def main() -> int:
     sources = model_manifest["sources"]
     unet_reference, unet_revision = _model_source(sources["unet"])
     vae_reference, vae_revision = _model_source(sources["vae"])
+    image_vae_reference, image_vae_revision = _model_source(sources["image_vae"])
     base_reference, base_revision = _model_source(sources["base_pipeline"])
     model_set = PinnedMotionCrafterModelSet.inspect(
         model_type=str(model_manifest["model_type"]),
@@ -294,6 +295,8 @@ def main() -> int:
         unet_revision=unet_revision,
         vae_reference=vae_reference,
         vae_revision=vae_revision,
+        image_vae_reference=image_vae_reference,
+        image_vae_revision=image_vae_revision,
         base_pipeline_reference=base_reference,
         base_pipeline_revision=base_revision,
     )

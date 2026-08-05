@@ -246,11 +246,19 @@ def test_recovery_lock_record_is_plain_finite_json() -> None:
     assert loaded["artifact_id"] == lock.artifact_id
 
 
-def test_committed_recovery_lock_binds_exact_provider_assets() -> None:
+@pytest.mark.parametrize(
+    "lock_filename",
+    [
+        "deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json",
+        "deform360_official_hub_visuotactile_v2_visual_provider_recovery_v1.json",
+    ],
+)
+def test_committed_recovery_lock_binds_exact_provider_assets(
+    lock_filename: str,
+) -> None:
     repository = Path(__file__).resolve().parents[1]
     lock = load_deform360_visual_provider_recovery_lock(
-        repository / "protocols/locks/"
-        "deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json"
+        repository / "protocols/locks/" / lock_filename
     )
     provider_path = repository / lock.metadata["prob4d_provider_manifest_path"]
     model_path = repository / lock.metadata["motioncrafter_model_set_manifest_path"]
