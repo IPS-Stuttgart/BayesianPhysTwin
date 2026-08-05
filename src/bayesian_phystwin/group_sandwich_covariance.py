@@ -49,8 +49,7 @@ def _literal_string(value: object, *, name: str) -> str:
 def _correction(value: object) -> SmallSampleCorrection:
     if type(value) is not str or value not in SMALL_SAMPLE_CORRECTIONS:
         raise ValueError(
-            "small_sample_correction must be one of "
-            f"{list(SMALL_SAMPLE_CORRECTIONS)}"
+            f"small_sample_correction must be one of {list(SMALL_SAMPLE_CORRECTIONS)}"
         )
     return cast(SmallSampleCorrection, value)
 
@@ -214,9 +213,7 @@ class GroupSandwichCovarianceResultV1:
             minimum=1.0,
         )
         expected_factor = (
-            1.0
-            if correction == "none"
-            else len(group_ids) / (len(group_ids) - 1)
+            1.0 if correction == "none" else len(group_ids) / (len(group_ids) - 1)
         )
         if not np.isclose(correction_factor, expected_factor, atol=0.0, rtol=1e-15):
             raise ValueError("correction_factor contradicts small_sample_correction")
@@ -277,9 +274,7 @@ class GroupSandwichCovarianceResultV1:
         if semantics.calibrated:
             raise ValueError("group sandwich covariance is not calibration by itself")
         if semantics.metadata.get("grouping_semantics") != grouping_semantics:
-            raise ValueError(
-                "covariance_semantics does not bind grouping_semantics"
-            )
+            raise ValueError("covariance_semantics does not bind grouping_semantics")
         if semantics.metadata.get("group_count") != len(group_ids):
             raise ValueError("covariance_semantics does not bind group_count")
         if semantics.metadata.get("small_sample_correction") != correction:
@@ -360,9 +355,7 @@ def estimate_group_sandwich_covariance(
     group_ids: Sequence[str],
     *,
     grouping_semantics: str,
-    likelihood_power_semantics: str = (
-        "grouped-student-t-generalized-bayes-power-v1"
-    ),
+    likelihood_power_semantics: str = ("grouped-student-t-generalized-bayes-power-v1"),
     small_sample_correction: SmallSampleCorrection = "g_over_g_minus_one",
     minimum_group_count: int = 3,
     prior_included: bool = True,
@@ -420,9 +413,7 @@ def estimate_group_sandwich_covariance(
         np.eye(information.shape[0], dtype=np.float64),
     )
     bread_inverse = 0.5 * (bread_inverse + bread_inverse.T)
-    correction_factor = (
-        1.0 if correction == "none" else group_count / (group_count - 1)
-    )
+    correction_factor = 1.0 if correction == "none" else group_count / (group_count - 1)
     meat = grouped_scores.T @ grouped_scores
     raw_covariance = correction_factor * bread_inverse @ meat @ bread_inverse.T
     covariance, effective_rank = _project_numerical_psd(raw_covariance)
