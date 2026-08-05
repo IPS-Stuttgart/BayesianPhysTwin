@@ -229,8 +229,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -c core.hooksPath=/dev/null commit \
             -m "Lock official Deform360 Stage-0 cohort"
-          git -c core.hooksPath=/dev/null push \
-            origin "HEAD:${BPT_HEAD_REF}"
+          git push origin "HEAD:${BPT_HEAD_REF}"
 
       - name: Publish Stage-0 summary
         if: always()
