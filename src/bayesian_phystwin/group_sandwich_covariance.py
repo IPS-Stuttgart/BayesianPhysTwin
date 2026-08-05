@@ -13,7 +13,7 @@ import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from numbers import Real
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -37,7 +37,8 @@ SMALL_SAMPLE_CORRECTIONS: tuple[SmallSampleCorrection, ...] = (
     "g_over_g_minus_one",
 )
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
+IntArray: TypeAlias = NDArray[np.int64]
 
 
 def _literal_string(value: object, *, name: str) -> str:
@@ -56,7 +57,12 @@ def _correction(value: object) -> SmallSampleCorrection:
 
 def _finite_matrix(value: object, *, name: str) -> FloatArray:
     try:
-        matrix = np.array(value, dtype=np.float64, copy=True, order="C")
+        matrix: FloatArray = np.array(
+            value,
+            dtype=np.float64,
+            copy=True,
+            order="C",
+        )
     except (TypeError, ValueError) as error:
         raise ValueError(f"{name} must be a real matrix") from error
     if matrix.ndim != 2 or not matrix.shape[0] or not matrix.shape[1]:
@@ -108,13 +114,22 @@ def _finite_real(value: object, *, name: str, minimum: float | None = None) -> f
 
 
 def _immutable(array: FloatArray) -> FloatArray:
-    owned = np.array(array, dtype=np.float64, copy=True, order="C")
+    owned: FloatArray = np.array(
+        array,
+        dtype=np.float64,
+        copy=True,
+        order="C",
+    )
     owned.setflags(write=False)
     return owned
 
 
 def _array_record(array: FloatArray) -> dict[str, object]:
-    canonical = np.asarray(array, dtype=np.dtype("<f8"), order="C")
+    canonical: FloatArray = np.asarray(
+        array,
+        dtype=np.dtype("<f8"),
+        order="C",
+    )
     return {
         "dtype": "float64-le",
         "shape": list(canonical.shape),
@@ -123,7 +138,7 @@ def _array_record(array: FloatArray) -> dict[str, object]:
 
 
 def _project_numerical_psd(matrix: FloatArray) -> tuple[FloatArray, int]:
-    symmetric = 0.5 * (matrix + matrix.T)
+    symmetric: FloatArray = 0.5 * (matrix + matrix.T)
     eigenvalues, eigenvectors = np.linalg.eigh(symmetric)
     scale = max(1.0, float(np.max(np.abs(eigenvalues))))
     tolerance = 1e-10 * scale
@@ -132,7 +147,7 @@ def _project_numerical_psd(matrix: FloatArray) -> tuple[FloatArray, int]:
             "computed sandwich covariance is not positive semidefinite"
         )
     clipped = np.maximum(eigenvalues, 0.0)
-    projected = (eigenvectors * clipped) @ eigenvectors.T
+    projected: FloatArray = (eigenvectors * clipped) @ eigenvectors.T
     projected = 0.5 * (projected + projected.T)
     rank_tolerance = 1e-12 * max(1.0, float(np.max(clipped)))
     effective_rank = int(np.count_nonzero(clipped > rank_tolerance))
@@ -179,7 +194,7 @@ class GroupSandwichCovarianceResultV1:
             raise ValueError("grouped_scores width must match bread dimension")
         if covariance.shape != bread.shape:
             raise ValueError("covariance shape must match bread")
-        identity = bread @ bread_inverse
+        identity: FloatArray = bread @ bread_inverse
         if not np.allclose(identity, np.eye(dimension), atol=1e-8, rtol=1e-8):
             raise ValueError("bread_inverse does not invert bread")
 
@@ -355,7 +370,9 @@ def estimate_group_sandwich_covariance(
     group_ids: Sequence[str],
     *,
     grouping_semantics: str,
-    likelihood_power_semantics: str = ("grouped-student-t-generalized-bayes-power-v1"),
+    likelihood_power_semantics: str = (
+        "grouped-student-t-generalized-bayes-power-v1"
+    ),
     small_sample_correction: SmallSampleCorrection = "g_over_g_minus_one",
     minimum_group_count: int = 3,
     prior_included: bool = True,
@@ -371,8 +388,8 @@ def estimate_group_sandwich_covariance(
     not masquerade as additional independent evidence.
     """
 
-    information = _positive_definite_bread(bread)
-    scores = _finite_matrix(score_rows, name="score_rows")
+    information: FloatArray = _positive_definite_bread(bread)
+    scores: FloatArray = _finite_matrix(score_rows, name="score_rows")
     if scores.shape[1] != information.shape[0]:
         raise ValueError("score_rows width must match bread dimension")
     identifiers = _group_id_tuple(group_ids, expected_count=scores.shape[0])
@@ -401,21 +418,28 @@ def estimate_group_sandwich_covariance(
             f"received {group_count}"
         )
     group_index = {group_id: index for index, group_id in enumerate(unique_group_ids)}
-    grouped_scores = np.zeros((group_count, information.shape[0]), dtype=np.float64)
-    row_counts = np.zeros(group_count, dtype=np.int64)
-    for score, group_id in zip(scores, identifiers, strict=True):
+    grouped_scores: FloatArray = np.zeros(
+        (group_count, information.shape[0]),
+        dtype=np.float64,
+    )
+    row_counts: IntArray = np.zeros(group_count, dtype=np.int64)
+    for row_index, group_id in enumerate(identifiers):
         index = group_index[group_id]
-        grouped_scores[index] += score
+        grouped_scores[index] += scores[row_index]
         row_counts[index] += 1
 
-    bread_inverse = np.linalg.solve(
+    bread_inverse: FloatArray = np.linalg.solve(
         information,
         np.eye(information.shape[0], dtype=np.float64),
     )
     bread_inverse = 0.5 * (bread_inverse + bread_inverse.T)
-    correction_factor = 1.0 if correction == "none" else group_count / (group_count - 1)
-    meat = grouped_scores.T @ grouped_scores
-    raw_covariance = correction_factor * bread_inverse @ meat @ bread_inverse.T
+    correction_factor = (
+        1.0 if correction == "none" else group_count / (group_count - 1)
+    )
+    meat: FloatArray = grouped_scores.T @ grouped_scores
+    raw_covariance: FloatArray = (
+        correction_factor * bread_inverse @ meat @ bread_inverse.T
+    )
     covariance, effective_rank = _project_numerical_psd(raw_covariance)
 
     semantics = PosteriorCovarianceSemanticsV1(
