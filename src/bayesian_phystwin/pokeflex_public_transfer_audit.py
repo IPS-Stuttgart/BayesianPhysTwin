@@ -23,7 +23,7 @@ from .pokeflex_instance_freshness import public_take_ids
 PROTOCOL_KIND = "PokeFlexActionRobustPublicTransferAuditProtocol"
 PROTOCOL_ID = "pokeflex-action-robust-public78-retrospective-v6"
 PROTOCOL_SHA256 = (
-    "03f017d46993e64a7dee41e363c943e977ab8eceb79d26b7988f3da22a585a33"
+    "f108baede896f32ee7150efc7dd2fe54fb51bfe374cc5e4e97f4969dca381eec"
 )
 RESULT_KIND = "PokeFlexActionRobustPublicTransferAuditResult"
 SMOKE_KIND = "PokeFlexCheckpointBayesianRegistrationDevelopmentSmoke"
@@ -33,6 +33,9 @@ BOOTSTRAP_REPLICATES = 20_000
 BOOTSTRAP_SEED = 20_260_720
 AUDIT_RUNNER_FILE_SHA256 = (
     "75ce66d0d12620ff1d0eaf98787af6502cc1dfd0af4bb4b5dd7ed28653a823e5"
+)
+SOURCE_PROJECTION_RUNNER_FILE_SHA256 = (
+    "08157ac8d232d0118ef8d29b6661c1855339c8ec76b2b37cf050e0438812abc5"
 )
 LEGACY_RUNNER_FILE_SHA256 = (
     "79ba8946653a55a70dc0b990e874754397e18948b9b7ba541158c6641cfc4b43"
@@ -248,6 +251,12 @@ def build_public_transfer_protocol(
             "takes": dict(sorted(archives.items())),
         },
         "implementation": {
+            "source_projection_runner": (
+                "scripts/remote/stage_pokeflex_public_transfer_archive.py"
+            ),
+            "source_projection_runner_file_sha256": (
+                SOURCE_PROJECTION_RUNNER_FILE_SHA256
+            ),
             "audit_runner": (
                 "scripts/remote/run_pokeflex_public_transfer_audit_take.py"
             ),
@@ -374,6 +383,11 @@ def validate_public_transfer_protocol(
         )
     implementation = payload.get("implementation")
     _require(isinstance(implementation, Mapping), "implementation binding is missing")
+    _require(
+        implementation.get("source_projection_runner_file_sha256")
+        == SOURCE_PROJECTION_RUNNER_FILE_SHA256,
+        "source projection runner changed",
+    )
     _require(
         implementation.get("audit_runner_file_sha256") == AUDIT_RUNNER_FILE_SHA256,
         "audit runner changed",
@@ -745,6 +759,7 @@ __all__ = [
     "PROTOCOL_KIND",
     "PROTOCOL_SHA256",
     "RESULT_KIND",
+    "SOURCE_PROJECTION_RUNNER_FILE_SHA256",
     "build_public_transfer_protocol",
     "build_public_transfer_result",
     "file_sha256",

@@ -103,7 +103,7 @@ def test_frozen_public_transfer_protocol_and_archive_inventory_are_exact() -> No
 
     assert protocol["protocol_sha256"] == PROTOCOL_SHA256
     assert hashlib.sha256(FROZEN_PROTOCOL.read_bytes()).hexdigest() == (
-        "b78fd58294656e548c7459e87889ce93f1447ef2633367d6b07852c1caaa4218"
+        "924d5d81f55ec1b6d721f76a10e9d2f96bbb8924eae6c0ef917075c1814a9980"
     )
     assert hashlib.sha256(ARCHIVE_INVENTORY.read_bytes()).hexdigest() == (
         "428257e0915f27f09074d06b8871c2a739ce3413a7069cc29c2e080e12c7c057"
