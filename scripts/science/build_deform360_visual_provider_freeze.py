@@ -228,7 +228,9 @@ def load_preflight_spec(path: str | Path) -> dict[str, Any]:
     if dict(boundary) != expected_boundary:
         raise ValueError("preflight information boundary changed")
     if spec["additional_metric_anchor_policy"] != "none":
-        raise ValueError("primary visual provider must use no additional metric anchors")
+        raise ValueError(
+            "primary visual provider must use no additional metric anchors"
+        )
     return spec
 
 
@@ -447,7 +449,9 @@ def build_preflight(
         for role in ("unet", "vae", "image_vae", "base_pipeline")
     }
     if resolved["unet"] != resolved["vae"]:
-        raise ValueError("MotionCrafter UNet and geometry VAE must share one model revision")
+        raise ValueError(
+            "MotionCrafter UNet and geometry VAE must share one model revision"
+        )
 
     provider_v2 = _import_from_checkout(prob4d_root, "prob4d.provider_v2")
     provider_attestation = _import_from_checkout(
@@ -468,9 +472,7 @@ def build_preflight(
             "point_artifact_id": None,
         },
         covariance_root_mode=cast(str, provider_spec["covariance_root_mode"]),
-        composition_jacobian_mode=cast(
-            str, provider_spec["composition_jacobian_mode"]
-        ),
+        composition_jacobian_mode=cast(str, provider_spec["composition_jacobian_mode"]),
         runtime_revision={
             "expected_revision": provider_revision,
             "observed_revision": provider_revision,
@@ -555,9 +557,7 @@ def build_preflight(
             height=_require_integer(
                 motion_spec.get("height"), name="height", minimum=1
             ),
-            width=_require_integer(
-                motion_spec.get("width"), name="width", minimum=1
-            ),
+            width=_require_integer(motion_spec.get("width"), name="width", minimum=1),
             storage_dtype=cast(str, motion_spec.get("storage_dtype")),
             initial_metric_frame_prior_id=cast(str, policy["artifact_id"]),
             additional_metric_anchor_policy=cast(
@@ -572,9 +572,7 @@ def build_preflight(
             ),
             metadata={
                 "preflight_spec_id": spec["artifact_id"],
-                "metric_frame_prior_policy_path": cast(
-                    str, policy_binding["path"]
-                ),
+                "metric_frame_prior_policy_path": cast(str, policy_binding["path"]),
                 "model_source_revisions": {
                     role: revision for role, (_, revision) in sorted(resolved.items())
                 },
