@@ -1,0 +1,32 @@
+{
+  "loader_module": {
+    "bytes": 19246,
+    "module": "prob4d.motioncrafter_models",
+    "sha256": "684ae4fed181fb9ce33d9582dc297947cc92f6dbd6dfb5004f487f23006762cc"
+  },
+  "model_type": "determ",
+  "schema": "prob4d.motioncrafter-model-set.v1",
+  "sources": {
+    "base_pipeline": {
+      "kind": "huggingface_revision",
+      "repository": "stabilityai/stable-video-diffusion-img2vid-xt",
+      "revision": "9e43909513c6714f1bc78bcb44d96e733cd242aa",
+      "role": "base-pipeline",
+      "schema": "prob4d.motioncrafter-model-source.v1"
+    },
+    "unet": {
+      "kind": "huggingface_revision",
+      "repository": "TencentARC/MotionCrafter",
+      "revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+      "role": "unet",
+      "schema": "prob4d.motioncrafter-model-source.v1"
+    },
+    "vae": {
+      "kind": "huggingface_revision",
+      "repository": "TencentARC/MotionCrafter",
+      "revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+      "role": "vae",
+      "schema": "prob4d.motioncrafter-model-source.v1"
+    }
+  }
+}

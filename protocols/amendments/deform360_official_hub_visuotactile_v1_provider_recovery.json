@@ -1,0 +1,49 @@
+{
+  "amendment_id": "deform360-official-hub-visuotactile-v1-provider-recovery-v1",
+  "artifact_id": "aa7ae5b26ed491e2a76414d122465e8e4202b0739165b0e5cca14ed5ed20c87b",
+  "claim_boundary": "Post-acquisition, pre-score recovery only. This amendment does not repair the missed pre-payload provider lock, and it does not establish observation competence, calibration, physical improvement, confirmation performance, or state of the art.",
+  "corrected_information_order": {
+    "calibration_camera_tactile_and_robot_payloads_acquired": true,
+    "calibration_scores_opened": false,
+    "calibration_values_used_for_provider_selection": false,
+    "confirmation_payloads_opened": false,
+    "exact_provider_recovery_lock_committed": true,
+    "target_outcomes_used": false
+  },
+  "frozen_causal_window": {
+    "contact_clock": "official-processed-tactile-first-contact-v1",
+    "future_frames": 24,
+    "insufficient_context_policy": "retained-technical-failure-no-replacement",
+    "observed_contact_frames": 6,
+    "observed_history_frames": 42,
+    "provider_overlap": 8,
+    "provider_window_count": 2,
+    "provider_window_size": 25
+  },
+  "parent_protocol": {
+    "canonical_json_sha256": "55534067fb0b3d7965eb66438cbec2ac5b85bcf5378abd1a73785479a5cdbeab",
+    "id": "deform360-official-hub-visuotactile-v1",
+    "path": "protocols/deform360_official_hub_visuotactile_v1.json"
+  },
+  "provider_recovery_lock": {
+    "artifact_id": "02d90e58f4f21d052073e098469ff8a7cd991f48b895d7496cebdb84dd10cb3d",
+    "path": "protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_recovery_v1.json",
+    "schema": "bayesian-phystwin.deform360-visual-provider-recovery-lock",
+    "schema_version": 1
+  },
+  "required_next_order": [
+    "commit this recovery amendment and exact provider/window lock before calibration scoring",
+    "derive and checksum one causal processing window per calibration object",
+    "run only the locked provider and registered ablations on calibration objects",
+    "fit and serialize visual covariance, contact anchor, guard, and finite-group interval artifacts",
+    "commit the exact calibration bundle and opening token before confirmation payload access",
+    "open confirmation payloads exactly once only if the registered calibration gates pass"
+  ],
+  "schema": "bayesian-phystwin.deform360-visuotactile-protocol-amendment",
+  "schema_version": 1,
+  "stage1_provenance": {
+    "artifact_id": "cc92a2a4297ef4d3a25e6c54f233469f7eef419262e5ea0d3d3904da088909b9",
+    "path": "protocols/amendments/deform360_official_hub_visuotactile_v1_stage1_provenance.json"
+  },
+  "status": "locked-post-calibration-payload-pre-calibration-score"
+}

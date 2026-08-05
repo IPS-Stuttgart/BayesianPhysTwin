@@ -1,0 +1,43 @@
+{
+  "artifact_id": "22d4cd84ad7d8291cd2f0d20952703ca79811512136dcc74cd1bca7abb7bb20b",
+  "claim_boundary": "Target-free initial metric-frame policy only. It does not establish depth accuracy, observation competence, covariance calibration, physical improvement, or confirmation performance.",
+  "coordinate_contract": {
+    "camera_extrinsics_source": "official-processing selected-episode calibration",
+    "metric_units": "m",
+    "output_frame": "official Deform360 world frame",
+    "reference_view": "lexicographically first retained calibrated camera"
+  },
+  "covariance": {
+    "cross_view_correlation": "unknown; preserve a shared bias nuisance and combine views by covariance intersection",
+    "minimum_spatial_clusters": 8,
+    "residual_covariance": "cluster-robust over fixed 8x8 image tiles",
+    "scale_pose_parameterization": "Sim(3) log-scale, axis-angle, translation"
+  },
+  "information_boundary": {
+    "additional_metric_anchors": "none",
+    "calibration_scores_used": false,
+    "confirmation_payloads_opened": false,
+    "future_frames_used": false,
+    "target_outcomes_used": false
+  },
+  "input": {
+    "depth_source": "official processing depth at the first observed source frame",
+    "motioncrafter_source": "decoded point map at the same first observed source frame",
+    "object_support": "official causal-prefix object mask",
+    "pixel_correspondence": "same retained output pixel after the locked 320x640 cover-resize transform"
+  },
+  "policy": {
+    "estimator": "deterministic robust Sim(3) with a fixed Huber loss",
+    "huber_delta_m": 0.01,
+    "minimum_inlier_count": 64,
+    "minimum_inlier_fraction": 0.25,
+    "minimum_views": 2,
+    "per_view_fit": true,
+    "source_frame_offset": 0,
+    "unknown_correlation_fusion": "covariance-intersection-equal-weight-v1"
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "schema": "bayesian-phystwin.deform360-initial-metric-frame-prior-policy",
+  "schema_version": 1,
+  "status": "locked-post-payload-pre-score"
+}

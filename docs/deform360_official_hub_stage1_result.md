@@ -111,6 +111,13 @@ has yet been committed.
 
 The immutable correction artifact is
 [`deform360_official_hub_visuotactile_v1_stage1_provenance.json`](../protocols/amendments/deform360_official_hub_visuotactile_v1_stage1_provenance.json).
+
+The exact post-payload, pre-score provider and causal-window recovery lock is
+documented in
+[`deform360_official_hub_provider_recovery_v1.md`](deform360_official_hub_provider_recovery_v1.md).
+It does not retroactively satisfy the original pre-payload provider-lock
+requirement; it preserves the still-valid prospective boundary before calibration
+scores and confirmation access.
 The original method gates, cohort selection, and no-replacement rule were locked
 before payload access and are unchanged.
 
