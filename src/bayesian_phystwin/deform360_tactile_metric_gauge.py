@@ -12,8 +12,48 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
+
+from ._portable_contracts import content_id, load_strict_json_object
+
+DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA = (
+    "bayesian-phystwin.deform360-tactile-metric-gauge-lock"
+)
+DEFORM360_TACTILE_METRIC_GAUGE_LOCK_VERSION = 1
+
+CONTACT_CAMERA_POLICY = {
+    "panel_size": 3,
+    "minimum_assignment_coverage": 1.0,
+    "minimum_margin_px": 64.0,
+    "minimum_angular_separation_deg": 45.0,
+    "source_shape": [720, 1280],
+    "target_shape": [320, 640],
+    "selection_order": "maximum-margin-then-greedy-maximum-minimum-view-angle",
+}
+
+TACTILE_METRIC_GAUGE_QUALITY_GATE = {
+    "huber_delta_m": 0.005,
+    "covariance_floor_m": 0.005,
+    "maximum_median_held_frame_error_m": 0.005,
+    "maximum_percentile_90_held_frame_error_m": 0.015,
+    "minimum_admitted_cameras": 3,
+    "assignment_admission": "both-direct-and-swapped-must-pass",
+    "cross_view_correlation": "unknown-equal-weight-covariance-intersection",
+}
+
+TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY = {
+    "calibration_camera_prefix_allowed": True,
+    "calibration_provider_values_allowed_after_lock": True,
+    "calibration_scores_opened": False,
+    "confirmation_payloads_opened": False,
+    "future_camera_frames_used": False,
+    "future_tactile_values_used": False,
+    "held_v8_accessed": False,
+    "target_outcomes_used": False,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +86,118 @@ class HeldFrameGaugeQuality:
 def _require(condition: bool | np.bool_, message: str) -> None:
     if not bool(condition):
         raise ValueError(message)
+
+
+def _lower_sha256(value: object, *, name: str) -> str:
+    _require(
+        type(value) is str
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value),
+        f"invalid {name}",
+    )
+    return str(value)
+
+
+def _lower_revision(value: object, *, name: str) -> str:
+    _require(
+        type(value) is str
+        and len(value) in {40, 64}
+        and all(character in "0123456789abcdef" for character in value),
+        f"invalid {name}",
+    )
+    return str(value)
+
+
+def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
+    """Validate one frozen source-only tactile metric-gauge lock."""
+
+    artifact_id = _lower_sha256(value.get("artifact_id"), name="artifact_id")
+    descriptor = dict(value)
+    descriptor.pop("artifact_id")
+    _require(content_id(descriptor) == artifact_id, "metric-gauge lock identity changed")
+    _require(
+        value.get("schema") == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA
+        and value.get("schema_version") == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_VERSION,
+        "unsupported metric-gauge lock",
+    )
+    _require(
+        value.get("status") == "locked-source-only-pre-supplement-provider",
+        "metric-gauge lock has the wrong status",
+    )
+    implementation = value.get("implementation")
+    source = value.get("source_case")
+    parents = value.get("parents")
+    selection = value.get("camera_selection")
+    provider = value.get("provider")
+    jobs = value.get("supplemental_jobs")
+    for item, name in (
+        (implementation, "implementation"),
+        (source, "source_case"),
+        (parents, "parents"),
+        (selection, "camera_selection"),
+        (provider, "provider"),
+    ):
+        _require(isinstance(item, Mapping), f"missing {name}")
+    _require(isinstance(jobs, list), "missing supplemental_jobs")
+    assert isinstance(implementation, Mapping)
+    assert isinstance(source, Mapping)
+    assert isinstance(parents, Mapping)
+    assert isinstance(selection, Mapping)
+    assert isinstance(provider, Mapping)
+    _lower_revision(implementation.get("revision"), name="implementation revision")
+    _lower_sha256(implementation.get("runner_source_sha256"), name="runner source")
+    _require(type(source.get("object_id")) is str, "missing object_id")
+    _require(type(source.get("processing_episode_index")) is int, "missing episode")
+    _require(type(source.get("causal_frame_stop")) is int, "missing cutoff")
+    for name, record in parents.items():
+        _require(isinstance(record, Mapping), f"invalid parent {name}")
+        assert isinstance(record, Mapping)
+        _lower_sha256(record.get("sha256"), name=f"{name} sha256")
+        _lower_sha256(record.get("artifact_id"), name=f"{name} artifact_id")
+    _require(selection.get("policy") == CONTACT_CAMERA_POLICY, "camera policy changed")
+    selected = selection.get("selected_cameras")
+    reused = selection.get("reused_provider_cameras")
+    supplemental = selection.get("supplemental_provider_cameras")
+    _require(
+        isinstance(selected, list)
+        and len(selected) == CONTACT_CAMERA_POLICY["panel_size"]
+        and len(set(selected)) == len(selected)
+        and all(type(item) is str for item in selected),
+        "selected camera panel changed",
+    )
+    _require(
+        isinstance(reused, list)
+        and isinstance(supplemental, list)
+        and set(reused).isdisjoint(supplemental)
+        and set(reused) | set(supplemental) == set(selected),
+        "provider camera partition changed",
+    )
+    _require(len(jobs) == len(supplemental), "supplemental job count changed")
+    _require(provider.get("quality_gate") == TACTILE_METRIC_GAUGE_QUALITY_GATE, "quality gate changed")
+    for job in jobs:
+        _require(isinstance(job, Mapping), "supplemental job must be an object")
+        assert isinstance(job, Mapping)
+        job_id = _lower_sha256(job.get("job_id"), name="job_id")
+        job_descriptor = dict(job)
+        job_descriptor.pop("job_id")
+        _require(content_id(job_descriptor) == job_id, "supplemental job identity changed")
+        _require(job.get("camera") in supplemental, "job camera is not supplemental")
+        source_video = job.get("source_video")
+        _require(isinstance(source_video, Mapping), "job source video is missing")
+        assert isinstance(source_video, Mapping)
+        _lower_sha256(source_video.get("sha256"), name="source video sha256")
+        _require(type(source_video.get("bytes")) is int, "source video bytes changed")
+    _require(
+        value.get("information_boundary") == TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY,
+        "metric-gauge information boundary changed",
+    )
+    return artifact_id
+
+
+def load_tactile_metric_gauge_lock(path: str | Path) -> Mapping[str, Any]:
+    value = load_strict_json_object(path, label="tactile metric-gauge lock")
+    validate_tactile_metric_gauge_lock(value)
+    return value
 
 
 def cover_resize_source_to_target(
@@ -401,14 +553,20 @@ def covariance_intersection_equal_weight(covariances_m2: np.ndarray) -> np.ndarr
 
 
 __all__ = [
+    "CONTACT_CAMERA_POLICY",
     "ContactCameraCandidate",
+    "DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA",
     "HeldFrameGaugeQuality",
     "SimilarityTransform",
+    "TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY",
+    "TACTILE_METRIC_GAUGE_QUALITY_GATE",
     "apply_similarity",
     "contact_camera_candidates",
     "covariance_intersection_equal_weight",
     "cover_resize_source_to_target",
     "fit_robust_similarity",
     "held_frame_gauge_quality",
+    "load_tactile_metric_gauge_lock",
     "select_contact_camera_panel",
+    "validate_tactile_metric_gauge_lock",
 ]

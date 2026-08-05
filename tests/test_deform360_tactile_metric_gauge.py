@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_tactile_metric_gauge import (
+    CONTACT_CAMERA_POLICY,
+    DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA,
+    TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY,
+    TACTILE_METRIC_GAUGE_QUALITY_GATE,
     ContactCameraCandidate,
     apply_similarity,
     contact_camera_candidates,
@@ -10,6 +15,7 @@ from bayesian_phystwin.deform360_tactile_metric_gauge import (
     fit_robust_similarity,
     held_frame_gauge_quality,
     select_contact_camera_panel,
+    validate_tactile_metric_gauge_lock,
 )
 
 
@@ -103,3 +109,65 @@ def test_unknown_correlation_is_less_confident_than_independence() -> None:
     independent = np.linalg.inv(sum(np.linalg.inv(item) for item in values))
     assert np.allclose(intersection, covariance)
     assert np.all(np.linalg.eigvalsh(intersection - independent) >= -1e-12)
+
+
+def _lock() -> dict[str, object]:
+    job_descriptor = {
+        "object_id": "source",
+        "episode": "episode_0000",
+        "camera": "new",
+        "source_video": {"path": "source.mp4", "sha256": "a" * 64, "bytes": 1},
+        "source_frame_start": 0,
+        "source_frame_stop_exclusive": 42,
+        "windows": [],
+        "seed_schedule": [],
+        "output_relative_path": "source/episode_0000/new",
+    }
+    descriptor: dict[str, object] = {
+        "schema": DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA,
+        "schema_version": 1,
+        "status": "locked-source-only-pre-supplement-provider",
+        "implementation": {
+            "revision": "b" * 40,
+            "runner_source_sha256": "c" * 64,
+        },
+        "source_case": {
+            "object_id": "source",
+            "processing_episode_index": 0,
+            "causal_frame_stop": 42,
+        },
+        "parents": {
+            "parent": {"artifact_id": "d" * 64, "sha256": "e" * 64}
+        },
+        "camera_selection": {
+            "policy": CONTACT_CAMERA_POLICY,
+            "selected_cameras": ["old", "new", "third"],
+            "reused_provider_cameras": ["old", "third"],
+            "supplemental_provider_cameras": ["new"],
+        },
+        "provider": {"quality_gate": TACTILE_METRIC_GAUGE_QUALITY_GATE},
+        "supplemental_jobs": [
+            {"job_id": content_id(job_descriptor), **job_descriptor}
+        ],
+        "information_boundary": TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY,
+    }
+    return {"artifact_id": content_id(descriptor), **descriptor}
+
+
+def test_metric_gauge_lock_binds_boundary_and_jobs() -> None:
+    value = _lock()
+    assert validate_tactile_metric_gauge_lock(value) == value["artifact_id"]
+    changed = dict(value)
+    changed["information_boundary"] = {
+        **TACTILE_METRIC_GAUGE_INFORMATION_BOUNDARY,
+        "calibration_scores_opened": True,
+    }
+    descriptor = dict(changed)
+    descriptor.pop("artifact_id")
+    changed["artifact_id"] = content_id(descriptor)
+    try:
+        validate_tactile_metric_gauge_lock(changed)
+    except ValueError as error:
+        assert "information boundary" in str(error)
+    else:
+        raise AssertionError("opened score boundary was accepted")
