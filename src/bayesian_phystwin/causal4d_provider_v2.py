@@ -2,7 +2,7 @@
 
 Provider API v2 removes hidden mutable replay sequencing: every rollout carries
 its controller trajectory, parameter values, state identity, and configuration
-identity in one immutable request.  Legacy diagnostic and simulator-mutation
+identity in one immutable request. Legacy diagnostic and simulator-mutation
 helpers remain confined to ``causal4d_provider_v1``.
 """
 
@@ -20,6 +20,14 @@ from .contracts.replay import (
     ReplayRequestV1,
     ReplayTrajectoryV1,
     RestartReplayRequestV1,
+)
+from .contracts.scheduled_replay import (
+    CONTACT_REGIME_SEMANTICS_V1,
+    SCHEDULED_CONTACT_REPLAY_SCHEMA_VERSION,
+    ScheduledContactReplayProviderV1,
+    ScheduledContactReplayRequestV1,
+    ScheduledContactReplayResultV1,
+    validate_scheduled_contact_replay_result,
 )
 from .phystwin.artifacts import sha256_file
 from .phystwin.geometry import build_lift_map, lift_residual, target_validity
@@ -39,6 +47,7 @@ CAUSAL4D_PROVIDER_CAPABILITIES = (
     "phystwin_replay",
     "residual_lifting",
     "restart_velocity_history",
+    "scheduled_contact_replay_contracts",
     "stateless_replay_requests",
     "target_validity",
     "typed_replay_requests",
@@ -48,6 +57,8 @@ CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS = {
     "TwinBelief": 1,
     "ReplayRequest": 1,
     "ReplayTrajectory": 1,
+    "ScheduledContactReplayRequest": SCHEDULED_CONTACT_REPLAY_SCHEMA_VERSION,
+    "ScheduledContactReplayResult": SCHEDULED_CONTACT_REPLAY_SCHEMA_VERSION,
 }
 
 # Concise unversioned aliases within the explicitly versioned provider module.
@@ -91,6 +102,8 @@ __all__ = [
     "CAUSAL4D_PROVIDER_API_VERSION",
     "CAUSAL4D_PROVIDER_CAPABILITIES",
     "CAUSAL4D_PROVIDER_PACKAGE_VERSION",
+    "CONTACT_REGIME_SEMANTICS_V1",
+    "SCHEDULED_CONTACT_REPLAY_SCHEMA_VERSION",
     "InitialReplayRequestV1",
     "OfficialPhysTwinReplayProvider",
     "OfficialPhysTwinReplayProviderV2",
@@ -99,6 +112,9 @@ __all__ = [
     "ReplayRequestV1",
     "ReplayTrajectoryV1",
     "RestartReplayRequestV1",
+    "ScheduledContactReplayProviderV1",
+    "ScheduledContactReplayRequestV1",
+    "ScheduledContactReplayResultV1",
     "build_lift_map",
     "causal4d_provider_manifest",
     "create_official_replay_provider",
@@ -106,4 +122,5 @@ __all__ = [
     "lift_residual",
     "sha256_file",
     "target_validity",
+    "validate_scheduled_contact_replay_result",
 ]
