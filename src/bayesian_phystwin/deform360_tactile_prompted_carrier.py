@@ -11,9 +11,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
+from ._portable_contracts import content_id, load_strict_json_object
 from .deform360_metric_object_carrier import (
     BlockPointCandidates,
     deterministic_farthest_point_indices,
@@ -46,6 +49,57 @@ TACTILE_PROMPTED_CARRIER_POLICY = {
     "assignment_policy": "retain-direct-and-swapped-with-exact-fallback-per-branch",
     "cross_view_policy": "validation-and-covariance-inflation-never-precision-gain",
     "representation_policy": "dense-nodes-inherit-fixed-block-information-clusters",
+}
+
+DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_SCHEMA = (
+    "bayesian-phystwin.deform360-tactile-prompted-carrier-validation-lock"
+)
+DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_VERSION = 1
+
+TACTILE_PROMPTED_CARRIER_VALIDATION_INFORMATION_BOUNDARY = {
+    "calibration_camera_prefix_allowed": True,
+    "calibration_provider_values_allowed_after_lock": True,
+    "calibration_scores_opened": False,
+    "calibration_tactile_prefix_allowed": True,
+    "confirmation_payloads_opened": False,
+    "future_camera_frames_used": False,
+    "future_tactile_values_used": False,
+    "held_v8_accessed": False,
+    "physical_state_residual_used_for_reliability": False,
+    "target_outcomes_used": False,
+}
+
+TACTILE_PROMPTED_CARRIER_VALIDATION_STAGE_GATES = {
+    "causal_robot_prefix": {
+        "contact_tail_frame_count": 6,
+        "maximum_opening_m": 0.112,
+        "maximum_rotation_step_deg": 20.0,
+        "maximum_translation_step_m": 0.05,
+        "minimum_both_fingers_fraction": 0.5,
+        "minimum_contact_ready_frames": 4,
+        "minimum_direct_wrist_fraction": 0.75,
+        "minimum_inlier_cameras_per_part": 2,
+        "minimum_opening_m": 0.04,
+        "rotation_matrix_tolerance": 0.001,
+    },
+    "tactile_contact_geometry": {
+        "minimum_active_frames": 3,
+        "minimum_active_taxels": 6,
+        "minimum_assignment_separation_m": 0.05,
+    },
+    "tactile_metric_gauge": {
+        "assignment_admission": "both-direct-and-swapped-must-pass",
+        "covariance_floor_m": 0.005,
+        "cross_view_correlation": "unknown-equal-weight-covariance-intersection",
+        "huber_delta_m": 0.005,
+        "maximum_median_held_frame_error_m": 0.005,
+        "maximum_percentile_90_held_frame_error_m": 0.015,
+        "minimum_admitted_cameras": 3,
+    },
+    "carrier": TACTILE_PROMPTED_CARRIER_POLICY,
+    "failure_policy": (
+        "exact-baseline-fallback-per-assignment-with-original-prior-mass"
+    ),
 }
 
 
@@ -143,6 +197,163 @@ class BiasAwareMetricCarrier:
 def _require(condition: bool | np.bool_, message: str) -> None:
     if not bool(condition):
         raise ValueError(message)
+
+
+def _sha256(value: object, *, name: str) -> str:
+    _require(
+        type(value) is str
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value),
+        f"invalid {name}",
+    )
+    return str(value)
+
+
+def validate_tactile_prompted_carrier_validation_lock(
+    value: Mapping[str, Any],
+) -> str:
+    """Validate the frozen independent calibration-object carrier protocol."""
+
+    artifact_id = _sha256(value.get("artifact_id"), name="artifact_id")
+    descriptor = dict(value)
+    descriptor.pop("artifact_id")
+    _require(content_id(descriptor) == artifact_id, "validation lock identity changed")
+    _require(
+        value.get("schema")
+        == DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_SCHEMA
+        and value.get("schema_version")
+        == DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_VERSION,
+        "unsupported validation lock",
+    )
+    _require(
+        value.get("status") == "locked-independent-calibration-pre-payload",
+        "validation lock has the wrong status",
+    )
+    _require(
+        value.get("information_boundary")
+        == TACTILE_PROMPTED_CARRIER_VALIDATION_INFORMATION_BOUNDARY,
+        "validation information boundary changed",
+    )
+    _require(
+        value.get("stage_gates") == TACTILE_PROMPTED_CARRIER_VALIDATION_STAGE_GATES,
+        "validation stage gates changed",
+    )
+
+    source = value.get("source_case")
+    selection = value.get("selection")
+    bindings = value.get("bindings")
+    implementation = value.get("implementation")
+    for item, name in (
+        (source, "source_case"),
+        (selection, "selection"),
+        (bindings, "bindings"),
+        (implementation, "implementation"),
+    ):
+        _require(isinstance(item, Mapping), f"missing {name}")
+    assert isinstance(source, Mapping)
+    assert isinstance(selection, Mapping)
+    assert isinstance(bindings, Mapping)
+    assert isinstance(implementation, Mapping)
+
+    _require(source.get("object_id") == "036-napkin-cloth", "source object changed")
+    _require(source.get("source_episode_id") == 9, "source episode changed")
+    _require(source.get("processing_episode_index") == 0, "processing episode changed")
+    _require(source.get("bimanual") is True, "validation source is not bimanual")
+    _require(source.get("stratum") == "sheet", "source stratum changed")
+    _require(
+        source.get("camera_panel")
+        == [
+            "brics-odroid-010_cam0",
+            "brics-odroid-019_cam1",
+            "brics-odroid-022_cam1",
+        ],
+        "camera panel changed",
+    )
+    _require(
+        source.get("causal_window")
+        == {
+            "source_frame_start": 78,
+            "contact_start_frame": 114,
+            "causal_frame_stop": 120,
+            "untouched_future_frame_start": 120,
+            "untouched_future_frame_stop_exclusive": 144,
+        },
+        "causal window changed",
+    )
+    _sha256(source.get("bound_input_files_sha256"), name="bound input files")
+    _sha256(source.get("source_output_tree_sha256"), name="source output tree")
+
+    _require(
+        selection.get("rule")
+        == "first-unopened-bimanual-calibration-object-after-development-in-stratum",
+        "selection rule changed",
+    )
+    _require(
+        selection.get("development_object_id") == "026-sock-cloth",
+        "development object changed",
+    )
+    candidates = selection.get("candidate_audit")
+    _require(
+        candidates
+        == [
+            {
+                "bimanual": False,
+                "metadata_sha256": (
+                    "c2c5d30efc85fea22b52d1b5317c3a8084f272ef79154f313441a79c35adaa08"
+                ),
+                "object_id": "031-cotton-cloth",
+            },
+            {
+                "bimanual": True,
+                "metadata_sha256": (
+                    "3eca16d7f72ce1d83828d60fdc98fa942843d12cd1aa20846f036a3e882547a6"
+                ),
+                "object_id": "036-napkin-cloth",
+            },
+        ],
+        "selection audit changed",
+    )
+
+    for name in (
+        "selection_lock_file_sha256",
+        "causal_window_manifest_file_sha256",
+        "causal_window_manifest_id",
+        "motioncrafter_job_manifest_file_sha256",
+        "motioncrafter_job_manifest_id",
+        "motioncrafter_stage1_run_report_sha256",
+    ):
+        _sha256(bindings.get(name), name=name)
+    jobs = bindings.get("motioncrafter_jobs")
+    _require(isinstance(jobs, list) and len(jobs) == 3, "provider jobs changed")
+    for camera, job in zip(source["camera_panel"], jobs, strict=True):
+        _require(isinstance(job, Mapping), "invalid provider job")
+        assert isinstance(job, Mapping)
+        _require(job.get("camera") == camera, "provider camera order changed")
+        _sha256(job.get("job_id"), name="provider job ID")
+        _require(job.get("source_frame_start") == 78, "provider start changed")
+        _require(job.get("source_frame_stop_exclusive") == 120, "provider stop changed")
+        _sha256(job.get("video_sha256"), name="provider video")
+
+    revision = implementation.get("revision")
+    _require(
+        type(revision) is str
+        and len(revision) == 40
+        and all(character in "0123456789abcdef" for character in revision),
+        "invalid implementation revision",
+    )
+    for name in ("module_source_sha256", "validation_runner_source_sha256"):
+        _sha256(implementation.get(name), name=name)
+    return artifact_id
+
+
+def load_tactile_prompted_carrier_validation_lock(
+    path: str | Path,
+) -> Mapping[str, Any]:
+    """Load and validate one independent carrier validation lock."""
+
+    value = load_strict_json_object(path, label="tactile-prompted carrier validation lock")
+    validate_tactile_prompted_carrier_validation_lock(value)
+    return value
 
 
 def _nearest(source: np.ndarray, target: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -591,11 +802,15 @@ def build_bias_aware_metric_carrier(
 __all__ = [
     "BiasAwareMetricCarrier",
     "CrossViewCandidatePair",
+    "DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_SCHEMA",
+    "DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_VERSION",
     "DensePointCandidates",
     "ProjectedPromptPair",
     "PromptMaskDiagnostics",
     "PromptedCandidateGeometry",
     "TACTILE_PROMPTED_CARRIER_POLICY",
+    "TACTILE_PROMPTED_CARRIER_VALIDATION_INFORMATION_BOUNDARY",
+    "TACTILE_PROMPTED_CARRIER_VALIDATION_STAGE_GATES",
     "TactilePromptAssignment",
     "build_bias_aware_metric_carrier",
     "build_dense_point_candidates",
@@ -604,4 +819,6 @@ __all__ = [
     "object_facing_finger_normal_world",
     "project_prompt_assignment",
     "select_crossview_candidate_pair",
+    "load_tactile_prompted_carrier_validation_lock",
+    "validate_tactile_prompted_carrier_validation_lock",
 ]

@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_tactile_metric_gauge import SimilarityTransform
 from bayesian_phystwin.deform360_tactile_prompted_carrier import (
+    DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_SCHEMA,
+    TACTILE_PROMPTED_CARRIER_POLICY,
+    TACTILE_PROMPTED_CARRIER_VALIDATION_INFORMATION_BOUNDARY,
+    TACTILE_PROMPTED_CARRIER_VALIDATION_STAGE_GATES,
     CrossViewCandidatePair,
     ProjectedPromptPair,
     PromptedCandidateGeometry,
@@ -12,9 +20,126 @@ from bayesian_phystwin.deform360_tactile_prompted_carrier import (
     build_dense_point_candidates,
     build_tactile_prompt_assignments,
     evaluate_prompted_mask,
+    load_tactile_prompted_carrier_validation_lock,
     object_facing_finger_normal_world,
     select_crossview_candidate_pair,
+    validate_tactile_prompted_carrier_validation_lock,
 )
+
+
+def _validation_lock() -> dict[str, object]:
+    descriptor: dict[str, object] = {
+        "schema": DEFORM360_TACTILE_PROMPTED_CARRIER_VALIDATION_LOCK_SCHEMA,
+        "schema_version": 1,
+        "status": "locked-independent-calibration-pre-payload",
+        "source_case": {
+            "object_id": "036-napkin-cloth",
+            "source_episode_id": 9,
+            "processing_episode_index": 0,
+            "bimanual": True,
+            "stratum": "sheet",
+            "camera_panel": [
+                "brics-odroid-010_cam0",
+                "brics-odroid-019_cam1",
+                "brics-odroid-022_cam1",
+            ],
+            "causal_window": {
+                "source_frame_start": 78,
+                "contact_start_frame": 114,
+                "causal_frame_stop": 120,
+                "untouched_future_frame_start": 120,
+                "untouched_future_frame_stop_exclusive": 144,
+            },
+            "bound_input_files_sha256": "a" * 64,
+            "source_output_tree_sha256": "b" * 64,
+        },
+        "selection": {
+            "rule": (
+                "first-unopened-bimanual-calibration-object-after-development-"
+                "in-stratum"
+            ),
+            "development_object_id": "026-sock-cloth",
+            "candidate_audit": [
+                {
+                    "bimanual": False,
+                    "metadata_sha256": (
+                        "c2c5d30efc85fea22b52d1b5317c3a8084f272ef79154f313441a79c35adaa08"
+                    ),
+                    "object_id": "031-cotton-cloth",
+                },
+                {
+                    "bimanual": True,
+                    "metadata_sha256": (
+                        "3eca16d7f72ce1d83828d60fdc98fa942843d12cd1aa20846f036a3e882547a6"
+                    ),
+                    "object_id": "036-napkin-cloth",
+                },
+            ],
+        },
+        "bindings": {
+            "selection_lock_file_sha256": "c" * 64,
+            "causal_window_manifest_file_sha256": "d" * 64,
+            "causal_window_manifest_id": "e" * 64,
+            "motioncrafter_job_manifest_file_sha256": "f" * 64,
+            "motioncrafter_job_manifest_id": "1" * 64,
+            "motioncrafter_stage1_run_report_sha256": "2" * 64,
+            "motioncrafter_jobs": [
+                {
+                    "camera": camera,
+                    "job_id": character * 64,
+                    "source_frame_start": 78,
+                    "source_frame_stop_exclusive": 120,
+                    "video_sha256": character * 64,
+                }
+                for camera, character in zip(
+                    [
+                        "brics-odroid-010_cam0",
+                        "brics-odroid-019_cam1",
+                        "brics-odroid-022_cam1",
+                    ],
+                    "345",
+                    strict=True,
+                )
+            ],
+        },
+        "implementation": {
+            "revision": "6" * 40,
+            "module_source_sha256": "7" * 64,
+            "validation_runner_source_sha256": "8" * 64,
+        },
+        "stage_gates": TACTILE_PROMPTED_CARRIER_VALIDATION_STAGE_GATES,
+        "information_boundary": (
+            TACTILE_PROMPTED_CARRIER_VALIDATION_INFORMATION_BOUNDARY
+        ),
+    }
+    return {"artifact_id": content_id(descriptor), **descriptor}
+
+
+def test_validation_lock_is_content_addressed_and_loadable(tmp_path: Path) -> None:
+    lock = _validation_lock()
+    assert validate_tactile_prompted_carrier_validation_lock(lock) == lock["artifact_id"]
+    path = tmp_path / "lock.json"
+    path.write_text(json.dumps(lock), encoding="utf-8")
+    assert load_tactile_prompted_carrier_validation_lock(path) == lock
+
+
+def test_validation_lock_rejects_policy_change() -> None:
+    lock = _validation_lock()
+    gates = dict(TACTILE_PROMPTED_CARRIER_VALIDATION_STAGE_GATES)
+    gates["carrier"] = {
+        **TACTILE_PROMPTED_CARRIER_POLICY,
+        "shared_bias_floor_m": 0.0,
+    }
+    lock["stage_gates"] = gates
+    descriptor = dict(lock)
+    descriptor.pop("artifact_id")
+    lock["artifact_id"] = content_id(descriptor)
+    try:
+        validate_tactile_prompted_carrier_validation_lock(lock)
+    except ValueError as error:
+        assert "stage gates changed" in str(error)
+    else:
+        raise AssertionError("changed carrier policy was accepted")
 
 
 def test_object_facing_normals_point_to_opposite_gripper_sides() -> None:

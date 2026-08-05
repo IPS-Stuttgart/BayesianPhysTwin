@@ -29,6 +29,7 @@ from bayesian_phystwin.deform360_tactile_prompted_carrier import (
     build_dense_point_candidates,
     build_tactile_prompt_assignments,
     evaluate_prompted_mask,
+    load_tactile_prompted_carrier_validation_lock,
     project_prompt_assignment,
     select_crossview_candidate_pair,
 )
@@ -60,6 +61,18 @@ def _git_head(repository: Path) -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def _require_ancestor(repository: Path, expected: str) -> str:
+    head = _git_head(repository)
+    result = subprocess.run(
+        ["git", "-C", str(repository), "merge-base", "--is-ancestor", expected, head],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    _require(result.returncode == 0, "runtime lacks the frozen implementation")
+    return head
 
 
 def _load_selector(source: Path):
@@ -120,10 +133,148 @@ def _transform(record: dict[str, object]) -> SimilarityTransform:
     )
 
 
+def _validation_providers(
+    *,
+    lock: dict[str, object],
+    job_manifest_path: Path,
+    provider_root: Path,
+    provider_run_report_path: Path,
+    processed_episode: Path,
+) -> dict[str, dict[str, object]]:
+    bindings = lock["bindings"]
+    source = lock["source_case"]
+    _require(isinstance(bindings, dict), "validation bindings are missing")
+    _require(isinstance(source, dict), "validation source is missing")
+    _require(
+        _sha256(job_manifest_path)
+        == bindings["motioncrafter_job_manifest_file_sha256"],
+        "MotionCrafter job manifest changed",
+    )
+    _require(
+        _sha256(provider_run_report_path)
+        == bindings["motioncrafter_stage1_run_report_sha256"],
+        "MotionCrafter provider run report changed",
+    )
+    job_manifest = _json(job_manifest_path)
+    _require(
+        job_manifest.get("manifest_sha256")
+        == bindings["motioncrafter_job_manifest_id"],
+        "MotionCrafter job manifest identity changed",
+    )
+    run_report = _json(provider_run_report_path)
+    _require(run_report.get("status") == "complete", "provider run is incomplete")
+    _require(
+        run_report.get("job_manifest_sha256")
+        == bindings["motioncrafter_job_manifest_file_sha256"],
+        "provider run used a different job manifest",
+    )
+    completed = {
+        str(row["job_id"]): row for row in run_report.get("completed_jobs", [])
+    }
+    jobs = {str(row["job_id"]): row for row in job_manifest.get("jobs", [])}
+    result: dict[str, dict[str, object]] = {}
+    for frozen in bindings["motioncrafter_jobs"]:
+        _require(isinstance(frozen, dict), "invalid frozen provider job")
+        job_id = str(frozen["job_id"])
+        _require(job_id in jobs and job_id in completed, "provider job is unavailable")
+        job = jobs[job_id]
+        camera = str(frozen["camera"])
+        _require(
+            job.get("camera") == camera
+            and job.get("object_id") == source["object_id"]
+            and job.get("episode")
+            == f"episode_{int(source['processing_episode_index']):04d}"
+            and job.get("source_frame_start") == frozen["source_frame_start"]
+            and job.get("source_frame_stop_exclusive")
+            == frozen["source_frame_stop_exclusive"]
+            and job.get("source_video", {}).get("sha256") == frozen["video_sha256"],
+            f"provider job changed: {camera}",
+        )
+        directory = provider_root / str(job["output_relative_path"])
+        prediction_manifest_path = directory / "predictions.json"
+        _require(
+            prediction_manifest_path.is_file()
+            and _sha256(prediction_manifest_path)
+            == completed[job_id]["prediction_manifest_sha256"],
+            f"prediction manifest changed: {camera}",
+        )
+        prediction = _json(prediction_manifest_path)
+        integrity = prediction.get("artifact_integrity")
+        _require(isinstance(integrity, dict), f"missing provider integrity: {camera}")
+        members = {
+            str(row["path"]): row for row in integrity.get("members", [])
+        }
+        windows: list[dict[str, object]] = []
+        for row in prediction.get("overlap_windows", []):
+            path = str(row["path"])
+            member = members.get(path)
+            _require(
+                isinstance(member, dict)
+                and member.get("kind") == "independently_decoded_overlap_window",
+                f"unbound provider window: {camera}/{path}",
+            )
+            member_path = directory / path
+            _require(
+                member_path.is_file() and _sha256(member_path) == member["sha256"],
+                f"provider window changed: {camera}/{path}",
+            )
+            windows.append(
+                {
+                    "path": str(member_path),
+                    "sha256": member["sha256"],
+                    "start_frame": int(row["start_frame"]),
+                    "stop_frame": int(row["stop_frame"]),
+                }
+            )
+        video_path = processed_episode / camera / "undistorted.mp4"
+        _require(
+            video_path.is_file() and _sha256(video_path) == frozen["video_sha256"],
+            f"provider video changed: {camera}",
+        )
+        result[camera] = {
+            "camera": camera,
+            "job_id": job_id,
+            "prediction_manifest_path": str(prediction_manifest_path),
+            "prediction_manifest_sha256": _sha256(prediction_manifest_path),
+            "video_path": str(video_path),
+            "video_sha256": frozen["video_sha256"],
+            "windows": windows,
+        }
+    _require(
+        tuple(result) == tuple(source["camera_panel"]),
+        "provider camera order changed",
+    )
+    return result
+
+
+def _provider_window(
+    provider: dict[str, object],
+    *,
+    prompt_frame: int,
+) -> Path:
+    if "window_path" in provider:
+        return Path(str(provider["window_path"]))
+    windows = provider.get("windows")
+    _require(isinstance(windows, list), "provider windows are missing")
+    candidates = [
+        row
+        for row in windows
+        if int(row["start_frame"]) <= prompt_frame < int(row["stop_frame"])
+    ]
+    _require(candidates, "prompt frame is absent from every provider window")
+    selected = max(candidates, key=lambda row: int(row["start_frame"]))
+    return Path(str(selected["path"]))
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, required=True)
-    parser.add_argument("--parent-carrier-lock", type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--parent-carrier-lock", type=Path)
+    mode.add_argument("--validation-lock", type=Path)
+    parser.add_argument("--motioncrafter-job-manifest", type=Path)
+    parser.add_argument("--provider-root", type=Path)
+    parser.add_argument("--provider-run-report", type=Path)
     parser.add_argument("--metric-gauge-result", type=Path, required=True)
     parser.add_argument("--robot-prefix", type=Path, required=True)
     parser.add_argument("--tactile-geometry", type=Path, required=True)
@@ -139,7 +290,14 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     args = _parse_args()
     repository = args.repository.resolve()
-    parent_lock_path = args.parent_carrier_lock.resolve()
+    parent_lock_path = (
+        args.parent_carrier_lock.resolve()
+        if args.parent_carrier_lock is not None
+        else None
+    )
+    validation_lock_path = (
+        args.validation_lock.resolve() if args.validation_lock is not None else None
+    )
     metric_result_path = args.metric_gauge_result.resolve()
     robot_prefix_path = args.robot_prefix.resolve()
     tactile_geometry_path = args.tactile_geometry.resolve()
@@ -156,16 +314,53 @@ def main() -> int:
         text=True,
     ).stdout
     _require(not status, "implementation checkout is dirty")
-    for path, label in (
-        (parent_lock_path, "parent carrier lock"),
+    required_paths = [
         (metric_result_path, "metric result"),
         (robot_prefix_path, "robot prefix"),
         (tactile_geometry_path, "tactile geometry"),
         (selector_source, "SAM2 selector"),
         (sam2_checkpoint, "SAM2 checkpoint"),
-    ):
+    ]
+    if parent_lock_path is not None:
+        required_paths.append((parent_lock_path, "parent carrier lock"))
+    else:
+        _require(validation_lock_path is not None, "validation lock is missing")
+        required_paths.append((validation_lock_path, "validation lock"))
+        for value, label in (
+            (args.motioncrafter_job_manifest, "MotionCrafter job manifest"),
+            (args.provider_run_report, "provider run report"),
+        ):
+            _require(value is not None, f"missing {label}")
+            required_paths.append((value.resolve(), label))
+        _require(args.provider_root is not None, "missing provider root")
+    for path, label in required_paths:
         _require(path.is_file(), f"missing {label}: {path}")
-    parent = _json(parent_lock_path)
+    validation: dict[str, object] | None = None
+    if parent_lock_path is not None:
+        parent = _json(parent_lock_path)
+        object_id = str(parent["source_case"]["object_id"])
+        _require(object_id == "026-sock-cloth", "development case changed")
+        cameras = tuple(str(camera) for camera in parent["cameras"])
+        providers = {str(row["camera"]): row for row in parent["providers"]}
+    else:
+        assert validation_lock_path is not None
+        validation = dict(
+            load_tactile_prompted_carrier_validation_lock(validation_lock_path)
+        )
+        implementation = validation["implementation"]
+        _require(isinstance(implementation, dict), "validation implementation missing")
+        _require_ancestor(repository, str(implementation["revision"]))
+        source = validation["source_case"]
+        _require(isinstance(source, dict), "validation source missing")
+        object_id = str(source["object_id"])
+        cameras = tuple(str(camera) for camera in source["camera_panel"])
+        providers = _validation_providers(
+            lock=validation,
+            job_manifest_path=args.motioncrafter_job_manifest.resolve(),
+            provider_root=args.provider_root.resolve(),
+            provider_run_report_path=args.provider_run_report.resolve(),
+            processed_episode=processed_episode,
+        )
     metric = _json(metric_result_path)
     _require(metric.get("status") == "admitted", "metric gauge is not admitted")
     gate = metric.get("gate")
@@ -177,20 +372,19 @@ def main() -> int:
         isinstance(gate, dict) and gate.get("contact_anchor_authorized") is False,
         "contact geometry was already promoted to an anchor",
     )
-    object_id = str(parent["source_case"]["object_id"])
-    _require(object_id == "026-sock-cloth", "development case changed")
-    cameras = tuple(str(camera) for camera in parent["cameras"])
-    providers = {str(row["camera"]): row for row in parent["providers"]}
     _require(set(cameras) == set(providers), "provider camera panel changed")
     for camera in cameras:
-        for name, sha_name in (
-            ("video_path", "video_sha256"),
-            ("window_path", "window_sha256"),
-        ):
-            path = Path(str(providers[camera][name]))
+        path = Path(str(providers[camera]["video_path"]))
+        _require(
+            path.is_file() and _sha256(path) == providers[camera]["video_sha256"],
+            f"provider input changed: {camera}/video_path",
+        )
+        if "window_path" in providers[camera]:
+            window = Path(str(providers[camera]["window_path"]))
             _require(
-                path.is_file() and _sha256(path) == providers[camera][sha_name],
-                f"provider input changed: {camera}/{name}",
+                window.is_file()
+                and _sha256(window) == providers[camera]["window_sha256"],
+                f"provider input changed: {camera}/window_path",
             )
 
     with np.load(robot_prefix_path, allow_pickle=False) as archive:
@@ -212,6 +406,17 @@ def main() -> int:
         all(item.source_frame_id == prompt_frame for item in assignments),
         "prompt frames differ",
     )
+    if validation is not None:
+        source = validation["source_case"]
+        _require(isinstance(source, dict), "validation source missing")
+        window = source["causal_window"]
+        _require(isinstance(window, dict), "validation causal window missing")
+        _require(
+            int(window["contact_start_frame"])
+            <= prompt_frame
+            < int(window["causal_frame_stop"]),
+            "prompt frame is outside the locked contact prefix",
+        )
     intrinsics = np.load(
         processed_episode / "undistorted_intrinsics.npy", allow_pickle=True
     ).item()
@@ -237,7 +442,8 @@ def main() -> int:
             rgb_by_camera[camera] = rgb
             annotations_by_camera[camera] = list(selector._automatic_annotations(rgb))
             with np.load(
-                Path(str(providers[camera]["window_path"])), allow_pickle=False
+                _provider_window(providers[camera], prompt_frame=prompt_frame),
+                allow_pickle=False,
             ) as archive:
                 frame_ids = np.asarray(archive["frame_indices"], dtype=np.int64)
                 rows = np.flatnonzero(frame_ids == prompt_frame)
@@ -254,6 +460,11 @@ def main() -> int:
     branch_records: list[dict[str, object]] = []
     branch_carriers: dict[int, object] = {}
     selected_masks: dict[tuple[int, str], np.ndarray] = {}
+    admitted_status = (
+        "admitted-independent-calibration-carrier"
+        if validation is not None
+        else "admitted-development-carrier"
+    )
     for assignment in assignments:
         candidates_by_camera: dict[str, list[PromptedCandidateGeometry]] = {}
         camera_diagnostics: dict[str, object] = {}
@@ -417,7 +628,7 @@ def main() -> int:
             branch_records.append(
                 {
                     "assignment_index": assignment.assignment_index,
-                    "status": "admitted-development-carrier",
+                    "status": admitted_status,
                     "reference_camera": pair.reference_camera,
                     "support_camera": pair.support_camera,
                     "reference_candidate_index": pair.reference.candidate_index,
@@ -513,29 +724,57 @@ def main() -> int:
     output.mkdir(parents=True)
     arrays_path = output / "tactile_prompted_carrier.npz"
     _deterministic_npz(arrays_path, arrays)
+    processing_episode_index = (
+        validation["source_case"]["processing_episode_index"]
+        if validation is not None
+        else parent["source_case"]["processing_episode_index"]
+    )
+    input_records: dict[str, object] = {
+        "metric_gauge_result_sha256": _sha256(metric_result_path),
+        "robot_prefix_sha256": _sha256(robot_prefix_path),
+        "tactile_geometry_sha256": _sha256(tactile_geometry_path),
+        "selector_source_sha256": _sha256(selector_source),
+        "sam2_repository_revision": _git_head(sam2_repository),
+        "sam2_checkpoint_sha256": _sha256(sam2_checkpoint),
+    }
+    if validation is None:
+        assert parent_lock_path is not None
+        input_records["parent_carrier_lock_sha256"] = _sha256(parent_lock_path)
+    else:
+        assert validation_lock_path is not None
+        input_records.update(
+            {
+                "validation_lock_id": validation["artifact_id"],
+                "validation_lock_sha256": _sha256(validation_lock_path),
+                "motioncrafter_job_manifest_sha256": _sha256(
+                    args.motioncrafter_job_manifest.resolve()
+                ),
+                "provider_run_report_sha256": _sha256(
+                    args.provider_run_report.resolve()
+                ),
+            }
+        )
     descriptor: dict[str, object] = {
-        "schema": "bayesian-phystwin.deform360-tactile-prompted-carrier-development",
+        "schema": (
+            "bayesian-phystwin.deform360-tactile-prompted-carrier-validation"
+            if validation is not None
+            else "bayesian-phystwin.deform360-tactile-prompted-carrier-development"
+        ),
         "schema_version": 1,
-        "status": "source-only-development-complete",
+        "status": (
+            "source-only-independent-calibration-complete"
+            if validation is not None
+            else "source-only-development-complete"
+        ),
         "implementation_revision": _git_head(repository),
         "source_case": {
             "object_id": object_id,
-            "processing_episode_index": parent["source_case"][
-                "processing_episode_index"
-            ],
+            "processing_episode_index": processing_episode_index,
             "prompt_source_frame": prompt_frame,
         },
         "policy": TACTILE_PROMPTED_CARRIER_POLICY,
         "branches": branch_records,
-        "inputs": {
-            "parent_carrier_lock_sha256": _sha256(parent_lock_path),
-            "metric_gauge_result_sha256": _sha256(metric_result_path),
-            "robot_prefix_sha256": _sha256(robot_prefix_path),
-            "tactile_geometry_sha256": _sha256(tactile_geometry_path),
-            "selector_source_sha256": _sha256(selector_source),
-            "sam2_repository_revision": _git_head(sam2_repository),
-            "sam2_checkpoint_sha256": _sha256(sam2_checkpoint),
-        },
+        "inputs": input_records,
         "outputs": {
             "arrays": arrays_path.name,
             "arrays_sha256": _sha256(arrays_path),
@@ -550,10 +789,15 @@ def main() -> int:
             "target_outcomes_used": False,
         },
         "claim_boundary": (
-            "Exploratory source-only carrier feasibility on an already-open case. "
-            "This does not authorize a state update, score access, confirmation "
-            "access, or a SOTA claim. Each failed tactile-assignment branch remains "
-            "an exact fallback with its original prior mass."
+            "Independent calibration-object source-only carrier admission. This "
+            "does not authorize a state update, score access, confirmation access, "
+            "or a SOTA claim. Each failed tactile-assignment branch remains an exact "
+            "fallback with its original prior mass."
+            if validation is not None
+            else "Exploratory source-only carrier feasibility on an already-open "
+            "case. This does not authorize a state update, score access, "
+            "confirmation access, or a SOTA claim. Each failed tactile-assignment "
+            "branch remains an exact fallback with its original prior mass."
         ),
     }
     result = {"artifact_id": content_id(descriptor), **descriptor}
