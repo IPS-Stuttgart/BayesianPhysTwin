@@ -7,13 +7,13 @@ from pathlib import Path
 
 
 def pytest_configure(config: object) -> None:
-    """Keep horizon-contract tests in explicit coverage-suite invocations.
+    """Keep new stable horizon-contract tests in explicit coverage invocations.
 
     The stable-core job intentionally names a bounded set of test files. When a
-    new stable NumPy-only surface is added, its focused test must not disappear
+    new stable NumPy-only surface is added, its focused tests must not disappear
     from changed-line coverage merely because that static list has not yet been
     extended. Normal pytest runs are unchanged; coverage-driven explicit-file
-    runs additionally collect the horizon contract test exactly once.
+    runs additionally collect every horizon-contract test exactly once.
     """
 
     if sys.gettrace() is None:
@@ -23,15 +23,17 @@ def pytest_configure(config: object) -> None:
     if not isinstance(args, list):
         return
 
-    horizon_test = (
-        Path(__file__).with_name("test_horizon_conditioned_discrepancy.py").resolve()
-    )
+    test_root = Path(__file__).resolve().parent
     resolved_args = [Path(argument).resolve() for argument in args]
-    if horizon_test in resolved_args:
-        return
-    if any(
-        path.is_dir() and horizon_test.is_relative_to(path) for path in resolved_args
+    for horizon_test in sorted(
+        test_root.glob("test_horizon_conditioned_discrepancy*.py")
     ):
-        return
-
-    args.append(str(horizon_test))
+        resolved_test = horizon_test.resolve()
+        if resolved_test in resolved_args:
+            continue
+        if any(
+            path.is_dir() and resolved_test.is_relative_to(path)
+            for path in resolved_args
+        ):
+            continue
+        args.append(str(resolved_test))
