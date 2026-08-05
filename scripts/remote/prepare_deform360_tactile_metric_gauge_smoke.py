@@ -142,16 +142,13 @@ def main() -> None:
     episode_index = int(source_case["processing_episode_index"])
     if object_id != "026-sock-cloth" or episode_index != 0:
         raise ValueError("unexpected source smoke case")
-    if (
-        tactile["source_artifacts"].get("robot/causal_robot_prefix.json")
-        != _sha256(robot_path)
+    if tactile["source_artifacts"].get("robot/causal_robot_prefix.json") != _sha256(
+        robot_path
     ):
         raise ValueError("tactile geometry is not bound to the robot prefix")
 
     episode_dir = (
-        args.processed_root.resolve()
-        / object_id
-        / f"episode_{episode_index:04d}"
+        args.processed_root.resolve() / object_id / f"episode_{episode_index:04d}"
     )
     intrinsics_path = episode_dir / "undistorted_intrinsics.npy"
     extrinsics_path = episode_dir / "extrinsics.npy"
@@ -189,6 +186,14 @@ def main() -> None:
     selected_names = [item.camera for item in selected]
     reused = [name for name in selected_names if name in parent_by_camera]
     supplemental = [name for name in selected_names if name not in parent_by_camera]
+    candidate_records = [_camera_record(item) for item in candidates]
+    selected_candidate_records = [_camera_record(item) for item in selected]
+    eligible_camera_count = sum(
+        item.minimum_assignment_coverage
+        >= CONTACT_CAMERA_POLICY["minimum_assignment_coverage"]
+        and item.minimum_margin_px >= CONTACT_CAMERA_POLICY["minimum_margin_px"]
+        for item in candidates
+    )
     jobs: list[dict[str, Any]] = []
     for camera in supplemental:
         video = episode_dir / camera / "undistorted.mp4"
@@ -247,7 +252,10 @@ def main() -> None:
             "selected_cameras": selected_names,
             "reused_provider_cameras": reused,
             "supplemental_provider_cameras": supplemental,
-            "all_candidates": [_camera_record(item) for item in candidates],
+            "candidate_count": len(candidate_records),
+            "eligible_camera_count": eligible_camera_count,
+            "candidate_inventory_sha256": content_id({"candidates": candidate_records}),
+            "selected_candidate_records": selected_candidate_records,
         },
         "provider": {
             "parent_manifest_id": parent_id,

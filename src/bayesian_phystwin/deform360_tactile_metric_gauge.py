@@ -114,7 +114,9 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
     artifact_id = _lower_sha256(value.get("artifact_id"), name="artifact_id")
     descriptor = dict(value)
     descriptor.pop("artifact_id")
-    _require(content_id(descriptor) == artifact_id, "metric-gauge lock identity changed")
+    _require(
+        content_id(descriptor) == artifact_id, "metric-gauge lock identity changed"
+    )
     _require(
         value.get("schema") == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_SCHEMA
         and value.get("schema_version") == DEFORM360_TACTILE_METRIC_GAUGE_LOCK_VERSION,
@@ -158,6 +160,13 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
     selected = selection.get("selected_cameras")
     reused = selection.get("reused_provider_cameras")
     supplemental = selection.get("supplemental_provider_cameras")
+    candidate_count = selection.get("candidate_count")
+    eligible_camera_count = selection.get("eligible_camera_count")
+    selected_records = selection.get("selected_candidate_records")
+    _lower_sha256(
+        selection.get("candidate_inventory_sha256"),
+        name="candidate inventory",
+    )
     _require(
         isinstance(selected, list)
         and len(selected) == CONTACT_CAMERA_POLICY["panel_size"]
@@ -172,15 +181,70 @@ def validate_tactile_metric_gauge_lock(value: Mapping[str, Any]) -> str:
         and set(reused) | set(supplemental) == set(selected),
         "provider camera partition changed",
     )
+    _require(
+        type(candidate_count) is int
+        and candidate_count >= CONTACT_CAMERA_POLICY["panel_size"],
+        "candidate camera count changed",
+    )
+    _require(
+        type(eligible_camera_count) is int
+        and CONTACT_CAMERA_POLICY["panel_size"]
+        <= eligible_camera_count
+        <= candidate_count,
+        "eligible camera count changed",
+    )
+    _require(
+        isinstance(selected_records, list) and len(selected_records) == len(selected),
+        "selected camera records changed",
+    )
+    selected_record_names: list[str] = []
+    for record in selected_records:
+        _require(isinstance(record, Mapping), "invalid selected camera record")
+        assert isinstance(record, Mapping)
+        camera = record.get("camera")
+        coverage = record.get("minimum_assignment_coverage")
+        margin = record.get("minimum_margin_px")
+        direction = record.get("view_direction")
+        _require(type(camera) is str, "invalid selected camera name")
+        _require(
+            type(coverage) in {int, float}
+            and np.isfinite(coverage)
+            and float(coverage) >= CONTACT_CAMERA_POLICY["minimum_assignment_coverage"],
+            "selected camera coverage changed",
+        )
+        _require(
+            type(margin) in {int, float}
+            and np.isfinite(margin)
+            and float(margin) >= CONTACT_CAMERA_POLICY["minimum_margin_px"],
+            "selected camera margin changed",
+        )
+        _require(
+            isinstance(direction, list)
+            and len(direction) == 3
+            and all(
+                type(item) in {int, float} and np.isfinite(item) for item in direction
+            ),
+            "selected camera view direction changed",
+        )
+        selected_record_names.append(camera)
+    _require(
+        selected_record_names == selected,
+        "selected camera records do not match the selected panel",
+    )
     _require(len(jobs) == len(supplemental), "supplemental job count changed")
-    _require(provider.get("quality_gate") == TACTILE_METRIC_GAUGE_QUALITY_GATE, "quality gate changed")
+    _require(
+        provider.get("quality_gate") == TACTILE_METRIC_GAUGE_QUALITY_GATE,
+        "quality gate changed",
+    )
     for job in jobs:
         _require(isinstance(job, Mapping), "supplemental job must be an object")
         assert isinstance(job, Mapping)
         job_id = _lower_sha256(job.get("job_id"), name="job_id")
         job_descriptor = dict(job)
         job_descriptor.pop("job_id")
-        _require(content_id(job_descriptor) == job_id, "supplemental job identity changed")
+        _require(
+            content_id(job_descriptor) == job_id, "supplemental job identity changed"
+        )
         _require(job.get("camera") in supplemental, "job camera is not supplemental")
         source_video = job.get("source_video")
         _require(isinstance(source_video, Mapping), "job source video is missing")
@@ -212,7 +276,10 @@ def cover_resize_source_to_target(
     _require(coordinates.shape[-1] == 2, "pixel coordinates must end in (x, y)")
     source_height, source_width = source_shape
     target_height, target_width = target_shape
-    _require(min(source_height, source_width, target_height, target_width) > 0, "invalid shape")
+    _require(
+        min(source_height, source_width, target_height, target_width) > 0,
+        "invalid shape",
+    )
     scale = max(target_height / source_height, target_width / source_width)
     resized_height = int(round(source_height * scale))
     resized_width = int(round(source_width * scale))
@@ -220,14 +287,10 @@ def cover_resize_source_to_target(
     crop_column = (resized_width - target_width) // 2
     result = np.empty_like(coordinates)
     result[..., 0] = (
-        (coordinates[..., 0] + 0.5) * resized_width / source_width
-        - 0.5
-        - crop_column
+        (coordinates[..., 0] + 0.5) * resized_width / source_width - 0.5 - crop_column
     )
     result[..., 1] = (
-        (coordinates[..., 1] + 0.5) * resized_height / source_height
-        - 0.5
-        - crop_row
+        (coordinates[..., 1] + 0.5) * resized_height / source_height - 0.5 - crop_row
     )
     return result
 
@@ -419,9 +482,7 @@ def _weighted_similarity(
 def apply_similarity(transform: SimilarityTransform, points: np.ndarray) -> np.ndarray:
     values = np.asarray(points, dtype=np.float64)
     _require(values.ndim == 2 and values.shape[1] == 3, "points must have shape (N, 3)")
-    return (
-        transform.scale * (transform.rotation @ values.T)
-    ).T + transform.translation
+    return (transform.scale * (transform.rotation @ values.T)).T + transform.translation
 
 
 def fit_robust_similarity(
@@ -478,7 +539,9 @@ def held_frame_gauge_quality(
         "held-frame inputs have incompatible shapes",
     )
     unique_frames = np.unique(frames)
-    _require(len(unique_frames) >= 3, "held-frame validation needs at least three frames")
+    _require(
+        len(unique_frames) >= 3, "held-frame validation needs at least three frames"
+    )
     residuals: list[np.ndarray] = []
     reasons: list[str] = []
     for frame in unique_frames:
