@@ -93,3 +93,9 @@ observation-prediction claim.
 Compact carrier manifests, prediction manifests, and result JSON files are in
 `results/sota/trackdeform3d_public_smoke_v1/`. Full NPZ carriers remain in the
 durable source-only server archive.
+
+The exact pre-outcome implementation passed 2,264 tests with 27 skips in
+11.85 s in an installed Python 3.12 server environment. The focused Ruff,
+JSON-schema, compilation, and nine TrackDeform3D adapter/smoke checks also
+passed. The initial local full-suite attempt was not used because that shell
+combined a NumPy 2.2 runtime with an ABI-incompatible system SciPy build.
