@@ -8,6 +8,12 @@ from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "prob4d",
+    reason="the controlled cross-repository study requires an installed Prob4D provider",
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "science" / "run_prob4d_bpt_controlled_decisive_v1.py"
