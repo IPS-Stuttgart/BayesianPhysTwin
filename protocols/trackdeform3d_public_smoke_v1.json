@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "protocol_id": "trackdeform3d-public-smoke-v1",
+  "claim_boundary": "interface_and_capacity_smoke_only",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/trackDeform3D-core-tracking",
+    "revision": "9920060a76f7d750f98e429bd1e0f172150c9ffa",
+    "sample_folder_url": "https://drive.google.com/drive/folders/1emeePJieKG0wwYZt4PY1E7GW2_mIJVrk?usp=sharing",
+    "license_status": "no_license_file_observed_at_locked_revision"
+  },
+  "sample_chunks": [
+    {"object_kind": "dlo", "chunk": "chunk_1"},
+    {"object_kind": "bdlo", "chunk": "chunk_7"},
+    {"object_kind": "fabric", "chunk": "chunk_14"},
+    {"object_kind": "cloth", "chunk": "chunk_0"}
+  ],
+  "first_smoke": {
+    "object_kind": "dlo",
+    "chunk": "chunk_1",
+    "clip_index": 0,
+    "clip_frames": 300,
+    "prefix_frames": 60,
+    "future_frames": 60,
+    "observed_identity_fraction": 0.25,
+    "identity_split_source": "frame_zero_geometry_only"
+  },
+  "frozen_arms": [
+    "exact_persistence",
+    "constant_velocity",
+    "shared_graph_physical_forward_model",
+    "bayesian_prefix_state_update"
+  ],
+  "required_metrics": [
+    "hidden_identity_rmse_m",
+    "hidden_final_displacement_error_m",
+    "hidden_symmetric_chamfer_m",
+    "horizon_resolved_identity_rmse_m",
+    "coverage",
+    "nees"
+  ],
+  "information_boundary": {
+    "future_rgbd_used_for_prediction": false,
+    "future_keypoints_used_for_prediction": false,
+    "observed_identities_scored": false,
+    "sample_result_is_confirmation": false,
+    "sample_result_is_sota_evidence": false
+  }
+}
