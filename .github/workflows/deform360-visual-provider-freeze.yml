@@ -72,7 +72,11 @@ jobs:
           echo "$(dirname "${python_bin}")" >> "${GITHUB_PATH}"
 
       - name: Install development environment
+        shell: bash
         run: |
+          set -euo pipefail
+          "${PYTHON_BIN}" -m ensurepip --upgrade
+          "${PYTHON_BIN}" -m pip install --upgrade pip
           "${PYTHON_BIN}" -m pip install -e ".[dev]" "huggingface_hub>=0.24"
           "${PYTHON_BIN}" -m pip check
 
@@ -164,6 +168,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          "${PYTHON_BIN}" -m ensurepip --upgrade
+          "${PYTHON_BIN}" -m pip install --upgrade pip
           "${PYTHON_BIN}" -m pip install \
             -e ".[dev]" \
             -e ./_prob4d \
