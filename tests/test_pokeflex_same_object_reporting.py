@@ -222,10 +222,7 @@ def test_post_outcome_diagnostic_reconstructs_frozen_decisions(
 def test_calibration_figure_renders_from_diagnostic(tmp_path: Path) -> None:
     pytest.importorskip("matplotlib")
     path = (
-        _REPOSITORY_ROOT
-        / "scripts"
-        / "paper"
-        / "make_pokeflex_same_object_figure.py"
+        _REPOSITORY_ROOT / "scripts" / "paper" / "make_pokeflex_same_object_figure.py"
     )
     spec = importlib.util.spec_from_file_location("pokeflex_same_object_figure", path)
     assert spec is not None and spec.loader is not None
