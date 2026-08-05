@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       hf_cache_dir:
-        description: Exact Hugging Face hub cache; defaults to repository variable or user cache
+        description: Exact Hugging Face hub cache; defaults to repository variable or unique workstation cache
         required: false
         type: string
 
@@ -126,15 +126,69 @@ jobs:
           python -m pip install -e ".[dev]" -e ./_prob4d
           python -m pip check
 
-      - name: Resolve cache and output roots
+      - name: Resolve unique model cache and output roots
         shell: bash
         run: |
           set -euo pipefail
-          cache="${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-${HOME}/.cache/huggingface/hub}}"
-          test -d "${cache}"
           root="${RUNNER_TEMP}/deform360-visual-provider-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           rm -rf "${root}"
           mkdir -p "${root}"
+          discovery="${root}/cache-discovery.txt"
+
+          requested="${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-}}"
+          candidates=()
+          if [[ -n "${requested}" ]]; then
+            candidates+=("${requested}")
+          else
+            candidates+=("${HOME}/.cache/huggingface/hub")
+            if [[ -n "${HUGGINGFACE_HUB_CACHE:-}" ]]; then
+              candidates+=("${HUGGINGFACE_HUB_CACHE}")
+            fi
+            if [[ -n "${HF_HOME:-}" ]]; then
+              candidates+=("${HF_HOME}/hub")
+            fi
+            if [[ -n "${TRANSFORMERS_CACHE:-}" ]]; then
+              candidates+=("${TRANSFORMERS_CACHE}")
+            fi
+            while IFS= read -r repository_dir; do
+              candidates+=("$(dirname "${repository_dir}")")
+            done < <(
+              find /home/github-runner /mnt \
+                -maxdepth 9 -type d \
+                -name 'models--TencentARC--MotionCrafter' \
+                -print 2>/dev/null || true
+            )
+          fi
+
+          declare -A seen=()
+          complete=()
+          {
+            echo "requested_cache=${requested:-<auto>}"
+            echo "candidate_roots:"
+          } > "${discovery}"
+          for candidate in "${candidates[@]}"; do
+            [[ -n "${candidate}" ]] || continue
+            candidate="$(realpath -m "${candidate}")"
+            [[ -z "${seen[${candidate}]:-}" ]] || continue
+            seen["${candidate}"]=1
+            printf '  %s\n' "${candidate}" >> "${discovery}"
+            if [[ -d "${candidate}/models--TencentARC--MotionCrafter/snapshots" ]]; then
+              complete+=("${candidate}")
+            fi
+          done
+          {
+            echo "motioncrafter_cache_roots:"
+            for candidate in "${complete[@]}"; do
+              printf '  %s\n' "${candidate}"
+            done
+          } >> "${discovery}"
+
+          if [[ ${#complete[@]} -ne 1 ]]; then
+            echo "::error title=Ambiguous MotionCrafter cache::Expected exactly one cache root, found ${#complete[@]}"
+            cat "${discovery}"
+            exit 1
+          fi
+          cache="${complete[0]}"
           {
             echo "DEFORM360_MODEL_CACHE=${cache}"
             echo "DEFORM360_PREFLIGHT_ROOT=${root}"
@@ -218,6 +272,7 @@ jobs:
         with:
           name: deform360-visual-provider-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            ${{ env.DEFORM360_PREFLIGHT_ROOT }}/cache-discovery.txt
             ${{ env.DEFORM360_PREFLIGHT_ROOT }}/console.log
             ${{ env.DEFORM360_PREFLIGHT_ROOT }}/environment.txt
             ${{ env.DEFORM360_PREFLIGHT_OUTPUT }}/provider-manifest.json
