@@ -47,9 +47,10 @@ only `action_local_state_relative_0.4` and effective scales
 ```
 
 Scale zero is an exact released-checkpoint control and is not a candidate
-multiplier. The source wrapper supplies an exact-take allowlist from the v4
-protocol; without that opt-in, the generic runner retains its original locked
-development-cohort behavior.
+multiplier. The source wrapper validates the exact-take allowlist from the v4
+protocol and adapts only the already-validated in-memory cohort view supplied
+to the generic runner. The frozen generic runner remains byte-identical and
+retains its original locked development-cohort behavior for every other call.
 
 The wrapper is:
 
