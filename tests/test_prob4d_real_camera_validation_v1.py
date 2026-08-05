@@ -123,6 +123,22 @@ def test_guard_rejection_is_exact_zero_fallback() -> None:
     np.testing.assert_array_equal(deployed, np.zeros_like(raw))
 
 
+def test_empty_technical_failure_report_is_renderable(tmp_path: Path) -> None:
+    output = tmp_path / "summary.md"
+    MODULE._write_markdown(
+        output,
+        {
+            "aggregate": {},
+            "decision": {"decision": "no-scorable-real-camera-cases"},
+            "technical_failure_count": 1,
+        },
+    )
+
+    rendered = output.read_text(encoding="utf-8")
+    assert "No cases were scorable" in rendered
+    assert "1 retained technical failure" in rendered
+
+
 def test_protocol_keeps_real_camera_claim_and_transfer_gates_frozen() -> None:
     protocol = _protocol()
 
@@ -133,6 +149,7 @@ def test_protocol_keeps_real_camera_claim_and_transfer_gates_frozen() -> None:
         "364f216c14f7770c1b360bb1b836b11ecf0c18b8"
     )
     assert protocol["prob4d"]["complete_overlap_window_count"] == 2
+    assert protocol["prob4d"]["alignment_stride_pixels"] == 4
     assert protocol["identity"][
         "reserved_graph_nodes_excluded_from_camera_association"
     ]

@@ -477,6 +477,9 @@ def _frame_zero_alignment(
     raw_case_dir: Path,
     *,
     camera_index: int,
+    stride_pixels: int,
+    trim_fraction: float,
+    iterations: int,
 ) -> tuple[Any, Mapping[str, Any], Path]:
     from prob4d.sim3 import Sim3
 
@@ -495,14 +498,14 @@ def _frame_zero_alignment(
         & np.all(np.isfinite(first_window.point_map[0]), axis=2)
         & np.all(np.isfinite(initial_world), axis=2)
         & (np.linalg.norm(initial_world, axis=2) > 1e-6)
-        & (rows % 32 == 0)
-        & (columns % 32 == 0)
+        & (rows % stride_pixels == 0)
+        & (columns % stride_pixels == 0)
     )
     transform = robust_similarity_transform(
         first_window.point_map[0, selected],
         initial_world[selected],
-        trim_fraction=0.8,
-        iterations=5,
+        trim_fraction=trim_fraction,
+        iterations=iterations,
     )
     sim3 = Sim3(
         scale=float(transform["scale"]),
@@ -1045,7 +1048,12 @@ def _prepare_case(
     reserved_nodes = np.unique(manual_nodes[reserved_indices])
 
     metric_transform, alignment, anchor_source_path = _frame_zero_alignment(
-        windows[0], raw_case_dir, camera_index=int(protocol["prob4d"]["camera_index"])
+        windows[0],
+        raw_case_dir,
+        camera_index=int(protocol["prob4d"]["camera_index"]),
+        stride_pixels=int(protocol["prob4d"]["alignment_stride_pixels"]),
+        trim_fraction=float(protocol["prob4d"]["alignment_trim_fraction"]),
+        iterations=int(protocol["prob4d"]["alignment_iterations"]),
     )
     anchor_covariance = _metric_anchor_covariance(
         float(alignment["inlier_rmse_m"]),
@@ -1517,6 +1525,15 @@ def _write_cases_csv(
 
 
 def _write_markdown(path: Path, report: Mapping[str, Any]) -> None:
+    if not report["aggregate"]:
+        path.write_text(
+            "# Prob4D real-camera validation v1 result\n\n"
+            f"Decision: **{report['decision']['decision']}**.\n\n"
+            f"No cases were scorable; {report['technical_failure_count']} retained "
+            "technical failure(s) are recorded in `report.json`.\n",
+            encoding="utf-8",
+        )
+        return
     lines = [
         "# Prob4D real-camera validation v1 result",
         "",
