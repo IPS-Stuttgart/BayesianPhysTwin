@@ -80,9 +80,7 @@ def _artifacts(stage0) -> tuple[Deform360CalibrationArtifactRefV1, ...]:
             selected_candidate_id=f"candidate-{index}",
             candidate_count=index + 2,
             calibration_group_ids=groups,
-            source_artifacts={
-                f"calibration/{role}.json": f"{index + 201:064x}"
-            },
+            source_artifacts={f"calibration/{role}.json": f"{index + 201:064x}"},
             metadata={"selection_rule": "source-only"},
         )
         for index, role in enumerate(DEFORM360_CALIBRATION_ROLES)
@@ -119,8 +117,7 @@ def _entry(
 
 def _ledger(stage0, *, entries=None, case_id=None) -> EvidenceUseLedgerV1:
     selected_entries = entries or tuple(
-        _entry(unit, index=index)
-        for index, unit in enumerate(stage0.calibration_units)
+        _entry(unit, index=index) for index, unit in enumerate(stage0.calibration_units)
     )
     return EvidenceUseLedgerV1(
         protocol_id=stage0.protocol_id,
@@ -138,9 +135,7 @@ def _sources(stage0) -> dict[str, str]:
         "sources/calibration/evidence-use-ledger.json": "2" * 64,
     }
     for index, role in enumerate(DEFORM360_CALIBRATION_ROLES):
-        result[f"sources/calibration/artifacts/{role}.json"] = (
-            f"{index + 10:064x}"
-        )
+        result[f"sources/calibration/artifacts/{role}.json"] = f"{index + 10:064x}"
     return result
 
 
@@ -167,10 +162,7 @@ def test_stage0_loader_binds_exact_official_hub_cohort() -> None:
 
     assert stage0.protocol_id == "deform360-official-hub-visuotactile-v1"
     assert stage0.dataset_revision == "f804696d7a133908c7497ffdab43819d879b5cbc"
-    assert (
-        stage0.processing_revision
-        == "d8522a4403b766aeb387510c04e89032a56fdf35"
-    )
+    assert stage0.processing_revision == "d8522a4403b766aeb387510c04e89032a56fdf35"
     assert len(stage0.calibration_units) == 10
     assert len(stage0.confirmation_units) == 12
     assert len(stage0.snapshot_id) == 64
@@ -234,9 +226,7 @@ def test_component_ids_bind_all_eight_roles_and_ignore_input_order() -> None:
     with pytest.raises(ValueError, match="incomplete"):
         deform360_calibration_component_ids(artifacts[:-1])
     with pytest.raises(ValueError, match="duplicate"):
-        deform360_calibration_component_ids(
-            (*artifacts[:-1], artifacts[0])
-        )
+        deform360_calibration_component_ids((*artifacts[:-1], artifacts[0]))
     with pytest.raises(ValueError, match="must contain"):
         deform360_calibration_component_ids(
             (*artifacts[:-1], object())  # type: ignore[arg-type]
@@ -260,19 +250,11 @@ def test_builder_seals_all_cross_artifact_identities() -> None:
         evidence_use_ledger=ledger,
     )
     assert (
-        products.visual_calibration_lock.visual_provider_lock_id
-        == provider.artifact_id
+        products.visual_calibration_lock.visual_provider_lock_id == provider.artifact_id
     )
-    assert (
-        products.visual_calibration_lock.selection_lock_id
-        == stage0.selection_sha256
-    )
-    assert products.calibration_bundle.calibration_units == (
-        stage0.calibration_units
-    )
-    assert products.calibration_bundle.confirmation_units == (
-        stage0.confirmation_units
-    )
+    assert products.visual_calibration_lock.selection_lock_id == stage0.selection_sha256
+    assert products.calibration_bundle.calibration_units == (stage0.calibration_units)
+    assert products.calibration_bundle.confirmation_units == (stage0.confirmation_units)
     assert products.execution_seal.calibration_payloads_opened is True
     assert products.execution_seal.confirmation_payloads_opened is False
     assert products.execution_seal.target_outcomes_used is False
@@ -284,8 +266,7 @@ def test_builder_seals_all_cross_artifact_identities() -> None:
 def test_builder_rejects_incomplete_or_leaky_evidence() -> None:
     stage0 = _stage0()
     complete = tuple(
-        _entry(unit, index=index)
-        for index, unit in enumerate(stage0.calibration_units)
+        _entry(unit, index=index) for index, unit in enumerate(stage0.calibration_units)
     )
 
     with pytest.raises(ValueError, match="does not cover every"):
@@ -392,10 +373,7 @@ def test_execution_seal_rejects_invalid_boundaries(
     message: str,
 ) -> None:
     seal = _products().execution_seal
-    values = {
-        field: getattr(seal, field)
-        for field in seal.__dataclass_fields__
-    }
+    values = {field: getattr(seal, field) for field in seal.__dataclass_fields__}
     values.update(updates)
     with pytest.raises(ValueError, match=message):
         Deform360CalibrationExecutionSealV1(**values)
@@ -414,9 +392,7 @@ def test_independent_verifier_rejects_cross_artifact_substitution() -> None:
         products.visual_calibration_lock,
         visual_provider_lock_id="f" * 64,
     )
-    substituted = products._replace(
-        visual_calibration_lock=substituted_lock
-    )
+    substituted = products._replace(visual_calibration_lock=substituted_lock)
     with pytest.raises(ValueError, match="provider identity"):
         verify_deform360_calibration_execution_artifacts(
             substituted,
@@ -484,9 +460,7 @@ def test_cli_publishes_one_atomic_portable_seal(tmp_path: Path) -> None:
         "SHA256SUMS",
     }
     assert required <= {path.name for path in output.iterdir()}
-    assert (
-        output / "sources" / "stage0" / "selection.json"
-    ).is_file()
+    assert (output / "sources" / "stage0" / "selection.json").is_file()
     summary = json.loads((output / "summary.json").read_text())
     assert summary["confirmation_payloads_opened"] is False
     assert summary["target_outcomes_used"] is False

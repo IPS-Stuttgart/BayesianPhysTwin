@@ -67,9 +67,7 @@ DEFORM360_CALIBRATION_EXECUTION_VERSION = 1
 DEFORM360_CALIBRATION_EXECUTION_SEMANTICS = (
     "calibration-open-confirmation-closed-complete-seal-v1"
 )
-DEFORM360_CALIBRATION_LEDGER_CASE_ID = (
-    "deform360-official-hub-calibration-cohort-v1"
-)
+DEFORM360_CALIBRATION_LEDGER_CASE_ID = "deform360-official-hub-calibration-cohort-v1"
 DEFORM360_CALIBRATION_EXECUTION_CLAIM_BOUNDARY = (
     "Calibration execution and information-boundary evidence only. A valid seal "
     "does not establish Deform360 accuracy, tactile benefit, provider competence, "
@@ -191,9 +189,7 @@ def _validated_units(
     if isinstance(values, (str, bytes)):
         raise ValueError(f"{name} must be a sequence")
     units = tuple(values)
-    if not units or any(
-        not isinstance(unit, Deform360CohortUnitV1) for unit in units
-    ):
+    if not units or any(not isinstance(unit, Deform360CohortUnitV1) for unit in units):
         raise ValueError(f"{name} must contain Deform360CohortUnitV1 objects")
     units = tuple(sorted(units, key=lambda item: (item.stratum, item.object_id)))
     object_ids = [unit.object_id for unit in units]
@@ -285,9 +281,7 @@ class Deform360Stage0SelectionV1:
                 "schema_version": DEFORM360_STAGE0_SNAPSHOT_VERSION,
                 "protocol_id": self.protocol_id,
                 "source_sha256": self.source_sha256,
-                "selection_artifact_sha256": (
-                    self.selection_artifact_sha256
-                ),
+                "selection_artifact_sha256": (self.selection_artifact_sha256),
                 "selection_sha256": self.selection_sha256,
                 "content_selection_sha256": self.content_selection_sha256,
                 "protocol_sha256": self.protocol_sha256,
@@ -457,8 +451,7 @@ def deform360_calibration_component_ids(
         raise ValueError("calibration artifacts must be a sequence")
     selected = tuple(artifacts)
     if any(
-        not isinstance(item, Deform360CalibrationArtifactRefV1)
-        for item in selected
+        not isinstance(item, Deform360CalibrationArtifactRefV1) for item in selected
     ):
         raise ValueError(
             "calibration artifacts must contain "
@@ -474,9 +467,7 @@ def deform360_calibration_component_ids(
     for component, roles in _COMPONENT_ROLES.items():
         result[component] = content_id(
             {
-                "schema": (
-                    "bayesian-phystwin.deform360-calibration-component"
-                ),
+                "schema": ("bayesian-phystwin.deform360-calibration-component"),
                 "schema_version": 1,
                 "component": component,
                 "artifacts": [
@@ -531,15 +522,11 @@ def _validate_calibration_ledger(
     covered: set[str] = set()
     for entry in ledger.entries:
         if entry.inference_role != "calibration_only":
-            raise ValueError(
-                "calibration ledger entries must use calibration_only"
-            )
+            raise ValueError("calibration ledger entries must use calibration_only")
         entry_ids = _entry_object_ids(entry.metadata)
         unexpected = entry_ids - calibration_ids
         if unexpected & confirmation_ids:
-            raise ValueError(
-                "calibration ledger contains confirmation-object evidence"
-            )
+            raise ValueError("calibration ledger contains confirmation-object evidence")
         if unexpected:
             raise ValueError(
                 "calibration ledger contains objects outside the Stage-0 "
@@ -549,8 +536,7 @@ def _validate_calibration_ledger(
     missing = sorted(calibration_ids - covered)
     if missing:
         raise ValueError(
-            "calibration ledger does not cover every calibration object: "
-            f"{missing}"
+            f"calibration ledger does not cover every calibration object: {missing}"
         )
 
 
@@ -622,18 +608,13 @@ class Deform360CalibrationExecutionSealV1:
             self.confirmation_object_ids,
             name="confirmation_object_ids",
         )
-        if (
-            len(calibration_ids)
-            != DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT
-        ):
+        if len(calibration_ids) != DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT:
             raise ValueError(
                 "calibration_object_ids must contain the registered "
                 "10 independent objects"
             )
         if len(confirmation_ids) != 12:
-            raise ValueError(
-                "confirmation_object_ids must contain 12 unique objects"
-            )
+            raise ValueError("confirmation_object_ids must contain 12 unique objects")
         _require(
             set(calibration_ids).isdisjoint(confirmation_ids),
             "calibration and confirmation object IDs overlap",
@@ -645,12 +626,10 @@ class Deform360CalibrationExecutionSealV1:
         missing_sources = sorted(_REQUIRED_SOURCE_KEYS - set(sources))
         _require(
             not missing_sources,
-            "calibration execution source artifacts are incomplete: "
-            f"{missing_sources}",
+            f"calibration execution source artifacts are incomplete: {missing_sources}",
         )
         _require(
-            sources["sources/stage0/selection.json"]
-            == digests["stage0_source_sha256"],
+            sources["sources/stage0/selection.json"] == digests["stage0_source_sha256"],
             "Stage-0 source bytes differ from the sealed digest",
         )
         calibration_opened = genuine_boolean(
@@ -733,9 +712,7 @@ class Deform360CalibrationExecutionSealV1:
             "confirmation_object_ids": self.confirmation_object_ids,
             "source_artifacts": self.source_artifacts,
             "calibration_payloads_opened": self.calibration_payloads_opened,
-            "confirmation_payloads_opened": (
-                self.confirmation_payloads_opened
-            ),
+            "confirmation_payloads_opened": (self.confirmation_payloads_opened),
             "target_outcomes_used": self.target_outcomes_used,
             "metadata": self.metadata,
             "claim_boundary": DEFORM360_CALIBRATION_EXECUTION_CLAIM_BOUNDARY,
@@ -795,10 +772,7 @@ class Deform360CalibrationExecutionSealV1:
             raise ValueError(f"{name} schema_version changed")
         if value["semantics"] != DEFORM360_CALIBRATION_EXECUTION_SEMANTICS:
             raise ValueError(f"{name} semantics changed")
-        if (
-            value["claim_boundary"]
-            != DEFORM360_CALIBRATION_EXECUTION_CLAIM_BOUNDARY
-        ):
+        if value["claim_boundary"] != DEFORM360_CALIBRATION_EXECUTION_CLAIM_BOUNDARY:
             raise ValueError(f"{name} claim boundary changed")
         result = cls(
             protocol_id=cast(str, value["protocol_id"]),
@@ -886,16 +860,12 @@ def build_deform360_calibration_execution_seal(
     """Build all Stage-1 artifacts from one complete calibration execution."""
 
     if not isinstance(stage0_selection, Deform360Stage0SelectionV1):
-        raise TypeError(
-            "stage0_selection must be a Deform360Stage0SelectionV1"
-        )
+        raise TypeError("stage0_selection must be a Deform360Stage0SelectionV1")
     if not isinstance(
         visual_provider_lock,
         Deform360VisualProviderLockV1,
     ):
-        raise TypeError(
-            "visual_provider_lock must be a Deform360VisualProviderLockV1"
-        )
+        raise TypeError("visual_provider_lock must be a Deform360VisualProviderLockV1")
     _validate_calibration_ledger(evidence_use_ledger, stage0_selection)
     revision = exact_revision(
         implementation_revision,
@@ -925,12 +895,8 @@ def build_deform360_calibration_execution_seal(
         },
     )
     bundle = Deform360CalibrationBundleV1(
-        selection_artifact_sha256=(
-            stage0_selection.selection_artifact_sha256
-        ),
-        content_selection_sha256=(
-            stage0_selection.content_selection_sha256
-        ),
+        selection_artifact_sha256=(stage0_selection.selection_artifact_sha256),
+        content_selection_sha256=(stage0_selection.content_selection_sha256),
         dataset_revision=stage0_selection.dataset_revision,
         processing_revision=stage0_selection.processing_revision,
         implementation_revision=revision,
@@ -988,17 +954,13 @@ def verify_deform360_calibration_execution_artifacts(
         products,
         Deform360CalibrationExecutionArtifactsV1,
     ):
-        raise TypeError(
-            "products must be a "
-            "Deform360CalibrationExecutionArtifactsV1"
-        )
+        raise TypeError("products must be a Deform360CalibrationExecutionArtifactsV1")
     _validate_calibration_ledger(evidence_use_ledger, stage0_selection)
     calibration = products.visual_calibration_lock
     bundle = products.calibration_bundle
     seal = products.execution_seal
     _require(
-        calibration.visual_provider_lock_id
-        == visual_provider_lock.artifact_id,
+        calibration.visual_provider_lock_id == visual_provider_lock.artifact_id,
         "visual calibration lock provider identity changed",
     )
     _require(
@@ -1006,13 +968,11 @@ def verify_deform360_calibration_execution_artifacts(
         "visual calibration lock Stage-0 identity changed",
     )
     _require(
-        bundle.selection_artifact_sha256
-        == stage0_selection.selection_artifact_sha256,
+        bundle.selection_artifact_sha256 == stage0_selection.selection_artifact_sha256,
         "calibration bundle Stage-0 artifact changed",
     )
     _require(
-        bundle.content_selection_sha256
-        == stage0_selection.content_selection_sha256,
+        bundle.content_selection_sha256 == stage0_selection.content_selection_sha256,
         "calibration bundle content selection changed",
     )
     _require(
@@ -1035,16 +995,13 @@ def verify_deform360_calibration_execution_artifacts(
         bundle.evidence_use_ledger_id == evidence_use_ledger.ledger_id,
         "calibration bundle evidence ledger changed",
     )
-    components = deform360_calibration_component_ids(
-        bundle.calibration_artifacts
-    )
+    components = deform360_calibration_component_ids(bundle.calibration_artifacts)
     _require(
         calibration.visual_calibration_id == components["visual"],
         "visual calibration component ID changed",
     )
     _require(
-        calibration.contact_anchor_calibration_id
-        == components["contact_anchor"],
+        calibration.contact_anchor_calibration_id == components["contact_anchor"],
         "contact-anchor calibration component ID changed",
     )
     _require(
@@ -1072,8 +1029,7 @@ def verify_deform360_calibration_execution_artifacts(
         "execution seal calibration bundle changed",
     )
     _require(
-        seal.confirmation_opening_token
-        == bundle.confirmation_opening_token,
+        seal.confirmation_opening_token == bundle.confirmation_opening_token,
         "execution seal confirmation token changed",
     )
     _require(
@@ -1095,9 +1051,7 @@ def save_deform360_calibration_execution_seal(
     """Atomically persist one complete pre-confirmation execution seal."""
 
     if not isinstance(seal, Deform360CalibrationExecutionSealV1):
-        raise TypeError(
-            "seal must be a Deform360CalibrationExecutionSealV1"
-        )
+        raise TypeError("seal must be a Deform360CalibrationExecutionSealV1")
     write_atomic_json(seal.to_record(), path, overwrite=overwrite)
 
 

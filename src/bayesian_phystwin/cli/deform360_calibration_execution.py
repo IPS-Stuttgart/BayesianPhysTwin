@@ -77,12 +77,7 @@ def _logical_name(value: str) -> str:
     if "\\" in value:
         raise ValueError("source name must use POSIX separators")
     path = PurePosixPath(value)
-    if (
-        path.is_absolute()
-        or not path.parts
-        or ".." in path.parts
-        or "." in path.parts
-    ):
+    if path.is_absolute() or not path.parts or ".." in path.parts or "." in path.parts:
         raise ValueError("source name must be a confined relative POSIX path")
     return path.as_posix()
 
@@ -164,18 +159,12 @@ def _write_status(path: Path, summary: Mapping[str, Any]) -> None:
                     "- Confirmation opening token: "
                     f"`{summary['confirmation_opening_token']}`"
                 ),
-                (
-                    "- Visual-provider lock: "
-                    f"`{summary['visual_provider_lock_id']}`"
-                ),
+                (f"- Visual-provider lock: `{summary['visual_provider_lock_id']}`"),
                 (
                     "- Stage-1 calibration lock: "
                     f"`{summary['visual_calibration_lock_id']}`"
                 ),
-                (
-                    "- Calibration bundle: "
-                    f"`{summary['calibration_bundle_id']}`"
-                ),
+                (f"- Calibration bundle: `{summary['calibration_bundle_id']}`"),
                 "- Calibration payloads opened: `true`",
                 "- Confirmation payloads opened: `false`",
                 "- Target outcomes used: `false`",
@@ -191,13 +180,10 @@ def _write_status(path: Path, summary: Mapping[str, Any]) -> None:
 
 def _write_checksums(root: Path) -> None:
     paths = sorted(
-        path
-        for path in root.rglob("*")
-        if path.is_file() and path.name != "SHA256SUMS"
+        path for path in root.rglob("*") if path.is_file() and path.name != "SHA256SUMS"
     )
     lines = [
-        f"{file_sha256(path)}  {path.relative_to(root).as_posix()}"
-        for path in paths
+        f"{file_sha256(path)}  {path.relative_to(root).as_posix()}" for path in paths
     ]
     (root / "SHA256SUMS").write_text(
         "\n".join(lines) + "\n",
@@ -259,8 +245,7 @@ def _artifact_mapping(
     extra = sorted(set(result) - set(DEFORM360_CALIBRATION_ROLES))
     if missing or extra:
         raise ValueError(
-            "calibration artifact roles changed: "
-            f"missing={missing}, extra={extra}"
+            f"calibration artifact roles changed: missing={missing}, extra={extra}"
         )
     return result
 
@@ -302,18 +287,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--calibration-payloads-opened",
         action="store_true",
-        help=(
-            "Acknowledge that only the locked calibration payloads were opened"
-        ),
+        help=("Acknowledge that only the locked calibration payloads were opened"),
     )
     return parser
 
 
 def _run(args: argparse.Namespace) -> dict[str, Any]:
     if not args.calibration_payloads_opened:
-        raise ValueError(
-            "--calibration-payloads-opened is required for a Stage-1 seal"
-        )
+        raise ValueError("--calibration-payloads-opened is required for a Stage-1 seal")
     repository_root = args.repository_root.resolve()
     revision = _verify_repository(
         repository_root,
@@ -355,8 +336,7 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         )
         artifacts = tuple(
             load_deform360_calibration_artifact_ref(
-                temporary
-                / f"sources/calibration/artifacts/{role}.json"
+                temporary / f"sources/calibration/artifacts/{role}.json"
             )
             for role in DEFORM360_CALIBRATION_ROLES
         )
