@@ -85,6 +85,8 @@ def test_arrays_are_immutable() -> None:
     result = _example()
     with pytest.raises(ValueError):
         result.covariance[0, 0] = 0.0
+    with pytest.raises(ValueError):
+        result.covariance.setflags(write=True)
 
 
 def test_result_rejects_covariance_not_generated_by_declared_scores() -> None:

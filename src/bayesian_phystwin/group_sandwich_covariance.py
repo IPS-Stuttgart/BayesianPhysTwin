@@ -114,14 +114,17 @@ def _finite_real(value: object, *, name: str, minimum: float | None = None) -> f
 
 
 def _immutable(array: FloatArray) -> FloatArray:
-    owned: FloatArray = np.array(
+    canonical: FloatArray = np.array(
         array,
-        dtype=np.float64,
+        dtype=np.dtype("<f8"),
         copy=True,
         order="C",
     )
-    owned.setflags(write=False)
-    return owned
+    frozen: FloatArray = np.frombuffer(
+        canonical.tobytes(order="C"),
+        dtype=np.dtype("<f8"),
+    ).reshape(canonical.shape)
+    return frozen
 
 
 def _array_record(array: FloatArray) -> dict[str, object]:
@@ -370,9 +373,7 @@ def estimate_group_sandwich_covariance(
     group_ids: Sequence[str],
     *,
     grouping_semantics: str,
-    likelihood_power_semantics: str = (
-        "grouped-student-t-generalized-bayes-power-v1"
-    ),
+    likelihood_power_semantics: str = ("grouped-student-t-generalized-bayes-power-v1"),
     small_sample_correction: SmallSampleCorrection = "g_over_g_minus_one",
     minimum_group_count: int = 3,
     prior_included: bool = True,
@@ -433,9 +434,7 @@ def estimate_group_sandwich_covariance(
         np.eye(information.shape[0], dtype=np.float64),
     )
     bread_inverse = 0.5 * (bread_inverse + bread_inverse.T)
-    correction_factor = (
-        1.0 if correction == "none" else group_count / (group_count - 1)
-    )
+    correction_factor = 1.0 if correction == "none" else group_count / (group_count - 1)
     meat: FloatArray = grouped_scores.T @ grouped_scores
     raw_covariance: FloatArray = (
         correction_factor * bread_inverse @ meat @ bread_inverse.T
