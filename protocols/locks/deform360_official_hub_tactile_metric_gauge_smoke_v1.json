@@ -1,0 +1,309 @@
+{
+  "artifact_id": "a4dd3c767c1487288e2285fbd813478803b68962668dae4a5e7ca507aa29084b",
+  "calibration": {
+    "extrinsics_sha256": "918edafe9772940d33e969fc0987411316b042c710d7681a1fffdfeef9f225d7",
+    "undistorted_intrinsics_sha256": "6d7be97d02dad370c1d56e73a89e1cf84c85357ba856fa95bcc9e12035df4ff3"
+  },
+  "camera_selection": {
+    "candidate_count": 36,
+    "candidate_inventory_sha256": "73a861aae67d49d2f235173c351b003913ceed09411813d8285b9669dadf3cac",
+    "eligible_camera_count": 14,
+    "policy": {
+      "minimum_angular_separation_deg": 45.0,
+      "minimum_assignment_coverage": 1.0,
+      "minimum_margin_px": 64.0,
+      "panel_size": 3,
+      "selection_order": "maximum-margin-then-greedy-maximum-minimum-view-angle",
+      "source_shape": [
+        720,
+        1280
+      ],
+      "target_shape": [
+        320,
+        640
+      ]
+    },
+    "reused_provider_cameras": [
+      "brics-odroid-019_cam1"
+    ],
+    "selected_cameras": [
+      "brics-odroid-019_cam1",
+      "brics-odroid-013_cam1",
+      "brics-odroid-006_cam0"
+    ],
+    "selected_candidate_records": [
+      {
+        "camera": "brics-odroid-019_cam1",
+        "minimum_assignment_coverage": 1.0,
+        "minimum_margin_px": 135.9311993704677,
+        "view_direction": [
+          -0.8764290493095626,
+          -0.23838748574773214,
+          0.4183820361406681
+        ]
+      },
+      {
+        "camera": "brics-odroid-013_cam1",
+        "minimum_assignment_coverage": 1.0,
+        "minimum_margin_px": 85.70373885700124,
+        "view_direction": [
+          0.5878596195146594,
+          0.30354851960104506,
+          -0.7498528949014559
+        ]
+      },
+      {
+        "camera": "brics-odroid-006_cam0",
+        "minimum_assignment_coverage": 1.0,
+        "minimum_margin_px": 85.56913594939107,
+        "view_direction": [
+          0.5839715651110945,
+          -0.6454777870042196,
+          0.4922759770960125
+        ]
+      }
+    ],
+    "supplemental_provider_cameras": [
+      "brics-odroid-013_cam1",
+      "brics-odroid-006_cam0"
+    ]
+  },
+  "claim_boundary": "Source-only tactile metric-gauge feasibility. No calibration score, object-state update, confirmation payload, target outcome, or SOTA claim.",
+  "implementation": {
+    "revision": "6950a3c0970ce3f3e9f994e6cb8828413b50e23f",
+    "runner_source_sha256": "af8a4d40da2a33e471086f0d02afe2d99dbdebd978a52a0684a607a0210ef76f"
+  },
+  "information_boundary": {
+    "calibration_camera_prefix_allowed": true,
+    "calibration_provider_values_allowed_after_lock": true,
+    "calibration_scores_opened": false,
+    "confirmation_payloads_opened": false,
+    "future_camera_frames_used": false,
+    "future_tactile_values_used": false,
+    "held_v8_accessed": false,
+    "target_outcomes_used": false
+  },
+  "parents": {
+    "motioncrafter_job_manifest": {
+      "artifact_id": "9726e7ae12d442956ff81376fe52cdc2f8360fdcd3e5cccbc12543ca584b30f9",
+      "path": "/home/florianpfaff/source-only/bpt-causal-robot-prefix-v1-1b83ba49/protocols/locks/deform360_official_hub_visuotactile_v6_motioncrafter_jobs.json",
+      "sha256": "b9302a27d779a6de619baffc04e624eee629a226a140b90278fa9dd06b213fe2"
+    },
+    "robot_prefix": {
+      "artifact_id": "555943b0614e211e9c4d0fb5e2928c5499d695f5d6a020b6d26c2646d536297e",
+      "path": "/home/florianpfaff/source-only/deform360-official-hub-contact-prefix-smoke-v1-1b83ba49/026-sock-cloth/causal_robot_prefix.json",
+      "sha256": "95256bbfffc11268b1c9044b9a1f0b76616221a39e707fe414674923906cd6d0"
+    },
+    "robot_prefix_lock": {
+      "artifact_id": "7e4f7a30d9ad00da9f47d2c0debd42fea704c0985e65f78f8cd4f584dc52bc34",
+      "path": "/home/florianpfaff/source-only/bpt-causal-robot-prefix-v1-1b83ba49/protocols/locks/deform360_official_hub_causal_robot_prefix_smoke_v1.json",
+      "sha256": "2685cab622e91613b697d3e69c469df756fe07d2882dfc57f746a61f9aa409f5"
+    },
+    "tactile_contact_geometry": {
+      "artifact_id": "4a00b4297b6ec8a61da6f1fbffcfe4c61787a3a1fcb90e70f0204eb665e76dc8",
+      "path": "/home/florianpfaff/source-only/deform360-official-hub-tactile-contact-geometry-smoke-v1-97b19a89/026-sock-cloth/tactile_contact_geometry.json",
+      "sha256": "e9ea31591baf60bf232db207c42cb36e612c65b3a341e7d6c46c2f9a11e902c0"
+    }
+  },
+  "provider": {
+    "motioncrafter": {
+      "model_set_id": "b072956636612ca1a31d1edb83bd7d1bd27b8962cb617c6e615b9b310a16de6e",
+      "model_set_manifest": {
+        "loader_module": {
+          "bytes": 22652,
+          "module": "prob4d.motioncrafter_models",
+          "sha256": "e3113cbcdbe10af815d2247705be38d9a185e51ffd399807645f4d7216173fa9"
+        },
+        "model_type": "determ",
+        "schema": "prob4d.motioncrafter-model-set.v2",
+        "sources": {
+          "base_pipeline": {
+            "kind": "huggingface_revision",
+            "repository": "stabilityai/stable-video-diffusion-img2vid-xt",
+            "revision": "9e43909513c6714f1bc78bcb44d96e733cd242aa",
+            "role": "base-pipeline",
+            "schema": "prob4d.motioncrafter-model-source.v1"
+          },
+          "image_vae": {
+            "kind": "huggingface_revision",
+            "repository": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+            "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+            "role": "image-vae",
+            "schema": "prob4d.motioncrafter-model-source.v1"
+          },
+          "unet": {
+            "kind": "huggingface_revision",
+            "repository": "TencentARC/MotionCrafter",
+            "revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+            "role": "unet",
+            "schema": "prob4d.motioncrafter-model-source.v1"
+          },
+          "vae": {
+            "kind": "huggingface_revision",
+            "repository": "TencentARC/MotionCrafter",
+            "revision": "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+            "role": "vae",
+            "schema": "prob4d.motioncrafter-model-source.v1"
+          }
+        }
+      },
+      "model_set_manifest_file_sha256": "90233d8caae7ae37c2b6489f38b5a40706f4e8f638f345ae1d4ff251f2e55aa2",
+      "repository": "TencentARC/MotionCrafter",
+      "revision": "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257"
+    },
+    "parent_manifest_id": "9726e7ae12d442956ff81376fe52cdc2f8360fdcd3e5cccbc12543ca584b30f9",
+    "provider_lock": {
+      "artifact_id": "d3d68423a6c1a19e5cab5651ef4f08921652757fc565539227c06bd8e7dfcbce",
+      "file_sha256": "67d1898ee78734fcba595be11cad6cc8ac6a458853ddcd83bba7e3684cc55958",
+      "provider_revision": "25d90ef7f78ba4307f4555cb636d666004e1bf66"
+    },
+    "quality_gate": {
+      "assignment_admission": "both-direct-and-swapped-must-pass",
+      "covariance_floor_m": 0.005,
+      "cross_view_correlation": "unknown-equal-weight-covariance-intersection",
+      "huber_delta_m": 0.005,
+      "maximum_median_held_frame_error_m": 0.005,
+      "maximum_percentile_90_held_frame_error_m": 0.015,
+      "minimum_admitted_cameras": 3
+    },
+    "run_configuration": {
+      "decode_chunk_size": 25,
+      "frame_stride": 1,
+      "guidance_scale": 1.0,
+      "height": 320,
+      "low_memory_usage": true,
+      "model_source_set_sha256": "b072956636612ca1a31d1edb83bd7d1bd27b8962cb617c6e615b9b310a16de6e",
+      "model_type": "determ",
+      "num_inference_steps": 5,
+      "overlap": 8,
+      "products": [
+        "disjoint_baseline",
+        "latent_linear_baseline",
+        "independently_decoded_overlap_windows"
+      ],
+      "provider_consumed_product": "independently_decoded_overlap_windows",
+      "seed": 20260805,
+      "seed_policy": "derived-per-call",
+      "width": 640,
+      "window_size": 25
+    }
+  },
+  "schema": "bayesian-phystwin.deform360-tactile-metric-gauge-lock",
+  "schema_version": 1,
+  "source_case": {
+    "causal_frame_stop": 150,
+    "object_id": "026-sock-cloth",
+    "processing_episode_index": 0
+  },
+  "status": "locked-source-only-pre-supplement-provider",
+  "supplemental_jobs": [
+    {
+      "camera": "brics-odroid-013_cam1",
+      "episode": "episode_0000",
+      "job_id": "aaaef97d0e0c91b25126fe7a43c28f525361e67b52c18e0702ab68134813283e",
+      "object_id": "026-sock-cloth",
+      "output_relative_path": "026-sock-cloth/episode_0000/brics-odroid-013_cam1",
+      "seed_schedule": [
+        {
+          "call_id": "baseline-disjoint",
+          "effective_seed": 1615290338,
+          "product": "disjoint_baseline"
+        },
+        {
+          "call_id": "baseline-latent-linear",
+          "effective_seed": 3841778143,
+          "product": "latent_linear_baseline"
+        },
+        {
+          "call_id": "overlap-window:window_0000:108:133",
+          "effective_seed": 1957733375,
+          "product": "independently_decoded_overlap_window",
+          "source_frame_start": 108,
+          "source_frame_stop_exclusive": 133,
+          "window_id": "window_0000"
+        },
+        {
+          "call_id": "overlap-window:window_0001:125:150",
+          "effective_seed": 2142056977,
+          "product": "independently_decoded_overlap_window",
+          "source_frame_start": 125,
+          "source_frame_stop_exclusive": 150,
+          "window_id": "window_0001"
+        }
+      ],
+      "source_frame_start": 108,
+      "source_frame_stop_exclusive": 150,
+      "source_video": {
+        "bytes": 3328441,
+        "path": "026-sock-cloth/episode_0000/brics-odroid-013_cam1/undistorted.mp4",
+        "sha256": "8c936dff0ab4287af2e2989c43eb4a620588db2863c2d5ab0a02c0dfe8088af8"
+      },
+      "windows": [
+        {
+          "source_frame_start": 108,
+          "source_frame_stop_exclusive": 133,
+          "window_id": "window_0000"
+        },
+        {
+          "source_frame_start": 125,
+          "source_frame_stop_exclusive": 150,
+          "window_id": "window_0001"
+        }
+      ]
+    },
+    {
+      "camera": "brics-odroid-006_cam0",
+      "episode": "episode_0000",
+      "job_id": "b2b4c6fb78b7d64550e7b5f9966d9e83026b05270632070b06378cfe9f10f74e",
+      "object_id": "026-sock-cloth",
+      "output_relative_path": "026-sock-cloth/episode_0000/brics-odroid-006_cam0",
+      "seed_schedule": [
+        {
+          "call_id": "baseline-disjoint",
+          "effective_seed": 1615290338,
+          "product": "disjoint_baseline"
+        },
+        {
+          "call_id": "baseline-latent-linear",
+          "effective_seed": 3841778143,
+          "product": "latent_linear_baseline"
+        },
+        {
+          "call_id": "overlap-window:window_0000:108:133",
+          "effective_seed": 1957733375,
+          "product": "independently_decoded_overlap_window",
+          "source_frame_start": 108,
+          "source_frame_stop_exclusive": 133,
+          "window_id": "window_0000"
+        },
+        {
+          "call_id": "overlap-window:window_0001:125:150",
+          "effective_seed": 2142056977,
+          "product": "independently_decoded_overlap_window",
+          "source_frame_start": 125,
+          "source_frame_stop_exclusive": 150,
+          "window_id": "window_0001"
+        }
+      ],
+      "source_frame_start": 108,
+      "source_frame_stop_exclusive": 150,
+      "source_video": {
+        "bytes": 8905496,
+        "path": "026-sock-cloth/episode_0000/brics-odroid-006_cam0/undistorted.mp4",
+        "sha256": "516529038810895f628dc32629e04a44073e14f6b8b0ce3b7a2ca0a599a5bfd4"
+      },
+      "windows": [
+        {
+          "source_frame_start": 108,
+          "source_frame_stop_exclusive": 133,
+          "window_id": "window_0000"
+        },
+        {
+          "source_frame_start": 125,
+          "source_frame_stop_exclusive": 150,
+          "window_id": "window_0001"
+        }
+      ]
+    }
+  ]
+}
