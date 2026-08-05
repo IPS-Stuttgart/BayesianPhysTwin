@@ -85,6 +85,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
         "aggregate the sealed Deform360 bias-aware prospective result"
     ),
     "fetch-phystwin-eval-data": "fetch the released PhysTwin evaluation subset",
+    "prepare-deform360-stage1": (
+        "create and verify Deform360 Stage-1 provider and calibration locks"
+    ),
 }
 
 EXACT_OWNERS: Final[dict[str, str]] = {
@@ -99,6 +102,9 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "phystwin-refit": "phystwin-refit-v1",
     "evaluate-deform360-online-belief": "deform360-online-belief-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
+    "prepare-deform360-stage1": (
+        "deform360-official-hub-visuotactile-v1"
+    ),
 }
 
 

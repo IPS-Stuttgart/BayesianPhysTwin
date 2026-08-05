@@ -94,6 +94,7 @@ jobs:
             tests/test_deform360_contact_anchor.py \
             tests/test_deform360_visual_provider_lock.py \
             tests/test_deform360_calibration_bundle.py \
+            tests/test_deform360_stage1_control.py \
             tests/test_evidence_use_ledger.py \
             tests/test_observation_belief.py \
             tests/test_grouped_likelihood.py \
@@ -220,6 +221,7 @@ jobs:
             tests/test_deform360_contact_anchor.py \
             tests/test_deform360_visual_provider_lock.py \
             tests/test_deform360_calibration_bundle.py \
+            tests/test_deform360_stage1_control.py \
             tests/test_evidence_use_ledger.py \
             tests/test_observation_belief.py \
             tests/test_grouped_likelihood.py \
@@ -429,3 +431,5 @@ jobs:
           "$bin/bpt" run manifest --help
           "$bin/bpt" experiment list >/dev/null
           "$bin/bpt" experiment describe phystwin-refit
+          "$bin/bpt" experiment describe prepare-deform360-stage1
+          "$bin/bpt" experiment run prepare-deform360-stage1 --help

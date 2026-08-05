@@ -111,7 +111,7 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "evaluate-phystwin-state-injection": (
         "bayesian_phystwin.cli.phystwin_state_injection"
     ),
-    "evaluate-pokeflex-public": ("bayesian_phystwin.cli.pokeflex_public_evaluation"),
+    "evaluate-pokeflex-public": "bayesian_phystwin.cli.pokeflex_public_evaluation",
     "export-phystwin-residuals": "bayesian_phystwin.cli.phystwin_export",
     "fetch-phystwin-eval-data": "bayesian_phystwin.cli.phystwin_data",
     "fit-phystwin-bayesian-anchor": "bayesian_phystwin.cli.phystwin_bayesian_anchor",
@@ -164,6 +164,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "phystwin-refit": "bayesian_phystwin.cli.phystwin_refit",
     "predict-deform360-crossview-guard": (
         "bayesian_phystwin.cli.deform360_crossview_guard"
+    ),
+    "prepare-deform360-stage1": (
+        "bayesian_phystwin.cli.deform360_stage1_control"
     ),
     "report-matphys-loo-sota": "bayesian_phystwin.cli.matphys_loo_sota_report",
     "search-phystwin-topology-field": (

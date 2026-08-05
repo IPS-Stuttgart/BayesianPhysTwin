@@ -20,10 +20,10 @@ from bayesian_phystwin.cli.command_registry import (
 
 def test_registry_is_complete_and_unambiguous() -> None:
     validate_registry()
-    assert len(COMMANDS) == 81
+    assert len(COMMANDS) == 82
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
-    assert len(COMMANDS_BY_LEGACY_ALIAS) == 80
+    assert len(COMMANDS_BY_LEGACY_ALIAS) == 81
     assert len(COMMANDS_BY_PREVIOUS_ROUTE) == 42
     assert set(STABLE_ROUTES) == {
         command.command_id
@@ -36,7 +36,7 @@ def test_registry_covers_all_lifecycle_states() -> None:
     counts = {status: len(iter_commands(status=status)) for status in CommandStatus}
     assert counts == {
         CommandStatus.STABLE: 6,
-        CommandStatus.EXPERIMENT: 33,
+        CommandStatus.EXPERIMENT: 34,
         CommandStatus.DIAGNOSTIC: 17,
         CommandStatus.ARCHIVED: 25,
     }
@@ -102,6 +102,16 @@ def test_nonstable_routes_match_lifecycle_namespace() -> None:
 def test_every_registered_target_module_exists() -> None:
     for command in COMMANDS:
         assert util.find_spec(command.module) is not None
+
+
+def test_stage1_command_has_exact_owner_and_no_heavy_dependencies() -> None:
+    command = find_command_metadata("prepare-deform360-stage1")
+
+    assert command is not None
+    assert command.status is CommandStatus.EXPERIMENT
+    assert command.owner == "deform360-official-hub-visuotactile-v1"
+    assert command.optional_dependencies == ()
+    assert command.module == "bayesian_phystwin.cli.deform360_stage1_control"
 
 
 @pytest.mark.parametrize("command_id", ["", "-invalid"])
