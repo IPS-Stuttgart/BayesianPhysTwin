@@ -293,10 +293,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f "${EVIDENCE_DIR}/SHA256SUMS"
-          sha256sum "${EVIDENCE_DIR}"/* \
-            | sort \
-            > "${EVIDENCE_DIR}/SHA256SUMS"
+          (
+            cd "${EVIDENCE_DIR}"
+            rm -f SHA256SUMS
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\0' \
+              | sort -z \
+              | xargs -0 -r sha256sum \
+              > SHA256SUMS
+          )
 
       - name: Publish Stage-0 summary
         if: always()
