@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import subprocess
@@ -132,6 +133,26 @@ class _SharedPinnedAdapterFactory:
         else:
             self._adapter.config = config
         return self._adapter
+
+
+def _release_job_memory(*, torch_module: Any | None = None) -> None:
+    """Release unreferenced CUDA allocations between independent camera jobs."""
+    gc.collect()
+    if torch_module is None:
+        try:
+            import torch as torch_module  # noqa: PLC0415
+        except ModuleNotFoundError:
+            return
+    cuda = getattr(torch_module, "cuda", None)
+    if cuda is not None and hasattr(cuda, "empty_cache"):
+        cuda.empty_cache()
+
+
+def _run_with_memory_barrier(runner: Any, *, resume: bool) -> Path:
+    try:
+        return runner.run(resume=resume)
+    finally:
+        _release_job_memory()
 
 
 def _validate_source(root: Path, job: Mapping[str, Any]) -> Path:
@@ -344,10 +365,8 @@ def main() -> int:
             raise ValueError(
                 f"job output already exists; rerun with --resume: {output_directory}"
             )
-        prediction_path = SafeMotionCrafterRunner(
-            config,
-            adapter_factory=shared_factory,
-        ).run(resume=has_existing)
+        runner = SafeMotionCrafterRunner(config, adapter_factory=shared_factory)
+        prediction_path = _run_with_memory_barrier(runner, resume=has_existing)
         result = _validate_prediction(
             prediction_path,
             job=job,

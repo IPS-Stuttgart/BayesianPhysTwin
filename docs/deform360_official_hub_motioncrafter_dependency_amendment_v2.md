@@ -102,6 +102,21 @@ It binds Bayesian-PhysTwin implementation
 `62fdb997ebfcf30ec2906117a02a31cf14777678a023225db70149626c417052`.
 Execution must use a fresh output root.
 
+The v4 smoke completed one provider job, and the complete-cohort continuation
+sealed a second job. The third camera job then failed during geometry-motion VAE
+decoding because the shared adapter retained 8.67 GiB of unallocated CUDA cache
+between independent videos. The incomplete v4 report remains an immutable
+provider-runtime record: two of 30 jobs completed, calibration scores remained
+sealed, no policy was fit, and no confirmation or target artifact was accessed.
+
+The runner now performs Python garbage collection and `torch.cuda.empty_cache()`
+in a `finally` block after every independent camera job, including resumed jobs
+and failed jobs. This is an inter-job memory-lifecycle correction only: it does
+not change model weights, source frames, windows, seeds, inference parameters,
+provider products, or output validation. The next job manifest must bind the new
+runner digest and use a fresh output root; v4 must not be resumed under the
+amended runtime.
+
 ## Claim boundary
 
 This amendment establishes runtime completeness and provenance only. It is not
