@@ -48,7 +48,7 @@ def _artifacts(
         Deform360CalibrationArtifactRefV1(
             role=role,
             artifact_id=f"{index + 1:064x}",
-            implementation_revision="a" * 40,
+            implementation_revision="5" * 40,
             selection_evidence_id=f"{index + 101:064x}",
             selected_candidate_id=f"candidate-{index}",
             candidate_count=index + 2,
@@ -360,3 +360,18 @@ def test_bundle_atomic_overwrite_and_loader_root_boundaries(tmp_path: Path) -> N
     path.write_text("[]", encoding="utf-8")
     with pytest.raises(ValueError, match="root must be a JSON object"):
         load_deform360_calibration_bundle(path)
+
+
+def test_bundle_rejects_artifact_revision_mismatch() -> None:
+    bundle = _bundle()
+    changed = replace(
+        bundle.calibration_artifacts[0],
+        implementation_revision="9" * 40,
+    )
+    with pytest.raises(ValueError, match="implementation revision"):
+        _bundle(
+            calibration_artifacts=(
+                changed,
+                *bundle.calibration_artifacts[1:],
+            )
+        )

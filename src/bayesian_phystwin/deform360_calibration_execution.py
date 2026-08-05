@@ -42,6 +42,7 @@ from .deform360_calibration_bundle import (
     DEFORM360_CONFIRMATION_OBJECTS_PER_STRATUM,
     Deform360CalibrationArtifactRefV1,
     Deform360CalibrationBundleV1,
+    Deform360CalibrationRole,
     Deform360CohortUnitV1,
 )
 from .deform360_visual_provider_lock import (
@@ -133,7 +134,7 @@ _EXECUTION_FIELDS = frozenset(
         "claim_boundary",
     }
 )
-_COMPONENT_ROLES: Mapping[str, tuple[str, ...]] = {
+_COMPONENT_ROLES: Mapping[str, tuple[Deform360CalibrationRole, ...]] = {
     "visual": (
         "visual_reliability_and_gauge",
         "normalized_evidence",
@@ -315,8 +316,64 @@ def _stage0_unit(value: object, *, name: str) -> Deform360CohortUnitV1:
     )
 
 
+def _validate_stage0_content_ids(
+    value: Mapping[str, Any],
+    *,
+    protocol_path: str | Path | None,
+) -> None:
+    """Recompute every Stage-0 identity instead of trusting declarations."""
+
+    selection = value["selection"]
+    if not isinstance(selection, Mapping):
+        raise ValueError("Stage-0 selection must be an object")
+    declared_selection = sha256_digest(
+        value["selection_sha256"],
+        name="Stage-0 selection_sha256",
+    )
+    observed_selection = content_id(selection)
+    if observed_selection != declared_selection:
+        raise ValueError("Stage-0 selection_sha256 does not match selection")
+
+    content_payload = dict(value)
+    content_payload.pop("content_selection_sha256")
+    content_payload.pop("implementation_revision")
+    content_payload.pop("selection_artifact_sha256")
+    declared_content = sha256_digest(
+        value["content_selection_sha256"],
+        name="Stage-0 content_selection_sha256",
+    )
+    observed_content = content_id(content_payload)
+    if observed_content != declared_content:
+        raise ValueError("Stage-0 content_selection_sha256 does not match content")
+
+    artifact_payload = dict(value)
+    artifact_payload.pop("selection_artifact_sha256")
+    declared_artifact = sha256_digest(
+        value["selection_artifact_sha256"],
+        name="Stage-0 selection_artifact_sha256",
+    )
+    observed_artifact = content_id(artifact_payload)
+    if observed_artifact != declared_artifact:
+        raise ValueError("Stage-0 selection_artifact_sha256 does not match content")
+
+    if protocol_path is not None:
+        protocol = load_strict_json_object(
+            protocol_path,
+            label="Deform360 Stage-0 protocol",
+        )
+        declared_protocol = sha256_digest(
+            value["protocol_sha256"],
+            name="Stage-0 protocol_sha256",
+        )
+        observed_protocol = content_id(protocol)
+        if observed_protocol != declared_protocol:
+            raise ValueError("Stage-0 protocol_sha256 does not match protocol content")
+
+
 def load_deform360_stage0_selection(
     path: str | Path,
+    *,
+    protocol_path: str | Path | None = None,
 ) -> Deform360Stage0SelectionV1:
     """Load and independently validate the committed metadata-only Stage 0."""
 
@@ -402,7 +459,7 @@ def load_deform360_stage0_selection(
     if not isinstance(confirmation_raw, list):
         raise ValueError("Stage-0 confirmation selection must be an array")
 
-    return Deform360Stage0SelectionV1(
+    result = Deform360Stage0SelectionV1(
         protocol_id=cast(str, value["protocol_id"]),
         source_sha256=file_sha256(source),
         selection_artifact_sha256=cast(
@@ -430,6 +487,8 @@ def load_deform360_stage0_selection(
             for index, item in enumerate(confirmation_raw)
         ),
     )
+    _validate_stage0_content_ids(value, protocol_path=protocol_path)
+    return result
 
 
 def load_deform360_calibration_artifact_ref(
