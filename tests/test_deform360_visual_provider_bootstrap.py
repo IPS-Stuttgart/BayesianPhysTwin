@@ -129,9 +129,7 @@ def test_complete_cache_skips_network(
 def test_bootstrap_rejects_noncanonical_member(tmp_path: Path) -> None:
     module = _module()
     spec = json.loads(SPEC.read_text(encoding="utf-8"))
-    spec["motioncrafter"]["model_sources"]["unet"]["required_members"] = [
-        "../weights"
-    ]
+    spec["motioncrafter"]["model_sources"]["unet"]["required_members"] = ["../weights"]
 
     with pytest.raises(ValueError, match="canonical relative path"):
         module._exact_source_groups(spec)
