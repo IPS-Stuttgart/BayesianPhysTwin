@@ -218,6 +218,7 @@ jobs:
           args=(
             --output-root "${POKEFLEX_RESOLVED}"
             --candidate-root "${POKEFLEX_VERIFIED_CANDIDATE_ROOT}"
+            --candidate-preparation-evidence "${POKEFLEX_EVIDENCE}/candidate-preparation.json"
             --take-id "${INPUT_TAKE_ID:-}"
             --github-env "${GITHUB_ENV}"
           )
