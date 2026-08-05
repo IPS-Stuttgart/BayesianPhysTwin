@@ -1,0 +1,350 @@
+name: PokeFlex same-object paper artifacts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/pokeflex-same-object-paper-artifacts.yml"
+      - "src/bayesian_phystwin/pokeflex_same_object_reporting.py"
+      - "scripts/paper/make_pokeflex_same_object_figure.py"
+      - "scripts/paper/render_pokeflex_same_object_video.py"
+      - "scripts/paper/pokeflex_same_object_video_*.py"
+      - "tests/test_pokeflex_same_object_reporting.py"
+      - "docs/pokeflex_same_object_paper_artifacts.md"
+      - "configs/sota/pokeflex_independent_depth_*.json"
+      - "results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/**"
+  workflow_dispatch:
+    inputs:
+      candidate_root:
+        description: Existing frozen candidate-artifact root; optional
+        required: false
+        type: string
+      take_id:
+        description: Visual exemplar; blank selects the strongest prospective take
+        required: false
+        type: string
+      fps:
+        description: Encoded video frame rate
+        required: true
+        default: "30"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pokeflex-same-object-paper-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Reporting and workflow contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install reporting environment
+        run: python -m pip install -e ".[dev,graph,vision]" matplotlib pillow
+
+      - name: Validate focused source and result contracts
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
+            scripts/paper/make_pokeflex_same_object_figure.py \
+            scripts/paper/pokeflex_same_object_video_capture.py \
+            scripts/paper/pokeflex_same_object_video_encode.py \
+            scripts/paper/pokeflex_same_object_video_plot.py \
+            scripts/paper/render_pokeflex_same_object_video.py \
+            tests/test_pokeflex_same_object_reporting.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
+            scripts/paper/make_pokeflex_same_object_figure.py \
+            scripts/paper/pokeflex_same_object_video_capture.py \
+            scripts/paper/pokeflex_same_object_video_encode.py \
+            scripts/paper/pokeflex_same_object_video_plot.py \
+            scripts/paper/render_pokeflex_same_object_video.py \
+            tests/test_pokeflex_same_object_reporting.py
+          python -m mypy \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py
+          python -m pytest -q tests/test_pokeflex_same_object_reporting.py
+          python scripts/paper/make_pokeflex_same_object_figure.py --help
+          python scripts/paper/render_pokeflex_same_object_video.py --help
+
+  render:
+    name: Reproduce figure and render video on workstation2
+    needs: contracts
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 720
+    env:
+      INPUT_CANDIDATE_ROOT: ${{ inputs.candidate_root }}
+      INPUT_TAKE_ID: ${{ inputs.take_id }}
+      INPUT_FPS: ${{ inputs.fps }}
+      VAR_DATASET_ROOT: ${{ vars.POKEFLEX_DATA_ROOT }}
+      VAR_UPSTREAM_CHECKOUT: ${{ vars.POKEFLEX_UPSTREAM_CHECKOUT }}
+      VAR_CHECKPOINT_ROOT: ${{ vars.POKEFLEX_CHECKPOINT_ROOT }}
+      VAR_PYTHON: ${{ vars.POKEFLEX_PYTHON }}
+      VAR_CANDIDATE_ROOT: ${{ vars.POKEFLEX_PROSPECTIVE_ARTIFACT_ROOT }}
+    steps:
+      - name: Check out exact evaluated revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve isolated runtime and opened evidence paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          data_root="${VAR_DATASET_ROOT:-}"
+          upstream_checkout="${VAR_UPSTREAM_CHECKOUT:-}"
+          checkpoint_root="${VAR_CHECKPOINT_ROOT:-}"
+          python_bin="${VAR_PYTHON:-python3}"
+          candidate_root="${INPUT_CANDIDATE_ROOT:-${VAR_CANDIDATE_ROOT:-}}"
+          if [[ -z "${candidate_root}" ]]; then
+            candidate_root="/mnt/corsair/florianpfaff/pokeflex-regret-prospective-v1"
+          fi
+          for value in data_root upstream_checkout checkpoint_root; do
+            if [[ -z "${!value}" ]]; then
+              echo "::error title=Missing PokeFlex path::${value} is not configured"
+              exit 1
+            fi
+          done
+          root="${RUNNER_TEMP}/pokeflex-paper-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          mkdir -p "${root}/candidates" "${root}/output" "${root}/evidence"
+          {
+            echo "POKEFLEX_DATA_ROOT=${data_root}"
+            echo "POKEFLEX_UPSTREAM_CHECKOUT=${upstream_checkout}"
+            echo "POKEFLEX_CHECKPOINT_ROOT=${checkpoint_root}"
+            echo "POKEFLEX_BASE_PYTHON=${python_bin}"
+            echo "POKEFLEX_CANDIDATE_ROOT=${candidate_root}"
+            echo "POKEFLEX_RUN_ROOT=${root}"
+            echo "POKEFLEX_CANDIDATES=${root}/candidates"
+            echo "POKEFLEX_OUTPUT=${root}/output"
+            echo "POKEFLEX_EVIDENCE=${root}/evidence"
+            echo "POKEFLEX_VENV=${root}/venv"
+          } >> "${GITHUB_ENV}"
+
+      - name: Create isolated rendering environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${POKEFLEX_BASE_PYTHON}" -m venv --system-site-packages "${POKEFLEX_VENV}"
+          echo "${POKEFLEX_VENV}/bin" >> "${GITHUB_PATH}"
+          "${POKEFLEX_VENV}/bin/python" -m pip install \
+            -e ".[dev,graph,vision]" matplotlib pillow imageio-ffmpeg
+          "${POKEFLEX_VENV}/bin/python" - <<'PY'
+          import cv2
+          import matplotlib
+          import numpy
+          import pyvista
+          import scipy
+          import torch
+          import trimesh
+
+          if not torch.cuda.is_available():
+              raise SystemExit("PokeFlex rendering runtime cannot see CUDA")
+          for module in (
+              cv2,
+              matplotlib,
+              numpy,
+              pyvista,
+              scipy,
+              torch,
+              trimesh,
+          ):
+              print(f"{module.__name__}={module.__version__}")
+          PY
+
+      - name: Stage immutable prospective candidate artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          result_path = Path(
+              "results/sota/"
+              "pokeflex_independent_depth_regret_guard_prospective_v1/"
+              "prospective_evaluation.json"
+          )
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          source_root = Path(os.environ["POKEFLEX_CANDIDATE_ROOT"])
+          output_root = Path(os.environ["POKEFLEX_CANDIDATES"])
+          staged = []
+          missing = []
+          for record in result["candidate_artifacts"]:
+              name = Path(record["path"]).name
+              source = source_root / name
+              target = output_root / name
+              if source.is_file():
+                  digest = hashlib.sha256(source.read_bytes()).hexdigest()
+                  if digest == record["sha256"]:
+                      shutil.copy2(source, target)
+                      staged.append(
+                          {
+                              "name": name,
+                              "source": str(source),
+                              "sha256": digest,
+                              "byte_identical_to_frozen": True,
+                          }
+                      )
+                      continue
+              missing.append(name)
+          payload = {"staged": staged, "missing": missing}
+          path = Path(os.environ["POKEFLEX_EVIDENCE"]) / "candidate_staging.json"
+          path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          PY
+
+      - name: Reproduce missing candidate artifacts without refitting
+        shell: bash
+        run: |
+          set -euo pipefail
+          for take_id in FoamDice_T7 FoamDice_T8 PlushOctopus_T7; do
+            output="${POKEFLEX_CANDIDATES}/${take_id}_candidates.json"
+            if [[ ! -f "${output}" ]]; then
+              python scripts/remote/run_pokeflex_independent_depth_regret_guard_prospective.py \
+                "${POKEFLEX_DATA_ROOT}/${take_id}" \
+                "${output}" \
+                --upstream-checkout "${POKEFLEX_UPSTREAM_CHECKOUT}" \
+                --checkpoint-root "${POKEFLEX_CHECKPOINT_ROOT}"
+            fi
+          done
+
+      - name: Build frozen calibration figure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/paper/make_pokeflex_same_object_figure.py \
+            --prospective-result \
+              results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/prospective_evaluation.json \
+            --candidate-artifact "${POKEFLEX_CANDIDATES}/FoamDice_T7_candidates.json" \
+            --candidate-artifact "${POKEFLEX_CANDIDATES}/FoamDice_T8_candidates.json" \
+            --candidate-artifact "${POKEFLEX_CANDIDATES}/PlushOctopus_T7_candidates.json" \
+            --output-root "${POKEFLEX_OUTPUT}" \
+            | tee "${POKEFLEX_EVIDENCE}/figure-console.log"
+
+      - name: Render strongest prospective take
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --prospective-result
+            results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/prospective_evaluation.json
+            --dataset-root "${POKEFLEX_DATA_ROOT}"
+            --upstream-checkout "${POKEFLEX_UPSTREAM_CHECKOUT}"
+            --checkpoint-root "${POKEFLEX_CHECKPOINT_ROOT}"
+            --fps "${INPUT_FPS:-30}"
+            --repeats-per-state 2
+            --output-root "${POKEFLEX_OUTPUT}"
+          )
+          if [[ -n "${INPUT_TAKE_ID}" ]]; then
+            args+=(--take-id "${INPUT_TAKE_ID}")
+          fi
+          python scripts/paper/render_pokeflex_same_object_video.py "${args[@]}" \
+            | tee "${POKEFLEX_EVIDENCE}/video-console.log"
+
+      - name: Verify paper artifacts and record checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          output = Path(os.environ["POKEFLEX_OUTPUT"])
+          diagnostic = json.loads(
+              (output / "pokeflex_same_object_diagnostic.json").read_text()
+          )
+          bounded = diagnostic["bounded_result"]
+          if bounded["take_count"] != 3 or bounded["object_count"] != 2:
+              raise SystemExit("same-object panel changed")
+          if bounded["accepted_frame_count"] != 87:
+              raise SystemExit("accepted-frame result changed")
+          if bounded["exact_fallback_frame_count"] != 154:
+              raise SystemExit("fallback result changed")
+          videos = list(output.glob("*.mp4"))
+          if len(videos) != 1 or videos[0].stat().st_size <= 100_000:
+              raise SystemExit("exactly one nonempty MP4 is required")
+          for name in (
+              "pokeflex_same_object_calibration.png",
+              "pokeflex_same_object_calibration.pdf",
+              "pokeflex_same_object_video_poster.png",
+          ):
+              if (output / name).stat().st_size <= 10_000:
+                  raise SystemExit(f"paper artifact is unexpectedly small: {name}")
+          print(json.dumps(bounded, indent=2, sort_keys=True))
+          PY
+          find "${POKEFLEX_OUTPUT}" "${POKEFLEX_EVIDENCE}" -type f \
+            -print0 | sort -z | xargs -0 sha256sum \
+            > "${POKEFLEX_EVIDENCE}/SHA256SUMS"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Publish bounded result summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### PokeFlex same-object temporal-transfer artifacts"
+            echo
+            echo "The claim is limited to new takes of previously seen objects."
+            echo "Independent-object calibration failed and is not rescued by this run."
+            if [[ -f "${POKEFLEX_OUTPUT}/pokeflex_same_object_diagnostic.json" ]]; then
+              echo
+              echo '```json'
+              python -c '
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["POKEFLEX_OUTPUT"]) / "pokeflex_same_object_diagnostic.json"
+          value = json.loads(path.read_text())
+          print(json.dumps(value["bounded_result"], indent=2, sort_keys=True))
+          '
+              echo '```'
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload figure, video, and compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pokeflex-same-object-paper-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.POKEFLEX_OUTPUT }}
+            ${{ env.POKEFLEX_EVIDENCE }}/candidate_staging.json
+            ${{ env.POKEFLEX_EVIDENCE }}/figure-console.log
+            ${{ env.POKEFLEX_EVIDENCE }}/video-console.log
+            ${{ env.POKEFLEX_EVIDENCE }}/SHA256SUMS
+          if-no-files-found: warn
+          retention-days: 90
