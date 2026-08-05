@@ -111,6 +111,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "evaluate-phystwin-state-injection": (
         "bayesian_phystwin.cli.phystwin_state_injection"
     ),
+    "evaluate-pokeflex-public": (
+        "bayesian_phystwin.cli.pokeflex_public_evaluation"
+    ),
     "export-phystwin-residuals": "bayesian_phystwin.cli.phystwin_export",
     "fetch-phystwin-eval-data": "bayesian_phystwin.cli.phystwin_data",
     "fit-phystwin-bayesian-anchor": "bayesian_phystwin.cli.phystwin_bayesian_anchor",
