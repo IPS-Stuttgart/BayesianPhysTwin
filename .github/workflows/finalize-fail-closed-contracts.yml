@@ -125,8 +125,6 @@ jobs:
 
           rm -f "$payload" .github/workflows/finalize-fail-closed-contracts.yml
           rmdir .github/patches 2>/dev/null || true
-          test ! -e "$payload"
-          test ! -e .github/workflows/finalize-fail-closed-contracts.yml
           git diff --check
 
       - name: Install development dependencies
@@ -162,14 +160,22 @@ jobs:
             src/bayesian_phystwin/robust_likelihood.py
           git diff --check
 
-      - name: Publish ordinary source commit
+      - name: Publish validated non-workflow source
         shell: bash
         env:
           BRANCH: agent/fail-closed-probability-cue-contracts
         run: |
           set -euo pipefail
+          git restore --source=HEAD -- \
+            .github/workflows/tests.yml \
+            .github/workflows/finalize-fail-closed-contracts.yml \
+            .github/patches/fail-closed-contracts.patch.gz.b64
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
+          if git diff --cached --name-only | grep -q '^.github/workflows/'; then
+            echo 'workflow file unexpectedly staged' >&2
+            exit 1
+          fi
           git commit --no-verify -m 'Fail closed on malformed probability and cue inputs'
           git push origin "HEAD:${BRANCH}"
