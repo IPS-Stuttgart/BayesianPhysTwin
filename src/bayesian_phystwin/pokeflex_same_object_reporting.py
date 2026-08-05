@@ -130,8 +130,7 @@ def validate_bounded_result(result: Mapping[str, Any]) -> dict[str, Any]:
         "take count changed",
     )
     _require(
-        _integer(result.get("object_count", -1), name="object_count")
-        == len(objects),
+        _integer(result.get("object_count", -1), name="object_count") == len(objects),
         "object count changed",
     )
     _require(
