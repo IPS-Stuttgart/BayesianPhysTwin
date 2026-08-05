@@ -30,11 +30,30 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Apply the provenance fixes
+      - name: Install development dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Apply and format the provenance fixes
         shell: bash
         run: |
           set -euo pipefail
           python .agent/harden_deform360_calibration_seal.py
+          files=(
+            src/bayesian_phystwin/deform360_calibration_execution.py
+            src/bayesian_phystwin/deform360_calibration_bundle.py
+            src/bayesian_phystwin/deform360_visual_provider_lock.py
+            src/bayesian_phystwin/cli/deform360_calibration_execution.py
+            tests/test_deform360_calibration_bundle.py
+            tests/test_deform360_visual_provider_lock.py
+            tests/test_deform360_calibration_execution.py
+            tests/test_deform360_calibration_execution_boundaries.py
+          )
+          python -m ruff format "${files[@]}"
           rm .agent/harden_deform360_calibration_seal.py
           rm .github/workflows/agent-harden-deform360-calibration-seal.yml
           rm .github/workflows/agent-harden-deform360-calibration-seal-pr.yml
@@ -48,14 +67,6 @@ jobs:
           git add -A
           git diff --cached --check
           git commit -m "Harden Deform360 calibration seal provenance"
-
-      - name: Install development dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
-          python -m pip check
 
       - name: Validate focused contracts
         shell: bash
