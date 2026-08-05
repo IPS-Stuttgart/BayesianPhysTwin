@@ -222,9 +222,7 @@ class _Anchor:
     causal_frame_stop: int = 8
     source_revision: str = "b" * 40
     source_artifacts: dict[str, str] = field(
-        default_factory=lambda: {
-            "raw/200-fresh-object/tactile.npy": "c" * 64
-        }
+        default_factory=lambda: {"raw/200-fresh-object/tactile.npy": "c" * 64}
     )
     sensor_names: tuple[str, ...] = ("tactile-a", "tactile-a")
     correlation_group_ids: tuple[str, ...] = ("contact-a", "contact-a")
