@@ -15,7 +15,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -27,7 +27,7 @@ from ._canonical_contracts import (
     plain_json,
 )
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 PROB4D_MATERIAL_IDENTITY_MIXTURE_SCHEMA = "prob4d.material-identity-mixture"
 PROB4D_MATERIAL_IDENTITY_MIXTURE_VERSION = 1
@@ -920,7 +920,9 @@ class MaterialIdentityStatePosteriorV1:
                 "state covariance must equal within plus between covariance"
             )
         if reference_only:
-            expected_probabilities = np.zeros(len(candidate_ids), dtype=np.float64)
+            expected_probabilities: FloatArray = np.zeros(
+                len(candidate_ids), dtype=np.float64
+            )
             expected_probabilities[0] = 1.0
             if not np.array_equal(probabilities, expected_probabilities):
                 raise ValueError(
@@ -1038,7 +1040,7 @@ def _reference_posterior(
     metadata: Mapping[str, Any] | None,
 ) -> MaterialIdentityStatePosteriorV1:
     reference = states[0]
-    probabilities = np.zeros(len(states), dtype=np.float64)
+    probabilities: FloatArray = np.zeros(len(states), dtype=np.float64)
     probabilities[0] = 1.0
     zero = np.zeros_like(reference.covariance)
     return MaterialIdentityStatePosteriorV1(
