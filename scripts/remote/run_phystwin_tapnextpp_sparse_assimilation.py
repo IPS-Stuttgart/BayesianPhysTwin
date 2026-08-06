@@ -39,7 +39,9 @@ from bayesian_phystwin.phystwin_tapnextpp_competence import (
 )
 from bayesian_phystwin.tapnextpp_sparse_assimilation import (
     SparseAssimilationConfig,
+    associate_fixed_material_displacements,
     associate_sparse_observations,
+    build_material_transport_graph_update,
     build_sparse_graph_update,
     robust_metric_random_walk_endpoint,
 )
@@ -220,6 +222,11 @@ def predict_case(
         source_start = int(stored["provider_source_frame_start"])
         source_end = int(stored["provider_source_frame_end_exclusive"])
         provider_gate_passed = bool(stored["provider_gate_passed"])
+        material_node_indices = (
+            np.asarray(stored["provider_material_node_indices"], np.int64)
+            if "provider_material_node_indices" in stored.files
+            else None
+        )
     _require(
         baseline.shape[:2] == (len(baseline), len(structure_points))
         and baseline.shape[2] == 3
@@ -252,16 +259,43 @@ def predict_case(
     endpoint = None
     update = None
     fallback_reason = None
+    assimilation_mode = protocol.get(
+        "sparse_assimilation_mode",
+        "source_geometry_absolute",
+    )
+    _require(
+        assimilation_mode
+        in {
+            "source_geometry_absolute",
+            "fixed_frame_zero_material_displacement",
+        },
+        "sparse assimilation mode changed",
+    )
     if provider_gate_passed:
         try:
-            association = associate_sparse_observations(
-                provider_points,
-                provider_support,
-                provider_reliability,
-                provider_covariance,
-                baseline[source_start:source_end],
-                config=sparse_config,
-            )
+            if assimilation_mode == "fixed_frame_zero_material_displacement":
+                _require(
+                    material_node_indices is not None,
+                    "fixed material nodes are missing",
+                )
+                association = associate_fixed_material_displacements(
+                    provider_points,
+                    provider_support,
+                    provider_reliability,
+                    provider_covariance,
+                    baseline[source_start:source_end],
+                    material_node_indices,
+                    config=sparse_config,
+                )
+            else:
+                association = associate_sparse_observations(
+                    provider_points,
+                    provider_support,
+                    provider_reliability,
+                    provider_covariance,
+                    baseline[source_start:source_end],
+                    config=sparse_config,
+                )
             endpoint = robust_metric_random_walk_endpoint(
                 association.innovation_m,
                 association.support,
@@ -269,19 +303,36 @@ def predict_case(
                 association.covariance_m2,
                 config=sparse_config,
             )
-            update = build_sparse_graph_update(
-                endpoint,
-                association,
-                dense_correction,
-                laplacian,
-                config=sparse_config,
+            update = (
+                build_material_transport_graph_update(
+                    endpoint,
+                    association,
+                    laplacian,
+                    config=sparse_config,
+                )
+                if assimilation_mode
+                == "fixed_frame_zero_material_displacement"
+                else build_sparse_graph_update(
+                    endpoint,
+                    association,
+                    dense_correction,
+                    laplacian,
+                    config=sparse_config,
+                )
             )
             if not update.accepted:
                 fallback_reason = update.reason
         except ValueError as error:
-            if "query is too far from the physical graph" not in str(error):
+            message = str(error)
+            if not any(
+                marker in message
+                for marker in (
+                    "query is too far from the physical graph",
+                    "material query is too far from its fixed physical node",
+                )
+            ):
                 raise
-            fallback_reason = str(error)
+            fallback_reason = message
     else:
         fallback_reason = "provider-transfer-gate-failed"
 
@@ -431,6 +482,7 @@ def predict_case(
         "method_config": {
             "dense_backbone": dense_config,
             "sparse_assimilation": asdict(sparse_config),
+            "sparse_assimilation_mode": assimilation_mode,
             "predictive_uq": protocol["predictive_uq"],
         },
         "inputs": {

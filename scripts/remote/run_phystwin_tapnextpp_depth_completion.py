@@ -24,6 +24,9 @@ REPORT_FILENAME = "tapnextpp_depth_completion_prediction_report.json"
 SEAL_FILENAME = "tapnextpp_depth_completion_prediction_seal.json"
 SOURCE_SMOKE_PROTOCOL_ID = "phystwin-tapnextpp-depth-completion-source-v1"
 TRANSFER_PANEL_PROTOCOL_ID = "phystwin-tapnextpp-depth-completion-transfer-v1"
+MATERIAL_TRANSPORT_PANEL_PROTOCOL_ID = (
+    "phystwin-tapnextpp-material-transport-provider-source-v1"
+)
 TRACKER_PROTOCOL_ID = "phystwin-tapnextpp-prefix-competence-v1"
 
 
@@ -96,7 +99,10 @@ def _load_protocol(path: Path) -> dict[str, Any]:
         )
         _require(
             protocol.get("source_panel_protocol_id")
-            == TRANSFER_PANEL_PROTOCOL_ID,
+            in {
+                TRANSFER_PANEL_PROTOCOL_ID,
+                MATERIAL_TRANSPORT_PANEL_PROTOCOL_ID,
+            },
             "transfer case does not bind the source panel",
         )
         _require(

@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapnextpp-material-transport-provider-source-v1",
+  "status": "locked-before-provider-source-outcomes",
+  "fixed_source_cases": [
+    "double_lift_cloth_3",
+    "double_lift_sloth",
+    "double_stretch_zebra",
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "single_lift_cloth",
+    "single_lift_cloth_1",
+    "single_lift_cloth_3",
+    "single_lift_cloth_4",
+    "single_lift_sloth",
+    "single_lift_zebra",
+    "single_push_rope",
+    "single_push_rope_1",
+    "single_push_sloth"
+  ],
+  "excluded_prior_assimilation_cases": [
+    "double_lift_cloth_1",
+    "double_stretch_sloth",
+    "double_lift_zebra",
+    "rope_double_hand",
+    "single_lift_rope",
+    "single_push_rope_4",
+    "single_lift_dinosor",
+    "weird_package"
+  ],
+  "selection": {
+    "window_frames": 20,
+    "window_rule": "terminal half-open training-prefix window",
+    "maximum_query_count": 4,
+    "minimum_query_count": 3,
+    "query_selection": "deterministic farthest-point coverage over identities finite at frame zero and the terminal-window start",
+    "material_attachment": "nearest physical graph node at frame zero, immutable thereafter",
+    "maximum_frame_zero_attachment_m": 0.03,
+    "selected_cameras": [0, 1, 2]
+  },
+  "tracker_fixed_config": {
+    "depth_scale_to_m": 0.001,
+    "input_resolution": 512,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "visibility_threshold": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_depth_residual_m": 0.03,
+    "minimum_triangulation_views": 2,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_standard_deviation_px": 1.5,
+    "shared_bias_standard_deviation_m": 0.005,
+    "two_view_covariance_inflation": 4.0,
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 5
+  },
+  "depth_completion_config": {
+    "visibility_threshold": 0.5,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "maximum_local_depth_mad_m": 0.02,
+    "depth_sensor_std_m": 0.003,
+    "pixel_noise_std_px": 1.5,
+    "shared_bias_std_m": 0.005,
+    "minimum_carrier_overlap_rows": 16,
+    "minimum_carrier_overlap_fraction": 0.25,
+    "maximum_penalized_agreement_m": 0.005
+  },
+  "per_case_gates": {
+    "minimum_supported_fraction": 0.85,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 5
+  },
+  "aggregate_gates": {
+    "minimum_passing_case_count": 10,
+    "minimum_aggregate_supported_fraction": 0.85,
+    "minimum_case_balanced_relative_gain_over_persistence": 0.1,
+    "maximum_case_balanced_identity_rmse_m": 0.015
+  },
+  "prospective_assimilation": {
+    "mode": "fixed_frame_zero_material_displacement",
+    "dense_comparator": "fixed robust endpoint graph persistence",
+    "relative_observation": "provider displacement minus fixed-node physical displacement from the query frame",
+    "query_frame_is_anchor_not_update": true,
+    "source_covariance_reused_once_per_relative_row": true,
+    "attachment_distance_added_to_metric_covariance": true,
+    "innovation_processed_once_by_robust_mixture": true,
+    "graph_prior_strength": 0.1,
+    "maximum_sparse_delta_m": 0.01,
+    "maximum_effective_rows_per_identity": 4.0
+  },
+  "retention_policy": {
+    "all_fourteen_cases_required": true,
+    "technical_failures_retained": true,
+    "failed_cases_replaced": false,
+    "provider_failures_require_exact_future_fallback": true,
+    "no_outcome_tuning": true
+  },
+  "information_boundary": {
+    "manual_material_data_used_for_query_initialization_and_frame_zero_node_binding": true,
+    "provider_prediction_uses_only_terminal_causal_rgbd_prefix": true,
+    "withheld_provider_prefix_opened_only_after_prediction_seal": true,
+    "future_physical_outcome_opened": false,
+    "future_real_outcome_opened": false,
+    "prior_eight_case_outcomes_used_for_hyperparameter_tuning": false,
+    "held_v8_accessed": false,
+    "independent_target_opened": false
+  },
+  "advancement_rule": "Only a complete provider-gate pass authorizes a separately checksummed future-assimilation lock on these fourteen opened source cases.",
+  "claim_boundary": "Fourteen-case opened-source provider and material-attachment study disjoint from the failed eight-case assimilation panel. Manual material identity initializes queries and fixes frame-zero graph identity. This is not deployable automatic association, independent confirmation, a state-of-the-art claim, or authority to inspect held-v8."
+}

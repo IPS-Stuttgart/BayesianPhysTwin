@@ -260,3 +260,52 @@ def test_postopen_audit_detects_material_identity_mismatch(tmp_path: Path) -> No
     assert result["exact_match_count"] == 0
     assert result["identities"][0]["benchmark_frame_zero_node"] == len(frame_zero) - 1
     assert not result["identities"][0]["exact_node_match"]
+
+
+def test_runner_uses_fixed_material_displacement_mode(tmp_path: Path) -> None:
+    runner = _load_script(
+        "run_phystwin_tapnextpp_sparse_assimilation.py",
+        "tapnextpp_material_transport_runner_test",
+    )
+    protocol, manifest_path, prediction_input, physical, _ = _artifacts(
+        tmp_path,
+        provider_gate_passed=True,
+    )
+    protocol_payload = json.loads(protocol.read_text(encoding="utf-8"))
+    protocol_payload["sparse_assimilation_mode"] = (
+        "fixed_frame_zero_material_displacement"
+    )
+    material_protocol = tmp_path / "material_protocol.json"
+    _write_json(material_protocol, protocol_payload)
+
+    with np.load(prediction_input, allow_pickle=False) as stored:
+        values = {name: stored[name] for name in stored.files}
+    provider_points = np.asarray(values["provider_points_world_m"]).copy()
+    provider_points[:, 0, 1] += np.array([0.0, 0.002, 0.004])
+    values["provider_points_world_m"] = provider_points
+    values["provider_material_node_indices"] = np.asarray([0], np.int64)
+    np.savez_compressed(prediction_input, **values)
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["protocol_sha256"] = file_sha256(material_protocol)
+    manifest["case_records"][0]["prediction_input"]["sha256"] = file_sha256(
+        prediction_input
+    )
+    manifest["result_sha256"] = canonical_sha256(manifest)
+    _write_json(manifest_path, manifest)
+
+    report = runner.predict_case(
+        material_protocol,
+        manifest_path,
+        "synthetic_case",
+        prediction_input,
+        physical,
+        tmp_path / "material_prediction",
+    )
+
+    assert (
+        report["method_config"]["sparse_assimilation_mode"]
+        == "fixed_frame_zero_material_displacement"
+    )
+    assert report["sparse_update"]["accepted"]
+    assert report["sparse_update"]["graph_update"]["observed_nodes"] == [0]

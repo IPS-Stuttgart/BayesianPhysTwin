@@ -60,6 +60,7 @@ class SparseAssimilationConfig:
     graph_prior_strength: float = 0.1
     maximum_sparse_delta_m: float = 0.010
     graph_covariance_probes: int = 32
+    minimum_material_attachment_std_m: float = 0.001
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -72,6 +73,10 @@ class SparseAssimilationConfig:
             ),
             ("graph prior strength", self.graph_prior_strength),
             ("maximum sparse delta", self.maximum_sparse_delta_m),
+            (
+                "minimum material attachment standard deviation",
+                self.minimum_material_attachment_std_m,
+            ),
         ):
             _require(np.isfinite(value) and value > 0.0, f"{name} must be positive")
         _require(
@@ -342,6 +347,115 @@ def associate_sparse_observations(
     )
 
 
+def associate_fixed_material_displacements(
+    observed_points_m: np.ndarray,
+    support: np.ndarray,
+    prior_reliability: np.ndarray,
+    observation_covariance_m2: np.ndarray,
+    baseline_segment_m: np.ndarray,
+    material_node_indices: np.ndarray,
+    *,
+    config: SparseAssimilationConfig | None = None,
+) -> SparseAssociation:
+    """Form relative innovations at immutable frame-zero material nodes.
+
+    The query-frame observation is an anchor, not an update. Relative motion
+    cancels a constant point-to-node attachment offset, while its magnitude is
+    retained as a conservative covariance term for non-rigid local motion.
+    """
+
+    cfg = config or SparseAssimilationConfig()
+    observations = np.asarray(observed_points_m, dtype=np.float64)
+    validity = np.asarray(support, dtype=bool)
+    reliability = np.asarray(prior_reliability, dtype=np.float64)
+    covariance = np.asarray(observation_covariance_m2, dtype=np.float64)
+    baseline = np.asarray(baseline_segment_m, dtype=np.float64)
+    nodes = np.asarray(material_node_indices, dtype=np.int64)
+    _require(
+        observations.ndim == 3 and observations.shape[-1] == 3,
+        "observations must have shape (T, N, 3)",
+    )
+    frame_count, identity_count, _ = observations.shape
+    _require(validity.shape == (frame_count, identity_count), "support shape changed")
+    _require(reliability.shape == validity.shape, "reliability shape changed")
+    _require(
+        covariance.shape == (frame_count, identity_count, 3, 3),
+        "observation covariance shape changed",
+    )
+    _require(
+        baseline.ndim == 3
+        and baseline.shape[0] == frame_count
+        and baseline.shape[2] == 3,
+        "baseline segment must have shape (T, M, 3)",
+    )
+    _require(nodes.shape == (identity_count,), "material-node shape changed")
+    _require(
+        np.all((nodes >= 0) & (nodes < baseline.shape[1])),
+        "material node lies outside the graph",
+    )
+    _require(
+        np.all(validity[0]),
+        "every material identity must have a supported query-frame carrier",
+    )
+    _require(
+        np.all(np.isfinite(observations[validity])),
+        "supported observations are not finite",
+    )
+    _require(
+        np.all(np.isfinite(reliability))
+        and np.all((reliability >= 0.0) & (reliability <= 1.0)),
+        "prior reliability must lie in [0, 1]",
+    )
+    _require(np.all(reliability[~validity] == 0.0), "unsupported reliability must be zero")
+
+    predicted = baseline[:, nodes]
+    source_offset = observations[0] - predicted[0]
+    source_distance = np.linalg.norm(source_offset, axis=1)
+    _require(
+        np.all(source_distance <= cfg.maximum_query_to_graph_distance_m),
+        "a material query is too far from its fixed physical node",
+    )
+    observed_displacement = observations - observations[:1]
+    predicted_displacement = predicted - predicted[:1]
+    relative_support = validity & validity[:1]
+    relative_support[0] = False
+    relative_reliability = np.minimum(reliability, reliability[:1])
+    relative_reliability[~relative_support] = 0.0
+    innovation = np.zeros_like(observations)
+    innovation[relative_support] = (
+        observed_displacement[relative_support]
+        - predicted_displacement[relative_support]
+    )
+
+    attachment_std = np.maximum(
+        source_distance,
+        cfg.minimum_material_attachment_std_m,
+    )
+    attachment_covariance = (
+        np.eye(3)[None, None]
+        * np.square(attachment_std)[None, :, None, None]
+    )
+    total_covariance = (
+        covariance
+        + covariance[:1]
+        + attachment_covariance
+    )
+    candidates = nodes[:, None]
+    probabilities = np.ones((identity_count, 1), dtype=np.float64)
+    return SparseAssociation(
+        candidate_indices=candidates,
+        candidate_probabilities=probabilities,
+        map_indices=nodes,
+        source_distance_m=source_distance,
+        entropy=np.zeros(identity_count, dtype=np.float64),
+        predicted_points_m=predicted,
+        innovation_m=innovation,
+        covariance_m2=total_covariance,
+        support=relative_support,
+        prior_reliability=relative_reliability,
+    )
+
+
 def _log_normal_zero(innovation: np.ndarray, covariance: np.ndarray) -> float:
     sign, log_determinant = np.linalg.slogdet(covariance)
     if sign <= 0.0:
@@ -510,6 +624,73 @@ def build_sparse_graph_update(
         axis=1,
     )
     sparse_delta = endpoint.mean_m - dense_at_query
+    return _build_graph_update_from_delta(
+        endpoint,
+        association,
+        sparse_delta,
+        laplacian,
+        node_count=len(dense),
+        config=cfg,
+    )
+
+
+def build_material_transport_graph_update(
+    endpoint: MetricEndpointPosterior,
+    association: SparseAssociation,
+    laplacian,
+    *,
+    config: SparseAssimilationConfig | None = None,
+) -> SparseGraphUpdate:
+    """Propagate a fixed-node relative-displacement posterior over the graph."""
+
+    cfg = config or SparseAssimilationConfig()
+    node_count = int(laplacian.shape[0])
+    _require(laplacian.shape == (node_count, node_count), "Laplacian shape changed")
+    return _build_graph_update_from_delta(
+        endpoint,
+        association,
+        endpoint.mean_m,
+        laplacian,
+        node_count=node_count,
+        config=cfg,
+    )
+
+
+def _build_graph_update_from_delta(
+    endpoint: MetricEndpointPosterior,
+    association: SparseAssociation,
+    sparse_delta_m: np.ndarray,
+    laplacian,
+    *,
+    node_count: int,
+    config: SparseAssimilationConfig,
+) -> SparseGraphUpdate:
+    """Build direct and graph fields from one delta per sparse identity."""
+
+    cfg = config
+    sparse_delta = np.asarray(sparse_delta_m, dtype=np.float64)
+    _require(
+        sparse_delta.shape == endpoint.mean_m.shape,
+        "sparse delta shape changed",
+    )
+    _require(laplacian.shape == (node_count, node_count), "Laplacian shape changed")
+    updated = endpoint.update_count > 0
+    inlier = endpoint.final_inlier_probability >= 0.5
+    accepted_identity = updated & inlier
+    empty_direct = np.zeros((node_count, 3), dtype=np.float64)
+    empty_variance = np.zeros(node_count, dtype=np.float64)
+    if not np.any(accepted_identity):
+        return SparseGraphUpdate(
+            accepted=False,
+            reason="no-robust-sparse-identity-update",
+            direct_delta_m=empty_direct,
+            graph_delta_m=empty_direct,
+            graph_marginal_variance_m2=empty_variance,
+            observed_nodes=np.empty(0, dtype=np.int64),
+            observed_delta_m=np.empty((0, 3), dtype=np.float64),
+            observed_variance_m2=np.empty(0, dtype=np.float64),
+            graph_posterior=None,
+        )
     scalar_variance = np.linalg.eigvalsh(endpoint.covariance_m2)[:, -1]
 
     # Correlated identities that map to one node do not accumulate precision.
@@ -524,13 +705,13 @@ def build_sparse_graph_update(
     nodes = association.map_indices[representative]
     deltas = sparse_delta[representative]
     variances = np.maximum(scalar_variance[representative], 1e-12)
-    direct = np.zeros_like(dense)
+    direct = np.zeros((node_count, 3), dtype=np.float64)
     direct[nodes] = deltas
     direct = _clip_rows(direct, cfg.maximum_sparse_delta_m)
 
-    observed_mean = np.zeros_like(dense)
-    observed_variance = np.ones(len(dense), dtype=np.float64)
-    observed_mask = np.zeros(len(dense), dtype=bool)
+    observed_mean = np.zeros((node_count, 3), dtype=np.float64)
+    observed_variance = np.ones(node_count, dtype=np.float64)
+    observed_mask = np.zeros(node_count, dtype=bool)
     observed_mean[nodes] = deltas
     observed_variance[nodes] = variances
     observed_mask[nodes] = True
@@ -544,7 +725,7 @@ def build_sparse_graph_update(
     )
     graph = _clip_rows(posterior.mean, cfg.maximum_sparse_delta_m)
     marginal = (
-        np.zeros(len(dense), dtype=np.float64)
+        np.zeros(node_count, dtype=np.float64)
         if posterior.marginal_variance is None
         else posterior.marginal_variance
     )
@@ -559,4 +740,3 @@ def build_sparse_graph_update(
         observed_variance_m2=variances,
         graph_posterior=posterior,
     )
-

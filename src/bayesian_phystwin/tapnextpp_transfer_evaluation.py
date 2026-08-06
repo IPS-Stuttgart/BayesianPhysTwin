@@ -9,6 +9,10 @@ from typing import Any
 import numpy as np
 
 from .phystwin_tapnextpp_competence import canonical_sha256, file_sha256
+from .tapnextpp_material_transport_staging import (
+    PROVIDER_PROTOCOL_ID,
+    validate_material_transport_provider_protocol,
+)
 from .tapnextpp_transfer_staging import (
     TRANSFER_PROTOCOL_ID,
     validate_transfer_protocol,
@@ -55,12 +59,25 @@ def evaluate_transfer_panel(
     output = Path(output_path).resolve()
     _require(not output.exists(), "aggregate transfer result already exists")
     protocol = _load_json(protocol_file)
-    validate_transfer_protocol(protocol)
+    protocol_id = protocol.get("protocol_id")
+    if protocol_id == TRANSFER_PROTOCOL_ID:
+        validate_transfer_protocol(protocol)
+        source_kind = "PhysTwinTAPNextPPDepthCompletionTransferSourceManifest"
+        summary_kind = "PhysTwinTAPNextPPDepthCompletionTransferSummary"
+        pass_decision = "authorize-separately-frozen-opened-source-assimilation-study"
+        fail_decision = "stop-tapnextpp-depth-completion-route"
+    elif protocol_id == PROVIDER_PROTOCOL_ID:
+        validate_material_transport_provider_protocol(protocol)
+        source_kind = "PhysTwinTAPNextPPMaterialTransportProviderSourceManifest"
+        summary_kind = "PhysTwinTAPNextPPMaterialTransportProviderSourceSummary"
+        pass_decision = "authorize-locked-material-transport-assimilation-source-study"
+        fail_decision = "stop-before-material-transport-future-assimilation"
+    else:
+        raise ValueError("provider protocol ID changed")
     source = _load_json(source_file)
     _require(
-        source.get("artifact_kind")
-        == "PhysTwinTAPNextPPDepthCompletionTransferSourceManifest"
-        and source.get("protocol_id") == TRANSFER_PROTOCOL_ID,
+        source.get("artifact_kind") == source_kind
+        and source.get("protocol_id") == protocol_id,
         "source manifest kind changed",
     )
     _require(
@@ -161,8 +178,8 @@ def evaluate_transfer_panel(
     passed = all(gates.values())
     summary: dict[str, Any] = {
         "schema_version": 1,
-        "artifact_kind": "PhysTwinTAPNextPPDepthCompletionTransferSummary",
-        "protocol_id": TRANSFER_PROTOCOL_ID,
+        "artifact_kind": summary_kind,
+        "protocol_id": protocol_id,
         "protocol_sha256": file_sha256(protocol_file),
         "source_manifest_sha256": file_sha256(source_file),
         "case_count": len(dispositions),
@@ -178,11 +195,7 @@ def evaluate_transfer_panel(
         },
         "gates": gates,
         "transfer_gate_passed": passed,
-        "decision": (
-            "authorize-separately-frozen-opened-source-assimilation-study"
-            if passed
-            else "stop-tapnextpp-depth-completion-route"
-        ),
+        "decision": pass_decision if passed else fail_decision,
         "case_dispositions": dispositions,
         "information_boundary": {
             "source_prefix_competence_results_opened": True,
