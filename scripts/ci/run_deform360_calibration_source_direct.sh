@@ -56,12 +56,13 @@ finalize() {
   verify_confirmation_boundary
   local boundary_status=$?
   local python_bin="${BASE_PYTHON:-$(command -v python3 || true)}"
+  local manifest="${EVIDENCE_ROOT}/execution-manifest.json"
   local record_status=70
   if [[ -n "${python_bin}" ]]; then
     PYTHONPATH="${GITHUB_WORKSPACE}/src${PYTHONPATH:+:${PYTHONPATH}}" \
       "${python_bin}" -m \
       bayesian_phystwin.deform360_calibration_source_run_record \
-      --output "${EVIDENCE_ROOT}/execution-manifest.json" \
+      --output "${manifest}" \
       --source-revision "${BPT_SOURCE_SHA}" \
       --processing-revision "${PROCESSING_REVISION}" \
       --workflow-run-id "${GITHUB_RUN_ID}" \
@@ -73,13 +74,16 @@ finalize() {
   fi
   set -e
 
-  local final_status="${workload_status}"
-  if [[ ${boundary_status} -ne 0 ]]; then
-    final_status=${boundary_status}
-  elif [[ ${record_status} -ne 0 && ${final_status} -eq 0 ]]; then
-    final_status=${record_status}
+  if [[ -f "${manifest}" ]]; then
+    exit "${record_status}"
   fi
-  exit "${final_status}"
+  if [[ ${boundary_status} -ne 0 ]]; then
+    exit "${boundary_status}"
+  fi
+  if [[ ${workload_status} -ne 0 ]]; then
+    exit "${workload_status}"
+  fi
+  exit 70
 }
 trap finalize EXIT
 
@@ -151,6 +155,7 @@ files=(
   scripts/science/run_deform360_official_hub_calibration_source.py
   src/bayesian_phystwin/deform360_calibration_source_run_record.py
   tests/test_deform360_official_hub_calibration_source.py
+  tests/test_deform360_calibration_source_direct_workflow.py
   tests/test_deform360_calibration_source_run_record.py
   tests/test_deform360_calibration_source_workflow.py
 )
@@ -159,6 +164,7 @@ files=(
 bash -n scripts/ci/run_deform360_calibration_source_direct.sh
 "${BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
   tests/test_deform360_official_hub_calibration_source.py \
+  tests/test_deform360_calibration_source_direct_workflow.py \
   tests/test_deform360_calibration_source_run_record.py \
   tests/test_deform360_calibration_source_workflow.py \
   tests/test_deform360_calibration_execution.py \
