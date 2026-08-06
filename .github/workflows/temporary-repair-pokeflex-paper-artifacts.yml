@@ -1,0 +1,258 @@
+name: Temporary repair for PokeFlex paper artifacts
+
+on:
+  push:
+    branches:
+      - agent/pokeflex-same-object-paper-artifacts
+    paths:
+      - ".github/workflows/temporary-repair-pokeflex-paper-artifacts.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-repair-pokeflex-paper-artifacts
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/pokeflex-same-object-paper-artifacts
+          fetch-depth: 0
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply deterministic repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow_path = Path(
+              ".github/workflows/pokeflex-same-object-paper-artifacts.yml"
+          )
+          text = workflow_path.read_text(encoding="utf-8")
+          marker = "\n  artifacts:\n"
+          if text.count(marker) != 1:
+              raise SystemExit("unexpected paper-artifact job boundary")
+          prefix, artifacts = text.split(marker, 1)
+
+          mkdir_line = (
+              '          mkdir -p "${root}/evidence" "${root}/output" '
+              '"${root}/resolved"\n'
+          )
+          runtime_selection = mkdir_line + '''          base_python="${VAR_PYTHON:-}"
+          if [[ -n "${base_python}" && ! -x "${base_python}" ]]; then
+            echo "Configured POKEFLEX_PYTHON is not executable: ${base_python}" >&2
+            exit 1
+          fi
+          if [[ -z "${base_python}" ]]; then
+            for candidate in \
+              /usr/bin/python3.11 \
+              /usr/local/bin/python3.11 \
+              /usr/bin/python3 \
+              /usr/local/bin/python3
+            do
+              if [[ -x "${candidate}" ]]; then
+                base_python="${candidate}"
+                break
+              fi
+            done
+          fi
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          if [[ -z "${base_python}" ]]; then
+            echo "No system Python is available on workstation2." >&2
+            exit 1
+          fi
+'''
+          if artifacts.count(mkdir_line) != 1:
+              raise SystemExit("unexpected artifact-path initialization block")
+          artifacts = artifacts.replace(mkdir_line, runtime_selection, 1)
+
+          env_line = '            echo "POKEFLEX_RUN_ROOT=${root}"\n'
+          env_replacement = env_line + '''            echo "POKEFLEX_VENV=${root}/venv"
+            echo "BPT_BASE_PYTHON=${base_python}"
+            echo "BPT_PYTHON=${root}/venv/bin/python"
+'''
+          if artifacts.count(env_line) != 1:
+              raise SystemExit("unexpected artifact environment block")
+          artifacts = artifacts.replace(env_line, env_replacement, 1)
+
+          old_setup = '''      - name: Set up the released-checkpoint Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+'''
+          new_setup = '''      - name: Create an isolated released-checkpoint Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BPT_BASE_PYTHON}" --version
+          "${BPT_BASE_PYTHON}" -m venv --copies "${POKEFLEX_VENV}"
+          "${BPT_PYTHON}" -m ensurepip --upgrade
+          "${BPT_PYTHON}" -m pip install --no-cache-dir \
+            --upgrade pip setuptools wheel
+          "${BPT_PYTHON}" -m pip --version
+
+'''
+          if artifacts.count(old_setup) != 1:
+              raise SystemExit("unexpected persistent setup-python block")
+          artifacts = artifacts.replace(old_setup, new_setup, 1)
+
+          replacements = (
+              (
+                  "          python -m pip install --upgrade pip\n",
+                  "          \"${BPT_PYTHON}\" -m pip install --no-cache-dir "
+                  "--upgrade pip\n",
+              ),
+              (
+                  "          python -m pip install \\\n"
+                  "            \"torch==2.1.0\" \\\n",
+                  "          \"${BPT_PYTHON}\" -m pip install --no-cache-dir \\\n"
+                  "            \"torch==2.1.0\" \\\n",
+              ),
+              (
+                  "          python -m pip install \\\n"
+                  "            -e \".[graph,vision]\" \\\n",
+                  "          \"${BPT_PYTHON}\" -m pip install --no-cache-dir \\\n"
+                  "            -e \".[graph,vision]\" \\\n",
+              ),
+              (
+                  "          python -m pip check\n",
+                  "          \"${BPT_PYTHON}\" -m pip check\n",
+              ),
+              (
+                  '          echo "BPT_PYTHON=$(command -v python)" >> '
+                  '"${GITHUB_ENV}"\n',
+                  "",
+              ),
+              (
+                  "          python - <<'PY'\n",
+                  "          \"${BPT_PYTHON}\" - <<'PY'\n",
+              ),
+          )
+          for old, new in replacements:
+              if artifacts.count(old) != 1:
+                  raise SystemExit(f"unexpected runtime block for {old!r}")
+              artifacts = artifacts.replace(old, new, 1)
+
+          repaired = prefix + marker + artifacts
+          if "actions/setup-python" in repaired.split(marker, 1)[1]:
+              raise SystemExit("self-hosted artifact job still uses setup-python")
+          required_runtime_terms = (
+              'BPT_BASE_PYTHON=${base_python}',
+              'BPT_PYTHON=${root}/venv/bin/python',
+              '-m venv --copies "${POKEFLEX_VENV}"',
+              'pip install --no-cache-dir',
+          )
+          for term in required_runtime_terms:
+              if term not in repaired:
+                  raise SystemExit(f"missing isolated-runtime term: {term}")
+          workflow_path.write_text(repaired, encoding="utf-8")
+
+          tests_path = Path(".github/workflows/tests.yml")
+          tests_text = tests_path.read_text(encoding="utf-8")
+          anchor = "            tests/test_pokeflex_public_evaluation_cli.py \\\n"
+          reporting = "            tests/test_pokeflex_same_object_reporting.py \\\n"
+          anchor_count = tests_text.count(anchor)
+          reporting_count = tests_text.count(reporting)
+          if reporting_count == 0:
+              if anchor_count != 2:
+                  raise SystemExit(
+                      f"expected two stable/core PokeFlex anchors, found {anchor_count}"
+                  )
+              tests_text = tests_text.replace(anchor, anchor + reporting)
+          elif reporting_count != anchor_count:
+              raise SystemExit(
+                  "PokeFlex reporting test is only partially integrated into core CI"
+              )
+          if tests_text.count(reporting) != 2:
+              raise SystemExit("PokeFlex reporting test must run in both core lists")
+          tests_path.write_text(tests_text, encoding="utf-8")
+          PY
+
+      - name: Validate repaired source and workflow contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]" "coverage==7.13.3" pyyaml
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_pokeflex_same_object_reporting.py
+          python -m coverage erase
+          python -m coverage run --branch --source=bayesian_phystwin \
+            -m pytest -q -p no:cacheprovider \
+            tests/test_pokeflex_same_object_reporting.py
+          python -m coverage json -o pokeflex-reporting-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("pokeflex-reporting-coverage.json").read_text(encoding="utf-8")
+          )
+          path = "src/bayesian_phystwin/pokeflex_same_object_reporting.py"
+          summary = data["files"][path]["summary"]
+          line_percent = 100.0 * summary["covered_lines"] / summary["num_statements"]
+          branch_percent = (
+              100.0 * summary["covered_branches"] / summary["num_branches"]
+          )
+          if line_percent < 90.0 or branch_percent < 80.0:
+              raise SystemExit(
+                  f"reporting coverage too low: lines={line_percent:.2f}, "
+                  f"branches={branch_percent:.2f}"
+              )
+          print(
+              f"reporting coverage: lines={line_percent:.2f}%, "
+              f"branches={branch_percent:.2f}%"
+          )
+          PY
+          python - <<'PY'
+          from pathlib import Path
+
+          import yaml
+
+          for name in (
+              ".github/workflows/tests.yml",
+              ".github/workflows/pokeflex-same-object-paper-artifacts.yml",
+          ):
+              payload = yaml.safe_load(Path(name).read_text(encoding="utf-8"))
+              if not isinstance(payload, dict) or "jobs" not in payload:
+                  raise SystemExit(f"invalid workflow structure: {name}")
+          PY
+          git diff --check
+
+      - name: Publish clean repaired branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/temporary-repair-pokeflex-paper-artifacts.yml
+          rm -f .coverage pokeflex-reporting-coverage.json
+          rm -rf .pytest_cache .ruff_cache .mypy_cache
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/tests.yml \
+            .github/workflows/pokeflex-same-object-paper-artifacts.yml \
+            .github/workflows/temporary-repair-pokeflex-paper-artifacts.yml
+          git commit -m "Repair PokeFlex paper artifact validation"
+          git push origin HEAD:agent/pokeflex-same-object-paper-artifacts
