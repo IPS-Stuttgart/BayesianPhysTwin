@@ -45,9 +45,7 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
 
 def _case_record(manifest: dict[str, Any], case_name: str) -> dict[str, Any]:
     records = [
-        record
-        for record in manifest["case_records"]
-        if record.get("case") == case_name
+        record for record in manifest["case_records"] if record.get("case") == case_name
     ]
     _require(len(records) == 1, f"source manifest does not bind {case_name} once")
     return records[0]
@@ -136,9 +134,7 @@ def _evaluate_arm(
             track[name][frame] = float(np.mean(radial))
             row_nees = squared[selected] / predictive_variance[selected]
             nees[name][frame] = float(np.mean(row_nees))
-            coverage[name][frame] = float(
-                np.mean(row_nees <= CHI_SQUARE_3D_90)
-            )
+            coverage[name][frame] = float(np.mean(row_nees <= CHI_SQUARE_3D_90))
     horizons: dict[str, Any] = {}
     for name, indices in _horizon_slices(frame_count).items():
         horizons[name] = {
@@ -311,13 +307,9 @@ def evaluate_case(
         "artifact_kind": "PhysTwinTAPNextPPSparseAssimilationCaseResult",
         "protocol_id": protocol["protocol_id"],
         "case": case_name,
-        "provider_gate_passed": bool(
-            report["sparse_update"]["provider_gate_passed"]
-        ),
+        "provider_gate_passed": bool(report["sparse_update"]["provider_gate_passed"]),
         "sparse_update_accepted": bool(report["sparse_update"]["accepted"]),
-        "exact_dense_fallback": bool(
-            report["sparse_update"]["exact_dense_fallback"]
-        ),
+        "exact_dense_fallback": bool(report["sparse_update"]["exact_dense_fallback"]),
         "arms": arms,
         "incremental_gain_over_dense_persistence": {
             "tapnext_direct": {
@@ -398,9 +390,7 @@ def aggregate_results(
                 "result_sha256": file_sha256(path),
                 "provider_gate_passed": result["provider_gate_passed"],
                 "sparse_update_accepted": result["sparse_update_accepted"],
-                "primary_joint_nonregression": result[
-                    "primary_joint_nonregression"
-                ],
+                "primary_joint_nonregression": result["primary_joint_nonregression"],
             }
         )
 
@@ -454,11 +444,9 @@ def aggregate_results(
     dense_coverage = dense["all_track_coverage_90"]
     gates = {
         "chamfer_gain": gains["chamfer_distance_m"] is not None
-        and gains["chamfer_distance_m"]
-        >= float(gate_config["minimum_chamfer_gain"]),
+        and gains["chamfer_distance_m"] >= float(gate_config["minimum_chamfer_gain"]),
         "all_track_gain": gains["track_error_m"] is not None
-        and gains["track_error_m"]
-        >= float(gate_config["minimum_all_track_gain"]),
+        and gains["track_error_m"] >= float(gate_config["minimum_all_track_gain"]),
         "observed_track_gain": gains["observed_track_error_m"] is not None
         and gains["observed_track_error_m"]
         >= float(gate_config["minimum_observed_track_gain"]),
@@ -499,7 +487,10 @@ def aggregate_results(
             "source_manifest_result_sha256": manifest["result_sha256"],
         },
         "information_boundary": {
-            "cohort": "eight fixed previously opened source cases",
+            "cohort": protocol.get(
+                "cohort_description",
+                "eight fixed previously opened source cases",
+            ),
             "future_metrics_opened_after_per_case_prediction_seals": True,
             "independent_target_opened": False,
             "held_v8_accessed": False,

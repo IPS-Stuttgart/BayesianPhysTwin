@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapnextpp-material-transport-assimilation-source-v1",
+  "status": "locked-before-future-assimilation-outcome",
+  "fixed_source_cases": [
+    "double_lift_cloth_3",
+    "double_lift_sloth",
+    "double_stretch_zebra",
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "single_lift_cloth",
+    "single_lift_cloth_1",
+    "single_lift_cloth_3",
+    "single_lift_cloth_4",
+    "single_lift_sloth",
+    "single_lift_zebra",
+    "single_push_rope",
+    "single_push_rope_1",
+    "single_push_sloth"
+  ],
+  "cohort_description": "14 fixed previously opened source cases disjoint from the failed eight-case sparse-association panel",
+  "provider_transfer": {
+    "protocol_id": "phystwin-tapnextpp-material-transport-provider-source-v1",
+    "summary_file_sha256": "39ac705f49e60219e2fc6e78e31d60db56ce9bb8c719fd4d2745a8ebafd8ca96",
+    "summary_result_sha256": "df5babfc29266a5da9952b5ddb2fb3b148dcf9b33da5c55c1dbde01639bf2637",
+    "source_manifest_file_sha256": "e36f57fae7c8c05eb67796088bc28839f420a9eca58c3fa1f940c0d88c71d84f",
+    "source_manifest_result_sha256": "a3443cc082891c978a740a41981e0b3febd1982043548cff9e27868155b28e8f",
+    "required_decision": "authorize-locked-material-transport-assimilation-source-study"
+  },
+  "dense_backbone": {
+    "method": "fixed robust endpoint persistence from released dense prefix pseudo-tracks",
+    "process_std_m": 0.001,
+    "observation_std_m": 0.005,
+    "initial_std_m": 0.01,
+    "inlier_prior": 0.95,
+    "outlier_variance_multiplier": 100.0,
+    "relative_cap_quantile": 0.95,
+    "relative_cap_multiplier": 1.0,
+    "temporal_gamma": 0.0,
+    "selection": "none; all settings fixed before future source outcomes"
+  },
+  "sparse_assimilation_mode": "fixed_frame_zero_material_displacement",
+  "sparse_assimilation_config": {
+    "process_std_m": 0.001,
+    "initial_std_m": 0.01,
+    "inlier_prior": 0.95,
+    "outlier_variance_multiplier": 100.0,
+    "minimum_inlier_prior": 0.001,
+    "maximum_effective_rows_per_identity": 4.0,
+    "association_neighbor_count": 4,
+    "association_temperature_m": 0.005,
+    "maximum_query_to_graph_distance_m": 0.03,
+    "minimum_material_attachment_std_m": 0.001,
+    "graph_prior_strength": 0.1,
+    "maximum_sparse_delta_m": 0.01,
+    "graph_covariance_probes": 32
+  },
+  "arms": {
+    "physical": "unmodified released PhysTwin rollout",
+    "dense_persistence": "fixed dense robust endpoint correction",
+    "tapnext_direct": "dense persistence plus robust relative-displacement correction at immutable frame-zero material nodes",
+    "tapnext_graph": "dense persistence plus the same correction smoothed on the PhysTwin spring graph"
+  },
+  "primary_arm": "tapnext_graph",
+  "primary_comparator": "dense_persistence",
+  "predictive_uq": {
+    "noise_floor_std_m": 0.005,
+    "future_rule": "posterior discrepancy variance plus random-walk growth by elapsed frames",
+    "coverage_level": 0.9,
+    "coverage_scope": "conditional isotropic graph-node discrepancy intervals; calibration not assumed"
+  },
+  "advancement_gates": {
+    "minimum_chamfer_gain": 0.05,
+    "minimum_all_track_gain": 0.05,
+    "minimum_observed_track_gain": 0.1,
+    "maximum_hidden_track_regression": 0.02,
+    "minimum_joint_case_nonregression_count": 10,
+    "minimum_hidden_future_frame_support": 0.95,
+    "minimum_coverage_90": 0.8
+  },
+  "retention_policy": {
+    "all_fourteen_cases_required": true,
+    "provider_gate_failures_use_exact_dense_fallback": true,
+    "technical_failures_retained": true,
+    "failed_cases_replaced": false,
+    "no_future_tuning_or_arm_switching": true
+  },
+  "information_boundary": {
+    "provider_inputs": "sealed causal RGB-D prefix predictions from the passed 14-case material-transport provider study",
+    "dense_inputs": "released object pseudo-tracks strictly before each training boundary",
+    "association": "one graph-node identity fixed from frame-zero material geometry before future prediction",
+    "prior_reliability": "provider confidence, mask/depth quality, carrier disagreement, and fixed-attachment covariance; never physical innovation",
+    "innovation": "relative displacement processed once by a reliability-conditioned robust mixture likelihood",
+    "future_prediction": "physical rollout plus frozen discrepancy fields; no future real observation",
+    "future_evaluation": "staged source future opened only after every case prediction seal",
+    "cohort": "previously opened exploratory source cases disjoint from the failed eight-case panel",
+    "held_v8_accessed": false,
+    "independent_target_opened": false
+  },
+  "advancement_rule": "Proceed to a genuinely fresh preregistered evaluation only if every documented accuracy, hidden-transfer, support, fallback, and calibration gate passes.",
+  "claim_boundary": "Fourteen-case opened-source Bayesian-PhysTwin material-transport assimilation study. Manual benchmark identity initializes each query and fixes its frame-zero graph node. Future scoring separates those observed identities from disjoint hidden identities. This is not deployable automatic association, independent confirmation, a fair open-loop state-of-the-art claim, or authority to inspect held-v8."
+}

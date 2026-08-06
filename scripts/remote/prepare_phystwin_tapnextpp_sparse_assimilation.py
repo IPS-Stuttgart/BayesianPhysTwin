@@ -24,6 +24,11 @@ PROVIDER_REPORT_FILENAME = "tapnextpp_depth_completion_prediction_report.json"
 PROVIDER_SEAL_FILENAME = "tapnextpp_depth_completion_prediction_seal.json"
 PROVIDER_RESULT_FILENAME = "tapnextpp_depth_completion_transfer_result.json"
 TRACKER_PROTOCOL_FILENAME = "tracker_protocol.json"
+MATERIAL_ATTACHMENT_FILENAME = "frame_zero_material_attachment.npz"
+LEGACY_PROTOCOL_ID = "phystwin-tapnextpp-sparse-assimilation-source-v1"
+MATERIAL_TRANSPORT_PROTOCOL_ID = (
+    "phystwin-tapnextpp-material-transport-assimilation-source-v1"
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -50,9 +55,9 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
 
 
 def _validate_protocol(protocol: dict[str, Any]) -> None:
+    protocol_id = protocol.get("protocol_id")
     _require(
-        protocol.get("protocol_id")
-        == "phystwin-tapnextpp-sparse-assimilation-source-v1",
+        protocol_id in {LEGACY_PROTOCOL_ID, MATERIAL_TRANSPORT_PROTOCOL_ID},
         "assimilation protocol ID changed",
     )
     _require(
@@ -60,12 +65,19 @@ def _validate_protocol(protocol: dict[str, Any]) -> None:
         "assimilation protocol is not prediction-locked",
     )
     cases = protocol.get("fixed_source_cases")
+    expected_case_count = 8 if protocol_id == LEGACY_PROTOCOL_ID else 14
     _require(
         isinstance(cases, list)
-        and len(cases) == 8
-        and len(set(cases)) == 8,
+        and len(cases) == expected_case_count
+        and len(set(cases)) == expected_case_count,
         "assimilation case panel changed",
     )
+    if protocol_id == MATERIAL_TRANSPORT_PROTOCOL_ID:
+        _require(
+            protocol.get("sparse_assimilation_mode")
+            == "fixed_frame_zero_material_displacement",
+            "material-transport assimilation mode changed",
+        )
     _require(
         protocol.get("information_boundary", {}).get("held_v8_accessed") is False,
         "held-v8 boundary changed",
@@ -76,12 +88,15 @@ def _validate_protocol(protocol: dict[str, Any]) -> None:
     )
 
 
-def _validate_provider_case(case_root: Path) -> dict[str, Any]:
+def _validate_provider_case(
+    case_root: Path,
+    result_path: Path | None = None,
+) -> dict[str, Any]:
     prediction_root = case_root / "depth_completion_prediction"
     archive = prediction_root / PROVIDER_PREDICTION_FILENAME
     report_path = prediction_root / PROVIDER_REPORT_FILENAME
     seal_path = prediction_root / PROVIDER_SEAL_FILENAME
-    result_path = case_root / PROVIDER_RESULT_FILENAME
+    result_path = result_path or case_root / PROVIDER_RESULT_FILENAME
     tracker_protocol_path = case_root / TRACKER_PROTOCOL_FILENAME
     for path in (
         archive,
@@ -121,6 +136,58 @@ def _validate_provider_case(case_root: Path) -> dict[str, Any]:
     }
 
 
+def _validate_material_attachment(
+    case_root: Path,
+    source_record: dict[str, Any],
+    identity_ids: np.ndarray,
+    node_count: int,
+) -> dict[str, Any]:
+    attachment_path = case_root / MATERIAL_ATTACHMENT_FILENAME
+    _require(attachment_path.is_file(), "material attachment is missing")
+    _require(
+        file_sha256(attachment_path) == source_record.get("material_attachment_sha256"),
+        "material attachment changed after the provider source lock",
+    )
+    with np.load(attachment_path, allow_pickle=False) as stored:
+        attachment_ids = np.asarray(stored["identity_ids"], dtype=np.int64)
+        node_indices = np.asarray(
+            stored["material_node_indices"],
+            dtype=np.int64,
+        )
+        attachment_distance = np.asarray(
+            stored["frame_zero_attachment_distance_m"],
+            dtype=np.float64,
+        )
+    _require(
+        np.array_equal(attachment_ids, identity_ids),
+        "provider and material-attachment identities differ",
+    )
+    _require(
+        node_indices.shape == identity_ids.shape
+        and np.array_equal(
+            node_indices,
+            np.asarray(source_record.get("material_node_indices"), dtype=np.int64),
+        ),
+        "material-node identity changed after the provider source lock",
+    )
+    _require(
+        np.all((node_indices >= 0) & (node_indices < node_count)),
+        "material node lies outside the physical graph",
+    )
+    _require(
+        attachment_distance.shape == identity_ids.shape
+        and np.all(np.isfinite(attachment_distance))
+        and np.all(attachment_distance >= 0.0),
+        "frame-zero attachment distance is invalid",
+    )
+    return {
+        "path": attachment_path,
+        "identity_ids": attachment_ids,
+        "node_indices": node_indices,
+        "distance_m": attachment_distance,
+    }
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--protocol", type=Path, required=True)
@@ -128,6 +195,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--physical-root", type=Path, required=True)
     parser.add_argument("--provider-root", type=Path, required=True)
+    parser.add_argument("--provider-result-root", type=Path)
+    parser.add_argument("--provider-source-manifest", type=Path)
     parser.add_argument("--output-root", type=Path, required=True)
     return parser.parse_args()
 
@@ -139,18 +208,26 @@ def stage_assimilation_panel(
     physical_root: str | Path,
     provider_root: str | Path,
     output_root: str | Path,
+    provider_result_root: str | Path | None = None,
+    provider_source_manifest_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Create disjoint prediction and future-outcome artifacts for eight cases."""
+    """Create disjoint prediction and future-outcome source artifacts."""
 
     protocol_file = Path(protocol_path).resolve()
     summary_file = Path(transfer_summary_path).resolve()
     data = Path(data_root).resolve()
     physical = Path(physical_root).resolve()
     provider = Path(provider_root).resolve()
+    provider_results = (
+        provider
+        if provider_result_root is None
+        else Path(provider_result_root).resolve()
+    )
     output = Path(output_root).resolve()
     _require(not output.exists(), "assimilation staging output already exists")
     protocol = _load_json(protocol_file)
     _validate_protocol(protocol)
+    material_transport = protocol["protocol_id"] == MATERIAL_TRANSPORT_PROTOCOL_ID
     transfer_summary = _load_json(summary_file)
     expected_transfer = protocol["provider_transfer"]
     _require(
@@ -166,6 +243,54 @@ def stage_assimilation_panel(
         transfer_summary.get("transfer_gate_passed") is True,
         "provider transfer gate did not pass",
     )
+    _require(
+        transfer_summary.get("protocol_id") == expected_transfer["protocol_id"]
+        and transfer_summary.get("decision") == expected_transfer["required_decision"],
+        "provider transfer authorization changed",
+    )
+    provider_source_manifest: dict[str, Any] | None = None
+    provider_source_records: dict[str, dict[str, Any]] = {}
+    provider_source_manifest_file: Path | None = None
+    if material_transport:
+        _require(
+            provider_source_manifest_path is not None,
+            "material transport requires the provider source manifest",
+        )
+        provider_source_manifest_file = Path(provider_source_manifest_path).resolve()
+        provider_source_manifest = _load_json(provider_source_manifest_file)
+        _require(
+            provider_source_manifest.get("result_sha256")
+            == canonical_sha256(provider_source_manifest),
+            "provider source manifest hash changed",
+        )
+        _require(
+            file_sha256(provider_source_manifest_file)
+            == expected_transfer["source_manifest_file_sha256"],
+            "provider source manifest file changed",
+        )
+        _require(
+            provider_source_manifest.get("result_sha256")
+            == expected_transfer["source_manifest_result_sha256"],
+            "provider source manifest identity changed",
+        )
+        source_records = provider_source_manifest.get("case_records")
+        _require(
+            isinstance(source_records, list)
+            and [record.get("case") for record in source_records]
+            == protocol["fixed_source_cases"],
+            "provider source panel changed",
+        )
+        provider_source_records = {
+            str(record["case"]): record for record in source_records
+        }
+        _require(
+            all(
+                record.get("status") == "prediction-ready"
+                and record.get("replacement_permitted") is False
+                for record in source_records
+            ),
+            "provider source disposition changed",
+        )
     output.mkdir(parents=True)
     records: list[dict[str, Any]] = []
     for case_name in protocol["fixed_source_cases"]:
@@ -189,7 +314,11 @@ def stage_assimilation_panel(
             physical_path,
         ):
             _require(path.is_file(), f"required source artifact is missing: {path}")
-        provider_case = _validate_provider_case(provider / "cases" / case_name)
+        provider_case_root = provider / "cases" / case_name
+        provider_case = _validate_provider_case(
+            provider_case_root,
+            provider_results / "cases" / case_name / PROVIDER_RESULT_FILENAME,
+        )
         split = _load_json(split_path)
         train_end = int(split["train"][1])
         future_end = int(split["test"][1])
@@ -252,42 +381,66 @@ def stage_assimilation_panel(
             np.all((identity_ids >= 0) & (identity_ids < manual_tracks.shape[1])),
             f"{case_name} provider identities exceed the manual identity table",
         )
+        material_attachment = (
+            _validate_material_attachment(
+                provider_case_root,
+                provider_source_records[case_name],
+                identity_ids,
+                len(structure_points),
+            )
+            if material_transport
+            else None
+        )
 
         prediction_input = prediction_root / PREDICTION_INPUT_FILENAME
-        np.savez_compressed(
-            prediction_input,
-            prefix_object_points_m=object_points[:train_end].astype(np.float32),
-            prefix_object_visibilities=object_visible[:train_end],
-            prefix_motion_valid=motion_valid[: max(train_end - 1, 0)],
-            structure_points_m=structure_points.astype(np.float32),
-            original_point_count=np.asarray(len(object_points[0]), dtype=np.int64),
-            surface_point_count=np.asarray(len(surface_points), dtype=np.int64),
-            train_end_frame_exclusive=np.asarray(train_end, dtype=np.int64),
-            future_end_frame_exclusive=np.asarray(future_end, dtype=np.int64),
-            object_radius=np.asarray(float(optimal["object_radius"])),
-            object_max_neighbours=np.asarray(
+        prediction_values: dict[str, Any] = {
+            "prefix_object_points_m": object_points[:train_end].astype(np.float32),
+            "prefix_object_visibilities": object_visible[:train_end],
+            "prefix_motion_valid": motion_valid[: max(train_end - 1, 0)],
+            "structure_points_m": structure_points.astype(np.float32),
+            "original_point_count": np.asarray(len(object_points[0]), dtype=np.int64),
+            "surface_point_count": np.asarray(len(surface_points), dtype=np.int64),
+            "train_end_frame_exclusive": np.asarray(train_end, dtype=np.int64),
+            "future_end_frame_exclusive": np.asarray(future_end, dtype=np.int64),
+            "object_radius": np.asarray(float(optimal["object_radius"])),
+            "object_max_neighbours": np.asarray(
                 int(optimal["object_max_neighbours"]),
                 dtype=np.int64,
             ),
-            controller_radius=np.asarray(float(optimal["controller_radius"])),
-            controller_max_neighbours=np.asarray(
+            "controller_radius": np.asarray(float(optimal["controller_radius"])),
+            "controller_max_neighbours": np.asarray(
                 int(optimal["controller_max_neighbours"]),
                 dtype=np.int64,
             ),
-            provider_points_world_m=provider_points.astype(np.float32),
-            provider_support=provider_support,
-            provider_prior_reliability=provider_reliability.astype(np.float32),
-            provider_covariance_m2=provider_covariance.astype(np.float32),
-            provider_identity_ids=identity_ids,
-            provider_source_frame_start=np.asarray(source_start, dtype=np.int64),
-            provider_source_frame_end_exclusive=np.asarray(
+            "provider_points_world_m": provider_points.astype(np.float32),
+            "provider_support": provider_support,
+            "provider_prior_reliability": provider_reliability.astype(np.float32),
+            "provider_covariance_m2": provider_covariance.astype(np.float32),
+            "provider_identity_ids": identity_ids,
+            "provider_source_frame_start": np.asarray(source_start, dtype=np.int64),
+            "provider_source_frame_end_exclusive": np.asarray(
                 source_end,
                 dtype=np.int64,
             ),
-            provider_gate_passed=np.asarray(
+            "provider_gate_passed": np.asarray(
                 provider_case["provider_gate_passed"],
                 dtype=bool,
             ),
+        }
+        if material_attachment is not None:
+            prediction_values.update(
+                {
+                    "provider_material_node_indices": material_attachment[
+                        "node_indices"
+                    ],
+                    "provider_frame_zero_attachment_distance_m": (
+                        material_attachment["distance_m"].astype(np.float32)
+                    ),
+                }
+            )
+        np.savez_compressed(
+            prediction_input,
+            **prediction_values,
         )
         withheld = withheld_root / WITHHELD_OUTCOME_FILENAME
         np.savez_compressed(
@@ -320,25 +473,32 @@ def stage_assimilation_panel(
                     "sha256": file_sha256(physical_path),
                 },
                 "provider": {
-                    "prediction_archive_sha256": file_sha256(
-                        provider_case["archive"]
-                    ),
-                    "prediction_report_sha256": file_sha256(
-                        provider_case["report"]
-                    ),
+                    "prediction_archive_sha256": file_sha256(provider_case["archive"]),
+                    "prediction_report_sha256": file_sha256(provider_case["report"]),
                     "prediction_seal_sha256": file_sha256(provider_case["seal"]),
                     "tracker_protocol_sha256": file_sha256(
                         provider_case["tracker_protocol"]
                     ),
-                    "transfer_result_sha256": file_sha256(
-                        provider_case["result"]
-                    ),
-                    "provider_gate_passed": provider_case[
-                        "provider_gate_passed"
-                    ],
+                    "transfer_result_sha256": file_sha256(provider_case["result"]),
+                    "provider_gate_passed": provider_case["provider_gate_passed"],
                     "source_frame_start": source_start,
                     "source_frame_end_exclusive": source_end,
                     "identity_ids": identity_ids.tolist(),
+                    **(
+                        {
+                            "material_attachment_sha256": file_sha256(
+                                material_attachment["path"]
+                            ),
+                            "material_node_indices": material_attachment[
+                                "node_indices"
+                            ].tolist(),
+                            "frame_zero_attachment_distance_m": (
+                                material_attachment["distance_m"].tolist()
+                            ),
+                        }
+                        if material_attachment is not None
+                        else {}
+                    ),
                 },
                 "source_inputs": {
                     "final_data_sha256": file_sha256(final_data_path),
@@ -355,6 +515,15 @@ def stage_assimilation_panel(
         "protocol_id": protocol["protocol_id"],
         "protocol_sha256": file_sha256(protocol_file),
         "provider_transfer_summary_sha256": file_sha256(summary_file),
+        **(
+            {
+                "provider_source_manifest_sha256": file_sha256(
+                    provider_source_manifest_file
+                )
+            }
+            if provider_source_manifest_file is not None
+            else {}
+        ),
         "fixed_case_count": len(records),
         "case_records": records,
         "information_boundary": {
@@ -380,6 +549,8 @@ def main() -> int:
         args.physical_root,
         args.provider_root,
         args.output_root,
+        args.provider_result_root,
+        args.provider_source_manifest,
     )
     print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
     return 0
