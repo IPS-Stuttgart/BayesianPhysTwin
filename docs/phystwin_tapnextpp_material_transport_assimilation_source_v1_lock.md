@@ -38,6 +38,24 @@ four provider identities, immutable frame-zero material-node indices, and
 frame-zero attachment distances. The largest attachment distance is 5.300 mm,
 below the frozen 30 mm admissibility limit.
 
+## Sealed Predictions
+
+All 14 prediction runners completed and sealed before any withheld source
+future was opened.
+
+- prediction-manifest canonical SHA-256:
+  `124da54a2eeb54b772ca730ebfc9be9d49d19e042f8678c1c9a7397b7db62dbb`
+- prediction-manifest file SHA-256:
+  `3bc387d97961ff5a59b0e4f3326a0fdf60f658cae7b47ade41f0fcffd5ff1075`
+- sealed prediction archives: 14
+- accepted fixed-material updates: 10
+- exact dense fallbacks: 4
+- future real outcomes read while predicting: 0
+
+The four fallbacks were triggered because at least one query-frame carrier
+lay beyond the frozen 30 mm distance from its immutable frame-zero material
+node. No case, attachment, or threshold was changed after this disposition.
+
 ## Information Boundary
 
 - Prediction inputs contain only released prefix observations, graph data,
