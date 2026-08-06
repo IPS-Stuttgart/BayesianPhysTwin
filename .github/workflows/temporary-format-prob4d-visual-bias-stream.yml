@@ -66,50 +66,37 @@ jobs:
 
           path = Path("src/bayesian_phystwin/prob4d_visual_bias_stream.py")
           source = path.read_text(encoding="utf-8")
-          old = '''        raw_updates = _exact_tuple(source.updates, name="updates")
-          updates = tuple(
-              Prob4DVisualBiasStreamUpdateBindingV1(
-                  bias_model_id=update.bias_model_id,
-                  observation_stream_update_id=update.observation_stream_update_id,
-                  visual_bias_artifact_id=update.visual_bias_artifact_id,
-                  observation_artifact_id=update.observation_artifact_id,
-                  observation_identity_sha256=update.observation_identity_sha256,
-                  frame_start=update.frame_start,
-                  frame_stop_exclusive=update.frame_stop_exclusive,
-                  row_start=update.row_start,
-                  row_stop_exclusive=update.row_stop_exclusive,
-                  maximum_gauge_projection=update.maximum_gauge_projection,
-                  previous_update_id=update.previous_update_id,
-                  update_id=update.update_id,
-              )
-              for update in raw_updates
+          start_marker = '        raw_updates = _exact_tuple(source.updates, name="updates")\n'
+          end_marker = '        return ValidatedProb4DVisualBiasStreamV1(\n'
+          start = source.index(start_marker)
+          end = source.index(end_marker, start)
+          replacement = "\n".join(
+              [
+                  '        raw_updates = _exact_tuple(source.updates, name="updates")',
+                  '        copied_updates: list[Prob4DVisualBiasStreamUpdateBindingV1] = []',
+                  '        for raw_update in raw_updates:',
+                  '            update = cast(Any, raw_update)',
+                  '            copied_updates.append(',
+                  '                Prob4DVisualBiasStreamUpdateBindingV1(',
+                  '                    bias_model_id=update.bias_model_id,',
+                  '                    observation_stream_update_id=update.observation_stream_update_id,',
+                  '                    visual_bias_artifact_id=update.visual_bias_artifact_id,',
+                  '                    observation_artifact_id=update.observation_artifact_id,',
+                  '                    observation_identity_sha256=update.observation_identity_sha256,',
+                  '                    frame_start=update.frame_start,',
+                  '                    frame_stop_exclusive=update.frame_stop_exclusive,',
+                  '                    row_start=update.row_start,',
+                  '                    row_stop_exclusive=update.row_stop_exclusive,',
+                  '                    maximum_gauge_projection=update.maximum_gauge_projection,',
+                  '                    previous_update_id=update.previous_update_id,',
+                  '                    update_id=update.update_id,',
+                  '                )',
+                  '            )',
+                  '        updates = tuple(copied_updates)',
+                  '',
+              ]
           )
-          '''
-          new = '''        raw_updates = _exact_tuple(source.updates, name="updates")
-          copied_updates: list[Prob4DVisualBiasStreamUpdateBindingV1] = []
-          for raw_update in raw_updates:
-              update = cast(Any, raw_update)
-              copied_updates.append(
-                  Prob4DVisualBiasStreamUpdateBindingV1(
-                      bias_model_id=update.bias_model_id,
-                      observation_stream_update_id=update.observation_stream_update_id,
-                      visual_bias_artifact_id=update.visual_bias_artifact_id,
-                      observation_artifact_id=update.observation_artifact_id,
-                      observation_identity_sha256=update.observation_identity_sha256,
-                      frame_start=update.frame_start,
-                      frame_stop_exclusive=update.frame_stop_exclusive,
-                      row_start=update.row_start,
-                      row_stop_exclusive=update.row_stop_exclusive,
-                      maximum_gauge_projection=update.maximum_gauge_projection,
-                      previous_update_id=update.previous_update_id,
-                      update_id=update.update_id,
-                  )
-              )
-          updates = tuple(copied_updates)
-          '''
-          if old not in source:
-              raise RuntimeError("opaque producer update copy changed unexpectedly")
-          path.write_text(source.replace(old, new, 1), encoding="utf-8")
+          path.write_text(source[:start] + replacement + source[end:], encoding="utf-8")
           PY
 
       - name: Format, lint, and type-check the focused files
