@@ -25,31 +25,6 @@ def test_functions(path: Path) -> tuple[str, ...]:
     )
 
 
-def patch_spd_backend() -> None:
-    path = Path("src/bayesian_phystwin/spd_system.py")
-    replace_once(
-        path,
-        "from dataclasses import dataclass\nfrom typing import Final\n",
-        "from dataclasses import dataclass\nfrom numbers import Real\nfrom typing import Final\n",
-    )
-    replace_once(path, "whitening, log\nDeterminants,", "whitening, log\ndeterminants,")
-    replace_once(
-        path,
-        '''    if isinstance(value, (bool, np.bool_)):\n        raise TypeError(f"{name} must be a real scalar")\n    try:\n        result = float(value)\n    except (TypeError, ValueError) as error:\n        raise TypeError(f"{name} must be a real scalar") from error\n''',
-        '''    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):\n        raise TypeError(f"{name} must be a real scalar")\n    result = float(value)\n''',
-    )
-    replace_once(
-        path,
-        '''        try:\n            candidate = np.asarray(value, dtype=np.float64)\n        except (TypeError, ValueError, OverflowError) as error:\n            raise SPDValidationError(\n                f"{system_name} must be a numeric float64 matrix"\n            ) from error\n''',
-        '''        try:\n            untyped_candidate = np.asarray(value)\n        except (TypeError, ValueError, OverflowError) as error:\n            raise SPDValidationError(\n                f"{system_name} must be a numeric float64 matrix"\n            ) from error\n        if untyped_candidate.dtype.kind not in "fiu":\n            raise SPDValidationError(\n                f"{system_name} must be a numeric float64 matrix"\n            )\n        candidate = untyped_candidate.astype(np.float64, copy=False)\n''',
-    )
-    replace_once(
-        path,
-        '''        try:\n            right = np.asarray(value, dtype=np.float64)\n        except (TypeError, ValueError, OverflowError) as error:\n            raise SPDSolveError(f"{name} must be numeric") from error\n''',
-        '''        try:\n            untyped_right = np.asarray(value)\n        except (TypeError, ValueError, OverflowError) as error:\n            raise SPDSolveError(f"{name} must be numeric") from error\n        if untyped_right.dtype.kind not in "fiu":\n            raise SPDSolveError(f"{name} must be numeric")\n        right = untyped_right.astype(np.float64, copy=False)\n''',
-    )
-
-
 def patch_bias_aware_v2() -> None:
     path = Path("src/bayesian_phystwin/bias_aware_belief_v2.py")
     replace_once(path, "    SPDSolveError,\n", "")
@@ -104,7 +79,6 @@ def patch_changelog() -> None:
 
 
 def main() -> int:
-    patch_spd_backend()
     patch_bias_aware_v2()
     patch_stable_coverage_imports()
     patch_changelog()
