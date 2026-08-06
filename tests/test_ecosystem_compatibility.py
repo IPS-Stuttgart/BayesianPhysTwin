@@ -144,7 +144,9 @@ def _invalid_payload_cases() -> list[tuple[str, dict[str, Any], str]]:
     components = payload["components"]
     assert isinstance(components, dict)
     components["prob4d"] = []
-    cases.append(("component-not-object", payload, "component prob4d must be an object"))
+    cases.append(
+        ("component-not-object", payload, "component prob4d must be an object")
+    )
 
     payload = _lock_payload()
     components = payload["components"]
