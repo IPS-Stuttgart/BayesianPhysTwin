@@ -35,7 +35,9 @@ def test_public13_retrospective_result_is_frozen_and_source_bound() -> None:
     assert result["artifact_kind"] == (
         "PokeFlexActionRobustAll18V4Public13RetrospectiveDiagnostic"
     )
-    assert result["status"] == "post-open retrospective diagnostic; not confirmation"
+    assert result["status"] == (
+        "post-open retrospective diagnostic; not confirmation"
+    )
     assert result["implementation_revision"] == (
         "6af891b882782e5c5f099dd1610c49f772866445"
     )
@@ -124,6 +126,7 @@ def test_public13_retrospective_context_is_numerical_not_confirmatory() -> None:
         if row["v4_all18_mean_CD_UL1_mm"] > row["global_mean_CD_UL1_mm"]
     ]
     assert [row["take_id"] for row in regressions] == ["3dPrintedBunny_T1"]
-    assert regressions[0]["v4_all18_mean_CD_UL1_mm"] < regressions[0][
-        "baseline_mean_CD_UL1_mm"
-    ]
+    assert (
+        regressions[0]["v4_all18_mean_CD_UL1_mm"]
+        < regressions[0]["baseline_mean_CD_UL1_mm"]
+    )
