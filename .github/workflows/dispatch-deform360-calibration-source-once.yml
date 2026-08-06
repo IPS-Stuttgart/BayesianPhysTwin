@@ -6,7 +6,9 @@ on:
     paths:
       - ".github/workflows/dispatch-deform360-calibration-source-once.yml"
   workflow_run:
-    workflows: ["Changed Python source preflight"]
+    workflows:
+      - "Changed Python source preflight"
+      - "Finite-group query covariance calibration"
     types: [completed]
   issue_comment:
     types: [created]
@@ -26,9 +28,10 @@ jobs:
     if: >-
       github.event_name == 'push' ||
       (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.id == 31086168090 &&
        github.event.workflow_run.run_attempt >= 2 &&
-       github.event.workflow_run.conclusion == 'success') ||
+       github.event.workflow_run.conclusion == 'success' &&
+       (github.event.workflow_run.id == 31086168090 ||
+        github.event.workflow_run.id == 31078692442)) ||
       (github.event_name == 'issue_comment' &&
        github.event.issue.number == 148 &&
        github.event.comment.user.login == 'FlorianPfaff' &&
