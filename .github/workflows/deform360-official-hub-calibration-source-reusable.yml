@@ -34,6 +34,23 @@ jobs:
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 400
     steps:
+      - name: Initialize isolated evidence paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          site_root="${RUNNER_TEMP}/deform360-calibration-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          processing_repo="${GITHUB_WORKSPACE}/_deform360_processing"
+          staged_root="${PROCESSED_ROOT}/staged-raw"
+          rm -rf -- "${evidence_root}" "${site_root}"
+          mkdir -p -- "${evidence_root}" "${site_root}"
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "PYTHON_SITE=${site_root}"
+            echo "PROCESSING_REPO=${processing_repo}"
+            echo "STAGED_ROOT=${staged_root}"
+          } >> "${GITHUB_ENV}"
+
       - name: Check out exact reviewed BayesianPhysTwin source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,25 +69,13 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Initialize evidence paths and publish a non-sensitive run beacon
+      - name: Publish a non-sensitive run beacon
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          site_root="${RUNNER_TEMP}/deform360-calibration-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          processing_repo="${GITHUB_WORKSPACE}/_deform360_processing"
-          staged_root="${PROCESSED_ROOT}/staged-raw"
-          rm -rf -- "${evidence_root}" "${site_root}"
-          mkdir -p -- "${evidence_root}" "${site_root}"
-          {
-            echo "EVIDENCE_ROOT=${evidence_root}"
-            echo "PYTHON_SITE=${site_root}"
-            echo "PROCESSING_REPO=${processing_repo}"
-            echo "STAGED_ROOT=${staged_root}"
-          } >> "${GITHUB_ENV}"
-          python3 - "${evidence_root}/beacon.json" <<'PY'
+          python3 - "${EVIDENCE_ROOT}/beacon.json" <<'PY'
           import json
           import os
           from pathlib import Path
@@ -97,11 +102,101 @@ jobs:
             --header "Accept: application/vnd.github+json" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/148/comments" \
-            --data-binary @"${evidence_root}/beacon.json"
+            --data-binary @"${EVIDENCE_ROOT}/beacon.json"
 
       - name: Validate and prepare the frozen calibration source
         shell: bash
         run: bash scripts/ci/run_deform360_calibration_source_direct.sh
+
+      - name: Publish non-sensitive completion receipt
+        if: always()
+        continue-on-error: true
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          evidence_root="${EVIDENCE_ROOT:-${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
+          mkdir -p -- "${evidence_root}"
+          manifest="${evidence_root}/execution-manifest.json"
+          receipt="${evidence_root}/completion-receipt.json"
+          python3 - "${manifest}" "${receipt}" <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          manifest_path = Path(sys.argv[1])
+          lines = [
+              "## Direct ten-object calibration-source execution completed",
+              "",
+              f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
+              f"- workflow attempt: `{os.environ['GITHUB_RUN_ATTEMPT']}`",
+              f"- exact reviewed source revision: `{os.environ['BPT_SOURCE_SHA']}`",
+          ]
+          try:
+              record = json.loads(manifest_path.read_text(encoding="utf-8"))
+              if record.get("schema") != (
+                  "bayesian-phystwin.deform360-calibration-source-run"
+              ):
+                  raise ValueError("unexpected execution-record schema")
+              lines.extend(
+                  [
+                      f"- status: `{record['status']}`",
+                      f"- exit code: `{record['exit_code']}`",
+                      f"- failure stage: `{record['failure_stage']}`",
+                      (
+                          "- confirmation boundary verified: "
+                          f"`{record['confirmation_boundary_verified']}`"
+                      ),
+                      f"- execution-record digest: `{record['record_sha256']}`",
+                  ]
+              )
+              gate = record.get("support_gate")
+              if isinstance(gate, dict):
+                  strata = json.dumps(
+                      gate["supported_by_stratum"],
+                      sort_keys=True,
+                      separators=(",", ":"),
+                  )
+                  lines.extend(
+                      [
+                          (
+                              "- prepared objects: "
+                              f"`{gate['supported_object_count']}`"
+                          ),
+                          f"- prepared by stratum: `{strata}`",
+                          f"- support gate passed: `{gate['support_passed']}`",
+                          f"- result digest: `{record['result_sha256']}`",
+                      ]
+                  )
+              elif record.get("result_error") is not None:
+                  lines.append(f"- result record: `{record['result_error']}`")
+          except (OSError, UnicodeError, ValueError, KeyError, json.JSONDecodeError):
+              lines.extend(
+                  [
+                      "- status: `execution-record-unavailable`",
+                      "- confirmation boundary verified: `unknown`",
+                  ]
+              )
+          lines.extend(
+              [
+                  "",
+                  "This receipt contains no local paths, object identities, or target outcomes.",
+              ]
+          )
+          Path(sys.argv[2]).write_text(
+              json.dumps({"body": "\n".join(lines)}, sort_keys=True),
+              encoding="utf-8",
+          )
+          PY
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            --data-binary @"${receipt}"
 
       - name: Publish compact calibration-source evidence
         if: always()
@@ -121,18 +216,35 @@ jobs:
           echo >> "${GITHUB_STEP_SUMMARY}"
           echo "- Runner: \`${RUNNER_NAME}\`" >> "${GITHUB_STEP_SUMMARY}"
           echo "- Source revision: \`${BPT_SOURCE_SHA}\`" >> "${GITHUB_STEP_SUMMARY}"
-          if [[ -f "${EVIDENCE_ROOT}/calibration-source-result.json" ]]; then
-            python3 - "${EVIDENCE_ROOT}/calibration-source-result.json" <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          manifest="${EVIDENCE_ROOT:-}/execution-manifest.json"
+          if [[ -f "${manifest}" ]]; then
+            if python3 - "${manifest}" <<'PY' >> "${GITHUB_STEP_SUMMARY}"
           import json
           from pathlib import Path
           import sys
 
-          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          gate = result["gate"]
-          print(f"- Prepared objects: `{gate['supported_object_count']}`")
-          print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
-          print(f"- Result digest: `{result['result_sha256']}`")
+          record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          print(f"- Status: `{record['status']}`")
+          print(f"- Exit code: `{record['exit_code']}`")
+          print(
+              "- Confirmation boundary verified: "
+              f"`{record['confirmation_boundary_verified']}`"
+          )
+          gate = record.get("support_gate")
+          if isinstance(gate, dict):
+              print(f"- Prepared objects: `{gate['supported_object_count']}`")
+              print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
+              print(f"- Support gate passed: `{gate['support_passed']}`")
+              print(f"- Result digest: `{record['result_sha256']}`")
+          print(f"- Execution-record digest: `{record['record_sha256']}`")
           PY
+            then
+              :
+            else
+              echo "- Execution record: \`invalid\`" >> "${GITHUB_STEP_SUMMARY}"
+            fi
+          else
+            echo "- Execution record: \`unavailable\`" >> "${GITHUB_STEP_SUMMARY}"
           fi
 
       - name: Remove isolated runtime and processing checkout
