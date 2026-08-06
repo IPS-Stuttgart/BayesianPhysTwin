@@ -35,12 +35,10 @@ def _nonempty_string(value: object, *, name: str) -> str:
 
 
 def _finite_float(value: object, *, name: str) -> float:
-    if isinstance(value, (bool, np.bool_)):
+    raw = np.asarray(value)
+    if raw.shape != () or raw.dtype.kind not in "iuf":
         raise ValueError(f"{name} must be finite")
-    try:
-        result = float(value)
-    except (TypeError, ValueError) as error:
-        raise ValueError(f"{name} must be finite") from error
+    result = float(raw.item())
     _require(np.isfinite(result), f"{name} must be finite")
     return result
 
