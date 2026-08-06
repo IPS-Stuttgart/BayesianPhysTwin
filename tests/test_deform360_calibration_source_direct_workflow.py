@@ -12,6 +12,9 @@ DISPATCHER = Path(
     ".github/workflows/dispatch-deform360-calibration-source-pr-target.yml"
 )
 DIRECT_SCRIPT = Path("scripts/ci/run_deform360_calibration_source_direct.sh")
+RUN_RECORD_CI = Path(
+    ".github/workflows/deform360-calibration-run-record-ci.yml"
+)
 
 
 def test_reusable_workflow_beacons_before_checkout_and_initializes_evidence() -> None:
@@ -51,6 +54,10 @@ def test_reusable_workflow_publishes_one_non_sensitive_completion_receipt() -> N
     assert "completion-receipt.json" in completion_block
     assert "deform360-calibration-source-run" in completion_block
     assert "execution-record digest changed" in completion_block
+    assert '"plan_sha256"' in completion_block
+    assert '"download_sha256"' in completion_block
+    assert '"result_sha256"' in completion_block
+    assert "admission gate passed" in completion_block
     assert "/issues/148/comments" in completion_block
     assert "local paths, object identities, or target outcomes" in completion_block
     assert "DATA_ROOT" not in completion_block
@@ -71,6 +78,18 @@ def test_direct_script_records_every_exit_after_boundary_verification() -> None:
     assert (
         '--confirmation-boundary-exit-code "${boundary_status}"' in finalize
     )
+    assert (
+        '--plan-json "${EVIDENCE_ROOT}/calibration-source-plan.json"'
+        in finalize
+    )
+    assert (
+        '--download-json "${EVIDENCE_ROOT}/calibration-download-manifest.json"'
+        in finalize
+    )
+    assert (
+        '--result-json "${EVIDENCE_ROOT}/calibration-source-result.json"'
+        in finalize
+    )
     assert 'if [[ -f "${manifest}" ]]; then' in finalize
     assert 'exit "${record_status}"' in finalize
     assert "tests/test_deform360_calibration_source_direct_workflow.py" in text
@@ -90,3 +109,20 @@ def test_pull_request_target_dispatcher_does_not_execute_head_code() -> None:
     assert "source_sha: ${{ github.sha }}" in text
     assert "actions/checkout" not in text
     assert "run:" not in text
+
+
+def test_focused_run_record_ci_is_exact_head_and_read_only() -> None:
+    text = RUN_RECORD_CI.read_text(encoding="utf-8")
+
+    assert "pull_request:" in text
+    assert "workflow_dispatch:" in text
+    assert "contents: read" in text
+    assert "runs-on: ubuntu-latest" in text
+    assert 'python-version: ["3.10", "3.12"]' in text
+    assert "ref: ${{ github.event.pull_request.head.sha || github.sha }}" in text
+    assert "persist-credentials: false" in text
+    assert "ruff check" in text
+    assert "ruff format --check" in text
+    assert "bash -n scripts/ci/run_deform360_calibration_source_direct.sh" in text
+    assert "test_deform360_calibration_source_run_record.py" in text
+    assert "self-hosted" not in text
