@@ -1,0 +1,25 @@
+# Default maintainer ownership.
+* @FlorianPfaff
+
+# Automation and privileged execution require explicit review.
+/.github/workflows/ @FlorianPfaff
+/.github/actions/ @FlorianPfaff
+
+# Versioned contracts and cross-repository provider boundaries.
+/src/bayesian_phystwin/*contract* @FlorianPfaff
+/src/bayesian_phystwin/causal4d_* @FlorianPfaff
+/src/bayesian_phystwin/prob4d_* @FlorianPfaff
+/src/bayesian_phystwin/*provider* @FlorianPfaff
+
+# Frozen protocols, locks, evidence, and result records.
+/protocols/ @FlorianPfaff
+/configs/ @FlorianPfaff
+/milestones/ @FlorianPfaff
+/results/ @FlorianPfaff
+/reproductions/ @FlorianPfaff
+
+# Packaging and supported public interfaces.
+/pyproject.toml @FlorianPfaff
+/MANIFEST.in @FlorianPfaff
+/SUPPORT.md @FlorianPfaff
+/src/bayesian_phystwin/cli/ @FlorianPfaff

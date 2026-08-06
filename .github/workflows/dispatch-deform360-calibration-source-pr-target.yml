@@ -1,0 +1,31 @@
+name: Execute frozen Deform360 calibration source from exact PR target
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - ".github/calibration-dispatch-trigger/deform360-official-hub-calibration-source-2026-08-07.txt"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dispatch-deform360-calibration-source-pr-target
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute trusted reusable calibration lane
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == 'FlorianPfaff' &&
+      github.event.pull_request.head.ref == 'agent/calibration-dispatch-trigger-v1' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.changed_files == 1 &&
+      github.event.pull_request.additions == 1 &&
+      github.event.pull_request.deletions == 0
+    uses: ./.github/workflows/deform360-official-hub-calibration-source-reusable.yml
+    with:
+      source_sha: ${{ github.sha }}
