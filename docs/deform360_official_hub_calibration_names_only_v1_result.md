@@ -1,0 +1,46 @@
+# Deform360 calibration names-only result v1
+
+## Boundary
+
+The first exact names-only plan was run at BayesianPhysTwin revision
+`803787036f06c6c4a416cfd4e4220da05c32e14c`. It queried repository paths at the
+locked Deform360 revision and opened no calibration RGB, tactile, robot,
+confirmation, or outcome bytes.
+
+The plan has canonical digest
+`0494d23278be875ef18fd6be8eff0b68907c8ef853a2d170df6b51f3fadfe755` and file
+SHA-256 `4db9572d75a336aaf732d364e6ba0c58ca46d0cd13a14aab8c2b529f85a8b992`.
+
+## Initial result
+
+The original planner admitted 3 of 10 calibration objects: one of five sheet
+objects and two of five volumetric objects. All seven rejected objects exposed
+the selected tactile recordings, but each of four tactile sensors contained
+multiple timestamped `median_*.npy` baselines. The implementation interpreted
+the protocol's one-baseline output contract as requiring one baseline in the
+entire sensor directory and therefore rejected every such sensor.
+
+## Target-free diagnosis
+
+Filename-only analysis established the following across all ten calibration
+objects and every selected tactile sensor:
+
+- every recording and multi-candidate baseline had one parseable timestamp;
+- the nearest baseline was unique in all cases;
+- nearest absolute distance ranged from 15.92 to 419.66 seconds;
+- nearest-versus-runner-up margin was at least 79.92 seconds; and
+- the chosen baselines across sensors formed a capture cluster spanning 1.13 to
+  2.70 seconds.
+
+The amended planner therefore retains the sole baseline exactly or, for several
+timestamped candidates, requires a unique nearest baseline within ten minutes,
+a runner-up margin of at least one minute, and a cross-sensor capture span of at
+most five seconds. The rule is deterministic, payload-free, and fails closed.
+It does not replace objects or inspect target outcomes.
+
+## Claim boundary
+
+This is source-admission and filename-association evidence only. It does not
+establish tactile quality, provider competence, BayesianPhysTwin accuracy,
+calibration, confirmation transfer, or state of the art. A new exact plan must
+pass before any calibration payload download is authorized.

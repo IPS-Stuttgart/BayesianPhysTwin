@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -30,6 +31,90 @@ from .contracts import (
     validate_provider_lock,
     write_json,
 )
+
+TACTILE_BASELINE_POLICY_ID = "nearest-filename-timestamp-v1"
+MAXIMUM_TACTILE_BASELINE_DISTANCE_US = 10 * 60 * 1_000_000
+MINIMUM_TACTILE_BASELINE_MARGIN_US = 60 * 1_000_000
+MAXIMUM_CROSS_SENSOR_BASELINE_SPAN_US = 5 * 1_000_000
+_FILENAME_TIMESTAMP_RE = re.compile(r"(?:^|_)(\d{13,18})(?=_|$)")
+
+
+def tactile_baseline_policy() -> dict[str, Any]:
+    return {
+        "policy_id": TACTILE_BASELINE_POLICY_ID,
+        "maximum_absolute_distance_us": MAXIMUM_TACTILE_BASELINE_DISTANCE_US,
+        "minimum_runner_up_margin_us": MINIMUM_TACTILE_BASELINE_MARGIN_US,
+        "maximum_cross_sensor_span_us": MAXIMUM_CROSS_SENSOR_BASELINE_SPAN_US,
+        "single_candidate_is_accepted_without_timestamp": True,
+    }
+
+
+def _filename_timestamp_us(record: RepositoryFile) -> int:
+    stem = PurePosixPath(record.path).stem
+    matches = _FILENAME_TIMESTAMP_RE.findall(stem)
+    require(
+        len(matches) == 1,
+        f"expected one filename timestamp in {record.path}",
+    )
+    return int(matches[0])
+
+
+def _select_tactile_baseline(
+    recording: RepositoryFile,
+    baselines: Sequence[RepositoryFile],
+) -> tuple[RepositoryFile, dict[str, Any]]:
+    require(baselines, "tactile baseline is missing")
+    if len(baselines) == 1:
+        baseline = baselines[0]
+        try:
+            recording_timestamp = _filename_timestamp_us(recording)
+            baseline_timestamp = _filename_timestamp_us(baseline)
+        except ValueError:
+            recording_timestamp = None
+            baseline_timestamp = None
+        return baseline, {
+            "policy_id": TACTILE_BASELINE_POLICY_ID,
+            "candidate_count": 1,
+            "recording_timestamp_us": recording_timestamp,
+            "baseline_timestamp_us": baseline_timestamp,
+            "absolute_distance_us": (
+                abs(recording_timestamp - baseline_timestamp)
+                if recording_timestamp is not None and baseline_timestamp is not None
+                else None
+            ),
+            "runner_up_margin_us": None,
+            "single_candidate_fallback": True,
+        }
+
+    recording_timestamp = _filename_timestamp_us(recording)
+    ranked = sorted(
+        (
+            abs(_filename_timestamp_us(baseline) - recording_timestamp),
+            baseline.path,
+            _filename_timestamp_us(baseline),
+            baseline,
+        )
+        for baseline in baselines
+    )
+    distance, _path, baseline_timestamp, baseline = ranked[0]
+    runner_up_margin = ranked[1][0] - distance
+    require(
+        distance <= MAXIMUM_TACTILE_BASELINE_DISTANCE_US,
+        "nearest tactile baseline is too far from the selected recording",
+    )
+    require(
+        runner_up_margin >= MINIMUM_TACTILE_BASELINE_MARGIN_US,
+        "nearest tactile baseline is not uniquely separated",
+    )
+    return baseline, {
+        "policy_id": TACTILE_BASELINE_POLICY_ID,
+        "candidate_count": len(baselines),
+        "recording_timestamp_us": recording_timestamp,
+        "baseline_timestamp_us": baseline_timestamp,
+        "absolute_distance_us": distance,
+        "runner_up_margin_us": runner_up_margin,
+        "single_candidate_fallback": False,
+    }
 
 
 def _entry_lfs_sha256(entry: object) -> str | None:
@@ -135,6 +220,7 @@ def select_object_files(
         str,
         tuple[RepositoryFile, RepositoryFile, RepositoryFile],
     ] = {}
+    tactile_baseline_associations: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
     for stream in stream_names:
         directory = f"{prefix}{stream}"
@@ -162,10 +248,33 @@ def select_object_files(
             )
             if unit.episode_id >= len(pairs):
                 errors.append(f"{stream}: selected tactile episode is absent")
-            elif len(baselines) != 1:
-                errors.append(f"{stream}: expected exactly one tactile baseline")
             else:
-                tactile[stream] = (*pairs[unit.episode_id], baselines[0])
+                try:
+                    baseline, association = _select_tactile_baseline(
+                        pairs[unit.episode_id][0],
+                        baselines,
+                    )
+                except ValueError as error:
+                    errors.append(f"{stream}: {error}")
+                else:
+                    tactile[stream] = (*pairs[unit.episode_id], baseline)
+                    tactile_baseline_associations[stream] = association
+
+    baseline_timestamps = [
+        int(association["baseline_timestamp_us"])
+        for association in tactile_baseline_associations.values()
+        if association["baseline_timestamp_us"] is not None
+    ]
+    baseline_span_us = (
+        max(baseline_timestamps) - min(baseline_timestamps)
+        if len(baseline_timestamps) >= 2
+        else None
+    )
+    if (
+        baseline_span_us is not None
+        and baseline_span_us > MAXIMUM_CROSS_SENSOR_BASELINE_SPAN_US
+    ):
+        errors.append("selected tactile baselines are not one cross-sensor capture")
 
     if len(cameras) < MINIMUM_CAMERA_STREAMS:
         errors.append(
@@ -190,6 +299,8 @@ def select_object_files(
         "errors": errors,
         "camera_streams": sorted(cameras),
         "tactile_streams": sorted(tactile),
+        "tactile_baseline_associations": tactile_baseline_associations,
+        "tactile_baseline_cross_sensor_span_us": baseline_span_us,
         "selected_files": [selected[path].to_record() for path in sorted(selected)],
     }
 
@@ -246,6 +357,7 @@ def build_plan(
         "dataset_revision": DATASET_REVISION,
         "processing_repository": PROCESSING_REPOSITORY,
         "processing_revision": PROCESSING_REVISION,
+        "tactile_baseline_policy": tactile_baseline_policy(),
         "objects": rows,
         "gate": gate,
         "information_boundary": {
@@ -295,6 +407,10 @@ def verify_plan(
     require(
         plan.get("processing_revision") == PROCESSING_REVISION,
         "plan processing changed",
+    )
+    require(
+        plan.get("tactile_baseline_policy") == tactile_baseline_policy(),
+        "plan tactile baseline policy changed",
     )
     supplied = plan.get("plan_sha256")
     require(isinstance(supplied, str), "plan digest is missing")
