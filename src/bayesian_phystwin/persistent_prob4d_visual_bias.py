@@ -195,7 +195,10 @@ def _row_latent_design(
     latent_dimension = stream.latent_dimension
     basis_dimension = len(stream.basis_names)
     scope_index = int(stream.row_bias_indices[row_index])
-    provider_design = np.zeros((3, latent_dimension), dtype=np.float64)
+    provider_design: np.ndarray = np.zeros(
+        (3, latent_dimension),
+        dtype=np.float64,
+    )
     start = scope_index * basis_dimension
     provider_design[:, start : start + basis_dimension] = stream.bias_jacobian[
         row_index
