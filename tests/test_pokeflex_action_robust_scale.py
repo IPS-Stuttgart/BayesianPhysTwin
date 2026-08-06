@@ -157,3 +157,10 @@ def test_frozen_action_robust_calibration_is_exact() -> None:
         "source_action_regression_count": 0,
         "source_object_count": 12,
     }
+
+
+# The stable-core coverage job invokes this file explicitly. Import the all-18
+# source and frozen-result cases so their implementation remains subject to the
+# ordinary changed-line and changed-branch ratchets.
+from test_pokeflex_action_robust_all18 import *  # noqa: E402,F403
+from test_pokeflex_action_robust_all18_public13_result import *  # noqa: E402,F403
