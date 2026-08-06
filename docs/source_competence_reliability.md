@@ -109,6 +109,13 @@ observation, evidence, feature, model, and Markov-config identities, the
 conservative composition rule, every forbidden-information declaration, and
 the fact that covariance and association probability were not changed.
 
+The result contract independently recomputes the Markov posterior, conservative
+cap, refined observation, and normalized sequence evidence in its constructor.
+It therefore rejects a forged result that supplies altered probabilities,
+means, metadata, or evidence summaries even when a caller constructs the result
+class directly. Reapplying the operation to an already refined observation is
+also rejected instead of silently counting the same source evidence twice.
+
 The retained evidence and result arrays are backed by immutable bytes. Their
 writeability cannot be restored with `array.setflags(write=True)` after content
 identity construction.
@@ -173,9 +180,44 @@ write_source_competence_evidence(sidecar, "source-competence.json")
 restored = load_source_competence_evidence("source-competence.json")
 ```
 
-Loading rejects duplicate JSON keys, nonfinite values, schema drift, changed
-content identities, and noncanonical booleans. Publication is atomic and does
-not overwrite an existing path unless explicitly requested.
+Loading rejects duplicate JSON keys, nonfinite values, booleans or strings in
+numeric arrays, schema drift, changed content identities, and noncanonical
+booleans. Publication is atomic and does not overwrite an existing path unless
+explicitly requested.
+
+## Physical-linearization binding
+
+Changing `prior_reliability` correctly changes the `ObservationBeliefV1`
+artifact ID. An existing `PhysicalLinearizationV1` still identifies the original
+observation and must therefore not be passed unchanged to a claim-bearing
+update. The narrow bridge in
+`bayesian_phystwin.source_competence_linearization` first validates that the
+linearization belongs to the exact source observation, then creates a new
+content-addressed linearization bound to the refined observation:
+
+```python
+from bayesian_phystwin.source_competence_linearization import (
+    rebind_physical_linearization_to_source_competence,
+)
+
+refined_linearization = rebind_physical_linearization_to_source_competence(
+    update,
+    source_linearization,
+)
+```
+
+The bridge changes only the observation artifact identity and provenance
+metadata. It verifies that frame, entity, view, and window rows, state and query
+Jacobians, physical response, baseline belief, action prefix, and simulator
+revision remain value-identical. It then runs the ordinary observation-to-
+linearization alignment validator against the refined observation. Conflicting
+preexisting source-competence metadata or a linearization for another source
+observation fails before inference.
+
+This rebind does not recompute physical derivatives and does not claim that
+source competence changes the simulator model. It is an auditable identity
+transition needed because the reliability-bearing observation is itself a new
+claim-bearing artifact.
 
 ## Recommended real-feeder features
 
@@ -200,9 +242,10 @@ also be frozen before confirmation access.
 
 This interface establishes exact row binding, temporal source-competence
 composition, conservative reliability capping, non-duplication of association
-and covariance semantics, and target-blind provenance. It does not establish
-that the feature model detects every coherent camera bias, that a provider is
-competent on a fresh cohort, that raw posterior covariance is calibrated, that
-a physical-state update is identifiable, that a guarded physical query
-improves, that exact fallback is a universal safety theorem, that Causal4D
-interventions improve, or that the system is state of the art.
+and covariance semantics, a zero-numerics physical-linearization rebind, and
+target-blind provenance. It does not establish that the feature model detects
+every coherent camera bias, that a provider is competent on a fresh cohort,
+that raw posterior covariance is calibrated, that a physical-state update is
+identifiable, that a guarded physical query improves, that exact fallback is a
+universal safety theorem, that Causal4D interventions improve, or that the
+system is state of the art.
