@@ -6,6 +6,9 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
+from bayesian_phystwin.causal4d_observation_clock_binding import (
+    bind_causal4d_observation_clock_prior,
+)
 from bayesian_phystwin.causal4d_observation_clock_prior import (
     Causal4DObservationClockOffsetPriorV1,
 )
@@ -74,9 +77,10 @@ def test_actual_causal4d_prior_record_round_trips_exactly() -> None:
     record = producer.to_record()
 
     reconstructed = Causal4DObservationClockOffsetPriorV1.from_mapping(record)
-    consumer = _binding(
-        producer.artifact_id
-    ).shared_clock_prior_from_causal4d_record(record)
+    consumer = bind_causal4d_observation_clock_prior(
+        _binding(producer.artifact_id),
+        record,
+    )
 
     assert reconstructed.artifact_id == producer.artifact_id
     assert reconstructed.identity_record() == producer.identity_record()
@@ -93,9 +97,10 @@ def test_compact_clock_payload_is_not_claim_bearing() -> None:
     producer = _causal4d_prior()
     assert producer.artifact_id is not None
 
-    with pytest.raises(ValueError, match="not independently verifiable"):
-        _binding(producer.artifact_id).shared_clock_prior_from_payload(
-            producer.bayesian_phystwin_prior_payload()
+    with pytest.raises(ValueError, match="fields changed"):
+        bind_causal4d_observation_clock_prior(
+            _binding(producer.artifact_id),
+            producer.bayesian_phystwin_prior_payload(),
         )
 
 
@@ -105,12 +110,17 @@ def test_causal4d_prior_record_rejects_changed_gaussian_with_same_id() -> None:
     binding = _binding(producer.artifact_id)
 
     with pytest.raises(ValueError, match="summary does not match"):
-        binding.shared_clock_prior_from_causal4d_record(
-            {**producer.to_record(), "mean_offset_s": 0.25}
+        bind_causal4d_observation_clock_prior(
+            binding,
+            {**producer.to_record(), "mean_offset_s": 0.25},
         )
     with pytest.raises(ValueError, match="summary does not match"):
-        binding.shared_clock_prior_from_causal4d_record(
-            {**producer.to_record(), "predictive_standard_deviation_s": 0.25}
+        bind_causal4d_observation_clock_prior(
+            binding,
+            {
+                **producer.to_record(),
+                "predictive_standard_deviation_s": 0.25,
+            },
         )
 
 
@@ -125,9 +135,10 @@ def test_causal4d_prior_record_cannot_be_relabelled() -> None:
     )
     assert different_domain.artifact_id is not None
     with pytest.raises(ValueError, match="domain differs"):
-        _binding(
-            different_domain.artifact_id
-        ).shared_clock_prior_from_causal4d_record(different_domain.to_record())
+        bind_causal4d_observation_clock_prior(
+            _binding(different_domain.artifact_id),
+            different_domain.to_record(),
+        )
 
     different_scale = replace(
         producer,
@@ -136,9 +147,10 @@ def test_causal4d_prior_record_cannot_be_relabelled() -> None:
     )
     assert different_scale.artifact_id is not None
     with pytest.raises(ValueError, match="time scale differs"):
-        _binding(
-            different_scale.artifact_id
-        ).shared_clock_prior_from_causal4d_record(different_scale.to_record())
+        bind_causal4d_observation_clock_prior(
+            _binding(different_scale.artifact_id),
+            different_scale.to_record(),
+        )
 
     different_source = replace(
         producer,
@@ -147,13 +159,15 @@ def test_causal4d_prior_record_cannot_be_relabelled() -> None:
     )
     assert different_source.artifact_id is not None
     with pytest.raises(ValueError, match="artifact ID differs"):
-        _binding(producer.artifact_id).shared_clock_prior_from_causal4d_record(
-            different_source.to_record()
+        bind_causal4d_observation_clock_prior(
+            _binding(producer.artifact_id),
+            different_source.to_record(),
         )
 
     with pytest.raises(ValueError, match="convention changed"):
-        _binding(producer.artifact_id).shared_clock_prior_from_causal4d_record(
-            {**producer.to_record(), "offset_convention": "reversed"}
+        bind_causal4d_observation_clock_prior(
+            _binding(producer.artifact_id),
+            {**producer.to_record(), "offset_convention": "reversed"},
         )
 
 
@@ -165,6 +179,20 @@ def test_causal4d_prior_record_preserves_information_boundary() -> None:
     boundary["target_outcomes_used"] = True
 
     with pytest.raises(ValueError, match="information boundary changed"):
-        _binding(producer.artifact_id).shared_clock_prior_from_causal4d_record(
-            {**record, "information_boundary": boundary}
+        bind_causal4d_observation_clock_prior(
+            _binding(producer.artifact_id),
+            {**record, "information_boundary": boundary},
         )
+
+
+def test_timestamp_lineage_must_declare_shared_clock_prior() -> None:
+    producer = _causal4d_prior()
+    assert producer.artifact_id is not None
+    binding = replace(
+        _binding(producer.artifact_id),
+        shared_clock_offset_prior_artifact_id=None,
+        binding_id=None,
+    )
+
+    with pytest.raises(ValueError, match="declares no shared clock prior"):
+        bind_causal4d_observation_clock_prior(binding, producer.to_record())
