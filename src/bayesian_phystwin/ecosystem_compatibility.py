@@ -193,6 +193,11 @@ class EcosystemCompatibilityLockV1:
             "bayesian_phystwin_tested_revision must be a lowercase Git commit",
         )
         _require(
+            self.bayesian_phystwin_tested_revision == self.components[0].revision,
+            "bayesian_phystwin_tested_revision must match the locked "
+            "BayesianPhysTwin revision",
+        )
+        _require(
             re.fullmatch(r"[0-9a-f]{64}", self.lock_sha256) is not None,
             "lock_sha256 must be a lowercase SHA-256 digest",
         )
