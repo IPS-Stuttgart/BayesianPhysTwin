@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
-from prob4d.observation_timestamp_lineage import (
-    ObservationTimestampLineageV1,
-    write_observation_timestamp_lineage,
-)
+import pytest
+
+try:
+    from prob4d.observation_timestamp_lineage import (
+        ObservationTimestampLineageV1,
+        write_observation_timestamp_lineage,
+    )
+except ModuleNotFoundError:
+    if os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1":
+        raise
+    pytest.skip(
+        "Prob4D parity is validated by the dedicated timestamp consumer workflow",
+        allow_module_level=True,
+    )
 
 from bayesian_phystwin.prob4d_observation_timestamps import (
     load_prob4d_observation_timestamp_lineage,
