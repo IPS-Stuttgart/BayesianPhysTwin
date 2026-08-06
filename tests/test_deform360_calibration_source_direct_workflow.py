@@ -59,13 +59,16 @@ def test_direct_script_records_every_exit_after_boundary_verification() -> None:
     assert "local workload_status=$?" in finalize
     assert "verify_confirmation_boundary" in finalize
     assert "local boundary_status=$?" in finalize
+    assert 'local manifest="${EVIDENCE_ROOT}/execution-manifest.json"' in finalize
     assert "deform360_calibration_source_run_record" in finalize
-    assert '--output "${EVIDENCE_ROOT}/execution-manifest.json"' in finalize
+    assert '--output "${manifest}"' in finalize
     assert '--workload-exit-code "${workload_status}"' in finalize
     assert (
-        '--confirmation-boundary-exit-code "${boundary_status}"'
-        in finalize
+        '--confirmation-boundary-exit-code "${boundary_status}"' in finalize
     )
+    assert 'if [[ -f "${manifest}" ]]; then' in finalize
+    assert 'exit "${record_status}"' in finalize
+    assert "tests/test_deform360_calibration_source_direct_workflow.py" in text
     assert "tests/test_deform360_calibration_source_run_record.py" in text
     assert "src/bayesian_phystwin/deform360_calibration_source_run_record.py" in text
 
