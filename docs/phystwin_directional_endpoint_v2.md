@@ -49,6 +49,10 @@ The complete covariance is retained. The scalar `variance` output is
 `lambda_max(P)`, so it remains a conservative directional scalar readout without
 discarding the covariance needed by downstream calculations.
 
+An identity that receives no accepted source or multiview observation retains
+`final_inlier_probability = inlier_prior`. A zero update count is therefore not
+misrepresented as evidence that the identity is an outlier.
+
 ## Fail-closed numerical contract
 
 Every prior, innovation, component-posterior, mixture, and final covariance must
