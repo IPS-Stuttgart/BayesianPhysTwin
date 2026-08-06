@@ -1,0 +1,54 @@
+name: Temporary exact-source export
+
+on:
+  push:
+    branches: [agent/temporary-export-current-source-20260806]
+    paths:
+      - ".github/workflows/temporary-export-current-source.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: temporary-exact-source-export-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Archive exact public checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          archive="${RUNNER_TEMP}/bayesian-phystwin-source-${GITHUB_SHA}.tar.gz"
+          tar \
+            --exclude=.git \
+            --exclude='*.pyc' \
+            --exclude='__pycache__' \
+            -czf "${archive}" .
+          sha256sum "${archive}" > "${archive}.sha256"
+          {
+            echo "SOURCE_ARCHIVE=${archive}"
+            echo "SOURCE_CHECKSUM=${archive}.sha256"
+          } >> "${GITHUB_ENV}"
+
+      - name: Upload exact source archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: bayesian-phystwin-source-${{ github.sha }}
+          path: |
+            ${{ env.SOURCE_ARCHIVE }}
+            ${{ env.SOURCE_CHECKSUM }}
+          if-no-files-found: error
+          retention-days: 1
