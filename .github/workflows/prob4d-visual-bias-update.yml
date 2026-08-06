@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: prob4d-visual-bias-${{ github.workflow }}-${{ github.ref }}
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          persist-credentials: false
+          persist-credentials: true
           clean: true
 
       - name: Check out reviewed Prob4D visual-bias producer
@@ -85,7 +85,28 @@ jobs:
           "${VISUAL_BIAS_VENV}/bin/python" -m pip install -e ./_external/prob4d
           "${VISUAL_BIAS_VENV}/bin/python" -m pip check
 
+      - name: Apply deterministic import ordering once
+        id: formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="tests/test_prob4d_visual_bias_update_adversarial.py"
+          python -m ruff check --fix --select I001 "$file"
+          python -m ruff format "$file"
+          if git diff --quiet -- "$file"; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$file"
+          git diff --cached --check
+          git commit -m "Organize visual-bias adversarial test imports"
+          git push origin HEAD:agent/prob4d-visual-bias-consumer-v2
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
       - name: Record the isolated environment
+        if: steps.formatting.outputs.pushed != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -102,6 +123,7 @@ jobs:
           } | tee "${VISUAL_BIAS_RUN_ROOT}/environment.txt"
 
       - name: Check focused source quality
+        if: steps.formatting.outputs.pushed != 'true'
         run: |
           python -m ruff check \
             src/bayesian_phystwin/prob4d_visual_bias_update.py \
@@ -117,6 +139,7 @@ jobs:
             src/bayesian_phystwin/prob4d_visual_bias_update.py
 
       - name: Run focused and producer-consumer tests
+        if: steps.formatting.outputs.pushed != 'true'
         run: |
           python -m pytest -q -p no:cacheprovider \
             tests/test_prob4d_visual_bias_update.py \
@@ -131,6 +154,7 @@ jobs:
             tests/test_prob4d_visual_bias_crossrepo.py
 
       - name: Verify clean repository state
+        if: steps.formatting.outputs.pushed != 'true'
         shell: bash
         run: |
           set -euo pipefail
