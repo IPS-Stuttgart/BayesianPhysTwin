@@ -169,6 +169,40 @@ jobs:
                       f"- execution-record digest: `{record['record_sha256']}`",
                   ]
               )
+              for label, valid_key, error_key, digest_key in (
+                  ("plan", "plan_valid", "plan_error", "plan_sha256"),
+                  (
+                      "download",
+                      "download_valid",
+                      "download_error",
+                      "download_sha256",
+                  ),
+                  ("result", "result_valid", "result_error", "result_sha256"),
+              ):
+                  if record.get(valid_key) is True:
+                      lines.append(f"- {label} digest: `{record[digest_key]}`")
+                  elif record.get(error_key) is not None:
+                      lines.append(f"- {label} record: `{record[error_key]}`")
+              plan_gate = record.get("plan_support_gate")
+              if isinstance(plan_gate, dict):
+                  admitted_strata = json.dumps(
+                      plan_gate["supported_by_stratum"],
+                      sort_keys=True,
+                      separators=(",", ":"),
+                  )
+                  lines.extend(
+                      [
+                          (
+                              "- admitted objects: "
+                              f"`{plan_gate['supported_object_count']}`"
+                          ),
+                          f"- admitted by stratum: `{admitted_strata}`",
+                          (
+                              "- admission gate passed: "
+                              f"`{plan_gate['support_passed']}`"
+                          ),
+                      ]
+                  )
               gate = record.get("support_gate")
               if isinstance(gate, dict):
                   strata = json.dumps(
@@ -184,11 +218,8 @@ jobs:
                           ),
                           f"- prepared by stratum: `{strata}`",
                           f"- support gate passed: `{gate['support_passed']}`",
-                          f"- result digest: `{record['result_sha256']}`",
                       ]
                   )
-              elif record.get("result_error") is not None:
-                  lines.append(f"- result record: `{record['result_error']}`")
           except (OSError, ValueError, KeyError):
               lines.extend(
                   [
@@ -261,12 +292,39 @@ jobs:
               "- Confirmation boundary verified: "
               f"`{record['confirmation_boundary_verified']}`"
           )
+          for label, valid_key, error_key, digest_key in (
+              ("Plan", "plan_valid", "plan_error", "plan_sha256"),
+              (
+                  "Download",
+                  "download_valid",
+                  "download_error",
+                  "download_sha256",
+              ),
+              ("Result", "result_valid", "result_error", "result_sha256"),
+          ):
+              if record.get(valid_key) is True:
+                  print(f"- {label} digest: `{record[digest_key]}`")
+              elif record.get(error_key) is not None:
+                  print(f"- {label} record: `{record[error_key]}`")
+          plan_gate = record.get("plan_support_gate")
+          if isinstance(plan_gate, dict):
+              print(
+                  "- Admitted objects: "
+                  f"`{plan_gate['supported_object_count']}`"
+              )
+              print(
+                  "- Admitted by stratum: "
+                  f"`{plan_gate['supported_by_stratum']}`"
+              )
+              print(
+                  "- Admission gate passed: "
+                  f"`{plan_gate['support_passed']}`"
+              )
           gate = record.get("support_gate")
           if isinstance(gate, dict):
               print(f"- Prepared objects: `{gate['supported_object_count']}`")
               print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
               print(f"- Support gate passed: `{gate['support_passed']}`")
-              print(f"- Result digest: `{record['result_sha256']}`")
           print(f"- Execution-record digest: `{record['record_sha256']}`")
           PY
             then
