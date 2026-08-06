@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/temporary-format-prob4d-observation-timestamps.yml"
+      - "tools/temporary_harden_timestamp_consumer.py"
       - "src/bayesian_phystwin/causal4d_observation_clock_prior.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
@@ -12,6 +13,7 @@ on:
       - "tests/test_prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps_crossrepo.py"
       - "tests/test_prob4d_observation_timestamps_causal4d.py"
+      - "docs/prob4d_observation_timestamps.md"
 
 permissions:
   contents: write
@@ -88,6 +90,12 @@ jobs:
             -e ./_external/causal4d --no-deps
           "${root}/venv/bin/python" -m pip check
 
+      - name: Apply the exact full-record hardening patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/temporary_harden_timestamp_consumer.py
+
       - name: Format permanent source and tests
         shell: bash
         run: |
@@ -138,10 +146,11 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _external
+          rm tools/temporary_harden_timestamp_consumer.py
           rm .github/workflows/temporary-format-prob4d-observation-timestamps.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
-          git commit -m "Format and validate Prob4D observation timestamps"
+          git commit -m "Validate full Causal4D observation clock prior"
           git push origin HEAD:agent/prob4d-observation-timestamp-consumer-v1
