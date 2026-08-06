@@ -100,8 +100,7 @@ jobs:
             "wheel==0.45.1"
           "${TIMESTAMP_VENV}/bin/python" -m pip install -e ".[dev]"
           "${TIMESTAMP_VENV}/bin/python" -m pip install -e ./_external/prob4d
-          "${TIMESTAMP_VENV}/bin/python" -m pip install \
-            -e ./_external/causal4d --no-deps
+          "${TIMESTAMP_VENV}/bin/python" -m pip install -e ./_external/causal4d
           "${TIMESTAMP_VENV}/bin/python" -m pip check
 
       - name: Record exact environment and source identities
