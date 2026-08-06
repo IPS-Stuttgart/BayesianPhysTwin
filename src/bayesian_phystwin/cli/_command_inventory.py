@@ -6,6 +6,7 @@ from typing import Final
 
 STABLE_ROUTES: Final[dict[str, tuple[str, ...]]] = {
     "provider-manifest": ("provider", "manifest"),
+    "ecosystem-validate": ("ecosystem", "validate"),
     "validate-observation-belief": ("observation", "validate"),
     "replay-residuals": ("residual", "replay"),
     "synthetic-benchmark": ("benchmark", "synthetic"),
@@ -68,6 +69,7 @@ DIAGNOSTIC_IDS: Final = frozenset(
 DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "run-manifest": "create or validate a content-addressed run manifest",
     "provider-manifest": "print the Causal4D provider manifest",
+    "ecosystem-validate": "validate installed packages against the ecosystem lock",
     "validate-observation-belief": (
         "validate or score an ObservationBeliefV1 artifact"
     ),
@@ -93,6 +95,7 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
 EXACT_OWNERS: Final[dict[str, str]] = {
     "run-manifest": "run-manifest-v2",
     "provider-manifest": "causal4d-provider-v1",
+    "ecosystem-validate": "three-repository-compatibility-v1",
     "validate-observation-belief": "observation-belief-v1",
     "replay-residuals": "residual-replay-v1",
     "synthetic-benchmark": "synthetic-benchmark-v3",
