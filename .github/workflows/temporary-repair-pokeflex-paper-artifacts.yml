@@ -44,12 +44,18 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev]" "coverage==7.13.3" pyyaml
+          python -m ruff format tests/test_pokeflex_same_object_reporting.py
+          python -m ruff check \
+            src/bayesian_phystwin/pokeflex_same_object_reporting.py \
+            tests/test_pokeflex_same_object_reporting.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_pokeflex_same_object_reporting.py
           python -m coverage erase
           python -m coverage run --branch --source=bayesian_phystwin \
             -m pytest -q -p no:cacheprovider \
             tests/test_pokeflex_same_object_reporting.py
+          python -m coverage report --show-missing \
+            --include=src/bayesian_phystwin/pokeflex_same_object_reporting.py
           python -m coverage json -o pokeflex-reporting-coverage.json
           python - <<'PY'
           import json
@@ -93,7 +99,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm \
+          rm -f \
+            .github/workflows/agent-repair-pr156-ci.yml \
             .github/workflows/temporary-repair-pokeflex-paper-artifacts.yml \
             tools/temporary_repair_pokeflex_paper.py
           rm -f .coverage pokeflex-reporting-coverage.json
@@ -103,9 +110,10 @@ jobs:
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
+            .github/workflows/agent-repair-pr156-ci.yml \
             .github/workflows/tests.yml \
-            .github/workflows/pokeflex-same-object-paper-artifacts.yml \
             .github/workflows/temporary-repair-pokeflex-paper-artifacts.yml \
+            tests/test_pokeflex_same_object_reporting.py \
             tools/temporary_repair_pokeflex_paper.py
           git commit -m "Repair PokeFlex paper artifact validation"
           git push origin HEAD:agent/pokeflex-same-object-paper-artifacts
