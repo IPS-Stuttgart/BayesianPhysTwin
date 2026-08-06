@@ -1,8 +1,8 @@
 name: Temporary finalize prospective SPD v2
 
 on:
-  push:
-    branches: [agent/prospective-spd-bias-aware-v2]
+  pull_request:
+    branches: [main]
     paths:
       - ".github/workflows/temporary-finalize-spd-v2.yml"
       - "scripts/ci/temporary_patch_spd_v2.py"
@@ -11,18 +11,22 @@ permissions:
   contents: write
 
 concurrency:
-  group: temporary-finalize-spd-v2-${{ github.ref }}
+  group: temporary-finalize-spd-v2-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: true
+
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
 
 jobs:
   finalize:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 60
     steps:
       - name: Check out exact branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.SOURCE_SHA }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -115,9 +119,12 @@ jobs:
 
       - name: Commit only permanent product changes
         shell: bash
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
+          test "$(git ls-remote origin "refs/heads/${HEAD_BRANCH}" | cut -f1)" = "${SOURCE_SHA}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
@@ -132,7 +139,7 @@ jobs:
             tests/test_calibration.py
           git diff --cached --check
           git commit -m "Finalize prospective SPD bias-aware belief v2"
-          git push origin HEAD:agent/prospective-spd-bias-aware-v2
+          git push origin "HEAD:${HEAD_BRANCH}"
 
       - name: Remove isolated validation environment
         if: always()
