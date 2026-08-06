@@ -124,9 +124,7 @@ def _query_arrays(
     if covariance_array.ndim == 2:
         covariance_array = covariance_array[None, :, :]
     elif covariance_array.ndim != 3:
-        raise ValueError(
-            f"{name} covariance must have shape (d, d) or (m, d, d)"
-        )
+        raise ValueError(f"{name} covariance must have shape (d, d) or (m, d, d)")
     if residual_array.shape[0] == 0 or residual_array.shape[1] == 0:
         raise ValueError(f"{name} cannot be empty")
     expected_shape = (
@@ -260,9 +258,7 @@ class QueryCalibrationV1:
                 "calibration_group_scores must contain one score per group"
             )
         if not np.all(np.isfinite(scores)) or np.any(scores < 0.0):
-            raise ValueError(
-                "calibration_group_scores must be finite and nonnegative"
-            )
+            raise ValueError("calibration_group_scores must be finite and nonnegative")
 
         if type(self.predictor_frozen_before_scores) is not bool:
             raise ValueError("predictor_frozen_before_scores must be a boolean")
@@ -354,9 +350,7 @@ class QueryCalibrationV1:
             "conformal_quantile": self.conformal_quantile,
             "covariance_scale": self.covariance_scale,
             "isotropic_variance": self.isotropic_variance,
-            "predictor_frozen_before_scores": (
-                self.predictor_frozen_before_scores
-            ),
+            "predictor_frozen_before_scores": (self.predictor_frozen_before_scores),
             "calibration_outcomes_used_for_selection": (
                 self.calibration_outcomes_used_for_selection
             ),
@@ -434,9 +428,7 @@ class QueryCalibrationV1:
             conformal_quantile=values["conformal_quantile"],
             covariance_scale=values["covariance_scale"],
             isotropic_variance=values["isotropic_variance"],
-            predictor_frozen_before_scores=values[
-                "predictor_frozen_before_scores"
-            ],
+            predictor_frozen_before_scores=values["predictor_frozen_before_scores"],
             calibration_outcomes_used_for_selection=values[
                 "calibration_outcomes_used_for_selection"
             ],
@@ -578,7 +570,9 @@ def calibrate_query_covariance(
     flattened = covariance_array.reshape((-1, dimension, dimension))
     calibrated = np.empty_like(flattened)
     with np.errstate(over="ignore", invalid="ignore"):
-        multiplier = validated.conformal_quantile**2
+        multiplier = float(
+            np.square(np.float64(validated.conformal_quantile))
+        )
     if not np.isfinite(multiplier):
         raise ValueError("conformal covariance multiplier must be finite")
     for index, matrix in enumerate(flattened):
@@ -621,7 +615,9 @@ def save_query_calibration(
 
     validated = _validated_calibration(calibration)
     destination = Path(path)
-    if destination.exists() or destination.is_symlink():
+    if destination.is_symlink():
+        raise ValueError("query calibration destination must not be a symbolic link")
+    if destination.exists():
         if not destination.is_file():
             raise ValueError("query calibration destination is not a regular file")
         existing = load_query_calibration(destination)
@@ -649,7 +645,14 @@ def save_query_calibration(
             stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary_name, destination)
+        try:
+            os.link(temporary_name, destination)
+        except FileExistsError:
+            existing = load_query_calibration(destination)
+            if existing.artifact_id != validated.artifact_id:
+                raise ValueError(
+                    "refusing to replace a different query calibration"
+                ) from None
         _fsync_directory(destination.parent)
     finally:
         if os.path.exists(temporary_name):
