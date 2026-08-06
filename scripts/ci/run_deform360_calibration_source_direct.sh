@@ -69,6 +69,14 @@ finalize() {
       --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
       --workload-exit-code "${workload_status}" \
       --confirmation-boundary-exit-code "${boundary_status}" \
+      --source-protocol-json \
+        protocols/deform360_official_hub_calibration_source_v1.json \
+      --stage0-protocol-json \
+        protocols/deform360_official_hub_visuotactile_v1.json \
+      --selection-lock \
+        protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+      --visual-provider-lock \
+        protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
       --plan-json "${EVIDENCE_ROOT}/calibration-source-plan.json" \
       --download-json "${EVIDENCE_ROOT}/calibration-download-manifest.json" \
       --result-json "${EVIDENCE_ROOT}/calibration-source-result.json"
