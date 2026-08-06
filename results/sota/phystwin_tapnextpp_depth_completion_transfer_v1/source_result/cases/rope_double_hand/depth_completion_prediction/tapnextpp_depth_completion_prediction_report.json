@@ -1,0 +1,396 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPDepthCompletionPrediction",
+  "camera_competence": [
+    {
+      "accepted": true,
+      "camera_index": 0,
+      "carrier_offset_m": [
+        -6.958511197829864e-05,
+        -0.00022064064440827091,
+        0.0
+      ],
+      "centered_median_m": 0.0009044812501446444,
+      "centered_p90_m": 0.0018368189984086642,
+      "overlap_fraction": 1.0,
+      "overlap_rows": 75,
+      "penalized_agreement_m": 0.0009044812501446444,
+      "reason": "accepted",
+      "residual_covariance_m2": [
+        [
+          7.345024971799696e-07,
+          1.1415205784849319e-07,
+          6.243880051339516e-07
+        ],
+        [
+          1.1415205784849318e-07,
+          5.370636757801877e-07,
+          8.191011931880961e-08
+        ],
+        [
+          6.243880051339516e-07,
+          8.191011931880961e-08,
+          6.852930266334908e-07
+        ]
+      ]
+    },
+    {
+      "accepted": true,
+      "camera_index": 1,
+      "carrier_offset_m": [
+        0.0008611607623850714,
+        -0.0011153131464834154,
+        -0.0003146619066207723
+      ],
+      "centered_median_m": 0.0018471552176474288,
+      "centered_p90_m": 0.004758929047462512,
+      "overlap_fraction": 0.6133333333333333,
+      "overlap_rows": 46,
+      "penalized_agreement_m": 0.002358604413521207,
+      "reason": "accepted",
+      "residual_covariance_m2": [
+        [
+          2.8304014619093447e-06,
+          -5.265506747845031e-06,
+          -2.506307388719625e-06
+        ],
+        [
+          -5.265506747845031e-06,
+          1.013810288730662e-05,
+          4.745649510221045e-06
+        ],
+        [
+          -2.5063073887196245e-06,
+          4.745649510221045e-06,
+          2.6462989921567173e-06
+        ]
+      ]
+    },
+    {
+      "accepted": true,
+      "camera_index": 2,
+      "carrier_offset_m": [
+        0.0006810339036530944,
+        0.0012170517905156775,
+        -0.0007647712259029049
+      ],
+      "centered_median_m": 0.002047157258901609,
+      "centered_p90_m": 0.004704139929298833,
+      "overlap_fraction": 1.0,
+      "overlap_rows": 75,
+      "penalized_agreement_m": 0.002047157258901609,
+      "reason": "accepted",
+      "residual_covariance_m2": [
+        [
+          3.736944083958216e-06,
+          4.55967328936842e-06,
+          -2.6253676611369337e-06
+        ],
+        [
+          4.559673289368421e-06,
+          6.171872189135347e-06,
+          -3.2389878873117852e-06
+        ],
+        [
+          -2.625367661136934e-06,
+          -3.2389878873117852e-06,
+          2.0101050258912976e-06
+        ]
+      ]
+    }
+  ],
+  "case": "rope_double_hand",
+  "claim_boundary": "Eight-case opened-source provider-transfer study. Manual material identity is used only for query initialization and sealed prefix competence scoring. No future Bayesian-PhysTwin metric, held-v8 artifact, independent target, or confirmation outcome is part of this protocol.",
+  "decision": {
+    "accepted": true,
+    "reason": "completed",
+    "selected_camera_local_index": 0,
+    "selected_camera_released_index": 0
+  },
+  "information_boundary": {
+    "correlated_camera_precision_accumulation": false,
+    "future_rgbd_read": false,
+    "held_v8_accessed": false,
+    "manual_future_read": false,
+    "physical_state_innovation_used_for_reliability": false,
+    "strict_carrier_rows_used_for_camera_competence_only": true,
+    "withheld_prefix_read": false
+  },
+  "inputs": {
+    "calibration_sha256": "da17f836de0c60bb38c48bde515d5b1dcc75a67525f8ee7ee71f505f55d9f533",
+    "depth_frame_sha256": {
+      "0": [
+        {
+          "depth_sha256": "0b50b30d13ce3d53293ac6499e2c9e76296aef9b28948a149886ce0481f495b7",
+          "frame": 22
+        },
+        {
+          "depth_sha256": "90494b7035171890ec8e391383b60b04e96f12e303f87f9698b5c0ad1c9cc04f",
+          "frame": 23
+        },
+        {
+          "depth_sha256": "e389780a9d5db7744276fc894c3678c0cb27b07d745e322b7ca0a6b89d9b3783",
+          "frame": 24
+        },
+        {
+          "depth_sha256": "819583d7ffd1407b41e23743cfa9b0aed2435caf565ba3560218a4f289492f0b",
+          "frame": 25
+        },
+        {
+          "depth_sha256": "cd454cb6e8e6b6adf9b0a93733759f11e41c5a3681c055e9985c58131d04bb84",
+          "frame": 26
+        },
+        {
+          "depth_sha256": "f0b42f15b2566f8a55fb55c6bad2bf1d61859d2f37b36ebaadee0412720d6875",
+          "frame": 27
+        },
+        {
+          "depth_sha256": "a4d88707eb9052c00807048e9607860ce3be590c1114d36e684b5cf7bec04eaa",
+          "frame": 28
+        },
+        {
+          "depth_sha256": "0df68ce275b91afa169a6ea078bc966825ba49a14dd2daac5bef24420ac8a4b3",
+          "frame": 29
+        },
+        {
+          "depth_sha256": "ee1303a368d03c6ecbf5adee213a765cec7433a1420e6d115ef3a5b198f0db49",
+          "frame": 30
+        },
+        {
+          "depth_sha256": "558c094d3742758040b86519afff99b879472566c5944c8ef9c12175077193ed",
+          "frame": 31
+        },
+        {
+          "depth_sha256": "4afaf985b2dadff9ae69e130cf1bfe09af72d41c864b0f10c9ff82d3fe4e16d5",
+          "frame": 32
+        },
+        {
+          "depth_sha256": "64d0324ae2adb86940003ef8a85a872dd3a7e1b092b816365fcd5d78fe40531d",
+          "frame": 33
+        },
+        {
+          "depth_sha256": "949f9ee723808003b016dec044ed5f047062d1d871369b4ce4bb5079c7519684",
+          "frame": 34
+        },
+        {
+          "depth_sha256": "93c14a8b8071800d8b5b3188feb3ed3806e8c92b51b6bc54760f452de1814664",
+          "frame": 35
+        },
+        {
+          "depth_sha256": "424989a42ed73379448ea85ae5a3c447a1a7a4f196f8b9990d2708ac3b86b097",
+          "frame": 36
+        },
+        {
+          "depth_sha256": "5125758e02787fafbfb176210a148e4a41f027f8b70be9e54e566f30802c5e06",
+          "frame": 37
+        },
+        {
+          "depth_sha256": "212836b3f64cbfb06a858dfad3dd224acda4333bb3e88bc151067bb72a8d4549",
+          "frame": 38
+        },
+        {
+          "depth_sha256": "dbfa948d9387a586f3bc445a367e635e8a5985f4b76825335a6a48d5c4280c84",
+          "frame": 39
+        },
+        {
+          "depth_sha256": "5735bb5116fbdb7cce4b70c39b9489165966f8b84df23ad9eb80d870150267fd",
+          "frame": 40
+        },
+        {
+          "depth_sha256": "74eb2ffe92463d8a68dd61e37eca12130a60f98f4c001227e83be0c6b128ba10",
+          "frame": 41
+        }
+      ],
+      "1": [
+        {
+          "depth_sha256": "d71b2cb9d679af82dda0db672d7ec73d4c058d12c788e0ad4e0d023f68f25df0",
+          "frame": 22
+        },
+        {
+          "depth_sha256": "8ea027ff7c9c5728b88ca69cec9b685e8920f66cd88cc1d8a26e7051b78577ca",
+          "frame": 23
+        },
+        {
+          "depth_sha256": "cf34ff74a2b494f7ead54da3e2178170817b02cdf36a336d5dac9675bb4ebf53",
+          "frame": 24
+        },
+        {
+          "depth_sha256": "59d4ab7feb980f2ed56279cd2e26172fdedde6b5107879d59997f132ae2569c1",
+          "frame": 25
+        },
+        {
+          "depth_sha256": "3a21707148acfaee419ec84caacbc257d4e5740020a8afc648b735eb3950872f",
+          "frame": 26
+        },
+        {
+          "depth_sha256": "11a3491b769767611e5c4dac0535b00cf9d5bafba4b4a345281138160618744a",
+          "frame": 27
+        },
+        {
+          "depth_sha256": "30bf41fcad48f31cb336e1826bbde52c9fa46c21975129b5bec5bdcbc1ed9b4d",
+          "frame": 28
+        },
+        {
+          "depth_sha256": "2f6f76aabc56eee6b48ceee2ede25b0d651309ffc67c761dba6441e362b3c8be",
+          "frame": 29
+        },
+        {
+          "depth_sha256": "449ddf681247928f7004dbf3b0c8c0e0fa3adb4160d17151f9546888cd01b3fc",
+          "frame": 30
+        },
+        {
+          "depth_sha256": "5d447fd8b1d52de10519a8a51ae7f2481faaf292c45102052500bfcb20d9d837",
+          "frame": 31
+        },
+        {
+          "depth_sha256": "3589ba54d0fd1970b96716f78beb07a0948f354d398f897263906169237bccd4",
+          "frame": 32
+        },
+        {
+          "depth_sha256": "04739cb5408195ab2e2b786bcb9e7da09bc9f44cf10b4ee741bb39a7a7e1c7e4",
+          "frame": 33
+        },
+        {
+          "depth_sha256": "e777afeff3d3b81e153c44909c2c39193c5041a382ba622866246820fb4e1235",
+          "frame": 34
+        },
+        {
+          "depth_sha256": "c71dddec365947bc8e5d990b620fb32a3da19e529554dc1f18630d87bc9e734a",
+          "frame": 35
+        },
+        {
+          "depth_sha256": "681b669b257778b4891774edcf76a1d2920bfcd043d354ac3d7777441d67b749",
+          "frame": 36
+        },
+        {
+          "depth_sha256": "5fd0cab320226753220914487b143f2674e67fa99c8d239fe3e23e2eee5dadc8",
+          "frame": 37
+        },
+        {
+          "depth_sha256": "bac5332b0beeef85526b8ceaae48677d9e9545d63a20071e35318123116e0b68",
+          "frame": 38
+        },
+        {
+          "depth_sha256": "4124684bfd413ef2a0ac4473e22db3209f6a21d07d2686cc7a49bdea1b0869cd",
+          "frame": 39
+        },
+        {
+          "depth_sha256": "d6cf4a0008432097cf09c4b15bb0f1d832a325b422d7c0e6fea82be63592dc61",
+          "frame": 40
+        },
+        {
+          "depth_sha256": "d9f6ec1b20dea2fd2958bbd34e756aac0cb0664516269fc27d7bba8be95e1990",
+          "frame": 41
+        }
+      ],
+      "2": [
+        {
+          "depth_sha256": "960b05616d008eebd069635abb9071b61a11901e0b52bdb800c769a666806d6a",
+          "frame": 22
+        },
+        {
+          "depth_sha256": "a3d513c8dab23b6829eb2451dfab601ea189474d171335c33a7c4349a9000091",
+          "frame": 23
+        },
+        {
+          "depth_sha256": "d38deb465bcb0345f0d3d806f0bcd13aea7111a08a8e948500b88301266273da",
+          "frame": 24
+        },
+        {
+          "depth_sha256": "866262852bed5fb69f7af25d856e9d24fc5e2ef5c90719bb6cb21e3060aaae3e",
+          "frame": 25
+        },
+        {
+          "depth_sha256": "0039ceb284f6ce8f4341a443533670cf275fc59b0a994c7964ac5389b5c8065f",
+          "frame": 26
+        },
+        {
+          "depth_sha256": "ca73c5925b19395d49d9f54e58f0deb136da80119783988e3c29c22b32f88976",
+          "frame": 27
+        },
+        {
+          "depth_sha256": "9856c97551bea0b285effee6a2db3a575dc183c5879606d8d4722806d86fdd5c",
+          "frame": 28
+        },
+        {
+          "depth_sha256": "31d1994f385171c018175333561f9a7d91da6a4bb2b46e1b6dd8dca0e77debee",
+          "frame": 29
+        },
+        {
+          "depth_sha256": "8060e1d7bb0563f8d82f9b4f034c3cad40e26f0b803f7a5d5593f576632009c6",
+          "frame": 30
+        },
+        {
+          "depth_sha256": "7020529f3bf8a817961f94227367ada7fafdbd3575ac66febc0997a782f24d8b",
+          "frame": 31
+        },
+        {
+          "depth_sha256": "06ed9b69105a1667d38420986b57906d1dd319f326151acc72d7536fc97ed2e9",
+          "frame": 32
+        },
+        {
+          "depth_sha256": "b73d747bc71bba41f08bcb52852f5368ea56982ef014ac6d8957f04d89d27d15",
+          "frame": 33
+        },
+        {
+          "depth_sha256": "f1434bebb0f94e22e91e72db810ee8a4d4b76144e35f978ee30e0dca6a3dbd1b",
+          "frame": 34
+        },
+        {
+          "depth_sha256": "0a7f669f54d3bb2b4b0916bd5693e190216b0b08eb125450e497f2f0140fe341",
+          "frame": 35
+        },
+        {
+          "depth_sha256": "37bff0c1f06031fd10074f0cbae6d40022b43c01732b617902eca8e6d10e2eef",
+          "frame": 36
+        },
+        {
+          "depth_sha256": "ef06c9fe2f259b31cb20d0888775695e67442611050efc45a4520e854edc62af",
+          "frame": 37
+        },
+        {
+          "depth_sha256": "00a19159331365a8126667549182329aa1b3ff75b10a1f8ede39baf3cc8ea593",
+          "frame": 38
+        },
+        {
+          "depth_sha256": "d36824618126f6851d99d644edd3862cdce0a13a475ddc6d1cde56285016e229",
+          "frame": 39
+        },
+        {
+          "depth_sha256": "1ef4f83a653fa8db89fa0f4e8f685e48a3707e7815b9fac4235f07d4e3442a0c",
+          "frame": 40
+        },
+        {
+          "depth_sha256": "e73156d64740815e4d195b393495f4fc72c5427a2e3d57d49e550db0ac5beb57",
+          "frame": 41
+        }
+      ]
+    },
+    "metadata_sha256": "181c34b1441a0d73f48ca6fc44a10092040ebcbbbac425416139bde71dd4efb8",
+    "prediction_input_sha256": "d519872e9a0990ec6c4331e2afdd2887a277ae142647398f9c6469b3e8856551",
+    "protocol_sha256": "84ddb89f4590e014a27db84adda6588926ac6ad142d3fd2f752f101f5ff831ee",
+    "strict_prediction_report_sha256": "abfc260f59ed4531d098e6f22abd8af9ffb0c32564ba6d0ffb2ef8971e1e72bb",
+    "strict_prediction_seal_sha256": "1dba93fc9fc9eb17555c40b809db7bf2472b76f9a8043e1d078d7ae9e70bf674",
+    "strict_prediction_sha256": "e4c1d6c5de985c3b2c08d8ba8fcd3e8a80c3be31b813a84456f61a5fd9da0696"
+  },
+  "method_config": {
+    "depth_sensor_std_m": 0.003,
+    "mask_patch_radius_px": 2,
+    "maximum_local_depth_mad_m": 0.02,
+    "maximum_penalized_agreement_m": 0.005,
+    "minimum_carrier_overlap_fraction": 0.25,
+    "minimum_carrier_overlap_rows": 16,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_noise_std_px": 1.5,
+    "shared_bias_std_m": 0.005,
+    "visibility_threshold": 0.5
+  },
+  "protocol_id": "phystwin-tapnextpp-prefix-competence-v1",
+  "result_sha256": "e2cef0adb032a64751031d3d6300ba361e39d4b6fbd20551f92dbf7b84920c52",
+  "schema_version": 1,
+  "support": {
+    "added_rows": 5,
+    "completed_rows": 80,
+    "strict_rows": 75,
+    "total_rows": 80
+  }
+}
