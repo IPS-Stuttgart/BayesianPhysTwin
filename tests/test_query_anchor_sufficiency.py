@@ -197,6 +197,88 @@ def test_planner_diagnostics_cannot_be_silently_repaired(
 
 
 @pytest.mark.parametrize(
+    ("final_trace", "total_cost", "message"),
+    [
+        (0.5, 0.0, "zero-selection final trace"),
+        (1.0, 1.0, "zero-selection plan"),
+    ],
+)
+def test_zero_selection_diagnostics_must_describe_no_change(
+    monkeypatch: pytest.MonkeyPatch,
+    final_trace: float,
+    total_cost: float,
+    message: str,
+) -> None:
+    prior, query, state, nuisance, covariance = _problem()
+    selection = SimpleNamespace(
+        selected_indices=(),
+        initial_query_variance_trace=1.0,
+        query_trace_reductions=np.asarray([], dtype=np.float64),
+        final_query_variance_trace=final_trace,
+        selected_costs=np.asarray([], dtype=np.float64),
+        total_cost=total_cost,
+    )
+    monkeypatch.setattr(
+        "bayesian_phystwin.query_anchor_sufficiency.greedy_query_aware_selection",
+        lambda *_args, **_kwargs: selection,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        evaluate_query_anchor_sufficiency(
+            prior,
+            query,
+            state,
+            nuisance,
+            covariance,
+            precision_multipliers=[1.0],
+            maximum_count=1,
+        )
+
+
+@pytest.mark.parametrize(
+    ("selected", "maximum_count", "message"),
+    [
+        ((0, 1), 1, "more anchors"),
+        ((3,), 1, "invalid or duplicate"),
+        ((0, 0), 2, "invalid or duplicate"),
+    ],
+)
+def test_selected_candidate_diagnostics_respect_inventory_and_budget(
+    monkeypatch: pytest.MonkeyPatch,
+    selected: tuple[int, ...],
+    maximum_count: int,
+    message: str,
+) -> None:
+    prior, query, state, nuisance, covariance = _problem()
+    count = len(selected)
+    reductions = np.full(count, 0.1, dtype=np.float64)
+    selected_costs = np.ones(count, dtype=np.float64)
+    selection = SimpleNamespace(
+        selected_indices=selected,
+        initial_query_variance_trace=1.0,
+        query_trace_reductions=reductions,
+        final_query_variance_trace=1.0 - float(np.sum(reductions)),
+        selected_costs=selected_costs,
+        total_cost=float(np.sum(selected_costs)),
+    )
+    monkeypatch.setattr(
+        "bayesian_phystwin.query_anchor_sufficiency.greedy_query_aware_selection",
+        lambda *_args, **_kwargs: selection,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        evaluate_query_anchor_sufficiency(
+            prior,
+            query,
+            state,
+            nuisance,
+            covariance,
+            precision_multipliers=[1.0],
+            maximum_count=maximum_count,
+        )
+
+
+@pytest.mark.parametrize(
     ("kwargs", "message"),
     [
         ({"precision_multipliers": [1.0, 1.0]}, "strictly increasing"),
