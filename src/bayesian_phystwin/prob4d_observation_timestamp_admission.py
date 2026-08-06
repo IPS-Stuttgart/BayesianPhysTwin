@@ -13,7 +13,10 @@ of the sidecar during admission.
 
 from __future__ import annotations
 
+import errno
 import hashlib
+import os
+import stat
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -38,16 +41,40 @@ _CLAIM_METADATA_FIELDS = frozenset(
 
 
 def _ordinary_snapshot(path: str | Path) -> tuple[Path, str]:
+    """Hash one regular file through a no-follow descriptor when available."""
+
     artifact_path = Path(path)
-    if artifact_path.is_symlink():
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    if not nofollow and artifact_path.is_symlink():
         raise ValueError("Prob4D timestamp lineage path must not be a symlink")
+    flags = os.O_RDONLY | nofollow | getattr(os, "O_BINARY", 0)
     try:
-        payload = artifact_path.read_bytes()
+        descriptor = os.open(artifact_path, flags)
+    except OSError as error:
+        if error.errno == errno.ELOOP or artifact_path.is_symlink():
+            raise ValueError(
+                "Prob4D timestamp lineage path must not be a symlink"
+            ) from error
+        raise ValueError("Prob4D timestamp lineage is unreadable") from error
+
+    digest = hashlib.sha256()
+    try:
+        information = os.fstat(descriptor)
+        if not stat.S_ISREG(information.st_mode):
+            raise ValueError("Prob4D timestamp lineage must be an ordinary file")
+        while True:
+            block = os.read(descriptor, 1024 * 1024)
+            if not block:
+                break
+            digest.update(block)
     except OSError as error:
         raise ValueError("Prob4D timestamp lineage is unreadable") from error
-    if not artifact_path.is_file():
-        raise ValueError("Prob4D timestamp lineage must be an ordinary file")
-    return artifact_path, hashlib.sha256(payload).hexdigest()
+    finally:
+        os.close(descriptor)
+
+    if not nofollow and artifact_path.is_symlink():
+        raise ValueError("Prob4D timestamp lineage path must not be a symlink")
+    return artifact_path, digest.hexdigest()
 
 
 def load_claim_bearing_prob4d_observation_timestamp_binding(
