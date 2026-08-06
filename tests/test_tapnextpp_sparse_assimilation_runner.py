@@ -217,3 +217,46 @@ def test_evidence_vectors_use_null_for_unsupported_rows() -> None:
     )
 
     assert evaluator._json_vector(np.array([1.0, np.nan])) == [1.0, None]
+
+
+def test_postopen_audit_detects_material_identity_mismatch(tmp_path: Path) -> None:
+    runner = _load_script(
+        "run_phystwin_tapnextpp_sparse_assimilation.py",
+        "tapnextpp_sparse_assimilation_runner_association_audit_test",
+    )
+    audit = _load_script(
+        "audit_phystwin_tapnextpp_material_association_postopen.py",
+        "tapnextpp_sparse_assimilation_association_audit_test",
+    )
+    protocol, manifest, prediction_input, physical, withheld = _artifacts(
+        tmp_path,
+        provider_gate_passed=True,
+    )
+    case_root = tmp_path / "cases" / "synthetic_case"
+    prediction = case_root / "prediction"
+    runner.predict_case(
+        protocol,
+        manifest,
+        "synthetic_case",
+        prediction_input,
+        physical,
+        prediction,
+    )
+
+    outcome = case_root / "withheld_outcome" / audit.OUTCOME_FILENAME
+    outcome.parent.mkdir(parents=True)
+    with np.load(withheld, allow_pickle=False) as stored:
+        values = {name: stored[name] for name in stored.files}
+    with np.load(prediction / runner.PREDICTION_FILENAME, allow_pickle=False) as stored:
+        frame_zero = np.asarray(stored["physical_frame_zero_m"])
+    manual_frame_zero = np.asarray(values["manual_track_frame_zero_m"]).copy()
+    manual_frame_zero[0] = frame_zero[-1]
+    values["manual_track_frame_zero_m"] = manual_frame_zero
+    np.savez_compressed(outcome, **values)
+
+    result = audit._case_audit(case_root, "synthetic_case")
+
+    assert result["scored_identity_count"] == 1
+    assert result["exact_match_count"] == 0
+    assert result["identities"][0]["benchmark_frame_zero_node"] == len(frame_zero) - 1
+    assert not result["identities"][0]["exact_node_match"]

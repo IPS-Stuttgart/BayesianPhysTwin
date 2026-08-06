@@ -1,0 +1,145 @@
+{
+  "arms": {
+    "dense_persistence": {
+      "all_track_coverage_90": 0.981194707705671,
+      "all_track_nees": 1.1670666881446563,
+      "chamfer_distance_m": 0.008004339959464866,
+      "hidden_future_frame_support": 0.9807692307692308,
+      "hidden_track_error_m": 0.01591452307357991,
+      "late_hidden_track_error_m": 0.01930797079115191,
+      "late_track_error_m": 0.019591145999903376,
+      "observed_track_error_m": 0.016174943344525978,
+      "track_error_m": 0.016094392690440447
+    },
+    "physical": {
+      "all_track_coverage_90": 0.310995582317968,
+      "all_track_nees": 24.115711689403312,
+      "chamfer_distance_m": 0.011430808449922732,
+      "hidden_future_frame_support": 0.9807692307692308,
+      "hidden_track_error_m": 0.02000762540734544,
+      "late_hidden_track_error_m": 0.022295152770140842,
+      "late_track_error_m": 0.02283656916869204,
+      "observed_track_error_m": 0.02183544326922489,
+      "track_error_m": 0.020664211525609936
+    },
+    "tapnext_direct": {
+      "all_track_coverage_90": 0.9850335001150219,
+      "all_track_nees": 1.0856476725406508,
+      "chamfer_distance_m": 0.008003226971173932,
+      "hidden_future_frame_support": 0.9807692307692308,
+      "hidden_track_error_m": 0.01591452307357991,
+      "late_hidden_track_error_m": 0.01930797079115191,
+      "late_track_error_m": 0.019667927287179345,
+      "observed_track_error_m": 0.016320425106715223,
+      "track_error_m": 0.016158868744567324
+    },
+    "tapnext_graph": {
+      "all_track_coverage_90": 0.9864555776014109,
+      "all_track_nees": 0.6591797675241067,
+      "chamfer_distance_m": 0.009277885704811539,
+      "hidden_future_frame_support": 0.9807692307692308,
+      "hidden_track_error_m": 0.017783473188565064,
+      "late_hidden_track_error_m": 0.021145760542240974,
+      "late_track_error_m": 0.02077374896496851,
+      "observed_track_error_m": 0.017220291404344227,
+      "track_error_m": 0.017571020699510706
+    }
+  },
+  "artifact_kind": "PhysTwinTAPNextPPSparseAssimilationSourceSummary",
+  "case_count": 8,
+  "case_dispositions": [
+    {
+      "case": "double_lift_cloth_1",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "38789791dbceaef0de626b5d47065154be12bf4c1ea365c7afae9e032a372dda",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "double_stretch_sloth",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "aa967acf494589ae07a1048daa5bc54c5b3b85323f1b585beb4573ecd706d13d",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "double_lift_zebra",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "71518ec63e866a2b9631ab8e8c4ff9776593f66ecadc0d11fe19e6b6310d6775",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "rope_double_hand",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "56490a5ed41ee808e312ee2003d788c6562034993b601208b7fe1f7daffd28cf",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_lift_rope",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "31c2561fdf0c9a5c057aeea4521fb2c440bc26f7b38b47262e4fd46009b622ab",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_push_rope_4",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": false,
+      "result_sha256": "520f5de5aa2256aedd333b89305fd8e51bdcf22b9fddd9c090950b33bb53a563",
+      "sparse_update_accepted": false
+    },
+    {
+      "case": "single_lift_dinosor",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "dd9aa779f997439a89b7978c95a64949ad17ecdae8d8c5068f93422bc1e76d06",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "weird_package",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "bb139cc6d8feb5fa76fd3928521caa38f657556302105c6292cedef8e69b8bdc",
+      "sparse_update_accepted": true
+    }
+  ],
+  "claim_boundary": "Eight-case opened-source Bayesian-PhysTwin assimilation study. It tests whether a sealed TAPNext++ RGB-D provider adds value beyond fixed dense persistence. Manual material identity is used only at the query frame and for post-seal source scoring. This is not independent confirmation, a fair open-loop SOTA claim, or authority to inspect held-v8.",
+  "decision": "stop-before-independent-evaluation",
+  "gate_passed": false,
+  "gates": {
+    "all_track_gain": false,
+    "chamfer_gain": false,
+    "coverage_floor": true,
+    "coverage_not_farther_from_nominal": false,
+    "failed_provider_exact_fallback": true,
+    "hidden_future_support": true,
+    "hidden_track_nonregression": false,
+    "joint_case_nonregression": false,
+    "observed_track_gain": false
+  },
+  "information_boundary": {
+    "cohort": "eight fixed previously opened source cases",
+    "failed_cases_replaced": false,
+    "future_metrics_opened_after_per_case_prediction_seals": true,
+    "held_v8_accessed": false,
+    "independent_target_opened": false
+  },
+  "inputs": {
+    "protocol_sha256": "303654f662fb0852b2c02dcfe5d7235992a252c3bc3b8798c8e05c80e216b0c0",
+    "source_manifest_result_sha256": "881e725d7728bf54e4323240f7bf1827415a36e82f59820ab16dd333b4114dac",
+    "source_manifest_sha256": "db27105334854a8ffa40d7b370f539f53e1dbe740fcd6216435ef62cc09bccb2"
+  },
+  "joint_case_nonregression_count": 2,
+  "protocol_id": "phystwin-tapnextpp-sparse-assimilation-source-v1",
+  "result_sha256": "dc5361e047438050c412254fa288698b41a6272e25617603c5e4a9243ba0b022",
+  "schema_version": 1,
+  "tapnext_graph_incremental_gain_over_dense_persistence": {
+    "chamfer_distance_m": -0.15910690347937395,
+    "hidden_track_error_m": -0.11743676554705207,
+    "late_track_error_m": -0.06036415455588795,
+    "observed_track_error_m": -0.0646276180109171,
+    "track_error_m": -0.09174797940324453
+  }
+}
