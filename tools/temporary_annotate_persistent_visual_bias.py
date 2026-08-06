@@ -16,17 +16,24 @@ def main() -> None:
     source = SOURCE_PATH.read_text(encoding="utf-8")
     source = replace_once(
         source,
-        "    provider_design = np.zeros(\n",
-        "    provider_design: np.ndarray = np.zeros(\n",
+        "    provider_design = np.zeros((3, latent_dimension), dtype=np.float64)\n",
+        (
+            "    provider_design: np.ndarray = np.zeros(\n"
+            "        (3, latent_dimension), dtype=np.float64\n"
+            "    )\n"
+        ),
         name="provider_design annotation",
     )
     source = replace_once(
         source,
-        "    if physical_offset is None:\n        offset = np.zeros(\n",
+        (
+            "    if physical_offset is None:\n"
+            "        offset = np.zeros(physical_dimension, dtype=np.float64)\n"
+        ),
         (
             "    offset: np.ndarray\n"
             "    if physical_offset is None:\n"
-            "        offset = np.zeros(\n"
+            "        offset = np.zeros(physical_dimension, dtype=np.float64)\n"
         ),
         name="physical_offset annotation",
     )
