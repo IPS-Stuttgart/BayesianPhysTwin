@@ -69,6 +69,8 @@ finalize() {
       --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
       --workload-exit-code "${workload_status}" \
       --confirmation-boundary-exit-code "${boundary_status}" \
+      --plan-json "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+      --download-json "${EVIDENCE_ROOT}/calibration-download-manifest.json" \
       --result-json "${EVIDENCE_ROOT}/calibration-source-result.json"
     record_status=$?
   fi
