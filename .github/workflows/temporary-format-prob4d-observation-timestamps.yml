@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: temporary-format-prob4d-observation-timestamps-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   PROB4D_TIMESTAMP_PRODUCER_REVISION: 34b74302383ecf91c46c4d7a32e2bd22260ad7ed
