@@ -91,6 +91,25 @@ run = select_persistent_visual_bias_candidate(
 )
 ```
 
+Before applying either the accepted or rejected decision, the selection
+boundary independently revalidates the candidate against the live run. It
+requires:
+
+- the exact active visual-bias stream update, factor-stream update, and
+  observation-binding IDs;
+- the current prior-belief ID and update index;
+- the same stream binding, visual-bias model, physical state domain, physical
+  dimension, bias dimension, and covariance root in the proposed posterior;
+- posterior lineage that names the same update index and physical-linearization
+  artifact as the candidate;
+- a posterior covariance that is a positive-semidefinite measurement
+  contraction of the prior covariance; and
+- an information-gain diagnostic that exactly matches the prior and posterior
+  covariance determinants within the declared numerical tolerance.
+
+These checks prevent a directly constructed or tampered candidate from reaching
+the guard merely because it carries a valid-looking candidate ID.
+
 When accepted, the complete joint posterior becomes the next belief. When
 rejected, the selected belief is the exact prior belief object. Neither the
 physical state nor the persistent bias state learns from a rejected update.
@@ -154,7 +173,8 @@ run = predict_persistent_visual_bias_run(
 
 The run rejects stale candidates, reordered or replayed stream members, a
 changed stream binding, a changed visual-bias model, a changed physical state
-domain, and a broken belief-event chain.
+domain, a changed covariance root, forged member bindings, inconsistent
+posterior lineage, and a broken belief-event chain.
 
 ## Compatibility boundary
 
@@ -183,8 +203,18 @@ Focused regressions cover:
   cross-covariance;
 - a negative control showing overconfidence when the bias prior is
   reinstantiated;
-- matrix-free operation without constructing the complete global design; and
+- matrix-free operation without constructing the complete global design;
+- forged factor-update and observation-binding rejection;
+- posterior state-domain, covariance-root, and lineage mismatch rejection;
+- noncontracting covariance and misreported information-gain rejection;
+- irreversible NumPy immutability for retained and derived belief arrays; and
 - content-identity tamper detection.
+
+The authoritative workflow is read-only, checks out the exact reviewed
+BayesianPhysTwin head and merged Prob4D producer revision
+`e37c3d50d4a07a2c3760389e79d59b0ac9402dc4`, installs both packages into a
+fresh Python environment, and runs focused plus adjacent producer-consumer
+contracts before verifying a clean repository tree.
 
 These are solver and contract properties. They do not establish real Prob4D
 provider competence, complete camera-bias coverage, calibrated target
