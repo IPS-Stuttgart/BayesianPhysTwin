@@ -1,0 +1,196 @@
+name: Temporary exact-head validation for PR 187
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-validate-pr187-exact-head.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: temporary-validate-pr187-e0ee39a
+  cancel-in-progress: true
+
+env:
+  TARGET_SHA: e0ee39a779c0d467171fd2af425724b0d1f14dcf
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  validate:
+    name: Full exact-head validation on Python 3.10, 3.12, and 3.14
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out the immutable reviewed head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Verify exact checkout and main ancestry context
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git rev-parse origin/main > /tmp/pr187-base-sha.txt
+          git merge-base origin/main HEAD > /tmp/pr187-merge-base-sha.txt
+
+      - name: Provision Python 3.10
+        id: py310
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+          update-environment: false
+
+      - name: Provision Python 3.12
+        id: py312
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          update-environment: false
+
+      - name: Provision Python 3.14
+        id: py314
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          update-environment: false
+
+      - name: Create isolated environments
+        shell: bash
+        env:
+          PYTHON_310: ${{ steps.py310.outputs.python-path }}
+          PYTHON_312: ${{ steps.py312.outputs.python-path }}
+          PYTHON_314: ${{ steps.py314.outputs.python-path }}
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/pr187-exact-head-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          mkdir -p "${root}/evidence"
+          {
+            echo "VALIDATION_ROOT=${root}"
+            echo "VENV_310=${root}/venv310"
+            echo "VENV_312=${root}/venv312"
+            echo "VENV_314=${root}/venv314"
+          } >> "${GITHUB_ENV}"
+          "${PYTHON_310}" -m venv "${root}/venv310"
+          "${PYTHON_312}" -m venv "${root}/venv312"
+          "${PYTHON_314}" -m venv "${root}/venv314"
+
+      - name: Install exact source on Python 3.10
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_310}/bin/python" -m pip install \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+          "${VENV_310}/bin/python" -m pip install -e ".[dev,graph,vision]"
+          "${VENV_310}/bin/python" -m pip check
+
+      - name: Run full suite on Python 3.10
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_310}/bin/python" -m pytest -q --tb=short -p no:cacheprovider \
+            | tee "${VALIDATION_ROOT}/evidence/pytest-3.10.txt"
+
+      - name: Install exact source on Python 3.12
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_312}/bin/python" -m pip install \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+          "${VENV_312}/bin/python" -m pip install -e ".[dev,graph,vision]"
+          "${VENV_312}/bin/python" -m pip check
+
+      - name: Run full quality and full suite on Python 3.12
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_312}/bin/python" -m ruff check .
+          "${VENV_312}/bin/python" -m ruff format --check .
+          "${VENV_312}/bin/python" -m mypy src/bayesian_phystwin
+          "${VENV_312}/bin/python" tools/quality/changed_python_quality.py \
+            --base "$(cat /tmp/pr187-base-sha.txt)" \
+            --head "${TARGET_SHA}" \
+            | tee "${VALIDATION_ROOT}/evidence/quality-ratchet.txt"
+          "${VENV_312}/bin/python" -m pytest -q --tb=short -p no:cacheprovider \
+            | tee "${VALIDATION_ROOT}/evidence/pytest-3.12.txt"
+          "${VENV_312}/bin/python" -m compileall -q src tests
+
+      - name: Build and smoke-test the wheel on Python 3.12
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${VALIDATION_ROOT}/wheelhouse"
+          "${VENV_312}/bin/python" -m pip wheel --no-deps . \
+            --wheel-dir "${VALIDATION_ROOT}/wheelhouse"
+          wheel="$(find "${VALIDATION_ROOT}/wheelhouse" -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "${wheel}"
+          "${VENV_312}/bin/python" -m pip install --force-reinstall --no-deps "${wheel}"
+          "${VENV_312}/bin/python" -m pip check
+          "${VENV_312}/bin/bpt" --help > "${VALIDATION_ROOT}/evidence/bpt-help.txt"
+          sha256sum "${wheel}" > "${VALIDATION_ROOT}/evidence/wheel.sha256"
+
+      - name: Install exact source on Python 3.14
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_314}/bin/python" -m pip install \
+            "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+          "${VENV_314}/bin/python" -m pip install -e ".[dev,graph,vision]"
+          "${VENV_314}/bin/python" -m pip check
+
+      - name: Run full suite on Python 3.14
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV_314}/bin/python" -m pytest -q --tb=short -p no:cacheprovider \
+            | tee "${VALIDATION_ROOT}/evidence/pytest-3.14.txt"
+
+      - name: Record immutable validation environment
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${VALIDATION_ROOT}/evidence"
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "target_sha=${TARGET_SHA}"
+            echo "checked_out_sha=$(git rev-parse HEAD)"
+            echo "base_sha=$(cat /tmp/pr187-base-sha.txt)"
+            echo "merge_base_sha=$(cat /tmp/pr187-merge-base-sha.txt)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            "${VENV_310}/bin/python" --version
+            "${VENV_312}/bin/python" --version
+            "${VENV_314}/bin/python" --version
+          } > "${VALIDATION_ROOT}/evidence/environment.txt"
+
+      - name: Verify read-only exact tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact exact-head evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pr187-exact-head-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.VALIDATION_ROOT }}/evidence
+          if-no-files-found: warn
+          retention-days: 30
