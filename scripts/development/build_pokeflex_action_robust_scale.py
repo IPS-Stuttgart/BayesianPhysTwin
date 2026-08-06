@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Build a repeated-action maximin PokeFlex scale calibration."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+
+def _repository_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+REPOSITORY_ROOT = _repository_root()
+sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
+
+from bayesian_phystwin.pokeflex_action_robust_scale import (  # noqa: E402
+    build_action_robust_scale_calibration,
+    validate_action_robust_scale_calibration,
+)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("first_source_audit", type=Path)
+    parser.add_argument("second_source_audit", type=Path)
+    parser.add_argument("output", type=Path)
+    args = parser.parse_args()
+
+    if args.output.exists():
+        raise FileExistsError(f"refusing to replace calibration: {args.output}")
+    first = json.loads(args.first_source_audit.read_text(encoding="utf-8"))
+    second = json.loads(args.second_source_audit.read_text(encoding="utf-8"))
+    calibration = build_action_robust_scale_calibration(first, second)
+    validate_action_robust_scale_calibration(
+        calibration,
+        bind_registered_digest=False,
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(calibration, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(
+        json.dumps(
+            {
+                "calibration_sha256": calibration["calibration_sha256"],
+                "source_gate": calibration["source_gate"],
+                "multipliers": {
+                    name: row["multiplier"]
+                    for name, row in calibration["objects"].items()
+                },
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()

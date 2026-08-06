@@ -1,0 +1,154 @@
+{
+  "artifact_kind": "PokeFlexInstanceScaleCalibration",
+  "base_effective_scale": 0.125,
+  "calibration_id": "pokeflex-instance-scale-calibration-v2",
+  "calibration_sha256": "74c2f5fe6b57215fdebedd18cc31cb1b4bca010aac905b1c91f185fb34b10390",
+  "candidate_multipliers": [
+    0.5,
+    1.0,
+    1.5,
+    2.0
+  ],
+  "claim_boundary": "This artifact calibrates one scalar from an opened interaction of each physical object. It is method-development evidence only until the frozen mapping transfers to untouched interactions.",
+  "default_multiplier": 1.0,
+  "future_take_outcomes_opened": false,
+  "objects": {
+    "3dPrintedCylinder": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 3.1242250213493103,
+      "source_scored_frame_count": 134,
+      "source_selected_minus_global_CD_UL1_mm": -0.03640562016376103,
+      "source_selected_scale_CD_UL1_mm": 3.0878194011855493,
+      "source_supported_frame_count": 127,
+      "source_take_id": "3dPrintedCylinder_T5"
+    },
+    "3dPrintedPizza": {
+      "effective_scale": 0.0625,
+      "multiplier": 0.5,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 2.261037086714918,
+      "source_scored_frame_count": 64,
+      "source_selected_minus_global_CD_UL1_mm": -0.004766238118254051,
+      "source_selected_scale_CD_UL1_mm": 2.256270848596664,
+      "source_supported_frame_count": 59,
+      "source_take_id": "3dPrintedPizza_T6"
+    },
+    "3dPrintedPyramid": {
+      "effective_scale": 0.0625,
+      "multiplier": 0.5,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 1.9858200765276308,
+      "source_scored_frame_count": 65,
+      "source_selected_minus_global_CD_UL1_mm": -0.006325218262790422,
+      "source_selected_scale_CD_UL1_mm": 1.9794948582648404,
+      "source_supported_frame_count": 61,
+      "source_take_id": "3dPrintedPyramid_T4"
+    },
+    "Beanbag": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 5.131650166587635,
+      "source_scored_frame_count": 36,
+      "source_selected_minus_global_CD_UL1_mm": -0.06496219332717157,
+      "source_selected_scale_CD_UL1_mm": 5.066687973260463,
+      "source_supported_frame_count": 32,
+      "source_take_id": "Beanbag_T3"
+    },
+    "FoamCylinder": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 5.428575390075557,
+      "source_scored_frame_count": 75,
+      "source_selected_minus_global_CD_UL1_mm": -0.051143970746106326,
+      "source_selected_scale_CD_UL1_mm": 5.377431419329451,
+      "source_supported_frame_count": 70,
+      "source_take_id": "FoamCylinder_T3"
+    },
+    "FoamHalfSphere": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 2.2848676349741015,
+      "source_scored_frame_count": 72,
+      "source_selected_minus_global_CD_UL1_mm": -0.04967592179948177,
+      "source_selected_scale_CD_UL1_mm": 2.2351917131746197,
+      "source_supported_frame_count": 67,
+      "source_take_id": "FoamHalfSphere_T5"
+    },
+    "Pillow": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 7.856584806636647,
+      "source_scored_frame_count": 81,
+      "source_selected_minus_global_CD_UL1_mm": -0.019198593359465832,
+      "source_selected_scale_CD_UL1_mm": 7.837386213277181,
+      "source_supported_frame_count": 76,
+      "source_take_id": "Pillow_T7"
+    },
+    "PlushDice": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 6.2883989465481935,
+      "source_scored_frame_count": 71,
+      "source_selected_minus_global_CD_UL1_mm": -0.0676984620111174,
+      "source_selected_scale_CD_UL1_mm": 6.220700484537076,
+      "source_supported_frame_count": 66,
+      "source_take_id": "PlushDice_T1"
+    },
+    "PlushMoon": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 6.275475404587347,
+      "source_scored_frame_count": 69,
+      "source_selected_minus_global_CD_UL1_mm": -0.02626848469179066,
+      "source_selected_scale_CD_UL1_mm": 6.249206919895556,
+      "source_supported_frame_count": 64,
+      "source_take_id": "PlushMoon_T5"
+    },
+    "PlushTurtle": {
+      "effective_scale": 0.25,
+      "multiplier": 2.0,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 7.684858882584555,
+      "source_scored_frame_count": 81,
+      "source_selected_minus_global_CD_UL1_mm": -0.08097383471998221,
+      "source_selected_scale_CD_UL1_mm": 7.603885047864573,
+      "source_supported_frame_count": 76,
+      "source_take_id": "PlushTurtle_T5"
+    },
+    "PlushVolleyball": {
+      "effective_scale": 0.125,
+      "multiplier": 1.0,
+      "selection_reason": "no-supported-source-update",
+      "source_global_scale_CD_UL1_mm": 6.697532954886971,
+      "source_scored_frame_count": 85,
+      "source_selected_minus_global_CD_UL1_mm": 0.0,
+      "source_selected_scale_CD_UL1_mm": 6.697532954886971,
+      "source_supported_frame_count": 0,
+      "source_take_id": "PlushVolleyball_T3"
+    },
+    "Sponge": {
+      "effective_scale": 0.1875,
+      "multiplier": 1.5,
+      "selection_reason": "source-map",
+      "source_global_scale_CD_UL1_mm": 3.6387050701815244,
+      "source_scored_frame_count": 88,
+      "source_selected_minus_global_CD_UL1_mm": -0.0021229216198483947,
+      "source_selected_scale_CD_UL1_mm": 3.636582148561676,
+      "source_supported_frame_count": 83,
+      "source_take_id": "Sponge_T4"
+    }
+  },
+  "schema_version": 1,
+  "selection_rule": "per physical object, minimize source-action CD_UL1 over the frozen capped multiplier bank; exact ties prefer log-distance to multiplier one; no supported source update uses multiplier one",
+  "source_cohort_role": "opened development interactions only",
+  "source_scale_audit_file_sha256": "114fbf7c3437311f625c9c022742a2c707d6db1e61ca1548b0d8f2500f83d494",
+  "source_scale_audit_sha256": "78179996296b5ed47692e3ee716308c4525deeb71ce2881442331b5643b4bf94"
+}

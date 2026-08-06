@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexConservativeShrinkageTargetProtocol",
+  "protocol_id": "pokeflex-conservative-shrinkage-fresh12-public-v1",
+  "locked_at_utc": "2026-08-04T11:15:42Z",
+  "status": "pre-outcome lock for twelve deterministically selected, previously unexposed public takes",
+  "claim_boundary": "This protocol compares the unchanged source-selected Bayesian correction with the released PokeFlex checkpoint on twelve prospectively selected public takes from twelve object instances. The exact takes were selected without outcomes after excluding every public take found in tracked PokeFlex branches or server-side text artifacts. Other takes of the same physical objects were used during source development, so this is new-take transfer, not unseen-object transfer. The cohort differs from the published eighteen-take validation split; the published 6.498 mm value is contextual only and cannot support a direct table-SOTA claim.",
+  "preoutcome_storage_amendment": {
+    "supersedes_protocol_sha256": "38cfafdbf92d66d3dc3bb5bf346df89f0cc00d5d5ed928aacf8ddb3469e5adcc",
+    "reason": "the destination server cannot hold all registered ZIP archives plus their extracted inputs; replace local ZIP rehashing with a canonical member-level stage manifest produced beside the source archive",
+    "target_mesh_geometry_decoded": false,
+    "target_metric_computed": false,
+    "cohort_or_method_changed": false
+  },
+  "source_gate": {
+    "protocol_sha256": "73b69d3efae27d5afe511bc795c3e270546722e410aaca698db5afcc90ed23e9",
+    "result_sha256": "0075c331fc23ffadb2e9ebdd4b58093c76d25ce39c2bcf33e84d80d50a338bda",
+    "result_git_commit": "234e201d586712f5966908b86cacc3076dc5b6ca",
+    "passed": true,
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "source_object_count": 9,
+    "source_object_win_count": 9,
+    "source_object_balanced_relative_improvement": 0.01286289679729027
+  },
+  "target_cohort": {
+    "take_ids": [
+      "3dPrintedCylinder_T5",
+      "3dPrintedPizza_T6",
+      "3dPrintedPyramid_T4",
+      "Beanbag_T3",
+      "FoamCylinder_T3",
+      "FoamHalfSphere_T5",
+      "Pillow_T7",
+      "PlushDice_T1",
+      "PlushMoon_T5",
+      "PlushTurtle_T5",
+      "PlushVolleyball_T3",
+      "Sponge_T4"
+    ],
+    "prospective_take_ids": [
+      "3dPrintedCylinder_T5",
+      "3dPrintedPizza_T6",
+      "3dPrintedPyramid_T4",
+      "Beanbag_T3",
+      "FoamCylinder_T3",
+      "FoamHalfSphere_T5",
+      "Pillow_T7",
+      "PlushDice_T1",
+      "PlushMoon_T5",
+      "PlushTurtle_T5",
+      "PlushVolleyball_T3",
+      "Sponge_T4"
+    ],
+    "development_overlap_take_ids": [],
+    "replacement_allowed": false,
+    "selection_basis": "minimum SHA-256 of pokeflex-fresh12-selection-v1, NUL, and take ID within each eligible object after the frozen exposure audit",
+    "freshness_scope": "exact take IDs are unexposed in the declared audit; physical object instances are not new"
+  },
+  "freshness_audit": {
+    "path": "configs/sota/pokeflex_fresh12_exclusion_audit_v1.json",
+    "audit_sha256": "fa2062f97e3ae496705717b7e2851b64b748a0417c270fea5649b9aa8cc96bbc",
+    "public_inventory_sha256": "90121a8d060f50288bb52872556e38ce808de4d2a642d1691ff1cff20b5b1e96",
+    "prior_exclusion_union_sha256": "3157950b1422d9e210103f5f01bb55cda705fe54fc32926892d6ea2a40d7f62a",
+    "eligible_inventory_sha256": "f4b605ac1fdf36f341789698d47c8657f32861426766a1e882996abe713e4923",
+    "selected_inventory_sha256": "ca4c2b3006167bbbb973060ee799a4e1811fc07baa5584e098885bf3d38bff1e",
+    "selection_salt": "pokeflex-fresh12-selection-v1",
+    "selected_zip_sha256": {
+      "3dPrintedCylinder_T5": "2545cfd8c671e5f6b8af1884b216ff7f486de5fe45d00927142a9b4ca6a37691",
+      "3dPrintedPizza_T6": "b320295970f695a7ee0e97faa2dc3b8f05198f5e8b36e73af92b0b0af7fba966",
+      "3dPrintedPyramid_T4": "f0b807274e6217010bd75eca72a322ee5cf326e6cb9cc2c0a67ddd1a3c746652",
+      "Beanbag_T3": "3fbc0995e9777bd83650fe0f7e197c6bd6fea8347fddcc9f6a0b78f62f85d386",
+      "FoamCylinder_T3": "c7e7c1c23dbc9e65fa554434b64b6cfcba376bc761123a48519ffc00ff6fe9c0",
+      "FoamHalfSphere_T5": "6abad03c0c3d17e690f0555c72d6d555fba0e3040fe3601f1b8577c854102cbf",
+      "Pillow_T7": "2b4fff35524e35bb81540e42cd1d27f83b1f6a698ff900dd01c935b88d254560",
+      "PlushDice_T1": "978212f8e67c01e3ae318021080b3f88aa2dfefbeee479c31aedd61eefe6a248",
+      "PlushMoon_T5": "3c06a03c0e82d0b89e194be18d4d965b5f1529bbc70ee6a012ed38ba4afabb81",
+      "PlushTurtle_T5": "6f74f5371cd415fc213699832bb53be75d28687ca867be61c533be50557d0ccb",
+      "PlushVolleyball_T3": "6b7668947e84e93f8f0439810fb5ba9b3e6d06fefa3589a558e4f9d2681a7412",
+      "Sponge_T4": "eea7d0a0f124700e89162e54fa40e6a3336e510e7a1a24eb6581278c5358e9a2"
+    }
+  },
+  "method": {
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "physical_prior": "released PokeFlex Kinect checkpoint",
+    "state_update": "robust correlation-aware graph registration at f-1",
+    "field": "action_local_state_relative_0.4",
+    "scale": 0.125,
+    "transfer": "one material-vertex-identity step from f-1 to f",
+    "required_action_history": "finite T_WT, T_WE, and force values for every frame used by the frozen action-local field",
+    "missing_required_robot_pose_action": "mark update unsupported and return byte-identical released checkpoint",
+    "unsupported_frame_action": "byte-identical released checkpoint",
+    "online_selector": "none"
+  },
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    }
+  },
+  "official_reference": {
+    "paper": "PokeFlex: A Real-World Dataset of Deformable Objects for Physics-Based Reconstruction",
+    "arxiv": "2410.07688v2",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "evaluator_path": "test/evaluate.py",
+    "evaluator_sha256": "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60",
+    "published_kinect_CD_UL1_mm": 6.498,
+    "published_kinect_jaccard": 0.82,
+    "published_split_scope": "one hard-coded validation recording per each of eighteen objects",
+    "fresh12_scope": "twelve different public recordings; only paired released-checkpoint comparison is authorized"
+  },
+  "custody": {
+    "prediction_and_scoring_are_separate": true,
+    "required_prediction_seal_count": 12,
+    "all_prediction_revisions_must_match": true,
+    "implementation_checkout_must_be_clean": true,
+    "registered_source_archive_required": true,
+    "registered_source_archive_evidence": "canonical opaque-stage manifest binds the registered ZIP hash and every transferred member hash",
+    "target_mesh_access_before_barrier": "geometry decoding and scoring forbidden; opaque byte-preserving archive extraction allowed",
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "template_mesh": "allowed explicit task input selected by the frozen upstream robot-metadata rule",
+    "prediction_frames": "all contiguous f from 6 through the last robot frame; active-frame filtering occurs only during locked scoring",
+    "scored_frames": "force-y at f exceeds 3 N, matching the registered official evaluator",
+    "retry_policy": "no replacement; technical failures and exact fallbacks remain in the registered cohort"
+  },
+  "evaluation": {
+    "primary_metric": "CD_UL1_mm",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to target surface points in original metric coordinates",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720,
+    "aggregation": "equal-weight physical objects over twelve prospectively selected public takes; frame-level values are diagnostic",
+    "jaccard_definition": "trimesh boolean intersection volume divided by union volume",
+    "jaccard_boolean_backend": "manifold",
+    "jaccard_role": "non-gating reproducibility diagnostic because the released target meshes are not guaranteed volumetric",
+    "invalid_jaccard_action": "report the failure and valid fraction; never substitute a voxel or repaired-mesh surrogate"
+  },
+  "gates": {
+    "direct_metric_reference": {
+      "published_aggregate_is_gating": false,
+      "released_checkpoint_pairing_is_primary": true,
+      "scope": "paired candidate-versus-released-checkpoint comparison over all twelve prospectively selected takes"
+    },
+    "paired_transfer": {
+      "relative_CD_UL1_improvement_above": 0.0,
+      "bootstrap_upper_difference_mm_below": 0.0,
+      "maximum_per_object_relative_regression": 0.0,
+      "bootstrap_unit": "physical object among all twelve prospectively selected public takes",
+      "bootstrap_replicates": 20000,
+      "bootstrap_seed": 20260720,
+      "bootstrap_upper_quantile": 0.975
+    }
+  },
+  "forbidden": [
+    "opening any scored deformed mesh before all twelve prediction seals pass the barrier",
+    "using frame f Kinect or robot observations to predict frame f",
+    "substituting T_WT for missing T_WE or otherwise imputing a required actuator pose",
+    "changing the selected arm, scale, support radius, metric, aggregation, or gate after target access",
+    "replacing any selected take or a technically failed prediction",
+    "tuning from any of the twelve target outcomes",
+    "representing the physical objects as unseen during source development",
+    "substituting a repaired-mesh or voxel Jaccard for the registered public-mesh diagnostic",
+    "claiming reproduction of or direct comparison with the published eighteen-object aggregate",
+    "touching any held-v8 artifact or process"
+  ],
+  "protocol_sha256": "c80a266e3f4829bf56c16235ad560edc61484b1f48d7399b0ed78b97bd6d04a0"
+}
