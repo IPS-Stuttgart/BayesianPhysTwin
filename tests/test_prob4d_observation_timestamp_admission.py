@@ -14,18 +14,21 @@ from bayesian_phystwin.prob4d_observation_timestamp_admission import (
 SOURCE_SHA = "a" * 64
 LINEAGE_ID = "b" * 64
 BUNDLE_SHA = "c" * 64
+VERIFICATION_ID = "f" * 64
 
 
 def _call(
     path: Path,
     *,
     expected_source: str = SOURCE_SHA,
+    verification_id: str = VERIFICATION_ID,
     metadata: dict[str, object] | None = None,
 ):
     return load_claim_bearing_prob4d_observation_timestamp_binding(
         cast(ObservationBeliefV1, object()),
         timestamp_lineage_path=path,
         expected_timestamp_source_sha256=expected_source,
+        timestamp_source_verification_artifact_id=verification_id,
         bundle_manifest_path=path.parent / "bundle.json",
         expected_bundle_manifest_sha256=BUNDLE_SHA,
         row_factor_ids=("factor-0",),
@@ -71,6 +74,9 @@ def test_admission_binds_independent_source_and_exact_sidecar_bytes(
     assert admitted["protocol"] == "source-frozen-v1"
     assert admitted["prob4d_timestamp_source_sha256"] == SOURCE_SHA
     assert admitted["prob4d_timestamp_source_independently_verified"] is True
+    assert admitted["prob4d_timestamp_source_verification_artifact_id"] == (
+        VERIFICATION_ID
+    )
     assert admitted["prob4d_timestamp_lineage_artifact_id"] == LINEAGE_ID
     assert len(cast(str, admitted["prob4d_timestamp_lineage_file_sha256"])) == 64
 
@@ -106,6 +112,25 @@ def test_wrong_independent_source_digest_fails_before_binding(
     with pytest.raises(ValueError, match="independent evidence"):
         _call(path)
     assert not called
+
+
+def test_sidecar_cannot_verify_itself(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "timestamps.json"
+    path.write_bytes(b"sidecar")
+    monkeypatch.setattr(
+        "bayesian_phystwin.prob4d_observation_timestamp_admission."
+        "load_prob4d_observation_timestamp_lineage",
+        lambda _: SimpleNamespace(
+            source_artifact_sha256=SOURCE_SHA,
+            artifact_id=LINEAGE_ID,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="own verification"):
+        _call(path, verification_id=LINEAGE_ID)
 
 
 def test_sidecar_replacement_during_admission_fails_closed(
