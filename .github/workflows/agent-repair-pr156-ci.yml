@@ -1,0 +1,127 @@
+name: Repair PR 156 CI infrastructure
+
+on:
+  push:
+    branches: [agent/pokeflex-same-object-paper-artifacts]
+    paths: [.github/workflows/agent-repair-pr156-ci.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-pr156-ci-infrastructure
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/pokeflex-same-object-paper-artifacts
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Add focused coverage and isolate the workstation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          tests_path = Path(".github/workflows/tests.yml")
+          lines = tests_path.read_text(encoding="utf-8").splitlines()
+          target = "tests/test_pokeflex_same_object_reporting.py"
+          inserted = 0
+          index = 0
+          while index < len(lines):
+              if lines[index].strip() == "tests/test_quality_invariants.py":
+                  indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+                  next_line = lines[index + 1].strip() if index + 1 < len(lines) else ""
+                  if next_line != target:
+                      if not lines[index].rstrip().endswith("\\"):
+                          lines[index] = lines[index].rstrip() + " \\"
+                      lines.insert(index + 1, indent + target)
+                      inserted += 1
+                      index += 1
+              index += 1
+          if target not in "\n".join(lines):
+              raise SystemExit("failed to add the focused reporting test")
+          if inserted not in {0, 2}:
+              raise SystemExit(f"unexpected focused-test insertion count: {inserted}")
+          tests_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          workflow_path = Path(
+              ".github/workflows/pokeflex-same-object-paper-artifacts.yml"
+          )
+          workflow = workflow_path.read_text(encoding="utf-8")
+          start_marker = "      - name: Install the explicit PokeFlex runtime\n"
+          end_marker = "      - name: Validate installed runtime entrypoints\n"
+          start = workflow.index(start_marker)
+          end = workflow.index(end_marker, start)
+          block = workflow[start:end]
+          if "BPT_RUNTIME_PYTHON" not in block:
+              anchor = "          set -euo pipefail\n"
+              setup = (
+                  "          runtime_venv=\"${RUNNER_TEMP}/pokeflex-runtime-"
+                  "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\"\n"
+                  "          rm -rf \"${runtime_venv}\"\n"
+                  "          python -m venv \"${runtime_venv}\"\n"
+                  "          BPT_RUNTIME_PYTHON=\"${runtime_venv}/bin/python\"\n"
+                  "          echo \"${runtime_venv}/bin\" >> \"${GITHUB_PATH}\"\n"
+              )
+              if block.count(anchor) != 1:
+                  raise SystemExit("unexpected runtime-step shell preamble")
+              block = block.replace(anchor, anchor + setup, 1)
+              block = block.replace(
+                  "          python -m pip install --upgrade pip\n",
+                  "          \"${BPT_RUNTIME_PYTHON}\" -m pip install --upgrade pip\n",
+                  1,
+              )
+              block = block.replace(
+                  "          python -m pip install \\\n",
+                  "          \"${BPT_RUNTIME_PYTHON}\" -m pip install \\\n",
+              )
+              block = block.replace(
+                  "          python -m pip check\n",
+                  "          \"${BPT_RUNTIME_PYTHON}\" -m pip check\n",
+                  1,
+              )
+              block = block.replace(
+                  "          echo \"BPT_PYTHON=$(command -v python)\" >> \"${GITHUB_ENV}\"\n",
+                  "          echo \"BPT_PYTHON=${BPT_RUNTIME_PYTHON}\" >> \"${GITHUB_ENV}\"\n",
+                  1,
+              )
+              block = block.replace(
+                  "          python - <<'PY'\n",
+                  "          \"${BPT_RUNTIME_PYTHON}\" - <<'PY'\n",
+                  1,
+              )
+          required = (
+              "python -m venv \"${runtime_venv}\"",
+              "\"${BPT_RUNTIME_PYTHON}\" -m pip check",
+              "BPT_PYTHON=${BPT_RUNTIME_PYTHON}",
+              "\"${BPT_RUNTIME_PYTHON}\" - <<'PY'",
+          )
+          missing = [item for item in required if item not in block]
+          if missing:
+              raise SystemExit(f"runtime isolation patch incomplete: {missing}")
+          workflow = workflow[:start] + block + workflow[end:]
+          workflow_path.write_text(workflow, encoding="utf-8")
+          PY
+          git diff --check
+
+      - name: Commit repairs and remove this executor
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/agent-repair-pr156-ci.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Isolate PokeFlex artifact runtime and cover reporting code"
+          git push origin HEAD:agent/pokeflex-same-object-paper-artifacts
