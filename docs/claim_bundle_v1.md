@@ -17,9 +17,11 @@ A bundle requires:
 
 All repositories recorded by the run manifest must be clean and pinned to exact 40-character revisions. The bundle copies those states into its own content-addressed descriptor and rechecks them during validation.
 
+A supplied claim-binding file must use the paper repository's real `bayesian_phystwin.claim_evidence_bindings` version-1 schema. It must bind every manifest claim exactly once to the same manifest ID and evidence fingerprint. Its result and table references must resolve to content-addressed artifacts carried by the bundle, and a current bundle claim cannot be authorized through a migration exception.
+
 ## Build a bundle
 
-Paths may be absolute or relative to `--artifact-root`. Every emitted artifact path is normalized relative to that root.
+Paths may be absolute or relative to `--artifact-root`. Every emitted artifact path is normalized relative to that root. Symbolic-link artifacts are rejected, and each regular file's digest and byte size are read through one stable descriptor.
 
 ```bash
 bpt evidence bundle build claim-bundle.json \
@@ -34,7 +36,7 @@ bpt evidence bundle build claim-bundle.json \
 
 Additional immutable files can be included with repeated `--supporting NAME=PATH` arguments. Names and relative paths must be unique.
 
-The build command validates semantic bindings before writing the bundle. It reports the resulting bundle ID, run-manifest ID, evidence fingerprint, and artifact/repository/claim counts as JSON.
+The build command validates semantic bindings before writing the bundle. Publication is atomic and fails if the output already exists. Replacing an existing output requires the explicit `--force` option. The command reports the resulting bundle ID, run-manifest ID, evidence fingerprint, and artifact/repository/claim counts as JSON.
 
 ## Validate a bundle
 
@@ -44,7 +46,7 @@ Validate the descriptor alone:
 bpt evidence bundle validate claim-bundle.json
 ```
 
-Re-hash every artifact and re-run the manifest, paper-evidence, and decisive-evidence semantic checks:
+Re-hash every artifact and re-run the manifest, paper-evidence, decisive-evidence, and paper claim-binding checks:
 
 ```bash
 bpt evidence bundle validate claim-bundle.json \
@@ -55,10 +57,12 @@ bpt evidence bundle validate claim-bundle.json \
 Full validation fails if:
 
 - the bundle descriptor or bundle ID was altered;
-- an artifact is missing or its size or SHA-256 digest changed;
+- an artifact is missing, symbolic-linked, changes while being hashed, or has a different size or SHA-256 digest;
 - the run manifest or paper-evidence profile no longer validates;
 - the summary uses a different protocol or statistical unit;
-- a participating repository, claim ID, freeze ID, split ID, baseline ID, or claim boundary differs from the bound evidence; or
+- a participating repository, claim ID, freeze ID, split ID, baseline ID, or claim boundary differs from the bound evidence;
+- the paper binding selects another manifest, evidence fingerprint, result, or table artifact;
+- the paper binding omits or adds a manifest claim, or relies on a migration exception for a bound claim; or
 - a required paper claim-binding artifact is absent.
 
 ## Artifact roles
