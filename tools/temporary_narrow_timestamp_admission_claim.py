@@ -27,7 +27,37 @@ replace_once(
 replace_once(
     "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py",
     "    ``timestamp_source_verification_artifact_id`` must come from an independently\n    frozen source/calibration manifest, not from the timestamp sidecar being\n    admitted. The verification artifact must be distinct from the sidecar itself.\n",
-    "    ``timestamp_source_verification_artifact_id`` must come from a separately\n    frozen upstream source/calibration manifest, not from the timestamp sidecar\n    being admitted. This function binds that artifact's content ID but does not\n    open it or establish the verifier's competence. The verification artifact\n    must be distinct from the sidecar itself.\n",
+    "    ``timestamp_source_verification_artifact_id`` must come from a separately\n    frozen upstream source/calibration manifest, not from the timestamp sidecar\n    being admitted. This function binds that artifact's content ID but does not\n    open it or establish the verifier's competence. The verification artifact\n    must be distinct from the raw source, bundle, and sidecar identities.\n",
+)
+replace_once(
+    "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py",
+    "    expected_bundle = sha256_digest(\n"
+    "        expected_bundle_manifest_sha256,\n"
+    "        name=\"expected_bundle_manifest_sha256\",\n"
+    "    )\n"
+    "    timestamp_path, timestamp_bytes, timestamp_sha_before = _ordinary_snapshot(\n",
+    "    expected_bundle = sha256_digest(\n"
+    "        expected_bundle_manifest_sha256,\n"
+    "        name=\"expected_bundle_manifest_sha256\",\n"
+    "    )\n"
+    "    if verification_id in {expected_source, expected_bundle}:\n"
+    "        raise ValueError(\n"
+    "            \"timestamp verification artifact must be distinct from source and bundle\"\n"
+    "        )\n"
+    "    timestamp_path, timestamp_bytes, timestamp_sha_before = _ordinary_snapshot(\n",
+)
+replace_once(
+    "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py",
+    "    if bundle_sha_before != expected_bundle:\n"
+    "        raise ValueError(\"Prob4D bundle manifest checksum mismatch\")\n\n"
+    "    with tempfile.TemporaryDirectory(\n",
+    "    if bundle_sha_before != expected_bundle:\n"
+    "        raise ValueError(\"Prob4D bundle manifest checksum mismatch\")\n"
+    "    if verification_id in {timestamp_sha_before, bundle_sha_before}:\n"
+    "        raise ValueError(\n"
+    "            \"timestamp verification artifact must be distinct from admitted files\"\n"
+    "        )\n\n"
+    "    with tempfile.TemporaryDirectory(\n",
 )
 replace_once(
     "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py",
@@ -59,6 +89,33 @@ replace_once(
     "tests/test_prob4d_observation_timestamp_admission.py",
     '    with pytest.raises(ValueError, match="independent evidence"):\n',
     '    with pytest.raises(ValueError, match="separately frozen evidence"):\n',
+)
+replace_once(
+    "tests/test_prob4d_observation_timestamp_admission.py",
+    "\n\ndef test_sidecar_cannot_verify_itself(\n",
+    '''
+
+
+def test_verification_artifact_is_distinct_from_source_bundle_and_files(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "timestamps.json"
+    sidecar_bytes = b"separate sidecar bytes"
+    path.write_bytes(sidecar_bytes)
+
+    with pytest.raises(ValueError, match="distinct from source and bundle"):
+        _call(path, verification_id=SOURCE_SHA)
+    with pytest.raises(ValueError, match="distinct from source and bundle"):
+        _call(path, verification_id=BUNDLE_SHA)
+    with pytest.raises(ValueError, match="distinct from admitted files"):
+        _call(
+            path,
+            verification_id=hashlib.sha256(sidecar_bytes).hexdigest(),
+        )
+
+
+def test_sidecar_cannot_verify_itself(
+''',
 )
 
 replace_once(
