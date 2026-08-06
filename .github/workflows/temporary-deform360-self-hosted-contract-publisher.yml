@@ -46,8 +46,13 @@ jobs:
           base_python="$(command -v python3.12 || command -v python3)"
           publisher_root="${RUNNER_TEMP}/deform360-self-hosted-publisher-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           publisher_site="${publisher_root}/site"
+          export_root="${publisher_root}/export"
           rm -rf "${publisher_root}"
-          mkdir -p "${publisher_site}"
+          mkdir -p \
+            "${publisher_site}" \
+            "${export_root}/.github/workflows" \
+            "${export_root}/tests" \
+            "${export_root}/docs"
           "${base_python}" -m pip install \
             --break-system-packages \
             --no-cache-dir \
@@ -58,6 +63,7 @@ jobs:
             echo "PUBLISHER_BASE_PYTHON=${base_python}"
             echo "PUBLISHER_ROOT=${publisher_root}"
             echo "PUBLISHER_SITE=${publisher_site}"
+            echo "PUBLISHER_EXPORT=${export_root}"
             echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${publisher_site}${PYTHONPATH:+:${PYTHONPATH}}"
           } >> "${GITHUB_ENV}"
 
@@ -75,11 +81,37 @@ jobs:
           "${PUBLISHER_BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
             tests/test_deform360_official_hub_calibration_source.py \
             tests/test_deform360_calibration_source_workflow.py \
-            tests/test_deform360_visual_provider_freeze.py
+            tests/test_deform360_visual_provider_freeze.py \
+            | tee "${PUBLISHER_ROOT}/pytest.txt"
           "${PUBLISHER_BASE_PYTHON}" -m compileall -q \
             scripts/science/deform360_calibration_source \
             scripts/science/run_deform360_official_hub_calibration_source.py
           git diff --check
+          cp .github/workflows/deform360-official-hub-calibration-source.yml \
+            "${PUBLISHER_EXPORT}/.github/workflows/"
+          cp tests/test_deform360_calibration_source_workflow.py \
+            "${PUBLISHER_EXPORT}/tests/"
+          cp docs/deform360_official_hub_calibration_source_v1.md \
+            "${PUBLISHER_EXPORT}/docs/"
+          (
+            cd "${PUBLISHER_EXPORT}"
+            sha256sum \
+              .github/workflows/deform360-official-hub-calibration-source.yml \
+              tests/test_deform360_calibration_source_workflow.py \
+              docs/deform360_official_hub_calibration_source_v1.md \
+              > "${PUBLISHER_ROOT}/sha256sums.txt"
+          )
+
+      - name: Upload exact validated permanent files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-self-hosted-gate-files-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.PUBLISHER_EXPORT }}
+            ${{ env.PUBLISHER_ROOT }}/pytest.txt
+            ${{ env.PUBLISHER_ROOT }}/sha256sums.txt
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Commit only the reviewed permanent files
         shell: bash
