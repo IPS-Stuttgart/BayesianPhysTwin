@@ -334,7 +334,7 @@ class Prob4DVisualBiasBindingV1:
     def global_design(self) -> np.ndarray:
         """Return the block-sparse row design with shape ``(N, 3, S*R)``."""
 
-        result = np.zeros(
+        result: np.ndarray = np.zeros(
             (self.observation_count, 3, self.latent_dimension),
             dtype=np.float64,
         )
