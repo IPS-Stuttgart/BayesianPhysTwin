@@ -1,0 +1,96 @@
+name: Prob4D coherent visual-bias consumer
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/prob4d-visual-bias-update.yml"
+      - "src/bayesian_phystwin/prob4d_visual_bias_update.py"
+      - "tests/test_prob4d_visual_bias_update.py"
+      - "tests/test_prob4d_visual_bias_crossrepo.py"
+      - "docs/prob4d_visual_bias_update_v2.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prob4d-visual-bias-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Exact joint-covariance consumer and cross-repository parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact reviewed BayesianPhysTwin revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Check out reviewed Prob4D visual-bias producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: d7568c1cf8b8a1d5425847c99133a127b30af0c6
+          path: _external/prob4d
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Create an isolated validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          environment="${RUNNER_TEMP}/prob4d-visual-bias-venv"
+          python -m venv "${environment}"
+          echo "${environment}/bin" >> "${GITHUB_PATH}"
+          "${environment}/bin/python" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          "${environment}/bin/python" -m pip install -e ".[dev]"
+          "${environment}/bin/python" -m pip install -e ./_external/prob4d
+          "${environment}/bin/python" -m pip check
+
+      - name: Check focused source quality
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_crossrepo.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_crossrepo.py
+          python -m mypy \
+            src/bayesian_phystwin/prob4d_visual_bias_update.py
+
+      - name: Run focused and producer-consumer tests
+        run: |
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_crossrepo.py \
+            tests/test_prospective_prob4d_update.py \
+            tests/test_observation_belief_gauge_adapter.py
+          python -m py_compile \
+            src/bayesian_phystwin/prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_crossrepo.py
