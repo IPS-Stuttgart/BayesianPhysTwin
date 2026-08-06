@@ -125,30 +125,22 @@ def test_causal4d_workflow_has_locked_and_canary_lanes() -> None:
     assert "persist-credentials: false" in workflow
 
 
-def test_three_repository_workflow_uses_lock_and_canaries_main() -> None:
+def test_three_repository_workflow_uses_all_lock_lanes() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = (
         root / ".github" / "workflows" / "three-repository-golden-path.yml"
     ).read_text(encoding="utf-8")
     assert "Resolve committed ecosystem lock" in workflow
+    assert "locked_bpt_ref" in workflow
     assert "needs.resolve-lock.outputs.prob4d_ref" in workflow
     assert "needs.resolve-lock.outputs.causal4d_ref" in workflow
-    assert "Latest Prob4D and Causal4D main canary" in workflow
+    assert "Current BPT + selected Prob4D/Causal4D" in workflow
+    assert "Reproduce exact locked trio" in workflow
+    assert "Latest three-repository main canary" in workflow
     assert "continue-on-error: true" in workflow
     assert "THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS" in workflow
     assert "persist-credentials: false" in workflow
-
-
-def test_historical_workflow_reproduces_exact_locked_trio() -> None:
-    root = Path(__file__).resolve().parents[1]
-    workflow = (
-        root / ".github" / "workflows" / "ecosystem-locked-golden-path.yml"
-    ).read_text(encoding="utf-8")
-    lock = load_ecosystem_compatibility_lock()
-    for component in lock.components:
-        assert component.revision in workflow
-    assert "Historical lock identity contract" in workflow
-    assert "Reproduce exact locked trio" in workflow
-    assert "Latest three-repository main canary" not in workflow
-    assert "persist-credentials: false" in workflow
     assert "permissions:\n  contents: read" in workflow
+    assert not (
+        root / ".github" / "workflows" / "ecosystem-locked-golden-path.yml"
+    ).exists()
