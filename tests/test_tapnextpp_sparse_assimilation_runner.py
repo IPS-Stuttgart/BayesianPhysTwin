@@ -208,3 +208,12 @@ def test_prediction_seals_before_case_evaluation(tmp_path: Path) -> None:
         "tapnext_graph",
     }
     assert result["arms"]["tapnext_graph"]["observed_track_error_m"] is not None
+
+
+def test_evidence_vectors_use_null_for_unsupported_rows() -> None:
+    evaluator = _load_script(
+        "evaluate_phystwin_tapnextpp_sparse_assimilation.py",
+        "tapnextpp_sparse_assimilation_evaluator_null_test",
+    )
+
+    assert evaluator._json_vector(np.array([1.0, np.nan])) == [1.0, None]

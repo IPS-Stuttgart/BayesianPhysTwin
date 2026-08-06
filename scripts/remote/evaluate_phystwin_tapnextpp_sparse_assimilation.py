@@ -58,6 +58,10 @@ def _safe_mean(values: np.ndarray) -> float | None:
     return float(np.mean(values[finite])) if np.any(finite) else None
 
 
+def _json_vector(values: np.ndarray) -> list[float | None]:
+    return [float(value) if np.isfinite(value) else None for value in values]
+
+
 def _horizon_slices(frame_count: int) -> dict[str, np.ndarray]:
     chunks = np.array_split(np.arange(frame_count, dtype=np.int64), 3)
     return dict(zip(("early", "middle", "late"), chunks, strict=True))
@@ -158,11 +162,11 @@ def _evaluate_arm(
         "horizons": horizons,
         "by_frame": {
             "chamfer_distance_m": chamfer.tolist(),
-            "track_error_m": track["all"].tolist(),
-            "observed_track_error_m": track["observed"].tolist(),
-            "hidden_track_error_m": track["hidden"].tolist(),
-            "all_track_nees": nees["all"].tolist(),
-            "all_track_coverage_90": coverage["all"].tolist(),
+            "track_error_m": _json_vector(track["all"]),
+            "observed_track_error_m": _json_vector(track["observed"]),
+            "hidden_track_error_m": _json_vector(track["hidden"]),
+            "all_track_nees": _json_vector(nees["all"]),
+            "all_track_coverage_90": _json_vector(coverage["all"]),
         },
         "track_identity_counts": {
             "all": int(len(initial_ids)),
@@ -550,4 +554,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
