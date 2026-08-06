@@ -6,8 +6,8 @@ on:
     paths:
       - ".github/workflows/query-calibration-v1.yml"
       - "src/bayesian_phystwin/query_calibration.py"
+      - "tests/conftest.py"
       - "tests/test_query_calibration*.py"
-      - "tests/test_claim_bearing_identifier_types.py"
       - "docs/query_calibration_v1.md"
       - "docs/finite_group_calibration_design.md"
   workflow_dispatch:
@@ -94,16 +94,16 @@ jobs:
         run: |
           python -m ruff check \
             src/bayesian_phystwin/query_calibration.py \
+            tests/conftest.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
-            tests/test_query_calibration_hardening.py \
-            tests/test_claim_bearing_identifier_types.py
+            tests/test_query_calibration_hardening.py
           python -m ruff format --check \
             src/bayesian_phystwin/query_calibration.py \
+            tests/conftest.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
-            tests/test_query_calibration_hardening.py \
-            tests/test_claim_bearing_identifier_types.py
+            tests/test_query_calibration_hardening.py
           python -m mypy src/bayesian_phystwin/query_calibration.py
 
       - name: Run focused and adjacent contracts
@@ -114,12 +114,12 @@ jobs:
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
             tests/test_query_calibration_hardening.py \
-            tests/test_claim_bearing_identifier_types.py \
             tests/test_calibration.py \
             tests/test_grouped_conformal.py \
             | tee "${QUERY_CALIBRATION_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/query_calibration.py \
+            tests/conftest.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
             tests/test_query_calibration_hardening.py
