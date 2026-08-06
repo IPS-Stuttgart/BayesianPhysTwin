@@ -1,0 +1,168 @@
+name: Publish persistent visual-bias product
+
+on:
+  push:
+    branches:
+      - agent/persistent-prob4d-visual-bias-state
+    paths:
+      - ".staging/persistent_visual_bias_payload.part*"
+      - ".github/workflows/publish-persistent-visual-bias.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-persistent-visual-bias-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BASE_SHA: 034ed13b71841d7955abcefcad3fcc5adb96564c
+  PAYLOAD_BASE64_SHA256: 6c5a3d6612a4eceae4e675a2e64a329995f3b00f89db566126f7537c9c0028ae
+  PAYLOAD_TARGZ_SHA256: 51862256fd26e3c2eaeed1c2a0a5622a0b72374eb9a33ee2217539a3ff625e23
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  publish:
+    name: Verify, test, and replace staging history
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the staging branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Reconstruct and verify the exact product payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import hashlib
+          import io
+          import os
+          import tarfile
+          from pathlib import Path, PurePosixPath
+
+          expected = {
+              ".github/workflows/persistent-prob4d-visual-bias.yml",
+              "docs/persistent_prob4d_visual_bias_state.md",
+              "docs/prob4d_visual_bias_stream.md",
+              "src/bayesian_phystwin/_persistent_visual_bias_common.py",
+              "src/bayesian_phystwin/_persistent_visual_bias_contracts.py",
+              "src/bayesian_phystwin/_persistent_visual_bias_numerics.py",
+              "src/bayesian_phystwin/persistent_prob4d_visual_bias.py",
+              "tests/test_persistent_prob4d_visual_bias.py",
+          }
+          chunks = [
+              Path(f".staging/persistent_visual_bias_payload.part{index}")
+              for index in range(1, 4)
+          ]
+          if any(not path.is_file() for path in chunks):
+              raise SystemExit("persistent visual-bias payload chunks are incomplete")
+          encoded = "".join(path.read_text(encoding="ascii").strip() for path in chunks)
+          encoded_digest = hashlib.sha256(encoded.encode("ascii")).hexdigest()
+          if encoded_digest != os.environ["PAYLOAD_BASE64_SHA256"]:
+              raise SystemExit("persistent visual-bias base64 payload digest mismatch")
+          payload = base64.b64decode(encoded, validate=True)
+          payload_digest = hashlib.sha256(payload).hexdigest()
+          if payload_digest != os.environ["PAYLOAD_TARGZ_SHA256"]:
+              raise SystemExit("persistent visual-bias tar payload digest mismatch")
+
+          with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as archive:
+              members = archive.getmembers()
+              names = {member.name for member in members}
+              if names != expected or len(members) != len(expected):
+                  raise SystemExit(
+                      f"persistent visual-bias payload paths changed: {sorted(names)}"
+                  )
+              for member in members:
+                  path = PurePosixPath(member.name)
+                  if path.is_absolute() or ".." in path.parts or not member.isfile():
+                      raise SystemExit(f"inadmissible payload member: {member.name}")
+                  source = archive.extractfile(member)
+                  if source is None:
+                      raise SystemExit(f"payload member has no bytes: {member.name}")
+                  target = Path(member.name)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(source.read())
+          PY
+
+      - name: Install the exact development environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Format and validate the product source
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(
+            src/bayesian_phystwin/_persistent_visual_bias_common.py
+            src/bayesian_phystwin/_persistent_visual_bias_contracts.py
+            src/bayesian_phystwin/_persistent_visual_bias_numerics.py
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+            tests/test_persistent_prob4d_visual_bias.py
+          )
+          python -m ruff format "${paths[@]}"
+          python -m ruff check "${paths[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/_persistent_visual_bias_common.py \
+            src/bayesian_phystwin/_persistent_visual_bias_contracts.py \
+            src/bayesian_phystwin/_persistent_visual_bias_numerics.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_prior_aware_likelihood_conformance.py
+          python -m py_compile \
+            src/bayesian_phystwin/_persistent_visual_bias_common.py \
+            src/bayesian_phystwin/_persistent_visual_bias_contracts.py \
+            src/bayesian_phystwin/_persistent_visual_bias_numerics.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          git diff --check
+
+      - name: Replace staging commits with one reviewable product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .staging/persistent_visual_bias_payload.part{1,2,3}
+          rmdir .staging 2>/dev/null || true
+          rm -f .github/workflows/publish-persistent-visual-bias.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --soft "${BASE_SHA}"
+          git add -A
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          test ! -e .github/workflows/publish-persistent-visual-bias.yml
+          test ! -d .staging
+          git commit -m "Add persistent Prob4D visual-bias state inference"
+          git push --force-with-lease origin "HEAD:${GITHUB_REF_NAME}"
