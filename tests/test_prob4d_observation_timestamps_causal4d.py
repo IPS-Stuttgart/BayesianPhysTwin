@@ -1,33 +1,17 @@
 from __future__ import annotations
 
+import importlib
 import json
 import math
 import os
 from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import numpy as np
 import pytest
-
-_REQUIRED_WORKFLOW = "Prob4D observation timestamp consumer"
-
-try:
-    from causal4d.observation_clock_offset_prior import (
-        OBSERVATION_TIME_CORRECTION_CONVENTION,
-        ObservationClockOffsetPriorV1,
-    )
-except ModuleNotFoundError:
-    if (
-        os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
-        or os.environ.get("GITHUB_WORKFLOW") == _REQUIRED_WORKFLOW
-    ):
-        raise
-    pytest.skip(
-        "Causal4D parity is validated by the dedicated timestamp consumer workflow",
-        allow_module_level=True,
-    )
 
 from bayesian_phystwin.causal4d_observation_clock_prior import (
     Causal4DObservationClockOffsetPriorV1,
@@ -41,8 +25,29 @@ from bayesian_phystwin.prob4d_observation_timestamps import (
     Prob4DObservationTimestampBindingV1,
 )
 
+_REQUIRED_WORKFLOW = "Prob4D observation timestamp consumer"
 
-def _causal4d_prior() -> ObservationClockOffsetPriorV1:
+
+def _load_causal4d_clock_prior() -> ModuleType:
+    try:
+        return importlib.import_module("causal4d.observation_clock_offset_prior")
+    except ModuleNotFoundError as exc:
+        if (
+            exc.name != "causal4d"
+            or os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
+            or os.environ.get("GITHUB_WORKFLOW") == _REQUIRED_WORKFLOW
+        ):
+            raise
+        pytest.skip(
+            "Causal4D parity is validated by the dedicated timestamp consumer workflow",
+            allow_module_level=True,
+        )
+
+
+_causal4d_clock_prior = _load_causal4d_clock_prior()
+
+
+def _causal4d_prior() -> Any:
     offsets = (-0.011, -0.010, -0.009)
     sample_standard_deviation = 0.001
     grid_standard_deviation = 0.001 / math.sqrt(12.0)
@@ -50,7 +55,7 @@ def _causal4d_prior() -> ObservationClockOffsetPriorV1:
         (1.0 + 1.0 / len(offsets)) * sample_standard_deviation**2
         + grid_standard_deviation**2
     )
-    return ObservationClockOffsetPriorV1(
+    return _causal4d_clock_prior.ObservationClockOffsetPriorV1(
         clock_domain="camera-hardware-clock",
         reference_clock_domain="actuator-command-clock",
         time_scale="device-monotonic",
@@ -156,7 +161,10 @@ def test_actual_causal4d_prior_record_round_trips_exactly() -> None:
     assert consumer.standard_deviation_s == pytest.approx(
         producer.predictive_standard_deviation_s
     )
-    assert record["offset_convention"] == OBSERVATION_TIME_CORRECTION_CONVENTION
+    assert (
+        record["offset_convention"]
+        == _causal4d_clock_prior.OBSERVATION_TIME_CORRECTION_CONVENTION
+    )
 
 
 def test_compact_clock_payload_is_not_claim_bearing() -> None:
