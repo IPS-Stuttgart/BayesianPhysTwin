@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,24 @@ def _write_result(
     supported_sheet: int = 5,
     supported_volumetric: int = 5,
 ) -> None:
+    objects = []
+    for stratum, supported in (
+        ("sheet", supported_sheet),
+        ("volumetric", supported_volumetric),
+    ):
+        for index in range(5):
+            objects.append(
+                {
+                    "object_id": f"{stratum}-{index}",
+                    "episode_id": index,
+                    "stratum": stratum,
+                    "status": (
+                        "source_prepared"
+                        if index < supported
+                        else "technical_failure_without_replacement"
+                    ),
+                }
+            )
     supported = supported_sheet + supported_volumetric
     payload: dict[str, Any] = {
         "schema": DEFORM360_CALIBRATION_SOURCE_RESULT_SCHEMA,
@@ -38,7 +57,7 @@ def _write_result(
         "download_sha256": "4" * 64,
         "dataset_revision": DEFORM360_DATASET_REVISION,
         "processing_revision": PROCESSING_REVISION,
-        "objects": [],
+        "objects": objects,
         "gate": {
             "supported_object_count": supported,
             "supported_by_stratum": {
@@ -72,6 +91,14 @@ def _write_result(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _rewrite_digest(path: Path, payload: dict[str, Any]) -> None:
+    payload["result_sha256"] = _canonical_sha256(
+        payload,
+        digest_key="result_sha256",
+    )
+    path.write_text(json.dumps(payload), encoding="utf-8")
 
 
 def _record(result: Path, **overrides: Any) -> dict[str, Any]:
@@ -109,16 +136,31 @@ def test_success_record_is_content_addressed_and_non_sensitive(tmp_path: Path) -
     assert '"objects":' not in serialized
 
 
+def test_support_gate_failure_is_distinct_from_infrastructure_failure(
+    tmp_path: Path,
+) -> None:
+    result = tmp_path / "result.json"
+    _write_result(result, supported_sheet=4, supported_volumetric=3)
+
+    record = _record(result, workload_exit_code=3)
+
+    assert record["status"] == "failed"
+    assert record["exit_code"] == 3
+    assert record["failure_stage"] == "calibration-source-support-gate"
+    assert record["result_valid"] is True
+    assert record["support_gate"]["support_passed"] is False
+
+
 def test_failed_workload_retains_failure_without_requiring_a_result(
     tmp_path: Path,
 ) -> None:
     record = _record(
         tmp_path / "missing.json",
-        workload_exit_code=3,
+        workload_exit_code=5,
     )
 
     assert record["status"] == "failed"
-    assert record["exit_code"] == 3
+    assert record["exit_code"] == 5
     assert record["failure_stage"] == "calibration-source-workload"
     assert record["result_available"] is False
     assert record["result_error"] == "missing"
@@ -150,23 +192,48 @@ def test_success_without_a_valid_result_fails_the_record_contract(
     assert record["failure_stage"] == "result-contract"
 
 
-def test_tampered_result_is_summarized_without_copying_payload_details(
-    tmp_path: Path,
-) -> None:
+def test_tampered_result_is_not_masked_by_a_workload_failure(tmp_path: Path) -> None:
     result = tmp_path / "result.json"
     _write_result(result)
     payload = json.loads(result.read_text(encoding="utf-8"))
     payload["information_boundary"]["target_outcomes_used"] = True
-    result.write_text(json.dumps(payload), encoding="utf-8")
+    _rewrite_digest(result, payload)
 
     record = _record(result, workload_exit_code=1)
 
+    assert record["exit_code"] == 4
+    assert record["failure_stage"] == "result-contract"
     assert record["result_available"] is True
     assert record["result_valid"] is False
     assert record["result_error"] == "invalid-contract"
     assert record["result_sha256"] is None
     assert record["support_gate"] is None
     assert "target_outcomes_used" not in json.dumps(record, sort_keys=True)
+
+
+def test_gate_thresholds_and_object_rows_are_frozen(tmp_path: Path) -> None:
+    result = tmp_path / "result.json"
+    _write_result(result)
+    payload = json.loads(result.read_text(encoding="utf-8"))
+    payload["gate"]["minimum_supported_objects"] = 0
+    _rewrite_digest(result, payload)
+    assert _record(result)["result_valid"] is False
+
+    _write_result(result)
+    payload = json.loads(result.read_text(encoding="utf-8"))
+    payload["objects"][0]["status"] = "technical_failure_without_replacement"
+    _rewrite_digest(result, payload)
+    assert _record(result)["result_valid"] is False
+
+
+def test_valid_result_and_workload_status_must_agree(tmp_path: Path) -> None:
+    result = tmp_path / "result.json"
+    _write_result(result)
+
+    record = _record(result, workload_exit_code=1)
+
+    assert record["exit_code"] == 4
+    assert record["failure_stage"] == "result-contract"
 
 
 def test_atomic_publication_does_not_replace_an_existing_record(
@@ -182,6 +249,26 @@ def test_atomic_publication_does_not_replace_an_existing_record(
     with pytest.raises(FileExistsError):
         save_deform360_calibration_source_run_record(record, output)
     assert output.read_bytes() == first
+
+
+def test_concurrent_publication_has_exactly_one_winner(tmp_path: Path) -> None:
+    result = tmp_path / "result.json"
+    output = tmp_path / "execution-manifest.json"
+    _write_result(result)
+    record = _record(result)
+
+    def publish() -> bool:
+        try:
+            save_deform360_calibration_source_run_record(record, output)
+        except FileExistsError:
+            return False
+        return True
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = list(executor.map(lambda _: publish(), range(2)))
+
+    assert sorted(outcomes) == [False, True]
+    assert json.loads(output.read_text(encoding="utf-8")) == record
 
 
 def test_cli_writes_failure_record_and_returns_the_effective_status(
@@ -202,7 +289,7 @@ def test_cli_writes_failure_record_and_returns_the_effective_status(
             "--workflow-run-attempt",
             "1",
             "--workload-exit-code",
-            "3",
+            "5",
             "--confirmation-boundary-exit-code",
             "0",
             "--result-json",
@@ -210,5 +297,5 @@ def test_cli_writes_failure_record_and_returns_the_effective_status(
         ]
     )
 
-    assert status == 3
-    assert json.loads(output.read_text(encoding="utf-8"))["exit_code"] == 3
+    assert status == 5
+    assert json.loads(output.read_text(encoding="utf-8"))["exit_code"] == 5
