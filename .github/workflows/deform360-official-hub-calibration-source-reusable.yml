@@ -115,129 +115,49 @@ jobs:
           mkdir -p -- "${evidence_root}"
           manifest="${evidence_root}/execution-manifest.json"
           receipt="${evidence_root}/completion-receipt.json"
-          python3 - "${manifest}" "${receipt}" <<'PY'
-          import hashlib
+          renderer="${GITHUB_WORKSPACE}/scripts/ci/render_deform360_calibration_source_run_record.py"
+          python_path="${GITHUB_WORKSPACE}/src"
+          if [[ -n "${PYTHON_SITE:-}" ]]; then
+            python_path="${python_path}:${PYTHON_SITE}"
+          fi
+          if [[ -f "${renderer}" ]] && \
+             PYTHONPATH="${python_path}${PYTHONPATH:+:${PYTHONPATH}}" \
+             python3 "${renderer}" issue \
+               --manifest "${manifest}" \
+               --source-revision "${BPT_SOURCE_SHA}" \
+               --workflow-run-id "${GITHUB_RUN_ID}" \
+               --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+               --output "${receipt}"; then
+            :
+          else
+            python3 - "${receipt}" <<'PY'
           import json
           import os
           from pathlib import Path
           import sys
 
-          manifest_path = Path(sys.argv[1])
-          lines = [
-              "## Direct ten-object calibration-source execution completed",
-              "",
-              f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
-              f"- workflow attempt: `{os.environ['GITHUB_RUN_ATTEMPT']}`",
-              f"- exact reviewed source revision: `{os.environ['BPT_SOURCE_SHA']}`",
-          ]
-          try:
-              record = json.loads(manifest_path.read_text(encoding="utf-8"))
-              if record.get("schema") != (
-                  "bayesian-phystwin.deform360-calibration-source-run"
-              ):
-                  raise ValueError("unexpected execution-record schema")
-              expected_digest = record.get("record_sha256")
-              payload = dict(record)
-              payload.pop("record_sha256", None)
-              actual_digest = hashlib.sha256(
-                  json.dumps(
-                      payload,
-                      sort_keys=True,
-                      separators=(",", ":"),
-                      allow_nan=False,
-                  ).encode("utf-8")
-              ).hexdigest()
-              if expected_digest != actual_digest:
-                  raise ValueError("execution-record digest changed")
-              if record.get("source_revision") != os.environ["BPT_SOURCE_SHA"]:
-                  raise ValueError("execution-record source changed")
-              if record.get("workflow_run_id") != int(os.environ["GITHUB_RUN_ID"]):
-                  raise ValueError("execution-record run changed")
-              if record.get("workflow_run_attempt") != int(
-                  os.environ["GITHUB_RUN_ATTEMPT"]
-              ):
-                  raise ValueError("execution-record attempt changed")
-              lines.extend(
-                  [
-                      f"- status: `{record['status']}`",
-                      f"- exit code: `{record['exit_code']}`",
-                      f"- failure stage: `{record['failure_stage']}`",
-                      (
-                          "- confirmation boundary verified: "
-                          f"`{record['confirmation_boundary_verified']}`"
-                      ),
-                      f"- execution-record digest: `{record['record_sha256']}`",
-                  ]
-              )
-              for label, valid_key, error_key, digest_key in (
-                  ("plan", "plan_valid", "plan_error", "plan_sha256"),
-                  (
-                      "download",
-                      "download_valid",
-                      "download_error",
-                      "download_sha256",
-                  ),
-                  ("result", "result_valid", "result_error", "result_sha256"),
-              ):
-                  if record.get(valid_key) is True:
-                      lines.append(f"- {label} digest: `{record[digest_key]}`")
-                  elif record.get(error_key) is not None:
-                      lines.append(f"- {label} record: `{record[error_key]}`")
-              plan_gate = record.get("plan_support_gate")
-              if isinstance(plan_gate, dict):
-                  admitted_strata = json.dumps(
-                      plan_gate["supported_by_stratum"],
-                      sort_keys=True,
-                      separators=(",", ":"),
-                  )
-                  lines.extend(
-                      [
-                          (
-                              "- admitted objects: "
-                              f"`{plan_gate['supported_object_count']}`"
-                          ),
-                          f"- admitted by stratum: `{admitted_strata}`",
-                          (
-                              "- admission gate passed: "
-                              f"`{plan_gate['support_passed']}`"
-                          ),
-                      ]
-                  )
-              gate = record.get("support_gate")
-              if isinstance(gate, dict):
-                  strata = json.dumps(
-                      gate["supported_by_stratum"],
-                      sort_keys=True,
-                      separators=(",", ":"),
-                  )
-                  lines.extend(
-                      [
-                          (
-                              "- prepared objects: "
-                              f"`{gate['supported_object_count']}`"
-                          ),
-                          f"- prepared by stratum: `{strata}`",
-                          f"- support gate passed: `{gate['support_passed']}`",
-                      ]
-                  )
-          except (OSError, ValueError, KeyError):
-              lines.extend(
-                  [
-                      "- status: `execution-record-unavailable`",
-                      "- confirmation boundary verified: `unknown`",
-                  ]
-              )
-          lines.extend(
+          body = "\n".join(
               [
+                  "## Direct ten-object calibration-source execution completed",
                   "",
-                  "This receipt contains no local paths, object identities, or target outcomes.",
+                  f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
+                  f"- workflow attempt: `{os.environ['GITHUB_RUN_ATTEMPT']}`",
+                  f"- exact reviewed source revision: `{os.environ['BPT_SOURCE_SHA']}`",
+                  "- status: `execution-record-unavailable`",
+                  "- confirmation boundary verified: `unknown`",
+                  "",
+                  (
+                      "This receipt contains no local paths, object identities, "
+                      "or target outcomes."
+                  ),
               ]
           )
-          Path(sys.argv[2]).write_text(
-              json.dumps({"body": "\n".join(lines)}, sort_keys=True),
+          Path(sys.argv[1]).write_text(
+              json.dumps({"body": body}, sort_keys=True),
               encoding="utf-8",
           )
           PY
+          fi
           curl --fail-with-body --silent --show-error \
             --request POST \
             --header "Authorization: Bearer ${GITHUB_TOKEN}" \
@@ -265,75 +185,27 @@ jobs:
           echo "- Runner: \`${RUNNER_NAME}\`" >> "${GITHUB_STEP_SUMMARY}"
           echo "- Source revision: \`${BPT_SOURCE_SHA}\`" >> "${GITHUB_STEP_SUMMARY}"
           manifest="${EVIDENCE_ROOT:-}/execution-manifest.json"
-          if [[ -f "${manifest}" ]]; then
-            if python3 - "${manifest}" <<'PY' >> "${GITHUB_STEP_SUMMARY}"
-          import hashlib
-          import json
-          from pathlib import Path
-          import sys
-
-          record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          expected_digest = record.get("record_sha256")
-          payload = dict(record)
-          payload.pop("record_sha256", None)
-          actual_digest = hashlib.sha256(
-              json.dumps(
-                  payload,
-                  sort_keys=True,
-                  separators=(",", ":"),
-                  allow_nan=False,
-              ).encode("utf-8")
-          ).hexdigest()
-          if expected_digest != actual_digest:
-              raise ValueError("execution-record digest changed")
-          print(f"- Status: `{record['status']}`")
-          print(f"- Exit code: `{record['exit_code']}`")
-          print(
-              "- Confirmation boundary verified: "
-              f"`{record['confirmation_boundary_verified']}`"
-          )
-          for label, valid_key, error_key, digest_key in (
-              ("Plan", "plan_valid", "plan_error", "plan_sha256"),
-              (
-                  "Download",
-                  "download_valid",
-                  "download_error",
-                  "download_sha256",
-              ),
-              ("Result", "result_valid", "result_error", "result_sha256"),
-          ):
-              if record.get(valid_key) is True:
-                  print(f"- {label} digest: `{record[digest_key]}`")
-              elif record.get(error_key) is not None:
-                  print(f"- {label} record: `{record[error_key]}`")
-          plan_gate = record.get("plan_support_gate")
-          if isinstance(plan_gate, dict):
-              print(
-                  "- Admitted objects: "
-                  f"`{plan_gate['supported_object_count']}`"
-              )
-              print(
-                  "- Admitted by stratum: "
-                  f"`{plan_gate['supported_by_stratum']}`"
-              )
-              print(
-                  "- Admission gate passed: "
-                  f"`{plan_gate['support_passed']}`"
-              )
-          gate = record.get("support_gate")
-          if isinstance(gate, dict):
-              print(f"- Prepared objects: `{gate['supported_object_count']}`")
-              print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
-              print(f"- Support gate passed: `{gate['support_passed']}`")
-          print(f"- Execution-record digest: `{record['record_sha256']}`")
-          PY
-            then
+          renderer="${GITHUB_WORKSPACE}/scripts/ci/render_deform360_calibration_source_run_record.py"
+          python_path="${GITHUB_WORKSPACE}/src"
+          if [[ -n "${PYTHON_SITE:-}" ]]; then
+            python_path="${python_path}:${PYTHON_SITE}"
+          fi
+          if [[ -f "${renderer}" ]]; then
+            if PYTHONPATH="${python_path}${PYTHONPATH:+:${PYTHONPATH}}" \
+               python3 "${renderer}" summary \
+                 --manifest "${manifest}" \
+                 --source-revision "${BPT_SOURCE_SHA}" \
+                 --workflow-run-id "${GITHUB_RUN_ID}" \
+                 --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+                 >> "${GITHUB_STEP_SUMMARY}"; then
               :
             else
-              echo "- Execution record: \`invalid\`" >> "${GITHUB_STEP_SUMMARY}"
+              echo "- Execution record: \`unavailable or invalid\`" \
+                >> "${GITHUB_STEP_SUMMARY}"
             fi
           else
-            echo "- Execution record: \`unavailable\`" >> "${GITHUB_STEP_SUMMARY}"
+            echo "- Execution record: \`unavailable or invalid\`" \
+              >> "${GITHUB_STEP_SUMMARY}"
           fi
 
       - name: Remove isolated runtime and processing checkout
