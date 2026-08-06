@@ -1,0 +1,39 @@
+{
+  "components": {
+    "bayesian_phystwin": {
+      "compatible_version_prefix": "0.4.",
+      "locked_version": "0.4.0",
+      "package_name": "bayesian-phystwin",
+      "repository": "IPS-Stuttgart/BayesianPhysTwin",
+      "revision": "3c2c703f70e5ecc971645657eb06bf8001bee9a9",
+      "role": "reliability-aware physical-twin belief and guarded update"
+    },
+    "causal4d": {
+      "compatible_version_prefix": "0.5.",
+      "locked_version": "0.5.0",
+      "package_name": "causal4d",
+      "repository": "IPS-Stuttgart/Causal4D",
+      "revision": "b0bf0c2de176b29534ef59484ad167b8f27d9dae",
+      "role": "downstream abduction, intervention, and prediction consumer"
+    },
+    "prob4d": {
+      "compatible_version_prefix": "0.3.",
+      "locked_version": "0.3.1",
+      "package_name": "prob4d",
+      "repository": "IPS-Stuttgart/Prob4D",
+      "revision": "9ad07f89f9a85b68cf1375a4087ffa447b6af846",
+      "role": "uncertainty-bearing causal 4-D observation producer"
+    }
+  },
+  "lock_name": "three-repository-installed-wheel-v1",
+  "schema": "bayesian-phystwin.ecosystem-compatibility-lock",
+  "schema_version": 1,
+  "validation": {
+    "bayesian_phystwin_tested_revision": "3f37fbc87975f0581a0e58434e53b44c4d61b402",
+    "python_version": "3.12",
+    "tests_passed": 17,
+    "validated_date": "2026-08-05",
+    "workflow_name": "Three-repository installed-wheel golden path",
+    "workflow_run_id": 31019529164
+  }
+}
