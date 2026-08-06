@@ -35,13 +35,20 @@ jobs:
           python-version: "3.12"
 
       - name: Produce canonical Ruff output
+        shell: bash
         run: |
-          python -m pip install "ruff==0.16.1"
-          python -m ruff check --fix --select I001 \
+          set -euo pipefail
+          root="${RUNNER_TEMP}/pr175-format-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          python -m venv "${root}/venv"
+          "${root}/venv/bin/python" -m pip install \
+            "pip==25.2" \
+            "ruff==0.16.1"
+          "${root}/venv/bin/python" -m ruff check --fix --select I001 \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py
-          python -m ruff format \
+          "${root}/venv/bin/python" -m ruff format \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py
