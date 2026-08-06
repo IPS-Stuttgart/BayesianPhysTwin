@@ -18,7 +18,7 @@ jobs:
   publish-typing-fix:
     name: Publish strict ndarray annotations
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Check out exact reviewed revision
