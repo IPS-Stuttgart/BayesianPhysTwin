@@ -105,7 +105,7 @@ replace_all(
     "tests/test_prob4d_observation_timestamps_causal4d.py",
     "bind_causal4d_observation_clock_prior(",
     "_consume(",
-    expected=9,
+    expected=10,
 )
 
 replace_between(
