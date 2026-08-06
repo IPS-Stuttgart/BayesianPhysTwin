@@ -3,12 +3,18 @@ from __future__ import annotations
 from copy import deepcopy
 
 import pytest
+from test_query_calibration_stable_core import (
+    test_query_calibration_stable_core_coverage,
+)
 
 from bayesian_phystwin.prob4d_provider_attestation import (
     compute_prob4d_provider_manifest_id,
     validate_prob4d_provider_attestation,
 )
 
+_QUERY_CALIBRATION_STABLE_TESTS = (
+    test_query_calibration_stable_core_coverage,
+)
 _REVISION = "1" * 40
 
 
