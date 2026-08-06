@@ -1,0 +1,461 @@
+{
+  "case": "single_lift_cloth",
+  "covariance_diagnostic_only": {
+    "count": 475,
+    "ellipsoid_90_coverage": 0.8757894736842106,
+    "mean_nees": 2.5202888836556245
+  },
+  "fusion_manifest": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/outputs/sealed/fusion/fusion_manifest.json",
+    "sha256": "f53dde96898fbbd00e785d52884823d9f1542807daa0c49716901cb52024b948"
+  },
+  "gates": {
+    "best_single_shared_improvement_at_least_minimum": false,
+    "competence_gate_passed": false,
+    "displacement_rmse_at_most_maximum": false,
+    "frame_zero_anchor_rmse_at_most_maximum": true,
+    "late_displacement_rmse_at_most_maximum": false,
+    "late_support_at_least_minimum": false,
+    "prefix_support_at_least_minimum": false
+  },
+  "information_boundary": {
+    "future_after_prefix_used": false,
+    "held_v8_access": false,
+    "manual_identity_role": "frame-zero coordinates are prediction queries; the sealed prefix trajectory is score-only",
+    "rgbd_frames_used_by_prediction": [
+      0,
+      121
+    ]
+  },
+  "multiview": {
+    "displacement_rmse_m": 0.011676459714078725,
+    "frame_range": [
+      0,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 7.012747023607095e-09,
+    "per_identity": [
+      {
+        "displacement_rmse_m": 0.01105930074331499,
+        "identity_index": 0,
+        "support_fraction": 1.0,
+        "supported_count": 66,
+        "target_count": 66
+      },
+      {
+        "displacement_rmse_m": 0.013639127355040985,
+        "identity_index": 1,
+        "support_fraction": 0.8888888888888888,
+        "supported_count": 72,
+        "target_count": 81
+      },
+      {
+        "displacement_rmse_m": 0.004772945574862942,
+        "identity_index": 2,
+        "support_fraction": 1.0,
+        "supported_count": 51,
+        "target_count": 51
+      },
+      {
+        "displacement_rmse_m": 0.015738663185314503,
+        "identity_index": 3,
+        "support_fraction": 0.38392857142857145,
+        "supported_count": 43,
+        "target_count": 112
+      },
+      {
+        "displacement_rmse_m": 0.01713005800360187,
+        "identity_index": 4,
+        "support_fraction": 0.7583333333333333,
+        "supported_count": 91,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": 0.008192209889657078,
+        "identity_index": 5,
+        "support_fraction": 0.36666666666666664,
+        "supported_count": 44,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 6,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 121
+      },
+      {
+        "displacement_rmse_m": 0.004039320969104608,
+        "identity_index": 7,
+        "support_fraction": 0.6024096385542169,
+        "supported_count": 50,
+        "target_count": 83
+      },
+      {
+        "displacement_rmse_m": 0.004173633116087536,
+        "identity_index": 8,
+        "support_fraction": 0.4793388429752066,
+        "supported_count": 58,
+        "target_count": 121
+      }
+    ],
+    "position_rmse_m": 0.011676457491421637,
+    "support_fraction": 0.5428571428571428,
+    "supported_count": 475,
+    "target_count": 875,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.014058820390886904,
+      "frame_count": 107,
+      "translation_removed_rmse_m": 0.008817896385548255
+    }
+  },
+  "multiview_late_third": {
+    "displacement_rmse_m": 0.020977559061619754,
+    "frame_range": [
+      80,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 7.012747023607095e-09,
+    "per_identity": [
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 0,
+        "support_fraction": null,
+        "supported_count": 0,
+        "target_count": 0
+      },
+      {
+        "displacement_rmse_m": 0.02221788339653698,
+        "identity_index": 1,
+        "support_fraction": 0.6111111111111112,
+        "supported_count": 11,
+        "target_count": 18
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 2,
+        "support_fraction": null,
+        "supported_count": 0,
+        "target_count": 0
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 3,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 41
+      },
+      {
+        "displacement_rmse_m": 0.020487457557976325,
+        "identity_index": 4,
+        "support_fraction": 0.725,
+        "supported_count": 29,
+        "target_count": 40
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 5,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 40
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 6,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 41
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 7,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 3
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 8,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 41
+      }
+    ],
+    "position_rmse_m": 0.020977555724772813,
+    "support_fraction": 0.17857142857142858,
+    "supported_count": 40,
+    "target_count": 224,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.02046593837515004,
+      "frame_count": 33,
+      "translation_removed_rmse_m": 0.005198047490351939
+    }
+  },
+  "per_view": {
+    "0": {
+      "displacement_rmse_m": 0.010167630230242268,
+      "frame_range": [
+        0,
+        121
+      ],
+      "frame_zero_anchor_rmse_m": 7.0792911862359795e-09,
+      "per_identity": [
+        {
+          "displacement_rmse_m": 0.01057026994183366,
+          "identity_index": 0,
+          "support_fraction": 1.0,
+          "supported_count": 66,
+          "target_count": 66
+        },
+        {
+          "displacement_rmse_m": 0.011207642027276936,
+          "identity_index": 1,
+          "support_fraction": 0.9012345679012346,
+          "supported_count": 73,
+          "target_count": 81
+        },
+        {
+          "displacement_rmse_m": 0.005099752850834781,
+          "identity_index": 2,
+          "support_fraction": 1.0,
+          "supported_count": 51,
+          "target_count": 51
+        },
+        {
+          "displacement_rmse_m": 0.006576385397719215,
+          "identity_index": 3,
+          "support_fraction": 0.36607142857142855,
+          "supported_count": 41,
+          "target_count": 112
+        },
+        {
+          "displacement_rmse_m": 0.016184614645389683,
+          "identity_index": 4,
+          "support_fraction": 0.85,
+          "supported_count": 102,
+          "target_count": 120
+        },
+        {
+          "displacement_rmse_m": 0.006456435406498461,
+          "identity_index": 5,
+          "support_fraction": 0.75,
+          "supported_count": 90,
+          "target_count": 120
+        },
+        {
+          "displacement_rmse_m": 0.009170387224542728,
+          "identity_index": 6,
+          "support_fraction": 1.0,
+          "supported_count": 121,
+          "target_count": 121
+        },
+        {
+          "displacement_rmse_m": 0.006577130137102338,
+          "identity_index": 7,
+          "support_fraction": 1.0,
+          "supported_count": 83,
+          "target_count": 83
+        },
+        {
+          "displacement_rmse_m": 0.010542907243866445,
+          "identity_index": 8,
+          "support_fraction": 1.0,
+          "supported_count": 121,
+          "target_count": 121
+        }
+      ],
+      "position_rmse_m": 0.010167628397288233,
+      "support_fraction": 0.8548571428571429,
+      "supported_count": 748,
+      "target_count": 875,
+      "translation_diagnostics": {
+        "common_translation_rmse_m": 0.004423250310888125,
+        "frame_count": 121,
+        "translation_removed_rmse_m": 0.009419624836105445
+      }
+    },
+    "1": {
+      "displacement_rmse_m": 0.013546804871114546,
+      "frame_range": [
+        0,
+        121
+      ],
+      "frame_zero_anchor_rmse_m": 7.012747023607095e-09,
+      "per_identity": [
+        {
+          "displacement_rmse_m": 0.01096001936086066,
+          "identity_index": 0,
+          "support_fraction": 1.0,
+          "supported_count": 66,
+          "target_count": 66
+        },
+        {
+          "displacement_rmse_m": 0.010430395510771453,
+          "identity_index": 1,
+          "support_fraction": 0.654320987654321,
+          "supported_count": 53,
+          "target_count": 81
+        },
+        {
+          "displacement_rmse_m": 0.0035653796472397627,
+          "identity_index": 2,
+          "support_fraction": 1.0,
+          "supported_count": 51,
+          "target_count": 51
+        },
+        {
+          "displacement_rmse_m": 0.017636746707277717,
+          "identity_index": 3,
+          "support_fraction": 0.38392857142857145,
+          "supported_count": 43,
+          "target_count": 112
+        },
+        {
+          "displacement_rmse_m": 0.021174988538466197,
+          "identity_index": 4,
+          "support_fraction": 1.0,
+          "supported_count": 120,
+          "target_count": 120
+        },
+        {
+          "displacement_rmse_m": 0.011191052487199916,
+          "identity_index": 5,
+          "support_fraction": 0.36666666666666664,
+          "supported_count": 44,
+          "target_count": 120
+        },
+        {
+          "displacement_rmse_m": null,
+          "identity_index": 6,
+          "support_fraction": 0.0,
+          "supported_count": 0,
+          "target_count": 121
+        },
+        {
+          "displacement_rmse_m": 0.0042301998532916,
+          "identity_index": 7,
+          "support_fraction": 0.6024096385542169,
+          "supported_count": 50,
+          "target_count": 83
+        },
+        {
+          "displacement_rmse_m": 0.0043083201946084206,
+          "identity_index": 8,
+          "support_fraction": 0.4793388429752066,
+          "supported_count": 58,
+          "target_count": 121
+        }
+      ],
+      "position_rmse_m": 0.01354680352178858,
+      "support_fraction": 0.5542857142857143,
+      "supported_count": 485,
+      "target_count": 875,
+      "translation_diagnostics": {
+        "common_translation_rmse_m": 0.018347489665278077,
+        "frame_count": 120,
+        "translation_removed_rmse_m": 0.009485176302488449
+      }
+    },
+    "2": {
+      "displacement_rmse_m": 0.03272663386795224,
+      "frame_range": [
+        0,
+        121
+      ],
+      "frame_zero_anchor_rmse_m": 8.839927758633037e-09,
+      "per_identity": [
+        {
+          "displacement_rmse_m": 0.012337409694761865,
+          "identity_index": 0,
+          "support_fraction": 1.0,
+          "supported_count": 66,
+          "target_count": 66
+        },
+        {
+          "displacement_rmse_m": 0.01892678624213439,
+          "identity_index": 1,
+          "support_fraction": 1.0,
+          "supported_count": 81,
+          "target_count": 81
+        },
+        {
+          "displacement_rmse_m": 0.0053524796941301234,
+          "identity_index": 2,
+          "support_fraction": 1.0,
+          "supported_count": 51,
+          "target_count": 51
+        },
+        {
+          "displacement_rmse_m": 0.05329587491889754,
+          "identity_index": 3,
+          "support_fraction": 1.0,
+          "supported_count": 112,
+          "target_count": 112
+        },
+        {
+          "displacement_rmse_m": null,
+          "identity_index": 4,
+          "support_fraction": 0.0,
+          "supported_count": 0,
+          "target_count": 120
+        },
+        {
+          "displacement_rmse_m": 0.00238598699916452,
+          "identity_index": 5,
+          "support_fraction": 0.20833333333333334,
+          "supported_count": 25,
+          "target_count": 120
+        },
+        {
+          "displacement_rmse_m": null,
+          "identity_index": 6,
+          "support_fraction": 0.0,
+          "supported_count": 0,
+          "target_count": 121
+        },
+        {
+          "displacement_rmse_m": null,
+          "identity_index": 7,
+          "support_fraction": 0.0,
+          "supported_count": 0,
+          "target_count": 83
+        },
+        {
+          "displacement_rmse_m": null,
+          "identity_index": 8,
+          "support_fraction": 0.0,
+          "supported_count": 0,
+          "target_count": 121
+        }
+      ],
+      "position_rmse_m": 0.032726632480845466,
+      "support_fraction": 0.38285714285714284,
+      "supported_count": 335,
+      "target_count": 875,
+      "translation_diagnostics": {
+        "common_translation_rmse_m": 0.04112968924376673,
+        "frame_count": 121,
+        "translation_removed_rmse_m": 0.017825105190334294
+      }
+    }
+  },
+  "protocol": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/BPT-b3cf20ee/configs/sota/phystwin_tapip3d_multiview_competence_v1.json",
+    "sha256": "057b8d83de0ccc33f1a1a87f7d725087725afc64814c6a2f59b3e40577f39286"
+  },
+  "recommendation": "Stop this multiview TAPIP3D feeder without tuning on the opened case.",
+  "reference_camera_shared_comparison": {
+    "first_displacement_rmse_m": 0.010829726176233158,
+    "first_relative_improvement_fraction": -0.050228631158521386,
+    "frame_range": [
+      0,
+      121
+    ],
+    "second_displacement_rmse_m": 0.010311779602015554,
+    "shared_count": 473
+  },
+  "schema_version": 1,
+  "scored_at_utc": "2026-08-06T03:58:57.819596+00:00",
+  "status": "opened one-case association-oracle multiview observation competence control; not prediction, transfer, confirmation, or SOTA evidence",
+  "study_id": "phystwin-tapip3d-multiview-competence-v1"
+}

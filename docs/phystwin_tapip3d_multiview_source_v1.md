@@ -87,3 +87,47 @@ If the conjunction passes, freeze the result and design an automatic graph-query
 source study with the existing physical/action-supported guarded update and exact
 fallback. If it fails, stop this multiview TAPIP3D feeder without changing view
 admission, fusion, or gates on the opened case.
+
+## Result
+
+The protocol was locked at commit `a5ba9bf1` before camera-1 or camera-2
+inference. Both official runs completed under the locked settings, all three view
+predictions were sealed, and the fusion was sealed before the later manual prefix
+was read.
+
+| Arm | Prefix support | Displacement RMSE | Late support | Late RMSE |
+| --- | ---: | ---: | ---: | ---: |
+| Camera 0 | 85.49% | 10.168 mm | 65.63% | 13.771 mm |
+| Camera 1 | 55.43% | 13.547 mm | not gated | not gated |
+| Camera 2 | 38.29% | 32.727 mm | not gated | not gated |
+| Locked multiview fusion | 54.29% | 11.676 mm | 17.86% | 20.978 mm |
+
+On the 473 identity-frame rows shared with camera 0, fusion had 10.830 mm RMSE
+versus 10.312 mm for camera 0, a 5.02% regression. Only the frame-zero anchor gate
+passed; the other five conditions failed. The uncalibrated conservative covariance
+had 87.58% coverage for the nominal 90% three-dimensional ellipsoid and mean NEES
+2.52, which is useful diagnostic evidence but not a calibration result.
+
+The failure is not merely low support. Camera 2 supplies a coherent but badly
+biased trajectory for some identities, and geometric-median fusion can retain that
+bias when only two views are available. Requiring agreement removes many late
+rows without improving the surviving point estimates enough. This is consistent
+with the broader camera-only common-mode-bias limit already observed in the
+Deform360 studies.
+
+## Decision
+
+The competence gate failed. Stop this exact feeder and do not tune its depth gate,
+disagreement threshold, view count, or covariance on `single_lift_cloth`.
+
+This result closes only:
+
+- independent official TAPIP3D per calibrated RGB-D camera;
+- frame-zero depth admission at 10 mm;
+- exact query re-anchoring;
+- two-view geometric-median fusion with a 20 mm disagreement gate; and
+- the specified conservative shared-bias covariance.
+
+It does not reject learned cross-view feature fusion, an independent sensing
+modality, or physical/action-supported guarded belief updates. No source panel,
+fresh object, future after frame 120, or held-v8 artifact was opened.

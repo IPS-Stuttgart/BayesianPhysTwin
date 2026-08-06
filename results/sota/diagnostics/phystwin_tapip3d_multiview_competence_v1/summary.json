@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "study_id": "phystwin-tapip3d-multiview-competence-v1",
+  "status": "source competence gate failed",
+  "protocol_commit": "a5ba9bf1d54ac6b27ab575338e2d1208bc2cd0b8",
+  "protocol_sha256": "057b8d83de0ccc33f1a1a87f7d725087725afc64814c6a2f59b3e40577f39286",
+  "case": "single_lift_cloth",
+  "metrics": {
+    "camera0": {
+      "support_fraction": 0.8548571428571429,
+      "displacement_rmse_m": 0.010167630230242268
+    },
+    "camera1": {
+      "support_fraction": 0.5542857142857143,
+      "displacement_rmse_m": 0.013546804871114546
+    },
+    "camera2": {
+      "support_fraction": 0.38285714285714284,
+      "displacement_rmse_m": 0.03272663386795224
+    },
+    "multiview": {
+      "support_fraction": 0.5428571428571428,
+      "displacement_rmse_m": 0.011676459714078725,
+      "late_support_fraction": 0.17857142857142858,
+      "late_displacement_rmse_m": 0.020977559061619754,
+      "reference_camera_shared_improvement_fraction": -0.050228631158521386,
+      "mean_nees": 2.5202888836556245,
+      "ellipsoid_90_coverage": 0.8757894736842106
+    }
+  },
+  "gates": {
+    "competence_gate_passed": false,
+    "passed_count": 1,
+    "total_count": 6
+  },
+  "decision": "Stop the locked multiview TAPIP3D feeder without tuning on the opened case.",
+  "information_boundary": {
+    "future_after_prefix_used": false,
+    "fresh_object_opened": false,
+    "held_v8_access": false
+  },
+  "evidence_sha256": {
+    "camera0_prediction_manifest.json": "e10294b8cebc5bfa866675b803cdf82d8c1d29b8fe1430ac02ec233960385069",
+    "camera1_input_manifest.json": "46861538e006c070a5a2cf9bcdc4a1fb450d94f3023621a9182a1d6ace0c1038",
+    "camera1_prediction_manifest.json": "aaf877c14ec3211594c44af08d3393f5ef42df8407e1bc578e9bc2b1b10a5548",
+    "camera2_input_manifest.json": "7b9ce83acdd09ff7c699d1210baf99c7927cda24b7fb388491c4ecfcab7cc307",
+    "camera2_prediction_manifest.json": "1f1e697507bde8da458f858fe09646bbfb172ff0a1d1b4c0db7007b9dec3a9d0",
+    "fusion_manifest.json": "f53dde96898fbbd00e785d52884823d9f1542807daa0c49716901cb52024b948",
+    "result.json": "2137508d2ed1809301cc3de84f4620f1a55e522e9111a035994a7f7def289409"
+  },
+  "verification": {
+    "focused_tests": "19 passed",
+    "local_ruff": "passed",
+    "remote_gpu": "gpuserver4090 GPU 0"
+  }
+}

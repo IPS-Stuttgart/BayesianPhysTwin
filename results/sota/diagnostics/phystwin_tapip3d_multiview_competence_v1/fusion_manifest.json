@@ -1,0 +1,51 @@
+{
+  "artifact_kind": "PhysTwinTapip3dMultiviewFusionPredictionV1",
+  "case": "single_lift_cloth",
+  "created_at_utc": "2026-08-06T03:58:39.995491+00:00",
+  "future_after_prefix_loaded": false,
+  "held_v8_access": false,
+  "implementation_commit": "a5ba9bf1d54ac6b27ab575338e2d1208bc2cd0b8",
+  "later_manual_trajectory_loaded": false,
+  "prediction": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/outputs/sealed/fusion/multiview_prediction.npz",
+    "sha256": "b7cb1a3544258a6ed9c76dc5b00eddc39be15ef43405240020966764bdad9df2"
+  },
+  "protocol": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/BPT-b3cf20ee/configs/sota/phystwin_tapip3d_multiview_competence_v1.json",
+    "sha256": "057b8d83de0ccc33f1a1a87f7d725087725afc64814c6a2f59b3e40577f39286"
+  },
+  "schema_version": 1,
+  "target_free_support": {
+    "median_pairwise_disagreement_m": 0.004287671726727838,
+    "p90_pairwise_disagreement_m": 0.018575184770377742,
+    "support_fraction": 0.48484848484848486,
+    "supported_count": 528,
+    "total_count": 1089,
+    "view_count_histogram": {
+      "0": 67,
+      "1": 467,
+      "2": 313,
+      "3": 242
+    }
+  },
+  "view_predictions": [
+    {
+      "camera_index": 0,
+      "manifest_path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/outputs/sealed/camera0/prediction_manifest.json",
+      "manifest_sha256": "e10294b8cebc5bfa866675b803cdf82d8c1d29b8fe1430ac02ec233960385069",
+      "prediction_sha256": "f491da4ed3bb4e418b594b3d5404306e03db214455b50703160f4423bcd5cc7d"
+    },
+    {
+      "camera_index": 1,
+      "manifest_path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/outputs/sealed/camera1/prediction_manifest.json",
+      "manifest_sha256": "aaf877c14ec3211594c44af08d3393f5ef42df8407e1bc578e9bc2b1b10a5548",
+      "prediction_sha256": "3725fdeeeb6881e70d705e33bbbe1c8259ac84ee2e7b1b8e501bd3899f631564"
+    },
+    {
+      "camera_index": 2,
+      "manifest_path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/outputs/sealed/camera2/prediction_manifest.json",
+      "manifest_sha256": "1f1e697507bde8da458f858fe09646bbfb172ff0a1d1b4c0db7007b9dec3a9d0",
+      "prediction_sha256": "49b0fe1802e263be5815363205fe96735929660d8bfa55bdbb200c9356b985a7"
+    }
+  ]
+}

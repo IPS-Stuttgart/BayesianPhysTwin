@@ -1,0 +1,81 @@
+{
+  "artifact_kind": "TAPIP3DPhysTwinMultiviewFrameZeroInputV1",
+  "camera_index": 2,
+  "case": "single_lift_cloth",
+  "created_at_utc": "2026-08-06T03:54:42.451247+00:00",
+  "depth_units": "metres",
+  "extrinsics_convention": "world-to-camera",
+  "frame_range": [
+    0,
+    121
+  ],
+  "future_after_prefix_loaded": false,
+  "global_query_count": 9,
+  "held_v8_access": false,
+  "input_npz": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/inputs/single_lift_cloth_camera2_prefix121_oracle.npz",
+    "sha256": "edcdf256d73e4041d3bbf057f1342d14a4e8f77a814523be143e265b796066ca"
+  },
+  "later_manual_trajectory_loaded": false,
+  "manual_identity_role": "frame-zero query coordinates only",
+  "maximum_frame_zero_depth_error_m": 0.01,
+  "query_source": {
+    "field_read": "query_point only",
+    "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/inputs/single_lift_cloth_camera0_prefix121_oracle9.npz",
+    "sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc"
+  },
+  "raw_inputs": {
+    "calibration": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/raw/single_lift_cloth/calibrate.pkl",
+      "sha256": "160962e646f60bdfd70a71793e11c8152a0d05543762999213d489ef50849f1d"
+    },
+    "depth_aggregate_sha256": "dd967cd04ed012ca5df5842bdcb4c63659b06db3c31d258c8b0a10720714cc07",
+    "depth_frame_count": 121,
+    "metadata": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/raw/single_lift_cloth/metadata.json",
+      "sha256": "37b6926c2ff037e8e03ea93258db4884e99e154c666b7142ede63e724de83142"
+    },
+    "video": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/raw/single_lift_cloth/color/2.mp4",
+      "sha256": "ca4f09fa890173355a318c34fa3b9eb63bdd81bf443118320ac46afd584edf70"
+    }
+  },
+  "schema_version": 1,
+  "selected_frame_zero_depth_error_m": [
+    0.004110221082043175,
+    0.0022156278382445826,
+    0.006263816292520263,
+    0.0031474872542377463,
+    0.0010817317650932967
+  ],
+  "selected_frame_zero_pixels": [
+    [
+      550.8162820169018,
+      235.99806162144426
+    ],
+    [
+      455.8512001035242,
+      308.586653342968
+    ],
+    [
+      512.1657231331641,
+      220.76362772193264
+    ],
+    [
+      414.5876575408863,
+      280.20403300404973
+    ],
+    [
+      417.12180792265286,
+      219.04276562162647
+    ]
+  ],
+  "selected_global_query_indices": [
+    0,
+    1,
+    2,
+    3,
+    5
+  ],
+  "selected_query_count": 5
+}

@@ -1,0 +1,99 @@
+{
+  "artifact_kind": "TAPIP3DPhysTwinMultiviewFrameZeroInputV1",
+  "camera_index": 1,
+  "case": "single_lift_cloth",
+  "created_at_utc": "2026-08-06T03:54:18.597053+00:00",
+  "depth_units": "metres",
+  "extrinsics_convention": "world-to-camera",
+  "frame_range": [
+    0,
+    121
+  ],
+  "future_after_prefix_loaded": false,
+  "global_query_count": 9,
+  "held_v8_access": false,
+  "input_npz": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/inputs/single_lift_cloth_camera1_prefix121_oracle.npz",
+    "sha256": "982390f20018be8cf06fbd1f1668f108405472dddd308259d1245c6376686ab4"
+  },
+  "later_manual_trajectory_loaded": false,
+  "manual_identity_role": "frame-zero query coordinates only",
+  "maximum_frame_zero_depth_error_m": 0.01,
+  "query_source": {
+    "field_read": "query_point only",
+    "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/inputs/single_lift_cloth_camera0_prefix121_oracle9.npz",
+    "sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc"
+  },
+  "raw_inputs": {
+    "calibration": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/raw/single_lift_cloth/calibrate.pkl",
+      "sha256": "160962e646f60bdfd70a71793e11c8152a0d05543762999213d489ef50849f1d"
+    },
+    "depth_aggregate_sha256": "760cbb368597387dab6dce98302f6d0c8541cef02c89cdc311fd9844e5c6cf1c",
+    "depth_frame_count": 121,
+    "metadata": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/raw/single_lift_cloth/metadata.json",
+      "sha256": "37b6926c2ff037e8e03ea93258db4884e99e154c666b7142ede63e724de83142"
+    },
+    "video": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/raw/single_lift_cloth/color/1.mp4",
+      "sha256": "8ba5a56a17f39bcfb4c0abaec56f5ada7d568bbe20a2c184fc3f84a2b84a450e"
+    }
+  },
+  "schema_version": 1,
+  "selected_frame_zero_depth_error_m": [
+    0.0028336643062507605,
+    0.0027040314337672955,
+    0.0017776931074243718,
+    0.005328370601917043,
+    0.0005401976452287238,
+    0.0012465811981143826,
+    0.004863989041492434,
+    0.009363562339394615
+  ],
+  "selected_frame_zero_pixels": [
+    [
+      351.29055686915837,
+      316.2171005480626
+    ],
+    [
+      324.1681949161209,
+      236.72576778881154
+    ],
+    [
+      399.4767340632089,
+      304.3034941644506
+    ],
+    [
+      362.8588303793983,
+      229.43907020979933
+    ],
+    [
+      443.1826659852161,
+      287.6164095641988
+    ],
+    [
+      438.81204064810663,
+      248.39965152317382
+    ],
+    [
+      477.7375009620755,
+      264.7469640543733
+    ],
+    [
+      443.56815497577446,
+      222.45408239732367
+    ]
+  ],
+  "selected_global_query_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8
+  ],
+  "selected_query_count": 8
+}
