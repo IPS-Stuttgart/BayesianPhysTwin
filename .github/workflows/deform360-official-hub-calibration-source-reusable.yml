@@ -1,0 +1,147 @@
+name: Reusable frozen Deform360 calibration source
+
+on:
+  workflow_call:
+    inputs:
+      source_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: deform360-official-calibration-source-direct-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+env:
+  BPT_SOURCE_SHA: ${{ inputs.source_sha }}
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  DATA_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_DATA_ROOT || '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-source' }}
+  PROCESSED_ROOT: ${{ vars.DEFORM360_OFFICIAL_CALIBRATION_PROCESSED_ROOT || '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed' }}
+
+jobs:
+  prepare-calibration-source:
+    name: Direct reviewed ten-object calibration source / workstation2
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 400
+    steps:
+      - name: Check out exact reviewed BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.PROCESSING_REVISION }}
+          path: _deform360_processing
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Initialize evidence paths and publish a non-sensitive run beacon
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          site_root="${RUNNER_TEMP}/deform360-calibration-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          processing_repo="${GITHUB_WORKSPACE}/_deform360_processing"
+          staged_root="${PROCESSED_ROOT}/staged-raw"
+          rm -rf -- "${evidence_root}" "${site_root}"
+          mkdir -p -- "${evidence_root}" "${site_root}"
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "PYTHON_SITE=${site_root}"
+            echo "PROCESSING_REPO=${processing_repo}"
+            echo "STAGED_ROOT=${staged_root}"
+          } >> "${GITHUB_ENV}"
+          python3 - "${evidence_root}/beacon.json" <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          body = "\n".join(
+              [
+                  "## Direct ten-object calibration-source execution started",
+                  "",
+                  f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
+                  f"- exact reviewed source revision: `{os.environ['BPT_SOURCE_SHA']}`",
+                  "- runner lane: `self-hosted, Linux, X64, nvidia-smi`",
+                  "- authorized payload scope: ten frozen calibration objects only",
+                  "- forbidden payload scope: all confirmation objects and target outcomes",
+              ]
+          )
+          Path(sys.argv[1]).write_text(
+              json.dumps({"body": body}, sort_keys=True), encoding="utf-8"
+          )
+          PY
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            --data-binary @"${evidence_root}/beacon.json"
+
+      - name: Validate and prepare the frozen calibration source
+        shell: bash
+        run: bash scripts/ci/run_deform360_calibration_source_direct.sh
+
+      - name: Publish compact calibration-source evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-official-calibration-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish compact job summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "### Official-Hub Deform360 calibration source" >> "${GITHUB_STEP_SUMMARY}"
+          echo >> "${GITHUB_STEP_SUMMARY}"
+          echo "- Runner: \`${RUNNER_NAME}\`" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- Source revision: \`${BPT_SOURCE_SHA}\`" >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -f "${EVIDENCE_ROOT}/calibration-source-result.json" ]]; then
+            python3 - "${EVIDENCE_ROOT}/calibration-source-result.json" <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          from pathlib import Path
+          import sys
+
+          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          gate = result["gate"]
+          print(f"- Prepared objects: `{gate['supported_object_count']}`")
+          print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
+          print(f"- Result digest: `{result['result_sha256']}`")
+          PY
+          fi
+
+      - name: Remove isolated runtime and processing checkout
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in "${PYTHON_SITE:-}" "${PROCESSING_REPO:-}"; do
+            if [[ -n "${path}" ]]; then
+              rm -rf -- "${path}"
+            fi
+          done
