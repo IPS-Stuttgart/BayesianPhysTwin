@@ -1,0 +1,127 @@
+name: Validate merged query calibration 177
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-merged-query-calibration-177.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-merged-query-calibration-177
+  cancel-in-progress: true
+
+jobs:
+  exact-merge:
+    name: Full-suite validation of merge 034ed13b
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 120
+    env:
+      MERGE_SHA: 034ed13b71841d7955abcefcad3fcc5adb96564c
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONHASHSEED: "0"
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+    steps:
+      - name: Check out exact merged revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.MERGE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Verify merged revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${MERGE_SHA}"
+          git merge-base --is-ancestor "${MERGE_SHA}" origin/main
+          git diff --check "${MERGE_SHA}^...${MERGE_SHA}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Create isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          environment="${RUNNER_TEMP}/validate-query-calibration-177"
+          python -m venv --clear "${environment}"
+          "${environment}/bin/python" -m ensurepip --upgrade
+          echo "${environment}/bin" >> "${GITHUB_PATH}"
+
+      - name: Install repository and validation tools
+        run: |
+          python -m pip install "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+          python -m pip install -e ".[dev,graph,vision]"
+          python -m pip install "coverage==7.13.3"
+          python -m pip check
+
+      - name: Recheck merged source quality
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/query_calibration.py \
+            tests/conftest.py \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/query_calibration.py \
+            tests/conftest.py \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
+          python -m mypy src/bayesian_phystwin/query_calibration.py
+
+      - name: Verify query-calibration coverage ratchet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m coverage erase
+          python -m coverage run --branch --source=bayesian_phystwin -m pytest -q -p no:cacheprovider \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
+          python -m coverage json -o query-calibration-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = "src/bayesian_phystwin/query_calibration.py"
+          details = json.loads(
+              Path("query-calibration-coverage.json").read_text(encoding="utf-8")
+          )["files"][path]
+          summary = details["summary"]
+          line_coverage = float(summary["percent_statements_covered"])
+          branch_coverage = 100.0 * summary["covered_branches"] / summary["num_branches"]
+          print(
+              f"{path}: lines={line_coverage:.2f}% branches={branch_coverage:.2f}% "
+              f"missing_lines={details['missing_lines']} "
+              f"missing_branches={details['missing_branches']}"
+          )
+          if line_coverage < 90.0:
+              raise SystemExit("query calibration line coverage is below 90%")
+          if branch_coverage < 80.0:
+              raise SystemExit("query calibration branch coverage is below 80%")
+          PY
+          rm -f .coverage query-calibration-coverage.json
+
+      - name: Run complete repository suite
+        run: python -m pytest -q -p no:cacheprovider
+
+      - name: Verify compilation and clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q src tests
+          git diff --check
+          test -z "$(git status --porcelain=v1)"
