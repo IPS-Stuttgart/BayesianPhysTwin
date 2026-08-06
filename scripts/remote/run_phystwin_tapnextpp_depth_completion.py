@@ -156,6 +156,31 @@ def _validate_strict_prediction_seal(
     }
 
 
+def _validate_transfer_evaluation_custody(
+    protocol: dict[str, Any],
+    prediction: Path,
+    withheld_path: Path,
+) -> None:
+    if protocol["protocol_id"] == SOURCE_SMOKE_PROTOCOL_ID:
+        return
+    report_path = prediction / REPORT_FILENAME
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    _require(
+        report.get("result_sha256") == _canonical_sha256(report),
+        "completion prediction report hash changed",
+    )
+    _require(
+        report.get("protocol_id") == protocol["protocol_id"]
+        and report.get("case") == protocol.get("case"),
+        "completion prediction belongs to another transfer case",
+    )
+    _require(
+        _file_sha256(withheld_path)
+        == protocol["source_artifacts"]["withheld_prefix_sha256"],
+        "withheld prefix differs from the transfer lock",
+    )
+
+
 def _load_inputs(
     strict_path: Path,
     prediction_input_path: Path,
@@ -417,6 +442,11 @@ def _evaluate(args: argparse.Namespace) -> None:
         "sealed prediction files changed",
     )
     withheld_path = args.withheld_prefix.resolve()
+    _validate_transfer_evaluation_custody(
+        protocol,
+        prediction,
+        withheld_path,
+    )
     with np.load(archive_path, allow_pickle=False) as stored:
         candidate = np.asarray(stored["completed_points_world_m"], np.float64)
         support = np.asarray(stored["completed_support"], bool)

@@ -90,3 +90,43 @@ def test_transfer_strict_prediction_must_match_its_seal(tmp_path: Path) -> None:
         assert "differs from its seal" in str(error)
     else:  # pragma: no cover - defensive assertion
         raise AssertionError("mutated carrier passed its prediction seal")
+
+
+def test_transfer_evaluation_requires_locked_withheld_prefix(
+    tmp_path: Path,
+) -> None:
+    runner = _load_runner()
+    prediction = tmp_path / "prediction"
+    prediction.mkdir()
+    report = {
+        "protocol_id": runner.TRACKER_PROTOCOL_ID,
+        "case": "transfer_case",
+    }
+    report["result_sha256"] = runner._canonical_sha256(report)
+    _write_json(prediction / runner.REPORT_FILENAME, report)
+    withheld = tmp_path / "withheld.npz"
+    withheld.write_bytes(b"locked-prefix")
+    protocol = {
+        "protocol_id": runner.TRACKER_PROTOCOL_ID,
+        "case": "transfer_case",
+        "source_artifacts": {
+            "withheld_prefix_sha256": runner._file_sha256(withheld)
+        },
+    }
+    runner._validate_transfer_evaluation_custody(
+        protocol,
+        prediction,
+        withheld,
+    )
+
+    withheld.write_bytes(b"mutated-prefix")
+    try:
+        runner._validate_transfer_evaluation_custody(
+            protocol,
+            prediction,
+            withheld,
+        )
+    except ValueError as error:
+        assert "differs from the transfer lock" in str(error)
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("mutated withheld prefix passed custody validation")
