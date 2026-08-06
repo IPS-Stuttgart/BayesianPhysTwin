@@ -43,11 +43,19 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+
+      - name: Create isolated validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          environment="${RUNNER_TEMP}/query-calibration-177-venv"
+          python -m venv --clear "${environment}"
+          "${environment}/bin/python" -m ensurepip --upgrade
+          echo "${environment}/bin" >> "${GITHUB_PATH}"
 
       - name: Install validation environment
         run: |
+          python -m pip install --upgrade pip
           python -m pip install -e ".[dev,graph,vision]"
           python -m pip install "coverage==7.13.3"
           python -m pip check
