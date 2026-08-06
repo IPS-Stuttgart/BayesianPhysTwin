@@ -8,6 +8,7 @@ on:
       - "tools/temporary_harden_timestamp_consumer.py"
       - "tools/temporary_narrow_timestamp_admission_claim.py"
       - "tools/temporary_add_clock_prior_file_loader.py"
+      - "tools/temporary_annotate_timestamp_workspace.py"
       - "src/bayesian_phystwin/causal4d_observation_clock_prior.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
@@ -98,6 +99,7 @@ jobs:
           python tools/temporary_harden_timestamp_consumer.py
           python tools/temporary_narrow_timestamp_admission_claim.py
           python tools/temporary_add_clock_prior_file_loader.py
+          python tools/temporary_annotate_timestamp_workspace.py
 
       - name: Format permanent source and tests
         shell: bash
@@ -152,6 +154,7 @@ jobs:
           rm tools/temporary_harden_timestamp_consumer.py
           rm tools/temporary_narrow_timestamp_admission_claim.py
           rm tools/temporary_add_clock_prior_file_loader.py
+          rm tools/temporary_annotate_timestamp_workspace.py
           rm .github/workflows/temporary-format-prob4d-observation-timestamps.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
