@@ -12,6 +12,7 @@ on:
       - "scripts/paper/render_pokeflex_same_object_video.py"
       - "scripts/paper/pokeflex_same_object_video_*.py"
       - "tests/test_pokeflex_same_object_reporting.py"
+      - "tests/test_pokeflex_same_object_workflow.py"
       - "docs/pokeflex_same_object_paper_artifacts.md"
       - "configs/sota/pokeflex_independent_depth_*.json"
       - "results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/**"
@@ -90,6 +91,7 @@ jobs:
             scripts/paper/pokeflex_same_object_video_plot.py
             scripts/paper/render_pokeflex_same_object_video.py
             tests/test_pokeflex_same_object_reporting.py
+            tests/test_pokeflex_same_object_workflow.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
@@ -97,7 +99,8 @@ jobs:
             --cache-dir "${RUNNER_TEMP}/pokeflex-paper-mypy-cache" \
             src/bayesian_phystwin/pokeflex_same_object_reporting.py
           python -m pytest -q -p no:cacheprovider \
-            tests/test_pokeflex_same_object_reporting.py
+            tests/test_pokeflex_same_object_reporting.py \
+            tests/test_pokeflex_same_object_workflow.py
           python -m py_compile "${files[@]}"
 
   artifacts:
@@ -126,17 +129,43 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Initialize isolated artifact paths
+      - name: Initialize isolated artifact paths and Python
         shell: bash
         run: |
           set -euo pipefail
           root="${RUNNER_TEMP}/pokeflex-paper-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           rm -rf "${root}"
           mkdir -p "${root}/evidence" "${root}/output" "${root}/resolved"
+
           candidate_root="${INPUT_CANDIDATE_ROOT:-${VAR_CANDIDATE_ROOT:-}}"
           if [[ -z "${candidate_root}" ]]; then
             candidate_root="/mnt/corsair/florianpfaff/pokeflex-regret-prospective-v1"
           fi
+
+          python_bin="${VAR_PYTHON:-}"
+          if [[ -z "${python_bin}" ]] && command -v python3.11 >/dev/null 2>&1; then
+            python_bin="$(command -v python3.11)"
+          fi
+          if [[ -z "${python_bin}" && -n "${RUNNER_TOOL_CACHE:-}" ]]; then
+            shopt -s nullglob
+            candidates=("${RUNNER_TOOL_CACHE}"/Python/3.11.*/x64/bin/python)
+            shopt -u nullglob
+            if (( ${#candidates[@]} )); then
+              python_bin="$(printf '%s\n' "${candidates[@]}" | sort -V | tail -n 1)"
+            fi
+          fi
+          if [[ -z "${python_bin}" || ! -x "${python_bin}" ]]; then
+            echo "A Python 3.11 interpreter is required for the released checkpoint." >&2
+            exit 1
+          fi
+          "${python_bin}" - <<'PY'
+          import sys
+          if sys.version_info[:2] != (3, 11):
+              raise SystemExit(
+                  f"released-checkpoint runtime requires Python 3.11, got {sys.version}"
+              )
+          PY
+
           {
             echo "POKEFLEX_RUN_ROOT=${root}"
             echo "POKEFLEX_RESOLVED=${root}/resolved"
@@ -145,26 +174,157 @@ jobs:
             echo "POKEFLEX_OUTPUT=${root}/output"
             echo "POKEFLEX_SOURCE_CANDIDATE_ROOT=${candidate_root}"
             echo "POKEFLEX_VERIFIED_CANDIDATE_ROOT=${root}/verified-candidates"
+            echo "POKEFLEX_BOOTSTRAP_PYTHON=${python_bin}"
+            echo "POKEFLEX_VENV=${root}/venv"
             echo "MPLCONFIGDIR=${root}/matplotlib"
             echo "XDG_CACHE_HOME=${root}/cache"
           } >> "${GITHUB_ENV}"
 
-      - name: Set up the released-checkpoint Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install the explicit PokeFlex runtime
+      - name: Validate frozen input custody before runtime installation
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --upgrade pip
-          python -m pip install \
+          "${POKEFLEX_BOOTSTRAP_PYTHON}" - <<'PY' | \
+            tee "${POKEFLEX_EVIDENCE}/input-preflight.json"
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(
+              "results/sota/"
+              "pokeflex_independent_depth_regret_guard_prospective_v1/"
+              "prospective_evaluation.json"
+          )
+          manifest_path = result_path.with_name("execution_manifest.json")
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+          requested = os.environ.get("INPUT_TAKE_ID", "").strip()
+          takes = result["takes"]
+          take_ids = {str(item["take_id"]) for item in takes}
+          if requested:
+              if requested not in take_ids:
+                  raise SystemExit(f"requested take is outside the frozen panel: {requested}")
+              selected = requested
+          else:
+              selected = str(
+                  max(takes, key=lambda item: item["relative_improvement"])["take_id"]
+              )
+
+          candidate_root = Path(os.environ["POKEFLEX_SOURCE_CANDIDATE_ROOT"])
+          candidates = []
+          for record in result["candidate_artifacts"]:
+              path = candidate_root / Path(str(record["path"])).name
+              status = "missing"
+              observed = None
+              try:
+                  if path.is_file():
+                      digest = hashlib.sha256()
+                      with path.open("rb") as handle:
+                          for block in iter(lambda: handle.read(1024 * 1024), b""):
+                              digest.update(block)
+                      observed = digest.hexdigest()
+                      status = (
+                          "verified"
+                          if observed == str(record["sha256"])
+                          else "digest-mismatch"
+                      )
+              except OSError:
+                  status = "unreadable"
+              candidates.append(
+                  {
+                      "take_id": Path(str(record["path"])).name.removesuffix(
+                          "_candidates.json"
+                      ),
+                      "path": str(path),
+                      "status": status,
+                      "expected_sha256": str(record["sha256"]),
+                      "observed_sha256": observed,
+                  }
+              )
+
+          archives = {
+              str(record["take_id"]): record for record in manifest["archives"]
+          }
+          archive = archives[selected]
+          archive_path = Path(str(archive["path"]))
+          try:
+              archive_readable = archive_path.is_file()
+              archive_size_matches = (
+                  archive_readable
+                  and archive_path.stat().st_size == int(archive["size_bytes"])
+              )
+          except OSError:
+              archive_readable = False
+              archive_size_matches = False
+
+          object_name = selected.split("_T", maxsplit=1)[0]
+          dataset_root_text = os.environ.get("VAR_DATASET_ROOT", "").strip()
+          possible_roots = []
+          if dataset_root_text:
+              configured = Path(dataset_root_text)
+              possible_roots.extend(
+                  [
+                      configured / selected,
+                      configured / object_name / selected,
+                      configured / "poking" / object_name / selected,
+                  ]
+              )
+          possible_roots.extend(
+              [
+                  Path("/mnt/lexar4tb/pokeflex/poking") / object_name / selected,
+                  Path("/mnt/corsair/pokeflex/poking") / object_name / selected,
+              ]
+          )
+          extracted = None
+          for candidate in possible_roots:
+              try:
+                  if (candidate / "robot_data.json").is_file():
+                      extracted = candidate.resolve()
+                      break
+              except OSError:
+                  continue
+
+          if not archive_size_matches and extracted is None:
+              raise SystemExit(
+                  "selected video take has neither a readable size-matched "
+                  "frozen archive nor an extracted robot_data.json root"
+              )
+
+          print(
+              json.dumps(
+                  {
+                      "schema_version": 1,
+                      "selected_take_id": selected,
+                      "candidate_artifacts": candidates,
+                      "selected_archive": str(archive_path),
+                      "selected_archive_readable": archive_readable,
+                      "selected_archive_size_matches": archive_size_matches,
+                      "selected_extracted_take": (
+                          None if extracted is None else str(extracted)
+                      ),
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+          )
+          PY
+
+      - name: Create isolated released-checkpoint runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${POKEFLEX_BOOTSTRAP_PYTHON}" -m venv --clear "${POKEFLEX_VENV}"
+          "${POKEFLEX_VENV}/bin/python" -m ensurepip --upgrade
+          "${POKEFLEX_VENV}/bin/python" -m pip install \
+            --no-cache-dir --upgrade pip setuptools wheel
+          "${POKEFLEX_VENV}/bin/python" -m pip install \
+            --no-cache-dir \
             "torch==2.1.0" \
             --index-url https://download.pytorch.org/whl/cu121
-          python -m pip install \
+          "${POKEFLEX_VENV}/bin/python" -m pip install \
+            --no-cache-dir \
             -e ".[graph,vision]" \
             "numpy==1.26.4" \
             gdown \
@@ -175,9 +335,9 @@ jobs:
             siren-pytorch \
             transformers==4.46.3 \
             trimesh
-          python -m pip check
-          echo "BPT_PYTHON=$(command -v python)" >> "${GITHUB_ENV}"
-          python - <<'PY'
+          "${POKEFLEX_VENV}/bin/python" -m pip check
+          echo "BPT_PYTHON=${POKEFLEX_VENV}/bin/python" >> "${GITHUB_ENV}"
+          "${POKEFLEX_VENV}/bin/python" - <<'PY'
           import cv2
           import imageio_ffmpeg
           import matplotlib
@@ -308,6 +468,7 @@ jobs:
             echo "repository=${GITHUB_REPOSITORY}"
             echo "revision=${GITHUB_SHA}"
             echo "runner_name=${RUNNER_NAME}"
+            echo "bootstrap_python=${POKEFLEX_BOOTSTRAP_PYTHON}"
             echo "python=${BPT_PYTHON}"
             echo "take=${POKEFLEX_SELECTED_TAKE}"
             echo "archive=${POKEFLEX_SELECTED_ARCHIVE}"
@@ -365,9 +526,14 @@ jobs:
           if [[ -n "${POKEFLEX_OUTPUT:-}" && \
                 -f "${POKEFLEX_OUTPUT}/pokeflex_same_object_diagnostic.json" ]]; then
             echo '```json' >> "${GITHUB_STEP_SUMMARY}"
-            "${BPT_PYTHON}" -c \
-              'import json, os; from pathlib import Path; p=Path(os.environ["POKEFLEX_OUTPUT"])/"pokeflex_same_object_diagnostic.json"; print(json.dumps(json.loads(p.read_text())["bounded_result"], indent=2, sort_keys=True))' \
-              >> "${GITHUB_STEP_SUMMARY}"
+            if [[ -n "${BPT_PYTHON:-}" && -x "${BPT_PYTHON}" ]]; then
+              "${BPT_PYTHON}" -c \
+                'import json, os; from pathlib import Path; p=Path(os.environ["POKEFLEX_OUTPUT"])/"pokeflex_same_object_diagnostic.json"; print(json.dumps(json.loads(p.read_text())["bounded_result"], indent=2, sort_keys=True))' \
+                >> "${GITHUB_STEP_SUMMARY}"
+            else
+              cat "${POKEFLEX_OUTPUT}/pokeflex_same_object_diagnostic.json" \
+                >> "${GITHUB_STEP_SUMMARY}"
+            fi
             echo '```' >> "${GITHUB_STEP_SUMMARY}"
           fi
 
@@ -378,6 +544,7 @@ jobs:
           name: pokeflex-same-object-paper-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ env.POKEFLEX_OUTPUT }}
+            ${{ env.POKEFLEX_EVIDENCE }}/input-preflight.json
             ${{ env.POKEFLEX_EVIDENCE }}/candidate-preparation.log
             ${{ env.POKEFLEX_EVIDENCE }}/candidate-preparation.json
             ${{ env.POKEFLEX_EVIDENCE }}/asset-resolution.log
