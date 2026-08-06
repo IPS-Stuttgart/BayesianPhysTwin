@@ -192,6 +192,29 @@ def test_success_without_a_valid_result_fails_the_record_contract(
     assert record["failure_stage"] == "result-contract"
 
 
+@pytest.mark.parametrize(
+    "payload",
+    (
+        '{"schema":"first","schema":"second"}',
+        '{"value":NaN}',
+    ),
+)
+def test_noncanonical_json_is_rejected_as_a_result_contract_failure(
+    tmp_path: Path,
+    payload: str,
+) -> None:
+    result = tmp_path / "result.json"
+    result.write_text(payload, encoding="utf-8")
+
+    record = _record(result, workload_exit_code=1)
+
+    assert record["exit_code"] == 4
+    assert record["failure_stage"] == "result-contract"
+    assert record["result_available"] is True
+    assert record["result_valid"] is False
+    assert record["result_error"] == "invalid-json"
+
+
 def test_tampered_result_is_not_masked_by_a_workload_failure(tmp_path: Path) -> None:
     result = tmp_path / "result.json"
     _write_result(result)
