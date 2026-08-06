@@ -570,9 +570,7 @@ def calibrate_query_covariance(
     flattened = covariance_array.reshape((-1, dimension, dimension))
     calibrated = np.empty_like(flattened)
     with np.errstate(over="ignore", invalid="ignore"):
-        multiplier = float(
-            np.square(np.float64(validated.conformal_quantile))
-        )
+        multiplier = float(np.square(np.float64(validated.conformal_quantile)))
     if not np.isfinite(multiplier):
         raise ValueError("conformal covariance multiplier must be finite")
     for index, matrix in enumerate(flattened):
@@ -648,6 +646,10 @@ def save_query_calibration(
         try:
             os.link(temporary_name, destination)
         except FileExistsError:
+            if destination.is_symlink():
+                raise ValueError(
+                    "query calibration destination must not be a symbolic link"
+                ) from None
             existing = load_query_calibration(destination)
             if existing.artifact_id != validated.artifact_id:
                 raise ValueError(
