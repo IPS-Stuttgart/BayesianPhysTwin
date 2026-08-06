@@ -5,67 +5,158 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/prob4d-visual-bias-stream.yml"
+      - "src/bayesian_phystwin/prob4d_visual_bias_stream.py"
       - "src/bayesian_phystwin/persistent_prob4d_visual_bias.py"
+      - "tests/test_prob4d_visual_bias_stream.py"
+      - "tests/test_prob4d_visual_bias_stream_crossrepo.py"
+      - "tests/test_persistent_prob4d_visual_bias.py"
+      - "docs/prob4d_visual_bias_stream.md"
+      - "docs/persistent_prob4d_visual_bias_solver.md"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: prob4d-visual-bias-stream-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
 jobs:
-  publish-typing-fix:
-    name: Publish strict ndarray annotations
-    if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64]
-    timeout-minutes: 10
+  contracts:
+    name: Persistent-bias binding and shared-state solver
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
     steps:
-      - name: Check out exact reviewed revision
+      - name: Check out exact reviewed BayesianPhysTwin revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: true
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
           clean: true
 
-      - name: Provision Python 3.12
+      - name: Check out exact merged Prob4D recursive visual-bias producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: e37c3d50d4a07a2c3760389e79d59b0ac9402dc4
+          path: _external/prob4d
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve isolated validation paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/prob4d-visual-bias-stream-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          mkdir -p "${root}"
+          {
+            echo "VISUAL_BIAS_STREAM_RUN_ROOT=${root}"
+            echo "VISUAL_BIAS_STREAM_VENV=${root}/venv"
+          } >> "${GITHUB_ENV}"
+
+      - name: Provision Python 3.12 with venv support
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
-      - name: Apply, format, and publish exact typing fixes
+      - name: Create an isolated validation environment
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install "ruff==0.16.1"
-          python - <<'PY'
-          from pathlib import Path
+          python -m venv "${VISUAL_BIAS_STREAM_VENV}"
+          echo "${VISUAL_BIAS_STREAM_VENV}/bin" >> "${GITHUB_PATH}"
+          "${VISUAL_BIAS_STREAM_VENV}/bin/python" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          "${VISUAL_BIAS_STREAM_VENV}/bin/python" -m pip install -e ".[dev]"
+          "${VISUAL_BIAS_STREAM_VENV}/bin/python" -m pip install -e ./_external/prob4d
+          "${VISUAL_BIAS_STREAM_VENV}/bin/python" -m pip check
 
-          path = Path("src/bayesian_phystwin/persistent_prob4d_visual_bias.py")
-          text = path.read_text(encoding="utf-8")
+      - name: Record exact evidence environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=$(git rev-parse HEAD)"
+            echo "prob4d_revision=$(git -C _external/prob4d rev-parse HEAD)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            python -m pip --version
+            python -m pip freeze --all
+          } | tee "${VISUAL_BIAS_STREAM_RUN_ROOT}/environment.txt"
 
-          provider_old = "    provider_design = np.zeros(\n"
-          provider_new = "    provider_design: np.ndarray = np.zeros(\n"
-          if text.count(provider_old) != 1:
-              raise SystemExit("expected exactly one provider_design declaration")
-          text = text.replace(provider_old, provider_new)
-
-          offset_old = "    if physical_offset is None:\n        offset = np.zeros(\n"
-          offset_new = (
-              "    offset: np.ndarray\n"
-              "    if physical_offset is None:\n"
-              "        offset = np.zeros(\n"
-          )
-          if text.count(offset_old) != 1:
-              raise SystemExit("expected exactly one physical_offset branch")
-          text = text.replace(offset_old, offset_new)
-          path.write_text(text, encoding="utf-8")
-          PY
-          python -m ruff format \
+      - name: Check focused source quality
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          python -m mypy \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             src/bayesian_phystwin/persistent_prob4d_visual_bias.py
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/bayesian_phystwin/persistent_prob4d_visual_bias.py
-          git commit -m "Add strict ndarray annotations"
-          git push origin HEAD:agent/persistent-prob4d-visual-bias-solver
+
+      - name: Run contract and producer-consumer evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_update_adversarial.py \
+            tests/test_prob4d_visual_bias_crossrepo.py \
+            tests/prob4d_factor_stream_contract_cases.py \
+            tests/test_observation_belief_gauge_adapter.py \
+            | tee "${VISUAL_BIAS_STREAM_RUN_ROOT}/pytest.txt"
+          python -m py_compile \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py
+
+      - name: Verify clean repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _external
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: prob4d-visual-bias-stream-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.VISUAL_BIAS_STREAM_RUN_ROOT }}/environment.txt
+            ${{ env.VISUAL_BIAS_STREAM_RUN_ROOT }}/pytest.txt
+          if-no-files-found: warn
+          retention-days: 30
