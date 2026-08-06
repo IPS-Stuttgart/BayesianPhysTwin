@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/prob4d-observation-timestamps.yml"
+      - "src/bayesian_phystwin/causal4d_observation_clock_prior.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps.py"
@@ -131,6 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m ruff check \
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
@@ -138,6 +140,7 @@ jobs:
             tests/test_prob4d_observation_timestamps_crossrepo.py \
             tests/test_prob4d_observation_timestamps_causal4d.py
           python -m ruff format --check \
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
@@ -145,6 +148,7 @@ jobs:
             tests/test_prob4d_observation_timestamps_crossrepo.py \
             tests/test_prob4d_observation_timestamps_causal4d.py
           python -m mypy \
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py
 
@@ -162,6 +166,7 @@ jobs:
             tests/test_observation_belief.py \
             | tee "${TIMESTAMP_RUN_ROOT}/pytest.txt"
           python -m py_compile \
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
