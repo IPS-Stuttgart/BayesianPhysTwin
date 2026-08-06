@@ -81,6 +81,18 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         owner="causal4d-provider-v1",
     ),
     CommandSpec(
+        command_id="ecosystem-validate",
+        route=("ecosystem", "validate"),
+        previous_routes=(),
+        module="bayesian_phystwin.cli.ecosystem_validate",
+        function="main",
+        description="validate installed packages against the ecosystem lock",
+        legacy_alias=None,
+        status=CommandStatus.STABLE,
+        optional_dependencies=(),
+        owner="three-repository-compatibility-v1",
+    ),
+    CommandSpec(
         command_id="validate-observation-belief",
         route=("observation", "validate"),
         previous_routes=(),
