@@ -12,11 +12,11 @@ permissions:
 
 concurrency:
   group: publish-persistent-visual-bias-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   BASE_SHA: 034ed13b71841d7955abcefcad3fcc5adb96564c
-  PAYLOAD_BASE64_SHA256: 6c5a3d6612a4eceeae4e675a2e64a329995f3b00f89db566126f7537c9c0028ae
+  PAYLOAD_BASE64_SHA256: 6c5a3d6612a4eceae4e675a2e64a329995f3b00f89db566126f7537c9c0028ae
   PAYLOAD_TARGZ_SHA256: 51862256fd26e3c2eaeed1c2a0a5622a0b72374eb9a33ee2217539a3ff625e23
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
@@ -30,7 +30,7 @@ env:
 jobs:
   publish:
     name: Verify, test, and replace staging history
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 30
     steps:
       - name: Check out the staging branch
