@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/source-competence-reliability.yml"
-      - ".staging/harden_source_competence_contract.py"
       - "src/bayesian_phystwin/source_competence_reliability.py"
       - "src/bayesian_phystwin/source_competence_linearization.py"
       - "src/bayesian_phystwin/structured_reliability.py"
@@ -21,7 +20,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: source-competence-reliability-${{ github.workflow }}-${{ github.ref }}
@@ -43,15 +42,14 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
           clean: true
 
       - name: Resolve isolated validation paths
@@ -83,41 +81,6 @@ jobs:
             "wheel==0.45.1"
           "${SOURCE_COMPETENCE_VENV}/bin/python" -m pip install -e ".[dev]"
           "${SOURCE_COMPETENCE_VENV}/bin/python" -m pip check
-
-      - name: Apply pending contract hardening
-        shell: bash
-        run: |
-          set -euo pipefail
-          patch_script=".staging/harden_source_competence_contract.py"
-          if [[ ! -f "${patch_script}" ]]; then
-            echo "SOURCE_COMPETENCE_PATCHED=false" >> "${GITHUB_ENV}"
-            exit 0
-          fi
-          sed -i \
-            's/^    result = np\.empty(len(value), dtype=np\.float64)$/    result: np.ndarray = np.empty(len(value), dtype=np.float64)/' \
-            "${patch_script}"
-          grep -F \
-            'result: np.ndarray = np.empty(len(value), dtype=np.float64)' \
-            "${patch_script}"
-          python "${patch_script}"
-          python -m ruff format \
-            src/bayesian_phystwin/source_competence_reliability.py \
-            src/bayesian_phystwin/source_competence_linearization.py \
-            tests/test_source_competence_reliability.py \
-            tests/test_source_competence_linearization.py
-          python -m ruff check \
-            src/bayesian_phystwin/source_competence_reliability.py \
-            src/bayesian_phystwin/source_competence_linearization.py \
-            tests/test_source_competence_reliability.py \
-            tests/test_source_competence_linearization.py
-          rm -f "${patch_script}"
-          rmdir .staging 2>/dev/null || true
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Harden source-competence contract semantics"
-          echo "SOURCE_COMPETENCE_PATCHED=true" >> "${GITHUB_ENV}"
 
       - name: Record exact environment
         shell: bash
@@ -186,10 +149,3 @@ jobs:
             ${{ env.SOURCE_COMPETENCE_RUN_ROOT }}/pytest.txt
           if-no-files-found: warn
           retention-days: 30
-
-      - name: Push validated contract hardening
-        if: env.SOURCE_COMPETENCE_PATCHED == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git push origin "HEAD:agent/source-competence-reliability-v1"
