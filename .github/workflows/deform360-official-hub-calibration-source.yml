@@ -200,8 +200,7 @@ jobs:
           } >> "${GITHUB_ENV}"
           rm -rf "${evidence_root}" "${site_root}"
           mkdir -p             "${DATA_ROOT}"             "${PROCESSED_ROOT}"             "${evidence_root}"             "${site_root}"
-          printf '/_deform360_processing/
-' >> .git/info/exclude
+          printf '%s\n' '/_deform360_processing/' >> .git/info/exclude
 
           base_python=""
           for candidate in             /usr/bin/python3.12             /usr/local/bin/python3.12             /usr/bin/python3             /usr/local/bin/python3

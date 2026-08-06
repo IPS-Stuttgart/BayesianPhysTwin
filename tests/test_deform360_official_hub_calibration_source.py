@@ -12,12 +12,17 @@ from scripts.science.deform360_calibration_source.contracts import (
     PROCESSING_REVISION,
     PROTOCOL_ID,
     CalibrationUnit,
+    canonical_sha256,
     load_protocol,
     load_units,
     summary_gate,
 )
 from scripts.science.deform360_calibration_source.download import download_one
 from scripts.science.deform360_calibration_source.planning import (
+    MAXIMUM_CROSS_SENSOR_BASELINE_SPAN_US,
+    MAXIMUM_TACTILE_BASELINE_DISTANCE_US,
+    MINIMUM_TACTILE_BASELINE_MARGIN_US,
+    TACTILE_BASELINE_POLICY_ID,
     build_plan,
     repository_files,
     select_object_files,
@@ -82,6 +87,33 @@ def _object_entries(
     return rows
 
 
+def _timestamped_tactile_entries(
+    object_id: str,
+    *,
+    cross_sensor_span_us: int = 2_000_000,
+    nearest_distance_us: int = 100_000_000,
+    runner_up_margin_us: int = 100_000_000,
+) -> list[SimpleNamespace]:
+    rows = _object_entries(object_id, tactile=0)
+    recording_timestamp = 1_760_000_100_000_000
+    for sensor_index in range(2):
+        sensor = f"brics-odroid_tactilel_sensor{sensor_index}"
+        sensor_shift = sensor_index * cross_sensor_span_us
+        selected_baseline = recording_timestamp - nearest_distance_us + sensor_shift
+        recording = recording_timestamp + sensor_shift
+        runner_up = recording + nearest_distance_us + runner_up_margin_us
+        stem = f"{sensor}_{recording}"
+        rows.extend(
+            (
+                _entry(f"raw/{object_id}/{sensor}/{stem}.npy"),
+                _entry(f"raw/{object_id}/{sensor}/{stem}.txt"),
+                _entry(f"raw/{object_id}/{sensor}/median_{selected_baseline}.npy"),
+                _entry(f"raw/{object_id}/{sensor}/median_{runner_up}.npy"),
+            )
+        )
+    return rows
+
+
 class _Api:
     def __init__(self, entries_by_object: dict[str, list[SimpleNamespace]]) -> None:
         self.entries_by_object = entries_by_object
@@ -130,6 +162,106 @@ def test_selected_episode_file_plan_uses_exact_sorted_recording() -> None:
     assert not any(path.endswith("_08.mp4") for path in paths)
     assert len(row["camera_streams"]) == 10
     assert len(row["tactile_streams"]) == 2
+
+
+def test_multiple_tactile_baselines_use_unique_nearest_timestamp() -> None:
+    unit = CalibrationUnit(
+        object_id="201-example",
+        episode_id=0,
+        stratum="sheet",
+        metadata_path="raw/201-example/metadata.json",
+        metadata_sha256="a" * 64,
+    )
+    records = repository_files(
+        _timestamped_tactile_entries(unit.object_id),
+        prefix=f"raw/{unit.object_id}/",
+    )
+
+    row = select_object_files(records, unit=unit)
+
+    assert row["status"] == "planned"
+    assert row["tactile_baseline_cross_sensor_span_us"] == 2_000_000
+    associations = row["tactile_baseline_associations"]
+    assert set(associations) == {
+        "brics-odroid_tactilel_sensor0",
+        "brics-odroid_tactilel_sensor1",
+    }
+    for association in associations.values():
+        assert association["policy_id"] == TACTILE_BASELINE_POLICY_ID
+        assert association["candidate_count"] == 2
+        assert association["absolute_distance_us"] == 100_000_000
+        assert association["runner_up_margin_us"] == 100_000_000
+        assert association["single_candidate_fallback"] is False
+    selected = {record["path"] for record in row["selected_files"]}
+    assert sum("/median_" in path for path in selected) == 2
+
+
+def test_ambiguous_tactile_baselines_fail_closed() -> None:
+    unit = CalibrationUnit(
+        object_id="201-example",
+        episode_id=0,
+        stratum="sheet",
+        metadata_path="raw/201-example/metadata.json",
+        metadata_sha256="a" * 64,
+    )
+    records = repository_files(
+        _timestamped_tactile_entries(
+            unit.object_id,
+            runner_up_margin_us=MINIMUM_TACTILE_BASELINE_MARGIN_US - 1,
+        ),
+        prefix=f"raw/{unit.object_id}/",
+    )
+
+    row = select_object_files(records, unit=unit)
+
+    assert row["status"] == "unsupported_without_replacement"
+    assert sum("not uniquely separated" in error for error in row["errors"]) == 2
+
+
+def test_distant_tactile_baselines_fail_closed() -> None:
+    unit = CalibrationUnit(
+        object_id="201-example",
+        episode_id=0,
+        stratum="sheet",
+        metadata_path="raw/201-example/metadata.json",
+        metadata_sha256="a" * 64,
+    )
+    records = repository_files(
+        _timestamped_tactile_entries(
+            unit.object_id,
+            nearest_distance_us=MAXIMUM_TACTILE_BASELINE_DISTANCE_US + 1,
+        ),
+        prefix=f"raw/{unit.object_id}/",
+    )
+
+    row = select_object_files(records, unit=unit)
+
+    assert row["status"] == "unsupported_without_replacement"
+    assert sum("too far" in error for error in row["errors"]) == 2
+
+
+def test_cross_sensor_tactile_baseline_capture_fails_closed() -> None:
+    unit = CalibrationUnit(
+        object_id="201-example",
+        episode_id=0,
+        stratum="sheet",
+        metadata_path="raw/201-example/metadata.json",
+        metadata_sha256="a" * 64,
+    )
+    records = repository_files(
+        _timestamped_tactile_entries(
+            unit.object_id,
+            cross_sensor_span_us=MAXIMUM_CROSS_SENSOR_BASELINE_SPAN_US + 1,
+        ),
+        prefix=f"raw/{unit.object_id}/",
+    )
+
+    row = select_object_files(records, unit=unit)
+
+    assert row["status"] == "unsupported_without_replacement"
+    assert (
+        "selected tactile baselines are not one cross-sensor capture" in row["errors"]
+    )
 
 
 def test_names_only_plan_excludes_every_confirmation_object(tmp_path: Path) -> None:
@@ -203,6 +335,28 @@ def test_plan_digest_tampering_fails_closed(tmp_path: Path) -> None:
     output.write_text(json.dumps(plan), encoding="utf-8")
 
     with pytest.raises(ValueError, match="plan digest changed"):
+        verify_plan(
+            output,
+            protocol_path=PROTOCOL,
+            selection_path=SELECTION,
+            provider_path=PROVIDER,
+        )
+
+
+def test_plan_tactile_policy_tampering_fails_closed(tmp_path: Path) -> None:
+    output = tmp_path / "plan.json"
+    plan = build_plan(
+        protocol_path=PROTOCOL,
+        selection_path=SELECTION,
+        provider_path=PROVIDER,
+        output_path=output,
+        api=_Api(_all_entries()),
+    )
+    plan["tactile_baseline_policy"]["maximum_absolute_distance_us"] += 1
+    plan["plan_sha256"] = canonical_sha256(plan, digest_key="plan_sha256")
+    output.write_text(json.dumps(plan), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="tactile baseline policy changed"):
         verify_plan(
             output,
             protocol_path=PROTOCOL,

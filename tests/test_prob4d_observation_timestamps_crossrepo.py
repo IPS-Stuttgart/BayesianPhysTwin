@@ -1,16 +1,30 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
-from prob4d.observation_timestamp_lineage import (
-    ObservationTimestampLineageV1,
-    write_observation_timestamp_lineage,
-)
+import pytest
 
 from bayesian_phystwin.prob4d_observation_timestamps import (
     load_prob4d_observation_timestamp_lineage,
 )
+
+try:
+    from prob4d.observation_timestamp_lineage import (
+        ObservationTimestampLineageV1,
+        write_observation_timestamp_lineage,
+    )
+except ModuleNotFoundError as error:
+    if (
+        error.name != "prob4d"
+        or os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
+    ):
+        raise
+    pytest.skip(
+        "Prob4D is installed only in the locked cross-repository suite",
+        allow_module_level=True,
+    )
 
 
 def test_actual_prob4d_timestamp_sidecar_has_exact_consumer_identity(
