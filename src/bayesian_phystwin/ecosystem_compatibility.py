@@ -189,8 +189,7 @@ class EcosystemCompatibilityLockV1:
         _literal_string(self.python_version, name="python_version")
         _literal_integer(self.tests_passed, name="tests_passed", minimum=1)
         _require(
-            _SHA1_PATTERN.fullmatch(self.bayesian_phystwin_tested_revision)
-            is not None,
+            _SHA1_PATTERN.fullmatch(self.bayesian_phystwin_tested_revision) is not None,
             "bayesian_phystwin_tested_revision must be a lowercase Git commit",
         )
         _require(
@@ -528,14 +527,11 @@ def validate_installed_ecosystem(
             if supplied_revision is None
             else supplied_revision == component.revision
         )
-        compatible = (
-            (not required and not installed and supplied_revision is None)
-            or (
-                installed
-                and bool(version_compatible)
-                and (not exact_versions or bool(exact_version_match))
-                and (revision_compatible is not False)
-            )
+        compatible = (not required and not installed and supplied_revision is None) or (
+            installed
+            and bool(version_compatible)
+            and (not exact_versions or bool(exact_version_match))
+            and (revision_compatible is not False)
         )
         statuses.append(
             EcosystemComponentStatusV1(
