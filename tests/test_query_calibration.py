@@ -114,9 +114,7 @@ def test_covariance_scale_is_compensated_by_conformal_quantile() -> None:
     unit = _fit(covariance_scale=1.0)
     quadrupled = _fit(covariance_scale=4.0)
 
-    assert quadrupled.conformal_quantile == pytest.approx(
-        0.5 * unit.conformal_quantile
-    )
+    assert quadrupled.conformal_quantile == pytest.approx(0.5 * unit.conformal_quantile)
     np.testing.assert_allclose(
         calibrate_query_covariance(np.eye(2), unit),
         calibrate_query_covariance(np.eye(2), quadrupled),
@@ -244,9 +242,7 @@ def test_contract_rejects_changed_evidence_or_derived_quantile() -> None:
     scores = np.asarray([group["score"] for group in groups])
 
     wrong_quantile = dict(values)
-    wrong_quantile["conformal_quantile"] = (
-        calibration.conformal_quantile - 1.0
-    )
+    wrong_quantile["conformal_quantile"] = calibration.conformal_quantile - 1.0
     with pytest.raises(ValueError, match="conformal_quantile"):
         QueryCalibrationV1(
             calibration_group_ids=group_ids,
