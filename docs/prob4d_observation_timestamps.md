@@ -65,19 +65,23 @@ source bytes and a forged sidecar could remain mutually self-consistent. Merely
 passing a digest copied out of that sidecar would not improve the boundary. The
 wrapper therefore:
 
-- snapshots and hashes the exact sidecar through a no-follow regular-file
-  descriptor before loading;
+- reads both the timestamp sidecar and factor-bundle manifest through stable
+  regular-file descriptors without following symlinks;
+- checks device, inode, size, modification time, and change time before and after
+  each read, rejecting replacement or in-place mutation;
+- limits each snapshot to 64 MiB and hashes the exact bytes;
+- writes owner-only private copies and lets the portable parser see only those
+  byte-for-byte snapshots, eliminating a hash-then-reopen race;
 - requires `source_artifact_sha256` to equal the independently supplied digest;
 - requires a separate content-addressed verification artifact and refuses to let
   the timestamp sidecar verify itself;
-- binds the source digest, verification artifact ID, sidecar digest, and sidecar
-  artifact ID into immutable content-addressed binding metadata;
-- loads and validates the exact factor bundle and row mapping; and
-- hashes the sidecar again after binding, rejecting replacement or identity
-  changes during admission.
+- binds the source digest, verification artifact ID, sidecar digest, sidecar
+  artifact ID, and exact bundle digest into the content-addressed binding; and
+- re-snapshots both original files after binding, rejecting any change.
 
 The claim-bearing evidence keys are reserved and cannot be supplied or replaced
-through caller metadata. Symlinked and non-regular sidecars are rejected.
+through caller metadata. Symlinked and non-regular timestamp or bundle files are
+rejected.
 
 `row_factor_ids` is explicit because a factor can contribute several selected
 3-D rows, while the timestamp sidecar contains one timestamp record per factor.
@@ -86,9 +90,9 @@ checks that each row frame equals its source factor frame. For a claim-bearing
 Prob4D path, these IDs should come from the independently validated sparse factor
 stack rather than being reconstructed from frame numbers.
 
-The bundle manifest is read from an exact SHA-256 snapshot. The consumer rejects
-schema drift, duplicate JSON keys, changed source identity, reordered factors,
-changed frame indices, unknown row factors, causal-boundary violations, and a
+The bundle manifest is bound by its exact SHA-256. The consumer rejects schema
+drift, duplicate JSON keys, changed source identity, reordered factors, changed
+frame indices, unknown row factors, causal-boundary violations, and a
 row-to-factor frame mismatch.
 
 ## Conditional jitter factor
@@ -135,16 +139,16 @@ relaxation.
 ## Information-order boundary
 
 Timestamp extraction, clock-domain definitions, conditional-jitter estimation,
-the raw timestamp-source digest, its independent verification artifact, and a
-shared-offset prior must be frozen from source or calibration evidence before
-confirmation access. The consumer binds those choices but does not infer or
-retune them from target outcomes.
+the raw timestamp-source digest, its independent verification artifact, the
+factor-bundle identity, and a shared-offset prior must be frozen from source or
+calibration evidence before confirmation access. The consumer binds those
+choices but does not infer or retune them from target outcomes.
 
 ## Claim boundary
 
-A valid binding establishes byte identity, causal ordering, exact factor-to-row
-mapping, independently evidenced source-byte admission, and non-duplicated timing
-uncertainty semantics. It does not establish timestamp accuracy, transfer of a
-timing prior, physical-state identifiability, provider competence, calibrated
-target coverage, downstream physical-query improvement, Causal4D benefit,
-deployment safety, or state of the art.
+A valid binding establishes stable byte identity, causal ordering, exact
+factor-to-row mapping, independently evidenced source-byte admission, and
+non-duplicated timing uncertainty semantics. It does not establish timestamp
+accuracy, transfer of a timing prior, physical-state identifiability, provider
+competence, calibrated target coverage, downstream physical-query improvement,
+Causal4D benefit, deployment safety, or state of the art.
