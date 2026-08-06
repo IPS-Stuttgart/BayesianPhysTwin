@@ -420,14 +420,52 @@ def evaluate_query_anchor_sufficiency(
         )
         row_costs = np.zeros(support_limit + 1, dtype=np.float64)
         if selected_count:
-            row_traces[1 : selected_count + 1] -= np.cumsum(
-                selection.query_trace_reductions
+            cumulative_reductions = np.cumsum(selection.query_trace_reductions)
+            row_traces[1 : selected_count + 1] -= cumulative_reductions
+            reconstructed_final = float(row_traces[selected_count])
+            declared_final = float(selection.final_query_variance_trace)
+            trace_scale = max(
+                1.0,
+                abs(float(selection.initial_query_variance_trace)),
+                abs(reconstructed_final),
+                abs(declared_final),
             )
-            row_traces[selected_count] = selection.final_query_variance_trace
+            trace_tolerance = _TOLERANCE * trace_scale
+            _require(
+                np.isfinite(reconstructed_final) and np.isfinite(declared_final),
+                "reconstructed query variance contains non-finite values",
+            )
+            _require(
+                np.isclose(
+                    reconstructed_final,
+                    declared_final,
+                    rtol=_TOLERANCE,
+                    atol=trace_tolerance,
+                ),
+                "query trace reductions do not reconstruct the declared final trace",
+            )
+            _require(
+                declared_final >= -trace_tolerance,
+                "reconstructed query variance became materially negative",
+            )
+            row_traces[selected_count] = max(declared_final, 0.0)
             row_costs[1 : selected_count + 1] = np.cumsum(selection.selected_costs)
-            row_traces[selected_count + 1 :] = selection.final_query_variance_trace
+            _require(
+                np.isclose(
+                    float(row_costs[selected_count]),
+                    float(selection.total_cost),
+                    rtol=_TOLERANCE,
+                    atol=_TOLERANCE,
+                ),
+                "selected costs do not reconstruct the declared total cost",
+            )
+            row_traces[selected_count + 1 :] = row_traces[selected_count]
             row_costs[selected_count + 1 :] = selection.total_cost
-        traces[row] = np.maximum(row_traces, 0.0)
+        _require(
+            np.all(np.isfinite(row_traces)) and np.all(np.isfinite(row_costs)),
+            "reconstructed query curve contains non-finite values",
+        )
+        traces[row] = row_traces
         cumulative_costs[row] = row_costs
         crossings = np.flatnonzero(traces[row] / traces[row, 0] <= target + _TOLERANCE)
         if len(crossings):
