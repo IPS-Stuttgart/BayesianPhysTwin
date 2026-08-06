@@ -1,0 +1,38 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPDepthCompletionSourceResult",
+  "case": "single_lift_cloth",
+  "claim_boundary": "One-case, prefix-only exploratory source competence result on an already-open interaction. It is not a Bayesian-PhysTwin future gain, independent confirmation, or state-of-the-art evidence.",
+  "decision": "freeze-separate-opened-cohort-transfer-protocol",
+  "gates": {
+    "endpoint_rmse": true,
+    "identity_rmse": true,
+    "relative_gain_over_persistence": true,
+    "supported_fraction": true
+  },
+  "information_boundary": {
+    "future_simulator_outcome_read": false,
+    "held_v8_accessed": false,
+    "prediction_sealed_before_this_evaluation": true
+  },
+  "inputs": {
+    "prediction_seal_sha256": "da5c3bb7d81c61209516ae25192381b0ef0cc2a1fe00e8816b0c9fa3be18af20",
+    "withheld_prefix_sha256": "77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143"
+  },
+  "metrics": {
+    "candidate_endpoint_rmse_m": 0.005373580042962245,
+    "candidate_identity_rmse_m": 0.004698037408692687,
+    "completed_supported_rows": 76,
+    "eligible_rows": 76,
+    "fallback_identity_rmse_m": 0.003708542805499409,
+    "fallback_rows": 24,
+    "persistence_identity_rmse_m": 0.0355581646607729,
+    "relative_gain_over_persistence": 0.8678773931806589,
+    "strict_identity_rmse_m": 0.005090260805882252,
+    "strict_supported_rows": 52,
+    "supported_fraction": 1.0
+  },
+  "protocol_id": "phystwin-tapnextpp-depth-completion-source-v1",
+  "result_sha256": "5bfbce05f59e7742a0b12ca99c29a8f0d90a3ba33ac55127ebf3ae1566136c23",
+  "schema_version": 1,
+  "source_smoke_passed": true
+}
