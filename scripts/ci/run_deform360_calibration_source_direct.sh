@@ -9,6 +9,9 @@ set -euo pipefail
 : "${EVIDENCE_ROOT:?}"
 : "${PYTHON_SITE:?}"
 : "${STAGED_ROOT:?}"
+: "${GITHUB_RUN_ID:?}"
+: "${GITHUB_RUN_ATTEMPT:?}"
+: "${GITHUB_WORKSPACE:?}"
 
 verify_confirmation_boundary() {
   local python_bin="${BASE_PYTHON:-$(command -v python3 || true)}"
@@ -47,16 +50,40 @@ PY
 }
 
 finalize() {
-  local status=$?
+  local workload_status=$?
   trap - EXIT
   set +e
   verify_confirmation_boundary
   local boundary_status=$?
-  set -e
-  if [[ ${boundary_status} -ne 0 ]]; then
-    status=${boundary_status}
+  local python_bin="${BASE_PYTHON:-$(command -v python3 || true)}"
+  local manifest="${EVIDENCE_ROOT}/execution-manifest.json"
+  local record_status=70
+  if [[ -n "${python_bin}" ]]; then
+    PYTHONPATH="${GITHUB_WORKSPACE}/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      "${python_bin}" -m \
+      bayesian_phystwin.deform360_calibration_source_run_record \
+      --output "${manifest}" \
+      --source-revision "${BPT_SOURCE_SHA}" \
+      --processing-revision "${PROCESSING_REVISION}" \
+      --workflow-run-id "${GITHUB_RUN_ID}" \
+      --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+      --workload-exit-code "${workload_status}" \
+      --confirmation-boundary-exit-code "${boundary_status}" \
+      --result-json "${EVIDENCE_ROOT}/calibration-source-result.json"
+    record_status=$?
   fi
-  exit "${status}"
+  set -e
+
+  if [[ -f "${manifest}" ]]; then
+    exit "${record_status}"
+  fi
+  if [[ ${boundary_status} -ne 0 ]]; then
+    exit "${boundary_status}"
+  fi
+  if [[ ${workload_status} -ne 0 ]]; then
+    exit "${workload_status}"
+  fi
+  exit 70
 }
 trap finalize EXIT
 
@@ -126,7 +153,10 @@ files=(
   scripts/science/deform360_calibration_source/prepare.py
   scripts/science/deform360_calibration_source/cli.py
   scripts/science/run_deform360_official_hub_calibration_source.py
+  src/bayesian_phystwin/deform360_calibration_source_run_record.py
   tests/test_deform360_official_hub_calibration_source.py
+  tests/test_deform360_calibration_source_direct_workflow.py
+  tests/test_deform360_calibration_source_run_record.py
   tests/test_deform360_calibration_source_workflow.py
 )
 "${BASE_PYTHON}" -m ruff check "${files[@]}"
@@ -134,6 +164,8 @@ files=(
 bash -n scripts/ci/run_deform360_calibration_source_direct.sh
 "${BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
   tests/test_deform360_official_hub_calibration_source.py \
+  tests/test_deform360_calibration_source_direct_workflow.py \
+  tests/test_deform360_calibration_source_run_record.py \
   tests/test_deform360_calibration_source_workflow.py \
   tests/test_deform360_calibration_execution.py \
   tests/test_deform360_visual_provider_freeze.py \
@@ -141,7 +173,8 @@ bash -n scripts/ci/run_deform360_calibration_source_direct.sh
   | tee "${EVIDENCE_ROOT}/pytest.txt"
 "${BASE_PYTHON}" -m compileall -q \
   scripts/science/deform360_calibration_source \
-  scripts/science/run_deform360_official_hub_calibration_source.py
+  scripts/science/run_deform360_official_hub_calibration_source.py \
+  src/bayesian_phystwin/deform360_calibration_source_run_record.py
 git diff --exit-code
 test -z "$(git status --porcelain --untracked-files=all)"
 
