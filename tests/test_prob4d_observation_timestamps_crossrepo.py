@@ -6,13 +6,18 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+_REQUIRED_WORKFLOW = "Prob4D observation timestamp consumer"
+
 try:
     from prob4d.observation_timestamp_lineage import (
         ObservationTimestampLineageV1,
         write_observation_timestamp_lineage,
     )
 except ModuleNotFoundError:
-    if os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1":
+    if (
+        os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
+        or os.environ.get("GITHUB_WORKFLOW") == _REQUIRED_WORKFLOW
+    ):
         raise
     pytest.skip(
         "Prob4D parity is validated by the dedicated timestamp consumer workflow",
