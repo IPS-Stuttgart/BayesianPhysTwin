@@ -12,6 +12,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -20,6 +21,7 @@ from ._canonical_contracts import genuine_integer
 from ._portable_contracts import (
     content_id,
     exact_revision,
+    load_strict_json_object,
     nonempty_string,
     require_exact_fields,
     sha256_digest,
@@ -96,9 +98,7 @@ def _sequence(value: object, *, name: str) -> Sequence[object]:
 
 def _ordered_unique_strings(value: object, *, name: str) -> tuple[str, ...]:
     values = _sequence(value, name=name)
-    result = tuple(
-        _canonical_string(item, name=f"{name} entry") for item in values
-    )
+    result = tuple(_canonical_string(item, name=f"{name} entry") for item in values)
     if not result:
         raise ValueError(f"{name} must not be empty")
     if len(set(result)) != len(result):
@@ -108,9 +108,7 @@ def _ordered_unique_strings(value: object, *, name: str) -> tuple[str, ...]:
 
 def _ordered_sha256s(value: object, *, name: str) -> tuple[str, ...]:
     values = _sequence(value, name=name)
-    result = tuple(
-        sha256_digest(item, name=f"{name} entry") for item in values
-    )
+    result = tuple(sha256_digest(item, name=f"{name} entry") for item in values)
     if not result:
         raise ValueError(f"{name} must not be empty")
     if len(set(result)) != len(result):
@@ -192,9 +190,9 @@ class Causal4DObservationClockOffsetPriorV1:
             self.source_offsets_s,
             name="source_offsets_s",
         )
-        if len(source_artifact_ids) != len(execution_ids) or len(
-            execution_ids
-        ) != len(source_offsets):
+        if len(source_artifact_ids) != len(execution_ids) or len(execution_ids) != len(
+            source_offsets
+        ):
             raise ValueError("source timing evidence counts differ")
         if execution_ids != tuple(sorted(execution_ids)):
             raise ValueError("execution IDs must use deterministic sorted order")
@@ -204,9 +202,7 @@ class Causal4DObservationClockOffsetPriorV1:
             minimum=3,
         )
         if source_group_count != len(execution_ids):
-            raise ValueError(
-                "source_group_count must equal at least three executions"
-            )
+            raise ValueError("source_group_count must equal at least three executions")
         if self.offset_convention != OBSERVATION_TIME_CORRECTION_CONVENTION:
             raise ValueError("observation time-correction convention changed")
         grid_standard_deviation = _finite_float(
@@ -318,9 +314,7 @@ class Causal4DObservationClockOffsetPriorV1:
             "minimum_predictive_standard_deviation_s": (
                 self.minimum_predictive_standard_deviation_s
             ),
-            "predictive_standard_deviation_s": (
-                self.predictive_standard_deviation_s
-            ),
+            "predictive_standard_deviation_s": (self.predictive_standard_deviation_s),
             "information_boundary": dict(_INFORMATION_BOUNDARY),
             "claim_boundary": _CLAIM_BOUNDARY,
         }
@@ -358,18 +352,14 @@ class Causal4DObservationClockOffsetPriorV1:
             source_offsets_s=value["source_offsets_s"],
             source_group_count=value["source_group_count"],
             mean_offset_s=value["mean_offset_s"],
-            sample_standard_deviation_s=value[
-                "sample_standard_deviation_s"
-            ],
+            sample_standard_deviation_s=value["sample_standard_deviation_s"],
             grid_quantization_standard_deviation_s=value[
                 "grid_quantization_standard_deviation_s"
             ],
             minimum_predictive_standard_deviation_s=value[
                 "minimum_predictive_standard_deviation_s"
             ],
-            predictive_standard_deviation_s=value[
-                "predictive_standard_deviation_s"
-            ],
+            predictive_standard_deviation_s=value["predictive_standard_deviation_s"],
             offset_convention=value["offset_convention"],
             artifact_id=value["artifact_id"],
         )
@@ -417,9 +407,31 @@ def causal4d_observation_timing_prior_from_record(
     return prior.observation_timing_prior()
 
 
+def load_causal4d_observation_timing_prior(
+    path: str | Path,
+    *,
+    expected_artifact_id: str,
+    expected_clock_domain: str,
+    expected_time_scale: str,
+) -> ObservationTimingPrior:
+    """Strictly load, reconstruct, and bind one Causal4D prior artifact."""
+
+    value = load_strict_json_object(
+        path,
+        label="Causal4D observation clock-offset prior",
+    )
+    return causal4d_observation_timing_prior_from_record(
+        value,
+        expected_artifact_id=expected_artifact_id,
+        expected_clock_domain=expected_clock_domain,
+        expected_time_scale=expected_time_scale,
+    )
+
+
 __all__ = [
     "CAUSAL4D_OBSERVATION_CLOCK_OFFSET_PRIOR_SCHEMA",
     "CAUSAL4D_OBSERVATION_CLOCK_OFFSET_PRIOR_VERSION",
     "Causal4DObservationClockOffsetPriorV1",
     "causal4d_observation_timing_prior_from_record",
+    "load_causal4d_observation_timing_prior",
 ]

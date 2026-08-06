@@ -7,7 +7,8 @@ content ID could remain mutually self-consistent.
 
 This module snapshots the timestamp sidecar and factor-bundle manifest through
 regular-file descriptors, parses private byte-for-byte copies, checks the raw
-source identity against a separate verification artifact, and rejects concurrent
+source identity against a separately supplied verification-artifact ID, and rejects
+concurrent
 replacement or in-place mutation of either original file.
 """
 
@@ -34,7 +35,6 @@ from .prob4d_observation_timestamps import (
 _CLAIM_METADATA_FIELDS = frozenset(
     {
         "prob4d_timestamp_source_sha256",
-        "prob4d_timestamp_source_independently_verified",
         "prob4d_timestamp_source_verification_artifact_id",
         "prob4d_timestamp_lineage_artifact_id",
         "prob4d_timestamp_lineage_file_sha256",
@@ -160,9 +160,11 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
     """Admit timestamp evidence through private exact-byte snapshots.
 
     ``expected_timestamp_source_sha256`` and
-    ``timestamp_source_verification_artifact_id`` must come from an independently
-    frozen source/calibration manifest, not from the timestamp sidecar being
-    admitted. The verification artifact must be distinct from the sidecar itself.
+    ``timestamp_source_verification_artifact_id`` must come from a separately
+    frozen upstream source/calibration manifest, not from the timestamp sidecar
+    being admitted. This function binds that artifact's content ID but does not
+    open it or establish the verifier's competence. The verification artifact
+    must be distinct from the raw source, bundle, and sidecar identities.
     Both the timestamp sidecar and the observation-factor bundle are read once
     through regular-file descriptors and parsed only from private snapshots.
     Their original paths are re-snapshotted afterward to reject replacement or
@@ -181,6 +183,10 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
         expected_bundle_manifest_sha256,
         name="expected_bundle_manifest_sha256",
     )
+    if verification_id in {expected_source, expected_bundle}:
+        raise ValueError(
+            "timestamp verification artifact must be distinct from source and bundle"
+        )
     timestamp_path, timestamp_bytes, timestamp_sha_before = _ordinary_snapshot(
         timestamp_lineage_path,
         name="Prob4D timestamp lineage",
@@ -191,6 +197,10 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
     )
     if bundle_sha_before != expected_bundle:
         raise ValueError("Prob4D bundle manifest checksum mismatch")
+    if verification_id in {timestamp_sha_before, bundle_sha_before}:
+        raise ValueError(
+            "timestamp verification artifact must be distinct from admitted files"
+        )
 
     with tempfile.TemporaryDirectory(
         prefix="bpt-prob4d-timestamp-admission-"
@@ -206,12 +216,10 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
             "observation-factor-bundle.json",
             bundle_bytes,
         )
-        lineage = load_prob4d_observation_timestamp_lineage(
-            timestamp_snapshot_path
-        )
+        lineage = load_prob4d_observation_timestamp_lineage(timestamp_snapshot_path)
         if lineage.source_artifact_sha256 != expected_source:
             raise ValueError(
-                "Prob4D timestamp source artifact differs from independent evidence"
+                "Prob4D timestamp source artifact differs from separately frozen evidence"
             )
         lineage_id = lineage.artifact_id
         if lineage_id is None:
@@ -229,13 +237,11 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
         overlap = _CLAIM_METADATA_FIELDS.intersection(caller_metadata)
         if overlap:
             raise ValueError(
-                "claim-bearing timestamp metadata reserves fields "
-                f"{sorted(overlap)}"
+                f"claim-bearing timestamp metadata reserves fields {sorted(overlap)}"
             )
         admitted_metadata = {
             **caller_metadata,
             "prob4d_timestamp_source_sha256": expected_source,
-            "prob4d_timestamp_source_independently_verified": True,
             "prob4d_timestamp_source_verification_artifact_id": verification_id,
             "prob4d_timestamp_lineage_artifact_id": lineage_id,
             "prob4d_timestamp_lineage_file_sha256": timestamp_sha_before,
@@ -260,9 +266,7 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
         name="Prob4D observation-factor bundle",
     )
     if bundle_sha_after != bundle_sha_before:
-        raise ValueError(
-            "Prob4D observation-factor bundle changed during admission"
-        )
+        raise ValueError("Prob4D observation-factor bundle changed during admission")
     if binding.timestamp_lineage_artifact_id != lineage_id:
         raise ValueError("Prob4D timestamp lineage identity changed during admission")
     if dict(binding.metadata) != admitted_metadata:

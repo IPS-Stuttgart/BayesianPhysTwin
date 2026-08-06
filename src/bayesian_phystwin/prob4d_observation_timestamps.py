@@ -45,9 +45,7 @@ from .observation_timing_nuisance import (
     build_timing_jacobian,
 )
 
-PROB4D_OBSERVATION_TIMESTAMP_LINEAGE_SCHEMA = (
-    "prob4d.observation-timestamp-lineage"
-)
+PROB4D_OBSERVATION_TIMESTAMP_LINEAGE_SCHEMA = "prob4d.observation-timestamp-lineage"
 PROB4D_OBSERVATION_TIMESTAMP_LINEAGE_VERSION = 1
 PROB4D_TIMESTAMP_UNCERTAINTY_SEMANTICS = (
     "conditional-jitter-excludes-shared-clock-offset"
@@ -102,9 +100,7 @@ def _string_sequence(
 ) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
         raise ValueError(f"{name} must be a sequence")
-    result = tuple(
-        _canonical_string(item, name=f"{name} entry") for item in value
-    )
+    result = tuple(_canonical_string(item, name=f"{name} entry") for item in value)
     if not result:
         raise ValueError(f"{name} must not be empty")
     if unique and len(set(result)) != len(result):
@@ -196,9 +192,7 @@ class Prob4DObservationTimestampLineageV1:
     conditional_timestamp_std_ns: np.ndarray
     shared_clock_offset_prior_artifact_id: str | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
-    timestamp_uncertainty_semantics: str = (
-        PROB4D_TIMESTAMP_UNCERTAINTY_SEMANTICS
-    )
+    timestamp_uncertainty_semantics: str = PROB4D_TIMESTAMP_UNCERTAINTY_SEMANTICS
     artifact_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -312,9 +306,7 @@ class Prob4DObservationTimestampLineageV1:
             "conditional_timestamp_std_ns": (
                 self.conditional_timestamp_std_ns.tolist()
             ),
-            "timestamp_uncertainty_semantics": (
-                self.timestamp_uncertainty_semantics
-            ),
+            "timestamp_uncertainty_semantics": (self.timestamp_uncertainty_semantics),
             "shared_clock_offset_prior_artifact_id": (
                 self.shared_clock_offset_prior_artifact_id
             ),
@@ -416,14 +408,22 @@ def _load_bundle_factor_order(
         raise ValueError("timestamp binding requires observation-factor schema v4")
     sequence_id = _canonical_string(value.get("sequence_id"), name="sequence_id")
     raw_case = value.get("case_id")
-    case_id = sequence_id if raw_case is None else _canonical_string(
-        raw_case,
-        name="case_id",
+    case_id = (
+        sequence_id
+        if raw_case is None
+        else _canonical_string(
+            raw_case,
+            name="case_id",
+        )
     )
     raw_stream = value.get("stream_id")
-    stream_id = sequence_id if raw_stream is None else _canonical_string(
-        raw_stream,
-        name="stream_id",
+    stream_id = (
+        sequence_id
+        if raw_stream is None
+        else _canonical_string(
+            raw_stream,
+            name="stream_id",
+        )
     )
     repository = _canonical_string(
         value.get("source_repository"),
@@ -521,9 +521,7 @@ class Prob4DObservationTimestampBindingV1:
     row_conditional_timestamp_std_s: np.ndarray
     shared_clock_offset_prior_artifact_id: str | None
     metadata: Mapping[str, Any] = field(default_factory=dict)
-    timestamp_uncertainty_semantics: str = (
-        PROB4D_TIMESTAMP_UNCERTAINTY_SEMANTICS
-    )
+    timestamp_uncertainty_semantics: str = PROB4D_TIMESTAMP_UNCERTAINTY_SEMANTICS
     conditional_jitter_factor_semantics: str = (
         PROB4D_CONDITIONAL_JITTER_FACTOR_SEMANTICS
     )
@@ -677,15 +675,12 @@ class Prob4DObservationTimestampBindingV1:
             "timestamp_source": self.timestamp_source,
             "factor_ids": list(self.factor_ids),
             "arrays": {
-                name: _array_descriptor(array)
-                for name, array in self.arrays().items()
+                name: _array_descriptor(array) for name, array in self.arrays().items()
             },
             "shared_clock_offset_prior_artifact_id": (
                 self.shared_clock_offset_prior_artifact_id
             ),
-            "timestamp_uncertainty_semantics": (
-                self.timestamp_uncertainty_semantics
-            ),
+            "timestamp_uncertainty_semantics": (self.timestamp_uncertainty_semantics),
             "conditional_jitter_factor_semantics": (
                 self.conditional_jitter_factor_semantics
             ),
@@ -702,7 +697,7 @@ class Prob4DObservationTimestampBindingV1:
             observation_derivative_xyz_per_s,
             observation_count=self.observation_count,
         )
-        result = np.zeros(
+        result: np.ndarray = np.zeros(
             (self.observation_count, 3, self.factor_count),
             dtype=np.float64,
         )
@@ -725,11 +720,11 @@ class Prob4DObservationTimestampBindingV1:
         design = build_timing_jacobian(derivative.reshape(-1))
         return _immutable_array(design, dtype=np.dtype(np.float64))
 
-    def shared_clock_prior_from_payload(
+    def exploratory_shared_clock_prior_from_payload(
         self,
         value: Mapping[str, object],
     ) -> ObservationTimingPrior:
-        """Bind a source-only prior without merging it into local jitter."""
+        """Construct an exploratory compact prior; not claim-bearing."""
 
         expected_id = self.shared_clock_offset_prior_artifact_id
         if expected_id is None:

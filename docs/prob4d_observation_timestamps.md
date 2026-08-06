@@ -116,30 +116,51 @@ added again as diagonal point covariance.
 ## Shared clock design and prior
 
 ```python
+from bayesian_phystwin.causal4d_observation_clock_prior import (
+    load_causal4d_observation_timing_prior,
+)
+
 clock_design = binding.shared_clock_design(
     observation_derivative_xyz_per_s
 )
-prior = binding.shared_clock_prior_from_payload(source_only_prior_payload)
+prior = load_causal4d_observation_timing_prior(
+    source_only_prior_path,
+    expected_artifact_id=(
+        binding.shared_clock_offset_prior_artifact_id
+    ),
+    expected_clock_domain=binding.clock_domain,
+    expected_time_scale=binding.time_scale,
+)
 ```
 
 The design has shape `(3N, 1)` and uses the same coordinate flattening as the
-physical and nuisance Jacobians. The prior payload must match the exact artifact
-ID, clock-domain name, and correction convention declared by the lineage:
+physical and nuisance Jacobians. Claim-bearing consumption requires the complete
+content-addressed Causal4D prior record, not only its compact Gaussian payload.
+BayesianPhysTwin independently checks the closed schema, source-only information
+boundary, source execution count and ordering, source offsets, predictive-width
+formula and floor, exact content ID, clock domain, time scale, and correction
+convention:
 
 ```text
 aligned_observation_time_s = observation_time_s + offset_s
 ```
 
-The resulting `ObservationTimingPrior` can be passed to the explicit timing
-nuisance machinery. Timing identifiability must still be assessed against
-physical-state, gauge, visual-bias, and material-lag modes. A source timestamp
-sidecar does not by itself distinguish hardware clock error from physical
-relaxation.
+A compact payload containing an artifact ID, mean, and standard deviation cannot
+tie those numeric values to that ID. The
+`binding.exploratory_shared_clock_prior_from_payload(...)` helper is explicitly
+non-claim-bearing. The full-record validator rejects compact payloads and returns
+an `ObservationTimingPrior` only after the complete record has been reconstructed
+successfully.
+
+Timing identifiability must still be assessed against physical-state, gauge,
+visual-bias, and material-lag modes. A source timestamp sidecar and a valid
+source-only prior do not by themselves distinguish hardware clock error from
+physical relaxation.
 
 ## Information-order boundary
 
 Timestamp extraction, clock-domain definitions, conditional-jitter estimation,
-the raw timestamp-source digest, its independent verification artifact, the
+the raw timestamp-source digest, its separately frozen verification-artifact ID, the
 factor-bundle identity, and a shared-offset prior must be frozen from source or
 calibration evidence before confirmation access. The consumer binds those
 choices but does not infer or retune them from target outcomes.
@@ -147,7 +168,7 @@ choices but does not infer or retune them from target outcomes.
 ## Claim boundary
 
 A valid binding establishes stable byte identity, causal ordering, exact
-factor-to-row mapping, independently evidenced source-byte admission, and
+factor-to-row mapping, separately bound source-byte evidence, and
 non-duplicated timing uncertainty semantics. It does not establish timestamp
 accuracy, transfer of a timing prior, physical-state identifiability, provider
 competence, calibrated target coverage, downstream physical-query improvement,

@@ -3,13 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-
-from bayesian_phystwin.prob4d_observation_timestamps import (
-    load_prob4d_observation_timestamp_lineage,
-)
 from prob4d.observation_timestamp_lineage import (
     ObservationTimestampLineageV1,
     write_observation_timestamp_lineage,
+)
+
+from bayesian_phystwin.prob4d_observation_timestamps import (
+    load_prob4d_observation_timestamp_lineage,
 )
 
 

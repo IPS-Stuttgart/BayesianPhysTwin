@@ -185,7 +185,9 @@ def test_factor_local_jitter_and_shared_clock_are_separate(tmp_path: Path) -> No
     assert covariance[x0, x2] == 0.0
 
 
-def test_shared_clock_prior_binds_artifact_domain_and_sign(tmp_path: Path) -> None:
+def test_exploratory_clock_prior_binds_artifact_domain_and_sign(
+    tmp_path: Path,
+) -> None:
     binding = _binding(tmp_path)
     payload: dict[str, object] = {
         "clock_domain": "camera-hardware-clock",
@@ -197,20 +199,20 @@ def test_shared_clock_prior_binds_artifact_domain_and_sign(tmp_path: Path) -> No
         ),
     }
 
-    prior = binding.shared_clock_prior_from_payload(payload)
+    prior = binding.exploratory_shared_clock_prior_from_payload(payload)
     assert prior.clock_domain == binding.clock_domain
     assert prior.source_artifact_id == SHARED_PRIOR
 
     with pytest.raises(ValueError, match="artifact ID"):
-        binding.shared_clock_prior_from_payload(
+        binding.exploratory_shared_clock_prior_from_payload(
             {**payload, "source_artifact_id": "f" * 64}
         )
     with pytest.raises(ValueError, match="domain"):
-        binding.shared_clock_prior_from_payload(
+        binding.exploratory_shared_clock_prior_from_payload(
             {**payload, "clock_domain": "other-clock"}
         )
     with pytest.raises(ValueError, match="convention"):
-        binding.shared_clock_prior_from_payload(
+        binding.exploratory_shared_clock_prior_from_payload(
             {**payload, "offset_convention": "reversed"}
         )
 
@@ -290,9 +292,7 @@ def test_binding_arrays_are_irreversibly_immutable(tmp_path: Path) -> None:
         binding.row_factor_indices,
         binding.row_timestamps_s,
         binding.row_conditional_timestamp_std_s,
-        binding.conditional_jitter_low_rank_factor(
-            np.ones((4, 3), dtype=np.float64)
-        ),
+        binding.conditional_jitter_low_rank_factor(np.ones((4, 3), dtype=np.float64)),
         binding.shared_clock_design(np.ones((4, 3), dtype=np.float64)),
     ):
         assert not array.flags.writeable

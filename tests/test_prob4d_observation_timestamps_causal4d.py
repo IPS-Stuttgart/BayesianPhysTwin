@@ -1,23 +1,29 @@
 from __future__ import annotations
 
+import json
 import math
+from collections.abc import Mapping
 from dataclasses import replace
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
-
-from bayesian_phystwin.causal4d_observation_clock_binding import (
-    bind_causal4d_observation_clock_prior,
-)
-from bayesian_phystwin.causal4d_observation_clock_prior import (
-    Causal4DObservationClockOffsetPriorV1,
-)
-from bayesian_phystwin.prob4d_observation_timestamps import (
-    Prob4DObservationTimestampBindingV1,
-)
 from causal4d.observation_clock_offset_prior import (
     OBSERVATION_TIME_CORRECTION_CONVENTION,
     ObservationClockOffsetPriorV1,
+)
+
+from bayesian_phystwin.causal4d_observation_clock_prior import (
+    Causal4DObservationClockOffsetPriorV1,
+    causal4d_observation_timing_prior_from_record,
+    load_causal4d_observation_timing_prior,
+)
+from bayesian_phystwin.observation_timing_nuisance import (
+    ObservationTimingPrior,
+)
+from bayesian_phystwin.prob4d_observation_timestamps import (
+    Prob4DObservationTimestampBindingV1,
 )
 
 
@@ -71,13 +77,58 @@ def _binding(
     )
 
 
+def _consume(
+    binding: Prob4DObservationTimestampBindingV1,
+    record: Mapping[str, Any],
+) -> ObservationTimingPrior:
+    expected_id = binding.shared_clock_offset_prior_artifact_id
+    if expected_id is None:
+        raise ValueError("timestamp lineage declares no shared clock prior")
+    return causal4d_observation_timing_prior_from_record(
+        record,
+        expected_artifact_id=expected_id,
+        expected_clock_domain=binding.clock_domain,
+        expected_time_scale=binding.time_scale,
+    )
+
+
+def test_strict_clock_prior_file_loader_round_trip_and_duplicates(
+    tmp_path: Path,
+) -> None:
+    producer = _causal4d_prior()
+    assert producer.artifact_id is not None
+    binding = _binding(producer.artifact_id)
+    path = tmp_path / "clock-prior.json"
+    path.write_text(json.dumps(producer.to_record()), encoding="utf-8")
+
+    prior = load_causal4d_observation_timing_prior(
+        path,
+        expected_artifact_id=producer.artifact_id,
+        expected_clock_domain=binding.clock_domain,
+        expected_time_scale=binding.time_scale,
+    )
+    assert prior.source_artifact_id == producer.artifact_id
+
+    path.write_text(
+        '{"schema":"first","schema":"second"}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate"):
+        load_causal4d_observation_timing_prior(
+            path,
+            expected_artifact_id=producer.artifact_id,
+            expected_clock_domain=binding.clock_domain,
+            expected_time_scale=binding.time_scale,
+        )
+
+
 def test_actual_causal4d_prior_record_round_trips_exactly() -> None:
     producer = _causal4d_prior()
     assert producer.artifact_id is not None
     record = producer.to_record()
 
     reconstructed = Causal4DObservationClockOffsetPriorV1.from_mapping(record)
-    consumer = bind_causal4d_observation_clock_prior(
+    consumer = _consume(
         _binding(producer.artifact_id),
         record,
     )
@@ -98,7 +149,7 @@ def test_compact_clock_payload_is_not_claim_bearing() -> None:
     assert producer.artifact_id is not None
 
     with pytest.raises(ValueError, match="fields changed"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             _binding(producer.artifact_id),
             producer.bayesian_phystwin_prior_payload(),
         )
@@ -110,12 +161,12 @@ def test_causal4d_prior_record_rejects_changed_gaussian_with_same_id() -> None:
     binding = _binding(producer.artifact_id)
 
     with pytest.raises(ValueError, match="summary does not match"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             binding,
             {**producer.to_record(), "mean_offset_s": 0.25},
         )
     with pytest.raises(ValueError, match="summary does not match"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             binding,
             {
                 **producer.to_record(),
@@ -135,7 +186,7 @@ def test_causal4d_prior_record_cannot_be_relabelled() -> None:
     )
     assert different_domain.artifact_id is not None
     with pytest.raises(ValueError, match="domain differs"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             _binding(different_domain.artifact_id),
             different_domain.to_record(),
         )
@@ -147,7 +198,7 @@ def test_causal4d_prior_record_cannot_be_relabelled() -> None:
     )
     assert different_scale.artifact_id is not None
     with pytest.raises(ValueError, match="time scale differs"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             _binding(different_scale.artifact_id),
             different_scale.to_record(),
         )
@@ -159,13 +210,13 @@ def test_causal4d_prior_record_cannot_be_relabelled() -> None:
     )
     assert different_source.artifact_id is not None
     with pytest.raises(ValueError, match="artifact ID differs"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             _binding(producer.artifact_id),
             different_source.to_record(),
         )
 
     with pytest.raises(ValueError, match="convention changed"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             _binding(producer.artifact_id),
             {**producer.to_record(), "offset_convention": "reversed"},
         )
@@ -179,7 +230,7 @@ def test_causal4d_prior_record_preserves_information_boundary() -> None:
     boundary["target_outcomes_used"] = True
 
     with pytest.raises(ValueError, match="information boundary changed"):
-        bind_causal4d_observation_clock_prior(
+        _consume(
             _binding(producer.artifact_id),
             {**record, "information_boundary": boundary},
         )
@@ -195,4 +246,4 @@ def test_timestamp_lineage_must_declare_shared_clock_prior() -> None:
     )
 
     with pytest.raises(ValueError, match="declares no shared clock prior"):
-        bind_causal4d_observation_clock_prior(binding, producer.to_record())
+        _consume(binding, producer.to_record())

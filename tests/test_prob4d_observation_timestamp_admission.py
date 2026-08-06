@@ -41,7 +41,7 @@ def _call(
     )
 
 
-def test_admission_binds_independent_source_and_private_exact_snapshots(
+def test_admission_binds_separately_frozen_source_and_private_snapshots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -91,17 +91,17 @@ def test_admission_binds_independent_source_and_private_exact_snapshots(
     assert captured["bundle_snapshot_is_private"] is True
     assert admitted["protocol"] == "source-frozen-v1"
     assert admitted["prob4d_timestamp_source_sha256"] == SOURCE_SHA
-    assert admitted["prob4d_timestamp_source_independently_verified"] is True
     assert admitted["prob4d_timestamp_source_verification_artifact_id"] == (
         VERIFICATION_ID
     )
     assert admitted["prob4d_timestamp_lineage_artifact_id"] == LINEAGE_ID
-    assert admitted["prob4d_timestamp_lineage_file_sha256"] == hashlib.sha256(
-        timestamp_bytes
-    ).hexdigest()
+    assert (
+        admitted["prob4d_timestamp_lineage_file_sha256"]
+        == hashlib.sha256(timestamp_bytes).hexdigest()
+    )
 
 
-def test_wrong_independent_source_digest_fails_before_binding(
+def test_wrong_separately_frozen_source_digest_fails_before_binding(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -129,9 +129,27 @@ def test_wrong_independent_source_digest_fails_before_binding(
         forbidden,
     )
 
-    with pytest.raises(ValueError, match="independent evidence"):
+    with pytest.raises(ValueError, match="separately frozen evidence"):
         _call(path)
     assert not called
+
+
+def test_verification_artifact_is_distinct_from_source_bundle_and_files(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "timestamps.json"
+    sidecar_bytes = b"separate sidecar bytes"
+    path.write_bytes(sidecar_bytes)
+
+    with pytest.raises(ValueError, match="distinct from source and bundle"):
+        _call(path, verification_id=SOURCE_SHA)
+    with pytest.raises(ValueError, match="distinct from source and bundle"):
+        _call(path, verification_id=BUNDLE_SHA)
+    with pytest.raises(ValueError, match="distinct from admitted files"):
+        _call(
+            path,
+            verification_id=hashlib.sha256(sidecar_bytes).hexdigest(),
+        )
 
 
 def test_sidecar_cannot_verify_itself(
