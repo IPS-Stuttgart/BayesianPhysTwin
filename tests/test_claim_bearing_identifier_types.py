@@ -3,8 +3,6 @@ from __future__ import annotations
 from copy import deepcopy
 
 import pytest
-from test_query_calibration import *  # noqa: F403
-from test_query_calibration_validation import *  # noqa: F403
 
 from bayesian_phystwin.prob4d_provider_attestation import (
     compute_prob4d_provider_manifest_id,
