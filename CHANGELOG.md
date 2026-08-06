@@ -9,6 +9,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- A content-addressed BayesianPhysTwin/Prob4D/Causal4D compatibility lock,
+  NumPy-free `bpt ecosystem validate` command, and deterministic locked-versus-
+  latest-main canary policy for cross-repository CI.
 - An MIT license for project-authored source code and documentation.
 - Machine-readable software citation metadata in `CITATION.cff`.
 - A Python and Causal4D provider compatibility policy in `SUPPORT.md`.
