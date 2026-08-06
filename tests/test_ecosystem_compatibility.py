@@ -30,7 +30,7 @@ def test_bundled_ecosystem_lock_is_complete_and_content_addressed() -> None:
         "causal4d",
     )
     assert lock.component("bpt").revision == (
-        "3c2c703f731a46019cf07b540474f25827dd5106"
+        "3f37fbc87975f0581a0e58434e53b44c4d61b402"
     )
     assert lock.component("prob4d").revision == (
         "9ad07f89f9a85b68cf1375a4087ffa447b6af846"
@@ -38,6 +38,10 @@ def test_bundled_ecosystem_lock_is_complete_and_content_addressed() -> None:
     assert lock.component("causal4d").revision == (
         "b0bf0c2de176b29534ef59484ad167b8f27d9dae"
     )
+    assert lock.validation["bayesian_phystwin_tested_revision"] == (
+        lock.component("bpt").revision
+    )
+    assert lock.validation["workflow_run_id"] == 31019529164
 
 
 def test_optional_companions_and_require_all_have_distinct_semantics() -> None:
@@ -66,6 +70,7 @@ def test_exact_versions_and_source_revisions_fail_closed() -> None:
         exact_versions=True,
         installed_versions=_complete_versions(),
         revisions={
+            "bpt": lock.component("bpt").revision,
             "prob4d": lock.component("prob4d").revision,
             "causal4d": lock.component("causal4d").revision,
         },
