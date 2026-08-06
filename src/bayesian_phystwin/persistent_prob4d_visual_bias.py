@@ -283,12 +283,8 @@ class PersistentVisualBiasBeliefV1:
             "visual_bias_model_id": self.visual_bias_model_id,
             "physical_state_domain_id": self.physical_state_domain_id,
             "physical_mean": _array_descriptor(np.asarray(self.physical_mean)),
-            "bias_latent_mean": _array_descriptor(
-                np.asarray(self.bias_latent_mean)
-            ),
-            "joint_covariance": _array_descriptor(
-                np.asarray(self.joint_covariance)
-            ),
+            "bias_latent_mean": _array_descriptor(np.asarray(self.bias_latent_mean)),
+            "joint_covariance": _array_descriptor(np.asarray(self.joint_covariance)),
             "bias_covariance_root": _array_descriptor(
                 np.asarray(self.bias_covariance_root)
             ),
@@ -330,9 +326,7 @@ class PersistentVisualBiasCandidateV1:
             )
         index = genuine_integer(self.update_index, name="update_index", minimum=0)
         if not isinstance(self.posterior_belief, PersistentVisualBiasBeliefV1):
-            raise TypeError(
-                "posterior_belief must be a PersistentVisualBiasBeliefV1"
-            )
+            raise TypeError("posterior_belief must be a PersistentVisualBiasBeliefV1")
         if self.posterior_belief.stream_binding_id != self.stream_binding_id:
             raise ValueError("candidate posterior uses a different stream binding")
         quadratic = _finite_real(
@@ -440,9 +434,7 @@ class PersistentVisualBiasEventV1:
             )
             candidate_id = _sha256(candidate_id, name="candidate_id")
             accepted = genuine_boolean(accepted, name="accepted")
-            expected = (
-                self.candidate_belief_id if accepted else self.prior_belief_id
-            )
+            expected = self.candidate_belief_id if accepted else self.prior_belief_id
             if self.selected_belief_id != expected:
                 raise ValueError("measurement event violates exact accept/fallback")
         object.__setattr__(self, "update_index", index)
@@ -498,8 +490,7 @@ class PersistentVisualBiasRunV1:
             Prob4DVisualBiasStreamConsumptionBindingV1,
         ):
             raise TypeError(
-                "stream_binding must be a "
-                "Prob4DVisualBiasStreamConsumptionBindingV1"
+                "stream_binding must be a Prob4DVisualBiasStreamConsumptionBindingV1"
             )
         binding_id = self.stream_binding.binding_id
         if binding_id is None:
@@ -515,8 +506,7 @@ class PersistentVisualBiasRunV1:
         if self.belief.bias_dimension != stream.latent_dimension:
             raise ValueError("run belief bias dimension differs from the stream")
         reconstructed_bias_covariance = (
-            self.belief.bias_covariance_root
-            @ self.belief.bias_covariance_root.T
+            self.belief.bias_covariance_root @ self.belief.bias_covariance_root.T
         )
         if not np.allclose(
             reconstructed_bias_covariance,
@@ -526,8 +516,7 @@ class PersistentVisualBiasRunV1:
         ):
             raise ValueError("run belief uses a different visual-bias prior root")
         if type(self.events) is not tuple or any(
-            not isinstance(event, PersistentVisualBiasEventV1)
-            for event in self.events
+            not isinstance(event, PersistentVisualBiasEventV1) for event in self.events
         ):
             raise TypeError("events must be a canonical tuple of solver events")
         expected_prior = initial_id
@@ -708,9 +697,7 @@ def predict_persistent_visual_bias_run(
     predicted_mean[:physical_dimension] += offset
     predicted_covariance = affine @ belief.joint_covariance @ affine.T
     predicted_covariance[:physical_dimension, :physical_dimension] += process
-    predicted_covariance = 0.5 * (
-        predicted_covariance + predicted_covariance.T
-    )
+    predicted_covariance = 0.5 * (predicted_covariance + predicted_covariance.T)
     candidate = PersistentVisualBiasBeliefV1(
         stream_binding_id=belief.stream_binding_id,
         visual_bias_model_id=belief.visual_bias_model_id,
@@ -793,9 +780,7 @@ def propose_persistent_visual_bias_update(
         3,
         3,
     ):
-        raise ValueError(
-            "conditional_covariance must be float64 with shape (N, 3, 3)"
-        )
+        raise ValueError("conditional_covariance must be float64 with shape (N, 3, 3)")
     if not np.all(np.isfinite(innovation)) or not np.all(np.isfinite(jacobian)):
         raise ValueError("innovation and physical Jacobian must be finite")
 
@@ -828,17 +813,13 @@ def propose_persistent_visual_bias_update(
         )
         information += design.T @ weighted_design
         score += design.T @ weighted_innovation
-        innovation_quadratic += float(
-            innovation[local_row] @ weighted_innovation
-        )
+        innovation_quadratic += float(innovation[local_row] @ weighted_innovation)
     information = 0.5 * (information + information.T)
     posterior_covariance = np.linalg.solve(
         information,
         np.eye(joint_dimension, dtype=np.float64),
     )
-    posterior_covariance = 0.5 * (
-        posterior_covariance + posterior_covariance.T
-    )
+    posterior_covariance = 0.5 * (posterior_covariance + posterior_covariance.T)
     delta = np.linalg.solve(information, score)
     posterior_mean = _joint_mean(run.belief) + delta
     posterior = PersistentVisualBiasBeliefV1(
@@ -910,9 +891,7 @@ def select_persistent_visual_bias_candidate(
         raise ValueError("candidate update index is stale or out of order")
     if candidate.prior_belief_id != run.belief.belief_id:
         raise ValueError("candidate prior belief is stale")
-    update = run.stream_binding.visual_bias_stream.updates[
-        run.next_update_index
-    ]
+    update = run.stream_binding.visual_bias_stream.updates[run.next_update_index]
     if candidate.visual_bias_stream_update_id != update.update_id:
         raise ValueError("candidate identifies a different visual-bias update")
     selected = candidate.posterior_belief if accept else run.belief

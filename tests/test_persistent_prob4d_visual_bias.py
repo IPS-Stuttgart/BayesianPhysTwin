@@ -37,9 +37,7 @@ def _model_id(covariance: np.ndarray) -> str:
             "bias_ids": ["camera-0"],
             "basis_names": ["tx"],
             "joint_bias_covariance": _array_descriptor(covariance),
-            "orthogonalization_semantics": (
-                PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
-            ),
+            "orthogonalization_semantics": (PROB4D_VISUAL_BIAS_ORTHOGONALIZATION),
             "gauge_projection_tolerance": 1e-6,
             "model_metadata": {"calibration": "source-only"},
         }
