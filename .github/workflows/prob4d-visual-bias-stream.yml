@@ -44,11 +44,11 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Check out exact Prob4D recursive visual-bias producer
+      - name: Check out exact merged Prob4D recursive visual-bias producer
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Prob4D
-          ref: cd651bbc1ca943d79703ceb87069d444518aae47
+          ref: e37c3d50d4a07a2c3760389e79d59b0ac9402dc4
           path: _external/prob4d
           persist-credentials: false
           clean: true
@@ -144,6 +144,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: prob4d-visual-bias-stream-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.VISUAL_BIAS_STREAM_RUN_ROOT }}
+          path: |
+            ${{ env.VISUAL_BIAS_STREAM_RUN_ROOT }}/environment.txt
+            ${{ env.VISUAL_BIAS_STREAM_RUN_ROOT }}/pytest.txt
           if-no-files-found: warn
           retention-days: 30
