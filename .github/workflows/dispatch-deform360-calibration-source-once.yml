@@ -10,6 +10,7 @@ on:
       - "Changed Python source preflight"
       - "Finite-group query covariance calibration"
       - "Tests"
+      - "CLI entrypoint contract"
     types: [completed]
   issue_comment:
     types: [created]
@@ -33,7 +34,8 @@ jobs:
        github.event.workflow_run.conclusion == 'success' &&
        (github.event.workflow_run.id == 31086168090 ||
         github.event.workflow_run.id == 31078692442 ||
-        github.event.workflow_run.id == 31086168413)) ||
+        github.event.workflow_run.id == 31086168413 ||
+        github.event.workflow_run.id == 30981281149)) ||
       (github.event_name == 'issue_comment' &&
        github.event.issue.number == 148 &&
        github.event.comment.user.login == 'FlorianPfaff' &&
