@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import stat
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -17,11 +20,12 @@ from .decisive_evidence import (
 )
 from .paper_evidence_v1 import validate_paper_evidence_manifest
 from .repository_provenance import RepositoryRole, RepositoryState
-from .run_manifest import sha256_file
 from .run_manifest_v2 import RunManifestV2, load_run_manifest
 
 CLAIM_BUNDLE_SCHEMA = "bayesian_phystwin.claim_bundle"
 CLAIM_BUNDLE_SCHEMA_VERSION = 1
+CLAIM_EVIDENCE_BINDING_SCHEMA = "bayesian_phystwin.claim_evidence_bindings"
+CLAIM_EVIDENCE_BINDING_SCHEMA_VERSION = 1
 
 ClaimBundleArtifactKind = Literal[
     "run_manifest",
@@ -80,6 +84,23 @@ _SUMMARY_FIELDS = frozenset(
         "metrics",
     }
 )
+_CLAIM_BINDING_ROOT_FIELDS = frozenset(
+    {"schema_name", "schema_version", "bindings", "migration_exceptions"}
+)
+_CLAIM_BINDING_FIELDS = frozenset(
+    {
+        "claim_id",
+        "manifest",
+        "artifact_root",
+        "expected_manifest_id",
+        "expected_evidence_fingerprint",
+        "result_artifact",
+        "table_artifact",
+        "table_row_id",
+    }
+)
+_CLAIM_BINDING_REFERENCE_FIELDS = frozenset({"name", "path", "sha256"})
+_CLAIM_BINDING_EXCEPTION_FIELDS = frozenset({"claim_id", "reason"})
 _MEDIA_TYPES = {
     ".csv": "text/csv",
     ".json": "application/json",
@@ -163,6 +184,13 @@ def _require_relative_path(value: Any, *, name: str) -> str:
     return path.as_posix()
 
 
+def _require_binding_root(value: Any, *, name: str) -> PurePosixPath:
+    text = _require_text(value, name=name)
+    if text == ".":
+        return PurePosixPath()
+    return PurePosixPath(_require_relative_path(text, name=name))
+
+
 def _require_artifact_kind(value: Any) -> ClaimBundleArtifactKind:
     if value not in _VALID_ARTIFACT_KINDS:
         raise ValueError("unsupported claim-bundle artifact kind")
@@ -191,6 +219,72 @@ def _load_json_mapping(path: str | Path, *, name: str) -> Mapping[str, Any]:
 
 def _media_type(path: Path) -> str:
     return _MEDIA_TYPES.get(path.suffix.lower(), "application/octet-stream")
+
+
+def _stable_regular_file_snapshot(path: Path) -> tuple[str, int]:
+    """Hash and size one regular file through a single stable descriptor."""
+
+    flags = os.O_RDONLY
+    if hasattr(os, "O_BINARY"):
+        flags |= os.O_BINARY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as error:
+        raise ValueError(f"claim-bundle artifact cannot be opened: {path}") from error
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise ValueError(f"claim-bundle artifact is not a regular file: {path}")
+        digest = hashlib.sha256()
+        size = 0
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+            size += len(chunk)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+
+    before_identity = (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+    )
+    after_identity = (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+    )
+    if before_identity != after_identity or size != after.st_size:
+        raise ValueError(f"claim-bundle artifact changed while hashing: {path}")
+    return digest.hexdigest(), size
+
+
+def _resolved_artifact_path(
+    root: Path,
+    path: str | Path,
+) -> tuple[Path, str]:
+    source = Path(path)
+    candidate = source if source.is_absolute() else root / source
+    if candidate.is_symlink():
+        raise ValueError("claim-bundle artifacts must not be symbolic links")
+    try:
+        resolved = candidate.resolve(strict=True)
+    except OSError as error:
+        raise ValueError(f"claim-bundle artifact is not a file: {candidate}") from error
+    try:
+        relative = resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError("claim-bundle artifacts must remain below artifact root") from error
+    return resolved, relative.as_posix()
 
 
 @dataclass(frozen=True)
@@ -484,20 +578,14 @@ def claim_bundle_artifact(
     """Hash one file and bind it to a portable path below ``root``."""
 
     artifact_root = Path(root).resolve()
-    source = Path(path)
-    resolved = source.resolve() if source.is_absolute() else (artifact_root / source).resolve()
-    try:
-        relative = resolved.relative_to(artifact_root)
-    except ValueError as error:
-        raise ValueError("claim-bundle artifacts must remain below artifact root") from error
-    if not resolved.is_file():
-        raise ValueError(f"claim-bundle artifact is not a file: {resolved}")
+    resolved, relative = _resolved_artifact_path(artifact_root, path)
+    digest, size = _stable_regular_file_snapshot(resolved)
     return ClaimBundleArtifactV1(
         name=name,
         kind=kind,
-        path=relative.as_posix(),
-        sha256=sha256_file(resolved),
-        size_bytes=resolved.stat().st_size,
+        path=relative,
+        sha256=digest,
+        size_bytes=size,
         media_type=media_type or _media_type(resolved),
     )
 
@@ -530,6 +618,167 @@ def _check_manifest_summary_identity(
         raise ValueError("evidence summary protocol_id differs from run manifest")
     if summary["statistical_unit"] != manifest.statistical_unit:
         raise ValueError("evidence summary statistical_unit differs from run manifest")
+
+
+def _claim_binding_reference(
+    value: Any,
+    *,
+    name: str,
+    artifact_root: PurePosixPath,
+) -> tuple[str, str]:
+    reference = _require_mapping(value, name=name)
+    _require_exact_fields(
+        reference,
+        expected=_CLAIM_BINDING_REFERENCE_FIELDS,
+        name=name,
+    )
+    _require_text(reference["name"], name=f"{name}.name")
+    relative = PurePosixPath(
+        _require_relative_path(reference["path"], name=f"{name}.path")
+    )
+    path = (artifact_root / relative).as_posix()
+    return path, _require_sha256(reference["sha256"], name=f"{name}.sha256")
+
+
+def validate_claim_evidence_bindings(
+    payload: Mapping[str, Any],
+    *,
+    manifest: RunManifestV2,
+    artifacts: Sequence[ClaimBundleArtifactV1],
+) -> Mapping[str, Any]:
+    """Validate the paper repository's claim-evidence binding schema."""
+
+    _require_exact_fields(
+        payload,
+        expected=_CLAIM_BINDING_ROOT_FIELDS,
+        name="claim-evidence bindings",
+    )
+    if payload["schema_name"] != CLAIM_EVIDENCE_BINDING_SCHEMA:
+        raise ValueError("unsupported claim-evidence binding schema")
+    if (
+        _require_integer(
+            payload["schema_version"],
+            name="claim-evidence binding schema_version",
+        )
+        != CLAIM_EVIDENCE_BINDING_SCHEMA_VERSION
+    ):
+        raise ValueError("unsupported claim-evidence binding schema version")
+
+    by_path = {artifact.path: artifact for artifact in artifacts}
+    manifest_artifact = next(
+        (artifact for artifact in artifacts if artifact.kind == "run_manifest"),
+        None,
+    )
+    if manifest_artifact is None:
+        raise ValueError("claim-evidence bindings require the bound run manifest")
+
+    bound_claims: set[str] = set()
+    for raw_binding in _require_sequence(payload["bindings"], name="bindings"):
+        binding = _require_mapping(raw_binding, name="claim-evidence binding")
+        _require_exact_fields(
+            binding,
+            expected=_CLAIM_BINDING_FIELDS,
+            name="claim-evidence binding",
+        )
+        claim_id = _require_text(binding["claim_id"], name="binding claim_id")
+        if claim_id in bound_claims:
+            raise ValueError(f"duplicate claim-evidence binding: {claim_id}")
+        bound_claims.add(claim_id)
+
+        manifest_path = _require_relative_path(
+            binding["manifest"],
+            name=f"{claim_id}.manifest",
+        )
+        if manifest_path != manifest_artifact.path:
+            raise ValueError(f"{claim_id} binding selects another manifest path")
+        if (
+            _require_sha256(
+                binding["expected_manifest_id"],
+                name=f"{claim_id}.expected_manifest_id",
+            )
+            != manifest.manifest_id
+        ):
+            raise ValueError(f"{claim_id} binding selects another manifest")
+        if (
+            _require_sha256(
+                binding["expected_evidence_fingerprint"],
+                name=f"{claim_id}.expected_evidence_fingerprint",
+            )
+            != manifest.evidence_fingerprint
+        ):
+            raise ValueError(
+                f"{claim_id} binding selects another evidence fingerprint"
+            )
+
+        binding_root = _require_binding_root(
+            binding["artifact_root"],
+            name=f"{claim_id}.artifact_root",
+        )
+        result_path, result_digest = _claim_binding_reference(
+            binding["result_artifact"],
+            name=f"{claim_id}.result_artifact",
+            artifact_root=binding_root,
+        )
+        result_artifact = by_path.get(result_path)
+        if (
+            result_artifact is None
+            or result_artifact.sha256 != result_digest
+            or result_artifact.kind not in {"evidence_summary", "supporting"}
+        ):
+            raise ValueError(f"{claim_id} result artifact is absent from the bundle")
+
+        table_path, table_digest = _claim_binding_reference(
+            binding["table_artifact"],
+            name=f"{claim_id}.table_artifact",
+            artifact_root=binding_root,
+        )
+        table_artifact = by_path.get(table_path)
+        if (
+            table_artifact is None
+            or table_artifact.sha256 != table_digest
+            or table_artifact.kind != "table_data"
+        ):
+            raise ValueError(f"{claim_id} table artifact is absent from the bundle")
+        _require_text(binding["table_row_id"], name=f"{claim_id}.table_row_id")
+
+    expected_claims = set(manifest.claim_ids)
+    if bound_claims != expected_claims:
+        missing = sorted(expected_claims - bound_claims)
+        unknown = sorted(bound_claims - expected_claims)
+        raise ValueError(
+            "claim-evidence bindings do not match manifest claim IDs: "
+            f"missing={missing}, unknown={unknown}"
+        )
+
+    exceptions: set[str] = set()
+    for raw_exception in _require_sequence(
+        payload["migration_exceptions"],
+        name="migration_exceptions",
+    ):
+        exception = _require_mapping(
+            raw_exception,
+            name="claim-evidence migration exception",
+        )
+        _require_exact_fields(
+            exception,
+            expected=_CLAIM_BINDING_EXCEPTION_FIELDS,
+            name="claim-evidence migration exception",
+        )
+        claim_id = _require_text(
+            exception["claim_id"],
+            name="migration exception claim_id",
+        )
+        _require_text(exception["reason"], name=f"{claim_id}.migration reason")
+        if claim_id in exceptions:
+            raise ValueError(f"duplicate claim-evidence migration exception: {claim_id}")
+        exceptions.add(claim_id)
+    overlap = sorted(expected_claims & exceptions)
+    if overlap:
+        raise ValueError(
+            "claim bundle cannot rely on migration exceptions for bound claims: "
+            f"{overlap}"
+        )
+    return payload
 
 
 def build_claim_bundle(
@@ -588,7 +837,12 @@ def build_claim_bundle(
             if Path(claim_binding_path).is_absolute()
             else root / claim_binding_path
         )
-        _load_json_mapping(binding_path, name="claim binding")
+        binding_payload = _load_json_mapping(binding_path, name="claim binding")
+        validate_claim_evidence_bindings(
+            binding_payload,
+            manifest=manifest,
+            artifacts=artifacts,
+        )
         artifacts.append(
             claim_bundle_artifact(
                 claim_binding_path,
@@ -616,15 +870,42 @@ def build_claim_bundle(
     )
 
 
-def write_claim_bundle(path: str | Path, bundle: ClaimBundleV1) -> None:
-    """Write a stable, human-readable claim-bundle JSON artifact."""
+def write_claim_bundle(
+    path: str | Path,
+    bundle: ClaimBundleV1,
+    *,
+    overwrite: bool = False,
+) -> None:
+    """Atomically publish stable JSON, refusing replacement unless requested."""
 
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        json.dumps(bundle.as_dict(), indent=2, sort_keys=True, allow_nan=False) + "\n",
-        encoding="utf-8",
+    payload = (
+        json.dumps(bundle.as_dict(), indent=2, sort_keys=True, allow_nan=False) + "\n"
+    ).encode("utf-8")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
     )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if overwrite:
+            os.replace(temporary, destination)
+        else:
+            try:
+                os.link(temporary, destination)
+            except FileExistsError as error:
+                raise FileExistsError(
+                    f"claim bundle already exists: {destination}"
+                ) from error
+            temporary.unlink()
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _repository_from_mapping(value: Mapping[str, Any]) -> RepositoryState:
@@ -735,16 +1016,11 @@ def verify_claim_bundle_artifacts(
 
     artifact_root = Path(root).resolve()
     for artifact in bundle.artifacts:
-        path = (artifact_root / artifact.path).resolve()
-        try:
-            path.relative_to(artifact_root)
-        except ValueError as error:
-            raise ValueError("claim-bundle artifact escapes artifact root") from error
-        if not path.is_file():
-            raise ValueError(f"claim-bundle artifact is missing: {artifact.path}")
-        if path.stat().st_size != artifact.size_bytes:
+        resolved, _relative = _resolved_artifact_path(artifact_root, artifact.path)
+        digest, size = _stable_regular_file_snapshot(resolved)
+        if size != artifact.size_bytes:
             raise ValueError(f"claim-bundle artifact size differs: {artifact.name}")
-        if sha256_file(path) != artifact.sha256:
+        if digest != artifact.sha256:
             raise ValueError(f"claim-bundle artifact digest differs: {artifact.name}")
 
     manifest_artifact = _artifact_for_kind(bundle, "run_manifest")
@@ -795,9 +1071,14 @@ def verify_claim_bundle_artifacts(
 
     binding_artifact = _artifact_for_kind(bundle, "claim_binding")
     if binding_artifact is not None:
-        _load_json_mapping(
+        binding_payload = _load_json_mapping(
             artifact_root / binding_artifact.path,
             name="claim binding",
+        )
+        validate_claim_evidence_bindings(
+            binding_payload,
+            manifest=manifest,
+            artifacts=bundle.artifacts,
         )
     return manifest
 
@@ -805,12 +1086,15 @@ def verify_claim_bundle_artifacts(
 __all__ = [
     "CLAIM_BUNDLE_SCHEMA",
     "CLAIM_BUNDLE_SCHEMA_VERSION",
+    "CLAIM_EVIDENCE_BINDING_SCHEMA",
+    "CLAIM_EVIDENCE_BINDING_SCHEMA_VERSION",
     "ClaimBundleArtifactKind",
     "ClaimBundleArtifactV1",
     "ClaimBundleV1",
     "build_claim_bundle",
     "claim_bundle_artifact",
     "load_claim_bundle",
+    "validate_claim_evidence_bindings",
     "validate_decisive_evidence_summary",
     "verify_claim_bundle_artifacts",
     "write_claim_bundle",
