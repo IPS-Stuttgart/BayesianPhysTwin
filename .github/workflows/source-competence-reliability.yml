@@ -112,7 +112,7 @@ jobs:
             tests/test_source_competence_reliability.py \
             tests/test_structured_reliability.py \
             tests/test_observation_belief.py \
-            tests/test_prob4d_stream_binding.py \
+            tests/test_prob4d_joint_contract_fixture.py \
             | tee "${SOURCE_COMPETENCE_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/source_competence_reliability.py \
