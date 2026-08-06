@@ -420,32 +420,21 @@ def validate_prob4d_visual_bias_nuisance(
         require_gauge_orthogonalized,
         name="require_gauge_orthogonalized",
     )
+    source = cast(Any, nuisance)
     try:
         binding = Prob4DVisualBiasBindingV1(
-            observation_artifact_id=getattr(nuisance, "observation_artifact_id"),
-            observation_identity_sha256=getattr(
-                nuisance,
-                "observation_identity_sha256",
-            ),
-            bias_ids=getattr(nuisance, "bias_ids"),
-            basis_names=getattr(nuisance, "basis_names"),
-            row_bias_indices=getattr(nuisance, "row_bias_indices"),
-            bias_jacobian=getattr(nuisance, "bias_jacobian"),
-            joint_bias_covariance=getattr(nuisance, "joint_bias_covariance"),
-            orthogonalization_semantics=getattr(
-                nuisance,
-                "orthogonalization_semantics",
-            ),
-            maximum_gauge_projection=getattr(
-                nuisance,
-                "maximum_gauge_projection",
-            ),
-            gauge_projection_tolerance=getattr(
-                nuisance,
-                "gauge_projection_tolerance",
-            ),
-            metadata=getattr(nuisance, "metadata"),
-            artifact_id=getattr(nuisance, "artifact_id"),
+            observation_artifact_id=source.observation_artifact_id,
+            observation_identity_sha256=source.observation_identity_sha256,
+            bias_ids=source.bias_ids,
+            basis_names=source.basis_names,
+            row_bias_indices=source.row_bias_indices,
+            bias_jacobian=source.bias_jacobian,
+            joint_bias_covariance=source.joint_bias_covariance,
+            orthogonalization_semantics=source.orthogonalization_semantics,
+            maximum_gauge_projection=source.maximum_gauge_projection,
+            gauge_projection_tolerance=source.gauge_projection_tolerance,
+            metadata=source.metadata,
+            artifact_id=source.artifact_id,
         )
     except AttributeError as error:
         raise TypeError(
