@@ -336,6 +336,7 @@ def greedy_query_aware_selection(
         )
         reliability_values = reliabilities
 
+    cost_values: np.ndarray
     if costs is None:
         cost_values = np.ones(candidate_count, dtype=np.float64)
     else:
