@@ -1,0 +1,187 @@
+{
+  "arms": {
+    "dense_persistence": {
+      "all_track_coverage_90": 0.9478498438584826,
+      "all_track_nees": 1.5347884724757017,
+      "chamfer_distance_m": 0.009265289710459961,
+      "hidden_future_frame_support": 1.0,
+      "hidden_track_error_m": 0.020210678485342363,
+      "late_hidden_track_error_m": 0.02509755623057681,
+      "late_track_error_m": 0.0251808783295678,
+      "observed_track_error_m": 0.021368238192968615,
+      "track_error_m": 0.021215380647584766
+    },
+    "physical": {
+      "all_track_coverage_90": 0.29261706502869345,
+      "all_track_nees": 51.7836923650213,
+      "chamfer_distance_m": 0.015968109076125534,
+      "hidden_future_frame_support": 1.0,
+      "hidden_track_error_m": 0.025656143565149763,
+      "late_hidden_track_error_m": 0.029424870501193977,
+      "late_track_error_m": 0.03023443591978101,
+      "observed_track_error_m": 0.02886765277422948,
+      "track_error_m": 0.027623881104001772
+    },
+    "tapnext_direct": {
+      "all_track_coverage_90": 0.9511268872971,
+      "all_track_nees": 1.4399341720404988,
+      "chamfer_distance_m": 0.009263101320782582,
+      "hidden_future_frame_support": 1.0,
+      "hidden_track_error_m": 0.020210678485342363,
+      "late_hidden_track_error_m": 0.02509755623057681,
+      "late_track_error_m": 0.025269460198465356,
+      "observed_track_error_m": 0.02124373585714614,
+      "track_error_m": 0.021141154927369305
+    },
+    "tapnext_graph": {
+      "all_track_coverage_90": 0.9577673803737633,
+      "all_track_nees": 1.1996412173098214,
+      "chamfer_distance_m": 0.009124317226281653,
+      "hidden_future_frame_support": 1.0,
+      "hidden_track_error_m": 0.019749593886137683,
+      "late_hidden_track_error_m": 0.024717192714192673,
+      "late_track_error_m": 0.025099828744982438,
+      "observed_track_error_m": 0.021243489746941353,
+      "track_error_m": 0.020933805255471182
+    }
+  },
+  "artifact_kind": "PhysTwinTAPNextPPSparseAssimilationSourceSummary",
+  "case_count": 14,
+  "case_dispositions": [
+    {
+      "case": "double_lift_cloth_3",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "8723835524a5822bc4aff1bfa3c6b7f3edc36910cbbc318d7b86486662248c37",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "double_lift_sloth",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "9eb2ef4bb86ed76e15184939be50262ef91608383dd4d751c33f1affc5414dec",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "double_stretch_zebra",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "4a3e02b58b043e3219ff44a3f15706620cc378c522511f13a50313030b8e9912",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_clift_cloth_1",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "7127cb86b08f18bfc5b39b1006fa45cf810ed92853eced1d28e183cd0dc22025",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_clift_cloth_3",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "91c9b8920eb6eb5b36043daed9fc7aa8ab25051d2ee36fb2cbe133f4a79b6708",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_lift_cloth",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "240d2fe5194b766855067344b77a8eb09eef7dd5896cd3e9b8a39e831d381b2d",
+      "sparse_update_accepted": false
+    },
+    {
+      "case": "single_lift_cloth_1",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "603ee3eee38ff0f589b6a1b1532e5ccc4a7da650c6a58b5c1816c520ec290bb8",
+      "sparse_update_accepted": false
+    },
+    {
+      "case": "single_lift_cloth_3",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "6aa6cee196c4378574f82326672b5dc40864cfbf397c6592fd1d808db3c9654d",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_lift_cloth_4",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "bef0ba511ada81e1b69a7c8c00af161609b2ff65d38adbfc4d10dbd6b0a43237",
+      "sparse_update_accepted": false
+    },
+    {
+      "case": "single_lift_sloth",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "905bffc631fb0276dedf7d2e59c61fca86d9b906e93b2306d53d61ea9c62648d",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_lift_zebra",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "9376f155708c387402a4711a1ea0f8f2e71b907c4e3d4203c69bd5e407fef3e1",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_push_rope",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "be06a2b92fd69cf548ee8fb6482a9e168efefa49aaa7b66580ea16757a085147",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_push_rope_1",
+      "primary_joint_nonregression": false,
+      "provider_gate_passed": true,
+      "result_sha256": "43e53d79ebbd442ddba2c175a20b0c0d679f0817e81a31af38a3d98527181852",
+      "sparse_update_accepted": true
+    },
+    {
+      "case": "single_push_sloth",
+      "primary_joint_nonregression": true,
+      "provider_gate_passed": true,
+      "result_sha256": "697beff3fc1e6f446bbfd3ac3826648f9c7e5b2569cd1a45c819a223b326e1bb",
+      "sparse_update_accepted": false
+    }
+  ],
+  "claim_boundary": "Fourteen-case opened-source Bayesian-PhysTwin material-transport assimilation study. Manual benchmark identity initializes each query and fixes its frame-zero graph node. Future scoring separates those observed identities from disjoint hidden identities. This is not deployable automatic association, independent confirmation, a fair open-loop state-of-the-art claim, or authority to inspect held-v8.",
+  "decision": "stop-before-independent-evaluation",
+  "gate_passed": false,
+  "gates": {
+    "all_track_gain": false,
+    "chamfer_gain": false,
+    "coverage_floor": true,
+    "coverage_not_farther_from_nominal": false,
+    "failed_provider_exact_fallback": true,
+    "hidden_future_support": true,
+    "hidden_track_nonregression": true,
+    "joint_case_nonregression": false,
+    "observed_track_gain": false
+  },
+  "information_boundary": {
+    "cohort": "14 fixed previously opened source cases disjoint from the failed eight-case sparse-association panel",
+    "failed_cases_replaced": false,
+    "future_metrics_opened_after_per_case_prediction_seals": true,
+    "held_v8_accessed": false,
+    "independent_target_opened": false
+  },
+  "inputs": {
+    "protocol_sha256": "ed6467b2dfe4eb8373b5ebe3fa49e32495f5704b26f0681eb22bd83319ffedbb",
+    "source_manifest_result_sha256": "7a068cb14b99dcd82b0a90b519b29a26c89247d4399df59746f01105910588a6",
+    "source_manifest_sha256": "6a96bc5dbbd1ebfde6d04453cb5c66e918eec0020131fb12fd3d6901b053799c"
+  },
+  "joint_case_nonregression_count": 8,
+  "protocol_id": "phystwin-tapnextpp-material-transport-assimilation-source-v1",
+  "result_sha256": "d8f42f19bef80ec00efc97d7bdda3517f5b512c504f73c589e76a550fca08315",
+  "schema_version": 1,
+  "tapnext_graph_incremental_gain_over_dense_persistence": {
+    "chamfer_distance_m": 0.015215118855825827,
+    "hidden_track_error_m": 0.0228139099604735,
+    "late_track_error_m": 0.003218695691412532,
+    "observed_track_error_m": 0.005838031423119894,
+    "track_error_m": 0.013272229086572551
+  }
+}

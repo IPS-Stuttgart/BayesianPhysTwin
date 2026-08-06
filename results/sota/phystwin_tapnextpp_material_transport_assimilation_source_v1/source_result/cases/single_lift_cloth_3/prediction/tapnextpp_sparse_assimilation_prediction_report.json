@@ -1,0 +1,230 @@
+{
+  "arms": [
+    "physical",
+    "dense_persistence",
+    "tapnext_direct",
+    "tapnext_graph"
+  ],
+  "artifact_kind": "PhysTwinTAPNextPPSparseAssimilationPrediction",
+  "case": "single_lift_cloth_3",
+  "claim_boundary": "Fourteen-case opened-source Bayesian-PhysTwin material-transport assimilation study. Manual benchmark identity initializes each query and fixes its frame-zero graph node. Future scoring separates those observed identities from disjoint hidden identities. This is not deployable automatic association, independent confirmation, a fair open-loop state-of-the-art claim, or authority to inspect held-v8.",
+  "dense_backbone": {
+    "maximum_correction_m": 0.07643608734474164,
+    "median_final_inlier_probability": 0.9944782210995152,
+    "reference_norm_m": 0.07643608734474164,
+    "update_count": 845767,
+    "updated_identity_count": 8582
+  },
+  "information_boundary": {
+    "dense_released_prefix_read": true,
+    "future_physical_rollout_read": true,
+    "future_real_outcome_read": false,
+    "held_v8_accessed": false,
+    "innovation_processed_once_by_robust_mixture": true,
+    "manual_future_identity_read": false,
+    "physical_innovation_used_for_prior_reliability": false,
+    "provider_source_prefix_read": true
+  },
+  "inputs": {
+    "physical_trajectory_sha256": "a18fc6a7a31234fdb24929855d1bf12f79bcefcf38eda908543096dea793d294",
+    "prediction_input_sha256": "53b5be517447edafbc9b5b2e2209cab47e0c86379ec23ae8785f4398c0c2d118",
+    "protocol_sha256": "ed6467b2dfe4eb8373b5ebe3fa49e32495f5704b26f0681eb22bd83319ffedbb",
+    "source_manifest_sha256": "6a96bc5dbbd1ebfde6d04453cb5c66e918eec0020131fb12fd3d6901b053799c"
+  },
+  "method_config": {
+    "dense_backbone": {
+      "initial_std_m": 0.01,
+      "inlier_prior": 0.95,
+      "method": "fixed robust endpoint persistence from released dense prefix pseudo-tracks",
+      "observation_std_m": 0.005,
+      "outlier_variance_multiplier": 100.0,
+      "process_std_m": 0.001,
+      "relative_cap_multiplier": 1.0,
+      "relative_cap_quantile": 0.95,
+      "selection": "none; all settings fixed before future source outcomes",
+      "temporal_gamma": 0.0
+    },
+    "predictive_uq": {
+      "coverage_level": 0.9,
+      "coverage_scope": "conditional isotropic graph-node discrepancy intervals; calibration not assumed",
+      "future_rule": "posterior discrepancy variance plus random-walk growth by elapsed frames",
+      "noise_floor_std_m": 0.005
+    },
+    "sparse_assimilation": {
+      "association_neighbor_count": 4,
+      "association_temperature_m": 0.005,
+      "graph_covariance_probes": 32,
+      "graph_prior_strength": 0.1,
+      "initial_std_m": 0.01,
+      "inlier_prior": 0.95,
+      "maximum_effective_rows_per_identity": 4.0,
+      "maximum_query_to_graph_distance_m": 0.03,
+      "maximum_sparse_delta_m": 0.01,
+      "minimum_inlier_prior": 0.001,
+      "minimum_material_attachment_std_m": 0.001,
+      "outlier_variance_multiplier": 100.0,
+      "process_std_m": 0.001
+    },
+    "sparse_assimilation_mode": "fixed_frame_zero_material_displacement"
+  },
+  "protocol_id": "phystwin-tapnextpp-material-transport-assimilation-source-v1",
+  "result_sha256": "9e8d53fb70c1bebb867aa08ff036c99fb23b36f220143917f455437059186c36",
+  "schema_version": 1,
+  "sparse_update": {
+    "accepted": true,
+    "association": {
+      "candidate_indices": [
+        [
+          1335
+        ],
+        [
+          5790
+        ],
+        [
+          7375
+        ],
+        [
+          1673
+        ]
+      ],
+      "candidate_probabilities": [
+        [
+          1.0
+        ],
+        [
+          1.0
+        ],
+        [
+          1.0
+        ],
+        [
+          1.0
+        ]
+      ],
+      "entropy": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "map_indices": [
+        1335,
+        5790,
+        7375,
+        1673
+      ],
+      "prior_reliability_mean": 0.9111117132400212,
+      "source_distance_m": [
+        0.005237768921022397,
+        0.011381362028444217,
+        0.025243414420338624,
+        0.012320643513288765
+      ]
+    },
+    "exact_dense_fallback": false,
+    "fallback_reason": null,
+    "graph_update": {
+      "direct_delta_rms_m": 0.00011422352152024335,
+      "graph_delta_rms_m": 0.004991133797232266,
+      "graph_solve_maximum_relative_residual": 5.391351197067738e-11,
+      "graph_solve_methods": [
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg",
+        "sparse_direct_after_cg"
+      ],
+      "observed_delta_m": [
+        [
+          0.0033015440066403597,
+          -0.003804911272902641,
+          8.917869576184266e-05
+        ],
+        [
+          0.002077102733685767,
+          -0.0006075863761813121,
+          -0.0002602936367106992
+        ],
+        [
+          -0.0014906399103517267,
+          -0.006012952344269076,
+          -0.0057129000883473025
+        ],
+        [
+          0.0009376406868035633,
+          -0.0030564434384168977,
+          0.0007725619852076595
+        ]
+      ],
+      "observed_nodes": [
+        1335,
+        1673,
+        5790,
+        7375
+      ],
+      "observed_variance_m2": [
+        2.4578773914733504e-05,
+        4.691852452289974e-05,
+        4.5166751381942594e-05,
+        7.921193829254362e-05
+      ]
+    },
+    "provider_gate_passed": true,
+    "robust_endpoint": {
+      "effective_row_count": [
+        4.0,
+        4.0,
+        4.0,
+        4.0
+      ],
+      "final_inlier_probability": [
+        0.9998381208223425,
+        0.9997046744196207,
+        0.9998761827841207,
+        0.9998819159767225
+      ],
+      "temporal_covariance_inflation": [
+        4.75,
+        4.75,
+        4.75,
+        4.75
+      ],
+      "update_count": [
+        19,
+        19,
+        19,
+        19
+      ]
+    }
+  }
+}
