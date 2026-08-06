@@ -164,7 +164,9 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
     _require(selection.get("salt") == SELECTION_SALT, "selection salt changed")
     objects = selection.get("objects")
     _require(isinstance(objects, Mapping), "source object map is missing")
-    _require(tuple(sorted(objects)) == tuple(sorted(NEW_OBJECTS)), "source objects changed")
+    _require(
+        tuple(sorted(objects)) == tuple(sorted(NEW_OBJECTS)), "source objects changed"
+    )
     selected_take_ids = []
     for object_name in NEW_OBJECTS:
         raw = objects[object_name]
@@ -178,7 +180,9 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
             all(_object_name(value) == object_name for value in candidates),
             "source candidates change object",
         )
-        _require(official_target not in candidates, "official target entered source pool")
+        _require(
+            official_target not in candidates, "official target entered source pool"
+        )
         expected = tuple(sorted(candidates, key=_selection_digest)[:2])
         _require(selected == expected, "source pair is not the frozen salted selection")
         _require(official_target not in selected, "official target selected as source")
@@ -223,14 +227,15 @@ def source_row_from_smoke(
     _require(payload.get("schema_version") == 1, "source smoke schema changed")
     _require(payload.get("artifact_kind") == SOURCE_SMOKE_KIND, "source smoke changed")
     _require(
-        payload.get("all18_source_protocol_sha256")
-        == expected_protocol_sha256,
+        payload.get("all18_source_protocol_sha256") == expected_protocol_sha256,
         "source smoke uses another v4 protocol",
     )
     take = payload.get("take")
     _require(isinstance(take, Mapping), "source take metadata is missing")
     _require(take.get("id") == expected_take_id, "source take identity changed")
-    _require(payload.get("future_observation_used") is False, "source prediction leaked")
+    _require(
+        payload.get("future_observation_used") is False, "source prediction leaked"
+    )
     fields = tuple(str(value) for value in payload.get("correction_fields", ()))
     _require(SOURCE_FIELD in fields, "source field is missing")
     aggregates = payload.get("aggregates")
@@ -276,7 +281,9 @@ def build_all18_calibration(
     validate_action_robust_scale_calibration(parent_calibration)
     protocol_validation = validate_all18_source_protocol(source_protocol)
     expected = tuple(protocol_validation["selected_take_ids"])
-    _require(set(source_artifacts) == set(expected), "source artifact inventory changed")
+    _require(
+        set(source_artifacts) == set(expected), "source artifact inventory changed"
+    )
     _require(
         set(source_artifact_file_sha256s) == set(expected),
         "source artifact checksum inventory changed",
@@ -298,14 +305,20 @@ def build_all18_calibration(
     selected_by_object = source_protocol["source_selection"]["objects"]
     new_objects = {
         object_name: select_action_robust_multiplier(
-            [rows[take_id] for take_id in selected_by_object[object_name]["selected_take_ids"]]
+            [
+                rows[take_id]
+                for take_id in selected_by_object[object_name]["selected_take_ids"]
+            ]
         )
         for object_name in NEW_OBJECTS
     }
     objects = deepcopy(dict(parent_calibration["objects"]))
     _require(not (set(objects) & set(new_objects)), "new objects overlap parent map")
     objects.update(new_objects)
-    _require(tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)), "all18 map incomplete")
+    _require(
+        tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)),
+        "all18 map incomplete",
+    )
 
     gains = [
         float(gain)
@@ -365,8 +378,13 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Validate a generated all-18 source calibration."""
 
     _require(payload.get("schema_version") == 1, "calibration schema changed")
-    _require(payload.get("artifact_kind") == ALL18_CALIBRATION_KIND, "calibration kind changed")
-    _require(payload.get("calibration_id") == ALL18_CALIBRATION_ID, "calibration id changed")
+    _require(
+        payload.get("artifact_kind") == ALL18_CALIBRATION_KIND,
+        "calibration kind changed",
+    )
+    _require(
+        payload.get("calibration_id") == ALL18_CALIBRATION_ID, "calibration id changed"
+    )
     _require(
         payload.get("calibration_sha256") == calibration_sha256(payload),
         "calibration checksum mismatch",
@@ -401,10 +419,15 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         )
     objects = payload.get("objects")
     _require(isinstance(objects, Mapping), "calibration object map is missing")
-    _require(tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)), "all18 map changed")
+    _require(
+        tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)),
+        "all18 map changed",
+    )
     new_objects = payload.get("new_objects")
     _require(isinstance(new_objects, Mapping), "new object map is missing")
-    _require(tuple(sorted(new_objects)) == tuple(sorted(NEW_OBJECTS)), "new objects changed")
+    _require(
+        tuple(sorted(new_objects)) == tuple(sorted(NEW_OBJECTS)), "new objects changed"
+    )
     expected_source_takes = {
         str(take_id)
         for row in new_objects.values()
@@ -415,7 +438,9 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         "source artifact hash inventory changed",
     )
     gate = payload.get("source_gate")
-    _require(isinstance(gate, Mapping) and gate.get("passed") is True, "source gate failed")
+    _require(
+        isinstance(gate, Mapping) and gate.get("passed") is True, "source gate failed"
+    )
     return {
         "passed": True,
         "calibration_sha256": payload["calibration_sha256"],
@@ -431,7 +456,9 @@ def load_all18_source_protocol(path: str | Path) -> dict[str, Any]:
     return payload
 
 
-def load_source_artifacts(root: str | Path, take_ids: Sequence[str]) -> tuple[dict[str, Any], dict[str, str]]:
+def load_source_artifacts(
+    root: str | Path, take_ids: Sequence[str]
+) -> tuple[dict[str, Any], dict[str, str]]:
     """Load ``<take_id>.json`` source artifacts and bind their bytes."""
 
     source_root = Path(root)
