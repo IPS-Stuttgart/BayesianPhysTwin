@@ -169,8 +169,9 @@ def stage_assimilation_panel(
         final_data_path = case_data / "final_data.pkl"
         tracks_path = case_data / "gt_track_3d.pkl"
         split_path = case_data / "split.json"
-        optimal_path = case_data / "optimal_params.pkl"
-        physical_path = physical / case_name / "inference.pkl"
+        physical_case = physical / case_name
+        optimal_path = physical_case / "optimal_params.pkl"
+        physical_path = physical_case / "inference.pkl"
         for path in (
             final_data_path,
             tracks_path,
@@ -368,4 +369,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
