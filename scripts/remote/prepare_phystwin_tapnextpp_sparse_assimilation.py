@@ -23,6 +23,7 @@ PROVIDER_PREDICTION_FILENAME = "tapnextpp_depth_completion_prediction.npz"
 PROVIDER_REPORT_FILENAME = "tapnextpp_depth_completion_prediction_report.json"
 PROVIDER_SEAL_FILENAME = "tapnextpp_depth_completion_prediction_seal.json"
 PROVIDER_RESULT_FILENAME = "tapnextpp_depth_completion_transfer_result.json"
+TRACKER_PROTOCOL_FILENAME = "tracker_protocol.json"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -81,7 +82,14 @@ def _validate_provider_case(case_root: Path) -> dict[str, Any]:
     report_path = prediction_root / PROVIDER_REPORT_FILENAME
     seal_path = prediction_root / PROVIDER_SEAL_FILENAME
     result_path = case_root / PROVIDER_RESULT_FILENAME
-    for path in (archive, report_path, seal_path, result_path):
+    tracker_protocol_path = case_root / TRACKER_PROTOCOL_FILENAME
+    for path in (
+        archive,
+        report_path,
+        seal_path,
+        result_path,
+        tracker_protocol_path,
+    ):
         _require(path.is_file(), f"provider artifact is missing: {path}")
     seal = _load_json(seal_path)
     _require(
@@ -108,6 +116,7 @@ def _validate_provider_case(case_root: Path) -> dict[str, Any]:
         "report": report_path,
         "seal": seal_path,
         "result": result_path,
+        "tracker_protocol": tracker_protocol_path,
         "provider_gate_passed": bool(result["provider_gate_passed"]),
     }
 
@@ -226,8 +235,14 @@ def stage_assimilation_panel(
                 dtype=np.float64,
             )
             identity_ids = np.asarray(stored["identity_ids"], dtype=np.int64)
-        provider_report = _load_json(provider_case["report"])
-        source_start = int(provider_report["method_config"]["source_frame_start"])
+        tracker_protocol = _load_json(provider_case["tracker_protocol"])
+        _require(
+            tracker_protocol.get("case") == case_name
+            and tracker_protocol.get("result_sha256")
+            == canonical_sha256(tracker_protocol),
+            f"{case_name} tracker protocol changed",
+        )
+        source_start = int(tracker_protocol["source_frame_start"])
         source_end = source_start + len(provider_points)
         _require(
             0 <= source_start < source_end <= train_end,
@@ -312,6 +327,9 @@ def stage_assimilation_panel(
                         provider_case["report"]
                     ),
                     "prediction_seal_sha256": file_sha256(provider_case["seal"]),
+                    "tracker_protocol_sha256": file_sha256(
+                        provider_case["tracker_protocol"]
+                    ),
                     "transfer_result_sha256": file_sha256(
                         provider_case["result"]
                     ),
