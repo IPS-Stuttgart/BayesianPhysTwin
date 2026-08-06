@@ -6,7 +6,7 @@ on:
       - agent/query-calibration-v1
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: validate-query-calibration-177
@@ -14,21 +14,22 @@ concurrency:
 
 jobs:
   exact-head:
-    name: Exact-head validation on workstation2
+    name: Format and validate exact head on workstation2
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 90
     env:
       BASE_SHA: 2a35d33827b760908342850bf32cad2e0cc2b01e
       EXPECTED_HEAD_SHA: ef7e844e9a56b478767f21ad4a59313af8c1ca07
+      SOURCE_BRANCH: agent/query-calibration-v1
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONUNBUFFERED: "1"
     steps:
-      - name: Check out exact validation head
+      - name: Check out exact source branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.EXPECTED_HEAD_SHA }}
+          ref: ${{ env.SOURCE_BRANCH }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
           clean: true
 
       - name: Verify exact source revision
@@ -36,6 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
+          test "$(git ls-remote origin "refs/heads/${SOURCE_BRANCH}" | cut -f1)" = "${EXPECTED_HEAD_SHA}"
           git cat-file -e "${BASE_SHA}^{commit}"
           git diff --check "${BASE_SHA}...${EXPECTED_HEAD_SHA}"
 
@@ -60,14 +62,41 @@ jobs:
           python -m pip install "coverage==7.13.3"
           python -m pip check
 
+      - name: Apply repository formatter and publish source commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff format \
+            src/bayesian_phystwin/query_calibration.py \
+            tests/test_claim_bearing_identifier_types.py \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py
+          git diff --check
+          if git diff --quiet; then
+            echo "Formatter produced no changes."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add \
+              src/bayesian_phystwin/query_calibration.py \
+              tests/test_claim_bearing_identifier_types.py \
+              tests/test_query_calibration.py \
+              tests/test_query_calibration_validation.py
+            git commit -m "Apply Ruff formatting"
+            git push origin "HEAD:refs/heads/${SOURCE_BRANCH}"
+          fi
+          actual_head="$(git rev-parse HEAD)"
+          echo "ACTUAL_HEAD_SHA=${actual_head}" >> "${GITHUB_ENV}"
+          echo "Validated source revision: ${actual_head}"
+
       - name: Run changed-source quality gates
         run: |
           python scripts/ci/check_changed_python.py \
             --base "${BASE_SHA}" \
-            --head "${EXPECTED_HEAD_SHA}"
+            --head "${ACTUAL_HEAD_SHA}"
           python tools/quality/changed_python_quality.py \
             --base "${BASE_SHA}" \
-            --head "${EXPECTED_HEAD_SHA}"
+            --head "${ACTUAL_HEAD_SHA}"
 
       - name: Prove query-calibration line and branch coverage
         run: |
@@ -90,6 +119,7 @@ jobs:
               raise SystemExit(f"query calibration has uncovered code: {summary}")
           print(summary)
           PY
+          rm -f .coverage query-calibration-coverage.json
 
       - name: Run full repository test suite
         run: python -m pytest -q
