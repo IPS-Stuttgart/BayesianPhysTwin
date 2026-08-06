@@ -34,6 +34,7 @@ def _certificate(
         certification_partition_id=C,
         statistical_unit="independent-physical-object-v1",
         metric="endpoint-rmse-m",
+        threshold_selection_group_ids=("source-object-00",),
         group_ids=tuple(f"object-{index:02d}" for index in range(count)),
         risk_scores=np.linspace(0.0, 0.9, count),
         candidate_losses=np.ones(count),
@@ -106,6 +107,9 @@ def test_group_order_does_not_change_the_certificate_identity() -> None:
         certification_partition_id=certificate.certification_partition_id,
         statistical_unit=certificate.statistical_unit,
         metric=certificate.metric,
+        threshold_selection_group_ids=(
+            certificate.threshold_selection_group_ids
+        ),
         group_ids=tuple(certificate.group_ids[index] for index in permutation),
         risk_scores=certificate.risk_scores[permutation],
         candidate_losses=certificate.candidate_losses[permutation],
@@ -157,6 +161,7 @@ def test_rejected_groups_must_verify_exact_fallback() -> None:
             certification_partition_id=C,
             statistical_unit="object",
             metric="loss",
+            threshold_selection_group_ids=(),
             group_ids=("a", "b", "c"),
             risk_scores=np.asarray([0.0, 0.5, 1.0]),
             candidate_losses=np.ones(3),
@@ -180,6 +185,7 @@ def test_information_order_and_independence_fail_closed() -> None:
         "certification_partition_id": C,
         "statistical_unit": "object",
         "metric": "loss",
+        "threshold_selection_group_ids": (),
         "group_ids": ("a",),
         "risk_scores": np.asarray([0.0]),
         "candidate_losses": np.asarray([1.0]),
@@ -211,6 +217,31 @@ def test_information_order_and_independence_fail_closed() -> None:
             threshold_frozen_before_certification_outcomes=True,
             certification_outcomes_used_for_threshold_selection=False,
             certification_groups_independent=False,
+        )
+
+
+def test_threshold_selection_and_certification_groups_must_be_disjoint() -> None:
+    with pytest.raises(ValueError, match="groups overlap"):
+        certify_guard_harm_risk(
+            guard_policy_id=A,
+            threshold_source_artifact_id=B,
+            certification_partition_id=C,
+            statistical_unit="object",
+            metric="loss",
+            threshold_selection_group_ids=("shared",),
+            group_ids=("shared",),
+            risk_scores=np.asarray([0.0]),
+            candidate_losses=np.asarray([1.0]),
+            fallback_losses=np.asarray([1.0]),
+            fallback_identity_verified=np.asarray([True]),
+            threshold=0.0,
+            harm_margin=0.0,
+            target_harm_probability=0.20,
+            confidence_level=0.95,
+            minimum_accepted_group_count=1,
+            threshold_frozen_before_certification_outcomes=True,
+            certification_outcomes_used_for_threshold_selection=False,
+            certification_groups_independent=True,
         )
 
 
