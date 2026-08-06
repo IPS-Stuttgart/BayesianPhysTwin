@@ -6,7 +6,9 @@ on:
     paths:
       - ".github/workflows/observation-timing-nuisance.yml"
       - "src/bayesian_phystwin/observation_timing_nuisance.py"
+      - "src/bayesian_phystwin/observation_timing_interchange.py"
       - "tests/test_observation_timing_nuisance.py"
+      - "tests/test_observation_timing_interchange.py"
       - "docs/observation_timing_nuisance.md"
   workflow_dispatch:
 
@@ -29,7 +31,7 @@ env:
 
 jobs:
   contracts:
-    name: Timing calibration, confounding, and immutability contracts
+    name: Timing convention, calibration, confounding, and immutability
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -92,12 +94,17 @@ jobs:
         run: |
           python -m ruff check \
             src/bayesian_phystwin/observation_timing_nuisance.py \
-            tests/test_observation_timing_nuisance.py
+            src/bayesian_phystwin/observation_timing_interchange.py \
+            tests/test_observation_timing_nuisance.py \
+            tests/test_observation_timing_interchange.py
           python -m ruff format --check \
             src/bayesian_phystwin/observation_timing_nuisance.py \
-            tests/test_observation_timing_nuisance.py
+            src/bayesian_phystwin/observation_timing_interchange.py \
+            tests/test_observation_timing_nuisance.py \
+            tests/test_observation_timing_interchange.py
           python -m mypy \
-            src/bayesian_phystwin/observation_timing_nuisance.py
+            src/bayesian_phystwin/observation_timing_nuisance.py \
+            src/bayesian_phystwin/observation_timing_interchange.py
 
       - name: Run focused and adjacent contracts
         shell: bash
@@ -105,13 +112,16 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_observation_timing_nuisance.py \
+            tests/test_observation_timing_interchange.py \
             tests/test_observability_diagnostics.py \
             tests/test_information_mass_invariants.py \
             tests/test_nuisance_information_row_permutation.py \
             | tee "${TIMING_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/observation_timing_nuisance.py \
-            tests/test_observation_timing_nuisance.py
+            src/bayesian_phystwin/observation_timing_interchange.py \
+            tests/test_observation_timing_nuisance.py \
+            tests/test_observation_timing_interchange.py
 
       - name: Verify clean repository state
         shell: bash
