@@ -154,27 +154,30 @@ def _adapted_batch(
 
 
 def _solver_result(batch: GaugeAwareObservationBatch) -> GaugeAwareBeliefResult:
+    gauge_count = batch.gauge_jacobian.shape[2]
     shared_count = batch.shared_bias_jacobian.shape[2]
-    dimension = 1 + batch.gauge_jacobian.shape[2] + shared_count
+    view_count = batch.view_bias_jacobian.shape[2]
+    dimension = 1 + gauge_count + shared_count + view_count
     covariance = np.eye(dimension, dtype=np.float64)
     covariance[0, 0] = 0.5
     if shared_count:
-        start = 1 + batch.gauge_jacobian.shape[2]
-        covariance[start:, start:] = np.diag(
+        start = 1 + gauge_count
+        stop = start + shared_count
+        covariance[start:stop, start:stop] = np.diag(
             np.linspace(0.6, 0.7, shared_count)
         )
     return GaugeAwareBeliefResult(
         inference_admissible=True,
         reason="accepted",
         state_coefficients=np.asarray([0.2], dtype=np.float64),
-        gauge_delta=np.zeros(batch.gauge_jacobian.shape[2], dtype=np.float64),
+        gauge_delta=np.zeros(gauge_count, dtype=np.float64),
         shared_bias_coefficients=np.linspace(
             0.3,
             -0.4,
             shared_count,
             dtype=np.float64,
         ),
-        view_bias_coefficients=np.zeros(0, dtype=np.float64),
+        view_bias_coefficients=np.zeros(view_count, dtype=np.float64),
         anchor_bias_coefficients=np.zeros(0, dtype=np.float64),
         posterior_covariance=covariance,
         identifiable_state_transform=np.asarray([[1.0]], dtype=np.float64),
