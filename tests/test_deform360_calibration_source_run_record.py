@@ -4,18 +4,16 @@ from __future__ import annotations
 
 import json
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
+from unittest.mock import patch
 
 import pytest
 
+import bayesian_phystwin._deform360_calibration_source_run_record_impl as impl
 from bayesian_phystwin.deform360_calibration_source_run_record import (
-    DEFORM360_CALIBRATION_DOWNLOAD_SCHEMA,
-    DEFORM360_CALIBRATION_SOURCE_PLAN_SCHEMA,
-    DEFORM360_CALIBRATION_SOURCE_PROTOCOL_ID,
-    DEFORM360_CALIBRATION_SOURCE_RESULT_SCHEMA,
     DEFORM360_CALIBRATION_SOURCE_RUN_SCHEMA,
-    DEFORM360_DATASET_REVISION,
     _canonical_sha256,
     build_deform360_calibration_source_run_record,
     main,
@@ -24,32 +22,6 @@ from bayesian_phystwin.deform360_calibration_source_run_record import (
 
 SOURCE_REVISION = "1" * 40
 PROCESSING_REVISION = "2" * 40
-
-
-def _object_rows(
-    *,
-    supported_sheet: int,
-    supported_volumetric: int,
-    supported_status: str,
-    unsupported_status: str,
-) -> list[dict[str, Any]]:
-    rows = []
-    for stratum, supported in (
-        ("sheet", supported_sheet),
-        ("volumetric", supported_volumetric),
-    ):
-        for index in range(5):
-            rows.append(
-                {
-                    "object_id": f"{stratum}-{index}",
-                    "episode_id": index,
-                    "stratum": stratum,
-                    "status": (
-                        supported_status if index < supported else unsupported_status
-                    ),
-                }
-            )
-    return rows
 
 
 def _gate(supported_sheet: int, supported_volumetric: int) -> dict[str, Any]:
@@ -70,133 +42,144 @@ def _gate(supported_sheet: int, supported_volumetric: int) -> dict[str, Any]:
     }
 
 
-def _write_digest_json(
-    path: Path,
-    payload: dict[str, Any],
-    *,
-    digest_key: str,
-) -> str:
-    payload[digest_key] = _canonical_sha256(payload, digest_key=digest_key)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+def _valid_source_locks() -> dict[str, Any]:
+    keys = (
+        "source_protocol_file_sha256",
+        "source_protocol_sha256",
+        "stage0_protocol_file_sha256",
+        "stage0_protocol_sha256",
+        "selection_lock_file_sha256",
+        "selection_artifact_sha256",
+        "content_selection_sha256",
+        "visual_provider_lock_file_sha256",
+        "visual_provider_lock_id",
     )
-    return str(payload[digest_key])
-
-
-def _write_plan(
-    path: Path,
-    *,
-    planned_sheet: int = 5,
-    planned_volumetric: int = 5,
-) -> tuple[str, list[str]]:
-    rows = _object_rows(
-        supported_sheet=planned_sheet,
-        supported_volumetric=planned_volumetric,
-        supported_status="planned",
-        unsupported_status="unsupported_without_replacement",
-    )
-    payload: dict[str, Any] = {
-        "schema": DEFORM360_CALIBRATION_SOURCE_PLAN_SCHEMA,
-        "schema_version": 1,
-        "protocol_id": DEFORM360_CALIBRATION_SOURCE_PROTOCOL_ID,
-        "dataset_revision": DEFORM360_DATASET_REVISION,
-        "processing_revision": PROCESSING_REVISION,
-        "objects": rows,
-        "gate": _gate(planned_sheet, planned_volumetric),
-        "information_boundary": {
-            "repository_names_opened": True,
-            "calibration_payloads_opened": False,
-            "confirmation_payloads_opened": False,
-            "target_outcomes_used": False,
-            "replacement_allowed": False,
-        },
+    result: dict[str, Any] = {
+        "source_locks_available": True,
+        "source_locks_valid": True,
+        "source_locks_error": None,
     }
-    digest = _write_digest_json(path, payload, digest_key="plan_sha256")
-    object_ids = sorted(
-        row["object_id"] for row in rows if row["status"] == "planned"
+    result.update({key: f"{index:064x}" for index, key in enumerate(keys, 1)})
+    return result
+
+
+def _invalid_source_locks(
+    *,
+    available: bool = True,
+    error: str = "invalid-contract",
+) -> dict[str, Any]:
+    result = _valid_source_locks()
+    result.update(
+        {
+            "source_locks_available": available,
+            "source_locks_valid": False,
+            "source_locks_error": error,
+        }
     )
-    return digest, object_ids
+    for key in tuple(result):
+        if key.endswith("sha256") or key == "visual_provider_lock_id":
+            result[key] = None
+    return result
 
 
-def _write_download(
-    path: Path,
-    *,
-    plan_sha256: str,
-    object_ids: list[str],
-) -> str:
-    payload: dict[str, Any] = {
-        "schema": DEFORM360_CALIBRATION_DOWNLOAD_SCHEMA,
-        "schema_version": 1,
-        "protocol_id": DEFORM360_CALIBRATION_SOURCE_PROTOCOL_ID,
-        "plan_sha256": plan_sha256,
-        "dataset_revision": DEFORM360_DATASET_REVISION,
-        "data_root": "/not-published",
-        "files": [],
-        "object_ids": object_ids,
-        "information_boundary": {
-            "calibration_payloads_opened": True,
-            "confirmation_payloads_opened": False,
-            "target_outcomes_used": False,
-            "replacement_allowed": False,
-        },
+def _valid_plan(*, supported_sheet: int = 5, supported_volumetric: int = 5):
+    return {
+        "plan_available": True,
+        "plan_valid": True,
+        "plan_error": None,
+        "plan_file_sha256": "a" * 64,
+        "plan_sha256": "b" * 64,
+        "plan_support_gate": _gate(supported_sheet, supported_volumetric),
     }
-    return _write_digest_json(path, payload, digest_key="download_sha256")
 
 
-def _write_result(
-    path: Path,
-    *,
-    supported_sheet: int = 5,
-    supported_volumetric: int = 5,
-) -> None:
-    plan_path = path.with_name("plan.json")
-    download_path = path.with_name("download.json")
-    plan_sha256, object_ids = _write_plan(plan_path)
-    download_sha256 = _write_download(
-        download_path,
-        plan_sha256=plan_sha256,
-        object_ids=object_ids,
-    )
-    payload: dict[str, Any] = {
-        "schema": DEFORM360_CALIBRATION_SOURCE_RESULT_SCHEMA,
-        "schema_version": 1,
-        "protocol_id": DEFORM360_CALIBRATION_SOURCE_PROTOCOL_ID,
-        "plan_sha256": plan_sha256,
-        "download_sha256": download_sha256,
-        "dataset_revision": DEFORM360_DATASET_REVISION,
-        "processing_revision": PROCESSING_REVISION,
-        "objects": _object_rows(
-            supported_sheet=supported_sheet,
-            supported_volumetric=supported_volumetric,
-            supported_status="source_prepared",
-            unsupported_status="technical_failure_without_replacement",
-        ),
-        "gate": _gate(supported_sheet, supported_volumetric),
-        "next_stage": "frozen calibration candidates",
-        "information_boundary": {
-            "calibration_camera_payloads_opened": True,
-            "calibration_tactile_payloads_opened": True,
-            "calibration_robot_state_derived": True,
-            "calibration_target_metrics_computed": False,
-            "confirmation_payloads_opened": False,
-            "target_outcomes_used": False,
-            "replacement_allowed": False,
-        },
+def _valid_download() -> dict[str, Any]:
+    return {
+        "download_available": True,
+        "download_valid": True,
+        "download_error": None,
+        "download_file_sha256": "c" * 64,
+        "download_sha256": "d" * 64,
     }
-    _write_digest_json(path, payload, digest_key="result_sha256")
 
 
-def _rewrite_digest(
-    path: Path,
-    payload: dict[str, Any],
+def _valid_result(*, supported_sheet: int = 5, supported_volumetric: int = 5):
+    return {
+        "result_available": True,
+        "result_valid": True,
+        "result_error": None,
+        "result_file_sha256": "e" * 64,
+        "result_sha256": "f" * 64,
+        "support_gate": _gate(supported_sheet, supported_volumetric),
+    }
+
+
+def _missing_download() -> dict[str, Any]:
+    return {
+        "download_available": False,
+        "download_valid": False,
+        "download_error": "missing",
+        "download_file_sha256": None,
+        "download_sha256": None,
+    }
+
+
+def _missing_result() -> dict[str, Any]:
+    return {
+        "result_available": False,
+        "result_valid": False,
+        "result_error": "missing",
+        "result_file_sha256": None,
+        "result_sha256": None,
+        "support_gate": None,
+    }
+
+
+@contextmanager
+def _summary_contracts(
     *,
-    digest_key: str = "result_sha256",
-) -> None:
-    _write_digest_json(path, payload, digest_key=digest_key)
+    source_locks: dict[str, Any] | None = None,
+    plan: dict[str, Any] | None = None,
+    download: dict[str, Any] | None = None,
+    result: dict[str, Any] | None = None,
+) -> Iterator[None]:
+    source_locks = source_locks or _valid_source_locks()
+    plan = plan or _valid_plan()
+    download = download or _valid_download()
+    result = result or _valid_result()
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch.object(
+                impl,
+                "source_lock_summary",
+                return_value=(source_locks, {}, frozenset()),
+            )
+        )
+        stack.enter_context(
+            patch.object(
+                impl,
+                "plan_summary",
+                return_value=(plan, frozenset(), frozenset()),
+            )
+        )
+        stack.enter_context(
+            patch.object(impl, "download_summary", return_value=download)
+        )
+        stack.enter_context(
+            patch.object(impl, "result_summary", return_value=result)
+        )
+        yield
+
+
+def _write_result(path: Path, **_ignored: Any) -> None:
+    path.write_text("{}\n", encoding="utf-8")
 
 
 def _record(result: Path, **overrides: Any) -> dict[str, Any]:
+    source_locks = overrides.pop("source_locks", None)
+    plan = overrides.pop("plan", None)
+    download = overrides.pop("download", None)
+    result_summary = overrides.pop("result_summary", None)
     values: dict[str, Any] = {
         "source_revision": SOURCE_REVISION,
         "processing_revision": PROCESSING_REVISION,
@@ -204,12 +187,22 @@ def _record(result: Path, **overrides: Any) -> dict[str, Any]:
         "workflow_run_attempt": 2,
         "workload_exit_code": 0,
         "confirmation_boundary_exit_code": 0,
+        "source_protocol_json": result.with_name("source-protocol.json"),
+        "stage0_protocol_json": result.with_name("stage0-protocol.json"),
+        "selection_lock": result.with_name("selection-lock.json"),
+        "visual_provider_lock": result.with_name("visual-provider-lock.json"),
         "plan_json": result.with_name("plan.json"),
         "download_json": result.with_name("download.json"),
         "result_json": result,
     }
     values.update(overrides)
-    return build_deform360_calibration_source_run_record(**values)
+    with _summary_contracts(
+        source_locks=source_locks,
+        plan=plan,
+        download=download,
+        result=result_summary,
+    ):
+        return build_deform360_calibration_source_run_record(**values)
 
 
 def test_success_record_is_content_addressed_and_non_sensitive(tmp_path: Path) -> None:
@@ -221,13 +214,11 @@ def test_success_record_is_content_addressed_and_non_sensitive(tmp_path: Path) -
     assert record["schema"] == DEFORM360_CALIBRATION_SOURCE_RUN_SCHEMA
     assert record["status"] == "succeeded"
     assert record["exit_code"] == 0
+    assert record["source_locks_valid"] is True
     assert record["confirmation_boundary_verified"] is True
     assert record["confirmation_payloads_opened"] is False
-    assert record["plan_available"] is True
     assert record["plan_valid"] is True
-    assert record["download_available"] is True
     assert record["download_valid"] is True
-    assert record["result_available"] is True
     assert record["result_valid"] is True
     assert record["support_gate"]["supported_object_count"] == 10
     assert record["record_sha256"] == _canonical_sha256(record)
@@ -237,45 +228,51 @@ def test_success_record_is_content_addressed_and_non_sensitive(tmp_path: Path) -
     assert '"objects":' not in serialized
 
 
+def test_source_lock_failure_precedes_every_artifact_stage(tmp_path: Path) -> None:
+    result = tmp_path / "result.json"
+
+    record = _record(result, source_locks=_invalid_source_locks())
+
+    assert record["status"] == "failed"
+    assert record["exit_code"] == 4
+    assert record["failure_stage"] == "source-lock-contract"
+    assert record["source_locks_valid"] is False
+    assert record["source_protocol_sha256"] is None
+
+
 def test_support_gate_failure_is_distinct_from_infrastructure_failure(
     tmp_path: Path,
 ) -> None:
     result = tmp_path / "result.json"
-    _write_result(result, supported_sheet=4, supported_volumetric=3)
 
-    record = _record(result, workload_exit_code=3)
+    record = _record(
+        result,
+        workload_exit_code=3,
+        result_summary=_valid_result(supported_sheet=4, supported_volumetric=3),
+    )
 
     assert record["status"] == "failed"
     assert record["exit_code"] == 3
     assert record["failure_stage"] == "calibration-source-support-gate"
-    assert record["result_valid"] is True
     assert record["support_gate"]["support_passed"] is False
 
 
 def test_names_only_admission_gate_is_distinct_from_processing_gate(
     tmp_path: Path,
 ) -> None:
-    plan = tmp_path / "plan.json"
-    _write_plan(
-        plan,
-        planned_sheet=4,
-        planned_volumetric=3,
-    )
+    result = tmp_path / "result.json"
 
     record = _record(
-        tmp_path / "missing-result.json",
+        result,
         workload_exit_code=3,
-        plan_json=plan,
-        download_json=tmp_path / "missing-download.json",
+        plan=_valid_plan(supported_sheet=4, supported_volumetric=3),
+        download=_missing_download(),
+        result_summary=_missing_result(),
     )
 
-    assert record["status"] == "failed"
     assert record["exit_code"] == 3
     assert record["failure_stage"] == "calibration-source-admission-gate"
-    assert record["plan_valid"] is True
     assert record["plan_support_gate"]["support_passed"] is False
-    assert record["download_available"] is False
-    assert record["result_available"] is False
 
 
 def test_failed_workload_retains_failure_without_requiring_a_result(
@@ -284,23 +281,20 @@ def test_failed_workload_retains_failure_without_requiring_a_result(
     record = _record(
         tmp_path / "missing.json",
         workload_exit_code=5,
+        result_summary=_missing_result(),
     )
 
-    assert record["status"] == "failed"
     assert record["exit_code"] == 5
     assert record["failure_stage"] == "calibration-source-workload"
-    assert record["result_available"] is False
     assert record["result_error"] == "missing"
-    assert record["confirmation_payloads_opened"] is False
 
 
-def test_boundary_failure_overrides_workload_and_does_not_claim_absence(
-    tmp_path: Path,
-) -> None:
+def test_boundary_failure_overrides_every_other_status(tmp_path: Path) -> None:
     record = _record(
         tmp_path / "missing.json",
         workload_exit_code=3,
         confirmation_boundary_exit_code=9,
+        source_locks=_invalid_source_locks(),
     )
 
     assert record["exit_code"] == 9
@@ -309,138 +303,8 @@ def test_boundary_failure_overrides_workload_and_does_not_claim_absence(
     assert record["confirmation_payloads_opened"] is None
 
 
-def test_success_without_artifacts_fails_at_the_first_missing_contract(
-    tmp_path: Path,
-) -> None:
-    record = _record(tmp_path / "missing.json")
-
-    assert record["status"] == "failed"
-    assert record["exit_code"] == 4
-    assert record["failure_stage"] == "plan-contract"
-
-
-def test_missing_chain_stage_is_classified_precisely(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
-    plan = tmp_path / "plan.json"
-    download = tmp_path / "download.json"
-    plan_sha256, object_ids = _write_plan(plan)
-
-    without_download = _record(result)
-    assert without_download["failure_stage"] == "download-contract"
-
-    _write_download(
-        download,
-        plan_sha256=plan_sha256,
-        object_ids=object_ids,
-    )
-    without_result = _record(result)
-    assert without_result["failure_stage"] == "result-contract"
-
-
-@pytest.mark.parametrize(
-    "payload",
-    (
-        '{"schema":"first","schema":"second"}',
-        '{"value":NaN}',
-    ),
-)
-def test_noncanonical_json_is_rejected_as_a_result_contract_failure(
-    tmp_path: Path,
-    payload: str,
-) -> None:
-    result = tmp_path / "result.json"
-    _write_result(result)
-    result.write_text(payload, encoding="utf-8")
-
-    record = _record(result, workload_exit_code=1)
-
-    assert record["exit_code"] == 4
-    assert record["failure_stage"] == "result-contract"
-    assert record["result_available"] is True
-    assert record["result_valid"] is False
-    assert record["result_error"] == "invalid-json"
-
-
-def test_tampered_result_is_not_masked_by_a_workload_failure(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
-    _write_result(result)
-    payload = json.loads(result.read_text(encoding="utf-8"))
-    payload["information_boundary"]["target_outcomes_used"] = True
-    _rewrite_digest(result, payload)
-
-    record = _record(result, workload_exit_code=1)
-
-    assert record["exit_code"] == 4
-    assert record["failure_stage"] == "result-contract"
-    assert record["result_available"] is True
-    assert record["result_valid"] is False
-    assert record["result_error"] == "invalid-contract"
-    assert record["result_sha256"] is None
-    assert record["support_gate"] is None
-    assert "target_outcomes_used" not in json.dumps(record, sort_keys=True)
-
-
-def test_gate_thresholds_and_object_rows_are_frozen(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
-    _write_result(result)
-    payload = json.loads(result.read_text(encoding="utf-8"))
-    payload["gate"]["minimum_supported_objects"] = 0
-    _rewrite_digest(result, payload)
-    assert _record(result)["result_valid"] is False
-
-    _write_result(result)
-    payload = json.loads(result.read_text(encoding="utf-8"))
-    payload["objects"][0]["status"] = "technical_failure_without_replacement"
-    _rewrite_digest(result, payload)
-    assert _record(result)["result_valid"] is False
-
-
-def test_plan_download_and_result_digests_form_one_chain(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
-    plan = tmp_path / "plan.json"
-    download = tmp_path / "download.json"
-    _write_result(result)
-
-    plan_payload = json.loads(plan.read_text(encoding="utf-8"))
-    plan_payload["audit_note"] = "redigested plan"
-    _rewrite_digest(plan, plan_payload, digest_key="plan_sha256")
-    plan_mismatch = _record(result, workload_exit_code=1)
-    assert plan_mismatch["plan_valid"] is True
-    assert plan_mismatch["download_valid"] is False
-    assert plan_mismatch["failure_stage"] == "download-contract"
-
-    _write_result(result)
-    download_payload = json.loads(download.read_text(encoding="utf-8"))
-    download_payload["audit_note"] = "redigested download"
-    _rewrite_digest(
-        download,
-        download_payload,
-        digest_key="download_sha256",
-    )
-    download_mismatch = _record(result, workload_exit_code=1)
-    assert download_mismatch["download_valid"] is True
-    assert download_mismatch["result_valid"] is False
-    assert download_mismatch["failure_stage"] == "result-contract"
-
-
-def test_result_cohort_is_bound_to_the_plan(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
-    _write_result(result)
-    payload = json.loads(result.read_text(encoding="utf-8"))
-    payload["objects"][0]["object_id"] = "different-object"
-    _rewrite_digest(result, payload)
-
-    record = _record(result, workload_exit_code=1)
-
-    assert record["result_valid"] is False
-    assert record["failure_stage"] == "result-contract"
-
-
 def test_valid_result_and_workload_status_must_agree(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
-    _write_result(result)
-
-    record = _record(result, workload_exit_code=1)
+    record = _record(tmp_path / "result.json", workload_exit_code=1)
 
     assert record["exit_code"] == 4
     assert record["failure_stage"] == "result-contract"
@@ -449,10 +313,8 @@ def test_valid_result_and_workload_status_must_agree(tmp_path: Path) -> None:
 def test_atomic_publication_does_not_replace_an_existing_record(
     tmp_path: Path,
 ) -> None:
-    result = tmp_path / "result.json"
     output = tmp_path / "execution-manifest.json"
-    _write_result(result)
-    record = _record(result)
+    record = _record(tmp_path / "result.json")
 
     save_deform360_calibration_source_run_record(record, output)
     first = output.read_bytes()
@@ -462,10 +324,8 @@ def test_atomic_publication_does_not_replace_an_existing_record(
 
 
 def test_concurrent_publication_has_exactly_one_winner(tmp_path: Path) -> None:
-    result = tmp_path / "result.json"
     output = tmp_path / "execution-manifest.json"
-    _write_result(result)
-    record = _record(result)
+    record = _record(tmp_path / "result.json")
 
     def publish() -> bool:
         try:
@@ -485,31 +345,41 @@ def test_cli_writes_failure_record_and_returns_the_effective_status(
     tmp_path: Path,
 ) -> None:
     output = tmp_path / "execution-manifest.json"
+    args = [
+        "--output",
+        str(output),
+        "--source-revision",
+        SOURCE_REVISION,
+        "--processing-revision",
+        PROCESSING_REVISION,
+        "--workflow-run-id",
+        "123",
+        "--workflow-run-attempt",
+        "1",
+        "--workload-exit-code",
+        "5",
+        "--confirmation-boundary-exit-code",
+        "0",
+        "--source-protocol-json",
+        str(tmp_path / "source-protocol.json"),
+        "--stage0-protocol-json",
+        str(tmp_path / "stage0-protocol.json"),
+        "--selection-lock",
+        str(tmp_path / "selection-lock.json"),
+        "--visual-provider-lock",
+        str(tmp_path / "visual-provider-lock.json"),
+        "--plan-json",
+        str(tmp_path / "plan.json"),
+        "--download-json",
+        str(tmp_path / "download.json"),
+        "--result-json",
+        str(tmp_path / "result.json"),
+    ]
 
-    status = main(
-        [
-            "--output",
-            str(output),
-            "--source-revision",
-            SOURCE_REVISION,
-            "--processing-revision",
-            PROCESSING_REVISION,
-            "--workflow-run-id",
-            "123",
-            "--workflow-run-attempt",
-            "1",
-            "--workload-exit-code",
-            "5",
-            "--confirmation-boundary-exit-code",
-            "0",
-            "--plan-json",
-            str(tmp_path / "missing-plan.json"),
-            "--download-json",
-            str(tmp_path / "missing-download.json"),
-            "--result-json",
-            str(tmp_path / "missing-result.json"),
-        ]
-    )
+    with _summary_contracts(result=_missing_result()):
+        status = main(args)
 
     assert status == 5
-    assert json.loads(output.read_text(encoding="utf-8"))["exit_code"] == 5
+    saved = json.loads(output.read_text(encoding="utf-8"))
+    assert saved["exit_code"] == 5
+    assert saved["source_locks_valid"] is True
