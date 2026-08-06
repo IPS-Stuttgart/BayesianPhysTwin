@@ -17,8 +17,7 @@ from bayesian_phystwin.query_calibration import (
 
 
 def _calibration_with_quantile(quantile: float) -> QueryCalibrationV1:
-    scores = np.arange(1.0, 10.0, dtype=np.float64)
-    scores[-1] = quantile
+    scores = np.full(9, quantile, dtype=np.float64)
     return QueryCalibrationV1(
         **_IDS,
         calibration_group_ids=tuple(f"object-{index:02d}" for index in range(9)),
@@ -98,6 +97,19 @@ def test_save_does_not_replace_corrupt_or_nonregular_destinations(
     directory.mkdir()
     with pytest.raises(ValueError, match="regular file"):
         save_query_calibration(_fit(), directory)
+
+
+def test_save_rejects_symbolic_link_destinations(tmp_path: Path) -> None:
+    target = tmp_path / "target.json"
+    save_query_calibration(_fit(), target)
+    link = tmp_path / "link.json"
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("symbolic links are unavailable in this environment")
+
+    with pytest.raises(ValueError, match="symbolic link"):
+        save_query_calibration(_fit(), link)
 
 
 def test_public_consumers_require_the_validated_calibration_contract(
