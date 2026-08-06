@@ -26,6 +26,17 @@ from ._deform360_calibration_run_common import (
 )
 from ._deform360_calibration_source_run_record_impl import _execution_outcome
 
+_SOURCE_LOCK_DIGEST_KEYS = (
+    "source_protocol_file_sha256",
+    "source_protocol_sha256",
+    "stage0_protocol_file_sha256",
+    "stage0_protocol_sha256",
+    "selection_lock_file_sha256",
+    "selection_artifact_sha256",
+    "content_selection_sha256",
+    "visual_provider_lock_file_sha256",
+    "visual_provider_lock_id",
+)
 _RECORD_KEYS = frozenset(
     {
         "schema",
@@ -44,6 +55,10 @@ _RECORD_KEYS = frozenset(
         "processing_revision",
         "workflow_run_id",
         "workflow_run_attempt",
+        "source_locks_available",
+        "source_locks_valid",
+        "source_locks_error",
+        *_SOURCE_LOCK_DIGEST_KEYS,
         "plan_available",
         "plan_valid",
         "plan_error",
@@ -101,6 +116,33 @@ def _validated_record_gate(value: object, *, name: str) -> dict[str, Any]:
             "volumetric": volumetric,
         },
     )
+
+
+def _validate_source_lock_summary(record: Mapping[str, Any]) -> None:
+    available = record["source_locks_available"]
+    valid = record["source_locks_valid"]
+    error = record["source_locks_error"]
+    if type(available) is not bool or type(valid) is not bool:
+        raise ValueError("source-lock availability flags must be booleans")
+    if error is not None and (
+        type(error) is not str or error not in _ARTIFACT_ERRORS
+    ):
+        raise ValueError("source_locks_error changed")
+    digests = [record[key] for key in _SOURCE_LOCK_DIGEST_KEYS]
+    if valid:
+        if not available or error is not None:
+            raise ValueError("valid source-lock summary is inconsistent")
+        for key, digest in zip(_SOURCE_LOCK_DIGEST_KEYS, digests, strict=True):
+            sha256(digest, name=key)
+        return
+    if any(digest is not None for digest in digests):
+        raise ValueError("invalid source-lock summary retained derived evidence")
+    if not available:
+        if error != "missing":
+            raise ValueError("missing source-lock summary is inconsistent")
+        return
+    if error not in {"unreadable", "invalid-json", "invalid-contract"}:
+        raise ValueError("available invalid source-lock summary is inconsistent")
 
 
 def _validate_artifact_summary(
@@ -195,6 +237,7 @@ def validate_deform360_calibration_source_run_record(
     if record.get("confirmation_payloads_opened") is not expected_opened:
         raise ValueError("confirmation-payload statement is inconsistent")
 
+    _validate_source_lock_summary(record)
     _validate_artifact_summary(record, prefix="plan", gate_key="plan_support_gate")
     _validate_artifact_summary(record, prefix="download", gate_key=None)
     _validate_artifact_summary(record, prefix="result", gate_key="support_gate")
@@ -202,6 +245,7 @@ def validate_deform360_calibration_source_run_record(
     expected_exit_code, expected_failure_stage = _execution_outcome(
         workload_exit_code=workload_exit_code,
         confirmation_boundary_exit_code=boundary_exit_code,
+        source_locks=record,
         plan=record,
         download=record,
         result=record,

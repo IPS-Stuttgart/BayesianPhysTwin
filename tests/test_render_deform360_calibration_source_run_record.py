@@ -13,7 +13,7 @@ import pytest
 from bayesian_phystwin.deform360_calibration_source_run_record import (
     _canonical_sha256,
 )
-from test_deform360_calibration_source_run_record import _record, _write_result
+from test_deform360_calibration_source_run_record import _build_chain, _record
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "ci" / "render_deform360_calibration_source_run_record.py"
@@ -24,9 +24,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 def _write_record(tmp_path: Path) -> tuple[Path, dict[str, Any]]:
-    result = tmp_path / "result.json"
-    _write_result(result)
-    record = _record(result)
+    record = _record(_build_chain(tmp_path))
     path = tmp_path / "execution-manifest.json"
     path.write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n",
@@ -61,7 +59,7 @@ def test_valid_issue_receipt_and_summary_share_the_strict_record(
     assert "prepared objects: `10`" in body
     assert "confirmation boundary verified: `True`" in body
     assert str(tmp_path) not in body
-    assert "sheet-0" not in body
+    assert "cal-sheet-0" not in body
 
     assert MODULE.main(["summary", *_args(path)]) == 0
     summary = capsys.readouterr().out

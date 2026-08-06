@@ -15,7 +15,7 @@ from bayesian_phystwin.deform360_calibration_source_run_record import (
     save_deform360_calibration_source_run_record,
     validate_deform360_calibration_source_run_record,
 )
-from test_deform360_calibration_source_run_record import _record, _write_result
+from test_deform360_calibration_source_run_record import _build_chain, _record
 
 
 def _redigested(record: dict[str, Any]) -> dict[str, Any]:
@@ -24,9 +24,7 @@ def _redigested(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def _success_record(tmp_path: Path) -> dict[str, Any]:
-    result = tmp_path / "result.json"
-    _write_result(result)
-    return _record(result)
+    return _record(_build_chain(tmp_path))
 
 
 def test_strict_validator_accepts_the_builder_output(tmp_path: Path) -> None:
@@ -50,7 +48,6 @@ def test_redigested_extra_field_cannot_enter_the_public_record(
         validate_deform360_calibration_source_run_record(record)
     with pytest.raises(ValueError, match="fields changed"):
         save_deform360_calibration_source_run_record(record, output)
-
     assert not output.exists()
 
 
@@ -91,6 +88,14 @@ def test_redigesting_does_not_authorize_inconsistent_derived_fields(
     "mutation",
     (
         {
+            "source_locks_valid": True,
+            "source_locks_error": "invalid-contract",
+        },
+        {
+            "source_locks_available": False,
+            "source_locks_valid": True,
+        },
+        {
             "plan_valid": True,
             "plan_error": "invalid-contract",
         },
@@ -108,7 +113,7 @@ def test_redigesting_does_not_authorize_inconsistent_derived_fields(
         },
     ),
 )
-def test_artifact_summary_shape_is_recomputed_not_trusted(
+def test_summary_shapes_are_recomputed_not_trusted(
     tmp_path: Path,
     mutation: dict[str, object],
 ) -> None:
@@ -117,6 +122,15 @@ def test_artifact_summary_shape_is_recomputed_not_trusted(
     _redigested(record)
 
     with pytest.raises(ValueError):
+        validate_deform360_calibration_source_run_record(record)
+
+
+def test_redigested_source_lock_digest_drift_is_rejected(tmp_path: Path) -> None:
+    record = deepcopy(_success_record(tmp_path))
+    record["selection_artifact_sha256"] = None
+    _redigested(record)
+
+    with pytest.raises(ValueError, match="selection_artifact_sha256"):
         validate_deform360_calibration_source_run_record(record)
 
 
