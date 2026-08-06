@@ -13,6 +13,7 @@ from bayesian_phystwin.cli import ecosystem_validate as cli_module
 from bayesian_phystwin.cli.ecosystem_validate import main as ecosystem_main
 from bayesian_phystwin.ecosystem_compatibility import (
     DEFAULT_ECOSYSTEM_COMPATIBILITY_RESOURCE,
+    EcosystemCompatibilityLockV1,
     EcosystemCompatibilityReportV1,
     EcosystemComponentStatusV1,
     load_ecosystem_compatibility_lock,
@@ -49,7 +50,7 @@ def _write_payload(tmp_path: Path, name: str, payload: object) -> Path:
     return path
 
 
-def _check_bundled_lock() -> None:
+def _bundled_lock() -> EcosystemCompatibilityLockV1:
     lock = load_ecosystem_compatibility_lock()
     assert lock.lock_name == "three-repository-installed-wheel-v1"
     assert len(lock.lock_sha256) == 64
@@ -71,49 +72,16 @@ def _check_bundled_lock() -> None:
     assert lock.workflow_run_id == 31019529164
     serialized = lock.to_dict()
     assert serialized["lock_sha256"] == lock.lock_sha256
-    assert serialized["components"]["prob4d"]["repository"] == (
-        "IPS-Stuttgart/Prob4D"
-    )
+    components = serialized["components"]
+    assert isinstance(components, dict)
+    prob4d = components["prob4d"]
+    assert isinstance(prob4d, dict)
+    assert prob4d["repository"] == "IPS-Stuttgart/Prob4D"
     assert lock.component("bpt").to_dict()["locked_version"] == "0.4.0"
-
-    for selector in (
-        "bpt",
-        "bayesian-phystwin",
-        "bayesian_phystwin",
-        "PROB4D",
-        "causal4d",
-    ):
-        assert normalize_ecosystem_component_id(selector) in {
-            "bayesian_phystwin",
-            "prob4d",
-            "causal4d",
-        }
-    with pytest.raises(ValueError, match="unknown ecosystem component"):
-        normalize_ecosystem_component_id("unknown")
-    with pytest.raises(ValueError, match="not canonical"):
-        normalize_ecosystem_component_id(" ")
-    with pytest.raises(ValueError, match="literal string"):
-        normalize_ecosystem_component_id(1)  # type: ignore[arg-type]
+    return lock
 
 
-def _check_payload_validation(tmp_path: Path) -> None:
-    duplicate = tmp_path / "duplicate.json"
-    duplicate.write_text(
-        '{"schema":"first","schema":"second"}\n',
-        encoding="utf-8",
-    )
-    with pytest.raises(ValueError, match="strict JSON"):
-        load_ecosystem_compatibility_lock(duplicate)
-
-    malformed = tmp_path / "malformed.json"
-    malformed.write_text("{", encoding="utf-8")
-    with pytest.raises(ValueError, match="strict JSON"):
-        load_ecosystem_compatibility_lock(malformed)
-
-    scalar = _write_payload(tmp_path, "scalar", [1, 2, 3])
-    with pytest.raises(ValueError, match="must be an object"):
-        load_ecosystem_compatibility_lock(scalar)
-
+def _invalid_payload_cases() -> list[tuple[str, dict[str, Any], str]]:
     cases: list[tuple[str, dict[str, Any], str]] = []
 
     payload = _lock_payload()
@@ -220,10 +188,16 @@ def _check_payload_validation(tmp_path: Path) -> None:
         ("tests-zero", "tests_passed", 0, "at least 1"),
         ("tests-bool", "tests_passed", False, "must be an integer"),
         (
-            "tested-revision",
+            "tested-revision-format",
             "bayesian_phystwin_tested_revision",
             "x",
             "lowercase Git commit",
+        ),
+        (
+            "tested-revision-mismatch",
+            "bayesian_phystwin_tested_revision",
+            "0" * 40,
+            "must match the locked",
         ),
     )
     for name, field, value, message in invalid_validation_fields:
@@ -233,17 +207,15 @@ def _check_payload_validation(tmp_path: Path) -> None:
         validation[field] = value
         cases.append((f"validation-{name}", payload, message))
 
-    for name, payload, message in cases:
-        with pytest.raises(ValueError, match=message):
-            load_ecosystem_compatibility_lock(
-                _write_payload(tmp_path, name, payload)
-            )
+    return cases
 
-    lock = load_ecosystem_compatibility_lock()
+
+def _exercise_dataclass_validation(lock: EcosystemCompatibilityLockV1) -> None:
     component = lock.component("bpt")
     component_cases = (
         ({"component_id": "other"}, "unsupported component"),
         ({"package_name": 1}, "literal string"),
+        ({"package_name": "Bad Name"}, "not canonical"),
         ({"repository": "/name"}, "owner/name"),
         ({"revision": "0"}, "lowercase 40-character"),
         ({"compatible_version_prefix": "0.4"}, "major.minor"),
@@ -265,6 +237,7 @@ def _check_payload_validation(tmp_path: Path) -> None:
         ({"tests_passed": 0}, "at least 1"),
         ({"tests_passed": False}, "must be an integer"),
         ({"bayesian_phystwin_tested_revision": "A" * 40}, "lowercase Git commit"),
+        ({"bayesian_phystwin_tested_revision": "0" * 40}, "must match the locked"),
         ({"lock_sha256": "x"}, "SHA-256"),
     )
     for changes, message in lock_cases:
@@ -272,8 +245,8 @@ def _check_payload_validation(tmp_path: Path) -> None:
             replace(lock, **changes)
 
 
-def _check_runtime_validation(monkeypatch: pytest.MonkeyPatch) -> None:
-    lock = load_ecosystem_compatibility_lock()
+def _exercise_runtime_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    lock = _bundled_lock()
     installed = {"bpt": "0.4.0"}
     optional = validate_installed_ecosystem(lock, installed_versions=installed)
     assert optional.compatible
@@ -304,7 +277,7 @@ def _check_runtime_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     assert all(status.compatible for status in exact.components)
     assert all(status.to_dict()["installed"] for status in exact.components)
 
-    compatible_line = dict(_complete_versions())
+    compatible_line = deepcopy(_complete_versions())
     compatible_line["prob4d"] = "0.3.9"
     assert validate_installed_ecosystem(
         lock,
@@ -318,7 +291,7 @@ def _check_runtime_validation(monkeypatch: pytest.MonkeyPatch) -> None:
         installed_versions=compatible_line,
     ).compatible
 
-    wrong_line = dict(_complete_versions())
+    wrong_line = deepcopy(_complete_versions())
     wrong_line["prob4d"] = "0.4.0"
     assert not validate_installed_ecosystem(
         lock,
@@ -336,10 +309,7 @@ def _check_runtime_validation(monkeypatch: pytest.MonkeyPatch) -> None:
         installed_versions={"bpt": "0.4.0", "prob4d": None},
         revisions={"prob4d": lock.component("prob4d").revision},
     ).compatible
-    assert not validate_installed_ecosystem(
-        lock,
-        installed_versions={},
-    ).compatible
+    assert not validate_installed_ecosystem(lock, installed_versions={}).compatible
 
     with pytest.raises(ValueError, match="duplicate installed version"):
         validate_installed_ecosystem(
@@ -395,24 +365,8 @@ def _check_runtime_validation(monkeypatch: pytest.MonkeyPatch) -> None:
         assert discovered.missing_components == ("prob4d", "causal4d")
 
 
-def _check_cli_boundaries(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    output = tmp_path / "reports" / "ecosystem.json"
-    assert ecosystem_main(["--json", "--output-json", str(output)]) == 0
-    stdout = json.loads(capsys.readouterr().out)
-    persisted = json.loads(output.read_text(encoding="utf-8"))
-    assert stdout == persisted
-    assert stdout["schema"] == "bayesian-phystwin.ecosystem-compatibility-report"
-    assert stdout["components"]["bayesian_phystwin"]["installed"] is True
-
-    lock_path = _write_payload(tmp_path, "explicit-lock", _lock_payload())
-    assert ecosystem_main(["--lock", str(lock_path)]) == 0
-    assert "ecosystem lock:" in capsys.readouterr().out
-
-    lock = load_ecosystem_compatibility_lock()
+def _incompatible_report() -> EcosystemCompatibilityReportV1:
+    lock = _bundled_lock()
     statuses = (
         EcosystemComponentStatusV1(
             component_id="bayesian_phystwin",
@@ -460,7 +414,7 @@ def _check_cli_boundaries(
             compatible=False,
         ),
     )
-    incompatible = EcosystemCompatibilityReportV1(
+    return EcosystemCompatibilityReportV1(
         lock_name=lock.lock_name,
         lock_sha256=lock.lock_sha256,
         require_all=True,
@@ -468,6 +422,26 @@ def _check_cli_boundaries(
         compatible=False,
         components=statuses,
     )
+
+
+def _exercise_cli(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    output = tmp_path / "reports" / "ecosystem.json"
+    assert ecosystem_main(["--json", "--output-json", str(output)]) == 0
+    stdout = json.loads(capsys.readouterr().out)
+    persisted = json.loads(output.read_text(encoding="utf-8"))
+    assert stdout == persisted
+    assert stdout["schema"] == "bayesian-phystwin.ecosystem-compatibility-report"
+    assert stdout["components"]["bayesian_phystwin"]["installed"] is True
+
+    lock_path = _write_payload(tmp_path, "explicit-lock", _lock_payload())
+    assert ecosystem_main(["--lock", str(lock_path)]) == 0
+    assert "ecosystem lock:" in capsys.readouterr().out
+
+    incompatible = _incompatible_report()
     cli_module._print_human(incompatible)
     human = capsys.readouterr().out
     assert "compatible 0.4.0" in human
@@ -476,12 +450,19 @@ def _check_cli_boundaries(
     assert "compatible: no" in human
 
     required_missing = replace(
-        statuses[1],
+        incompatible.components[1],
         required=True,
         compatible=False,
     )
     cli_module._print_human(
-        replace(incompatible, components=(statuses[0], required_missing, statuses[2]))
+        replace(
+            incompatible,
+            components=(
+                incompatible.components[0],
+                required_missing,
+                incompatible.components[2],
+            ),
+        )
     )
     assert "missing (required)" in capsys.readouterr().out
 
@@ -503,6 +484,7 @@ def _check_cli_boundaries(
             return incompatible
 
         scoped.setattr(cli_module, "validate_installed_ecosystem", fake_validate)
+        lock = _bundled_lock()
         result = ecosystem_main(
             [
                 "--require-all",
@@ -519,6 +501,7 @@ def _check_cli_boundaries(
         }
         assert "compatible: no" in capsys.readouterr().out
 
+    lock = _bundled_lock()
     assert cli_module._revision_map(
         [
             f"bpt={lock.component('bpt').revision}",
@@ -556,12 +539,54 @@ def exercise_ecosystem_contract_coverage(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Exercise all public and fail-closed paths from stable-core coverage."""
+    """Exercise public, serialization, discovery, and fail-closed boundaries."""
 
-    _check_bundled_lock()
-    _check_payload_validation(tmp_path)
-    _check_runtime_validation(monkeypatch)
-    _check_cli_boundaries(tmp_path, monkeypatch, capsys)
+    lock = _bundled_lock()
+    for selector in (
+        "bpt",
+        "bayesian-phystwin",
+        "bayesian_phystwin",
+        "PROB4D",
+        "causal4d",
+    ):
+        assert normalize_ecosystem_component_id(selector) in {
+            "bayesian_phystwin",
+            "prob4d",
+            "causal4d",
+        }
+    with pytest.raises(ValueError, match="unknown ecosystem component"):
+        normalize_ecosystem_component_id("unknown")
+    with pytest.raises(ValueError, match="not canonical"):
+        normalize_ecosystem_component_id(" ")
+    with pytest.raises(ValueError, match="literal string"):
+        normalize_ecosystem_component_id(1)  # type: ignore[arg-type]
+
+    duplicate = tmp_path / "duplicate.json"
+    duplicate.write_text(
+        '{"schema":"first","schema":"second"}\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="strict JSON"):
+        load_ecosystem_compatibility_lock(duplicate)
+
+    malformed = tmp_path / "malformed.json"
+    malformed.write_text("{", encoding="utf-8")
+    with pytest.raises(ValueError, match="strict JSON"):
+        load_ecosystem_compatibility_lock(malformed)
+
+    scalar = _write_payload(tmp_path, "scalar", [1, 2, 3])
+    with pytest.raises(ValueError, match="must be an object"):
+        load_ecosystem_compatibility_lock(scalar)
+
+    for name, payload, message in _invalid_payload_cases():
+        with pytest.raises(ValueError, match=message):
+            load_ecosystem_compatibility_lock(
+                _write_payload(tmp_path, name, payload)
+            )
+
+    _exercise_dataclass_validation(lock)
+    _exercise_runtime_validation(monkeypatch)
+    _exercise_cli(tmp_path, monkeypatch, capsys)
 
 
 def test_ecosystem_contract_boundaries(
