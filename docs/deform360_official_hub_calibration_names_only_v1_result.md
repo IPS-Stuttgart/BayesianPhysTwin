@@ -41,7 +41,7 @@ It does not replace objects or inspect target outcomes.
 ## Amended plan result
 
 The amended implementation was frozen at
-`a875aa0214dc48c054c116369662df3ec0d8f591` before its exact clean-checkout
+`cf8e7fb1f07ed44eafd2e845aac88c1a5bd6df24` before its exact clean-checkout
 names-only rerun. The amended plan passed with all 10 calibration objects,
 including all five sheet and all five volumetric objects. Its canonical digest
 is `3a5d2390546ea55370f45a688036e4911f0ffefc99cfed0732d498bc5e2cc5f4` and its
