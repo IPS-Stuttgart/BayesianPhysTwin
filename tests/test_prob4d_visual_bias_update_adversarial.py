@@ -6,9 +6,9 @@ from typing import Any
 
 import numpy as np
 import pytest
+import test_prob4d_visual_bias_update as fixtures
 
 import bayesian_phystwin.prob4d_visual_bias_update as update_module
-import test_prob4d_visual_bias_update as fixtures
 from bayesian_phystwin.prob4d_visual_bias_update import (
     PROB4D_VISUAL_BIAS_ORTHOGONALIZATION,
     PROB4D_VISUAL_BIAS_REPARAMETERIZATION,
