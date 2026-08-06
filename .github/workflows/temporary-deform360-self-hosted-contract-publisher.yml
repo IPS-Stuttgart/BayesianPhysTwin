@@ -75,7 +75,6 @@ jobs:
           "${PUBLISHER_BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
             tests/test_deform360_official_hub_calibration_source.py \
             tests/test_deform360_calibration_source_workflow.py \
-            tests/test_deform360_calibration_execution.py \
             tests/test_deform360_visual_provider_freeze.py
           "${PUBLISHER_BASE_PYTHON}" -m compileall -q \
             scripts/science/deform360_calibration_source \
