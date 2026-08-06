@@ -46,6 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path.cwd(),
         help="root used for portable artifact paths and digests",
     )
+    build.add_argument(
+        "--force",
+        action="store_true",
+        help="atomically replace an existing bundle instead of failing closed",
+    )
 
     validate = subparsers.add_parser(
         "validate",
@@ -99,7 +104,7 @@ def _build(args: argparse.Namespace) -> int:
         claim_binding_path=args.claim_binding,
         additional_artifacts=_additional_artifacts(args, root=root),
     )
-    write_claim_bundle(args.bundle, bundle)
+    write_claim_bundle(args.bundle, bundle, overwrite=args.force)
     print(
         json.dumps(
             {
