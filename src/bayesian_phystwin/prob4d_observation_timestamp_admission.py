@@ -8,7 +8,7 @@ content ID could remain mutually self-consistent.
 This module snapshots the timestamp sidecar and factor-bundle manifest through
 regular-file descriptors, parses private byte-for-byte copies, checks the raw
 source identity against a separate verification artifact, and rejects concurrent
-replacement of either original file.
+replacement or in-place mutation of either original file.
 """
 
 from __future__ import annotations
@@ -41,6 +41,16 @@ _CLAIM_METADATA_FIELDS = frozenset(
     }
 )
 _MAXIMUM_SNAPSHOT_BYTES = 64 * 1024 * 1024
+
+
+def _file_identity(information: os.stat_result) -> tuple[int, int, int, int, int]:
+    return (
+        int(information.st_dev),
+        int(information.st_ino),
+        int(information.st_size),
+        int(information.st_mtime_ns),
+        int(information.st_ctime_ns),
+    )
 
 
 def _ordinary_snapshot(
@@ -85,14 +95,20 @@ def _ordinary_snapshot(
             payload.extend(block)
             if len(payload) > _MAXIMUM_SNAPSHOT_BYTES:
                 raise ValueError(f"{name} exceeds the snapshot size limit")
+        final_descriptor_information = os.fstat(descriptor)
+        if _file_identity(final_descriptor_information) != _file_identity(
+            descriptor_information
+        ):
+            raise ValueError(f"{name} changed while being read")
+        if len(payload) != descriptor_information.st_size:
+            raise ValueError(f"{name} changed while being read")
         try:
             final_path_information = os.lstat(artifact_path)
         except OSError as error:
             raise ValueError(f"{name} changed while being read") from error
-        if stat.S_ISLNK(final_path_information.st_mode) or (
-            final_path_information.st_dev,
-            final_path_information.st_ino,
-        ) != (descriptor_information.st_dev, descriptor_information.st_ino):
+        if stat.S_ISLNK(final_path_information.st_mode) or _file_identity(
+            final_path_information
+        ) != _file_identity(final_descriptor_information):
             raise ValueError(f"{name} changed while being read")
     except OSError as error:
         raise ValueError(f"{name} is unreadable") from error
@@ -120,7 +136,10 @@ def _write_private_snapshot(
         view = memoryview(payload)
         written = 0
         while written < len(view):
-            written += os.write(descriptor, view[written:])
+            count = os.write(descriptor, view[written:])
+            if count <= 0:
+                raise OSError("private snapshot write made no progress")
+            written += count
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
@@ -146,7 +165,8 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
     admitted. The verification artifact must be distinct from the sidecar itself.
     Both the timestamp sidecar and the observation-factor bundle are read once
     through regular-file descriptors and parsed only from private snapshots.
-    Their original paths are re-snapshotted afterward to reject replacement.
+    Their original paths are re-snapshotted afterward to reject replacement or
+    in-place mutation.
     """
 
     expected_source = sha256_digest(
