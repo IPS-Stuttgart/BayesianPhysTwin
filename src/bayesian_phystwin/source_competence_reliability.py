@@ -41,13 +41,9 @@ from .structured_reliability import (
     smooth_markov_reliability,
 )
 
-SOURCE_COMPETENCE_EVIDENCE_SCHEMA = (
-    "bayesian_phystwin.source_competence_evidence"
-)
+SOURCE_COMPETENCE_EVIDENCE_SCHEMA = "bayesian_phystwin.source_competence_evidence"
 SOURCE_COMPETENCE_EVIDENCE_VERSION = 1
-SOURCE_COMPETENCE_CONFIG_SCHEMA = (
-    "bayesian_phystwin.source_competence_markov_config"
-)
+SOURCE_COMPETENCE_CONFIG_SCHEMA = "bayesian_phystwin.source_competence_markov_config"
 SOURCE_COMPETENCE_CONFIG_VERSION = 1
 SOURCE_COMPETENCE_UPDATE_SCHEMA = (
     "bayesian_phystwin.source_competence_reliability_update"
@@ -117,9 +113,7 @@ def _array_descriptor(value: np.ndarray) -> dict[str, object]:
     array = np.ascontiguousarray(value)
     digest = hashlib.sha256()
     digest.update(array.dtype.str.encode("ascii"))
-    digest.update(
-        json.dumps(list(array.shape), separators=(",", ":")).encode("ascii")
-    )
+    digest.update(json.dumps(list(array.shape), separators=(",", ":")).encode("ascii"))
     digest.update(array.tobytes(order="C"))
     return {
         "dtype": array.dtype.str,
@@ -332,12 +326,8 @@ class SourceCompetenceEvidenceV1:
             "feature_names": list(self.feature_names),
             "sequence_ids": list(self.sequence_ids),
             "time_values": _array_descriptor(self.time_values),
-            "log_competent_density": _array_descriptor(
-                self.log_competent_density
-            ),
-            "log_incompetent_density": _array_descriptor(
-                self.log_incompetent_density
-            ),
+            "log_competent_density": _array_descriptor(self.log_competent_density),
+            "log_incompetent_density": _array_descriptor(self.log_incompetent_density),
             "uses_target_outcomes": False,
             "uses_physical_innovation": False,
             "uses_posterior_responsibility": False,
@@ -379,9 +369,7 @@ class SourceCompetenceEvidenceV1:
         if not isinstance(metadata, Mapping):
             raise ValueError("source-competence metadata must be an object")
         return cls(
-            observation_artifact_id=cast(
-                str, value.get("observation_artifact_id")
-            ),
+            observation_artifact_id=cast(str, value.get("observation_artifact_id")),
             observation_identity_sha256=cast(
                 str, value.get("observation_identity_sha256")
             ),
@@ -402,9 +390,7 @@ class SourceCompetenceEvidenceV1:
                 value.get("log_incompetent_density"), dtype=np.float64
             ),
             uses_target_outcomes=cast(bool, value.get("uses_target_outcomes")),
-            uses_physical_innovation=cast(
-                bool, value.get("uses_physical_innovation")
-            ),
+            uses_physical_innovation=cast(bool, value.get("uses_physical_innovation")),
             uses_posterior_responsibility=cast(
                 bool, value.get("uses_posterior_responsibility")
             ),
@@ -457,7 +443,9 @@ class SourceCompetenceReliabilityUpdateV1:
             deployed,
             self.refined_observation.prior_reliability,
         ):
-            raise ValueError("refined observation does not contain deployed reliability")
+            raise ValueError(
+                "refined observation does not contain deployed reliability"
+            )
         if self.evidence.observation_artifact_id != self.source_observation.artifact_id:
             raise ValueError("evidence identifies a different source observation")
         if not isinstance(self.sequence_log_evidence, Mapping):
