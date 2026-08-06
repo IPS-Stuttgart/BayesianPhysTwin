@@ -7,6 +7,7 @@ import subprocess
 import sys
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -151,6 +152,48 @@ def test_curve_contract_rejects_tampered_derived_values() -> None:
     indices[0, 2] = 0
     with pytest.raises(ValueError, match="suffixes"):
         replace(curve, selected_indices=indices)
+
+
+@pytest.mark.parametrize(
+    ("reduction", "final_trace", "selected_cost", "total_cost", "message"),
+    [
+        (2.0, -1.0, 1.0, 1.0, "materially negative"),
+        (0.25, 0.50, 1.0, 1.0, "do not reconstruct"),
+        (0.25, 0.75, 1.0, 2.0, "selected costs"),
+    ],
+)
+def test_planner_diagnostics_cannot_be_silently_repaired(
+    monkeypatch: pytest.MonkeyPatch,
+    reduction: float,
+    final_trace: float,
+    selected_cost: float,
+    total_cost: float,
+    message: str,
+) -> None:
+    prior, query, state, nuisance, covariance = _problem()
+    selection = SimpleNamespace(
+        selected_indices=(0,),
+        initial_query_variance_trace=1.0,
+        query_trace_reductions=np.asarray([reduction], dtype=np.float64),
+        final_query_variance_trace=final_trace,
+        selected_costs=np.asarray([selected_cost], dtype=np.float64),
+        total_cost=total_cost,
+    )
+    monkeypatch.setattr(
+        "bayesian_phystwin.query_anchor_sufficiency.greedy_query_aware_selection",
+        lambda *_args, **_kwargs: selection,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        evaluate_query_anchor_sufficiency(
+            prior,
+            query,
+            state,
+            nuisance,
+            covariance,
+            precision_multipliers=[1.0],
+            maximum_count=1,
+        )
 
 
 @pytest.mark.parametrize(
