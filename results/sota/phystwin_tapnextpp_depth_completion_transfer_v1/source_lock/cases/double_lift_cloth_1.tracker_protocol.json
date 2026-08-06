@@ -1,0 +1,82 @@
+{
+  "case": "double_lift_cloth_1",
+  "claim_boundary": "Eight-case opened-source provider-transfer study. Manual material identity is used only for query initialization and sealed prefix competence scoring. No future Bayesian-PhysTwin metric, held-v8 artifact, independent target, or confirmation outcome is part of this protocol.",
+  "depth_completion_config": {
+    "depth_sensor_std_m": 0.003,
+    "mask_patch_radius_px": 2,
+    "maximum_local_depth_mad_m": 0.02,
+    "maximum_penalized_agreement_m": 0.005,
+    "minimum_carrier_overlap_fraction": 0.25,
+    "minimum_carrier_overlap_rows": 16,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_noise_std_px": 1.5,
+    "shared_bias_std_m": 0.005,
+    "visibility_threshold": 0.5
+  },
+  "depth_completion_gates": {
+    "endpoint_frame_count": 5,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_supported_fraction": 0.85
+  },
+  "method_config": {
+    "case_name": "double_lift_cloth_1",
+    "depth_scale_to_m": 0.001,
+    "endpoint_frame_count": 5,
+    "input_resolution": 512,
+    "mask_patch_radius_px": 2,
+    "maximum_depth_residual_m": 0.03,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_object_mask_fraction": 0.2,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "minimum_triangulation_views": 2,
+    "pixel_standard_deviation_px": 1.5,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      0,
+      8,
+      6,
+      2
+    ],
+    "shared_bias_standard_deviation_m": 0.005,
+    "source_frame_end_exclusive": 81,
+    "source_frame_start": 61,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "two_view_covariance_inflation": 4.0,
+    "visibility_threshold": 0.5
+  },
+  "prefix_frame_count": 20,
+  "protocol_id": "phystwin-tapnextpp-prefix-competence-v1",
+  "result_sha256": "b52a99aad272b734e002fad4bb17137f3b5af348c588d2185c91c3338162ba81",
+  "schema_version": 1,
+  "selection": {
+    "physical_rms_endpoint_displacement_m": 0.0210865715807,
+    "physical_trajectory_sha256": "c1cad3e34e621d57e89915b964e54c76e286ec0b1ad5a0a66296afe4b7c02c6c",
+    "sampled_node_indices_sha256": "fb37724c583bbf3755eae9f98e78295b2f30b47bddc881c8a67f32d7600928ea",
+    "selected_identity_ids": [
+      0,
+      8,
+      6,
+      2
+    ],
+    "selection_used_withheld_prefix_or_future_target": false
+  },
+  "source_artifacts": {
+    "prediction_input_sha256": "6e3e9f17a84fe4af7a04e939e4997b5cb09191f19b46ea88ea0b7ac3560c2dda",
+    "source_report_sha256": "5620a198b01b2820e737e65e03a8cf66422eacb1a000b3dec6d3e8b5559cfa31",
+    "withheld_prefix_sha256": "4d394b679f501c837ca4ddf2874ee5d53f9c3eac688533604406f210e98225b0"
+  },
+  "source_frame_start": 61,
+  "source_panel_protocol_id": "phystwin-tapnextpp-depth-completion-transfer-v1",
+  "source_panel_protocol_sha256": "42df862177a63b19995d9c09f6f464494854868ae6953f4af8298c1947fef8f9",
+  "status": "locked-before-tapnextpp-prediction"
+}
