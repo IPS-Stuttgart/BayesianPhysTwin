@@ -37,7 +37,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 30
     steps:
       - name: Check out exact reviewed BayesianPhysTwin revision
