@@ -201,8 +201,7 @@ class ValidatedProb4DVisualBiasStreamV1:
         basis_names = _canonical_strings(self.basis_names, name="basis_names")
         if (
             type(self.orthogonalization_semantics) is not str
-            or self.orthogonalization_semantics
-            != PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
+            or self.orthogonalization_semantics != PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
         ):
             raise ValueError(
                 "claim-bearing recursive visual bias requires the global "
@@ -287,7 +286,7 @@ class ValidatedProb4DVisualBiasStreamV1:
                 raise ValueError(
                     "visual-bias update exceeds gauge projection tolerance"
                 )
-            expected_rows = np.full(
+            expected_rows: np.ndarray = np.full(
                 update.observation_count,
                 index,
                 dtype=np.int64,
@@ -369,9 +368,7 @@ class ValidatedProb4DVisualBiasStreamV1:
 
     @property
     def nuisance_family_id(self) -> str:
-        return prob4d_visual_bias_nuisance_family_id(
-            cast(str, self.bias_model_id)
-        )
+        return prob4d_visual_bias_nuisance_family_id(cast(str, self.bias_model_id))
 
     def arrays(self) -> dict[str, np.ndarray]:
         return {
@@ -382,10 +379,7 @@ class ValidatedProb4DVisualBiasStreamV1:
         }
 
     def array_descriptors(self) -> dict[str, dict[str, object]]:
-        return {
-            name: _array_descriptor(value)
-            for name, value in self.arrays().items()
-        }
+        return {name: _array_descriptor(value) for name, value in self.arrays().items()}
 
     def model_record(self) -> dict[str, object]:
         return {
@@ -418,7 +412,7 @@ class ValidatedProb4DVisualBiasStreamV1:
         }
 
     def global_design(self) -> np.ndarray:
-        result = np.zeros(
+        result: np.ndarray = np.zeros(
             (self.observation_count, 3, self.latent_dimension),
             dtype=np.float64,
         )
@@ -550,23 +544,26 @@ def _copy_prob4d_visual_bias_stream(
     source = cast(Any, nuisance_stream)
     try:
         raw_updates = _exact_tuple(source.updates, name="updates")
-        updates = tuple(
-            Prob4DVisualBiasStreamUpdateBindingV1(
-                bias_model_id=update.bias_model_id,
-                observation_stream_update_id=update.observation_stream_update_id,
-                visual_bias_artifact_id=update.visual_bias_artifact_id,
-                observation_artifact_id=update.observation_artifact_id,
-                observation_identity_sha256=update.observation_identity_sha256,
-                frame_start=update.frame_start,
-                frame_stop_exclusive=update.frame_stop_exclusive,
-                row_start=update.row_start,
-                row_stop_exclusive=update.row_stop_exclusive,
-                maximum_gauge_projection=update.maximum_gauge_projection,
-                previous_update_id=update.previous_update_id,
-                update_id=update.update_id,
+        copied_updates: list[Prob4DVisualBiasStreamUpdateBindingV1] = []
+        for raw_update in raw_updates:
+            update = cast(Any, raw_update)
+            copied_updates.append(
+                Prob4DVisualBiasStreamUpdateBindingV1(
+                    bias_model_id=update.bias_model_id,
+                    observation_stream_update_id=update.observation_stream_update_id,
+                    visual_bias_artifact_id=update.visual_bias_artifact_id,
+                    observation_artifact_id=update.observation_artifact_id,
+                    observation_identity_sha256=update.observation_identity_sha256,
+                    frame_start=update.frame_start,
+                    frame_stop_exclusive=update.frame_stop_exclusive,
+                    row_start=update.row_start,
+                    row_stop_exclusive=update.row_stop_exclusive,
+                    maximum_gauge_projection=update.maximum_gauge_projection,
+                    previous_update_id=update.previous_update_id,
+                    update_id=update.update_id,
+                )
             )
-            for update in raw_updates
-        )
+        updates = tuple(copied_updates)
         return ValidatedProb4DVisualBiasStreamV1(
             stream_key=source.stream_key,
             bias_ids=source.bias_ids,

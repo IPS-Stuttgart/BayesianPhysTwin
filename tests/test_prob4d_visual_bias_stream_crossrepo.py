@@ -129,12 +129,8 @@ def _sidecar(observation: ObservationBeliefV1) -> object:
             observation_count,
             axis=0,
         ),
-        joint_bias_covariance=np.diag(
-            np.array([0.04, 0.01, 0.01], dtype=np.float64)
-        ),
-        orthogonalization_semantics=(
-            PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
-        ),
+        joint_bias_covariance=np.diag(np.array([0.04, 0.01, 0.01], dtype=np.float64)),
+        orthogonalization_semantics=(PROB4D_VISUAL_BIAS_ORTHOGONALIZATION),
         maximum_gauge_projection=0.0,
         gauge_projection_tolerance=1e-6,
         metadata={"calibration": "source-only"},
@@ -199,9 +195,7 @@ def test_actual_prob4d_stream_is_reconstructed_and_bound_exactly() -> None:
 
 
 def test_actual_single_update_stream_remains_compatible_with_v2_solver() -> None:
-    observations, factor_stream, sidecars, stream, policy = _fixture(
-        update_count=1
-    )
+    observations, factor_stream, sidecars, stream, policy = _fixture(update_count=1)
 
     binding = validate_prob4d_visual_bias_nuisance_stream(
         factor_stream,
