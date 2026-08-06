@@ -45,7 +45,6 @@ def test_bundled_ecosystem_lock_is_complete_and_content_addressed() -> None:
 def test_optional_companions_and_require_all_have_distinct_semantics() -> None:
     lock = load_ecosystem_compatibility_lock()
     installed = {"bpt": "0.4.0"}
-
     optional = validate_installed_ecosystem(lock, installed_versions=installed)
     assert optional.compatible
     assert optional.missing_components == ("prob4d", "causal4d")
@@ -82,7 +81,6 @@ def test_exact_versions_and_source_revisions_fail_closed() -> None:
         require_all=True,
         installed_versions=wrong_version,
     ).compatible
-
     assert not validate_installed_ecosystem(
         lock,
         require_all=True,
@@ -100,10 +98,7 @@ def test_exact_versions_and_source_revisions_fail_closed() -> None:
 
 def test_lock_rejects_duplicate_json_keys(tmp_path: Path) -> None:
     path = tmp_path / "duplicate.json"
-    path.write_text(
-        '{"schema":"first","schema":"second"}\n',
-        encoding="utf-8",
-    )
+    path.write_text('{"schema":"first","schema":"second"}\n', encoding="utf-8")
     with pytest.raises(ValueError, match="strict JSON"):
         load_ecosystem_compatibility_lock(path)
 
@@ -118,7 +113,7 @@ def test_ecosystem_cli_emits_machine_readable_report(tmp_path: Path, capsys) -> 
     assert stdout["components"]["bayesian_phystwin"]["installed"] is True
 
 
-def test_compatibility_workflow_has_locked_and_canary_lanes() -> None:
+def test_causal4d_workflow_has_locked_and_canary_lanes() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = (
         root / ".github" / "workflows" / "causal4d-provider-compatibility.yml"
@@ -128,22 +123,32 @@ def test_compatibility_workflow_has_locked_and_canary_lanes() -> None:
     assert "Latest Causal4D main canary" in workflow
     assert "continue-on-error: true" in workflow
     assert "persist-credentials: false" in workflow
-    assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in workflow
 
 
-def test_three_repository_workflow_reproduces_lock_and_canaries_main() -> None:
+def test_three_repository_workflow_uses_lock_and_canaries_main() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflow = (
+        root / ".github" / "workflows" / "three-repository-golden-path.yml"
+    ).read_text(encoding="utf-8")
+    assert "Resolve committed ecosystem lock" in workflow
+    assert "needs.resolve-lock.outputs.prob4d_ref" in workflow
+    assert "needs.resolve-lock.outputs.causal4d_ref" in workflow
+    assert "Latest Prob4D and Causal4D main canary" in workflow
+    assert "continue-on-error: true" in workflow
+    assert "THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS" in workflow
+    assert "persist-credentials: false" in workflow
+
+
+def test_historical_workflow_reproduces_exact_locked_trio() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = (
         root / ".github" / "workflows" / "ecosystem-locked-golden-path.yml"
     ).read_text(encoding="utf-8")
     lock = load_ecosystem_compatibility_lock()
-
     for component in lock.components:
         assert component.revision in workflow
-    assert "Current BPT + locked Prob4D/Causal4D" in workflow
+    assert "Historical lock identity contract" in workflow
     assert "Reproduce exact locked trio" in workflow
-    assert "Latest three-repository main canary" in workflow
-    assert "continue-on-error: true" in workflow
-    assert "THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS: \"true\"" in workflow
+    assert "Latest three-repository main canary" not in workflow
     assert "persist-credentials: false" in workflow
     assert "permissions:\n  contents: read" in workflow
