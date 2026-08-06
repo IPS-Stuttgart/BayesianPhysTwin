@@ -299,3 +299,9 @@ def test_greedy_information_selection_accepts_numpy_integer_count() -> None:
     )
 
     np.testing.assert_array_equal(selection.selected_indices, np.asarray([0]))
+
+
+# The stable-core coverage job invokes this file explicitly. Import the
+# query-anchor sufficiency cases so the new source module is assessed by the
+# ordinary changed-line and changed-branch ratchets.
+from test_query_anchor_sufficiency import *  # noqa: E402,F403
