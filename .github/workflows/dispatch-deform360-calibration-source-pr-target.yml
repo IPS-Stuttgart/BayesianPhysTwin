@@ -1,4 +1,4 @@
-name: Dispatch frozen Deform360 calibration source from exact PR target
+name: Execute frozen Deform360 calibration source from exact PR target
 
 on:
   pull_request_target:
@@ -8,165 +8,24 @@ on:
       - ".github/calibration-dispatch-trigger/deform360-official-hub-calibration-source-2026-08-07.txt"
 
 permissions:
-  actions: write
   contents: read
   issues: write
-  pull-requests: read
 
 concurrency:
   group: dispatch-deform360-calibration-source-pr-target
   cancel-in-progress: false
 
 jobs:
-  dispatch:
-    name: Validate exact trigger and dispatch reviewed calibration lane
+  execute:
+    name: Execute trusted reusable calibration lane
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login == 'FlorianPfaff' &&
       github.event.pull_request.head.ref == 'agent/calibration-dispatch-trigger-v1' &&
-      github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Require the exact one-file trigger diff
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          set -euo pipefail
-          response="$RUNNER_TEMP/pull-files.json"
-          curl --fail-with-body --silent --show-error \
-            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
-            --header "Accept: application/vnd.github+json" \
-            --header "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" \
-            > "${response}"
-          python3 - "${response}" <<'PY'
-          import json
-          from pathlib import Path
-          import sys
-
-          files = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          expected = (
-              ".github/calibration-dispatch-trigger/"
-              "deform360-official-hub-calibration-source-2026-08-07.txt"
-          )
-          assert len(files) == 1, files
-          record = files[0]
-          assert record["filename"] == expected, record
-          assert record["status"] == "added", record
-          assert record["additions"] == 1, record
-          assert record["deletions"] == 0, record
-          assert record["changes"] == 1, record
-          PY
-
-      - name: Dispatch exact current main and resolve the new run
-        id: dispatch
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          api="https://api.github.com/repos/${REPOSITORY}"
-          workflow="deform360-official-hub-calibration-source.yml"
-          headers=(
-            --header "Authorization: Bearer ${GITHUB_TOKEN}"
-            --header "Accept: application/vnd.github+json"
-            --header "X-GitHub-Api-Version: 2022-11-28"
-          )
-          before="$RUNNER_TEMP/before-runs.json"
-          curl --fail-with-body --silent --show-error \
-            "${headers[@]}" \
-            "${api}/actions/workflows/${workflow}/runs?event=workflow_dispatch&branch=main&per_page=100" \
-            > "${before}"
-
-          curl --fail-with-body --silent --show-error \
-            --request POST \
-            "${headers[@]}" \
-            "${api}/actions/workflows/${workflow}/dispatches" \
-            --data '{"ref":"main"}'
-
-          run_record=""
-          for _ in $(seq 1 30); do
-            after="$RUNNER_TEMP/after-runs.json"
-            curl --fail-with-body --silent --show-error \
-              "${headers[@]}" \
-              "${api}/actions/workflows/${workflow}/runs?event=workflow_dispatch&branch=main&per_page=100" \
-              > "${after}"
-            run_record=$(python3 - "${before}" "${after}" <<'PY'
-          import json
-          from pathlib import Path
-          import sys
-
-          before = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          after = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
-          known = {int(item["id"]) for item in before.get("workflow_runs", [])}
-          fresh = [
-              item
-              for item in after.get("workflow_runs", [])
-              if int(item["id"]) not in known
-              and item.get("event") == "workflow_dispatch"
-              and item.get("head_branch") == "main"
-          ]
-          if fresh:
-              selected = max(fresh, key=lambda item: int(item["id"]))
-              print(f"{selected['id']} {selected['head_sha']}")
-          PY
-            )
-            if [[ -n "${run_record}" ]]; then
-              break
-            fi
-            sleep 2
-          done
-          if [[ -z "${run_record}" ]]; then
-            echo "Dispatch was accepted, but the new exact run was not found." >&2
-            exit 1
-          fi
-          read -r run_id source_sha <<< "${run_record}"
-          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
-          echo "source_sha=${source_sha}" >> "${GITHUB_OUTPUT}"
-
-      - name: Publish the non-sensitive dispatch receipt
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
-          SOURCE_SHA: ${{ steps.dispatch.outputs.source_sha }}
-        run: |
-          set -euo pipefail
-          receipt="$RUNNER_TEMP/dispatch-receipt.json"
-          python3 - "${receipt}" <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          import sys
-
-          body = "\n".join(
-              [
-                  "## Ten-object calibration-source execution dispatched",
-                  "",
-                  f"- workflow run: `{os.environ['RUN_ID']}`",
-                  f"- exact reviewed `main` revision: `{os.environ['SOURCE_SHA']}`",
-                  "- frozen dataset selection: `deform360-official-hub-visuotactile-v1`",
-                  "- authorized payload scope: the ten committed calibration objects only",
-                  "- forbidden payload scope: all twelve confirmation objects and target outcomes",
-                  "",
-                  "The trigger checked out no pull-request code. The permanent reviewed workflow retains technical failures without replacement and independently verifies that the confirmation cohort remains absent.",
-              ]
-          )
-          Path(sys.argv[1]).write_text(
-              json.dumps({"body": body}, sort_keys=True),
-              encoding="utf-8",
-          )
-          PY
-          curl --fail-with-body --silent --show-error \
-            --request POST \
-            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
-            --header "Accept: application/vnd.github+json" \
-            --header "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${REPOSITORY}/issues/148/comments" \
-            --data-binary @"${receipt}"
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.changed_files == 1 &&
+      github.event.pull_request.additions == 1 &&
+      github.event.pull_request.deletions == 0
+    uses: ./.github/workflows/deform360-official-hub-calibration-source-reusable.yml
+    with:
+      source_sha: ${{ github.sha }}
