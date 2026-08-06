@@ -38,9 +38,24 @@ a runner-up margin of at least one minute, and a cross-sensor capture span of at
 most five seconds. The rule is deterministic, payload-free, and fails closed.
 It does not replace objects or inspect target outcomes.
 
+## Amended plan result
+
+The amended implementation was frozen at
+`a875aa0214dc48c054c116369662df3ec0d8f591` before its exact clean-checkout
+names-only rerun. The amended plan passed with all 10 calibration objects,
+including all five sheet and all five volumetric objects. Its canonical digest
+is `3a5d2390546ea55370f45a688036e4911f0ffefc99cfed0732d498bc5e2cc5f4` and its
+file SHA-256 is
+`ef2d5d3be5f9e0373d7a305ad380b375e42c5003724c9eb05a8f5cec38b1c9d9`.
+
+The rerun reproduced the same canonical and file digests as the development
+rerun. It opened repository names only. No calibration payload was downloaded,
+no confirmation object was inspected, and no target metric was computed. The
+passing source-admission gate authorizes only the registered calibration
+download and preparation stage.
+
 ## Claim boundary
 
 This is source-admission and filename-association evidence only. It does not
 establish tactile quality, provider competence, BayesianPhysTwin accuracy,
-calibration, confirmation transfer, or state of the art. A new exact plan must
-pass before any calibration payload download is authorized.
+calibration, confirmation transfer, or state of the art.
