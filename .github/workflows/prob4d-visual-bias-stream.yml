@@ -37,8 +37,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install "ruff==0.16.1"
-          python - <<'PY'
+          root="${RUNNER_TEMP}/persistent-typing-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          python -m venv "${root}/venv"
+          "${root}/venv/bin/python" -m pip install \
+            "pip==25.2" \
+            "ruff==0.16.1"
+          "${root}/venv/bin/python" - <<'PY'
           from pathlib import Path
 
           path = Path("src/bayesian_phystwin/persistent_prob4d_visual_bias.py")
@@ -48,7 +53,7 @@ jobs:
           provider_new = "    provider_design: np.ndarray = np.zeros(\n"
           if text.count(provider_old) != 1:
               raise SystemExit("expected exactly one provider_design declaration")
-          text = text.replace(provider_old, provider_new)
+          text = text.replace(provider_old, provider_new, 1)
 
           offset_old = "    if physical_offset is None:\n        offset = np.zeros(\n"
           offset_new = (
@@ -58,10 +63,10 @@ jobs:
           )
           if text.count(offset_old) != 1:
               raise SystemExit("expected exactly one physical_offset branch")
-          text = text.replace(offset_old, offset_new)
+          text = text.replace(offset_old, offset_new, 1)
           path.write_text(text, encoding="utf-8")
           PY
-          python -m ruff format \
+          "${root}/venv/bin/python" -m ruff format \
             src/bayesian_phystwin/persistent_prob4d_visual_bias.py
           git diff --check
           git config user.name "github-actions[bot]"
