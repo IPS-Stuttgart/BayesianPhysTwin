@@ -76,9 +76,7 @@ def _load_pickle_array(path: Path) -> np.ndarray:
 
 def _case_record(manifest: dict[str, Any], case_name: str) -> dict[str, Any]:
     records = [
-        record
-        for record in manifest["case_records"]
-        if record.get("case") == case_name
+        record for record in manifest["case_records"] if record.get("case") == case_name
     ]
     _require(len(records) == 1, f"source manifest does not bind {case_name} once")
     return records[0]
@@ -244,9 +242,7 @@ def predict_case(
         cap_quantile=float(dense_config["relative_cap_quantile"]),
         cap_multiplier=float(dense_config["relative_cap_multiplier"]),
     )
-    sparse_config = SparseAssimilationConfig(
-        **protocol["sparse_assimilation_config"]
-    )
+    sparse_config = SparseAssimilationConfig(**protocol["sparse_assimilation_config"])
     graph = build_phystwin_spring_graph(
         structure_points,
         None,
@@ -310,8 +306,7 @@ def predict_case(
                     laplacian,
                     config=sparse_config,
                 )
-                if assimilation_mode
-                == "fixed_frame_zero_material_displacement"
+                if assimilation_mode == "fixed_frame_zero_material_displacement"
                 else build_sparse_graph_update(
                     endpoint,
                     association,
@@ -432,9 +427,7 @@ def predict_case(
             "source_distance_m": association.source_distance_m.tolist(),
             "entropy": association.entropy.tolist(),
             "candidate_indices": association.candidate_indices.tolist(),
-            "candidate_probabilities": (
-                association.candidate_probabilities.tolist()
-            ),
+            "candidate_probabilities": (association.candidate_probabilities.tolist()),
             "prior_reliability_mean": float(
                 np.mean(association.prior_reliability[association.support])
             ),
@@ -446,9 +439,7 @@ def predict_case(
             "temporal_covariance_inflation": (
                 endpoint.temporal_covariance_inflation.tolist()
             ),
-            "final_inlier_probability": (
-                endpoint.final_inlier_probability.tolist()
-            ),
+            "final_inlier_probability": (endpoint.final_inlier_probability.tolist()),
         }
     if update is not None and update.accepted:
         sparse_diagnostics["graph_update"] = {

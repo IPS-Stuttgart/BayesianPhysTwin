@@ -143,12 +143,9 @@ def evaluate_transfer_panel(
     passing_count = sum(
         disposition["provider_gate_passed"] for disposition in dispositions
     )
-    eligible_rows = sum(
-        int(result["metrics"]["eligible_rows"]) for result in evaluated
-    )
+    eligible_rows = sum(int(result["metrics"]["eligible_rows"]) for result in evaluated)
     supported_rows = sum(
-        int(result["metrics"]["completed_supported_rows"])
-        for result in evaluated
+        int(result["metrics"]["completed_supported_rows"]) for result in evaluated
     )
     aggregate_support = supported_rows / max(eligible_rows, 1)
     balanced_rmse = _mean_metric(evaluated, "candidate_identity_rmse_m")
@@ -164,11 +161,7 @@ def evaluate_transfer_panel(
         >= float(gate_config["minimum_aggregate_supported_fraction"]),
         "case_balanced_relative_gain": balanced_gain is not None
         and balanced_gain
-        >= float(
-            gate_config[
-                "minimum_case_balanced_relative_gain_over_persistence"
-            ]
-        ),
+        >= float(gate_config["minimum_case_balanced_relative_gain_over_persistence"]),
         "case_balanced_identity_rmse": balanced_rmse is not None
         and balanced_rmse
         <= float(gate_config["maximum_case_balanced_identity_rmse_m"]),

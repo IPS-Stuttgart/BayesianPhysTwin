@@ -215,9 +215,7 @@ def _load_inputs(
             "masks": np.asarray(stored["object_masks"], bool),
             "cameras": np.asarray(stored["selected_cameras"], np.int64),
             "source_frame": np.asarray(stored["source_frame"], np.int64),
-            "train_end": np.asarray(
-                stored["train_end_frame_exclusive"], np.int64
-            ),
+            "train_end": np.asarray(stored["train_end_frame_exclusive"], np.int64),
         }
     result = {**strict, **source}
     _require(
@@ -466,7 +464,9 @@ def _evaluate(args: argparse.Namespace) -> None:
         source_end = int(stored["source_frame_end_exclusive"])
     _require(candidate.shape == strict.shape == target.shape, "target shape changed")
     _require(np.array_equal(identity_ids, target_ids), "target identities changed")
-    _require(source_start == int(protocol["source_frame_start"]), "target start changed")
+    _require(
+        source_start == int(protocol["source_frame_start"]), "target start changed"
+    )
     _require(
         source_end - source_start == int(protocol["prefix_frame_count"]),
         "target interval changed",
@@ -519,19 +519,15 @@ def _evaluate(args: argparse.Namespace) -> None:
             "supported_fraction": supported_fraction,
             "strict_identity_rmse_m": _radial_rmse(strict, target, strict_rows),
             "candidate_identity_rmse_m": candidate_rmse,
-            "fallback_identity_rmse_m": _radial_rmse(
-                candidate, target, fallback_rows
-            ),
+            "fallback_identity_rmse_m": _radial_rmse(candidate, target, fallback_rows),
             "persistence_identity_rmse_m": persistence_rmse,
             "relative_gain_over_persistence": relative_gain,
             "candidate_endpoint_rmse_m": endpoint_rmse,
         },
         "gates": gates,
-        (
-            "source_smoke_passed"
-            if is_source_smoke
-            else "provider_gate_passed"
-        ): all(gates.values()),
+        ("source_smoke_passed" if is_source_smoke else "provider_gate_passed"): all(
+            gates.values()
+        ),
         "decision": (
             (
                 "freeze-separate-opened-cohort-transfer-protocol"

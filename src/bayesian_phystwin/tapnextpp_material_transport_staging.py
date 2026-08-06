@@ -95,9 +95,7 @@ def validate_material_transport_provider_protocol(protocol: dict[str, Any]) -> N
         "case_name": "validation_case",
         "source_frame_start": 0,
         "source_frame_end_exclusive": int(selection["window_frames"]),
-        "selected_identity_ids": tuple(
-            range(int(selection["minimum_query_count"]))
-        ),
+        "selected_identity_ids": tuple(range(int(selection["minimum_query_count"]))),
         "selected_cameras": tuple(int(camera) for camera in cameras),
     }
     PhysTwinTAPNextPPCompetenceConfig(
@@ -179,9 +177,7 @@ def plan_material_transport_case(
         source_frame_start=source_start,
         source_frame_end_exclusive=train_end_frame_exclusive,
         selected_identity_ids=tuple(int(identity) for identity in identities),
-        selected_cameras=tuple(
-            int(camera) for camera in selection["selected_cameras"]
-        ),
+        selected_cameras=tuple(int(camera) for camera in selection["selected_cameras"]),
         **protocol["tracker_fixed_config"],
     )
     return MaterialTransportCasePlan(

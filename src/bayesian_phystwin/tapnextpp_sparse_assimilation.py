@@ -137,8 +137,7 @@ class SparseAssociation:
         _require(distances.shape == (identity_count,), "distance shape changed")
         _require(entropy.shape == (identity_count,), "entropy shape changed")
         _require(
-            predicted.ndim == 3
-            and predicted.shape[1:] == (identity_count, 3),
+            predicted.ndim == 3 and predicted.shape[1:] == (identity_count, 3),
             "predicted points must have shape (T, N, 3)",
         )
         _require(innovation.shape == predicted.shape, "innovation shape changed")
@@ -293,7 +292,9 @@ def associate_sparse_observations(
         and np.all((reliability >= 0.0) & (reliability <= 1.0)),
         "prior reliability must lie in [0, 1]",
     )
-    _require(np.all(reliability[~validity] == 0.0), "unsupported reliability must be zero")
+    _require(
+        np.all(reliability[~validity] == 0.0), "unsupported reliability must be zero"
+    )
     node_count = baseline.shape[1]
     neighbor_count = min(cfg.association_neighbor_count, node_count)
     source_delta = observations[0, :, None, :] - baseline[0, None, :, :]
@@ -305,9 +306,9 @@ def associate_sparse_observations(
         np.all(source_distance <= cfg.maximum_query_to_graph_distance_m),
         "a query is too far from the physical graph",
     )
-    centered_score = -(
-        candidate_squared - candidate_squared[:, :1]
-    ) / (2.0 * cfg.association_temperature_m**2)
+    centered_score = -(candidate_squared - candidate_squared[:, :1]) / (
+        2.0 * cfg.association_temperature_m**2
+    )
     centered_score -= np.max(centered_score, axis=1, keepdims=True)
     probabilities = np.exp(centered_score)
     probabilities /= np.sum(probabilities, axis=1, keepdims=True)
@@ -406,7 +407,9 @@ def associate_fixed_material_displacements(
         and np.all((reliability >= 0.0) & (reliability <= 1.0)),
         "prior reliability must lie in [0, 1]",
     )
-    _require(np.all(reliability[~validity] == 0.0), "unsupported reliability must be zero")
+    _require(
+        np.all(reliability[~validity] == 0.0), "unsupported reliability must be zero"
+    )
 
     predicted = baseline[:, nodes]
     source_offset = observations[0] - predicted[0]
@@ -432,14 +435,9 @@ def associate_fixed_material_displacements(
         cfg.minimum_material_attachment_std_m,
     )
     attachment_covariance = (
-        np.eye(3)[None, None]
-        * np.square(attachment_std)[None, :, None, None]
+        np.eye(3)[None, None] * np.square(attachment_std)[None, :, None, None]
     )
-    total_covariance = (
-        covariance
-        + covariance[:1]
-        + attachment_covariance
-    )
+    total_covariance = covariance + covariance[:1] + attachment_covariance
     candidates = nodes[:, None]
     probabilities = np.ones((identity_count, 1), dtype=np.float64)
     return SparseAssociation(
@@ -564,14 +562,15 @@ def robust_metric_random_walk_endpoint(
                 predicted_covariance - outlier_gain @ predicted_covariance,
                 floor=1e-12,
             )
-            mixture_mean = probability * inlier_mean + (1.0 - probability) * outlier_mean
+            mixture_mean = (
+                probability * inlier_mean + (1.0 - probability) * outlier_mean
+            )
             inlier_offset = inlier_mean - mixture_mean
             outlier_offset = outlier_mean - mixture_mean
-            mixture_covariance = (
-                probability
-                * (inlier_covariance + np.outer(inlier_offset, inlier_offset))
-                + (1.0 - probability)
-                * (outlier_covariance + np.outer(outlier_offset, outlier_offset))
+            mixture_covariance = probability * (
+                inlier_covariance + np.outer(inlier_offset, inlier_offset)
+            ) + (1.0 - probability) * (
+                outlier_covariance + np.outer(outlier_offset, outlier_offset)
             )
             mean[identity] = mixture_mean
             covariance[identity] = _psd(mixture_covariance, floor=1e-12)

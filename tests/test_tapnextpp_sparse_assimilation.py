@@ -73,9 +73,7 @@ def test_ambiguous_assignment_adds_metric_covariance() -> None:
     )
 
     assert association.entropy[0] > 0.0
-    assert np.max(
-        association.covariance_m2[:, 0] - covariance[:, 0]
-    ) > 0.0
+    assert np.max(association.covariance_m2[:, 0] - covariance[:, 0]) > 0.0
 
 
 def test_temporal_effective_sample_cap_bounds_duplicate_confidence() -> None:
@@ -97,8 +95,7 @@ def test_temporal_effective_sample_cap_bounds_duplicate_confidence() -> None:
     four = posterior(4)
     forty = posterior(40)
     assert np.all(
-        np.diag(forty.covariance_m2[0])
-        >= 0.95 * np.diag(four.covariance_m2[0])
+        np.diag(forty.covariance_m2[0]) >= 0.95 * np.diag(four.covariance_m2[0])
     )
     assert four.effective_row_count[0] == 4.0
     assert forty.effective_row_count[0] == 4.0

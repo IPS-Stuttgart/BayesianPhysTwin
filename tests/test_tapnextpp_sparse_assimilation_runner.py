@@ -51,9 +51,7 @@ def _artifacts(tmp_path: Path, *, provider_gate_passed: bool):
     prediction_input = tmp_path / "prediction_input.npz"
     np.savez_compressed(
         prediction_input,
-        prefix_object_points_m=baseline[:train_end, :original_count].astype(
-            np.float32
-        ),
+        prefix_object_points_m=baseline[:train_end, :original_count].astype(np.float32),
         prefix_object_visibilities=np.ones(
             (train_end, original_count),
             dtype=bool,

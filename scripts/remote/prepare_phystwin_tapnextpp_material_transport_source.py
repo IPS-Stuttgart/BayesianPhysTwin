@@ -131,9 +131,9 @@ def stage_material_transport_provider_panel(
                     "prediction_input_sha256": source_report["prediction_input"][
                         "sha256"
                     ],
-                    "withheld_prefix_sha256": source_report[
-                        "withheld_evaluation"
-                    ]["sha256"],
+                    "withheld_prefix_sha256": source_report["withheld_evaluation"][
+                        "sha256"
+                    ],
                     "material_attachment_sha256": file_sha256(attachment_path),
                 },
                 "selection": {
@@ -149,9 +149,7 @@ def stage_material_transport_provider_panel(
                 },
                 "claim_boundary": protocol["claim_boundary"],
             }
-            per_case_protocol["result_sha256"] = canonical_sha256(
-                per_case_protocol
-            )
+            per_case_protocol["result_sha256"] = canonical_sha256(per_case_protocol)
             tracker_protocol_path = case_root / "tracker_protocol.json"
             _write_json(tracker_protocol_path, per_case_protocol)
             record.update(
@@ -167,18 +165,16 @@ def stage_material_transport_provider_panel(
                     "material_node_indices": plan.material_node_indices.tolist(),
                     "tracker_protocol_path": str(tracker_protocol_path),
                     "tracker_protocol_sha256": file_sha256(tracker_protocol_path),
-                    "prediction_input_path": source_report["prediction_input"][
-                        "path"
-                    ],
+                    "prediction_input_path": source_report["prediction_input"]["path"],
                     "prediction_input_sha256": source_report["prediction_input"][
                         "sha256"
                     ],
                     "withheld_prefix_path": source_report["withheld_evaluation"][
                         "path"
                     ],
-                    "withheld_prefix_sha256": source_report[
-                        "withheld_evaluation"
-                    ]["sha256"],
+                    "withheld_prefix_sha256": source_report["withheld_evaluation"][
+                        "sha256"
+                    ],
                     "material_attachment_path": str(attachment_path),
                     "material_attachment_sha256": file_sha256(attachment_path),
                     "physical_trajectory_path": str(physical_path),
