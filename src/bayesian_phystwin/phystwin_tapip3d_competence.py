@@ -237,7 +237,7 @@ def _translation_diagnostics(
 ) -> dict[str, float | int | None]:
     bias_vectors: list[np.ndarray] = []
     centered_vectors: list[np.ndarray] = []
-    for frame_error, frame_valid in zip(displacement_error, valid):
+    for frame_error, frame_valid in zip(displacement_error, valid, strict=True):
         values = frame_error[frame_valid]
         if len(values) == 0:
             continue
