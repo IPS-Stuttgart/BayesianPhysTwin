@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 90
     env:
       BASE_SHA: 2a35d33827b760908342850bf32cad2e0cc2b01e
-      EXPECTED_HEAD_SHA: ef7e844e9a56b478767f21ad4a59313af8c1ca07
+      EXPECTED_HEAD_SHA: ecca72f9a9d70bb7729c0eb0166bab9d621647ee
       SOURCE_BRANCH: agent/query-calibration-v1
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONUNBUFFERED: "1"
@@ -70,7 +70,8 @@ jobs:
             src/bayesian_phystwin/query_calibration.py \
             tests/test_claim_bearing_identifier_types.py \
             tests/test_query_calibration.py \
-            tests/test_query_calibration_validation.py
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py
           git diff --check
           if git diff --quiet; then
             echo "Formatter produced no changes."
@@ -81,7 +82,8 @@ jobs:
               src/bayesian_phystwin/query_calibration.py \
               tests/test_claim_bearing_identifier_types.py \
               tests/test_query_calibration.py \
-              tests/test_query_calibration_validation.py
+              tests/test_query_calibration_validation.py \
+              tests/test_query_calibration_hardening.py
             git commit -m "Apply Ruff formatting"
             git push origin "HEAD:refs/heads/${SOURCE_BRANCH}"
           fi
@@ -102,6 +104,9 @@ jobs:
         run: |
           python -m coverage erase
           python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
+            tests/test_query_calibration.py \
+            tests/test_query_calibration_validation.py \
+            tests/test_query_calibration_hardening.py \
             tests/test_claim_bearing_identifier_types.py
           python -m coverage json -o query-calibration-coverage.json
           python - <<'PY'
