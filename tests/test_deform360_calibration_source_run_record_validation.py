@@ -54,6 +54,24 @@ def test_redigested_extra_field_cannot_enter_the_public_record(
     assert not output.exists()
 
 
+def test_source_lock_summary_cannot_be_redigested_into_another_shape(
+    tmp_path: Path,
+) -> None:
+    record = deepcopy(_success_record(tmp_path))
+    record["source_locks_valid"] = False
+    record["source_locks_error"] = "invalid-contract"
+    _redigested(record)
+
+    with pytest.raises(ValueError, match="retained lock evidence"):
+        validate_deform360_calibration_source_run_record(record)
+
+    record = deepcopy(_success_record(tmp_path))
+    record["visual_provider_lock_id"] = "not-a-sha256"
+    _redigested(record)
+    with pytest.raises(ValueError, match="visual_provider_lock_id"):
+        validate_deform360_calibration_source_run_record(record)
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     (
