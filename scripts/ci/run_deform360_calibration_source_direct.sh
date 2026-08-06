@@ -156,6 +156,7 @@ nvidia-smi \
   > "${EVIDENCE_ROOT}/pip-freeze.txt"
 
 files=(
+  scripts/ci/render_deform360_calibration_source_run_record.py
   scripts/science/deform360_calibration_source/__init__.py
   scripts/science/deform360_calibration_source/contracts.py
   scripts/science/deform360_calibration_source/planning.py
@@ -166,11 +167,14 @@ files=(
   src/bayesian_phystwin/_deform360_calibration_artifact_chain.py
   src/bayesian_phystwin/_deform360_calibration_run_common.py
   src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py
+  src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py
   src/bayesian_phystwin/deform360_calibration_source_run_record.py
   tests/test_deform360_official_hub_calibration_source.py
   tests/test_deform360_calibration_source_direct_workflow.py
   tests/test_deform360_calibration_source_run_record.py
+  tests/test_deform360_calibration_source_run_record_validation.py
   tests/test_deform360_calibration_source_workflow.py
+  tests/test_render_deform360_calibration_source_run_record.py
 )
 "${BASE_PYTHON}" -m ruff check "${files[@]}"
 "${BASE_PYTHON}" -m ruff format --check "${files[@]}"
@@ -179,17 +183,21 @@ bash -n scripts/ci/run_deform360_calibration_source_direct.sh
   tests/test_deform360_official_hub_calibration_source.py \
   tests/test_deform360_calibration_source_direct_workflow.py \
   tests/test_deform360_calibration_source_run_record.py \
+  tests/test_deform360_calibration_source_run_record_validation.py \
   tests/test_deform360_calibration_source_workflow.py \
   tests/test_deform360_calibration_execution.py \
   tests/test_deform360_visual_provider_freeze.py \
   tests/test_pull_request_workflow_integrity.py \
+  tests/test_render_deform360_calibration_source_run_record.py \
   | tee "${EVIDENCE_ROOT}/pytest.txt"
 "${BASE_PYTHON}" -m compileall -q \
+  scripts/ci/render_deform360_calibration_source_run_record.py \
   scripts/science/deform360_calibration_source \
   scripts/science/run_deform360_official_hub_calibration_source.py \
   src/bayesian_phystwin/_deform360_calibration_artifact_chain.py \
   src/bayesian_phystwin/_deform360_calibration_run_common.py \
   src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py \
+  src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py \
   src/bayesian_phystwin/deform360_calibration_source_run_record.py
 git diff --exit-code
 test -z "$(git status --porcelain --untracked-files=all)"
