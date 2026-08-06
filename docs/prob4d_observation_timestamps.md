@@ -39,8 +39,9 @@ where `delta_clock` is persistent within the named clock domain and each
 ## Claim-bearing loading and binding
 
 Internal or exploratory code can use the portable loader directly. A promoted
-or claim-bearing run must use the admission wrapper and supply the timestamp
-source digest from an independently frozen source/calibration manifest:
+or claim-bearing run must use the admission wrapper and supply both the raw
+source digest and the content ID of the separate source/calibration manifest
+that independently verified it:
 
 ```python
 from bayesian_phystwin.prob4d_observation_timestamp_admission import (
@@ -51,6 +52,7 @@ binding = load_claim_bearing_prob4d_observation_timestamp_binding(
     observation_belief,
     timestamp_lineage_path="outputs/case-a/timestamp-lineage.json",
     expected_timestamp_source_sha256=raw_timestamp_source_sha256,
+    timestamp_source_verification_artifact_id=source_manifest_artifact_id,
     bundle_manifest_path="outputs/case-a/factors.json",
     expected_bundle_manifest_sha256=bundle_manifest_sha256,
     row_factor_ids=row_factor_ids,
@@ -59,19 +61,23 @@ binding = load_claim_bearing_prob4d_observation_timestamp_binding(
 ```
 
 A sidecar content ID alone is insufficient for claim-bearing admission: forged
-source bytes and a forged sidecar could remain mutually self-consistent. The
+source bytes and a forged sidecar could remain mutually self-consistent. Merely
+passing a digest copied out of that sidecar would not improve the boundary. The
 wrapper therefore:
 
-- snapshots and hashes the exact sidecar bytes before loading;
+- snapshots and hashes the exact sidecar through a no-follow regular-file
+  descriptor before loading;
 - requires `source_artifact_sha256` to equal the independently supplied digest;
-- binds the source digest, sidecar digest, and sidecar artifact ID into immutable
-  content-addressed binding metadata;
+- requires a separate content-addressed verification artifact and refuses to let
+  the timestamp sidecar verify itself;
+- binds the source digest, verification artifact ID, sidecar digest, and sidecar
+  artifact ID into immutable content-addressed binding metadata;
 - loads and validates the exact factor bundle and row mapping; and
 - hashes the sidecar again after binding, rejecting replacement or identity
   changes during admission.
 
 The claim-bearing evidence keys are reserved and cannot be supplied or replaced
-through caller metadata. Symlinked sidecars are rejected.
+through caller metadata. Symlinked and non-regular sidecars are rejected.
 
 `row_factor_ids` is explicit because a factor can contribute several selected
 3-D rows, while the timestamp sidecar contains one timestamp record per factor.
@@ -129,15 +135,16 @@ relaxation.
 ## Information-order boundary
 
 Timestamp extraction, clock-domain definitions, conditional-jitter estimation,
-the raw timestamp-source digest, and a shared-offset prior must be frozen from
-source or calibration evidence before confirmation access. The consumer binds
-those choices but does not infer or retune them from target outcomes.
+the raw timestamp-source digest, its independent verification artifact, and a
+shared-offset prior must be frozen from source or calibration evidence before
+confirmation access. The consumer binds those choices but does not infer or
+retune them from target outcomes.
 
 ## Claim boundary
 
 A valid binding establishes byte identity, causal ordering, exact factor-to-row
-mapping, independent source-byte admission, and non-duplicated timing uncertainty
-semantics. It does not establish timestamp accuracy, transfer of a timing prior,
-physical-state identifiability, provider competence, calibrated target coverage,
-downstream physical-query improvement, Causal4D benefit, deployment safety, or
-state of the art.
+mapping, independently evidenced source-byte admission, and non-duplicated timing
+uncertainty semantics. It does not establish timestamp accuracy, transfer of a
+timing prior, physical-state identifiability, provider competence, calibrated
+target coverage, downstream physical-query improvement, Causal4D benefit,
+deployment safety, or state of the art.
