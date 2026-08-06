@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 90
     env:
       BASE_SHA: 2a35d33827b760908342850bf32cad2e0cc2b01e
-      EXPECTED_HEAD_SHA: 2131732703ad16f6d6b9888bfc194e46d9c05d3e
+      EXPECTED_HEAD_SHA: ef7e844e9a56b478767f21ad4a59313af8c1ca07
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONUNBUFFERED: "1"
     steps:
