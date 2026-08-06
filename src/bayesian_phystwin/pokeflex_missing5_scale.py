@@ -97,6 +97,13 @@ def _valid_digest(value: object) -> bool:
     return len(text) == 64 and all(char in "0123456789abcdef" for char in text)
 
 
+def _valid_git_revision(value: object) -> bool:
+    text = str(value)
+    return len(text) in (40, 64) and all(
+        char in "0123456789abcdef" for char in text
+    )
+
+
 def build_source_protocol(
     archive_inventory: Mapping[str, Mapping[str, Any]],
     *,
@@ -136,7 +143,10 @@ def build_source_protocol(
         all(_valid_digest(value) for value in implementation_hashes.values()),
         "implementation file digest is invalid",
     )
-    _require(_valid_digest(implementation_revision), "implementation revision is invalid")
+    _require(
+        _valid_git_revision(implementation_revision),
+        "implementation revision is invalid",
+    )
 
     payload: dict[str, Any] = {
         "schema_version": 1,
@@ -289,7 +299,7 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
         "upstream commit changed",
     )
     _require(
-        _valid_digest(implementation.get("revision")),
+        _valid_git_revision(implementation.get("revision")),
         "implementation revision is invalid",
     )
     for field in (
