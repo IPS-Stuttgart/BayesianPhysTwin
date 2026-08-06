@@ -20,7 +20,7 @@ jobs:
   export:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out exact reviewed head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,24 +34,95 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Produce canonical Ruff output
+      - name: Create isolated quality environment
         shell: bash
         run: |
           set -euo pipefail
           root="${RUNNER_TEMP}/pr175-format-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           rm -rf "${root}"
           python -m venv "${root}/venv"
+          echo "${root}/venv/bin" >> "${GITHUB_PATH}"
           "${root}/venv/bin/python" -m pip install \
             "pip==25.2" \
-            "ruff==0.16.1"
-          "${root}/venv/bin/python" -m ruff check --fix --select I001 \
+            "ruff==0.16.1" \
+            "mypy==2.3.0" \
+            "numpy==2.2.6"
+
+      - name: Make producer copies explicit and annotate arrays
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/prob4d_visual_bias_stream.py")
+          source = path.read_text(encoding="utf-8")
+          start_marker = '        raw_updates = _exact_tuple(source.updates, name="updates")\n'
+          end_marker = '        return ValidatedProb4DVisualBiasStreamV1(\n'
+          start = source.index(start_marker)
+          end = source.index(end_marker, start)
+          replacement = "\n".join(
+              [
+                  '        raw_updates = _exact_tuple(source.updates, name="updates")',
+                  '        copied_updates: list[Prob4DVisualBiasStreamUpdateBindingV1] = []',
+                  '        for raw_update in raw_updates:',
+                  '            update = cast(Any, raw_update)',
+                  '            copied_updates.append(',
+                  '                Prob4DVisualBiasStreamUpdateBindingV1(',
+                  '                    bias_model_id=update.bias_model_id,',
+                  '                    observation_stream_update_id=update.observation_stream_update_id,',
+                  '                    visual_bias_artifact_id=update.visual_bias_artifact_id,',
+                  '                    observation_artifact_id=update.observation_artifact_id,',
+                  '                    observation_identity_sha256=update.observation_identity_sha256,',
+                  '                    frame_start=update.frame_start,',
+                  '                    frame_stop_exclusive=update.frame_stop_exclusive,',
+                  '                    row_start=update.row_start,',
+                  '                    row_stop_exclusive=update.row_stop_exclusive,',
+                  '                    maximum_gauge_projection=update.maximum_gauge_projection,',
+                  '                    previous_update_id=update.previous_update_id,',
+                  '                    update_id=update.update_id,',
+                  '                )',
+                  '            )',
+                  '        updates = tuple(copied_updates)',
+                  '',
+              ]
+          )
+          source = source[:start] + replacement + source[end:]
+          old_expected = "            expected_rows = np.full("
+          old_result = "        result = np.zeros("
+          if source.count(old_expected) != 1 or source.count(old_result) != 1:
+              raise RuntimeError("array annotation targets changed unexpectedly")
+          source = source.replace(
+              old_expected,
+              "            expected_rows: np.ndarray = np.full(",
+              1,
+          ).replace(
+              old_result,
+              "        result: np.ndarray = np.zeros(",
+              1,
+          )
+          path.write_text(source, encoding="utf-8")
+          PY
+
+      - name: Produce and verify canonical files
+        run: |
+          python -m ruff check --fix --select I001 \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py
-          "${root}/venv/bin/python" -m ruff format \
+          python -m ruff format \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py
+          python -m ruff check \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+          python -m mypy src/bayesian_phystwin/prob4d_visual_bias_stream.py
 
       - name: Upload formatted files
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
