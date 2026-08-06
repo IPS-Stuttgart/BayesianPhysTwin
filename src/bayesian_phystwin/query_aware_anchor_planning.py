@@ -17,12 +17,14 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
 from .nuisance_aware_information import NuisanceAwareInformationState
 
 _NUMERICAL_TOLERANCE = 1e-12
+_CONTRACT_TOLERANCE = 1e-10
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -38,7 +40,61 @@ def _nonnegative_integer(value: object, *, name: str) -> int:
     return result
 
 
-def _finite_matrix(value: np.ndarray, *, name: str) -> np.ndarray:
+def _finite_real(
+    value: object,
+    *,
+    name: str,
+    minimum: float | None = None,
+    strictly_positive: bool = False,
+) -> float:
+    if isinstance(value, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a finite real number")
+    raw = np.asarray(value)
+    if raw.shape != () or raw.dtype.kind not in "iuf":
+        raise ValueError(f"{name} must be a finite real number")
+    result = float(raw.item())
+    if not np.isfinite(result):
+        raise ValueError(f"{name} must be finite")
+    if minimum is not None and result < minimum:
+        raise ValueError(f"{name} must be at least {minimum}")
+    if strictly_positive and result <= 0.0:
+        raise ValueError(f"{name} must be positive")
+    return result
+
+
+def _immutable_array(value: object, *, dtype: np.dtype[Any]) -> np.ndarray:
+    """Return a C-contiguous array backed by immutable ``bytes`` storage."""
+
+    array = np.array(value, dtype=dtype, copy=True, order="C")
+    if array.dtype.hasobject:
+        raise TypeError("planner arrays must not contain Python objects")
+    payload = array.tobytes(order="C")
+    return np.frombuffer(payload, dtype=array.dtype).reshape(array.shape)
+
+
+def _integer_vector(value: object, *, name: str) -> np.ndarray:
+    raw = np.asarray(value)
+    integer_dtype = np.issubdtype(raw.dtype, np.integer) and not np.issubdtype(
+        raw.dtype,
+        np.bool_,
+    )
+    _require(raw.ndim == 1 and integer_dtype, f"{name} must be an integer vector")
+    if np.issubdtype(raw.dtype, np.unsignedinteger):
+        _require(
+            not np.any(raw > np.iinfo(np.int64).max),
+            f"{name} contains integers outside int64 range",
+        )
+    return _immutable_array(raw, dtype=np.dtype(np.int64))
+
+
+def _finite_vector(value: object, *, name: str) -> np.ndarray:
+    result = np.asarray(value, dtype=np.float64)
+    _require(result.ndim == 1, f"{name} must be a vector")
+    _require(np.all(np.isfinite(result)), f"{name} contains non-finite values")
+    return result
+
+
+def _finite_matrix(value: object, *, name: str) -> np.ndarray:
     result = np.asarray(value, dtype=np.float64)
     _require(result.ndim == 2, f"{name} must be a matrix")
     _require(np.all(np.isfinite(result)), f"{name} contains non-finite values")
@@ -48,6 +104,8 @@ def _finite_matrix(value: np.ndarray, *, name: str) -> np.ndarray:
 def _marginal_state_covariance(
     state: NuisanceAwareInformationState,
 ) -> np.ndarray:
+    if not isinstance(state, NuisanceAwareInformationState):
+        raise TypeError("state must be a NuisanceAwareInformationState")
     precision = state.marginal_state_precision()
     try:
         cholesky = np.linalg.cholesky(precision)
@@ -63,7 +121,7 @@ def _marginal_state_covariance(
         np.all(np.isfinite(covariance)),
         "marginal state covariance contains non-finite values",
     )
-    return covariance
+    return _immutable_array(covariance, dtype=np.dtype(np.float64))
 
 
 def query_covariance(
@@ -74,9 +132,11 @@ def query_covariance(
 
     ``query_jacobian`` maps physical-state coefficients to query coordinates.
     Nuisance coefficients are marginalized before the query covariance is
-    formed. The returned array is a detached read-only value.
+    formed. The returned array is detached and irreversibly read-only.
     """
 
+    if not isinstance(state, NuisanceAwareInformationState):
+        raise TypeError("state must be a NuisanceAwareInformationState")
     query = _finite_matrix(query_jacobian, name="query_jacobian")
     _require(query.shape[0] >= 1, "query_jacobian must contain at least one row")
     _require(
@@ -95,8 +155,7 @@ def query_covariance(
         float(np.min(eigenvalues)) >= -_NUMERICAL_TOLERANCE * scale,
         "query covariance is not positive semidefinite",
     )
-    covariance.setflags(write=False)
-    return covariance
+    return _immutable_array(covariance, dtype=np.dtype(np.float64))
 
 
 def query_variance_trace(
@@ -108,7 +167,7 @@ def query_variance_trace(
     return float(np.trace(query_covariance(state, query_jacobian)))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class QueryAwareAnchorSelection:
     """Deterministic greedy anchor plan for one declared physical query."""
 
@@ -121,14 +180,25 @@ class QueryAwareAnchorSelection:
     final_state: NuisanceAwareInformationState
 
     def __post_init__(self) -> None:
-        indices = np.asarray(self.selected_indices, dtype=np.int64).copy()
-        reductions = np.asarray(
+        if not isinstance(self.final_state, NuisanceAwareInformationState):
+            raise TypeError("final_state must be a NuisanceAwareInformationState")
+        indices = _integer_vector(self.selected_indices, name="selected_indices")
+        reductions = _finite_vector(
             self.query_trace_reductions,
-            dtype=np.float64,
-        ).copy()
-        scores = np.asarray(self.score_per_cost, dtype=np.float64).copy()
-        costs = np.asarray(self.selected_costs, dtype=np.float64).copy()
-        _require(indices.ndim == 1, "selected_indices must be a vector")
+            name="query_trace_reductions",
+        )
+        scores = _finite_vector(self.score_per_cost, name="score_per_cost")
+        costs = _finite_vector(self.selected_costs, name="selected_costs")
+        initial_trace = _finite_real(
+            self.initial_query_variance_trace,
+            name="initial_query_variance_trace",
+            minimum=0.0,
+        )
+        final_trace = _finite_real(
+            self.final_query_variance_trace,
+            name="final_query_variance_trace",
+            minimum=0.0,
+        )
         _require(
             reductions.shape == indices.shape
             and scores.shape == indices.shape
@@ -141,41 +211,61 @@ class QueryAwareAnchorSelection:
             "selected_indices must be unique",
         )
         _require(
-            np.all(np.isfinite(reductions)) and np.all(reductions >= 0.0),
-            "query trace reductions must be finite and nonnegative",
+            np.all(reductions >= 0.0),
+            "query trace reductions must be nonnegative",
         )
-        _require(
-            np.all(np.isfinite(scores)) and np.all(scores >= 0.0),
-            "score_per_cost must be finite and nonnegative",
+        _require(np.all(scores >= 0.0), "score_per_cost must be nonnegative")
+        _require(np.all(costs > 0.0), "selected costs must be positive")
+
+        scale = max(
+            1.0,
+            initial_trace,
+            final_trace,
+            float(np.sum(reductions)),
         )
+        tolerance = _CONTRACT_TOLERANCE * scale
         _require(
-            np.all(np.isfinite(costs)) and np.all(costs > 0.0),
-            "selected costs must be finite and positive",
-        )
-        _require(
-            np.isfinite(self.initial_query_variance_trace)
-            and self.initial_query_variance_trace >= 0.0,
-            "initial query variance trace must be finite and nonnegative",
-        )
-        _require(
-            np.isfinite(self.final_query_variance_trace)
-            and self.final_query_variance_trace >= 0.0,
-            "final query variance trace must be finite and nonnegative",
-        )
-        scale = max(1.0, self.initial_query_variance_trace)
-        _require(
-            self.final_query_variance_trace
-            <= self.initial_query_variance_trace + _NUMERICAL_TOLERANCE * scale,
+            final_trace <= initial_trace + tolerance,
             "query variance increased after anchor selection",
         )
-        for name, value in (
-            ("selected_indices", indices),
-            ("query_trace_reductions", reductions),
-            ("score_per_cost", scores),
-            ("selected_costs", costs),
-        ):
-            value.setflags(write=False)
-            object.__setattr__(self, name, value)
+        _require(
+            np.allclose(
+                scores * costs,
+                reductions,
+                atol=tolerance,
+                rtol=_CONTRACT_TOLERANCE,
+            ),
+            "score, cost, and query reduction diagnostics are inconsistent",
+        )
+        expected_total = max(initial_trace - final_trace, 0.0)
+        _require(
+            np.isclose(
+                float(np.sum(reductions)),
+                expected_total,
+                atol=tolerance,
+                rtol=_CONTRACT_TOLERANCE,
+            ),
+            "query reduction diagnostics do not match the trace change",
+        )
+
+        object.__setattr__(self, "selected_indices", indices)
+        object.__setattr__(
+            self,
+            "query_trace_reductions",
+            _immutable_array(reductions, dtype=np.dtype(np.float64)),
+        )
+        object.__setattr__(
+            self,
+            "score_per_cost",
+            _immutable_array(scores, dtype=np.dtype(np.float64)),
+        )
+        object.__setattr__(
+            self,
+            "selected_costs",
+            _immutable_array(costs, dtype=np.dtype(np.float64)),
+        )
+        object.__setattr__(self, "initial_query_variance_trace", initial_trace)
+        object.__setattr__(self, "final_query_variance_trace", final_trace)
 
     @property
     def total_cost(self) -> float:
@@ -187,7 +277,7 @@ class QueryAwareAnchorSelection:
     def total_query_trace_reduction(self) -> float:
         """Return total expected reduction in query covariance trace."""
 
-        return self.initial_query_variance_trace - self.final_query_variance_trace
+        return float(np.sum(self.query_trace_reductions))
 
 
 def greedy_query_aware_selection(
@@ -217,6 +307,8 @@ def greedy_query_aware_selection(
     candidates that must not be counted as independent anchors.
     """
 
+    if not isinstance(prior, NuisanceAwareInformationState):
+        raise TypeError("prior must be a NuisanceAwareInformationState")
     query = _finite_matrix(query_jacobian, name="query_jacobian")
     _require(
         query.shape[1] == prior.state_dimension,
@@ -229,10 +321,10 @@ def greedy_query_aware_selection(
         "candidate input counts differ",
     )
     selection_count = _nonnegative_integer(count, name="count")
-    _require(
-        np.isfinite(minimum_trace_reduction)
-        and minimum_trace_reduction >= 0.0,
-        "minimum_trace_reduction must be finite and nonnegative",
+    minimum_reduction = _finite_real(
+        minimum_trace_reduction,
+        name="minimum_trace_reduction",
+        minimum=0.0,
     )
 
     if reliabilities is None:
@@ -247,11 +339,14 @@ def greedy_query_aware_selection(
     if costs is None:
         cost_values = np.ones(candidate_count, dtype=np.float64)
     else:
-        cost_values = np.asarray(costs, dtype=np.float64)
+        raw_costs = np.asarray(costs)
         _require(
-            cost_values.shape == (candidate_count,),
-            "cost candidate count differs",
+            raw_costs.shape == (candidate_count,)
+            and raw_costs.dtype.kind in "iuf"
+            and raw_costs.dtype.kind != "b",
+            "candidate costs must be a numeric vector",
         )
+        cost_values = np.asarray(raw_costs, dtype=np.float64)
         _require(
             np.all(np.isfinite(cost_values)) and np.all(cost_values > 0.0),
             "candidate costs must be finite and positive",
@@ -284,7 +379,10 @@ def greedy_query_aware_selection(
     selected_costs: list[float] = []
 
     while remaining and len(selected) < selection_count:
-        evaluations: dict[int, tuple[NuisanceAwareInformationState, float, float]] = {}
+        evaluations: dict[
+            int,
+            tuple[NuisanceAwareInformationState, float, float, float],
+        ] = {}
         for candidate in sorted(remaining):
             updated = state.add_observation(
                 state_jacobians[candidate],
@@ -301,22 +399,23 @@ def greedy_query_aware_selection(
                 )
             reduction = max(reduction, 0.0)
             score = reduction / float(cost_values[candidate])
-            evaluations[candidate] = (updated, reduction, score)
+            evaluations[candidate] = (updated, updated_trace, reduction, score)
 
-        best_score = max(evaluation[2] for evaluation in evaluations.values())
+        best_score = max(evaluation[3] for evaluation in evaluations.values())
+        tie_tolerance = _NUMERICAL_TOLERANCE * max(1.0, abs(best_score))
         tied = [
             candidate
             for candidate, evaluation in evaluations.items()
             if np.isclose(
-                evaluation[2],
+                evaluation[3],
                 best_score,
                 rtol=0.0,
-                atol=_NUMERICAL_TOLERANCE,
+                atol=tie_tolerance,
             )
         ]
         chosen = min(tied)
-        chosen_state, chosen_reduction, chosen_score = evaluations[chosen]
-        if chosen_reduction <= minimum_trace_reduction:
+        chosen_state, chosen_trace, chosen_reduction, chosen_score = evaluations[chosen]
+        if chosen_reduction <= minimum_reduction:
             break
 
         selected.append(chosen)
@@ -324,7 +423,7 @@ def greedy_query_aware_selection(
         scores.append(chosen_score)
         selected_costs.append(float(cost_values[chosen]))
         state = chosen_state
-        current_trace = query_variance_trace(state, query)
+        current_trace = chosen_trace
 
         chosen_group = group_values[chosen]
         if chosen_group is None:
@@ -345,3 +444,11 @@ def greedy_query_aware_selection(
         final_query_variance_trace=current_trace,
         final_state=state,
     )
+
+
+__all__ = [
+    "QueryAwareAnchorSelection",
+    "greedy_query_aware_selection",
+    "query_covariance",
+    "query_variance_trace",
+]
