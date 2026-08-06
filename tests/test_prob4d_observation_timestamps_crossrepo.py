@@ -1,38 +1,44 @@
 from __future__ import annotations
 
+import importlib
 import os
 from pathlib import Path
+from types import ModuleType
 
 import numpy as np
 import pytest
-
-_REQUIRED_WORKFLOW = "Prob4D observation timestamp consumer"
-
-try:
-    from prob4d.observation_timestamp_lineage import (
-        ObservationTimestampLineageV1,
-        write_observation_timestamp_lineage,
-    )
-except ModuleNotFoundError:
-    if (
-        os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
-        or os.environ.get("GITHUB_WORKFLOW") == _REQUIRED_WORKFLOW
-    ):
-        raise
-    pytest.skip(
-        "Prob4D parity is validated by the dedicated timestamp consumer workflow",
-        allow_module_level=True,
-    )
 
 from bayesian_phystwin.prob4d_observation_timestamps import (
     load_prob4d_observation_timestamp_lineage,
 )
 
+_REQUIRED_WORKFLOW = "Prob4D observation timestamp consumer"
+
+
+def _load_prob4d_timestamp_lineage() -> ModuleType:
+    try:
+        return importlib.import_module("prob4d.observation_timestamp_lineage")
+    except ModuleNotFoundError as exc:
+        if (
+            exc.name != "prob4d"
+            or os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
+            or os.environ.get("GITHUB_WORKFLOW") == _REQUIRED_WORKFLOW
+        ):
+            raise
+        pytest.skip(
+            "Prob4D parity is validated by the dedicated timestamp consumer workflow",
+            allow_module_level=True,
+        )
+        raise AssertionError("pytest.skip returned unexpectedly")
+
+
+_prob4d_timestamp_lineage = _load_prob4d_timestamp_lineage()
+
 
 def test_actual_prob4d_timestamp_sidecar_has_exact_consumer_identity(
     tmp_path: Path,
 ) -> None:
-    producer = ObservationTimestampLineageV1(
+    producer = _prob4d_timestamp_lineage.ObservationTimestampLineageV1(
         sequence_id="sequence-a",
         case_id="case-a",
         stream_id="stream-a",
@@ -56,7 +62,7 @@ def test_actual_prob4d_timestamp_sidecar_has_exact_consumer_identity(
         metadata={"calibration_partition": "source-only"},
     )
     path = tmp_path / "timestamp-lineage.json"
-    write_observation_timestamp_lineage(producer, path)
+    _prob4d_timestamp_lineage.write_observation_timestamp_lineage(producer, path)
 
     consumer = load_prob4d_observation_timestamp_lineage(path)
 
