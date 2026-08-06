@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapnextpp-sparse-assimilation-source-v1",
+  "status": "locked-before-future-assimilation-outcome",
+  "fixed_source_cases": [
+    "double_lift_cloth_1",
+    "double_stretch_sloth",
+    "double_lift_zebra",
+    "rope_double_hand",
+    "single_lift_rope",
+    "single_push_rope_4",
+    "single_lift_dinosor",
+    "weird_package"
+  ],
+  "provider_transfer": {
+    "protocol_id": "phystwin-tapnextpp-depth-completion-transfer-v1",
+    "summary_file_sha256": "ed555519be8f5bcc6e8a3734b9ce536f3692f4a1ee7a9bd97392e9861b7ae1d9",
+    "summary_result_sha256": "08e24ba766b2904312bfc8898fb9bfd92ffeae37e3e9de544a864ceff7fe8dc6",
+    "required_decision": "authorize-separately-frozen-opened-source-assimilation-study"
+  },
+  "dense_backbone": {
+    "method": "fixed robust endpoint persistence from released dense prefix pseudo-tracks",
+    "process_std_m": 0.001,
+    "observation_std_m": 0.005,
+    "initial_std_m": 0.01,
+    "inlier_prior": 0.95,
+    "outlier_variance_multiplier": 100.0,
+    "relative_cap_quantile": 0.95,
+    "relative_cap_multiplier": 1.0,
+    "temporal_gamma": 0.0,
+    "selection": "none; all settings fixed before future source outcomes"
+  },
+  "sparse_assimilation_config": {
+    "process_std_m": 0.001,
+    "initial_std_m": 0.01,
+    "inlier_prior": 0.95,
+    "outlier_variance_multiplier": 100.0,
+    "minimum_inlier_prior": 0.001,
+    "maximum_effective_rows_per_identity": 4.0,
+    "association_neighbor_count": 4,
+    "association_temperature_m": 0.005,
+    "maximum_query_to_graph_distance_m": 0.03,
+    "graph_prior_strength": 0.1,
+    "maximum_sparse_delta_m": 0.01,
+    "graph_covariance_probes": 32
+  },
+  "arms": {
+    "physical": "unmodified released PhysTwin rollout",
+    "dense_persistence": "fixed dense robust endpoint correction",
+    "tapnext_direct": "dense persistence plus robust sparse correction at geometry-MAP nodes",
+    "tapnext_graph": "dense persistence plus the same sparse correction smoothed on the PhysTwin spring graph"
+  },
+  "primary_arm": "tapnext_graph",
+  "primary_comparator": "dense_persistence",
+  "predictive_uq": {
+    "noise_floor_std_m": 0.005,
+    "future_rule": "posterior discrepancy variance plus random-walk growth by elapsed frames",
+    "coverage_level": 0.9,
+    "coverage_scope": "conditional isotropic graph-node discrepancy intervals; calibration not assumed"
+  },
+  "advancement_gates": {
+    "minimum_chamfer_gain": 0.05,
+    "minimum_all_track_gain": 0.05,
+    "minimum_observed_track_gain": 0.1,
+    "maximum_hidden_track_regression": 0.02,
+    "minimum_joint_case_nonregression_count": 6,
+    "minimum_hidden_future_frame_support": 0.95,
+    "minimum_coverage_90": 0.8
+  },
+  "retention_policy": {
+    "all_eight_cases_required": true,
+    "provider_gate_failures_use_exact_dense_fallback": true,
+    "technical_failures_retained": true,
+    "failed_cases_replaced": false,
+    "no_future_tuning_or_arm_switching": true
+  },
+  "information_boundary": {
+    "provider_inputs": "sealed causal RGB-D prefix predictions from the passed eight-case transfer study",
+    "dense_inputs": "released object pseudo-tracks strictly before each training boundary",
+    "association": "candidate probabilities use query-frame geometry only",
+    "prior_reliability": "provider confidence, mask/depth quality, carrier disagreement, and assignment entropy; never physical innovation",
+    "innovation": "processed once by a reliability-conditioned robust mixture likelihood",
+    "future_prediction": "physical rollout plus frozen discrepancy fields; no future real observation",
+    "future_evaluation": "staged source future opened only after each prediction seal",
+    "cohort": "previously opened exploratory source cases",
+    "held_v8_accessed": false,
+    "independent_target_opened": false
+  },
+  "advancement_rule": "Proceed to an independently preregistered fresh-object evaluation only if every documented accuracy, hidden-transfer, fallback, support, and calibration gate passes.",
+  "claim_boundary": "Eight-case opened-source Bayesian-PhysTwin assimilation study. It tests whether a sealed TAPNext++ RGB-D provider adds value beyond fixed dense persistence. Manual material identity is used only at the query frame and for post-seal source scoring. This is not independent confirmation, a fair open-loop SOTA claim, or authority to inspect held-v8."
+}
