@@ -168,6 +168,8 @@ def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
 
 
 # The stable-core coverage job invokes this file explicitly. Import the recursive
-# factor-stream contract cases here so their new package code is covered by the
-# same line and branch ratchets without duplicating the full-suite collection.
+# factor-stream and timestamp-binding contract cases here so their new package
+# code is covered by the same line and branch ratchets without duplicating the
+# coverage command in the workflow.
 from prob4d_factor_stream_contract_cases import *  # noqa: E402,F403
+from test_prob4d_observation_timestamp_binding_invariants import *  # noqa: E402,F403

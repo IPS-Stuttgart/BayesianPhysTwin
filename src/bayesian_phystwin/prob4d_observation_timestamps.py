@@ -583,6 +583,10 @@ class Prob4DObservationTimestampBindingV1:
         ):
             if array.shape != factor_shape:
                 raise ValueError(f"{name} must have shape {factor_shape}")
+        if np.any(factor_frames < 0):
+            raise ValueError("factor_frame_indices must be nonnegative")
+        if np.any(factor_timestamps < 0):
+            raise ValueError("factor_timestamps_ns must be nonnegative")
         row_shape = row_factors.shape
         if row_factors.ndim != 1 or row_shape == (0,):
             raise ValueError("row_factor_indices must be a nonempty vector")
@@ -590,6 +594,25 @@ class Prob4DObservationTimestampBindingV1:
             raise ValueError("row timestamp arrays must match row_factor_indices")
         if np.any(row_factors < 0) or np.any(row_factors >= len(factor_ids)):
             raise ValueError("row_factor_indices reference an unknown factor")
+        expected_row_timestamps = np.asarray(
+            factor_timestamps[row_factors],
+            dtype=np.float64,
+        )
+        expected_row_timestamps *= 1e-9
+        expected_row_jitter = np.asarray(
+            factor_jitter[row_factors],
+            dtype=np.float64,
+        )
+        expected_row_jitter *= 1e-9
+        if not np.array_equal(row_timestamps, expected_row_timestamps):
+            raise ValueError(
+                "row_timestamps_s do not match factor timestamps and row mapping"
+            )
+        if not np.array_equal(row_jitter, expected_row_jitter):
+            raise ValueError(
+                "row_conditional_timestamp_std_s does not match factor jitter "
+                "and row mapping"
+            )
         if self.timestamp_uncertainty_semantics != (
             PROB4D_TIMESTAMP_UNCERTAINTY_SEMANTICS
         ):
