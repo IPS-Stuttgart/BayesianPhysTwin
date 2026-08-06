@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 from bayesian_phystwin.claim_bundle_v1 import (
+    CLAIM_EVIDENCE_BINDING_SCHEMA,
+    CLAIM_EVIDENCE_BINDING_SCHEMA_VERSION,
     ClaimBundleArtifactV1,
     build_claim_bundle,
     claim_bundle_artifact,
@@ -31,7 +33,11 @@ from bayesian_phystwin.paper_evidence_v1 import (
     embed_paper_evidence_bindings,
 )
 from bayesian_phystwin.repository_provenance import RepositoryState
-from bayesian_phystwin.run_manifest import ArtifactDigest, artifact_digest
+from bayesian_phystwin.run_manifest import (
+    ArtifactDigest,
+    artifact_digest,
+    sha256_file,
+)
 from bayesian_phystwin.run_manifest_v2 import RunManifestV2, write_run_manifest
 
 
@@ -177,32 +183,69 @@ def _summary(*, protocol_id: str = "deform360-independent-object-v1") -> dict:
     }
 
 
+def _claim_binding_payload(
+    manifest: RunManifestV2,
+    *,
+    summary_path: Path,
+    table_path: Path,
+) -> dict:
+    bindings = []
+    for claim_id in manifest.claim_ids:
+        bindings.append(
+            {
+                "artifact_root": ".",
+                "claim_id": claim_id,
+                "expected_evidence_fingerprint": manifest.evidence_fingerprint,
+                "expected_manifest_id": manifest.manifest_id,
+                "manifest": "run-manifest.json",
+                "result_artifact": {
+                    "name": "decisive_evidence_summary",
+                    "path": summary_path.name,
+                    "sha256": sha256_file(summary_path),
+                },
+                "table_artifact": {
+                    "name": "object_results_table",
+                    "path": table_path.name,
+                    "sha256": sha256_file(table_path),
+                },
+                "table_row_id": f"{claim_id}.primary",
+            }
+        )
+    return {
+        "bindings": bindings,
+        "migration_exceptions": [],
+        "schema_name": CLAIM_EVIDENCE_BINDING_SCHEMA,
+        "schema_version": CLAIM_EVIDENCE_BINDING_SCHEMA_VERSION,
+    }
+
+
 def _bundle_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path]:
+    manifest = _manifest(root)
     manifest_path = root / "run-manifest.json"
-    write_run_manifest(manifest_path, _manifest(root))
+    write_run_manifest(manifest_path, manifest)
     summary_path = root / "evidence-summary.json"
     summary_path.write_text(
         json.dumps(_summary(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    binding_path = root / "claim-binding.json"
-    binding_path.write_text(
-        json.dumps(
-            {
-                "claims": [
-                    "bpt.deform360.guard",
-                    "bpt.deform360.calibration",
-                ]
-            },
-            sort_keys=True,
-        )
-        + "\n",
         encoding="utf-8",
     )
     figure_path = root / "risk-coverage.svg"
     figure_path.write_text("<svg></svg>\n", encoding="utf-8")
     table_path = root / "object-results.csv"
     table_path.write_text("object,loss\n001,1.0\n", encoding="utf-8")
+    binding_path = root / "claim-binding.json"
+    binding_path.write_text(
+        json.dumps(
+            _claim_binding_payload(
+                manifest,
+                summary_path=summary_path,
+                table_path=table_path,
+            ),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return manifest_path, summary_path, binding_path, figure_path, table_path
 
 
@@ -343,6 +386,111 @@ def test_claim_bundle_rejects_missing_paper_profile_and_reserved_extra(
         )
 
 
+def test_claim_bundle_rejects_unbound_or_migrated_paper_claims(
+    tmp_path: Path,
+) -> None:
+    manifest_path, summary_path, binding_path, _figure, table_path = _bundle_inputs(
+        tmp_path
+    )
+    manifest = _manifest(tmp_path)
+    table_artifact = claim_bundle_artifact(
+        table_path,
+        name="object_results_table",
+        kind="table_data",
+        root=tmp_path,
+    )
+
+    payload = json.loads(binding_path.read_text(encoding="utf-8"))
+    payload["bindings"][0]["expected_manifest_id"] = "f" * 64
+    binding_path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="selects another manifest"):
+        build_claim_bundle(
+            run_manifest_path=manifest_path,
+            evidence_summary_path=summary_path,
+            claim_binding_path=binding_path,
+            artifact_root=tmp_path,
+            additional_artifacts=(table_artifact,),
+        )
+
+    payload = _claim_binding_payload(
+        manifest,
+        summary_path=summary_path,
+        table_path=table_path,
+    )
+    payload["bindings"].pop()
+    binding_path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="do not match manifest claim IDs"):
+        build_claim_bundle(
+            run_manifest_path=manifest_path,
+            evidence_summary_path=summary_path,
+            claim_binding_path=binding_path,
+            artifact_root=tmp_path,
+            additional_artifacts=(table_artifact,),
+        )
+
+    payload = _claim_binding_payload(
+        manifest,
+        summary_path=summary_path,
+        table_path=table_path,
+    )
+    payload["migration_exceptions"] = [
+        {
+            "claim_id": manifest.claim_ids[0],
+            "reason": "legacy exception must not authorize a new bundle",
+        }
+    ]
+    binding_path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="cannot rely on migration exceptions"):
+        build_claim_bundle(
+            run_manifest_path=manifest_path,
+            evidence_summary_path=summary_path,
+            claim_binding_path=binding_path,
+            artifact_root=tmp_path,
+            additional_artifacts=(table_artifact,),
+        )
+
+    binding_path.write_text('{"claims": []}', encoding="utf-8")
+    with pytest.raises(ValueError, match="does not match schema"):
+        build_claim_bundle(
+            run_manifest_path=manifest_path,
+            evidence_summary_path=summary_path,
+            claim_binding_path=binding_path,
+            artifact_root=tmp_path,
+            additional_artifacts=(table_artifact,),
+        )
+
+
+def test_claim_bundle_publication_refuses_replacement_by_default(
+    tmp_path: Path,
+) -> None:
+    bundle, _figure = _build(tmp_path)
+    destination = tmp_path / "claim-bundle.json"
+
+    write_claim_bundle(destination, bundle)
+    with pytest.raises(FileExistsError, match="already exists"):
+        write_claim_bundle(destination, bundle)
+    write_claim_bundle(destination, bundle, overwrite=True)
+    assert load_claim_bundle(destination) == bundle
+
+
+def test_claim_bundle_rejects_symbolic_link_artifacts(tmp_path: Path) -> None:
+    target = tmp_path / "target.txt"
+    target.write_text("payload\n", encoding="utf-8")
+    link = tmp_path / "link.txt"
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("symbolic links are unavailable on this platform")
+
+    with pytest.raises(ValueError, match="must not be symbolic links"):
+        claim_bundle_artifact(
+            link,
+            name="linked",
+            kind="supporting",
+            root=tmp_path,
+        )
+
+
 def test_claim_bundle_cli_builds_validates_and_registers_route(
     tmp_path: Path,
     capsys,
@@ -351,31 +499,32 @@ def test_claim_bundle_cli_builds_validates_and_registers_route(
         _bundle_inputs(tmp_path)
     )
     bundle_path = tmp_path / "claim-bundle.json"
+    build_args = [
+        "build",
+        str(bundle_path),
+        "--artifact-root",
+        str(tmp_path),
+        "--run-manifest",
+        str(manifest_path),
+        "--evidence-summary",
+        str(summary_path),
+        "--claim-binding",
+        str(binding_path),
+        "--figure",
+        f"risk_coverage_figure={figure_path}",
+        "--table-data",
+        f"object_results_table={table_path}",
+    ]
 
-    assert (
-        claim_bundle_main(
-            [
-                "build",
-                str(bundle_path),
-                "--artifact-root",
-                str(tmp_path),
-                "--run-manifest",
-                str(manifest_path),
-                "--evidence-summary",
-                str(summary_path),
-                "--claim-binding",
-                str(binding_path),
-                "--figure",
-                f"risk_coverage_figure={figure_path}",
-                "--table-data",
-                f"object_results_table={table_path}",
-            ]
-        )
-        == 0
-    )
+    assert claim_bundle_main(build_args) == 0
     build_output = json.loads(capsys.readouterr().out)
     assert build_output["artifact_count"] == 5
     assert build_output["claim_count"] == 2
+
+    with pytest.raises(FileExistsError, match="already exists"):
+        claim_bundle_main(build_args)
+    assert claim_bundle_main([*build_args, "--force"]) == 0
+    capsys.readouterr()
 
     assert (
         claim_bundle_main(
