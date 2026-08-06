@@ -9,6 +9,10 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from bayesian_phystwin.deform360_calibration_source_run_record import (
+    load_deform360_calibration_source_run_record,
+)
+
 
 def _load_bound_record(
     path: Path,
@@ -17,10 +21,6 @@ def _load_bound_record(
     workflow_run_id: int,
     workflow_run_attempt: int,
 ) -> dict[str, Any]:
-    from bayesian_phystwin.deform360_calibration_source_run_record import (
-        load_deform360_calibration_source_run_record,
-    )
-
     record = load_deform360_calibration_source_run_record(path)
     if record["source_revision"] != source_revision:
         raise ValueError("execution-record source changed")
@@ -32,7 +32,7 @@ def _load_bound_record(
 
 
 def _artifact_lines(record: Mapping[str, Any]) -> list[str]:
-    lines = []
+    lines: list[str] = []
     for label, valid_key, error_key, digest_key in (
         ("plan", "plan_valid", "plan_error", "plan_sha256"),
         ("download", "download_valid", "download_error", "download_sha256"),
@@ -113,7 +113,10 @@ def issue_body(
     lines.extend(
         [
             "",
-            "This receipt contains no local paths, object identities, or target outcomes.",
+            (
+                "This receipt contains no local paths, object identities, "
+                "or target outcomes."
+            ),
         ]
     )
     return "\n".join(lines)
