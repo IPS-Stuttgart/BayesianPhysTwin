@@ -113,12 +113,18 @@ def robust_directional_endpoint_v2(
         raise ValueError("valid multiview residuals must be finite")
     if not np.all(np.isfinite(projectors)):
         raise ValueError("tangent projectors must be finite")
-    if not np.allclose(projectors, np.swapaxes(projectors, 1, 2), atol=1e-8):
+    if not np.allclose(
+        projectors,
+        np.swapaxes(projectors, 1, 2),
+        atol=1e-8,
+        rtol=0.0,
+    ):
         raise ValueError("tangent projectors must be symmetric")
     if not np.allclose(
         np.einsum("nij,njk->nik", projectors, projectors),
         projectors,
         atol=1e-7,
+        rtol=0.0,
     ):
         raise ValueError("tangent projectors must be idempotent")
     (
@@ -138,9 +144,9 @@ def robust_directional_endpoint_v2(
     )
 
     eigenvalues, eigenvectors = np.linalg.eigh(projectors)
-    if not np.allclose(eigenvalues[:, 0], 0.0, atol=1e-7):
+    if not np.allclose(eigenvalues[:, 0], 0.0, atol=1e-7, rtol=0.0):
         raise ValueError("each tangent projector must have one null direction")
-    if not np.allclose(eigenvalues[:, 1:], 1.0, atol=1e-7):
+    if not np.allclose(eigenvalues[:, 1:], 1.0, atol=1e-7, rtol=0.0):
         raise ValueError("each tangent projector must have rank two")
     normal_basis = np.swapaxes(eigenvectors[:, :, :1], 1, 2)
     tangent_basis = np.swapaxes(eigenvectors[:, :, 1:], 1, 2)
