@@ -16,10 +16,10 @@ The producer contract deliberately separates:
 
 1. **Conditional factor-local jitter.** `conditional_timestamp_std_ns` excludes
    the shared clock offset. BayesianPhysTwin maps each selected observation row
-   back to its exact source factor and can form one low-rank timing factor per
+   back to its exact source factor and forms one low-rank timing factor per
    recorded factor. Rows from the same factor therefore retain their common
-   timestamp perturbation, while different factors are independent under this
-   declared representation.
+   timestamp perturbation, while different factors are independent only under
+   this declared representation.
 2. **Coherent clock-domain offset.** One source/calibration-derived prior can be
    referenced by `shared_clock_offset_prior_artifact_id`. BayesianPhysTwin keeps
    this as an explicit timing state with design `dh/dt`; it is not inserted into
@@ -36,16 +36,21 @@ y_i = h_i(x) + (dh_i/dt) delta_clock
 where `delta_clock` is persistent within the named clock domain and each
 `epsilon_factor` has the producer-supplied conditional scale.
 
-## Loading and binding
+## Claim-bearing loading and binding
+
+Internal or exploratory code can use the portable loader directly. A promoted
+or claim-bearing run must use the admission wrapper and supply the timestamp
+source digest from an independently frozen source/calibration manifest:
 
 ```python
-from bayesian_phystwin.prob4d_observation_timestamps import (
-    load_prob4d_observation_timestamp_binding,
+from bayesian_phystwin.prob4d_observation_timestamp_admission import (
+    load_claim_bearing_prob4d_observation_timestamp_binding,
 )
 
-binding = load_prob4d_observation_timestamp_binding(
+binding = load_claim_bearing_prob4d_observation_timestamp_binding(
     observation_belief,
     timestamp_lineage_path="outputs/case-a/timestamp-lineage.json",
+    expected_timestamp_source_sha256=raw_timestamp_source_sha256,
     bundle_manifest_path="outputs/case-a/factors.json",
     expected_bundle_manifest_sha256=bundle_manifest_sha256,
     row_factor_ids=row_factor_ids,
@@ -53,10 +58,27 @@ binding = load_prob4d_observation_timestamp_binding(
 )
 ```
 
+A sidecar content ID alone is insufficient for claim-bearing admission: forged
+source bytes and a forged sidecar could remain mutually self-consistent. The
+wrapper therefore:
+
+- snapshots and hashes the exact sidecar bytes before loading;
+- requires `source_artifact_sha256` to equal the independently supplied digest;
+- binds the source digest, sidecar digest, and sidecar artifact ID into immutable
+  content-addressed binding metadata;
+- loads and validates the exact factor bundle and row mapping; and
+- hashes the sidecar again after binding, rejecting replacement or identity
+  changes during admission.
+
+The claim-bearing evidence keys are reserved and cannot be supplied or replaced
+through caller metadata. Symlinked sidecars are rejected.
+
 `row_factor_ids` is explicit because a factor can contribute several selected
 3-D rows, while the timestamp sidecar contains one timestamp record per factor.
 The loader requires one factor ID for every BayesianPhysTwin observation row and
-checks that each row frame equals its source factor frame.
+checks that each row frame equals its source factor frame. For a claim-bearing
+Prob4D path, these IDs should come from the independently validated sparse factor
+stack rather than being reconstructed from frame numbers.
 
 The bundle manifest is read from an exact SHA-256 snapshot. The consumer rejects
 schema drift, duplicate JSON keys, changed source identity, reordered factors,
@@ -107,14 +129,15 @@ relaxation.
 ## Information-order boundary
 
 Timestamp extraction, clock-domain definitions, conditional-jitter estimation,
-and a shared-offset prior must be frozen from source or calibration evidence
-before confirmation access. The consumer binds those choices but does not infer
-or retune them from target outcomes.
+the raw timestamp-source digest, and a shared-offset prior must be frozen from
+source or calibration evidence before confirmation access. The consumer binds
+those choices but does not infer or retune them from target outcomes.
 
 ## Claim boundary
 
 A valid binding establishes byte identity, causal ordering, exact factor-to-row
-mapping, and non-duplicated timing uncertainty semantics. It does not establish
-timestamp accuracy, transfer of a timing prior, physical-state identifiability,
-provider competence, calibrated target coverage, downstream physical-query
-improvement, Causal4D benefit, deployment safety, or state of the art.
+mapping, independent source-byte admission, and non-duplicated timing uncertainty
+semantics. It does not establish timestamp accuracy, transfer of a timing prior,
+physical-state identifiability, provider competence, calibrated target coverage,
+downstream physical-query improvement, Causal4D benefit, deployment safety, or
+state of the art.
