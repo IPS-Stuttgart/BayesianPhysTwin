@@ -52,7 +52,9 @@ def _marginal_state_covariance(
     try:
         cholesky = np.linalg.cholesky(precision)
     except np.linalg.LinAlgError as error:
-        raise ValueError("marginal state precision must be positive definite") from error
+        raise ValueError(
+            "marginal state precision must be positive definite"
+        ) from error
     identity = np.eye(state.state_dimension, dtype=np.float64)
     lower_solution = np.linalg.solve(cholesky, identity)
     covariance = np.linalg.solve(cholesky.T, lower_solution)
