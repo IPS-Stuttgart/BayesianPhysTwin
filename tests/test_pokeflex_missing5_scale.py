@@ -18,6 +18,7 @@ from bayesian_phystwin.pokeflex_missing5_scale import (
     build_source_protocol,
     build_source_result,
     protocol_sha256,
+    result_sha256,
     select_cross_validated_multiplier,
     source_take_ids,
     synthetic_control_summary,
@@ -31,6 +32,13 @@ REMOTE_RUNNER = (
 )
 FROZEN_PROTOCOL = (
     ROOT / "configs" / "sota" / "pokeflex_missing5_scale_source_v5.json"
+)
+FROZEN_RESULT = (
+    ROOT
+    / "results"
+    / "sota"
+    / "pokeflex_missing5_scale_source_v5"
+    / "source_result.json"
 )
 
 
@@ -145,6 +153,33 @@ def test_frozen_protocol_binds_archive_and_implementation_inventory() -> None:
         "f461ec19e0032097bbdb97a1cbf5f4e01c3fde33"
     )
     assert protocol["archive_inventory"]["selected_total_bytes"] == 147_077_299_078
+
+
+def test_frozen_source_result_passes_with_conservative_fallbacks() -> None:
+    result = json.loads(FROZEN_RESULT.read_text(encoding="utf-8"))
+
+    assert result["result_sha256"] == (
+        "49658508e9531abd43d966c0eeb56f4deec43db3234e0ea530f756955b6deee7"
+    )
+    assert result["result_sha256"] == result_sha256(result)
+    assert hashlib.sha256(FROZEN_RESULT.read_bytes()).hexdigest() == (
+        "2f666ce4060a488f036745ff9471acd39a79e2c2a7e0799c7c03e65075e75bf1"
+    )
+    assert result["source_gate"]["passed"] is True
+    assert result["source_gate"]["complete_take_count"] == 30
+    assert result["source_gate"]["source_action_regression_count"] == 0
+    assert result["source_gate"]["deployed_loo_held_action_regression_count"] == 0
+    assert {
+        name: row["multiplier"] for name, row in result["objects"].items()
+    } == {
+        "3dPrintedCylinder": 2.0,
+        "3dPrintedHeart": 1.5,
+        "3dPrintedPizza": 1.0,
+        "Pillow": 1.0,
+        "Sponge": 1.0,
+    }
+    assert result["official_target_outcomes_used"] is False
+    assert result["held_v8_accessed"] is False
 
 
 def test_selector_promotes_cross_action_safe_scale() -> None:
