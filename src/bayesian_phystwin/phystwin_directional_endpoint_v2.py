@@ -155,7 +155,7 @@ def robust_directional_endpoint_v2(
     mean = np.zeros((point_count, 3), dtype=np.float64)
     identity_3 = np.eye(3, dtype=np.float64)
     covariance = np.repeat((initial * identity_3)[None], point_count, axis=0)
-    final_probability = np.zeros(point_count, dtype=np.float64)
+    final_probability = np.full(point_count, inlier, dtype=np.float64)
     source_update_count = np.zeros(point_count, dtype=np.int64)
     tangent_update_count = np.zeros(point_count, dtype=np.int64)
     maximum_innovation_condition = np.zeros(point_count, dtype=np.float64)
