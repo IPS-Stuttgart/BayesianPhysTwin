@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Final
 
 DEFORM360_CALIBRATION_SOURCE_RUN_SCHEMA: Final = (
@@ -25,10 +25,32 @@ DEFORM360_CALIBRATION_DOWNLOAD_SCHEMA: Final = (
 DEFORM360_CALIBRATION_SOURCE_RESULT_SCHEMA: Final = (
     "bayesian-phystwin/deform360-calibration-source-result-v1"
 )
+DEFORM360_CALIBRATION_SOURCE_PROTOCOL_SCHEMA: Final = (
+    "bayesian-phystwin/deform360-official-hub-calibration-source-v1"
+)
+DEFORM360_STAGE0_SELECTION_SCHEMA: Final = (
+    "bayesian-phystwin/deform360-official-hub-selection-v1"
+)
+DEFORM360_VISUAL_PROVIDER_LOCK_SCHEMA: Final = (
+    "bayesian-phystwin.deform360-visual-provider-lock"
+)
 DEFORM360_CALIBRATION_SOURCE_PROTOCOL_ID: Final = (
     "deform360-official-hub-calibration-source-v1"
 )
+DEFORM360_PARENT_PROTOCOL_ID: Final = "deform360-official-hub-visuotactile-v1"
+DEFORM360_DATASET_REPOSITORY: Final = "brownu/deform360"
 DEFORM360_DATASET_REVISION: Final = "f804696d7a133908c7497ffdab43819d879b5cbc"
+DEFORM360_PROCESSING_REPOSITORY: Final = "lhy0807/deform360"
+DEFORM360_VISUAL_PROVIDER_LOCK_SEMANTICS: Final = (
+    "target-blind-prob4d-motioncrafter-producer-lock-v1"
+)
+DEFORM360_EXPECTED_TACTILE_BASELINE_POLICY: Final = {
+    "policy_id": "nearest-filename-timestamp-v1",
+    "maximum_absolute_distance_us": 600_000_000,
+    "minimum_runner_up_margin_us": 60_000_000,
+    "maximum_cross_sensor_span_us": 5_000_000,
+    "single_candidate_is_accepted_without_timestamp": True,
+}
 DEFORM360_CALIBRATION_SOURCE_RUN_CLAIM_BOUNDARY: Final = (
     "Execution and information-boundary evidence only. This record does not "
     "establish observation-provider competence, physical-query benefit, "
@@ -40,8 +62,12 @@ SUPPORT_GATE_EXIT_CODE: Final = 3
 RECORD_WRITE_EXIT_CODE: Final = 70
 EXPECTED_OBJECT_COUNT: Final = 10
 EXPECTED_OBJECTS_PER_STRATUM: Final = 5
+EXPECTED_CONFIRMATION_OBJECT_COUNT: Final = 12
+EXPECTED_CONFIRMATION_OBJECTS_PER_STRATUM: Final = 6
 MINIMUM_SUPPORTED_OBJECTS: Final = 8
 MINIMUM_SUPPORTED_PER_STRATUM: Final = 4
+MINIMUM_CAMERA_STREAMS: Final = 8
+MINIMUM_ALIGNED_FRAMES: Final = 81
 EXPECTED_STRATA: Final = ("sheet", "volumetric")
 ALLOWED_RESULT_OBJECT_STATUSES: Final = frozenset(
     {
@@ -77,6 +103,8 @@ _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 ObjectIdentity = tuple[str, int, str]
 ObjectIdentitySet = frozenset[ObjectIdentity]
+ExpectedUnit = tuple[int, str, str, str]
+ExpectedUnitMap = dict[str, ExpectedUnit]
 ObjectSupportSummary = tuple[
     ObjectIdentitySet,
     frozenset[str],
@@ -124,6 +152,18 @@ def load_json_object(path: Path) -> tuple[dict[str, Any], str]:
     return value, file_sha256
 
 
+def content_sha256(value: Mapping[str, Any]) -> str:
+    """Hash one complete canonical JSON object."""
+
+    encoded = json.dumps(
+        dict(value),
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def canonical_sha256(
     value: Mapping[str, Any],
     *,
@@ -133,13 +173,7 @@ def canonical_sha256(
 
     payload = dict(value)
     payload.pop(digest_key, None)
-    encoded = json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return content_sha256(payload)
 
 
 def exit_code(value: int, *, name: str) -> int:
@@ -177,6 +211,37 @@ def integer_field(
     if maximum is not None and value > maximum:
         raise ValueError(f"{name} exceeds {maximum}")
     return value
+
+
+def string_sequence(
+    value: object,
+    *,
+    name: str,
+    minimum_length: int = 0,
+) -> tuple[str, ...]:
+    if not isinstance(value, list) or any(type(item) is not str for item in value):
+        raise ValueError(f"{name} must be an array of strings")
+    result = tuple(value)
+    if len(result) < minimum_length or len(set(result)) != len(result):
+        raise ValueError(f"{name} has invalid support or duplicates")
+    return result
+
+
+def raw_object_path(value: object, *, name: str) -> tuple[str, str]:
+    """Validate a confined ``raw/<object>/...`` POSIX path."""
+
+    if type(value) is not str or "\\" in value:
+        raise ValueError(f"{name} must be a confined POSIX path")
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or len(path.parts) < 3
+        or path.parts[0] != "raw"
+        or any(part in {"", ".", ".."} for part in path.parts)
+        or path.as_posix() != value
+    ):
+        raise ValueError(f"{name} must remain below raw/<object>")
+    return value, path.parts[1]
 
 
 def object_support_counts(
