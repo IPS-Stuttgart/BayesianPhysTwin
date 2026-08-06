@@ -1,0 +1,201 @@
+name: Trusted exact-head validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: Open same-repository pull request number
+        required: true
+        type: string
+      expected_head_sha:
+        description: Exact 40-character pull-request head SHA reviewed by the operator
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: trusted-exact-head-${{ inputs.pull_request_number }}-${{ inputs.expected_head_sha }}
+  cancel-in-progress: false
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  validate:
+    name: Validate exact reviewed head on workstation2
+    environment: trusted-self-hosted-validation
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 180
+    steps:
+      - name: Provision control-plane Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify open same-repository pull request and exact head
+        id: pr
+        shell: bash
+        env:
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.request
+
+          repository = os.environ["REPOSITORY"]
+          pull_request_number = os.environ["PR_NUMBER"]
+          expected_head_sha = os.environ["EXPECTED_HEAD_SHA"].lower()
+          if re.fullmatch(r"[1-9][0-9]*", pull_request_number) is None:
+              raise SystemExit("pull_request_number must be a positive integer")
+          if re.fullmatch(r"[0-9a-f]{40}", expected_head_sha) is None:
+              raise SystemExit("expected_head_sha must be a full lowercase SHA-1")
+
+          url = (
+              f"{os.environ['API_URL']}/repos/{repository}/pulls/"
+              f"{pull_request_number}"
+          )
+          request = urllib.request.Request(
+              url,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              pull_request = json.load(response)
+
+          actual_head_sha = str(pull_request["head"]["sha"]).lower()
+          head_repository = pull_request["head"]["repo"]["full_name"]
+          base_repository = pull_request["base"]["repo"]["full_name"]
+          base_ref = pull_request["base"]["ref"]
+          state = pull_request["state"]
+          if state != "open":
+              raise SystemExit(f"pull request is not open: {state}")
+          if head_repository != repository or base_repository != repository:
+              raise SystemExit("only same-repository pull requests are admitted")
+          if base_ref != "main":
+              raise SystemExit(f"pull request base must be main, got {base_ref!r}")
+          if actual_head_sha != expected_head_sha:
+              raise SystemExit(
+                  "pull-request head moved or the expected SHA is wrong: "
+                  f"expected {expected_head_sha}, actual {actual_head_sha}"
+              )
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"head_sha={actual_head_sha}\n")
+              output.write(f"base_sha={pull_request['base']['sha']}\n")
+              output.write(f"head_ref={pull_request['head']['ref']}\n")
+          PY
+
+      - name: Check out exact verified pull-request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Verify checkout identity
+        shell: bash
+        env:
+          EXPECTED_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
+
+      - name: Create isolated validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/bpt-exact-head-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          mkdir -p "${root}/wheelhouse"
+          python -m venv "${root}/venv"
+          {
+            echo "VALIDATION_ROOT=${root}"
+            echo "VALIDATION_VENV=${root}/venv"
+          } >> "${GITHUB_ENV}"
+          echo "${root}/venv/bin" >> "${GITHUB_PATH}"
+
+      - name: Install exact reviewed source and development checks
+        run: |
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install ".[dev]"
+          python -m pip check
+          python -m pre_commit validate-config .pre-commit-config.yaml
+
+      - name: Run full source validation
+        run: |
+          python -m ruff check .
+          python -m ruff format --check .
+          python -m mypy src/bayesian_phystwin
+          python -m pytest -q -p no:cacheprovider
+          python -m compileall -q src tests
+
+      - name: Build and smoke-test the wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip wheel --no-deps . --wheel-dir "${VALIDATION_ROOT}/wheelhouse"
+          wheel="$(find "${VALIDATION_ROOT}/wheelhouse" -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "${wheel}"
+          installed="${VALIDATION_ROOT}/installed"
+          python -m venv "${installed}"
+          "${installed}/bin/python" -m pip install \
+            "pip==25.2" \
+            "${wheel}"
+          "${installed}/bin/python" -m pip check
+          "${installed}/bin/bpt" --help
+          sha256sum "${wheel}" > "${VALIDATION_ROOT}/wheel.sha256"
+
+      - name: Record exact validation evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "pull_request=${{ inputs.pull_request_number }}"
+            echo "head_sha=$(git rev-parse HEAD)"
+            echo "base_sha=${{ steps.pr.outputs.base_sha }}"
+            echo "head_ref=${{ steps.pr.outputs.head_ref }}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            python -m pip --version
+            python -m pip freeze --all
+          } > "${VALIDATION_ROOT}/environment.txt"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: bpt-exact-head-${{ inputs.pull_request_number }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.VALIDATION_ROOT }}/environment.txt
+            ${{ env.VALIDATION_ROOT }}/wheel.sha256
+          if-no-files-found: warn
+          retention-days: 30
