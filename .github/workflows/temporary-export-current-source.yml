@@ -5,6 +5,10 @@ on:
     branches: [agent/temporary-export-current-source-20260806]
     paths:
       - ".github/workflows/temporary-export-current-source.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-export-current-source.yml"
 
 permissions:
   contents: read
@@ -15,13 +19,16 @@ concurrency:
 
 jobs:
   export:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 20
     steps:
       - name: Check out exact source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
@@ -30,8 +37,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
-          archive="${RUNNER_TEMP}/bayesian-phystwin-source-${GITHUB_SHA}.tar.gz"
+          expected_sha="${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "${expected_sha}"
+          archive="${RUNNER_TEMP}/bayesian-phystwin-source-${expected_sha}.tar.gz"
           tar \
             --exclude=.git \
             --exclude='*.pyc' \
@@ -46,7 +54,7 @@ jobs:
       - name: Upload exact source archive
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: bayesian-phystwin-source-${{ github.sha }}
+          name: bayesian-phystwin-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             ${{ env.SOURCE_ARCHIVE }}
             ${{ env.SOURCE_CHECKSUM }}
