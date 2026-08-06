@@ -195,12 +195,12 @@ def test_complete_covariance_reparameterization_and_true_immutability() -> None:
     binding = _binding(observation)
     scale = 0.02
     design = binding.global_design().reshape(6, -1)
-    transformed = binding.reparameterized_design(
-        shared_bias_prior_std_m=scale
-    ).reshape(6, -1)
+    transformed = binding.reparameterized_design(shared_bias_prior_std_m=scale).reshape(
+        6, -1
+    )
     expected = design @ binding.joint_bias_covariance @ design.T
-    actual = transformed @ (scale**2 * np.eye(binding.latent_dimension)) @ (
-        transformed.T
+    actual = (
+        transformed @ (scale**2 * np.eye(binding.latent_dimension)) @ (transformed.T)
     )
     np.testing.assert_allclose(actual, expected, atol=1e-14, rtol=1e-12)
 
@@ -309,9 +309,7 @@ def test_one_call_v2_preserves_joint_prior_and_binds_lineage(monkeypatch) -> Non
         == binding.artifact_id
     )
     assert (
-        update.result.input_lineage[
-            "prob4d_visual_bias_marginal_covariance_added"
-        ]
+        update.result.input_lineage["prob4d_visual_bias_marginal_covariance_added"]
         is False
     )
     for array in (
