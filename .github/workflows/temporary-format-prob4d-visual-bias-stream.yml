@@ -1,0 +1,67 @@
+name: Temporary recursive visual-bias consumer formatter
+
+on:
+  push:
+    branches: [agent/prob4d-visual-bias-stream-binding]
+    paths:
+      - ".github/workflows/temporary-format-prob4d-visual-bias-stream.yml"
+      - "src/bayesian_phystwin/prob4d_visual_bias_stream.py"
+      - "tests/test_prob4d_visual_bias_stream.py"
+      - "tests/test_prob4d_visual_bias_stream_crossrepo.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-prob4d-visual-bias-stream-format-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact event revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Install the reviewed formatter version
+        run: python -m pip install "ruff==0.16.1"
+
+      - name: Format and lint the focused files
+        run: |
+          python -m ruff format \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+          python -m ruff check \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+
+      - name: Publish only against the unchanged branch head
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py; then
+            exit 0
+          fi
+          remote_head="$(git ls-remote origin refs/heads/agent/prob4d-visual-bias-stream-binding | cut -f1)"
+          test "${remote_head}" = "${GITHUB_SHA}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+          git commit -m "Format recursive visual-bias consumer"
+          git push origin HEAD:agent/prob4d-visual-bias-stream-binding
