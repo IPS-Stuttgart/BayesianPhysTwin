@@ -1,13 +1,14 @@
 """Fail-closed symmetric-positive-definite linear algebra.
 
 The backend deliberately exposes factorization, solves, whitening, log
-Determinants, and explicit inverse reconstruction as separate operations. It
+determinants, and explicit inverse reconstruction as separate operations. It
 never adds jitter, clips eigenvalues, or substitutes a pseudoinverse.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Real
 from typing import Final
 
 import numpy as np
@@ -39,12 +40,9 @@ def _literal_name(value: object) -> str:
 
 
 def _finite_nonnegative(value: object, *, name: str) -> float:
-    if isinstance(value, (bool, np.bool_)):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
         raise TypeError(f"{name} must be a real scalar")
-    try:
-        result = float(value)
-    except (TypeError, ValueError) as error:
-        raise TypeError(f"{name} must be a real scalar") from error
+    result = float(value)
     if not np.isfinite(result) or result < 0.0:
         raise ValueError(f"{name} must be finite and nonnegative")
     return result
@@ -117,11 +115,16 @@ class SPDSystem:
             raise ValueError("maximum_condition_number must be at least one")
 
         try:
-            candidate = np.asarray(value, dtype=np.float64)
+            untyped_candidate = np.asarray(value)
         except (TypeError, ValueError, OverflowError) as error:
             raise SPDValidationError(
                 f"{system_name} must be a numeric float64 matrix"
             ) from error
+        if untyped_candidate.dtype.kind not in "fiu":
+            raise SPDValidationError(
+                f"{system_name} must be a numeric float64 matrix"
+            )
+        candidate = untyped_candidate.astype(np.float64, copy=False)
         if candidate.ndim != 2 or candidate.shape[0] != candidate.shape[1]:
             raise SPDValidationError(f"{system_name} must be a square matrix")
         if candidate.shape[0] < 1:
@@ -197,9 +200,12 @@ class SPDSystem:
 
     def _right_hand_side(self, value: object, *, name: str) -> np.ndarray:
         try:
-            right = np.asarray(value, dtype=np.float64)
+            untyped_right = np.asarray(value)
         except (TypeError, ValueError, OverflowError) as error:
             raise SPDSolveError(f"{name} must be numeric") from error
+        if untyped_right.dtype.kind not in "fiu":
+            raise SPDSolveError(f"{name} must be numeric")
+        right = untyped_right.astype(np.float64, copy=False)
         if right.ndim not in (1, 2) or right.shape[0] != self.dimension:
             raise SPDSolveError(
                 f"{name} must have leading dimension {self.dimension}"
