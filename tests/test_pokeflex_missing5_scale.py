@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 import sys
@@ -27,6 +28,9 @@ from bayesian_phystwin.pokeflex_missing5_scale import (
 ROOT = Path(__file__).resolve().parents[1]
 REMOTE_RUNNER = (
     ROOT / "scripts" / "remote" / "run_pokeflex_missing5_scale_source_take.py"
+)
+FROZEN_PROTOCOL = (
+    ROOT / "configs" / "sota" / "pokeflex_missing5_scale_source_v5.json"
 )
 
 
@@ -124,6 +128,23 @@ def test_protocol_is_canonical_and_rejects_resigned_target_change() -> None:
     changed["protocol_sha256"] = protocol_sha256(changed)
     with pytest.raises(ValueError, match="official target"):
         validate_source_protocol(changed)
+
+
+def test_frozen_protocol_binds_archive_and_implementation_inventory() -> None:
+    protocol = json.loads(FROZEN_PROTOCOL.read_text(encoding="utf-8"))
+
+    validation = validate_source_protocol(protocol)
+
+    assert validation["protocol_sha256"] == (
+        "83737068dca8621e331bcd30c76bc2852509872e59d034d984dc931d7bf5e27a"
+    )
+    assert hashlib.sha256(FROZEN_PROTOCOL.read_bytes()).hexdigest() == (
+        "0671df8beaaa4e560a264599ab5edbedd2e66ad2a7e1f9181f1b71fdea5fc70a"
+    )
+    assert protocol["implementation"]["revision"] == (
+        "f461ec19e0032097bbdb97a1cbf5f4e01c3fde33"
+    )
+    assert protocol["archive_inventory"]["selected_total_bytes"] == 147_077_299_078
 
 
 def test_selector_promotes_cross_action_safe_scale() -> None:
