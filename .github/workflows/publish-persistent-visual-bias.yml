@@ -1,9 +1,8 @@
 name: Publish persistent visual-bias product
 
 on:
-  push:
-    branches:
-      - agent/persistent-prob4d-visual-bias-state
+  pull_request:
+    branches: [main]
     paths:
       - ".staging/persistent_visual_bias_payload.part*"
       - ".github/workflows/publish-persistent-visual-bias.yml"
@@ -17,7 +16,7 @@ concurrency:
 
 env:
   BASE_SHA: 034ed13b71841d7955abcefcad3fcc5adb96564c
-  PAYLOAD_BASE64_SHA256: 6c5a3d6612a4eceae4e675a2e64a329995f3b00f89db566126f7537c9c0028ae
+  PAYLOAD_BASE64_SHA256: 6c5a3d6612a4eceeae4e675a2e64a329995f3b00f89db566126f7537c9c0028ae
   PAYLOAD_TARGZ_SHA256: 51862256fd26e3c2eaeed1c2a0a5622a0b72374eb9a33ee2217539a3ff625e23
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
@@ -37,7 +36,7 @@ jobs:
       - name: Check out the staging branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.ref_name }}
+          ref: agent/persistent-prob4d-visual-bias-state
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -165,4 +164,4 @@ jobs:
           test ! -e .github/workflows/publish-persistent-visual-bias.yml
           test ! -d .staging
           git commit -m "Add persistent Prob4D visual-bias state inference"
-          git push --force-with-lease origin "HEAD:${GITHUB_REF_NAME}"
+          git push --force-with-lease origin "HEAD:agent/persistent-prob4d-visual-bias-state"
