@@ -36,9 +36,32 @@ plan = greedy_query_aware_selection(
 The planner ranks expected query-trace reduction per unit acquisition cost.
 Candidates sharing a non-null dependence-group identifier are mutually
 exclusive, which conservatively prevents duplicate points from one capture from
-being counted as independent anchors. Ties are deterministic.
+being counted as independent anchors. Ties are deterministic and resolve to the
+lowest original candidate index.
+
+## Contract checks
+
+The returned `QueryAwareAnchorSelection` is a checked diagnostic contract rather
+than an unconstrained report. It requires:
+
+- one unique nonnegative integer index per selected candidate;
+- one finite nonnegative query-trace reduction, score, and positive cost per
+  selected candidate;
+- `score_per_cost * selected_cost == query_trace_reduction` for every step;
+- the sum of stepwise reductions to equal the initial-to-final query-trace
+  change within the declared numerical tolerance;
+- a valid `NuisanceAwareInformationState` as the final joint information state;
+- no increase in the declared query variance; and
+- bytes-backed retained arrays whose NumPy writeability cannot be restored.
+
+`query_covariance(...)` applies the same immutable-storage rule. Invalid query
+geometry, non-finite inputs, boolean counts or costs, incoherent direct contract
+construction, and unhashable dependence groups fail closed.
+
+## Evidence boundary
 
 The plan is a source/calibration diagnostic, not outcome evidence. Candidate
 Jacobians, costs, reliabilities, dependence groups, and the query definition
 must be frozen before a confirmation cohort is opened. Selecting an anchor
-does not establish provider competence or downstream BayesianPhysTwin benefit.
+does not establish provider competence, realized physical-query improvement,
+calibrated coverage, deployment safety, Causal4D benefit, or state of the art.
