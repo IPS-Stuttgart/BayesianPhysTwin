@@ -1,19 +1,20 @@
 # Three-Repository Compatibility Gates
 
-The cross-repository CI has two deliberately different blocking layers plus an
-advisory latest-main canary:
+The cross-repository CI has three deliberately different blocking layers plus
+an advisory latest-main canary:
 
 ```text
 checked-in producer-neutral fixture -> BayesianPhysTwin + Causal4D consumers
-locked Prob4D wheel -> BayesianPhysTwin wheel -> locked Causal4D wheel
-latest Prob4D main -> BayesianPhysTwin wheel -> latest Causal4D main (canary)
+locked Prob4D wheel -> current BayesianPhysTwin wheel -> locked Causal4D wheel
+locked Prob4D wheel -> locked BayesianPhysTwin wheel -> locked Causal4D wheel
+latest Prob4D main -> current BayesianPhysTwin wheel -> latest Causal4D main (canary)
 ```
 
-The first two layers execute on every relevant pull request and use the committed
-[ecosystem compatibility lock](ecosystem_compatibility.md) unless an explicit
-manual or repository-dispatch override is supplied. The third layer runs on the
-weekly schedule or when explicitly requested and is allowed to fail without
-invalidating a compatible BayesianPhysTwin change.
+The blocking layers execute on every relevant pull request. They use the
+committed [ecosystem compatibility lock](ecosystem_compatibility.md) unless an
+explicit manual or repository-dispatch override selects companion refs. The
+canary runs on the weekly schedule or when explicitly requested and is allowed
+to fail without invalidating a compatible BayesianPhysTwin change.
 
 All layers use the public canonical `IPS-Stuttgart/Prob4D` and
 `IPS-Stuttgart/Causal4D` repositories without repository secrets.
@@ -34,14 +35,14 @@ and compatibility-lock fixture tests. This gate detects:
 
 The fixture gate does not execute Prob4D. It is a producer-neutral compatibility
 check and cannot by itself admit three-repository evidence. It also does not
-replace the installed-wheel path; both blocking jobs are required.
+replace either installed-wheel path.
 
-## Public Installed-Wheel Golden Path
+## Current-Source Installed-Wheel Golden Path
 
-The blocking gate executes the package boundary
+The primary forward-compatibility gate executes the package boundary
 
 ```text
-Prob4D -> BayesianPhysTwin -> Causal4D
+Prob4D -> current BayesianPhysTwin -> Causal4D
 ```
 
 without importing any repository from its source checkout. The runner requires
@@ -91,6 +92,23 @@ The test then verifies:
 
 Validators remain implemented in their owning repositories. The integration
 test shares only immutable artifacts and expected accept/reject decisions.
+
+## Exact Historical Lock Reproduction
+
+A separate blocking job reads the BayesianPhysTwin, Prob4D, and Causal4D commits
+from the same packaged lock, checks out all three exact revisions, verifies each
+checkout identity, and invokes the golden-path script from the historical
+BayesianPhysTwin source itself. This distinguishes two questions that must not be
+conflated:
+
+- does the current BayesianPhysTwin change remain compatible with the locked
+  companions; and
+- does the lock still identify the exact source combination whose successful run
+  created the compatibility evidence?
+
+The historical lane runs only when the committed lock is in force. An explicit
+companion override is a diagnostic compatibility run, not a reproduction of the
+version-1 lock.
 
 ## Latest-Main Canary
 
@@ -161,8 +179,9 @@ bash BayesianPhysTwin/scripts/run_three_repository_golden_path.sh \
   Causal4D
 ```
 
-The script always validates that all three installed wheels lie on compatible
-package lines. To persist the report and require exact locked companion commits:
+The current script always validates that all three installed wheels lie on
+compatible package lines. To persist the report and require exact locked
+companion commits:
 
 ```bash
 THREE_REPOSITORY_COMPATIBILITY_REPORT="$PWD/compatibility.json" \
@@ -171,11 +190,12 @@ THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS=true \
     BayesianPhysTwin Prob4D Causal4D
 ```
 
-The script requires a normal Linux or macOS Python installation with `venv`,
-`pip`, `git`, `tar`, and network access for build/runtime dependencies. It
-removes temporary source snapshots, wheels, and virtual environments on exit;
-an explicitly requested compatibility report remains outside that temporary
-root.
+To reproduce the historical lock locally, check out all three revisions from the
+lock and run the script from that locked BayesianPhysTwin checkout. The script
+requires a normal Linux or macOS Python installation with `venv`, `pip`, `git`,
+`tar`, and network access for build/runtime dependencies. It removes temporary
+source snapshots, wheels, and virtual environments on exit; an explicitly
+requested compatibility report remains outside that temporary root.
 
 ## GitHub Actions Public-Repository Policy
 
@@ -185,6 +205,7 @@ repositories directly. It does not probe repository access with a personal
 token and does not accept a `PROB4D_READ_TOKEN` secret.
 
 Checkout, build, artifact, lock-validation, or compatibility failure fails the
-blocking job explicitly. The producer-neutral fixture is never relabelled as a
-full three-repository result, and the latest-main canary is clearly separated
-from exact-lock evidence.
+blocking jobs explicitly. The producer-neutral fixture is never relabelled as a
+full three-repository result, the historical lane is not confused with current
+forward compatibility, and the latest-main canary is clearly separated from
+exact-lock evidence.
