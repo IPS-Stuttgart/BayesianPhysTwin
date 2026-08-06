@@ -121,6 +121,7 @@ jobs:
           manifest="${evidence_root}/execution-manifest.json"
           receipt="${evidence_root}/completion-receipt.json"
           python3 - "${manifest}" "${receipt}" <<'PY'
+          import hashlib
           import json
           import os
           from pathlib import Path
@@ -140,6 +141,27 @@ jobs:
                   "bayesian-phystwin.deform360-calibration-source-run"
               ):
                   raise ValueError("unexpected execution-record schema")
+              expected_digest = record.get("record_sha256")
+              payload = dict(record)
+              payload.pop("record_sha256", None)
+              actual_digest = hashlib.sha256(
+                  json.dumps(
+                      payload,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  ).encode("utf-8")
+              ).hexdigest()
+              if expected_digest != actual_digest:
+                  raise ValueError("execution-record digest changed")
+              if record.get("source_revision") != os.environ["BPT_SOURCE_SHA"]:
+                  raise ValueError("execution-record source changed")
+              if record.get("workflow_run_id") != int(os.environ["GITHUB_RUN_ID"]):
+                  raise ValueError("execution-record run changed")
+              if record.get("workflow_run_attempt") != int(
+                  os.environ["GITHUB_RUN_ATTEMPT"]
+              ):
+                  raise ValueError("execution-record attempt changed")
               lines.extend(
                   [
                       f"- status: `{record['status']}`",
@@ -172,7 +194,7 @@ jobs:
                   )
               elif record.get("result_error") is not None:
                   lines.append(f"- result record: `{record['result_error']}`")
-          except (OSError, UnicodeError, ValueError, KeyError, json.JSONDecodeError):
+          except (OSError, ValueError, KeyError):
               lines.extend(
                   [
                       "- status: `execution-record-unavailable`",
@@ -219,11 +241,25 @@ jobs:
           manifest="${EVIDENCE_ROOT:-}/execution-manifest.json"
           if [[ -f "${manifest}" ]]; then
             if python3 - "${manifest}" <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import hashlib
           import json
           from pathlib import Path
           import sys
 
           record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          expected_digest = record.get("record_sha256")
+          payload = dict(record)
+          payload.pop("record_sha256", None)
+          actual_digest = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          if expected_digest != actual_digest:
+              raise ValueError("execution-record digest changed")
           print(f"- Status: `{record['status']}`")
           print(f"- Exit code: `{record['exit_code']}`")
           print(
