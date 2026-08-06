@@ -23,7 +23,6 @@ from .bias_aware_belief import (
 )
 from .spd_system import (
     SPDConditionError,
-    SPDSolveError,
     SPDSystem,
     SPDSystemError,
     SPDValidationError,
@@ -376,7 +375,11 @@ def update_bias_aware_state_v2(
                 name="state prior covariance",
                 config=cfg,
             )
-            state_precision = state_prior_system.reconstruct_inverse()
+            state_information_root = state_prior_system.whiten(
+                np.eye(state_count, dtype=np.float64)
+            )
+            state_precision = state_information_root.T @ state_information_root
+            state_precision = 0.5 * (state_precision + state_precision.T)
         except SPDSystemError as error:
             diagnostics["numerical_failure_type"] = type(error).__name__
             diagnostics["numerical_failure"] = str(error)
