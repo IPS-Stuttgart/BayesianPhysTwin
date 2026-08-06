@@ -42,12 +42,13 @@ def test_three_repository_workflow_requires_public_prob4d_execution() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
     assert "Check out selected Prob4D producer" in text
+    assert "Check out locked Prob4D producer" in text
     assert "PROB4D_READ_TOKEN" not in text
     assert "prob4d-access" not in text
     assert "https://api.github.com/repos/IPS-Stuttgart/Prob4D" not in text
     assert "steps.prob4d-access.outputs.available" not in text
     assert "permissions:\n  contents: read" in text
-    assert text.count("persist-credentials: false") >= 8
+    assert text.count("persist-credentials: false") >= 11
 
 
 def test_three_repository_workflow_uses_lock_and_nonblocking_canary() -> None:
@@ -55,10 +56,13 @@ def test_three_repository_workflow_uses_lock_and_nonblocking_canary() -> None:
 
     assert "Resolve committed ecosystem lock" in text
     assert "data/ecosystem_compatibility_v1.json" in text
+    assert "locked_bpt_ref" in text
     assert "needs.resolve-lock.outputs.prob4d_ref" in text
     assert "needs.resolve-lock.outputs.causal4d_ref" in text
     assert "needs.resolve-lock.outputs.lock_enforced" in text
-    assert "Latest Prob4D and Causal4D main canary" in text
+    assert "Current BPT + selected Prob4D/Causal4D" in text
+    assert "Reproduce exact locked trio" in text
+    assert "Latest three-repository main canary" in text
     assert "continue-on-error: true" in text
     assert "THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS" in text
     assert "three-repository-compatibility.json" in text
