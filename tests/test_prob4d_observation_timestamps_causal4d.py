@@ -11,13 +11,18 @@ from typing import Any
 import numpy as np
 import pytest
 
+_REQUIRED_WORKFLOW = "Prob4D observation timestamp consumer"
+
 try:
     from causal4d.observation_clock_offset_prior import (
         OBSERVATION_TIME_CORRECTION_CONVENTION,
         ObservationClockOffsetPriorV1,
     )
 except ModuleNotFoundError:
-    if os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1":
+    if (
+        os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
+        or os.environ.get("GITHUB_WORKFLOW") == _REQUIRED_WORKFLOW
+    ):
         raise
     pytest.skip(
         "Causal4D parity is validated by the dedicated timestamp consumer workflow",
