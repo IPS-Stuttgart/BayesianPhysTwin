@@ -11,6 +11,12 @@ Requires clean Git checkouts at exact commits. Builds one wheel from each
 repository, installs only those wheels into a fresh virtual environment, copies
 the integration tests outside every source tree, and runs them in Python
 isolated mode.
+
+Optional environment variables:
+  THREE_REPOSITORY_COMPATIBILITY_REPORT
+      Persist the installed-wheel ecosystem report at this path.
+  THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS
+      Set to 1 or true to require exact locked Prob4D and Causal4D revisions.
 EOF
 }
 
@@ -167,6 +173,29 @@ python -m venv "${TEST_VENV}"
 "${TEST_VENV}/bin/python" -m pip install --disable-pip-version-check \
   pytest "${PROB4D_WHEEL}" "${BPT_WHEEL}" "${CAUSAL4D_WHEEL}"
 "${TEST_VENV}/bin/python" -m pip check
+
+compatibility_report="${THREE_REPOSITORY_COMPATIBILITY_REPORT:-${RUN_ROOT}/ecosystem-compatibility.json}"
+compatibility_arguments=(
+  ecosystem validate
+  --require-all
+  --json
+  --output-json "${compatibility_report}"
+)
+case "${THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS:-0}" in
+  1 | true)
+    compatibility_arguments+=(
+      --exact-versions
+      --revision "prob4d=${PROB4D_REVISION}"
+      --revision "causal4d=${CAUSAL4D_REVISION}"
+    )
+    ;;
+  0 | false | "") ;;
+  *)
+    echo "THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS must be 0, 1, false, or true." >&2
+    exit 2
+    ;;
+esac
+"${TEST_VENV}/bin/bpt" "${compatibility_arguments[@]}"
 
 shopt -s nullglob
 integration_tests=(
