@@ -1,0 +1,22 @@
+name: Launch direct reviewed Deform360 calibration source once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-official-calibration-source-once.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-official-calibration-source-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute trusted reusable calibration lane
+    uses: ./.github/workflows/deform360-official-hub-calibration-source-reusable.yml
+    with:
+      source_sha: ${{ github.sha }}
