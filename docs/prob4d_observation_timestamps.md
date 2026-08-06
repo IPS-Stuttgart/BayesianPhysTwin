@@ -41,7 +41,7 @@ where `delta_clock` is persistent within the named clock domain and each
 Internal or exploratory code can use the portable loader directly. A promoted
 or claim-bearing run must use the admission wrapper and supply both the raw
 source digest and the content ID of the separate source/calibration manifest
-that independently verified it:
+frozen by the upstream evidence protocol:
 
 ```python
 from bayesian_phystwin.prob4d_observation_timestamp_admission import (
@@ -72,12 +72,17 @@ wrapper therefore:
 - limits each snapshot to 64 MiB and hashes the exact bytes;
 - writes owner-only private copies and lets the portable parser see only those
   byte-for-byte snapshots, eliminating a hash-then-reopen race;
-- requires `source_artifact_sha256` to equal the independently supplied digest;
-- requires a separate content-addressed verification artifact and refuses to let
-  the timestamp sidecar verify itself;
-- binds the source digest, verification artifact ID, sidecar digest, sidecar
+- requires `source_artifact_sha256` to equal the separately supplied digest;
+- requires a separate content-addressed verification-artifact ID and refuses to
+  let the timestamp sidecar, raw source, or bundle stand in for that evidence;
+- binds the source digest, verification-artifact ID, sidecar digest, sidecar
   artifact ID, and exact bundle digest into the content-addressed binding; and
 - re-snapshots both original files after binding, rejecting any change.
+
+The admission wrapper binds the separately frozen verification-artifact ID. It
+does not open that external artifact or establish the verifier's competence;
+those are responsibilities of the registered upstream source/calibration
+protocol.
 
 The claim-bearing evidence keys are reserved and cannot be supplied or replaced
 through caller metadata. Symlinked and non-regular timestamp or bundle files are
@@ -148,9 +153,13 @@ aligned_observation_time_s = observation_time_s + offset_s
 A compact payload containing an artifact ID, mean, and standard deviation cannot
 tie those numeric values to that ID. The
 `binding.exploratory_shared_clock_prior_from_payload(...)` helper is explicitly
-non-claim-bearing. The full-record validator rejects compact payloads and returns
-an `ObservationTimingPrior` only after the complete record has been reconstructed
-successfully.
+non-claim-bearing. The path-based full-record loader rejects duplicate JSON keys
+and returns an `ObservationTimingPrior` only after the complete record has been
+reconstructed successfully.
+
+The lower-level `causal4d_observation_timing_prior_from_record(...)` function is
+for mappings that have already passed duplicate-safe parsing. The path loader is
+the claim-bearing ingress for an external Causal4D prior artifact.
 
 Timing identifiability must still be assessed against physical-state, gauge,
 visual-bias, and material-lag modes. A source timestamp sidecar and a valid
@@ -160,10 +169,10 @@ physical relaxation.
 ## Information-order boundary
 
 Timestamp extraction, clock-domain definitions, conditional-jitter estimation,
-the raw timestamp-source digest, its separately frozen verification-artifact ID, the
-factor-bundle identity, and a shared-offset prior must be frozen from source or
-calibration evidence before confirmation access. The consumer binds those
-choices but does not infer or retune them from target outcomes.
+the raw timestamp-source digest, its separately frozen verification-artifact
+ID, the factor-bundle identity, and a shared-offset prior must be frozen from
+source or calibration evidence before confirmation access. The consumer binds
+those choices but does not infer or retune them from target outcomes.
 
 ## Claim boundary
 
