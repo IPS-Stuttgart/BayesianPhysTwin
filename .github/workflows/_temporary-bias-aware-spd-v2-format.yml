@@ -1,25 +1,29 @@
-name: Temporary bias-aware SPD v2 formatting
+name: Temporary bias-aware SPD v2 formatting artifact
 
 on:
-  push:
-    branches:
-      - fix/bias-aware-spd-v2-quality-gate
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/_temporary-bias-aware-spd-v2-format.yml'
+      - 'src/bayesian_phystwin/bias_aware_belief_v2.py'
+      - 'tests/test_bias_aware_belief_v2.py'
+      - 'tests/test_bias_aware_belief_v2_adversarial.py'
+      - 'tests/test_spd_system.py'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  format:
-    if: github.actor != 'github-actions[bot]'
+  format-artifact:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check out exact branch revision
+      - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
           clean: true
 
       - name: Set up Python
@@ -27,7 +31,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply repository Ruff policy
+      - name: Produce deterministic Ruff output
         shell: bash
         run: |
           set -euo pipefail
@@ -43,21 +47,17 @@ jobs:
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           git diff --check
+          git diff --binary > bias-aware-spd-v2-ruff.patch
 
-      - name: Commit deterministic formatting
-        shell: bash
-        run: |
-          set -euo pipefail
-          git add \
-            src/bayesian_phystwin/bias_aware_belief_v2.py \
-            tests/test_bias_aware_belief_v2.py \
-            tests/test_bias_aware_belief_v2_adversarial.py \
+      - name: Upload formatted files and patch
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: bias-aware-spd-v2-ruff-output
+          path: |
+            bias-aware-spd-v2-ruff.patch
+            src/bayesian_phystwin/bias_aware_belief_v2.py
+            tests/test_bias_aware_belief_v2.py
+            tests/test_bias_aware_belief_v2_adversarial.py
             tests/test_spd_system.py
-          if git diff --cached --quiet; then
-            echo 'No formatting changes were required.' >&2
-            exit 1
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Apply deterministic Ruff formatting to SPD v2'
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          if-no-files-found: error
+          retention-days: 1
