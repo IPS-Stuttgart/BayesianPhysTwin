@@ -39,6 +39,12 @@ Taking the maximum within each group targets simultaneous coverage of every
 registered endpoint in one future group. Long sequences therefore do not gain
 extra weight merely because they contain more frames.
 
+A zero conformal radius is retained exactly when every relevant order statistic
+is zero. In that edge case the deployed region is deterministically degenerate:
+only a zero residual is covered. The implementation does not silently inject a
+nugget after calibration; a positive `isotropic_variance` must have been frozen
+before the calibration outcomes were opened.
+
 ## Provenance and information order
 
 Every artifact binds lower-case SHA-256 identifiers for:
@@ -51,13 +57,33 @@ Every artifact binds lower-case SHA-256 identifiers for:
 
 The artifact also records all independent group IDs, their maximum scores, the
 finite-sample rank, the covariance transform, and the derived conformal
-quantile. Group order is canonical, saved arrays are immutable, JSON loading
-rejects duplicate keys, and the artifact ID is recomputed on every load.
+quantile. Group order is canonical, JSON loading rejects duplicate keys, and
+the artifact ID is recomputed on every load.
 
 `covariance_scale`, `isotropic_variance`, the predictor, the query set, and the
 guard must be selected without using the same calibration outcomes that produce
 `q`. The contract rejects a fit when the predictor was not frozen before scores
 or when calibration outcomes were used for policy selection.
+
+## Retained-artifact behavior
+
+Calibration scores and deployed covariance arrays are copied into bytes-backed
+NumPy storage. Their writeability cannot be restored with
+`array.setflags(write=True)`, so the content address and returned covariance do
+not depend on later caller mutation.
+
+`save_query_calibration(...)` publishes a complete JSON artifact atomically and
+is idempotent for the same content address. It refuses symbolic-link targets,
+corrupt existing files, non-regular destinations, and attempts to replace a
+different calibration artifact. Concurrent publication cannot overwrite an
+existing path. Loading normalizes unreadable and malformed-JSON failures and
+revalidates the closed schema, finite-group rank, derived order statistic, and
+artifact ID.
+
+The numerical boundary is also fail-closed: transformed covariances,
+Mahalanobis scores, the squared conformal multiplier, and deployed covariance
+entries must remain finite. Overflow is reported instead of being retained as
+`inf` or `nan`.
 
 ## Python example
 
