@@ -19,7 +19,7 @@ concurrency:
 jobs:
   format:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out the exact event revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,10 +27,67 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - name: Install the reviewed formatter version
-        run: python -m pip install "ruff==0.16.1"
+      - name: Install the reviewed quality environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install "ruff==0.16.1"
 
-      - name: Format and lint the focused files
+      - name: Make opaque producer update copies explicit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/prob4d_visual_bias_stream.py")
+          source = path.read_text(encoding="utf-8")
+          old = '''        raw_updates = _exact_tuple(source.updates, name="updates")
+          updates = tuple(
+              Prob4DVisualBiasStreamUpdateBindingV1(
+                  bias_model_id=update.bias_model_id,
+                  observation_stream_update_id=update.observation_stream_update_id,
+                  visual_bias_artifact_id=update.visual_bias_artifact_id,
+                  observation_artifact_id=update.observation_artifact_id,
+                  observation_identity_sha256=update.observation_identity_sha256,
+                  frame_start=update.frame_start,
+                  frame_stop_exclusive=update.frame_stop_exclusive,
+                  row_start=update.row_start,
+                  row_stop_exclusive=update.row_stop_exclusive,
+                  maximum_gauge_projection=update.maximum_gauge_projection,
+                  previous_update_id=update.previous_update_id,
+                  update_id=update.update_id,
+              )
+              for update in raw_updates
+          )
+          '''
+          new = '''        raw_updates = _exact_tuple(source.updates, name="updates")
+          copied_updates: list[Prob4DVisualBiasStreamUpdateBindingV1] = []
+          for raw_update in raw_updates:
+              update = cast(Any, raw_update)
+              copied_updates.append(
+                  Prob4DVisualBiasStreamUpdateBindingV1(
+                      bias_model_id=update.bias_model_id,
+                      observation_stream_update_id=update.observation_stream_update_id,
+                      visual_bias_artifact_id=update.visual_bias_artifact_id,
+                      observation_artifact_id=update.observation_artifact_id,
+                      observation_identity_sha256=update.observation_identity_sha256,
+                      frame_start=update.frame_start,
+                      frame_stop_exclusive=update.frame_stop_exclusive,
+                      row_start=update.row_start,
+                      row_stop_exclusive=update.row_stop_exclusive,
+                      maximum_gauge_projection=update.maximum_gauge_projection,
+                      previous_update_id=update.previous_update_id,
+                      update_id=update.update_id,
+                  )
+              )
+          updates = tuple(copied_updates)
+          '''
+          if old not in source:
+              raise RuntimeError("opaque producer update copy changed unexpectedly")
+          path.write_text(source.replace(old, new, 1), encoding="utf-8")
+          PY
+
+      - name: Format, lint, and type-check the focused files
         run: |
           python -m ruff format \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
@@ -44,6 +101,7 @@ jobs:
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py
+          python -m mypy src/bayesian_phystwin/prob4d_visual_bias_stream.py
 
       - name: Publish only against the unchanged branch head
         shell: bash
@@ -63,5 +121,5 @@ jobs:
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py
-          git commit -m "Format recursive visual-bias consumer"
+          git commit -m "Format and type-harden recursive visual-bias consumer"
           git push origin HEAD:agent/prob4d-visual-bias-stream-binding
