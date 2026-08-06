@@ -94,6 +94,12 @@ def test_direct_script_records_every_exit_after_boundary_verification() -> None:
     assert 'exit "${record_status}"' in finalize
     assert "tests/test_deform360_calibration_source_direct_workflow.py" in text
     assert "tests/test_deform360_calibration_source_run_record.py" in text
+    assert "src/bayesian_phystwin/_deform360_calibration_artifact_chain.py" in text
+    assert "src/bayesian_phystwin/_deform360_calibration_run_common.py" in text
+    assert (
+        "src/bayesian_phystwin/"
+        "_deform360_calibration_source_run_record_impl.py" in text
+    )
     assert "src/bayesian_phystwin/deform360_calibration_source_run_record.py" in text
 
 
@@ -125,4 +131,7 @@ def test_focused_run_record_ci_is_exact_head_and_read_only() -> None:
     assert "ruff format --check" in text
     assert "bash -n scripts/ci/run_deform360_calibration_source_direct.sh" in text
     assert "test_deform360_calibration_source_run_record.py" in text
+    assert "_deform360_calibration_artifact_chain.py" in text
+    assert "_deform360_calibration_run_common.py" in text
+    assert "_deform360_calibration_source_run_record_impl.py" in text
     assert "self-hosted" not in text
