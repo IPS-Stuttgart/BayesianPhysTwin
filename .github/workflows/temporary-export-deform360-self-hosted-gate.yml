@@ -1,0 +1,101 @@
+name: Temporary export validated Deform360 gate
+
+on:
+  push:
+    branches: [agent/deform360-calibration-self-hosted-gate]
+    paths:
+      - ".github/workflows/temporary-export-deform360-self-hosted-gate.yml"
+      - "scripts/ci/temporary_patch_deform360_self_hosted_gate.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: temporary-export-deform360-self-hosted-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact event revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Generate the reviewed permanent files
+        run: python3 scripts/ci/temporary_patch_deform360_self_hosted_gate.py
+
+      - name: Create an isolated validation target site
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_python="$(command -v python3.12 || command -v python3)"
+          export_root="${RUNNER_TEMP}/deform360-gate-export-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          export_site="${export_root}/site"
+          rm -rf "${export_root}"
+          mkdir -p "${export_site}" "${export_root}/files/.github/workflows" "${export_root}/files/tests" "${export_root}/files/docs"
+          "${base_python}" -m pip install \
+            --break-system-packages \
+            --no-cache-dir \
+            --target "${export_site}" \
+            ".[dev,graph]" \
+            "huggingface_hub>=0.24"
+          {
+            echo "EXPORT_BASE_PYTHON=${base_python}"
+            echo "EXPORT_ROOT=${export_root}"
+            echo "EXPORT_SITE=${export_site}"
+            echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${export_site}${PYTHONPATH:+:${PYTHONPATH}}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Canonicalize and validate the generated files
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${EXPORT_BASE_PYTHON}" -m pip check
+          "${EXPORT_BASE_PYTHON}" -m ruff format tests/test_deform360_calibration_source_workflow.py
+          "${EXPORT_BASE_PYTHON}" -m ruff check tests/test_deform360_calibration_source_workflow.py
+          "${EXPORT_BASE_PYTHON}" -m ruff format --check tests/test_deform360_calibration_source_workflow.py
+          "${EXPORT_BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_official_hub_calibration_source.py \
+            tests/test_deform360_calibration_source_workflow.py \
+            tests/test_deform360_visual_provider_freeze.py \
+            | tee "${EXPORT_ROOT}/pytest.txt"
+          "${EXPORT_BASE_PYTHON}" -m compileall -q \
+            scripts/science/deform360_calibration_source \
+            scripts/science/run_deform360_official_hub_calibration_source.py
+          git diff --check
+          cp .github/workflows/deform360-official-hub-calibration-source.yml "${EXPORT_ROOT}/files/.github/workflows/"
+          cp tests/test_deform360_calibration_source_workflow.py "${EXPORT_ROOT}/files/tests/"
+          cp docs/deform360_official_hub_calibration_source_v1.md "${EXPORT_ROOT}/files/docs/"
+          (
+            cd "${EXPORT_ROOT}/files"
+            sha256sum \
+              .github/workflows/deform360-official-hub-calibration-source.yml \
+              tests/test_deform360_calibration_source_workflow.py \
+              docs/deform360_official_hub_calibration_source_v1.md \
+              > ../sha256sums.txt
+          )
+
+      - name: Upload the exact validated permanent files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-self-hosted-gate-files-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EXPORT_ROOT }}/files
+            ${{ env.EXPORT_ROOT }}/pytest.txt
+            ${{ env.EXPORT_ROOT }}/sha256sums.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Remove the validation target site
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${EXPORT_ROOT:-}" ]]; then
+            rm -rf -- "${EXPORT_ROOT}"
+          fi
