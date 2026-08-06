@@ -41,20 +41,32 @@ supplied revision passes.
 
 ## CI policy
 
-The blocking Causal4D provider workflow resolves its default consumer revision
-from the committed lock. Pull requests and pushes therefore test a deterministic
-known-good consumer rather than whichever commit happens to be at Causal4D
-`main` when a runner starts.
+Two blocking workflows consume the committed lock:
 
-A scheduled or explicitly requested latest-main canary remains present and is
-allowed to fail without invalidating a compatible BayesianPhysTwin change. Its
-purpose is early warning for ecosystem drift. A canary failure should lead to a
-separate compatibility update in the affected repository and, after the public
-installed-wheel path passes, a reviewed lock update.
+1. `Causal4D provider compatibility` tests provider modules and downstream
+   Causal4D behavior against the locked Causal4D revision.
+2. `Three-repository installed-wheel golden path` builds public wheels from the
+   locked Prob4D and Causal4D revisions, installs all three wheels in isolation,
+   runs `bpt ecosystem validate --require-all --exact-versions` with the exact
+   companion commits, and executes the producer-to-consumer integration suite.
 
-Manual workflow dispatch may override the locked Causal4D ref for diagnosis. An
-override is clearly reported and is not presented as verification of the
-committed exact revision.
+Pull requests and pushes therefore test deterministic known-good companions
+rather than whichever commits happen to be at moving `main` branches when a
+runner starts. Both workflows upload compatibility evidence that records the
+selected revisions and the exact BayesianPhysTwin head.
+
+Each workflow also has a scheduled or explicitly requested latest-main canary.
+The canary is a job-level `continue-on-error` lane and is allowed to fail without
+invalidating a compatible BayesianPhysTwin change. Its purpose is early warning
+for ecosystem drift. A canary failure should lead to a separate compatibility
+update in the affected repository and, after the public installed-wheel path
+passes, a reviewed lock update.
+
+Manual workflow dispatch may override locked companion refs for diagnosis, and
+repository-dispatch payloads may select exact Prob4D and Causal4D refs. An
+override is clearly reported, remains subject to compatible package-line and
+integration checks, and is not presented as verification of the committed exact
+lock.
 
 ## Updating the lock
 
@@ -63,7 +75,8 @@ committed exact revision.
 3. Record exact package versions, repository commits, Python version, workflow
    run, and test count.
 4. Update the bundled JSON in an ordinary reviewable pull request.
-5. Run the lock parser, CLI, distribution, and both locked/canary workflow tests.
+5. Run the lock parser, CLI, wheel/sdist, provider, installed-wheel, and
+   locked-versus-canary workflow tests.
 
 A green compatibility lock establishes only interface and packaging
 interoperability. It is not evidence of observation quality, calibrated
