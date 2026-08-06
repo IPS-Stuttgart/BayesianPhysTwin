@@ -26,7 +26,7 @@ jobs:
       github.event_name == 'push' ||
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Check out the exact reviewed branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,14 +41,20 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
+          def action_expression(body: str) -> str:
+              return "$" + "{{ " + body + " }}"
+
+
           workflow_path = Path(
               ".github/workflows/deform360-official-hub-calibration-source.yml"
           )
           workflow = workflow_path.read_text(encoding="utf-8")
-          start_marker = "  contracts:\n"
-          end_marker = "  prepare-calibration-source:\n"
-          start = workflow.index(start_marker)
-          end = workflow.index(end_marker, start)
+
+          contracts_start = workflow.index("  contracts:\n")
+          empirical_start = workflow.index(
+              "  prepare-calibration-source:\n",
+              contracts_start,
+          )
           contracts = '''  contracts:
             name: Validate reviewed calibration-source contracts / workstation2
             if: >-
@@ -60,19 +66,19 @@ jobs:
               - name: Check out exact reviewed source
                 uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
                 with:
-                  ref: ${{ env.BPT_SOURCE_SHA }}
+                  ref: __BPT_SOURCE_SHA__
                   fetch-depth: 0
                   persist-credentials: false
                   clean: true
 
-              - name: Initialize an isolated contract environment
+              - name: Initialize an isolated contract target site
                 shell: bash
                 run: |
                   set -euo pipefail
                   contract_root="${RUNNER_TEMP}/deform360-calibration-contracts-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-                  venv_root="${contract_root}/venv"
+                  contract_site="${contract_root}/site"
                   rm -rf "${contract_root}"
-                  mkdir -p "${contract_root}"
+                  mkdir -p "${contract_site}"
 
                   base_python=""
                   for candidate in \
@@ -96,21 +102,24 @@ jobs:
 
                   {
                     echo "CONTRACT_ROOT=${contract_root}"
-                    echo "CONTRACT_VENV=${venv_root}"
+                    echo "CONTRACT_SITE=${contract_site}"
                     echo "CONTRACT_BASE_PYTHON=${base_python}"
+                    echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${contract_site}${PYTHONPATH:+:${PYTHONPATH}}"
                   } >> "${GITHUB_ENV}"
                   "${base_python}" --version | tee "${contract_root}/base-python.txt"
+                  "${base_python}" -m pip --version | tee "${contract_root}/base-pip.txt"
 
-              - name: Create a fresh contract environment
+              - name: Populate the fresh contract target site
                 shell: bash
                 run: |
                   set -euo pipefail
-                  "${CONTRACT_BASE_PYTHON}" -m venv --copies "${CONTRACT_VENV}"
-                  python="${CONTRACT_VENV}/bin/python"
-                  "${python}" -m ensurepip --upgrade
-                  "${python}" -m pip install --no-cache-dir --upgrade pip setuptools wheel
-                  "${python}" -m pip install --no-cache-dir ".[dev,graph]" "huggingface_hub>=0.24"
-                  "${python}" -m pip check
+                  "${CONTRACT_BASE_PYTHON}" -m pip install \
+                    --break-system-packages \
+                    --no-cache-dir \
+                    --target "${CONTRACT_SITE}" \
+                    ".[dev,graph]" \
+                    "huggingface_hub>=0.24"
+                  "${CONTRACT_BASE_PYTHON}" -m pip check
                   {
                     echo "repository=${GITHUB_REPOSITORY}"
                     echo "event_name=${GITHUB_EVENT_NAME}"
@@ -119,16 +128,16 @@ jobs:
                     echo "runner_name=${RUNNER_NAME}"
                     echo "runner_os=${RUNNER_OS}"
                     echo "runner_arch=${RUNNER_ARCH}"
-                    "${python}" --version
-                    "${python}" -m pip --version
-                    "${python}" -m pip freeze --all
+                    "${CONTRACT_BASE_PYTHON}" --version
+                    "${CONTRACT_BASE_PYTHON}" -m pip --version
+                    "${CONTRACT_BASE_PYTHON}" -m pip freeze --path "${CONTRACT_SITE}"
                   } > "${CONTRACT_ROOT}/environment.txt"
 
               - name: Validate source without opening dataset payloads
                 shell: bash
                 run: |
                   set -euo pipefail
-                  python="${CONTRACT_VENV}/bin/python"
+                  python="${CONTRACT_BASE_PYTHON}"
                   files=(
                     scripts/science/deform360_calibration_source/__init__.py
                     scripts/science/deform360_calibration_source/contracts.py
@@ -159,15 +168,16 @@ jobs:
                 if: always()
                 uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
                 with:
-                  name: deform360-calibration-contracts-${{ github.run_id }}-${{ github.run_attempt }}
+                  name: deform360-calibration-contracts-__RUN_ID__-__RUN_ATTEMPT__
                   path: |
-                    ${{ env.CONTRACT_ROOT }}/base-python.txt
-                    ${{ env.CONTRACT_ROOT }}/environment.txt
-                    ${{ env.CONTRACT_ROOT }}/pytest.txt
+                    __CONTRACT_ROOT__/base-python.txt
+                    __CONTRACT_ROOT__/base-pip.txt
+                    __CONTRACT_ROOT__/environment.txt
+                    __CONTRACT_ROOT__/pytest.txt
                   if-no-files-found: warn
                   retention-days: 30
 
-              - name: Remove the isolated contract environment
+              - name: Remove the isolated contract target site
                 if: always()
                 shell: bash
                 run: |
@@ -177,10 +187,109 @@ jobs:
                   fi
 
           '''
-          workflow_path.write_text(
-              workflow[:start] + contracts + workflow[end:],
-              encoding="utf-8",
+          contracts = (
+              contracts.replace(
+                  "__BPT_SOURCE_SHA__",
+                  action_expression("env.BPT_SOURCE_SHA"),
+              )
+              .replace("__RUN_ID__", action_expression("github.run_id"))
+              .replace(
+                  "__RUN_ATTEMPT__",
+                  action_expression("github.run_attempt"),
+              )
+              .replace(
+                  "__CONTRACT_ROOT__",
+                  action_expression("env.CONTRACT_ROOT"),
+              )
           )
+          workflow = (
+              workflow[:contracts_start]
+              + contracts
+              + workflow[empirical_start:]
+          )
+
+          old_initialization = '''          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv_root="${RUNNER_TEMP}/deform360-calibration-venv-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          staged_root="${PROCESSED_ROOT}/staged-raw"
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "VENV_ROOT=${venv_root}"
+            echo "STAGED_ROOT=${staged_root}"
+          } >> "${GITHUB_ENV}"
+          rm -rf "${evidence_root}" "${venv_root}"
+          mkdir -p "${DATA_ROOT}" "${PROCESSED_ROOT}" "${evidence_root}"
+          printf '/_deform360_processing/\\n' >> .git/info/exclude
+          '''
+          new_initialization = '''          evidence_root="${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          site_root="${RUNNER_TEMP}/deform360-calibration-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          staged_root="${PROCESSED_ROOT}/staged-raw"
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "PYTHON_SITE=${site_root}"
+            echo "STAGED_ROOT=${staged_root}"
+            echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${PROCESSING_REPO}:${site_root}${PYTHONPATH:+:${PYTHONPATH}}"
+          } >> "${GITHUB_ENV}"
+          rm -rf "${evidence_root}" "${site_root}"
+          mkdir -p "${DATA_ROOT}" "${PROCESSED_ROOT}" "${evidence_root}" "${site_root}"
+          printf '/_deform360_processing/\\n' >> .git/info/exclude
+          '''
+          if old_initialization not in workflow:
+              raise RuntimeError("empirical initialization block changed unexpectedly")
+          workflow = workflow.replace(
+              old_initialization,
+              new_initialization,
+              1,
+          )
+
+          environment_start = workflow.index(
+              "      - name: Create a fresh calibration-source environment\n"
+          )
+          validation_start = workflow.index(
+              "      - name: Validate the exact source before dataset access\n",
+              environment_start,
+          )
+          target_environment = '''      - name: Populate a fresh calibration-source target site
+            shell: bash
+            run: |
+              set -euo pipefail
+              "${BASE_PYTHON}" -m pip install \
+                --break-system-packages \
+                --no-cache-dir \
+                --target "${PYTHON_SITE}" \
+                ".[dev,graph]" \
+                build \
+                scipy \
+                matplotlib \
+                "${PROCESSING_REPO}[all]"
+              "${BASE_PYTHON}" -m pip check
+              "${BASE_PYTHON}" -m pip freeze --path "${PYTHON_SITE}" \
+                > "${EVIDENCE_ROOT}/pip-freeze.txt"
+              test -z "$(git -C "${PROCESSING_REPO}" status --porcelain)"
+
+          '''
+          workflow = (
+              workflow[:environment_start]
+              + target_environment
+              + workflow[validation_start:]
+          )
+          workflow = workflow.replace(
+              '"${VENV_ROOT}/bin/python"',
+              '"${BASE_PYTHON}"',
+          )
+          old_cleanup = (
+              '          for path in "${VENV_ROOT:-}" '
+              '"${PROCESSING_REPO:-}"; do\n'
+          )
+          new_cleanup = (
+              '          for path in "${PYTHON_SITE:-}" '
+              '"${PROCESSING_REPO:-}"; do\n'
+          )
+          if old_cleanup not in workflow:
+              raise RuntimeError("empirical cleanup block changed unexpectedly")
+          workflow = workflow.replace(old_cleanup, new_cleanup, 1)
+          if "VENV_ROOT" in workflow:
+              raise RuntimeError("obsolete VENV_ROOT remains in workflow")
+          workflow_path.write_text(workflow, encoding="utf-8")
 
           test_path = Path("tests/test_deform360_calibration_source_workflow.py")
           test_path.write_text(
@@ -209,9 +318,12 @@ jobs:
               assert "github.event.pull_request.head.repo.full_name == github.repository" in contract_block
               assert "actions/setup-python" not in contract_block
               assert "${RUNNER_TEMP}/deform360-calibration-contracts-" in contract_block
-              assert '"${CONTRACT_BASE_PYTHON}" -m venv --copies "${CONTRACT_VENV}"' in contract_block
-              assert '"${python}" -m ensurepip --upgrade' in contract_block
+              assert 'echo "CONTRACT_SITE=${contract_site}"' in contract_block
+              assert '--target "${CONTRACT_SITE}"' in contract_block
+              assert "--break-system-packages" in contract_block
               assert "--no-cache-dir" in contract_block
+              assert " -m venv" not in contract_block
+              assert "ensurepip" not in contract_block
               assert "DATA_ROOT:" not in contract_block
               assert "PROCESSED_ROOT:" not in contract_block
               assert "HF_TOKEN" not in contract_block
@@ -220,29 +332,32 @@ jobs:
               assert "needs: contracts" in empirical_block
 
 
-          def test_self_hosted_job_uses_a_fresh_runner_temp_virtual_environment() -> None:
+          def test_empirical_job_uses_a_fresh_runner_temp_target_site() -> None:
               text = _workflow_text()
               empirical = text[text.index("  prepare-calibration-source:") :]
               job_header = empirical[: empirical.index("    steps:")]
 
               assert "actions/setup-python" not in empirical
-              assert "${{ runner.temp }}" not in job_header
-              assert "${RUNNER_TEMP}/deform360-calibration-venv-" in empirical
-              assert 'echo "VENV_ROOT=${venv_root}"' in empirical
-              assert '"${BASE_PYTHON}" -m venv --copies "${VENV_ROOT}"' in empirical
-              assert '"${python}" -m ensurepip --upgrade' in empirical
+              assert ("$" + "{{ runner.temp }}") not in job_header
+              assert "${RUNNER_TEMP}/deform360-calibration-site-" in empirical
+              assert 'echo "PYTHON_SITE=${site_root}"' in empirical
+              assert '--target "${PYTHON_SITE}"' in empirical
+              assert "--break-system-packages" in empirical
               assert "--no-cache-dir" in empirical
+              assert " -m venv" not in empirical
+              assert "ensurepip" not in empirical
+              assert "VENV_ROOT" not in empirical
 
 
-          def test_failure_reporting_does_not_require_the_virtual_environment() -> None:
+          def test_failure_reporting_does_not_require_the_target_site() -> None:
               text = _workflow_text()
               confirmation = text[text.index("      - name: Verify the confirmation cohort") :]
               summary = confirmation[confirmation.index("      - name: Publish job summary") :]
 
-              assert "${VENV_ROOT}/bin/python" not in confirmation
-              assert "${VENV_ROOT}/bin/python" not in summary
+              assert "${PYTHON_SITE}/" not in confirmation
+              assert "${PYTHON_SITE}/" not in summary
               assert "if-no-files-found: warn" in confirmation
-              assert 'for path in "${VENV_ROOT:-}" "${PROCESSING_REPO:-}"' in summary
+              assert 'for path in "${PYTHON_SITE:-}" "${PROCESSING_REPO:-}"' in summary
           ''',
               encoding="utf-8",
           )
@@ -256,9 +371,14 @@ jobs:
           runs on `workstation2` for trusted pushes, manual dispatches, and pull requests
           whose head branch belongs to this repository. Pull requests from forks are not
           admitted to the self-hosted runner. The contract job checks out the exact
-          reviewed revision with read-only credentials, creates a fresh `RUNNER_TEMP`
-          virtual environment, installs without a package cache, and opens no dataset
-          root or payload.
+          reviewed revision with read-only credentials and installs into a fresh isolated
+          `RUNNER_TEMP` target site without a package cache. It opens no dataset root or
+          payload.
+
+          The empirical job uses a separate fresh target site rather than the runner's
+          Python toolcache or `venv` support. Both target sites are removed after the job,
+          while raw and processed calibration data remain only in their registered
+          persistent roots.
 
           The empirical preparation job still has the explicit
           `github.event_name != 'pull_request'` guard. Therefore no pull request can run
@@ -275,31 +395,43 @@ jobs:
           doc_path.write_text(documentation, encoding="utf-8")
           PY
 
-      - name: Create an isolated validation environment
+      - name: Create an isolated validation target site
         shell: bash
         run: |
           set -euo pipefail
           base_python="$(command -v python3.12 || command -v python3)"
-          environment="${RUNNER_TEMP}/deform360-self-hosted-publisher-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          rm -rf "${environment}"
-          "${base_python}" -m venv --copies "${environment}"
-          "${environment}/bin/python" -m ensurepip --upgrade
-          "${environment}/bin/python" -m pip install --no-cache-dir --upgrade pip setuptools wheel
-          "${environment}/bin/python" -m pip install --no-cache-dir -e ".[dev,graph]" "huggingface_hub>=0.24"
-          echo "${environment}/bin" >> "${GITHUB_PATH}"
+          publisher_root="${RUNNER_TEMP}/deform360-self-hosted-publisher-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          publisher_site="${publisher_root}/site"
+          rm -rf "${publisher_root}"
+          mkdir -p "${publisher_site}"
+          "${base_python}" -m pip install \
+            --break-system-packages \
+            --no-cache-dir \
+            --target "${publisher_site}" \
+            ".[dev,graph]" \
+            "huggingface_hub>=0.24"
+          {
+            echo "PUBLISHER_BASE_PYTHON=${base_python}"
+            echo "PUBLISHER_ROOT=${publisher_root}"
+            echo "PUBLISHER_SITE=${publisher_site}"
+            echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${publisher_site}${PYTHONPATH:+:${PYTHONPATH}}"
+          } >> "${GITHUB_ENV}"
 
       - name: Validate the patched exact source
         shell: bash
         run: |
           set -euo pipefail
-          python -m ruff check tests/test_deform360_calibration_source_workflow.py
-          python -m ruff format --check tests/test_deform360_calibration_source_workflow.py
-          python -m pytest -q -p no:cacheprovider \
+          "${PUBLISHER_BASE_PYTHON}" -m pip check
+          "${PUBLISHER_BASE_PYTHON}" -m ruff check \
+            tests/test_deform360_calibration_source_workflow.py
+          "${PUBLISHER_BASE_PYTHON}" -m ruff format --check \
+            tests/test_deform360_calibration_source_workflow.py
+          "${PUBLISHER_BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
             tests/test_deform360_official_hub_calibration_source.py \
             tests/test_deform360_calibration_source_workflow.py \
             tests/test_deform360_calibration_execution.py \
             tests/test_deform360_visual_provider_freeze.py
-          python -m compileall -q \
+          "${PUBLISHER_BASE_PYTHON}" -m compileall -q \
             scripts/science/deform360_calibration_source \
             scripts/science/run_deform360_official_hub_calibration_source.py
           git diff --check
@@ -320,3 +452,11 @@ jobs:
             docs/deform360_official_hub_calibration_source_v1.md
           git commit -m "Run Deform360 calibration contracts on workstation2"
           git push origin HEAD:agent/deform360-calibration-self-hosted-gate
+
+      - name: Remove the publisher target site
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${PUBLISHER_ROOT:-}" ]]; then
+            rm -rf -- "${PUBLISHER_ROOT}"
+          fi
