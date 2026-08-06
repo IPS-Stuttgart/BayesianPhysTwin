@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapip3d-multiview-competence-v1",
+  "locked_at_utc": "2026-08-06T04:00:00Z",
+  "status": "Locked after implementation and frame-zero input QA, before camera-1 or camera-2 TAPIP3D inference or trajectory scoring.",
+  "case": "single_lift_cloth",
+  "claim_boundary": "One-case association-oracle observation-competence control on an already-open source interaction. A pass can authorize only an automatic frame-zero graph-query study on opened source data. It cannot establish forecasting, transfer, calibration, confirmation, SOTA, or permission to inspect a fresh or held-v8 target.",
+  "implementation_commit": "b3cf20ee8fbe7f3537ccab5cee86c83e644d5e79",
+  "prefix_frame_count": 121,
+  "query_tolerance_m": 1e-07,
+  "global_query_source": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/inputs/single_lift_cloth_camera0_prefix121_oracle9.npz",
+    "sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc",
+    "field_read_before_prediction": "query_point only",
+    "query_count": 9
+  },
+  "views": [
+    {
+      "camera_index": 0,
+      "input_manifest_path": "/home/florianpfaff/tapip3d-phystwin-source-v1/inputs/single_lift_cloth_camera0_prefix121_oracle9_manifest.json",
+      "input_manifest_sha256": "1f5ea63348a2a15aab32e7daac0e893c615731bf5222f2c8fa5cb535b677bf2d",
+      "input_npz_sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc",
+      "selected_global_query_indices": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      "inference_policy": "Reuse the already-sealed official camera-0 result byte-for-byte; do not rerun."
+    },
+    {
+      "camera_index": 1,
+      "input_manifest_path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/inputs/single_lift_cloth_camera1_prefix121_oracle_manifest.json",
+      "input_manifest_sha256": "46861538e006c070a5a2cf9bcdc4a1fb450d94f3023621a9182a1d6ace0c1038",
+      "input_npz_sha256": "982390f20018be8cf06fbd1f1668f108405472dddd308259d1245c6376686ab4",
+      "selected_global_query_indices": [0, 1, 2, 3, 4, 5, 7, 8]
+    },
+    {
+      "camera_index": 2,
+      "input_manifest_path": "/home/florianpfaff/tapip3d-phystwin-multiview-v1/inputs/single_lift_cloth_camera2_prefix121_oracle_manifest.json",
+      "input_manifest_sha256": "7b9ce83acdd09ff7c699d1210baf99c7927cda24b7fb388491c4ecfcab7cc307",
+      "input_npz_sha256": "edcdf256d73e4041d3bbf057f1342d14a4e8f77a814523be143e265b796066ca",
+      "selected_global_query_indices": [0, 1, 2, 3, 5]
+    }
+  ],
+  "view_admission": {
+    "maximum_frame_zero_depth_error_m": 0.01,
+    "later_manual_trajectory_used": false,
+    "replacement_query_after_ineligibility": false
+  },
+  "tapip3d": {
+    "repository": "https://github.com/zbw001/TAPIP3D",
+    "commit": "4cb7e69a1687f67d56ec3e506768f51f2c581b46",
+    "checkout": "/home/florianpfaff/tapip3d-phystwin-source-v1/TAPIP3D",
+    "checkpoint": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/TAPIP3D/checkpoints/tapip3d_final.pth",
+      "sha256": "3a9514d526559838e6158360af2b857da596d064b06a94fae7fd3b85134b2b1e"
+    },
+    "inference_py_sha256": "bcc672d9a878e48b96cda1e377b0728514833f78165295137b533dee4978d3bd",
+    "settings": {
+      "device": "cuda:0 through CUDA_VISIBLE_DEVICES=0",
+      "resolution_factor": 1,
+      "num_iters": 6,
+      "support_grid_size": 16,
+      "num_threads": 8,
+      "visibility_threshold": 0.9
+    }
+  },
+  "fusion": {
+    "minimum_view_count": 2,
+    "point_estimate": "deterministic geometric median after exact frame-zero re-anchoring",
+    "maximum_pairwise_disagreement_m": 0.02,
+    "shared_bias_floor_m": 0.005,
+    "covariance": "(shared_bias_floor_m^2 + maximum_view_to_consensus_radius_m^2) * I; no division by view count",
+    "unsupported_policy": "zero provider weight and bit-exact physical/persistence fallback"
+  },
+  "score_inputs": {
+    "gt_track_path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_cloth/gt_track_3d.pkl",
+    "gt_track_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e"
+  },
+  "competence_gate": {
+    "minimum_support_fraction": 0.7,
+    "maximum_displacement_rmse_m": 0.005,
+    "maximum_frame_zero_anchor_rmse_m": 0.002,
+    "minimum_late_support_fraction": 0.5,
+    "maximum_late_displacement_rmse_m": 0.01,
+    "reference_camera_index": 0,
+    "minimum_reference_shared_improvement_fraction": 0.2,
+    "conjunction": "All six conditions must pass."
+  },
+  "information_boundary": {
+    "rgbd_frames_used_by_prediction": [0, 121],
+    "manual_identity_available_to_prediction": "frame-zero world coordinates only",
+    "later_manual_trajectory_available_before_fusion_seal": false,
+    "future_after_prefix_used": false,
+    "fresh_object_access_authorized": false,
+    "held_v8_access": false,
+    "held_v8_artifact_access": false
+  },
+  "forbidden": [
+    "changing view admission, TAPIP3D settings, fusion, covariance, metrics, or gates after camera inference",
+    "using manual coordinates after frame zero to generate, select, repair, or admit a prediction",
+    "counting exact fallback rows as provider support",
+    "calling this association-oracle source control deployable, transferable, confirmatory, calibrated, or state of the art",
+    "opening, inspecting, modifying, or rerunning any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
