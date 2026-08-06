@@ -1,9 +1,9 @@
 name: Validate query calibration PR 177
 
 on:
-  push:
+  pull_request:
     branches:
-      - maintenance/validate-query-calibration-177
+      - agent/query-calibration-v1
 
 permissions:
   contents: read
