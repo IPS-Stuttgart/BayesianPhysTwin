@@ -48,8 +48,26 @@ def replace_between(
 
 replace_once(
     "src/bayesian_phystwin/prob4d_observation_timestamps.py",
+    "    def shared_clock_prior_from_payload(\n",
+    "    def exploratory_shared_clock_prior_from_payload(\n",
+)
+replace_once(
+    "src/bayesian_phystwin/prob4d_observation_timestamps.py",
     '        """Bind a source-only prior without merging it into local jitter."""\n',
     '        """Construct an exploratory compact prior; not claim-bearing."""\n',
+)
+replace_once(
+    "tests/test_prob4d_observation_timestamps.py",
+    "def test_shared_clock_prior_binds_artifact_domain_and_sign(tmp_path: Path) -> None:\n",
+    "def test_exploratory_clock_prior_binds_artifact_domain_and_sign(\n"
+    "    tmp_path: Path,\n"
+    ") -> None:\n",
+)
+replace_all(
+    "tests/test_prob4d_observation_timestamps.py",
+    ".shared_clock_prior_from_payload(",
+    ".exploratory_shared_clock_prior_from_payload(",
+    expected=4,
 )
 
 replace_once(
@@ -146,11 +164,11 @@ replace_between(
         "```\n"
         "\n"
         "A compact payload containing an artifact ID, mean, and standard deviation cannot\n"
-        "tie those numeric values to that ID. The legacy\n"
-        "`binding.shared_clock_prior_from_payload(...)` helper is therefore exploratory\n"
-        "only and must not authorize a claim-bearing run. The full-record validator\n"
-        "rejects compact payloads and returns an `ObservationTimingPrior` only after the\n"
-        "complete record has been reconstructed successfully.\n"
+        "tie those numeric values to that ID. The\n"
+        "`binding.exploratory_shared_clock_prior_from_payload(...)` helper is explicitly\n"
+        "non-claim-bearing. The full-record validator rejects compact payloads and returns\n"
+        "an `ObservationTimingPrior` only after the complete record has been reconstructed\n"
+        "successfully.\n"
         "\n"
         "Timing identifiability must still be assessed against physical-state, gauge,\n"
         "visual-bias, and material-lag modes. A source timestamp sidecar and a valid\n"
