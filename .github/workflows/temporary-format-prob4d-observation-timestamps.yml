@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/temporary-format-prob4d-observation-timestamps.yml"
+      - "src/bayesian_phystwin/causal4d_observation_clock_prior.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps.py"
@@ -92,6 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           files=(
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py
             src/bayesian_phystwin/prob4d_observation_timestamps.py
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py
             tests/test_prob4d_observation_timestamps.py
@@ -107,6 +109,7 @@ jobs:
         run: |
           set -euo pipefail
           files=(
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py
             src/bayesian_phystwin/prob4d_observation_timestamps.py
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py
             tests/test_prob4d_observation_timestamps.py
@@ -117,6 +120,7 @@ jobs:
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
+            src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py
           python -m pytest -q -p no:cacheprovider \
