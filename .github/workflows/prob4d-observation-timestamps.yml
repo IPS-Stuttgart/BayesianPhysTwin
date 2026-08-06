@@ -6,7 +6,9 @@ on:
     paths:
       - ".github/workflows/prob4d-observation-timestamps.yml"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
+      - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps.py"
+      - "tests/test_prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps_crossrepo.py"
       - "docs/prob4d_observation_timestamps.md"
   workflow_dispatch:
@@ -47,7 +49,7 @@ jobs:
           clean: true
 
       - name: Check out exact Prob4D timestamp producer
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
         with:
           repository: IPS-Stuttgart/Prob4D
           ref: ${{ env.PROB4D_TIMESTAMP_PRODUCER_REVISION }}
@@ -112,14 +114,19 @@ jobs:
           set -euo pipefail
           python -m ruff check \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
+            src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
+            tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py
           python -m ruff format --check \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
+            src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
+            tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py
           python -m mypy \
-            src/bayesian_phystwin/prob4d_observation_timestamps.py
+            src/bayesian_phystwin/prob4d_observation_timestamps.py \
+            src/bayesian_phystwin/prob4d_observation_timestamp_admission.py
 
       - name: Run focused, adjacent, and producer-parity contracts
         shell: bash
@@ -127,6 +134,7 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_prob4d_observation_timestamps.py \
+            tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py \
             tests/test_observation_timing_nuisance.py \
             tests/test_observation_timing_interchange.py \
@@ -134,7 +142,9 @@ jobs:
             | tee "${TIMESTAMP_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
+            src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
+            tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py
 
       - name: Verify exact read-only repository state
