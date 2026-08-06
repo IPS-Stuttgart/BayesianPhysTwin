@@ -30,7 +30,7 @@ def test_bundled_ecosystem_lock_is_complete_and_content_addressed() -> None:
         "causal4d",
     )
     assert lock.component("bpt").revision == (
-        "3c2c703f70e5ecc971645657eb06bf8001bee9a9"
+        "3c2c703f731a46019cf07b540474f25827dd5106"
     )
     assert lock.component("prob4d").revision == (
         "9ad07f89f9a85b68cf1375a4087ffa447b6af846"
