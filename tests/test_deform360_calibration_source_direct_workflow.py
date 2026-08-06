@@ -52,16 +52,30 @@ def test_reusable_workflow_publishes_one_non_sensitive_completion_receipt() -> N
     assert "continue-on-error: true" in completion_block
     assert "execution-manifest.json" in completion_block
     assert "completion-receipt.json" in completion_block
-    assert "deform360-calibration-source-run" in completion_block
-    assert "execution-record digest changed" in completion_block
-    assert '"plan_sha256"' in completion_block
-    assert '"download_sha256"' in completion_block
-    assert '"result_sha256"' in completion_block
-    assert "admission gate passed" in completion_block
+    assert "render_deform360_calibration_source_run_record.py" in completion_block
+    assert 'python3 "${renderer}" issue' in completion_block
+    assert '--source-revision "${BPT_SOURCE_SHA}"' in completion_block
+    assert '--workflow-run-id "${GITHUB_RUN_ID}"' in completion_block
+    assert '--workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"' in completion_block
     assert "/issues/148/comments" in completion_block
     assert "local paths, object identities, or target outcomes" in completion_block
+    assert "hashlib" not in completion_block
     assert "DATA_ROOT" not in completion_block
     assert "PROCESSED_ROOT" not in completion_block
+
+
+def test_reusable_summary_uses_the_same_strict_renderer() -> None:
+    text = REUSABLE.read_text(encoding="utf-8")
+    summary = text.index("- name: Publish compact job summary")
+    cleanup = text.index("- name: Remove isolated runtime and processing checkout")
+    summary_block = text[summary:cleanup]
+
+    assert "render_deform360_calibration_source_run_record.py" in summary_block
+    assert 'python3 "${renderer}" summary' in summary_block
+    assert '--source-revision "${BPT_SOURCE_SHA}"' in summary_block
+    assert '--workflow-run-id "${GITHUB_RUN_ID}"' in summary_block
+    assert '--workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"' in summary_block
+    assert "json.loads" not in summary_block
 
 
 def test_direct_script_records_every_exit_after_boundary_verification() -> None:
@@ -94,11 +108,18 @@ def test_direct_script_records_every_exit_after_boundary_verification() -> None:
     assert 'exit "${record_status}"' in finalize
     assert "tests/test_deform360_calibration_source_direct_workflow.py" in text
     assert "tests/test_deform360_calibration_source_run_record.py" in text
+    assert "tests/test_deform360_calibration_source_run_record_validation.py" in text
+    assert "tests/test_render_deform360_calibration_source_run_record.py" in text
+    assert "scripts/ci/render_deform360_calibration_source_run_record.py" in text
     assert "src/bayesian_phystwin/_deform360_calibration_artifact_chain.py" in text
     assert "src/bayesian_phystwin/_deform360_calibration_run_common.py" in text
     assert (
         "src/bayesian_phystwin/"
         "_deform360_calibration_source_run_record_impl.py" in text
+    )
+    assert (
+        "src/bayesian_phystwin/"
+        "_deform360_calibration_source_run_record_validation.py" in text
     )
     assert "src/bayesian_phystwin/deform360_calibration_source_run_record.py" in text
 
@@ -131,7 +152,11 @@ def test_focused_run_record_ci_is_exact_head_and_read_only() -> None:
     assert "ruff format --check" in text
     assert "bash -n scripts/ci/run_deform360_calibration_source_direct.sh" in text
     assert "test_deform360_calibration_source_run_record.py" in text
+    assert "test_deform360_calibration_source_run_record_validation.py" in text
+    assert "test_render_deform360_calibration_source_run_record.py" in text
+    assert "render_deform360_calibration_source_run_record.py" in text
     assert "_deform360_calibration_artifact_chain.py" in text
     assert "_deform360_calibration_run_common.py" in text
     assert "_deform360_calibration_source_run_record_impl.py" in text
+    assert "_deform360_calibration_source_run_record_validation.py" in text
     assert "self-hosted" not in text
