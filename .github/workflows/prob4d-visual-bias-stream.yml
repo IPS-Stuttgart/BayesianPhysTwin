@@ -6,9 +6,12 @@ on:
     paths:
       - ".github/workflows/prob4d-visual-bias-stream.yml"
       - "src/bayesian_phystwin/prob4d_visual_bias_stream.py"
+      - "src/bayesian_phystwin/persistent_prob4d_visual_bias.py"
       - "tests/test_prob4d_visual_bias_stream.py"
       - "tests/test_prob4d_visual_bias_stream_crossrepo.py"
+      - "tests/test_persistent_prob4d_visual_bias.py"
       - "docs/prob4d_visual_bias_stream.md"
+      - "docs/persistent_prob4d_visual_bias_solver.md"
   workflow_dispatch:
 
 permissions:
@@ -30,7 +33,7 @@ env:
 
 jobs:
   contracts:
-    name: Persistent-bias binding and fail-closed execution boundary
+    name: Persistent-bias binding and shared-state solver
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -104,14 +107,19 @@ jobs:
         run: |
           python -m ruff check \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
             tests/test_prob4d_visual_bias_stream.py \
-            tests/test_prob4d_visual_bias_stream_crossrepo.py
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py
           python -m ruff format --check \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
             tests/test_prob4d_visual_bias_stream.py \
-            tests/test_prob4d_visual_bias_stream_crossrepo.py
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py
           python -m mypy \
-            src/bayesian_phystwin/prob4d_visual_bias_stream.py
+            src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py
 
       - name: Run contract and producer-consumer evidence
         shell: bash
@@ -120,6 +128,7 @@ jobs:
           python -m pytest -q -p no:cacheprovider \
             tests/test_prob4d_visual_bias_stream.py \
             tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py \
             tests/test_prob4d_visual_bias_update.py \
             tests/test_prob4d_visual_bias_update_adversarial.py \
             tests/test_prob4d_visual_bias_crossrepo.py \
@@ -128,8 +137,10 @@ jobs:
             | tee "${VISUAL_BIAS_STREAM_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
             tests/test_prob4d_visual_bias_stream.py \
-            tests/test_prob4d_visual_bias_stream_crossrepo.py
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py
 
       - name: Verify clean repository state
         shell: bash
