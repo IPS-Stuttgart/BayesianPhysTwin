@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/temporary-format-prob4d-observation-timestamps.yml"
+      - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
+      - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
+      - "tests/test_prob4d_observation_timestamps.py"
+      - "tests/test_prob4d_observation_timestamp_admission.py"
+      - "tests/test_prob4d_observation_timestamps_crossrepo.py"
+      - "tests/test_prob4d_observation_timestamps_causal4d.py"
 
 permissions:
   contents: write
