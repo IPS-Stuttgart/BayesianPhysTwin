@@ -14,6 +14,7 @@ promise.
 
 ```text
 bpt provider manifest
+bpt ecosystem validate
 bpt observation validate
 bpt residual replay
 bpt benchmark synthetic
@@ -23,6 +24,11 @@ bpt run manifest
 
 Use `--help` after any complete route to inspect its arguments. Stable routes
 are lazily imported, so root help and registry inspection remain NumPy-only.
+
+`bpt ecosystem validate` checks installed BayesianPhysTwin, Prob4D, and Causal4D
+package lines against the bundled three-repository compatibility lock. Exact
+source commits may be supplied explicitly; the command performs no network
+resolution. See [ecosystem compatibility](ecosystem_compatibility.md).
 
 ## Canonical registry
 
