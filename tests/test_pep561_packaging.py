@@ -15,4 +15,7 @@ def test_project_metadata_declares_typed_package_data() -> None:
     )
 
     assert '"Typing :: Typed"' in pyproject
-    assert 'bayesian_phystwin = ["py.typed"]' in pyproject
+    package_data = pyproject.split("[tool.setuptools.package-data]", maxsplit=1)[1]
+    package_data = package_data.split("\n[", maxsplit=1)[0]
+    assert "bayesian_phystwin = [" in package_data
+    assert '"py.typed"' in package_data
