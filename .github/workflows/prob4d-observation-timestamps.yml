@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PROB4D_TIMESTAMP_PRODUCER_REVISION: 64dccd77f9ac16edb972c649b862bfe71848f138
+  PROB4D_TIMESTAMP_PRODUCER_REVISION: 9ca9878c9f019f8bb960d3e480aec208840b5a37
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -49,7 +49,7 @@ jobs:
           clean: true
 
       - name: Check out exact Prob4D timestamp producer
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Prob4D
           ref: ${{ env.PROB4D_TIMESTAMP_PRODUCER_REVISION }}
