@@ -6,9 +6,10 @@ identity for the raw timestamp source. Otherwise a forged sidecar and a forged
 content ID could remain mutually self-consistent.
 
 This module therefore snapshots the exact sidecar bytes, checks the producer's
-``source_artifact_sha256`` against an independently supplied digest, binds both
-identities into the returned timestamp binding metadata, and rejects replacement
-of the sidecar during admission.
+``source_artifact_sha256`` against an independently supplied digest, binds the
+separate verification artifact and both content identities into the returned
+timestamp binding metadata, and rejects replacement of the sidecar during
+admission.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ _CLAIM_METADATA_FIELDS = frozenset(
     {
         "prob4d_timestamp_source_sha256",
         "prob4d_timestamp_source_independently_verified",
+        "prob4d_timestamp_source_verification_artifact_id",
         "prob4d_timestamp_lineage_artifact_id",
         "prob4d_timestamp_lineage_file_sha256",
     }
@@ -82,6 +84,7 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
     *,
     timestamp_lineage_path: str | Path,
     expected_timestamp_source_sha256: str,
+    timestamp_source_verification_artifact_id: str,
     bundle_manifest_path: str | Path,
     expected_bundle_manifest_sha256: str,
     row_factor_ids: Sequence[str],
@@ -89,8 +92,10 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
 ) -> Prob4DObservationTimestampBindingV1:
     """Admit one timestamp sidecar with independent source-byte evidence.
 
-    ``expected_timestamp_source_sha256`` must come from an independently frozen
-    source/calibration manifest, not from the timestamp sidecar being admitted.
+    ``expected_timestamp_source_sha256`` and
+    ``timestamp_source_verification_artifact_id`` must come from an independently
+    frozen source/calibration manifest, not from the timestamp sidecar being
+    admitted. The verification artifact must be distinct from the sidecar itself.
     The sidecar is hashed before and after the lower-level factor/row binding so
     a concurrent replacement cannot change the admitted evidence silently.
     """
@@ -98,6 +103,10 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
     expected_source = sha256_digest(
         expected_timestamp_source_sha256,
         name="expected_timestamp_source_sha256",
+    )
+    verification_id = sha256_digest(
+        timestamp_source_verification_artifact_id,
+        name="timestamp_source_verification_artifact_id",
     )
     artifact_path, file_sha_before = _ordinary_snapshot(timestamp_lineage_path)
     lineage = load_prob4d_observation_timestamp_lineage(artifact_path)
@@ -108,6 +117,10 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
     lineage_id = lineage.artifact_id
     if lineage_id is None:
         raise AssertionError("validated Prob4D timestamp lineage lacks an artifact ID")
+    if verification_id == lineage_id:
+        raise ValueError(
+            "Prob4D timestamp lineage cannot serve as its own verification artifact"
+        )
 
     caller_metadata = {} if metadata is None else plain_json(metadata)
     if not isinstance(caller_metadata, dict):
@@ -122,6 +135,7 @@ def load_claim_bearing_prob4d_observation_timestamp_binding(
         **caller_metadata,
         "prob4d_timestamp_source_sha256": expected_source,
         "prob4d_timestamp_source_independently_verified": True,
+        "prob4d_timestamp_source_verification_artifact_id": verification_id,
         "prob4d_timestamp_lineage_artifact_id": lineage_id,
         "prob4d_timestamp_lineage_file_sha256": file_sha_before,
     }
