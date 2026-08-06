@@ -10,6 +10,7 @@ on:
       - "tests/test_prob4d_observation_timestamps.py"
       - "tests/test_prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps_crossrepo.py"
+      - "tests/test_prob4d_observation_timestamps_causal4d.py"
       - "docs/prob4d_observation_timestamps.md"
   workflow_dispatch:
 
@@ -22,6 +23,7 @@ concurrency:
 
 env:
   PROB4D_TIMESTAMP_PRODUCER_REVISION: 9ca9878c9f019f8bb960d3e480aec208840b5a37
+  CAUSAL4D_CLOCK_PRIOR_REVISION: 1a74d96d61fe635e396de77d65da4be8f752fb20
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -58,6 +60,16 @@ jobs:
           persist-credentials: false
           clean: true
 
+      - name: Check out exact Causal4D clock-prior producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_CLOCK_PRIOR_REVISION }}
+          path: _external/causal4d
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
       - name: Resolve isolated validation paths
         shell: bash
         run: |
@@ -87,6 +99,8 @@ jobs:
             "wheel==0.45.1"
           "${TIMESTAMP_VENV}/bin/python" -m pip install -e ".[dev]"
           "${TIMESTAMP_VENV}/bin/python" -m pip install -e ./_external/prob4d
+          "${TIMESTAMP_VENV}/bin/python" -m pip install \
+            -e ./_external/causal4d --no-deps
           "${TIMESTAMP_VENV}/bin/python" -m pip check
 
       - name: Record exact environment and source identities
@@ -97,6 +111,7 @@ jobs:
             echo "repository=${GITHUB_REPOSITORY}"
             echo "revision=$(git rev-parse HEAD)"
             echo "prob4d_revision=$(git -C _external/prob4d rev-parse HEAD)"
+            echo "causal4d_revision=$(git -C _external/causal4d rev-parse HEAD)"
             echo "runner_name=${RUNNER_NAME}"
             echo "runner_os=${RUNNER_OS}"
             echo "runner_arch=${RUNNER_ARCH}"
@@ -106,7 +121,10 @@ jobs:
           } | tee "${TIMESTAMP_RUN_ROOT}/environment.txt"
           test "$(git -C _external/prob4d rev-parse HEAD)" = \
             "${PROB4D_TIMESTAMP_PRODUCER_REVISION}"
+          test "$(git -C _external/causal4d rev-parse HEAD)" = \
+            "${CAUSAL4D_CLOCK_PRIOR_REVISION}"
           test -z "$(git -C _external/prob4d status --porcelain=v1)"
+          test -z "$(git -C _external/causal4d status --porcelain=v1)"
 
       - name: Check focused source quality
         shell: bash
@@ -117,13 +135,15 @@ jobs:
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
-            tests/test_prob4d_observation_timestamps_crossrepo.py
+            tests/test_prob4d_observation_timestamps_crossrepo.py \
+            tests/test_prob4d_observation_timestamps_causal4d.py
           python -m ruff format --check \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
-            tests/test_prob4d_observation_timestamps_crossrepo.py
+            tests/test_prob4d_observation_timestamps_crossrepo.py \
+            tests/test_prob4d_observation_timestamps_causal4d.py
           python -m mypy \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py
@@ -136,6 +156,7 @@ jobs:
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py \
+            tests/test_prob4d_observation_timestamps_causal4d.py \
             tests/test_observation_timing_nuisance.py \
             tests/test_observation_timing_interchange.py \
             tests/test_observation_belief.py \
@@ -145,7 +166,8 @@ jobs:
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
-            tests/test_prob4d_observation_timestamps_crossrepo.py
+            tests/test_prob4d_observation_timestamps_crossrepo.py \
+            tests/test_prob4d_observation_timestamps_causal4d.py
 
       - name: Verify exact read-only repository state
         shell: bash
