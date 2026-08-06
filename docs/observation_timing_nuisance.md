@@ -11,6 +11,33 @@ r_i \approx H_{x,i}\Delta x + H_{b,i}b + \dot h_i\,\delta t + \epsilon_i.
 keeps clock-domain priors explicit, diagnoses timing/state/bias confounding, and
 supports a source-only Gaussian synchronization calibration.
 
+## Producer-consumer sign convention
+
+Portable timing-prior payloads use the fixed convention
+
+```text
+aligned_observation_time_s = observation_time_s + offset_s
+```
+
+A negative offset therefore shifts an observation timestamp earlier. The
+interchange boundary validates this text before admitting the scalar mean, so a
+producer's fitted offset cannot be silently reversed.
+
+```python
+from bayesian_phystwin.observation_timing_interchange import (
+    observation_timing_prior_from_payload,
+)
+
+prior = observation_timing_prior_from_payload(causal4d_timing_prior_payload)
+```
+
+The payload is closed-schema and contains the clock domain, signed mean,
+predictive standard deviation, exact source-artifact identity, and convention.
+`observation_timing_prior_payload(prior)` exports the same fixed convention for
+a subsequent portable boundary.
+
+## Nuisance design and identifiability
+
 ```python
 import numpy as np
 
