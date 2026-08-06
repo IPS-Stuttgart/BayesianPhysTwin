@@ -7,12 +7,16 @@ on:
       - ".github/workflows/source-competence-reliability.yml"
       - ".staging/harden_source_competence_contract.py"
       - "src/bayesian_phystwin/source_competence_reliability.py"
+      - "src/bayesian_phystwin/source_competence_linearization.py"
       - "src/bayesian_phystwin/structured_reliability.py"
       - "src/bayesian_phystwin/observation_belief.py"
+      - "src/bayesian_phystwin/physical_linearization.py"
       - "src/bayesian_phystwin/_prob4d_stream_binding.py"
       - "tests/test_source_competence_reliability.py"
+      - "tests/test_source_competence_linearization.py"
       - "tests/test_structured_reliability.py"
       - "tests/test_observation_belief.py"
+      - "tests/test_physical_linearization.py"
       - "docs/source_competence_reliability.md"
   workflow_dispatch:
 
@@ -92,10 +96,14 @@ jobs:
           python "${patch_script}"
           python -m ruff format \
             src/bayesian_phystwin/source_competence_reliability.py \
-            tests/test_source_competence_reliability.py
+            src/bayesian_phystwin/source_competence_linearization.py \
+            tests/test_source_competence_reliability.py \
+            tests/test_source_competence_linearization.py
           python -m ruff check \
             src/bayesian_phystwin/source_competence_reliability.py \
-            tests/test_source_competence_reliability.py
+            src/bayesian_phystwin/source_competence_linearization.py \
+            tests/test_source_competence_reliability.py \
+            tests/test_source_competence_linearization.py
           rm -f "${patch_script}"
           rmdir .staging 2>/dev/null || true
           git diff --check
@@ -124,12 +132,17 @@ jobs:
         run: |
           python -m ruff check \
             src/bayesian_phystwin/source_competence_reliability.py \
-            tests/test_source_competence_reliability.py
+            src/bayesian_phystwin/source_competence_linearization.py \
+            tests/test_source_competence_reliability.py \
+            tests/test_source_competence_linearization.py
           python -m ruff format --check \
             src/bayesian_phystwin/source_competence_reliability.py \
-            tests/test_source_competence_reliability.py
+            src/bayesian_phystwin/source_competence_linearization.py \
+            tests/test_source_competence_reliability.py \
+            tests/test_source_competence_linearization.py
           python -m mypy \
-            src/bayesian_phystwin/source_competence_reliability.py
+            src/bayesian_phystwin/source_competence_reliability.py \
+            src/bayesian_phystwin/source_competence_linearization.py
 
       - name: Run focused and adjacent contracts
         shell: bash
@@ -137,13 +150,17 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_source_competence_reliability.py \
+            tests/test_source_competence_linearization.py \
             tests/test_structured_reliability.py \
             tests/test_observation_belief.py \
+            tests/test_physical_linearization.py \
             tests/test_prob4d_joint_contract_fixture.py \
             | tee "${SOURCE_COMPETENCE_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/source_competence_reliability.py \
-            tests/test_source_competence_reliability.py
+            src/bayesian_phystwin/source_competence_linearization.py \
+            tests/test_source_competence_reliability.py \
+            tests/test_source_competence_linearization.py
           python -m pip check
 
       - name: Verify clean repository state
