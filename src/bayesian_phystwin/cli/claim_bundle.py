@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from bayesian_phystwin.claim_bundle_v1 import (
+    ClaimBundleArtifactKind,
     ClaimBundleArtifactV1,
     build_claim_bundle,
     claim_bundle_artifact,
@@ -60,27 +61,33 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _artifacts_for(
+    values: Sequence[tuple[str, Path]],
+    *,
+    kind: ClaimBundleArtifactKind,
+    root: Path,
+) -> tuple[ClaimBundleArtifactV1, ...]:
+    return tuple(
+        claim_bundle_artifact(
+            path,
+            name=name,
+            kind=kind,
+            root=root,
+        )
+        for name, path in values
+    )
+
+
 def _additional_artifacts(
     args: argparse.Namespace,
     *,
     root: Path,
 ) -> tuple[ClaimBundleArtifactV1, ...]:
-    artifacts: list[ClaimBundleArtifactV1] = []
-    for kind, values in (
-        ("figure", args.figure),
-        ("table_data", args.table_data),
-        ("supporting", args.supporting),
-    ):
-        artifacts.extend(
-            claim_bundle_artifact(
-                path,
-                name=name,
-                kind=kind,
-                root=root,
-            )
-            for name, path in values
-        )
-    return tuple(artifacts)
+    return (
+        *_artifacts_for(args.figure, kind="figure", root=root),
+        *_artifacts_for(args.table_data, kind="table_data", root=root),
+        *_artifacts_for(args.supporting, kind="supporting", root=root),
+    )
 
 
 def _build(args: argparse.Namespace) -> int:
