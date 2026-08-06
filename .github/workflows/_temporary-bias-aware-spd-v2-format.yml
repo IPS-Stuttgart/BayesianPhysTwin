@@ -1,0 +1,63 @@
+name: Temporary bias-aware SPD v2 formatting
+
+on:
+  push:
+    branches:
+      - fix/bias-aware-spd-v2-quality-gate
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Apply repository Ruff policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'ruff>=0.6'
+          files=(
+            src/bayesian_phystwin/bias_aware_belief_v2.py
+            tests/test_bias_aware_belief_v2.py
+            tests/test_bias_aware_belief_v2_adversarial.py
+            tests/test_spd_system.py
+          )
+          python -m ruff check --fix --select I001 "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          git diff --check
+
+      - name: Commit deterministic formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add \
+            src/bayesian_phystwin/bias_aware_belief_v2.py \
+            tests/test_bias_aware_belief_v2.py \
+            tests/test_bias_aware_belief_v2_adversarial.py \
+            tests/test_spd_system.py
+          if git diff --cached --quiet; then
+            echo 'No formatting changes were required.' >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Apply deterministic Ruff formatting to SPD v2'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
