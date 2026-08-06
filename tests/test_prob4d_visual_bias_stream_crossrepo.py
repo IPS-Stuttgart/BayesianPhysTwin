@@ -5,9 +5,6 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-prob4d_visual_bias = pytest.importorskip("prob4d.visual_bias")
-prob4d_visual_bias_stream = pytest.importorskip("prob4d.visual_bias_stream")
-
 from bayesian_phystwin.observation_belief import ObservationBeliefV1
 from bayesian_phystwin.prob4d_factor_stream import (
     Prob4DObservationFactorStreamUpdateV1,
@@ -22,6 +19,9 @@ from bayesian_phystwin.prob4d_visual_bias_stream import (
 from bayesian_phystwin.prob4d_visual_bias_update import (
     PROB4D_VISUAL_BIAS_ORTHOGONALIZATION,
 )
+
+prob4d_visual_bias = pytest.importorskip("prob4d.visual_bias")
+prob4d_visual_bias_stream = pytest.importorskip("prob4d.visual_bias_stream")
 
 VisualBiasNuisanceV1 = prob4d_visual_bias.VisualBiasNuisanceV1
 build_visual_bias_nuisance_stream = (
