@@ -22,9 +22,7 @@ def _constructor_kwargs(
     record.pop("schema")
     record.pop("schema_version")
     record.pop("score")
-    record["calibration_group_ids"] = tuple(
-        group["group_id"] for group in groups
-    )
+    record["calibration_group_ids"] = tuple(group["group_id"] for group in groups)
     record["calibration_group_scores"] = np.asarray(
         [group["score"] for group in groups]
     )
