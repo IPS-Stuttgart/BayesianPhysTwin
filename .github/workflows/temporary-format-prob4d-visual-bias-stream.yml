@@ -57,7 +57,7 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip install "ruff==0.16.1"
 
-      - name: Make opaque producer update copies explicit
+      - name: Make opaque producer copies and NumPy types explicit
         shell: bash
         run: |
           set -euo pipefail
@@ -96,7 +96,18 @@ jobs:
                   '',
               ]
           )
-          path.write_text(source[:start] + replacement + source[end:], encoding="utf-8")
+          patched = source[:start] + replacement + source[end:]
+          annotations = {
+              '            expected_rows = np.full(\n': (
+                  '            expected_rows: np.ndarray = np.full(\n'
+              ),
+              '        result = np.zeros(\n': '        result: np.ndarray = np.zeros(\n',
+          }
+          for old, new in annotations.items():
+              if old not in patched:
+                  raise RuntimeError(f"expected annotation site is missing: {old!r}")
+              patched = patched.replace(old, new, 1)
+          path.write_text(patched, encoding="utf-8")
           PY
 
       - name: Format, lint, and type-check the focused files
