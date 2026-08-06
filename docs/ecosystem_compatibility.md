@@ -53,33 +53,33 @@ supplied revision passes.
 
 ## CI policy
 
-Three complementary lanes use the committed lock:
+Three complementary workflows use the committed lock:
 
 1. `Causal4D provider compatibility` tests current BayesianPhysTwin provider
    modules and downstream behavior against the locked Causal4D revision.
-2. `Locked ecosystem installed-wheel compatibility` builds the current reviewed
+2. `Three-repository installed-wheel golden path` builds the current reviewed
    BayesianPhysTwin source with the exact locked Prob4D and Causal4D companions.
    This is the blocking forward-compatibility gate for a BayesianPhysTwin change.
-3. The same workflow separately reproduces the complete historical trio at all
-   three locked revisions, proving that the lock still names the source that
-   produced its evidence.
+   Its scheduled or explicitly requested latest-main job is non-blocking.
+3. `Historical ecosystem lock reproduction` checks out all three exact locked
+   revisions and reruns the historical installed-wheel integration path. This
+   proves that the lock still names the source combination that produced its
+   evidence.
 
 Pull requests and pushes therefore have deterministic known-good companion
 revisions rather than whichever commits happen to be at moving `main` branches
-when a runner starts. The locked workflow verifies its literal workflow pins
-against the packaged JSON before any cross-repository build begins.
+when a runner starts. Literal workflow pins are checked against the packaged
+JSON before the historical cross-repository build begins.
 
-A scheduled or explicitly requested latest-main canary tests current Prob4D and
-Causal4D `main`. It is a job-level `continue-on-error` lane and is allowed to
-fail without invalidating a compatible BayesianPhysTwin change. Its purpose is
+The latest-main canaries use job-level `continue-on-error` semantics and may
+fail without invalidating a compatible BayesianPhysTwin change. Their purpose is
 early warning for ecosystem drift. A canary failure should lead to a separate
 compatibility update in the affected repository and, after the public
 installed-wheel path passes, a reviewed lock update.
 
-The older broad `Three-repository installed-wheel golden path` remains useful
-for repository-dispatch and explicit branch testing. It is not the source of
-truth for the exact version-1 lock unless all three recorded checkouts match the
-lock.
+Manual and repository-dispatch runs may override companion refs for diagnosis.
+Such an override is reported explicitly and is not presented as verification of
+the committed exact lock.
 
 ## Updating the lock
 
@@ -89,8 +89,8 @@ lock.
 3. Record the exact checked-out revisions from the Actions logs, not a later
    squash, branch name, or inferred equivalent commit.
 4. Record package versions, Python version, workflow run, and test count.
-5. Update the bundled JSON and literal workflow pins in one reviewable pull
-   request.
+5. Update the bundled JSON and literal historical-workflow pins in one
+   reviewable pull request.
 6. Run the lock parser, CLI, wheel/sdist, provider, historical reproduction,
    current-source/locked-companion, and latest-main canary policy tests.
 
