@@ -119,6 +119,28 @@ The aggregate support gate is:
 Every technical failure is retained with its last completed stage and exception.
 There is no replacement, target-informed exclusion, or fallback object.
 
+## Workflow trust and runner-capacity boundary
+
+The source-contract gate no longer depends on GitHub-hosted runner capacity. It
+runs on `workstation2` for trusted pushes, manual dispatches, and pull requests
+whose head branch belongs to this repository. Pull requests from forks are not
+admitted to the self-hosted runner. The contract job checks out the exact
+reviewed revision with read-only credentials and installs into a fresh isolated
+`RUNNER_TEMP` target site without a package cache. It opens no dataset root or
+payload.
+
+The empirical job uses a separate fresh target site rather than the runner's
+Python toolcache or `venv` support. Both target sites are removed after the job,
+while raw and processed calibration data remain only in their registered
+persistent roots.
+
+The empirical preparation job still has the explicit
+`github.event_name != 'pull_request'` guard. Therefore no pull request can run
+the names-only planner, download calibration bytes, open camera or robot data,
+or inspect a confirmation-object subtree. A merge that changes this registered
+lane runs the self-hosted contract gate first and only then starts the locked
+calibration-source preparation.
+
 ## Persistent and uploaded data
 
 Raw and processed calibration payloads remain on `workstation2` in dedicated
