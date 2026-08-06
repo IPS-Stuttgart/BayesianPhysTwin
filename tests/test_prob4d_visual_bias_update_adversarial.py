@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 import bayesian_phystwin.prob4d_visual_bias_update as update_module
+import test_prob4d_visual_bias_update as fixtures
 from bayesian_phystwin.prob4d_visual_bias_update import (
     PROB4D_VISUAL_BIAS_ORTHOGONALIZATION,
     PROB4D_VISUAL_BIAS_REPARAMETERIZATION,
@@ -17,8 +18,6 @@ from bayesian_phystwin.prob4d_visual_bias_update import (
     validate_prob4d_visual_bias_nuisance,
 )
 from bayesian_phystwin.prospective_prob4d_update import ClaimBearingProb4DUpdateV1
-
-import test_prob4d_visual_bias_update as fixtures
 
 
 def _visual_lineage(
@@ -57,18 +56,19 @@ def _base_update(
     lineage_overrides: dict[str, object] | None = None,
 ) -> ClaimBearingProb4DUpdateV1:
     shared = binding.latent_dimension if shared_count is None else shared_count
-    shared_design = np.zeros((2, 3, shared), dtype=np.float64)
-    view_design = np.zeros((2, 3, view_count), dtype=np.float64)
-    adapted = fixtures._adapted_batch(observation, shared_design, view_design)
+    adapted = fixtures._adapted_batch(
+        observation,
+        np.zeros((2, 3, shared), dtype=np.float64),
+        np.zeros((2, 3, view_count), dtype=np.float64),
+    )
     lineage = _visual_lineage(
         observation,
         binding,
         **({} if lineage_overrides is None else lineage_overrides),
     )
     batch = replace(adapted.batch, metadata=lineage)
-    result = fixtures._solver_result(batch)
     return ClaimBearingProb4DUpdateV1(
-        result=result,
+        result=fixtures._solver_result(batch),
         observation_artifact_id=observation.artifact_id,
         linearization_artifact_id=fixtures.LINEARIZATION_ID,
         provider_manifest_id=fixtures.PROVIDER_ID,
@@ -154,16 +154,12 @@ def _base_update(
             "missing",
         ),
         (
-            lambda: update_module._validated_calibration_ids(
-                {"": "d" * 64}
-            ),
+            lambda: update_module._validated_calibration_ids({"": "d" * 64}),
             ValueError,
             "nonempty",
         ),
         (
-            lambda: update_module._validated_calibration_ids(
-                {"gauge": "bad"}
-            ),
+            lambda: update_module._validated_calibration_ids({"gauge": "bad"}),
             ValueError,
             "calibration artifact",
         ),
@@ -335,7 +331,10 @@ def test_binding_summary_and_coefficient_order_are_stable() -> None:
 def test_validation_rejects_wrong_observation_and_sidecar_types() -> None:
     observation = fixtures._observation()
     with pytest.raises(TypeError, match="ObservationBeliefV1"):
-        validate_prob4d_visual_bias_nuisance(object(), object())  # type: ignore[arg-type]
+        validate_prob4d_visual_bias_nuisance(
+            object(),  # type: ignore[arg-type]
+            object(),
+        )
     with pytest.raises(TypeError, match="VisualBiasNuisanceV1"):
         validate_prob4d_visual_bias_nuisance(observation, object())
     with pytest.raises(ValueError, match="require_gauge_orthogonalized"):
@@ -431,11 +430,21 @@ def test_gauge_projection_rejects_malformed_inputs(
 def test_gauge_projection_rejects_bad_covariance_blocks() -> None:
     bias = np.zeros((1, 3, 1), dtype=np.float64)
     gauge = np.zeros((1, 3, 1), dtype=np.float64)
+    nonsymmetric = np.asarray(
+        [
+            [
+                [1.0, 1.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        ],
+        dtype=np.float64,
+    )
     with pytest.raises(ValueError, match="symmetric"):
         update_module._maximum_conditional_gauge_projection(
             bias,
             gauge,
-            np.asarray([[[1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]]),
+            nonsymmetric,
         )
     with pytest.raises(ValueError, match="positive definite"):
         update_module._maximum_conditional_gauge_projection(
@@ -591,14 +600,17 @@ def test_one_call_rejects_bad_claim_bearing_metadata_before_solver(
     observation = fixtures._observation()
     binding = fixtures._binding(observation)
     shared = binding.reparameterized_design(shared_bias_prior_std_m=0.02)
-    adapted = fixtures._adapted_batch(
+    original = fixtures._adapted_batch(
         observation,
         shared,
         np.zeros((2, 3, 0), dtype=np.float64),
     )
-    metadata = dict(adapted.batch.metadata or {})
+    metadata = dict(original.batch.metadata or {})
     metadata.update(metadata_change)
-    adapted = replace(adapted, batch=replace(adapted.batch, metadata=metadata))
+    adapted = SimpleNamespace(
+        batch=replace(original.batch, metadata=metadata),
+        observation_artifact_id=original.observation_artifact_id,
+    )
     events: list[str] = []
 
     def build(*args: object, **kwargs: object) -> Any:
