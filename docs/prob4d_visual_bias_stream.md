@@ -40,6 +40,10 @@ policy = RecursiveNuisancePolicyV1(
 )
 ```
 
+## Producer compatibility pin
+
+The producer-consumer regression is bound to merged Prob4D revision `e37c3d50d4a07a2c3760389e79d59b0ac9402dc4`, which introduced recursive visual-bias nuisance streams. The workflow checks out that immutable revision rather than a moving branch, installs both repositories into a fresh environment, and verifies exact producer artifact IDs, member identities, row slices, covariance, and fail-closed execution semantics. Advancing the producer revision requires an explicit reviewed change to the workflow and a fresh parity run.
+
 ## Current execution boundary
 
 The existing claim-bearing V2 visual-bias solver consumes one sidecar with its complete covariance. It does **not** yet propagate one shared visual-bias posterior state through several physical recursive updates.
