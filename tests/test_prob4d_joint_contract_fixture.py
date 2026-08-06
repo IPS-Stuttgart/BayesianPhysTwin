@@ -167,7 +167,9 @@ def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
         )
 
 
-# The stable-core coverage job invokes this file explicitly. Import the recursive
-# factor-stream contract cases here so their new package code is covered by the
-# same line and branch ratchets without duplicating the full-suite collection.
+# The stable-core coverage job invokes this file explicitly. Import adjacent
+# contract cases here so their new package code is covered by the same line and
+# branch ratchets without weakening the thresholds or duplicating the workflow.
 from prob4d_factor_stream_contract_cases import *  # noqa: E402,F403
+from test_source_competence_linearization import *  # noqa: E402,F403
+from test_source_competence_reliability import *  # noqa: E402,F403
