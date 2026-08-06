@@ -1,0 +1,720 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPSparseAssimilationSourceManifest",
+  "case_records": [
+    {
+      "case": "double_lift_cloth_3",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/double_lift_cloth_3/inference.pkl",
+        "sha256": "cf6df1b37e0ba3a6deec4eab13f6fb73eed905c47a86bb1bed9227758fbdcca0"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/double_lift_cloth_3/prediction_input/prediction_input.npz",
+        "sha256": "2b631d653d83ab6735a1a2671f9e02ec6d5b110feb05c6cb7969f15f97b0b4c4"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0052996063604950905,
+          0.002184568904340267,
+          0.0015004683518782258,
+          0.002270864322781563
+        ],
+        "identity_ids": [
+          0,
+          8,
+          6,
+          2
+        ],
+        "material_attachment_sha256": "9ffa978beb74ab931371cf4cc118651b9405b67267a18c6b61d4e485427cd34c",
+        "material_node_indices": [
+          1665,
+          6104,
+          6395,
+          1973
+        ],
+        "prediction_archive_sha256": "20a5345e82263c563cdb416164f7add2379717c549672e9cb2bacbf9f510f764",
+        "prediction_report_sha256": "0f2c0786a6b678a41540ffef80f5e6b948283e64eb70bde39a9b8d69fd86af20",
+        "prediction_seal_sha256": "5892772b0d4d4f15ca9f2a37fea0806c077a2fca00854bb87fd59956fe67b570",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 82,
+        "source_frame_start": 62,
+        "tracker_protocol_sha256": "898deecf0541171b591201ce742f5d4bb1987ab54ab599e2f989d301e7f2bc21",
+        "transfer_result_sha256": "6e2704dc172a87ba021316e0936d31ab83c651211164a40687a985a513939030"
+      },
+      "source_inputs": {
+        "final_data_sha256": "ed4e77bd74c6641ec6bb7a3ed36e069cb0896af3ed273a615c6a2ae31cc71de3",
+        "manual_tracks_sha256": "9b05b081ae1746e92cdc901d96066ab3f7ff2cbee9503336f5aed97cae19655d",
+        "optimal_params_sha256": "f0b657267ee51c1e5a9bfef24039177b24a543e61138b5ef57686b2920a99494",
+        "split_sha256": "752a5ef5c8af559eac3bfc45154d6b57f46839a60256de27ccefc4ca2744b6cb"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/double_lift_cloth_3/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "c2dd4fffe6a26e35368e75ae33787bac148f011e35e38664f148d4e8f224afeb"
+      }
+    },
+    {
+      "case": "double_lift_sloth",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/double_lift_sloth/inference.pkl",
+        "sha256": "7b9328ba2531a60199d7bc9d04bc3232aa7a0d12eeb682987827fc705c071393"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/double_lift_sloth/prediction_input/prediction_input.npz",
+        "sha256": "e3c78e3910007c4099e06eccba3e43b00d3694b0fcda5e5a11aeae992c17dd67"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          9.703944314765067e-09,
+          0.0029395795427262783,
+          0.001652651117183268,
+          0.0031592710874974728
+        ],
+        "identity_ids": [
+          0,
+          6,
+          1,
+          5
+        ],
+        "material_attachment_sha256": "4a2986600bad6e5c4e41de44b673c9984c06c4605311af12eabf72e49cbde698",
+        "material_node_indices": [
+          4253,
+          377,
+          4337,
+          1519
+        ],
+        "prediction_archive_sha256": "ecdd0f338c8f43dbfa51051f00da557e370adacb1f2447ab674408a6c68e1f4d",
+        "prediction_report_sha256": "dfa5d435b3447601188c6f87071e088ea0a18f0d37911df1712b03eb5b33a609",
+        "prediction_seal_sha256": "745d172b0bc5d51446d4666c96ef9f09bccd8486316d43ee91b13aa5a971d172",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 43,
+        "source_frame_start": 23,
+        "tracker_protocol_sha256": "609c78aff92d6a067c3aa71fb1d6e892ef84ee3d3b034b7cec959df194842bf3",
+        "transfer_result_sha256": "79cf1620458c799ed31797f953182c89f702a6d22c52af3e37990e1fb016d8ce"
+      },
+      "source_inputs": {
+        "final_data_sha256": "6bbb1245812a9b6c760f6881b8b6174343fd0df717c168b09fb7b365caabb33c",
+        "manual_tracks_sha256": "6bd648125d2068924b02586b27e797d538a8220a26857a0758693a9a15cf3d2f",
+        "optimal_params_sha256": "0d2a512ddc68fa21ce52b2e86257f78fd66536450ed334e8d8eded13f898c17f",
+        "split_sha256": "2cec5a27c837edebb80d09c18fbacb6415299848951c3a19b86f7acd8a924c9a"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/double_lift_sloth/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "d28e9ac512666857f96e32d5d7d8c3d88e935fca76ba8d07d2d0697f980887ab"
+      }
+    },
+    {
+      "case": "double_stretch_zebra",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/double_stretch_zebra/inference.pkl",
+        "sha256": "5a8be78c2cd3e93ad012a958521c83e49712358e6d357b59b342cdfc6ce9512d"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/double_stretch_zebra/prediction_input/prediction_input.npz",
+        "sha256": "e62e2240c7a4a9d21cb5b8423af5751fbeb1e6809229332822cc4dfc89035e5a"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0033017632085829973,
+          0.0035550997126847506,
+          0.002612211275845766,
+          0.002042772015556693
+        ],
+        "identity_ids": [
+          0,
+          7,
+          8,
+          2
+        ],
+        "material_attachment_sha256": "053be0d5521151e10f015e89012d9488dea6f62bbf14c7681dca4b9fcaa3a7cc",
+        "material_node_indices": [
+          1831,
+          1199,
+          2429,
+          1210
+        ],
+        "prediction_archive_sha256": "6e4b05f95611d0c066586d82ad71a38377b2d12d20d054157a8762909f543390",
+        "prediction_report_sha256": "ab759c2892886fd2b2cf0dc82bf21270eec3bc1842a166bc04a02e18ca028b01",
+        "prediction_seal_sha256": "86f9d055689e14dc63b292462994c52b3c7418979c845bda1ad61a9ff7158ba1",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 138,
+        "source_frame_start": 118,
+        "tracker_protocol_sha256": "bb73433cff2ff47bea4ed5515414d978a45b880508bfbaf587fb226b0f96a78c",
+        "transfer_result_sha256": "7ff278889d7d226d62da4e68b6b34cb9dc4280a2117431e7f65d834dc1f37703"
+      },
+      "source_inputs": {
+        "final_data_sha256": "880a083589457ba0db8e937f6283d7918afae048eb290bf0a9cea78645854b44",
+        "manual_tracks_sha256": "de2f690cd86d49c45e5b4444bc28fc4c909f0b1afb80245c53df81d988662cd8",
+        "optimal_params_sha256": "0b06883a66a2307fa0919ca3884f2157801afeb2f240803eee072e098538fa2d",
+        "split_sha256": "54609373930da48c5fb400cd4b1d5bc0d13eca968c2f0e9a2f1a5552ec9db6bc"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/double_stretch_zebra/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "dfbf18f901631657d98d33e695b0f8b8de00b3f194f3b56252fe04ddf850f673"
+      }
+    },
+    {
+      "case": "single_clift_cloth_1",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_clift_cloth_1/inference.pkl",
+        "sha256": "d81ba8fae40c6ef49a4668621d8a8fe7fc3688451a1bc5a09a9b4d7116cea863"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_clift_cloth_1/prediction_input/prediction_input.npz",
+        "sha256": "5daa457783bfba27728e08910d38ddb907759b43dd8ae44d654369d371f45e8f"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.002560851164162159,
+          0.0026337699964642525,
+          0.0032525951974093914,
+          0.002074179006740451
+        ],
+        "identity_ids": [
+          0,
+          8,
+          6,
+          2
+        ],
+        "material_attachment_sha256": "664132583017dd4616a01d48748f675da3d56baa4bec19d9ae335fd8c19491e3",
+        "material_node_indices": [
+          1139,
+          5075,
+          5158,
+          1214
+        ],
+        "prediction_archive_sha256": "044437c2c61aa783f98871b404d07fb72d2f6fe98af77e160e45bae9a1ab1ca6",
+        "prediction_report_sha256": "e8d0af30206cc9799c9c6d878deb66d9f29e050ce914edd746d534800a393734",
+        "prediction_seal_sha256": "576fc992c75affeac4367695719a8dff39953374de61ecf21f452710d9bd71e6",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 56,
+        "source_frame_start": 36,
+        "tracker_protocol_sha256": "8488e6d3d376ec9e71488f75066a0daed43d34403f8c77f3527bfa14c2292ede",
+        "transfer_result_sha256": "e5b0c85a010d3cae0ad5cd86767b3a50062f79f86c8a8f7b7bd5de3befaa7f44"
+      },
+      "source_inputs": {
+        "final_data_sha256": "945998ecd4127bb9acc96296202c25cc55454055603b3e2480a0e6346a6b546c",
+        "manual_tracks_sha256": "10ad2022dc3de0539ca18e9c5e6c1adc0c73eba6cc49e62da25b0106ccebae6e",
+        "optimal_params_sha256": "92d8dd6e16d4f8cebcb4a608c2d7889c6d3c2a4fb7ed0b97ff487fa36f29e573",
+        "split_sha256": "2cac333e644e52632e88f34969285fe89afa325467b74791ad4579f1181c143a"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_clift_cloth_1/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "cf76e3b00700b49ae2e21b382e3c01a44b5edd1cf662c4452c88320658209fee"
+      }
+    },
+    {
+      "case": "single_clift_cloth_3",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_clift_cloth_3/inference.pkl",
+        "sha256": "eb1951ad27d47fae94687471ea82e74d430510442c540c5f7d561b356998f1e9"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_clift_cloth_3/prediction_input/prediction_input.npz",
+        "sha256": "f7ca97ff47bc6d8a98ffed315b7711b47bf13e3bcba365cd91eae47bc3bdbf15"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0026847023982554674,
+          0.002720057964324951,
+          0.003548671957105398,
+          0.0027968850918114185
+        ],
+        "identity_ids": [
+          1,
+          7,
+          6,
+          8
+        ],
+        "material_attachment_sha256": "0031f78c9f05e3c98878a06eb1c1abf5879a7b17f2d95d3ae00559034ad66336",
+        "material_node_indices": [
+          1847,
+          6645,
+          6692,
+          1863
+        ],
+        "prediction_archive_sha256": "19df898237fae45b32070e9091e4bfc007f6247d33bb38d64d300950faaa12fb",
+        "prediction_report_sha256": "7cac5d39a8165b97da98336ba55ad53c01f3c6583e63e2c1b43a39ab4f6d7573",
+        "prediction_seal_sha256": "ff72a4b5d3018a0b62f544f284c0ed8585972884c447d367fa210de7d4ed051c",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 67,
+        "source_frame_start": 47,
+        "tracker_protocol_sha256": "f2b880484e87c58bd7a5799df81f259dd04efa278a3a8500dda8ed2c177045b4",
+        "transfer_result_sha256": "12cc5f8f0ab962d8cdbb176d0de6a466531979acdf225c4e5f7e23662e44d3f5"
+      },
+      "source_inputs": {
+        "final_data_sha256": "693807277a795d250ba63f88a394ba5865d076803ce7fc5bc8defc847d7403b7",
+        "manual_tracks_sha256": "d1f2daf2db64aeec9ad6c8b071d16467af2f9f5893bd4c4e3e98861217cf725f",
+        "optimal_params_sha256": "ecd02a6f99e6259a23cb902bccb0ca99e2dbd0b00b5566a4cc80544c2ce9eb26",
+        "split_sha256": "066059d731461a2b0b9c626b1e29544e7ce8c9a6ba0cc0f4913d812413ba4359"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_clift_cloth_3/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "269cc8a93e2c07fe7adc933c5414225edc747c303bc906dfe2b8d0b338f47f74"
+      }
+    },
+    {
+      "case": "single_lift_cloth",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_cloth/inference.pkl",
+        "sha256": "f25cd2511ab591275233e7566c6f647dcc1a6b0c86a0041f2847607290231206"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth/prediction_input/prediction_input.npz",
+        "sha256": "3ad8c7260fccda8b7547d52eaad5a31ebc62cd9fe91fbdbb961b2f0e41820478"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0015976036665961146,
+          0.003482868429273367,
+          0.001542370766401291,
+          0.0011684931814670563
+        ],
+        "identity_ids": [
+          3,
+          4,
+          8,
+          5
+        ],
+        "material_attachment_sha256": "5fbfa2f9e209c19521516caa0f0726c082a784b9f621c905f583a044559eb1cc",
+        "material_node_indices": [
+          4821,
+          3860,
+          1496,
+          2606
+        ],
+        "prediction_archive_sha256": "e00a3d7c97517f2bcfa11c55695a32dab963157ff35f5dfdbfb67de3e4f8ac10",
+        "prediction_report_sha256": "530e1bd04ab0b47f524636462c123d0a330e4184a1b37f6653081183e01ee109",
+        "prediction_seal_sha256": "ba1794f9fdff59e250b318853264267e7ae4a9006715dbfa692fc359cd3a7e45",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 121,
+        "source_frame_start": 101,
+        "tracker_protocol_sha256": "6a19fec90de642c10bfbbcc2d2634f321c5111b7c204bb51456ed54383d14b82",
+        "transfer_result_sha256": "9462764cc9db7319df536b3a0dbfcad5f86929f56e8e285ab745910849c62062"
+      },
+      "source_inputs": {
+        "final_data_sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+        "manual_tracks_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+        "optimal_params_sha256": "d926c3dd7471363616bb67bd1dbad96b01be5a487c151bbae37769c68064fc48",
+        "split_sha256": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "d7c23b9788c32d94972c064cb17ada869a7e3c33cbf6278fd767a6abd7a674ac"
+      }
+    },
+    {
+      "case": "single_lift_cloth_1",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_cloth_1/inference.pkl",
+        "sha256": "65e9f20ea27c54c1536ad4ffd8710b9629b79435f25721adcd300b1e61199297"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth_1/prediction_input/prediction_input.npz",
+        "sha256": "c0e112bad44a4e4af51ac5f9ab90575e6f47b5c4b0190190de4c33cd2993b082"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0036108936183154583,
+          0.0009220630745403469,
+          0.003337120171636343,
+          0.0023274978157132864
+        ],
+        "identity_ids": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "material_attachment_sha256": "02dcada4993c3767411f0d043834e17acd7cac82c836425fd36a81785c565a16",
+        "material_node_indices": [
+          774,
+          4481,
+          4795,
+          3479
+        ],
+        "prediction_archive_sha256": "e5d9bc735dd2036be37568ee8e467b38bdda851a77b4a02bf3a3213e205742ca",
+        "prediction_report_sha256": "7e9b17841928c827b5ed7084bd3eaae7e92a47a7a932e1db336122a177175de2",
+        "prediction_seal_sha256": "6164bda7ab6bbcc07b1cca2bd3d45e47ba534ad30d23a0a3cd426676f33c7e1f",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 77,
+        "source_frame_start": 57,
+        "tracker_protocol_sha256": "654bd42025cc1face09627d09776aaf872c362cd1292c762bd0a4cc5de8bf2b8",
+        "transfer_result_sha256": "79d720653c5b64e55ddda5ffd0262ec684f170b3366ff58956c0f7a161ce5aec"
+      },
+      "source_inputs": {
+        "final_data_sha256": "3ec505a6a39f734d55969590225aba89c4efdb239c67cecf6e4addff6b549d9d",
+        "manual_tracks_sha256": "b7a69ece3858bd2373313299998b316ef625215f9fa6ecda2e166b1cca1a110a",
+        "optimal_params_sha256": "03fedc844b56fb2040cc47f6579bc89b064b1766276bc2f22a7b17729821449f",
+        "split_sha256": "ff7155ee3b00312fd4831b571af8b992eda1a15a1f76b683dcfa46e640ebba47"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth_1/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "bd12d1a3ed8df8bc6396cd1834b4437f007fb9efe86dd312d197e7f42115757c"
+      }
+    },
+    {
+      "case": "single_lift_cloth_3",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_cloth_3/inference.pkl",
+        "sha256": "a18fc6a7a31234fdb24929855d1bf12f79bcefcf38eda908543096dea793d294"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth_3/prediction_input/prediction_input.npz",
+        "sha256": "53b5be517447edafbc9b5b2e2209cab47e0c86379ec23ae8785f4398c0c2d118"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.003987104631960392,
+          0.0026462022215127945,
+          0.0029468063730746508,
+          0.002060442231595516
+        ],
+        "identity_ids": [
+          0,
+          6,
+          7,
+          1
+        ],
+        "material_attachment_sha256": "87fca8515b82c23d05112ec1addd29f5f831fc940cfd69538beca185fd43f1d0",
+        "material_node_indices": [
+          1335,
+          5790,
+          7375,
+          1673
+        ],
+        "prediction_archive_sha256": "c8b03b7be89dc9e78f38f444db83550d91d26ee0a39d0a378abfbcd8445162ed",
+        "prediction_report_sha256": "f618a480fdd37ffdc35a56f1dc905ba972d48776b28ae5b135da632460bc3b0d",
+        "prediction_seal_sha256": "5066ca7e1662da5d9295dc2908e02623ec86dd82a615ce5a8e5f49a10129fc6c",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 109,
+        "source_frame_start": 89,
+        "tracker_protocol_sha256": "209d1695990a5bed8f37469f7ac91e934d3f22ca1f5d6a20438cff4de44dcc30",
+        "transfer_result_sha256": "0f35b1db92f5c7061df2e83d479e2b3f580d6b9ba30fa3fee9a0335eb225db5a"
+      },
+      "source_inputs": {
+        "final_data_sha256": "0ecbea5028e7bc7014f2a3b9bb1ae8cfdd165ec8194ffab7907b2f5cdba514a2",
+        "manual_tracks_sha256": "e49e9e89b41526fc09ccf95bb6e53317d95b4949e5e1a9591c1a463b40446995",
+        "optimal_params_sha256": "2aa0b16a851c0078f253f4337d6ac1997a4f0f2b48b4ce369c1a03b20dd1c948",
+        "split_sha256": "e7fc26c5c398f654ad9ab2bcd7f9038221237043b7f0f23086d61f5f00768e96"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth_3/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "757fc1b984fee1cc35ff0dd7ffe2e43a1352da8571e62dde858c297b35d93369"
+      }
+    },
+    {
+      "case": "single_lift_cloth_4",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_cloth_4/inference.pkl",
+        "sha256": "e3680c295dedd64ebb9038155a14d950d6586651fb4428057f1c50c0b12246bc"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth_4/prediction_input/prediction_input.npz",
+        "sha256": "fb0e2fcc1bd8eaf557f45b2472216f71e4a17834fee2da75ff3aac4f85a0d875"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0038565744180232286,
+          0.004214897286146879,
+          5.65755799470935e-05,
+          0.0020499909296631813
+        ],
+        "identity_ids": [
+          0,
+          8,
+          6,
+          1
+        ],
+        "material_attachment_sha256": "38836d8dcda656d5f43be8118224082e3b0d010b6396de4267c90c5060f2f6ff",
+        "material_node_indices": [
+          5564,
+          1393,
+          6042,
+          1521
+        ],
+        "prediction_archive_sha256": "7b6299897705aeccc6d7eaf274a2134ea3beaa579daeb5e859a056b3601752c7",
+        "prediction_report_sha256": "43a834939cb890eb3e5168cbd6223fb38e95dfb6822c89527a4bae0516c79cd0",
+        "prediction_seal_sha256": "c84788e5446d01929eea26797f7ffb5bc844e9fa59aa862fd3a56ea4529ffcfe",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 120,
+        "source_frame_start": 100,
+        "tracker_protocol_sha256": "780a0aeef85e1bddc7d310589da6f9fa37bdc9571a6a984aed6c58538953d4aa",
+        "transfer_result_sha256": "bb29f437a6e4594aa942bfe15498ac68168775465c4b5c48b7962a0dce6a442d"
+      },
+      "source_inputs": {
+        "final_data_sha256": "264a5453df2be9393ea6d3a4789af9739e7b5cd9438f13b493c24f5168bf79fa",
+        "manual_tracks_sha256": "7c1a5aa7f0d0e1be2d84ec29b89dbbedb00edecbb84e6d5728afde24dbce0bc3",
+        "optimal_params_sha256": "288228f2a57afcf02b327c00c2c24be0d5ceb7bb8c2721275b68068a20309841",
+        "split_sha256": "1536fc76defa848a0bd9afe895d1f0189acf013dcc025ea090cf3d57ddf71afa"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_cloth_4/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "600ca0b15653a99e7989da4bb46dac9ed99ff824dece54f46612e374eb8ace4f"
+      }
+    },
+    {
+      "case": "single_lift_sloth",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_sloth/inference.pkl",
+        "sha256": "f1164dd76e8fbbfa06fc39eef8f9d16c66a985f31d77fa153504c69457931006"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_sloth/prediction_input/prediction_input.npz",
+        "sha256": "75e691922ed8657283f441ebdf09390190be9c9704a37d9361d27756e1072036"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.003011886030435562,
+          0.003595363814383745,
+          0.0016152700409293175,
+          0.0014704683562740684
+        ],
+        "identity_ids": [
+          0,
+          4,
+          1,
+          6
+        ],
+        "material_attachment_sha256": "b9478a64fb051c38b5ef5cbd993e47dcef0e8189e9dd8307cd462d29be79143a",
+        "material_node_indices": [
+          4599,
+          267,
+          6089,
+          2465
+        ],
+        "prediction_archive_sha256": "d3dc1189e9c3cc214e81bbc53a73ad0b6fdef540c63230de30292a75171f22b6",
+        "prediction_report_sha256": "06c0445222a886f966f4bc518488c13cd91193bfc085cdbbc07daff2514e0788",
+        "prediction_seal_sha256": "3c6bb1b7e20c546bbde7893ee285f46a37e68b3c37cf8a71014b3b80ab837870",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 59,
+        "source_frame_start": 39,
+        "tracker_protocol_sha256": "470474d8fa569ab93972f0bdedc554709428e8cf073e0402059229a58af13ea4",
+        "transfer_result_sha256": "cc28c17434c32f1114554ec6bc2101fc39bbdfd2e694480aae2c49bebc9588cf"
+      },
+      "source_inputs": {
+        "final_data_sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2",
+        "manual_tracks_sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255",
+        "optimal_params_sha256": "0808afd78cf185d3fcd99c796b84c898eb96dd8e43206764ed4816371481c368",
+        "split_sha256": "023d7fc38af55d3e1eda0cab7d523333e9c7260775287c0946b05503dacb39fd"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_sloth/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "436569b0961fda33b5d4e95ec9b561e91a475453dfe7dfc765425f4d3cf6e605"
+      }
+    },
+    {
+      "case": "single_lift_zebra",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_zebra/inference.pkl",
+        "sha256": "e0612e1e84b59f197760d9ec79b0c7440e32dd7c7d0947793d15ec2e3412a0bf"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_zebra/prediction_input/prediction_input.npz",
+        "sha256": "a3c0be30b795eefde12364979a3b713322c551f1770f03d8e922a22904b717a4"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          6.4950396172491764e-09,
+          1.1766567276083606e-08,
+          0.0011416284833103418,
+          0.0017254941631108522
+        ],
+        "identity_ids": [
+          0,
+          7,
+          3,
+          6
+        ],
+        "material_attachment_sha256": "8c39f952aca2323e76cd009a657ee83ea92bfda57464655f3e2fdb50dc35fddd",
+        "material_node_indices": [
+          1919,
+          3477,
+          399,
+          3812
+        ],
+        "prediction_archive_sha256": "24c599da94fb8099b7b4cd27600dfabe87e81bcb15aa38eade416e963bfc6563",
+        "prediction_report_sha256": "a357aec1bb3365fd88434a640b710281c3957bbb027f9e98a7c3c50df6b93170",
+        "prediction_seal_sha256": "2b6498917cf9b1c25f14451c0df1686969b67aa35c15eb394c22120c940dd2b6",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 46,
+        "source_frame_start": 26,
+        "tracker_protocol_sha256": "829c42ddc4baca7c24f1f737bf97fcb380c0da9a4e206b001feeaa19aa102482",
+        "transfer_result_sha256": "924f0fb46ab90aed3e036e3899a80c1f38dba56b1ab53cb1bf4ce4dbe4cdb113"
+      },
+      "source_inputs": {
+        "final_data_sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e",
+        "manual_tracks_sha256": "ce1da22169fce5063eff159b4ff297e2989559aa8410d30cdb8e4f2d0ee28e80",
+        "optimal_params_sha256": "b72fafd0a03632216c79be7d0bea048d7acb996d7724a1ca33b0ec068629f710",
+        "split_sha256": "c134477272286feb86e465bc02878a2311b810442e3179449bf47bce5863a681"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_lift_zebra/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "3177a3e71fc18ca9703cb14702c5bf89a8770391ac85bd6d1f3d5f57622fe295"
+      }
+    },
+    {
+      "case": "single_push_rope",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_push_rope/inference.pkl",
+        "sha256": "ddd6b4714acfe2eb30b90ff95b5861be608cc9e18086e62c82e45dc84e1828cf"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_push_rope/prediction_input/prediction_input.npz",
+        "sha256": "924f472c82f53daabd6da88b32a6ffbc18db647b2fc15bd485822aedcc36058c"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0025114978197962046,
+          0.0018624106887727976,
+          0.0022110193967819214,
+          0.0015688190469518304
+        ],
+        "identity_ids": [
+          0,
+          8,
+          4,
+          6
+        ],
+        "material_attachment_sha256": "056cc6a34fce08553f8af5ee575d94807f1f4f2130dde6e1894e574199e51f43",
+        "material_node_indices": [
+          615,
+          650,
+          342,
+          568
+        ],
+        "prediction_archive_sha256": "33b45bd6195c3af5799c0ac2dbbbad186ce7c5066a9546d61f470099b86eafd8",
+        "prediction_report_sha256": "7d17135481fee3a8d5cc90979a92b302ff8a6cd2c8b7ffa10ae987303ce3e207",
+        "prediction_seal_sha256": "729abf0a79e44de91f4db47e6465bd86b4a7e0d58bd5d27f79d61b1e3edee1fa",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 40,
+        "source_frame_start": 20,
+        "tracker_protocol_sha256": "2b8b8e9024607d1d0f88a9d10fd575767a1a19ed01c301725e48932035746f8c",
+        "transfer_result_sha256": "fa344c1f0b0c118ecea25aafe3bcf9fe940bcf930ae114fd7b414f4b328171c1"
+      },
+      "source_inputs": {
+        "final_data_sha256": "6e956043d11dd48f2a8b345d160d892500de5539568ef96a3a6ed3c10863584e",
+        "manual_tracks_sha256": "744d52daba60acd90c42dede95b5a9143eac25f607e5f9d730eda37c96a13274",
+        "optimal_params_sha256": "0be74363f762026c1b085f29d78630ad93c9e73860044801dbadcb0857c02703",
+        "split_sha256": "be3e50c1d2eff352c924affdb4de365906d71464b9bfc7f99eca3efb14fd235b"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_push_rope/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "0df6092ae78e448fd58f69d0502110f8013d112de04296f4a3d66e4a4c02c832"
+      }
+    },
+    {
+      "case": "single_push_rope_1",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_push_rope_1/inference.pkl",
+        "sha256": "17935184a46af7e75c73d8dba13edd1e13ef96c977bb8e70bb0590a2d838d762"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_push_rope_1/prediction_input/prediction_input.npz",
+        "sha256": "48622e8fde686b42626e1e903e9de323a35ffacbce88677f62b727d07b875717"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.001523928833194077,
+          0.0033348079305142164,
+          4.5698683726058675e-10,
+          0.002349541522562504
+        ],
+        "identity_ids": [
+          0,
+          8,
+          4,
+          2
+        ],
+        "material_attachment_sha256": "555e8e4eff727af6592197fcfc6a3a828f65dca099875ca1feaa81f4ebef1a5e",
+        "material_node_indices": [
+          1249,
+          1095,
+          1594,
+          1004
+        ],
+        "prediction_archive_sha256": "ba638c92652a6a0b97587745aac5beed8d069e8d5b1ac7cacce15fcec0cea4f2",
+        "prediction_report_sha256": "ae17e9f78dea4d882dae52772ad71abcdcf8273c2aed21b866ac5fd50e5be653",
+        "prediction_seal_sha256": "e2d7963ae8fb6209164f6bbeead0dffa817bafeed84b7ba1c40391e8a3bea9cf",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 64,
+        "source_frame_start": 44,
+        "tracker_protocol_sha256": "a317885becffb51ec1701c0a047b6507519bb79a3b06a6f74ab31faeaa7f43b6",
+        "transfer_result_sha256": "3b74030b506087eba80b9e3bf408acb659eedda1306763e87d6f46c4c74d282a"
+      },
+      "source_inputs": {
+        "final_data_sha256": "675319bf30b4d6d91b833424e07d1ce1454efa027e710092ba4f29d51a4d434e",
+        "manual_tracks_sha256": "139f006a2b6b8746ba9033a32c69113ca8c3f140b9f075e3e652f08676b0c2e2",
+        "optimal_params_sha256": "3156d867a54259aaa03fceec20313910c0b31615e553fe8d7f2ec9598f6d228c",
+        "split_sha256": "752f0c84bd1bd58de85e427d750d5c5d21801fd0e042c2c30f39f8a8668da7e0"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_push_rope_1/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "2d3ca7a25dda65d1b517efb2b6e455ff37efd688569a0e858dd53a267b890fd1"
+      }
+    },
+    {
+      "case": "single_push_sloth",
+      "physical_trajectory": {
+        "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_push_sloth/inference.pkl",
+        "sha256": "0571fbf48e2f48687327380253d6d2da64610e9fd9977b52b4231989828f37a8"
+      },
+      "prediction_input": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_push_sloth/prediction_input/prediction_input.npz",
+        "sha256": "4f026419200f89e84c6ba827f7fbbc75795a1aeba165d017050e608bf553e105"
+      },
+      "provider": {
+        "frame_zero_attachment_distance_m": [
+          0.0027423319406807423,
+          0.0024460814893245697,
+          0.0013732281513512135,
+          0.001619033981114626
+        ],
+        "identity_ids": [
+          1,
+          3,
+          5,
+          2
+        ],
+        "material_attachment_sha256": "b3983cd39e1ed97d6a787ee458c8fceddb6640f047d92d940477c2c8249079a0",
+        "material_node_indices": [
+          4631,
+          297,
+          1254,
+          2413
+        ],
+        "prediction_archive_sha256": "6031728990c8bff3c6f2acb36b0eee095a800b93d8b5ecbbc3bc97ed44a5b84a",
+        "prediction_report_sha256": "38195d296ecc2bed419881fa9b61bc0a182f4ed9cd0ad2d585c818e712b5521c",
+        "prediction_seal_sha256": "f7c77e4508a920f22041f6e9e59ed88da505579ec5379ad65eeeebc1fe452636",
+        "provider_gate_passed": true,
+        "source_frame_end_exclusive": 47,
+        "source_frame_start": 27,
+        "tracker_protocol_sha256": "9508c90deb8aca646adcbe31253aff4bef01c9b46dfc7c17716678cad4edbb59",
+        "transfer_result_sha256": "5e6e1ebbfd3caf3eb8f399a1f2b37adceb90157193ad7dcf012ba1cfc74eca76"
+      },
+      "source_inputs": {
+        "final_data_sha256": "d71975a65f78110d944a13687d7f2b0b48a9ac6ad51e994e88a1a63567703ba9",
+        "manual_tracks_sha256": "6d0f5547d2e7c0a9a6871ff0a9ae1b87135d55801bde58a26dcf2a8f5f465e67",
+        "optimal_params_sha256": "9e8d2c229dd5dfde97251ec298fcea3bd47de198c5499b70e34b69b7ff27deb5",
+        "split_sha256": "e6a258ca1899a18e1f7b3c3fde9778ccb61fe0d5c1e594e238e885f7e1f59363"
+      },
+      "withheld_outcome": {
+        "path": "/home/florianpfaff/source-only/bpt-material-transport-assimilation-source-v1/cases/single_push_sloth/withheld_outcome/withheld_future_outcome.npz",
+        "sha256": "cfd59874c95595e390b10e0026956e05510a9250fc682a9302542f5b6fc007c7"
+      }
+    }
+  ],
+  "claim_boundary": "Fourteen-case opened-source Bayesian-PhysTwin material-transport assimilation study. Manual benchmark identity initializes each query and fixes its frame-zero graph node. Future scoring separates those observed identities from disjoint hidden identities. This is not deployable automatic association, independent confirmation, a fair open-loop state-of-the-art claim, or authority to inspect held-v8.",
+  "fixed_case_count": 14,
+  "information_boundary": {
+    "failed_cases_replaced": false,
+    "future_score_opened": false,
+    "held_v8_accessed": false,
+    "prediction_input_contains_future_real_outcome": false,
+    "withheld_future_staged_separately": true
+  },
+  "protocol_id": "phystwin-tapnextpp-material-transport-assimilation-source-v1",
+  "protocol_sha256": "ed6467b2dfe4eb8373b5ebe3fa49e32495f5704b26f0681eb22bd83319ffedbb",
+  "provider_source_manifest_sha256": "e36f57fae7c8c05eb67796088bc28839f420a9eca58c3fa1f940c0d88c71d84f",
+  "provider_transfer_summary_sha256": "39ac705f49e60219e2fc6e78e31d60db56ce9bb8c719fd4d2745a8ebafd8ca96",
+  "result_sha256": "7a068cb14b99dcd82b0a90b519b29a26c89247d4399df59746f01105910588a6",
+  "schema_version": 1
+}
