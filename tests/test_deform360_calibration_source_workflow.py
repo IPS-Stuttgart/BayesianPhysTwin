@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 WORKFLOW = Path(".github/workflows/deform360-official-hub-calibration-source.yml")
@@ -9,6 +10,29 @@ WORKFLOW = Path(".github/workflows/deform360-official-hub-calibration-source.yml
 
 def _workflow_text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
+
+
+def test_workflow_has_only_yaml_keys_at_top_level() -> None:
+    top_level_key = re.compile(r"^[A-Za-z0-9_-]+:")
+    invalid = [
+        (line_number, line)
+        for line_number, line in enumerate(_workflow_text().splitlines(), start=1)
+        if line
+        and not line.startswith((" ", "#"))
+        and line not in {"---", "..."}
+        and top_level_key.match(line) is None
+    ]
+
+    assert not invalid, (
+        f"dedented non-key content makes workflow YAML invalid: {invalid}"
+    )
+
+
+def test_processing_checkout_exclusion_is_one_shell_line() -> None:
+    text = _workflow_text()
+
+    assert "printf '%s\\n' '/_deform360_processing/' >> .git/info/exclude" in text
+    assert "printf '/_deform360_processing/\n' >>" not in text
 
 
 def test_trusted_contracts_use_isolated_self_hosted_execution() -> None:
