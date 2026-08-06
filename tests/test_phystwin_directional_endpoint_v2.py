@@ -152,6 +152,26 @@ def test_v2_covariance_is_symmetric_positive_definite_after_mixed_updates() -> N
     assert result.maximum_posterior_condition_number[0] >= 1.0
 
 
+def test_v2_unobserved_identity_retains_the_declared_inlier_prior() -> None:
+    source = np.zeros((2, 1, 3), dtype=np.float64)
+    invalid = np.zeros((2, 1), dtype=bool)
+
+    result = _run_v2(
+        source,
+        invalid,
+        np.zeros_like(source),
+        invalid,
+        np.array([True]),
+    )
+
+    np.testing.assert_allclose(result.final_inlier_probability, [0.95])
+    np.testing.assert_array_equal(result.update_count, [0])
+    np.testing.assert_array_equal(result.source_update_count, [0])
+    np.testing.assert_array_equal(result.tangent_update_count, [0])
+    np.testing.assert_allclose(result.mean, np.zeros((1, 3)))
+    np.testing.assert_allclose(result.covariance, 1e-3 * np.eye(3)[None])
+
+
 def test_v2_is_invariant_to_an_orthogonal_coordinate_change() -> None:
     source = np.array(
         [
