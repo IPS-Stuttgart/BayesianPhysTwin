@@ -1,0 +1,88 @@
+{
+  "artifact_kind": "PokeFlexMissingFiveV5ExecutionProtocol",
+  "artifacts": {
+    "input_stage_kind": "PokeFlexMissingFiveV5PredictionInputStage",
+    "prediction_barrier_kind": "PokeFlexMissingFiveV5PredictionBarrier",
+    "prediction_seal_kind": "PokeFlexMissingFiveV5PredictionSeal",
+    "result_kind": "PokeFlexMissingFiveV5ProspectiveResult"
+  },
+  "completion_protocol_sha256": "11d6eb1ff115f0021e1ab9ad959b0dfd614ca455e5f54d1dd05c99e9b916c7de",
+  "custody": {
+    "all_prediction_revisions_must_match": true,
+    "prediction_and_scoring_are_separate": true,
+    "replacement_allowed": false,
+    "required_prediction_count": 5,
+    "target_adaptation": "forbidden",
+    "target_mesh_access_before_barrier": "forbidden"
+  },
+  "evaluation": {
+    "bootstrap_replicates": 20000,
+    "bootstrap_seed": 20260806,
+    "bootstrap_upper_quantile": 0.975,
+    "metric": "CD_UL1_mm",
+    "public13_result_file_sha256": "9d6a3ce6e4d606485dcecfb12418199dc4bd3bbf43236e2d42f3f25f94a98a0e",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720
+  },
+  "execution_protocol_sha256": "62c8c9c81a5c3dd179864624ffca69769ace4a59c6e49c993aab42080b295064",
+  "held_v8_accessed": false,
+  "implementation_file_sha256s": {
+    "scripts/held/run_pokeflex_missing5_v5.py": "e3316b5fe48c0a6e8da809ce52bfd32669e65a02e009cd0f5ae8b7d78d5c1ffd",
+    "scripts/remote/run_pokeflex_bayesian_registration_smoke.py": "5f95a954caa64276d3f8effe202370a796558aca783da7c30df796167f517fd7",
+    "scripts/remote/run_pokeflex_checkpoint_registration_independent_depth.py": "7927deb862dac8783b5415197ff65854ec3c0235a01db88689997c9b97f22e25",
+    "src/bayesian_phystwin/pokeflex_bayesian_registration.py": "97f3878f95a69782efc450e98d8bc2876bf35bf9d308bc628e7865f5c872c112",
+    "src/bayesian_phystwin/pokeflex_missing5_execution_v5.py": "b945da88ae39d04825ad69c57efa0909242d88dd32a086889a4d2c5ef7d37279",
+    "src/bayesian_phystwin/pokeflex_released_checkpoint.py": "51cc97ebf95a38c225c3ff25bb1b0e28898d53473a5f9320a1d43df4b79ebeb9"
+  },
+  "locked_at_utc": "2026-08-06T07:45:02Z",
+  "method": {
+    "field": "action_local_state_relative_0.4",
+    "global_effective_scale": 0.125,
+    "unsupported_frame_action": "byte-identical released checkpoint",
+    "v4_effective_scales": {
+      "3dPrintedCylinder_T7": 0.375,
+      "3dPrintedHeart_T14": 0.1875,
+      "3dPrintedPizza_T13": 0.0625,
+      "Pillow_T8": 0.25,
+      "Sponge_T10": 0.1875
+    },
+    "v5_effective_scales": {
+      "3dPrintedCylinder_T7": 0.25,
+      "3dPrintedHeart_T14": 0.1875,
+      "3dPrintedPizza_T13": 0.125,
+      "Pillow_T8": 0.125,
+      "Sponge_T10": 0.125
+    }
+  },
+  "parent_v4_protocol_sha256": "112a34e3af11f7fde44fa70de6b712d8b906ba81ea287b4897ad4a13692fed26",
+  "prediction_input_boundary": {
+    "allowed": [
+      "robot_data.json",
+      "two Kinect camera-parameter files",
+      "Kinect depth frames strictly before each predicted frame",
+      "exactly one upstream-selected template mesh"
+    ],
+    "authorized_template_mesh_count_per_take": 1,
+    "future_target_mesh_member_decoding_before_barrier": "forbidden",
+    "target_metric_before_barrier": "forbidden",
+    "template_role": "explicit published-task input, not a scored outcome",
+    "template_selection_rule": "frame 1 when deformation begins later; otherwise midpoint of the first inactive gap longer than five frames"
+  },
+  "protocol_id": "pokeflex-missing5-execution-v5",
+  "schema_version": 1,
+  "target_take_ids": [
+    "Pillow_T8",
+    "3dPrintedCylinder_T7",
+    "3dPrintedHeart_T14",
+    "Sponge_T10",
+    "3dPrintedPizza_T13"
+  ],
+  "upstream": {
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    },
+    "commit": "aaa8726072834a95bbe97e1a113588968c36e185"
+  }
+}
