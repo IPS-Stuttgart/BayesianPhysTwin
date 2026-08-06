@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapnextpp-depth-completion-transfer-v1",
+  "status": "locked-before-source-artifact-staging-and-tapnextpp-prediction",
+  "fixed_source_cases": [
+    "double_lift_cloth_1",
+    "double_stretch_sloth",
+    "double_lift_zebra",
+    "rope_double_hand",
+    "single_lift_rope",
+    "single_push_rope_4",
+    "single_lift_dinosor",
+    "weird_package"
+  ],
+  "selection": {
+    "window_frames": 20,
+    "sampled_physical_node_count": 64,
+    "window_score": "RMS endpoint displacement over deterministic frame-zero farthest-point physical nodes",
+    "window_tie_break": "earliest maximum",
+    "window_boundary": "entire half-open window must lie inside the released training prefix",
+    "maximum_query_count": 4,
+    "minimum_query_count": 3,
+    "query_selection": "deterministic farthest-point coverage over finite manual material identities at the selected source frame only",
+    "selected_cameras": [0, 1, 2]
+  },
+  "tracker_fixed_config": {
+    "depth_scale_to_m": 0.001,
+    "input_resolution": 512,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "visibility_threshold": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_depth_residual_m": 0.03,
+    "minimum_triangulation_views": 2,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_standard_deviation_px": 1.5,
+    "shared_bias_standard_deviation_m": 0.005,
+    "two_view_covariance_inflation": 4.0,
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 5
+  },
+  "depth_completion_config": {
+    "visibility_threshold": 0.5,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "maximum_local_depth_mad_m": 0.02,
+    "depth_sensor_std_m": 0.003,
+    "pixel_noise_std_px": 1.5,
+    "shared_bias_std_m": 0.005,
+    "minimum_carrier_overlap_rows": 16,
+    "minimum_carrier_overlap_fraction": 0.25,
+    "maximum_penalized_agreement_m": 0.005
+  },
+  "per_case_gates": {
+    "minimum_supported_fraction": 0.85,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 5
+  },
+  "aggregate_gates": {
+    "minimum_passing_case_count": 6,
+    "minimum_aggregate_supported_fraction": 0.85,
+    "minimum_case_balanced_relative_gain_over_persistence": 0.1,
+    "maximum_case_balanced_identity_rmse_m": 0.015
+  },
+  "retention_policy": {
+    "technical_failures_retained": true,
+    "failed_cases_replaced": false,
+    "all_eight_fixed_cases_required_in_final_accounting": true
+  },
+  "information_boundary": {
+    "window_selection_inputs": [
+      "released training split",
+      "selected physical forward-model trajectory"
+    ],
+    "query_selection_inputs": [
+      "manual material identities at the selected source frame only"
+    ],
+    "provider_prediction_inputs": [
+      "causal RGB-D prefix",
+      "prefix object masks",
+      "query-frame material identities"
+    ],
+    "withheld_prefix_opened_only_after_prediction_seal": true,
+    "future_simulator_outcomes_read": false,
+    "held_v8_accessed": false
+  },
+  "advancement_rule": "Passing authorizes only a separately frozen Bayesian-PhysTwin assimilation study on already-open source cases. It does not authorize target access or a state-of-the-art claim.",
+  "claim_boundary": "Eight-case opened-source provider-transfer study. Manual material identity is used only for query initialization and sealed prefix competence scoring. No future Bayesian-PhysTwin metric, held-v8 artifact, independent target, or confirmation outcome is part of this protocol."
+}

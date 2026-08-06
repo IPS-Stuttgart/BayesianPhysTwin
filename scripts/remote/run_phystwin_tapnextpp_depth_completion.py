@@ -22,6 +22,9 @@ from bayesian_phystwin.tapnextpp_depth_completion import (
 PREDICTION_FILENAME = "tapnextpp_depth_completion_prediction.npz"
 REPORT_FILENAME = "tapnextpp_depth_completion_prediction_report.json"
 SEAL_FILENAME = "tapnextpp_depth_completion_prediction_seal.json"
+SOURCE_SMOKE_PROTOCOL_ID = "phystwin-tapnextpp-depth-completion-source-v1"
+TRANSFER_PANEL_PROTOCOL_ID = "phystwin-tapnextpp-depth-completion-transfer-v1"
+TRACKER_PROTOCOL_ID = "phystwin-tapnextpp-prefix-competence-v1"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -75,18 +78,82 @@ def _parse_args() -> argparse.Namespace:
 
 def _load_protocol(path: Path) -> dict[str, Any]:
     protocol = json.loads(path.read_text(encoding="utf-8"))
-    _require(
-        protocol.get("protocol_id")
-        == "phystwin-tapnextpp-depth-completion-source-v1",
-        "protocol ID changed",
-    )
-    _require(
-        protocol.get("status") == "frozen-source-smoke",
-        "protocol is not frozen for the source smoke",
-    )
     expected = asdict(TAPNextPPDepthCompletionConfig())
-    _require(protocol.get("method_config") == expected, "method config changed")
+    protocol_id = protocol.get("protocol_id")
+    if protocol_id == SOURCE_SMOKE_PROTOCOL_ID:
+        _require(
+            protocol.get("status") == "frozen-source-smoke",
+            "protocol is not frozen for the source smoke",
+        )
+        _require(
+            protocol.get("method_config") == expected,
+            "method config changed",
+        )
+    elif protocol_id == TRACKER_PROTOCOL_ID:
+        _require(
+            protocol.get("status") == "locked-before-tapnextpp-prediction",
+            "transfer case is not prediction-locked",
+        )
+        _require(
+            protocol.get("source_panel_protocol_id")
+            == TRANSFER_PANEL_PROTOCOL_ID,
+            "transfer case does not bind the source panel",
+        )
+        _require(
+            protocol.get("depth_completion_config") == expected,
+            "depth-completion config changed",
+        )
+        _require(
+            isinstance(protocol.get("depth_completion_gates"), dict),
+            "transfer case omits depth-completion gates",
+        )
+    else:
+        raise ValueError("protocol ID changed")
     return protocol
+
+
+def _depth_completion_gates(protocol: dict[str, Any]) -> dict[str, Any]:
+    return (
+        protocol["gates"]
+        if protocol["protocol_id"] == SOURCE_SMOKE_PROTOCOL_ID
+        else protocol["depth_completion_gates"]
+    )
+
+
+def _validate_strict_prediction_seal(
+    strict_path: Path,
+    protocol: dict[str, Any],
+) -> dict[str, Any]:
+    report_path = strict_path.with_name("tapnextpp_prediction_report.json")
+    seal_path = strict_path.with_name("tapnextpp_prediction_seal.json")
+    _require(report_path.is_file(), "strict prediction report is missing")
+    _require(seal_path.is_file(), "strict prediction seal is missing")
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    _require(
+        report.get("result_sha256") == _canonical_sha256(report),
+        "strict prediction report hash changed",
+    )
+    _require(
+        seal.get("result_sha256") == _canonical_sha256(seal),
+        "strict prediction seal hash changed",
+    )
+    _require(
+        seal.get("prediction_archive_sha256") == _file_sha256(strict_path)
+        and seal.get("prediction_report_sha256") == _file_sha256(report_path),
+        "strict prediction differs from its seal",
+    )
+    _require(
+        report.get("protocol_id") == protocol["protocol_id"]
+        and report.get("case") == protocol.get("case")
+        and seal.get("protocol_id") == protocol["protocol_id"]
+        and seal.get("case") == protocol.get("case"),
+        "strict prediction provenance differs from the transfer protocol",
+    )
+    return {
+        "strict_prediction_report_sha256": _file_sha256(report_path),
+        "strict_prediction_seal_sha256": _file_sha256(seal_path),
+    }
 
 
 def _load_inputs(
@@ -214,6 +281,11 @@ def _predict(args: argparse.Namespace) -> None:
     output = args.output_dir.resolve()
     _require(not output.exists(), "prediction output already exists")
     protocol = _load_protocol(protocol_path)
+    strict_seal_provenance = (
+        _validate_strict_prediction_seal(strict_path, protocol)
+        if protocol["protocol_id"] == TRACKER_PROTOCOL_ID
+        else {}
+    )
     inputs = _load_inputs(strict_path, input_path, protocol)
     depths, intrinsics, poses, depth_provenance = _load_metric_frames(
         raw_case_dir,
@@ -286,6 +358,7 @@ def _predict(args: argparse.Namespace) -> None:
             "protocol_sha256": _file_sha256(protocol_path),
             "strict_prediction_sha256": _file_sha256(strict_path),
             "prediction_input_sha256": _file_sha256(input_path),
+            **strict_seal_provenance,
             **depth_provenance,
         },
         "information_boundary": {
@@ -326,6 +399,7 @@ def _radial_rmse(
 
 def _evaluate(args: argparse.Namespace) -> None:
     protocol = _load_protocol(args.protocol.resolve())
+    gate_config = _depth_completion_gates(protocol)
     prediction = args.prediction_dir.resolve()
     output = args.output.resolve()
     _require(not output.exists(), "evaluation output already exists")
@@ -369,7 +443,7 @@ def _evaluate(args: argparse.Namespace) -> None:
     fallback_rows = candidate_rows & ~strict_support
     persistence = np.broadcast_to(target[:1], target.shape)
     endpoint = np.arange(len(target)) >= (
-        len(target) - int(protocol["gates"]["endpoint_frame_count"])
+        len(target) - int(gate_config["endpoint_frame_count"])
     )
     candidate_rmse = _radial_rmse(candidate, target, candidate_rows)
     persistence_rmse = _radial_rmse(persistence, target, candidate_rows)
@@ -382,18 +456,23 @@ def _evaluate(args: argparse.Namespace) -> None:
     supported_fraction = float(np.sum(candidate_rows) / max(np.sum(eligible), 1))
     gates = {
         "supported_fraction": supported_fraction
-        >= float(protocol["gates"]["minimum_supported_fraction"]),
+        >= float(gate_config["minimum_supported_fraction"]),
         "relative_gain_over_persistence": relative_gain is not None
         and relative_gain
-        >= float(protocol["gates"]["minimum_relative_gain_over_persistence"]),
+        >= float(gate_config["minimum_relative_gain_over_persistence"]),
         "identity_rmse": candidate_rmse is not None
-        and candidate_rmse <= float(protocol["gates"]["maximum_identity_rmse_m"]),
+        and candidate_rmse <= float(gate_config["maximum_identity_rmse_m"]),
         "endpoint_rmse": endpoint_rmse is not None
-        and endpoint_rmse <= float(protocol["gates"]["maximum_endpoint_rmse_m"]),
+        and endpoint_rmse <= float(gate_config["maximum_endpoint_rmse_m"]),
     }
+    is_source_smoke = protocol["protocol_id"] == SOURCE_SMOKE_PROTOCOL_ID
     result: dict[str, Any] = {
         "schema_version": 1,
-        "artifact_kind": "PhysTwinTAPNextPPDepthCompletionSourceResult",
+        "artifact_kind": (
+            "PhysTwinTAPNextPPDepthCompletionSourceResult"
+            if is_source_smoke
+            else "PhysTwinTAPNextPPDepthCompletionTransferCaseResult"
+        ),
         "protocol_id": protocol["protocol_id"],
         "case": protocol["case"],
         "metrics": {
@@ -412,11 +491,23 @@ def _evaluate(args: argparse.Namespace) -> None:
             "candidate_endpoint_rmse_m": endpoint_rmse,
         },
         "gates": gates,
-        "source_smoke_passed": all(gates.values()),
+        (
+            "source_smoke_passed"
+            if is_source_smoke
+            else "provider_gate_passed"
+        ): all(gates.values()),
         "decision": (
-            "freeze-separate-opened-cohort-transfer-protocol"
-            if all(gates.values())
-            else "stop-depth-completion-route"
+            (
+                "freeze-separate-opened-cohort-transfer-protocol"
+                if all(gates.values())
+                else "stop-depth-completion-route"
+            )
+            if is_source_smoke
+            else (
+                "record-case-provider-gate-for-frozen-cohort"
+                if all(gates.values())
+                else "retain-failed-case-without-replacement"
+            )
         ),
         "inputs": {
             "prediction_seal_sha256": _file_sha256(seal_path),
