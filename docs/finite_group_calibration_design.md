@@ -55,6 +55,19 @@ calibrate its split-conformal interval. A CV+ or jackknife+ construction can use
 a different information order, but it requires a separately versioned contract
 and guarantee.
 
+## Deployable vector query covariances
+
+[`QueryCalibrationV1`](query_calibration_v1.md) applies this information order
+to vector-valued physical queries. It records one maximum Mahalanobis score per
+independent group, binds the predictor, query set, grouping rule, guard, and
+calibration evidence by content ID, and applies the resulting conformal radius
+to future query covariances. Loading revalidates the finite-sample rank, order
+statistic, covariance transform, and artifact ID.
+
+The query-calibration contract remains marginal over exchangeable independent
+groups. Separate horizon or observability strata need separate frozen query-set
+IDs and enough independent groups for their own requested finite coverage.
+
 ## Deform360 amendment
 
 The additive amendment at
