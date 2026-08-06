@@ -1,7 +1,7 @@
 """Finite-group calibration for vector-valued physical query covariances.
 
 Each independent object or acquisition session contributes exactly one maximum
-Mahalanobis nonconformity score.  The resulting content-addressed artifact can
+Mahalanobis nonconformity score. The resulting content-addressed artifact can
 inflate future query covariances without treating frames or endpoints as
 independent calibration samples.
 """
@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -55,6 +57,16 @@ def _sha256(value: object, *, name: str) -> str:
     return literal_lower_hex(value, name=name, lengths={64})
 
 
+def _immutable_array(value: object, *, dtype: np.dtype[Any]) -> np.ndarray:
+    """Return a C-contiguous array backed by immutable ``bytes`` storage."""
+
+    array = np.array(value, dtype=dtype, copy=True, order="C")
+    if array.dtype.hasobject:
+        raise TypeError("query calibration arrays must not contain Python objects")
+    payload = array.tobytes(order="C")
+    return np.frombuffer(payload, dtype=array.dtype).reshape(array.shape)
+
+
 def _canonical_json_bytes(values: Mapping[str, Any]) -> bytes:
     return json.dumps(
         dict(values),
@@ -75,6 +87,19 @@ def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
             raise ValueError(f"duplicate JSON key: {key}")
         result[key] = value
     return result
+
+
+def _fsync_directory(path: Path) -> None:
+    try:
+        descriptor = os.open(path, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(descriptor)
+    except OSError:
+        pass
+    finally:
+        os.close(descriptor)
 
 
 def _query_arrays(
@@ -128,10 +153,13 @@ def _transformed_covariance(
     name: str,
 ) -> tuple[np.ndarray, np.ndarray]:
     dimension = covariance.shape[0]
-    transformed = covariance_scale * covariance + isotropic_variance * np.eye(
-        dimension,
-        dtype=np.float64,
-    )
+    with np.errstate(over="ignore", invalid="ignore"):
+        transformed = covariance_scale * covariance + isotropic_variance * np.eye(
+            dimension,
+            dtype=np.float64,
+        )
+    if not np.all(np.isfinite(transformed)):
+        raise ValueError(f"{name} must be finite after the frozen transform")
     if not np.allclose(transformed, transformed.T, rtol=1e-12, atol=1e-12):
         raise ValueError(f"{name} must be symmetric after the frozen transform")
     symmetric = 0.5 * (transformed + transformed.T)
@@ -177,7 +205,10 @@ def group_mahalanobis_nonconformity(
             name=f"query group covariance {index}",
         )
         whitened = np.linalg.solve(cholesky, residual_array[index])
-        maximum = max(maximum, float(np.linalg.norm(whitened)))
+        score = float(np.linalg.norm(whitened))
+        if not np.isfinite(score):
+            raise ValueError("query group Mahalanobis score must be finite")
+        maximum = max(maximum, score)
     return maximum
 
 
@@ -260,12 +291,12 @@ class QueryCalibrationV1:
 
         pairs = sorted(zip(group_ids, scores.tolist(), strict=True))
         canonical_group_ids = tuple(group_id for group_id, _ in pairs)
-        canonical_scores = np.asarray(
+        canonical_scores_array = np.asarray(
             [score for _, score in pairs],
             dtype=np.float64,
         )
         expected_quantile = float(
-            np.partition(canonical_scores, rank - 1)[rank - 1]
+            np.partition(canonical_scores_array, rank - 1)[rank - 1]
         )
         quantile = _finite_real(
             self.conformal_quantile,
@@ -288,9 +319,12 @@ class QueryCalibrationV1:
             nonnegative=True,
         )
 
-        canonical_scores.setflags(write=False)
         object.__setattr__(self, "calibration_group_ids", canonical_group_ids)
-        object.__setattr__(self, "calibration_group_scores", canonical_scores)
+        object.__setattr__(
+            self,
+            "calibration_group_scores",
+            _immutable_array(canonical_scores_array, dtype=np.dtype(np.float64)),
+        )
         object.__setattr__(self, "nominal_coverage", design.nominal_coverage)
         object.__setattr__(self, "finite_sample_rank", rank)
         object.__setattr__(self, "conformal_quantile", quantile)
@@ -413,6 +447,12 @@ class QueryCalibrationV1:
         return artifact
 
 
+def _validated_calibration(value: object) -> QueryCalibrationV1:
+    if not isinstance(value, QueryCalibrationV1):
+        raise TypeError("calibration must be a QueryCalibrationV1")
+    return value
+
+
 def fit_query_calibration(
     calibration_group_ids: Sequence[str],
     residual_groups: Sequence[np.ndarray],
@@ -522,6 +562,7 @@ def calibrate_query_covariance(
 ) -> np.ndarray:
     """Apply the frozen affine transform and conformal inflation to covariance."""
 
+    validated = _validated_calibration(calibration)
     raw = np.asarray(covariance)
     if raw.dtype.kind not in "iuf":
         raise ValueError("covariance must contain real numeric values")
@@ -536,18 +577,23 @@ def calibrate_query_covariance(
     dimension = covariance_array.shape[-1]
     flattened = covariance_array.reshape((-1, dimension, dimension))
     calibrated = np.empty_like(flattened)
-    multiplier = calibration.conformal_quantile**2
+    with np.errstate(over="ignore", invalid="ignore"):
+        multiplier = validated.conformal_quantile**2
+    if not np.isfinite(multiplier):
+        raise ValueError("conformal covariance multiplier must be finite")
     for index, matrix in enumerate(flattened):
         transformed, _ = _transformed_covariance(
             matrix,
-            covariance_scale=calibration.covariance_scale,
-            isotropic_variance=calibration.isotropic_variance,
+            covariance_scale=validated.covariance_scale,
+            isotropic_variance=validated.isotropic_variance,
             name=f"covariance {index}",
         )
-        calibrated[index] = multiplier * transformed
+        with np.errstate(over="ignore", invalid="ignore"):
+            calibrated[index] = multiplier * transformed
+        if not np.all(np.isfinite(calibrated[index])):
+            raise ValueError(f"calibrated covariance {index} must be finite")
     result = calibrated.reshape(covariance_array.shape)
-    result.setflags(write=False)
-    return result
+    return _immutable_array(result, dtype=np.dtype(np.float64))
 
 
 def query_group_is_covered(
@@ -557,42 +603,71 @@ def query_group_is_covered(
 ) -> bool:
     """Return whether every registered endpoint lies in its calibrated ellipsoid."""
 
+    validated = _validated_calibration(calibration)
     score = group_mahalanobis_nonconformity(
         residual,
         covariance,
-        covariance_scale=calibration.covariance_scale,
-        isotropic_variance=calibration.isotropic_variance,
+        covariance_scale=validated.covariance_scale,
+        isotropic_variance=validated.isotropic_variance,
     )
-    return score <= calibration.conformal_quantile
+    return score <= validated.conformal_quantile
 
 
 def save_query_calibration(
     calibration: QueryCalibrationV1,
     path: str | Path,
 ) -> None:
-    """Write a validated query calibration as deterministic JSON."""
+    """Atomically retain one validated deterministic query calibration JSON."""
 
+    validated = _validated_calibration(calibration)
     destination = Path(path)
+    if destination.exists() or destination.is_symlink():
+        if not destination.is_file():
+            raise ValueError("query calibration destination is not a regular file")
+        existing = load_query_calibration(destination)
+        if existing.artifact_id != validated.artifact_id:
+            raise ValueError("refusing to replace a different query calibration")
+        return
+
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
+    payload = (
         json.dumps(
-            calibration.as_dict(),
+            validated.as_dict(),
             sort_keys=True,
             indent=2,
             allow_nan=False,
         )
-        + "\n",
-        encoding="utf-8",
+        + "\n"
     )
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
+    )
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_name, destination)
+        _fsync_directory(destination.parent)
+    finally:
+        if os.path.exists(temporary_name):
+            os.unlink(temporary_name)
 
 
 def load_query_calibration(path: str | Path) -> QueryCalibrationV1:
     """Load and revalidate a content-addressed query calibration JSON file."""
 
-    values = json.loads(
-        Path(path).read_text(encoding="utf-8"),
-        object_pairs_hook=_unique_json_object,
-    )
+    source = Path(path)
+    try:
+        text = source.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise ValueError("query calibration file is unreadable") from error
+    try:
+        values = json.loads(text, object_pairs_hook=_unique_json_object)
+    except json.JSONDecodeError as error:
+        raise ValueError("query calibration file contains invalid JSON") from error
     if not isinstance(values, Mapping):
         raise ValueError("query calibration file must contain one JSON object")
     return QueryCalibrationV1.from_dict(values)
