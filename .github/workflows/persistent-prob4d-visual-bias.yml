@@ -1,0 +1,72 @@
+name: Persistent Prob4D visual-bias posterior
+
+on:
+  pull_request:
+    paths:
+      - "src/bayesian_phystwin/persistent_prob4d_visual_bias.py"
+      - "tests/test_persistent_prob4d_visual_bias.py"
+      - "tests/test_prob4d_visual_bias_update.py"
+      - "tests/test_prob4d_visual_bias_stream_crossrepo.py"
+      - "docs/persistent_prob4d_visual_bias.md"
+      - ".github/workflows/persistent-prob4d-visual-bias.yml"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: persistent-prob4d-visual-bias-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+  PROB4D_REVISION: e37c3d50d4a07a2c3760389e79d59b0ac9402dc4
+
+jobs:
+  validate:
+    name: Exact persistent-bias contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install BayesianPhysTwin and exact Prob4D producer
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install --no-deps \
+            "git+https://github.com/IPS-Stuttgart/Prob4D.git@${PROB4D_REVISION}"
+      - name: Check formatting and static quality
+        run: |
+          ruff check \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          ruff format --check \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          mypy src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+      - name: Run focused and adjacent contracts
+        run: |
+          python -m pytest -q \
+            tests/test_persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_update_adversarial.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py
+      - name: Check byte compilation and installed requirements
+        run: |
+          python -m compileall -q \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          python -m pip check
+      - name: Require an unchanged exact-head checkout
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
