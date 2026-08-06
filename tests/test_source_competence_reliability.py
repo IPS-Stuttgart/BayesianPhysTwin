@@ -95,9 +95,7 @@ def _evidence(
             "track-11",
         ),
         "time_values": (
-            np.arange(count, dtype=np.float64)
-            if time_values is None
-            else time_values
+            np.arange(count, dtype=np.float64) if time_values is None else time_values
         ),
         "log_competent_density": (
             np.asarray([2.0, 1.5, -5.0, 2.0, -4.0, -4.0], dtype=np.float64)
@@ -105,9 +103,7 @@ def _evidence(
             else competent
         ),
         "log_incompetent_density": (
-            np.zeros(count, dtype=np.float64)
-            if incompetent is None
-            else incompetent
+            np.zeros(count, dtype=np.float64) if incompetent is None else incompetent
         ),
         "metadata": {
             "feature_semantics": "target-blind source-only features",
@@ -124,12 +120,8 @@ def test_temporal_source_competence_only_reduces_provider_reliability() -> None:
     update = refine_observation_source_competence(observation, evidence)
 
     assert update.refined_observation is not observation
-    assert np.all(
-        update.deployed_prior_reliability <= observation.prior_reliability
-    )
-    assert np.any(
-        update.deployed_prior_reliability < observation.prior_reliability
-    )
+    assert np.all(update.deployed_prior_reliability <= observation.prior_reliability)
+    assert np.any(update.deployed_prior_reliability < observation.prior_reliability)
     assert np.array_equal(
         update.refined_observation.prior_reliability,
         update.deployed_prior_reliability,
