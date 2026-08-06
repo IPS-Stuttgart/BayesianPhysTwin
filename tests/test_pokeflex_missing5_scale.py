@@ -42,7 +42,7 @@ def _protocol() -> dict[str, object]:
     return build_source_protocol(
         inventory,
         locked_at_utc="2026-08-06T00:00:00Z",
-        implementation_revision="a" * 64,
+        implementation_revision="a" * 40,
         source_projection_runner_file_sha256="b" * 64,
         source_runner_file_sha256="c" * 64,
         legacy_runner_file_sha256="d" * 64,
@@ -213,7 +213,7 @@ def test_complete_source_result_passes_without_target_evidence() -> None:
         artifacts,
         protocol,
         artifact_file_sha256s=digests,
-        implementation_revision="a" * 64,
+        implementation_revision="a" * 40,
     )
 
     assert result["source_gate"]["passed"] is True
