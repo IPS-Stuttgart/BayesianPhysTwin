@@ -155,6 +155,9 @@ files=(
   scripts/science/deform360_calibration_source/prepare.py
   scripts/science/deform360_calibration_source/cli.py
   scripts/science/run_deform360_official_hub_calibration_source.py
+  src/bayesian_phystwin/_deform360_calibration_artifact_chain.py
+  src/bayesian_phystwin/_deform360_calibration_run_common.py
+  src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py
   src/bayesian_phystwin/deform360_calibration_source_run_record.py
   tests/test_deform360_official_hub_calibration_source.py
   tests/test_deform360_calibration_source_direct_workflow.py
@@ -176,6 +179,9 @@ bash -n scripts/ci/run_deform360_calibration_source_direct.sh
 "${BASE_PYTHON}" -m compileall -q \
   scripts/science/deform360_calibration_source \
   scripts/science/run_deform360_official_hub_calibration_source.py \
+  src/bayesian_phystwin/_deform360_calibration_artifact_chain.py \
+  src/bayesian_phystwin/_deform360_calibration_run_common.py \
+  src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py \
   src/bayesian_phystwin/deform360_calibration_source_run_record.py
 git diff --exit-code
 test -z "$(git status --porcelain --untracked-files=all)"
