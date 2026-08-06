@@ -359,7 +359,7 @@ class SourceCompetenceEvidenceV1:
     def from_mapping(
         cls,
         value: Mapping[str, Any],
-    ) -> "SourceCompetenceEvidenceV1":
+    ) -> SourceCompetenceEvidenceV1:
         require_exact_fields(
             value,
             expected=_EVIDENCE_FIELDS,
@@ -535,7 +535,7 @@ def refine_observation_source_competence(
     """Temporally reduce row reliability without changing means or covariance."""
 
     validate_source_competence_evidence(observation, evidence)
-    cfg = config or SourceCompetenceMarkovConfigV1()
+    cfg = SourceCompetenceMarkovConfigV1() if config is None else config
     if not isinstance(cfg, SourceCompetenceMarkovConfigV1):
         raise TypeError("config must be a SourceCompetenceMarkovConfigV1")
     smoothed = smooth_markov_reliability(
