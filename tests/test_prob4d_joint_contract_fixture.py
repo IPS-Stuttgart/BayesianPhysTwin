@@ -167,7 +167,8 @@ def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
         )
 
 
-# The stable-core coverage job invokes this file explicitly. Import the recursive
-# factor-stream contract cases here so their new package code is covered by the
-# same line and branch ratchets without duplicating the full-suite collection.
+# The stable-core coverage job invokes this file explicitly. Import adjacent
+# prospective contract cases here so changed source remains subject to the same
+# line and branch ratchets without weakening their thresholds.
 from prob4d_factor_stream_contract_cases import *  # noqa: E402,F403
+from test_phystwin_directional_endpoint_v2 import *  # noqa: E402,F403
