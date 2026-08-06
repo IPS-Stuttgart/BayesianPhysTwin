@@ -222,6 +222,22 @@ def test_v2_is_invariant_to_an_orthogonal_coordinate_change() -> None:
     np.testing.assert_allclose(rotated.variance, reference.variance, atol=2e-14)
 
 
+def test_v2_rejects_a_nearly_idempotent_projector_outside_absolute_tolerance() -> None:
+    source = np.zeros((1, 1, 3), dtype=np.float64)
+    valid = np.ones((1, 1), dtype=bool)
+    near_projector = np.diag([1.0 + 5e-6, 1.0, 0.0])[None]
+
+    with pytest.raises(ValueError, match="idempotent"):
+        _run_v2(
+            source,
+            valid,
+            np.zeros_like(source),
+            np.zeros_like(valid),
+            np.array([True]),
+            projectors=near_projector,
+        )
+
+
 def test_v2_fails_closed_when_the_posterior_exceeds_condition_limit() -> None:
     source = np.array([[[0.0, 0.0, 0.01]]])
     multiview = np.zeros_like(source)
