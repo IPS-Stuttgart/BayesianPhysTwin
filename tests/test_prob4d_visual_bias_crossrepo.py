@@ -79,9 +79,7 @@ def test_strict_prob4d_roundtrip_matches_independent_bpt_identity(
             [[4e-6, 1e-6], [1e-6, 9e-6]],
             dtype=np.float64,
         ),
-        orthogonalization_semantics=(
-            PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
-        ),
+        orthogonalization_semantics=(PROB4D_VISUAL_BIAS_ORTHOGONALIZATION),
         maximum_gauge_projection=0.0,
         gauge_projection_tolerance=1e-8,
         metadata={"uses_truth": False},
@@ -94,9 +92,9 @@ def test_strict_prob4d_roundtrip_matches_independent_bpt_identity(
     assert binding.artifact_id == nuisance.artifact_id
     assert binding.observation_identity_sha256 == identity_sha
     original = binding.global_design().reshape(6, -1)
-    transformed = binding.reparameterized_design(
-        shared_bias_prior_std_m=0.02
-    ).reshape(6, -1)
+    transformed = binding.reparameterized_design(shared_bias_prior_std_m=0.02).reshape(
+        6, -1
+    )
     np.testing.assert_allclose(
         transformed @ (0.02**2 * np.eye(binding.latent_dimension)) @ transformed.T,
         original @ nuisance.joint_bias_covariance @ original.T,
