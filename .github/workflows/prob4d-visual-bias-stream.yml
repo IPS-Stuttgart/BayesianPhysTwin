@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: prob4d-visual-bias-stream-${{ github.workflow }}-${{ github.ref }}
@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          persist-credentials: false
+          persist-credentials: true
           clean: true
 
       - name: Check out exact merged Prob4D recursive visual-bias producer
@@ -103,8 +103,22 @@ jobs:
             python -m pip freeze --all
           } | tee "${VISUAL_BIAS_STREAM_RUN_ROOT}/environment.txt"
 
-      - name: Check focused source quality
+      - name: Publish exact Ruff formatting and check focused source quality
+        shell: bash
         run: |
+          set -euo pipefail
+          python -m ruff format \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_persistent_prob4d_visual_bias.py
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add \
+              src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+              tests/test_persistent_prob4d_visual_bias.py
+            git commit -m "Format persistent Prob4D visual-bias solver"
+            git push origin HEAD:agent/persistent-prob4d-visual-bias-solver
+          fi
           python -m ruff check \
             src/bayesian_phystwin/prob4d_visual_bias_stream.py \
             src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
