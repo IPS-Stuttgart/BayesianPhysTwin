@@ -130,6 +130,47 @@ def _joint_mean(belief: PersistentVisualBiasBeliefV1) -> np.ndarray:
     return np.concatenate((belief.physical_mean, belief.bias_latent_mean))
 
 
+def _require_compatible_posterior(
+    prior: PersistentVisualBiasBeliefV1,
+    posterior: PersistentVisualBiasBeliefV1,
+) -> None:
+    if posterior.stream_binding_id != prior.stream_binding_id:
+        raise ValueError("candidate posterior uses a different stream binding")
+    if posterior.visual_bias_model_id != prior.visual_bias_model_id:
+        raise ValueError("candidate posterior uses a different visual-bias model")
+    if posterior.physical_state_domain_id != prior.physical_state_domain_id:
+        raise ValueError("candidate posterior uses a different physical state domain")
+    if posterior.physical_dimension != prior.physical_dimension:
+        raise ValueError("candidate posterior physical dimension differs")
+    if posterior.bias_dimension != prior.bias_dimension:
+        raise ValueError("candidate posterior bias dimension differs")
+    if not np.array_equal(
+        posterior.bias_covariance_root,
+        prior.bias_covariance_root,
+    ):
+        raise ValueError(
+            "candidate posterior uses a different visual-bias covariance root"
+        )
+
+
+def _require_measurement_covariance_contraction(
+    prior_covariance: np.ndarray,
+    posterior_covariance: np.ndarray,
+) -> None:
+    reduction = prior_covariance - posterior_covariance
+    reduction = 0.5 * (reduction + reduction.T)
+    eigenvalues = np.linalg.eigvalsh(reduction)
+    scale = max(
+        1.0,
+        float(np.linalg.norm(prior_covariance, ord=2)),
+        float(np.linalg.norm(posterior_covariance, ord=2)),
+    )
+    if float(np.min(eigenvalues)) < -1e-10 * scale:
+        raise ValueError(
+            "candidate posterior covariance is not a measurement contraction"
+        )
+
+
 def _information_gain_nats(
     prior_covariance: np.ndarray,
     posterior_covariance: np.ndarray,
@@ -329,6 +370,14 @@ class PersistentVisualBiasCandidateV1:
             raise TypeError("posterior_belief must be a PersistentVisualBiasBeliefV1")
         if self.posterior_belief.stream_binding_id != self.stream_binding_id:
             raise ValueError("candidate posterior uses a different stream binding")
+        posterior_lineage = self.posterior_belief.metadata
+        if posterior_lineage.get("source_update_index") != index:
+            raise ValueError("candidate posterior source update index differs")
+        if (
+            posterior_lineage.get("physical_linearization_id")
+            != self.physical_linearization_id
+        ):
+            raise ValueError("candidate posterior physical linearization differs")
         quadratic = _finite_real(
             self.conditional_innovation_quadratic_per_dimension,
             name="conditional_innovation_quadratic_per_dimension",
@@ -682,6 +731,7 @@ def predict_persistent_visual_bias_run(
         name="process_covariance",
         dimension=physical_dimension,
     )
+    offset: np.ndarray
     if physical_offset is None:
         offset = np.zeros(physical_dimension, dtype=np.float64)
     else:
@@ -885,16 +935,46 @@ def select_persistent_visual_bias_candidate(
     if not isinstance(candidate, PersistentVisualBiasCandidateV1):
         raise TypeError("candidate must be a PersistentVisualBiasCandidateV1")
     accept = genuine_boolean(accepted, name="accepted")
-    if candidate.stream_binding_id != run.stream_binding.binding_id:
+    binding = run.stream_binding
+    if candidate.stream_binding_id != binding.binding_id:
         raise ValueError("candidate uses a different stream binding")
-    if candidate.update_index != run.next_update_index:
+    index = run.next_update_index
+    if candidate.update_index != index:
         raise ValueError("candidate update index is stale or out of order")
     if candidate.prior_belief_id != run.belief.belief_id:
         raise ValueError("candidate prior belief is stale")
-    update = run.stream_binding.visual_bias_stream.updates[run.next_update_index]
+    update = binding.visual_bias_stream.updates[index]
     if candidate.visual_bias_stream_update_id != update.update_id:
         raise ValueError("candidate identifies a different visual-bias update")
-    selected = candidate.posterior_belief if accept else run.belief
+    if candidate.factor_stream_update_id != binding.factor_stream_update_ids[index]:
+        raise ValueError(
+            "candidate factor-stream update differs from the active stream member"
+        )
+    if candidate.observation_binding_id != binding.observation_binding_ids[index]:
+        raise ValueError(
+            "candidate observation binding differs from the active stream member"
+        )
+    posterior = candidate.posterior_belief
+    _require_compatible_posterior(run.belief, posterior)
+    _require_measurement_covariance_contraction(
+        run.belief.joint_covariance,
+        posterior.joint_covariance,
+    )
+    expected_information_gain = _information_gain_nats(
+        run.belief.joint_covariance,
+        posterior.joint_covariance,
+    )
+    gain_scale = max(1.0, abs(expected_information_gain))
+    if not np.isclose(
+        candidate.information_gain_nats,
+        expected_information_gain,
+        rtol=1e-10,
+        atol=1e-12 * gain_scale,
+    ):
+        raise ValueError(
+            "candidate information gain does not match posterior covariance"
+        )
+    selected = posterior if accept else run.belief
     event = PersistentVisualBiasEventV1(
         event_type="measurement",
         update_index=run.next_update_index,
