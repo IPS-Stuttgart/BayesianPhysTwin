@@ -83,6 +83,7 @@ The package installs exactly one executable: `bpt`.
 | Command | Purpose |
 | --- | --- |
 | `bpt provider manifest` | Print the versioned Causal4D provider capability manifest. |
+| `bpt ecosystem validate` | Validate installed package lines and optional exact revisions against the ecosystem lock. |
 | `bpt observation validate` | Validate or summarize an `ObservationBeliefV1` artifact. |
 | `bpt residual replay` | Replay exported residuals through the robust likelihood. |
 | `bpt benchmark synthetic` | Run the controlled synthetic benchmark. |
@@ -181,6 +182,8 @@ state-update and exact-fallback boundaries.
 
 - [Command-line interface](docs/command_line.md): grouped routes, lifecycle
   registry, migration, and contribution policy.
+- [Ecosystem compatibility](docs/ecosystem_compatibility.md): known-good
+  package/revision lock, installed validation, and locked-versus-canary CI policy.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, experimental command families, and placement policy.
 - [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
