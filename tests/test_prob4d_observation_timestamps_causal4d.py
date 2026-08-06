@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
@@ -9,10 +10,19 @@ from typing import Any
 
 import numpy as np
 import pytest
-from causal4d.observation_clock_offset_prior import (
-    OBSERVATION_TIME_CORRECTION_CONVENTION,
-    ObservationClockOffsetPriorV1,
-)
+
+try:
+    from causal4d.observation_clock_offset_prior import (
+        OBSERVATION_TIME_CORRECTION_CONVENTION,
+        ObservationClockOffsetPriorV1,
+    )
+except ModuleNotFoundError:
+    if os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1":
+        raise
+    pytest.skip(
+        "Causal4D parity is validated by the dedicated timestamp consumer workflow",
+        allow_module_level=True,
+    )
 
 from bayesian_phystwin.causal4d_observation_clock_prior import (
     Causal4DObservationClockOffsetPriorV1,
