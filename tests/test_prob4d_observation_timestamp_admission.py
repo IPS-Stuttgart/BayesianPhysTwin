@@ -173,9 +173,7 @@ def test_changed_lineage_identity_and_reserved_metadata_fail_closed(
         )
 
 
-def test_symlinked_sidecar_is_rejected(
-    tmp_path: Path,
-) -> None:
+def test_symlinked_sidecar_is_rejected(tmp_path: Path) -> None:
     target = tmp_path / "target.json"
     target.write_bytes(b"sidecar")
     link = tmp_path / "timestamps.json"
@@ -183,3 +181,11 @@ def test_symlinked_sidecar_is_rejected(
 
     with pytest.raises(ValueError, match="must not be a symlink"):
         _call(link)
+
+
+def test_non_regular_sidecar_is_rejected(tmp_path: Path) -> None:
+    directory = tmp_path / "timestamps.json"
+    directory.mkdir()
+
+    with pytest.raises(ValueError, match="ordinary file"):
+        _call(directory)
