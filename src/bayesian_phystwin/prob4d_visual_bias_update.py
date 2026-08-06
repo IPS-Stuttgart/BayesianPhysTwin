@@ -42,9 +42,7 @@ from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
 
 PROB4D_VISUAL_BIAS_NUISANCE_SCHEMA = "prob4d.visual-bias-nuisance"
 PROB4D_VISUAL_BIAS_NUISANCE_VERSION = 1
-PROB4D_VISUAL_BIAS_ORTHOGONALIZATION = (
-    "conditional-whitened-global-gauge-projection-v1"
-)
+PROB4D_VISUAL_BIAS_ORTHOGONALIZATION = "conditional-whitened-global-gauge-projection-v1"
 PROB4D_VISUAL_BIAS_REPARAMETERIZATION = (
     "full-joint-covariance-root-to-isotropic-shared-bias-v1"
 )
@@ -121,9 +119,7 @@ def _array_sha256(value: np.ndarray) -> str:
     array = np.ascontiguousarray(value)
     digest = hashlib.sha256()
     digest.update(array.dtype.str.encode("ascii"))
-    digest.update(
-        json.dumps(list(array.shape), separators=(",", ":")).encode("ascii")
-    )
+    digest.update(json.dumps(list(array.shape), separators=(",", ":")).encode("ascii"))
     digest.update(memoryview(array).cast("B"))
     return digest.hexdigest()
 
@@ -203,9 +199,7 @@ class Prob4DVisualBiasBindingV1:
 
         row_indices = np.asarray(self.row_bias_indices)
         if row_indices.dtype != np.dtype(np.int64) or row_indices.ndim != 1:
-            raise ValueError(
-                "row_bias_indices must be a one-dimensional int64 array"
-            )
+            raise ValueError("row_bias_indices must be a one-dimensional int64 array")
         if row_indices.size < 1:
             raise ValueError("visual-bias sidecar requires observation rows")
         if np.any(row_indices < 0) or np.any(row_indices >= len(bias_ids)):
@@ -215,7 +209,7 @@ class Prob4DVisualBiasBindingV1:
         expected_shape = (row_indices.size, 3, len(basis_names))
         if jacobian.dtype != np.dtype(np.float64) or jacobian.shape != expected_shape:
             raise ValueError(
-                "bias_jacobian must be float64 with shape " f"{expected_shape}"
+                f"bias_jacobian must be float64 with shape {expected_shape}"
             )
         if not np.all(np.isfinite(jacobian)):
             raise ValueError("bias_jacobian must be finite")
@@ -227,9 +221,7 @@ class Prob4DVisualBiasBindingV1:
             dimension=latent_dimension,
         )
         if type(self.orthogonalization_semantics) is not str:
-            raise ValueError(
-                "orthogonalization_semantics must be a literal string"
-            )
+            raise ValueError("orthogonalization_semantics must be a literal string")
         semantics = self.orthogonalization_semantics
         if semantics not in {
             "not-orthogonalized",
@@ -322,10 +314,7 @@ class Prob4DVisualBiasBindingV1:
         }
 
     def array_descriptors(self) -> dict[str, dict[str, object]]:
-        return {
-            name: _array_descriptor(value)
-            for name, value in self.arrays().items()
-        }
+        return {name: _array_descriptor(value) for name, value in self.arrays().items()}
 
     def identity_record(self) -> dict[str, object]:
         return {
@@ -359,9 +348,7 @@ class Prob4DVisualBiasBindingV1:
         """Return the unique symmetric PSD root of the complete covariance."""
 
         eigenvalues, eigenvectors = np.linalg.eigh(self.joint_bias_covariance)
-        root = (
-            eigenvectors * np.sqrt(np.maximum(eigenvalues, 0.0))
-        ) @ eigenvectors.T
+        root = (eigenvectors * np.sqrt(np.maximum(eigenvalues, 0.0))) @ eigenvectors.T
         root = 0.5 * (root + root.T)
         if not np.allclose(
             root @ root.T,
@@ -454,8 +441,7 @@ def validate_prob4d_visual_bias_nuisance(
         raise ValueError("visual-bias row identity digest differs from the observation")
     if (
         require_orthogonal
-        and binding.orthogonalization_semantics
-        != PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
+        and binding.orthogonalization_semantics != PROB4D_VISUAL_BIAS_ORTHOGONALIZATION
     ):
         raise ValueError(
             "claim-bearing visual-bias use requires the global "
@@ -506,9 +492,7 @@ def _maximum_conditional_gauge_projection(
     if not len(singular_values) or singular_values[0] == 0.0:
         return 0.0
     threshold = (
-        max(stacked_gauge.shape)
-        * np.finfo(np.float64).eps
-        * float(singular_values[0])
+        max(stacked_gauge.shape) * np.finfo(np.float64).eps * float(singular_values[0])
     )
     gauge_basis = left[:, singular_values > threshold]
     if gauge_basis.shape[1] == 0:
@@ -617,9 +601,7 @@ class ClaimBearingProb4DVisualBiasUpdateV2:
         stop = start + self.visual_bias.latent_dimension
         transformed = self.result.posterior_covariance[start:stop, start:stop]
         root = self.visual_bias.symmetric_covariance_root()
-        covariance = (
-            root @ transformed @ root.T / self.shared_bias_prior_std_m**2
-        )
+        covariance = root @ transformed @ root.T / self.shared_bias_prior_std_m**2
         covariance = 0.5 * (covariance + covariance.T)
         return _immutable_array(covariance, dtype=np.dtype(np.float64))
 
@@ -627,13 +609,8 @@ class ClaimBearingProb4DVisualBiasUpdateV2:
     def update_id(self) -> str:
         return _canonical_id(
             {
-                "schema": (
-                    "bayesian_phystwin."
-                    "claim_bearing_prob4d_visual_bias_update"
-                ),
-                "schema_version": (
-                    CLAIM_BEARING_PROB4D_VISUAL_BIAS_UPDATE_VERSION
-                ),
+                "schema": ("bayesian_phystwin.claim_bearing_prob4d_visual_bias_update"),
+                "schema_version": (CLAIM_BEARING_PROB4D_VISUAL_BIAS_UPDATE_VERSION),
                 "base_update_id": self.base_update.update_id,
                 "visual_bias_artifact_id": self.visual_bias.artifact_id,
                 "visual_bias_observation_identity_sha256": (
@@ -741,9 +718,7 @@ def update_claim_bearing_prob4d_with_visual_bias_from_artifacts(
         metadata.get("prob4d_claim_bearing_runtime_revision_source")
     )
     if (
-        metadata.get(
-            "prob4d_claim_bearing_runtime_revision_independently_verified"
-        )
+        metadata.get("prob4d_claim_bearing_runtime_revision_independently_verified")
         is not True
     ):
         raise ValueError(
