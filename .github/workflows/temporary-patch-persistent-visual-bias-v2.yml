@@ -33,14 +33,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Apply deterministic source and test hardening
-        run: python tools/temporary_patch_persistent_visual_bias_v2.py
+      - name: Apply deterministic typing, source, and test hardening
+        run: |
+          python tools/temporary_annotate_persistent_visual_bias.py
+          python tools/temporary_patch_persistent_visual_bias_v2.py
 
       - name: Validate before publishing
         shell: bash
         run: |
           set -euo pipefail
           root="${RUNNER_TEMP}/persistent-hardening-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
           python -m venv "${root}/venv"
           "${root}/venv/bin/python" -m pip install \
             "pip==25.2" \
