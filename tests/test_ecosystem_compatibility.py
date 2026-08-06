@@ -38,10 +38,8 @@ def test_bundled_ecosystem_lock_is_complete_and_content_addressed() -> None:
     assert lock.component("causal4d").revision == (
         "b0bf0c2de176b29534ef59484ad167b8f27d9dae"
     )
-    assert lock.validation["bayesian_phystwin_tested_revision"] == (
-        lock.component("bpt").revision
-    )
-    assert lock.validation["workflow_run_id"] == 31019529164
+    assert lock.bayesian_phystwin_tested_revision == lock.component("bpt").revision
+    assert lock.workflow_run_id == 31019529164
 
 
 def test_optional_companions_and_require_all_have_distinct_semantics() -> None:
@@ -131,3 +129,21 @@ def test_compatibility_workflow_has_locked_and_canary_lanes() -> None:
     assert "continue-on-error: true" in workflow
     assert "persist-credentials: false" in workflow
     assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in workflow
+
+
+def test_three_repository_workflow_reproduces_lock_and_canaries_main() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflow = (
+        root / ".github" / "workflows" / "ecosystem-locked-golden-path.yml"
+    ).read_text(encoding="utf-8")
+    lock = load_ecosystem_compatibility_lock()
+
+    for component in lock.components:
+        assert component.revision in workflow
+    assert "Current BPT + locked Prob4D/Causal4D" in workflow
+    assert "Reproduce exact locked trio" in workflow
+    assert "Latest three-repository main canary" in workflow
+    assert "continue-on-error: true" in workflow
+    assert "THREE_REPOSITORY_REQUIRE_LOCKED_REVISIONS: \"true\"" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "permissions:\n  contents: read" in workflow
