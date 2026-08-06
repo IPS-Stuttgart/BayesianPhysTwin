@@ -38,6 +38,8 @@ The frozen five-target candidate is therefore:
 - Protocol file SHA-256: `0671df8beaaa4e560a264599ab5edbedd2e66ad2a7e1f9181f1b71fdea5fc70a`
 - Result canonical SHA-256: `49658508e9531abd43d966c0eeb56f4deec43db3234e0ea530f756955b6deee7`
 - Result file SHA-256: `2f666ce4060a488f036745ff9471acd39a79e2c2a7e0799c7c03e65075e75bf1`
+- V5 completion protocol SHA-256: `11d6eb1ff115f0021e1ab9ad959b0dfd614ca455e5f54d1dd05c99e9b916c7de`
+- V5 completion protocol file SHA-256: `960eb903634c621b0ea2244a2039cb92da974f9a196d54c77622cdd40f2ab271`
 - Complete source executions: 30/30
 - Independent aggregate regeneration: byte-identical
 - Raw artifact root: `/home/florianpfaff/source-only/pokeflex-missing5-scale-v5-run-83737068`
