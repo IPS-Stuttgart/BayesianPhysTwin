@@ -29,7 +29,6 @@ def _load_prob4d_timestamp_lineage() -> ModuleType:
             "Prob4D parity is validated by the dedicated timestamp consumer workflow",
             allow_module_level=True,
         )
-        raise AssertionError("pytest.skip returned unexpectedly")
 
 
 _prob4d_timestamp_lineage = _load_prob4d_timestamp_lineage()
