@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import runpy
 from pathlib import Path
 
 import pytest
@@ -193,3 +194,15 @@ def test_run_manifest_v2_rejects_empty_run_id() -> None:
             information_boundary={},
             configuration={},
         )
+
+
+def test_ecosystem_contracts_participate_in_stable_coverage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    namespace = runpy.run_path(
+        str(Path(__file__).with_name("test_ecosystem_compatibility.py"))
+    )
+    exercise = namespace["exercise_ecosystem_contract_coverage"]
+    exercise(tmp_path, monkeypatch, capsys)
