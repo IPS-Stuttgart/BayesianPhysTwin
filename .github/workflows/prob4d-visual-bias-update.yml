@@ -54,6 +54,15 @@ jobs:
           persist-credentials: false
           clean: true
 
+      - name: Provision Python 3.12 with venv support
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            _external/prob4d/pyproject.toml
+
       - name: Resolve isolated validation paths
         shell: bash
         run: |
@@ -70,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m venv "${VISUAL_BIAS_VENV}"
+          python -m venv "${VISUAL_BIAS_VENV}"
           echo "${VISUAL_BIAS_VENV}/bin" >> "${GITHUB_PATH}"
           "${VISUAL_BIAS_VENV}/bin/python" -m pip install \
             "pip==25.2" \
