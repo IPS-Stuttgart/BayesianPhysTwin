@@ -8,6 +8,7 @@ on:
       - "src/bayesian_phystwin/causal4d_observation_clock_prior.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
+      - "tests/test_prob4d_observation_timestamp_binding_invariants.py"
       - "tests/test_prob4d_observation_timestamps.py"
       - "tests/test_prob4d_observation_timestamp_admission.py"
       - "tests/test_prob4d_observation_timestamps_crossrepo.py"
@@ -23,6 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  BPT_REQUIRE_TIMESTAMP_COMPANIONS: "1"
   PROB4D_TIMESTAMP_PRODUCER_REVISION: 34b74302383ecf91c46c4d7a32e2bd22260ad7ed
   CAUSAL4D_CLOCK_PRIOR_REVISION: 183045f4a1085bd37221eb2294181f43ca629de0
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -134,6 +136,7 @@ jobs:
             src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
+            tests/test_prob4d_observation_timestamp_binding_invariants.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py \
@@ -142,6 +145,7 @@ jobs:
             src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
+            tests/test_prob4d_observation_timestamp_binding_invariants.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py \
@@ -156,6 +160,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
+            tests/test_prob4d_observation_timestamp_binding_invariants.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py \
@@ -168,6 +173,7 @@ jobs:
             src/bayesian_phystwin/causal4d_observation_clock_prior.py \
             src/bayesian_phystwin/prob4d_observation_timestamps.py \
             src/bayesian_phystwin/prob4d_observation_timestamp_admission.py \
+            tests/test_prob4d_observation_timestamp_binding_invariants.py \
             tests/test_prob4d_observation_timestamps.py \
             tests/test_prob4d_observation_timestamp_admission.py \
             tests/test_prob4d_observation_timestamps_crossrepo.py \

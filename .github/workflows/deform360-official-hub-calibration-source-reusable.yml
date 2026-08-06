@@ -12,8 +12,8 @@ permissions:
   issues: write
 
 concurrency:
-  group: deform360-official-calibration-source-direct-${{ inputs.source_sha }}
-  cancel-in-progress: false
+  group: deform360-official-calibration-source-direct
+  cancel-in-progress: true
 
 env:
   BPT_SOURCE_SHA: ${{ inputs.source_sha }}
@@ -34,25 +34,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 400
     steps:
-      - name: Check out exact reviewed BayesianPhysTwin source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.source_sha }}
-          fetch-depth: 0
-          persist-credentials: false
-          clean: true
-
-      - name: Check out exact official Deform360 processing source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: lhy0807/deform360
-          ref: ${{ env.PROCESSING_REVISION }}
-          path: _deform360_processing
-          fetch-depth: 1
-          persist-credentials: false
-          clean: true
-
-      - name: Initialize evidence paths and publish a non-sensitive run beacon
+      - name: Publish non-sensitive run beacon before checkout
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -99,9 +81,90 @@ jobs:
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/148/comments" \
             --data-binary @"${evidence_root}/beacon.json"
 
+      - name: Check out exact reviewed BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.PROCESSING_REVISION }}
+          path: _deform360_processing
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
       - name: Validate and prepare the frozen calibration source
         shell: bash
         run: bash scripts/ci/run_deform360_calibration_source_direct.sh
+
+      - name: Publish non-sensitive completion receipt
+        if: always()
+        continue-on-error: true
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          evidence_root="${EVIDENCE_ROOT:-${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
+          mkdir -p -- "${evidence_root}"
+          manifest="${evidence_root}/execution-manifest.json"
+          receipt="${evidence_root}/completion-receipt.json"
+          renderer="${GITHUB_WORKSPACE}/scripts/ci/render_deform360_calibration_source_run_record.py"
+          python_path="${GITHUB_WORKSPACE}/src"
+          if [[ -n "${PYTHON_SITE:-}" ]]; then
+            python_path="${python_path}:${PYTHON_SITE}"
+          fi
+          if [[ -f "${renderer}" ]] && \
+             PYTHONPATH="${python_path}${PYTHONPATH:+:${PYTHONPATH}}" \
+             python3 "${renderer}" issue \
+               --manifest "${manifest}" \
+               --source-revision "${BPT_SOURCE_SHA}" \
+               --workflow-run-id "${GITHUB_RUN_ID}" \
+               --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+               --output "${receipt}"; then
+            :
+          else
+            python3 - "${receipt}" <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          body = "\n".join(
+              [
+                  "## Direct ten-object calibration-source execution completed",
+                  "",
+                  f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`",
+                  f"- workflow attempt: `{os.environ['GITHUB_RUN_ATTEMPT']}`",
+                  f"- exact reviewed source revision: `{os.environ['BPT_SOURCE_SHA']}`",
+                  "- status: `execution-record-unavailable`",
+                  "- confirmation boundary verified: `unknown`",
+                  "",
+                  (
+                      "This receipt contains no local paths, object identities, "
+                      "or target outcomes."
+                  ),
+              ]
+          )
+          Path(sys.argv[1]).write_text(
+              json.dumps({"body": body}, sort_keys=True),
+              encoding="utf-8",
+          )
+          PY
+          fi
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            --data-binary @"${receipt}"
 
       - name: Publish compact calibration-source evidence
         if: always()
@@ -121,18 +184,28 @@ jobs:
           echo >> "${GITHUB_STEP_SUMMARY}"
           echo "- Runner: \`${RUNNER_NAME}\`" >> "${GITHUB_STEP_SUMMARY}"
           echo "- Source revision: \`${BPT_SOURCE_SHA}\`" >> "${GITHUB_STEP_SUMMARY}"
-          if [[ -f "${EVIDENCE_ROOT}/calibration-source-result.json" ]]; then
-            python3 - "${EVIDENCE_ROOT}/calibration-source-result.json" <<'PY' >> "${GITHUB_STEP_SUMMARY}"
-          import json
-          from pathlib import Path
-          import sys
-
-          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          gate = result["gate"]
-          print(f"- Prepared objects: `{gate['supported_object_count']}`")
-          print(f"- Prepared by stratum: `{gate['supported_by_stratum']}`")
-          print(f"- Result digest: `{result['result_sha256']}`")
-          PY
+          manifest="${EVIDENCE_ROOT:-}/execution-manifest.json"
+          renderer="${GITHUB_WORKSPACE}/scripts/ci/render_deform360_calibration_source_run_record.py"
+          python_path="${GITHUB_WORKSPACE}/src"
+          if [[ -n "${PYTHON_SITE:-}" ]]; then
+            python_path="${python_path}:${PYTHON_SITE}"
+          fi
+          if [[ -f "${renderer}" ]]; then
+            if PYTHONPATH="${python_path}${PYTHONPATH:+:${PYTHONPATH}}" \
+               python3 "${renderer}" summary \
+                 --manifest "${manifest}" \
+                 --source-revision "${BPT_SOURCE_SHA}" \
+                 --workflow-run-id "${GITHUB_RUN_ID}" \
+                 --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+                 >> "${GITHUB_STEP_SUMMARY}"; then
+              :
+            else
+              echo "- Execution record: \`unavailable or invalid\`" \
+                >> "${GITHUB_STEP_SUMMARY}"
+            fi
+          else
+            echo "- Execution record: \`unavailable or invalid\`" \
+              >> "${GITHUB_STEP_SUMMARY}"
           fi
 
       - name: Remove isolated runtime and processing checkout

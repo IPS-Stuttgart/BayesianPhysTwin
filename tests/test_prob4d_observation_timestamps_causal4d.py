@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
@@ -9,10 +10,6 @@ from typing import Any
 
 import numpy as np
 import pytest
-from causal4d.observation_clock_offset_prior import (
-    OBSERVATION_TIME_CORRECTION_CONVENTION,
-    ObservationClockOffsetPriorV1,
-)
 
 from bayesian_phystwin.causal4d_observation_clock_prior import (
     Causal4DObservationClockOffsetPriorV1,
@@ -25,6 +22,22 @@ from bayesian_phystwin.observation_timing_nuisance import (
 from bayesian_phystwin.prob4d_observation_timestamps import (
     Prob4DObservationTimestampBindingV1,
 )
+
+try:
+    from causal4d.observation_clock_offset_prior import (
+        OBSERVATION_TIME_CORRECTION_CONVENTION,
+        ObservationClockOffsetPriorV1,
+    )
+except ModuleNotFoundError as error:
+    if (
+        error.name != "causal4d"
+        or os.environ.get("BPT_REQUIRE_TIMESTAMP_COMPANIONS") == "1"
+    ):
+        raise
+    pytest.skip(
+        "Causal4D is installed only in the locked cross-repository suite",
+        allow_module_level=True,
+    )
 
 
 def _causal4d_prior() -> ObservationClockOffsetPriorV1:
