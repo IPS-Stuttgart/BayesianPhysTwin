@@ -27,7 +27,7 @@ env:
 jobs:
   validate:
     name: Full exact-head validation on Python 3.10, 3.12, and 3.14
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 120
     steps:
       - name: Check out the immutable reviewed head
@@ -140,7 +140,15 @@ jobs:
           "${VENV_312}/bin/python" -m pip install --force-reinstall --no-deps "${wheel}"
           "${VENV_312}/bin/python" -m pip check
           "${VENV_312}/bin/bpt" --help > "${VALIDATION_ROOT}/evidence/bpt-help.txt"
-          sha256sum "${wheel}" > "${VALIDATION_ROOT}/evidence/wheel.sha256"
+          "${VENV_312}/bin/python" - "${wheel}" \
+            > "${VALIDATION_ROOT}/evidence/wheel.sha256" <<'PY'
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          print(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}")
+          PY
 
       - name: Install exact source on Python 3.14
         shell: bash
