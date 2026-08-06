@@ -16,7 +16,7 @@ on:
       - "tests/test_source_competence_linearization.py"
       - "tests/test_structured_reliability.py"
       - "tests/test_observation_belief.py"
-      - "tests/test_physical_linearization.py"
+      - "tests/test_prior_aware_and_linearization.py"
       - "docs/source_competence_reliability.md"
   workflow_dispatch:
 
@@ -159,7 +159,7 @@ jobs:
             tests/test_source_competence_linearization.py \
             tests/test_structured_reliability.py \
             tests/test_observation_belief.py \
-            tests/test_physical_linearization.py \
+            tests/test_prior_aware_and_linearization.py \
             tests/test_prob4d_joint_contract_fixture.py \
             | tee "${SOURCE_COMPETENCE_RUN_ROOT}/pytest.txt"
           python -m py_compile \
