@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/temporary-format-prob4d-observation-timestamps.yml"
       - "tools/temporary_harden_timestamp_consumer.py"
+      - "tools/temporary_narrow_timestamp_admission_claim.py"
       - "src/bayesian_phystwin/causal4d_observation_clock_prior.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamps.py"
       - "src/bayesian_phystwin/prob4d_observation_timestamp_admission.py"
@@ -90,11 +91,12 @@ jobs:
             -e ./_external/causal4d --no-deps
           "${root}/venv/bin/python" -m pip check
 
-      - name: Apply the exact full-record hardening patch
+      - name: Apply exact hardening and claim-boundary patches
         shell: bash
         run: |
           set -euo pipefail
           python tools/temporary_harden_timestamp_consumer.py
+          python tools/temporary_narrow_timestamp_admission_claim.py
 
       - name: Format permanent source and tests
         shell: bash
@@ -147,6 +149,7 @@ jobs:
           set -euo pipefail
           rm -rf _external
           rm tools/temporary_harden_timestamp_consumer.py
+          rm tools/temporary_narrow_timestamp_admission_claim.py
           rm .github/workflows/temporary-format-prob4d-observation-timestamps.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
