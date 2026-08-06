@@ -31,6 +31,19 @@ assimilation prediction or future score opened.
 The compact manifest is archived under
 `results/sota/phystwin_tapnextpp_sparse_assimilation_source_v1/source_lock/`.
 
+## Sealed Predictions
+
+All eight prediction runners returned zero before any withheld source outcome
+was opened. Seven sparse updates were accepted. The failed provider case used
+the required bit-exact dense fallback.
+
+- prediction-manifest canonical SHA-256:
+  `6ceadb79e43b5057f375dfd575e51399447614e36aabd39eb9ef465e8fdc0ced`
+- prediction-manifest file SHA-256:
+  `c15a9ebaaab8c5161ba3f24d1723ed42eef9d4617a1f34d06749310ea52610f5`
+- sealed prediction archives: 8
+- future real outcomes read while predicting: 0
+
 ## Pre-outcome Technical Amendments
 
 Two staging attempts stopped before writing any case artifact:
@@ -53,4 +66,3 @@ or a metric. No numerical setting, case, arm, or advancement gate changed.
   hashed withheld artifacts.
 - Failed provider cases cannot be replaced and must use exact dense fallback.
 - No independent target or held-v8 artifact is authorized or accessed.
-
