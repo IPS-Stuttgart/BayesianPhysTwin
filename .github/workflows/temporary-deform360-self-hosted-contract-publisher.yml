@@ -16,7 +16,7 @@ on:
       - "docs/deform360_official_hub_calibration_source_v1.md"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: temporary-deform360-self-hosted-contract-${{ github.ref }}
@@ -35,6 +35,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Apply the reviewed deterministic patch
         run: python3 scripts/ci/temporary_patch_deform360_self_hosted_gate.py
@@ -111,24 +112,14 @@ jobs:
             ${{ env.PUBLISHER_ROOT }}/pytest.txt
             ${{ env.PUBLISHER_ROOT }}/sha256sums.txt
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 7
 
-      - name: Commit only the reviewed permanent files
-        shell: bash
-        env:
-          REVIEWED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Preserve the artifact-only publication boundary
         run: |
           set -euo pipefail
-          remote_head="$(git ls-remote origin refs/heads/agent/deform360-calibration-self-hosted-gate | cut -f1)"
-          test "${remote_head}" = "${REVIEWED_SHA}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            .github/workflows/deform360-official-hub-calibration-source.yml \
-            tests/test_deform360_calibration_source_workflow.py \
-            docs/deform360_official_hub_calibration_source_v1.md
-          git commit -m "Run Deform360 calibration contracts on workstation2"
-          git push origin HEAD:agent/deform360-calibration-self-hosted-gate
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git diff --check
 
       - name: Remove the publisher target site
         if: always()
