@@ -37,74 +37,8 @@ def replace_between(
 
 replace_once(
     "src/bayesian_phystwin/prob4d_observation_timestamps.py",
-    "from .observation_belief import ObservationBeliefV1\n"
-    "from .observation_timing_interchange import "
-    "observation_timing_prior_from_payload\n"
-    "from .observation_timing_nuisance import (\n",
-    "from .causal4d_observation_clock_prior import (\n"
-    "    causal4d_observation_timing_prior_from_record,\n"
-    ")\n"
-    "from .observation_belief import ObservationBeliefV1\n"
-    "from .observation_timing_nuisance import (\n",
-)
-
-replace_between(
-    "src/bayesian_phystwin/prob4d_observation_timestamps.py",
-    start="    def shared_clock_prior_from_payload(\n",
-    end="\n\n\ndef load_prob4d_observation_timestamp_binding(\n",
-    replacement=(
-        "    def shared_clock_prior_from_causal4d_record(\n"
-        "        self,\n"
-        "        value: Mapping[str, Any],\n"
-        "    ) -> ObservationTimingPrior:\n"
-        "        \"\"\"Independently reconstruct and bind a complete Causal4D prior.\"\"\"\n"
-        "\n"
-        "        expected_id = self.shared_clock_offset_prior_artifact_id\n"
-        "        if expected_id is None:\n"
-        "            raise ValueError(\"timestamp lineage declares no shared clock prior\")\n"
-        "        return causal4d_observation_timing_prior_from_record(\n"
-        "            value,\n"
-        "            expected_artifact_id=expected_id,\n"
-        "            expected_clock_domain=self.clock_domain,\n"
-        "            expected_time_scale=self.time_scale,\n"
-        "        )\n"
-        "\n"
-        "    def shared_clock_prior_from_payload(\n"
-        "        self,\n"
-        "        value: Mapping[str, object],\n"
-        "    ) -> ObservationTimingPrior:\n"
-        "        \"\"\"Reject compact Gaussian payloads at the claim-bearing boundary.\"\"\"\n"
-        "\n"
-        "        if self.shared_clock_offset_prior_artifact_id is None:\n"
-        "            raise ValueError(\"timestamp lineage declares no shared clock prior\")\n"
-        "        del value\n"
-        "        raise ValueError(\n"
-        "            \"compact shared clock payload is not independently verifiable; \"\n"
-        "            \"provide the full Causal4D clock-prior record\"\n"
-        "        )\n"
-    ),
-)
-
-replace_between(
-    "tests/test_prob4d_observation_timestamps.py",
-    start="def test_shared_clock_prior_binds_artifact_domain_and_sign(\n",
-    end="\n\n\ndef test_source_order_frame_and_checksum_mismatches_fail_closed(\n",
-    replacement=(
-        "def test_compact_shared_clock_payload_fails_closed(tmp_path: Path) -> None:\n"
-        "    binding = _binding(tmp_path)\n"
-        "    payload: dict[str, object] = {\n"
-        "        \"clock_domain\": \"camera-hardware-clock\",\n"
-        "        \"mean_offset_s\": 0.001,\n"
-        "        \"standard_deviation_s\": 0.0005,\n"
-        "        \"source_artifact_id\": SHARED_PRIOR,\n"
-        "        \"offset_convention\": (\n"
-        "            \"aligned_observation_time_s = observation_time_s + offset_s\"\n"
-        "        ),\n"
-        "    }\n"
-        "\n"
-        "    with pytest.raises(ValueError, match=\"not independently verifiable\"):\n"
-        "        binding.shared_clock_prior_from_payload(payload)\n"
-    ),
+    '        """Bind a source-only prior without merging it into local jitter."""\n',
+    '        """Construct an exploratory compact prior; not claim-bearing."""\n',
 )
 
 replace_between(
@@ -115,11 +49,16 @@ replace_between(
         "## Shared clock design and prior\n"
         "\n"
         "```python\n"
+        "from bayesian_phystwin.causal4d_observation_clock_binding import (\n"
+        "    bind_causal4d_observation_clock_prior,\n"
+        ")\n"
+        "\n"
         "clock_design = binding.shared_clock_design(\n"
         "    observation_derivative_xyz_per_s\n"
         ")\n"
-        "prior = binding.shared_clock_prior_from_causal4d_record(\n"
-        "    source_only_prior_record\n"
+        "prior = bind_causal4d_observation_clock_prior(\n"
+        "    binding,\n"
+        "    source_only_prior_record,\n"
         ")\n"
         "```\n"
         "\n"
@@ -135,11 +74,12 @@ replace_between(
         "aligned_observation_time_s = observation_time_s + offset_s\n"
         "```\n"
         "\n"
-        "A compact payload containing an artifact ID, mean, and standard deviation is\n"
-        "deliberately rejected: those numeric values could otherwise be altered while\n"
-        "retaining the expected ID. The resulting `ObservationTimingPrior` can be passed\n"
-        "to the explicit timing nuisance machinery only after the full record has been\n"
-        "reconstructed successfully.\n"
+        "A compact payload containing an artifact ID, mean, and standard deviation cannot\n"
+        "tie those numeric values to that ID. The legacy\n"
+        "`binding.shared_clock_prior_from_payload(...)` helper is therefore exploratory\n"
+        "only and must not authorize a claim-bearing run. The dedicated binder rejects\n"
+        "compact payloads and returns an `ObservationTimingPrior` only after the full\n"
+        "record has been reconstructed successfully.\n"
         "\n"
         "Timing identifiability must still be assessed against physical-state, gauge,\n"
         "visual-bias, and material-lag modes. A source timestamp sidecar and a valid\n"
