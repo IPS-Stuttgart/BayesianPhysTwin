@@ -93,6 +93,12 @@ jobs:
             echo "SOURCE_COMPETENCE_PATCHED=false" >> "${GITHUB_ENV}"
             exit 0
           fi
+          sed -i \
+            's/^    result = np\.empty(len(value), dtype=np\.float64)$/    result: np.ndarray = np.empty(len(value), dtype=np.float64)/' \
+            "${patch_script}"
+          grep -F \
+            'result: np.ndarray = np.empty(len(value), dtype=np.float64)' \
+            "${patch_script}"
           python "${patch_script}"
           python -m ruff format \
             src/bayesian_phystwin/source_competence_reliability.py \
