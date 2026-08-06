@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 import numpy as np
@@ -309,4 +310,99 @@ def test_wrong_config_type_is_rejected() -> None:
             observation,
             evidence,
             config=object(),  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("time_values", "0.0"),
+        ("time_values", True),
+        ("log_competent_density", "1.0"),
+        ("log_incompetent_density", False),
+    ],
+)
+def test_strict_loader_rejects_coercion_dependent_array_scalars(
+    tmp_path,
+    field: str,
+    bad_value: object,
+) -> None:
+    observation = _observation()
+    record = _evidence(observation).to_record()
+    values = record[field]
+    assert isinstance(values, list)
+    values[0] = bad_value
+    path = tmp_path / f"bad-{field}.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(ValueError, match="literal JSON number"):
+        load_source_competence_evidence(path)
+
+
+def test_update_contract_recomputes_all_claim_bearing_semantics() -> None:
+    observation = _observation()
+    update = refine_observation_source_competence(
+        observation,
+        _evidence(observation),
+    )
+
+    with pytest.raises(ValueError, match="posterior competence probability"):
+        replace(
+            update,
+            posterior_competence_probability=np.zeros(
+                observation.observation_count,
+                dtype=np.float64,
+            ),
+            update_id=None,
+        )
+
+    lower = 0.5 * update.deployed_prior_reliability
+    lower_refined = replace(
+        update.refined_observation,
+        prior_reliability=lower,
+    )
+    with pytest.raises(ValueError, match="conservative composition"):
+        replace(
+            update,
+            refined_observation=lower_refined,
+            deployed_prior_reliability=lower,
+            update_id=None,
+        )
+
+    altered_mean = np.array(
+        update.refined_observation.mean_xyz_m,
+        dtype=np.float64,
+        copy=True,
+    )
+    altered_mean[0, 0] += 1e-6
+    with pytest.raises(ValueError, match="exact metadata-bound refinement"):
+        replace(
+            update,
+            refined_observation=replace(
+                update.refined_observation,
+                mean_xyz_m=altered_mean,
+            ),
+            update_id=None,
+        )
+
+    altered_evidence = dict(update.sequence_log_evidence)
+    altered_evidence["track-10"] = float(altered_evidence["track-10"]) + 1.0
+    with pytest.raises(ValueError, match="sequence log evidence"):
+        replace(
+            update,
+            sequence_log_evidence=altered_evidence,
+            update_id=None,
+        )
+
+
+def test_source_competence_refinement_cannot_be_reapplied() -> None:
+    observation = _observation()
+    update = refine_observation_source_competence(
+        observation,
+        _evidence(observation),
+    )
+    refined = update.refined_observation
+    with pytest.raises(ValueError, match="already carries"):
+        refine_observation_source_competence(
+            refined,
+            _evidence(refined),
         )

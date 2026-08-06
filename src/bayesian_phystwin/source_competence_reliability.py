@@ -133,6 +133,23 @@ def _sequence_ids(value: Sequence[str], *, count: int) -> tuple[str, ...]:
     return result
 
 
+def _literal_json_float_array(value: object, *, name: str) -> np.ndarray:
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"{name} must be a nonempty JSON array")
+    result: np.ndarray = np.empty(len(value), dtype=np.float64)
+    for index, raw in enumerate(value):
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            raise ValueError(f"{name}[{index}] must be a literal JSON number")
+        try:
+            number = float(raw)
+        except (OverflowError, ValueError) as error:
+            raise ValueError(f"{name}[{index}] must be a finite JSON number") from error
+        if not np.isfinite(number):
+            raise ValueError(f"{name}[{index}] must be finite")
+        result[index] = number
+    return result
+
+
 @dataclass(frozen=True, slots=True)
 class SourceCompetenceMarkovConfigV1:
     """Content-addressed temporal persistence and conservative composition."""
@@ -382,12 +399,16 @@ class SourceCompetenceEvidenceV1:
             causal_frame_stop=cast(int, value.get("causal_frame_stop")),
             feature_names=tuple(feature_names),
             sequence_ids=tuple(sequence_ids),
-            time_values=np.asarray(value.get("time_values"), dtype=np.float64),
-            log_competent_density=np.asarray(
-                value.get("log_competent_density"), dtype=np.float64
+            time_values=_literal_json_float_array(
+                value.get("time_values"), name="time_values"
             ),
-            log_incompetent_density=np.asarray(
-                value.get("log_incompetent_density"), dtype=np.float64
+            log_competent_density=_literal_json_float_array(
+                value.get("log_competent_density"),
+                name="log_competent_density",
+            ),
+            log_incompetent_density=_literal_json_float_array(
+                value.get("log_incompetent_density"),
+                name="log_incompetent_density",
             ),
             uses_target_outcomes=cast(bool, value.get("uses_target_outcomes")),
             uses_physical_innovation=cast(bool, value.get("uses_physical_innovation")),
@@ -437,23 +458,93 @@ class SourceCompetenceReliabilityUpdateV1:
                 (values < 0.0) | (values > 1.0)
             ):
                 raise ValueError(f"{name} must lie in [0, 1]")
-        if np.any(deployed > self.source_observation.prior_reliability):
-            raise ValueError("deployed reliability exceeds the provider prior")
-        if not np.array_equal(
-            deployed,
-            self.refined_observation.prior_reliability,
-        ):
-            raise ValueError(
-                "refined observation does not contain deployed reliability"
-            )
-        if self.evidence.observation_artifact_id != self.source_observation.artifact_id:
-            raise ValueError("evidence identifies a different source observation")
         if not isinstance(self.sequence_log_evidence, Mapping):
             raise TypeError("sequence_log_evidence must be a mapping")
-        evidence_mapping = frozen_finite_json_mapping(
+        if self.evidence.observation_artifact_id != self.source_observation.artifact_id:
+            raise ValueError("evidence identifies a different source observation")
+        _, evidence_count, identity_sha = prob4d_observation_identity_summary(
+            self.source_observation
+        )
+        if self.evidence.observation_count != evidence_count:
+            raise ValueError("source-competence evidence row count differs")
+        if self.evidence.observation_identity_sha256 != identity_sha:
+            raise ValueError("source-competence row identity digest differs")
+        if self.evidence.causal_frame_stop != self.source_observation.causal_frame_stop:
+            raise ValueError("source-competence causal frame cutoff differs")
+
+        expected_smoothed = smooth_markov_reliability(
+            self.source_observation.prior_reliability,
+            self.evidence.log_competent_density,
+            self.evidence.log_incompetent_density,
+            self.evidence.sequence_ids,
+            self.evidence.time_values,
+            config=self.config.as_markov_config(),
+        )
+        expected_posterior = np.asarray(
+            expected_smoothed.posterior_inlier_probability,
+            dtype=np.float64,
+        )
+        if not np.array_equal(posterior, expected_posterior):
+            raise ValueError(
+                "posterior competence probability differs from the bound model"
+            )
+        expected_deployed = np.minimum(
+            self.source_observation.prior_reliability,
+            expected_posterior,
+        )
+        if not np.array_equal(deployed, expected_deployed):
+            raise ValueError(
+                "deployed reliability does not equal the conservative composition"
+            )
+        provided_evidence_mapping = frozen_finite_json_mapping(
             self.sequence_log_evidence,
             name="source-competence sequence log evidence",
         )
+        expected_evidence_mapping = frozen_finite_json_mapping(
+            expected_smoothed.sequence_log_evidence,
+            name="expected source-competence sequence log evidence",
+        )
+        if plain_json(provided_evidence_mapping) != plain_json(
+            expected_evidence_mapping
+        ):
+            raise ValueError(
+                "sequence log evidence differs from the bound Markov model"
+            )
+
+        expected_metadata = dict(plain_json(self.source_observation.metadata))
+        expected_metadata.update(
+            {
+                "source_competence_evidence_id": self.evidence.artifact_id,
+                "source_competence_feature_artifact_id": (
+                    self.evidence.source_feature_artifact_id
+                ),
+                "source_competence_reliability_model_id": (
+                    self.evidence.source_reliability_model_id
+                ),
+                "source_competence_markov_config_id": self.config.config_id,
+                "source_competence_original_observation_id": (
+                    self.source_observation.artifact_id
+                ),
+                "source_competence_composition": SOURCE_COMPETENCE_COMPOSITION,
+                "source_competence_covariance_changed": False,
+                "source_competence_association_probability_changed": False,
+                "source_competence_uses_target_outcomes": False,
+                "source_competence_uses_physical_innovation": False,
+                "source_competence_uses_posterior_responsibility": False,
+                "source_competence_uses_association_probability_as_label": False,
+                "source_competence_claim_boundary": (SOURCE_COMPETENCE_CLAIM_BOUNDARY),
+            }
+        )
+        expected_refined = replace(
+            self.source_observation,
+            prior_reliability=expected_deployed,
+            metadata=expected_metadata,
+        )
+        if self.refined_observation.artifact_id != expected_refined.artifact_id:
+            raise ValueError(
+                "refined observation differs from the exact metadata-bound refinement"
+            )
+        evidence_mapping = provided_evidence_mapping
         object.__setattr__(
             self,
             "posterior_competence_probability",
@@ -523,6 +614,10 @@ def refine_observation_source_competence(
     """Temporally reduce row reliability without changing means or covariance."""
 
     validate_source_competence_evidence(observation, evidence)
+    if "source_competence_original_observation_id" in observation.metadata:
+        raise ValueError(
+            "source observation already carries source-competence refinement"
+        )
     cfg = SourceCompetenceMarkovConfigV1() if config is None else config
     if not isinstance(cfg, SourceCompetenceMarkovConfigV1):
         raise TypeError("config must be a SourceCompetenceMarkovConfigV1")
