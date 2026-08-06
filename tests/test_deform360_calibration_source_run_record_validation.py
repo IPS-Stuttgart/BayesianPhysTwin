@@ -9,6 +9,10 @@ from typing import Any
 
 import pytest
 
+import bayesian_phystwin.deform360_calibration_source_run_record as public_record
+from bayesian_phystwin._deform360_calibration_run_common import (
+    RECORD_WRITE_EXIT_CODE,
+)
 from bayesian_phystwin.deform360_calibration_source_run_record import (
     _canonical_sha256,
     load_deform360_calibration_source_run_record,
@@ -70,6 +74,57 @@ def test_source_lock_summary_cannot_be_redigested_into_another_shape(
     _redigested(record)
     with pytest.raises(ValueError, match="visual_provider_lock_id"):
         validate_deform360_calibration_source_run_record(record)
+
+
+def test_cli_refuses_a_redigested_record_that_fails_strict_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    record = deepcopy(_success_record(tmp_path))
+    record["unexpected_private_field"] = "/private/object-id"
+    _redigested(record)
+    monkeypatch.setattr(
+        public_record,
+        "build_deform360_calibration_source_run_record",
+        lambda **_kwargs: record,
+    )
+    output = tmp_path / "execution-manifest.json"
+
+    status = public_record.main(
+        [
+            "--output",
+            str(output),
+            "--source-revision",
+            "1" * 40,
+            "--processing-revision",
+            "2" * 40,
+            "--workflow-run-id",
+            "123",
+            "--workflow-run-attempt",
+            "1",
+            "--workload-exit-code",
+            "0",
+            "--confirmation-boundary-exit-code",
+            "0",
+            "--source-protocol-json",
+            str(tmp_path / "source-protocol.json"),
+            "--stage0-protocol-json",
+            str(tmp_path / "stage0-protocol.json"),
+            "--selection-lock",
+            str(tmp_path / "selection-lock.json"),
+            "--visual-provider-lock",
+            str(tmp_path / "visual-provider-lock.json"),
+            "--plan-json",
+            str(tmp_path / "plan.json"),
+            "--download-json",
+            str(tmp_path / "download.json"),
+            "--result-json",
+            str(tmp_path / "result.json"),
+        ]
+    )
+
+    assert status == RECORD_WRITE_EXIT_CODE
+    assert not output.exists()
 
 
 @pytest.mark.parametrize(
