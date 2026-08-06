@@ -410,31 +410,55 @@ def evaluate_query_anchor_sufficiency(
             count=support_limit,
             minimum_trace_reduction=minimum_reduction,
         )
-        selected_count = len(selection.selected_indices)
-        selected_counts[row] = selected_count
-        selected_indices[row, :selected_count] = selection.selected_indices
-
-        row_traces = np.full(
-            support_limit + 1,
-            selection.initial_query_variance_trace,
+        selected = _integer_array(
+            selection.selected_indices,
+            name="selected_indices",
+            ndim=1,
         )
+        selected_count = len(selected)
+        _require(
+            selected_count <= support_limit,
+            "planner selected more anchors than the support limit",
+        )
+        _require(
+            np.all((selected >= 0) & (selected < candidate_count))
+            and len(np.unique(selected)) == selected_count,
+            "planner selected invalid or duplicate candidate indices",
+        )
+        selected_counts[row] = selected_count
+        selected_indices[row, :selected_count] = selected
+
+        declared_initial = _finite_scalar(
+            selection.initial_query_variance_trace,
+            name="initial_query_variance_trace",
+            minimum=0.0,
+            strictly_positive=True,
+        )
+        declared_final = float(selection.final_query_variance_trace)
+        declared_total_cost = float(selection.total_cost)
+        _require(
+            np.isfinite(declared_final) and np.isfinite(declared_total_cost),
+            "planner final trace and total cost must be finite",
+        )
+        row_traces = np.full(support_limit + 1, declared_initial)
         row_costs = np.zeros(support_limit + 1, dtype=np.float64)
+        trace_scale = max(1.0, abs(declared_initial), abs(declared_final))
+        trace_tolerance = _TOLERANCE * trace_scale
         if selected_count:
-            cumulative_reductions = np.cumsum(selection.query_trace_reductions)
+            reductions = np.asarray(selection.query_trace_reductions, dtype=np.float64)
+            selected_costs = np.asarray(selection.selected_costs, dtype=np.float64)
+            _require(
+                reductions.shape == selected_costs.shape == (selected_count,),
+                "planner reduction or cost diagnostic shape changed",
+            )
+            _require(
+                np.all(np.isfinite(reductions))
+                and np.all(np.isfinite(selected_costs)),
+                "planner reduction or cost diagnostics must be finite",
+            )
+            cumulative_reductions = np.cumsum(reductions)
             row_traces[1 : selected_count + 1] -= cumulative_reductions
             reconstructed_final = float(row_traces[selected_count])
-            declared_final = float(selection.final_query_variance_trace)
-            trace_scale = max(
-                1.0,
-                abs(float(selection.initial_query_variance_trace)),
-                abs(reconstructed_final),
-                abs(declared_final),
-            )
-            trace_tolerance = _TOLERANCE * trace_scale
-            _require(
-                np.isfinite(reconstructed_final) and np.isfinite(declared_final),
-                "reconstructed query variance contains non-finite values",
-            )
             _require(
                 np.isclose(
                     reconstructed_final,
@@ -449,18 +473,37 @@ def evaluate_query_anchor_sufficiency(
                 "reconstructed query variance became materially negative",
             )
             row_traces[selected_count] = max(declared_final, 0.0)
-            row_costs[1 : selected_count + 1] = np.cumsum(selection.selected_costs)
+            row_costs[1 : selected_count + 1] = np.cumsum(selected_costs)
+            cost_scale = max(
+                1.0,
+                abs(declared_total_cost),
+                abs(float(row_costs[selected_count])),
+            )
             _require(
                 np.isclose(
                     float(row_costs[selected_count]),
-                    float(selection.total_cost),
+                    declared_total_cost,
                     rtol=_TOLERANCE,
-                    atol=_TOLERANCE,
+                    atol=_TOLERANCE * cost_scale,
                 ),
                 "selected costs do not reconstruct the declared total cost",
             )
             row_traces[selected_count + 1 :] = row_traces[selected_count]
-            row_costs[selected_count + 1 :] = selection.total_cost
+            row_costs[selected_count + 1 :] = declared_total_cost
+        else:
+            _require(
+                np.isclose(
+                    declared_final,
+                    declared_initial,
+                    rtol=_TOLERANCE,
+                    atol=trace_tolerance,
+                ),
+                "zero-selection final trace differs from the initial trace",
+            )
+            _require(
+                abs(declared_total_cost) <= _TOLERANCE,
+                "zero-selection plan has nonzero total cost",
+            )
         _require(
             np.all(np.isfinite(row_traces)) and np.all(np.isfinite(row_costs)),
             "reconstructed query curve contains non-finite values",
