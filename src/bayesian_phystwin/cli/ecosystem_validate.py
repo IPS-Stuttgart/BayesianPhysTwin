@@ -88,9 +88,7 @@ def _print_human(report: EcosystemCompatibilityReportV1) -> None:
     for status in report.components:
         if not status.installed:
             state = (
-                "missing (required)"
-                if status.required
-                else "not installed (optional)"
+                "missing (required)" if status.required else "not installed (optional)"
             )
         elif status.compatible:
             state = f"compatible {status.installed_version}"
