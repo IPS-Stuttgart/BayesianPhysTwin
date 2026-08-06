@@ -1,0 +1,331 @@
+{
+  "artifact_kind": "PokeFlexActionRobustScaleCalibration",
+  "base_effective_scale": 0.125,
+  "calibration_id": "pokeflex-action-robust-scale-v3",
+  "calibration_sha256": "78d3c74e4246ec6b69cbcfe113ed04324bf1a9f49d543194df8a7a87d7f09157",
+  "candidate_multipliers": [
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0
+  ],
+  "claim_boundary": "Both source interactions are opened development data. The maximin mapping has no prospective status until it is frozen and evaluated on another interaction.",
+  "first_source_audit_file_sha256": "114fbf7c3437311f625c9c022742a2c707d6db1e61ca1548b0d8f2500f83d494",
+  "first_source_audit_sha256": "78179996296b5ed47692e3ee716308c4525deeb71ce2881442331b5643b4bf94",
+  "future_take_outcomes_opened": false,
+  "global_multiplier": 1.0,
+  "objects": {
+    "3dPrintedCylinder": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.028003813816223466,
+      "minimum_source_relative_improvement": 0.013717177793582235,
+      "multiplier": 3.0,
+      "object_name": "3dPrintedCylinder",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.013717177793582235,
+        0.0422904498388647
+      ],
+      "source_supported_frame_counts": [
+        127,
+        92
+      ],
+      "source_take_ids": [
+        "3dPrintedCylinder_T5",
+        "3dPrintedCylinder_T1"
+      ]
+    },
+    "3dPrintedPizza": {
+      "effective_scale": 0.0625,
+      "mean_source_relative_improvement": 0.0015742702862626265,
+      "minimum_source_relative_improvement": 0.0010405529829988181,
+      "multiplier": 0.5,
+      "object_name": "3dPrintedPizza",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        0.5,
+        0.5
+      ],
+      "source_relative_improvements": [
+        0.0021079875895264346,
+        0.0010405529829988181
+      ],
+      "source_supported_frame_counts": [
+        59,
+        53
+      ],
+      "source_take_ids": [
+        "3dPrintedPizza_T6",
+        "3dPrintedPizza_T4"
+      ]
+    },
+    "3dPrintedPyramid": {
+      "effective_scale": 0.125,
+      "mean_source_relative_improvement": 0.0,
+      "minimum_source_relative_improvement": 0.0,
+      "multiplier": 1.0,
+      "object_name": "3dPrintedPyramid",
+      "selection_reason": "global-lower-envelope-fallback",
+      "source_best_multipliers": [
+        0.5,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.0,
+        0.0
+      ],
+      "source_supported_frame_counts": [
+        61,
+        62
+      ],
+      "source_take_ids": [
+        "3dPrintedPyramid_T4",
+        "3dPrintedPyramid_T5"
+      ]
+    },
+    "Beanbag": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.02794720897325085,
+      "minimum_source_relative_improvement": 0.02579063507922423,
+      "multiplier": 4.0,
+      "object_name": "Beanbag",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.03010378286727747,
+        0.02579063507922423
+      ],
+      "source_supported_frame_counts": [
+        32,
+        51
+      ],
+      "source_take_ids": [
+        "Beanbag_T3",
+        "Beanbag_T1"
+      ]
+    },
+    "FoamCylinder": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.011694924595206676,
+      "minimum_source_relative_improvement": 0.009556019521019357,
+      "multiplier": 3.0,
+      "object_name": "FoamCylinder",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.009556019521019357,
+        0.013833829669393996
+      ],
+      "source_supported_frame_counts": [
+        70,
+        36
+      ],
+      "source_take_ids": [
+        "FoamCylinder_T3",
+        "FoamCylinder_T6"
+      ]
+    },
+    "FoamHalfSphere": {
+      "effective_scale": 0.25,
+      "mean_source_relative_improvement": 0.018508679146485622,
+      "minimum_source_relative_improvement": 0.015276089328808758,
+      "multiplier": 2.0,
+      "object_name": "FoamHalfSphere",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        2.0
+      ],
+      "source_relative_improvements": [
+        0.021741268964162484,
+        0.015276089328808758
+      ],
+      "source_supported_frame_counts": [
+        67,
+        76
+      ],
+      "source_take_ids": [
+        "FoamHalfSphere_T5",
+        "FoamHalfSphere_T6"
+      ]
+    },
+    "Pillow": {
+      "effective_scale": 0.25,
+      "mean_source_relative_improvement": 0.00390855372401108,
+      "minimum_source_relative_improvement": 0.00244363089459027,
+      "multiplier": 2.0,
+      "object_name": "Pillow",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        2.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.00244363089459027,
+        0.00537347655343189
+      ],
+      "source_supported_frame_counts": [
+        76,
+        80
+      ],
+      "source_take_ids": [
+        "Pillow_T7",
+        "Pillow_T3"
+      ]
+    },
+    "PlushDice": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.03319764188615287,
+      "minimum_source_relative_improvement": 0.032694363509433395,
+      "multiplier": 4.0,
+      "object_name": "PlushDice",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.032694363509433395,
+        0.03370092026287236
+      ],
+      "source_supported_frame_counts": [
+        66,
+        65
+      ],
+      "source_take_ids": [
+        "PlushDice_T1",
+        "PlushDice_T6"
+      ]
+    },
+    "PlushMoon": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.009998688397071447,
+      "minimum_source_relative_improvement": 0.00974823362759773,
+      "multiplier": 4.0,
+      "object_name": "PlushMoon",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.010249143166545165,
+        0.00974823362759773
+      ],
+      "source_supported_frame_counts": [
+        64,
+        77
+      ],
+      "source_take_ids": [
+        "PlushMoon_T5",
+        "PlushMoon_T4"
+      ]
+    },
+    "PlushTurtle": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.017536445376098053,
+      "minimum_source_relative_improvement": 0.01196200308332926,
+      "multiplier": 4.0,
+      "object_name": "PlushTurtle",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.023110887668866847,
+        0.01196200308332926
+      ],
+      "source_supported_frame_counts": [
+        76,
+        58
+      ],
+      "source_take_ids": [
+        "PlushTurtle_T5",
+        "PlushTurtle_T6"
+      ]
+    },
+    "PlushVolleyball": {
+      "effective_scale": 0.125,
+      "mean_source_relative_improvement": 0.0,
+      "minimum_source_relative_improvement": 0.0,
+      "multiplier": 1.0,
+      "object_name": "PlushVolleyball",
+      "selection_reason": "insufficient-repeated-action-support",
+      "source_best_multipliers": [
+        1.0,
+        1.0
+      ],
+      "source_relative_improvements": [
+        0.0,
+        0.0
+      ],
+      "source_supported_frame_counts": [
+        0,
+        0
+      ],
+      "source_take_ids": [
+        "PlushVolleyball_T3",
+        "PlushVolleyball_T6"
+      ]
+    },
+    "Sponge": {
+      "effective_scale": 0.1875,
+      "mean_source_relative_improvement": 0.002283343221382889,
+      "minimum_source_relative_improvement": 0.000583427779636586,
+      "multiplier": 1.5,
+      "object_name": "Sponge",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        1.5,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.000583427779636586,
+        0.003983258663129192
+      ],
+      "source_supported_frame_counts": [
+        83,
+        91
+      ],
+      "source_take_ids": [
+        "Sponge_T4",
+        "Sponge_T5"
+      ]
+    }
+  },
+  "schema_version": 1,
+  "second_source_audit_file_sha256": "2583791fa6e64d9d7f9f1493c1fc7dec5c9cf7a2d96bfe27ef0010a561d516d5",
+  "second_source_audit_sha256": "08bc71efec3c8c99bb469efada2a82048b978a0f5fdde3a149c47b60ac395587",
+  "selection_rule": "per physical object, choose the multiplier maximizing the minimum relative improvement over the validated global scale across two source interactions; mean gain, prior distance to one, and smaller magnitude break exact ties",
+  "source_cohort_role": "two opened development interactions per object",
+  "source_gate": {
+    "adjusted_object_count": 10,
+    "controls_passed": true,
+    "mean_source_action_relative_improvement": 0.012887797451845465,
+    "minimum_source_action_relative_improvement": 0.0,
+    "passed": true,
+    "source_action_count": 24,
+    "source_action_regression_count": 0,
+    "source_object_count": 12
+  },
+  "synthetic_controls": {
+    "passed": true,
+    "placebo_control_count": 12,
+    "placebo_deviation_count": 0,
+    "positive_control_count": 12,
+    "positive_detection_count": 12
+  }
+}
