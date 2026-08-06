@@ -1,0 +1,106 @@
+name: Temporary split ecosystem lock core
+
+on:
+  push:
+    branches:
+      - agent/ecosystem-lock-core-v1
+    paths:
+      - .github/workflows/temporary-split-ecosystem-lock-core.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-split-ecosystem-lock-core
+  cancel-in-progress: false
+
+jobs:
+  split-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/ecosystem-lock-core-v1
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Fetch source branch
+        run: git fetch origin agent/ecosystem-compatibility-lock
+      - name: Apply only the stable package-level compatibility surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            MANIFEST.in
+            pyproject.toml
+            docs/command_line.md
+            docs/ecosystem_compatibility.md
+            src/bayesian_phystwin/cli/_command_inventory.py
+            src/bayesian_phystwin/cli/command_registry.py
+            src/bayesian_phystwin/cli/ecosystem_validate.py
+            src/bayesian_phystwin/data/ecosystem_compatibility_v1.json
+            src/bayesian_phystwin/ecosystem_compatibility.py
+            tests/test_command_registry.py
+            tests/test_ecosystem_compatibility.py
+            tests/test_pep561_packaging.py
+          )
+          git diff --binary \
+            "$(git merge-base origin/main origin/agent/ecosystem-compatibility-lock)" \
+            origin/agent/ecosystem-compatibility-lock \
+            -- "${files[@]}" > "${RUNNER_TEMP}/ecosystem-lock-core.patch"
+          test -s "${RUNNER_TEMP}/ecosystem-lock-core.patch"
+          git apply --3way --index "${RUNNER_TEMP}/ecosystem-lock-core.patch"
+          git diff --cached --check
+      - name: Set up Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install and validate the split core
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff format \
+            src/bayesian_phystwin/ecosystem_compatibility.py \
+            src/bayesian_phystwin/cli/ecosystem_validate.py \
+            tests/test_ecosystem_compatibility.py
+          python -m ruff check \
+            src/bayesian_phystwin/ecosystem_compatibility.py \
+            src/bayesian_phystwin/cli/ecosystem_validate.py \
+            src/bayesian_phystwin/cli/command_registry.py \
+            src/bayesian_phystwin/cli/_command_inventory.py \
+            tests/test_ecosystem_compatibility.py \
+            tests/test_command_registry.py \
+            tests/test_pep561_packaging.py
+          python -m mypy \
+            src/bayesian_phystwin/ecosystem_compatibility.py \
+            src/bayesian_phystwin/cli/ecosystem_validate.py
+          python -m pytest -q \
+            tests/test_ecosystem_compatibility.py \
+            tests/test_command_registry.py \
+            tests/test_pep561_packaging.py \
+            tests/test_cli_main.py
+          python -m compileall -q src tests
+          git diff --check
+      - name: Commit and push the split product changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            MANIFEST.in \
+            pyproject.toml \
+            docs/command_line.md \
+            docs/ecosystem_compatibility.md \
+            src/bayesian_phystwin/cli/_command_inventory.py \
+            src/bayesian_phystwin/cli/command_registry.py \
+            src/bayesian_phystwin/cli/ecosystem_validate.py \
+            src/bayesian_phystwin/data/ecosystem_compatibility_v1.json \
+            src/bayesian_phystwin/ecosystem_compatibility.py \
+            tests/test_command_registry.py \
+            tests/test_ecosystem_compatibility.py \
+            tests/test_pep561_packaging.py
+          git diff --cached --check
+          git commit -m "Add core ecosystem compatibility lock"
+          git push origin HEAD:agent/ecosystem-lock-core-v1
