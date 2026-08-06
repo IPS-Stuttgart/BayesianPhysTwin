@@ -125,6 +125,25 @@ def _group_id_tuple(value: object, *, expected_count: int) -> tuple[str, ...]:
     return result
 
 
+def _selection_group_id_tuple(value: object) -> tuple[str, ...]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError(
+            "threshold_selection_group_ids must be a sequence of strings"
+        )
+    result = tuple(
+        _canonical_string(
+            item,
+            name=f"threshold_selection_group_ids[{index}]",
+        )
+        for index, item in enumerate(tuple(value))
+    )
+    if len(set(result)) != len(result):
+        raise ValueError(
+            "threshold_selection_group_ids must not contain duplicates"
+        )
+    return tuple(sorted(result))
+
+
 def _log_binomial_probability(
     successes: int,
     trials: int,
@@ -239,6 +258,7 @@ class GuardHarmRiskCertificateV1:
     certification_partition_id: str
     statistical_unit: str
     metric: str
+    threshold_selection_group_ids: Sequence[str]
     group_ids: Sequence[str]
     risk_scores: FloatArray
     candidate_losses: FloatArray
@@ -279,6 +299,9 @@ class GuardHarmRiskCertificateV1:
             name="statistical_unit",
         )
         metric = _canonical_string(self.metric, name="metric")
+        threshold_selection_group_ids = _selection_group_id_tuple(
+            self.threshold_selection_group_ids
+        )
         risk_scores = _float_vector(self.risk_scores, name="risk_scores")
         candidate_losses = _float_vector(
             self.candidate_losses,
@@ -309,6 +332,12 @@ class GuardHarmRiskCertificateV1:
         group_ids = _group_id_tuple(self.group_ids, expected_count=count)
         order = np.argsort(np.asarray(group_ids, dtype=object), kind="mergesort")
         group_ids = tuple(group_ids[int(index)] for index in order)
+        overlap = sorted(set(group_ids) & set(threshold_selection_group_ids))
+        if overlap:
+            raise ValueError(
+                "threshold-selection and certification groups overlap: "
+                f"{overlap}"
+            )
         risk_scores = risk_scores[order]
         candidate_losses = candidate_losses[order]
         fallback_losses = fallback_losses[order]
@@ -437,6 +466,11 @@ class GuardHarmRiskCertificateV1:
         object.__setattr__(self, "certification_partition_id", partition_id)
         object.__setattr__(self, "statistical_unit", statistical_unit)
         object.__setattr__(self, "metric", metric)
+        object.__setattr__(
+            self,
+            "threshold_selection_group_ids",
+            threshold_selection_group_ids,
+        )
         object.__setattr__(self, "group_ids", group_ids)
         object.__setattr__(self, "risk_scores", _immutable_float(risk_scores))
         object.__setattr__(
@@ -540,6 +574,9 @@ class GuardHarmRiskCertificateV1:
             "certification_partition_id": self.certification_partition_id,
             "statistical_unit": self.statistical_unit,
             "metric": self.metric,
+            "threshold_selection_group_ids": list(
+                self.threshold_selection_group_ids
+            ),
             "group_ids": list(self.group_ids),
             "risk_scores": self.risk_scores.tolist(),
             "candidate_losses": self.candidate_losses.tolist(),
@@ -601,6 +638,7 @@ class GuardHarmRiskCertificateV1:
                 "certification_partition_id",
                 "statistical_unit",
                 "metric",
+                "threshold_selection_group_ids",
                 "group_ids",
                 "risk_scores",
                 "candidate_losses",
@@ -654,6 +692,10 @@ class GuardHarmRiskCertificateV1:
             ),
             statistical_unit=cast(str, value["statistical_unit"]),
             metric=cast(str, value["metric"]),
+            threshold_selection_group_ids=cast(
+                Sequence[str],
+                value["threshold_selection_group_ids"],
+            ),
             group_ids=cast(Sequence[str], value["group_ids"]),
             risk_scores=cast(FloatArray, value["risk_scores"]),
             candidate_losses=cast(FloatArray, value["candidate_losses"]),
@@ -727,6 +769,7 @@ def certify_guard_harm_risk(
     certification_partition_id: str,
     statistical_unit: str,
     metric: str,
+    threshold_selection_group_ids: Sequence[str],
     group_ids: Sequence[str],
     risk_scores: object,
     candidate_losses: object,
@@ -777,6 +820,7 @@ def certify_guard_harm_risk(
         certification_partition_id=certification_partition_id,
         statistical_unit=statistical_unit,
         metric=metric,
+        threshold_selection_group_ids=threshold_selection_group_ids,
         group_ids=group_ids,
         risk_scores=scores,
         candidate_losses=candidate,
