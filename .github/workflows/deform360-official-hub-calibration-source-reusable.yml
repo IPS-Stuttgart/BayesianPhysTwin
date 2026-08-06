@@ -12,8 +12,8 @@ permissions:
   issues: write
 
 concurrency:
-  group: deform360-official-calibration-source-direct-${{ inputs.source_sha }}
-  cancel-in-progress: false
+  group: deform360-official-calibration-source-direct
+  cancel-in-progress: true
 
 env:
   BPT_SOURCE_SHA: ${{ inputs.source_sha }}
@@ -34,25 +34,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 400
     steps:
-      - name: Check out exact reviewed BayesianPhysTwin source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.source_sha }}
-          fetch-depth: 0
-          persist-credentials: false
-          clean: true
-
-      - name: Check out exact official Deform360 processing source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: lhy0807/deform360
-          ref: ${{ env.PROCESSING_REVISION }}
-          path: _deform360_processing
-          fetch-depth: 1
-          persist-credentials: false
-          clean: true
-
-      - name: Initialize evidence paths and publish a non-sensitive run beacon
+      - name: Publish non-sensitive run beacon before checkout
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -98,6 +80,24 @@ jobs:
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/148/comments" \
             --data-binary @"${evidence_root}/beacon.json"
+
+      - name: Check out exact reviewed BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.PROCESSING_REVISION }}
+          path: _deform360_processing
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
 
       - name: Validate and prepare the frozen calibration source
         shell: bash
