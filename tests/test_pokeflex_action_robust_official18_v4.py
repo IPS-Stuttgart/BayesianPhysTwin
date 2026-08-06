@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 
@@ -9,6 +10,7 @@ from bayesian_phystwin.pokeflex_action_robust_official18_v4 import (
     EXPECTED_PROTOCOL_SHA256,
     PREDICTION_BARRIER_ARTIFACT_KIND,
     SOURCE_MANIFEST_ARTIFACT_KIND,
+    build_author_source_manifest,
     completion_sha256,
     evaluate_official18_v4,
     load_archived_public13_result,
@@ -104,17 +106,23 @@ def _synthetic_source_manifest(protocol: dict[str, object]) -> dict[str, object]
         "artifact_kind": SOURCE_MANIFEST_ARTIFACT_KIND,
         "created_before_prediction": True,
         "held_v8_accessed": False,
+        "member_payload_decoded": False,
         "protocol_sha256": protocol["protocol_sha256"],
         "schema_version": 1,
         "source_manifest_sha256": "",
+        "source_root_embedded": False,
         "takes": [
             {
                 "camera_panel_sufficient": True,
                 "episode_length": 120,
                 "evaluator_compatible": True,
                 "member_manifest_sha256": f"{index + 10:064x}",
+                "mesh_frame_count": 120,
+                "mesh_frames_contiguous_from_one": True,
                 "official_take_identity_verified": True,
                 "required_streams_present": True,
+                "source_payload_bytes": 1000 + index,
+                "source_payload_name": f"{take_id}.zip",
                 "source_payload_sha256": f"{index + 20:064x}",
                 "take_id": take_id,
             }
@@ -125,6 +133,36 @@ def _synthetic_source_manifest(protocol: dict[str, object]) -> dict[str, object]
     }
     manifest["source_manifest_sha256"] = source_manifest_sha256(manifest)
     return manifest
+
+
+def _write_source_zip(
+    root: Path,
+    take_id: str,
+    *,
+    omit_prefix: str | None = None,
+) -> None:
+    object_name = take_id.rpartition("_T")[0]
+    path = root / object_name / f"{take_id}.zip"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    member_names = [f"{take_id}/robot_data.json"]
+    member_names.extend(
+        f"{take_id}/meshes/mesh-f{frame:05d}.obj" for frame in range(1, 8)
+    )
+    member_names.append(f"{take_id}/mesh_confidence/00001.npy")
+    member_names.extend(
+        f"{take_id}/{sensor}/{camera}/{modality}/00001.bin"
+        for sensor, modalities in (
+            ("kinect", ("color", "depth")),
+            ("realsense", ("color", "depth")),
+            ("volucam", ("color",)),
+        )
+        for camera in (0, 1)
+        for modality in modalities
+    )
+    with ZipFile(path, "w") as archive:
+        for name in member_names:
+            if omit_prefix is None or not name.startswith(f"{take_id}/{omit_prefix}"):
+                archive.writestr(name, f"fixture:{name}".encode())
 
 
 def _synthetic_prediction_barrier(
@@ -187,6 +225,35 @@ def test_archived_public13_component_is_byte_bound() -> None:
     assert result["parameter_selection_from_this_cohort"] is False
     assert result["future_or_missing_official_takes_accessed"] is False
     assert result["held_v8_accessed"] is False
+
+
+def test_author_source_builder_uses_opaque_zip_inventory(tmp_path: Path) -> None:
+    protocol = load_official18_v4_protocol(PROTOCOL_PATH)
+    for take_id in MISSING_TAKES:
+        _write_source_zip(tmp_path, take_id)
+
+    manifest = build_author_source_manifest(tmp_path, protocol)
+    validation = validate_author_source_manifest(manifest, protocol)
+
+    assert validation["take_count"] == 5
+    assert manifest["member_payload_decoded"] is False
+    assert manifest["target_geometry_decoded"] is False
+    assert manifest["source_root_embedded"] is False
+    assert all(row["mesh_frame_count"] == 7 for row in manifest["takes"])
+    assert all(row["episode_length"] == 7 for row in manifest["takes"])
+    assert all("/" not in row["source_payload_name"] for row in manifest["takes"])
+
+
+def test_author_source_builder_rejects_incomplete_camera_panel(
+    tmp_path: Path,
+) -> None:
+    protocol = load_official18_v4_protocol(PROTOCOL_PATH)
+    for take_id in MISSING_TAKES:
+        omitted = "realsense/1/depth/" if take_id == MISSING_TAKES[0] else None
+        _write_source_zip(tmp_path, take_id, omit_prefix=omitted)
+
+    with pytest.raises(ValueError, match="required stream is missing"):
+        build_author_source_manifest(tmp_path, protocol)
 
 
 def test_prospective_completion_enforces_custody_and_exact_cohort() -> None:

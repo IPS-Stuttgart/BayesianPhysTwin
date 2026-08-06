@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
+from zipfile import ZipFile
 
 import numpy as np
 
@@ -305,6 +307,117 @@ def load_archived_public13_result(
     return payload
 
 
+def _zip_member_manifest_sha256(archive: ZipFile) -> str:
+    inventory = [
+        {
+            "CRC": int(info.CRC),
+            "compress_size": int(info.compress_size),
+            "file_size": int(info.file_size),
+            "filename": info.filename,
+        }
+        for info in sorted(archive.infolist(), key=lambda item: item.filename)
+    ]
+    encoded = json.dumps(
+        inventory,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _archive_source_row(archive_path: Path, take_id: str) -> dict[str, Any]:
+    with ZipFile(archive_path) as archive:
+        names = tuple(sorted(info.filename for info in archive.infolist()))
+        member_manifest = _zip_member_manifest_sha256(archive)
+    root = f"{take_id}/"
+    rooted = bool(names) and all(name.startswith(root) for name in names)
+    mesh_pattern = re.compile(rf"^{re.escape(root)}meshes/mesh-f(\d{{5}})\.obj$")
+    mesh_frames = sorted(
+        int(match.group(1))
+        for name in names
+        if (match := mesh_pattern.fullmatch(name)) is not None
+    )
+    contiguous_meshes = bool(mesh_frames) and mesh_frames == list(
+        range(1, max(mesh_frames) + 1)
+    )
+    required_exact = {f"{root}robot_data.json"}
+    required_prefixes = {
+        f"{root}kinect/{camera}/{modality}/"
+        for camera in (0, 1)
+        for modality in ("color", "depth")
+    }
+    required_prefixes.update(
+        f"{root}realsense/{camera}/{modality}/"
+        for camera in (0, 1)
+        for modality in ("color", "depth")
+    )
+    required_prefixes.update(f"{root}volucam/{camera}/color/" for camera in (0, 1))
+    required_prefixes.update({f"{root}mesh_confidence/", f"{root}meshes/"})
+    streams_present = required_exact.issubset(names) and all(
+        any(name.startswith(prefix) and name != prefix for name in names)
+        for prefix in required_prefixes
+    )
+    camera_prefixes = {
+        prefix
+        for prefix in required_prefixes
+        if any(sensor in prefix for sensor in ("/kinect/", "/realsense/", "/volucam/"))
+    }
+    camera_panel_sufficient = all(
+        any(name.startswith(prefix) and name != prefix for name in names)
+        for prefix in camera_prefixes
+    )
+    evaluator_compatible = bool(
+        rooted and streams_present and contiguous_meshes and len(mesh_frames) >= 7
+    )
+    return {
+        "camera_panel_sufficient": camera_panel_sufficient,
+        "episode_length": max(mesh_frames, default=0),
+        "evaluator_compatible": evaluator_compatible,
+        "member_manifest_sha256": member_manifest,
+        "mesh_frame_count": len(mesh_frames),
+        "mesh_frames_contiguous_from_one": contiguous_meshes,
+        "official_take_identity_verified": rooted,
+        "required_streams_present": streams_present,
+        "source_payload_bytes": archive_path.stat().st_size,
+        "source_payload_name": archive_path.name,
+        "source_payload_sha256": file_sha256(archive_path),
+        "take_id": take_id,
+    }
+
+
+def build_author_source_manifest(
+    source_root: Path,
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Preflight exact author ZIPs without decoding any member payload."""
+
+    validate_official18_v4_protocol(protocol)
+    root = Path(source_root)
+    _require(root.is_dir(), "author source root is missing")
+    rows = []
+    for take_id in OFFICIAL18_MISSING_PUBLIC_TAKE_IDS:
+        matches = sorted(root.rglob(f"{take_id}.zip"))
+        _require(len(matches) == 1, f"expected exactly one archive for {take_id}")
+        rows.append(_archive_source_row(matches[0], take_id))
+    manifest: dict[str, Any] = {
+        "artifact_kind": SOURCE_MANIFEST_ARTIFACT_KIND,
+        "created_before_prediction": True,
+        "held_v8_accessed": False,
+        "member_payload_decoded": False,
+        "protocol_sha256": EXPECTED_PROTOCOL_SHA256,
+        "schema_version": 1,
+        "source_manifest_sha256": "",
+        "source_root_embedded": False,
+        "takes": rows,
+        "target_geometry_decoded": False,
+        "target_metric_computed": False,
+    }
+    manifest["source_manifest_sha256"] = source_manifest_sha256(manifest)
+    validate_author_source_manifest(manifest, protocol)
+    return manifest
+
+
 def validate_author_source_manifest(
     payload: Mapping[str, Any],
     protocol: Mapping[str, Any],
@@ -335,6 +448,14 @@ def validate_author_source_manifest(
     _require(
         payload.get("target_metric_computed") is False, "target metric was computed"
     )
+    _require(
+        payload.get("member_payload_decoded") is False,
+        "ZIP member payload was decoded",
+    )
+    _require(
+        payload.get("source_root_embedded") is False,
+        "machine path entered manifest",
+    )
     _require(payload.get("held_v8_accessed") is False, "held-v8 was accessed")
     takes = payload.get("takes")
     _require(isinstance(takes, list) and len(takes) == 5, "source cohort is incomplete")
@@ -361,6 +482,22 @@ def validate_author_source_manifest(
             row.get("evaluator_compatible") is True, "take is evaluator-incompatible"
         )
         _require(int(row.get("episode_length", 0)) >= 7, "episode is too short")
+        _require(
+            int(row.get("mesh_frame_count", 0)) == int(row.get("episode_length", -1)),
+            "mesh frame inventory is incomplete",
+        )
+        _require(
+            row.get("mesh_frames_contiguous_from_one") is True,
+            "mesh frames are not contiguous",
+        )
+        _require(
+            row.get("source_payload_name") == f"{take_id}.zip",
+            "archive name changed",
+        )
+        _require(
+            int(row.get("source_payload_bytes", 0)) > 0,
+            "source archive is empty",
+        )
     return {"source_manifest_sha256": observed, "take_count": len(takes)}
 
 

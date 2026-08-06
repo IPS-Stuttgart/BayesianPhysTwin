@@ -33,6 +33,20 @@ take IDs, archive and member hashes, stream inventory, episode length, and
 compatibility with the registered evaluator. This source lock is created before
 prediction and before any target mesh is decoded.
 
+The registered preflight is:
+
+```bash
+python scripts/held/prepare_pokeflex_official18_v4_source_manifest.py \
+  /path/to/author-delivery \
+  /path/to/locked/source_manifest.json
+```
+
+It hashes each ZIP as an opaque payload and derives the member-inventory digest
+from ZIP central-directory metadata. It verifies the exact take root, contiguous
+mesh-frame inventory, robot metadata, and both camera panels without reading or
+decoding member payloads. The output refuses to embed the machine-local source
+path and refuses to overwrite an existing manifest.
+
 Predictions use observations and robot history only through frame `f-1`. All
 five prediction seals, from one clean implementation revision, must pass a
 barrier before any target mesh is opened. Unsupported frames return the released
