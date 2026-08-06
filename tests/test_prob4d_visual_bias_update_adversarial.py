@@ -583,11 +583,7 @@ def test_one_call_rejects_wrong_config_before_adapter() -> None:
             "runtime_revision_source",
         ),
         (
-            {
-                "prob4d_claim_bearing_runtime_revision_independently_verified": (
-                    False
-                )
-            },
+            {"prob4d_claim_bearing_runtime_revision_independently_verified": (False)},
             "not independently verified",
         ),
     ],
