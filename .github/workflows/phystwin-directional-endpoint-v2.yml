@@ -1,0 +1,137 @@
+name: Prospective directional endpoint v2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/phystwin-directional-endpoint-v2.yml"
+      - "src/bayesian_phystwin/_phystwin_directional_endpoint_v2_solver.py"
+      - "src/bayesian_phystwin/phystwin_directional_endpoint_v2.py"
+      - "src/bayesian_phystwin/spd_system.py"
+      - "tests/test_phystwin_directional_endpoint_v2.py"
+      - "tests/test_phystwin_directional_endpoint.py"
+      - "tests/test_spd_system.py"
+      - "tests/test_spd_system_adversarial.py"
+      - "docs/phystwin_directional_endpoint_v2.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phystwin-directional-endpoint-v2-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: SPD, Joseph covariance, mixture, and invariance contracts
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Create isolated validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/directional-endpoint-v2-${GITHUB_RUN_ID}"
+          root="${root}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "${root}"
+          python -m venv "${root}/venv"
+          echo "DIRECTIONAL_ENDPOINT_RUN_ROOT=${root}" >> "${GITHUB_ENV}"
+          echo "${root}/venv/bin" >> "${GITHUB_PATH}"
+          "${root}/venv/bin/python" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          "${root}/venv/bin/python" -m pip install -e ".[dev]"
+          "${root}/venv/bin/python" -m pip check
+
+      - name: Record exact environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=$(git rev-parse HEAD)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            python -m pip --version
+            python -m pip freeze --all
+          } | tee "${DIRECTIONAL_ENDPOINT_RUN_ROOT}/environment.txt"
+
+      - name: Check focused source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/_phystwin_directional_endpoint_v2_solver.py \
+            src/bayesian_phystwin/phystwin_directional_endpoint_v2.py \
+            tests/test_phystwin_directional_endpoint_v2.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/_phystwin_directional_endpoint_v2_solver.py \
+            src/bayesian_phystwin/phystwin_directional_endpoint_v2.py \
+            tests/test_phystwin_directional_endpoint_v2.py
+          python -m mypy \
+            src/bayesian_phystwin/_phystwin_directional_endpoint_v2_solver.py \
+            src/bayesian_phystwin/phystwin_directional_endpoint_v2.py
+
+      - name: Run focused and adjacent numerical contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_phystwin_directional_endpoint_v2.py \
+            tests/test_phystwin_directional_endpoint.py \
+            tests/test_spd_system.py \
+            tests/test_spd_system_adversarial.py \
+            | tee "${DIRECTIONAL_ENDPOINT_RUN_ROOT}/pytest.txt"
+          python -m py_compile \
+            src/bayesian_phystwin/_phystwin_directional_endpoint_v2_solver.py \
+            src/bayesian_phystwin/phystwin_directional_endpoint_v2.py \
+            tests/test_phystwin_directional_endpoint_v2.py
+          python -m pip check
+
+      - name: Verify exact read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: directional-endpoint-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.DIRECTIONAL_ENDPOINT_RUN_ROOT }}/environment.txt
+            ${{ env.DIRECTIONAL_ENDPOINT_RUN_ROOT }}/pytest.txt
+          if-no-files-found: warn
+          retention-days: 30
