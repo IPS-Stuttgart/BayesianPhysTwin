@@ -172,7 +172,7 @@ def test_result_contract_rejects_matrix_and_mapping_drift(
     )
     _reject_result(
         analysis,
-        "wider than observed",
+        "retains more directions than the prior supports",
         state_mapping=np.zeros(
             (len(analysis.state_prior_covariance), dimension + 1),
             dtype=np.float64,
