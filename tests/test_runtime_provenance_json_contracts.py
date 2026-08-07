@@ -26,9 +26,7 @@ def test_runtime_overrides_reject_nonstring_keys_at_every_depth() -> None:
     with pytest.raises(ValueError, match="genuine string keys"):
         default_runtime_environment(overrides=cast(Any, {1: "value"}))
     with pytest.raises(ValueError, match="genuine string keys"):
-        default_runtime_environment(
-            overrides=cast(Any, {"gpu": {1: "value"}})
-        )
+        default_runtime_environment(overrides=cast(Any, {"gpu": {1: "value"}}))
 
 
 def test_runtime_overrides_reject_scalar_subclasses_and_cycles() -> None:
@@ -91,6 +89,20 @@ def test_environment_variable_names_require_canonical_identifiers(
 ) -> None:
     with pytest.raises(ValueError, match="canonical identifiers"):
         default_runtime_environment(environment_variables=(name,))
+
+
+@pytest.mark.parametrize(
+    "names",
+    (
+        cast(Any, "CUDA_VISIBLE_DEVICES"),
+        cast(Any, b"CUDA_VISIBLE_DEVICES"),
+    ),
+)
+def test_environment_variable_collection_must_be_a_sequence_not_a_scalar(
+    names: tuple[str, ...],
+) -> None:
+    with pytest.raises(ValueError, match="sequence of identifiers"):
+        default_runtime_environment(environment_variables=names)
 
 
 def test_selected_environment_is_explicit_sorted_and_deduplicated(
