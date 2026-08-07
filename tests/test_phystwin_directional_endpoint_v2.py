@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 
+import bayesian_phystwin._phystwin_directional_endpoint_v2_solver as solver
+import bayesian_phystwin.phystwin_directional_endpoint_v2 as endpoint_v2
 from bayesian_phystwin.phystwin_directional_endpoint import (
     robust_directional_endpoint,
 )
@@ -69,6 +73,45 @@ def _run_v2(
         outlier_variance_multiplier=100.0,
         config=config,
     )
+
+
+def _raw_inputs() -> dict[str, object]:
+    source = np.zeros((1, 1, 3), dtype=np.float64)
+    valid = np.ones((1, 1), dtype=bool)
+    return {
+        "source_residual": source,
+        "source_valid": valid,
+        "multiview_residual": np.zeros_like(source),
+        "multiview_valid": valid.copy(),
+        "tangent_projectors": _tangent_projectors(1),
+        "priority_identities": np.asarray([False]),
+        "end_frame": 1,
+        "process_variance": 0.0,
+        "observation_variance": 1e-4,
+        "initial_variance": 1e-3,
+        "inlier_prior": 0.95,
+        "outlier_variance_multiplier": 100.0,
+    }
+
+
+def _call_raw(**changes: object) -> endpoint_v2.DirectionalEndpointPosteriorV2:
+    inputs = _raw_inputs()
+    inputs.update(changes)
+    return endpoint_v2.robust_directional_endpoint_v2(**inputs)  # type: ignore[arg-type]
+
+
+def _solver_inputs() -> dict[str, Any]:
+    return {
+        "mean": np.zeros((1, 3), dtype=np.float64),
+        "covariance": np.eye(3, dtype=np.float64)[None],
+        "observation": np.zeros((1, 3), dtype=np.float64),
+        "observation_matrix": np.eye(3, dtype=np.float64)[None],
+        "observation_variance": 1e-4,
+        "inlier_prior": 0.95,
+        "outlier_variance_multiplier": 100.0,
+        "name": "adversarial",
+        "config": DirectionalEndpointConfigV2(),
+    }
 
 
 def test_v2_retains_legacy_mean_but_not_anti_conservative_isotropization() -> None:
@@ -307,3 +350,218 @@ def test_v2_results_are_immutable_and_report_numerical_semantics() -> None:
     assert diagnostics["implicit_jitter"] is False
     assert diagnostics["eigenvalue_clipping"] is False
     assert diagnostics["pseudoinverse_fallback"] is False
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"source_residual": np.zeros((1, 3))}, "source residual"),
+        ({"multiview_residual": np.zeros((2, 1, 3))}, "multiview residual"),
+        ({"source_valid": np.zeros((1, 2), dtype=bool)}, "source validity"),
+        ({"multiview_valid": np.zeros((1, 2), dtype=bool)}, "multiview validity"),
+        ({"tangent_projectors": np.zeros((2, 3, 3))}, "tangent projectors"),
+        ({"priority_identities": np.zeros(2, dtype=bool)}, "priority identities"),
+        (
+            {"source_residual": np.full((1, 1, 3), np.nan)},
+            "valid source residuals",
+        ),
+        (
+            {"multiview_residual": np.full((1, 1, 3), np.nan)},
+            "valid multiview residuals",
+        ),
+        (
+            {"tangent_projectors": np.full((1, 3, 3), np.nan)},
+            "tangent projectors must be finite",
+        ),
+        (
+            {
+                "tangent_projectors": np.asarray(
+                    [[[1.0, 1.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]]
+                )
+            },
+            "symmetric",
+        ),
+    ],
+)
+def test_v2_rejects_malformed_inputs(
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        _call_raw(**changes)
+
+
+def test_v2_rejects_invalid_projector_spectra() -> None:
+    with pytest.raises(ValueError, match="one null direction"):
+        _call_raw(tangent_projectors=np.eye(3, dtype=np.float64)[None])
+    with pytest.raises(ValueError, match="rank two"):
+        _call_raw(tangent_projectors=np.zeros((1, 3, 3), dtype=np.float64))
+
+
+@pytest.mark.parametrize(
+    ("changes", "error", "message"),
+    [
+        ({"maximum_condition_number": True}, TypeError, "real scalar"),
+        ({"maximum_condition_number": 0.5}, ValueError, "at least one"),
+        ({"symmetry_absolute_tolerance": -1.0}, ValueError, "nonnegative"),
+        ({"symmetry_relative_tolerance": np.inf}, ValueError, "nonnegative"),
+        ({"solve_residual_tolerance": 0.0}, ValueError, "positive"),
+    ],
+)
+def test_v2_config_rejects_invalid_numerical_policy(
+    changes: dict[str, object],
+    error: type[Exception],
+    message: str,
+) -> None:
+    with pytest.raises(error, match=message):
+        DirectionalEndpointConfigV2(**changes)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("changes", "error", "message"),
+    [
+        ({"end_frame": True}, TypeError, "integer"),
+        ({"end_frame": 0}, ValueError, "inside"),
+        ({"process_variance": -1.0}, ValueError, "nonnegative"),
+        ({"observation_variance": 0.0}, ValueError, "positive"),
+        ({"initial_variance": 0.0}, ValueError, "positive"),
+        ({"inlier_prior": 1.0}, ValueError, "lie in"),
+        ({"outlier_variance_multiplier": 1.0}, ValueError, "exceed"),
+        (
+            {
+                "observation_variance": np.finfo(np.float64).max,
+                "outlier_variance_multiplier": 2.0,
+            },
+            ValueError,
+            "remain finite",
+        ),
+    ],
+)
+def test_filter_parameter_contract_rejects_invalid_values(
+    changes: dict[str, object],
+    error: type[Exception],
+    message: str,
+) -> None:
+    values: dict[str, object] = {
+        "end_frame": 1,
+        "frame_count": 1,
+        "process_variance": 0.0,
+        "observation_variance": 1e-4,
+        "initial_variance": 1e-3,
+        "inlier_prior": 0.95,
+        "outlier_variance_multiplier": 100.0,
+    }
+    values.update(changes)
+    with np.errstate(over="ignore"):
+        with pytest.raises(error, match=message):
+            solver.validate_filter_parameters(**values)  # type: ignore[arg-type]
+
+
+def test_component_update_rejects_nonfinite_mean() -> None:
+    config = DirectionalEndpointConfigV2()
+    prior = solver.admit_spd_system(
+        np.eye(3),
+        name="prior",
+        config=config,
+    )
+    with pytest.raises(solver.SPDSolveError, match="non-finite"):
+        solver._component_update(
+            mean=np.zeros(3),
+            prior=prior,
+            innovation=np.asarray([np.inf]),
+            projected_covariance=np.asarray([[1.0]]),
+            observation_matrix=np.asarray([[1.0, 0.0, 0.0]]),
+            observation_variance=1.0,
+            name="component",
+            config=config,
+        )
+
+
+def test_robust_update_rejects_overflow_and_nonfinite_innovation() -> None:
+    values = _solver_inputs()
+    values["observation_variance"] = np.finfo(np.float64).max
+    values["outlier_variance_multiplier"] = 2.0
+    with np.errstate(over="ignore"):
+        with pytest.raises(DirectionalEndpointNumericalError, match="overflowed"):
+            solver.robust_linear_update_v2(**values)
+
+    values = _solver_inputs()
+    values["observation"] = np.asarray([[np.inf, 0.0, 0.0]])
+    with pytest.raises(DirectionalEndpointNumericalError, match="failed SPD admission"):
+        solver.robust_linear_update_v2(**values)
+
+
+def test_robust_update_rejects_nonfinite_mixture_probability(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(solver.np, "logaddexp", lambda _left, _right: np.nan)
+    with pytest.raises(
+        DirectionalEndpointNumericalError,
+        match="non-finite mixture probability",
+    ):
+        solver.robust_linear_update_v2(**_solver_inputs())
+
+
+def test_robust_update_rejects_nonfinite_mixture_mean(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def nonfinite_component(**_kwargs: object) -> tuple[object, ...]:
+        return np.full(3, np.inf), np.eye(3), 0.0, 0.0, 1.0, 1.0
+
+    monkeypatch.setattr(solver, "_component_update", nonfinite_component)
+    with pytest.raises(
+        DirectionalEndpointNumericalError,
+        match="non-finite mixture mean",
+    ):
+        solver.robust_linear_update_v2(**_solver_inputs())
+
+
+def test_robust_update_rejects_singular_mixture_covariance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    call_count = 0
+
+    def singular_component(**_kwargs: object) -> tuple[object, ...]:
+        nonlocal call_count
+        mean = np.asarray([float(call_count), 0.0, 0.0])
+        call_count += 1
+        return mean, np.zeros((3, 3)), 0.0, 0.0, 1.0, 1.0
+
+    monkeypatch.setattr(solver, "_component_update", singular_component)
+    with pytest.raises(
+        DirectionalEndpointNumericalError,
+        match="mixture failed SPD admission",
+    ):
+        solver.robust_linear_update_v2(**_solver_inputs())
+
+
+def test_v2_fails_closed_on_process_overflow() -> None:
+    maximum = np.finfo(np.float64).max
+    with np.errstate(over="ignore"):
+        with pytest.raises(
+            DirectionalEndpointNumericalError,
+            match="process covariance overflowed",
+        ):
+            _call_raw(
+                source_valid=np.zeros((1, 1), dtype=bool),
+                multiview_valid=np.zeros((1, 1), dtype=bool),
+                process_variance=maximum,
+                initial_variance=maximum,
+            )
+
+
+def test_v2_fails_closed_when_final_covariance_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def reject_final(*_args: object, **_kwargs: object) -> object:
+        raise endpoint_v2.SPDSystemError("forced final rejection")
+
+    monkeypatch.setattr(endpoint_v2, "admit_spd_system", reject_final)
+    with pytest.raises(
+        DirectionalEndpointNumericalError,
+        match="final point 0 covariance failed SPD admission",
+    ):
+        _call_raw(
+            source_valid=np.zeros((1, 1), dtype=bool),
+            multiview_valid=np.zeros((1, 1), dtype=bool),
+        )
