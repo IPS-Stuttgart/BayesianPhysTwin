@@ -401,7 +401,7 @@ def test_public_builder_rejects_covariance_and_diagnostic_drift(
         ),
     ):
         diagnostics = dict(result.diagnostics)
-        diagnostics[key] = float(diagnostics[key]) + 1.0
+        diagnostics[key] = -1.0
         changed = replace(result, diagnostics=diagnostics)
         with pytest.raises(ValueError, match=message):
             target.observed_information_covariance_from_prior_aware_result(
