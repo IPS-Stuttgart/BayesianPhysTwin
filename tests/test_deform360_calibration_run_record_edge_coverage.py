@@ -6,6 +6,12 @@ import json
 from pathlib import Path
 
 import pytest
+from test_deform360_calibration_source_run_record import (
+    _build_chain,
+    _record,
+    _rewrite,
+    _units,
+)
 
 from bayesian_phystwin._deform360_calibration_artifact_chain import (
     _selection_units,
@@ -17,12 +23,6 @@ from bayesian_phystwin._deform360_calibration_source_run_record_validation impor
     _validate_artifact_summary,
     _validate_source_lock_summary,
     _validated_record_gate,
-)
-from test_deform360_calibration_source_run_record import (
-    _build_chain,
-    _record,
-    _rewrite,
-    _units,
 )
 
 
