@@ -118,7 +118,7 @@ jobs:
             tests/test_deform360_calibration_observability_case_builder_adversarial.py
           )
           python -m ruff check "${lint_files[@]}"
-          python -m ruff format --diff "${format_files[@]}"
+          python -m ruff format --check "${format_files[@]}"
           python -m mypy \
             src/bayesian_phystwin/deform360_calibration_observability_case_builder.py \
             src/bayesian_phystwin/deform360_calibration_observability_report.py \
