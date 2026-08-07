@@ -6,7 +6,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 import test_deform360_calibration_observability_case_builder as observability_cases
-import test_deform360_calibration_observability_case_builder_adversarial as adversarial_cases
+import test_deform360_calibration_observability_case_builder_adversarial as (
+    adversarial_cases,
+)
 
 import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2
 from bayesian_phystwin._canonical_contracts import (
@@ -217,9 +219,11 @@ def test_deform360_observability_case_builder_stable_core_controls(
         case_path("read-error"),
         monkeypatch,
     )
-    adversarial_cases.test_matrix_loader_rejects_wrong_suffix_scalar_and_non_numeric(
-        case_path("matrix-types"),
-        monkeypatch,
+    (
+        adversarial_cases.test_matrix_loader_rejects_wrong_suffix_scalar_and_non_numeric(
+            case_path("matrix-types"),
+            monkeypatch,
+        )
     )
     invalid_matrices = (
         np.asarray([1.0, 2.0]),
@@ -227,9 +231,11 @@ def test_deform360_observability_case_builder_stable_core_controls(
         np.asarray([[1.0, np.nan]]),
     )
     for index, matrix in enumerate(invalid_matrices):
-        adversarial_cases.test_matrix_loader_rejects_invalid_shape_empty_and_nonfinite(
-            case_path(f"matrix-shape-{index}"),
-            matrix,
+        (
+            adversarial_cases.test_matrix_loader_rejects_invalid_shape_empty_and_nonfinite(
+                case_path(f"matrix-shape-{index}"),
+                matrix,
+            )
         )
     terminal_mutations = (
         ({"status": "failed"}, "did not succeed"),
@@ -244,9 +250,11 @@ def test_deform360_observability_case_builder_stable_core_controls(
         ({"support_gate": {"support_passed": False}}, "support gate did not pass"),
     )
     for mutation, message in terminal_mutations:
-        adversarial_cases.test_successful_run_guard_rejects_each_invalid_terminal_state(
-            mutation,
-            message,
+        (
+            adversarial_cases.test_successful_run_guard_rejects_each_invalid_terminal_state(
+                mutation,
+                message,
+            )
         )
     invalid_digests = (
         ({}, "lacks artifact"),
@@ -270,11 +278,13 @@ def test_deform360_observability_case_builder_stable_core_controls(
         ("result", "result is invalid"),
     )
     for index, (stage, message) in enumerate(invalid_stages):
-        adversarial_cases.test_context_rejects_each_invalid_revalidated_stage(
-            case_path(f"invalid-stage-{index}"),
-            monkeypatch,
-            stage,
-            message,
+        (
+            adversarial_cases.test_context_rejects_each_invalid_revalidated_stage(
+                case_path(f"invalid-stage-{index}"),
+                monkeypatch,
+                stage,
+                message,
+            )
         )
     adversarial_cases.test_context_detects_result_change_after_summary_validation(
         case_path("result-race"),
