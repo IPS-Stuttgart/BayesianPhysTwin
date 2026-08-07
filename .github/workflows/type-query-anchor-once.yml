@@ -1,0 +1,61 @@
+name: Type query-anchor once
+
+on:
+  push:
+    branches: [agent/query-anchor-sufficiency-v1]
+    paths:
+      - .github/workflows/type-query-anchor-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Add explicit ndarray annotations and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/query_anchor_sufficiency.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = {
+              "    selected_indices = np.full((precision_count, support_limit), -1, dtype=np.int64)":
+                  "    selected_indices: np.ndarray = np.full((precision_count, support_limit), -1, dtype=np.int64)",
+              "    selected_counts = np.zeros(precision_count, dtype=np.int64)":
+                  "    selected_counts: np.ndarray = np.zeros(precision_count, dtype=np.int64)",
+              "    traces = np.empty((precision_count, support_limit + 1), dtype=np.float64)":
+                  "    traces: np.ndarray = np.empty((precision_count, support_limit + 1), dtype=np.float64)",
+              "    first_support = np.full(precision_count, -1, dtype=np.int64)":
+                  "    first_support: np.ndarray = np.full(precision_count, -1, dtype=np.int64)",
+              "        row_costs = np.zeros(support_limit + 1, dtype=np.float64)":
+                  "        row_costs: np.ndarray = np.zeros(support_limit + 1, dtype=np.float64)",
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f"expected source line not found: {old}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          python -m pip install -e ".[dev]"
+          python -m ruff check src/bayesian_phystwin/query_anchor_sufficiency.py
+          python -m ruff format --check src/bayesian_phystwin/query_anchor_sufficiency.py
+          python -m mypy src/bayesian_phystwin/query_aware_anchor_planning.py src/bayesian_phystwin/query_anchor_sufficiency.py
+          git rm .github/workflows/type-query-anchor-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add strict MyPy annotations to query-anchor accumulators"
+          git push origin HEAD:agent/query-anchor-sufficiency-v1
