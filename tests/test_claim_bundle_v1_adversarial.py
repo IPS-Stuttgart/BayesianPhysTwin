@@ -363,9 +363,7 @@ def test_claim_bundle_cli_fail_closed_branches(
     assert claim_bundle_cli.main(["validate", str(bundle_path)]) == 0
     assert '"artifacts_verified": false' in capsys.readouterr().out
     with pytest.raises(ValueError, match="no claim-binding artifact"):
-        claim_bundle_cli.main(
-            ["validate", str(bundle_path), "--require-claim-binding"]
-        )
+        claim_bundle_cli.main(["validate", str(bundle_path), "--require-claim-binding"])
 
     class UnknownParser:
         def parse_args(self, _argv):
