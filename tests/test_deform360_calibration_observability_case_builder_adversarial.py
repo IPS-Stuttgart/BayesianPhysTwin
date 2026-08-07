@@ -267,7 +267,7 @@ def test_context_detects_result_change_after_summary_validation(
     inputs = case_inputs._inputs(tmp_path)
     original = builder.load_json_object
 
-    def changed_result(path: Path):
+    def changed_result(path: Path) -> tuple[dict[str, Any], str]:
         value, digest = original(path)
         if path.resolve() == inputs.chain.result_path.resolve():
             return value, ("0" * 64 if digest != "0" * 64 else "1" * 64)
