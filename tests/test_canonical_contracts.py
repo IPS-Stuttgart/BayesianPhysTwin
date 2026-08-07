@@ -168,14 +168,19 @@ def test_deform360_observability_case_builder_stable_core_controls(
 ) -> None:
     """Execute every claim-bearing producer control in the coverage ratchet."""
 
+    def case_path(name: str) -> Path:
+        path = tmp_path / name
+        path.mkdir(parents=True)
+        return path
+
     observability_cases.test_evaluated_builder_binds_exact_lineage_and_round_trips(
-        tmp_path / "evaluated"
+        case_path("evaluated")
     )
     observability_cases.test_builder_rejects_confirmation_and_unknown_objects(
-        tmp_path / "identities"
+        case_path("identities")
     )
     observability_cases.test_evaluated_builder_requires_source_prepared_object(
-        tmp_path / "prepared"
+        case_path("prepared")
     )
     substitutions = (
         ("source_protocol_path", "source-lock summary differs"),
@@ -185,35 +190,35 @@ def test_deform360_observability_case_builder_stable_core_controls(
     )
     for index, (path_name, message) in enumerate(substitutions):
         observability_cases.test_terminal_record_prevents_artifact_file_substitution(
-            tmp_path / f"substitution-{index}",
+            case_path(f"substitution-{index}"),
             path_name,
             message,
         )
     observability_cases.test_candidate_information_loss_is_rejected(
-        tmp_path / "information-loss"
+        case_path("information-loss")
     )
-    observability_cases.test_symlinked_matrix_is_rejected(tmp_path / "symlink")
-    observability_cases.test_pickled_query_payload_is_rejected(tmp_path / "pickle")
-    observability_cases.test_empty_contact_anchor_is_rejected(tmp_path / "empty")
+    observability_cases.test_symlinked_matrix_is_rejected(case_path("symlink"))
+    observability_cases.test_pickled_query_payload_is_rejected(case_path("pickle"))
+    observability_cases.test_empty_contact_anchor_is_rejected(case_path("empty"))
     observability_cases.test_failure_builder_retains_source_and_analysis_failures(
-        tmp_path / "retained-failures"
+        case_path("retained-failures")
     )
     observability_cases.test_unsupported_object_failure_records_no_payload_access(
-        tmp_path / "unsupported"
+        case_path("unsupported")
     )
     observability_cases.test_cli_publishes_evaluated_case_without_overwrite(
-        tmp_path / "cli"
+        case_path("cli")
     )
 
     adversarial_cases.test_ordinary_file_rejects_missing_directory_and_parent_symlink(
-        tmp_path / "ordinary-file"
+        case_path("ordinary-file")
     )
     adversarial_cases.test_read_ordinary_bytes_reports_read_failure(
-        tmp_path / "read-error",
+        case_path("read-error"),
         monkeypatch,
     )
     adversarial_cases.test_matrix_loader_rejects_wrong_suffix_scalar_and_non_numeric(
-        tmp_path / "matrix-types",
+        case_path("matrix-types"),
         monkeypatch,
     )
     invalid_matrices = (
@@ -223,7 +228,7 @@ def test_deform360_observability_case_builder_stable_core_controls(
     )
     for index, matrix in enumerate(invalid_matrices):
         adversarial_cases.test_matrix_loader_rejects_invalid_shape_empty_and_nonfinite(
-            tmp_path / f"matrix-shape-{index}",
+            case_path(f"matrix-shape-{index}"),
             matrix,
         )
     terminal_mutations = (
@@ -256,7 +261,7 @@ def test_deform360_observability_case_builder_stable_core_controls(
     adversarial_cases.test_required_digest_accepts_literal_sha256()
     adversarial_cases.test_result_row_rejects_malformed_missing_duplicate_and_identity_drift()
     adversarial_cases.test_context_rejects_surrounding_object_whitespace(
-        tmp_path / "whitespace-object"
+        case_path("whitespace-object")
     )
     invalid_stages = (
         ("source", "source locks are invalid"),
@@ -266,18 +271,18 @@ def test_deform360_observability_case_builder_stable_core_controls(
     )
     for index, (stage, message) in enumerate(invalid_stages):
         adversarial_cases.test_context_rejects_each_invalid_revalidated_stage(
-            tmp_path / f"invalid-stage-{index}",
+            case_path(f"invalid-stage-{index}"),
             monkeypatch,
             stage,
             message,
         )
     adversarial_cases.test_context_detects_result_change_after_summary_validation(
-        tmp_path / "result-race",
+        case_path("result-race"),
         monkeypatch,
     )
     adversarial_cases.test_failure_builder_rejects_whitespace_reason(
-        tmp_path / "failure-reason"
+        case_path("failure-reason")
     )
     adversarial_cases.test_cli_publishes_technical_failure_case(
-        tmp_path / "technical-cli"
+        case_path("technical-cli")
     )
