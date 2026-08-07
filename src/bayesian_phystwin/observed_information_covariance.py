@@ -620,9 +620,15 @@ def observed_information_covariance_from_prior_aware_result(
         anchor_residual,
     )
 
-    observation_precision = np.zeros(len(observation_groups), dtype=np.float64)
-    observation_derivative = np.zeros(len(observation_groups), dtype=np.float64)
-    observation_row_precision = np.zeros(len(batch.innovation_m), dtype=np.float64)
+    observation_precision: FloatArray = np.zeros(
+        len(observation_groups), dtype=np.float64
+    )
+    observation_derivative: FloatArray = np.zeros(
+        len(observation_groups), dtype=np.float64
+    )
+    observation_row_precision: FloatArray = np.zeros(
+        len(batch.innovation_m), dtype=np.float64
+    )
     for position, selected in enumerate(observation_indices):
         active = selected[batch.prior_reliability[selected] > 0.0]
         if len(active):
@@ -642,9 +648,9 @@ def observed_information_covariance_from_prior_aware_result(
             observation_derivative[position] = statistics.expected_precision_derivative
         observation_row_precision[selected] = observation_precision[position]
 
-    anchor_precision = np.zeros(len(anchor_groups), dtype=np.float64)
-    anchor_derivative = np.zeros(len(anchor_groups), dtype=np.float64)
-    anchor_row_precision = np.zeros(anchor_count, dtype=np.float64)
+    anchor_precision: FloatArray = np.zeros(len(anchor_groups), dtype=np.float64)
+    anchor_derivative: FloatArray = np.zeros(len(anchor_groups), dtype=np.float64)
+    anchor_row_precision: FloatArray = np.zeros(anchor_count, dtype=np.float64)
     for position, selected in enumerate(anchor_indices):
         active = selected[anchor_reliability[selected] > 0.0]
         if len(active):
