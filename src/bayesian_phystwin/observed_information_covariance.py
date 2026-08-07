@@ -771,20 +771,32 @@ def observed_information_covariance_from_prior_aware_result(
     diagnostic_maximum = result.diagnostics.get(
         "exact_reduced_mixture_hessian_maximum_eigenvalue"
     )
-    if diagnostic_minimum is not None and not np.isclose(
-        minimum_eigenvalue,
-        float(diagnostic_minimum),
-        atol=1e-10,
-        rtol=1e-10,
-    ):
-        raise ValueError("reconstructed minimum Hessian eigenvalue changed")
-    if diagnostic_maximum is not None and not np.isclose(
-        maximum_eigenvalue,
-        float(diagnostic_maximum),
-        atol=1e-10,
-        rtol=1e-10,
-    ):
-        raise ValueError("reconstructed maximum Hessian eigenvalue changed")
+    if diagnostic_minimum is not None:
+        diagnostic_minimum_value = float(diagnostic_minimum)
+        if (
+            not np.isfinite(diagnostic_minimum_value)
+            or diagnostic_minimum_value <= 0.0
+            or not np.isclose(
+                minimum_eigenvalue,
+                diagnostic_minimum_value,
+                atol=1e-10,
+                rtol=1e-10,
+            )
+        ):
+            raise ValueError("reconstructed minimum Hessian eigenvalue changed")
+    if diagnostic_maximum is not None:
+        diagnostic_maximum_value = float(diagnostic_maximum)
+        if (
+            not np.isfinite(diagnostic_maximum_value)
+            or diagnostic_maximum_value <= 0.0
+            or not np.isclose(
+                maximum_eigenvalue,
+                diagnostic_maximum_value,
+                atol=1e-10,
+                rtol=1e-10,
+            )
+        ):
+            raise ValueError("reconstructed maximum Hessian eigenvalue changed")
     if minimum_eigenvalue <= 0.0:
         raise ValueError("exact observed mixture information is not positive definite")
     condition_number = float(np.linalg.cond(observed_information))
