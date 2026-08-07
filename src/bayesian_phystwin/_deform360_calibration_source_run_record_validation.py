@@ -208,19 +208,19 @@ def validate_deform360_calibration_source_run_record(
     ):
         raise ValueError("execution record claim boundary changed")
 
-    revision(record.get("source_revision"), name="source_revision")
-    revision(record.get("processing_revision"), name="processing_revision")
-    positive_integer(record.get("workflow_run_id"), name="workflow_run_id")
+    revision(record["source_revision"], name="source_revision")
+    revision(record["processing_revision"], name="processing_revision")
+    positive_integer(record["workflow_run_id"], name="workflow_run_id")
     positive_integer(
-        record.get("workflow_run_attempt"),
+        record["workflow_run_attempt"],
         name="workflow_run_attempt",
     )
     workload_exit_code = exit_code(
-        record.get("workload_exit_code"),
+        record["workload_exit_code"],
         name="workload_exit_code",
     )
     boundary_exit_code = exit_code(
-        record.get("confirmation_boundary_exit_code"),
+        record["confirmation_boundary_exit_code"],
         name="confirmation_boundary_exit_code",
     )
 
@@ -244,7 +244,7 @@ def validate_deform360_calibration_source_run_record(
         download=record,
         result=record,
     )
-    observed_exit_code = exit_code(record.get("exit_code"), name="exit_code")
+    observed_exit_code = exit_code(record["exit_code"], name="exit_code")
     if observed_exit_code != expected_exit_code:
         raise ValueError("execution record exit code is inconsistent")
     if record.get("failure_stage") != expected_failure_stage:
