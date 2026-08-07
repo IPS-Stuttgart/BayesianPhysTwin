@@ -86,8 +86,12 @@ bpt run manifest create runs/example/manifest.json \
 `runtime.json` can add numerical execution details Python cannot infer
 portably, such as GPU model, CUDA and driver versions, Warp and Torch builds,
 container-image digest, and deterministic versus atomic spring-force mode.
-Environment variables are never collected wholesale; only explicitly named
-variables are recorded.
+It cannot replace Python version, operating system, machine, processor, byte
+order, or the explicitly selected environment captured by the runtime. Runtime,
+configuration, information-boundary, and related-repository JSON reject
+duplicate object keys and non-finite constants rather than relying on parser
+coercion. Environment variables are never collected wholesale; only explicitly
+named canonical identifiers are recorded.
 
 Every V2 manifest binds:
 
