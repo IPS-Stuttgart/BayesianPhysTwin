@@ -54,43 +54,38 @@ jobs:
           python -m pip check
 
       - name: Validate changed contracts
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          python -m ruff check \
-            scripts/ci/render_deform360_calibration_source_run_record.py \
-            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py \
-            src/bayesian_phystwin/_deform360_calibration_run_common.py \
-            src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py \
-            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py \
-            src/bayesian_phystwin/deform360_calibration_source_run_record.py \
-            tests/test_deform360_calibration_source_direct_workflow.py \
-            tests/test_deform360_calibration_source_run_record.py \
-            tests/test_deform360_calibration_source_run_record_validation.py \
+          set -euo pipefail
+          contract_files=(
+            scripts/ci/render_deform360_calibration_source_run_record.py
+            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py
+            src/bayesian_phystwin/_deform360_calibration_run_common.py
+            src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py
+            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py
+            src/bayesian_phystwin/deform360_calibration_source_run_record.py
+            tests/test_deform360_calibration_source_direct_workflow.py
+            tests/test_deform360_calibration_source_run_record.py
+            tests/test_deform360_calibration_source_run_record_validation.py
             tests/test_render_deform360_calibration_source_run_record.py
-          python -m ruff format --check \
-            scripts/ci/render_deform360_calibration_source_run_record.py \
-            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py \
-            src/bayesian_phystwin/_deform360_calibration_run_common.py \
-            src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py \
-            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py \
-            src/bayesian_phystwin/deform360_calibration_source_run_record.py \
-            tests/test_deform360_calibration_source_direct_workflow.py \
-            tests/test_deform360_calibration_source_run_record.py \
-            tests/test_deform360_calibration_source_run_record_validation.py \
-            tests/test_render_deform360_calibration_source_run_record.py
+          )
+          python -m ruff check "${contract_files[@]}"
+          format_files=("${contract_files[@]}")
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            mapfile -t format_files < <(
+              git diff --name-only --diff-filter=ACMR \
+                "${BASE_SHA}...${HEAD_SHA}" -- "${contract_files[@]}"
+            )
+          fi
+          if (( ${#format_files[@]} )); then
+            python -m ruff format --check "${format_files[@]}"
+          fi
           bash -n scripts/ci/run_deform360_calibration_source_direct.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_calibration_source_direct_workflow.py \
             tests/test_deform360_calibration_source_run_record.py \
             tests/test_deform360_calibration_source_run_record_validation.py \
             tests/test_render_deform360_calibration_source_run_record.py
-          python -m compileall -q \
-            scripts/ci/render_deform360_calibration_source_run_record.py \
-            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py \
-            src/bayesian_phystwin/_deform360_calibration_run_common.py \
-            src/bayesian_phystwin/_deform360_calibration_source_run_record_impl.py \
-            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py \
-            src/bayesian_phystwin/deform360_calibration_source_run_record.py \
-            tests/test_deform360_calibration_source_direct_workflow.py \
-            tests/test_deform360_calibration_source_run_record.py \
-            tests/test_deform360_calibration_source_run_record_validation.py \
-            tests/test_render_deform360_calibration_source_run_record.py
+          python -m compileall -q "${contract_files[@]}"

@@ -10,6 +10,7 @@ STABLE_ROUTES: Final[dict[str, tuple[str, ...]]] = {
     "replay-residuals": ("residual", "replay"),
     "synthetic-benchmark": ("benchmark", "synthetic"),
     "decisive-evidence": ("evidence", "summarize"),
+    "claim-bundle": ("evidence", "bundle"),
     "run-manifest": ("run", "manifest"),
 }
 
@@ -74,6 +75,7 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "replay-residuals": "replay exported residuals through the robust likelihood",
     "synthetic-benchmark": "run the controlled synthetic benchmark",
     "decisive-evidence": "summarize matched guarded prospective evidence",
+    "claim-bundle": "build or validate a content-addressed claim bundle",
     "confirm-phystwin-bayesian-anchor": (
         "evaluate the frozen Bayesian anchor on the official PhysTwin cohort"
     ),
@@ -97,6 +99,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "replay-residuals": "residual-replay-v1",
     "synthetic-benchmark": "synthetic-benchmark-v3",
     "decisive-evidence": "bayesian-phystwin-decisive-evidence-v1",
+    "claim-bundle": "claim-bundle-v1",
     "combine-phystwin-profiles": "phystwin-profile-pooling-v1",
     "calibrate-phystwin-discrepancy": "phystwin-discrepancy-calibration-v1",
     "phystwin-refit": "phystwin-refit-v1",

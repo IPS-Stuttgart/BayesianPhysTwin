@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from test_deform360_calibration_source_run_record import _build_chain, _record
 
 import bayesian_phystwin.deform360_calibration_source_run_record as public_record
 from bayesian_phystwin._deform360_calibration_run_common import (
@@ -19,7 +20,6 @@ from bayesian_phystwin.deform360_calibration_source_run_record import (
     save_deform360_calibration_source_run_record,
     validate_deform360_calibration_source_run_record,
 )
-from test_deform360_calibration_source_run_record import _build_chain, _record
 
 
 def _redigested(record: dict[str, Any]) -> dict[str, Any]:

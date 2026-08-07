@@ -4,12 +4,12 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.spd_system import (
+    SPD_SYSTEM_SCHEMA,
+    SPD_SYSTEM_VERSION,
     SPDConditionError,
     SPDSolveError,
     SPDSystem,
     SPDValidationError,
-    SPD_SYSTEM_SCHEMA,
-    SPD_SYSTEM_VERSION,
 )
 
 

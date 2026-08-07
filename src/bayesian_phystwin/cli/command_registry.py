@@ -129,6 +129,18 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         owner="bayesian-phystwin-decisive-evidence-v1",
     ),
     CommandSpec(
+        command_id="claim-bundle",
+        route=("evidence", "bundle"),
+        previous_routes=(),
+        module="bayesian_phystwin.cli.claim_bundle",
+        function="main",
+        description="build or validate a content-addressed claim bundle",
+        legacy_alias=None,
+        status=CommandStatus.STABLE,
+        optional_dependencies=(),
+        owner="claim-bundle-v1",
+    ),
+    CommandSpec(
         command_id="run-manifest",
         route=("run", "manifest"),
         previous_routes=(),
