@@ -89,6 +89,20 @@ revisions, Prob4D provider manifest and attestation, metric-frame policy, and
 portable model-set identity before any of the ten selected calibration-object
 payloads may be opened.
 
+The
+[confirmation-opening authorization](deform360_confirmation_opening_authorization_v1.md)
+binds the successful calibration-source run, supported ten-object observability
+report, complete Stage-1 calibration bundle, and evidence-use ledger before
+predictor-side confirmation inputs may be opened.
+
+After those inputs produce exact Prob4D target manifests, the
+[Prob4D target-outcome authorization](deform360_prob4d_target_outcome_authorization_v1.md)
+binds the portable cohort, promotion lock, provider-manifest admission, original
+prediction-producer revision, and complete twelve-object target set while target
+outcomes remain closed. Its generated metadata is retained on the later
+BayesianPhysTwin query-result stream and replayed by Prob4D's held-out promotion
+gate.
+
 ## PhysTwin experiment families
 
 | Area | Primary document | Status and purpose |
