@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/_one_shot_extend_legacy_snapshot.yml"
       - "scripts/_one_shot_extend_legacy_snapshot.py"
+      - "scripts/_one_shot_patch_legacy_workflow.py"
 
 permissions:
   contents: write
@@ -40,6 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/_one_shot_extend_legacy_snapshot.py
+          python scripts/_one_shot_patch_legacy_workflow.py
 
       - name: Install focused validation environment
         run: |
@@ -69,6 +71,16 @@ jobs:
             src/bayesian_phystwin/phystwin_raw_cues.py \
             src/bayesian_phystwin/causal4d_artifacts_v1.py \
             src/bayesian_phystwin/causal4d_artifacts_v2.py
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          yaml.safe_load(
+              Path(".github/workflows/legacy-artifact-contract.yml").read_text(
+                  encoding="utf-8"
+              )
+          )
+          PY
 
       - name: Run focused and adjacent contracts
         run: |
@@ -89,14 +101,17 @@ jobs:
           set -euo pipefail
           rm -- \
             .github/workflows/_one_shot_extend_legacy_snapshot.yml \
-            scripts/_one_shot_extend_legacy_snapshot.py
+            scripts/_one_shot_extend_legacy_snapshot.py \
+            scripts/_one_shot_patch_legacy_workflow.py
           git diff --check
           actual="$(git diff --name-only | sort)"
           printf 'Final working-tree paths:\n%s\n' "${actual}"
           while IFS= read -r path; do
             case "${path}" in
               .github/workflows/_one_shot_extend_legacy_snapshot.yml|\
+              .github/workflows/legacy-artifact-contract.yml|\
               scripts/_one_shot_extend_legacy_snapshot.py|\
+              scripts/_one_shot_patch_legacy_workflow.py|\
               src/bayesian_phystwin/legacy_artifacts.py|\
               src/bayesian_phystwin/phystwin_raw_cues.py|\
               src/bayesian_phystwin/causal4d_artifacts_v1.py|\
@@ -121,7 +136,9 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A -- \
             .github/workflows/_one_shot_extend_legacy_snapshot.yml \
+            .github/workflows/legacy-artifact-contract.yml \
             scripts/_one_shot_extend_legacy_snapshot.py \
+            scripts/_one_shot_patch_legacy_workflow.py \
             src/bayesian_phystwin/legacy_artifacts.py \
             src/bayesian_phystwin/phystwin_raw_cues.py \
             src/bayesian_phystwin/causal4d_artifacts_v1.py \
