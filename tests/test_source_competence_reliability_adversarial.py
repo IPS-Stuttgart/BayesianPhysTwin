@@ -45,7 +45,9 @@ def test_markov_config_rejects_invalid_probability_and_semantic_contracts() -> N
             source.SourceCompetenceMarkovConfigV1(**{field: value})
 
 
-def test_evidence_constructor_rejects_shape_finiteness_and_feature_drift() -> None:
+def test_evidence_constructor_rejects_shape_finiteness_and_feature_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     observation = cases._observation()
     with pytest.raises(ValueError, match="feature_names must be unique"):
         cases._evidence(observation, feature_names=("same", "same"))
@@ -63,6 +65,8 @@ def test_evidence_constructor_rejects_shape_finiteness_and_feature_drift() -> No
         bad = np.zeros(observation.observation_count, dtype=np.float64)
         bad[0] = np.nan
         cases._evidence(observation, incompetent=bad)
+
+    monkeypatch.setattr(source, "_sequence_ids", lambda _value, *, count: ())
     with pytest.raises(ValueError, match="must contain rows"):
         source.SourceCompetenceEvidenceV1(
             observation_artifact_id=observation.artifact_id,
