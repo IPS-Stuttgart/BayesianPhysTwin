@@ -124,3 +124,8 @@ Before v2 can enter a physical or claim-bearing protocol, the protocol must:
 4. report any numerical rejection as an exact fallback; and
 5. create a new evidence identity rather than reinterpreting historical v1
    artifacts.
+
+The version is not part of the currently frozen Deform360 10+12-object method.
+Merging the implementation does not admit it to that experiment, change the
+Stage-1 evidence-use ledger, or permit it to reinterpret or rescue confirmation
+outcomes. A later protocol must opt in before its own target boundary is opened.
