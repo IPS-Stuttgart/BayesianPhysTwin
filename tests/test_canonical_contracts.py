@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import test_claim_bundle_v1 as claim_bundle_cases
+import test_claim_bundle_v1_adversarial as claim_bundle_adversarial_cases
 import test_deform360_calibration_observability_case_builder as observability_cases
 import test_deform360_calibration_observability_case_builder_adversarial as adversarial_cases
 import test_paper_evidence_v1 as paper_evidence_cases
@@ -327,6 +328,9 @@ def test_claim_bundle_and_paper_evidence_stable_core_controls(
     claim_bundle_cases.test_claim_bundle_publication_refuses_replacement_by_default(
         case_path("bundle-publication")
     )
+    claim_bundle_cases.test_claim_bundle_rejects_symbolic_link_artifacts(
+        case_path("bundle-symlink")
+    )
     claim_bundle_cases.test_claim_bundle_cli_builds_validates_and_registers_route(
         case_path("bundle-cli"),
         capsys,
@@ -353,4 +357,39 @@ def test_claim_bundle_and_paper_evidence_stable_core_controls(
     )
     paper_evidence_cases.test_primary_distribution_requires_wheel_and_sdist(
         case_path("paper-distributions")
+    )
+
+
+def test_claim_bundle_adversarial_stable_core_controls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Exercise ClaimBundle fail-closed branches inside the coverage ratchet."""
+
+    def case_path(name: str) -> Path:
+        path = tmp_path / name
+        path.mkdir(parents=True)
+        return path
+
+    claim_bundle_adversarial_cases.test_claim_bundle_low_level_fail_closed_contracts(
+        case_path("low-level")
+    )
+    claim_bundle_adversarial_cases.test_claim_bundle_descriptor_invariants_fail_closed(
+        case_path("descriptor-invariants")
+    )
+    claim_bundle_adversarial_cases.test_decisive_evidence_summary_fail_closed_branches()
+    claim_bundle_adversarial_cases.test_claim_binding_fail_closed_branches(
+        case_path("claim-binding")
+    )
+    claim_bundle_adversarial_cases.test_claim_bundle_cli_fail_closed_branches(
+        case_path("cli-fail-closed"),
+        monkeypatch,
+        capsys,
+    )
+    claim_bundle_adversarial_cases.test_claim_bundle_load_and_verify_fail_closed_branches(
+        case_path("load-and-verify")
+    )
+    claim_bundle_adversarial_cases.test_paper_evidence_empty_distribution_profile_is_rejected(
+        case_path("paper-empty-distributions")
     )
