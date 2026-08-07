@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, cast
+from urllib.parse import SplitResult, urlsplit
 
 RepositoryRole = Literal[
     "primary",
@@ -32,6 +34,11 @@ _VALID_REPOSITORY_ROLES = frozenset(
         "dependency",
     }
 )
+_GITHUB_OWNER = re.compile(
+    r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
+)
+_GITHUB_REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}$")
+_GITHUB_SCP_REMOTE = re.compile(r"^git@github\.com:(?P<path>[^?#]+)$")
 
 
 def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
@@ -47,31 +54,78 @@ def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
 def validate_revision(value: str, *, name: str = "revision") -> str:
     """Require an exact lowercase 40-character Git commit."""
 
-    normalized = str(value).lower()
-    if len(normalized) != 40 or any(
-        character not in "0123456789abcdef" for character in normalized
+    if type(value) is not str or value != value.strip() or value != value.lower():
+        raise ValueError(f"{name} must be an exact lowercase Git revision")
+    if len(value) != 40 or any(
+        character not in "0123456789abcdef" for character in value
     ):
-        raise ValueError(f"{name} must be an exact 40-character Git revision")
-    return normalized
+        raise ValueError(f"{name} must be an exact lowercase Git revision")
+    return value
+
+
+def _canonical_repository(value: object, *, name: str = "repository") -> str:
+    if type(value) is not str or value != value.strip():
+        raise ValueError(f"{name} must use canonical owner/name form")
+    parts = value.split("/")
+    if len(parts) != 2:
+        raise ValueError(f"{name} must use canonical owner/name form")
+    owner, repository = parts
+    if _GITHUB_OWNER.fullmatch(owner) is None:
+        raise ValueError(f"{name} contains an invalid GitHub owner")
+    if (
+        _GITHUB_REPOSITORY.fullmatch(repository) is None
+        or repository in {".", ".."}
+    ):
+        raise ValueError(f"{name} contains an invalid GitHub repository name")
+    return value
+
+
+def _remote_path_from_url(parsed: SplitResult) -> str:
+    if parsed.query or parsed.fragment:
+        raise ValueError("Git remote URL must not contain a query or fragment")
+    try:
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError("Git remote URL contains an invalid port") from error
+
+    hostname = parsed.hostname.lower() if parsed.hostname is not None else None
+    if parsed.scheme == "https":
+        if (
+            hostname != "github.com"
+            or parsed.username is not None
+            or parsed.password is not None
+            or port is not None
+        ):
+            raise ValueError("HTTPS Git remote must use exactly github.com")
+    elif parsed.scheme == "ssh":
+        if (
+            hostname != "github.com"
+            or parsed.username != "git"
+            or parsed.password is not None
+            or port not in {None, 22}
+        ):
+            raise ValueError("SSH Git remote must use git@github.com")
+    else:
+        raise ValueError("only GitHub HTTPS and SSH repository remotes are supported")
+    return parsed.path.removeprefix("/")
 
 
 def normalize_github_repository(remote_url: str) -> str:
-    """Normalize a GitHub HTTPS/SSH remote to ``owner/repository``."""
+    """Normalize a GitHub HTTPS/SSH remote to canonical ``owner/repository``."""
 
-    value = str(remote_url).strip()
-    if not value:
-        raise ValueError("Git remote URL must be nonempty")
-    if value.startswith("git@github.com:"):
-        path = value.split(":", 1)[1]
-    elif "github.com/" in value:
-        path = value.split("github.com/", 1)[1]
+    if type(remote_url) is not str or not remote_url or remote_url != remote_url.strip():
+        raise ValueError("Git remote URL must be a canonical nonempty string")
+
+    scp_match = _GITHUB_SCP_REMOTE.fullmatch(remote_url)
+    if scp_match is not None:
+        path = scp_match.group("path")
     else:
-        raise ValueError("only github.com repository remotes are supported")
-    path = path.removesuffix(".git").strip("/")
-    parts = path.split("/")
-    if len(parts) != 2 or any(not part for part in parts):
-        raise ValueError("GitHub remote must identify exactly owner/repository")
-    return "/".join(parts)
+        path = _remote_path_from_url(urlsplit(remote_url))
+
+    repository = path.removesuffix(".git").strip("/")
+    if repository != path.removesuffix(".git"):
+        raise ValueError("Git remote path must not contain surrounding slashes")
+    return _canonical_repository(repository, name="GitHub remote")
 
 
 @dataclass(frozen=True)
@@ -84,14 +138,10 @@ class RepositoryState:
     role: RepositoryRole
 
     def __post_init__(self) -> None:
-        repository = str(self.repository).strip()
-        role = str(self.role)
-        parts = repository.split("/")
-        if len(parts) != 2 or any(not part for part in parts):
-            raise ValueError("repository must use owner/name form")
-        if role not in _VALID_REPOSITORY_ROLES:
+        repository = _canonical_repository(self.repository)
+        if type(self.role) is not str or self.role not in _VALID_REPOSITORY_ROLES:
             raise ValueError("unknown repository role")
-        if not isinstance(self.dirty, bool):
+        if type(self.dirty) is not bool:
             raise ValueError("dirty must be boolean")
         object.__setattr__(self, "repository", repository)
         object.__setattr__(
