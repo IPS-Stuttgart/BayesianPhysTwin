@@ -278,6 +278,8 @@ def discover_git_repository_state(
 
 
 def _environment_variable_names(values: Sequence[str]) -> tuple[str, ...]:
+    if isinstance(values, (str, bytes)):
+        raise ValueError("environment variable names must be a sequence of identifiers")
     names: list[str] = []
     for value in values:
         if type(value) is not str or _ENVIRONMENT_VARIABLE.fullmatch(value) is None:
