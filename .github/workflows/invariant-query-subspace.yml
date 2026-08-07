@@ -1,0 +1,106 @@
+name: Invariant query subspace
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/invariant-query-subspace.yml"
+      - "src/bayesian_phystwin/invariant_query_subspace.py"
+      - "tests/test_invariant_query_subspace.py"
+      - "tests/conftest.py"
+      - "docs/invariant_query_subspace.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invariant-query-subspace-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Repeated-eigenspace and reparameterization contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install focused environment
+        run: |
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip install "coverage==7.13.3"
+          python -m pip check
+
+      - name: Check source quality
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/invariant_query_subspace.py \
+            tests/test_invariant_query_subspace.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/invariant_query_subspace.py \
+            tests/test_invariant_query_subspace.py
+          python -m mypy \
+            src/bayesian_phystwin/invariant_query_subspace.py
+
+      - name: Run focused contracts and changed-code coverage
+        run: |
+          python -m coverage run --branch \
+            --source=bayesian_phystwin.invariant_query_subspace \
+            -m pytest -q -p no:cacheprovider \
+            tests/test_invariant_query_subspace.py
+          python -m coverage report \
+            --fail-under=90 \
+            --show-missing
+          python -m coverage json -o invariant-query-subspace-coverage.json
+          python - <<'PY'
+          import json
+
+          payload = json.load(open("invariant-query-subspace-coverage.json"))
+          summary = next(iter(payload["files"].values()))["summary"]
+          branches = 100.0 * summary["covered_branches"] / summary["num_branches"]
+          if branches < 80.0:
+              raise SystemExit(f"branch coverage {branches:.2f}% is below 80%")
+          PY
+          python -m py_compile \
+            src/bayesian_phystwin/invariant_query_subspace.py \
+            tests/test_invariant_query_subspace.py
+
+      - name: Verify read-only checkout
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: invariant-query-subspace-${{ github.run_id }}-${{ github.run_attempt }}
+          path: invariant-query-subspace-coverage.json
+          if-no-files-found: warn
+          retention-days: 30
