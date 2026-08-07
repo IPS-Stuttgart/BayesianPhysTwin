@@ -136,10 +136,17 @@ def test_released_raw_track_map_is_hash_locked_and_immutable(
         PhysTwinRawCueConfig = FakeConfig
 
         @staticmethod
-        def load_phystwin_raw_track_map(final_data_path, raw_case_dir, *, config):
+        def load_phystwin_raw_track_map(
+            final_data_path,
+            raw_case_dir,
+            *,
+            config,
+            final_data_payload,
+        ):
             assert Path(final_data_path) == final_path
             assert Path(raw_case_dir) == raw_case
             assert isinstance(config, FakeConfig)
+            assert final_data_payload is not None
             return FakeMapping()
 
     monkeypatch.setattr(artifact_api, "import_module", lambda name: FakeModule)
@@ -289,10 +296,17 @@ def _fake_visual_module(final_path: Path, raw_case: Path):
         PhysTwinRawCueConfig = FakeConfig
 
         @staticmethod
-        def load_phystwin_raw_track_map(final_data_path, raw_case_dir, *, config):
+        def load_phystwin_raw_track_map(
+            final_data_path,
+            raw_case_dir,
+            *,
+            config,
+            final_data_payload,
+        ):
             assert Path(final_data_path) == final_path
             assert Path(raw_case_dir) == raw_case
             assert isinstance(config, FakeConfig)
+            assert final_data_payload is not None
             return FakeMapping()
 
     return FakeModule
@@ -381,8 +395,19 @@ def test_visual_inputs_v2_revalidates_after_internal_loading(
     fake_module = _fake_visual_module(final_path, raw_case)
     original = fake_module.load_phystwin_raw_track_map
 
-    def mutate_after_preflight(final_data_path, raw_case_dir, *, config):
-        result = original(final_data_path, raw_case_dir, config=config)
+    def mutate_after_preflight(
+        final_data_path,
+        raw_case_dir,
+        *,
+        config,
+        final_data_payload,
+    ):
+        result = original(
+            final_data_path,
+            raw_case_dir,
+            config=config,
+            final_data_payload=final_data_payload,
+        )
         (raw_case / "metadata.json").write_text("{}", encoding="utf-8")
         return result
 

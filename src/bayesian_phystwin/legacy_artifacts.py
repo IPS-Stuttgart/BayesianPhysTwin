@@ -35,18 +35,6 @@ def _validate_sha256(value: str, *, name: str) -> str:
     return normalized
 
 
-def _sha256_file(
-    path: Path,
-    *,
-    chunk_size: int = _COPY_CHUNK_SIZE_BYTES,
-) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while block := stream.read(chunk_size):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def _load_verified_pickle_snapshot(
     source: Path,
     *,
@@ -55,10 +43,13 @@ def _load_verified_pickle_snapshot(
     """Deserialize exactly the bytes whose trusted digest was verified."""
 
     digest = hashlib.sha256()
-    with source.open("rb") as stream, tempfile.SpooledTemporaryFile(
-        max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
-        mode="w+b",
-    ) as snapshot:
+    with (
+        source.open("rb") as stream,
+        tempfile.SpooledTemporaryFile(
+            max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
+            mode="w+b",
+        ) as snapshot,
+    ):
         while block := stream.read(_COPY_CHUNK_SIZE_BYTES):
             digest.update(block)
             snapshot.write(block)

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pickle
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -64,8 +65,14 @@ def load_phystwin_raw_track_map(
     raw_case_dir: str | Path,
     *,
     config: PhysTwinRawCueConfig | None = None,
+    final_data_payload: Mapping[str, Any] | None = None,
 ) -> PhysTwinRawTrackMap:
-    """Recover the release preprocessing's exact raw-query correspondence."""
+    """Recover the release preprocessing's exact raw-query correspondence.
+
+    ``final_data_payload`` lets digest-bound callers pass the exact mapping they
+    already verified and deserialized. When omitted, the historical path-based
+    behavior is retained for ordinary development callers.
+    """
 
     cfg = config or PhysTwinRawCueConfig()
     if cfg.initial_match_tolerance_m <= 0.0:
@@ -75,7 +82,13 @@ def load_phystwin_raw_track_map(
     except ImportError as error:
         raise RuntimeError("raw track mapping requires scipy") from error
 
-    final_data = _load_pickle(final_data_path)
+    final_data = (
+        _load_pickle(final_data_path)
+        if final_data_payload is None
+        else final_data_payload
+    )
+    if not isinstance(final_data, Mapping):
+        raise TypeError("final_data_payload must contain a mapping")
     final_points = np.asarray(final_data["object_points"], dtype=float)
     final_visible = np.asarray(final_data["object_visibilities"], dtype=bool)
     if final_points.ndim != 3 or final_points.shape[2] != 3:
@@ -174,9 +187,7 @@ def build_phystwin_raw_camera_cues(
     if cfg.initial_match_tolerance_m <= 0.0:
         raise ValueError("initial_match_tolerance_m must be positive")
     if cfg.boundary_normalization != "maximum_image_dimension":
-        raise ValueError(
-            "boundary_normalization must be 'maximum_image_dimension'"
-        )
+        raise ValueError("boundary_normalization must be 'maximum_image_dimension'")
     try:
         from scipy.ndimage import distance_transform_edt
     except ImportError as error:
@@ -188,7 +199,6 @@ def build_phystwin_raw_camera_cues(
     )
     final_points = mapping.final_points
     final_visible = mapping.final_visible
-    camera_points = mapping.camera_points
     track_paths = mapping.track_paths
     tracks_by_camera = mapping.tracks_by_camera
     visibility_by_camera = mapping.visibility_by_camera
@@ -224,14 +234,14 @@ def build_phystwin_raw_camera_cues(
                 & (pixels[:, 1] >= 0)
                 & (pixels[:, 1] < object_mask.shape[1])
             )
-            values = np.zeros(len(selected), dtype=float)
+            values: np.ndarray = np.zeros(len(selected), dtype=float)
             values[in_bounds] = distance[
                 pixels[in_bounds, 0],
                 pixels[in_bounds, 1],
             ]
             boundary_distance[frame, selected] = values
 
-    cues: dict[str, np.ndarray] = {}
+    cues: dict[str, Any] = {}
     if base_cues_path is not None:
         with np.load(base_cues_path) as archive:
             cues.update({name: np.asarray(archive[name]) for name in archive.files})

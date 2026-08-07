@@ -253,10 +253,17 @@ def _fake_module(
         PhysTwinRawCueConfig = FakeConfig
 
         @staticmethod
-        def load_phystwin_raw_track_map(final_data_path, raw_case_dir, *, config):
+        def load_phystwin_raw_track_map(
+            final_data_path,
+            raw_case_dir,
+            *,
+            config,
+            final_data_payload,
+        ):
             assert Path(final_data_path) == final_path
             assert Path(raw_case_dir) == raw
             assert isinstance(config, FakeConfig)
+            assert final_data_payload is not None
             return FakeMapping()
 
     return FakeModule
@@ -374,8 +381,19 @@ def test_loader_rejects_postload_mutation(tmp_path: Path, monkeypatch) -> None:
     fake = _fake_module(final_path, raw)
     original = fake.load_phystwin_raw_track_map
 
-    def mutate(final_data_path, raw_case_dir, *, config):
-        result = original(final_data_path, raw_case_dir, config=config)
+    def mutate(
+        final_data_path,
+        raw_case_dir,
+        *,
+        config,
+        final_data_payload,
+    ):
+        result = original(
+            final_data_path,
+            raw_case_dir,
+            config=config,
+            final_data_payload=final_data_payload,
+        )
         (raw / "metadata.json").write_text("{}", encoding="utf-8")
         return result
 
