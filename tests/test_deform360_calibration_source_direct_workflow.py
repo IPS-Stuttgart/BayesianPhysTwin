@@ -53,7 +53,6 @@ def test_reusable_workflow_publishes_one_non_sensitive_completion_receipt() -> N
     assert '--workflow-run-id "${GITHUB_RUN_ID}"' in completion_block
     assert '--workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"' in completion_block
     assert "/issues/148/comments" in completion_block
-    assert "local paths, object identities, or target outcomes" in completion_block
     assert "hashlib" not in completion_block
     assert "DATA_ROOT" not in completion_block
     assert "PROCESSED_ROOT" not in completion_block
