@@ -81,9 +81,7 @@ def test_curve_reports_costs_prefixes_and_records() -> None:
     assert curve.selected_prefix(1, 0).tolist() == []
     assert curve.selected_prefix(1, 1).tolist() == [1]
     assert curve.selected_prefix(1, 3).tolist() == [1, 0]
-    assert curve.cumulative_costs[1].tolist() == pytest.approx(
-        [0.0, 2.0, 3.0, 3.0]
-    )
+    assert curve.cumulative_costs[1].tolist() == pytest.approx([0.0, 2.0, 3.0, 3.0])
 
     records = curve.records()
     assert len(records) == 16
@@ -110,9 +108,7 @@ def test_dependence_group_limit_is_filled_without_false_support() -> None:
     assert curve.query_variance_traces[0, 2] == pytest.approx(
         curve.query_variance_traces[0, 1]
     )
-    assert curve.cumulative_costs[0, 2] == pytest.approx(
-        curve.cumulative_costs[0, 1]
-    )
+    assert curve.cumulative_costs[0, 2] == pytest.approx(curve.cumulative_costs[0, 1])
     assert curve.selected_prefix(0, 2).tolist() == [0]
 
 
@@ -353,9 +349,10 @@ def test_controlled_study_writes_replayable_outputs(tmp_path: Path) -> None:
     assert summary["query_aware_selected_candidate_ids_at_unit_precision"][0] == (
         "independent-metric-x-efficient"
     )
-    assert summary["full_state_information_selected_candidate_ids_at_unit_precision"][
-        0
-    ] == "query-irrelevant-y"
+    assert (
+        summary["full_state_information_selected_candidate_ids_at_unit_precision"][0]
+        == "query-irrelevant-y"
+    )
     assert (output_dir / "curve.csv").is_file()
     assert (output_dir / "report.md").is_file()
 

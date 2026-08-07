@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from test_observability_diagnostics import *  # noqa: F403
 
 from bayesian_phystwin._gauge_aware_contracts import (
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
@@ -12,7 +13,6 @@ from bayesian_phystwin.nuisance_aware_information import (
     NuisanceAwareInformationState,
     greedy_nuisance_aware_selection,
 )
-from test_observability_diagnostics import *  # noqa: F403
 
 
 @pytest.mark.parametrize("seed", range(16))

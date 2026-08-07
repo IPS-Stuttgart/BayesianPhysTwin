@@ -266,9 +266,7 @@ def build_controlled_study() -> tuple[dict[str, Any], str, str]:
         "records": records,
         "claim_boundary": protocol["claim_boundary"],
     }
-    result["result_sha256"] = hashlib.sha256(
-        _canonical_json_bytes(result)
-    ).hexdigest()
+    result["result_sha256"] = hashlib.sha256(_canonical_json_bytes(result)).hexdigest()
 
     csv_buffer = io.StringIO()
     fieldnames = [

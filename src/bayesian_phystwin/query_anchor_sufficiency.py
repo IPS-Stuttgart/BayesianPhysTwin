@@ -452,8 +452,7 @@ def evaluate_query_anchor_sufficiency(
                 "planner reduction or cost diagnostic shape changed",
             )
             _require(
-                np.all(np.isfinite(reductions))
-                and np.all(np.isfinite(selected_costs)),
+                np.all(np.isfinite(reductions)) and np.all(np.isfinite(selected_costs)),
                 "planner reduction or cost diagnostics must be finite",
             )
             cumulative_reductions = np.cumsum(reductions)
