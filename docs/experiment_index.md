@@ -11,14 +11,17 @@ archived reproduction paths in the command registry.
 
 ## Stable workflows
 
-| Workflow | Stable command | Documentation |
+<!-- bpt-stable-commands:begin -->
+| Command | Purpose | Documentation |
 | --- | --- | --- |
-| Provider capability and provenance | `bpt provider manifest` | [Causal4D provider v1](causal4d_provider_v1.md) |
-| Observation-belief validation | `bpt observation validate` | [ObservationBeliefV1](observation_belief_contract.md) |
-| Robust residual replay | `bpt residual replay` | [Residual replay](residual_replay.md) |
-| Controlled synthetic benchmark | `bpt benchmark synthetic` | [Synthetic benchmark](synthetic_benchmark.md) |
-| Matched guarded evidence analysis | `bpt evidence summarize` | [Decisive evidence protocol](decisive_evidence_protocol.md) |
-| Content-addressed run provenance | `bpt run manifest` | [Reproducible runs](reproducible_runs.md) |
+| `bpt provider manifest` | Print the Causal4D provider capability manifest. | [Guide](causal4d_provider_v1.md) |
+| `bpt observation validate` | Validate or summarize an ObservationBeliefV1 artifact. | [Guide](observation_belief_contract.md) |
+| `bpt residual replay` | Replay exported residuals through the robust likelihood. | [Guide](residual_replay.md) |
+| `bpt benchmark synthetic` | Run the controlled synthetic benchmark. | [Guide](synthetic_benchmark.md) |
+| `bpt evidence summarize` | Summarize matched guarded prospective evidence. | [Guide](decisive_evidence_protocol.md) |
+| `bpt evidence bundle` | Build or validate a content-addressed claim bundle. | [Guide](claim_bundle_v1.md) |
+| `bpt run manifest` | Create or validate a content-addressed run manifest. | [Guide](reproducible_runs.md) |
+<!-- bpt-stable-commands:end -->
 
 The observation-to-state boundary is described in
 [gauge-aware observation update](gauge_aware_observation_update.md) and
