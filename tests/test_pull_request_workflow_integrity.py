@@ -8,6 +8,9 @@ from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _WORKFLOW_ROOT = _REPOSITORY_ROOT / ".github" / "workflows"
+_MAPPING_KEY = re.compile(
+    r"^(?P<indent>[ \t]*)[\"']?[A-Za-z0-9_-]+[\"']?\s*:"
+)
 _PULL_REQUEST_BLOCK_EVENT = re.compile(
     r"(?m)^[ \t]+[\"']?pull_request(?:_target)?[\"']?\s*:"
 )
@@ -17,6 +20,7 @@ _PULL_REQUEST_FLOW_MAPPING_EVENT = re.compile(
 _PULL_REQUEST_FLOW_SEQUENCE_EVENT = re.compile(
     r"(?:^|[,\[])\s*[\"']?pull_request(?:_target)?[\"']?\s*(?=,|\])"
 )
+_YAML_ALIAS_OR_MERGE = re.compile(r"(?:^|\s)(?:\*[A-Za-z0-9_-]+|<<\s*:)")
 _FORBIDDEN_PULL_REQUEST_COMMANDS = (
     "git " + "push",
     "git reset " + "--soft origin/",
@@ -102,6 +106,17 @@ def _indent_width(line: str) -> int:
     return len(line) - len(line.lstrip(" \t"))
 
 
+def _root_mapping_indent(lines: list[str]) -> int:
+    """Return the minimum indentation used by mapping keys in the document."""
+
+    indents: list[int] = []
+    for line in lines:
+        match = _MAPPING_KEY.match(_strip_yaml_comment(line))
+        if match is not None:
+            indents.append(_indent_width(match.group("indent")))
+    return min(indents, default=0)
+
+
 def _iter_yaml_values(
     text: str,
     *,
@@ -112,6 +127,7 @@ def _iter_yaml_values(
 
     declaration = _key_declaration(key)
     lines = text.splitlines()
+    root_indent = _root_mapping_indent(lines)
     index = 0
     while index < len(lines):
         cleaned = _strip_yaml_comment(lines[index])
@@ -121,7 +137,7 @@ def _iter_yaml_values(
             continue
 
         declaration_indent = _indent_width(match.group("indent"))
-        if root_only and declaration_indent != 0:
+        if root_only and declaration_indent != root_indent:
             index += 1
             continue
 
@@ -185,6 +201,8 @@ def _mapping_has_pair(
 
 def _inline_on_value_has_pull_request(value: str) -> bool:
     normalized = value.strip()
+    if _YAML_ALIAS_OR_MERGE.search(normalized) is not None:
+        return True
     if normalized.startswith("["):
         return _PULL_REQUEST_FLOW_SEQUENCE_EVENT.search(normalized) is not None
     if normalized.startswith("{"):
@@ -194,6 +212,8 @@ def _inline_on_value_has_pull_request(value: str) -> bool:
 
 def _has_pull_request_trigger(text: str) -> bool:
     for style, value in _iter_yaml_values(text, key="on", root_only=True):
+        if _YAML_ALIAS_OR_MERGE.search(value) is not None:
+            return True
         if style == "block":
             if _PULL_REQUEST_BLOCK_EVENT.search(value) is not None:
                 return True
@@ -269,6 +289,9 @@ def test_pull_request_trigger_detection_covers_yaml_forms() -> None:
         "on: [\n  push,\n  'pull_request_target',\n]\n",
         "on: {\n  push: null,\n  pull_request: {types: [opened]},\n}\n",
         '"on": [pull_request] # quoted key\n',
+        "  on:\n    pull_request:\n  jobs: {}\n",
+        "events: &events [push]\non: *events\n",
+        "events: &events {push: null}\non:\n  <<: *events\n",
     )
     non_triggering = (
         "on: push\n",
