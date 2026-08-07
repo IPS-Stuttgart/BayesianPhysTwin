@@ -54,8 +54,7 @@ def _repository_root() -> Path:
 
 def _stage0():
     return load_deform360_stage0_selection(
-        _repository_root()
-        / "protocols/locks/"
+        _repository_root() / "protocols/locks/"
         "deform360_official_hub_visuotactile_v1_selection.json"
     )
 
@@ -106,9 +105,7 @@ def _case(unit, *, evaluated: bool = True):
         "stratum": unit.stratum,
         "physical_query_id": QUERY_ID,
         "status": (
-            "evaluated"
-            if evaluated
-            else "technical_failure_without_replacement"
+            "evaluated" if evaluated else "technical_failure_without_replacement"
         ),
         "source_artifacts": {
             f"sources/cases/{unit.object_id}.json": hashlib.sha256(
@@ -227,9 +224,7 @@ def _sources(stage0) -> dict[str, str]:
         DEFORM360_CALIBRATION_OBSERVABILITY_SOURCE_KEY: REPORT_FILE_SHA256,
     }
     for index, role in enumerate(DEFORM360_CALIBRATION_ROLES):
-        sources[f"sources/calibration/artifacts/{role}.json"] = (
-            f"{index + 10:064x}"
-        )
+        sources[f"sources/calibration/artifacts/{role}.json"] = f"{index + 10:064x}"
     return sources
 
 
