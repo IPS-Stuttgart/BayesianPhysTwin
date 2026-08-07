@@ -88,9 +88,7 @@ def _validated_record_gate(value: object, *, name: str) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} must be an object")
     by_stratum = value.get("supported_by_stratum")
-    if not isinstance(by_stratum, Mapping) or set(by_stratum) != set(
-        EXPECTED_STRATA
-    ):
+    if not isinstance(by_stratum, Mapping) or set(by_stratum) != set(EXPECTED_STRATA):
         raise ValueError(f"{name}.supported_by_stratum changed")
     sheet = integer_field(
         by_stratum.get("sheet"),
@@ -124,9 +122,7 @@ def _validate_source_lock_summary(record: Mapping[str, Any]) -> None:
     error = record["source_locks_error"]
     if type(available) is not bool or type(valid) is not bool:
         raise ValueError("source-lock availability flags must be booleans")
-    if error is not None and (
-        type(error) is not str or error not in _ARTIFACT_ERRORS
-    ):
+    if error is not None and (type(error) is not str or error not in _ARTIFACT_ERRORS):
         raise ValueError("source_locks_error changed")
     digests = [record[key] for key in _SOURCE_LOCK_DIGEST_KEYS]
     if valid:
@@ -160,9 +156,7 @@ def _validate_artifact_summary(
 
     if type(available) is not bool or type(valid) is not bool:
         raise ValueError(f"{prefix} availability flags must be booleans")
-    if error is not None and (
-        type(error) is not str or error not in _ARTIFACT_ERRORS
-    ):
+    if error is not None and (type(error) is not str or error not in _ARTIFACT_ERRORS):
         raise ValueError(f"{prefix}_error changed")
 
     if valid:
@@ -214,19 +208,19 @@ def validate_deform360_calibration_source_run_record(
     ):
         raise ValueError("execution record claim boundary changed")
 
-    revision(record.get("source_revision"), name="source_revision")
-    revision(record.get("processing_revision"), name="processing_revision")
-    positive_integer(record.get("workflow_run_id"), name="workflow_run_id")
+    revision(record["source_revision"], name="source_revision")
+    revision(record["processing_revision"], name="processing_revision")
+    positive_integer(record["workflow_run_id"], name="workflow_run_id")
     positive_integer(
-        record.get("workflow_run_attempt"),
+        record["workflow_run_attempt"],
         name="workflow_run_attempt",
     )
     workload_exit_code = exit_code(
-        record.get("workload_exit_code"),
+        record["workload_exit_code"],
         name="workload_exit_code",
     )
     boundary_exit_code = exit_code(
-        record.get("confirmation_boundary_exit_code"),
+        record["confirmation_boundary_exit_code"],
         name="confirmation_boundary_exit_code",
     )
 
@@ -250,7 +244,7 @@ def validate_deform360_calibration_source_run_record(
         download=record,
         result=record,
     )
-    observed_exit_code = exit_code(record.get("exit_code"), name="exit_code")
+    observed_exit_code = exit_code(record["exit_code"], name="exit_code")
     if observed_exit_code != expected_exit_code:
         raise ValueError("execution record exit code is inconsistent")
     if record.get("failure_stage") != expected_failure_stage:

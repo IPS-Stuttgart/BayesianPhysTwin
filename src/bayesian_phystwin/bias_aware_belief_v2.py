@@ -22,19 +22,17 @@ from .bias_aware_belief import (
     _subspace_overlap,
 )
 from .spd_system import (
+    SPD_SYSTEM_SCHEMA,
+    SPD_SYSTEM_VERSION,
     SPDConditionError,
     SPDSystem,
     SPDSystemError,
     SPDValidationError,
-    SPD_SYSTEM_SCHEMA,
-    SPD_SYSTEM_VERSION,
 )
 
 BIAS_AWARE_BELIEF_V2_SCHEMA: Final = "bayesian_phystwin.bias_aware_belief"
 BIAS_AWARE_BELIEF_V2_VERSION: Final = 2
-BIAS_AWARE_BELIEF_V2_IMPLEMENTATION: Final = (
-    "bias-aware-linear-student-t-spd-v2"
-)
+BIAS_AWARE_BELIEF_V2_IMPLEMENTATION: Final = "bias-aware-linear-student-t-spd-v2"
 BIAS_AWARE_BELIEF_V2_CLAIM_BOUNDARY: Final = (
     "Prospective numerical implementation only. Results produced by v2 are not "
     "interchangeable with historical v1 evidence and require a separately frozen "
@@ -278,9 +276,9 @@ def update_bias_aware_state_v2(
         (len(camera_rows), state_count + shared_bias_count + view_count),
         dtype=np.float64,
     )
-    camera_target = np.empty((len(camera_rows), 3), dtype=np.float64)
-    camera_row_variance = np.empty(len(camera_rows), dtype=np.float64)
-    camera_base_weight = np.empty(len(camera_rows), dtype=np.float64)
+    camera_target: np.ndarray = np.empty((len(camera_rows), 3), dtype=np.float64)
+    camera_row_variance: np.ndarray = np.empty(len(camera_rows), dtype=np.float64)
+    camera_base_weight: np.ndarray = np.empty(len(camera_rows), dtype=np.float64)
     for row_index, (view_index, point_index) in enumerate(camera_rows):
         camera_design[row_index, :state_count] = state[point_index]
         camera_design[
@@ -296,12 +294,11 @@ def update_bias_aware_state_v2(
         count = int(np.sum(usable[view_index]))
         within_view = min(cfg.effective_samples_per_view, float(count)) / count
         camera_base_weight[row_index] = (
-            reliability[view_index, point_index]
-            * within_view
-            / len(active_views)
+            reliability[view_index, point_index] * within_view / len(active_views)
         )
 
     has_anchor = anchor_innovation_m is not None
+    anchor_variance: np.ndarray
     if has_anchor:
         _require(anchor_state_basis is not None, "anchor state basis is missing")
         anchor_target = np.asarray(anchor_innovation_m, dtype=np.float64)
@@ -339,8 +336,7 @@ def update_bias_aware_state_v2(
             )
             anchor_variance = supplied_anchor_variance[anchor_finite]
             _require(
-                np.all(np.isfinite(anchor_variance))
-                and np.all(anchor_variance > 0.0),
+                np.all(np.isfinite(anchor_variance)) and np.all(anchor_variance > 0.0),
                 "anchor variance must be positive",
             )
     else:
@@ -414,9 +410,7 @@ def update_bias_aware_state_v2(
     diagnostics["per_camera_bias_prior_ci_scaled"] = True
 
     camera_bias_design = camera_design[:, state_count:]
-    camera_overlap_weight = np.sqrt(
-        camera_base_weight / camera_row_variance
-    )[:, None]
+    camera_overlap_weight = np.sqrt(camera_base_weight / camera_row_variance)[:, None]
     overlap = _subspace_overlap(
         camera_overlap_weight * camera_design[:, :state_count],
         camera_overlap_weight * camera_bias_design,
@@ -439,8 +433,8 @@ def update_bias_aware_state_v2(
         )
 
     solution = np.zeros((dimension, 3), dtype=np.float64)
-    camera_robust = np.ones(len(camera_rows), dtype=np.float64)
-    anchor_robust = np.ones(len(anchor_target), dtype=np.float64)
+    camera_robust: np.ndarray = np.ones(len(camera_rows), dtype=np.float64)
+    anchor_robust: np.ndarray = np.ones(len(anchor_target), dtype=np.float64)
 
     def posterior_system() -> tuple[np.ndarray, np.ndarray]:
         camera_precision_weight = (
@@ -531,9 +525,7 @@ def update_bias_aware_state_v2(
             "condition_number": final_system.condition_number,
             "final_spd_system": final_system.diagnostics(),
             "final_solve_relative_residual": final_solve_residual,
-            "effective_camera_information_mass": float(
-                np.sum(camera_base_weight)
-            ),
+            "effective_camera_information_mass": float(np.sum(camera_base_weight)),
             "minimum_camera_robust_weight": (
                 float(np.min(camera_robust)) if len(camera_robust) else 1.0
             ),
@@ -608,9 +600,7 @@ def update_bias_aware_state_v2(
         )
     else:
         maximum_cross_correlation = 0.0
-    diagnostics["maximum_state_bias_posterior_correlation"] = (
-        maximum_cross_correlation
-    )
+    diagnostics["maximum_state_bias_posterior_correlation"] = maximum_cross_correlation
 
     robust_map = np.zeros((view_count, point_count), dtype=np.float64)
     robust_map[camera_rows[:, 0], camera_rows[:, 1]] = camera_robust
