@@ -22,13 +22,17 @@ _CONTENTS_WRITE_PERMISSION = re.compile(
 )
 _INLINE_CONTENTS_WRITE_PERMISSION = re.compile(
     r"(?im)^\s*permissions\s*:\s*\{[^}\n]*"
-    r"\bcontents\s*:\s*[\"']?write[\"']?\b"
+    r"[\"']?contents[\"']?\s*:\s*[\"']?write[\"']?\b"
 )
 _WRITE_ALL_PERMISSION = re.compile(
     r"(?im)^\s*permissions\s*:\s*[\"']?write-all[\"']?\s*(?:#.*)?$"
 )
 _PERSIST_CREDENTIALS_TRUE = re.compile(
     r"(?im)^\s*persist-credentials\s*:\s*[\"']?true[\"']?\s*(?:#.*)?$"
+)
+_INLINE_PERSIST_CREDENTIALS_TRUE = re.compile(
+    r"(?im)^\s*with\s*:\s*\{[^}\n]*"
+    r"[\"']?persist-credentials[\"']?\s*:\s*[\"']?true[\"']?\b"
 )
 _FORBIDDEN_PULL_REQUEST_COMMANDS = (
     "git " + "push",
@@ -74,6 +78,8 @@ def _pull_request_workflow_violations(
         violations.append(f"{relative_path}: grants permissions: write-all")
     if _PERSIST_CREDENTIALS_TRUE.search(text) is not None:
         violations.append(f"{relative_path}: persists checkout credentials")
+    if _INLINE_PERSIST_CREDENTIALS_TRUE.search(text) is not None:
+        violations.append(f"{relative_path}: persists inline checkout credentials")
 
     for marker in _FORBIDDEN_PULL_REQUEST_COMMANDS:
         if marker in text:
@@ -124,7 +130,7 @@ def test_inline_pull_request_workflows_cannot_bypass_write_checks() -> None:
             "grants permissions: write-all",
         ),
         (
-            "on: pull_request_target\npermissions: {contents: write}\n",
+            "on: pull_request_target\npermissions: {'contents': 'write'}\n",
             "grants inline contents: write",
         ),
         (
@@ -132,6 +138,12 @@ def test_inline_pull_request_workflows_cannot_bypass_write_checks() -> None:
             "steps:\n  - uses: actions/checkout@v7\n"
             "    with:\n      persist-credentials: TRUE\n",
             "persists checkout credentials",
+        ),
+        (
+            'on: ["pull_request"]\nsteps:\n'
+            "  - uses: actions/checkout@v7\n"
+            "    with: {'persist-credentials': 'true'}\n",
+            "persists inline checkout credentials",
         ),
     )
 
