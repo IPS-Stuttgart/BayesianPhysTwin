@@ -96,6 +96,7 @@ jobs:
             tests/test_deform360_calibration_bundle.py \
             tests/test_deform360_calibration_execution.py \
             tests/test_deform360_calibration_execution_boundaries.py \
+            tests/test_deform360_calibration_observability_binding.py \
             tests/test_evidence_use_ledger.py \
             tests/test_decisive_evidence.py \
             tests/test_decisive_evidence_bootstrap.py \
@@ -358,7 +359,7 @@ jobs:
           }
           missing = required - set(payload["capabilities"])
           if missing:
-            raise SystemExit(f"missing provider capabilities: {sorted(missing)}")
+              raise SystemExit(f"missing provider capabilities: {sorted(missing)}")
 
           graph_payload = causal4d_graph_provider_manifest(
               provider_revision=os.environ["GITHUB_SHA"]
@@ -366,7 +367,7 @@ jobs:
           graph_required = {"controller_grouping", "phystwin_spring_graph"}
           graph_missing = graph_required - set(graph_payload["capabilities"])
           if graph_missing:
-            raise SystemExit(
+              raise SystemExit(
                 f"missing graph-provider capabilities: {sorted(graph_missing)}"
               )
           if graph_payload["artifact_schema_versions"] != {
