@@ -3,19 +3,22 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _WORKFLOW_ROOT = _REPOSITORY_ROOT / ".github" / "workflows"
-_PULL_REQUEST_BLOCK_TRIGGER = re.compile(
-    r"(?m)^\s*[\"']?pull_request(?:_target)?[\"']?\s*:"
+_ON_DECLARATION = re.compile(
+    r"^(?P<indent>[ \t]*)[\"']?on[\"']?\s*:\s*(?P<value>.*)$"
 )
-_PULL_REQUEST_INLINE_TRIGGER = re.compile(
-    r"(?m)^\s*on\s*:\s*(?:"
-    r"[\"']?pull_request(?:_target)?[\"']?\s*(?:#.*)?$"
-    r"|\[[^\]\n]*[\"']?pull_request(?:_target)?[\"']?[^\]\n]*\]"
-    r"|\{[^}\n]*[\"']?pull_request(?:_target)?[\"']?\s*:"
-    r")"
+_PULL_REQUEST_BLOCK_EVENT = re.compile(
+    r"(?m)^[ \t]+[\"']?pull_request(?:_target)?[\"']?\s*:"
+)
+_PULL_REQUEST_FLOW_MAPPING_EVENT = re.compile(
+    r"(?:^|[,{])\s*[\"']?pull_request(?:_target)?[\"']?\s*:"
+)
+_PULL_REQUEST_FLOW_SEQUENCE_EVENT = re.compile(
+    r"(?:^|[,\[])\s*[\"']?pull_request(?:_target)?[\"']?\s*(?=,|\])"
 )
 _CONTENTS_WRITE_PERMISSION = re.compile(
     r"(?im)^\s*contents\s*:\s*[\"']?write[\"']?\s*(?:#.*)?$"
@@ -55,11 +58,118 @@ def _workflow_texts() -> list[tuple[Path, str]]:
     return [(path, path.read_text(encoding="utf-8")) for path in workflows]
 
 
+def _strip_yaml_comment(line: str) -> str:
+    """Remove comments while preserving hashes inside quoted scalars."""
+
+    quote: str | None = None
+    escaped = False
+    for index, character in enumerate(line):
+        if quote == '"':
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+        if quote == "'":
+            if character == quote:
+                quote = None
+            continue
+        if character in {'"', "'"}:
+            quote = character
+        elif character == "#":
+            return line[:index]
+    return line
+
+
+def _flow_balance(value: str) -> int:
+    """Return unclosed flow-container depth outside quoted scalars."""
+
+    quote: str | None = None
+    escaped = False
+    balance = 0
+    for character in value:
+        if quote == '"':
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+        if quote == "'":
+            if character == quote:
+                quote = None
+            continue
+        if character in {'"', "'"}:
+            quote = character
+        elif character in "[{":
+            balance += 1
+        elif character in "]}":
+            balance -= 1
+    return balance
+
+
+def _indent_width(line: str) -> int:
+    return len(line) - len(line.lstrip(" \t"))
+
+
+def _iter_on_values(text: str) -> Iterator[tuple[str, str]]:
+    """Yield block or inline values of top-level-style ``on`` declarations."""
+
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines):
+        cleaned = _strip_yaml_comment(lines[index])
+        match = _ON_DECLARATION.match(cleaned)
+        if match is None:
+            index += 1
+            continue
+
+        declaration_indent = _indent_width(match.group("indent"))
+        value = match.group("value").strip()
+        if value:
+            parts = [value]
+            balance = _flow_balance(value)
+            index += 1
+            while balance > 0 and index < len(lines):
+                continuation = _strip_yaml_comment(lines[index]).strip()
+                parts.append(continuation)
+                balance += _flow_balance(continuation)
+                index += 1
+            yield "inline", " ".join(part for part in parts if part)
+            continue
+
+        block: list[str] = []
+        index += 1
+        while index < len(lines):
+            candidate = _strip_yaml_comment(lines[index])
+            if candidate.strip() and _indent_width(candidate) <= declaration_indent:
+                break
+            if candidate.strip():
+                block.append(candidate)
+            index += 1
+        yield "block", "\n".join(block)
+
+
+def _inline_on_value_has_pull_request(value: str) -> bool:
+    normalized = value.strip()
+    if normalized.startswith("["):
+        return _PULL_REQUEST_FLOW_SEQUENCE_EVENT.search(normalized) is not None
+    if normalized.startswith("{"):
+        return _PULL_REQUEST_FLOW_MAPPING_EVENT.search(normalized) is not None
+    return normalized.strip("\"'") in {"pull_request", "pull_request_target"}
+
+
 def _has_pull_request_trigger(text: str) -> bool:
-    return bool(
-        _PULL_REQUEST_BLOCK_TRIGGER.search(text)
-        or _PULL_REQUEST_INLINE_TRIGGER.search(text)
-    )
+    for style, value in _iter_on_values(text):
+        if style == "block":
+            if _PULL_REQUEST_BLOCK_EVENT.search(value) is not None:
+                return True
+        elif _inline_on_value_has_pull_request(value):
+            return True
+    return False
 
 
 def _pull_request_workflow_violations(
@@ -112,11 +222,15 @@ def test_pull_request_trigger_detection_covers_yaml_forms() -> None:
         "on: pull_request\n",
         'on: [push, "pull_request"]\n',
         "on: {push: null, pull_request_target: {types: [opened]}}\n",
+        "on: [\n  push,\n  'pull_request_target',\n]\n",
+        "on: {\n  push: null,\n  pull_request: {types: [opened]},\n}\n",
+        '"on": [pull_request] # quoted key\n',
     )
     non_triggering = (
         "on: push\n",
         "on: [push, workflow_dispatch]\n",
         "name: pull_request documentation\n",
+        "on: workflow_dispatch\nsteps:\n  - run: |\n      pull_request:\n",
     )
 
     assert all(_has_pull_request_trigger(text) for text in triggering)
