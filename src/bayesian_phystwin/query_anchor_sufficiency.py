@@ -97,6 +97,8 @@ def _positive_precision_vector(value: object) -> np.ndarray:
 
 def _integer_array(value: object, *, name: str, ndim: int) -> np.ndarray:
     raw = np.asarray(value)
+    if raw.ndim == ndim and raw.size == 0 and raw.dtype.kind == "f":
+        return _immutable(raw, np.dtype(np.int64))
     integer = np.issubdtype(raw.dtype, np.integer) and not np.issubdtype(
         raw.dtype,
         np.bool_,
@@ -383,14 +385,25 @@ def evaluate_query_anchor_sufficiency(
     )
 
     precision_count = len(precision)
-    selected_indices = np.full((precision_count, support_limit), -1, dtype=np.int64)
-    selected_counts = np.zeros(precision_count, dtype=np.int64)
-    traces = np.empty((precision_count, support_limit + 1), dtype=np.float64)
-    cumulative_costs = np.empty_like(traces)
-    first_support = np.full(precision_count, -1, dtype=np.int64)
+    selected_indices: np.ndarray = np.full(
+        (precision_count, support_limit),
+        -1,
+        dtype=np.int64,
+    )
+    selected_counts: np.ndarray = np.zeros(precision_count, dtype=np.int64)
+    traces: np.ndarray = np.empty(
+        (precision_count, support_limit + 1),
+        dtype=np.float64,
+    )
+    cumulative_costs: np.ndarray = np.empty_like(traces)
+    first_support: np.ndarray = np.full(
+        precision_count,
+        -1,
+        dtype=np.int64,
+    )
 
     for row, multiplier in enumerate(precision):
-        scaled_covariances = []
+        scaled_covariances: list[np.ndarray] = []
         for covariance in observation_covariances:
             scaled = np.asarray(covariance, dtype=np.float64) / float(multiplier)
             _require(
@@ -440,8 +453,15 @@ def evaluate_query_anchor_sufficiency(
             np.isfinite(declared_final) and np.isfinite(declared_total_cost),
             "planner final trace and total cost must be finite",
         )
-        row_traces = np.full(support_limit + 1, declared_initial)
-        row_costs = np.zeros(support_limit + 1, dtype=np.float64)
+        row_traces: np.ndarray = np.full(
+            support_limit + 1,
+            declared_initial,
+            dtype=np.float64,
+        )
+        row_costs: np.ndarray = np.zeros(
+            support_limit + 1,
+            dtype=np.float64,
+        )
         trace_scale = max(1.0, abs(declared_initial), abs(declared_final))
         trace_tolerance = _TOLERANCE * trace_scale
         if selected_count:
