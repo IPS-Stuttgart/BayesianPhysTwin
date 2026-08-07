@@ -43,6 +43,75 @@ A candidate that reduces query information fails closed. This normally indicates
 mismatched priors, nuisance domains, evidence order, or query definitions rather
 than valid negative contact information.
 
+## Claim-bearing case production
+
+Cases must be produced with
+`build_deform360_calibration_observability_case.py`; manually assembling JSON is
+not the registered path. Before reading a matrix, the producer independently
+revalidates:
+
+- the calibration-source protocol and Stage-0 protocol;
+- the exact selection and visual-provider locks;
+- the successful terminal execution record;
+- the exact names-only plan, download manifest, and prepared-source result;
+- the frozen ten-object cohort and 8/10 plus 4/5 support rule; and
+- absence of every confirmation object and target outcome.
+
+The reference precision, candidate precision, and physical-query Jacobian are
+ordinary, non-symlinked `.npy` files loaded with `allow_pickle=False`. Their exact
+file bytes are wrapped in role-aware content identities, so swapping reference
+and candidate inputs or silently replacing a file changes the case identity.
+The contact-anchor input and retained failure evidence are also ordinary,
+nonempty files whose exact SHA-256 values enter the case lineage.
+
+For an evaluated object:
+
+```bash
+python scripts/science/build_deform360_calibration_observability_case.py \
+  evaluated \
+  --source-protocol protocols/deform360_official_hub_calibration_source_v1.json \
+  --stage0-protocol protocols/deform360_official_hub_visuotactile_v1.json \
+  --selection-lock \
+    protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+  --visual-provider-lock /sealed/visual-provider-lock.json \
+  --calibration-source-plan /sealed/calibration-source-plan.json \
+  --calibration-source-download /sealed/calibration-download-manifest.json \
+  --calibration-source-run-record /sealed/execution-manifest.json \
+  --calibration-source-result /sealed/calibration-source-result.json \
+  --object-id 167-glove-gray-cloth \
+  --implementation-revision "$(git rev-parse HEAD)" \
+  --reference-marginal-precision /calibration/167/reference-precision.npy \
+  --candidate-marginal-precision /calibration/167/candidate-precision.npy \
+  --query-jacobian /calibration/shared/physical-query-jacobian.npy \
+  --contact-anchor-artifact /calibration/167/contact-anchor.json \
+  --output /calibration/observability/167-glove-gray-cloth.json
+```
+
+For an object retained as a technical failure:
+
+```bash
+python scripts/science/build_deform360_calibration_observability_case.py \
+  technical-failure \
+  --source-protocol protocols/deform360_official_hub_calibration_source_v1.json \
+  --stage0-protocol protocols/deform360_official_hub_visuotactile_v1.json \
+  --selection-lock \
+    protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+  --visual-provider-lock /sealed/visual-provider-lock.json \
+  --calibration-source-plan /sealed/calibration-source-plan.json \
+  --calibration-source-download /sealed/calibration-download-manifest.json \
+  --calibration-source-run-record /sealed/execution-manifest.json \
+  --calibration-source-result /sealed/calibration-source-result.json \
+  --object-id 167-glove-gray-cloth \
+  --implementation-revision "$(git rev-parse HEAD)" \
+  --query-jacobian /calibration/shared/physical-query-jacobian.npy \
+  --failure-evidence /calibration/167/observability-failure.txt \
+  --failure-reason "registered observability factorization failure" \
+  --output /calibration/observability/167-glove-gray-cloth.json
+```
+
+The same query-Jacobian file must be used for all ten cases. Its role-aware
+content identity is emitted as `physical_query_id` in every case record.
+
 ## Technical failures and support
 
 Every one of the ten selected objects remains in the denominator. An object that
@@ -94,12 +163,14 @@ confirmation_payloads_opened = false
 support_gate.support_passed = true
 ```
 
-The record's Stage-0 selection and visual-provider lock must exactly match the
-ones used by the report.
+The record's Stage-0 selection, visual-provider lock, plan, download manifest,
+and prepared result must exactly match the ones used by every case and by the
+report.
 
 ## Building the report
 
-First publish ten strict case JSON files. Then run:
+After publishing exactly one strict case for each selected calibration object,
+run:
 
 ```bash
 python scripts/science/build_deform360_calibration_observability_report.py \
@@ -120,7 +191,7 @@ python scripts/science/build_deform360_calibration_observability_report.py \
   --case /calibration/observability/object-09.json \
   --case /calibration/observability/object-10.json \
   --implementation-revision "$(git rev-parse HEAD)" \
-  --physical-query-id "<content-addressed query ID>" \
+  --physical-query-id "<physical_query_id emitted by the case producer>" \
   --output /sealed/deform360-calibration-observability-v1.json
 ```
 
