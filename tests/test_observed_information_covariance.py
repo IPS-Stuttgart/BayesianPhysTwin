@@ -38,9 +38,7 @@ def _batch() -> GaugeAwareObservationBatch:
     innovation = np.zeros((count, 3), dtype=np.float64)
     innovation[:, 0] = 0.01
     innovation[-4:, 0] = 0.014
-    groups = tuple(
-        "source-a" if index < 8 else "source-b" for index in range(count)
-    )
+    groups = tuple("source-a" if index < 8 else "source-b" for index in range(count))
     return GaugeAwareObservationBatch(
         innovation_m=innovation,
         observation_covariance_m2=np.tile(
@@ -133,9 +131,7 @@ def _finite_difference_hessian(
         composite_weight_mode=batch.composite_weight_mode,
     )
     state_prior, nuisance_prior, _ = _prior_covariances(batch, config)
-    reduced_prior = _block_diagonal(
-        [np.eye(state_mapping.shape[1]), nuisance_prior]
-    )
+    reduced_prior = _block_diagonal([np.eye(state_mapping.shape[1]), nuisance_prior])
     prior_precision = _regularized_precision(
         reduced_prior,
         "finite-difference reduced prior covariance",
@@ -171,11 +167,7 @@ def _finite_difference_hessian(
                 design[active],
                 residual[active],
             )
-            output -= (
-                group_power[position]
-                * statistics.expected_precision
-                * score
-            )
+            output -= group_power[position] * statistics.expected_precision * score
         return output
 
     step = 1e-7
@@ -195,9 +187,7 @@ def _finite_difference_hessian(
 def test_observed_information_reconstructs_solver_and_is_immutable() -> None:
     _, result, analysis = _analysis()
 
-    assert analysis.covariance_semantics.method == (
-        "laplace_observed_information"
-    )
+    assert analysis.covariance_semantics.method == ("laplace_observed_information")
     assert analysis.covariance_semantics.mixture_curvature_exact
     assert not analysis.covariance_semantics.calibrated
     assert analysis.metadata["input_lineage"] == result.input_lineage
@@ -209,9 +199,7 @@ def test_observed_information_reconstructs_solver_and_is_immutable() -> None:
         rtol=1e-8,
     )
     assert analysis.metadata["minimum_eigenvalue"] == pytest.approx(
-        result.diagnostics[
-            "exact_reduced_mixture_hessian_minimum_eigenvalue"
-        ]
+        result.diagnostics["exact_reduced_mixture_hessian_minimum_eigenvalue"]
     )
     assert analysis.artifact_id == replace(analysis).artifact_id
     assert not analysis.full_covariance.flags.writeable

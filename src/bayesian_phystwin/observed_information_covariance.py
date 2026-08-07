@@ -45,9 +45,7 @@ OBSERVED_INFORMATION_COVARIANCE_SCHEMA = (
     "bayesian_phystwin.observed_information_covariance"
 )
 OBSERVED_INFORMATION_COVARIANCE_VERSION = 1
-LIKELIHOOD_POWER_SEMANTICS = (
-    "grouped-student-t-generalized-bayes-power-v1"
-)
+LIKELIHOOD_POWER_SEMANTICS = "grouped-student-t-generalized-bayes-power-v1"
 
 FloatArray: TypeAlias = NDArray[np.float64]
 
@@ -191,9 +189,7 @@ class ObservedInformationCovarianceResultV1:
         try:
             np.linalg.cholesky(working)
         except np.linalg.LinAlgError as error:
-            raise ValueError(
-                "working_information must be positive definite"
-            ) from error
+            raise ValueError("working_information must be positive definite") from error
         try:
             np.linalg.cholesky(observed)
         except np.linalg.LinAlgError as error:
@@ -268,18 +264,15 @@ class ObservedInformationCovarianceResultV1:
             for name, _ in observation_arrays
         ):
             raise ValueError("observation group arrays changed length")
-        if any(
-            len(validated[name]) != len(anchor_ids)
-            for name, _ in anchor_arrays
-        ):
+        if any(len(validated[name]) != len(anchor_ids) for name, _ in anchor_arrays):
             raise ValueError("anchor group arrays changed length")
         if np.any(validated["observation_group_power"] < 0.0) or np.any(
             validated["anchor_group_power"] < 0.0
         ):
             raise ValueError("group powers must be nonnegative")
-        if np.any(
-            validated["observation_group_expected_precision"] < 0.0
-        ) or np.any(validated["anchor_group_expected_precision"] < 0.0):
+        if np.any(validated["observation_group_expected_precision"] < 0.0) or np.any(
+            validated["anchor_group_expected_precision"] < 0.0
+        ):
             raise ValueError("group expected precisions must be nonnegative")
 
         condition_number = _finite_real(
@@ -361,17 +354,13 @@ class ObservedInformationCovarianceResultV1:
             "observed_information": _array_record(self.observed_information),
             "reduced_covariance": _array_record(self.reduced_covariance),
             "full_covariance": _array_record(self.full_covariance),
-            "state_prior_covariance": _array_record(
-                self.state_prior_covariance
-            ),
+            "state_prior_covariance": _array_record(self.state_prior_covariance),
             "state_mapping": _array_record(self.state_mapping),
             "full_dimension": self.full_dimension,
             "reduced_dimension": self.reduced_dimension,
             "observation_group_ids": list(self.observation_group_ids),
             "anchor_group_ids": list(self.anchor_group_ids),
-            "observation_group_power": _array_record(
-                self.observation_group_power
-            ),
+            "observation_group_power": _array_record(self.observation_group_power),
             "anchor_group_power": _array_record(self.anchor_group_power),
             "observation_group_expected_precision": _array_record(
                 self.observation_group_expected_precision
@@ -650,9 +639,7 @@ def observed_information_covariance_from_prior_aware_result(
                 cfg,
             )
             observation_precision[position] = statistics.expected_precision
-            observation_derivative[position] = (
-                statistics.expected_precision_derivative
-            )
+            observation_derivative[position] = statistics.expected_precision_derivative
         observation_row_precision[selected] = observation_precision[position]
 
     anchor_precision = np.zeros(len(anchor_groups), dtype=np.float64)
@@ -694,9 +681,7 @@ def observed_information_covariance_from_prior_aware_result(
 
     state_prior, nuisance_prior, _ = _prior_covariances(batch, cfg)
     reduced_prior = _block_diagonal(
-        [np.eye(retained), nuisance_prior]
-        if nuisance_count
-        else [np.eye(retained)]
+        [np.eye(retained), nuisance_prior] if nuisance_count else [np.eye(retained)]
     )
     prior_precision = _regularized_precision(
         reduced_prior,
@@ -719,9 +704,7 @@ def observed_information_covariance_from_prior_aware_result(
             anchor_design,
             anchor_design,
         )
-    working_information = 0.5 * (
-        working_information + working_information.T
-    )
+    working_information = 0.5 * (working_information + working_information.T)
 
     working_reduced_covariance = _spd_covariance(working_information)
     working_full_covariance = _full_covariance(
@@ -771,9 +754,7 @@ def observed_information_covariance_from_prior_aware_result(
             * anchor_derivative[position]
             * np.outer(score_direction, score_direction)
         )
-    observed_information = 0.5 * (
-        observed_information + observed_information.T
-    )
+    observed_information = 0.5 * (observed_information + observed_information.T)
 
     eigenvalues = np.linalg.eigvalsh(observed_information)
     minimum_eigenvalue = float(np.min(eigenvalues))
@@ -837,12 +818,8 @@ def observed_information_covariance_from_prior_aware_result(
     result_metadata = {
         **({} if metadata is None else dict(metadata)),
         "input_lineage": plain_json(result.input_lineage),
-        "working_covariance_kind": result.diagnostics.get(
-            "posterior_covariance_kind"
-        ),
-        "exact_objective": result.diagnostics.get(
-            "robust_likelihood_objective"
-        ),
+        "working_covariance_kind": result.diagnostics.get("posterior_covariance_kind"),
+        "exact_objective": result.diagnostics.get("robust_likelihood_objective"),
         "minimum_eigenvalue": minimum_eigenvalue,
         "maximum_eigenvalue": maximum_eigenvalue,
     }
