@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+import test_deform360_calibration_source_run_record as run_record_tests
 
 import bayesian_phystwin.deform360_calibration_observability_binding as binding
 from bayesian_phystwin.deform360_calibration_bundle import (
@@ -22,11 +23,13 @@ from bayesian_phystwin.deform360_calibration_execution import (
 from bayesian_phystwin.deform360_calibration_observability_binding import (
     DEFORM360_CALIBRATION_OBSERVABILITY_SOURCE_KEY,
     DEFORM360_CALIBRATION_SOURCE_RUN_RECORD_SOURCE_KEY,
+    Deform360ConfirmationOpeningAuthorizationV1,
     build_deform360_calibration_execution_seal_with_observability,
     build_deform360_confirmation_opening_authorization,
     load_deform360_confirmation_opening_authorization,
     save_deform360_confirmation_opening_authorization,
     validate_deform360_calibration_observability_binding,
+    verify_deform360_calibration_execution_observability_binding,
 )
 from bayesian_phystwin.deform360_calibration_observability_report import (
     Deform360CalibrationObservabilityCaseV1,
@@ -237,7 +240,7 @@ def _strict_run_record_stub(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def _bound_products(*, low_level: bool = False):
+def _bound_products(*, low_level: bool = False, metadata=None):
     stage0 = _stage0()
     provider = _provider()
     report = _report()
@@ -252,6 +255,7 @@ def _bound_products(*, low_level: bool = False):
         "calibration_artifacts": artifacts,
         "implementation_revision": IMPLEMENTATION_REVISION,
         "source_artifacts": _sources(stage0),
+        "metadata": metadata,
     }
     if low_level:
         products = build_deform360_calibration_execution_seal(**values)
@@ -264,6 +268,34 @@ def _bound_products(*, low_level: bool = False):
             calibration_observability_report_file_sha256=REPORT_FILE_SHA256,
         )
     return stage0, provider, ledger, report, artifacts, products
+
+
+def _authorization():
+    stage0, provider, ledger, report, artifacts, products = _bound_products()
+    authorization = build_deform360_confirmation_opening_authorization(
+        products,
+        calibration_source_run_record=_run_record(stage0, provider),
+        calibration_observability_report=report,
+        calibration_source_run_record_file_sha256=RUN_FILE_SHA256,
+        calibration_observability_report_file_sha256=REPORT_FILE_SHA256,
+        stage0_selection=stage0,
+        visual_provider_lock=provider,
+        evidence_use_ledger=ledger,
+    )
+    return stage0, provider, ledger, report, artifacts, products, authorization
+
+
+def _verify_products(products, stage0, provider, ledger, report) -> None:
+    verify_deform360_calibration_execution_observability_binding(
+        products,
+        calibration_source_run_record=_run_record(stage0, provider),
+        calibration_observability_report=report,
+        calibration_source_run_record_file_sha256=RUN_FILE_SHA256,
+        calibration_observability_report_file_sha256=REPORT_FILE_SHA256,
+        stage0_selection=stage0,
+        visual_provider_lock=provider,
+        evidence_use_ledger=ledger,
+    )
 
 
 def test_bound_builder_and_authorization_round_trip(tmp_path: Path) -> None:
@@ -400,4 +432,278 @@ def test_binding_rejects_insufficient_object_support() -> None:
             source_artifacts=_sources(stage0),
             calibration_source_run_record_file_sha256=RUN_FILE_SHA256,
             calibration_observability_report_file_sha256=REPORT_FILE_SHA256,
+        )
+
+
+def test_run_record_contracts_are_exercised_by_stable_coverage(tmp_path: Path) -> None:
+    tests = (
+        run_record_tests.test_success_record_binds_exact_locks_and_remains_non_sensitive,
+        run_record_tests.test_tampered_source_lock_fails_before_artifact_interpretation,
+        run_record_tests.test_plan_cannot_substitute_the_frozen_cohort,
+        run_record_tests.test_plan_and_download_reject_confirmation_paths,
+        run_record_tests.test_unplanned_object_cannot_become_prepared,
+        run_record_tests.test_admission_and_preparation_gates_remain_distinct,
+        run_record_tests.test_early_workload_and_boundary_failures_are_retained,
+        run_record_tests.test_digest_chain_and_prepared_row_contract_fail_closed,
+        run_record_tests.test_atomic_publication_is_durable_and_non_replacing,
+        run_record_tests.test_concurrent_publication_has_exactly_one_winner,
+        run_record_tests.test_cli_writes_the_bound_terminal_record,
+    )
+    for index, test in enumerate(tests):
+        test(tmp_path / f"run-record-{index}")
+    for index, payload in enumerate(
+        ('{"schema":"first","schema":"second"}', '{"value":NaN}')
+    ):
+        run_record_tests.test_noncanonical_result_json_is_rejected(
+            tmp_path / f"run-record-json-{index}",
+            payload,
+        )
+
+
+def test_binding_helpers_reject_missing_identity_and_reserved_metadata() -> None:
+    stage0, provider, _ledger_value, report, _artifacts_value, _products = (
+        _bound_products()
+    )
+    missing_id = _report()
+    object.__setattr__(missing_id, "report_id", None)
+    with pytest.raises(ValueError, match="lacks a report_id"):
+        binding._report_id(missing_id)
+
+    run_record = _run_record(stage0, provider)
+    with pytest.raises(ValueError, match="must be a mapping"):
+        binding._augmented_metadata(
+            ["not-a-mapping"],
+            report,
+            run_record,
+            run_record_file_sha256=RUN_FILE_SHA256,
+            report_file_sha256=REPORT_FILE_SHA256,
+        )
+    with pytest.raises(ValueError, match="reserves observability fields"):
+        binding._augmented_metadata(
+            {"calibration_source_revision": SOURCE_REVISION},
+            report,
+            run_record,
+            run_record_file_sha256=RUN_FILE_SHA256,
+            report_file_sha256=REPORT_FILE_SHA256,
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ({"confirmation_boundary_verified": False}, "boundary is unverified"),
+        ({"confirmation_payloads_opened": True}, "confirmation payload access"),
+        ({"support_gate": None}, "support gate did not pass"),
+        ({"support_gate": {"support_passed": False}}, "support gate did not pass"),
+    ),
+)
+def test_binding_rejects_invalid_success_record_fields(
+    mutation: dict[str, object],
+    message: str,
+) -> None:
+    stage0, provider, _ledger_value, report, artifacts, _products = _bound_products()
+    run_record = _run_record(stage0, provider)
+    run_record.update(mutation)
+    with pytest.raises(ValueError, match=message):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            stage0_selection=stage0,
+            visual_provider_lock=provider,
+            calibration_artifacts=artifacts,
+            source_artifacts=_sources(stage0),
+            calibration_source_run_record_file_sha256=RUN_FILE_SHA256,
+            calibration_observability_report_file_sha256=REPORT_FILE_SHA256,
+        )
+
+
+def test_binding_rejects_missing_sources_and_invalid_argument_types() -> None:
+    stage0, provider, _ledger_value, report, artifacts, _products = _bound_products()
+    run_record = _run_record(stage0, provider)
+    sources = _sources(stage0)
+    del sources[DEFORM360_CALIBRATION_SOURCE_RUN_RECORD_SOURCE_KEY]
+    with pytest.raises(ValueError, match="bytes are not retained"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            stage0_selection=stage0,
+            visual_provider_lock=provider,
+            calibration_artifacts=artifacts,
+            source_artifacts=sources,
+            calibration_source_run_record_file_sha256=RUN_FILE_SHA256,
+            calibration_observability_report_file_sha256=REPORT_FILE_SHA256,
+        )
+
+    common = {
+        "stage0_selection": stage0,
+        "visual_provider_lock": provider,
+        "calibration_artifacts": artifacts,
+        "source_artifacts": _sources(stage0),
+        "calibration_source_run_record_file_sha256": RUN_FILE_SHA256,
+        "calibration_observability_report_file_sha256": REPORT_FILE_SHA256,
+    }
+    with pytest.raises(TypeError, match="calibration_observability_report"):
+        validate_deform360_calibration_observability_binding(
+            object(),
+            run_record,
+            **common,
+        )
+    with pytest.raises(TypeError, match="stage0_selection"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            **{**common, "stage0_selection": object()},
+        )
+    with pytest.raises(TypeError, match="visual_provider_lock"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            **{**common, "visual_provider_lock": object()},
+        )
+    with pytest.raises(TypeError, match="calibration_source_run_record"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            [],
+            **common,
+        )
+
+
+def test_binding_rejects_malformed_artifact_collections() -> None:
+    stage0, provider, _ledger_value, report, artifacts, _products = _bound_products()
+    run_record = _run_record(stage0, provider)
+    common = {
+        "stage0_selection": stage0,
+        "visual_provider_lock": provider,
+        "source_artifacts": _sources(stage0),
+        "calibration_source_run_record_file_sha256": RUN_FILE_SHA256,
+        "calibration_observability_report_file_sha256": REPORT_FILE_SHA256,
+    }
+    with pytest.raises(ValueError, match="must be a sequence"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            calibration_artifacts="not-artifacts",
+            **common,
+        )
+    with pytest.raises(ValueError, match="unsupported value"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            calibration_artifacts=(object(),),
+            **common,
+        )
+    with pytest.raises(ValueError, match="repeat a role"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            calibration_artifacts=(artifacts[0], *artifacts),
+            **common,
+        )
+    missing = tuple(
+        artifact for artifact in artifacts if artifact.role != "anchor_bias_prior"
+    )
+    with pytest.raises(ValueError, match="roles are missing"):
+        validate_deform360_calibration_observability_binding(
+            report,
+            run_record,
+            calibration_artifacts=missing,
+            **common,
+        )
+
+
+def test_execution_seal_metadata_binding_rejects_partial_and_changed_values() -> None:
+    stage0, provider, ledger, report, artifacts, _products = _bound_products()
+    values = {
+        "stage0_selection": stage0,
+        "visual_provider_lock": provider,
+        "evidence_use_ledger": ledger,
+        "calibration_artifacts": artifacts,
+        "implementation_revision": IMPLEMENTATION_REVISION,
+        "source_artifacts": _sources(stage0),
+    }
+    partial = build_deform360_calibration_execution_seal(
+        **values,
+        metadata={"calibration_source_revision": SOURCE_REVISION},
+    )
+    with pytest.raises(ValueError, match="incomplete observability metadata"):
+        _verify_products(partial, stage0, provider, ledger, report)
+
+    metadata = binding._binding_metadata(
+        report,
+        _run_record(stage0, provider),
+        run_record_file_sha256=RUN_FILE_SHA256,
+        report_file_sha256=REPORT_FILE_SHA256,
+    )
+    metadata["calibration_observability_support_passed"] = False
+    changed = build_deform360_calibration_execution_seal(
+        **values,
+        metadata=metadata,
+    )
+    with pytest.raises(ValueError, match="metadata changed"):
+        _verify_products(changed, stage0, provider, ledger, report)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("status", "not-authorized", "status changed"),
+        ("confirmation_payloads_opened", True, "payloads were opened"),
+        ("target_outcomes_used", True, "target outcomes were used"),
+    ),
+)
+def test_authorization_constructor_rejects_open_or_changed_state(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    *_values, authorization = _authorization()
+    with pytest.raises(ValueError, match=message):
+        replace(
+            authorization,
+            **{field: value, "authorization_id": None},
+        )
+
+
+def test_authorization_constructor_rejects_source_byte_drift() -> None:
+    *_values, authorization = _authorization()
+    sources = dict(authorization.source_artifacts)
+    sources[DEFORM360_CALIBRATION_OBSERVABILITY_SOURCE_KEY] = "f" * 64
+    with pytest.raises(ValueError, match="source bytes changed"):
+        replace(
+            authorization,
+            source_artifacts=sources,
+            authorization_id=None,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("schema", "wrong", "schema changed"),
+        ("schema_version", 2, "schema_version changed"),
+        ("semantics", "wrong", "semantics changed"),
+        ("claim_boundary", "wrong", "claim boundary changed"),
+        ("source_artifacts", [], "source_artifacts must be a JSON object"),
+        ("metadata", [], "metadata must be a JSON object"),
+    ),
+)
+def test_authorization_mapping_rejects_schema_and_container_drift(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    *_values, authorization = _authorization()
+    record = authorization.to_record()
+    record[field] = value
+    with pytest.raises(ValueError, match=message):
+        Deform360ConfirmationOpeningAuthorizationV1.from_mapping(record)
+
+
+def test_authorization_mapping_and_save_reject_wrong_root_types(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        Deform360ConfirmationOpeningAuthorizationV1.from_mapping([])
+    with pytest.raises(TypeError, match="must be a Deform360"):
+        save_deform360_confirmation_opening_authorization(
+            object(),
+            tmp_path / "authorization.json",
         )
