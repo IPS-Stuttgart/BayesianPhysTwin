@@ -117,7 +117,9 @@ def _strict_json_value(
     )
 
 
-def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
+def _json_mapping(value: object, *, name: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise TypeError(f"{name} must be a mapping")
     result = _strict_json_value(
         value,
         name=name,
