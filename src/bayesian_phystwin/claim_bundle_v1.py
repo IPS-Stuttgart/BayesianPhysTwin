@@ -283,7 +283,9 @@ def _resolved_artifact_path(
     try:
         relative = resolved.relative_to(root)
     except ValueError as error:
-        raise ValueError("claim-bundle artifacts must remain below artifact root") from error
+        raise ValueError(
+            "claim-bundle artifacts must remain below artifact root"
+        ) from error
     return resolved, relative.as_posix()
 
 
@@ -343,7 +345,9 @@ class ClaimBundleArtifactV1:
             kind=_require_artifact_kind(value["kind"]),
             path=_require_relative_path(value["path"], name="artifact path"),
             sha256=_require_sha256(value["sha256"], name="artifact sha256"),
-            size_bytes=_require_integer(value["size_bytes"], name="artifact size_bytes"),
+            size_bytes=_require_integer(
+                value["size_bytes"], name="artifact size_bytes"
+            ),
             media_type=_require_text(value["media_type"], name="artifact media_type"),
         )
 
@@ -526,7 +530,9 @@ def validate_decisive_evidence_summary(
         configuration.get("primary_risk_coverage_contract")
         != THRESHOLD_RISK_COVERAGE_CONTRACT
     ):
-        raise ValueError("decisive-evidence summary has the wrong primary risk contract")
+        raise ValueError(
+            "decisive-evidence summary has the wrong primary risk contract"
+        )
     if (
         configuration.get("secondary_risk_coverage_contract")
         != MATCHED_COUNT_RISK_COVERAGE_CONTRACT
@@ -706,9 +712,7 @@ def validate_claim_evidence_bindings(
             )
             != manifest.evidence_fingerprint
         ):
-            raise ValueError(
-                f"{claim_id} binding selects another evidence fingerprint"
-            )
+            raise ValueError(f"{claim_id} binding selects another evidence fingerprint")
 
         binding_root = _require_binding_root(
             binding["artifact_root"],
@@ -770,7 +774,9 @@ def validate_claim_evidence_bindings(
         )
         _require_text(exception["reason"], name=f"{claim_id}.migration reason")
         if claim_id in exceptions:
-            raise ValueError(f"duplicate claim-evidence migration exception: {claim_id}")
+            raise ValueError(
+                f"duplicate claim-evidence migration exception: {claim_id}"
+            )
         exceptions.add(claim_id)
     overlap = sorted(expected_claims & exceptions)
     if overlap:
@@ -1004,7 +1010,9 @@ def _artifact_for_kind(
     bundle: ClaimBundleV1,
     kind: ClaimBundleArtifactKind,
 ) -> ClaimBundleArtifactV1 | None:
-    return next((artifact for artifact in bundle.artifacts if artifact.kind == kind), None)
+    return next(
+        (artifact for artifact in bundle.artifacts if artifact.kind == kind), None
+    )
 
 
 def verify_claim_bundle_artifacts(

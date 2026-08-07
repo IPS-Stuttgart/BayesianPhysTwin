@@ -142,9 +142,7 @@ def _validate(args: argparse.Namespace) -> int:
                 "run_id": bundle.run_id,
                 "classification": bundle.classification,
                 "claim_count": len(bundle.claim_ids),
-                "claim_binding": (
-                    "present" if claim_binding_present else "absent"
-                ),
+                "claim_binding": ("present" if claim_binding_present else "absent"),
                 "artifacts_verified": args.artifact_root is not None,
             },
             indent=2,

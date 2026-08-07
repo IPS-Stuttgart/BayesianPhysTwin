@@ -163,9 +163,7 @@ def _summary(*, protocol_id: str = "deform360-independent-object-v1") -> dict:
         "analysis_configuration": {
             "matched_fallback": True,
             "primary_risk_coverage_contract": THRESHOLD_RISK_COVERAGE_CONTRACT,
-            "secondary_risk_coverage_contract": (
-                MATCHED_COUNT_RISK_COVERAGE_CONTRACT
-            ),
+            "secondary_risk_coverage_contract": (MATCHED_COUNT_RISK_COVERAGE_CONTRACT),
             "confirmatory_thresholds_must_be_source_or_calibration_frozen": True,
         },
         "metrics": {
@@ -250,8 +248,8 @@ def _bundle_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path]:
 
 
 def _build(root: Path):
-    manifest_path, summary_path, binding_path, figure_path, table_path = (
-        _bundle_inputs(root)
+    manifest_path, summary_path, binding_path, figure_path, table_path = _bundle_inputs(
+        root
     )
     extras = (
         claim_bundle_artifact(
@@ -309,7 +307,9 @@ def test_claim_bundle_detects_artifact_and_descriptor_tampering(
     write_claim_bundle(bundle_path, bundle)
 
     figure_path.write_text("<svg>tampered</svg>\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="artifact size differs|artifact digest differs"):
+    with pytest.raises(
+        ValueError, match="artifact size differs|artifact digest differs"
+    ):
         verify_claim_bundle_artifacts(bundle, root=tmp_path)
 
     payload = json.loads(bundle_path.read_text(encoding="utf-8"))
@@ -319,7 +319,11 @@ def test_claim_bundle_detects_artifact_and_descriptor_tampering(
         load_claim_bundle(bundle_path)
 
     bundle_path.write_text(
-        '{"bundle_id":"' + bundle.bundle_id + '","bundle_id":"' + bundle.bundle_id + '"}',
+        '{"bundle_id":"'
+        + bundle.bundle_id
+        + '","bundle_id":"'
+        + bundle.bundle_id
+        + '"}',
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="duplicate JSON key"):
@@ -357,7 +361,9 @@ def test_claim_bundle_rejects_semantic_drift_and_nonclaim_runs(
 def test_claim_bundle_rejects_missing_paper_profile_and_reserved_extra(
     tmp_path: Path,
 ) -> None:
-    manifest_path, summary_path, _binding, figure_path, _table = _bundle_inputs(tmp_path)
+    manifest_path, summary_path, _binding, figure_path, _table = _bundle_inputs(
+        tmp_path
+    )
     manifest = _manifest(tmp_path)
     write_run_manifest(
         manifest_path,
@@ -495,8 +501,8 @@ def test_claim_bundle_cli_builds_validates_and_registers_route(
     tmp_path: Path,
     capsys,
 ) -> None:
-    manifest_path, summary_path, binding_path, figure_path, table_path = (
-        _bundle_inputs(tmp_path)
+    manifest_path, summary_path, binding_path, figure_path, table_path = _bundle_inputs(
+        tmp_path
     )
     bundle_path = tmp_path / "claim-bundle.json"
     build_args = [
