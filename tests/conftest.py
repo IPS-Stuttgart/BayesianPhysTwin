@@ -26,6 +26,10 @@ def pytest_configure(config: object) -> None:
     test_root = Path(__file__).resolve().parent
     resolved_args = [Path(argument).resolve() for argument in args]
     contract_tests = [
+        *sorted(
+            test_root.glob("test_deform360_calibration_source_run_record*.py")
+        ),
+        test_root / "test_render_deform360_calibration_source_run_record.py",
         *sorted(test_root.glob("test_horizon_conditioned_discrepancy*.py")),
         *sorted(test_root.glob("test_prob4d_visual_bias_update*.py")),
         *sorted(test_root.glob("test_query_calibration*.py")),
