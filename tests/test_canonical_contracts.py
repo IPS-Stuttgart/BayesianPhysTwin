@@ -1,11 +1,37 @@
 from __future__ import annotations
 
+import importlib
+
 import pytest
 
 from bayesian_phystwin._canonical_contracts import (
     canonical_relative_posix_path,
     literal_lower_hex,
 )
+
+
+def _expose_stable_coverage_tests(module_name: str, prefix: str) -> None:
+    module = importlib.import_module(module_name)
+    for name in dir(module):
+        if name.startswith("test_"):
+            globals()[f"test_stable_core_{prefix}_{name[5:]}"] = getattr(module, name)
+
+
+for _module_name, _prefix in (
+    (
+        "test_deform360_calibration_source_run_record",
+        "deform360_run_record",
+    ),
+    (
+        "test_deform360_calibration_source_run_record_validation",
+        "deform360_run_record_validation",
+    ),
+    (
+        "test_render_deform360_calibration_source_run_record",
+        "deform360_run_record_rendering",
+    ),
+):
+    _expose_stable_coverage_tests(_module_name, _prefix)
 
 
 class _StringSubclass(str):
