@@ -1,4 +1,4 @@
-"""Build or validate a portable claim-bearing evidence bundle."""
+"""Build, validate, or project a portable claim-bearing evidence bundle."""
 
 from __future__ import annotations
 
@@ -15,6 +15,11 @@ from bayesian_phystwin.claim_bundle_v1 import (
     load_claim_bundle,
     verify_claim_bundle_artifacts,
     write_claim_bundle,
+)
+from bayesian_phystwin.paper_projection_v1 import (
+    build_paper_projection,
+    write_paper_projection,
+    write_paper_projection_markdown,
 )
 
 
@@ -62,6 +67,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--require-claim-binding",
         action="store_true",
         help="fail unless one claim-binding JSON artifact is present",
+    )
+
+    project = subparsers.add_parser(
+        "project-paper",
+        help=(
+            "verify a ClaimBundleV1 and emit strict compact-table claim evidence "
+            "for paper ingestion"
+        ),
+    )
+    project.add_argument("bundle", type=Path)
+    project.add_argument("--artifact-root", type=Path, required=True)
+    project.add_argument("--output", type=Path, required=True)
+    project.add_argument(
+        "--markdown",
+        type=Path,
+        help="optional deterministic human-reviewable Markdown projection",
+    )
+    project.add_argument(
+        "--force",
+        action="store_true",
+        help="atomically replace existing projection outputs",
     )
     return parser
 
@@ -152,12 +178,46 @@ def _validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _project_paper(args: argparse.Namespace) -> int:
+    projection = build_paper_projection(
+        bundle_path=args.bundle,
+        artifact_root=args.artifact_root,
+    )
+    write_paper_projection(args.output, projection, overwrite=args.force)
+    if args.markdown is not None:
+        write_paper_projection_markdown(
+            args.markdown,
+            projection,
+            overwrite=args.force,
+        )
+    print(
+        json.dumps(
+            {
+                "status": "projected",
+                "schema_version": 1,
+                "projection_id": projection.projection_id,
+                "bundle_id": projection.bundle_id,
+                "claim_count": len(projection.claim_ids),
+                "output": str(args.output.resolve()),
+                "markdown": (
+                    None if args.markdown is None else str(args.markdown.resolve())
+                ),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command_name == "build":
         return _build(args)
     if args.command_name == "validate":
         return _validate(args)
+    if args.command_name == "project-paper":
+        return _project_paper(args)
     raise AssertionError(f"unhandled command: {args.command_name}")
 
 
