@@ -18,9 +18,7 @@ from ._gauge_aware_contracts import (
     _positive_semidefinite_square_root,
 )
 
-INVARIANT_QUERY_SUBSPACE_SCHEMA: Final = (
-    "bayesian_phystwin.invariant_query_subspace"
-)
+INVARIANT_QUERY_SUBSPACE_SCHEMA: Final = "bayesian_phystwin.invariant_query_subspace"
 INVARIANT_QUERY_SUBSPACE_VERSION: Final = 1
 
 
@@ -240,9 +238,12 @@ class InvariantQuerySubspaceResultV1:
             raise ValueError("reduced_covariance shape does not match retained rank")
         if prior.shape != (self.state_mapping.shape[0],) * 2:
             raise ValueError("state_prior_covariance shape does not match state")
-        result = prior + self.state_mapping @ (
-            reduced - np.eye(self.retained_rank)
-        ) @ self.state_mapping.T
+        result = (
+            prior
+            + self.state_mapping
+            @ (reduced - np.eye(self.retained_rank))
+            @ self.state_mapping.T
+        )
         return 0.5 * (result + result.T)
 
     def diagnostics(self) -> dict[str, object]:
@@ -272,8 +273,7 @@ class InvariantQuerySubspaceResultV1:
 
 def _tolerance(values: np.ndarray, config: InvariantQuerySubspaceConfigV1) -> float:
     return config.absolute_spectral_tolerance + (
-        config.relative_spectral_tolerance
-        * float(np.max(np.abs(values), initial=0.0))
+        config.relative_spectral_tolerance * float(np.max(np.abs(values), initial=0.0))
     )
 
 
@@ -414,9 +414,7 @@ def select_invariant_query_subspace(
         return empty("no-identifiable-support", ident_values=ident_values)
     raw_ident_basis = whitener @ ident_basis_white
     orthonormal_ident_basis, _ = np.linalg.qr(raw_ident_basis, mode="reduced")
-    ident_projector_reduced = (
-        orthonormal_ident_basis @ orthonormal_ident_basis.T
-    )
+    ident_projector_reduced = orthonormal_ident_basis @ orthonormal_ident_basis.T
     ident_basis = _canonical_basis(
         ident_projector_reduced,
         orthonormal_ident_basis.shape[1],
@@ -429,9 +427,7 @@ def select_invariant_query_subspace(
     query_design = query_flat @ identifiable_mapping
     query_gram = query_design.T @ query_design
     raw_query_values = np.linalg.eigvalsh(0.5 * (query_gram + query_gram.T))
-    maximum_query_power = float(
-        np.max(np.maximum(raw_query_values, 0.0), initial=0.0)
-    )
+    maximum_query_power = float(np.max(np.maximum(raw_query_values, 0.0), initial=0.0))
     maximum_query = float(np.sqrt(maximum_query_power))
     if settings.minimum_query_sensitivity_fraction == 0.0:
         query_basis = np.eye(identifiable_mapping.shape[1])
