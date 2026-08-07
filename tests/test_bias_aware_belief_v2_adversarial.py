@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from test_bias_aware_belief_v2 import _centered_problem, _legacy_config, _v2_config
 
 import bayesian_phystwin.bias_aware_belief_v2 as belief_v2
 from bayesian_phystwin.bias_aware_belief_v2 import (
@@ -9,7 +10,6 @@ from bayesian_phystwin.bias_aware_belief_v2 import (
     update_bias_aware_state_v2,
 )
 from bayesian_phystwin.spd_system import SPDSolveError
-from test_bias_aware_belief_v2 import _centered_problem, _legacy_config, _v2_config
 
 
 def test_posterior_failure_reason_distinguishes_validation_and_solve() -> None:
