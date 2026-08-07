@@ -170,8 +170,15 @@ def test_focused_run_record_ci_is_exact_head_and_read_only() -> None:
     assert 'python-version: ["3.10", "3.12"]' in text
     assert "ref: ${{ github.event.pull_request.head.sha || github.sha }}" in text
     assert "persist-credentials: false" in text
-    assert "ruff check" in text
-    assert "ruff format --check" in text
+    assert "BASE_SHA: ${{ github.event.pull_request.base.sha }}" in text
+    assert "HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}" in text
+    assert "set -euo pipefail" in text
+    assert "contract_files=(" in text
+    assert 'python -m ruff check "${contract_files[@]}"' in text
+    assert "git diff --name-only --diff-filter=ACMR" in text
+    assert '"${BASE_SHA}...${HEAD_SHA}" -- "${contract_files[@]}"' in text
+    assert 'python -m ruff format --check "${format_files[@]}"' in text
+    assert "if (( ${#format_files[@]} )); then" in text
     assert "bash -n scripts/ci/run_deform360_calibration_source_direct.sh" in text
     assert "test_deform360_calibration_source_run_record.py" in text
     assert "test_deform360_calibration_source_run_record_validation.py" in text
