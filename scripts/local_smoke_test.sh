@@ -8,6 +8,7 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
 python3 -m pytest -s
+python3 -m bayesian_phystwin.cli.command_docs --check
 python3 examples/reliability_weighting_demo.py
 python3 -m bayesian_phystwin.cli.residual_replay \
     examples/residuals_demo.csv \

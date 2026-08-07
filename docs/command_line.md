@@ -12,17 +12,23 @@ promise.
 
 ## Stable routes
 
+<!-- bpt-stable-commands:begin -->
 ```text
 bpt provider manifest
 bpt observation validate
 bpt residual replay
 bpt benchmark synthetic
 bpt evidence summarize
+bpt evidence bundle
 bpt run manifest
 ```
+<!-- bpt-stable-commands:end -->
 
 Use `--help` after any complete route to inspect its arguments. Stable routes
 are lazily imported, so root help and registry inspection remain NumPy-only.
+The list above is generated from the command registry. Check it with
+`python -m bayesian_phystwin.cli.command_docs --check` or update all tracked
+stable-command sections with `--write`.
 
 ## Canonical registry
 
@@ -40,6 +46,7 @@ Every command is represented by a `CommandSpec` in
 | `status` | `stable`, `experiment`, `diagnostic`, or `archived`. |
 | `optional_dependencies` | Package extras required by the command. |
 | `owner` | Contract, protocol, or milestone responsible for the command. |
+| `documentation` | Repository-relative Markdown guide for stable commands. |
 
 Inspect the complete registry in human-readable or JSON form:
 
@@ -132,10 +139,14 @@ rather than being mislabeled as installation problems.
 1. Implement a CLI module with `main(argv=None)` when practical.
 2. Add one `CommandSpec` with a unique ID and route, lifecycle status, optional
    extras, owner, and concise description.
-3. Set `legacy_alias=None` for new commands.
-4. Do not add another `[project.scripts]` entry.
-5. Add focused dispatch, registry, and installed-artifact tests.
-6. Document the protocol in `docs/` or the owning paper repository.
+3. Stable commands must also own an existing repository-relative Markdown guide
+   in `documentation`.
+4. Set `legacy_alias=None` for new commands.
+5. Do not add another `[project.scripts]` entry.
+6. Add focused dispatch, registry, and installed-artifact tests.
+7. Regenerate the stable-command documentation sections with
+   `python -m bayesian_phystwin.cli.command_docs --write`.
+8. Document the protocol in `docs/` or the owning paper repository.
 
 Registry status is descriptive, not evidence promotion. Method freezing, split
 integrity, target sealing, statistical analysis, and claim review remain

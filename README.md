@@ -80,14 +80,17 @@ the pinned PyRecEst integration.
 
 The package installs exactly one executable: `bpt`.
 
-| Command | Purpose |
-| --- | --- |
-| `bpt provider manifest` | Print the versioned Causal4D provider capability manifest. |
-| `bpt observation validate` | Validate or summarize an `ObservationBeliefV1` artifact. |
-| `bpt residual replay` | Replay exported residuals through the robust likelihood. |
-| `bpt benchmark synthetic` | Run the controlled synthetic benchmark. |
-| `bpt evidence summarize` | Summarize matched guarded prospective evidence. |
-| `bpt run manifest` | Create or validate content-addressed run provenance. |
+<!-- bpt-stable-commands:begin -->
+| Command | Purpose | Documentation |
+| --- | --- | --- |
+| `bpt provider manifest` | Print the Causal4D provider capability manifest. | [Guide](docs/causal4d_provider_v1.md) |
+| `bpt observation validate` | Validate or summarize an ObservationBeliefV1 artifact. | [Guide](docs/observation_belief_contract.md) |
+| `bpt residual replay` | Replay exported residuals through the robust likelihood. | [Guide](docs/residual_replay.md) |
+| `bpt benchmark synthetic` | Run the controlled synthetic benchmark. | [Guide](docs/synthetic_benchmark.md) |
+| `bpt evidence summarize` | Summarize matched guarded prospective evidence. | [Guide](docs/decisive_evidence_protocol.md) |
+| `bpt evidence bundle` | Build or validate a content-addressed claim bundle. | [Guide](docs/claim_bundle_v1.md) |
+| `bpt run manifest` | Create or validate a content-addressed run manifest. | [Guide](docs/reproducible_runs.md) |
+<!-- bpt-stable-commands:end -->
 
 The dispatcher imports only the selected command module. Rendering help,
 listing commands, and inspecting metadata therefore do not require optional

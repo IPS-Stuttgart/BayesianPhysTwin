@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from enum import Enum
+from pathlib import PurePosixPath
 from typing import Final
 
 from ._command_inventory import description, optional_dependencies, owner, status_name
@@ -34,6 +35,7 @@ class CommandSpec:
     status: CommandStatus
     optional_dependencies: tuple[str, ...]
     owner: str
+    documentation: str | None
 
     @property
     def target(self) -> str:
@@ -79,6 +81,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="causal4d-provider-v1",
+        documentation="docs/causal4d_provider_v1.md",
     ),
     CommandSpec(
         command_id="validate-observation-belief",
@@ -91,6 +94,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="observation-belief-v1",
+        documentation="docs/observation_belief_contract.md",
     ),
     CommandSpec(
         command_id="replay-residuals",
@@ -103,6 +107,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="residual-replay-v1",
+        documentation="docs/residual_replay.md",
     ),
     CommandSpec(
         command_id="synthetic-benchmark",
@@ -115,6 +120,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="synthetic-benchmark-v3",
+        documentation="docs/synthetic_benchmark.md",
     ),
     CommandSpec(
         command_id="decisive-evidence",
@@ -127,6 +133,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="bayesian-phystwin-decisive-evidence-v1",
+        documentation="docs/decisive_evidence_protocol.md",
     ),
     CommandSpec(
         command_id="claim-bundle",
@@ -139,6 +146,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="claim-bundle-v1",
+        documentation="docs/claim_bundle_v1.md",
     ),
     CommandSpec(
         command_id="run-manifest",
@@ -151,6 +159,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         status=CommandStatus.STABLE,
         optional_dependencies=(),
         owner="run-manifest-v2",
+        documentation="docs/reproducible_runs.md",
     ),
 )
 
@@ -182,6 +191,7 @@ def _build_research_commands() -> tuple[CommandSpec, ...]:
                 status=status,
                 optional_dependencies=optional_dependencies(command_id),
                 owner=owner(command_id),
+                documentation=None,
             )
         )
     return tuple(commands)
@@ -191,6 +201,25 @@ COMMANDS: Final[tuple[CommandSpec, ...]] = (
     *_STABLE_COMMANDS,
     *_build_research_commands(),
 )
+
+
+def _validate_documentation(command: CommandSpec) -> None:
+    documentation = command.documentation
+    if documentation is None:
+        if command.status is CommandStatus.STABLE:
+            raise ValueError(f"missing documentation for {command.command_id}")
+        return
+    path = PurePosixPath(documentation)
+    if (
+        path.is_absolute()
+        or path.suffix != ".md"
+        or not path.parts
+        or path.parts[0] != "docs"
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
+        raise ValueError(
+            f"invalid documentation path for {command.command_id}: {documentation!r}"
+        )
 
 
 def validate_registry(commands: Iterable[CommandSpec] = COMMANDS) -> None:
@@ -221,6 +250,7 @@ def validate_registry(commands: Iterable[CommandSpec] = COMMANDS) -> None:
             raise ValueError(f"invalid command module: {command.module}")
         if not command.owner:
             raise ValueError(f"missing owner for {command.command_id}")
+        _validate_documentation(command)
         unsupported = set(command.optional_dependencies) - supported_dependencies
         if unsupported:
             raise ValueError(
