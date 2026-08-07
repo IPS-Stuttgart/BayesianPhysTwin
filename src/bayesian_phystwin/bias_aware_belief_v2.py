@@ -276,9 +276,9 @@ def update_bias_aware_state_v2(
         (len(camera_rows), state_count + shared_bias_count + view_count),
         dtype=np.float64,
     )
-    camera_target = np.empty((len(camera_rows), 3), dtype=np.float64)
-    camera_row_variance = np.empty(len(camera_rows), dtype=np.float64)
-    camera_base_weight = np.empty(len(camera_rows), dtype=np.float64)
+    camera_target: np.ndarray = np.empty((len(camera_rows), 3), dtype=np.float64)
+    camera_row_variance: np.ndarray = np.empty(len(camera_rows), dtype=np.float64)
+    camera_base_weight: np.ndarray = np.empty(len(camera_rows), dtype=np.float64)
     for row_index, (view_index, point_index) in enumerate(camera_rows):
         camera_design[row_index, :state_count] = state[point_index]
         camera_design[
@@ -298,6 +298,7 @@ def update_bias_aware_state_v2(
         )
 
     has_anchor = anchor_innovation_m is not None
+    anchor_variance: np.ndarray
     if has_anchor:
         _require(anchor_state_basis is not None, "anchor state basis is missing")
         anchor_target = np.asarray(anchor_innovation_m, dtype=np.float64)
@@ -432,8 +433,8 @@ def update_bias_aware_state_v2(
         )
 
     solution = np.zeros((dimension, 3), dtype=np.float64)
-    camera_robust = np.ones(len(camera_rows), dtype=np.float64)
-    anchor_robust = np.ones(len(anchor_target), dtype=np.float64)
+    camera_robust: np.ndarray = np.ones(len(camera_rows), dtype=np.float64)
+    anchor_robust: np.ndarray = np.ones(len(anchor_target), dtype=np.float64)
 
     def posterior_system() -> tuple[np.ndarray, np.ndarray]:
         camera_precision_weight = (
