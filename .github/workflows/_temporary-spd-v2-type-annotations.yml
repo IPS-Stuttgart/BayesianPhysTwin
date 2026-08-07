@@ -108,6 +108,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e '.[dev]'
+          python -m ruff format -- \
+            src/bayesian_phystwin/bias_aware_belief_v2.py
           python -m ruff check -- \
             src/bayesian_phystwin/bias_aware_belief_v2.py
           python -m ruff format --check -- \
@@ -122,6 +124,9 @@ jobs:
             tests/test_spd_system_adversarial.py
           python -m compileall -q \
             src/bayesian_phystwin/bias_aware_belief_v2.py
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = \
+            'src/bayesian_phystwin/bias_aware_belief_v2.py'
           git diff --check
 
       - name: Commit only the validated annotation change
