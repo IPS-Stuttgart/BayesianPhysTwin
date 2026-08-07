@@ -6,8 +6,11 @@ on:
     paths:
       - ".github/workflows/deform360-calibration-observability-report.yml"
       - "docs/deform360_calibration_observability_report.md"
+      - "scripts/science/build_deform360_calibration_observability_case.py"
       - "scripts/science/build_deform360_calibration_observability_report.py"
+      - "src/bayesian_phystwin/deform360_calibration_observability_case_builder.py"
       - "src/bayesian_phystwin/deform360_calibration_observability_report.py"
+      - "tests/test_deform360_calibration_observability_case_builder.py"
       - "tests/test_deform360_calibration_observability_report.py"
   workflow_dispatch:
 
@@ -95,15 +98,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          files=(
+          lint_files=(
+            src/bayesian_phystwin/deform360_calibration_observability_case_builder.py
             src/bayesian_phystwin/deform360_calibration_observability_report.py
+            scripts/science/build_deform360_calibration_observability_case.py
             scripts/science/build_deform360_calibration_observability_report.py
+            tests/test_deform360_calibration_observability_case_builder.py
             tests/test_deform360_calibration_observability_report.py
           )
-          python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
+          format_files=(
+            src/bayesian_phystwin/deform360_calibration_observability_case_builder.py
+            scripts/science/build_deform360_calibration_observability_case.py
+            tests/test_deform360_calibration_observability_case_builder.py
+          )
+          python -m ruff check "${lint_files[@]}"
+          python -m ruff format --check "${format_files[@]}"
           python -m mypy \
+            src/bayesian_phystwin/deform360_calibration_observability_case_builder.py \
             src/bayesian_phystwin/deform360_calibration_observability_report.py \
+            scripts/science/build_deform360_calibration_observability_case.py \
             scripts/science/build_deform360_calibration_observability_report.py
 
       - name: Run focused and adjacent contracts
@@ -111,14 +124,18 @@ jobs:
         run: |
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_observability_case_builder.py \
             tests/test_deform360_calibration_observability_report.py \
             tests/test_observability_diagnostics.py \
             tests/test_deform360_calibration_execution.py \
             tests/test_deform360_calibration_source_run_record.py \
             | tee "${OBSERVABILITY_ROOT}/pytest.txt"
           python -m py_compile \
+            src/bayesian_phystwin/deform360_calibration_observability_case_builder.py \
             src/bayesian_phystwin/deform360_calibration_observability_report.py \
+            scripts/science/build_deform360_calibration_observability_case.py \
             scripts/science/build_deform360_calibration_observability_report.py \
+            tests/test_deform360_calibration_observability_case_builder.py \
             tests/test_deform360_calibration_observability_report.py
 
       - name: Verify exact read-only repository state
