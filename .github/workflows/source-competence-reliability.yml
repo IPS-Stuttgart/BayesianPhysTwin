@@ -12,6 +12,7 @@ on:
       - "src/bayesian_phystwin/physical_linearization.py"
       - "src/bayesian_phystwin/_prob4d_stream_binding.py"
       - "tests/test_source_competence_reliability.py"
+      - "tests/test_source_competence_reliability_adversarial.py"
       - "tests/test_source_competence_linearization.py"
       - "tests/test_structured_reliability.py"
       - "tests/test_observation_belief.py"
@@ -103,11 +104,13 @@ jobs:
             src/bayesian_phystwin/source_competence_reliability.py \
             src/bayesian_phystwin/source_competence_linearization.py \
             tests/test_source_competence_reliability.py \
+            tests/test_source_competence_reliability_adversarial.py \
             tests/test_source_competence_linearization.py
           python -m ruff format --check \
             src/bayesian_phystwin/source_competence_reliability.py \
             src/bayesian_phystwin/source_competence_linearization.py \
             tests/test_source_competence_reliability.py \
+            tests/test_source_competence_reliability_adversarial.py \
             tests/test_source_competence_linearization.py
           python -m mypy \
             src/bayesian_phystwin/source_competence_reliability.py \
@@ -119,6 +122,7 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_source_competence_reliability.py \
+            tests/test_source_competence_reliability_adversarial.py \
             tests/test_source_competence_linearization.py \
             tests/test_structured_reliability.py \
             tests/test_observation_belief.py \
@@ -129,6 +133,7 @@ jobs:
             src/bayesian_phystwin/source_competence_reliability.py \
             src/bayesian_phystwin/source_competence_linearization.py \
             tests/test_source_competence_reliability.py \
+            tests/test_source_competence_reliability_adversarial.py \
             tests/test_source_competence_linearization.py
           python -m pip check
 
