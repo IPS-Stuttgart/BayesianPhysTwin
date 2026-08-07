@@ -220,9 +220,9 @@ def robust_linear_update_v2(
     dimension = observation.shape[1]
     updated_mean = np.empty_like(mean, dtype=np.float64)
     updated_covariance = np.empty_like(covariance, dtype=np.float64)
-    probability = np.empty(count, dtype=np.float64)
-    innovation_condition = np.empty(count, dtype=np.float64)
-    posterior_condition = np.empty(count, dtype=np.float64)
+    probability: np.ndarray = np.empty(count, dtype=np.float64)
+    innovation_condition: np.ndarray = np.empty(count, dtype=np.float64)
+    posterior_condition: np.ndarray = np.empty(count, dtype=np.float64)
     normalizer = dimension * np.log(2.0 * np.pi)
     outlier_variance = observation_variance * outlier_variance_multiplier
     if not np.isfinite(outlier_variance):
