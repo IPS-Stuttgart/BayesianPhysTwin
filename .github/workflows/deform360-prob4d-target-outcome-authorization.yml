@@ -7,6 +7,7 @@ on:
       - ".github/workflows/deform360-prob4d-target-outcome-authorization.yml"
       - "docs/deform360_prob4d_target_outcome_authorization_v1.md"
       - "scripts/science/authorize_deform360_prob4d_target_outcomes.py"
+      - "src/bayesian_phystwin/_deform360_prob4d_contracts.py"
       - "src/bayesian_phystwin/deform360_prob4d_target_outcome_authorization.py"
       - "tests/test_deform360_prob4d_target_outcome_authorization.py"
   workflow_dispatch:
@@ -72,6 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           files=(
+            src/bayesian_phystwin/_deform360_prob4d_contracts.py
             src/bayesian_phystwin/deform360_prob4d_target_outcome_authorization.py
             scripts/science/authorize_deform360_prob4d_target_outcomes.py
             tests/test_deform360_prob4d_target_outcome_authorization.py
@@ -79,6 +81,7 @@ jobs:
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
+            src/bayesian_phystwin/_deform360_prob4d_contracts.py \
             src/bayesian_phystwin/deform360_prob4d_target_outcome_authorization.py \
             scripts/science/authorize_deform360_prob4d_target_outcomes.py
 
@@ -93,6 +96,7 @@ jobs:
             tests/test_deform360_visual_provider_lock.py
           python scripts/science/authorize_deform360_prob4d_target_outcomes.py --help
           python -m py_compile \
+            src/bayesian_phystwin/_deform360_prob4d_contracts.py \
             src/bayesian_phystwin/deform360_prob4d_target_outcome_authorization.py \
             scripts/science/authorize_deform360_prob4d_target_outcomes.py \
             tests/test_deform360_prob4d_target_outcome_authorization.py
