@@ -102,3 +102,48 @@ jobs:
           set -euo pipefail
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
+
+  run-record-format-preview:
+    name: Temporary exact-head run-record formatting preview
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Format exact run-record files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff==0.16.1"
+          python -m ruff format \
+            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py \
+            src/bayesian_phystwin/_deform360_calibration_run_common.py \
+            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py \
+            tests/test_deform360_calibration_source_run_record.py \
+            tests/test_render_deform360_calibration_source_run_record.py
+
+      - name: Upload exact formatted files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-run-record-formatted-${{ github.run_id }}
+          path: |
+            src/bayesian_phystwin/_deform360_calibration_artifact_chain.py
+            src/bayesian_phystwin/_deform360_calibration_run_common.py
+            src/bayesian_phystwin/_deform360_calibration_source_run_record_validation.py
+            tests/test_deform360_calibration_source_run_record.py
+            tests/test_render_deform360_calibration_source_run_record.py
+          if-no-files-found: error
+          retention-days: 1
