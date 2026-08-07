@@ -11,7 +11,7 @@ import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from urllib.parse import SplitResult, urlsplit
 
 RepositoryRole = Literal[
@@ -93,8 +93,9 @@ def _strict_json_value(
         finally:
             active_containers.remove(identity)
 
-    if type(value) in {list, tuple}:
-        identity = id(value)
+    if type(value) is list or type(value) is tuple:
+        sequence = cast(Sequence[object], value)
+        identity = id(sequence)
         if identity in active_containers:
             raise ValueError(f"{name} contains a circular sequence at {path}")
         active_containers.add(identity)
@@ -106,7 +107,7 @@ def _strict_json_value(
                     path=f"{path}[{index}]",
                     active_containers=active_containers,
                 )
-                for index, item in enumerate(value)
+                for index, item in enumerate(sequence)
             ]
         finally:
             active_containers.remove(identity)
