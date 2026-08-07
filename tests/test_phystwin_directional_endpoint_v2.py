@@ -7,9 +7,9 @@ from bayesian_phystwin.phystwin_directional_endpoint import (
     robust_directional_endpoint,
 )
 from bayesian_phystwin.phystwin_directional_endpoint_v2 import (
+    PHYSTWIN_DIRECTIONAL_ENDPOINT_VERSION,
     DirectionalEndpointConfigV2,
     DirectionalEndpointNumericalError,
-    PHYSTWIN_DIRECTIONAL_ENDPOINT_VERSION,
     robust_directional_endpoint_v2,
 )
 
