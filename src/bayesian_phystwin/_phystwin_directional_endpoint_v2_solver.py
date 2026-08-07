@@ -241,12 +241,8 @@ def robust_linear_update_v2(
             row_matrix = observation_matrix[index]
             innovation = observation[index] - row_matrix @ mean[index]
             if not np.all(np.isfinite(innovation)):
-                raise SPDSolveError(
-                    f"{row_name} innovation produced non-finite values"
-                )
-            projected_covariance = (
-                row_matrix @ np.asarray(prior.matrix) @ row_matrix.T
-            )
+                raise SPDSolveError(f"{row_name} innovation produced non-finite values")
+            projected_covariance = row_matrix @ np.asarray(prior.matrix) @ row_matrix.T
             (
                 inlier_mean,
                 inlier_covariance,
@@ -299,8 +295,7 @@ def robust_linear_update_v2(
                 f"{row_name} produced a non-finite mixture probability"
             )
         mixture_mean = (
-            inlier_probability * inlier_mean
-            + (1.0 - inlier_probability) * outlier_mean
+            inlier_probability * inlier_mean + (1.0 - inlier_probability) * outlier_mean
         )
         if not np.all(np.isfinite(mixture_mean)):
             raise DirectionalEndpointNumericalError(
@@ -308,11 +303,10 @@ def robust_linear_update_v2(
             )
         inlier_offset = inlier_mean - mixture_mean
         outlier_offset = outlier_mean - mixture_mean
-        mixture_covariance = (
-            inlier_probability
-            * (inlier_covariance + np.outer(inlier_offset, inlier_offset))
-            + (1.0 - inlier_probability)
-            * (outlier_covariance + np.outer(outlier_offset, outlier_offset))
+        mixture_covariance = inlier_probability * (
+            inlier_covariance + np.outer(inlier_offset, inlier_offset)
+        ) + (1.0 - inlier_probability) * (
+            outlier_covariance + np.outer(outlier_offset, outlier_offset)
         )
         try:
             mixture = admit_spd_system(
