@@ -1,8 +1,9 @@
-name: Temporary bias-aware SPD v2 formatting artifact
+name: Temporary apply verified SPD v2 Ruff artifact
 
 on:
   pull_request:
     branches: [main]
+    types: [synchronize]
     paths:
       - '.github/workflows/_temporary-bias-aware-spd-v2-format.yml'
       - 'src/bayesian_phystwin/bias_aware_belief_v2.py'
@@ -11,31 +12,36 @@ on:
       - 'tests/test_spd_system.py'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  format-artifact:
+  apply-verified-formatting:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check out exact reviewed revision
+      - name: Check out exact same-repository PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
           clean: true
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.12'
-
-      - name: Produce deterministic Ruff output
+      - name: Verify exact reviewed head
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install 'ruff>=0.6'
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git branch --show-current)" = "${GITHUB_HEAD_REF}"
+
+      - name: Reproduce and verify the formatter artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'ruff==0.16.1'
           files=(
             src/bayesian_phystwin/bias_aware_belief_v2.py
             tests/test_bias_aware_belief_v2.py
@@ -47,17 +53,41 @@ jobs:
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           git diff --check
-          git diff --binary > bias-aware-spd-v2-ruff.patch
+          git diff --binary -- "${files[@]}" > /tmp/bias-aware-spd-v2-ruff.patch
 
-      - name: Upload formatted files and patch
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
-        with:
-          name: bias-aware-spd-v2-ruff-output
-          path: |
-            bias-aware-spd-v2-ruff.patch
+          cat <<'EOF' | sha256sum -c -
+          1fc2d51bc5f382a91e76e9b624ee90ff50096ccc9ddb9a9888649bcf0fb66dd9  /tmp/bias-aware-spd-v2-ruff.patch
+          20a640af59e0ddb0b6fd94af2a1bc2a8045d80c41556a21c0396af9f5bea0961  src/bayesian_phystwin/bias_aware_belief_v2.py
+          908454f0b70ed97c7b2a5b36c172337674661a676b6b0025333bf670d8600b07  tests/test_bias_aware_belief_v2.py
+          aee24e6d3f6bcdc6d5bc8e2d98ca29042a646102b8fe60ce6bb3a02db19fd898  tests/test_bias_aware_belief_v2_adversarial.py
+          b8b8797c6d3b77f792cb14bb8f616763fc0ca97cac060180543afa91db75c24f  tests/test_spd_system.py
+          EOF
+
+          printf '%s\n' "${files[@]}" | sort > /tmp/expected-files
+          git diff --name-only | sort > /tmp/actual-files
+          diff -u /tmp/expected-files /tmp/actual-files
+
+      - name: Commit only the verified generated files
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
             src/bayesian_phystwin/bias_aware_belief_v2.py
             tests/test_bias_aware_belief_v2.py
             tests/test_bias_aware_belief_v2_adversarial.py
             tests/test_spd_system.py
-          if-no-files-found: error
-          retention-days: 1
+          )
+          git add -- "${files[@]}"
+          git diff --cached --check
+          git diff --quiet
+          printf '%s\n' "${files[@]}" | sort > /tmp/expected-staged-files
+          git diff --cached --name-only | sort > /tmp/actual-staged-files
+          diff -u /tmp/expected-staged-files /tmp/actual-staged-files
+          if git diff --cached --quiet; then
+            echo 'Verified artifact unexpectedly produced no formatting changes.' >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Apply deterministic Ruff formatting to SPD v2'
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
