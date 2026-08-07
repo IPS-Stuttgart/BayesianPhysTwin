@@ -132,13 +132,13 @@ def _case(unit, *, evaluated: bool = True):
     return Deform360CalibrationObservabilityCaseV1(
         **common,
         reference_state_artifact_id=hashlib.sha256(
-            f"reference-{unit.object_id}".encode("utf-8")
+            f"reference-{unit.object_id}".encode()
         ).hexdigest(),
         candidate_state_artifact_id=hashlib.sha256(
-            f"candidate-{unit.object_id}".encode("utf-8")
+            f"candidate-{unit.object_id}".encode()
         ).hexdigest(),
         contact_anchor_artifact_id=hashlib.sha256(
-            f"anchor-{unit.object_id}".encode("utf-8")
+            f"anchor-{unit.object_id}".encode()
         ).hexdigest(),
         reference_marginal_precision=reference,
         candidate_marginal_precision=candidate,
