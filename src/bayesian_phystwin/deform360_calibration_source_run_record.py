@@ -1,5 +1,7 @@
 """Non-sensitive completion records for direct Deform360 calibration runs."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import json
