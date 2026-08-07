@@ -54,15 +54,14 @@ jobs:
               'deform360-official-hub-calibration-source-reusable.yml'
           )
           text = path.read_text(encoding='utf-8')
-          old = '''                  (
-                      "This receipt contains no local paths, object identities, "
-                      "or target outcomes."
-                  ),
-'''
-          new = '''                  (
-                      "This receipt contains no local paths, object identities, or target outcomes."
-                  ),
-'''
+          old = (
+              '                      "This receipt contains no local paths, object identities, "\n'
+              '                      "or target outcomes."'
+          )
+          new = (
+              '                      "This receipt contains no local paths, object identities, '
+              'or target outcomes."'
+          )
           if text.count(old) != 1:
               raise SystemExit(
                   f'exact completion-receipt sentence occurred {text.count(old)} times'
