@@ -1,8 +1,9 @@
 """Digest-bound loading for trusted legacy PhysTwin pickle artifacts.
 
-Pickle deserialization can execute code.  This module does not sandbox pickle;
-it verifies bytes against an externally trusted SHA-256 digest before opening the
-artifact and then validates the top-level representation expected by the caller.
+Pickle deserialization can execute code. This module does not sandbox pickle;
+it copies the source into a private snapshot while hashing it, verifies that
+snapshot against an externally trusted SHA-256 digest, and deserializes exactly
+the verified bytes before validating the caller's top-level representation.
 New Bayesian-PhysTwin artifacts should continue to use JSON/NPZ contracts.
 """
 
@@ -11,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import pickle
+import tempfile
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from pathlib import Path
@@ -18,6 +20,8 @@ from typing import Any, Literal
 
 LegacyPhysTwinArtifactKind = Literal["mapping", "sequence", "ndarray"]
 _VALID_ARTIFACT_KINDS = frozenset({"mapping", "sequence", "ndarray"})
+_COPY_CHUNK_SIZE_BYTES = 1024 * 1024
+_SNAPSHOT_MEMORY_LIMIT_BYTES = 16 * 1024 * 1024
 
 
 def _validate_sha256(value: str, *, name: str) -> str:
@@ -31,12 +35,33 @@ def _validate_sha256(value: str, *, name: str) -> str:
     return normalized
 
 
-def _sha256_file(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
+def _load_verified_pickle_snapshot(
+    source: Path,
+    *,
+    expected_sha256: str,
+) -> Any:
+    """Deserialize exactly the bytes whose trusted digest was verified."""
+
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while block := stream.read(chunk_size):
+    with (
+        source.open("rb") as stream,
+        tempfile.SpooledTemporaryFile(
+            max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
+            mode="w+b",
+        ) as snapshot,
+    ):
+        while block := stream.read(_COPY_CHUNK_SIZE_BYTES):
             digest.update(block)
-    return digest.hexdigest()
+            snapshot.write(block)
+
+        actual = digest.hexdigest()
+        if not hmac.compare_digest(actual, expected_sha256):
+            raise ValueError(
+                "legacy PhysTwin artifact SHA-256 mismatch; refusing to deserialize"
+            )
+
+        snapshot.seek(0)
+        return pickle.load(snapshot)
 
 
 def load_trusted_legacy_phystwin_pickle(
@@ -49,7 +74,7 @@ def load_trusted_legacy_phystwin_pickle(
     """Load one hash-locked legacy pickle and validate its top-level contract.
 
     ``expected_sha256`` must come from an independently trusted manifest or
-    protocol lock.  A matching digest establishes byte identity, not general
+    protocol lock. A matching digest establishes byte identity, not general
     pickle safety; callers must never accept a digest supplied alongside an
     otherwise untrusted pickle.
     """
@@ -65,15 +90,10 @@ def load_trusted_legacy_phystwin_pickle(
     if keys and kind != "mapping":
         raise ValueError("required_keys are supported only for mapping artifacts")
 
-    source = Path(path)
-    actual = _sha256_file(source)
-    if not hmac.compare_digest(actual, expected):
-        raise ValueError(
-            "legacy PhysTwin artifact SHA-256 mismatch; refusing to deserialize"
-        )
-
-    with source.open("rb") as stream:
-        value = pickle.load(stream)
+    value = _load_verified_pickle_snapshot(
+        Path(path),
+        expected_sha256=expected,
+    )
 
     if kind == "mapping":
         if not isinstance(value, Mapping):

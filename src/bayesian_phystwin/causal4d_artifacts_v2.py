@@ -332,6 +332,7 @@ def load_released_phystwin_visual_inputs(
         final_path,
         raw_path,
         config=config,
+        final_data_payload=final_data,
     )
 
     for name, (path, digest) in identities.items():

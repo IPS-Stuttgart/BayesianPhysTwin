@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - "src/bayesian_phystwin/legacy_artifacts.py"
+      - "src/bayesian_phystwin/phystwin_raw_cues.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v2.py"
       - "tests/test_legacy_artifacts.py"
+      - "tests/test_legacy_artifacts_snapshot.py"
       - "tests/test_causal4d_artifacts_v2.py"
+      - "tests/test_phystwin_raw_cues.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_artifacts_v2.md"
       - ".github/workflows/legacy-artifact-contract.yml"
@@ -16,10 +19,13 @@ on:
     branches: [main]
     paths:
       - "src/bayesian_phystwin/legacy_artifacts.py"
+      - "src/bayesian_phystwin/phystwin_raw_cues.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v2.py"
       - "tests/test_legacy_artifacts.py"
+      - "tests/test_legacy_artifacts_snapshot.py"
       - "tests/test_causal4d_artifacts_v2.py"
+      - "tests/test_phystwin_raw_cues.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_artifacts_v2.md"
       - ".github/workflows/legacy-artifact-contract.yml"
@@ -45,27 +51,34 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install development tools
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,graph]"
       - name: Run Ruff
         run: >-
           python -m ruff check
           src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/phystwin_raw_cues.py
           src/bayesian_phystwin/causal4d_artifacts_v1.py
           src/bayesian_phystwin/causal4d_artifacts_v2.py
           tests/test_legacy_artifacts.py
+          tests/test_legacy_artifacts_snapshot.py
           tests/test_causal4d_artifacts_v2.py
+          tests/test_phystwin_raw_cues.py
       - name: Check formatting
         run: >-
           python -m ruff format --check
           src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/phystwin_raw_cues.py
           src/bayesian_phystwin/causal4d_artifacts_v1.py
           src/bayesian_phystwin/causal4d_artifacts_v2.py
           tests/test_legacy_artifacts.py
+          tests/test_legacy_artifacts_snapshot.py
           tests/test_causal4d_artifacts_v2.py
+          tests/test_phystwin_raw_cues.py
       - name: Type-check the stable boundary
         run: >-
           python -m mypy --python-version 3.12
           src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/phystwin_raw_cues.py
           src/bayesian_phystwin/causal4d_artifacts_v1.py
           src/bayesian_phystwin/causal4d_artifacts_v2.py
 
@@ -85,9 +98,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install NumPy-only package and tests
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,graph]"
       - name: Run the digest and artifact-contract tests
         run: >-
           python -m pytest -q
           tests/test_legacy_artifacts.py
+          tests/test_legacy_artifacts_snapshot.py
           tests/test_causal4d_artifacts_v2.py
+          tests/test_phystwin_raw_cues.py
