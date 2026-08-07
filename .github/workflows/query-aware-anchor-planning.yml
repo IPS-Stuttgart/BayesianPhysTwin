@@ -6,7 +6,10 @@ on:
     paths:
       - ".github/workflows/query-aware-anchor-planning.yml"
       - "src/bayesian_phystwin/query_aware_anchor_planning.py"
+      - "src/bayesian_phystwin/query_anchor_sufficiency.py"
       - "tests/test_query_aware_anchor_planning.py"
+      - "tests/test_query_anchor_sufficiency.py"
+      - "scripts/science/run_query_anchor_sufficiency_study.py"
       - "docs/query_aware_anchor_planning.md"
   workflow_dispatch:
 
@@ -29,11 +32,11 @@ env:
 
 jobs:
   contracts:
-    name: Query covariance, cost, dependence, and immutability contracts
+    name: Query covariance, sufficiency, cost, dependence, and immutability
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out exact reviewed revision
@@ -92,12 +95,19 @@ jobs:
         run: |
           python -m ruff check \
             src/bayesian_phystwin/query_aware_anchor_planning.py \
-            tests/test_query_aware_anchor_planning.py
+            src/bayesian_phystwin/query_anchor_sufficiency.py \
+            scripts/science/run_query_anchor_sufficiency_study.py \
+            tests/test_query_aware_anchor_planning.py \
+            tests/test_query_anchor_sufficiency.py
           python -m ruff format --check \
             src/bayesian_phystwin/query_aware_anchor_planning.py \
-            tests/test_query_aware_anchor_planning.py
+            src/bayesian_phystwin/query_anchor_sufficiency.py \
+            scripts/science/run_query_anchor_sufficiency_study.py \
+            tests/test_query_aware_anchor_planning.py \
+            tests/test_query_anchor_sufficiency.py
           python -m mypy \
-            src/bayesian_phystwin/query_aware_anchor_planning.py
+            src/bayesian_phystwin/query_aware_anchor_planning.py \
+            src/bayesian_phystwin/query_anchor_sufficiency.py
 
       - name: Run focused and adjacent contracts
         shell: bash
@@ -105,13 +115,49 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_query_aware_anchor_planning.py \
+            tests/test_query_anchor_sufficiency.py \
             tests/test_observability_diagnostics.py \
             tests/test_information_mass_invariants.py \
             tests/test_nuisance_information_row_permutation.py \
             | tee "${QUERY_ANCHOR_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/query_aware_anchor_planning.py \
-            tests/test_query_aware_anchor_planning.py
+            src/bayesian_phystwin/query_anchor_sufficiency.py \
+            scripts/science/run_query_anchor_sufficiency_study.py \
+            tests/test_query_aware_anchor_planning.py \
+            tests/test_query_anchor_sufficiency.py
+
+      - name: Run controlled support--precision study
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/run_query_anchor_sufficiency_study.py \
+            --output-dir "${QUERY_ANCHOR_RUN_ROOT}/controlled-study"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = (
+              Path(os.environ["QUERY_ANCHOR_RUN_ROOT"])
+              / "controlled-study"
+              / "summary.json"
+          )
+          result = json.loads(path.read_text(encoding="utf-8"))
+          result_sha256 = result.pop("result_sha256")
+          canonical = json.dumps(
+              result,
+              sort_keys=True,
+              separators=(",", ":"),
+              ensure_ascii=True,
+              allow_nan=False,
+          ).encode("utf-8")
+          if result_sha256 != hashlib.sha256(canonical).hexdigest():
+              raise SystemExit("controlled study result identity changed")
+          if not result["all_directional_checks_passed"]:
+              raise SystemExit("controlled anchor-sufficiency checks failed")
+          PY
 
       - name: Verify clean repository state
         shell: bash
@@ -128,5 +174,8 @@ jobs:
           path: |
             ${{ env.QUERY_ANCHOR_RUN_ROOT }}/environment.txt
             ${{ env.QUERY_ANCHOR_RUN_ROOT }}/pytest.txt
+            ${{ env.QUERY_ANCHOR_RUN_ROOT }}/controlled-study/summary.json
+            ${{ env.QUERY_ANCHOR_RUN_ROOT }}/controlled-study/curve.csv
+            ${{ env.QUERY_ANCHOR_RUN_ROOT }}/controlled-study/report.md
           if-no-files-found: warn
           retention-days: 30
