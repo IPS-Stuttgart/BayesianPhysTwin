@@ -9,11 +9,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from test_deform360_calibration_source_run_record import _build_chain, _record
 
 from bayesian_phystwin.deform360_calibration_source_run_record import (
     _canonical_sha256,
 )
-from test_deform360_calibration_source_run_record import _build_chain, _record
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "ci" / "render_deform360_calibration_source_run_record.py"
