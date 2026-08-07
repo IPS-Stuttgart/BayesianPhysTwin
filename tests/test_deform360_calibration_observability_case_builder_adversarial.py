@@ -194,12 +194,15 @@ def test_result_row_rejects_malformed_missing_duplicate_and_identity_drift() -> 
             stratum="sheet",
         )
 
-    assert builder._result_row(
-        {"objects": [row]},
-        object_id="object",
-        episode_id=0,
-        stratum="sheet",
-    ) == row
+    assert (
+        builder._result_row(
+            {"objects": [row]},
+            object_id="object",
+            episode_id=0,
+            stratum="sheet",
+        )
+        == row
+    )
 
 
 def test_context_rejects_surrounding_object_whitespace(tmp_path: Path) -> None:
