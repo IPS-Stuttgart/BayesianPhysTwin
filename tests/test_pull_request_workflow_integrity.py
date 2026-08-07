@@ -7,8 +7,29 @@ from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _WORKFLOW_ROOT = _REPOSITORY_ROOT / ".github" / "workflows"
-_PULL_REQUEST_TRIGGER = re.compile(r"(?m)^\s*pull_request(?:_target)?\s*:\s*(?:#.*)?$")
-_CONTENTS_WRITE_PERMISSION = re.compile(r"(?m)^\s*contents\s*:\s*write\s*(?:#.*)?$")
+_PULL_REQUEST_BLOCK_TRIGGER = re.compile(
+    r"(?m)^\s*[\"']?pull_request(?:_target)?[\"']?\s*:"
+)
+_PULL_REQUEST_INLINE_TRIGGER = re.compile(
+    r"(?m)^\s*on\s*:\s*(?:"
+    r"[\"']?pull_request(?:_target)?[\"']?\s*(?:#.*)?$"
+    r"|\[[^\]\n]*[\"']?pull_request(?:_target)?[\"']?[^\]\n]*\]"
+    r"|\{[^}\n]*[\"']?pull_request(?:_target)?[\"']?\s*:"
+    r")"
+)
+_CONTENTS_WRITE_PERMISSION = re.compile(
+    r"(?im)^\s*contents\s*:\s*[\"']?write[\"']?\s*(?:#.*)?$"
+)
+_INLINE_CONTENTS_WRITE_PERMISSION = re.compile(
+    r"(?im)^\s*permissions\s*:\s*\{[^}\n]*"
+    r"\bcontents\s*:\s*[\"']?write[\"']?\b"
+)
+_WRITE_ALL_PERMISSION = re.compile(
+    r"(?im)^\s*permissions\s*:\s*[\"']?write-all[\"']?\s*(?:#.*)?$"
+)
+_PERSIST_CREDENTIALS_TRUE = re.compile(
+    r"(?im)^\s*persist-credentials\s*:\s*[\"']?true[\"']?\s*(?:#.*)?$"
+)
 _FORBIDDEN_PULL_REQUEST_COMMANDS = (
     "git " + "push",
     "git reset " + "--soft origin/",
@@ -30,6 +51,42 @@ def _workflow_texts() -> list[tuple[Path, str]]:
     return [(path, path.read_text(encoding="utf-8")) for path in workflows]
 
 
+def _has_pull_request_trigger(text: str) -> bool:
+    return bool(
+        _PULL_REQUEST_BLOCK_TRIGGER.search(text)
+        or _PULL_REQUEST_INLINE_TRIGGER.search(text)
+    )
+
+
+def _pull_request_workflow_violations(
+    relative_path: str,
+    text: str,
+) -> list[str]:
+    if not _has_pull_request_trigger(text):
+        return []
+
+    violations: list[str] = []
+    if _CONTENTS_WRITE_PERMISSION.search(text) is not None:
+        violations.append(f"{relative_path}: grants contents: write")
+    if _INLINE_CONTENTS_WRITE_PERMISSION.search(text) is not None:
+        violations.append(f"{relative_path}: grants inline contents: write")
+    if _WRITE_ALL_PERMISSION.search(text) is not None:
+        violations.append(f"{relative_path}: grants permissions: write-all")
+    if _PERSIST_CREDENTIALS_TRUE.search(text) is not None:
+        violations.append(f"{relative_path}: persists checkout credentials")
+
+    for marker in _FORBIDDEN_PULL_REQUEST_COMMANDS:
+        if marker in text:
+            violations.append(f"{relative_path}: contains {marker!r}")
+
+    for marker in _FORBIDDEN_PULL_REQUEST_TRANSPORT:
+        if marker in text:
+            violations.append(
+                f"{relative_path}: transports hidden generated source via {marker!r}"
+            )
+    return violations
+
+
 def test_source_transport_scratch_directory_is_not_committed() -> None:
     transport_paths = sorted(
         path.relative_to(_REPOSITORY_ROOT).as_posix()
@@ -42,26 +99,63 @@ def test_source_transport_scratch_directory_is_not_committed() -> None:
     )
 
 
+def test_pull_request_trigger_detection_covers_yaml_forms() -> None:
+    triggering = (
+        "on:\n  pull_request:\n",
+        "on:\n  'pull_request_target': {types: [opened]}\n",
+        "on: pull_request\n",
+        'on: [push, "pull_request"]\n',
+        "on: {push: null, pull_request_target: {types: [opened]}}\n",
+    )
+    non_triggering = (
+        "on: push\n",
+        "on: [push, workflow_dispatch]\n",
+        "name: pull_request documentation\n",
+    )
+
+    assert all(_has_pull_request_trigger(text) for text in triggering)
+    assert all(not _has_pull_request_trigger(text) for text in non_triggering)
+
+
+def test_inline_pull_request_workflows_cannot_bypass_write_checks() -> None:
+    cases = (
+        (
+            "on: [pull_request]\npermissions: write-all\n",
+            "grants permissions: write-all",
+        ),
+        (
+            "on: pull_request_target\npermissions: {contents: write}\n",
+            "grants inline contents: write",
+        ),
+        (
+            "on: {pull_request: {types: [opened]}}\n"
+            "steps:\n  - uses: actions/checkout@v7\n"
+            "    with:\n      persist-credentials: TRUE\n",
+            "persists checkout credentials",
+        ),
+    )
+
+    for text, expected in cases:
+        violations = _pull_request_workflow_violations("fixture.yml", text)
+        assert any(expected in violation for violation in violations)
+
+
+def test_non_pull_request_workflows_are_outside_this_policy() -> None:
+    text = (
+        "on: workflow_dispatch\n"
+        "permissions: write-all\n"
+        "steps:\n  - run: git push\n"
+    )
+
+    assert _pull_request_workflow_violations("manual.yml", text) == []
+
+
 def test_pull_request_workflows_are_read_only_and_do_not_rewrite_source() -> None:
     violations: list[str] = []
 
     for path, text in _workflow_texts():
-        if _PULL_REQUEST_TRIGGER.search(text) is None:
-            continue
-
         relative_path = path.relative_to(_REPOSITORY_ROOT).as_posix()
-        if _CONTENTS_WRITE_PERMISSION.search(text) is not None:
-            violations.append(f"{relative_path}: grants contents: write")
-
-        for marker in _FORBIDDEN_PULL_REQUEST_COMMANDS:
-            if marker in text:
-                violations.append(f"{relative_path}: contains {marker!r}")
-
-        for marker in _FORBIDDEN_PULL_REQUEST_TRANSPORT:
-            if marker in text:
-                violations.append(
-                    f"{relative_path}: transports hidden generated source via {marker!r}"
-                )
+        violations.extend(_pull_request_workflow_violations(relative_path, text))
 
     assert not violations, (
         "pull-request workflows must validate the exact reviewed commit without "
