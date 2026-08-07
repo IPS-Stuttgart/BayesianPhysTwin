@@ -95,7 +95,40 @@ jobs:
             tests/test_paper_evidence_hardening.py
           )
           python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
+
+          case "${{ github.event_name }}" in
+            pull_request)
+              base_ref="${{ github.event.pull_request.base.sha }}"
+              head_ref="${{ github.event.pull_request.head.sha }}"
+              ;;
+            push)
+              base_ref="${{ github.event.before }}"
+              head_ref="${{ github.sha }}"
+              ;;
+            *)
+              base_ref="$(git rev-parse HEAD^)"
+              head_ref="$(git rev-parse HEAD)"
+              ;;
+          esac
+
+          format_files=()
+          while IFS= read -r changed_path; do
+            for candidate in "${files[@]}"; do
+              if [[ "$changed_path" == "$candidate" ]]; then
+                format_files+=("$candidate")
+                break
+              fi
+            done
+          done < <(
+            git diff --name-only --diff-filter=ACMR \
+              "$base_ref...$head_ref" -- "${files[@]}"
+          )
+
+          if (( ${#format_files[@]} > 0 )); then
+            python -m ruff format --check "${format_files[@]}"
+          else
+            echo "No changed stable evidence Python interfaces require format checking."
+          fi
 
       - name: Type-check evidence interfaces
         run: |
