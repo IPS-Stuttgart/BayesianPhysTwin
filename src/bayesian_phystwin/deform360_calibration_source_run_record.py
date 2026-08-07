@@ -17,6 +17,8 @@ from ._deform360_calibration_run_common import (
     DEFORM360_CALIBRATION_SOURCE_RUN_SCHEMA,
     DEFORM360_DATASET_REVISION,
     RECORD_WRITE_EXIT_CODE,
+)
+from ._deform360_calibration_run_common import (
     canonical_sha256 as _canonical_sha256,
 )
 from ._deform360_calibration_source_run_record_validation import (

@@ -9,11 +9,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from test_deform360_calibration_source_run_record import _build_chain, _record
 
 from bayesian_phystwin.deform360_calibration_source_run_record import (
     _canonical_sha256,
 )
-from test_deform360_calibration_source_run_record import _build_chain, _record
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "ci" / "render_deform360_calibration_source_run_record.py"
@@ -97,14 +97,17 @@ def test_recomputed_status_or_source_mismatch_is_not_rendered(
 
     path, _ = _write_record(tmp_path)
     output = tmp_path / "receipt.json"
-    assert MODULE.main(
-        [
-            "issue",
-            *_args(path, source_revision="9" * 40),
-            "--output",
-            str(output),
-        ]
-    ) == 0
+    assert (
+        MODULE.main(
+            [
+                "issue",
+                *_args(path, source_revision="9" * 40),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
     body = json.loads(output.read_text(encoding="utf-8"))["body"]
     assert "execution-record-unavailable" in body
 
