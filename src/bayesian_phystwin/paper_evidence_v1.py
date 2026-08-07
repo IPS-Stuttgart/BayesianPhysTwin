@@ -44,7 +44,9 @@ _DISTRIBUTION_BINDING_FIELDS = frozenset(
 )
 _VALID_ARTIFACT_ROLES = frozenset({"input", "output"})
 _VALID_DISTRIBUTION_KINDS = frozenset({"wheel", "sdist"})
-_VALID_STREAM_RESOLUTIONS = frozenset({"declared", "inferred", "not_applicable"})
+_VALID_STREAM_RESOLUTIONS = frozenset(
+    {"declared", "inferred", "not_applicable"}
+)
 
 
 def _require_exact_fields(
@@ -304,7 +306,9 @@ class PaperEvidenceBindingsV1:
         )
         for name, binding, expected_role in required_roles:
             if binding.role != expected_role:
-                raise ValueError(f"{name} must be bound as an {expected_role} artifact")
+                raise ValueError(
+                    f"{name} must be bound as an {expected_role} artifact"
+                )
         if not distributions:
             raise ValueError("paper-evidence profile requires distribution artifacts")
 
@@ -320,7 +324,9 @@ class PaperEvidenceBindingsV1:
         project_kinds = [(item.project, item.kind) for item in distributions]
         if len(project_kinds) != len(set(project_kinds)):
             raise ValueError("distribution project/kind pairs must be unique")
-        primary_kinds = {item.kind for item in distributions if item.project == project}
+        primary_kinds = {
+            item.kind for item in distributions if item.project == project
+        }
         if primary_kinds != _VALID_DISTRIBUTION_KINDS:
             raise ValueError(
                 "primary distribution project must bind exactly one wheel and one sdist"
