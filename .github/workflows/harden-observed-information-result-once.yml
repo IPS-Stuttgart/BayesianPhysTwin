@@ -1,0 +1,324 @@
+name: One-shot observed-information public-contract hardening
+
+on:
+  push:
+    branches:
+      - agent/observed-information-covariance-v1
+    paths:
+      - ".github/workflows/harden-observed-information-result-once.yml"
+      - "src/bayesian_phystwin/observed_information_covariance.py"
+      - "tests/test_observed_information_covariance_adversarial.py"
+      - "docs/observed_information_covariance.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-observed-information-result-hardening-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  harden:
+    name: Enforce PSD-prior mapping invariants
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.actor == 'FlorianPfaff'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact same-repository branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/observed-information-covariance-v1
+          fetch-depth: 0
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Harden the artifact constructor and add regression contracts
+        shell: bash
+        env:
+          EXPECTED_EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_EVENT_SHA}"
+          python -m pip install -e ".[dev]"
+
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path("src/bayesian_phystwin/observed_information_covariance.py")
+          text = source.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  'LIKELIHOOD_POWER_SEMANTICS = "grouped-student-t-generalized-bayes-power-v1"\n\nFloatArray: TypeAlias',
+                  'LIKELIHOOD_POWER_SEMANTICS = "grouped-student-t-generalized-bayes-power-v1"\n'
+                  '_PRIOR_STANDARDIZATION_ATOL = 1e-8\n'
+                  '_PRIOR_NULLSPACE_ATOL = 1e-10\n\n'
+                  'FloatArray: TypeAlias',
+              ),
+              (
+                  '    anchor_group_precision_derivative: FloatArray\n'
+                  '    condition_number: float\n',
+                  '    anchor_group_precision_derivative: FloatArray\n'
+                  '    prior_eigenvalue_floor: float\n'
+                  '    condition_number: float\n',
+              ),
+              (
+                  '        retained = mapping.shape[1]\n'
+                  '        nuisance_count = len(observed) - retained\n'
+                  '        if nuisance_count < 0:\n'
+                  '            raise ValueError("state_mapping is wider than observed information")\n'
+                  '        expected_full = _full_covariance(\n',
+                  '        retained = mapping.shape[1]\n'
+                  '        prior_eigenvalue_floor = _finite_real(\n'
+                  '            self.prior_eigenvalue_floor,\n'
+                  '            name="prior_eigenvalue_floor",\n'
+                  '            minimum=0.0,\n'
+                  '        )\n'
+                  '        if prior_eigenvalue_floor <= 0.0:\n'
+                  '            raise ValueError("prior_eigenvalue_floor must be positive")\n'
+                  '        prior_eigenvalues, prior_eigenvectors = np.linalg.eigh(state_prior)\n'
+                  '        if np.any(prior_eigenvalues < -prior_eigenvalue_floor):\n'
+                  '            raise ValueError(\n'
+                  '                "state_prior_covariance must be positive semidefinite"\n'
+                  '            )\n'
+                  '        if retained == 0:\n'
+                  '            raise ValueError(\n'
+                  '                "state_mapping must retain at least one state direction"\n'
+                  '            )\n'
+                  '        positive_prior = prior_eigenvalues > prior_eigenvalue_floor\n'
+                  '        if retained > int(np.count_nonzero(positive_prior)):\n'
+                  '            raise ValueError(\n'
+                  '                "state_mapping retains more directions than the prior supports"\n'
+                  '            )\n'
+                  '        positive_basis = prior_eigenvectors[:, positive_prior]\n'
+                  '        standardized_mapping = (positive_basis.T @ mapping) / np.sqrt(\n'
+                  '            prior_eigenvalues[positive_prior]\n'
+                  '        )[:, None]\n'
+                  '        if not np.allclose(\n'
+                  '            standardized_mapping.T @ standardized_mapping,\n'
+                  '            np.eye(retained),\n'
+                  '            atol=_PRIOR_STANDARDIZATION_ATOL,\n'
+                  '            rtol=_PRIOR_STANDARDIZATION_ATOL,\n'
+                  '        ):\n'
+                  '            raise ValueError(\n'
+                  '                "state_mapping is not standardized by the state prior"\n'
+                  '            )\n'
+                  '        null_basis = prior_eigenvectors[:, ~positive_prior]\n'
+                  '        null_component = null_basis.T @ mapping\n'
+                  '        null_tolerance = _PRIOR_NULLSPACE_ATOL * max(\n'
+                  '            1.0,\n'
+                  '            float(np.linalg.norm(mapping, ord=2)),\n'
+                  '        )\n'
+                  '        if null_component.size and not np.allclose(\n'
+                  '            null_component,\n'
+                  '            np.zeros_like(null_component),\n'
+                  '            atol=null_tolerance,\n'
+                  '            rtol=0.0,\n'
+                  '        ):\n'
+                  '            raise ValueError(\n'
+                  '                "state_mapping leaks into the state-prior nullspace"\n'
+                  '            )\n'
+                  '        if np.any(np.linalg.eigvalsh(full) < -prior_eigenvalue_floor):\n'
+                  '            raise ValueError("full_covariance must be positive semidefinite")\n'
+                  '        nuisance_count = len(observed) - retained\n'
+                  '        if nuisance_count < 0:\n'
+                  '            raise ValueError("state_mapping is wider than observed information")\n'
+                  '        expected_full = _full_covariance(\n',
+              ),
+              (
+                  '        object.__setattr__(self, "condition_number", condition_number)\n'
+                  '        object.__setattr__(self, "metadata", metadata)\n',
+                  '        object.__setattr__(\n'
+                  '            self,\n'
+                  '            "prior_eigenvalue_floor",\n'
+                  '            prior_eigenvalue_floor,\n'
+                  '        )\n'
+                  '        object.__setattr__(self, "condition_number", condition_number)\n'
+                  '        object.__setattr__(self, "metadata", metadata)\n',
+              ),
+              (
+                  '            "state_mapping": _array_record(self.state_mapping),\n'
+                  '            "full_dimension": self.full_dimension,\n',
+                  '            "state_mapping": _array_record(self.state_mapping),\n'
+                  '            "prior_eigenvalue_floor": self.prior_eigenvalue_floor,\n'
+                  '            "full_dimension": self.full_dimension,\n',
+              ),
+              (
+                  '        anchor_group_precision_derivative=anchor_derivative,\n'
+                  '        condition_number=condition_number,\n',
+                  '        anchor_group_precision_derivative=anchor_derivative,\n'
+                  '        prior_eigenvalue_floor=cfg.prior_eigenvalue_floor,\n'
+                  '        condition_number=condition_number,\n',
+              ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count == 1:
+                  text = text.replace(old, new)
+              elif count == 0 and new in text:
+                  continue
+              else:
+                  raise SystemExit(f"unexpected source replacement count {count}: {old!r}")
+          source.write_text(text, encoding="utf-8")
+
+          tests = Path("tests/test_observed_information_covariance_adversarial.py")
+          test_text = tests.read_text(encoding="utf-8")
+          addition = r'''
+
+
+def _singular_prior_analysis() -> ObservedInformationCovarianceResultV1:
+    base = cases._batch()
+    count = len(base.innovation_m)
+    state = np.zeros((count, 3, 2), dtype=np.float64)
+    state[:, 0, 0] = 1.0
+    batch = replace(
+        base,
+        state_jacobian=state,
+        gauge_jacobian=cases._empty(count),
+        query_state_jacobian=state,
+        gauge_prior_covariance=np.zeros((0, 0), dtype=np.float64),
+        state_prior_covariance_m2=np.diag([0.01, 0.0]),
+    )
+    _, analysis = _run(batch)
+    return analysis
+
+
+def test_result_contract_binds_floor_and_rejects_non_psd_geometry(
+    base_case: tuple[
+        GaugeAwareObservationBatch,
+        GaugeAwareBeliefResult,
+        ObservedInformationCovarianceResultV1,
+    ],
+) -> None:
+    _, _, analysis = base_case
+    floor = analysis.prior_eigenvalue_floor
+
+    assert floor == cases._config().prior_eigenvalue_floor
+    assert analysis.to_record()["prior_eigenvalue_floor"] == floor
+
+    negative_prior = np.asarray(analysis.state_prior_covariance).copy()
+    negative_prior[0, 0] = -10.0 * floor
+    _reject_result(
+        analysis,
+        "state_prior_covariance must be positive semidefinite",
+        state_prior_covariance=negative_prior,
+    )
+
+    _reject_result(
+        analysis,
+        "full_covariance must be positive semidefinite",
+        full_covariance=-np.eye(analysis.full_dimension, dtype=np.float64),
+    )
+    _reject_result(
+        analysis,
+        "retain at least one state direction",
+        state_mapping=np.zeros(
+            (len(analysis.state_prior_covariance), 0),
+            dtype=np.float64,
+        ),
+    )
+    _reject_result(
+        analysis,
+        "prior_eigenvalue_floor must be positive",
+        prior_eigenvalue_floor=0.0,
+    )
+
+
+def test_result_contract_rejects_scaled_and_nullspace_mappings() -> None:
+    analysis = _singular_prior_analysis()
+    nuisance_count = analysis.reduced_dimension - analysis.state_mapping.shape[1]
+
+    scaled_mapping = np.asarray(analysis.state_mapping) * 2.0
+    scaled_full = target._full_covariance(
+        np.asarray(analysis.state_prior_covariance),
+        scaled_mapping,
+        np.asarray(analysis.reduced_covariance),
+        nuisance_count,
+    )
+    _reject_result(
+        analysis,
+        "not standardized by the state prior",
+        state_mapping=scaled_mapping,
+        full_covariance=scaled_full,
+    )
+
+    leaking_mapping = np.asarray(analysis.state_mapping).copy()
+    leaking_mapping[1, 0] = 1e-4
+    leaking_full = target._full_covariance(
+        np.asarray(analysis.state_prior_covariance),
+        leaking_mapping,
+        np.asarray(analysis.reduced_covariance),
+        nuisance_count,
+    )
+    _reject_result(
+        analysis,
+        "leaks into the state-prior nullspace",
+        state_mapping=leaking_mapping,
+        full_covariance=leaking_full,
+    )
+'''
+          if "def _singular_prior_analysis()" not in test_text:
+              tests.write_text(test_text.rstrip() + addition + "\n", encoding="utf-8")
+
+          docs = Path("docs/observed_information_covariance.md")
+          doc_text = docs.read_text(encoding="utf-8")
+          old = "- the state prior and retained state mapping;\n"
+          new = (
+              "- the state prior, declared prior eigenvalue floor, and retained state mapping;\n"
+          )
+          if old in doc_text:
+              doc_text = doc_text.replace(old, new)
+          elif new not in doc_text:
+              raise SystemExit("artifact-content documentation anchor changed")
+          old = "- a positive-definite exact observed Hessian.\n"
+          new = (
+              "- a positive-definite exact observed Hessian;\n"
+              "- PSD state-prior and complete covariance matrices under the declared prior "
+              "eigenvalue floor; and\n"
+              "- a nonempty retained-state mapping that is orthonormal in the prior-"
+              "standardized positive-eigenvalue basis and has negligible prior-nullspace "
+              "leakage.\n"
+          )
+          if old in doc_text:
+              doc_text = doc_text.replace(old, new)
+          elif new not in doc_text:
+              raise SystemExit("admission documentation anchor changed")
+          docs.write_text(doc_text, encoding="utf-8")
+          PY
+
+          files=(
+            src/bayesian_phystwin/observed_information_covariance.py
+            tests/test_observed_information_covariance.py
+            tests/test_observed_information_covariance_adversarial.py
+            tests/test_observed_information_covariance_public_surface.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m mypy src/bayesian_phystwin/observed_information_covariance.py
+          python -m pytest -q "${files[@]:1}"
+          git diff --check
+
+          mapfile -t changed < <(git diff --name-only)
+          expected=(
+            docs/observed_information_covariance.md
+            src/bayesian_phystwin/observed_information_covariance.py
+            tests/test_observed_information_covariance_adversarial.py
+          )
+          if [[ "${changed[*]}" != "${expected[*]}" ]]; then
+            printf 'Unexpected changed paths:\n%s\n' "${changed[*]}" >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${expected[@]}"
+          git commit -m "Harden observed-information public covariance contract"
+          git push origin HEAD:refs/heads/agent/observed-information-covariance-v1
