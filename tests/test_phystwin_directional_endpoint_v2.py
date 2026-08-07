@@ -59,11 +59,7 @@ def _run_v2(
         source_valid,
         multiview,
         multiview_valid,
-        (
-            _tangent_projectors(source.shape[1])
-            if projectors is None
-            else projectors
-        ),
+        (_tangent_projectors(source.shape[1]) if projectors is None else projectors),
         priority,
         end_frame=len(source),
         process_variance=0.0,
@@ -109,9 +105,7 @@ def test_v2_retains_legacy_mean_but_not_anti_conservative_isotropization() -> No
     assert legacy.variance[0] == pytest.approx(
         np.trace(prospective.covariance[0]) / 3.0
     )
-    scalar_upper_bound = (
-        prospective.variance[0] * np.eye(3) - prospective.covariance[0]
-    )
+    scalar_upper_bound = prospective.variance[0] * np.eye(3) - prospective.covariance[0]
     assert np.min(np.linalg.eigvalsh(scalar_upper_bound)) >= -1e-15
 
 
