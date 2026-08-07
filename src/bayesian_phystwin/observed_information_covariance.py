@@ -46,6 +46,8 @@ OBSERVED_INFORMATION_COVARIANCE_SCHEMA = (
 )
 OBSERVED_INFORMATION_COVARIANCE_VERSION = 1
 LIKELIHOOD_POWER_SEMANTICS = "grouped-student-t-generalized-bayes-power-v1"
+_PRIOR_STANDARDIZATION_ATOL = 1e-8
+_PRIOR_NULLSPACE_ATOL = 1e-10
 
 FloatArray: TypeAlias = NDArray[np.float64]
 
@@ -158,6 +160,7 @@ class ObservedInformationCovarianceResultV1:
     anchor_group_expected_precision: FloatArray
     observation_group_precision_derivative: FloatArray
     anchor_group_precision_derivative: FloatArray
+    prior_eigenvalue_floor: float
     condition_number: float
     covariance_semantics: PosteriorCovarianceSemanticsV1
     metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -209,6 +212,49 @@ class ObservedInformationCovarianceResultV1:
         if mapping.ndim != 2 or mapping.shape[0] != state_count:
             raise ValueError("state_mapping row count must match state prior")
         retained = mapping.shape[1]
+        prior_eigenvalue_floor = _finite_real(
+            self.prior_eigenvalue_floor,
+            name="prior_eigenvalue_floor",
+            minimum=0.0,
+        )
+        if prior_eigenvalue_floor <= 0.0:
+            raise ValueError("prior_eigenvalue_floor must be positive")
+        prior_eigenvalues, prior_eigenvectors = np.linalg.eigh(state_prior)
+        if np.any(prior_eigenvalues < -prior_eigenvalue_floor):
+            raise ValueError("state_prior_covariance must be positive semidefinite")
+        if retained == 0:
+            raise ValueError("state_mapping must retain at least one state direction")
+        positive_prior = prior_eigenvalues > prior_eigenvalue_floor
+        if retained > int(np.count_nonzero(positive_prior)):
+            raise ValueError(
+                "state_mapping retains more directions than the prior supports"
+            )
+        positive_basis = prior_eigenvectors[:, positive_prior]
+        standardized_mapping = (positive_basis.T @ mapping) / np.sqrt(
+            prior_eigenvalues[positive_prior]
+        )[:, None]
+        if not np.allclose(
+            standardized_mapping.T @ standardized_mapping,
+            np.eye(retained),
+            atol=_PRIOR_STANDARDIZATION_ATOL,
+            rtol=_PRIOR_STANDARDIZATION_ATOL,
+        ):
+            raise ValueError("state_mapping is not standardized by the state prior")
+        null_basis = prior_eigenvectors[:, ~positive_prior]
+        null_component = null_basis.T @ mapping
+        null_tolerance = _PRIOR_NULLSPACE_ATOL * max(
+            1.0,
+            float(np.linalg.norm(mapping, ord=2)),
+        )
+        if null_component.size and not np.allclose(
+            null_component,
+            np.zeros_like(null_component),
+            atol=null_tolerance,
+            rtol=0.0,
+        ):
+            raise ValueError("state_mapping leaks into the state-prior nullspace")
+        if np.any(np.linalg.eigvalsh(full) < -prior_eigenvalue_floor):
+            raise ValueError("full_covariance must be positive semidefinite")
         nuisance_count = len(observed) - retained
         if nuisance_count < 0:
             raise ValueError("state_mapping is wider than observed information")
@@ -323,6 +369,11 @@ class ObservedInformationCovarianceResultV1:
         object.__setattr__(self, "anchor_group_ids", anchor_ids)
         for name, value in validated.items():
             object.__setattr__(self, name, _immutable(value))
+        object.__setattr__(
+            self,
+            "prior_eigenvalue_floor",
+            prior_eigenvalue_floor,
+        )
         object.__setattr__(self, "condition_number", condition_number)
         object.__setattr__(self, "metadata", metadata)
 
@@ -356,6 +407,7 @@ class ObservedInformationCovarianceResultV1:
             "full_covariance": _array_record(self.full_covariance),
             "state_prior_covariance": _array_record(self.state_prior_covariance),
             "state_mapping": _array_record(self.state_mapping),
+            "prior_eigenvalue_floor": self.prior_eigenvalue_floor,
             "full_dimension": self.full_dimension,
             "reduced_dimension": self.reduced_dimension,
             "observation_group_ids": list(self.observation_group_ids),
@@ -856,6 +908,7 @@ def observed_information_covariance_from_prior_aware_result(
         anchor_group_expected_precision=anchor_precision,
         observation_group_precision_derivative=observation_derivative,
         anchor_group_precision_derivative=anchor_derivative,
+        prior_eigenvalue_floor=cfg.prior_eigenvalue_floor,
         condition_number=condition_number,
         covariance_semantics=semantics,
         metadata=result_metadata,

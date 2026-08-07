@@ -94,7 +94,7 @@ records for:
 - the exact observed reduced information matrix;
 - its reduced covariance;
 - the mapped complete covariance;
-- the state prior and retained state mapping;
+- the state prior, declared prior eigenvalue floor, and retained state mapping;
 - ordered observation and anchor group identities;
 - group likelihood powers;
 - expected group precisions and their exact derivatives;
@@ -115,7 +115,9 @@ The operation requires:
   the objective into a separately defined approximation;
 - exact reproduction of ordinary and anchor robust weights;
 - exact reproduction of the solver's working covariance; and
-- a positive-definite exact observed Hessian.
+- a positive-definite exact observed Hessian;
+- PSD state-prior and complete covariance matrices under the declared prior eigenvalue floor; and
+- a nonempty retained-state mapping that is orthonormal in the prior-standardized positive-eigenvalue basis and has negligible prior-nullspace leakage.
 
 It does not rescue an inadmissible update and does not affect the separate
 baseline-relative regret guard or exact-fallback decision.
