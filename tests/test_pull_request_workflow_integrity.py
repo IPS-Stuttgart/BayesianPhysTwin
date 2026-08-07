@@ -2,34 +2,82 @@
 
 from __future__ import annotations
 
+import copy
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
+from typing import Any
+
+import yaml
+from yaml.constructor import ConstructorError
+from yaml.nodes import MappingNode
+from yaml.resolver import BaseResolver
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _WORKFLOW_ROOT = _REPOSITORY_ROOT / ".github" / "workflows"
-_MAPPING_KEY = re.compile(
-    r"^(?P<indent>[ \t]*)[\"']?[A-Za-z0-9_-]+[\"']?\s*:"
-)
-_PULL_REQUEST_BLOCK_EVENT = re.compile(
-    r"(?m)^[ \t]+[\"']?pull_request(?:_target)?[\"']?\s*:"
-)
-_PULL_REQUEST_FLOW_MAPPING_EVENT = re.compile(
-    r"(?:^|[,{])\s*[\"']?pull_request(?:_target)?[\"']?\s*:"
-)
-_PULL_REQUEST_FLOW_SEQUENCE_EVENT = re.compile(
-    r"(?:^|[,\[])\s*[\"']?pull_request(?:_target)?[\"']?\s*(?=,|\])"
-)
-_YAML_ALIAS_OR_MERGE = re.compile(r"(?:^|\s)(?:\*[A-Za-z0-9_-]+|<<\s*:)")
 _FORBIDDEN_PULL_REQUEST_COMMANDS = (
-    "git " + "push",
-    "git reset " + "--soft origin/",
-    "git reset " + "--hard origin/",
+    "git push",
+    "git reset --soft origin/",
+    "git reset --hard origin/",
 )
 _FORBIDDEN_PULL_REQUEST_TRANSPORT = (
-    ".agent" + "/",
-    "base64 " + "--decode",
-    "base64 " + "-d",
+    ".agent/",
+    "base64 --decode",
+    "base64 -d",
+)
+
+
+class _WorkflowLoader(yaml.SafeLoader):
+    """Safe YAML loader with YAML-1.2-like booleans and unique mapping keys."""
+
+
+_WorkflowLoader.yaml_implicit_resolvers = copy.deepcopy(
+    yaml.SafeLoader.yaml_implicit_resolvers
+)
+for resolver_key, resolvers in tuple(_WorkflowLoader.yaml_implicit_resolvers.items()):
+    retained = [
+        (tag, pattern)
+        for tag, pattern in resolvers
+        if tag != "tag:yaml.org,2002:bool"
+    ]
+    if retained:
+        _WorkflowLoader.yaml_implicit_resolvers[resolver_key] = retained
+    else:
+        del _WorkflowLoader.yaml_implicit_resolvers[resolver_key]
+
+
+def _construct_unique_mapping(
+    loader: _WorkflowLoader,
+    node: MappingNode,
+    deep: bool = False,
+) -> dict[Any, Any]:
+    loader.flatten_mapping(node)
+    mapping: dict[Any, Any] = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        try:
+            duplicate = key in mapping
+        except TypeError as error:
+            raise ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                "found an unhashable mapping key",
+                key_node.start_mark,
+            ) from error
+        if duplicate:
+            raise ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                f"found duplicate key {key!r}",
+                key_node.start_mark,
+            )
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_WorkflowLoader.add_constructor(
+    BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_unique_mapping,
 )
 
 
@@ -42,228 +90,146 @@ def _workflow_texts() -> list[tuple[Path, str]]:
     return [(path, path.read_text(encoding="utf-8")) for path in workflows]
 
 
-def _key_declaration(key: str) -> re.Pattern[str]:
-    return re.compile(
-        rf"^(?P<indent>[ \t]*)[\"']?{re.escape(key)}[\"']?"
-        r"\s*:\s*(?P<value>.*)$"
-    )
+def _load_workflow(text: str) -> Mapping[str, object]:
+    try:
+        loaded = yaml.load(text, Loader=_WorkflowLoader)
+    except yaml.YAMLError as error:
+        raise ValueError(f"workflow YAML is invalid or ambiguous: {error}") from error
+    if loaded is None:
+        return {}
+    if not isinstance(loaded, Mapping):
+        raise ValueError("workflow YAML root must be a mapping")
+    return {str(key): value for key, value in loaded.items()}
 
 
-def _strip_yaml_comment(line: str) -> str:
-    """Remove comments while preserving hashes inside quoted scalars."""
-
-    quote: str | None = None
-    escaped = False
-    for index, character in enumerate(line):
-        if quote == '"':
-            if escaped:
-                escaped = False
-            elif character == "\\":
-                escaped = True
-            elif character == quote:
-                quote = None
-            continue
-        if quote == "'":
-            if character == quote:
-                quote = None
-            continue
-        if character in {'"', "'"}:
-            quote = character
-        elif character == "#":
-            return line[:index]
-    return line
-
-
-def _flow_balance(value: str) -> int:
-    """Return unclosed flow-container depth outside quoted scalars."""
-
-    quote: str | None = None
-    escaped = False
-    balance = 0
-    for character in value:
-        if quote == '"':
-            if escaped:
-                escaped = False
-            elif character == "\\":
-                escaped = True
-            elif character == quote:
-                quote = None
-            continue
-        if quote == "'":
-            if character == quote:
-                quote = None
-            continue
-        if character in {'"', "'"}:
-            quote = character
-        elif character in "[{":
-            balance += 1
-        elif character in "]}":
-            balance -= 1
-    return balance
-
-
-def _indent_width(line: str) -> int:
-    return len(line) - len(line.lstrip(" \t"))
-
-
-def _root_mapping_indent(lines: list[str]) -> int:
-    """Return the minimum indentation used by mapping keys in the document."""
-
-    indents: list[int] = []
-    for line in lines:
-        match = _MAPPING_KEY.match(_strip_yaml_comment(line))
-        if match is not None:
-            indents.append(_indent_width(match.group("indent")))
-    return min(indents, default=0)
-
-
-def _iter_yaml_values(
-    text: str,
+def _iter_mappings(
+    node: object,
     *,
-    key: str,
-    root_only: bool = False,
-) -> Iterator[tuple[str, str]]:
-    """Yield block or inline values for one YAML mapping key."""
+    seen: set[int] | None = None,
+) -> Iterator[Mapping[object, object]]:
+    visited = set() if seen is None else seen
+    if isinstance(node, (Mapping, list)):
+        identity = id(node)
+        if identity in visited:
+            return
+        visited.add(identity)
+    if isinstance(node, Mapping):
+        yield node
+        for value in node.values():
+            yield from _iter_mappings(value, seen=visited)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _iter_mappings(value, seen=visited)
 
-    declaration = _key_declaration(key)
-    lines = text.splitlines()
-    root_indent = _root_mapping_indent(lines)
-    index = 0
-    while index < len(lines):
-        cleaned = _strip_yaml_comment(lines[index])
-        match = declaration.match(cleaned)
-        if match is None:
-            index += 1
+
+def _normalized_scalar(value: object) -> str:
+    return str(value).strip().lower()
+
+
+def _has_pull_request_trigger(workflow: Mapping[str, object]) -> bool:
+    events = workflow.get("on")
+    if isinstance(events, str):
+        return _normalized_scalar(events) in {"pull_request", "pull_request_target"}
+    if isinstance(events, list):
+        return any(
+            _normalized_scalar(event) in {"pull_request", "pull_request_target"}
+            for event in events
+        )
+    if isinstance(events, Mapping):
+        return any(
+            _normalized_scalar(event) in {"pull_request", "pull_request_target"}
+            for event in events
+        )
+    return False
+
+
+def _permission_violations(
+    relative_path: str,
+    workflow: Mapping[str, object],
+) -> list[str]:
+    violations: list[str] = []
+    for mapping in _iter_mappings(workflow):
+        if "permissions" not in mapping:
             continue
-
-        declaration_indent = _indent_width(match.group("indent"))
-        if root_only and declaration_indent != root_indent:
-            index += 1
+        permissions = mapping["permissions"]
+        if isinstance(permissions, str):
+            if _normalized_scalar(permissions) == "write-all":
+                violations.append(f"{relative_path}: grants permissions: write-all")
             continue
-
-        value = match.group("value").strip()
-        if value:
-            parts = [value]
-            balance = _flow_balance(value)
-            index += 1
-            while balance > 0 and index < len(lines):
-                continuation = _strip_yaml_comment(lines[index]).strip()
-                parts.append(continuation)
-                balance += _flow_balance(continuation)
-                index += 1
-            yield "inline", " ".join(part for part in parts if part)
+        if not isinstance(permissions, Mapping):
+            violations.append(
+                f"{relative_path}: permissions must be a mapping or scalar"
+            )
             continue
-
-        block: list[str] = []
-        index += 1
-        while index < len(lines):
-            candidate = _strip_yaml_comment(lines[index])
-            if candidate.strip() and _indent_width(candidate) <= declaration_indent:
-                break
-            if candidate.strip():
-                block.append(candidate)
-            index += 1
-        yield "block", "\n".join(block)
+        for name, level in permissions.items():
+            if (
+                _normalized_scalar(name) == "contents"
+                and _normalized_scalar(level) == "write"
+            ):
+                violations.append(f"{relative_path}: grants contents: write")
+    return violations
 
 
-def _flow_mapping_has_pair(value: str, *, key: str, expected: str) -> bool:
-    pattern = re.compile(
-        rf"(?:^|[{{,])\s*[\"']?{re.escape(key)}[\"']?\s*:\s*"
-        rf"[\"']?{re.escape(expected)}[\"']?\s*(?=,|}})",
-        flags=re.IGNORECASE,
-    )
-    return pattern.search(value.strip()) is not None
-
-
-def _block_mapping_has_pair(value: str, *, key: str, expected: str) -> bool:
-    pattern = re.compile(
-        rf"(?im)^[ \t]+[\"']?{re.escape(key)}[\"']?\s*:\s*"
-        rf"[\"']?{re.escape(expected)}[\"']?\s*$"
-    )
-    return pattern.search(value) is not None
-
-
-def _mapping_has_pair(
-    style: str,
-    value: str,
-    *,
-    key: str,
-    expected: str,
-) -> bool:
-    if style == "block":
-        return _block_mapping_has_pair(value, key=key, expected=expected)
-    return value.lstrip().startswith("{") and _flow_mapping_has_pair(
-        value,
-        key=key,
-        expected=expected,
-    )
-
-
-def _inline_on_value_has_pull_request(value: str) -> bool:
-    normalized = value.strip()
-    if _YAML_ALIAS_OR_MERGE.search(normalized) is not None:
-        return True
-    if normalized.startswith("["):
-        return _PULL_REQUEST_FLOW_SEQUENCE_EVENT.search(normalized) is not None
-    if normalized.startswith("{"):
-        return _PULL_REQUEST_FLOW_MAPPING_EVENT.search(normalized) is not None
-    return normalized.strip("\"'") in {"pull_request", "pull_request_target"}
-
-
-def _has_pull_request_trigger(text: str) -> bool:
-    for style, value in _iter_yaml_values(text, key="on", root_only=True):
-        if _YAML_ALIAS_OR_MERGE.search(value) is not None:
+def _persists_checkout_credentials(workflow: Mapping[str, object]) -> bool:
+    for mapping in _iter_mappings(workflow):
+        uses = mapping.get("uses")
+        if (
+            not isinstance(uses, str)
+            or not uses.lower().startswith("actions/checkout@")
+        ):
+            continue
+        options = mapping.get("with")
+        if options is None:
+            continue
+        if not isinstance(options, Mapping):
             return True
-        if style == "block":
-            if _PULL_REQUEST_BLOCK_EVENT.search(value) is not None:
-                return True
-        elif _inline_on_value_has_pull_request(value):
+        persist_values = [
+            value
+            for name, value in options.items()
+            if _normalized_scalar(name) == "persist-credentials"
+        ]
+        if persist_values and (
+            len(persist_values) != 1
+            or _normalized_scalar(persist_values[0]) != "false"
+        ):
             return True
     return False
 
 
-def _permission_violations(relative_path: str, text: str) -> list[str]:
-    violations: list[str] = []
-    for style, value in _iter_yaml_values(text, key="permissions"):
-        if style == "inline" and value.strip().strip("\"'").lower() == "write-all":
-            violations.append(f"{relative_path}: grants permissions: write-all")
-        if _mapping_has_pair(style, value, key="contents", expected="write"):
-            violations.append(f"{relative_path}: grants contents: write")
-    return violations
-
-
-def _persists_checkout_credentials(text: str) -> bool:
-    return any(
-        _mapping_has_pair(
-            style,
-            value,
-            key="persist-credentials",
-            expected="true",
-        )
-        for style, value in _iter_yaml_values(text, key="with")
-    )
+def _normalized_run_commands(workflow: Mapping[str, object]) -> Iterator[str]:
+    for mapping in _iter_mappings(workflow):
+        command = mapping.get("run")
+        if not isinstance(command, str):
+            continue
+        without_continuations = re.sub(r"\\\s*", "", command)
+        yield re.sub(r"\s+", " ", without_continuations).strip().lower()
 
 
 def _pull_request_workflow_violations(
     relative_path: str,
     text: str,
 ) -> list[str]:
-    if not _has_pull_request_trigger(text):
+    try:
+        workflow = _load_workflow(text)
+    except ValueError as error:
+        return [f"{relative_path}: {error}"]
+    if not _has_pull_request_trigger(workflow):
         return []
 
-    violations = _permission_violations(relative_path, text)
-    if _persists_checkout_credentials(text):
+    violations = _permission_violations(relative_path, workflow)
+    if _persists_checkout_credentials(workflow):
         violations.append(f"{relative_path}: persists checkout credentials")
 
-    for marker in _FORBIDDEN_PULL_REQUEST_COMMANDS:
-        if marker in text:
-            violations.append(f"{relative_path}: contains {marker!r}")
-
-    for marker in _FORBIDDEN_PULL_REQUEST_TRANSPORT:
-        if marker in text:
-            violations.append(
-                f"{relative_path}: transports hidden generated source via {marker!r}"
-            )
+    for command in _normalized_run_commands(workflow):
+        for marker in _FORBIDDEN_PULL_REQUEST_COMMANDS:
+            if marker in command:
+                violations.append(f"{relative_path}: contains {marker!r}")
+        for marker in _FORBIDDEN_PULL_REQUEST_TRANSPORT:
+            if marker in command:
+                violations.append(
+                    f"{relative_path}: transports hidden generated source "
+                    f"via {marker!r}"
+                )
     return violations
 
 
@@ -279,30 +245,27 @@ def test_source_transport_scratch_directory_is_not_committed() -> None:
     )
 
 
-def test_pull_request_trigger_detection_covers_yaml_forms() -> None:
+def test_pull_request_trigger_detection_covers_yaml_forms_and_aliases() -> None:
     triggering = (
         "on:\n  pull_request:\n",
         "on:\n  'pull_request_target': {types: [opened]}\n",
         "on: pull_request\n",
         'on: [push, "pull_request"]\n',
         "on: {push: null, pull_request_target: {types: [opened]}}\n",
-        "on: [\n  push,\n  'pull_request_target',\n]\n",
-        "on: {\n  push: null,\n  pull_request: {types: [opened]},\n}\n",
+        "events: &events [push, pull_request]\non: *events\n",
         '"on": [pull_request] # quoted key\n',
-        "  on:\n    pull_request:\n  jobs: {}\n",
-        "events: &events [push]\non: *events\n",
-        "events: &events {push: null}\non:\n  <<: *events\n",
     )
     non_triggering = (
         "on: push\n",
         "on: [push, workflow_dispatch]\n",
-        "name: pull_request documentation\n",
-        "on: workflow_dispatch\nsteps:\n  - run: |\n      pull_request:\n",
-        "on: workflow_dispatch\njobs:\n  task:\n    on: pull_request\n",
+        "name: pull_request documentation\non: workflow_dispatch\n",
+        "on: workflow_dispatch\njobs:\n  task:\n    env:\n      on: pull_request\n",
     )
 
-    assert all(_has_pull_request_trigger(text) for text in triggering)
-    assert all(not _has_pull_request_trigger(text) for text in non_triggering)
+    assert all(_has_pull_request_trigger(_load_workflow(text)) for text in triggering)
+    assert all(
+        not _has_pull_request_trigger(_load_workflow(text)) for text in non_triggering
+    )
 
 
 def test_pull_request_workflows_cannot_bypass_write_checks() -> None:
@@ -316,7 +279,8 @@ def test_pull_request_workflows_cannot_bypass_write_checks() -> None:
             "grants contents: write",
         ),
         (
-            "on: [pull_request]\npermissions: {\n  contents:\n    write,\n}\n",
+            "danger: &danger\n  contents: write\n"
+            "on: pull_request\njobs:\n  test:\n    permissions: *danger\n",
             "grants contents: write",
         ),
         (
@@ -327,15 +291,33 @@ def test_pull_request_workflows_cannot_bypass_write_checks() -> None:
         ),
         (
             'on: ["pull_request"]\nsteps:\n'
-            "  - uses: actions/checkout@v7\n"
-            "    with: {\n      'persist-credentials':\n        'true',\n    }\n",
+            "  - &checkout\n"
+            "    uses: actions/checkout@v7\n"
+            "    with: {'persist-credentials': 'true'}\n",
             "persists checkout credentials",
+        ),
+        (
+            "on: pull_request\nsteps:\n"
+            "  - run: >-\n      git\n      push origin HEAD\n",
+            "contains 'git push'",
+        ),
+        (
+            "on: pull_request\nsteps:\n"
+            "  - run: |\n      base64 \\\n        --decode payload\n",
+            "transports hidden generated source",
         ),
     )
 
     for text, expected in cases:
         violations = _pull_request_workflow_violations("fixture.yml", text)
         assert any(expected in violation for violation in violations)
+
+
+def test_duplicate_yaml_keys_fail_closed() -> None:
+    text = "on: pull_request\npermissions: {}\npermissions: {contents: write}\n"
+    violations = _pull_request_workflow_violations("fixture.yml", text)
+    assert len(violations) == 1
+    assert "duplicate key 'permissions'" in violations[0]
 
 
 def test_non_pull_request_workflows_are_outside_this_policy() -> None:
