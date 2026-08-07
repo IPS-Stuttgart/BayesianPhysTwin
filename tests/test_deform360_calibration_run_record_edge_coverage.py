@@ -48,9 +48,7 @@ def test_source_protocol_rejects_nonmapping_provider_locks(
     tmp_path: Path,
 ) -> None:
     chain = _build_chain(tmp_path)
-    source_protocol = json.loads(
-        chain.source_protocol_path.read_text(encoding="utf-8")
-    )
+    source_protocol = json.loads(chain.source_protocol_path.read_text(encoding="utf-8"))
     source_protocol["locks"] = []
     _rewrite(
         chain.source_protocol_path,
@@ -90,9 +88,7 @@ def test_unsupported_plan_row_requires_retained_errors(tmp_path: Path) -> None:
 def test_download_rejects_lfs_identity_mismatch(tmp_path: Path) -> None:
     chain = _build_chain(tmp_path)
     download = json.loads(chain.download_path.read_text(encoding="utf-8"))
-    lfs_file = next(
-        row for row in download["files"] if row["lfs_sha256"] is not None
-    )
+    lfs_file = next(row for row in download["files"] if row["lfs_sha256"] is not None)
     lfs_file["downloaded_sha256"] = "e" * 64
     _rewrite(chain.download_path, download, digest_key="download_sha256")
 
