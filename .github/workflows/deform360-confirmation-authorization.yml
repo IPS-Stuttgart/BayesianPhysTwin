@@ -102,3 +102,25 @@ jobs:
           set -euo pipefail
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
+
+  tree-identity:
+    name: Temporary exact branch tree identity
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Print exact tree identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'BRANCH_TREE_SHA=%s\n' "$(git rev-parse 'HEAD^{tree}')"
