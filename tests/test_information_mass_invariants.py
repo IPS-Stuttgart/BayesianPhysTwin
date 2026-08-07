@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from test_observability_diagnostics import *  # noqa: F403
 
 from bayesian_phystwin._gauge_aware_contracts import (
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
@@ -12,7 +13,6 @@ from bayesian_phystwin.nuisance_aware_information import (
     NuisanceAwareInformationState,
     greedy_nuisance_aware_selection,
 )
-from test_observability_diagnostics import *  # noqa: F403
 
 
 @pytest.mark.parametrize("seed", range(16))
@@ -299,3 +299,9 @@ def test_greedy_information_selection_accepts_numpy_integer_count() -> None:
     )
 
     np.testing.assert_array_equal(selection.selected_indices, np.asarray([0]))
+
+
+# The stable-core coverage job invokes this file explicitly. Import the
+# query-anchor sufficiency cases so the new source module is assessed by the
+# ordinary changed-line and changed-branch ratchets.
+from test_query_anchor_sufficiency import *  # noqa: E402,F403

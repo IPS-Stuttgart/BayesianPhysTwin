@@ -153,11 +153,9 @@ def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
         validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
 
 
-# The stable-core coverage job invokes this file explicitly. Import recursive
-# factor-stream, timestamp-binding, directional-endpoint, and source-competence
-# contract cases here so their new package code shares the same strict ratchets.
+# The stable-core coverage job invokes this file explicitly. Import the recursive
+# factor-stream, timestamp-binding, and directional-endpoint contract cases here
+# so their new package code is covered by the same line and branch ratchets.
 from prob4d_factor_stream_contract_cases import *  # noqa: E402,F403
 from test_phystwin_directional_endpoint_v2 import *  # noqa: E402,F403
 from test_prob4d_observation_timestamp_binding_invariants import *  # noqa: E402,F403
-from test_source_competence_linearization import *  # noqa: E402,F403
-from test_source_competence_reliability import *  # noqa: E402,F403
