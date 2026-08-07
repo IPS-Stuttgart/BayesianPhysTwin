@@ -43,7 +43,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           test "$(git branch --show-current)" = "${GITHUB_HEAD_REF}"
 
-      - name: Apply deterministic Ruff import ordering
+      - name: Apply deterministic Ruff normalization
         shell: bash
         run: |
           set -euo pipefail
@@ -54,6 +54,7 @@ jobs:
             tests/test_render_deform360_calibration_source_run_record.py
           )
           python -m ruff check --fix --select I001 "${files[@]}"
+          python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
@@ -91,5 +92,5 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Sort Deform360 run-record imports'
+          git commit -m 'Normalize Deform360 run-record source'
           git push origin "HEAD:${GITHUB_HEAD_REF}"
