@@ -146,9 +146,7 @@ jobs:
                   "- status: `execution-record-unavailable`",
                   "- confirmation boundary verified: `unknown`",
                   "",
-                  (
-                      "This receipt contains no local paths, object identities, or target outcomes."
-                  ),
+                  "This receipt contains no local paths, object identities, or target outcomes.",
               ]
           )
           Path(sys.argv[1]).write_text(
