@@ -8,9 +8,6 @@ from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _WORKFLOW_ROOT = _REPOSITORY_ROOT / ".github" / "workflows"
-_ON_DECLARATION = re.compile(
-    r"^(?P<indent>[ \t]*)[\"']?on[\"']?\s*:\s*(?P<value>.*)$"
-)
 _PULL_REQUEST_BLOCK_EVENT = re.compile(
     r"(?m)^[ \t]+[\"']?pull_request(?:_target)?[\"']?\s*:"
 )
@@ -19,23 +16,6 @@ _PULL_REQUEST_FLOW_MAPPING_EVENT = re.compile(
 )
 _PULL_REQUEST_FLOW_SEQUENCE_EVENT = re.compile(
     r"(?:^|[,\[])\s*[\"']?pull_request(?:_target)?[\"']?\s*(?=,|\])"
-)
-_CONTENTS_WRITE_PERMISSION = re.compile(
-    r"(?im)^\s*contents\s*:\s*[\"']?write[\"']?\s*(?:#.*)?$"
-)
-_INLINE_CONTENTS_WRITE_PERMISSION = re.compile(
-    r"(?im)^\s*permissions\s*:\s*\{[^}\n]*"
-    r"[\"']?contents[\"']?\s*:\s*[\"']?write[\"']?\b"
-)
-_WRITE_ALL_PERMISSION = re.compile(
-    r"(?im)^\s*permissions\s*:\s*[\"']?write-all[\"']?\s*(?:#.*)?$"
-)
-_PERSIST_CREDENTIALS_TRUE = re.compile(
-    r"(?im)^\s*persist-credentials\s*:\s*[\"']?true[\"']?\s*(?:#.*)?$"
-)
-_INLINE_PERSIST_CREDENTIALS_TRUE = re.compile(
-    r"(?im)^\s*with\s*:\s*\{[^}\n]*"
-    r"[\"']?persist-credentials[\"']?\s*:\s*[\"']?true[\"']?\b"
 )
 _FORBIDDEN_PULL_REQUEST_COMMANDS = (
     "git " + "push",
@@ -56,6 +36,13 @@ def _workflow_texts() -> list[tuple[Path, str]]:
         if path.is_file() and path.suffix in {".yml", ".yaml"}
     )
     return [(path, path.read_text(encoding="utf-8")) for path in workflows]
+
+
+def _key_declaration(key: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"^(?P<indent>[ \t]*)[\"']?{re.escape(key)}[\"']?"
+        r"\s*:\s*(?P<value>.*)$"
+    )
 
 
 def _strip_yaml_comment(line: str) -> str:
@@ -115,19 +102,29 @@ def _indent_width(line: str) -> int:
     return len(line) - len(line.lstrip(" \t"))
 
 
-def _iter_on_values(text: str) -> Iterator[tuple[str, str]]:
-    """Yield block or inline values of top-level-style ``on`` declarations."""
+def _iter_yaml_values(
+    text: str,
+    *,
+    key: str,
+    root_only: bool = False,
+) -> Iterator[tuple[str, str]]:
+    """Yield block or inline values for one YAML mapping key."""
 
+    declaration = _key_declaration(key)
     lines = text.splitlines()
     index = 0
     while index < len(lines):
         cleaned = _strip_yaml_comment(lines[index])
-        match = _ON_DECLARATION.match(cleaned)
+        match = declaration.match(cleaned)
         if match is None:
             index += 1
             continue
 
         declaration_indent = _indent_width(match.group("indent"))
+        if root_only and declaration_indent != 0:
+            index += 1
+            continue
+
         value = match.group("value").strip()
         if value:
             parts = [value]
@@ -153,6 +150,39 @@ def _iter_on_values(text: str) -> Iterator[tuple[str, str]]:
         yield "block", "\n".join(block)
 
 
+def _flow_mapping_has_pair(value: str, *, key: str, expected: str) -> bool:
+    pattern = re.compile(
+        rf"(?:^|[{{,])\s*[\"']?{re.escape(key)}[\"']?\s*:\s*"
+        rf"[\"']?{re.escape(expected)}[\"']?\s*(?=,|}})",
+        flags=re.IGNORECASE,
+    )
+    return pattern.search(value.strip()) is not None
+
+
+def _block_mapping_has_pair(value: str, *, key: str, expected: str) -> bool:
+    pattern = re.compile(
+        rf"(?im)^[ \t]+[\"']?{re.escape(key)}[\"']?\s*:\s*"
+        rf"[\"']?{re.escape(expected)}[\"']?\s*$"
+    )
+    return pattern.search(value) is not None
+
+
+def _mapping_has_pair(
+    style: str,
+    value: str,
+    *,
+    key: str,
+    expected: str,
+) -> bool:
+    if style == "block":
+        return _block_mapping_has_pair(value, key=key, expected=expected)
+    return value.lstrip().startswith("{") and _flow_mapping_has_pair(
+        value,
+        key=key,
+        expected=expected,
+    )
+
+
 def _inline_on_value_has_pull_request(value: str) -> bool:
     normalized = value.strip()
     if normalized.startswith("["):
@@ -163,13 +193,35 @@ def _inline_on_value_has_pull_request(value: str) -> bool:
 
 
 def _has_pull_request_trigger(text: str) -> bool:
-    for style, value in _iter_on_values(text):
+    for style, value in _iter_yaml_values(text, key="on", root_only=True):
         if style == "block":
             if _PULL_REQUEST_BLOCK_EVENT.search(value) is not None:
                 return True
         elif _inline_on_value_has_pull_request(value):
             return True
     return False
+
+
+def _permission_violations(relative_path: str, text: str) -> list[str]:
+    violations: list[str] = []
+    for style, value in _iter_yaml_values(text, key="permissions"):
+        if style == "inline" and value.strip().strip("\"'").lower() == "write-all":
+            violations.append(f"{relative_path}: grants permissions: write-all")
+        if _mapping_has_pair(style, value, key="contents", expected="write"):
+            violations.append(f"{relative_path}: grants contents: write")
+    return violations
+
+
+def _persists_checkout_credentials(text: str) -> bool:
+    return any(
+        _mapping_has_pair(
+            style,
+            value,
+            key="persist-credentials",
+            expected="true",
+        )
+        for style, value in _iter_yaml_values(text, key="with")
+    )
 
 
 def _pull_request_workflow_violations(
@@ -179,17 +231,9 @@ def _pull_request_workflow_violations(
     if not _has_pull_request_trigger(text):
         return []
 
-    violations: list[str] = []
-    if _CONTENTS_WRITE_PERMISSION.search(text) is not None:
-        violations.append(f"{relative_path}: grants contents: write")
-    if _INLINE_CONTENTS_WRITE_PERMISSION.search(text) is not None:
-        violations.append(f"{relative_path}: grants inline contents: write")
-    if _WRITE_ALL_PERMISSION.search(text) is not None:
-        violations.append(f"{relative_path}: grants permissions: write-all")
-    if _PERSIST_CREDENTIALS_TRUE.search(text) is not None:
+    violations = _permission_violations(relative_path, text)
+    if _persists_checkout_credentials(text):
         violations.append(f"{relative_path}: persists checkout credentials")
-    if _INLINE_PERSIST_CREDENTIALS_TRUE.search(text) is not None:
-        violations.append(f"{relative_path}: persists inline checkout credentials")
 
     for marker in _FORBIDDEN_PULL_REQUEST_COMMANDS:
         if marker in text:
@@ -231,13 +275,14 @@ def test_pull_request_trigger_detection_covers_yaml_forms() -> None:
         "on: [push, workflow_dispatch]\n",
         "name: pull_request documentation\n",
         "on: workflow_dispatch\nsteps:\n  - run: |\n      pull_request:\n",
+        "on: workflow_dispatch\njobs:\n  task:\n    on: pull_request\n",
     )
 
     assert all(_has_pull_request_trigger(text) for text in triggering)
     assert all(not _has_pull_request_trigger(text) for text in non_triggering)
 
 
-def test_inline_pull_request_workflows_cannot_bypass_write_checks() -> None:
+def test_pull_request_workflows_cannot_bypass_write_checks() -> None:
     cases = (
         (
             "on: [pull_request]\npermissions: write-all\n",
@@ -245,7 +290,11 @@ def test_inline_pull_request_workflows_cannot_bypass_write_checks() -> None:
         ),
         (
             "on: pull_request_target\npermissions: {'contents': 'write'}\n",
-            "grants inline contents: write",
+            "grants contents: write",
+        ),
+        (
+            "on: [pull_request]\npermissions: {\n  contents:\n    write,\n}\n",
+            "grants contents: write",
         ),
         (
             "on: {pull_request: {types: [opened]}}\n"
@@ -256,8 +305,8 @@ def test_inline_pull_request_workflows_cannot_bypass_write_checks() -> None:
         (
             'on: ["pull_request"]\nsteps:\n'
             "  - uses: actions/checkout@v7\n"
-            "    with: {'persist-credentials': 'true'}\n",
-            "persists inline checkout credentials",
+            "    with: {\n      'persist-credentials':\n        'true',\n    }\n",
+            "persists checkout credentials",
         ),
     )
 
