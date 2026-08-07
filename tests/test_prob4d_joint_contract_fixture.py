@@ -37,8 +37,24 @@ def _belief() -> tuple[ObservationBeliefV1, str]:
         source_repository=descriptor["source_repository"],
         source_revision=descriptor["source_revision"],
         source_artifact_sha256=descriptor["source_artifact_sha256"],
+        declared_frame_ids=arrays["declared_frame_ids"],
+        mean_xyz_m=arrays["mean_xyz_m"],
+        frame_ids=arrays["frame_ids"],
+        entity_ids=arrays["entity_ids"],
+        view_indices=arrays["view_indices"],
+        window_indices=arrays["window_indices"],
+        correlation_group_ids=arrays["correlation_group_ids"],
+        factor_group_ids=arrays["factor_group_ids"],
+        prior_reliability=arrays["prior_reliability"],
+        association_probability=arrays["association_probability"],
+        local_covariance_m2=arrays["local_covariance_m2"],
+        low_rank_factor_m=arrays["low_rank_factor_m"],
+        group_ids=arrays["group_ids"],
+        group_prior_nominal_probability=arrays[
+            "group_prior_nominal_probability"
+        ],
+        group_composite_weight=arrays["group_composite_weight"],
         metadata=descriptor["metadata"],
-        **arrays,
     )
     return belief, payload["expected_artifact_id"]
 
@@ -161,3 +177,4 @@ from test_phystwin_directional_endpoint_v2 import *  # noqa: E402,F403
 from test_prob4d_observation_timestamp_binding_invariants import *  # noqa: E402,F403
 from test_source_competence_linearization import *  # noqa: E402,F403
 from test_source_competence_reliability import *  # noqa: E402,F403
+from test_source_competence_reliability_adversarial import *  # noqa: E402,F403
