@@ -32,6 +32,7 @@ def pytest_configure(config: object) -> None:
         *sorted(test_root.glob("test_observed_information_covariance*.py")),
         *sorted(test_root.glob("test_prob4d_visual_bias_update*.py")),
         *sorted(test_root.glob("test_query_calibration*.py")),
+        *sorted(test_root.glob("test_source_competence*.py")),
     ]
     for contract_test in contract_tests:
         resolved_test = contract_test.resolve()
