@@ -139,14 +139,12 @@ def _claim_sources(
         ),
         (
             _BINDING_SOURCE_ADDITIONAL_NAME,
-            repository_root
-            / "src/bayesian_phystwin/"
+            repository_root / "src/bayesian_phystwin/"
             "deform360_calibration_observability_binding.py",
         ),
         (
             _COMMAND_SOURCE_ADDITIONAL_NAME,
-            repository_root
-            / "scripts/science/"
+            repository_root / "scripts/science/"
             "seal_deform360_calibration_with_observability.py",
         ),
     ]
@@ -219,8 +217,7 @@ def _run(args: argparse.Namespace) -> dict[str, object]:
         stage0 = load_deform360_stage0_selection(
             staged / "sources/stage0/selection.json",
             protocol_path=(
-                staged
-                / "sources/repository/protocols/"
+                staged / "sources/repository/protocols/"
                 "deform360_official_hub_visuotactile_v1.json"
             ),
         )
