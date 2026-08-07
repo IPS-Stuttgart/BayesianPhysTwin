@@ -153,7 +153,11 @@ def test_mapping_loader_rejects_schema_and_derived_field_drift() -> None:
         ("bound_method", "wrong", "bound method changed"),
         ("risk_score_semantics", "wrong", "risk-score semantics changed"),
         ("group_count", certificate.group_count + 1, "group_count changed"),
-        ("acceptance_rate", certificate.acceptance_rate + 0.1, "acceptance_rate changed"),
+        (
+            "acceptance_rate",
+            certificate.acceptance_rate + 0.1,
+            "acceptance_rate changed",
+        ),
         ("observed_harm_rate", None, "observed_harm_rate changed"),
         (
             "minimum_zero_harm_accepted_groups",
