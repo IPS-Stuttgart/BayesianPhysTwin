@@ -88,9 +88,7 @@ def _validated_record_gate(value: object, *, name: str) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} must be an object")
     by_stratum = value.get("supported_by_stratum")
-    if not isinstance(by_stratum, Mapping) or set(by_stratum) != set(
-        EXPECTED_STRATA
-    ):
+    if not isinstance(by_stratum, Mapping) or set(by_stratum) != set(EXPECTED_STRATA):
         raise ValueError(f"{name}.supported_by_stratum changed")
     sheet = integer_field(
         by_stratum.get("sheet"),
@@ -124,9 +122,7 @@ def _validate_source_lock_summary(record: Mapping[str, Any]) -> None:
     error = record["source_locks_error"]
     if type(available) is not bool or type(valid) is not bool:
         raise ValueError("source-lock availability flags must be booleans")
-    if error is not None and (
-        type(error) is not str or error not in _ARTIFACT_ERRORS
-    ):
+    if error is not None and (type(error) is not str or error not in _ARTIFACT_ERRORS):
         raise ValueError("source_locks_error changed")
     digests = [record[key] for key in _SOURCE_LOCK_DIGEST_KEYS]
     if valid:
@@ -160,9 +156,7 @@ def _validate_artifact_summary(
 
     if type(available) is not bool or type(valid) is not bool:
         raise ValueError(f"{prefix} availability flags must be booleans")
-    if error is not None and (
-        type(error) is not str or error not in _ARTIFACT_ERRORS
-    ):
+    if error is not None and (type(error) is not str or error not in _ARTIFACT_ERRORS):
         raise ValueError(f"{prefix}_error changed")
 
     if valid:
