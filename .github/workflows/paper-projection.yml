@@ -1,0 +1,129 @@
+name: Paper projection contracts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/paper-projection.yml"
+      - "src/bayesian_phystwin/claim_bundle_v1.py"
+      - "src/bayesian_phystwin/paper_projection_v1.py"
+      - "src/bayesian_phystwin/cli/claim_bundle.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/run_manifest_v2.py"
+      - "tests/test_paper_projection_v1.py"
+      - "tests/test_claim_bundle_v1.py"
+      - "tests/test_cli_main.py"
+      - "docs/paper_projection_v1.md"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/paper-projection.yml"
+      - "src/bayesian_phystwin/claim_bundle_v1.py"
+      - "src/bayesian_phystwin/paper_projection_v1.py"
+      - "src/bayesian_phystwin/cli/claim_bundle.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/run_manifest_v2.py"
+      - "tests/test_paper_projection_v1.py"
+      - "tests/test_claim_bundle_v1.py"
+      - "tests/test_cli_main.py"
+      - "docs/paper_projection_v1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paper-projection-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Compact rows, manifest outputs, CLI, and package inclusion
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package and development tools
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Check focused source quality
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/paper_projection_v1.py
+            src/bayesian_phystwin/cli/claim_bundle.py
+            tests/test_paper_projection_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/paper_projection_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py
+
+      - name: Run focused and adjacent contracts
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_paper_projection_v1.py \
+            tests/test_claim_bundle_v1.py \
+            tests/test_cli_main.py
+
+      - name: Compile and verify wheel contents
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            src/bayesian_phystwin/paper_projection_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py \
+            tests/test_paper_projection_v1.py
+          wheel_dir="${RUNNER_TEMP}/paper-projection-wheel"
+          mkdir -p "${wheel_dir}"
+          python -m pip wheel . --no-deps --wheel-dir "${wheel_dir}"
+          WHEEL_DIR="${wheel_dir}" python - <<'PY'
+          import os
+          import zipfile
+          from pathlib import Path
+
+          wheels = sorted(Path(os.environ["WHEEL_DIR"]).glob("*.whl"))
+          if len(wheels) != 1:
+              raise SystemExit(f"expected one wheel, found {len(wheels)}")
+          with zipfile.ZipFile(wheels[0]) as archive:
+              names = set(archive.namelist())
+          required = {
+              "bayesian_phystwin/paper_projection_v1.py",
+              "bayesian_phystwin/cli/claim_bundle.py",
+          }
+          missing = sorted(required - names)
+          if missing:
+              raise SystemExit(f"wheel is missing paper-projection files: {missing}")
+          PY
+
+      - name: Verify read-only tracked state
+        run: |
+          set -euo pipefail
+          git diff --exit-code
