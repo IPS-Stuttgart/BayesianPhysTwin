@@ -120,7 +120,10 @@ def test_matrix_loader_rejects_invalid_shape_empty_and_nonfinite(
         ({"download_valid": False}, "invalid download_valid"),
         ({"result_valid": False}, "invalid result_valid"),
         ({"support_gate": None}, "support gate did not pass"),
-        ({"support_gate": {"support_passed": False}}, "support gate did not pass"),
+        (
+            {"support_gate": {"support_passed": False}},
+            "support gate did not pass",
+        ),
     ),
 )
 def test_successful_run_guard_rejects_each_invalid_terminal_state(
@@ -152,12 +155,14 @@ def test_required_digest_rejects_missing_length_and_non_hex(
 
 def test_required_digest_accepts_literal_sha256() -> None:
     digest = "a" * 64
-    assert builder._required_digest({"artifact": digest}, "artifact", name="record") == (
-        digest
+    assert (
+        builder._required_digest({"artifact": digest}, "artifact", name="record")
+        == digest
     )
 
 
-def test_result_row_rejects_malformed_missing_duplicate_and_identity_drift() -> None:
+def test_result_row_rejects_malformed_missing_duplicate_and_identity_drift(
+) -> None:
     with pytest.raises(ValueError, match="rows are missing"):
         builder._result_row(
             {"objects": "not-a-list"},
@@ -191,12 +196,15 @@ def test_result_row_rejects_malformed_missing_duplicate_and_identity_drift() -> 
             stratum="sheet",
         )
 
-    assert builder._result_row(
-        {"objects": [row]},
-        object_id="object",
-        episode_id=0,
-        stratum="sheet",
-    ) == row
+    assert (
+        builder._result_row(
+            {"objects": [row]},
+            object_id="object",
+            episode_id=0,
+            stratum="sheet",
+        )
+        == row
+    )
 
 
 def test_context_rejects_surrounding_object_whitespace(tmp_path: Path) -> None:
