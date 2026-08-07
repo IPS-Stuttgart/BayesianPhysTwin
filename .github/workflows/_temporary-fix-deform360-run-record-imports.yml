@@ -59,8 +59,10 @@ jobs:
           python -m ruff format --check "${files[@]}"
           python -m mypy \
             src/bayesian_phystwin/deform360_calibration_source_run_record.py
+          # The reusable-workflow receipt source assertion is independently
+          # repaired in PR #230. This generator validates only the three
+          # run-record files it is permitted to change.
           python -m pytest -q -p no:cacheprovider \
-            tests/test_deform360_calibration_source_direct_workflow.py \
             tests/test_deform360_calibration_source_run_record.py \
             tests/test_deform360_calibration_source_run_record_validation.py \
             tests/test_render_deform360_calibration_source_run_record.py
