@@ -162,6 +162,17 @@ def test_source_lock_summary_requires_boolean_flags() -> None:
         _validate_source_lock_summary(record)
 
 
+def test_source_lock_summary_rejects_unknown_error_category() -> None:
+    record = {
+        "source_locks_available": False,
+        "source_locks_valid": False,
+        "source_locks_error": "unknown-error",
+    }
+
+    with pytest.raises(ValueError, match="source_locks_error changed"):
+        _validate_source_lock_summary(record)
+
+
 def test_artifact_summary_requires_boolean_flags() -> None:
     record = {
         "plan_available": 1,
@@ -173,6 +184,24 @@ def test_artifact_summary_requires_boolean_flags() -> None:
     }
 
     with pytest.raises(ValueError, match="flags must be booleans"):
+        _validate_artifact_summary(
+            record,
+            prefix="plan",
+            gate_key="plan_support_gate",
+        )
+
+
+def test_artifact_summary_rejects_unknown_error_category() -> None:
+    record = {
+        "plan_available": False,
+        "plan_valid": False,
+        "plan_error": "unknown-error",
+        "plan_file_sha256": None,
+        "plan_sha256": None,
+        "plan_support_gate": None,
+    }
+
+    with pytest.raises(ValueError, match="plan_error changed"):
         _validate_artifact_summary(
             record,
             prefix="plan",
