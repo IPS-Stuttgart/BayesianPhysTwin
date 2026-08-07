@@ -303,7 +303,7 @@ def test_claim_binding_fail_closed_branches(tmp_path: Path) -> None:
     payload["bindings"][0]["result_artifact"] = {
         "name": "object_results_table",
         "path": table_path.name,
-        "sha256": claim_bundle.sha256_file(table_path),
+        "sha256": cases.sha256_file(table_path),
     }
     rejects(payload, "result artifact is absent")
 
@@ -321,7 +321,7 @@ def test_claim_binding_fail_closed_branches(tmp_path: Path) -> None:
     payload["bindings"][0]["table_artifact"] = {
         "name": "decisive_evidence_summary",
         "path": summary_path.name,
-        "sha256": claim_bundle.sha256_file(summary_path),
+        "sha256": cases.sha256_file(summary_path),
     }
     rejects(payload, "table artifact is absent")
 
