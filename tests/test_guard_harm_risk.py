@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import test_guard_harm_risk_adversarial as adversarial
 
 from bayesian_phystwin.guard_harm_risk import (
     GuardHarmRiskCertificateV1,
@@ -267,3 +268,13 @@ def test_loader_rejects_duplicate_json_keys(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="duplicate JSON object key"):
         load_guard_harm_risk_certificate(path)
+
+
+def test_adversarial_contracts_are_in_the_stable_coverage_lane() -> None:
+    adversarial.test_low_level_validators_reject_malformed_values()
+    adversarial.test_binomial_boundary_and_count_validation_branches()
+    adversarial.test_certificate_constructor_rejects_malformed_and_tampered_fields()
+    adversarial.test_mapping_loader_rejects_schema_and_derived_field_drift()
+    adversarial.test_artifact_binding_validators_and_identity_fail_closed()
+    adversarial.test_compound_artifact_contract_rejects_type_group_and_rejection_drift()
+    adversarial.test_artifact_builder_exercises_explicit_metadata_paths()
