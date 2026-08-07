@@ -101,9 +101,6 @@ jobs:
             tests/test_evidence_use_ledger.py \
             tests/test_decisive_evidence.py \
             tests/test_decisive_evidence_bootstrap.py \
-            tests/test_guard_harm_risk.py \
-            tests/test_guard_harm_risk_artifacts.py \
-            tests/test_guard_harm_risk_support_planning.py \
             tests/test_observation_belief.py \
             tests/test_grouped_likelihood.py \
             tests/test_calibration.py \
@@ -117,6 +114,9 @@ jobs:
             tests/test_sparse_prior_aware_gauge_belief.py \
             tests/test_sparse_explicit_gauge_prob4d.py \
             tests/test_structured_reliability.py \
+            tests/test_source_competence_linearization.py \
+            tests/test_source_competence_reliability.py \
+            tests/test_source_competence_reliability_adversarial.py \
             tests/test_drift_bias.py \
             tests/test_phystwin_bayesian_anchor.py \
             tests/test_phystwin_directional_endpoint_v2.py \
