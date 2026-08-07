@@ -1,0 +1,44 @@
+name: Format guard harm-risk once
+
+on:
+  push:
+    branches: [agent/guard-harm-risk-certificate-v1]
+    paths:
+      - .github/workflows/format-guard-harm-risk-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Format changed Python and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff==0.16.1"
+          files=(
+            src/bayesian_phystwin/guard_harm_risk.py
+            src/bayesian_phystwin/guard_harm_risk_artifacts.py
+            tests/test_guard_harm_risk.py
+            tests/test_guard_harm_risk_artifacts.py
+            tests/test_guard_harm_risk_support_planning.py
+          )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          git rm .github/workflows/format-guard-harm-risk-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Apply current Ruff formatting to guard harm-risk contracts"
+          git push origin HEAD:agent/guard-harm-risk-certificate-v1
