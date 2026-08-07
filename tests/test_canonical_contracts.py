@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 import test_deform360_calibration_observability_case_builder as observability_cases
-import test_deform360_calibration_observability_case_builder_adversarial as (
-    adversarial_cases,
+adversarial_cases = importlib.import_module(
+    "test_deform360_calibration_observability_case_builder_adversarial"
 )
 
 import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2
