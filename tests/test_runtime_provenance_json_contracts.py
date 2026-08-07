@@ -22,6 +22,11 @@ class _StringableName:
         return "CUDA_VISIBLE_DEVICES"
 
 
+def test_runtime_overrides_require_a_mapping() -> None:
+    with pytest.raises(TypeError, match="must be a mapping"):
+        default_runtime_environment(overrides=cast(Any, []))
+
+
 def test_runtime_overrides_reject_nonstring_keys_at_every_depth() -> None:
     with pytest.raises(ValueError, match="genuine string keys"):
         default_runtime_environment(overrides=cast(Any, {1: "value"}))
