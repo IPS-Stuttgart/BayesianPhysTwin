@@ -93,12 +93,12 @@ The dispatcher imports only the selected command module. Rendering help,
 listing commands, and inspecting metadata therefore do not require optional
 graph, vision, data, or experiment-only dependencies.
 
-## Research command registry
+## Research commands
 
-The former `bpt-*` executable surface is represented by a typed registry rather
-than installed as dozens of console scripts. Each entry records its grouped
-route, removed legacy alias, lifecycle status, optional dependency extras, and
-owning protocol or milestone.
+Additional research functionality is organized under grouped `bpt` routes.
+Use the built-in registries to discover current experiments, diagnostics, and
+archived analysis protocols together with their lifecycle status and optional
+dependency requirements.
 
 ```bash
 # Current research protocols
@@ -106,28 +106,20 @@ bpt experiment list
 bpt experiment describe confirm-phystwin-bayesian-anchor
 bpt experiment run confirm-phystwin-bayesian-anchor --help
 
-# Audits and analyses that are not promotable methods by themselves
+# Audits and analyses
 bpt diagnostic list
 bpt diagnostic describe audit-phystwin-calibration
 
-# Frozen historical or negative-result paths
+# Archived analysis protocols and negative results
 bpt archive list
 bpt archive describe evaluate-phystwin-state-injection
 
 # Complete machine-readable registry
 bpt commands list --json
-bpt commands describe bpt-phystwin-refit --json
-bpt commands migrate bpt-phystwin-refit
 ```
 
-Removed executable names are inspection and migration metadata, not runnable
-aliases. Frozen releases and tags retain their original command surface, and
-historical manifests keep their original command strings unchanged. New
-commands must be added to the grouped registry and must not add another
-`[project.scripts]` entry.
-
-See [command-line interface](docs/command_line.md) for lifecycle definitions,
-migration rules, and the contribution procedure.
+See [command-line interface](docs/command_line.md) for lifecycle definitions and
+the contribution procedure.
 
 ## Common stable workflows
 
@@ -180,7 +172,7 @@ state-update and exact-fallback boundaries.
 ## Documentation map
 
 - [Command-line interface](docs/command_line.md): grouped routes, lifecycle
-  registry, migration, and contribution policy.
+  registry, and contribution policy.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, experimental command families, and placement policy.
 - [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
