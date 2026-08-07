@@ -75,9 +75,7 @@ def _gate(sheet: int, volumetric: int) -> dict[str, Any]:
         },
         "minimum_supported_objects": 8,
         "minimum_supported_per_stratum": 4,
-        "support_passed": (
-            supported >= 8 and sheet >= 4 and volumetric >= 4
-        ),
+        "support_passed": (supported >= 8 and sheet >= 4 and volumetric >= 4),
     }
 
 
@@ -190,13 +188,9 @@ def _plan_row(
     object_id = unit["object_id"]
     return {
         **unit,
-        "status": (
-            "planned" if planned else "unsupported_without_replacement"
-        ),
+        "status": ("planned" if planned else "unsupported_without_replacement"),
         "errors": [] if planned else ["source support unavailable"],
-        "camera_streams": [f"camera-{index}" for index in range(8)]
-        if planned
-        else [],
+        "camera_streams": [f"camera-{index}" for index in range(8)] if planned else [],
         "tactile_streams": ["touch-0"] if planned else [],
         "selected_files": [
             {
@@ -329,9 +323,7 @@ def _build_chain(
         "dataset_revision": DEFORM360_DATASET_REVISION,
         "processing_repository": DEFORM360_PROCESSING_REPOSITORY,
         "processing_revision": PROCESSING_REVISION,
-        "tactile_baseline_policy": dict(
-            DEFORM360_EXPECTED_TACTILE_BASELINE_POLICY
-        ),
+        "tactile_baseline_policy": dict(DEFORM360_EXPECTED_TACTILE_BASELINE_POLICY),
         "objects": plan_rows,
         "gate": _gate(planned_sheet, planned_volumetric),
         "information_boundary": {
@@ -541,13 +533,9 @@ def test_plan_and_download_reject_confirmation_paths(tmp_path: Path) -> None:
     chain = _build_chain(tmp_path)
     confirmation = chain.selection["selection"]["confirmation"][0]
     plan = json.loads(chain.plan_path.read_text(encoding="utf-8"))
-    plan["objects"][0]["selected_files"][0]["path"] = confirmation[
-        "metadata_path"
-    ]
+    plan["objects"][0]["selected_files"][0]["path"] = confirmation["metadata_path"]
     _rewrite(chain.plan_path, plan, digest_key="plan_sha256")
-    assert _record(chain, workload_exit_code=1)["failure_stage"] == (
-        "plan-contract"
-    )
+    assert _record(chain, workload_exit_code=1)["failure_stage"] == ("plan-contract")
 
     chain = _build_chain(tmp_path / "download-case")
     download = json.loads(chain.download_path.read_text(encoding="utf-8"))
@@ -662,9 +650,7 @@ def test_digest_chain_and_prepared_row_contract_fail_closed(
     result = json.loads(chain.result_path.read_text(encoding="utf-8"))
     result["objects"][0]["camera_count"] = 7
     _rewrite(chain.result_path, result, digest_key="result_sha256")
-    assert _record(chain, workload_exit_code=1)["failure_stage"] == (
-        "result-contract"
-    )
+    assert _record(chain, workload_exit_code=1)["failure_stage"] == ("result-contract")
 
 
 def test_atomic_publication_is_durable_and_non_replacing(tmp_path: Path) -> None:

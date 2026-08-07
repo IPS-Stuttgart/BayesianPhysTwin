@@ -4,44 +4,155 @@ on:
   push:
     branches: [main]
     paths:
+      - src/bayesian_phystwin/claim_bundle_v1.py
       - src/bayesian_phystwin/paper_evidence_v1.py
+      - src/bayesian_phystwin/cli/claim_bundle.py
+      - src/bayesian_phystwin/cli/command_registry.py
       - src/bayesian_phystwin/cli/run_manifest.py
+      - tests/test_claim_bundle_v1.py
+      - tests/test_cli_main.py
       - tests/test_paper_evidence_v1.py
       - tests/test_paper_evidence_cli.py
       - tests/test_paper_evidence_hardening.py
+      - docs/claim_bundle_v1.md
       - docs/paper_evidence_profile.md
+      - .github/workflows/claim-bundle.yml
       - .github/workflows/paper-evidence.yml
   pull_request:
     branches: [main]
     paths:
+      - src/bayesian_phystwin/claim_bundle_v1.py
       - src/bayesian_phystwin/paper_evidence_v1.py
+      - src/bayesian_phystwin/cli/claim_bundle.py
+      - src/bayesian_phystwin/cli/command_registry.py
       - src/bayesian_phystwin/cli/run_manifest.py
+      - tests/test_claim_bundle_v1.py
+      - tests/test_cli_main.py
       - tests/test_paper_evidence_v1.py
       - tests/test_paper_evidence_cli.py
       - tests/test_paper_evidence_hardening.py
+      - docs/claim_bundle_v1.md
       - docs/paper_evidence_profile.md
+      - .github/workflows/claim-bundle.yml
       - .github/workflows/paper-evidence.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: paper-evidence-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
 jobs:
   validate:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Provision Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
+
       - name: Install development tools
-        run: python -m pip install -e ".[dev]"
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
       - name: Check stable evidence interfaces
-        run: python -m ruff check src/bayesian_phystwin/paper_evidence_v1.py src/bayesian_phystwin/cli/run_manifest.py tests/test_paper_evidence_v1.py tests/test_paper_evidence_cli.py tests/test_paper_evidence_hardening.py
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/claim_bundle_v1.py
+            src/bayesian_phystwin/paper_evidence_v1.py
+            src/bayesian_phystwin/cli/claim_bundle.py
+            src/bayesian_phystwin/cli/command_registry.py
+            src/bayesian_phystwin/cli/run_manifest.py
+            tests/test_claim_bundle_v1.py
+            tests/test_cli_main.py
+            tests/test_paper_evidence_v1.py
+            tests/test_paper_evidence_cli.py
+            tests/test_paper_evidence_hardening.py
+          )
+          python -m ruff check "${files[@]}"
+
+          case "${{ github.event_name }}" in
+            pull_request)
+              base_ref="${{ github.event.pull_request.base.sha }}"
+              head_ref="${{ github.event.pull_request.head.sha }}"
+              ;;
+            push)
+              base_ref="${{ github.event.before }}"
+              head_ref="${{ github.sha }}"
+              ;;
+            *)
+              base_ref="$(git rev-parse HEAD^)"
+              head_ref="$(git rev-parse HEAD)"
+              ;;
+          esac
+
+          format_files=()
+          while IFS= read -r changed_path; do
+            for candidate in "${files[@]}"; do
+              if [[ "$changed_path" == "$candidate" ]]; then
+                format_files+=("$candidate")
+                break
+              fi
+            done
+          done < <(
+            git diff --name-only --diff-filter=ACMR \
+              "$base_ref...$head_ref" -- "${files[@]}"
+          )
+
+          if (( ${#format_files[@]} > 0 )); then
+            python -m ruff format --check "${format_files[@]}"
+          else
+            echo "No changed stable evidence Python interfaces require format checking."
+          fi
+
       - name: Type-check evidence interfaces
-        run: python -m mypy src/bayesian_phystwin/paper_evidence_v1.py src/bayesian_phystwin/cli/run_manifest.py
+        run: |
+          set -euo pipefail
+          python -m mypy \
+            src/bayesian_phystwin/claim_bundle_v1.py \
+            src/bayesian_phystwin/paper_evidence_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py \
+            src/bayesian_phystwin/cli/command_registry.py \
+            src/bayesian_phystwin/cli/run_manifest.py
+
       - name: Run evidence contract tests
-        run: python -m pytest -q tests/test_run_manifest_v2.py tests/test_run_manifest_cli.py tests/test_paper_evidence_v1.py tests/test_paper_evidence_cli.py tests/test_paper_evidence_hardening.py
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_run_manifest_v2.py \
+            tests/test_run_manifest_cli.py \
+            tests/test_paper_evidence_v1.py \
+            tests/test_paper_evidence_cli.py \
+            tests/test_paper_evidence_hardening.py \
+            tests/test_claim_bundle_v1.py \
+            tests/test_cli_main.py
+
+      - name: Verify read-only tracked state
+        run: |
+          set -euo pipefail
+          git diff --exit-code
