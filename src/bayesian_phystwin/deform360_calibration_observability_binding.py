@@ -61,9 +61,7 @@ DEFORM360_CALIBRATION_OBSERVABILITY_SOURCE_KEY = (
 DEFORM360_OBSERVABILITY_REPORT_RUN_RECORD_SOURCE_KEY = (
     "sources/calibration-source/execution-manifest.json"
 )
-DEFORM360_OBSERVABILITY_BOUND_ROLES: tuple[
-    Deform360CalibrationRole, ...
-] = (
+DEFORM360_OBSERVABILITY_BOUND_ROLES: tuple[Deform360CalibrationRole, ...] = (
     "contact_linearization_and_covariance",
     "anchor_bias_prior",
     "physical_response_and_closure",
@@ -241,9 +239,7 @@ def validate_deform360_calibration_observability_binding(
     if not isinstance(stage0_selection, Deform360Stage0SelectionV1):
         raise TypeError("stage0_selection must be a Deform360Stage0SelectionV1")
     if not isinstance(visual_provider_lock, Deform360VisualProviderLockV1):
-        raise TypeError(
-            "visual_provider_lock must be a Deform360VisualProviderLockV1"
-        )
+        raise TypeError("visual_provider_lock must be a Deform360VisualProviderLockV1")
     if not isinstance(calibration_source_run_record, Mapping):
         raise TypeError("calibration_source_run_record must be a mapping")
     run_record = _validated_run_record(calibration_source_run_record)
@@ -279,13 +275,11 @@ def validate_deform360_calibration_observability_binding(
         "calibration source Stage-0 selection changed",
     )
     _require(
-        run_record.get("visual_provider_lock_id")
-        == visual_provider_lock.artifact_id,
+        run_record.get("visual_provider_lock_id") == visual_provider_lock.artifact_id,
         "calibration source visual-provider lock changed",
     )
     _require(
-        report.selection_artifact_sha256
-        == stage0_selection.selection_artifact_sha256,
+        report.selection_artifact_sha256 == stage0_selection.selection_artifact_sha256,
         "calibration observability Stage-0 selection changed",
     )
     _require(
@@ -349,8 +343,7 @@ def validate_deform360_calibration_observability_binding(
         raise ValueError("calibration_artifacts must be a sequence")
     artifacts = tuple(calibration_artifacts)
     if any(
-        not isinstance(value, Deform360CalibrationArtifactRefV1)
-        for value in artifacts
+        not isinstance(value, Deform360CalibrationArtifactRefV1) for value in artifacts
     ):
         raise ValueError("calibration_artifacts contain an unsupported value")
     by_role = {artifact.role: artifact for artifact in artifacts}
@@ -358,7 +351,9 @@ def validate_deform360_calibration_observability_binding(
         raise ValueError("calibration_artifacts repeat a role")
     missing = sorted(set(DEFORM360_OBSERVABILITY_BOUND_ROLES) - set(by_role))
     if missing:
-        raise ValueError(f"observability-bound calibration roles are missing: {missing}")
+        raise ValueError(
+            f"observability-bound calibration roles are missing: {missing}"
+        )
     for role in DEFORM360_OBSERVABILITY_BOUND_ROLES:
         artifact = by_role[role]
         _require(
@@ -646,9 +641,7 @@ class Deform360ConfirmationOpeningAuthorizationV1:
             "execution_seal_id": self.execution_seal_id,
             "calibration_bundle_id": self.calibration_bundle_id,
             "confirmation_opening_token": self.confirmation_opening_token,
-            "stage0_selection_artifact_sha256": (
-                self.stage0_selection_artifact_sha256
-            ),
+            "stage0_selection_artifact_sha256": (self.stage0_selection_artifact_sha256),
             "visual_provider_lock_id": self.visual_provider_lock_id,
             "evidence_use_ledger_id": self.evidence_use_ledger_id,
             "calibration_source_run_record_sha256": (
@@ -736,9 +729,7 @@ class Deform360ConfirmationOpeningAuthorizationV1:
             execution_seal_id=value["execution_seal_id"],
             calibration_bundle_id=value["calibration_bundle_id"],
             confirmation_opening_token=value["confirmation_opening_token"],
-            stage0_selection_artifact_sha256=value[
-                "stage0_selection_artifact_sha256"
-            ],
+            stage0_selection_artifact_sha256=value["stage0_selection_artifact_sha256"],
             visual_provider_lock_id=value["visual_provider_lock_id"],
             evidence_use_ledger_id=value["evidence_use_ledger_id"],
             calibration_source_run_record_sha256=value[
@@ -804,9 +795,7 @@ def build_deform360_confirmation_opening_authorization(
         confirmation_opening_token=(
             products.calibration_bundle.confirmation_opening_token
         ),
-        stage0_selection_artifact_sha256=(
-            stage0_selection.selection_artifact_sha256
-        ),
+        stage0_selection_artifact_sha256=(stage0_selection.selection_artifact_sha256),
         visual_provider_lock_id=visual_provider_lock.artifact_id,
         evidence_use_ledger_id=evidence_use_ledger.ledger_id,
         calibration_source_run_record_sha256=run_record["record_sha256"],
@@ -849,9 +838,7 @@ def save_deform360_confirmation_opening_authorization(
     """Atomically persist one validated confirmation-opening authorization."""
 
     if not isinstance(value, Deform360ConfirmationOpeningAuthorizationV1):
-        raise TypeError(
-            "value must be a Deform360ConfirmationOpeningAuthorizationV1"
-        )
+        raise TypeError("value must be a Deform360ConfirmationOpeningAuthorizationV1")
     write_atomic_json(value.to_record(), path, overwrite=overwrite)
 
 
