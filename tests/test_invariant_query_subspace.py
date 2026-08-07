@@ -361,15 +361,11 @@ def test_result_and_helper_methods_reject_malformed_inputs() -> None:
     with pytest.raises(ValueError, match="reason"):
         InvariantQuerySubspaceResultV1(**{**kwargs, "reason": 3})
     with pytest.raises(ValueError, match="inconsistent"):
-        InvariantQuerySubspaceResultV1(
-            **{**kwargs, "reason": "no-query-support"}
-        )
+        InvariantQuerySubspaceResultV1(**{**kwargs, "reason": "no-query-support"})
     with pytest.raises(ValueError, match="idempotent"):
         InvariantQuerySubspaceResultV1(
             **{
                 **kwargs,
-                "information_projector": np.asarray(
-                    [[1.0, 0.0], [0.0, 0.5]]
-                ),
+                "information_projector": np.asarray([[1.0, 0.0], [0.0, 0.5]]),
             }
         )
