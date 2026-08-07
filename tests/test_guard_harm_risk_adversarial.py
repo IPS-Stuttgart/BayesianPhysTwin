@@ -247,7 +247,7 @@ def test_compound_artifact_contract_rejects_type_group_and_rejection_drift() -> 
         statistical_unit="object",
         metric="loss",
         threshold_selection_group_ids=(),
-        group_ids=("a", "b"),
+        group_ids=certificate.group_ids,
         risk_scores=np.asarray([0.0, 0.0]),
         candidate_losses=np.ones(2),
         fallback_losses=np.ones(2),
@@ -264,7 +264,7 @@ def test_compound_artifact_contract_rejects_type_group_and_rejection_drift() -> 
     object.__setattr__(
         all_accepted,
         "accepted_mask",
-        np.asarray([True, False], dtype=bool),
+        np.asarray([False, True], dtype=bool),
     )
     with pytest.raises(ValueError, match="every rejected group"):
         artifacts.GuardHarmRiskArtifactCertificateV1(
