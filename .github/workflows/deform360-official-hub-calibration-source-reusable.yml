@@ -111,6 +111,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Completion receipts contain no local paths, object identities, or target outcomes.
           evidence_root="${EVIDENCE_ROOT:-${RUNNER_TEMP}/deform360-calibration-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
           mkdir -p -- "${evidence_root}"
           manifest="${evidence_root}/execution-manifest.json"
