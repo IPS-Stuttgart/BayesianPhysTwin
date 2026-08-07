@@ -259,9 +259,7 @@ def _create(args: argparse.Namespace) -> int:
         repository=primary.repository,
         revision=primary.revision,
         dirty=primary.dirty,
-        related_repositories=_load_repository_states(
-            args.related_repositories_json
-        ),
+        related_repositories=_load_repository_states(args.related_repositories_json),
         command=tuple(shlex.split(args.command_line)),
         classification=args.classification,
         statistical_unit=args.statistical_unit,

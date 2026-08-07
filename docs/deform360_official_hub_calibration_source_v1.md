@@ -53,7 +53,17 @@ calibration object subtrees. For each object it selects:
   stream;
 - the exact raw NPY/timestamp pair at that episode index for every tactile
   stream; and
-- the one released `median_*.npy` baseline for each admitted tactile sensor.
+- one released `median_*.npy` baseline for each admitted tactile sensor.
+
+When a sensor exposes one baseline, that baseline is retained exactly. When it
+exposes several timestamped baselines, the planner selects the unique baseline
+whose filename timestamp is nearest to the selected tactile recording timestamp.
+The association fails closed unless the nearest baseline is at most ten minutes
+away, is separated from the runner-up by at least one minute, and the selected
+baselines across sensors form one capture cluster spanning at most five seconds.
+These limits and the association rule were fixed after the first names-only plan
+revealed multiple baselines but before any calibration payload byte was opened.
+The plan records every timestamp, distance, margin, and cross-sensor span.
 
 Episode identity follows the official implementation: exact-stem data/timestamp
 pairs are sorted by data filename and addressed by zero-based episode index.

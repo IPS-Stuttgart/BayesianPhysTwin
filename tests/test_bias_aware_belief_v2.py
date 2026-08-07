@@ -17,7 +17,7 @@ from bayesian_phystwin.bias_aware_belief_v2 import (
     BiasAwareStateUpdateConfigV2,
     update_bias_aware_state_v2,
 )
-from bayesian_phystwin.spd_system import SPDConditionError, SPD_SYSTEM_SCHEMA
+from bayesian_phystwin.spd_system import SPD_SYSTEM_SCHEMA, SPDConditionError
 
 FROZEN_V1_GIT_BLOB_SHA1 = "80994687a44b798c6b33089bfd4f1858911e0837"
 
@@ -70,10 +70,7 @@ def _v2_config(**overrides: object) -> BiasAwareStateUpdateConfigV2:
 
 def test_frozen_v1_implementation_bytes_are_unchanged() -> None:
     source = (
-        Path(__file__).parents[1]
-        / "src"
-        / "bayesian_phystwin"
-        / "bias_aware_belief.py"
+        Path(__file__).parents[1] / "src" / "bayesian_phystwin" / "bias_aware_belief.py"
     )
 
     assert _git_blob_sha1(source) == FROZEN_V1_GIT_BLOB_SHA1
