@@ -33,9 +33,7 @@ from ._portable_contracts import (
     write_atomic_json,
 )
 
-GUARD_HARM_RISK_CERTIFICATE_SCHEMA = (
-    "bayesian_phystwin.guard_harm_risk_certificate"
-)
+GUARD_HARM_RISK_CERTIFICATE_SCHEMA = "bayesian_phystwin.guard_harm_risk_certificate"
 GUARD_HARM_RISK_CERTIFICATE_VERSION = 1
 RISK_SCORE_SEMANTICS = "lower-is-safer-inclusive-threshold-v1"
 BOUND_METHOD = "one-sided-clopper-pearson-binomial-v1"
@@ -127,9 +125,7 @@ def _group_id_tuple(value: object, *, expected_count: int) -> tuple[str, ...]:
 
 def _selection_group_id_tuple(value: object) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise ValueError(
-            "threshold_selection_group_ids must be a sequence of strings"
-        )
+        raise ValueError("threshold_selection_group_ids must be a sequence of strings")
     result = tuple(
         _canonical_string(
             item,
@@ -138,9 +134,7 @@ def _selection_group_id_tuple(value: object) -> tuple[str, ...]:
         for index, item in enumerate(tuple(value))
     )
     if len(set(result)) != len(result):
-        raise ValueError(
-            "threshold_selection_group_ids must not contain duplicates"
-        )
+        raise ValueError("threshold_selection_group_ids must not contain duplicates")
     return tuple(sorted(result))
 
 
@@ -229,21 +223,13 @@ def minimum_zero_harm_groups_for_certificate(
     tail_probability = 1.0 - confidence
     estimate = max(
         1,
-        int(
-            math.ceil(
-                math.log(tail_probability) / math.log1p(-target)
-            )
-        ),
+        int(math.ceil(math.log(tail_probability) / math.log1p(-target))),
     )
-    while (
-        one_sided_binomial_upper_bound(0, estimate, confidence)
-        > target
-    ):
+    while one_sided_binomial_upper_bound(0, estimate, confidence) > target:
         estimate += 1
     while (
         estimate > 1
-        and one_sided_binomial_upper_bound(0, estimate - 1, confidence)
-        <= target
+        and one_sided_binomial_upper_bound(0, estimate - 1, confidence) <= target
     ):
         estimate -= 1
     return estimate
@@ -335,8 +321,7 @@ class GuardHarmRiskCertificateV1:
         overlap = sorted(set(group_ids) & set(threshold_selection_group_ids))
         if overlap:
             raise ValueError(
-                "threshold-selection and certification groups overlap: "
-                f"{overlap}"
+                f"threshold-selection and certification groups overlap: {overlap}"
             )
         risk_scores = risk_scores[order]
         candidate_losses = candidate_losses[order]
@@ -383,9 +368,7 @@ class GuardHarmRiskCertificateV1:
                 "certification outcomes cannot select the certified threshold"
             )
         if not groups_independent:
-            raise ValueError(
-                "certification groups must be independent physical units"
-            )
+            raise ValueError("certification groups must be independent physical units")
 
         expected_accepted = risk_scores <= threshold
         expected_harmful = candidate_losses > fallback_losses + harm_margin
@@ -446,8 +429,7 @@ class GuardHarmRiskCertificateV1:
                 "one_sided_upper_bound does not match exact binomial inversion"
             )
         expected_certified = (
-            accepted_count >= minimum_accepted
-            and expected_upper <= target
+            accepted_count >= minimum_accepted and expected_upper <= target
         )
         certified = genuine_boolean(self.certified, name="certified")
         if certified != expected_certified:
@@ -568,29 +550,21 @@ class GuardHarmRiskCertificateV1:
             "bound_method": BOUND_METHOD,
             "risk_score_semantics": RISK_SCORE_SEMANTICS,
             "guard_policy_id": self.guard_policy_id,
-            "threshold_source_artifact_id": (
-                self.threshold_source_artifact_id
-            ),
+            "threshold_source_artifact_id": (self.threshold_source_artifact_id),
             "certification_partition_id": self.certification_partition_id,
             "statistical_unit": self.statistical_unit,
             "metric": self.metric,
-            "threshold_selection_group_ids": list(
-                self.threshold_selection_group_ids
-            ),
+            "threshold_selection_group_ids": list(self.threshold_selection_group_ids),
             "group_ids": list(self.group_ids),
             "risk_scores": self.risk_scores.tolist(),
             "candidate_losses": self.candidate_losses.tolist(),
             "fallback_losses": self.fallback_losses.tolist(),
-            "fallback_identity_verified": (
-                self.fallback_identity_verified.tolist()
-            ),
+            "fallback_identity_verified": (self.fallback_identity_verified.tolist()),
             "threshold": self.threshold,
             "harm_margin": self.harm_margin,
             "target_harm_probability": self.target_harm_probability,
             "confidence_level": self.confidence_level,
-            "minimum_accepted_group_count": (
-                self.minimum_accepted_group_count
-            ),
+            "minimum_accepted_group_count": (self.minimum_accepted_group_count),
             "accepted_mask": self.accepted_mask.tolist(),
             "harmful_mask": self.harmful_mask.tolist(),
             "group_count": self.group_count,
@@ -609,9 +583,7 @@ class GuardHarmRiskCertificateV1:
             "certification_outcomes_used_for_threshold_selection": (
                 self.certification_outcomes_used_for_threshold_selection
             ),
-            "certification_groups_independent": (
-                self.certification_groups_independent
-            ),
+            "certification_groups_independent": (self.certification_groups_independent),
             "metadata": plain_json(self.metadata),
         }
 
@@ -729,15 +701,11 @@ class GuardHarmRiskCertificateV1:
             certified=cast(bool, value["certified"]),
             threshold_frozen_before_certification_outcomes=cast(
                 bool,
-                value[
-                    "threshold_frozen_before_certification_outcomes"
-                ],
+                value["threshold_frozen_before_certification_outcomes"],
             ),
             certification_outcomes_used_for_threshold_selection=cast(
                 bool,
-                value[
-                    "certification_outcomes_used_for_threshold_selection"
-                ],
+                value["certification_outcomes_used_for_threshold_selection"],
             ),
             certification_groups_independent=cast(
                 bool,
@@ -756,9 +724,7 @@ class GuardHarmRiskCertificateV1:
             value["minimum_zero_harm_accepted_groups"]
             != certificate.minimum_zero_harm_accepted_groups
         ):
-            raise ValueError(
-                f"{name} minimum zero-harm support changed"
-            )
+            raise ValueError(f"{name} minimum zero-harm support changed")
         return certificate
 
 
@@ -836,18 +802,14 @@ def certify_guard_harm_risk(
         accepted_count=accepted_count,
         harmful_accepted_count=harmful_count,
         one_sided_upper_bound=upper,
-        certified=(
-            accepted_count >= minimum_accepted and upper <= target
-        ),
+        certified=(accepted_count >= minimum_accepted and upper <= target),
         threshold_frozen_before_certification_outcomes=(
             threshold_frozen_before_certification_outcomes
         ),
         certification_outcomes_used_for_threshold_selection=(
             certification_outcomes_used_for_threshold_selection
         ),
-        certification_groups_independent=(
-            certification_groups_independent
-        ),
+        certification_groups_independent=(certification_groups_independent),
         metadata={} if metadata is None else metadata,
     )
 

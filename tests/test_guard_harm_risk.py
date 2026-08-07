@@ -64,9 +64,7 @@ def test_zero_harm_support_planning_is_exact() -> None:
 def test_general_clopper_pearson_bound_inverts_binomial_cdf() -> None:
     upper = one_sided_binomial_upper_bound(1, 10, 0.95)
     probability = sum(
-        float(math.comb(10, index))
-        * upper**index
-        * (1.0 - upper) ** (10 - index)
+        float(math.comb(10, index)) * upper**index * (1.0 - upper) ** (10 - index)
         for index in range(2)
     )
 
@@ -101,15 +99,11 @@ def test_group_order_does_not_change_the_certificate_identity() -> None:
     permutation = np.arange(certificate.group_count)[::-1]
     permuted = certify_guard_harm_risk(
         guard_policy_id=certificate.guard_policy_id,
-        threshold_source_artifact_id=(
-            certificate.threshold_source_artifact_id
-        ),
+        threshold_source_artifact_id=(certificate.threshold_source_artifact_id),
         certification_partition_id=certificate.certification_partition_id,
         statistical_unit=certificate.statistical_unit,
         metric=certificate.metric,
-        threshold_selection_group_ids=(
-            certificate.threshold_selection_group_ids
-        ),
+        threshold_selection_group_ids=(certificate.threshold_selection_group_ids),
         group_ids=tuple(certificate.group_ids[index] for index in permutation),
         risk_scores=certificate.risk_scores[permutation],
         candidate_losses=certificate.candidate_losses[permutation],
@@ -121,9 +115,7 @@ def test_group_order_does_not_change_the_certificate_identity() -> None:
         harm_margin=certificate.harm_margin,
         target_harm_probability=certificate.target_harm_probability,
         confidence_level=certificate.confidence_level,
-        minimum_accepted_group_count=(
-            certificate.minimum_accepted_group_count
-        ),
+        minimum_accepted_group_count=(certificate.minimum_accepted_group_count),
         threshold_frozen_before_certification_outcomes=True,
         certification_outcomes_used_for_threshold_selection=False,
         certification_groups_independent=True,
@@ -269,7 +261,7 @@ def test_loader_rejects_duplicate_json_keys(tmp_path: Path) -> None:
     path = tmp_path / "duplicate.json"
     record = json.dumps(certificate.to_record(), sort_keys=True)
     path.write_text(
-        "{\"schema\":\"duplicate\"," + record[1:],
+        '{"schema":"duplicate",' + record[1:],
         encoding="utf-8",
     )
 

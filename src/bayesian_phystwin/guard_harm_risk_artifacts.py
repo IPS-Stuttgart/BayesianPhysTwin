@@ -162,13 +162,9 @@ class GuardHarmRiskArtifactCertificateV1:
         binding = self.fallback_binding
         certificate = self.risk_certificate
         if not isinstance(binding, GuardFallbackArtifactBindingV1):
-            raise TypeError(
-                "fallback_binding must be a GuardFallbackArtifactBindingV1"
-            )
+            raise TypeError("fallback_binding must be a GuardFallbackArtifactBindingV1")
         if not isinstance(certificate, GuardHarmRiskCertificateV1):
-            raise TypeError(
-                "risk_certificate must be a GuardHarmRiskCertificateV1"
-            )
+            raise TypeError("risk_certificate must be a GuardHarmRiskCertificateV1")
         if tuple(certificate.group_ids) != tuple(binding.group_ids):
             raise ValueError(
                 "risk-certificate groups differ from fallback-binding groups"
@@ -208,9 +204,7 @@ class GuardHarmRiskArtifactCertificateV1:
     def descriptor(self) -> dict[str, object]:
         return {
             "schema": GUARD_HARM_RISK_ARTIFACT_CERTIFICATE_SCHEMA,
-            "schema_version": (
-                GUARD_HARM_RISK_ARTIFACT_CERTIFICATE_VERSION
-            ),
+            "schema_version": (GUARD_HARM_RISK_ARTIFACT_CERTIFICATE_VERSION),
             "fallback_binding_id": self.fallback_binding.artifact_id,
             "risk_certificate_id": self.risk_certificate.artifact_id,
             "certified": self.certified,
@@ -289,9 +283,7 @@ def certify_guard_harm_risk_from_artifacts(
         fallback_binding=binding,
         risk_certificate=certificate,
         metadata={
-            "fallback_equality_source": (
-                "selected-and-fallback-content-identities-v1"
-            )
+            "fallback_equality_source": ("selected-and-fallback-content-identities-v1")
         },
     )
 
