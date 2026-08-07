@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -32,7 +32,7 @@ GUARD_HARM_RISK_ARTIFACT_CERTIFICATE_SCHEMA = (
 )
 GUARD_HARM_RISK_ARTIFACT_CERTIFICATE_VERSION = 1
 
-BoolArray = NDArray[np.bool_]
+BoolArray: TypeAlias = NDArray[np.bool_]
 
 
 def _canonical_string(value: object, *, name: str) -> str:
