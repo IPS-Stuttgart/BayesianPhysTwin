@@ -286,7 +286,8 @@ def object_support_counts(
             supported_ids.add(object_id)
             supported_by_stratum[stratum] += 1
     if any(
-        count != EXPECTED_OBJECTS_PER_STRATUM for count in cohort_by_stratum.values()
+        count != EXPECTED_OBJECTS_PER_STRATUM
+        for count in cohort_by_stratum.values()
     ):
         raise ValueError(f"{artifact} cohort strata changed")
     return (
@@ -324,7 +325,9 @@ def validated_support_gate(
         maximum=EXPECTED_OBJECT_COUNT,
     )
     by_stratum = gate.get("supported_by_stratum")
-    if not isinstance(by_stratum, Mapping) or set(by_stratum) != set(EXPECTED_STRATA):
+    if not isinstance(by_stratum, Mapping) or set(by_stratum) != set(
+        EXPECTED_STRATA
+    ):
         raise ValueError(f"{artifact} supported_by_stratum changed")
     sheet = integer_field(
         by_stratum.get("sheet"),

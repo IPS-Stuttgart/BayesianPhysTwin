@@ -107,7 +107,9 @@ def _selection_units(
             row.get("metadata_path"),
             name=f"{name} metadata_path",
         )
-        if metadata_object != object_id or not metadata_path.endswith("/metadata.json"):
+        if metadata_object != object_id or not metadata_path.endswith(
+            "/metadata.json"
+        ):
             raise ValueError(f"{name} metadata path changed")
         metadata_sha256 = sha256(
             row.get("metadata_sha256"),
@@ -250,8 +252,10 @@ def source_lock_summary(
             raise ValueError("selection revisions are missing")
         if (
             selection_dataset.get("repo_id") != DEFORM360_DATASET_REPOSITORY
-            or selection_dataset.get("resolved_revision") != DEFORM360_DATASET_REVISION
-            or selection_processing.get("repository") != DEFORM360_PROCESSING_REPOSITORY
+            or selection_dataset.get("resolved_revision")
+            != DEFORM360_DATASET_REVISION
+            or selection_processing.get("repository")
+            != DEFORM360_PROCESSING_REPOSITORY
             or selection_processing.get("revision") != processing_revision
             or selection.get("replacement_allowed_after_payload_access") is not False
         ):
@@ -290,10 +294,9 @@ def source_lock_summary(
         ):
             raise ValueError("provider lock information boundary changed")
         locks = source_protocol.get("locks")
-        if (
-            not isinstance(locks, Mapping)
-            or locks.get("visual_provider_lock_id") != provider_id
-        ):
+        if not isinstance(locks, Mapping) or locks.get(
+            "visual_provider_lock_id"
+        ) != provider_id:
             raise ValueError("source protocol provider binding changed")
     except ValueError:
         return (
@@ -407,10 +410,8 @@ def _validate_plan_rows(
             if errors != [] or len(cameras) < MINIMUM_CAMERA_STREAMS or not tactile:
                 raise ValueError("planned row lacks admitted source support")
         elif status == "unsupported_without_replacement":
-            if (
-                not isinstance(errors, list)
-                or not errors
-                or any(type(item) is not str or not item for item in errors)
+            if not isinstance(errors, list) or not errors or any(
+                type(item) is not str or not item for item in errors
             ):
                 raise ValueError("unsupported row lacks retained failure evidence")
         files = row.get("selected_files")
@@ -488,7 +489,9 @@ def plan_summary(
             raise ValueError("plan protocol changed")
         if value.get("parent_protocol_id") != DEFORM360_PARENT_PROTOCOL_ID:
             raise ValueError("plan parent protocol changed")
-        if value.get("protocol_sha256") != source_locks.get("source_protocol_sha256"):
+        if value.get("protocol_sha256") != source_locks.get(
+            "source_protocol_sha256"
+        ):
             raise ValueError("plan source protocol binding changed")
         if value.get("selection_source_sha256") != source_locks.get(
             "selection_lock_file_sha256"
@@ -505,7 +508,8 @@ def plan_summary(
         if (
             value.get("dataset_repository") != DEFORM360_DATASET_REPOSITORY
             or value.get("dataset_revision") != DEFORM360_DATASET_REVISION
-            or value.get("processing_repository") != DEFORM360_PROCESSING_REPOSITORY
+            or value.get("processing_repository")
+            != DEFORM360_PROCESSING_REPOSITORY
             or value.get("processing_revision") != processing_revision
         ):
             raise ValueError("plan revisions changed")
@@ -524,11 +528,14 @@ def plan_summary(
         identities, planned_ids, supported, by_stratum = object_support_counts(
             value,
             artifact="plan",
-            allowed_statuses=frozenset({"planned", "unsupported_without_replacement"}),
+            allowed_statuses=frozenset(
+                {"planned", "unsupported_without_replacement"}
+            ),
             supported_status="planned",
         )
         expected_identities = frozenset(
-            (object_id, unit[0], unit[1]) for object_id, unit in expected_units.items()
+            (object_id, unit[0], unit[1])
+            for object_id, unit in expected_units.items()
         )
         if identities != expected_identities:
             raise ValueError("plan cohort differs from the frozen selection")
@@ -667,14 +674,10 @@ def download_summary(
                 name="downloaded_sha256",
             )
             lfs_sha = record.get("lfs_sha256")
-            if (
-                lfs_sha is not None
-                and sha256(
-                    lfs_sha,
-                    name="download LFS SHA-256",
-                )
-                != downloaded_sha
-            ):
+            if lfs_sha is not None and sha256(
+                lfs_sha,
+                name="download LFS SHA-256",
+            ) != downloaded_sha:
                 raise ValueError("downloaded bytes differ from LFS identity")
         if seen_objects != set(planned_ids):
             raise ValueError("download omitted a planned object")
@@ -822,10 +825,8 @@ def result_summary(
                 if object_id in planned_ids:
                     raise ValueError("planned object was reclassified as unsupported")
                 errors = row.get("errors")
-                if (
-                    not isinstance(errors, list)
-                    or not errors
-                    or any(type(item) is not str or not item for item in errors)
+                if not isinstance(errors, list) or not errors or any(
+                    type(item) is not str or not item for item in errors
                 ):
                     raise ValueError("unsupported result lacks plan evidence")
         support_gate = validated_support_gate(
