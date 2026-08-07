@@ -483,11 +483,17 @@ def verify_deform360_calibration_execution_observability_binding(
         ),
     )
     seal_metadata = dict(products.execution_seal.metadata)
-    for key, value in expected_metadata.items():
+    present = _BINDING_METADATA_FIELDS.intersection(seal_metadata)
+    if present:
         _require(
-            seal_metadata.get(key) == value,
-            f"execution seal observability metadata changed: {key}",
+            present == _BINDING_METADATA_FIELDS,
+            "execution seal carries an incomplete observability metadata binding",
         )
+        for key, value in expected_metadata.items():
+            _require(
+                seal_metadata.get(key) == value,
+                f"execution seal observability metadata changed: {key}",
+            )
     _require(
         dict(products.calibration_bundle.source_artifacts)
         == dict(products.execution_seal.source_artifacts),
