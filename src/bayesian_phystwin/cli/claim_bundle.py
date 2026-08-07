@@ -22,7 +22,7 @@ def _named_path(value: str) -> tuple[str, Path]:
     name, separator, path = value.partition("=")
     if not separator or not name.strip() or not path.strip():
         raise argparse.ArgumentTypeError("expected NAME=PATH")
-    return name.strip(), Path(path)
+    return name.strip(), Path(path.strip())
 
 
 def build_parser() -> argparse.ArgumentParser:
