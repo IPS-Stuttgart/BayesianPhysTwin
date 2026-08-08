@@ -27,7 +27,9 @@ def test_workflow_keeps_pull_request_validation_hosted_and_data_free() -> None:
     assert "workflow_dispatch:" in text
     assert "pull_request_target:" not in text
     assert "permissions:\n  contents: read" in text
-    assert "cancel-in-progress: false" in text
+    assert "github.workflow" in text
+    assert "github.ref" in text
+    assert "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in text
     assert "runs-on: ubuntu-latest" in contracts
     assert "runs-on: self-hosted" not in contracts
     assert "runs-on: self-hosted" in science
