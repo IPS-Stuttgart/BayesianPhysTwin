@@ -17,18 +17,25 @@ the visual/contact observability producer.
 This is retained-source custody evidence, not visual competence or physical-query
 evidence.
 
-## Frozen successful source run
+## Authoritative successful source run
 
-The main-only self-hosted workflow is bound to:
+The main-only self-hosted workflow is bound to the least-privilege repeat of the
+complete calibration-source preparation:
 
-- workflow run `31236230283`;
-- compact artifact `deform360-official-calibration-source-31236230283-1`;
-- terminal-record ID
-  `2663a44b1d62b4032774c3a15884b4365580e8d11909ef9a4d4919c921ab21ee`;
+- workflow run `31236564360`;
+- compact artifact `deform360-official-calibration-source-31236564360-1`;
+- artifact digest
+  `sha256:866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2`;
+- terminal-record digest
+  `edf3692d88fed3c011ee44da2508b39e4755a0e97a83a26a0391fcfe433d7b74`;
 - ten prepared physical objects, five per stratum; and
 - the persistent `calibration-processed/aligned` runner root.
 
-It does not reuse the earlier failed transport run as scientific evidence.
+This execution repeated the complete successful source preparation after the
+optional Hugging Face credential had been restricted to the acquisition step.
+It is the authoritative source for the retained-byte inventory. Earlier failed
+or successful transport executions remain historical operational evidence and
+are not substituted into this admission.
 
 ## Validation order
 
@@ -81,18 +88,52 @@ version. This deliberately avoids relying on version-specific
 `SpooledTemporaryFile` seekability while keeping snapshots unnamed and absent
 from the published inventory.
 
+## One-shot retained-source admission
+
+The reviewed main-only workflow performs the remaining metadata handoff in one
+protected execution:
+
+```text
+authoritative compact source evidence
+  + protected retained aligned root
+        |
+        v
+prepared-source inventory
+        |
+        v
+frozen all-camera visual-production plan
+        |
+        v
+inventory-bound visual-execution admission
+```
+
+The workflow validates and publishes all three content-addressed artifacts plus a
+compact receipt and canonical `SHA256SUMS`. The receipt records the exact source
+run, source artifact digest, reviewed implementation revision, inventory ID,
+plan ID, admission ID, object count, and admitted camera-job count.
+
+Combining these steps removes the risk that an inventory from one retained source
+is paired manually with a plan or admission from another source. It still does
+not decode a video, run MotionCrafter, run Prob4D, construct an observability
+matrix, or open confirmation data.
+
 ## Information boundary
 
-The command acknowledges that the authorized calibration camera, tactile, and
-robot products are opened. It fails closed if any frozen confirmation object is
-present in the prepared root. It does not open geometry annotations, compute
-calibration target metrics, open confirmation payloads, use target outcomes, or
-permit object replacement.
+The inventory command acknowledges that the authorized calibration camera,
+tactile, and robot products are opened. It fails closed if any frozen
+confirmation object is present in the prepared root. It does not open geometry
+annotations, compute calibration target metrics, open confirmation payloads, use
+target outcomes, or permit object replacement.
 
-The output claim boundary is therefore limited to calibration-only retained-byte
-custody and array/media contracts.
+The plan and admission stages consume only the newly published metadata. Their
+information boundary therefore remains stricter than the inventory boundary:
+retained payloads are not reopened while the executable work list is frozen.
 
-## Manual command
+The output claim boundary is limited to calibration-only retained-byte custody,
+portable array/media contracts, and a deterministic inventory-bound visual work
+list.
+
+## Manual inventory command
 
 ```bash
 python scripts/science/inventory_deform360_calibration_prepared_source.py \
@@ -122,9 +163,13 @@ the exact source artifact digests, the action-selected window, all camera media
 contracts, tactile array contracts, robot array contracts, and the closed
 information boundary.
 
-The inventory is the deterministic input map for the next empirical producer:
-construct the visual-reference marginal precision, visual-plus-contact marginal
+The visual-production plan and execution admission then bind every admitted
+camera job to an inventoried video and timestamp path, SHA-256, byte count,
+causal frame range, seed, dependence group, and collision-free output namespace.
+Their next consumer must execute exactly those calibration-only MotionCrafter and
+Prob4D jobs, retaining technical failures without replacement.
+
+The resulting visual-reference marginal precision, visual-plus-contact marginal
 precision, contact-anchor artifact, and shared physical-query Jacobian for each
-of the ten calibration objects. Those products then enter the atomic
-calibration-observability batch. The inventory itself cannot authorize
-confirmation opening.
+of the ten objects then enter the already merged atomic calibration-observability
+batch. None of the retained-source artifacts authorizes confirmation opening.
