@@ -92,6 +92,7 @@ def test_stages_verified_files_by_reflink_and_leaves_missing_for_downloader(
     assert result["planned_file_count"] == 2
     assert result["reflinked_file_count"] == 1
     assert result["missing_in_source_count"] == 1
+    assert result["revision_mismatch_count"] == 0
     assert result["reflink_unavailable_count"] == 0
     assert result["download_fallback_file_count"] == 1
     assert result["download_fallback_paths"] == [
@@ -138,6 +139,37 @@ def test_reflink_failure_falls_back_to_downloader_without_copying(
     assert result["download_fallback_paths"] == [relative.as_posix()]
 
 
+def test_older_revision_mismatch_falls_back_to_exact_downloader(tmp_path: Path) -> None:
+    source = tmp_path / "official"
+    destination = tmp_path / "calibration"
+    relative = Path("raw/001-fixture/payload.bin")
+    source_file = source / relative
+    source_file.parent.mkdir(parents=True)
+    source_file.write_bytes(b"old-revision")
+    plan = _write_plan(
+        tmp_path / "plan.json",
+        [
+            {
+                "path": relative.as_posix(),
+                "size": source_file.stat().st_size,
+                "lfs_sha256": hashlib.sha256(b"frozen-revision").hexdigest(),
+            }
+        ],
+    )
+
+    result = MODULE.stage_local_calibration_cache(
+        plan_path=plan,
+        source_root=source,
+        destination_root=destination,
+    )
+
+    assert not (destination / relative).exists()
+    assert result["revision_mismatch_count"] == 1
+    assert result["sha256_checked_file_count"] == 1
+    assert result["download_fallback_file_count"] == 1
+    assert result["download_fallback_paths"] == [relative.as_posix()]
+
+
 def test_reuses_existing_verified_destination(tmp_path: Path) -> None:
     source = tmp_path / "official"
     destination = tmp_path / "calibration"
@@ -167,32 +199,6 @@ def test_reuses_existing_verified_destination(tmp_path: Path) -> None:
 
     assert result["reused_file_count"] == 1
     assert result["reflinked_file_count"] == 0
-
-
-def test_rejects_mismatched_local_bytes(tmp_path: Path) -> None:
-    source = tmp_path / "official"
-    destination = tmp_path / "calibration"
-    relative = Path("raw/001-fixture/payload.bin")
-    source_file = source / relative
-    source_file.parent.mkdir(parents=True)
-    source_file.write_bytes(b"wrong")
-    plan = _write_plan(
-        tmp_path / "plan.json",
-        [
-            {
-                "path": relative.as_posix(),
-                "size": source_file.stat().st_size,
-                "lfs_sha256": hashlib.sha256(b"expected").hexdigest(),
-            }
-        ],
-    )
-
-    with pytest.raises(ValueError, match="LFS digest mismatch"):
-        MODULE.stage_local_calibration_cache(
-            plan_path=plan,
-            source_root=source,
-            destination_root=destination,
-        )
 
 
 def test_refuses_destination_inside_immutable_snapshot(tmp_path: Path) -> None:
