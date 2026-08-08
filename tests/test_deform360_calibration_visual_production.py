@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 
@@ -17,7 +16,6 @@ from bayesian_phystwin.deform360_calibration_visual_production import (
     deform360_calibration_visual_command_descriptor,
     validate_deform360_calibration_visual_prediction_seal,
     validate_deform360_calibration_visual_production_result,
-    validate_deform360_calibration_visual_technical_failure,
     validate_deform360_motioncrafter_model_set_binding,
     validate_deform360_motioncrafter_prediction_manifest,
 )
@@ -80,9 +78,7 @@ def _model_binding() -> dict[str, object]:
     }
     model_set_id = hashlib.sha256(_canonical(manifest)).hexdigest()
     return {
-        "schema": (
-            "bayesian-phystwin/deform360-motioncrafter-model-set-binding-v1"
-        ),
+        "schema": ("bayesian-phystwin/deform360-motioncrafter-model-set-binding-v1"),
         "schema_version": 1,
         "model_set_id": model_set_id,
         "model_set_manifest": manifest,
@@ -137,9 +133,7 @@ def _job(
             "byte_count": 200,
         },
         "source_timestamps": {
-            "path": (
-                f"{object_id}/episode_0000/{camera_id}/aligned_timestamps.txt"
-            ),
+            "path": (f"{object_id}/episode_0000/{camera_id}/aligned_timestamps.txt"),
             "sha256": "9" * 64,
             "byte_count": 100,
         },
@@ -366,15 +360,15 @@ def test_prediction_manifest_is_bound_to_source_model_seed_and_cutoff() -> None:
             "post-cutoff",
         ),
         (
-            lambda manifest, verification: manifest["artifact_integrity"][
-                "run_spec"
-            ]["input_video"].update(sha256="e" * 64),
+            lambda manifest, verification: manifest["artifact_integrity"]["run_spec"][
+                "input_video"
+            ].update(sha256="e" * 64),
             "run-spec digest mismatch|input video",
         ),
         (
-            lambda manifest, verification: manifest["artifact_integrity"][
-                "run_spec"
-            ]["motioncrafter_upstream"].update(clean=False),
+            lambda manifest, verification: manifest["artifact_integrity"]["run_spec"][
+                "motioncrafter_upstream"
+            ].update(clean=False),
             "run-spec digest mismatch|checkout differs",
         ),
         (
@@ -382,9 +376,9 @@ def test_prediction_manifest_is_bound_to_source_model_seed_and_cutoff() -> None:
             "did not verify",
         ),
         (
-            lambda manifest, verification: manifest["artifact_integrity"][
-                "run_spec"
-            ]["inference_config"].update(seed=999),
+            lambda manifest, verification: manifest["artifact_integrity"]["run_spec"][
+                "inference_config"
+            ].update(seed=999),
             "run-spec digest mismatch|inference config",
         ),
     ],
@@ -565,6 +559,7 @@ def test_content_ids_change_with_numerical_or_lineage_fields() -> None:
         stderr=_file("logs/err.bin", 0),
     )
     assert base["failure_id"] != changed["failure_id"]
-    assert content_id({key: value for key, value in base.items() if key != "failure_id"}) == base[
-        "failure_id"
-    ]
+    assert (
+        content_id({key: value for key, value in base.items() if key != "failure_id"})
+        == base["failure_id"]
+    )

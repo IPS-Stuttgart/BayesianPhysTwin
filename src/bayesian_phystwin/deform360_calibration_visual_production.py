@@ -38,9 +38,7 @@ _MODEL_BINDING_SCHEMA: Final = (
 )
 _MODEL_SET_SCHEMA: Final = "prob4d.motioncrafter-model-set.v2"
 _MODEL_SOURCE_SCHEMA: Final = "prob4d.motioncrafter-model-source.v1"
-_MOTIONCRAFTER_INTEGRITY_SCHEMA: Final = (
-    "prob4d.motioncrafter-artifact-integrity.v1"
-)
+_MOTIONCRAFTER_INTEGRITY_SCHEMA: Final = "prob4d.motioncrafter-artifact-integrity.v1"
 _MOTIONCRAFTER_RUN_SPEC_SCHEMA: Final = "prob4d.motioncrafter-run-spec.v1"
 
 PRODUCTION_INFORMATION_BOUNDARY: Final = {
@@ -66,12 +64,8 @@ _MODEL_BINDING_FIELDS = frozenset(
         "target_outcomes_used",
     }
 )
-_MODEL_MANIFEST_FIELDS = frozenset(
-    {"schema", "model_type", "sources", "loader_module"}
-)
-_MODEL_SOURCE_FIELDS = frozenset(
-    {"schema", "role", "kind", "repository", "revision"}
-)
+_MODEL_MANIFEST_FIELDS = frozenset({"schema", "model_type", "sources", "loader_module"})
+_MODEL_SOURCE_FIELDS = frozenset({"schema", "role", "kind", "repository", "revision"})
 _FILE_FIELDS = frozenset({"path", "sha256", "byte_count"})
 _SEAL_FIELDS = frozenset(
     {
@@ -217,8 +211,7 @@ def validate_deform360_motioncrafter_model_set_binding(
         name="model-set binding",
     )
     _require(
-        binding["schema"] == _MODEL_BINDING_SCHEMA
-        and binding["schema_version"] == 1,
+        binding["schema"] == _MODEL_BINDING_SCHEMA and binding["schema_version"] == 1,
         "unsupported model-set binding",
     )
     for field in (
@@ -226,7 +219,9 @@ def validate_deform360_motioncrafter_model_set_binding(
         "selected_raw_payloads_opened",
         "target_outcomes_used",
     ):
-        _require(type(binding[field]) is bool and not binding[field], f"{field} changed")
+        _require(
+            type(binding[field]) is bool and not binding[field], f"{field} changed"
+        )
     model_set_id = sha256_digest(binding["model_set_id"], name="model_set_id")
     _require(model_set_id == expected_model_set_id, "model-set identity changed")
     manifest = binding["model_set_manifest"]
@@ -247,13 +242,20 @@ def validate_deform360_motioncrafter_model_set_binding(
     )
     sources = manifest["sources"]
     roles = ("unet", "vae", "image_vae", "base_pipeline")
-    _require(isinstance(sources, Mapping) and set(sources) == set(roles), "model roles changed")
+    _require(
+        isinstance(sources, Mapping) and set(sources) == set(roles),
+        "model roles changed",
+    )
     cached = binding["cached_revisions"]
-    _require(isinstance(cached, Mapping) and set(cached) == set(roles), "cache roles changed")
+    _require(
+        isinstance(cached, Mapping) and set(cached) == set(roles), "cache roles changed"
+    )
     normalized_sources: dict[str, dict[str, str]] = {}
     for role in roles:
         source = cast(Mapping[str, Any], sources[role])
-        require_exact_fields(source, expected=_MODEL_SOURCE_FIELDS, name=f"source {role}")
+        require_exact_fields(
+            source, expected=_MODEL_SOURCE_FIELDS, name=f"source {role}"
+        )
         _require(
             source["schema"] == _MODEL_SOURCE_SCHEMA
             and source["kind"] == "huggingface_revision",
@@ -409,11 +411,17 @@ def validate_deform360_motioncrafter_prediction_manifest(
     integrity = manifest.get("artifact_integrity")
     _require(isinstance(integrity, Mapping), "prediction is not integrity bound")
     integrity = cast(Mapping[str, Any], integrity)
-    _require(integrity.get("schema") == _MOTIONCRAFTER_INTEGRITY_SCHEMA, "integrity schema changed")
+    _require(
+        integrity.get("schema") == _MOTIONCRAFTER_INTEGRITY_SCHEMA,
+        "integrity schema changed",
+    )
     run_spec = integrity.get("run_spec")
     _require(isinstance(run_spec, Mapping), "prediction run spec is missing")
     run_spec = cast(Mapping[str, Any], run_spec)
-    _require(run_spec.get("schema") == _MOTIONCRAFTER_RUN_SPEC_SCHEMA, "run-spec schema changed")
+    _require(
+        run_spec.get("schema") == _MOTIONCRAFTER_RUN_SPEC_SCHEMA,
+        "run-spec schema changed",
+    )
     run_spec_sha = sha256_digest(
         integrity.get("run_spec_sha256"),
         name="run_spec_sha256",
@@ -489,14 +497,22 @@ def validate_deform360_motioncrafter_prediction_manifest(
         model_manifest = json.loads(str(config.get("model_source_manifest_json", "")))
     except json.JSONDecodeError as error:
         raise ValueError("prediction model-source manifest is invalid") from error
-    _require(model_manifest == model_binding["manifest"], "prediction model set changed")
+    _require(
+        model_manifest == model_binding["manifest"], "prediction model set changed"
+    )
     windows = manifest.get("overlap_windows")
-    _require(isinstance(windows, list) and bool(windows), "prediction windows are missing")
+    if not isinstance(windows, list) or not windows:
+        raise ValueError("prediction windows are missing")
     for index, window in enumerate(windows):
         _require(isinstance(window, Mapping), f"window {index} is not an object")
         start = _integer(window.get("start_frame"), name=f"window {index} start")
-        stop = _integer(window.get("stop_frame"), name=f"window {index} stop", minimum=1)
-        _require(prefix[0] <= start < stop <= prefix[1], "prediction contains a post-cutoff window")
+        stop = _integer(
+            window.get("stop_frame"), name=f"window {index} stop", minimum=1
+        )
+        _require(
+            prefix[0] <= start < stop <= prefix[1],
+            "prediction contains a post-cutoff window",
+        )
     return {"run_spec_sha256": run_spec_sha, "member_count": member_count}
 
 
@@ -582,7 +598,11 @@ def validate_deform360_calibration_visual_prediction_seal(
         == "integrity-bound-causal-prefix-motioncrafter-prediction-v1",
         "prediction seal contract changed",
     )
-    for field in ("implementation_revision", "provider_revision", "motioncrafter_revision"):
+    for field in (
+        "implementation_revision",
+        "provider_revision",
+        "motioncrafter_revision",
+    ):
         exact_revision(seal[field], name=field)
     for field in (
         "admission_id",
@@ -674,7 +694,11 @@ def validate_deform360_calibration_visual_technical_failure(
         and failure["schema_version"] == 1,
         "technical-failure contract changed",
     )
-    for field in ("implementation_revision", "provider_revision", "motioncrafter_revision"):
+    for field in (
+        "implementation_revision",
+        "provider_revision",
+        "motioncrafter_revision",
+    ):
         exact_revision(failure[field], name=field)
     for field in (
         "admission_id",
@@ -719,14 +743,13 @@ def build_deform360_calibration_visual_production_result(
 
     rows = [plain_json(row) for row in jobs]
     admitted_jobs = admission.get("jobs")
-    _require(isinstance(admitted_jobs, list), "admission jobs are missing")
+    if not isinstance(admitted_jobs, list):
+        raise ValueError("admission jobs are missing")
     expected_roster = [
-        (row["job_id"], row["object_id"], row["camera_id"])
-        for row in admitted_jobs
+        (row["job_id"], row["object_id"], row["camera_id"]) for row in admitted_jobs
     ]
     observed_roster = [
-        (row.get("job_id"), row.get("object_id"), row.get("camera_id"))
-        for row in rows
+        (row.get("job_id"), row.get("object_id"), row.get("camera_id")) for row in rows
     ]
     _require(
         observed_roster == expected_roster,
@@ -777,14 +800,20 @@ def validate_deform360_calibration_visual_production_result(
     if not isinstance(value, Mapping):
         raise ValueError("visual production result must be a JSON object")
     result = cast(dict[str, Any], plain_json(value))
-    require_exact_fields(result, expected=_RESULT_FIELDS, name="visual production result")
+    require_exact_fields(
+        result, expected=_RESULT_FIELDS, name="visual production result"
+    )
     _require(
         result["schema"] == DEFORM360_CALIBRATION_VISUAL_PRODUCTION_RESULT_SCHEMA
         and result["schema_version"] == 1
         and result["semantics"] == "complete-admitted-calibration-view-accounting-v1",
         "visual production result contract changed",
     )
-    for field in ("implementation_revision", "provider_revision", "motioncrafter_revision"):
+    for field in (
+        "implementation_revision",
+        "provider_revision",
+        "motioncrafter_revision",
+    ):
         exact_revision(result[field], name=field)
     for field in ("admission_id", "visual_provider_lock_id", "model_set_id"):
         sha256_digest(result[field], name=field)
@@ -795,14 +824,18 @@ def validate_deform360_calibration_visual_production_result(
         minimum=1,
     )
     jobs = result["jobs"]
-    _require(isinstance(jobs, list) and len(jobs) == camera_count, "result job count changed")
+    _require(
+        isinstance(jobs, list) and len(jobs) == camera_count, "result job count changed"
+    )
     statuses: list[str] = []
     ordering: list[tuple[str, str]] = []
     object_statuses: dict[str, list[str]] = {}
     for index, row in enumerate(jobs):
         _require(isinstance(row, Mapping), f"result job {index} is not an object")
         row = cast(Mapping[str, Any], row)
-        require_exact_fields(row, expected=_RESULT_JOB_FIELDS, name=f"result job {index}")
+        require_exact_fields(
+            row, expected=_RESULT_JOB_FIELDS, name=f"result job {index}"
+        )
         sha256_digest(row["job_id"], name=f"result job {index} ID")
         object_id = _string(row["object_id"], name=f"result job {index} object")
         camera_id = _string(row["camera_id"], name=f"result job {index} camera")
@@ -829,7 +862,9 @@ def validate_deform360_calibration_visual_production_result(
         result["completely_succeeded_object_count"] == complete,
         "object success count changed",
     )
-    expected_status = "all-jobs-succeeded" if failed == 0 else "technical-failures-retained"
+    expected_status = (
+        "all-jobs-succeeded" if failed == 0 else "technical-failures-retained"
+    )
     _require(result["status"] == expected_status, "terminal status changed")
     _require(
         result["information_boundary"] == PRODUCTION_INFORMATION_BOUNDARY,
@@ -838,7 +873,9 @@ def validate_deform360_calibration_visual_production_result(
     declared = sha256_digest(result["result_id"], name="result_id")
     _require(
         declared
-        == content_id({key: item for key, item in result.items() if key != "result_id"}),
+        == content_id(
+            {key: item for key, item in result.items() if key != "result_id"}
+        ),
         "result ID mismatch",
     )
     return result

@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
-WORKFLOW = Path(
-    ".github/workflows/deform360-calibration-visual-production.yml"
-)
+WORKFLOW = Path(".github/workflows/deform360-calibration-visual-production.yml")
 
 
 def test_visual_production_workflow_is_main_only_and_resumable() -> None:
@@ -26,7 +23,9 @@ def test_visual_production_workflow_pins_every_external_source() -> None:
 
     assert "25d90ef7f78ba4307f4555cb636d666004e1bf66" in text
     assert "9cb4e9679f5f34e249945544052464ef46324bc2" in text
-    assert "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml" in text
+    assert (
+        "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml" in text
+    )
     assert "deform360-calibration-retained-source-admission-" in text
     assert "persist-credentials: false" in text
     assert "actions/checkout@v7" in text

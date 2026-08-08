@@ -246,7 +246,9 @@ def _parse_stdout_json(outcome: ProcessOutcome, *, label: str) -> dict[str, Any]
     return cast(dict[str, Any], value)
 
 
-def _provider_lock(path: Path, admission: Mapping[str, Any]) -> Deform360VisualProviderLockV1:
+def _provider_lock(
+    path: Path, admission: Mapping[str, Any]
+) -> Deform360VisualProviderLockV1:
     lock = Deform360VisualProviderLockV1.from_mapping(
         _load_json(path, label="visual provider lock")
     )
@@ -471,7 +473,8 @@ def execute(
         name="implementation_revision",
     )
     if not attempt_id or any(
-        character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+        character
+        not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
         for character in attempt_id
     ):
         raise ValueError("attempt_id must contain only letters, digits, '-' and '_'")
@@ -532,7 +535,9 @@ def execute(
         try:
             fcntl.flock(lock_stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
-            raise ValueError("another visual production process holds the run lock") from error
+            raise ValueError(
+                "another visual production process holds the run lock"
+            ) from error
         rows: list[dict[str, object]] = []
         for job in jobs:
             existing = _existing_receipt(
@@ -623,12 +628,14 @@ def execute(
                 )
                 manifest_path = output / "predictions.json"
                 manifest = _load_json(manifest_path, label="prediction manifest")
-                verified_contract = validate_deform360_motioncrafter_prediction_manifest(
-                    manifest,
-                    verification=verification,
-                    job=job,
-                    provider_lock=lock,
-                    model_binding=binding,
+                verified_contract = (
+                    validate_deform360_motioncrafter_prediction_manifest(
+                        manifest,
+                        verification=verification,
+                        job=job,
+                        provider_lock=lock,
+                        model_binding=binding,
+                    )
                 )
                 manifest_descriptor = _descriptor(output, manifest_path)
                 seal = build_deform360_calibration_visual_prediction_seal(
