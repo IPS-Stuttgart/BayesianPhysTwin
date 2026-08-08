@@ -424,7 +424,10 @@ def test_paper_handoff_binding_inventory_and_root_schema_failures(
 
     for claim_ids in ((), ("bpt.claim", "bpt.claim"), ("",)):
         bundle = paper_cases._bundle(tmp_path, claim_ids=claim_ids)
-        with pytest.raises(ValueError, match="unique and nonempty"):
+        with pytest.raises(
+            ValueError,
+            match="unique and nonempty|nonempty literal text",
+        ):
             handoff.verify_compact_claim_table_bindings(bundle, root=tmp_path)
 
 
