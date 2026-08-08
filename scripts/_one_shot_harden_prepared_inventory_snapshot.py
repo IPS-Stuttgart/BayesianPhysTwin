@@ -55,8 +55,7 @@ def _read_stable_file(
     name: str,
     sink: BinaryIO | None = None,
 ) -> dict[str, object]:
-    """Hash one descriptor-stable regular file and optionally retain its bytes."""
-
+    # Hash one descriptor-stable regular file and optionally retain its bytes.
     ordinary = _ordinary_file(path, root=root, name=name)
     flags = (
         os.O_RDONLY
