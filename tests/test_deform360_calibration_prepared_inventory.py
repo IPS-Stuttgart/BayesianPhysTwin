@@ -226,8 +226,7 @@ def test_inventory_binds_all_prepared_bytes_without_local_paths(tmp_path: Path) 
     assert value["information_boundary"]["target_outcomes_used"] is False
     assert all(len(row["cameras"]) == 8 for row in value["objects"])
     assert all(
-        row["episode_files"]["robot"]["arrays"]["actions"]["shape"]
-        == [81, 5, 3]
+        row["episode_files"]["robot"]["arrays"]["actions"]["shape"] == [81, 5, 3]
         for row in value["objects"]
     )
     serialized = output.read_text(encoding="utf-8")
@@ -251,7 +250,9 @@ def test_inventory_rejects_tampering_and_confirmation_directories(
         _build(inputs, processed)
 
 
-def test_cli_refuses_overwrite_and_substituted_terminal_artifacts(tmp_path: Path) -> None:
+def test_cli_refuses_overwrite_and_substituted_terminal_artifacts(
+    tmp_path: Path,
+) -> None:
     inputs, processed = _prepared_inputs(tmp_path)
     output = tmp_path / "inventory.json"
     arguments = _arguments(inputs, processed, output)
