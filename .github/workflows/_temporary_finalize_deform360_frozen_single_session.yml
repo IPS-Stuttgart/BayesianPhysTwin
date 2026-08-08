@@ -55,6 +55,42 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              ".github/patches/apply_deform360_visual_production_hardening.py"
+          )
+          source = path.read_text(encoding="utf-8")
+          old_prior = (
+              "from dataclasses import dataclass\n'''\n"
+              "        '''import argparse"
+          )
+          new_prior = (
+              "from dataclasses import dataclass\n"
+              "from pathlib import Path, PurePosixPath\n"
+              "from typing import Any, cast\n'''\n"
+              "        '''import argparse"
+          )
+          old_replacement = (
+              "from dataclasses import asdict, dataclass\n'''\n"
+              "    )"
+          )
+          new_replacement = (
+              "from dataclasses import asdict, dataclass\n"
+              "from pathlib import Path, PurePosixPath\n"
+              "from typing import Any, cast\n'''\n"
+              "    )"
+          )
+          for old, new, label in (
+              (old_prior, new_prior, "prior import anchor"),
+              (old_replacement, new_replacement, "replacement import anchor"),
+          ):
+              if source.count(old) != 1:
+                  raise SystemExit(f"transformer {label} changed")
+              source = source.replace(old, new)
+          path.write_text(source, encoding="utf-8")
+          PY
           python .github/patches/apply_deform360_visual_production_hardening.py
           python - <<'PY'
           from pathlib import Path
