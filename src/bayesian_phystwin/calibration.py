@@ -89,9 +89,7 @@ def minimum_groups_for_finite_conformal(coverage: float) -> int:
 
     nominal, exact_nominal = _coverage_fraction(coverage)
     remaining = exact_nominal.denominator - exact_nominal.numerator
-    upper = (
-        exact_nominal.numerator + remaining - 1
-    ) // remaining
+    upper = (exact_nominal.numerator + remaining - 1) // remaining
 
     # The decimal-exact result is an upper bound. Search against the canonical
     # rank function so recurring rational boundaries represented as floats (for
