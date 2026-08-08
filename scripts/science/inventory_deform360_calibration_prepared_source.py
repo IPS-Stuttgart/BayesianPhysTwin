@@ -256,8 +256,12 @@ def _camera_record(
         value = output.get(dimension)
         if type(value) is not int or value <= 0:
             raise ValueError(f"prepared camera {dimension} is invalid: {camera}")
-    fps = output.get("fps")
-    if type(fps) not in {int, float} or not np.isfinite(float(fps)) or float(fps) <= 0:
+    fps_value = output.get("fps")
+    if type(fps_value) not in {int, float}:
+        raise ValueError(f"prepared camera fps is invalid: {camera}")
+    assert isinstance(fps_value, (int, float))
+    fps = float(fps_value)
+    if not np.isfinite(fps) or fps <= 0:
         raise ValueError(f"prepared camera fps is invalid: {camera}")
     return {
         "camera": camera,
@@ -269,7 +273,7 @@ def _camera_record(
         "frame_count": frame_count,
         "width": output["width"],
         "height": output["height"],
-        "fps": float(fps),
+        "fps": fps,
         "timeline_sha256": target.get("sha256"),
     }
 
