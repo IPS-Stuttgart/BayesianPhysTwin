@@ -11,6 +11,7 @@ from typing import Any
 
 import numpy as np
 
+from .mask_distance import interior_mask_distance
 from .phystwin_graph import PhysTwinSpringGraphConfig, build_phystwin_spring_graph
 from .phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
@@ -27,8 +28,8 @@ from .phystwin_motioncrafter_association import (
     _sha256,
     align_motioncrafter_prediction,
     dense_graph_error_by_frame,
-    load_phystwin_world_point_grid,
     load_motioncrafter_prediction,
+    load_phystwin_world_point_grid,
     manual_track_association_audit,
     resample_cover_grid,
     robust_similarity_transform,
@@ -274,29 +275,9 @@ def _accumulate_vertex_measurements(
 
 
 def _mask_boundary_distance(mask: np.ndarray) -> np.ndarray:
-    """Return an interior pixel distance without making SciPy a base dependency."""
+    """Return the canonical border-aware Euclidean interior distance."""
 
-    values = np.asarray(mask, dtype=bool)
-    try:
-        from scipy.ndimage import distance_transform_edt
-    except (ImportError, OSError):
-        padded = np.pad(values, 1, constant_values=False)
-        interior = values.copy()
-        distance = np.zeros(values.shape, dtype=float)
-        for step in range(1, max(values.shape) + 1):
-            if not np.any(interior):
-                break
-            distance[interior] = step
-            neighbors = (
-                padded[:-2, 1:-1]
-                & padded[2:, 1:-1]
-                & padded[1:-1, :-2]
-                & padded[1:-1, 2:]
-            )
-            interior &= neighbors
-            padded = np.pad(interior, 1, constant_values=False)
-        return distance
-    return np.asarray(distance_transform_edt(values), dtype=float)
+    return interior_mask_distance(mask)
 
 
 def _measurement_covariance(
