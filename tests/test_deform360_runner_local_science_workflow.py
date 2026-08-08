@@ -45,17 +45,10 @@ def test_workflow_binds_exact_runner_roots_and_frozen_revisions() -> None:
     assert f"OFFICIAL_RAW_ROOT: {OFFICIAL_ROOT}" in text
     assert f"ADAPTIVE_CONFIRMATION_ROOT: {ADAPTIVE_ROOT}" in text
     assert (
-        "OFFICIAL_RAW_SOURCE_REVISION: "
-        "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
+        "OFFICIAL_RAW_SOURCE_REVISION: 7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
     ) in text
-    assert (
-        "DATASET_REVISION: f804696d7a133908c7497ffdab43819d879b5cbc"
-        in text
-    )
-    assert (
-        "PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35"
-        in text
-    )
+    assert "DATASET_REVISION: f804696d7a133908c7497ffdab43819d879b5cbc" in text
+    assert "PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35" in text
     assert (
         "LOCAL_SCIENCE_ROOT: "
         "/mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13"
@@ -91,9 +84,7 @@ def test_science_path_uses_existing_frozen_calibration_contracts() -> None:
     assert "run_deform360_official_hub_calibration_source.py plan" in science
     assert "run_deform360_official_hub_calibration_source.py download" in science
     assert "run_deform360_official_hub_calibration_source.py prepare" in science
-    assert (
-        "protocols/deform360_official_hub_calibration_source_v1.json" in science
-    )
+    assert "protocols/deform360_official_hub_calibration_source_v1.json" in science
     assert (
         "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
         in science
