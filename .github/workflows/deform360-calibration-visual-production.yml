@@ -129,7 +129,16 @@ jobs:
     timeout-minutes: 1320
     steps:
       - name: Publish frozen calibration-only beacon
+        shell: bash
         run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-visual-production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${evidence}/admission" "${evidence}/compact"
+          {
+            echo "EVIDENCE_ROOT=${evidence}"
+            echo "ADMISSION_ROOT=${evidence}/admission"
+            echo "COMPACT_ROOT=${evidence}/compact"
+          } >> "${GITHUB_ENV}"
           echo "retained_source_artifact_id=${AUTHORITATIVE_ADMISSION_ARTIFACT_ID}"
           echo "retained_source_artifact_digest=${AUTHORITATIVE_ADMISSION_ARTIFACT_DIGEST}"
           echo "retained_source_admission_id=${AUTHORITATIVE_ADMISSION_ID}"
@@ -176,6 +185,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
           test "$(git -C _prob4d rev-parse HEAD)" = "${PROB4D_REVISION}"
           test "$(git -C _motioncrafter rev-parse HEAD)" = "${MOTIONCRAFTER_REVISION}"
+          printf '%s\n' '/_prob4d/' '/_motioncrafter/' >> .git/info/exclude
           test -z "$(git status --porcelain=v1)"
           test -z "$(git -C _prob4d status --porcelain=v1)"
           test -z "$(git -C _motioncrafter status --porcelain=v1)"
@@ -192,18 +202,16 @@ jobs:
           test "${processed}" != "${output}"
           test "${processed}" != "${cache}"
           test "${output}" != "${cache}"
-          test -d "${processed}/aligned"
+          if [[ ! -d "${processed}/aligned" ]]; then
+            echo "The frozen calibration-processed root is unavailable." >&2
+            exit 1
+          fi
           mkdir -p "${output}" "${cache}"
 
-          evidence="${RUNNER_TEMP}/deform360-visual-production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${evidence}/admission" "${evidence}/compact"
           {
             echo "PROCESSED_ROOT=${processed}"
             echo "VISUAL_OUTPUT_ROOT=${output}"
             echo "MODEL_CACHE=${cache}"
-            echo "EVIDENCE_ROOT=${evidence}"
-            echo "ADMISSION_ROOT=${evidence}/admission"
-            echo "COMPACT_ROOT=${evidence}/compact"
           } >> "${GITHUB_ENV}"
       - name: Verify authoritative admission artifact metadata
         env:
@@ -371,6 +379,9 @@ jobs:
           fi
           {
             echo "repository=${GITHUB_REPOSITORY}"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "job_status=${{ job.status }}"
             echo "bpt_revision=${GITHUB_SHA}"
             echo "prob4d_revision=${PROB4D_REVISION}"
             echo "motioncrafter_revision=${MOTIONCRAFTER_REVISION}"
