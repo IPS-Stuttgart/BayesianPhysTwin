@@ -29,11 +29,10 @@ defect is demonstrated before payload access. Such a repair requires a reviewed,
 versioned launcher revision that names its failed predecessor. There is no
 manual payload dispatch.
 
-The sole runner that carries Deform360 is selected only by the `self-hosted`
-label. The workflow does not require inferred `Linux`, `X64`, `nvidia-smi`, or
-machine-name labels. Instead, it checks `nvidia-smi` explicitly after the job has
-been scheduled and fails before source access if the required GPU capability is
-missing.
+The runner that carries Deform360 is scheduled using only the `self-hosted`
+label. Before any protected-root access, the workflow additionally requires the
+exact runtime name `workstation2` and a working `nvidia-smi`; a different
+self-hosted machine therefore fails closed.
 
 Run `31274946936` established the first such pre-payload failure: its parent
 cleanliness check saw the two expected nested provider checkouts as untracked.
@@ -54,6 +53,17 @@ Retry v4 binds scheduling and storage to the actual sole-runner deployment. It
 changes no scientific estimator, cohort, frame range, seed, provider revision,
 or threshold.
 
+Run `31276893637` verified the frozen admission and installed the complete
+producer environment, then stopped because `uv pip check` rejected the upstream
+`decord==0.6.0` wheel's stale `cp36-cp36m-manylinux2010_x86_64` metadata tag on
+Python 3.12. The same frozen wheel imports and loads its video runtime under
+Python 3.12, and no other package inconsistency was reported. The run stopped
+before model snapshots, retained source-byte reads, inference, or prediction
+output. Retry v5 admits only this exact metadata exception, checks that no other
+`uv pip check` output remains, and verifies all required provider imports, the
+frozen decord version and wheel tag, its environment-local `VideoReader`, CPU
+context, and CUDA availability before proceeding.
+
 ## Sole-runner storage contract
 
 The reviewed workflow fixes the storage namespace to
@@ -62,19 +72,23 @@ The reviewed workflow fixes the storage namespace to
 /mnt/lexar4tb/datasets/deform360
 ```
 
-and requires the following two exact, canonical, non-symlinked directories:
+and requires the exact, canonical official/raw dataset directory:
 
 ```text
 /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+```
+
+It also registers the following adaptive-confirmation path solely as an
+excluded lexical boundary:
+
+```text
 /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
 ```
 
-The first directory identifies the official/raw dataset revision. The second
-identifies the separately downloaded adaptive-confirmation payload. This
-calibration-only stage performs directory metadata checks on those roots but
-does not read either raw payload. In particular, it does not descend into the
-adaptive-confirmation root, hash its members, enumerate its targets, or pass its
-path to the producer command.
+The calibration-only stage may inspect metadata for the official/raw directory,
+but it does not require or stat the adaptive-confirmation directory. It never
+descends into that path, hashes its members, enumerates its targets, or passes it
+to the producer command.
 
 The retained calibration-processed root is resolved in this order:
 
@@ -103,9 +117,10 @@ disjoint.
 
 Before model setup, the workflow emits a compact
 `runner-storage-preflight.json` record containing the exact resolved roots,
-storage capacity, device identities, the required runner-label set, and explicit
-closed-boundary flags. It uses `stat`-level metadata for the raw roots; it does
-not calculate recursive raw-directory sizes.
+storage capacity, official/raw device identity, runtime runner identity, and
+explicit closed-boundary flags. It records that the adaptive-confirmation path
+was registered without a stat operation and does not calculate recursive raw
+directory sizes.
 
 At runtime the workflow:
 

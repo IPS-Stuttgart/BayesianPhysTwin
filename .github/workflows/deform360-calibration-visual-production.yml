@@ -49,6 +49,7 @@ env:
   AUTHORITATIVE_ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
   AUTHORITATIVE_RESULT_FILE_SHA256: 4a45f5ccd10c4f2d7c3d606aa37d6e1159ff5e5100bfca5f40d445e33ffd951a
   AUTHORITATIVE_CAMERA_VIEW_COUNT: "324"
+  AUTHORIZED_RUNNER_NAME: workstation2
   DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360
   DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
   DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
@@ -143,6 +144,7 @@ jobs:
             echo "COMPACT_ROOT=${evidence}/compact"
           } >> "${GITHUB_ENV}"
           echo "runner_label_contract=self-hosted-only"
+          echo "authorized_runner_name=${AUTHORIZED_RUNNER_NAME}"
           echo "official_raw_root=${DEFORM360_OFFICIAL_RAW_ROOT}"
           echo "adaptive_confirmation_root=${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
           echo "retained_source_artifact_id=${AUTHORITATIVE_ADMISSION_ARTIFACT_ID}"
@@ -197,12 +199,13 @@ jobs:
           test -z "$(git status --porcelain=v1)"
           test -z "$(git -C _prob4d status --porcelain=v1)"
           test -z "$(git -C _motioncrafter status --porcelain=v1)"
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
           command -v nvidia-smi >/dev/null 2>&1
           nvidia-smi -L
 
           storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"
           official_raw="$(realpath -e "${DEFORM360_OFFICIAL_RAW_ROOT}")"
-          adaptive_raw="$(realpath -e "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"
+          adaptive_raw="$(realpath -m "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"
           test "${storage}" = "${DEFORM360_STORAGE_ROOT}"
           test "${official_raw}" = "${DEFORM360_OFFICIAL_RAW_ROOT}"
           test "${adaptive_raw}" = "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
@@ -314,7 +317,7 @@ jobs:
 
           storage = Path(os.environ["STORAGE_ROOT"])
           official = Path(os.environ["OFFICIAL_RAW_ROOT"])
-          adaptive = Path(os.environ["ADAPTIVE_RAW_ROOT"])
+          adaptive = os.environ["ADAPTIVE_RAW_ROOT"]
           usage = shutil.disk_usage(storage)
           payload = {
               "schema": "bayesian-phystwin.deform360-runner-storage-preflight",
@@ -323,7 +326,7 @@ jobs:
               "storage_root": str(storage),
               "official_raw_root": str(official),
               "official_raw_revision": "7fea8e2",
-              "adaptive_confirmation_raw_root": str(adaptive),
+              "adaptive_confirmation_raw_root": adaptive,
               "processed_root": os.environ["PROCESSED_ROOT"],
               "output_root": os.environ["OUTPUT_ROOT"],
               "cache_root": os.environ["CACHE_ROOT"],
@@ -331,10 +334,9 @@ jobs:
               "storage_used_bytes": usage.used,
               "storage_free_bytes": usage.free,
               "official_raw_same_device": official.stat().st_dev == storage.stat().st_dev,
-              "adaptive_confirmation_same_device": adaptive.stat().st_dev
-              == storage.stat().st_dev,
               "official_raw_payload_opened": False,
-              "adaptive_confirmation_directory_stat_only": True,
+              "adaptive_confirmation_root_registered": True,
+              "adaptive_confirmation_root_stat_performed": False,
               "adaptive_confirmation_payloads_opened": False,
               "target_outcomes_used": False,
           }
@@ -465,22 +467,35 @@ jobs:
             --python "${env_root}/bin/python" \
             --no-deps \
             .
-          set +e
-          check_output="$("${uv_bin}" pip check --python "${env_root}/bin/python" 2>&1)"
-          check_code=$?
-          set -e
-          if [[ "${check_code}" -ne 0 ]]; then
-            if [[ "${check_output}" != *"Found 1 incompatibility"* ]] || \
-               [[ "${check_output}" != *'The package `decord` was built for a different platform'* ]]; then
-              printf '%s\n' "${check_output}" >&2
-              exit "${check_code}"
-            fi
-            printf '%s\n' "${check_output}"
+          pip_check_status=0
+          pip_check_output="$(
+            "${uv_bin}" pip check \
+              --color never \
+              --python "${env_root}/bin/python" 2>&1
+          )" || pip_check_status=$?
+          printf '%s\n' "${pip_check_output}"
+          if [[ "${pip_check_status}" -ne 0 ]]; then
+            unexpected="$(
+              printf '%s\n' "${pip_check_output}" \
+                | sed -E \
+                    -e '/^Using Python /d' \
+                    -e '/^Checked [0-9]+ packages in /d' \
+                    -e '/^Found 1 incompatibility$/d' \
+                    -e '/^The package `decord` was built for a different platform$/d' \
+                    -e '/^[[:space:]]*$/d'
+            )"
+            test -z "${unexpected}"
+            grep -Fxq 'Found 1 incompatibility' <<<"${pip_check_output}"
+            grep -Fxq \
+              'The package `decord` was built for a different platform' \
+              <<<"${pip_check_output}"
           fi
           PYTHONPATH="${GITHUB_WORKSPACE}/_motioncrafter" \
             "${env_root}/bin/python" - <<'PY'
           import importlib
           import importlib.metadata
+          import sys
+          from pathlib import Path
 
           for module_name in (
               "bayesian_phystwin",
@@ -492,8 +507,26 @@ jobs:
               "torchvision",
           ):
               importlib.import_module(module_name)
-          if importlib.metadata.version("decord") != "0.6.0":
-              raise SystemExit("unexpected decord version")
+          dist = importlib.metadata.distribution("decord")
+          if dist.version != "0.6.0":
+              raise SystemExit(f"unexpected decord version: {dist.version}")
+          wheel = dist.read_text("WHEEL") or ""
+          expected_tag = "Tag: cp36-cp36m-manylinux2010_x86_64"
+          if expected_tag not in wheel.splitlines():
+              raise SystemExit("frozen decord wheel metadata changed")
+
+          import decord
+          from decord import VideoReader, cpu
+
+          origin = Path(decord.__file__).resolve()
+          try:
+              origin.relative_to(Path(sys.prefix).resolve())
+          except ValueError as error:
+              raise SystemExit("decord resolved outside the frozen environment") from error
+          if not callable(VideoReader):
+              raise SystemExit("decord VideoReader is unavailable")
+          cpu(0)
+
           import torch
 
           if not torch.cuda.is_available():
@@ -561,6 +594,9 @@ jobs:
             echo "prob4d_revision=${PROB4D_REVISION}"
             echo "motioncrafter_revision=${MOTIONCRAFTER_REVISION}"
             echo "runner_label_contract=self-hosted-only"
+            echo "authorized_runner_name=${AUTHORIZED_RUNNER_NAME}"
+            echo "runner_name=${RUNNER_NAME:-unknown}"
+            echo "decord_metadata_exception=0.6.0-cp36-tag-runtime-verified"
             echo "storage_root=${DEFORM360_STORAGE_ROOT}"
             echo "official_raw_root=${DEFORM360_OFFICIAL_RAW_ROOT}"
             echo "adaptive_confirmation_root=${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
@@ -579,7 +615,13 @@ jobs:
             echo "adaptive_confirmation_payloads_opened=false"
             echo "confirmation_payloads_opened=false"
             echo "target_outcomes_used=false"
-            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total --format=csv,noheader
+            if command -v nvidia-smi >/dev/null 2>&1; then
+              nvidia-smi \
+                --query-gpu=index,name,uuid,driver_version,memory.total \
+                --format=csv,noheader || echo "gpu_inventory=unavailable"
+            else
+              echo "gpu_inventory=unavailable"
+            fi
           } > "${COMPACT_ROOT}/environment.txt"
           (
             cd "${COMPACT_ROOT}"
