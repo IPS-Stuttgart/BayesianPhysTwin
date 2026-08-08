@@ -1,0 +1,110 @@
+name: Deform360 calibration visual-execution admission
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-visual-execution-admission.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_calibration_visual_execution_admission.md"
+      - "scripts/science/admit_deform360_calibration_visual_execution.py"
+      - "src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py"
+      - "tests/conftest.py"
+      - "tests/test_deform360_calibration_visual_execution_admission.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-visual-execution-admission-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Visual-execution admission contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install source and validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev,graph]"
+          python -m pip install "build>=1.2"
+          python -m pip check
+
+      - name: Check source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py
+            scripts/science/admit_deform360_calibration_visual_execution.py
+            tests/test_deform360_calibration_visual_execution_admission.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py \
+            scripts/science/admit_deform360_calibration_visual_execution.py
+
+      - name: Run focused and adjacent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_visual_execution_admission.py \
+            tests/test_deform360_calibration_visual_production_plan.py
+          python -m py_compile \
+            src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py \
+            scripts/science/admit_deform360_calibration_visual_execution.py \
+            tests/test_deform360_calibration_visual_execution_admission.py
+
+      - name: Verify source-distribution membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build dist ./*.egg-info
+          python -m build --sdist
+          archive="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          test -n "${archive}"
+          listing="$(tar -tzf "${archive}")"
+          grep -Fq '/docs/deform360_calibration_visual_execution_admission.md' \
+            <<<"${listing}"
+          grep -Fq '/scripts/science/admit_deform360_calibration_visual_execution.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py' \
+            <<<"${listing}"
+          git restore --worktree -- src/bayesian_phystwin.egg-info
+          rm -rf build dist
+
+      - name: Verify exact read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
