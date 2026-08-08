@@ -3,16 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github" / "workflows" / (
-    "deform360-calibration-prepared-inventory.yml"
+WORKFLOW = (
+    ROOT / ".github" / "workflows" / ("deform360-calibration-prepared-inventory.yml")
 )
 GUIDE = ROOT / "docs" / "deform360_calibration_prepared_inventory.md"
 
 AUTHORITATIVE_SOURCE_REVISION = "0f403cbed8b5fc9ac585b5f7c237106809207b3f"
 AUTHORITATIVE_RUN_ID = "31236564360"
-AUTHORITATIVE_ARTIFACT = (
-    "deform360-official-calibration-source-31236564360-1"
-)
+AUTHORITATIVE_ARTIFACT = "deform360-official-calibration-source-31236564360-1"
 AUTHORITATIVE_RECORD_ID = (
     "edf3692d88fed3c011ee44da2508b39e4755a0e97a83a26a0391fcfe433d7b74"
 )
