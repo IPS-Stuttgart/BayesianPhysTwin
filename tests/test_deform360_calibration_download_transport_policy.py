@@ -7,8 +7,12 @@ from pathlib import Path
 from scripts.science.deform360_calibration_source import cli, download
 
 ROOT = Path(__file__).resolve().parents[1]
-REUSABLE = ROOT / ".github/workflows/deform360-official-hub-calibration-source-reusable.yml"
-DISPATCHER = ROOT / ".github/workflows/dispatch-deform360-calibration-source-pr-target.yml"
+REUSABLE = (
+    ROOT / ".github/workflows/deform360-official-hub-calibration-source-reusable.yml"
+)
+DISPATCHER = (
+    ROOT / ".github/workflows/dispatch-deform360-calibration-source-pr-target.yml"
+)
 DIRECT_SCRIPT = ROOT / "scripts/ci/run_deform360_calibration_source_direct.sh"
 
 
