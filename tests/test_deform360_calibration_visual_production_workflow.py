@@ -2,50 +2,121 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 WORKFLOW = Path(".github/workflows/deform360-calibration-visual-production.yml")
+LAUNCHER = Path(
+    ".github/workflows/launch-deform360-calibration-visual-production-once.yml"
+)
+SCRIPT = Path("scripts/science/execute_deform360_calibration_visual_production.py")
 
 
-def test_visual_production_workflow_is_main_only_and_resumable() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
+def _workflow() -> str:
+    return WORKFLOW.read_text(encoding="utf-8")
 
-    assert "workflow_dispatch:" in text
-    assert "github.event_name == 'workflow_dispatch'" in text
+
+def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
+    text = _workflow()
+    parsed = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(parsed, dict)
+    assert "workflow_call:" in text
+    assert "workflow_dispatch:" not in text
+    assert "inputs.execute_authorized == true" in text
+    assert "github.event_name == 'push'" in text
+    assert (
+        "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/"
+        "launch-deform360-calibration-visual-production-once.yml@refs/heads/main"
+        in text
+    )
     assert "github.ref == 'refs/heads/main'" in text
+    assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
     assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in text
+    assert "timeout-minutes: 1320" in text
     assert "cancel-in-progress: false" in text
     assert "--resume" in text
     assert "--attempt-id" in text
-    assert ".production.lock" not in text
 
 
-def test_visual_production_workflow_pins_every_external_source() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
+def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
+    text = LAUNCHER.read_text(encoding="utf-8")
+    parsed = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(parsed, dict)
+    assert "workflow_dispatch:" not in text
+    assert "branches: [main]" in text
+    assert (
+        text.count(
+            '      - ".github/workflows/launch-deform360-calibration-visual-production-once.yml"'
+        )
+        == 1
+    )
+    assert (
+        "uses: ./.github/workflows/deform360-calibration-visual-production.yml" in text
+    )
+    assert "execute_authorized: true" in text
+    assert "resume: true" in text
+    assert "secrets: inherit" in text
+    assert "cancel-in-progress: false" in text
+    assert r"confirmation payloads opened: \`false\`" in text
+    assert r"target outcomes used: \`false\`" in text
+    assert r"replacement allowed: \`false\`" in text
+
+
+def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
+    text = _workflow()
+
+    assert 'AUTHORITATIVE_ADMISSION_RUN_ID: "31272512658"' in text
+    assert 'AUTHORITATIVE_ADMISSION_ARTIFACT_ID: "9026043628"' in text
+    assert "deform360-calibration-retained-source-admission-31272512658-1" in text
+    assert (
+        "sha256:d0041af0ba0cfe6e5c5bd4008c47adb3ed4cf0cf0f6754eff67a238e746c7a86"
+        in text
+    )
+    assert "715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15" in text
+    assert "run-id: ${{ env.AUTHORITATIVE_ADMISSION_RUN_ID }}" in text
+    assert "repository: ${{ github.repository }}" in text
+    assert "github-token: ${{ github.token }}" in text
+    assert "sha256sum -c SHA256SUMS" in text
+    assert (
+        "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml"
+        not in text
+    )
+    assert "needs.retained-source" not in text
+
+
+def test_visual_production_has_no_caller_selected_host_paths() -> None:
+    text = _workflow()
+    call_contract = text[text.index("  workflow_call:") : text.index("\npermissions:")]
+
+    assert "processed_root" not in call_contract
+    assert "output_root" not in call_contract
+    assert "hf_cache_dir" not in call_contract
+    assert "INPUT_PROCESSED_ROOT" not in text
+    assert "INPUT_OUTPUT_ROOT" not in text
+    assert "INPUT_HF_CACHE_DIR" not in text
+    assert "VAR_PROCESSED_ROOT" in text
+    assert "VAR_OUTPUT_ROOT" in text
+    assert "VAR_HF_CACHE_DIR" in text
+
+
+def test_visual_production_pins_external_sources_and_single_model_session() -> None:
+    text = _workflow()
+    script = SCRIPT.read_text(encoding="utf-8")
 
     assert "25d90ef7f78ba4307f4555cb636d666004e1bf66" in text
     assert "9cb4e9679f5f34e249945544052464ef46324bc2" in text
-    assert (
-        "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml" in text
-    )
-    assert "deform360-calibration-retained-source-admission-" in text
-    assert "persist-credentials: false" in text
-    assert "actions/checkout@v7" in text
-    assert "actions/upload-artifact@v7" in text
-
-
-def test_visual_production_consumes_authoritative_custody_boundary() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
-
-    assert "Authoritative retained-source admission" in text
-    assert "needs.retained-source.outputs.admission_id" in text
-    assert "needs.retained-source.outputs.artifact_digest" in text
-    assert "execute_deform360_calibration_visual_production.py" in text
-    assert "calibration-visual-execution-admission.json" in text
-    assert "prediction-seal.json" in text
-    assert "visual-production-result.json" in text
+    assert "model_loading_policy=single-session-shared-adapter-v1" in text
+    assert "_SharedAdapterFactory" in script
+    assert "SafeMotionCrafterRunner" in script
+    assert "PinnedMotionCrafterModelSet" in script
+    assert "produced = _run(command)" not in script
+    assert "--prob4d-motioncrafter" not in text
+    assert "--prob4d-motioncrafter" not in script
 
 
 def test_visual_production_artifact_excludes_large_predictions_and_targets() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
+    text = _workflow()
     upload = text[text.index("Upload compact calibration-only production evidence") :]
 
     assert "*.npz" not in upload
@@ -58,8 +129,12 @@ def test_visual_production_artifact_excludes_large_predictions_and_targets() -> 
 
 
 def test_hugging_face_token_is_not_workflow_wide() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
+    text = _workflow()
     global_env = text[text.index("env:") : text.index("jobs:")]
 
     assert "HF_TOKEN" not in global_env
+    assert (
+        "secrets:"
+        in text[text.index("  workflow_call:") : text.index("\npermissions:")]
+    )
     assert text.count("HF_TOKEN: ${{ secrets.HF_TOKEN }}") == 2

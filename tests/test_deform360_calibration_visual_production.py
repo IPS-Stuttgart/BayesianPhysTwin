@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
 
@@ -577,3 +578,261 @@ def test_validation_primitives_reject_malformed_metadata() -> None:
         validate_deform360_motioncrafter_model_set_binding(
             [], expected_model_set_id="0" * 64
         )
+
+
+def test_shared_adapter_factory_reuses_one_loaded_adapter() -> None:
+    import runpy
+    from dataclasses import dataclass
+    from pathlib import Path
+
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    shared_factory_type = namespace["_SharedAdapterFactory"]
+
+    @dataclass(frozen=True)
+    class Config:
+        upstream_root: Path
+        video_path: Path
+        output_directory: Path
+        cache_directory: str
+        height: int
+        seed: int
+        frame_start: int
+        frame_stop: int
+
+    class Adapter:
+        def __init__(self, config: Config) -> None:
+            self.config = config
+
+    created: list[Adapter] = []
+
+    def factory(config: Config) -> Adapter:
+        adapter = Adapter(config)
+        created.append(adapter)
+        return adapter
+
+    shared = shared_factory_type(factory)
+    first_config = Config(
+        upstream_root=Path("MotionCrafter"),
+        video_path=Path("a.mp4"),
+        output_directory=Path("a"),
+        cache_directory="cache",
+        height=320,
+        seed=11,
+        frame_start=0,
+        frame_stop=58,
+    )
+    second_config = Config(
+        upstream_root=Path("MotionCrafter"),
+        video_path=Path("b.mp4"),
+        output_directory=Path("b"),
+        cache_directory="cache",
+        height=320,
+        seed=12,
+        frame_start=20,
+        frame_stop=78,
+    )
+
+    first = shared(first_config)
+    second = shared(second_config)
+
+    assert first is second
+    assert len(created) == 1
+    assert shared.creation_attempt_count == 1
+    assert shared.creation_count == 1
+    assert second.config == second_config
+
+    changed_fixed = Config(
+        upstream_root=Path("different"),
+        video_path=Path("c.mp4"),
+        output_directory=Path("c"),
+        cache_directory="cache",
+        height=320,
+        seed=13,
+        frame_start=40,
+        frame_stop=98,
+    )
+    with pytest.raises(ValueError, match="fixed fields"):
+        shared(changed_fixed)
+
+
+def test_shared_adapter_factory_latches_initial_creation_failure() -> None:
+    import runpy
+    from dataclasses import dataclass
+
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    shared_factory_type = namespace["_SharedAdapterFactory"]
+
+    @dataclass(frozen=True)
+    class Config:
+        video_path: Path
+        output_directory: Path
+        seed: int
+        frame_start: int
+        frame_stop: int
+
+    attempts = 0
+
+    def factory(_config: Config) -> object:
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("synthetic load failure")
+
+    shared = shared_factory_type(factory)
+    config = Config(Path("a.mp4"), Path("a"), 1, 0, 58)
+    with pytest.raises(RuntimeError, match="synthetic load failure"):
+        shared(config)
+    with pytest.raises(RuntimeError, match="creation already failed"):
+        shared(config)
+
+    assert attempts == 1
+    assert shared.creation_attempt_count == 1
+    assert shared.creation_count == 0
+
+
+def test_shared_producer_matches_the_pinned_prob4d_public_api(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import runpy
+    import sys
+    import types
+    from dataclasses import dataclass
+    from types import SimpleNamespace
+
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    producer_type = namespace["_SharedMotionCrafterProducer"]
+    model_set_id = "a" * 64
+    manifest = {"schema": "prob4d.motioncrafter-model-set.v2", "value": 1}
+    created_adapters: list[object] = []
+    runner_configs: list[object] = []
+    verified_paths: list[Path] = []
+
+    @dataclass(frozen=True)
+    class Config:
+        upstream_root: Path
+        video_path: Path
+        output_directory: Path
+        cache_directory: str
+        height: int
+        width: int
+        window_size: int
+        overlap: int
+        num_inference_steps: int
+        guidance_scale: float
+        decode_chunk_size: int
+        seed: int
+        seed_policy: str
+        low_memory_usage: bool
+        frame_start: int
+        frame_stop: int
+        frame_stride: int
+
+    class Adapter:
+        def __init__(self, config: Config) -> None:
+            self.config = config
+
+    class ModelSet:
+        set_sha256 = model_set_id
+        manifest_json = json.dumps(manifest, sort_keys=True)
+
+        def build_config(self, **kwargs: object) -> Config:
+            return Config(**kwargs)  # type: ignore[arg-type]
+
+        def adapter_factory(self):
+            def factory(config: Config) -> Adapter:
+                adapter = Adapter(config)
+                created_adapters.append(adapter)
+                return adapter
+
+            return factory
+
+    class PinnedMotionCrafterModelSet:
+        @classmethod
+        def inspect(cls, **_kwargs: object) -> ModelSet:
+            return ModelSet()
+
+    class SafeMotionCrafterRunner:
+        def __init__(self, config: Config, *, adapter_factory) -> None:
+            self.config = config
+            self.adapter_factory = adapter_factory
+
+        def run(self, *, resume: bool) -> Path:
+            assert resume
+            if self.config.output_directory.name == "resumed":
+                self.config.output_directory.mkdir(parents=True, exist_ok=True)
+                return self.config.output_directory / "predictions.json"
+            adapter = self.adapter_factory(self.config)
+            runner_configs.append(adapter.config)
+            self.config.output_directory.mkdir(parents=True, exist_ok=True)
+            return self.config.output_directory / "predictions.json"
+
+    def verify(path: Path, *, verify_hashes: bool) -> dict[str, object]:
+        assert verify_hashes
+        verified_paths.append(path)
+        return {"manifest_path": str(path), "hashes_verified": True}
+
+    package = types.ModuleType("prob4d")
+    package.__path__ = []  # type: ignore[attr-defined]
+    models_module = types.ModuleType("prob4d.motioncrafter_models")
+    models_module.PinnedMotionCrafterModelSet = PinnedMotionCrafterModelSet
+    runner_module = types.ModuleType("prob4d.motioncrafter_runner")
+    runner_module.SafeMotionCrafterRunner = SafeMotionCrafterRunner
+    integrity_module = types.ModuleType("prob4d.motioncrafter_integrity")
+    integrity_module.verify_motioncrafter_prediction_manifest = verify
+    monkeypatch.setitem(sys.modules, "prob4d", package)
+    monkeypatch.setitem(sys.modules, "prob4d.motioncrafter_models", models_module)
+    monkeypatch.setitem(sys.modules, "prob4d.motioncrafter_runner", runner_module)
+    monkeypatch.setitem(sys.modules, "prob4d.motioncrafter_integrity", integrity_module)
+
+    sources = {
+        role: {"repository": f"example/{role}", "revision": "b" * 40}
+        for role in ("unet", "vae", "image_vae", "base_pipeline")
+    }
+    producer = producer_type(
+        model_binding={
+            "model_set_id": model_set_id,
+            "manifest": manifest,
+            "sources": sources,
+        },
+        motioncrafter_root=tmp_path / "MotionCrafter",
+        cache_directory=tmp_path / "cache",
+        provider_lock=SimpleNamespace(height=320, width=640, window_size=25, overlap=8),
+    )
+    resumed = producer.produce(
+        job={"prefix_source_frame_range_half_open": [0, 58], "view_root_seed": 10},
+        source_video_path=tmp_path / "resumed.mp4",
+        output_directory=tmp_path / "resumed",
+        resume=True,
+    )
+    assert resumed == tmp_path / "resumed" / "predictions.json"
+    assert producer.model_load_attempt_count == 0
+    assert producer.model_load_count == 0
+
+    first = producer.produce(
+        job={"prefix_source_frame_range_half_open": [0, 58], "view_root_seed": 11},
+        source_video_path=tmp_path / "a.mp4",
+        output_directory=tmp_path / "a",
+        resume=True,
+    )
+    second = producer.produce(
+        job={"prefix_source_frame_range_half_open": [20, 78], "view_root_seed": 12},
+        source_video_path=tmp_path / "b.mp4",
+        output_directory=tmp_path / "b",
+        resume=True,
+    )
+
+    assert first == tmp_path / "a" / "predictions.json"
+    assert second == tmp_path / "b" / "predictions.json"
+    assert producer.model_load_count == 1
+    assert producer.model_load_attempt_count == 1
+    assert len(created_adapters) == 1
+    assert len(runner_configs) == 2
+    assert runner_configs[-1].video_path == tmp_path / "b.mp4"
+    assert producer.verify(second)["hashes_verified"] is True
+    assert verified_paths == [second]
