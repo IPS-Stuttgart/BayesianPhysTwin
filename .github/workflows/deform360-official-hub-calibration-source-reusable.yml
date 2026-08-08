@@ -22,7 +22,6 @@ env:
   BPT_SOURCE_SHA: ${{ inputs.source_sha }}
   PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
   HF_HUB_DISABLE_XET: "1"
-  HF_TOKEN: ${{ secrets.hf_token }}
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -106,6 +105,8 @@ jobs:
 
       - name: Validate and prepare the frozen calibration source
         shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.hf_token }}
         run: bash scripts/ci/run_deform360_calibration_source_direct.sh
 
       - name: Publish non-sensitive completion receipt
