@@ -152,18 +152,42 @@ def source_artifact_mapping(
     return frozen_finite_json_mapping(normalized, name=name)
 
 
+def _fsync_directory(directory: Path) -> None:
+    """Best-effort fsync of one directory after a publication rename or link."""
+
+    flags = (
+        os.O_RDONLY
+        | int(getattr(os, "O_DIRECTORY", 0))
+        | int(getattr(os, "O_CLOEXEC", 0))
+    )
+    try:
+        descriptor = os.open(directory, flags)
+    except OSError:
+        return
+    try:
+        os.fsync(descriptor)
+    except OSError:
+        pass
+    finally:
+        os.close(descriptor)
+
+
 def write_atomic_json(
     value: Mapping[str, Any],
     path: str | Path,
     *,
     overwrite: bool,
 ) -> None:
-    """Write canonical pretty JSON through fsync and atomic replacement."""
+    """Durably publish canonical pretty JSON with optional atomic replacement.
+
+    With ``overwrite=False``, the completed temporary inode is hard-linked into
+    place. The link operation is atomic and fails when another writer has already
+    published the destination, so concurrent writers cannot silently replace one
+    another after a racy existence check.
+    """
 
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    if destination.exists() and not overwrite:
-        raise FileExistsError(destination)
     data = (
         json.dumps(
             plain_json(value),
@@ -185,7 +209,14 @@ def write_atomic_json(
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, destination)
+        if overwrite:
+            os.replace(temporary, destination)
+        else:
+            try:
+                os.link(temporary, destination)
+            except FileExistsError:
+                raise FileExistsError(destination) from None
+        _fsync_directory(destination.parent)
     finally:
         temporary.unlink(missing_ok=True)
 
