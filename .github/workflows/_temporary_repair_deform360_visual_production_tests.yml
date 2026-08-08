@@ -44,7 +44,7 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: Repair and validate exact files
+      - name: Repair, format, and validate exact files
         shell: bash
         run: |
           set -euo pipefail
@@ -78,6 +78,7 @@ jobs:
             tests/test_deform360_calibration_visual_production.py
             tests/test_deform360_calibration_visual_production_workflow.py
           )
+          python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
@@ -128,6 +129,8 @@ jobs:
 
           parent_commit = request("GET", f"/git/commits/{parent}")
           paths = (
+              "src/bayesian_phystwin/deform360_calibration_visual_production.py",
+              "scripts/science/execute_deform360_calibration_visual_production.py",
               "tests/test_deform360_calibration_visual_production.py",
               "tests/test_deform360_calibration_visual_production_workflow.py",
           )
