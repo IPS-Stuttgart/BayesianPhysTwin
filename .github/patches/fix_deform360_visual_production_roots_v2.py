@@ -98,3 +98,5 @@ new = '''          mapfile -t resolved_roots < <(
 if source.count(old) != 1:
     raise SystemExit("protected-root resolution block changed")
 path.write_text(source.replace(old, new), encoding="utf-8")
+
+# Push after the finalizer workflow exists so this reviewed transform is executed.
