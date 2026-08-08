@@ -51,9 +51,7 @@ def main(argv: list[str] | None = None) -> int:
             visual_provider_lock_path=args.visual_provider_lock,
             calibration_source_plan_path=args.calibration_source_plan,
             calibration_source_download_path=args.calibration_source_download,
-            calibration_source_run_record_path=(
-                args.calibration_source_run_record
-            ),
+            calibration_source_run_record_path=(args.calibration_source_run_record),
             calibration_source_result_path=args.calibration_source_result,
             implementation_revision=args.implementation_revision,
         )

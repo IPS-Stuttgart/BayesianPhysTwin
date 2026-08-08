@@ -77,9 +77,7 @@ def test_plan_binds_exact_ten_object_camera_and_frame_roster(
 
     assert plan["object_count"] == 10
     assert plan["camera_view_count"] == 80
-    assert plan["production_policy"]["camera_roster_policy"] == (
-        CAMERA_ROSTER_POLICY
-    )
+    assert plan["production_policy"]["camera_roster_policy"] == (CAMERA_ROSTER_POLICY)
     assert plan["production_policy"]["prob4d_motioncrafter_seed_policy"] == (
         PROB4D_MOTIONCRAFTER_SEED_POLICY
     )
@@ -170,16 +168,14 @@ def test_frame_range_and_output_collisions_fail_closed(tmp_path: Path) -> None:
     plan = _build(_inputs(tmp_path))
 
     changed_range = copy.deepcopy(plan)
-    changed_range["objects"][0][
-        "prediction_source_frame_range_half_open"
-    ][1] += 1
+    changed_range["objects"][0]["prediction_source_frame_range_half_open"][1] += 1
     with pytest.raises(ValueError, match="exactly 76 frames"):
         validate_deform360_calibration_visual_production_plan(changed_range)
 
     collision = copy.deepcopy(plan)
-    collision["objects"][1]["cameras"][0]["output_relative_directory"] = (
-        collision["objects"][0]["cameras"][0]["output_relative_directory"]
-    )
+    collision["objects"][1]["cameras"][0]["output_relative_directory"] = collision[
+        "objects"
+    ][0]["cameras"][0]["output_relative_directory"]
     with pytest.raises(ValueError, match="camera plan changed|collision"):
         validate_deform360_calibration_visual_production_plan(collision)
 
@@ -225,5 +221,7 @@ def test_confirmation_identity_cannot_enter_object_plan(tmp_path: Path) -> None:
         inputs.run_record_path,
     )
 
-    with pytest.raises(ValueError, match="terminal record did not succeed|confirmation"):
+    with pytest.raises(
+        ValueError, match="terminal record did not succeed|confirmation"
+    ):
         _build(inputs)

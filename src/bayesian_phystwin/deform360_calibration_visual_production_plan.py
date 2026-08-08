@@ -43,9 +43,7 @@ DEFORM360_CALIBRATION_PREDICTION_FRAME_COUNT: Final = 76
 DEFORM360_CALIBRATION_PREFIX_FRAME_COUNT: Final = 58
 DEFORM360_CALIBRATION_MINIMUM_CAMERA_COUNT: Final = 8
 PROB4D_MOTIONCRAFTER_SEED_POLICY: Final = "derived-per-call"
-CAMERA_ROSTER_POLICY: Final = (
-    "all-source-prepared-calibrated-cameras-lexicographic-v1"
-)
+CAMERA_ROSTER_POLICY: Final = "all-source-prepared-calibrated-cameras-lexicographic-v1"
 FRAME_POLICY: Final = "selected-81-predict-first-76-prefix-first-58-v1"
 VIEW_SUBSTREAM_POLICY: Final = "per-camera-derived-substream-v1"
 
@@ -261,12 +259,12 @@ def _dependence_group_id(*, kind: str, payload: Mapping[str, Any]) -> str:
 
 
 def _frame_range(value: object, *, name: str, expected_count: int) -> list[int]:
-    _require(
-        isinstance(value, Sequence)
-        and not isinstance(value, (str, bytes))
-        and len(value) == 2,
-        f"{name} must contain two integer bounds",
-    )
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes))
+        or len(value) != 2
+    ):
+        raise ValueError(f"{name} must contain two integer bounds")
     start = _literal_integer(value[0], name=f"{name}[0]")
     stop = _literal_integer(value[1], name=f"{name}[1]")
     _require(
@@ -303,9 +301,7 @@ def _camera_record(
         "view_root_seed": view_seed,
         "call_namespace": call_namespace,
         "source_video_relative_path": f"{source_root}/undistorted.mp4",
-        "source_timestamps_relative_path": (
-            f"{source_root}/aligned_timestamps.txt"
-        ),
+        "source_timestamps_relative_path": (f"{source_root}/aligned_timestamps.txt"),
         "output_relative_directory": output_root,
         "dependence_group_ids": [
             _dependence_group_id(
@@ -328,7 +324,8 @@ def _validate_camera_record(
     object_seed: int,
     model_set_id: str,
 ) -> dict[str, Any]:
-    _require(isinstance(value, Mapping), "camera plan must be a JSON object")
+    if not isinstance(value, Mapping):
+        raise ValueError("camera plan must be a JSON object")
     record = dict(value)
     _exact_fields(record, _CAMERA_FIELDS, "camera plan")
     camera_id = _literal_string(record["camera_id"], name="camera_id")
@@ -366,9 +363,7 @@ def validate_deform360_calibration_visual_production_plan(
             json.dumps(plain_json(value), sort_keys=True, allow_nan=False)
         )
     except (TypeError, ValueError) as error:
-        raise ValueError(
-            "visual production plan must contain finite JSON"
-        ) from error
+        raise ValueError("visual production plan must contain finite JSON") from error
     _require(
         isinstance(plan, dict),
         "visual production plan must be a JSON object",
@@ -379,13 +374,11 @@ def validate_deform360_calibration_visual_production_plan(
         "unsupported visual production plan schema",
     )
     _require(
-        plan["schema_version"]
-        == DEFORM360_CALIBRATION_VISUAL_PRODUCTION_PLAN_VERSION,
+        plan["schema_version"] == DEFORM360_CALIBRATION_VISUAL_PRODUCTION_PLAN_VERSION,
         "unsupported visual production plan version",
     )
     _require(
-        plan["semantics"]
-        == DEFORM360_CALIBRATION_VISUAL_PRODUCTION_PLAN_SEMANTICS,
+        plan["semantics"] == DEFORM360_CALIBRATION_VISUAL_PRODUCTION_PLAN_SEMANTICS,
         "visual production plan semantics changed",
     )
     exact_revision(plan["implementation_revision"], name="implementation_revision")
@@ -464,8 +457,7 @@ def validate_deform360_calibration_visual_production_plan(
         name="initial_metric_frame_prior_id",
     )
     _require(
-        provider["additional_metric_anchor_policy"]
-        in {"none", "independent_sparse"},
+        provider["additional_metric_anchor_policy"] in {"none", "independent_sparse"},
         "additional metric-anchor policy changed",
     )
     max_gauge_rank = provider["max_gauge_rank"]
@@ -596,16 +588,13 @@ def validate_deform360_calibration_visual_production_plan(
         )
         object_ids.append(object_id)
         object_seeds.append(object_seed)
-        view_seeds.extend(
-            camera["view_root_seed"] for camera in validated_cameras
-        )
+        view_seeds.extend(camera["view_root_seed"] for camera in validated_cameras)
         outputs.extend(
             camera["output_relative_directory"] for camera in validated_cameras
         )
         camera_view_count += camera_count
     _require(
-        object_ids == sorted(object_ids)
-        and len(set(object_ids)) == len(object_ids),
+        object_ids == sorted(object_ids) and len(set(object_ids)) == len(object_ids),
         "object plans must be sorted and unique",
     )
     _require(
@@ -655,9 +644,7 @@ def build_deform360_calibration_visual_production_plan(
         implementation_revision,
         name="implementation_revision",
     )
-    provider_lock = load_deform360_visual_provider_lock(
-        visual_provider_lock_path
-    )
+    provider_lock = load_deform360_visual_provider_lock(visual_provider_lock_path)
     provider_record = provider_lock.to_record()
     _require(
         provider_record["seed_policy"] == "per-object-derived-seed-v1",
@@ -668,8 +655,7 @@ def build_deform360_calibration_visual_production_plan(
     )
     rows = result_value.get("objects")
     _require(
-        isinstance(rows, list)
-        and len(rows) == DEFORM360_CALIBRATION_OBJECT_COUNT,
+        isinstance(rows, list) and len(rows) == DEFORM360_CALIBRATION_OBJECT_COUNT,
         "successful result must contain ten object rows",
     )
     row_ids = [row.get("object_id") for row in rows if isinstance(row, Mapping)]
@@ -704,23 +690,15 @@ def build_deform360_calibration_visual_production_plan(
     visual_lock_id = contexts[0].visual_provider_lock_id
     run_record_id = contexts[0].run_record_sha256
     _require(
-        all(
-            context.selection_artifact_sha256 == selection_id
-            for context in contexts
-        ),
+        all(context.selection_artifact_sha256 == selection_id for context in contexts),
         "selection identity changed across objects",
     )
     _require(
-        all(
-            context.visual_provider_lock_id == visual_lock_id
-            for context in contexts
-        ),
+        all(context.visual_provider_lock_id == visual_lock_id for context in contexts),
         "provider identity changed across objects",
     )
     _require(
-        all(
-            context.run_record_sha256 == run_record_id for context in contexts
-        ),
+        all(context.run_record_sha256 == run_record_id for context in contexts),
         "run-record identity changed across objects",
     )
     _require(
@@ -757,8 +735,7 @@ def build_deform360_calibration_visual_production_plan(
             f"prepared camera roster is missing: {context.object_id}",
         )
         cameras = sorted(
-            _literal_string(camera, name="camera_id")
-            for camera in cameras_value
+            _literal_string(camera, name="camera_id") for camera in cameras_value
         )
         _require(
             len(cameras) >= DEFORM360_CALIBRATION_MINIMUM_CAMERA_COUNT
@@ -844,9 +821,7 @@ def build_deform360_calibration_visual_production_plan(
             "additional_metric_anchor_policy"
         ],
         "max_gauge_rank": provider_record["max_gauge_rank"],
-        "minimum_retained_gauge_trace": provider_record[
-            "minimum_retained_gauge_trace"
-        ],
+        "minimum_retained_gauge_trace": provider_record["minimum_retained_gauge_trace"],
     }
     payload: dict[str, Any] = {
         "schema": DEFORM360_CALIBRATION_VISUAL_PRODUCTION_PLAN_SCHEMA,
@@ -871,9 +846,7 @@ def build_deform360_calibration_visual_production_plan(
             "object_seed_schema": DEFORM360_CALIBRATION_OBJECT_SEED_SCHEMA,
             "view_seed_schema": DEFORM360_CALIBRATION_VIEW_SEED_SCHEMA,
             "view_substream_policy": VIEW_SUBSTREAM_POLICY,
-            "prob4d_motioncrafter_seed_policy": (
-                PROB4D_MOTIONCRAFTER_SEED_POLICY
-            ),
+            "prob4d_motioncrafter_seed_policy": (PROB4D_MOTIONCRAFTER_SEED_POLICY),
             "source_episode_directory": "episode_0000",
             "source_video_filename": "undistorted.mp4",
             "source_timestamps_filename": "aligned_timestamps.txt",
@@ -893,7 +866,9 @@ def build_deform360_calibration_visual_production_plan(
     validated = validate_deform360_calibration_visual_production_plan(plan)
     _require(
         result_file_sha256
-        == hashlib.sha256(Path(calibration_source_result_path).read_bytes()).hexdigest(),
+        == hashlib.sha256(
+            Path(calibration_source_result_path).read_bytes()
+        ).hexdigest(),
         "calibration-source result changed during planning",
     )
     return validated
