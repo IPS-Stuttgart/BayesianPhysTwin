@@ -13,8 +13,12 @@ TARGET = (
 
 def main() -> None:
     text = TARGET.read_text(encoding="utf-8")
-    old = """    result = float(value)\n    if not math.isfinite(result) or result <= 0.0:\n"""
-    new = """    result: float = float(value)\n    if not math.isfinite(result) or result <= 0.0:\n"""
+    old = """    result = float(value)
+    if not math.isfinite(result) or result <= 0.0:
+"""
+    new = """    result: float = float(value)
+    if not math.isfinite(result) or result <= 0.0:
+"""
     if text.count(old) != 1:
         raise SystemExit("positive-number parser shape changed")
     TARGET.write_text(text.replace(old, new), encoding="utf-8")
