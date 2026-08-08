@@ -30,8 +30,8 @@ from ._portable_contracts import (
 )
 from .deform360_calibration_visual_production_plan import (
     DEFORM360_CALIBRATION_OBJECT_COUNT,
-    DEFORM360_CALIBRATION_PREFIX_FRAME_COUNT,
     DEFORM360_CALIBRATION_PREDICTION_FRAME_COUNT,
+    DEFORM360_CALIBRATION_PREFIX_FRAME_COUNT,
     DEFORM360_CALIBRATION_SELECTED_FRAME_COUNT,
     validate_deform360_calibration_visual_production_plan,
 )
@@ -229,7 +229,7 @@ def _literal_integer(value: object, *, name: str, minimum: int = 0) -> int:
 def _positive_number(value: object, *, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a positive finite number")
-    result = float(value)
+    result: float = float(value)
     if not math.isfinite(result) or result <= 0.0:
         raise ValueError(f"{name} must be a positive finite number")
     return result
@@ -387,7 +387,9 @@ def _validate_inventory_camera(
         minimum=1,
     )
     if frame_count != aligned_frame_count:
-        raise ValueError(f"inventory camera frame count changed: {object_id}/{camera_id}")
+        raise ValueError(
+            f"inventory camera frame count changed: {object_id}/{camera_id}"
+        )
     normalized = {
         "camera": camera_id,
         "video": _validate_file_record(
@@ -500,7 +502,10 @@ def validate_deform360_prepared_source_inventory(
         name="inventory object_count",
         minimum=1,
     )
-    if object_count != DEFORM360_CALIBRATION_OBJECT_COUNT or len(objects) != object_count:
+    if (
+        object_count != DEFORM360_CALIBRATION_OBJECT_COUNT
+        or len(objects) != object_count
+    ):
         raise ValueError("inventory must contain exactly ten calibration objects")
 
     object_ids: list[str] = []
@@ -654,7 +659,9 @@ def _build_jobs(
                 name=f"{object_id}/{camera_id} timestamps",
             )
             if plan_camera["source_video_relative_path"] != video["path"]:
-                raise ValueError(f"plan video path differs from inventory: {object_id}/{camera_id}")
+                raise ValueError(
+                    f"plan video path differs from inventory: {object_id}/{camera_id}"
+                )
             if plan_camera["source_timestamps_relative_path"] != timestamps["path"]:
                 raise ValueError(
                     f"plan timestamp path differs from inventory: {object_id}/{camera_id}"
@@ -683,9 +690,7 @@ def _build_jobs(
                 "camera_height": inventory_camera["height"],
                 "camera_fps": inventory_camera["fps"],
                 "camera_timeline_sha256": inventory_camera["timeline_sha256"],
-                "output_relative_directory": plan_camera[
-                    "output_relative_directory"
-                ],
+                "output_relative_directory": plan_camera["output_relative_directory"],
                 "dependence_group_ids": plan_camera["dependence_group_ids"],
             }
             jobs.append({**identity, "job_id": content_id(identity)})
@@ -832,7 +837,10 @@ def validate_deform360_calibration_visual_execution_admission(
     )
     object_ids = [cast(str, job["object_id"]) for job in jobs]
     unique_objects = sorted(set(object_ids))
-    if object_count != len(unique_objects) or object_count != DEFORM360_CALIBRATION_OBJECT_COUNT:
+    if (
+        object_count != len(unique_objects)
+        or object_count != DEFORM360_CALIBRATION_OBJECT_COUNT
+    ):
         raise ValueError("admission must contain exactly ten physical objects")
     ordering = [
         (cast(str, job["object_id"]), cast(str, job["camera_id"])) for job in jobs

@@ -41,6 +41,10 @@ def _inventory(plan: dict[str, object]) -> dict[str, object]:
     objects = []
     for plan_object in plan["objects"]:
         object_id = plan_object["object_id"]
+        selected_stop = plan_object["selected_source_frame_range_half_open"][1]
+        if type(selected_stop) is not int:
+            raise AssertionError("selected frame stop must be an integer")
+        aligned_frame_count = max(140, selected_stop)
         cameras = []
         for plan_camera in plan_object["cameras"]:
             camera_id = plan_camera["camera_id"]
@@ -48,24 +52,18 @@ def _inventory(plan: dict[str, object]) -> dict[str, object]:
             cameras.append(
                 {
                     "camera": camera_id,
-                    "video": _file_record(
-                        plan_camera["source_video_relative_path"]
-                    ),
-                    "preview": _file_record(
-                        f"{camera_root}/undistorted_000000.png"
-                    ),
+                    "video": _file_record(plan_camera["source_video_relative_path"]),
+                    "preview": _file_record(f"{camera_root}/undistorted_000000.png"),
                     "timestamps": _file_record(
                         plan_camera["source_timestamps_relative_path"]
                     ),
                     "alignment": _file_record(f"{camera_root}/alignment.json"),
                     "metadata": _file_record(f"{camera_root}/metadata.json"),
-                    "frame_count": 140,
+                    "frame_count": aligned_frame_count,
                     "width": 640,
                     "height": 360,
                     "fps": 30.0,
-                    "timeline_sha256": _digest(
-                        f"{object_id}:{camera_id}:timeline"
-                    ),
+                    "timeline_sha256": _digest(f"{object_id}:{camera_id}:timeline"),
                 }
             )
         objects.append(
@@ -74,7 +72,7 @@ def _inventory(plan: dict[str, object]) -> dict[str, object]:
                 "episode_id": plan_object["episode_id"],
                 "stratum": plan_object["stratum"],
                 "synthetic_episode_index": 0,
-                "aligned_frame_count": 140,
+                "aligned_frame_count": aligned_frame_count,
                 "action_window": {
                     "selected_raw_frame_range_half_open": plan_object[
                         "selected_source_frame_range_half_open"
@@ -85,7 +83,7 @@ def _inventory(plan: dict[str, object]) -> dict[str, object]:
                     "prefix_raw_frame_range_half_open": plan_object[
                         "prefix_source_frame_range_half_open"
                     ],
-                    "raw_frame_count": 140,
+                    "raw_frame_count": aligned_frame_count,
                 },
                 "episode_files": {},
                 "cameras": cameras,
@@ -93,9 +91,7 @@ def _inventory(plan: dict[str, object]) -> dict[str, object]:
             }
         )
     identity: dict[str, object] = {
-        "schema": (
-            "bayesian-phystwin.deform360-calibration-prepared-source-inventory"
-        ),
+        "schema": ("bayesian-phystwin.deform360-calibration-prepared-source-inventory"),
         "schema_version": 1,
         "semantics": "exact-retained-calibration-rgb-tactile-robot-inventory-v1",
         "status": "complete-calibration-only-prepared-source",
@@ -113,9 +109,7 @@ def _inventory(plan: dict[str, object]) -> dict[str, object]:
             "sources/calibration-source/result.json": plan[
                 "calibration_source_result_sha256"
             ],
-            "sources/stage0/selection.json": plan[
-                "selection_artifact_sha256"
-            ],
+            "sources/stage0/selection.json": plan["selection_artifact_sha256"],
         },
         "information_boundary": {
             "calibration_camera_payloads_opened": True,
@@ -170,17 +164,11 @@ def test_admission_binds_all_jobs_to_exact_source_bytes(tmp_path: Path) -> None:
     assert admission["camera_view_count"] == 80
     assert len(admission["jobs"]) == 80
     assert [
-        (job["object_id"], job["camera_id"])
-        for job in admission["jobs"]
-    ] == sorted(
-        (job["object_id"], job["camera_id"])
-        for job in admission["jobs"]
-    )
+        (job["object_id"], job["camera_id"]) for job in admission["jobs"]
+    ] == sorted((job["object_id"], job["camera_id"]) for job in admission["jobs"])
     first = admission["jobs"][0]
     assert first["source_video"]["path"].endswith("/undistorted.mp4")
-    assert first["source_timestamps"]["path"].endswith(
-        "/aligned_timestamps.txt"
-    )
+    assert first["source_timestamps"]["path"].endswith("/aligned_timestamps.txt")
     assert first["source_video"]["byte_count"] > 0
     assert len(first["source_video"]["sha256"]) == 64
     serialized = json.dumps(admission, sort_keys=True)
@@ -244,9 +232,9 @@ def first_job_id(admission: dict[str, object]) -> str:
 def test_frame_and_upstream_identity_mismatch_fail_closed(tmp_path: Path) -> None:
     plan_path, inventory_path, _plan = _inputs(tmp_path)
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-    inventory["objects"][0]["action_window"][
-        "prediction_raw_frame_range_half_open"
-    ][1] += 1
+    inventory["objects"][0]["action_window"]["prediction_raw_frame_range_half_open"][
+        1
+    ] += 1
     _rewrite_inventory(inventory_path, inventory)
     with pytest.raises(ValueError, match="exactly 76 frames"):
         build_deform360_calibration_visual_execution_admission(

@@ -28,9 +28,7 @@ def pytest_configure(config: object) -> None:
     contract_tests = [
         *sorted(test_root.glob("test_bias_aware_belief_v2*.py")),
         *sorted(
-            test_root.glob(
-                "test_deform360_calibration_visual_execution_admission*.py"
-            )
+            test_root.glob("test_deform360_calibration_visual_execution_admission*.py")
         ),
         *sorted(test_root.glob("test_guard_harm_risk*.py")),
         *sorted(test_root.glob("test_horizon_conditioned_discrepancy*.py")),
