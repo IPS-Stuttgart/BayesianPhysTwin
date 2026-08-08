@@ -69,6 +69,25 @@ def test_visual_production_revalidates_the_complete_audited_artifact() -> None:
     assert "visual-production-result.json" in text
 
 
+def test_resolved_roots_are_available_before_first_same_step_use() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    block = text[
+        text.index("      - name: Resolve and separate protected roots") :
+        text.index("      - name: Download exact audited retained-source admission")
+    ]
+
+    assert "mapfile -t resolved_roots" in block
+    assert 'PROCESSED_ROOT="${resolved_roots[0]}"' in block
+    assert 'OUTPUT_ROOT="${resolved_roots[1]}"' in block
+    assert 'HF_CACHE_DIR="${resolved_roots[2]}"' in block
+    assert 'PRODUCTION_RUN_ROOT="${OUTPUT_ROOT}/${ADMISSION_ID}"' in block
+    assert 'export PROCESSED_ROOT OUTPUT_ROOT HF_CACHE_DIR PRODUCTION_RUN_ROOT' in block
+    assert block.index('OUTPUT_ROOT="${resolved_roots[1]}"') < block.index(
+        'mkdir -p -- "${OUTPUT_ROOT}" "${HF_CACHE_DIR}"'
+    )
+    assert 'Path(os.environ["GITHUB_ENV"])' not in block
+
+
 def test_source_bytes_are_revalidated_inside_the_locked_job_loop() -> None:
     text = EXECUTOR.read_text(encoding="utf-8")
 
