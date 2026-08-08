@@ -67,7 +67,9 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert r"replacement allowed: \`false\`" in text
     assert r"pre-payload predecessor: run \`31274946936\`" in text
     assert r"environment-bootstrap predecessor: run \`31275886113\`" in text
-    assert "2026-08-09-sole-self-hosted-layout-v4" in text
+    assert r"runtime-metadata predecessor: run \`31276893637\`" in text
+    assert r"runtime repair: PR \`#294\`" in text
+    assert "2026-08-09-functional-runtime-retry-v5" in text
 
 
 def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
@@ -86,7 +88,7 @@ def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() 
     assert "The frozen calibration-processed root is unavailable." in production
 
 
-def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> None:
+def test_visual_production_validates_exact_decord_diagnostic_and_runtime() -> None:
     text = _workflow()
     bootstrap = text[
         text.index("Bootstrap exact GPU producer environment") : text.index(
@@ -98,8 +100,24 @@ def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> No
     assert 'uv_bin="${HOME}/.local/bin/uv"' in bootstrap
     assert '"${uv_bin}" pip install \\\n' in bootstrap
     assert '--python "${env_root}/bin/python"' in bootstrap
-    assert '"${uv_bin}" pip check --python "${env_root}/bin/python"' in bootstrap
+    assert 'check_output="$("${uv_bin}" pip check' in bootstrap
+    assert "Found 1 incompatibility" in bootstrap
+    assert "The package `decord` was built for a different platform" in bootstrap
+    assert 'printf \'%s\\n\' "${check_output}" >&2' in bootstrap
     assert '"${env_root}/bin/python" -m pip' not in bootstrap
+    assert 'PYTHONPATH="${GITHUB_WORKSPACE}/_motioncrafter"' in bootstrap
+    for module in (
+        "bayesian_phystwin",
+        "decord",
+        "diffusers",
+        "motioncrafter",
+        "prob4d",
+        "torch",
+        "torchvision",
+    ):
+        assert f'              "{module}",' in bootstrap
+    assert 'importlib.metadata.version("decord") != "0.6.0"' in bootstrap
+    assert "torch.cuda.is_available()" in bootstrap
 
 
 def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
