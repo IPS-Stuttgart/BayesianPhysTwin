@@ -51,6 +51,34 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
+          source_path = Path(
+              "src/bayesian_phystwin/deform360_calibration_visual_production.py"
+          )
+          source = source_path.read_text(encoding="utf-8")
+          replacements = (
+              (
+                  '    windows = manifest.get("overlap_windows")\n'
+                  '    _require(isinstance(windows, list) and bool(windows), '
+                  '"prediction windows are missing")\n',
+                  '    windows = manifest.get("overlap_windows")\n'
+                  '    if not isinstance(windows, list) or not windows:\n'
+                  '        raise ValueError("prediction windows are missing")\n',
+              ),
+              (
+                  '    admitted_jobs = admission.get("jobs")\n'
+                  '    _require(isinstance(admitted_jobs, list), '
+                  '"admission jobs are missing")\n',
+                  '    admitted_jobs = admission.get("jobs")\n'
+                  '    if not isinstance(admitted_jobs, list):\n'
+                  '        raise ValueError("admission jobs are missing")\n',
+              ),
+          )
+          for old, new in replacements:
+              if source.count(old) != 1:
+                  raise SystemExit(f"source repair anchor changed: {old!r}")
+              source = source.replace(old, new)
+          source_path.write_text(source, encoding="utf-8")
+
           tests = Path("tests/test_deform360_calibration_visual_production.py")
           text = tests.read_text(encoding="utf-8")
           text = text.replace("from pathlib import Path\n\n", "")
