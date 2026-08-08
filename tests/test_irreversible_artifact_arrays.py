@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -5,7 +6,11 @@ import pytest
 
 from bayesian_phystwin.causal4d_artifacts_v2 import ReleasedPhysTwinVisualInputsV2
 from bayesian_phystwin.deform360_contact_anchor import Deform360ContactAnchorV1
-from bayesian_phystwin.dynamic_discrepancy import DynamicDiscrepancyCorrection
+from bayesian_phystwin.dynamic_discrepancy import (
+    DynamicDiscrepancyCorrection,
+    scale_coefficients_to_field_limit,
+    write_dynamic_discrepancy_correction,
+)
 
 
 def _dynamic_correction() -> DynamicDiscrepancyCorrection:
@@ -99,6 +104,43 @@ def test_dynamic_discrepancy_arrays_cannot_be_reenabled_for_writes() -> None:
         _assert_irreversibly_immutable(array)
 
     assert correction.artifact_id == artifact_id
+
+
+def test_dynamic_discrepancy_validates_prefix_and_information_boundary() -> None:
+    correction = _dynamic_correction()
+
+    with pytest.raises(ValueError, match="prefix interval"):
+        replace(correction, prefix_frame_start=-1)
+    with pytest.raises(ValueError, match="prefix interval"):
+        replace(correction, prefix_frame_stop=10)
+    with pytest.raises(ValueError, match="information boundary"):
+        replace(
+            correction,
+            information_boundary={
+                **correction.information_boundary,
+                "future_frames_used_for_fit_or_selection": True,
+            },
+        )
+    with pytest.raises(ValueError, match="exactly six O-plus frames"):
+        replace(correction, prefix_frame_stop=18)
+
+
+def test_dynamic_discrepancy_zero_field_limit_and_serialization(tmp_path: Path) -> None:
+    basis = np.eye(4, dtype=np.float64)
+    coefficients = np.zeros((4, 3), dtype=np.float64)
+    limited, diagnostics = scale_coefficients_to_field_limit(
+        basis,
+        coefficients,
+        maximum_node_norm=0.01,
+    )
+    np.testing.assert_array_equal(limited, coefficients)
+    assert diagnostics["radial_scale"] == 1.0
+
+    correction = _dynamic_correction()
+    result = write_dynamic_discrepancy_correction(tmp_path / "correction", correction)
+    assert Path(result["manifest_path"]).is_file()
+    assert Path(result["arrays_path"]).is_file()
+    assert result["artifact_id"] == correction.artifact_id
 
 
 def test_released_visual_inputs_cannot_mutate_behind_artifact_identity() -> None:
