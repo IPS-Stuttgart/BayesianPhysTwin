@@ -12,6 +12,8 @@ from typing import Any
 
 import numpy as np
 
+from .mask_distance import interior_mask_distance
+
 
 @dataclass(frozen=True)
 class PhysTwinRawCueConfig:
@@ -188,10 +190,6 @@ def build_phystwin_raw_camera_cues(
         raise ValueError("initial_match_tolerance_m must be positive")
     if cfg.boundary_normalization != "maximum_image_dimension":
         raise ValueError("boundary_normalization must be 'maximum_image_dimension'")
-    try:
-        from scipy.ndimage import distance_transform_edt
-    except ImportError as error:
-        raise RuntimeError("raw camera cues require scipy") from error
     mapping = load_phystwin_raw_track_map(
         final_data_path,
         raw_case_dir,
@@ -226,7 +224,7 @@ def build_phystwin_raw_camera_cues(
                 processed_masks[frame][camera]["object"],
                 dtype=bool,
             )
-            distance = distance_transform_edt(object_mask) / max(object_mask.shape)
+            distance = interior_mask_distance(object_mask) / max(object_mask.shape)
             pixels = np.rint(tracks[frame, selected_tracks]).astype(int)
             in_bounds = (
                 (pixels[:, 0] >= 0)
