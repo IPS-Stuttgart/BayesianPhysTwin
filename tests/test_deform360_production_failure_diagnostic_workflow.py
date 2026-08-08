@@ -84,7 +84,7 @@ def test_failure_diagnostic_rejects_symlinks_and_path_escape() -> None:
 
     assert "path contains a symbolic link" in text
     assert "retained path contains a symlink" in text
-    assert "os.O_NOFOLLOW" in text
+    assert 'getattr(os, "O_NOFOLLOW", 0)' in text
     assert 'any(part in {"", ".", ".."} for part in pure.parts)' in text
     assert "file changed while being read" in text
     assert "not a regular file" in text
