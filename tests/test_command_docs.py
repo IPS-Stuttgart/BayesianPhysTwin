@@ -6,8 +6,8 @@ import pytest
 
 from bayesian_phystwin.cli.command_docs import (
     BEGIN_MARKER,
-    END_MARKER,
     DOCUMENT_TARGETS,
+    END_MARKER,
     render_generated_section,
     replace_generated_section,
     stable_commands,
