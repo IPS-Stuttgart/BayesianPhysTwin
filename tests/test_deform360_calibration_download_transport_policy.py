@@ -65,10 +65,11 @@ def test_download_concurrency_is_hard_capped_and_cli_defaults_to_cap() -> None:
 def test_scientific_and_security_boundaries_remain_unchanged() -> None:
     reusable = REUSABLE.read_text(encoding="utf-8")
     dispatcher = DISPATCHER.read_text(encoding="utf-8")
+    direct = DIRECT_SCRIPT.read_text(encoding="utf-8")
 
     assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in reusable
     assert "persist-credentials: false" in reusable
-    assert "confirmation_payloads_opened=false" in reusable
+    assert "confirmation_payloads_opened=false" in direct
     assert "head.repo.full_name == github.repository" in dispatcher
     assert "head.ref == 'agent/calibration-dispatch-trigger-v1'" in dispatcher
     assert "changed_files == 1" in dispatcher
