@@ -5,6 +5,12 @@ on:
     branches: [agent/deform360-calibration-visual-production-v1]
     paths:
       - ".github/workflows/_temporary_materialize_deform360_visual_production.yml"
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/patches/deform360-visual-production.tar.gz.b64"
+      - ".github/workflows/_temporary_materialize_deform360_visual_production.yml"
 
 permissions:
   contents: write
@@ -15,12 +21,22 @@ concurrency:
 
 jobs:
   materialize:
+    if: >-
+      github.event_name == 'push' ||
+      (
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.ref ==
+          'agent/deform360-calibration-visual-production-v1' &&
+        github.event.pull_request.user.login == 'FlorianPfaff'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      PARENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.PARENT_SHA }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
@@ -62,7 +78,11 @@ jobs:
               text = text.replace(anchor, anchor + additions)
           tests.write_text(text, encoding="utf-8")
           PY
-          python -m compileall -q src/bayesian_phystwin/deform360_calibration_visual_production.py scripts/science/execute_deform360_calibration_visual_production.py tests/test_deform360_calibration_visual_production.py tests/test_deform360_calibration_visual_production_workflow.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_calibration_visual_production.py \
+            scripts/science/execute_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production_workflow.py
           python - <<'PY'
           from __future__ import annotations
 
@@ -75,7 +95,7 @@ jobs:
           repository = os.environ["GITHUB_REPOSITORY"]
           api = os.environ["GITHUB_API_URL"]
           token = os.environ["GITHUB_TOKEN"]
-          parent = os.environ["GITHUB_SHA"]
+          parent = os.environ["PARENT_SHA"]
           headers = {
               "Accept": "application/vnd.github+json",
               "Authorization": f"Bearer {token}",
@@ -134,7 +154,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v7
         with:
-          name: deform360-visual-production-tree-${{ github.sha }}
+          name: deform360-visual-production-tree-${{ env.PARENT_SHA }}
           path: ${{ runner.temp }}/deform360-visual-production-tree.json
           if-no-files-found: error
           retention-days: 2
