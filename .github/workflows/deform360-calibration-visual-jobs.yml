@@ -1,0 +1,123 @@
+name: Deform360 calibration visual-job contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-visual-jobs.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_calibration_visual_jobs_v1.md"
+      - "scripts/science/build_deform360_calibration_visual_jobs.py"
+      - "src/bayesian_phystwin/deform360_calibration_visual_jobs.py"
+      - "tests/conftest.py"
+      - "tests/test_deform360_calibration_visual_jobs.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-calibration-visual-jobs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Calibration visual jobs / Python ${{ matrix.python-version }}
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "build==1.3.0"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Check focused source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/build_deform360_calibration_visual_jobs.py
+            src/bayesian_phystwin/deform360_calibration_visual_jobs.py
+            tests/conftest.py
+            tests/test_deform360_calibration_visual_jobs.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/build_deform360_calibration_visual_jobs.py \
+            src/bayesian_phystwin/deform360_calibration_visual_jobs.py
+
+      - name: Run focused and adjacent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_visual_jobs.py \
+            tests/test_deform360_calibration_observability_batch.py \
+            tests/test_deform360_calibration_source_run_record.py \
+            tests/test_deform360_visual_provider_lock.py \
+            tests/test_deform360_bias_aware_prospective_staging.py
+          python -m py_compile \
+            scripts/science/build_deform360_calibration_visual_jobs.py \
+            src/bayesian_phystwin/deform360_calibration_visual_jobs.py \
+            tests/test_deform360_calibration_visual_jobs.py
+
+      - name: Audit source-distribution membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m build --sdist --outdir dist
+          archive="$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "${archive}"
+          tar -tzf "${archive}" > sdist-files.txt
+          grep -q '/docs/deform360_calibration_visual_jobs_v1.md$' sdist-files.txt
+          grep -q '/scripts/science/build_deform360_calibration_visual_jobs.py$' \
+            sdist-files.txt
+          grep -q '/src/bayesian_phystwin/deform360_calibration_visual_jobs.py$' \
+            sdist-files.txt
+
+      - name: Verify exact read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
