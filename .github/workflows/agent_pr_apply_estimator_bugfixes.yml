@@ -28,6 +28,23 @@ jobs:
       - name: Install validation dependencies
         run: python -m pip install -e '.[dev,graph]'
 
+      - name: Normalize generated patch
+        run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/mask_distance.py \
+            src/bayesian_phystwin/phystwin_raw_cues.py \
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py \
+            src/bayesian_phystwin/phystwin_alltracker_cues.py \
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py \
+            tests/test_mask_distance_and_multiview_geometry_regressions.py
+          python -m ruff format \
+            src/bayesian_phystwin/mask_distance.py \
+            src/bayesian_phystwin/phystwin_raw_cues.py \
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py \
+            src/bayesian_phystwin/phystwin_alltracker_cues.py \
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py \
+            tests/test_mask_distance_and_multiview_geometry_regressions.py
+
       - name: Validate focused fixes
         run: |
           python -m ruff check \
