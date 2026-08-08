@@ -6,6 +6,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - ".github/workflows/_one_shot_finalize_pr260.yml"
+      - "scripts/_one_shot_fix_pr260_typing.py"
 
 permissions:
   contents: write
@@ -41,6 +42,11 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
+
+      - name: Apply explicit parser narrowing
+        run: |
+          set -euo pipefail
+          python scripts/_one_shot_fix_pr260_typing.py
 
       - name: Install validation environment
         run: |
@@ -99,11 +105,12 @@ jobs:
           set -euo pipefail
           rm -- \
             .github/workflows/_temporary_prepare_pr260_formatted_source.yml \
-            .github/workflows/_one_shot_finalize_pr260.yml
+            .github/workflows/_one_shot_finalize_pr260.yml \
+            scripts/_one_shot_fix_pr260_typing.py
           git diff --check
-          unexpected="$(git diff --name-only 0f403cbed8b5fc9ac585b5f7c237106809207b3f -- | grep -E '^\.github/workflows/_' || true)"
+          unexpected="$(git diff --name-only 0f403cbed8b5fc9ac585b5f7c237106809207b3f -- | grep -E '^(.github/workflows/_|scripts/_one_shot)' || true)"
           if [[ -n "${unexpected}" ]]; then
-            printf 'Temporary workflows remain:\n%s\n' "${unexpected}" >&2
+            printf 'Temporary paths remain:\n%s\n' "${unexpected}" >&2
             exit 1
           fi
 
