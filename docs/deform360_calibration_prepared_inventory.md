@@ -26,6 +26,8 @@ source execution:
   `0f403cbed8b5fc9ac585b5f7c237106809207b3f`;
 - workflow run `31236564360`;
 - compact artifact `deform360-official-calibration-source-31236564360-1`;
+- artifact digest
+  `sha256:866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2`;
 - terminal-record ID
   `edf3692d88fed3c011ee44da2508b39e4755a0e97a83a26a0391fcfe433d7b74`;
 - ten prepared physical objects, five per stratum; and
@@ -87,16 +89,54 @@ version. This deliberately avoids relying on version-specific
 `SpooledTemporaryFile` seekability while keeping snapshots unnamed and absent
 from the published inventory.
 
+## One-shot retained-source admission
+
+The reviewed main-only workflow now performs the complete metadata handoff in one
+protected execution:
+
+```text
+authoritative compact source evidence
+  + protected retained aligned root
+        |
+        v
+prepared-source inventory
+        |
+        v
+frozen all-camera visual-production plan
+        |
+        v
+inventory-bound visual-execution admission
+```
+
+The workflow validates and publishes all three content-addressed artifacts plus a
+compact receipt and canonical `SHA256SUMS`. Its reusable-workflow outputs expose
+the Actions artifact identity and digest, inventory ID, plan ID, admission ID,
+and admitted camera-job count. This removes the risk of manually pairing an
+inventory from one retained source with a plan or admission from another source.
+
+A one-shot push-to-main launcher calls only this reviewed reusable workflow. It
+posts the terminal status and immutable identities to issue #148. Pull-request
+validation remains hosted and payload-free; the retained source is opened only
+after the reviewed launcher reaches `main`.
+
+This stage does not decode a video, run MotionCrafter, run Prob4D, construct an
+observability matrix, or open confirmation data.
+
 ## Information boundary
 
-The command acknowledges that the authorized calibration camera, tactile, and
-robot products are opened. It fails closed if any frozen confirmation object is
-present in the prepared root. It does not open geometry annotations, compute
-calibration target metrics, open confirmation payloads, use target outcomes, or
-permit object replacement.
+The inventory command acknowledges that the authorized calibration camera,
+tactile, and robot products are opened. It fails closed if any frozen
+confirmation object is present in the prepared root. It does not open geometry
+annotations, compute calibration target metrics, open confirmation payloads, use
+target outcomes, or permit object replacement.
 
-The output claim boundary is therefore limited to calibration-only retained-byte
-custody and array/media contracts.
+The plan and admission stages consume only the newly published metadata. Their
+information boundary therefore remains stricter than the inventory boundary:
+retained payloads are not reopened while the executable work list is frozen.
+
+The output claim boundary is limited to calibration-only retained-byte custody,
+portable array/media contracts, and a deterministic inventory-bound visual work
+list.
 
 ## Manual command
 
@@ -128,9 +168,13 @@ the exact source artifact digests, the action-selected window, all camera media
 contracts, tactile array contracts, robot array contracts, and the closed
 information boundary.
 
-The inventory is the deterministic input map for the next empirical producer:
-construct the visual-reference marginal precision, visual-plus-contact marginal
+The frozen visual-production plan and execution admission then bind every
+admitted camera job to an inventoried video and timestamp path, SHA-256, byte
+count, causal frame range, seed, dependence group, and collision-free output
+namespace. Their next consumer must execute exactly those calibration-only
+MotionCrafter and Prob4D jobs, retaining technical failures without replacement.
+
+The resulting visual-reference marginal precision, visual-plus-contact marginal
 precision, contact-anchor artifact, and shared physical-query Jacobian for each
-of the ten calibration objects. Those products then enter the atomic
-calibration-observability batch. The inventory itself cannot authorize
-confirmation opening.
+of the ten objects then enter the atomic calibration-observability batch. None of
+the retained-source artifacts authorizes confirmation opening.
