@@ -465,7 +465,40 @@ jobs:
             --python "${env_root}/bin/python" \
             --no-deps \
             .
-          "${uv_bin}" pip check --python "${env_root}/bin/python"
+          set +e
+          check_output="$("${uv_bin}" pip check --python "${env_root}/bin/python" 2>&1)"
+          check_code=$?
+          set -e
+          if [[ "${check_code}" -ne 0 ]]; then
+            if [[ "${check_output}" != *"Found 1 incompatibility"* ]] || \
+               [[ "${check_output}" != *'The package `decord` was built for a different platform'* ]]; then
+              printf '%s\n' "${check_output}" >&2
+              exit "${check_code}"
+            fi
+            printf '%s\n' "${check_output}"
+          fi
+          PYTHONPATH="${GITHUB_WORKSPACE}/_motioncrafter" \
+            "${env_root}/bin/python" - <<'PY'
+          import importlib
+          import importlib.metadata
+
+          for module_name in (
+              "bayesian_phystwin",
+              "decord",
+              "diffusers",
+              "motioncrafter",
+              "prob4d",
+              "torch",
+              "torchvision",
+          ):
+              importlib.import_module(module_name)
+          if importlib.metadata.version("decord") != "0.6.0":
+              raise SystemExit("unexpected decord version")
+          import torch
+
+          if not torch.cuda.is_available():
+              raise SystemExit("CUDA unavailable after producer bootstrap")
+          PY
           echo "PRODUCTION_PYTHON=${env_root}/bin/python" >> "${GITHUB_ENV}"
       - name: Bootstrap exact immutable model snapshots
         env:
