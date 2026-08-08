@@ -89,6 +89,16 @@ jobs:
               if source.count(old) != 1:
                   raise SystemExit(f"transformer {label} changed")
               source = source.replace(old, new)
+          old_error = (
+              'f"expected exactly one source fragment in {path}, observed {count}"'
+          )
+          new_error = (
+              'f"expected exactly one source fragment in {path}, observed {count}; "'
+              'f"anchor={old[:160]!r}"'
+          )
+          if source.count(old_error) != 1:
+              raise SystemExit("transformer error-message anchor changed")
+          source = source.replace(old_error, new_error)
           path.write_text(source, encoding="utf-8")
           PY
           python .github/patches/apply_deform360_visual_production_hardening.py
