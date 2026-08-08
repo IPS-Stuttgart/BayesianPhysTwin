@@ -34,9 +34,7 @@ _VALID_REPOSITORY_ROLES = frozenset(
         "dependency",
     }
 )
-_GITHUB_OWNER = re.compile(
-    r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
-)
+_GITHUB_OWNER = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 _GITHUB_REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}$")
 _GITHUB_SCP_REMOTE = re.compile(r"^git@github\.com:(?P<path>[^?#]+)$")
 _ENVIRONMENT_VARIABLE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -152,10 +150,7 @@ def _canonical_repository(value: object, *, name: str = "repository") -> str:
     owner, repository = parts
     if _GITHUB_OWNER.fullmatch(owner) is None:
         raise ValueError(f"{name} contains an invalid GitHub owner")
-    if (
-        _GITHUB_REPOSITORY.fullmatch(repository) is None
-        or repository in {".", ".."}
-    ):
+    if _GITHUB_REPOSITORY.fullmatch(repository) is None or repository in {".", ".."}:
         raise ValueError(f"{name} contains an invalid GitHub repository name")
     return value
 
@@ -193,7 +188,11 @@ def _remote_path_from_url(parsed: SplitResult) -> str:
 def normalize_github_repository(remote_url: str) -> str:
     """Normalize a GitHub HTTPS/SSH remote to canonical ``owner/repository``."""
 
-    if type(remote_url) is not str or not remote_url or remote_url != remote_url.strip():
+    if (
+        type(remote_url) is not str
+        or not remote_url
+        or remote_url != remote_url.strip()
+    ):
         raise ValueError("Git remote URL must be a canonical nonempty string")
 
     scp_match = _GITHUB_SCP_REMOTE.fullmatch(remote_url)
@@ -286,9 +285,7 @@ def _environment_variable_names(values: Sequence[str]) -> tuple[str, ...]:
     names: list[str] = []
     for value in values:
         if type(value) is not str or _ENVIRONMENT_VARIABLE.fullmatch(value) is None:
-            raise ValueError(
-                "environment variable names must be canonical identifiers"
-            )
+            raise ValueError("environment variable names must be canonical identifiers")
         names.append(value)
     return tuple(sorted(set(names)))
 
