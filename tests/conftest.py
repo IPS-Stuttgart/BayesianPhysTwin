@@ -27,6 +27,7 @@ def pytest_configure(config: object) -> None:
     resolved_args = [Path(argument).resolve() for argument in args]
     contract_tests = [
         *sorted(test_root.glob("test_bias_aware_belief_v2*.py")),
+        *sorted(test_root.glob("test_deform360_calibration_visual_jobs*.py")),
         *sorted(test_root.glob("test_guard_harm_risk*.py")),
         *sorted(test_root.glob("test_horizon_conditioned_discrepancy*.py")),
         *sorted(test_root.glob("test_legacy_artifacts*.py")),
