@@ -67,7 +67,8 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert r"replacement allowed: \`false\`" in text
     assert r"pre-payload predecessor: run \`31274946936\`" in text
     assert r"environment-bootstrap predecessor: run \`31275886113\`" in text
-    assert "2026-08-09-sole-self-hosted-layout-v4" in text
+    assert r"runtime-metadata predecessor: run \`31276893637\`" in text
+    assert "2026-08-09-decord-runtime-smoke-v5" in text
 
 
 def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
@@ -86,7 +87,7 @@ def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() 
     assert "The frozen calibration-processed root is unavailable." in production
 
 
-def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> None:
+def test_visual_production_uses_uv_install_and_actual_runtime_smoke() -> None:
     text = _workflow()
     bootstrap = text[
         text.index("Bootstrap exact GPU producer environment") : text.index(
@@ -98,8 +99,19 @@ def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> No
     assert 'uv_bin="${HOME}/.local/bin/uv"' in bootstrap
     assert '"${uv_bin}" pip install \\\n' in bootstrap
     assert '--python "${env_root}/bin/python"' in bootstrap
-    assert '"${uv_bin}" pip check --python "${env_root}/bin/python"' in bootstrap
+    assert '"${uv_bin}" pip check' not in bootstrap
     assert '"${env_root}/bin/python" -m pip' not in bootstrap
+    assert "import bayesian_phystwin" in bootstrap
+    assert "import decord" in bootstrap
+    assert "import prob4d" in bootstrap
+    assert "import torch" in bootstrap
+    assert "torch.cuda.is_available()" in bootstrap
+    assert 'torch.zeros(1, device="cuda")' in bootstrap
+    assert "decord.cpu(0)" in bootstrap
+    assert "producer-runtime-preflight.json" in bootstrap
+    assert "decord_runtime_imported" in bootstrap
+    assert "official_raw_payload_opened" in bootstrap
+    assert "adaptive_confirmation_payloads_opened" in bootstrap
 
 
 def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
