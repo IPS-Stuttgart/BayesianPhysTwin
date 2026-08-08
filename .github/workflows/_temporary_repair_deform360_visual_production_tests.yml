@@ -5,6 +5,11 @@ on:
     branches: [agent/deform360-calibration-visual-production-v1]
     paths:
       - ".github/workflows/_temporary_repair_deform360_visual_production_tests.yml"
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/_temporary_repair_deform360_visual_production_tests.yml"
 
 permissions:
   contents: write
@@ -15,12 +20,22 @@ concurrency:
 
 jobs:
   repair:
+    if: >-
+      github.event_name == 'push' ||
+      (
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.ref ==
+          'agent/deform360-calibration-visual-production-v1' &&
+        github.event.pull_request.user.login == 'FlorianPfaff'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PARENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.PARENT_SHA }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
@@ -92,7 +107,7 @@ jobs:
           repository = os.environ["GITHUB_REPOSITORY"]
           api = os.environ["GITHUB_API_URL"]
           token = os.environ["GITHUB_TOKEN"]
-          parent = os.environ["GITHUB_SHA"]
+          parent = os.environ["PARENT_SHA"]
           headers = {
               "Accept": "application/vnd.github+json",
               "Authorization": f"Bearer {token}",
@@ -143,7 +158,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v7
         with:
-          name: deform360-visual-production-test-repair-${{ github.sha }}
+          name: deform360-visual-production-test-repair-${{ env.PARENT_SHA }}
           path: ${{ runner.temp }}/deform360-visual-production-test-repair.json
           if-no-files-found: error
           retention-days: 2
