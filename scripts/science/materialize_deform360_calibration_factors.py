@@ -49,8 +49,10 @@ def _json(path: Path, *, name: str) -> Any:
 
 def _string_list(path: Path, *, name: str) -> tuple[str, ...]:
     value = _json(path, name=name)
-    if not isinstance(value, list) or not value or not all(
-        isinstance(item, str) and item for item in value
+    if (
+        not isinstance(value, list)
+        or not value
+        or not all(isinstance(item, str) and item for item in value)
     ):
         raise ValueError(f"{name} must be a nonempty JSON string list")
     return tuple(value)

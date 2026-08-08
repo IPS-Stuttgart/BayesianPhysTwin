@@ -114,9 +114,7 @@ def _linearization() -> PhysicalLinearizationV1:
         window_indices=belief.window_indices,
         state_jacobian=state,
         query_state_jacobian=query,
-        physical_response_m=np.asarray(
-            [[0.01, 0.0, 0.0], [0.0, 0.01, 0.0]]
-        ),
+        physical_response_m=np.asarray([[0.01, 0.0, 0.0], [0.0, 0.01, 0.0]]),
     )
 
 
@@ -242,9 +240,8 @@ def test_materializer_binds_case_and_adds_group_capped_contact_information() -> 
     assert materialization.observability_evaluable
     assert materialization.contact_anchor_artifact_id == _anchor().artifact_id
     assert materialization.observation_artifact_id == belief.artifact_id
-    assert (
-        np.trace(materialization.candidate_marginal_precision)
-        > np.trace(materialization.reference_marginal_precision)
+    assert np.trace(materialization.candidate_marginal_precision) > np.trace(
+        materialization.reference_marginal_precision
     )
     assert materialization.metadata[
         "contact_effective_samples_per_correlation_group"

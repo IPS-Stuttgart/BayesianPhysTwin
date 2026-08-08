@@ -130,9 +130,7 @@ def _sha256_file(path: Path) -> str:
 def _spd_inverse(value: np.ndarray, *, name: str) -> np.ndarray:
     matrix = np.asarray(value, dtype=np.float64)
     _require(
-        matrix.ndim == 2
-        and matrix.shape[0] == matrix.shape[1]
-        and len(matrix) > 0,
+        matrix.ndim == 2 and matrix.shape[0] == matrix.shape[1] and len(matrix) > 0,
         f"{name} must be a nonempty square matrix",
     )
     matrix = 0.5 * (matrix + matrix.T)
@@ -222,9 +220,7 @@ def build_deform360_kinematic_contact_anchor(
     )
     frames_raw = np.asarray(frame_ids)
     _require(
-        frames_raw.ndim == 1
-        and frames_raw.dtype.kind in "iu"
-        and len(frames_raw) > 0,
+        frames_raw.ndim == 1 and frames_raw.dtype.kind in "iu" and len(frames_raw) > 0,
         "frame_ids must be a nonempty integer vector",
     )
     frames = np.asarray(frames_raw, dtype=np.int64)
@@ -523,13 +519,9 @@ class Deform360CalibrationFactorMaterializationV1:
             "observation_artifact_id": self.observation_artifact_id,
             "linearization_artifact_id": self.linearization_artifact_id,
             "contact_anchor_artifact_id": self.contact_anchor_artifact_id,
-            "reference_inference_admissible": (
-                self.reference_inference_admissible
-            ),
+            "reference_inference_admissible": (self.reference_inference_admissible),
             "reference_reason": self.reference_reason,
-            "candidate_inference_admissible": (
-                self.candidate_inference_admissible
-            ),
+            "candidate_inference_admissible": (self.candidate_inference_admissible),
             "candidate_reason": self.candidate_reason,
             "observability_evaluable": self.observability_evaluable,
             "minimum_information_increment_eigenvalue": (
@@ -543,9 +535,7 @@ class Deform360CalibrationFactorMaterializationV1:
                 "candidate_marginal_precision": _array_record(
                     self.candidate_marginal_precision
                 ),
-                "physical_query_jacobian": _array_record(
-                    self.physical_query_jacobian
-                ),
+                "physical_query_jacobian": _array_record(self.physical_query_jacobian),
             },
         }
 
@@ -728,14 +718,10 @@ def publish_deform360_calibration_factor_materialization(
             + "\n",
             encoding="utf-8",
         )
-        checksum_files = tuple(
-            sorted(temporary.iterdir(), key=lambda path: path.name)
-        )
+        checksum_files = tuple(sorted(temporary.iterdir(), key=lambda path: path.name))
         checksum_path = temporary / "SHA256SUMS"
         checksum_path.write_text(
-            "".join(
-                f"{_sha256_file(path)}  {path.name}\n" for path in checksum_files
-            ),
+            "".join(f"{_sha256_file(path)}  {path.name}\n" for path in checksum_files),
             encoding="ascii",
         )
         lock_descriptor = os.open(
