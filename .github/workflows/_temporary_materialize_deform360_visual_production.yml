@@ -1,0 +1,160 @@
+name: Temporary materialize Deform360 visual production
+
+on:
+  push:
+    branches: [agent/deform360-calibration-visual-production-v1]
+    paths:
+      - ".github/workflows/_temporary_materialize_deform360_visual_production.yml"
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/patches/deform360-visual-production.tar.gz.b64"
+      - ".github/workflows/_temporary_materialize_deform360_visual_production.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-materialize-deform360-visual-production
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    if: >-
+      github.event_name == 'push' ||
+      (
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.ref ==
+          'agent/deform360-calibration-visual-production-v1' &&
+        github.event.pull_request.user.login == 'FlorianPfaff'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PARENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.PARENT_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Decode, validate, and publish blobs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RECEIPT: ${{ runner.temp }}/deform360-visual-production-tree.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/patch.tar.gz"
+          base64 --decode .github/patches/deform360-visual-production.tar.gz.b64 > "${archive}"
+          echo "99d84e424c8dd8046218e49425f33e20af4e802a0241a1086748f01374338f7f  ${archive}" | sha256sum --check -
+          tar -xzf "${archive}"
+          python - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("MANIFEST.in")
+          text = manifest.read_text(encoding="utf-8")
+          for line in (
+              "include docs/deform360_calibration_visual_production.md\n",
+              "include scripts/science/execute_deform360_calibration_visual_production.py\n",
+          ):
+              if line not in text:
+                  text += "\n" if text and not text.endswith("\n") else ""
+                  text += line
+          manifest.write_text(text, encoding="utf-8")
+
+          tests = Path(".github/workflows/tests.yml")
+          text = tests.read_text(encoding="utf-8")
+          anchor = "            tests/test_deform360_calibration_visual_execution_admission_edges.py \\\n"
+          additions = (
+              "            tests/test_deform360_calibration_visual_production.py \\\n"
+              "            tests/test_deform360_calibration_visual_production_workflow.py \\\n"
+          )
+          if additions not in text:
+              if text.count(anchor) != 1:
+                  raise SystemExit("stable-core coverage anchor changed")
+              text = text.replace(anchor, anchor + additions)
+          tests.write_text(text, encoding="utf-8")
+          PY
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_calibration_visual_production.py \
+            scripts/science/execute_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production_workflow.py
+          python - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          api = os.environ["GITHUB_API_URL"]
+          token = os.environ["GITHUB_TOKEN"]
+          parent = os.environ["PARENT_SHA"]
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "Content-Type": "application/json",
+          }
+
+          def request(method: str, path: str, payload: object | None = None) -> object:
+              data = None if payload is None else json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  f"{api}/repos/{repository}{path}",
+                  data=data,
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+
+          parent_commit = request("GET", f"/git/commits/{parent}")
+          paths = [
+              ".github/workflows/deform360-calibration-visual-production.yml",
+              ".github/workflows/tests.yml",
+              "MANIFEST.in",
+              "docs/deform360_calibration_visual_production.md",
+              "scripts/science/execute_deform360_calibration_visual_production.py",
+              "src/bayesian_phystwin/deform360_calibration_visual_production.py",
+              "tests/test_deform360_calibration_visual_production.py",
+              "tests/test_deform360_calibration_visual_production_workflow.py",
+          ]
+          blobs = {}
+          for path in paths:
+              payload = Path(path).read_bytes()
+              blob = request(
+                  "POST",
+                  "/git/blobs",
+                  {
+                      "content": base64.b64encode(payload).decode("ascii"),
+                      "encoding": "base64",
+                  },
+              )
+              blobs[path] = str(blob["sha"])
+          receipt = {
+              "parent_sha": parent,
+              "base_tree_sha": str(parent_commit["tree"]["sha"]),
+              "blobs": blobs,
+              "delete": [
+                  ".github/patches/deform360-visual-production.tar.gz.b64",
+                  ".github/workflows/_temporary_materialize_deform360_visual_production.yml",
+              ],
+          }
+          Path(os.environ["RECEIPT"]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: deform360-visual-production-tree-${{ env.PARENT_SHA }}
+          path: ${{ runner.temp }}/deform360-visual-production-tree.json
+          if-no-files-found: error
+          retention-days: 2
