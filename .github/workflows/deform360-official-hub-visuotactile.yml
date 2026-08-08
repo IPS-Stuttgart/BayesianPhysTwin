@@ -120,9 +120,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]" "huggingface_hub>=0.30,<2"
-          python -m pip check
+          venv="${RUNNER_TEMP}/deform360-official-hub-stage0-venv"
+          rm -rf "${venv}"
+          python -m venv "${venv}"
+          echo "${venv}/bin" >> "${GITHUB_PATH}"
+          "${venv}/bin/python" -m pip install --upgrade pip
+          "${venv}/bin/python" -m pip install -e ".[dev]" "huggingface_hub>=0.30,<2"
+          "${venv}/bin/python" -m pip check
 
       - name: Revalidate target-blind implementation on publication runner
         shell: bash
