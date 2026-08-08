@@ -1,0 +1,123 @@
+name: One-shot fix paper-handoff claim IDs
+
+# Temporary branch-only repair; removes itself after exact-head validation.
+on:
+  push:
+    branches:
+      - agent/claim-bundle-paper-handoff-v1
+    paths:
+      - ".github/workflows/_one_shot_fix_paper_handoff_claim_ids.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Require unchanged remote head
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_sha="$(git ls-remote origin refs/heads/agent/claim-bundle-paper-handoff-v1 | cut -f1)"
+          test "${remote_sha}" = "${GITHUB_SHA}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Restore deterministic aggregate claim-ID validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/paper_handoff_v1.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''    expected_claims = {
+              _require_text(claim_id, name="bundle claim ID") for claim_id in bundle.claim_ids
+          }
+          if len(expected_claims) != len(bundle.claim_ids) or not expected_claims:
+              raise ValueError("bundle claim IDs must be unique and nonempty")
+          '''
+          new = '''    raw_claim_ids = tuple(bundle.claim_ids)
+          if not raw_claim_ids or any(
+              type(claim_id) is not str or not claim_id for claim_id in raw_claim_ids
+          ):
+              raise ValueError("bundle claim IDs must be unique and nonempty")
+          if len(set(raw_claim_ids)) != len(raw_claim_ids):
+              raise ValueError("bundle claim IDs must be unique and nonempty")
+          expected_claims = {
+              _require_text(claim_id, name="bundle claim ID")
+              for claim_id in raw_claim_ids
+          }
+          '''
+          if text.count(old) != 1:
+              raise SystemExit("paper-handoff claim-ID validation anchor changed")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          python -m ruff format src/bayesian_phystwin/paper_handoff_v1.py
+
+      - name: Validate focused and adjacent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/paper_handoff_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py \
+            tests/test_paper_handoff_v1.py \
+            tests/test_claim_bundle_cli_paper_handoff_compat.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/paper_handoff_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py \
+            tests/test_paper_handoff_v1.py \
+            tests/test_claim_bundle_cli_paper_handoff_compat.py
+          python -m mypy \
+            src/bayesian_phystwin/paper_handoff_v1.py \
+            src/bayesian_phystwin/cli/claim_bundle.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_paper_handoff_v1.py \
+            tests/test_claim_bundle_cli_paper_handoff_compat.py \
+            tests/test_claim_bundle_v1.py \
+            tests/test_run_manifest_v2.py
+
+      - name: Remove temporary workflow and commit with lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -- .github/workflows/_one_shot_fix_paper_handoff_claim_ids.yml
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Restore aggregate paper-handoff claim-ID validation'
+          git fetch origin agent/claim-bundle-paper-handoff-v1
+          test "$(git rev-parse FETCH_HEAD)" = "${GITHUB_SHA}"
+          git push --force-with-lease=refs/heads/agent/claim-bundle-paper-handoff-v1:${GITHUB_SHA} \
+            origin HEAD:agent/claim-bundle-paper-handoff-v1
