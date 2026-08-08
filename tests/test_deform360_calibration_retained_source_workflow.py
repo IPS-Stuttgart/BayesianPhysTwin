@@ -99,7 +99,7 @@ def test_reusable_workflow_materializes_the_complete_metadata_chain() -> None:
         assert f"{output_name}:" in source
 
 
-def test_one_shot_launcher_calls_only_the_reviewed_reusable_workflow() -> None:
+def test_one_shot_launcher_verifies_the_source_lock_before_execution() -> None:
     source = _source(LAUNCHER)
 
     assert "on:\n  push:\n    branches: [main]" in source
@@ -107,6 +107,12 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_workflow() -> None:
         '      - ".github/workflows/'
         'launch-deform360-calibration-retained-source-once.yml"'
     ) in source
+    assert "verify_source_artifact:" in source
+    assert "uses: actions/github-script@v8" in source
+    assert "listWorkflowRunArtifacts" in source
+    assert "artifact.digest !== expectedDigest" in source
+    assert "matches.length !== 1" in source
+    assert "needs: verify_source_artifact" in source
     assert (
         "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml"
     ) in source
@@ -116,6 +122,7 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_workflow() -> None:
     assert AUTHORITATIVE_RUN_ID in source
     assert AUTHORITATIVE_ARTIFACT in source
     assert AUTHORITATIVE_ARTIFACT_DIGEST in source
+    assert "source-artifact verification result" in source
     assert "actions/checkout" not in source
     assert "pull_request_target:" not in source
     assert "workflow_dispatch:" not in source
