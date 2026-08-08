@@ -49,8 +49,9 @@ def _write_plan(path: Path, records: list[dict[str, object]]) -> Path:
     return path
 
 
-def test_stages_verified_files_by_hardlink_and_leaves_missing_for_downloader(
+def test_stages_verified_files_by_reflink_and_leaves_missing_for_downloader(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = tmp_path / "official"
     destination = tmp_path / "calibration"
@@ -74,6 +75,11 @@ def test_stages_verified_files_by_hardlink_and_leaves_missing_for_downloader(
         ],
     )
 
+    def fake_reflink(source_path: Path, destination_path: Path) -> bool:
+        destination_path.write_bytes(source_path.read_bytes())
+        return True
+
+    monkeypatch.setattr(MODULE, "_try_reflink", fake_reflink)
     result = MODULE.stage_local_calibration_cache(
         plan_path=plan,
         source_root=source,
@@ -82,12 +88,54 @@ def test_stages_verified_files_by_hardlink_and_leaves_missing_for_downloader(
 
     staged = destination / available.relative_to(source)
     assert staged.read_bytes() == available.read_bytes()
-    assert staged.stat().st_ino == available.stat().st_ino
+    assert staged.stat().st_ino != available.stat().st_ino
     assert result["planned_file_count"] == 2
-    assert result["hardlinked_file_count"] == 1
-    assert result["missing_file_count"] == 1
-    assert result["missing_paths"] == [missing.relative_to(source).as_posix()]
-    assert result["information_boundary"]["adaptive_confirmation_root_accessed"] is False
+    assert result["reflinked_file_count"] == 1
+    assert result["missing_in_source_count"] == 1
+    assert result["reflink_unavailable_count"] == 0
+    assert result["download_fallback_file_count"] == 1
+    assert result["download_fallback_paths"] == [
+        missing.relative_to(source).as_posix()
+    ]
+    boundary = result["information_boundary"]
+    assert boundary["adaptive_confirmation_root_accessed"] is False
+    assert boundary["hardlink_allowed"] is False
+    assert boundary["full_copy_fallback_allowed"] is False
+
+
+def test_reflink_failure_falls_back_to_downloader_without_copying(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "official"
+    destination = tmp_path / "calibration"
+    relative = Path("raw/001-fixture/payload.bin")
+    source_file = source / relative
+    source_file.parent.mkdir(parents=True)
+    source_file.write_bytes(b"fixture")
+    plan = _write_plan(
+        tmp_path / "plan.json",
+        [
+            {
+                "path": relative.as_posix(),
+                "size": source_file.stat().st_size,
+                "lfs_sha256": _sha256(source_file),
+            }
+        ],
+    )
+    monkeypatch.setattr(MODULE, "_try_reflink", lambda *_args: False)
+
+    result = MODULE.stage_local_calibration_cache(
+        plan_path=plan,
+        source_root=source,
+        destination_root=destination,
+    )
+
+    assert not (destination / relative).exists()
+    assert result["reflinked_file_count"] == 0
+    assert result["reflink_unavailable_count"] == 1
+    assert result["download_fallback_file_count"] == 1
+    assert result["download_fallback_paths"] == [relative.as_posix()]
 
 
 def test_reuses_existing_verified_destination(tmp_path: Path) -> None:
@@ -118,7 +166,7 @@ def test_reuses_existing_verified_destination(tmp_path: Path) -> None:
     )
 
     assert result["reused_file_count"] == 1
-    assert result["hardlinked_file_count"] == 0
+    assert result["reflinked_file_count"] == 0
 
 
 def test_rejects_mismatched_local_bytes(tmp_path: Path) -> None:
