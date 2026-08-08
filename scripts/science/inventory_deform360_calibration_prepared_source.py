@@ -293,7 +293,9 @@ def _successful_record(value: Mapping[str, Any]) -> Mapping[str, Any]:
     if record.get("confirmation_boundary_verified") is not True:
         raise ValueError("calibration-source confirmation boundary is unverified")
     if record.get("confirmation_payloads_opened") is not False:
-        raise ValueError("calibration-source terminal record reports confirmation access")
+        raise ValueError(
+            "calibration-source terminal record reports confirmation access"
+        )
     gate = record.get("support_gate")
     if not isinstance(gate, Mapping) or gate.get("support_passed") is not True:
         raise ValueError("calibration-source support gate did not pass")
@@ -397,11 +399,15 @@ def build_inventory(
         raise ValueError(f"confirmation objects appear in prepared root: {forbidden}")
     expected_object_ids = tuple(sorted(expected_units))
     if tuple(sorted(rows)) != expected_object_ids:
-        raise ValueError("prepared-source result does not cover the exact calibration cohort")
+        raise ValueError(
+            "prepared-source result does not cover the exact calibration cohort"
+        )
 
     objects: list[dict[str, object]] = []
     for object_id in expected_object_ids:
-        episode_id, stratum, _metadata_path, _metadata_sha256 = expected_units[object_id]
+        episode_id, stratum, _metadata_path, _metadata_sha256 = expected_units[
+            object_id
+        ]
         row = rows[object_id]
         if (
             row.get("status") != "source_prepared"
@@ -430,7 +436,9 @@ def build_inventory(
             or tactile_sensors != sorted(set(tactile_sensors))
             or row.get("tactile_sensor_count") != len(tactile_sensors)
         ):
-            raise ValueError(f"prepared-source tactile sensors are invalid: {object_id}")
+            raise ValueError(
+                f"prepared-source tactile sensors are invalid: {object_id}"
+            )
         if not isinstance(outputs, Mapping) or not isinstance(action_window, Mapping):
             raise ValueError(f"prepared-source outputs are invalid: {object_id}")
 
