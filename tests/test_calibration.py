@@ -49,6 +49,25 @@ def test_boundary_coverage_uses_decimal_exact_rank() -> None:
     assert minimum_groups_for_finite_conformal(0.9) == 9
 
 
+@pytest.mark.parametrize("count", [5, 10, 12])
+def test_maximum_finite_coverage_round_trips_through_rank_and_minimum(
+    count: int,
+) -> None:
+    coverage = maximum_finite_group_coverage(count)
+
+    assert finite_group_conformal_rank(count, coverage) == count
+    assert minimum_groups_for_finite_conformal(coverage) == count
+
+
+def test_float_immediately_above_rank_boundary_is_not_snapped_down() -> None:
+    count = 5
+    coverage = float(
+        np.nextafter(maximum_finite_group_coverage(count), 1.0)
+    )
+
+    assert finite_group_conformal_rank(count, coverage) == count + 1
+
+
 def test_valid_pooled_design_records_the_frozen_information_order() -> None:
     design = plan_finite_group_calibration(
         10,
