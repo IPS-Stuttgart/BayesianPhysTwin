@@ -88,7 +88,9 @@ def main() -> int:
         from huggingface_hub import hf_hub_download
 
         result = download_plan(
-            **paths,
+            protocol_path=paths["protocol_path"],
+            selection_path=paths["selection_path"],
+            provider_path=paths["provider_path"],
             plan_path=args.plan.resolve(),
             data_root=args.data_root.resolve(),
             output_path=args.output.resolve(),
