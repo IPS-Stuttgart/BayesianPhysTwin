@@ -99,9 +99,7 @@ def _retryable_download_error(error: BaseException) -> bool:
     if status is not None:
         return status in _RETRYABLE_HTTP_STATUS
     names = {
-        base.__name__
-        for item in _error_chain(error)
-        for base in type(item).__mro__
+        base.__name__ for item in _error_chain(error) for base in type(item).__mro__
     }
     return bool(names & _RETRYABLE_EXCEPTION_NAMES)
 
