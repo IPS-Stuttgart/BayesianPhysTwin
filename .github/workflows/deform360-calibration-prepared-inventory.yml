@@ -15,6 +15,7 @@ on:
       - "scripts/science/build_deform360_calibration_visual_production_plan.py"
       - "scripts/science/inventory_deform360_calibration_prepared_source.py"
       - "tests/test_deform360_calibration_prepared_inventory.py"
+      - "tests/test_deform360_calibration_prepared_inventory_authoritative_run.py"
       - "tests/test_deform360_calibration_retained_source_workflow.py"
       - "tests/test_deform360_calibration_visual_execution_admission.py"
       - "tests/test_deform360_calibration_visual_production_plan.py"
@@ -105,6 +106,8 @@ jobs:
             scripts/science/admit_deform360_calibration_visual_execution.py
             scripts/science/build_deform360_calibration_visual_production_plan.py
             scripts/science/inventory_deform360_calibration_prepared_source.py
+            tests/test_deform360_calibration_prepared_inventory.py
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py
             tests/test_deform360_calibration_retained_source_workflow.py
           )
           python -m ruff check "${files[@]}"
@@ -120,6 +123,7 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_calibration_prepared_inventory.py \
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py \
             tests/test_deform360_calibration_retained_source_workflow.py \
             tests/test_deform360_calibration_visual_production_plan.py \
             tests/test_deform360_calibration_visual_execution_admission.py \
@@ -130,6 +134,8 @@ jobs:
             scripts/science/admit_deform360_calibration_visual_execution.py \
             scripts/science/build_deform360_calibration_visual_production_plan.py \
             scripts/science/inventory_deform360_calibration_prepared_source.py \
+            tests/test_deform360_calibration_prepared_inventory.py \
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py \
             tests/test_deform360_calibration_retained_source_workflow.py
 
       - name: Verify exact read-only repository state

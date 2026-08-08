@@ -12,9 +12,7 @@ LAUNCHER = (
 INVENTORY_GUIDE = ROOT / "docs/deform360_calibration_prepared_inventory.md"
 
 AUTHORITATIVE_RUN_ID = "31236564360"
-AUTHORITATIVE_ARTIFACT = (
-    "deform360-official-calibration-source-31236564360-1"
-)
+AUTHORITATIVE_ARTIFACT = "deform360-official-calibration-source-31236564360-1"
 AUTHORITATIVE_ARTIFACT_DIGEST = (
     "866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2"
 )
@@ -100,8 +98,7 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_workflow() -> None:
         'launch-deform360-calibration-retained-source-once.yml"'
     ) in source
     assert (
-        "uses: ./.github/workflows/"
-        "deform360-calibration-prepared-inventory.yml"
+        "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml"
     ) in source
     assert "if: always()" in source
     assert "issues: write" in source
@@ -115,10 +112,12 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_workflow() -> None:
     assert "secrets: inherit" not in source
 
 
-def test_inventory_guide_names_only_the_authoritative_execution() -> None:
+def test_inventory_guide_distinguishes_authoritative_and_superseded_runs() -> None:
     source = _source(INVENTORY_GUIDE)
 
     assert AUTHORITATIVE_RUN_ID in source
     assert AUTHORITATIVE_ARTIFACT in source
     assert AUTHORITATIVE_ARTIFACT_DIGEST in source
-    assert SUPERSEDED_RUN_ID not in source
+    assert SUPERSEDED_RUN_ID in source
+    assert "predates the final step-scoped optional" in source
+    assert "is not substituted into this admission" in source

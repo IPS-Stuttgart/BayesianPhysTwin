@@ -19,14 +19,16 @@ evidence.
 
 ## Authoritative successful source run
 
-The main-only self-hosted workflow is bound to the least-privilege repeat of the
-complete calibration-source preparation:
+The main-only self-hosted workflow is bound to the authoritative least-privilege
+repeat of the complete calibration-source preparation:
 
+- exact reviewed source revision
+  `0f403cbed8b5fc9ac585b5f7c237106809207b3f`;
 - workflow run `31236564360`;
 - compact artifact `deform360-official-calibration-source-31236564360-1`;
 - artifact digest
   `sha256:866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2`;
-- terminal-record digest
+- terminal-record ID
   `edf3692d88fed3c011ee44da2508b39e4755a0e97a83a26a0391fcfe433d7b74`;
 - ten prepared physical objects, five per stratum; and
 - the persistent `calibration-processed/aligned` runner root.
@@ -34,8 +36,9 @@ complete calibration-source preparation:
 This execution repeated the complete successful source preparation after the
 optional Hugging Face credential had been restricted to the acquisition step.
 It is the authoritative source for the retained-byte inventory. Earlier failed
-or successful transport executions remain historical operational evidence and
-are not substituted into this admission.
+transport executions remain historical operational evidence. In particular,
+the earlier successful run `31236230283` predates the final step-scoped optional
+credential boundary and is not substituted into this admission.
 
 ## Validation order
 
