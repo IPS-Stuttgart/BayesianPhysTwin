@@ -1,0 +1,131 @@
+name: Fix touched-module type debt
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-validate:
+    if: github.head_ref == 'agent/fix-multiview-boundary-bugs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply explicit NumPy typing
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, *, expected: int = 1) -> None:
+              source = Path(path)
+              text = source.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(
+                      f"{path}: expected {expected} occurrences, found {count}: {old!r}"
+                  )
+              source.write_text(text.replace(old, new), encoding="utf-8")
+
+          motion = "src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py"
+          for old, new in (
+              ("    mass = np.zeros(vertex_count, dtype=float)\n", "    mass: np.ndarray = np.zeros(vertex_count, dtype=float)\n"),
+              ("    evidence_mass = np.zeros(vertex_count, dtype=float)\n", "    evidence_mass: np.ndarray = np.zeros(vertex_count, dtype=float)\n"),
+              ("    numerator = np.zeros((vertex_count, 3), dtype=float)\n", "    numerator: np.ndarray = np.zeros((vertex_count, 3), dtype=float)\n"),
+              ("    entropy_numerator = np.zeros(vertex_count, dtype=float)\n", "    entropy_numerator: np.ndarray = np.zeros(vertex_count, dtype=float)\n"),
+              ("    position_numerator = np.zeros(vertex_count, dtype=float)\n", "    position_numerator: np.ndarray = np.zeros(vertex_count, dtype=float)\n"),
+              ("    flow_numerator = np.zeros(vertex_count, dtype=float)\n", "    flow_numerator: np.ndarray = np.zeros(vertex_count, dtype=float)\n"),
+              ("    group_mean_numerator = np.zeros((group_count, 3), dtype=float)\n", "    group_mean_numerator: np.ndarray = np.zeros((group_count, 3), dtype=float)\n"),
+              ("    group_source_second = np.zeros((group_count, 3, 3), dtype=float)\n", "    group_source_second: np.ndarray = np.zeros((group_count, 3, 3), dtype=float)\n"),
+              ("    group_assignment_covariance = np.zeros((group_count, 3, 3), dtype=float)\n", "    group_assignment_covariance: np.ndarray = np.zeros(\n        (group_count, 3, 3), dtype=float\n    )\n"),
+              ("    mean_numerator = np.zeros((vertex_count, 3), dtype=float)\n", "    mean_numerator: np.ndarray = np.zeros((vertex_count, 3), dtype=float)\n"),
+              ("    second_numerator = np.zeros((vertex_count, 3, 3), dtype=float)\n", "    second_numerator: np.ndarray = np.zeros((vertex_count, 3, 3), dtype=float)\n"),
+              ("    assignment_numerator = np.zeros((vertex_count, 3, 3), dtype=float)\n", "    assignment_numerator: np.ndarray = np.zeros((vertex_count, 3, 3), dtype=float)\n"),
+              ("    posterior_reliability = np.zeros(vertex_count, dtype=float)\n", "    posterior_reliability: np.ndarray = np.zeros(vertex_count, dtype=float)\n"),
+              ("        flow_is_usable = np.zeros(len(points), dtype=bool)\n", "        flow_is_usable: np.ndarray = np.zeros(len(points), dtype=bool)\n"),
+              ("        expected_flow_error = np.full(len(points), np.nan, dtype=float)\n", "        expected_flow_error: np.ndarray = np.full(\n            len(points), np.nan, dtype=float\n        )\n"),
+              ("    parent = np.arange(node_count, dtype=np.int64)\n", "    parent: np.ndarray = np.arange(node_count, dtype=np.int64)\n"),
+              ("    iterations = np.zeros((len(graph), 3), dtype=np.int32)\n", "    iterations: np.ndarray = np.zeros((len(graph), 3), dtype=np.int32)\n"),
+              ("    residual = np.full((len(graph), 3), np.nan, dtype=np.float64)\n", "    residual: np.ndarray = np.full(\n        (len(graph), 3), np.nan, dtype=np.float64\n    )\n"),
+              ("    chamfer_by_frame = np.full(len(frame_indices), np.nan, dtype=float)\n", "    chamfer_by_frame: np.ndarray = np.full(\n        len(frame_indices), np.nan, dtype=float\n    )\n"),
+              ("    if audit is not None and manual_error is not None:\n", "    if audit is not None and manual_error is not None and manual_tracks is not None:\n"),
+              ("            nees_by_frame = np.full(len(frame_indices), np.nan, dtype=float)\n", "            nees_by_frame: np.ndarray = np.full(\n                len(frame_indices), np.nan, dtype=float\n            )\n"),
+              ("            coverage_by_frame = np.full(len(frame_indices), np.nan, dtype=float)\n", "            coverage_by_frame: np.ndarray = np.full(\n                len(frame_indices), np.nan, dtype=float\n            )\n"),
+              ("            count_by_frame = np.zeros(len(frame_indices), dtype=np.int32)\n", "            count_by_frame: np.ndarray = np.zeros(\n                len(frame_indices), dtype=np.int32\n            )\n"),
+              ("    archive_payload: dict[str, np.ndarray] = {\n", "    archive_payload: dict[str, Any] = {\n"),
+          ):
+              expected = 2 if old in {
+                  "        flow_is_usable = np.zeros(len(points), dtype=bool)\n",
+                  "        expected_flow_error = np.full(len(points), np.nan, dtype=float)\n",
+              } else 1
+              replace_exact(motion, old, new, expected=expected)
+
+          cotracker = "src/bayesian_phystwin/phystwin_cotracker3_cues.py"
+          for old, new in (
+              ("        squared_error = np.zeros(np.sum(selected), dtype=float)\n", "        squared_error: np.ndarray = np.zeros(np.sum(selected), dtype=float)\n"),
+              ("        weight_sum = np.zeros(np.sum(selected), dtype=float)\n", "        weight_sum: np.ndarray = np.zeros(np.sum(selected), dtype=float)\n"),
+              ("        positive_depth_count = np.zeros(np.sum(selected), dtype=np.int16)\n", "        positive_depth_count: np.ndarray = np.zeros(\n            np.sum(selected), dtype=np.int16\n        )\n"),
+              ("        frame_error = np.full(np.sum(selected), np.nan, dtype=float)\n", "        frame_error: np.ndarray = np.full(\n            np.sum(selected), np.nan, dtype=float\n        )\n"),
+              ("    surface_distance = np.full(len(world_points), np.inf, dtype=float)\n", "    surface_distance: np.ndarray = np.full(\n        len(world_points), np.inf, dtype=float\n    )\n"),
+              ("        archived_queries_xy = archived_tracks[0, :, ::-1].astype(np.float32)\n", "        archived_queries_xy: np.ndarray = archived_tracks[0, :, ::-1].astype(\n            np.float32\n        )\n"),
+              ("            values = np.zeros(len(selected), dtype=np.float32)\n", "            values: np.ndarray = np.zeros(len(selected), dtype=np.float32)\n"),
+              ("    cues: dict[str, np.ndarray] = {}\n", "    cues: dict[str, Any] = {}\n"),
+          ):
+              replace_exact(cotracker, old, new)
+
+          alltracker = "src/bayesian_phystwin/phystwin_alltracker_cues.py"
+          replace_exact(
+              alltracker,
+              "            queries = archived[0, :, ::-1].astype(np.float32)\n",
+              "            queries: np.ndarray = archived[0, :, ::-1].astype(np.float32)\n",
+          )
+          replace_exact(
+              alltracker,
+              "                values = np.zeros(len(selected), dtype=np.float32)\n",
+              "                values: np.ndarray = np.zeros(\n                    len(selected), dtype=np.float32\n                )\n",
+          )
+          PY
+
+      - name: Install validation dependencies
+        run: python -m pip install -e '.[dev,graph]'
+
+      - name: Format and validate quality ratchet
+        shell: bash
+        run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py \
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py \
+            src/bayesian_phystwin/phystwin_alltracker_cues.py
+          python -m ruff format \
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py \
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py \
+            src/bayesian_phystwin/phystwin_alltracker_cues.py
+          python tools/quality/changed_python_quality.py --base origin/main --head HEAD
+          python -m pytest -q \
+            tests/test_mask_distance_and_multiview_geometry_regressions.py \
+            tests/test_phystwin_cotracker3_cues.py \
+            tests/test_phystwin_motioncrafter_assimilation.py \
+            tests/test_phystwin_raw_cues.py \
+            tests/test_phystwin_alltracker_cues.py
+
+      - name: Publish validated typing cleanup
+        shell: bash
+        run: |
+          rm .github/workflows/agent_pr_fix_touched_type_debt.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Clean touched-module type debt"
+          git push origin HEAD:${{ github.head_ref }}
