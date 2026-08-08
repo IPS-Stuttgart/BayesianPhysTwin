@@ -1,0 +1,573 @@
+name: Deform360 runner-local calibration science
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-runner-local-science.yml"
+      - "scripts/ci/stage_deform360_local_calibration_cache.py"
+      - "tests/test_stage_deform360_local_calibration_cache.py"
+      - "tests/test_deform360_runner_local_science_workflow.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-runner-local-science
+  cancel-in-progress: false
+
+env:
+  OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  OFFICIAL_RAW_SOURCE_REVISION: 7fea8e20231a47641d1d2bc8791920ec4e62ec5e
+  ADAPTIVE_CONFIRMATION_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  LOCAL_SCIENCE_ROOT: /mnt/lexar4tb/datasets/deform360/bpt-runner-local-science-f804696d7a13
+  DATASET_REVISION: f804696d7a133908c7497ffdab43819d879b5cbc
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Validate runner-local science contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate data-free workflow implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          files=(
+            scripts/ci/stage_deform360_local_calibration_cache.py
+            tests/test_stage_deform360_local_calibration_cache.py
+            tests/test_deform360_runner_local_science_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q \
+            tests/test_stage_deform360_local_calibration_cache.py \
+            tests/test_deform360_runner_local_science_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          python -m compileall -q \
+            scripts/ci/stage_deform360_local_calibration_cache.py
+          git diff --check
+          git diff --exit-code
+
+  science:
+    name: Frozen calibration preparation from runner-local Deform360
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: self-hosted
+    timeout-minutes: 480
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - name: Check out exact trusted BayesianPhysTwin source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact official Deform360 processing source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.PROCESSING_REVISION }}
+          path: _deform360_processing
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Initialize isolated runtime and persistent science roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_root="${RUNNER_TEMP}/deform360-runner-local-science-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          site_root="${RUNNER_TEMP}/deform360-runner-local-site-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          processing_repo="${GITHUB_WORKSPACE}/_deform360_processing"
+          data_root="${LOCAL_SCIENCE_ROOT}/calibration-source"
+          processed_root="${LOCAL_SCIENCE_ROOT}/calibration-processed"
+          cache_root="/mnt/lexar4tb/datasets/deform360/.cache/bpt-runner-local-science"
+
+          official_raw="$(readlink -f -- "${OFFICIAL_RAW_ROOT}")"
+          adaptive_confirmation="$(readlink -f -- "${ADAPTIVE_CONFIRMATION_ROOT}")"
+          test -d "${official_raw}"
+          test -d "${adaptive_confirmation}"
+          test "${official_raw}" != "${adaptive_confirmation}"
+
+          case "${LOCAL_SCIENCE_ROOT}/" in
+            "${official_raw}/"*|"${adaptive_confirmation}/"*)
+              echo "Persistent science output must not live inside a raw snapshot." >&2
+              exit 1
+              ;;
+          esac
+
+          rm -rf -- "${evidence_root}" "${site_root}"
+          mkdir -p -- \
+            "${evidence_root}" \
+            "${site_root}" \
+            "${data_root}" \
+            "${processed_root}" \
+            "${cache_root}/pip" \
+            "${cache_root}/huggingface"
+          printf '%s\n' '/_deform360_processing/' >> .git/info/exclude
+
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          if [[ -z "${base_python}" ]]; then
+            echo "No Python 3 interpreter is available on the self-hosted runner." >&2
+            exit 1
+          fi
+
+          {
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "PYTHON_SITE=${site_root}"
+            echo "BASE_PYTHON=${base_python}"
+            echo "PROCESSING_REPO=${processing_repo}"
+            echo "DATA_ROOT=${data_root}"
+            echo "PROCESSED_ROOT=${processed_root}"
+            echo "STAGED_ROOT=${processed_root}/staged-raw"
+            echo "RESOLVED_OFFICIAL_RAW_ROOT=${official_raw}"
+            echo "RESOLVED_ADAPTIVE_CONFIRMATION_ROOT=${adaptive_confirmation}"
+            echo "PIP_CACHE_DIR=${cache_root}/pip"
+            echo "HF_HOME=${cache_root}/huggingface"
+            echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${processing_repo}:${site_root}${PYTHONPATH:+:${PYTHONPATH}}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Record runner and mounted dataset identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C "${PROCESSING_REPO}" rev-parse HEAD)" = "${PROCESSING_REVISION}"
+          {
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "bayesian_phystwin_revision=$(git rev-parse HEAD)"
+            echo "processing_revision=$(git -C "${PROCESSING_REPO}" rev-parse HEAD)"
+            echo "official_raw_source_revision=${OFFICIAL_RAW_SOURCE_REVISION}"
+            echo "frozen_calibration_dataset_revision=${DATASET_REVISION}"
+            echo "official_raw_root=${RESOLVED_OFFICIAL_RAW_ROOT}"
+            echo "adaptive_confirmation_root=${RESOLVED_ADAPTIVE_CONFIRMATION_ROOT}"
+            echo "persistent_science_root=${LOCAL_SCIENCE_ROOT}"
+            "${BASE_PYTHON}" --version
+            uname -a
+            stat -c 'official_raw device=%d inode=%i mode=%a' "${RESOLVED_OFFICIAL_RAW_ROOT}"
+            stat -c 'adaptive_confirmation device=%d inode=%i mode=%a' "${RESOLVED_ADAPTIVE_CONFIRMATION_ROOT}"
+            df -h "${RESOLVED_OFFICIAL_RAW_ROOT}" "${LOCAL_SCIENCE_ROOT}"
+            df -T "${RESOLVED_OFFICIAL_RAW_ROOT}" "${LOCAL_SCIENCE_ROOT}"
+          } | tee "${EVIDENCE_ROOT}/runner.txt"
+          if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi \
+              --query-gpu=index,name,uuid,driver_version,memory.total \
+              --format=csv,noheader \
+              | tee "${EVIDENCE_ROOT}/gpus.csv"
+          else
+            echo "nvidia-smi unavailable on this self-hosted runner" \
+              | tee "${EVIDENCE_ROOT}/gpus.csv"
+          fi
+
+      - name: Populate isolated scientific runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" -m pip install \
+            --break-system-packages \
+            --cache-dir "${PIP_CACHE_DIR}" \
+            --target "${PYTHON_SITE}" \
+            ".[dev,graph]" \
+            build \
+            scipy \
+            matplotlib \
+            "huggingface_hub>=0.30,<2" \
+            "${PROCESSING_REPO}[all]"
+          "${BASE_PYTHON}" -m pip freeze --path "${PYTHON_SITE}" \
+            | sort \
+            > "${EVIDENCE_ROOT}/python-packages.txt"
+
+      - name: Revalidate exact source before dataset traversal
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/ci/stage_deform360_local_calibration_cache.py
+            scripts/science/build_deform360_metadata_inventory.py
+            scripts/science/run_deform360_official_hub_calibration_source.py
+            scripts/science/deform360_calibration_source/contracts.py
+            scripts/science/deform360_calibration_source/planning.py
+            scripts/science/deform360_calibration_source/download.py
+            scripts/science/deform360_calibration_source/prepare.py
+            tests/test_stage_deform360_local_calibration_cache.py
+            tests/test_deform360_runner_local_science_workflow.py
+          )
+          "${BASE_PYTHON}" -m ruff check "${files[@]}"
+          "${BASE_PYTHON}" -m ruff format --check "${files[@]}"
+          "${BASE_PYTHON}" -m pytest -q -p no:cacheprovider \
+            tests/test_stage_deform360_local_calibration_cache.py \
+            tests/test_deform360_runner_local_science_workflow.py \
+            tests/test_deform360_official_hub_calibration_source.py \
+            tests/test_deform360_calibration_source_workflow.py \
+            tests/test_deform360_calibration_execution.py
+          "${BASE_PYTHON}" -m compileall -q \
+            scripts/ci/stage_deform360_local_calibration_cache.py \
+            scripts/science/deform360_calibration_source
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+          test -z "$(git -C "${PROCESSING_REPO}" status --porcelain)"
+
+      - name: Build names-only inventories of both runner-resident roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" scripts/science/build_deform360_metadata_inventory.py \
+            --data-root "${RESOLVED_OFFICIAL_RAW_ROOT}" \
+            --repository . \
+            --protocol protocols/deform360_metadata_preflight_v1.json \
+            --output "${EVIDENCE_ROOT}/official-raw-inventory.json" \
+            | tee "${EVIDENCE_ROOT}/official-raw-inventory.log"
+          "${BASE_PYTHON}" scripts/science/build_deform360_metadata_inventory.py \
+            --data-root "${RESOLVED_ADAPTIVE_CONFIRMATION_ROOT}" \
+            --repository . \
+            --protocol protocols/deform360_metadata_preflight_v1.json \
+            --output "${EVIDENCE_ROOT}/adaptive-confirmation-inventory.json" \
+            | tee "${EVIDENCE_ROOT}/adaptive-confirmation-inventory.log"
+
+      - name: Compare runner-resident roots without opening dataset payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          official = json.loads(
+              (evidence / "official-raw-inventory.json").read_text(encoding="utf-8")
+          )
+          adaptive = json.loads(
+              (evidence / "adaptive-confirmation-inventory.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          def object_ids(payload: dict[str, object]) -> set[str]:
+              rows = payload.get("objects", [])
+              if not isinstance(rows, list):
+                  raise SystemExit("inventory objects field is malformed")
+              result: set[str] = set()
+              for row in rows:
+                  if not isinstance(row, dict) or not isinstance(row.get("object_id"), str):
+                      raise SystemExit("inventory object row is malformed")
+                  result.add(row["object_id"])
+              return result
+
+          official_ids = object_ids(official)
+          adaptive_ids = object_ids(adaptive)
+          comparison = {
+              "schema": "bayesian-phystwin/deform360-runner-local-root-comparison-v1",
+              "schema_version": 1,
+              "official_content_inventory_sha256": official[
+                  "content_inventory_sha256"
+              ],
+              "adaptive_content_inventory_sha256": adaptive[
+                  "content_inventory_sha256"
+              ],
+              "official_recognized_object_count": official.get(
+                  "recognized_object_count"
+              ),
+              "adaptive_recognized_object_count": adaptive.get(
+                  "recognized_object_count"
+              ),
+              "shared_object_ids": sorted(official_ids & adaptive_ids),
+              "official_only_object_ids": sorted(official_ids - adaptive_ids),
+              "adaptive_only_object_ids": sorted(adaptive_ids - official_ids),
+              "information_boundary": {
+                  "names_and_directory_structure_only": True,
+                  "official_dataset_payloads_opened": False,
+                  "adaptive_confirmation_payloads_opened": False,
+                  "target_outcomes_opened": False,
+              },
+          }
+          (evidence / "root-comparison.json").write_text(
+              json.dumps(comparison, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(comparison, indent=2, sort_keys=True))
+          PY
+
+      - name: Seal exact frozen calibration filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" \
+            scripts/science/run_deform360_official_hub_calibration_source.py plan \
+            --protocol protocols/deform360_official_hub_calibration_source_v1.json \
+            --selection-lock protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --output "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            | tee "${EVIDENCE_ROOT}/plan-console.json"
+
+      - name: Reuse only exact calibration bytes from the official raw snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" scripts/ci/stage_deform360_local_calibration_cache.py \
+            --plan "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            --source-root "${RESOLVED_OFFICIAL_RAW_ROOT}" \
+            --destination-root "${DATA_ROOT}" \
+            --output "${EVIDENCE_ROOT}/local-cache-staging.json" \
+            | tee "${EVIDENCE_ROOT}/local-cache-staging.log"
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(
+              (Path(os.environ["EVIDENCE_ROOT"]) / "local-cache-staging.json")
+              .read_text(encoding="utf-8")
+          )
+          boundary = manifest["information_boundary"]
+          if Path(manifest["source_root"]).resolve() != Path(
+              os.environ["RESOLVED_OFFICIAL_RAW_ROOT"]
+          ).resolve():
+              raise SystemExit("local calibration cache used the wrong source root")
+          if boundary["adaptive_confirmation_root_accessed"] is not False:
+              raise SystemExit("adaptive-confirmation payload root was accessed")
+          if boundary["confirmation_payloads_opened"] is not False:
+              raise SystemExit("confirmation payloads were opened during cache staging")
+          if boundary["hardlink_allowed"] is not False:
+              raise SystemExit("raw-snapshot hardlinks were unexpectedly enabled")
+          PY
+
+      - name: Download and hash only missing frozen calibration files
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" \
+            scripts/science/run_deform360_official_hub_calibration_source.py download \
+            --protocol protocols/deform360_official_hub_calibration_source_v1.json \
+            --selection-lock protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --plan "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            --data-root "${DATA_ROOT}" \
+            --output "${EVIDENCE_ROOT}/calibration-download-manifest.json" \
+            --workers 2 \
+            | tee "${EVIDENCE_ROOT}/download-console.json"
+
+      - name: Prepare synchronized calibration RGB tactile and robot source
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${BASE_PYTHON}" \
+            scripts/science/run_deform360_official_hub_calibration_source.py prepare \
+            --protocol protocols/deform360_official_hub_calibration_source_v1.json \
+            --selection-lock protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --plan "${EVIDENCE_ROOT}/calibration-source-plan.json" \
+            --download-manifest "${EVIDENCE_ROOT}/calibration-download-manifest.json" \
+            --data-root "${DATA_ROOT}" \
+            --staged-raw-root "${STAGED_ROOT}" \
+            --processed-root "${PROCESSED_ROOT}/aligned" \
+            --processing-repository "${PROCESSING_REPO}" \
+            --output "${EVIDENCE_ROOT}/calibration-source-result.json" \
+            | tee "${EVIDENCE_ROOT}/prepare-console.json"
+
+      - name: Verify confirmation and adaptive payload boundaries
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${EVIDENCE_ROOT}"
+          "${BASE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          selection = json.loads(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_visuotactile_v1_selection.json"
+              ).read_text(encoding="utf-8")
+          )
+          confirmation = {
+              row["object_id"] for row in selection["selection"]["confirmation"]
+          }
+          raw = Path(os.environ["DATA_ROOT"]) / "raw"
+          present = (
+              {path.name for path in raw.iterdir() if path.is_dir()}
+              if raw.exists()
+              else set()
+          )
+          overlap = sorted(present & confirmation)
+          if overlap:
+              raise SystemExit(f"confirmation payloads appeared: {overlap}")
+
+          staging_path = Path(os.environ["EVIDENCE_ROOT"]) / "local-cache-staging.json"
+          if staging_path.is_file():
+              staging = json.loads(staging_path.read_text(encoding="utf-8"))
+              boundary = staging["information_boundary"]
+              if boundary["adaptive_confirmation_root_accessed"] is not False:
+                  raise SystemExit("adaptive-confirmation root was used for calibration")
+              if boundary["confirmation_payloads_opened"] is not False:
+                  raise SystemExit("confirmation payload was opened during local reuse")
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          (evidence / "confirmation-boundary.txt").write_text(
+              "confirmation_payloads_opened=false\n"
+              "adaptive_confirmation_payloads_opened=false\n"
+              "target_outcomes_used=false\n",
+              encoding="utf-8",
+          )
+          print("confirmation_payloads_opened=false")
+          print("adaptive_confirmation_payloads_opened=false")
+          print("target_outcomes_used=false")
+          PY
+
+      - name: Verify source repositories remained clean
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git -C "${PROCESSING_REPO}" diff --exit-code
+          test -z "$(git -C "${PROCESSING_REPO}" status --porcelain)"
+
+      - name: Publish compact scientific summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### Runner-local Deform360 calibration science"
+            echo
+            echo "- BayesianPhysTwin revision: \`${GITHUB_SHA}\`"
+            echo "- Frozen calibration dataset revision: \`${DATASET_REVISION}\`"
+            echo "- Runner-local source snapshot: \`${OFFICIAL_RAW_SOURCE_REVISION}\`"
+            echo "- Adaptive-confirmation payloads opened: \`false\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          "${BASE_PYTHON}" - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_ROOT"])
+          comparison_path = evidence / "root-comparison.json"
+          if comparison_path.is_file():
+              comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
+              print(
+                  "- Official names-only inventory: "
+                  f"`{comparison['official_content_inventory_sha256']}`"
+              )
+              print(
+                  "- Adaptive names-only inventory: "
+                  f"`{comparison['adaptive_content_inventory_sha256']}`"
+              )
+              print(
+                  "- Shared recognized objects by name: "
+                  f"`{len(comparison['shared_object_ids'])}`"
+              )
+              print(
+                  "- Adaptive-only recognized objects by name: "
+                  f"`{len(comparison['adaptive_only_object_ids'])}`"
+              )
+          staging_path = evidence / "local-cache-staging.json"
+          if staging_path.is_file():
+              staging = json.loads(staging_path.read_text(encoding="utf-8"))
+              print(f"- Reflink-reused frozen files: `{staging['reflinked_file_count']}`")
+              print(f"- Previously verified files reused: `{staging['reused_file_count']}`")
+              print(
+                  "- Exact files delegated to frozen downloader: "
+                  f"`{staging['download_fallback_file_count']}`"
+              )
+              print(
+                  "- Older-snapshot revision mismatches: "
+                  f"`{staging['revision_mismatch_count']}`"
+              )
+          result_path = evidence / "calibration-source-result.json"
+          if result_path.is_file():
+              result = json.loads(result_path.read_text(encoding="utf-8"))
+              gate = result.get("gate", {})
+              print(f"- Prepared objects: `{gate.get('supported_object_count')}`")
+              print(f"- Result digest: `{result.get('result_sha256')}`")
+          PY
+
+      - name: Upload compact runner-local science evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-runner-local-science-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/runner.txt
+            ${{ env.EVIDENCE_ROOT }}/gpus.csv
+            ${{ env.EVIDENCE_ROOT }}/python-packages.txt
+            ${{ env.EVIDENCE_ROOT }}/official-raw-inventory.json
+            ${{ env.EVIDENCE_ROOT }}/official-raw-inventory.log
+            ${{ env.EVIDENCE_ROOT }}/adaptive-confirmation-inventory.json
+            ${{ env.EVIDENCE_ROOT }}/adaptive-confirmation-inventory.log
+            ${{ env.EVIDENCE_ROOT }}/root-comparison.json
+            ${{ env.EVIDENCE_ROOT }}/calibration-source-plan.json
+            ${{ env.EVIDENCE_ROOT }}/plan-console.json
+            ${{ env.EVIDENCE_ROOT }}/local-cache-staging.json
+            ${{ env.EVIDENCE_ROOT }}/local-cache-staging.log
+            ${{ env.EVIDENCE_ROOT }}/calibration-download-manifest.json
+            ${{ env.EVIDENCE_ROOT }}/download-console.json
+            ${{ env.EVIDENCE_ROOT }}/calibration-source-result.json
+            ${{ env.EVIDENCE_ROOT }}/prepare-console.json
+            ${{ env.EVIDENCE_ROOT }}/confirmation-boundary.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Remove isolated runtime and processing checkout
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in "${PYTHON_SITE:-}" "${PROCESSING_REPO:-}"; do
+            if [[ -n "${path}" ]]; then
+              rm -rf -- "${path}"
+            fi
+          done
