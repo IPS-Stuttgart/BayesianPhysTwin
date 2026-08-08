@@ -94,6 +94,8 @@ def _parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = _parser().parse_args()
     paths = _common_paths(args)
+    if args.command in {"plan", "download"}:
+        _prepare_public_hub_environment()
     if args.command == "plan":
         from huggingface_hub import HfApi
 
@@ -110,7 +112,6 @@ def main() -> int:
         )
         return 0 if result["gate"]["support_passed"] else 3
     if args.command == "download":
-        _prepare_public_hub_environment()
         from huggingface_hub import hf_hub_download
 
         result = download_plan(
