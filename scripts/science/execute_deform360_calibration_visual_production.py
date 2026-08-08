@@ -30,10 +30,13 @@ from bayesian_phystwin.deform360_calibration_visual_production import (
     build_deform360_calibration_visual_prediction_seal,
     build_deform360_calibration_visual_production_result,
     build_deform360_calibration_visual_technical_failure,
+    build_deform360_calibration_visual_technical_smoke,
     deform360_calibration_visual_command_descriptor,
+    select_deform360_calibration_visual_technical_smoke_job,
     validate_deform360_calibration_visual_prediction_seal,
     validate_deform360_calibration_visual_production_result,
     validate_deform360_calibration_visual_technical_failure,
+    validate_deform360_calibration_visual_technical_smoke,
     validate_deform360_motioncrafter_model_set_binding,
     validate_deform360_motioncrafter_prediction_manifest,
 )
@@ -335,6 +338,16 @@ def _portable_return_code(value: int) -> int:
     return value if value >= 0 else 128 + abs(value)
 
 
+def _validate_attempt_id(value: str) -> str:
+    if not value or any(
+        character
+        not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+        for character in value
+    ):
+        raise ValueError("attempt_id must contain only letters, digits, '-' and '_'")
+    return value
+
+
 def _write_log(root: Path, relative: str, payload: bytes) -> dict[str, object]:
     path = _safe_member(root, relative, label="log")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -595,12 +608,7 @@ def execute(
         implementation_revision,
         name="implementation_revision",
     )
-    if not attempt_id or any(
-        character
-        not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-        for character in attempt_id
-    ):
-        raise ValueError("attempt_id must contain only letters, digits, '-' and '_'")
+    attempt_id = _validate_attempt_id(attempt_id)
     admission = load_deform360_calibration_visual_execution_admission(admission_path)
     lock = _provider_lock(provider_lock_path, admission)
     binding = validate_deform360_motioncrafter_model_set_binding(
@@ -822,27 +830,295 @@ def execute(
         return result
 
 
+def execute_technical_smoke(
+    *,
+    admission_path: Path,
+    provider_lock_path: Path,
+    model_binding_path: Path,
+    retained_root: Path,
+    output_root: Path,
+    prob4d_root: Path,
+    motioncrafter_root: Path,
+    cache_directory: Path,
+    implementation_revision: str,
+    attempt_id: str,
+    resume: bool,
+) -> dict[str, Any]:
+    """Run exactly one target-free selected public calibration-prefix job."""
+
+    if resume:
+        raise ValueError(
+            "technical smoke is one-shot; a same-version resume is not authorized"
+        )
+    implementation = exact_revision(
+        implementation_revision,
+        name="implementation_revision",
+    )
+    attempt_id = _validate_attempt_id(attempt_id)
+    admission = load_deform360_calibration_visual_execution_admission(admission_path)
+    lock = _provider_lock(provider_lock_path, admission)
+    binding = validate_deform360_motioncrafter_model_set_binding(
+        _load_json(model_binding_path, label="model-set binding"),
+        expected_model_set_id=lock.model_set_id,
+    )
+    _checkout_revision(prob4d_root, expected=lock.provider_revision, label="Prob4D")
+    _checkout_revision(
+        motioncrafter_root,
+        expected=lock.motioncrafter_revision,
+        label="MotionCrafter",
+    )
+    job = select_deform360_calibration_visual_technical_smoke_job(admission)
+    job_id = cast(str, job["job_id"])
+    _reject_symlinks(output_root)
+    output_root.mkdir(parents=True, exist_ok=True)
+    scope_root = (
+        output_root / "technical-smoke-v1" / cast(str, admission["admission_id"])
+    )
+    scope_root.mkdir(parents=True, exist_ok=True)
+    run_root = scope_root / implementation
+    lock_path = scope_root / f".{implementation}.lock"
+    with lock_path.open("a+b") as lock_stream:
+        try:
+            fcntl.flock(lock_stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise ValueError(
+                "another technical smoke process holds the run lock"
+            ) from error
+        if run_root.exists():
+            raise FileExistsError(
+                "technical smoke state already exists; same-version retry is forbidden"
+            )
+        run_root.mkdir(parents=False, exist_ok=False)
+        result_path = run_root / "technical-smoke-result.json"
+        source_video = _verify_source(
+            retained_root,
+            cast(Mapping[str, Any], job["source_video"]),
+            label=f"technical smoke source video {job_id}",
+        )
+        _verify_source(
+            retained_root,
+            cast(Mapping[str, Any], job["source_timestamps"]),
+            label=f"technical smoke source timestamps {job_id}",
+        )
+        output = _safe_member(
+            run_root,
+            job["output_relative_directory"],
+            label="technical smoke output",
+        )
+        output.mkdir(parents=True, exist_ok=False)
+        descriptor = deform360_calibration_visual_command_descriptor(
+            admission=admission,
+            job=job,
+            provider_lock=lock,
+            model_binding=binding,
+        )
+        command_id = content_id(descriptor)
+        producer: _SharedMotionCrafterProducer | None = None
+        try:
+            producer = _SharedMotionCrafterProducer(
+                model_binding=binding,
+                motioncrafter_root=motioncrafter_root,
+                cache_directory=cache_directory,
+                provider_lock=lock,
+            )
+            manifest_path = producer.produce(
+                job=job,
+                source_video_path=source_video,
+                output_directory=output,
+                resume=False,
+            )
+        except Exception:
+            detail = traceback.format_exc().encode("utf-8", errors="replace")
+            receipt = _failure(
+                run_root=run_root,
+                attempt_id=attempt_id,
+                implementation_revision=implementation,
+                admission=admission,
+                lock=lock,
+                job=job,
+                command_id=command_id,
+                stage="motioncrafter-production",
+                outcome=ProcessOutcome(1, b"", detail),
+                detail=b"one-job technical smoke producer raised an exception",
+            )
+            status = "technical-failure"
+        else:
+            try:
+                verification = producer.verify(manifest_path)
+                manifest = _load_json(
+                    manifest_path,
+                    label="technical smoke prediction manifest",
+                )
+                verified_contract = (
+                    validate_deform360_motioncrafter_prediction_manifest(
+                        manifest,
+                        verification=verification,
+                        job=job,
+                        provider_lock=lock,
+                        model_binding=binding,
+                    )
+                )
+                manifest_descriptor = _descriptor(output, manifest_path)
+                seal = build_deform360_calibration_visual_prediction_seal(
+                    implementation_revision=implementation,
+                    admission=admission,
+                    job=job,
+                    provider_lock=lock,
+                    command_id=command_id,
+                    prediction_manifest=manifest_descriptor,
+                    run_spec_sha256=cast(
+                        str,
+                        verified_contract["run_spec_sha256"],
+                    ),
+                    verified_member_count=cast(
+                        int,
+                        verified_contract["member_count"],
+                    ),
+                )
+            except Exception:
+                detail = traceback.format_exc().encode("utf-8", errors="replace")
+                receipt = _failure(
+                    run_root=run_root,
+                    attempt_id=attempt_id,
+                    implementation_revision=implementation,
+                    admission=admission,
+                    lock=lock,
+                    job=job,
+                    command_id=command_id,
+                    stage="prediction-verification",
+                    outcome=ProcessOutcome(1, b"", detail),
+                    detail=b"one-job technical smoke prediction verification failed",
+                )
+                status = "technical-failure"
+            else:
+                receipt = output / "prediction-seal.json"
+                write_atomic_json(seal, receipt, overwrite=False)
+                status = "passed"
+        if producer is not None:
+            producer.release_temporaries()
+        model_load_attempt_count = (
+            producer.model_load_attempt_count if producer is not None else 0
+        )
+        model_load_count = producer.model_load_count if producer is not None else 0
+        if model_load_attempt_count > 1:
+            raise RuntimeError(
+                "MotionCrafter adapter creation was attempted more than once"
+            )
+        receipt_value = _load_json(receipt, label="technical smoke receipt")
+        if status == "passed":
+            validated_receipt = validate_deform360_calibration_visual_prediction_seal(
+                receipt_value
+            )
+            receipt_schema = cast(str, validated_receipt["schema"])
+            receipt_id = cast(str, validated_receipt["seal_id"])
+        else:
+            validated_receipt = validate_deform360_calibration_visual_technical_failure(
+                receipt_value
+            )
+            receipt_schema = cast(str, validated_receipt["schema"])
+            receipt_id = cast(str, validated_receipt["failure_id"])
+        result = build_deform360_calibration_visual_technical_smoke(
+            implementation_revision=implementation,
+            admission=admission,
+            provider_lock=lock,
+            selected_job=job,
+            command_id=command_id,
+            status=status,
+            receipt=_descriptor(run_root, receipt),
+            receipt_schema=receipt_schema,
+            receipt_id=receipt_id,
+            model_load_attempt_count=model_load_attempt_count,
+            model_load_count=model_load_count,
+        )
+        write_atomic_json(result, result_path, overwrite=False)
+        return result
+
+
+def validate_technical_smoke_bundle(
+    *,
+    result_path: Path,
+    run_root: Path,
+) -> dict[str, Any]:
+    """Re-hash and validate a smoke result together with its exact receipt."""
+
+    result = validate_deform360_calibration_visual_technical_smoke(
+        _load_json(result_path, label="technical smoke result")
+    )
+    receipt_path = _verify_descriptor(
+        run_root,
+        cast(Mapping[str, Any], result["receipt"]),
+        label="technical smoke receipt",
+    )
+    receipt_value = _load_json(receipt_path, label="technical smoke receipt")
+    if result["status"] == "passed":
+        receipt = validate_deform360_calibration_visual_prediction_seal(receipt_value)
+        receipt_id = receipt["seal_id"]
+    else:
+        receipt = validate_deform360_calibration_visual_technical_failure(receipt_value)
+        receipt_id = receipt["failure_id"]
+    expected = {
+        "schema": result["receipt_schema"],
+        "implementation_revision": result["implementation_revision"],
+        "admission_id": result["admission_id"],
+        "job_id": result["selected_job_id"],
+        "object_id": result["selected_object_id"],
+        "episode_id": result["selected_episode_id"],
+        "camera_id": result["selected_camera_id"],
+        "provider_revision": result["provider_revision"],
+        "motioncrafter_revision": result["motioncrafter_revision"],
+        "visual_provider_lock_id": result["visual_provider_lock_id"],
+        "model_set_id": result["model_set_id"],
+        "command_id": result["command_id"],
+    }
+    if {key: receipt.get(key) for key in expected} != expected:
+        raise ValueError("technical smoke receipt lineage changed")
+    if receipt_id != result["receipt_id"]:
+        raise ValueError("technical smoke receipt content ID changed")
+    return result
+
+
+def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--admission", type=Path, required=True)
+    parser.add_argument("--visual-provider-lock", type=Path, required=True)
+    parser.add_argument("--model-set-binding", type=Path, required=True)
+    parser.add_argument("--retained-root", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--prob4d-root", type=Path, required=True)
+    parser.add_argument("--motioncrafter-root", type=Path, required=True)
+    parser.add_argument("--cache-dir", type=Path, required=True)
+    parser.add_argument("--implementation-revision", required=True)
+    parser.add_argument("--attempt-id", required=True)
+    parser.add_argument("--resume", action="store_true")
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     run = subparsers.add_parser("run", help="execute or resume all admitted jobs")
-    run.add_argument("--admission", type=Path, required=True)
-    run.add_argument("--visual-provider-lock", type=Path, required=True)
-    run.add_argument("--model-set-binding", type=Path, required=True)
-    run.add_argument("--retained-root", type=Path, required=True)
-    run.add_argument("--output-root", type=Path, required=True)
-    run.add_argument("--prob4d-root", type=Path, required=True)
-    run.add_argument("--motioncrafter-root", type=Path, required=True)
-    run.add_argument("--cache-dir", type=Path, required=True)
-    run.add_argument("--implementation-revision", required=True)
-    run.add_argument("--attempt-id", required=True)
-    run.add_argument("--resume", action="store_true")
+    _add_execution_arguments(run)
+
+    smoke = subparsers.add_parser(
+        "smoke",
+        help="execute the frozen one-job public calibration-prefix smoke",
+    )
+    _add_execution_arguments(smoke)
 
     validate = subparsers.add_parser(
         "validate-result",
         help="validate one compact visual-production result",
     )
     validate.add_argument("path", type=Path)
+    validate_smoke = subparsers.add_parser(
+        "validate-smoke-result",
+        help="validate one compact technical-smoke result",
+    )
+    validate_smoke.add_argument("path", type=Path)
+    validate_smoke_bundle = subparsers.add_parser(
+        "validate-smoke-bundle",
+        help="re-hash one technical-smoke result and its exact receipt",
+    )
+    validate_smoke_bundle.add_argument("path", type=Path)
+    validate_smoke_bundle.add_argument("--run-root", type=Path, required=True)
     return parser
 
 
@@ -853,8 +1129,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = validate_deform360_calibration_visual_production_result(
                 _load_json(arguments.path, label="visual production result")
             )
+        elif arguments.command == "validate-smoke-result":
+            result = validate_deform360_calibration_visual_technical_smoke(
+                _load_json(arguments.path, label="technical smoke result")
+            )
+        elif arguments.command == "validate-smoke-bundle":
+            result = validate_technical_smoke_bundle(
+                result_path=arguments.path,
+                run_root=arguments.run_root,
+            )
         else:
-            result = execute(
+            operation = (
+                execute_technical_smoke if arguments.command == "smoke" else execute
+            )
+            result = operation(
                 admission_path=arguments.admission,
                 provider_lock_path=arguments.visual_provider_lock,
                 model_binding_path=arguments.model_set_binding,
@@ -871,6 +1159,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps({"status": "failed", "error": str(error)}, sort_keys=True))
         return 2
     print(json.dumps(result, indent=2, sort_keys=True))
+    if arguments.command in {
+        "smoke",
+        "validate-smoke-result",
+        "validate-smoke-bundle",
+    }:
+        return 0 if result["status"] == "passed" else 3
     return 3 if result["technical_failure_job_count"] else 0
 
 

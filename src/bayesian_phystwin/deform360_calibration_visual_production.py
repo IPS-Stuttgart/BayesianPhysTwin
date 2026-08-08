@@ -32,6 +32,12 @@ DEFORM360_CALIBRATION_VISUAL_TECHNICAL_FAILURE_SCHEMA: Final = (
 DEFORM360_CALIBRATION_VISUAL_PRODUCTION_RESULT_SCHEMA: Final = (
     "bayesian-phystwin.deform360-calibration-visual-production-result"
 )
+DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SCHEMA: Final = (
+    "bayesian-phystwin.deform360-calibration-visual-technical-smoke"
+)
+DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SELECTION_RULE: Final = (
+    "lexicographically-smallest-admitted-job-id-v1"
+)
 
 _MODEL_BINDING_SCHEMA: Final = (
     "bayesian-phystwin/deform360-motioncrafter-model-set-binding-v1"
@@ -146,6 +152,36 @@ _RESULT_FIELDS = frozenset(
 )
 _RESULT_JOB_FIELDS = frozenset(
     {"job_id", "object_id", "camera_id", "status", "receipt"}
+)
+_TECHNICAL_SMOKE_FIELDS = frozenset(
+    {
+        "schema",
+        "schema_version",
+        "semantics",
+        "smoke_id",
+        "implementation_revision",
+        "admission_id",
+        "visual_provider_lock_id",
+        "provider_revision",
+        "motioncrafter_revision",
+        "model_set_id",
+        "selection_rule",
+        "admitted_job_count",
+        "selected_job_id",
+        "selected_object_id",
+        "selected_episode_id",
+        "selected_camera_id",
+        "command_id",
+        "status",
+        "receipt",
+        "receipt_schema",
+        "receipt_id",
+        "model_load_attempt_count",
+        "model_load_count",
+        "full_calibration_retry_authorized",
+        "scientific_metrics_computed",
+        "information_boundary",
+    }
 )
 
 
@@ -732,6 +768,190 @@ def validate_deform360_calibration_visual_technical_failure(
     return failure
 
 
+def select_deform360_calibration_visual_technical_smoke_job(
+    admission: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Select one admitted camera job without consulting payloads or outcomes."""
+
+    raw_jobs = admission.get("jobs")
+    _require(
+        isinstance(raw_jobs, list) and bool(raw_jobs), "admission jobs are missing"
+    )
+    jobs = cast(list[object], raw_jobs)
+    normalized: list[tuple[str, dict[str, Any]]] = []
+    for index, row in enumerate(jobs):
+        _require(isinstance(row, Mapping), f"admission job {index} is not an object")
+        job = cast(dict[str, Any], plain_json(row))
+        job_id = sha256_digest(job.get("job_id"), name=f"admission job {index} ID")
+        normalized.append((job_id, job))
+    _require(
+        len({job_id for job_id, _job in normalized}) == len(normalized),
+        "admission job IDs are not unique",
+    )
+    return min(normalized, key=lambda item: item[0])[1]
+
+
+def build_deform360_calibration_visual_technical_smoke(
+    *,
+    implementation_revision: str,
+    admission: Mapping[str, Any],
+    provider_lock: Deform360VisualProviderLockV1,
+    selected_job: Mapping[str, Any],
+    command_id: str,
+    status: str,
+    receipt: Mapping[str, object],
+    receipt_schema: str,
+    receipt_id: str,
+    model_load_attempt_count: int,
+    model_load_count: int,
+) -> dict[str, Any]:
+    """Build the one-job provider smoke result that gates a full retry."""
+
+    expected_job = select_deform360_calibration_visual_technical_smoke_job(admission)
+    _require(
+        plain_json(selected_job) == expected_job,
+        "technical smoke did not use the frozen target-free selection rule",
+    )
+    smoke_status = _string(status, name="technical smoke status")
+    _require(
+        smoke_status in {"passed", "technical-failure"},
+        "technical smoke status changed",
+    )
+    expected_receipt_schema = (
+        DEFORM360_CALIBRATION_VISUAL_PREDICTION_SEAL_SCHEMA
+        if smoke_status == "passed"
+        else DEFORM360_CALIBRATION_VISUAL_TECHNICAL_FAILURE_SCHEMA
+    )
+    _require(
+        receipt_schema == expected_receipt_schema,
+        "technical smoke receipt schema does not match its status",
+    )
+    jobs = cast(list[object], admission["jobs"])
+    identity = {
+        "schema": DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SCHEMA,
+        "schema_version": 1,
+        "semantics": "single-public-calibration-prefix-provider-smoke-v1",
+        "implementation_revision": exact_revision(
+            implementation_revision,
+            name="implementation_revision",
+        ),
+        "admission_id": admission["admission_id"],
+        "visual_provider_lock_id": provider_lock.artifact_id,
+        "provider_revision": provider_lock.provider_revision,
+        "motioncrafter_revision": provider_lock.motioncrafter_revision,
+        "model_set_id": provider_lock.model_set_id,
+        "selection_rule": DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SELECTION_RULE,
+        "admitted_job_count": len(jobs),
+        "selected_job_id": expected_job["job_id"],
+        "selected_object_id": expected_job["object_id"],
+        "selected_episode_id": expected_job["episode_id"],
+        "selected_camera_id": expected_job["camera_id"],
+        "command_id": command_id,
+        "status": smoke_status,
+        "receipt": dict(receipt),
+        "receipt_schema": receipt_schema,
+        "receipt_id": receipt_id,
+        "model_load_attempt_count": model_load_attempt_count,
+        "model_load_count": model_load_count,
+        "full_calibration_retry_authorized": smoke_status == "passed",
+        "scientific_metrics_computed": False,
+        "information_boundary": dict(PRODUCTION_INFORMATION_BOUNDARY),
+    }
+    return validate_deform360_calibration_visual_technical_smoke(
+        {**identity, "smoke_id": content_id(identity)}
+    )
+
+
+def validate_deform360_calibration_visual_technical_smoke(
+    value: object,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise ValueError("technical smoke must be a JSON object")
+    smoke = cast(dict[str, Any], plain_json(value))
+    require_exact_fields(
+        smoke,
+        expected=_TECHNICAL_SMOKE_FIELDS,
+        name="technical smoke",
+    )
+    _require(
+        smoke["schema"] == DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SCHEMA
+        and smoke["schema_version"] == 1
+        and smoke["semantics"] == "single-public-calibration-prefix-provider-smoke-v1",
+        "technical smoke contract changed",
+    )
+    for field in (
+        "implementation_revision",
+        "provider_revision",
+        "motioncrafter_revision",
+    ):
+        exact_revision(smoke[field], name=field)
+    for field in (
+        "admission_id",
+        "visual_provider_lock_id",
+        "model_set_id",
+        "selected_job_id",
+        "command_id",
+        "receipt_id",
+    ):
+        sha256_digest(smoke[field], name=field)
+    _require(
+        smoke["selection_rule"]
+        == DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SELECTION_RULE,
+        "technical smoke selection rule changed",
+    )
+    _integer(smoke["admitted_job_count"], name="admitted_job_count", minimum=1)
+    _string(smoke["selected_object_id"], name="selected_object_id")
+    _integer(smoke["selected_episode_id"], name="selected_episode_id")
+    _string(smoke["selected_camera_id"], name="selected_camera_id")
+    status = _string(smoke["status"], name="technical smoke status")
+    _require(
+        status in {"passed", "technical-failure"}, "technical smoke status changed"
+    )
+    _file_record(smoke["receipt"], name="technical smoke receipt")
+    expected_receipt_schema = (
+        DEFORM360_CALIBRATION_VISUAL_PREDICTION_SEAL_SCHEMA
+        if status == "passed"
+        else DEFORM360_CALIBRATION_VISUAL_TECHNICAL_FAILURE_SCHEMA
+    )
+    _require(
+        smoke["receipt_schema"] == expected_receipt_schema,
+        "technical smoke receipt schema does not match its status",
+    )
+    attempted = _integer(
+        smoke["model_load_attempt_count"],
+        name="model_load_attempt_count",
+    )
+    loaded = _integer(smoke["model_load_count"], name="model_load_count")
+    _require(
+        loaded <= attempted <= 1,
+        "technical smoke model-loading accounting changed",
+    )
+    if status == "passed":
+        _require(
+            attempted == loaded == 1,
+            "passing technical smoke did not load the model exactly once",
+        )
+    _require(
+        smoke["full_calibration_retry_authorized"] is (status == "passed"),
+        "technical smoke retry authorization changed",
+    )
+    _require(
+        smoke["scientific_metrics_computed"] is False,
+        "technical smoke cannot compute scientific metrics",
+    )
+    _require(
+        smoke["information_boundary"] == PRODUCTION_INFORMATION_BOUNDARY,
+        "technical smoke information boundary changed",
+    )
+    declared = sha256_digest(smoke["smoke_id"], name="smoke_id")
+    _require(
+        declared
+        == content_id({key: item for key, item in smoke.items() if key != "smoke_id"}),
+        "technical smoke ID mismatch",
+    )
+    return smoke
+
+
 def build_deform360_calibration_visual_production_result(
     *,
     implementation_revision: str,
@@ -884,15 +1104,20 @@ def validate_deform360_calibration_visual_production_result(
 __all__ = [
     "DEFORM360_CALIBRATION_VISUAL_PREDICTION_SEAL_SCHEMA",
     "DEFORM360_CALIBRATION_VISUAL_PRODUCTION_RESULT_SCHEMA",
+    "DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SCHEMA",
+    "DEFORM360_CALIBRATION_VISUAL_TECHNICAL_SMOKE_SELECTION_RULE",
     "DEFORM360_CALIBRATION_VISUAL_TECHNICAL_FAILURE_SCHEMA",
     "PRODUCTION_INFORMATION_BOUNDARY",
     "build_deform360_calibration_visual_command",
     "build_deform360_calibration_visual_prediction_seal",
     "build_deform360_calibration_visual_production_result",
+    "build_deform360_calibration_visual_technical_smoke",
     "build_deform360_calibration_visual_technical_failure",
     "deform360_calibration_visual_command_descriptor",
+    "select_deform360_calibration_visual_technical_smoke_job",
     "validate_deform360_calibration_visual_prediction_seal",
     "validate_deform360_calibration_visual_production_result",
+    "validate_deform360_calibration_visual_technical_smoke",
     "validate_deform360_calibration_visual_technical_failure",
     "validate_deform360_motioncrafter_model_set_binding",
     "validate_deform360_motioncrafter_prediction_manifest",

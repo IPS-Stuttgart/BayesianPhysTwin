@@ -17,6 +17,7 @@ def _workflow() -> str:
 
 def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
     text = _workflow()
+    script = SCRIPT.read_text(encoding="utf-8")
     parsed = yaml.load(text, Loader=yaml.BaseLoader)
 
     assert isinstance(parsed, dict)
@@ -24,11 +25,20 @@ def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
     assert "workflow_dispatch:" not in text
     assert "inputs.execute_authorized == true" in text
     assert "github.event_name == 'push'" in text
+    assert "execution_scope:" in text
+    assert "default: full" in text
     assert (
         "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/"
         "launch-deform360-calibration-visual-production-once.yml@refs/heads/main"
         in text
     )
+    assert (
+        "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/"
+        "launch-deform360-calibration-visual-smoke-once.yml@refs/heads/main" in text
+    )
+    assert "inputs.execution_scope == 'full'" in text
+    assert "inputs.execution_scope == 'technical-smoke'" in text
+    assert "inputs.resume == false" in text
     assert "github.ref == 'refs/heads/main'" in text
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
     assert "runs-on: self-hosted" in text
@@ -40,6 +50,14 @@ def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
     assert "cancel-in-progress: false" in text
     assert "--resume" in text
     assert "--attempt-id" in text
+    assert "command=smoke" in text
+    assert 'output_root / "technical-smoke-v1"' in script
+    smoke = script[script.index("def execute_technical_smoke(") :]
+    assert smoke.index("if run_root.exists():") < smoke.index(
+        "source_video = _verify_source("
+    )
+    assert "receipt_schema=receipt_schema" in smoke
+    assert "receipt_id=receipt_id" in smoke
 
 
 def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
@@ -159,7 +177,7 @@ def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
 def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
     text = _workflow()
 
-    assert "name: Admitted all-camera production / sole Deform360 runner" in text
+    assert "Admitted all-camera production / sole Deform360 runner" in text
     assert "runs-on: self-hosted" in text
     assert "runner_label_contract=self-hosted-only" in text
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
@@ -243,7 +261,7 @@ def test_visual_production_pins_external_sources_and_single_model_session() -> N
 def test_visual_production_artifact_excludes_large_predictions_and_targets() -> None:
     text = _workflow()
     execution = text[
-        text.index("Execute or resume every admitted causal-prefix job") : text.index(
+        text.index("Execute the exact admitted causal-prefix scope") : text.index(
             "Collect compact seals and accounting evidence"
         )
     ]
@@ -251,6 +269,7 @@ def test_visual_production_artifact_excludes_large_predictions_and_targets() -> 
 
     assert "*.npz" not in compact
     assert "predictions.json" not in compact
+    assert "technical-smoke-result.json" in compact
     assert "confirmation-processed" not in text
     assert "ADAPTIVE_CONFIRMATION" not in execution
     assert "official_raw_payload_opened=false" in text
@@ -262,6 +281,16 @@ def test_visual_production_artifact_excludes_large_predictions_and_targets() -> 
     assert 'echo "gpu_inventory=unavailable"' in compact
     assert "decord_metadata_exception=0.6.0-cp36-tag-runtime-verified" in compact
     assert "replacement_allowed=true" not in text
+    assert "scientific_metrics_computed=false" in text
+    assert "Revalidate compact technical-smoke gate" in text
+    assert 'validate-smoke-bundle "${result}"' in text
+    assert '--run-root "${PRODUCTION_RUN_ROOT}"' in text
+    assert 'selected = min(admission["jobs"], key=lambda row: row["job_id"])' in text
+    assert "technical-smoke-gate.json" in text
+    assert 'validation_code}" != 0 && "${validation_code}" != 3' in text
+    assert "Enforce one-job technical-smoke advancement gate" in text
+    assert 'steps.production.outputs.terminal_code }}" = "0"' in text
+    assert 'steps.smoke-gate.outputs.authorized }}" = "true"' in text
 
 
 def test_hugging_face_token_is_not_workflow_wide() -> None:
