@@ -47,7 +47,14 @@ jobs:
           - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
           - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
           - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - runner scheduling contract: sole \`self-hosted\` label; GPU availability checked at runtime
+          - Deform360 storage root: \`/mnt/lexar4tb/datasets/deform360\`
+          - official raw revision root: \`/mnt/lexar4tb/datasets/deform360/data-7fea8e2\`
+          - adaptive-confirmation raw root registered: \`/mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370\`
+          - official raw payload opened: \`false\`
+          - adaptive-confirmation payloads opened: \`false\`
           - pre-payload predecessor: run \`31274946936\` failed before admission download, model construction, or calibration-data access
+          - environment-bootstrap predecessor: run \`31275886113\` verified the frozen admission but failed because the unseeded uv environment had no pip module; it stopped before model snapshots, retained source-byte reads, inference, or prediction output
           - retained-source admission run: \`31272512658\`
           - retained-source admission artifact ID: \`9026043628\`
           - retained-source admission ID: \`715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15\`
@@ -63,7 +70,8 @@ jobs:
           This is calibration-only provider production. The compact seals and
           retained technical-failure receipts require separate review before any
           contact/physical-query materialization or calibration decision. It does
-          not authorize confirmation access or establish a scientific claim.
+          not authorize adaptive-confirmation or confirmation access and does not
+          establish a scientific claim.
           EOF
           )
           gh api \
@@ -71,4 +79,4 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
             -f body="${body}"
 
-# Reviewed calibration visual-production request: 2026-08-09-pre-payload-retry-v2
+# Reviewed calibration visual-production request: 2026-08-09-sole-self-hosted-layout-v4
