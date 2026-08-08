@@ -30,6 +30,11 @@ def _finite_positive(value: object, *, name: str) -> float:
     return result
 
 
+def _require_finite_array(value: np.ndarray, *, name: str) -> None:
+    if not np.all(np.isfinite(value)):
+        raise SPDSolveError(f"{name} contains non-finite values")
+
+
 def immutable_float64(value: object) -> np.ndarray:
     """Return a C-contiguous float64 array backed by immutable bytes."""
 
@@ -163,6 +168,17 @@ def _component_update(
     name: str,
     config: DirectionalEndpointConfigV2,
 ) -> tuple[np.ndarray, np.ndarray, float, float, float, float]:
+    _require_finite_array(mean, name=f"{name} mean")
+    _require_finite_array(innovation, name=f"{name} innovation")
+    _require_finite_array(
+        projected_covariance,
+        name=f"{name} projected covariance",
+    )
+    _require_finite_array(
+        observation_matrix,
+        name=f"{name} observation matrix",
+    )
+
     observation_dimension = innovation.shape[0]
     innovation_covariance = projected_covariance + (
         observation_variance * np.eye(observation_dimension, dtype=np.float64)
@@ -238,8 +254,16 @@ def robust_linear_update_v2(
                 name=f"{row_name} prior covariance",
                 config=config,
             )
+            row_mean = mean[index]
+            row_observation = observation[index]
             row_matrix = observation_matrix[index]
-            innovation = observation[index] - row_matrix @ mean[index]
+            _require_finite_array(row_mean, name=f"{row_name} prior mean")
+            _require_finite_array(row_observation, name=f"{row_name} observation")
+            _require_finite_array(
+                row_matrix,
+                name=f"{row_name} observation matrix",
+            )
+            innovation = row_observation - row_matrix @ row_mean
             if not np.all(np.isfinite(innovation)):
                 raise SPDSolveError(f"{row_name} innovation produced non-finite values")
             projected_covariance = row_matrix @ np.asarray(prior.matrix) @ row_matrix.T
@@ -251,7 +275,7 @@ def robust_linear_update_v2(
                 inlier_innovation_condition,
                 inlier_posterior_condition,
             ) = _component_update(
-                mean=mean[index],
+                mean=row_mean,
                 prior=prior,
                 innovation=innovation,
                 projected_covariance=projected_covariance,
@@ -268,7 +292,7 @@ def robust_linear_update_v2(
                 outlier_innovation_condition,
                 outlier_posterior_condition,
             ) = _component_update(
-                mean=mean[index],
+                mean=row_mean,
                 prior=prior,
                 innovation=innovation,
                 projected_covariance=projected_covariance,
