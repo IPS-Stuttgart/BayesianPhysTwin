@@ -353,8 +353,9 @@ def write_dynamic_discrepancy_correction(
     target.parent.mkdir(parents=True, exist_ok=True)
     manifest_path = target.with_suffix(".json")
     arrays_path = target.with_suffix(".npz")
-    np.savez_compressed(  # type: ignore[arg-type]
-        arrays_path, **correction._array_payload()
+    np.savez_compressed(
+        arrays_path,
+        **correction._array_payload(),  # type: ignore[arg-type]
     )
     manifest = {
         **correction._scalar_payload(),
