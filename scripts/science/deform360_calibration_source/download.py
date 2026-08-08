@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import math
+import re
+from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from time import sleep as _sleep
+from typing import Any, Final, cast
 
 from .contracts import (
     DATASET_REPOSITORY,
@@ -21,26 +24,102 @@ from .contracts import (
 )
 from .planning import verify_plan
 
+DOWNLOAD_MAX_WORKERS: Final = 2
+DOWNLOAD_MAX_ATTEMPTS: Final = 6
+DOWNLOAD_INITIAL_BACKOFF_SECONDS: Final = 15.0
+DOWNLOAD_MAX_BACKOFF_SECONDS: Final = 240.0
 
-def download_one(
+_RETRYABLE_HTTP_STATUS = frozenset({429, 500, 502, 503, 504})
+_RETRYABLE_EXCEPTION_NAMES = frozenset(
+    {
+        "ConnectError",
+        "ConnectionError",
+        "ConnectTimeout",
+        "NetworkError",
+        "ReadError",
+        "ReadTimeout",
+        "RemoteProtocolError",
+        "TimeoutError",
+        "TimeoutException",
+        "TransportError",
+    }
+)
+_HTTP_STATUS_PATTERN = re.compile(
+    r"(?:http\s+status|status(?:\s+code)?)\D{0,40}(\d{3})",
+    flags=re.IGNORECASE,
+)
+
+
+def _error_chain(error: BaseException) -> tuple[BaseException, ...]:
+    chain: list[BaseException] = []
+    current: BaseException | None = error
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        chain.append(current)
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+    return tuple(chain)
+
+
+def _http_status_code(error: BaseException) -> int | None:
+    for item in _error_chain(error):
+        response = getattr(item, "response", None)
+        for candidate in (response, item):
+            status = getattr(candidate, "status_code", None)
+            if type(status) is int and 100 <= status <= 599:
+                return status
+        match = _HTTP_STATUS_PATTERN.search(str(item))
+        if match is not None:
+            return int(match.group(1))
+    return None
+
+
+def _retry_after_seconds(error: BaseException) -> float | None:
+    for item in _error_chain(error):
+        response = getattr(item, "response", None)
+        headers = getattr(response, "headers", None)
+        if not isinstance(headers, Mapping):
+            headers = getattr(item, "headers", None)
+        if not isinstance(headers, Mapping):
+            continue
+        raw = headers.get("Retry-After", headers.get("retry-after"))
+        if raw is None:
+            continue
+        try:
+            delay = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(delay) and delay >= 0.0:
+            return delay
+    return None
+
+
+def _retryable_download_error(error: BaseException) -> bool:
+    status = _http_status_code(error)
+    if status is not None:
+        return status in _RETRYABLE_HTTP_STATUS
+    names = {
+        base.__name__ for item in _error_chain(error) for base in type(item).__mro__
+    }
+    return bool(names & _RETRYABLE_EXCEPTION_NAMES)
+
+
+def _record_path(record: Mapping[str, Any]) -> str:
+    raw = record.get("path")
+    require(isinstance(raw, str), "download path is malformed")
+    return cast(str, raw)
+
+
+def _validated_download(
     *,
     record: Mapping[str, Any],
     root: Path,
-    hub_download: Any,
+    destination: Path,
 ) -> dict[str, Any]:
-    relative = record.get("path")
-    require(isinstance(relative, str), "download path is malformed")
-    destination = Path(
-        hub_download(
-            repo_id=DATASET_REPOSITORY,
-            repo_type="dataset",
-            revision=DATASET_REVISION,
-            filename=relative,
-            local_dir=str(root),
-        )
-    ).resolve()
+    relative = _record_path(record)
     expected = (root / relative).resolve()
-    require(destination == expected, f"download path changed: {relative}")
+    require(expected.is_relative_to(root), f"download path escaped root: {relative}")
+    require(destination.resolve() == expected, f"download path changed: {relative}")
     require(
         destination.is_file() and not destination.is_symlink(),
         f"download is not a regular file: {relative}",
@@ -63,6 +142,105 @@ def download_one(
     }
 
 
+def _completed_download(
+    *,
+    record: Mapping[str, Any],
+    root: Path,
+) -> dict[str, Any] | None:
+    relative = _record_path(record)
+    candidate = root / relative
+    require(not candidate.is_symlink(), f"download is a symlink: {relative}")
+    if not candidate.exists():
+        return None
+    return _validated_download(
+        record=record,
+        root=root,
+        destination=candidate,
+    )
+
+
+def _download_once(
+    *,
+    record: Mapping[str, Any],
+    root: Path,
+    hub_download: Any,
+) -> dict[str, Any]:
+    relative = _record_path(record)
+    destination = Path(
+        hub_download(
+            repo_id=DATASET_REPOSITORY,
+            repo_type="dataset",
+            revision=DATASET_REVISION,
+            filename=relative,
+            local_dir=str(root),
+        )
+    )
+    return _validated_download(
+        record=record,
+        root=root,
+        destination=destination,
+    )
+
+
+def _retry_configuration(
+    *,
+    max_attempts: int,
+    initial_backoff_seconds: float,
+    max_backoff_seconds: float,
+) -> None:
+    require(max_attempts >= 1, "download max_attempts must be positive")
+    require(
+        math.isfinite(initial_backoff_seconds) and initial_backoff_seconds >= 0.0,
+        "download initial backoff must be finite and nonnegative",
+    )
+    require(
+        math.isfinite(max_backoff_seconds)
+        and max_backoff_seconds >= initial_backoff_seconds,
+        "download maximum backoff must be finite and no smaller than initial",
+    )
+
+
+def download_one(
+    *,
+    record: Mapping[str, Any],
+    root: Path,
+    hub_download: Any,
+    max_attempts: int = DOWNLOAD_MAX_ATTEMPTS,
+    initial_backoff_seconds: float = DOWNLOAD_INITIAL_BACKOFF_SECONDS,
+    max_backoff_seconds: float = DOWNLOAD_MAX_BACKOFF_SECONDS,
+    sleeper: Callable[[float], None] = _sleep,
+) -> dict[str, Any]:
+    """Download one exact file, reusing verified bytes and retrying transport only."""
+
+    _retry_configuration(
+        max_attempts=max_attempts,
+        initial_backoff_seconds=initial_backoff_seconds,
+        max_backoff_seconds=max_backoff_seconds,
+    )
+    root = root.resolve()
+    completed = _completed_download(record=record, root=root)
+    if completed is not None:
+        return completed
+
+    for attempt in range(max_attempts):
+        try:
+            return _download_once(
+                record=record,
+                root=root,
+                hub_download=hub_download,
+            )
+        except Exception as error:
+            completed = _completed_download(record=record, root=root)
+            if completed is not None:
+                return completed
+            if attempt + 1 >= max_attempts or not _retryable_download_error(error):
+                raise
+            exponential = initial_backoff_seconds * (2.0**attempt)
+            retry_after = _retry_after_seconds(error) or 0.0
+            sleeper(min(max(exponential, retry_after), max_backoff_seconds))
+    raise AssertionError("download retry loop did not return or raise")
+
+
 def download_plan(
     *,
     plan_path: Path,
@@ -73,8 +251,17 @@ def download_plan(
     output_path: Path,
     max_workers: int,
     hub_download: Any,
+    max_attempts: int = DOWNLOAD_MAX_ATTEMPTS,
+    initial_backoff_seconds: float = DOWNLOAD_INITIAL_BACKOFF_SECONDS,
+    max_backoff_seconds: float = DOWNLOAD_MAX_BACKOFF_SECONDS,
+    sleeper: Callable[[float], None] = _sleep,
 ) -> dict[str, Any]:
     require(max_workers >= 1, "max_workers must be positive")
+    _retry_configuration(
+        max_attempts=max_attempts,
+        initial_backoff_seconds=initial_backoff_seconds,
+        max_backoff_seconds=max_backoff_seconds,
+    )
     plan, confirmations = verify_plan(
         plan_path,
         protocol_path=protocol_path,
@@ -107,13 +294,18 @@ def download_plan(
         if row.get("status") == "planned"
         for file in row["selected_files"]
     ]
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    worker_count = min(max_workers, DOWNLOAD_MAX_WORKERS)
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
         downloaded = tuple(
             executor.map(
                 lambda record: download_one(
                     record=record,
                     root=root,
                     hub_download=hub_download,
+                    max_attempts=max_attempts,
+                    initial_backoff_seconds=initial_backoff_seconds,
+                    max_backoff_seconds=max_backoff_seconds,
+                    sleeper=sleeper,
                 ),
                 records,
             )
@@ -123,11 +315,12 @@ def download_plan(
     for unit in units:
         if unit.object_id not in planned_objects:
             continue
-        metadata = by_path.get(unit.metadata_path)
+        raw_metadata = by_path.get(unit.metadata_path)
         require(
-            metadata is not None,
+            raw_metadata is not None,
             f"download omitted metadata: {unit.object_id}",
         )
+        metadata = cast(Mapping[str, Any], raw_metadata)
         require(
             metadata["downloaded_sha256"] == unit.metadata_sha256,
             f"metadata digest changed: {unit.object_id}",

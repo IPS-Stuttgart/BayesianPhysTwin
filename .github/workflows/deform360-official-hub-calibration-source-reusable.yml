@@ -6,6 +6,9 @@ on:
       source_sha:
         required: true
         type: string
+    secrets:
+      hf_token:
+        required: false
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ concurrency:
 env:
   BPT_SOURCE_SHA: ${{ inputs.source_sha }}
   PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  HF_HUB_DISABLE_XET: "1"
+  HF_TOKEN: ${{ secrets.hf_token }}
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"

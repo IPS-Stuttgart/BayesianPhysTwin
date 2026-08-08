@@ -98,3 +98,5 @@ jobs:
     uses: ./.github/workflows/deform360-official-hub-calibration-source-reusable.yml
     with:
       source_sha: ${{ needs.admit.outputs.source_sha }}
+    secrets:
+      hf_token: ${{ secrets.HF_TOKEN }}
