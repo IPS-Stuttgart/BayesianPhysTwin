@@ -323,9 +323,9 @@ def triangulate_multiview_tracks(
             stabilized,
             right_hand_side[selected, :, None],
         )[:, :, 0]
-        squared_error = np.zeros(np.sum(selected), dtype=float)
-        weight_sum = np.zeros(np.sum(selected), dtype=float)
-        positive_depth_count = np.zeros(np.sum(selected), dtype=np.int16)
+        squared_error: np.ndarray = np.zeros(np.sum(selected), dtype=float)
+        weight_sum: np.ndarray = np.zeros(np.sum(selected), dtype=float)
+        positive_depth_count: np.ndarray = np.zeros(np.sum(selected), dtype=np.int16)
         for camera in range(camera_count):
             projected, depth = project_world_points(
                 solved,
@@ -349,7 +349,7 @@ def triangulate_multiview_tracks(
         usable = (positive_depth_count >= 2) & (weight_sum > 0.0)
         selected_indices = np.flatnonzero(selected)
         points[frame, selected_indices[usable]] = solved[usable]
-        frame_error = np.full(np.sum(selected), np.nan, dtype=float)
+        frame_error: np.ndarray = np.full(np.sum(selected), np.nan, dtype=float)
         frame_error[usable] = np.sqrt(squared_error[usable] / weight_sum[usable])
         error[frame, selected] = frame_error
     return points, error, camera_counts
@@ -1075,7 +1075,7 @@ def _initial_multiview_eligibility(
         & (rounded[:, 1] >= 0)
         & (rounded[:, 1] < height)
     )
-    surface_distance = np.full(len(world_points), np.inf, dtype=float)
+    surface_distance: np.ndarray = np.full(len(world_points), np.inf, dtype=float)
     selected = np.flatnonzero(in_bounds)
     if len(selected):
         raw_surface = camera_points[rounded[selected, 1], rounded[selected, 0]]
@@ -1140,7 +1140,7 @@ def build_phystwin_cotracker3_cues(
     with (raw_path / "mask" / "processed_masks.pkl").open("rb") as handle:
         processed_masks = pickle.load(handle)
 
-    cues: dict[str, np.ndarray] = {}
+    cues: dict[str, Any] = {}
     if base_cues_path is not None:
         with np.load(base_cues_path) as archive:
             cues.update({name: np.asarray(archive[name]) for name in archive.files})
@@ -1176,7 +1176,7 @@ def build_phystwin_cotracker3_cues(
     for camera in range(camera_count):
         video = _load_video_prefix(raw_path, camera, config.train_end_frame)
         archived_tracks = mapping.tracks_by_camera[camera]
-        archived_queries_xy = archived_tracks[0, :, ::-1].astype(np.float32)
+        archived_queries_xy: np.ndarray = archived_tracks[0, :, ::-1].astype(np.float32)
         forward = runner.track(video, archived_queries_xy)
         reverse = runner.track(
             np.ascontiguousarray(video[::-1]),
@@ -1225,7 +1225,7 @@ def build_phystwin_cotracker3_cues(
             frame_tracks = selected_forward_tracks[frame]
             pixels = np.rint(frame_tracks).astype(np.int64)
             inside = _pixels_inside_mask(frame_tracks, object_mask)
-            values = np.zeros(len(selected), dtype=np.float32)
+            values: np.ndarray = np.zeros(len(selected), dtype=np.float32)
             indexes = np.flatnonzero(inside)
             values[indexes] = distance[pixels[indexes, 1], pixels[indexes, 0]]
             boundary[frame, selected] = values

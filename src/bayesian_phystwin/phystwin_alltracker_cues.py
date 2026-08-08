@@ -352,7 +352,7 @@ def build_phystwin_alltracker_cues(
                 config.train_end_frame,
             )
             archived = mapping.tracks_by_camera[camera]
-            queries = archived[0, :, ::-1].astype(np.float32)
+            queries: np.ndarray = archived[0, :, ::-1].astype(np.float32)
             forward = runner.track(video, queries)
             reverse = runner.track(
                 np.ascontiguousarray(video[::-1]),
@@ -385,7 +385,7 @@ def build_phystwin_alltracker_cues(
                 pixels = np.rint(frame_tracks).astype(np.int64)
                 inside = _pixels_inside_mask(frame_tracks, object_mask)
                 ids = np.flatnonzero(inside)
-                values = np.zeros(len(selected), dtype=np.float32)
+                values: np.ndarray = np.zeros(len(selected), dtype=np.float32)
                 values[ids] = distance[pixels[ids, 1], pixels[ids, 0]]
                 boundary[frame, selected] = values
             camera_summaries[str(camera)] = {

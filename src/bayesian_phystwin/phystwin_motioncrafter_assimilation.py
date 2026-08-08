@@ -249,12 +249,12 @@ def _accumulate_vertex_measurements(
         candidate_indices.shape[1],
     )
 
-    mass = np.zeros(vertex_count, dtype=float)
-    evidence_mass = np.zeros(vertex_count, dtype=float)
-    numerator = np.zeros((vertex_count, 3), dtype=float)
-    entropy_numerator = np.zeros(vertex_count, dtype=float)
-    position_numerator = np.zeros(vertex_count, dtype=float)
-    flow_numerator = np.zeros(vertex_count, dtype=float)
+    mass: np.ndarray = np.zeros(vertex_count, dtype=float)
+    evidence_mass: np.ndarray = np.zeros(vertex_count, dtype=float)
+    numerator: np.ndarray = np.zeros((vertex_count, 3), dtype=float)
+    entropy_numerator: np.ndarray = np.zeros(vertex_count, dtype=float)
+    position_numerator: np.ndarray = np.zeros(vertex_count, dtype=float)
+    flow_numerator: np.ndarray = np.zeros(vertex_count, dtype=float)
     np.add.at(mass, indices, posterior)
     np.add.at(evidence_mass, indices, evidence)
     np.add.at(numerator, indices, evidence[:, None] * values)
@@ -375,7 +375,7 @@ def _clustered_vertex_measurements(
     group_evidence_mass = np.bincount(
         inverse, weights=flat_evidence, minlength=group_count
     )
-    group_mean_numerator = np.zeros((group_count, 3), dtype=float)
+    group_mean_numerator: np.ndarray = np.zeros((group_count, 3), dtype=float)
     np.add.at(
         group_mean_numerator,
         inverse,
@@ -385,14 +385,14 @@ def _clustered_vertex_measurements(
     source_second = repeated_source_covariance + np.einsum(
         "mi,mj->mij", repeated_values, repeated_values
     )
-    group_source_second = np.zeros((group_count, 3, 3), dtype=float)
+    group_source_second: np.ndarray = np.zeros((group_count, 3, 3), dtype=float)
     np.add.at(
         group_source_second,
         inverse,
         flat_evidence[:, None, None] * source_second,
     )
     group_source_second /= np.maximum(group_evidence_mass[:, None, None], 1e-15)
-    group_assignment_covariance = np.zeros((group_count, 3, 3), dtype=float)
+    group_assignment_covariance: np.ndarray = np.zeros((group_count, 3, 3), dtype=float)
     np.add.at(
         group_assignment_covariance,
         inverse,
@@ -416,10 +416,10 @@ def _clustered_vertex_measurements(
         where=cluster_weight_squared > 0.0,
     )
     mass = np.bincount(flat_vertex, weights=flat_assignment, minlength=vertex_count)
-    mean_numerator = np.zeros((vertex_count, 3), dtype=float)
+    mean_numerator: np.ndarray = np.zeros((vertex_count, 3), dtype=float)
     np.add.at(mean_numerator, group_vertex, cluster_weight[:, None] * group_mean)
     mean = mean_numerator / np.maximum(effective_mass[:, None], 1e-15)
-    second_numerator = np.zeros((vertex_count, 3, 3), dtype=float)
+    second_numerator: np.ndarray = np.zeros((vertex_count, 3, 3), dtype=float)
     np.add.at(
         second_numerator,
         group_vertex,
@@ -429,7 +429,7 @@ def _clustered_vertex_measurements(
         effective_mass[:, None, None], 1e-15
     ) - np.einsum("ni,nj->nij", mean, mean)
     source_covariance /= np.maximum(effective_sample_size[:, None, None], 1.0)
-    assignment_numerator = np.zeros((vertex_count, 3, 3), dtype=float)
+    assignment_numerator: np.ndarray = np.zeros((vertex_count, 3, 3), dtype=float)
     np.add.at(
         assignment_numerator,
         group_vertex,
@@ -465,7 +465,7 @@ def _clustered_vertex_measurements(
         where=prior_denominator > 0.0,
     )
     valid = effective_mass >= minimum_observation_mass
-    posterior_reliability = np.zeros(vertex_count, dtype=float)
+    posterior_reliability: np.ndarray = np.zeros(vertex_count, dtype=float)
     if np.any(valid):
         likelihood = robust_mixture_likelihood(
             PseudoMeasurementBatch(
@@ -593,7 +593,7 @@ def _associate_anonymous_scene_flow_decoupled(
         )
         candidate_valid = candidate_distance <= config.maximum_position_error_m
         cost = 0.5 * np.square(candidate_distance / config.position_scale_m)
-        flow_is_usable = np.zeros(len(points), dtype=bool)
+        flow_is_usable: np.ndarray = np.zeros(len(points), dtype=bool)
         measurement_endpoints = np.full_like(points, np.nan)
         candidate_flow_distance = np.full_like(candidate_distance, np.nan)
         if frame + 1 < frame_count:
@@ -677,7 +677,7 @@ def _associate_anonymous_scene_flow_decoupled(
             1.0 - config.robust_probability_floor,
         )
         expected_position_error = np.sum(candidate_weights * candidate_distance, axis=1)
-        expected_flow_error = np.full(len(points), np.nan, dtype=float)
+        expected_flow_error: np.ndarray = np.full(len(points), np.nan, dtype=float)
         expected_flow_error[flow_is_usable] = np.sum(
             candidate_weights[flow_is_usable] * candidate_flow_distance[flow_is_usable],
             axis=1,
@@ -918,7 +918,7 @@ def associate_anonymous_scene_flow(
         )
         candidate_valid = candidate_distance <= config.maximum_position_error_m
         cost = 0.5 * np.square(candidate_distance / config.position_scale_m)
-        flow_is_usable = np.zeros(len(points), dtype=bool)
+        flow_is_usable: np.ndarray = np.zeros(len(points), dtype=bool)
         measurement_endpoints = np.full_like(points, np.nan)
         candidate_flow_distance = np.full_like(candidate_distance, np.nan)
         if frame + 1 < frame_count:
@@ -980,7 +980,7 @@ def associate_anonymous_scene_flow(
             -expected_cost - config.entropy_strength * measurement_entropy
         )
         expected_position_error = np.sum(candidate_weights * candidate_distance, axis=1)
-        expected_flow_error = np.full(len(points), np.nan, dtype=float)
+        expected_flow_error: np.ndarray = np.full(len(points), np.nan, dtype=float)
         expected_flow_error[flow_is_usable] = np.sum(
             candidate_weights[flow_is_usable] * candidate_flow_distance[flow_is_usable],
             axis=1,
@@ -1517,7 +1517,7 @@ def combine_framewise_graph_observations(
 
 
 def _spring_components(node_count: int, springs: np.ndarray) -> np.ndarray:
-    parent = np.arange(node_count, dtype=np.int64)
+    parent: np.ndarray = np.arange(node_count, dtype=np.int64)
 
     def find(node: int) -> int:
         while parent[node] != node:
@@ -1569,8 +1569,8 @@ def graph_regularized_state_observations(
     positions = np.full_like(graph, np.nan, dtype=np.float32)
     correction = np.full_like(graph, np.nan, dtype=np.float32)
     valid = np.zeros(graph.shape[:2], dtype=bool)
-    iterations = np.zeros((len(graph), 3), dtype=np.int32)
-    residual = np.full((len(graph), 3), np.nan, dtype=np.float64)
+    iterations: np.ndarray = np.zeros((len(graph), 3), dtype=np.int32)
+    residual: np.ndarray = np.full((len(graph), 3), np.nan, dtype=np.float64)
     marginal_variance = (
         np.full(graph.shape[:2], np.nan, dtype=np.float64)
         if covariance_probes > 0 or covariance_node_indices is not None
@@ -1690,7 +1690,7 @@ def _variant_summary(
             discrepancy, future_selection
         ),
     }
-    chamfer_by_frame = np.full(len(frame_indices), np.nan, dtype=float)
+    chamfer_by_frame: np.ndarray = np.full(len(frame_indices), np.nan, dtype=float)
     points = np.asarray(object_points, dtype=float)
     visibility = np.asarray(object_visibilities, dtype=bool)
     for output_frame, source_frame in enumerate(frame_indices):
@@ -1717,7 +1717,7 @@ def _variant_summary(
             ),
         }
     )
-    if audit is not None and manual_error is not None:
+    if audit is not None and manual_error is not None and manual_tracks is not None:
         summary["manual_identity_audit"] = {
             "available": True,
             **audit,
@@ -1730,9 +1730,11 @@ def _variant_summary(
             selected_tracks = np.asarray(manual_tracks, dtype=float)[
                 :, initial_track_mask
             ]
-            nees_by_frame = np.full(len(frame_indices), np.nan, dtype=float)
-            coverage_by_frame = np.full(len(frame_indices), np.nan, dtype=float)
-            count_by_frame = np.zeros(len(frame_indices), dtype=np.int32)
+            nees_by_frame: np.ndarray = np.full(len(frame_indices), np.nan, dtype=float)
+            coverage_by_frame: np.ndarray = np.full(
+                len(frame_indices), np.nan, dtype=float
+            )
+            count_by_frame: np.ndarray = np.zeros(len(frame_indices), dtype=np.int32)
             covariance_values = np.asarray(observation_covariance_m2, dtype=float)
             for output_frame, source_frame in enumerate(frame_indices):
                 target = selected_tracks[source_frame]
@@ -2099,7 +2101,7 @@ def assimilate_motioncrafter_case(
 
     output.mkdir(parents=True, exist_ok=True)
     archive_path = output / "assimilation.npz"
-    archive_payload: dict[str, np.ndarray] = {
+    archive_payload: dict[str, Any] = {
         "frame_indices": frame_indices.astype(np.int32),
         "position_only_positions": position_observations.positions,
         "position_only_valid": position_observations.valid,
