@@ -9,7 +9,7 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened]
     paths:
-      - ".github/patches/deform360-visual-production.tar.gz.b64"
+      - ".github/patches/deform360-visual-production.tar.gz.b64*"
       - ".github/workflows/_temporary_materialize_deform360_visual_production.yml"
 
 permissions:
@@ -48,7 +48,8 @@ jobs:
         run: |
           set -euo pipefail
           archive="${RUNNER_TEMP}/patch.tar.gz"
-          base64 --decode .github/patches/deform360-visual-production.tar.gz.b64 > "${archive}"
+          cat .github/patches/deform360-visual-production.tar.gz.b64.part* \
+            | base64 --decode > "${archive}"
           echo "99d84e424c8dd8046218e49425f33e20af4e802a0241a1086748f01374338f7f  ${archive}" | sha256sum --check -
           tar -xzf "${archive}"
           python - <<'PY'
@@ -143,6 +144,12 @@ jobs:
               "blobs": blobs,
               "delete": [
                   ".github/patches/deform360-visual-production.tar.gz.b64",
+                  ".github/patches/deform360-visual-production.tar.gz.b64.part00",
+                  ".github/patches/deform360-visual-production.tar.gz.b64.part01",
+                  ".github/patches/deform360-visual-production.tar.gz.b64.part02",
+                  ".github/patches/deform360-visual-production.tar.gz.b64.part03",
+                  ".github/patches/deform360-visual-production.tar.gz.b64.part04",
+                  ".github/patches/deform360-visual-production.tar.gz.b64.part05",
                   ".github/workflows/_temporary_materialize_deform360_visual_production.yml",
               ],
           }
