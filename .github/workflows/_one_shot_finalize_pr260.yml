@@ -1,30 +1,36 @@
 name: One-shot finalize PR 260
 
 on:
-  push:
-    branches: [feat/deform360-calibration-visual-production-plan-v1]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
     paths:
       - ".github/workflows/_one_shot_finalize_pr260.yml"
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: one-shot-finalize-pr260
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   finalize:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/feat/deform360-calibration-visual-production-plan-v1'
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.number == 260 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref ==
+        'feat/deform360-calibration-visual-production-plan-v1'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out exact branch revision
+      - name: Check out exact pull-request head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
