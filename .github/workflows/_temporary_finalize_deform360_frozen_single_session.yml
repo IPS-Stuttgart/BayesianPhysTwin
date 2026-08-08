@@ -58,10 +58,10 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path(
+          transformer_path = Path(
               ".github/patches/apply_deform360_visual_production_hardening.py"
           )
-          source = path.read_text(encoding="utf-8")
+          source = transformer_path.read_text(encoding="utf-8")
           replacements = (
               (
                   "from dataclasses import dataclass\n'''\n"
@@ -89,7 +89,7 @@ jobs:
                   "    prob4d_executable: Path,\n"
                   "    job: Mapping[str, Any],\n"
                   "    resume: bool,\n",
-                  "prior existing-result signature",
+                  "prior existing-receipt signature",
               ),
               (
                   "    model_binding: Mapping[str, Any],\n"
@@ -99,7 +99,7 @@ jobs:
                   "    verify_prediction: Callable[[Path], Mapping[str, Any]],\n"
                   "    job: Mapping[str, Any],\n"
                   "    resume: bool,\n",
-                  "replacement existing-result signature",
+                  "replacement existing-receipt signature",
               ),
               (
                   'f"expected exactly one source fragment in {path}, observed {count}"',
@@ -112,7 +112,53 @@ jobs:
               if source.count(old) != 1:
                   raise SystemExit(f"transformer {label} changed")
               source = source.replace(old, new)
-          path.write_text(source, encoding="utf-8")
+
+          obsolete_start = (
+              "    replace_once(\n"
+              "        script,\n"
+              "        '''        verified = _run("
+          )
+          next_call = (
+              "    replace_once(\n"
+              "        script,\n"
+              "        '''    output_root: Path,"
+          )
+          start = source.find(obsolete_start)
+          end = source.find(next_call, start + 1)
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit("transformer sealed-verifier operation changed")
+          source = (
+              source[:start]
+              + "    # Existing sealed predictions are verified by the shared verifier.\n"
+              + source[end:]
+          )
+          transformer_path.write_text(source, encoding="utf-8")
+
+          script_path = Path(
+              "scripts/science/execute_deform360_calibration_visual_production.py"
+          )
+          script = script_path.read_text(encoding="utf-8")
+          old_verifier = '''        verified = _run(
+            (
+                str(prob4d_executable),
+                "--output-dir",
+                str(output),
+                "--verify-only",
+            )
+        )
+        verification = _parse_stdout_json(
+            verified,
+            label="Prob4D sealed prediction verifier",
+        )
+'''
+          new_verifier = '''        verification = verify_prediction(manifest_path)
+'''
+          if script.count(old_verifier) != 1:
+              raise SystemExit("current sealed prediction verifier changed")
+          script_path.write_text(
+              script.replace(old_verifier, new_verifier),
+              encoding="utf-8",
+          )
           PY
 
           python .github/patches/apply_deform360_visual_production_hardening.py
