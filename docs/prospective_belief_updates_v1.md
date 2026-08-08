@@ -59,7 +59,7 @@ unchanged for frozen experiments and exact historical semantics.
 ## Strict Prob4D update composition
 
 `update_claim_bearing_prob4d_from_artifacts` is the supported one-call
-composition for a new prospective Prob4D-to-BayesianPhysTwin experiment. It:
+composition for a new prospective Prob4D-to-Bayesian-PhysTwin experiment. It:
 
 1. validates the strict provider-v2 attestation and stream-v2 joint gauge
    covariance before forming an innovation;
