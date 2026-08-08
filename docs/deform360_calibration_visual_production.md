@@ -24,9 +24,18 @@ hosted, data-free contract validation only. The initial payload execution is
 requested exactly once by the reviewed
 `.github/workflows/launch-deform360-calibration-visual-production-once.yml`
 merge on `main`. A retry must rerun that original launcher workflow, preserving
-its implementation revision and frozen admission; there is no manual payload
-dispatch. Payload access is restricted to the protected `workstation2` runner
-with labels `self-hosted`, `Linux`, `X64`, and `nvidia-smi`.
+its implementation revision and frozen admission unless a source-independent
+defect is demonstrated before payload access. Such a repair requires a reviewed,
+versioned launcher revision that names its failed predecessor. There is no
+manual payload dispatch. Payload access is restricted to the protected
+`workstation2` runner with labels `self-hosted`, `Linux`, `X64`, and
+`nvidia-smi`.
+
+Run `31274946936` established the first such pre-payload failure: its parent
+cleanliness check saw the two expected nested provider checkouts as untracked.
+It stopped before admission download, model construction, and calibration-data
+access. Retry v2 excludes exactly those two checkout paths and initializes the
+compact failure-evidence root before any fallible setup step.
 
 At runtime the workflow:
 

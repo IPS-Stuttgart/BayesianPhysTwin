@@ -61,6 +61,24 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert r"confirmation payloads opened: \`false\`" in text
     assert r"target outcomes used: \`false\`" in text
     assert r"replacement allowed: \`false\`" in text
+    assert r"pre-payload predecessor: run \`31274946936\`" in text
+    assert "2026-08-09-pre-payload-retry-v2" in text
+
+
+def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
+    text = _workflow()
+    production = text[text.index("  production:") :]
+
+    exclude = "printf '%s\\n' '/_prob4d/' '/_motioncrafter/' >> .git/info/exclude"
+    assert production.count(exclude) == 1
+    assert production.index(exclude) < production.index(
+        'test -z "$(git status --porcelain=v1)"'
+    )
+    assert production.index(
+        'echo "COMPACT_ROOT=${evidence}/compact"'
+    ) < production.index("Check out exact reviewed BayesianPhysTwin main")
+    assert 'if [[ ! -d "${processed}/aligned" ]]' in production
+    assert "The frozen calibration-processed root is unavailable." in production
 
 
 def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
@@ -117,14 +135,15 @@ def test_visual_production_pins_external_sources_and_single_model_session() -> N
 
 def test_visual_production_artifact_excludes_large_predictions_and_targets() -> None:
     text = _workflow()
-    upload = text[text.index("Upload compact calibration-only production evidence") :]
+    compact = text[text.index("Collect compact seals and accounting evidence") :]
 
-    assert "*.npz" not in upload
-    assert "predictions.json" not in upload
+    assert "*.npz" not in compact
+    assert "predictions.json" not in compact
     assert "confirmation-processed" not in text
     assert "reserved_evaluation_frames_opened=false" in text
     assert "confirmation_payloads_opened=false" in text
     assert "target_outcomes_used=false" in text
+    assert 'echo "job_status=${{ job.status }}"' in compact
     assert "replacement_allowed=true" not in text
 
 
