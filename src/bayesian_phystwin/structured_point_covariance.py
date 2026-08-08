@@ -346,7 +346,7 @@ class StructuredPointCovarianceV1:
             second_index = self.point_ids.index(second)
         except ValueError as error:
             raise ValueError("cross-covariance point ID is not present") from error
-        covariance = np.zeros((3, 3), dtype=np.float64)
+        covariance: np.ndarray = np.zeros((3, 3), dtype=np.float64)
         if first_index == second_index:
             covariance += self.local_covariance_m2[first_index]
         for factor in self.shared_factors_m.values():
@@ -365,7 +365,7 @@ class StructuredPointCovarianceV1:
             raise ValueError(
                 "structured covariance exceeds the requested dense dimension limit"
             )
-        dense = np.zeros(
+        dense: np.ndarray = np.zeros(
             (self.state_dimension, self.state_dimension),
             dtype=np.float64,
         )
