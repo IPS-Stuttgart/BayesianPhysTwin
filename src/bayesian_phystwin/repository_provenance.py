@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+import math
 import os
 import platform
 import re
@@ -34,21 +34,99 @@ _VALID_REPOSITORY_ROLES = frozenset(
         "dependency",
     }
 )
-_GITHUB_OWNER = re.compile(
-    r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
-)
+_GITHUB_OWNER = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 _GITHUB_REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]{1,100}$")
 _GITHUB_SCP_REMOTE = re.compile(r"^git@github\.com:(?P<path>[^?#]+)$")
+_ENVIRONMENT_VARIABLE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_RUNTIME_BASE_FIELDS = frozenset(
+    {
+        "python_implementation",
+        "python_version",
+        "python_compiler",
+        "operating_system",
+        "machine",
+        "processor",
+        "byte_order",
+        "selected_environment",
+    }
+)
 
 
-def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
-    try:
-        return cast(
-            dict[str, Any],
-            json.loads(json.dumps(dict(value), sort_keys=True, allow_nan=False)),
-        )
-    except (TypeError, ValueError) as error:
-        raise ValueError(f"{name} must contain finite JSON data") from error
+def _strict_json_value(
+    value: object,
+    *,
+    name: str,
+    path: str,
+    active_containers: set[int],
+) -> Any:
+    """Return a detached JSON value without coercing keys or scalar subclasses."""
+
+    if value is None or type(value) in {bool, int, str}:
+        return value
+    if type(value) is float:
+        if not math.isfinite(value):
+            raise ValueError(f"{name} contains a non-finite number at {path}")
+        return value
+
+    if isinstance(value, Mapping):
+        identity = id(value)
+        if identity in active_containers:
+            raise ValueError(f"{name} contains a circular mapping at {path}")
+        active_containers.add(identity)
+        try:
+            result: dict[str, Any] = {}
+            for key, item in value.items():
+                if type(key) is not str:
+                    raise ValueError(
+                        f"{name} requires genuine string keys at {path}; "
+                        f"received {type(key).__name__}"
+                    )
+                result[key] = _strict_json_value(
+                    item,
+                    name=name,
+                    path=f"{path}.{key}",
+                    active_containers=active_containers,
+                )
+            return {key: result[key] for key in sorted(result)}
+        finally:
+            active_containers.remove(identity)
+
+    if type(value) is list or type(value) is tuple:
+        sequence = cast(Sequence[object], value)
+        identity = id(sequence)
+        if identity in active_containers:
+            raise ValueError(f"{name} contains a circular sequence at {path}")
+        active_containers.add(identity)
+        try:
+            return [
+                _strict_json_value(
+                    item,
+                    name=name,
+                    path=f"{path}[{index}]",
+                    active_containers=active_containers,
+                )
+                for index, item in enumerate(sequence)
+            ]
+        finally:
+            active_containers.remove(identity)
+
+    raise ValueError(
+        f"{name} contains a non-JSON value at {path}: {type(value).__name__}"
+    )
+
+
+def _json_mapping(value: object, *, name: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise TypeError(f"{name} must be a mapping")
+    result = _strict_json_value(
+        value,
+        name=name,
+        path="$",
+        active_containers=set(),
+    )
+    if not isinstance(result, dict):
+        raise AssertionError("mapping validation did not return a dictionary")
+    return result
 
 
 def validate_revision(value: str, *, name: str = "revision") -> str:
@@ -72,10 +150,7 @@ def _canonical_repository(value: object, *, name: str = "repository") -> str:
     owner, repository = parts
     if _GITHUB_OWNER.fullmatch(owner) is None:
         raise ValueError(f"{name} contains an invalid GitHub owner")
-    if (
-        _GITHUB_REPOSITORY.fullmatch(repository) is None
-        or repository in {".", ".."}
-    ):
+    if _GITHUB_REPOSITORY.fullmatch(repository) is None or repository in {".", ".."}:
         raise ValueError(f"{name} contains an invalid GitHub repository name")
     return value
 
@@ -113,7 +188,11 @@ def _remote_path_from_url(parsed: SplitResult) -> str:
 def normalize_github_repository(remote_url: str) -> str:
     """Normalize a GitHub HTTPS/SSH remote to canonical ``owner/repository``."""
 
-    if type(remote_url) is not str or not remote_url or remote_url != remote_url.strip():
+    if (
+        type(remote_url) is not str
+        or not remote_url
+        or remote_url != remote_url.strip()
+    ):
         raise ValueError("Git remote URL must be a canonical nonempty string")
 
     scp_match = _GITHUB_SCP_REMOTE.fullmatch(remote_url)
@@ -200,6 +279,17 @@ def discover_git_repository_state(
     )
 
 
+def _environment_variable_names(values: Sequence[str]) -> tuple[str, ...]:
+    if isinstance(values, (str, bytes)):
+        raise ValueError("environment variable names must be a sequence of identifiers")
+    names: list[str] = []
+    for value in values:
+        if type(value) is not str or _ENVIRONMENT_VARIABLE.fullmatch(value) is None:
+            raise ValueError("environment variable names must be canonical identifiers")
+        names.append(value)
+    return tuple(sorted(set(names)))
+
+
 def default_runtime_environment(
     *,
     overrides: Mapping[str, Any] | None = None,
@@ -208,9 +298,7 @@ def default_runtime_environment(
     """Return portable runtime metadata without collecting arbitrary secrets."""
 
     selected_environment: dict[str, str] = {}
-    for name in sorted(set(map(str, environment_variables))):
-        if not name:
-            raise ValueError("environment variable names must be nonempty")
+    for name in _environment_variable_names(environment_variables):
         if name in os.environ:
             selected_environment[name] = os.environ[name]
     result: dict[str, Any] = {
@@ -224,7 +312,14 @@ def default_runtime_environment(
         "selected_environment": selected_environment,
     }
     if overrides is not None:
-        result.update(_json_mapping(overrides, name="runtime overrides"))
+        additional = _json_mapping(overrides, name="runtime overrides")
+        collisions = sorted(_RUNTIME_BASE_FIELDS & additional.keys())
+        if collisions:
+            raise ValueError(
+                "runtime overrides cannot replace inferred fields: "
+                + ", ".join(collisions)
+            )
+        result.update(additional)
     return _json_mapping(result, name="runtime environment")
 
 
