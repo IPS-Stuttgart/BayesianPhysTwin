@@ -304,9 +304,12 @@ failure.
 ## Downstream observability handoff
 
 Visual production does not invent the physical-state Jacobian, contact mapping,
-contact covariance, or anchor-bias prior. Those quantities must be produced by a
-separately reviewed calibration-only materializer and bound to the prediction
-seals. Once each physical object has either:
+contact covariance, or anchor-bias prior. Those quantities are produced by the
+[calibration factor materializer](deform360_calibration_factor_materializer.md),
+which consumes only public calibration-prefix measurements, requires calibrated
+claim-bearing Prob4D input, reduces raw taxels to grouped kinematic contact
+patches, and binds the result to the prediction seals. Once each physical object
+has either:
 
 - a visual-reference marginal precision matrix, visual-plus-contact marginal
   precision matrix, contact-anchor artifact, and the shared physical-query

@@ -73,6 +73,12 @@ SHA-256 and the same source lineage as the evaluated cases.
 
 ## Claim-bearing command
 
+The reference precision, candidate precision, query Jacobian, and contact anchor
+for each evaluated row are produced by
+`materialize_deform360_calibration_factors.py`; see
+[Deform360 calibration factor materializer](deform360_calibration_factor_materializer.md).
+The batch builder does not derive or refit those inputs.
+
 ```bash
 python scripts/science/build_deform360_calibration_observability_batch.py \
   --batch-spec /calibration/observability-batch-spec.json \
