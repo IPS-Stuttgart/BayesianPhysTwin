@@ -135,8 +135,7 @@ def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
     assert "DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360" in text
     assert (
         "DEFORM360_OFFICIAL_RAW_ROOT: "
-        "/mnt/lexar4tb/datasets/deform360/data-7fea8e2"
-        in text
+        "/mnt/lexar4tb/datasets/deform360/data-7fea8e2" in text
     )
     assert (
         "DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: "
@@ -148,8 +147,7 @@ def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
     assert 'official_raw="$(realpath -e "${DEFORM360_OFFICIAL_RAW_ROOT}")"' in text
     assert (
         'adaptive_raw="$(realpath -e '
-        '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"'
-        in text
+        '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"' in text
     )
     assert "adaptive_confirmation_directory_stat_only" in text
     assert "adaptive_confirmation_payloads_opened=false" in text
@@ -158,19 +156,16 @@ def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
 def test_visual_production_keeps_outputs_and_cache_on_the_dataset_volume() -> None:
     text = _workflow()
 
-    assert (
-        "${storage}/results/bayesian-phystwin/calibration-visual-production" in text
-    )
+    assert "${storage}/results/bayesian-phystwin/calibration-visual-production" in text
     assert "${storage}/caches/huggingface/hub" in text
     assert (
-        "Production output and model cache must stay on the Deform360 volume."
-        in text
+        "Production output and model cache must stay on the Deform360 volume." in text
     )
     assert "Processed, raw, output, and cache roots must be disjoint." in text
     assert "runner-storage-preflight.json" in text
     assert "storage_total_bytes" in text
     assert "storage_free_bytes" in text
-    assert "find \"${storage}\" -mindepth 2 -maxdepth 6" in text
+    assert 'find "${storage}" -mindepth 2 -maxdepth 6' in text
     assert '-path "${official_raw}" -o -path "${adaptive_raw}"' in text
 
 
