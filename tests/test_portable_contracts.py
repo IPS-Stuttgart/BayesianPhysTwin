@@ -24,16 +24,7 @@ def test_atomic_json_uses_canonical_pretty_encoding(tmp_path: Path) -> None:
     )
 
     assert destination.read_text(encoding="utf-8") == (
-        "{\n"
-        '  "a": {\n'
-        '    "value": 4\n'
-        "  },\n"
-        '  "z": [\n'
-        "    3,\n"
-        "    2,\n"
-        "    1\n"
-        "  ]\n"
-        "}\n"
+        '{\n  "a": {\n    "value": 4\n  },\n  "z": [\n    3,\n    2,\n    1\n  ]\n}\n'
     )
     assert _temporary_publication_files(destination) == []
 
