@@ -228,3 +228,74 @@ def test_provider_v1_delegates_historical_scientific_names(
     )
     with pytest.raises(AttributeError, match="has no attribute"):
         replay_provider.__getattr__("not_a_compatibility_export")
+
+
+def _dynamic_discrepancy_correction() -> provider.DynamicDiscrepancyCorrection:
+    node_count = 12
+    basis_seed = np.column_stack(
+        (
+            np.ones(node_count),
+            np.linspace(-1.0, 1.0, node_count),
+            np.cos(np.linspace(0.0, np.pi, node_count)),
+            np.sin(np.linspace(0.0, 2.0 * np.pi, node_count)),
+        )
+    )
+    basis = np.linalg.qr(basis_seed, mode="reduced")[0]
+    coefficients = np.arange(12, dtype=float).reshape(4, 3) * 1e-4
+    return provider.DynamicDiscrepancyCorrection(
+        case_id="stable_coverage_case",
+        graph_basis=basis,
+        graph_eigenvalues=np.asarray((0.0, 0.1, 0.2, 0.3)),
+        position_coefficients_m=coefficients,
+        velocity_coefficients_mps=2.0 * coefficients,
+        generalized_force_coefficients_n=3.0 * coefficients,
+        structural_coefficients_m=4.0 * coefficients,
+        prefix_frame_start=19,
+        prefix_frame_stop=26,
+        frame_dt_s=0.05,
+        information_boundary={
+            "o_plus_prefix_frames": 6,
+            "future_frames_used_for_fit_or_selection": False,
+            "manual_tracks_used_for_fit_or_selection": False,
+            "graph_rank": 4,
+        },
+        regularization={"dimensionless_ridge": 1e-4},
+        source_checksums={"source": "a" * 64},
+    )
+
+
+def test_dynamic_discrepancy_stable_paths_and_roundtrip(tmp_path: Path) -> None:
+    correction = _dynamic_discrepancy_correction()
+
+    for values in (
+        correction.graph_basis,
+        correction.graph_eigenvalues,
+        correction.position_coefficients_m,
+        correction.velocity_coefficients_mps,
+        correction.generalized_force_coefficients_n,
+        correction.structural_coefficients_m,
+    ):
+        assert values.flags.writeable is False
+        with pytest.raises(ValueError):
+            values.setflags(write=True)
+
+    limited, diagnostics = provider.scale_coefficients_to_field_limit(
+        correction.graph_basis,
+        correction.position_coefficients_m,
+        maximum_node_norm=1e-5,
+    )
+    assert diagnostics["limit_applied"] is True
+    assert np.max(np.linalg.norm(correction.graph_basis @ limited, axis=1)) == (
+        pytest.approx(1e-5)
+    )
+
+    written = provider.write_dynamic_discrepancy_correction(
+        tmp_path / "correction",
+        correction,
+    )
+    loaded = provider.load_dynamic_discrepancy_correction(written["manifest_path"])
+    assert loaded.artifact_id == correction.artifact_id
+    np.testing.assert_allclose(
+        loaded.position_field_m(),
+        correction.position_field_m(),
+    )
