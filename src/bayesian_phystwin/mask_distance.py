@@ -66,7 +66,7 @@ def _interior_mask_distance_fallback(mask: np.ndarray) -> np.ndarray:
 
 
 def interior_mask_distance(mask: np.ndarray) -> np.ndarray:
-    """Return border-aware Euclidean distance for pixels inside ``mask``.
+    """Return the canonical border-aware Euclidean distance inside ``mask``.
 
     The image exterior is background. This makes a foreground pixel on an
     image edge exactly one pixel from background and gives identical
