@@ -1,4 +1,4 @@
-name: One-shot finalize PR 260
+name: Export validated PR 260 final tree
 
 on:
   pull_request:
@@ -9,15 +9,14 @@ on:
       - "scripts/_one_shot_fix_pr260_typing.py"
 
 permissions:
-  contents: write
-  pull-requests: read
+  contents: read
 
 concurrency:
-  group: one-shot-finalize-pr260
-  cancel-in-progress: false
+  group: export-final-pr260-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
 
 jobs:
-  finalize:
+  export:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       github.event_name == 'pull_request' &&
@@ -33,7 +32,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
           clean: true
 
       - name: Set up Python 3.12
@@ -100,25 +99,41 @@ jobs:
             scripts/science/build_deform360_calibration_visual_production_plan.py \
             tests/test_deform360_calibration_visual_production_plan.py
 
-      - name: Remove temporary workflows and verify scope
+      - name: Assemble exact final tree
+        shell: bash
         run: |
           set -euo pipefail
-          rm -- \
-            .github/workflows/_temporary_prepare_pr260_formatted_source.yml \
-            .github/workflows/_one_shot_finalize_pr260.yml \
-            scripts/_one_shot_fix_pr260_typing.py
-          git diff --check
-          unexpected="$(git diff --name-only 0f403cbed8b5fc9ac585b5f7c237106809207b3f -- | grep -E '^(.github/workflows/_|scripts/_one_shot)' || true)"
-          if [[ -n "${unexpected}" ]]; then
-            printf 'Temporary paths remain:\n%s\n' "${unexpected}" >&2
-            exit 1
-          fi
+          root="$RUNNER_TEMP/pr260-final-tree"
+          mkdir -p \
+            "$root/.github/workflows" \
+            "$root/docs" \
+            "$root/scripts/science" \
+            "$root/src/bayesian_phystwin" \
+            "$root/tests"
+          cp .github/workflows/tests.yml "$root/.github/workflows/tests.yml"
+          cp docs/deform360_calibration_visual_production_plan.md "$root/docs/"
+          cp scripts/science/build_deform360_calibration_visual_production_plan.py \
+            "$root/scripts/science/"
+          cp src/bayesian_phystwin/deform360_calibration_visual_production_plan.py \
+            "$root/src/bayesian_phystwin/"
+          cp tests/test_deform360_calibration_visual_production_plan.py \
+            "$root/tests/"
+          cat > "$root/DELETE_PATHS.txt" <<'EOF'
+          .github/workflows/_one_shot_finalize_pr260.yml
+          .github/workflows/_temporary_prepare_pr260_formatted_source.yml
+          scripts/_one_shot_fix_pr260_typing.py
+          EOF
+          (
+            cd "$root"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+          )
 
-      - name: Commit validated final source
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'Finalize target-blind calibration visual production plan'
-          git push origin HEAD:feat/deform360-calibration-visual-production-plan-v1
+      - name: Upload exact final tree
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: pr260-final-tree-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/pr260-final-tree/
+          if-no-files-found: error
+          retention-days: 7
