@@ -1,0 +1,367 @@
+name: Diagnose retained Deform360 visual-production failure once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-deform360-visual-production-failure-once.yml"
+      - "tests/test_deform360_production_failure_diagnostic_workflow.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-deform360-visual-production-failure-once.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnose-deform360-visual-production-failure-once
+  cancel-in-progress: false
+
+env:
+  FAILED_PRODUCTION_RUN_ID: "31277475724"
+  FAILED_PRODUCTION_ATTEMPT_ID: 31277475724-1
+  FAILED_IMPLEMENTATION_REVISION: 312d4a46545b547efcdab79d4f285473077887cf
+  ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
+  EXPECTED_JOB_COUNT: "324"
+  EXPECTED_STDERR_SHA256: 0ceb1aa1732f8efd2a75eac1c008c6afd5fc1e80349e01d3c86f09706ff52fba
+  EXPECTED_STDERR_BYTES: "812"
+  VISUAL_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Failure-diagnostic contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate the data-free workflow contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m ruff check tests/test_deform360_production_failure_diagnostic_workflow.py
+          python -m ruff format --check tests/test_deform360_production_failure_diagnostic_workflow.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_production_failure_diagnostic_workflow.py
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  diagnose:
+    name: Verify and summarize one retained common traceback
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Verify all retained failures and sanitize the common traceback
+        shell: bash
+        run: |
+          set -euo pipefail
+          diagnostic_root="${RUNNER_TEMP}/deform360-failure-diagnostic-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${diagnostic_root}"
+          echo "DIAGNOSTIC_ROOT=${diagnostic_root}" >> "${GITHUB_ENV}"
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import stat
+          from pathlib import Path, PurePosixPath
+
+          output_root = Path(os.environ["VISUAL_OUTPUT_ROOT"])
+          run_root = (
+              output_root
+              / os.environ["ADMISSION_ID"]
+              / os.environ["FAILED_IMPLEMENTATION_REVISION"]
+          )
+          failure_root = run_root / "failures"
+          expected_count = int(os.environ["EXPECTED_JOB_COUNT"])
+          expected_sha = os.environ["EXPECTED_STDERR_SHA256"]
+          expected_bytes = int(os.environ["EXPECTED_STDERR_BYTES"])
+
+          def reject_symlinks(path: Path) -> None:
+              absolute = path.absolute()
+              for candidate in (absolute, *absolute.parents):
+                  if candidate.is_symlink():
+                      raise SystemExit(f"path contains a symbolic link: {candidate}")
+
+          def stable_read(path: Path, *, expected_size: int | None = None) -> bytes:
+              reject_symlinks(path)
+              flags = (
+                  os.O_RDONLY
+                  | int(getattr(os, "O_CLOEXEC", 0))
+                  | int(getattr(os, "O_NOFOLLOW", 0))
+              )
+              descriptor = os.open(path, flags)
+              try:
+                  before = os.fstat(descriptor)
+                  if not stat.S_ISREG(before.st_mode):
+                      raise SystemExit(f"not a regular file: {path}")
+                  if expected_size is not None and before.st_size != expected_size:
+                      raise SystemExit(f"unexpected byte count for {path}")
+                  chunks: list[bytes] = []
+                  while True:
+                      block = os.read(descriptor, 1024 * 1024)
+                      if not block:
+                          break
+                      chunks.append(block)
+                  after = os.fstat(descriptor)
+              finally:
+                  os.close(descriptor)
+              identity_before = (
+                  before.st_dev,
+                  before.st_ino,
+                  before.st_size,
+                  before.st_mtime_ns,
+                  before.st_ctime_ns,
+              )
+              identity_after = (
+                  after.st_dev,
+                  after.st_ino,
+                  after.st_size,
+                  after.st_mtime_ns,
+                  after.st_ctime_ns,
+              )
+              if identity_before != identity_after:
+                  raise SystemExit(f"file changed while being read: {path}")
+              payload = b"".join(chunks)
+              if len(payload) != before.st_size:
+                  raise SystemExit(f"short read for {path}")
+              return payload
+
+          def safe_member(root: Path, relative: str) -> Path:
+              pure = PurePosixPath(relative)
+              if (
+                  not relative
+                  or pure.is_absolute()
+                  or pure.as_posix() != relative
+                  or any(part in {"", ".", ".."} for part in pure.parts)
+              ):
+                  raise SystemExit(f"noncanonical retained path: {relative!r}")
+              path = root
+              for part in pure.parts:
+                  path = path / part
+                  if path.is_symlink():
+                      raise SystemExit(f"retained path contains a symlink: {relative}")
+              return path
+
+          reject_symlinks(run_root)
+          if not failure_root.is_dir():
+              raise SystemExit("retained failure directory is missing")
+          receipt_paths = sorted(failure_root.glob("*.json"))
+          if len(receipt_paths) != expected_count:
+              raise SystemExit(
+                  f"expected {expected_count} failure receipts, found {len(receipt_paths)}"
+              )
+
+          descriptors: set[tuple[str, int]] = set()
+          detail_hashes: set[str] = set()
+          job_ids: set[str] = set()
+          representative: dict[str, object] | None = None
+          for receipt_path in receipt_paths:
+              receipt_bytes = stable_read(receipt_path)
+              receipt = json.loads(receipt_bytes.decode("utf-8"))
+              if receipt.get("schema") != (
+                  "bayesian-phystwin.deform360-calibration-visual-technical-failure"
+              ):
+                  raise SystemExit("retained failure schema changed")
+              if receipt.get("admission_id") != os.environ["ADMISSION_ID"]:
+                  raise SystemExit("retained failure admission changed")
+              if receipt.get("implementation_revision") != os.environ[
+                  "FAILED_IMPLEMENTATION_REVISION"
+              ]:
+                  raise SystemExit("retained failure implementation changed")
+              if receipt.get("stage") != "motioncrafter-production":
+                  raise SystemExit("retained failure stage changed")
+              if receipt.get("return_code") != 1:
+                  raise SystemExit("retained failure return code changed")
+              boundary = receipt.get("information_boundary")
+              if not isinstance(boundary, dict):
+                  raise SystemExit("retained failure boundary is missing")
+              expected_boundary = {
+                  "confirmation_payloads_opened": False,
+                  "reserved_evaluation_frames_opened": False,
+                  "target_outcomes_used": False,
+                  "replacement_allowed": False,
+              }
+              if any(boundary.get(key) is not value for key, value in expected_boundary.items()):
+                  raise SystemExit("retained failure information boundary changed")
+              stderr = receipt.get("stderr")
+              if not isinstance(stderr, dict):
+                  raise SystemExit("retained stderr descriptor is missing")
+              descriptor = (stderr.get("sha256"), stderr.get("byte_count"))
+              if not isinstance(descriptor[0], str) or not isinstance(descriptor[1], int):
+                  raise SystemExit("retained stderr descriptor is malformed")
+              descriptors.add((descriptor[0], descriptor[1]))
+              detail_hash = receipt.get("detail_sha256")
+              if not isinstance(detail_hash, str):
+                  raise SystemExit("retained detail digest is malformed")
+              detail_hashes.add(detail_hash)
+              job_id = receipt.get("job_id")
+              if not isinstance(job_id, str) or job_id in job_ids:
+                  raise SystemExit("retained failure job identities changed")
+              job_ids.add(job_id)
+              if representative is None:
+                  representative = receipt
+
+          expected_descriptor = {(expected_sha, expected_bytes)}
+          if descriptors != expected_descriptor:
+              raise SystemExit(
+                  f"retained failures do not share the expected traceback: {descriptors}"
+              )
+          if len(detail_hashes) != 1:
+              raise SystemExit("retained failures do not share one detail identity")
+          if representative is None:
+              raise SystemExit("no representative failure exists")
+
+          stderr_record = representative["stderr"]
+          assert isinstance(stderr_record, dict)
+          stderr_path = safe_member(run_root, str(stderr_record["path"]))
+          stderr_bytes = stable_read(stderr_path, expected_size=expected_bytes)
+          observed_sha = hashlib.sha256(stderr_bytes).hexdigest()
+          if observed_sha != expected_sha:
+              raise SystemExit("representative traceback digest changed")
+          traceback_text = stderr_bytes.decode("utf-8", errors="strict")
+
+          replacements = {
+              os.environ.get("GITHUB_WORKSPACE", ""): "<GITHUB_WORKSPACE>",
+              os.environ.get("RUNNER_TEMP", ""): "<RUNNER_TEMP>",
+              os.environ.get("HOME", ""): "<HOME>",
+              "/mnt/lexar4tb/datasets/deform360": "<DEFORM360_STORAGE>",
+          }
+          sanitized = traceback_text
+          for prefix, token in sorted(
+              ((key, value) for key, value in replacements.items() if key),
+              key=lambda item: len(item[0]),
+              reverse=True,
+          ):
+              sanitized = sanitized.replace(prefix, token)
+
+          file_pattern = re.compile(r'^(\s*File ")([^"]+)(", line \d+, in .+)$')
+          sanitized_lines: list[str] = []
+          frames: list[dict[str, object]] = []
+          original_lines = sanitized.splitlines()
+          for index, line in enumerate(original_lines):
+              match = file_pattern.match(line)
+              if match:
+                  original_path = match.group(2)
+                  if original_path.startswith("<"):
+                      safe_path = original_path
+                  else:
+                      parts = PurePosixPath(original_path).parts
+                      safe_path = "<ABSOLUTE_PATH>/" + "/".join(parts[-4:])
+                  line = match.group(1) + safe_path + match.group(3)
+                  frame_match = re.search(
+                      r'File "([^"]+)", line (\d+), in (.+)$',
+                      line,
+                  )
+                  if frame_match:
+                      source_line = (
+                          original_lines[index + 1].strip()
+                          if index + 1 < len(original_lines)
+                          else ""
+                      )
+                      frames.append(
+                          {
+                              "path": frame_match.group(1),
+                              "line": int(frame_match.group(2)),
+                              "function": frame_match.group(3),
+                              "source_line": source_line,
+                          }
+                      )
+              sanitized_lines.append(line)
+          sanitized = "\n".join(sanitized_lines).rstrip() + "\n"
+          nonempty = [line for line in sanitized_lines if line.strip()]
+          if not nonempty or not nonempty[0].startswith("Traceback"):
+              raise SystemExit("retained stderr is not a Python traceback")
+          exception_line = nonempty[-1]
+
+          diagnostic = {
+              "schema": (
+                  "bayesian-phystwin.deform360-visual-production-"
+                  "failure-diagnostic"
+              ),
+              "schema_version": 1,
+              "failed_workflow_run_id": int(
+                  os.environ["FAILED_PRODUCTION_RUN_ID"]
+              ),
+              "failed_attempt_id": os.environ["FAILED_PRODUCTION_ATTEMPT_ID"],
+              "implementation_revision": os.environ[
+                  "FAILED_IMPLEMENTATION_REVISION"
+              ],
+              "admission_id": os.environ["ADMISSION_ID"],
+              "failure_receipt_count": len(receipt_paths),
+              "unique_job_count": len(job_ids),
+              "common_stage": "motioncrafter-production",
+              "common_return_code": 1,
+              "common_stderr_sha256": observed_sha,
+              "common_stderr_bytes": len(stderr_bytes),
+              "common_detail_sha256": next(iter(detail_hashes)),
+              "exception_line": exception_line,
+              "frames": frames,
+              "sanitized_traceback_sha256": hashlib.sha256(
+                  sanitized.encode("utf-8")
+              ).hexdigest(),
+              "information_boundary": {
+                  "retained_technical_logs_opened": True,
+                  "retained_calibration_camera_payloads_opened": False,
+                  "calibration_tactile_payloads_opened": False,
+                  "calibration_robot_state_opened": False,
+                  "reserved_evaluation_frames_opened": False,
+                  "adaptive_confirmation_payloads_opened": False,
+                  "confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "replacement_allowed": False,
+              },
+          }
+          destination = Path(os.environ["DIAGNOSTIC_ROOT"])
+          (destination / "diagnostic.json").write_text(
+              json.dumps(diagnostic, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          (destination / "sanitized-traceback.txt").write_text(
+              sanitized,
+              encoding="utf-8",
+          )
+          print("=== Sanitized common traceback ===")
+          print(sanitized, end="")
+          print("=== End sanitized common traceback ===")
+          print(json.dumps(diagnostic, indent=2, sort_keys=True))
+          PY
+      - name: Seal compact diagnostic evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd "${DIAGNOSTIC_ROOT}"
+            sha256sum diagnostic.json sanitized-traceback.txt > SHA256SUMS
+          )
+      - name: Upload compact failure diagnostic
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-visual-production-failure-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.DIAGNOSTIC_ROOT }}
+          if-no-files-found: error
+          retention-days: 90
+
+# Reviewed one-shot diagnostic request: 2026-08-09-common-traceback-v1
