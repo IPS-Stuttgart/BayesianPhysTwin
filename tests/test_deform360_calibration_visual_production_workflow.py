@@ -31,7 +31,8 @@ def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
     )
     assert "github.ref == 'refs/heads/main'" in text
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in text
+    assert "runs-on: self-hosted" in text
+    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" not in text
     assert "timeout-minutes: 1320" in text
     assert "cancel-in-progress: false" in text
     assert "--resume" in text
@@ -47,7 +48,8 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert "branches: [main]" in text
     assert (
         text.count(
-            '      - ".github/workflows/launch-deform360-calibration-visual-production-once.yml"'
+            '      - ".github/workflows/'
+            'launch-deform360-calibration-visual-production-once.yml"'
         )
         == 1
     )
@@ -58,12 +60,14 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert "resume: true" in text
     assert "secrets: inherit" in text
     assert "cancel-in-progress: false" in text
+    assert r"official raw payload opened: \`false\`" in text
+    assert r"adaptive-confirmation payloads opened: \`false\`" in text
     assert r"confirmation payloads opened: \`false\`" in text
     assert r"target outcomes used: \`false\`" in text
     assert r"replacement allowed: \`false\`" in text
     assert r"pre-payload predecessor: run \`31274946936\`" in text
     assert r"environment-bootstrap predecessor: run \`31275886113\`" in text
-    assert "2026-08-09-environment-bootstrap-retry-v3" in text
+    assert "2026-08-09-sole-self-hosted-layout-v4" in text
 
 
 def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
@@ -120,6 +124,56 @@ def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
     assert "needs.retained-source" not in text
 
 
+def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
+    text = _workflow()
+
+    assert "name: Admitted all-camera production / sole Deform360 runner" in text
+    assert "runs-on: self-hosted" in text
+    assert "runner_label_contract=self-hosted-only" in text
+    assert "command -v nvidia-smi" in text
+    assert "nvidia-smi -L" in text
+    assert "DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360" in text
+    assert (
+        "DEFORM360_OFFICIAL_RAW_ROOT: "
+        "/mnt/lexar4tb/datasets/deform360/data-7fea8e2"
+        in text
+    )
+    assert (
+        "DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: "
+        "/mnt/lexar4tb/datasets/deform360/"
+        "adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370"
+        in text
+    )
+    assert 'storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"' in text
+    assert 'official_raw="$(realpath -e "${DEFORM360_OFFICIAL_RAW_ROOT}")"' in text
+    assert (
+        'adaptive_raw="$(realpath -e '
+        '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"'
+        in text
+    )
+    assert "adaptive_confirmation_directory_stat_only" in text
+    assert "adaptive_confirmation_payloads_opened=false" in text
+
+
+def test_visual_production_keeps_outputs_and_cache_on_the_dataset_volume() -> None:
+    text = _workflow()
+
+    assert (
+        "${storage}/results/bayesian-phystwin/calibration-visual-production" in text
+    )
+    assert "${storage}/caches/huggingface/hub" in text
+    assert (
+        "Production output and model cache must stay on the Deform360 volume."
+        in text
+    )
+    assert "Processed, raw, output, and cache roots must be disjoint." in text
+    assert "runner-storage-preflight.json" in text
+    assert "storage_total_bytes" in text
+    assert "storage_free_bytes" in text
+    assert "find \"${storage}\" -mindepth 2 -maxdepth 6" in text
+    assert '-path "${official_raw}" -o -path "${adaptive_raw}"' in text
+
+
 def test_visual_production_has_no_caller_selected_host_paths() -> None:
     text = _workflow()
     call_contract = text[text.index("  workflow_call:") : text.index("\npermissions:")]
@@ -152,12 +206,20 @@ def test_visual_production_pins_external_sources_and_single_model_session() -> N
 
 def test_visual_production_artifact_excludes_large_predictions_and_targets() -> None:
     text = _workflow()
+    execution = text[
+        text.index("Execute or resume every admitted causal-prefix job") : text.index(
+            "Collect compact seals and accounting evidence"
+        )
+    ]
     compact = text[text.index("Collect compact seals and accounting evidence") :]
 
     assert "*.npz" not in compact
     assert "predictions.json" not in compact
     assert "confirmation-processed" not in text
+    assert "ADAPTIVE_CONFIRMATION" not in execution
+    assert "official_raw_payload_opened=false" in text
     assert "reserved_evaluation_frames_opened=false" in text
+    assert "adaptive_confirmation_payloads_opened=false" in text
     assert "confirmation_payloads_opened=false" in text
     assert "target_outcomes_used=false" in text
     assert 'echo "job_status=${{ job.status }}"' in compact
