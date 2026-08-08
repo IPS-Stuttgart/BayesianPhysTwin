@@ -465,7 +465,80 @@ jobs:
             --python "${env_root}/bin/python" \
             --no-deps \
             .
-          "${uv_bin}" pip check --python "${env_root}/bin/python"
+          UV_VERSION="$("${uv_bin}" --version)" \
+          COMPACT_ROOT="${COMPACT_ROOT}" \
+          "${env_root}/bin/python" - <<'PY'
+          import importlib.metadata
+          import json
+          import os
+          import platform
+          from pathlib import Path
+
+          import bayesian_phystwin
+          import decord
+          import numpy
+          import prob4d
+          import torch
+
+          if not torch.cuda.is_available():
+              raise SystemExit("PyTorch cannot access CUDA on the admitted runner")
+          device_count = torch.cuda.device_count()
+          if device_count < 1:
+              raise SystemExit("No CUDA device is visible to the producer runtime")
+          allocation = torch.zeros(1, device="cuda")
+          if allocation.device.type != "cuda":
+              raise SystemExit("The CUDA allocation probe did not remain on CUDA")
+          decord_context = decord.cpu(0)
+          packages = (
+              "bayesian-phystwin",
+              "prob4d",
+              "torch",
+              "decord",
+              "numpy",
+          )
+          payload = {
+              "schema": "bayesian-phystwin.deform360-producer-runtime-preflight",
+              "schema_version": 1,
+              "python_version": platform.python_version(),
+              "platform": platform.platform(),
+              "uv_version": os.environ["UV_VERSION"],
+              "package_versions": {
+                  name: importlib.metadata.version(name) for name in packages
+              },
+              "imported_modules": {
+                  "bayesian_phystwin": str(Path(bayesian_phystwin.__file__).resolve()),
+                  "prob4d": str(Path(prob4d.__file__).resolve()),
+                  "decord": str(Path(decord.__file__).resolve()),
+                  "numpy": str(Path(numpy.__file__).resolve()),
+                  "torch": str(Path(torch.__file__).resolve()),
+              },
+              "cuda_available": True,
+              "cuda_device_count": device_count,
+              "cuda_devices": [
+                  {
+                      "index": index,
+                      "name": torch.cuda.get_device_name(index),
+                      "capability": list(torch.cuda.get_device_capability(index)),
+                  }
+                  for index in range(device_count)
+              ],
+              "torch_cuda_version": torch.version.cuda,
+              "cuda_allocation_probe": True,
+              "decord_cpu_context": str(decord_context),
+              "decord_runtime_imported": True,
+              "official_raw_payload_opened": False,
+              "adaptive_confirmation_payloads_opened": False,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+          }
+          destination = (
+              Path(os.environ["COMPACT_ROOT"]) / "producer-runtime-preflight.json"
+          )
+          destination.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
           echo "PRODUCTION_PYTHON=${env_root}/bin/python" >> "${GITHUB_ENV}"
       - name: Bootstrap exact immutable model snapshots
         env:
