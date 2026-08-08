@@ -1,0 +1,198 @@
+name: Repair Deform360 retained-source retry 1
+
+on:
+  push:
+    branches:
+      - fix/deform360-retained-source-install-retry1
+    paths:
+      - ".github/workflows/_one_shot_repair_deform360_retained_source_retry1.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/deform360-retained-source-install-retry1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Apply reviewed runtime repair and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow = Path(
+              ".github/workflows/deform360-calibration-prepared-inventory.yml"
+          )
+          source = workflow.read_text(encoding="utf-8")
+
+          old_download = '''      - name: Download authoritative compact source evidence
+                  uses: actions/download-artifact@v7
+                  with:
+                    name: ${{ env.SOURCE_ARTIFACT_NAME }}
+                    path: ${{ runner.temp }}/deform360-retained-source-evidence
+                    github-token: ${{ github.token }}
+                    repository: ${{ github.repository }}
+                    run-id: ${{ env.SOURCE_RUN_ID }}
+          '''
+          new_download = '''      - name: Verify authoritative compact source artifact identity
+                  id: source_artifact
+                  uses: actions/github-script@v8
+                  env:
+                    EXPECTED_RUN_ID: ${{ env.SOURCE_RUN_ID }}
+                    EXPECTED_ARTIFACT_NAME: ${{ env.SOURCE_ARTIFACT_NAME }}
+                    EXPECTED_ARTIFACT_DIGEST: >-
+                      sha256:${{ env.SOURCE_ARTIFACT_DIGEST }}
+                  with:
+                    script: |
+                      const runId = Number(process.env.EXPECTED_RUN_ID)
+                      const expectedName = process.env.EXPECTED_ARTIFACT_NAME
+                      const expectedDigest = process.env.EXPECTED_ARTIFACT_DIGEST
+                      if (!Number.isSafeInteger(runId) || runId <= 0) {
+                        throw new Error('reviewed source run ID is invalid')
+                      }
+                      if (!expectedName || !expectedDigest) {
+                        throw new Error('reviewed source artifact lock is incomplete')
+                      }
+                      const response = await github.rest.actions.listWorkflowRunArtifacts({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        run_id: runId,
+                        name: expectedName,
+                        per_page: 100,
+                      })
+                      const matches = response.data.artifacts.filter(
+                        artifact => artifact.name === expectedName && !artifact.expired,
+                      )
+                      if (matches.length !== 1) {
+                        throw new Error(
+                          `expected exactly one live artifact ${expectedName}; found ${matches.length}`,
+                        )
+                      }
+                      const artifact = matches[0]
+                      if (artifact.digest !== expectedDigest) {
+                        throw new Error(
+                          `source artifact digest changed: expected ${expectedDigest}, got ${artifact.digest}`,
+                        )
+                      }
+                      core.info(
+                        `Verified source artifact ${artifact.id} at ${artifact.digest}`,
+                      )
+                      core.setOutput('artifact-id', String(artifact.id))
+
+                - name: Download authoritative compact source evidence
+                  uses: actions/download-artifact@v8
+                  with:
+                    artifact-ids: ${{ steps.source_artifact.outputs.artifact-id }}
+                    path: ${{ runner.temp }}/deform360-retained-source-evidence
+                    github-token: ${{ github.token }}
+                    repository: ${{ github.repository }}
+                    run-id: ${{ env.SOURCE_RUN_ID }}
+                    digest-mismatch: error
+          '''
+
+          old_install = '''      - name: Install exact admission source in an isolated environment
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    site="${RUNNER_TEMP}/deform360-retained-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+                    python3 -m venv "${site}"
+                    "${site}/bin/python" -m pip install \\
+                      "pip==25.2" \\
+                      "setuptools==80.9.0" \\
+                      "wheel==0.45.1" \\
+                      "numpy==2.2.6"
+                    "${site}/bin/python" -m pip install --no-deps .
+                    "${site}/bin/python" -m pip check
+                    echo "ADMISSION_PYTHON=${site}/bin/python" >> "${GITHUB_ENV}"
+                    echo "ADMISSION_SITE=${site}" >> "${GITHUB_ENV}"
+          '''
+          new_install = '''      - name: Install exact admission source in an isolated target site
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    root="${RUNNER_TEMP}/deform360-retained-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+                    site="${root}/site"
+                    rm -rf -- "${root}"
+                    mkdir -p -- "${site}"
+
+                    base_python=""
+                    for candidate in \\
+                      /usr/bin/python3.12 \\
+                      /usr/local/bin/python3.12 \\
+                      /usr/bin/python3 \\
+                      /usr/local/bin/python3
+                    do
+                      if [[ -x "${candidate}" ]]; then
+                        base_python="${candidate}"
+                        break
+                      fi
+                    done
+                    if [[ -z "${base_python}" ]]; then
+                      base_python="$(command -v python3 || true)"
+                    fi
+                    if [[ -z "${base_python}" ]]; then
+                      echo "No system Python is available on the self-hosted runner." >&2
+                      exit 1
+                    fi
+
+                    "${base_python}" --version
+                    "${base_python}" -m pip --version
+                    "${base_python}" -m pip install \\
+                      --break-system-packages \\
+                      --no-cache-dir \\
+                      --target "${site}" \\
+                      "numpy==2.2.6"
+                    PYTHONNOUSERSITE=1 \\
+                    PYTHONPATH="${GITHUB_WORKSPACE}/src:${site}" \\
+                      "${base_python}" - <<'PYTHON'
+                    import numpy
+                    import bayesian_phystwin
+
+                    print(f"numpy={numpy.__version__}")
+                    print(f"bayesian_phystwin={bayesian_phystwin.__file__}")
+                    PYTHON
+                    {
+                      echo "ADMISSION_PYTHON=${base_python}"
+                      echo "ADMISSION_SITE=${root}"
+                      echo "PYTHONNOUSERSITE=1"
+                      echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${site}${PYTHONPATH:+:${PYTHONPATH}}"
+                    } >> "${GITHUB_ENV}"
+          '''
+
+          if source.count(old_download) != 1:
+              raise SystemExit("authoritative artifact download block changed")
+          if source.count(old_install) != 1:
+              raise SystemExit("isolated admission install block changed")
+          source = source.replace(old_download, new_download)
+          source = source.replace(old_install, new_install)
+          workflow.write_text(source, encoding="utf-8")
+
+          Path(
+              ".github/workflows/_one_shot_repair_deform360_retained_source_retry1.yml"
+          ).unlink()
+          PY
+
+          git diff --check
+          git diff -- .github/workflows/deform360-calibration-prepared-inventory.yml
+          git status --short
+
+      - name: Publish repaired branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair retained-source isolated install and digest verification"
+          git push origin HEAD:fix/deform360-retained-source-install-retry1
