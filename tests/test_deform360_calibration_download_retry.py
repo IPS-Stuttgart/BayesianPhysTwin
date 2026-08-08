@@ -84,8 +84,7 @@ def test_xet_429_text_retries_then_resumes_from_completed_file(
         calls += 1
         if calls == 1:
             raise ConnectionError(
-                "CAS service error: HTTP status client error "
-                "(429 Too Many Requests)"
+                "CAS service error: HTTP status client error (429 Too Many Requests)"
             )
         return str(_write(root))
 
