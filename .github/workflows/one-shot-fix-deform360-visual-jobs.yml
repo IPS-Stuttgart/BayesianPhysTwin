@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "46b596d579f8bc6958b770b13701c5e2c57cad1c"
+          test "$(git rev-parse HEAD^)" = "766bc41f613bf7523a0d8d6192715694b7391330"
           test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/one-shot-fix-deform360-visual-jobs.yml"
           test -z "$(git status --porcelain=v1)"
 
