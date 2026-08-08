@@ -72,6 +72,11 @@ def test_dynamic_discrepancy_roundtrip_and_fields(tmp_path) -> None:
     )
 
 
+def test_artifact_rejects_empty_or_negative_prefix_interval() -> None:
+    with pytest.raises(ValueError, match="prefix interval"):
+        replace(_correction(), prefix_frame_start=-1)
+
+
 def test_artifact_enforces_six_frame_o_plus_boundary() -> None:
     with pytest.raises(ValueError, match="information boundary"):
         replace(
@@ -83,6 +88,11 @@ def test_artifact_enforces_six_frame_o_plus_boundary() -> None:
                 "graph_rank": 4,
             },
         )
+
+
+def test_artifact_requires_exact_frozen_prefix_length() -> None:
+    with pytest.raises(ValueError, match="exactly six O-plus frames"):
+        replace(_correction(), prefix_frame_stop=27)
 
 
 def test_prefix_position_and_velocity_recover_linear_graph_field() -> None:
