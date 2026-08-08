@@ -27,9 +27,13 @@ merge on `main`. A retry must rerun that original launcher workflow, preserving
 its implementation revision and frozen admission unless a source-independent
 defect is demonstrated before payload access. Such a repair requires a reviewed,
 versioned launcher revision that names its failed predecessor. There is no
-manual payload dispatch. Payload access is restricted to the protected
-`workstation2` runner with labels `self-hosted`, `Linux`, `X64`, and
-`nvidia-smi`.
+manual payload dispatch.
+
+The sole runner that carries Deform360 is selected only by the `self-hosted`
+label. The workflow does not require inferred `Linux`, `X64`, `nvidia-smi`, or
+machine-name labels. Instead, it checks `nvidia-smi` explicitly after the job has
+been scheduled and fails before source access if the required GPU capability is
+missing.
 
 Run `31274946936` established the first such pre-payload failure: its parent
 cleanliness check saw the two expected nested provider checkouts as untracked.
@@ -46,19 +50,78 @@ installer selected by the frozen Prob4D bootstrap to install and check
 BayesianPhysTwin inside that environment. The roster, provider revisions,
 source files, and scientific configuration are unchanged.
 
+Retry v4 binds scheduling and storage to the actual sole-runner deployment. It
+changes no scientific estimator, cohort, frame range, seed, provider revision,
+or threshold.
+
+## Sole-runner storage contract
+
+The reviewed workflow fixes the storage namespace to
+
+```text
+/mnt/lexar4tb/datasets/deform360
+```
+
+and requires the following two exact, canonical, non-symlinked directories:
+
+```text
+/mnt/lexar4tb/datasets/deform360/data-7fea8e2
+/mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+```
+
+The first directory identifies the official/raw dataset revision. The second
+identifies the separately downloaded adaptive-confirmation payload. This
+calibration-only stage performs directory metadata checks on those roots but
+does not read either raw payload. In particular, it does not descend into the
+adaptive-confirmation root, hash its members, enumerate its targets, or pass its
+path to the producer command.
+
+The retained calibration-processed root is resolved in this order:
+
+1. repository variable
+   `DEFORM360_OFFICIAL_HUB_CALIBRATION_PROCESSED_ROOT`, when set;
+2. reviewed conventional locations on the Deform360 volume and the historical
+   calibration-processed location; or
+3. one unambiguous `aligned` parent discovered below the storage root while
+   pruning both raw roots.
+
+Ambiguous discovery fails closed and requires the repository variable. The
+processed root must be separate from both raw roots.
+
+Large outputs and model caches remain on the Deform360 volume. Their defaults
+are
+
+```text
+/mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production
+/mnt/lexar4tb/datasets/deform360/caches/huggingface/hub
+```
+
+The repository variables `DEFORM360_CALIBRATION_VISUAL_OUTPUT_ROOT` and
+`MOTIONCRAFTER_HF_CACHE_DIR` may select different absolute locations only within
+the same Deform360 storage root. Raw, processed, output, and cache roots must be
+disjoint.
+
+Before model setup, the workflow emits a compact
+`runner-storage-preflight.json` record containing the exact resolved roots,
+storage capacity, device identities, the required runner-label set, and explicit
+closed-boundary flags. It uses `stat`-level metadata for the raw roots; it does
+not calculate recursive raw-directory sizes.
+
 At runtime the workflow:
 
-1. downloads the frozen successful retained-source artifact from run
+1. verifies the sole-runner storage contract and GPU availability without
+   opening raw payloads;
+2. downloads the frozen successful retained-source artifact from run
    `31272512658` by exact artifact ID, name, and digest;
-2. verifies its internal `SHA256SUMS`, inventory ID, plan ID, admission ID,
+3. verifies its internal `SHA256SUMS`, inventory ID, plan ID, admission ID,
    ten-object roster, and all 324 admitted camera jobs;
-3. verifies clean, exact BayesianPhysTwin, Prob4D, and MotionCrafter revisions;
-4. bootstraps the exact model snapshots frozen by the provider lock;
-5. attempts one pinned MotionCrafter model-set construction, then executes every
+4. verifies clean, exact BayesianPhysTwin, Prob4D, and MotionCrafter revisions;
+5. bootstraps the exact model snapshots frozen by the provider lock;
+6. attempts one pinned MotionCrafter model-set construction, then executes every
    unfinished camera through a separate crash-safe Prob4D runner and progress
    journal without any reload; and
-6. uploads only compact admission metadata, per-job seals or retained failure
-   receipts, complete accounting, and environment evidence.
+7. uploads only compact admission metadata, storage evidence, per-job seals or
+   retained failure receipts, complete accounting, and environment evidence.
 
 Large prediction arrays remain under the protected persistent output root. They
 are not copied into GitHub artifacts.
@@ -70,9 +133,9 @@ For every job, the producer first re-hashes both retained inputs:
 - `undistorted.mp4`;
 - `aligned_timestamps.txt`.
 
-All source files are verified before the first model invocation. Any missing,
-changed, non-regular, or symlinked source aborts the complete run before partial
-scientific output is produced.
+All admitted retained source files are verified before the first model
+invocation. Any missing, changed, non-regular, or symlinked source aborts the
+complete run before partial scientific output is produced.
 
 Every generated Prob4D run configuration binds:
 
@@ -137,11 +200,11 @@ python scripts/science/execute_deform360_calibration_visual_production.py run \
   --admission visual-execution-admission.json \
   --visual-provider-lock visual-provider-lock.json \
   --model-set-binding motioncrafter-model-set.json \
-  --retained-root /protected/calibration-processed/aligned \
-  --output-root /protected/calibration-visual-production \
+  --retained-root /resolved/calibration-processed/aligned \
+  --output-root /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production \
   --prob4d-root /exact/Prob4D \
   --motioncrafter-root /exact/MotionCrafter \
-  --cache-dir /exact/huggingface/cache \
+  --cache-dir /mnt/lexar4tb/datasets/deform360/caches/huggingface/hub \
   --implementation-revision "$(git rev-parse HEAD)" \
   --attempt-id RUN_ID-RUN_ATTEMPT \
   --resume
@@ -168,6 +231,6 @@ seals. Once each physical object has either:
   Jacobian; or
 - a retained technical-failure row,
 
-the existing atomic ten-object observability batch can be executed. Confirmation
-payload access remains forbidden until that batch, the complete Stage-1 evidence
-ledger, and the confirmation-opening authorization have all passed.
+the existing atomic ten-object observability batch can be executed. Adaptive-
+confirmation and confirmation payload access remain forbidden until the complete
+Stage-1 evidence ledger and the corresponding opening authorization have passed.
