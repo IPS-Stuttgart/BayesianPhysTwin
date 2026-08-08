@@ -92,6 +92,19 @@ revisions, Prob4D provider manifest and attestation, metric-frame policy, and
 portable model-set identity before any of the ten selected calibration-object
 payloads may be opened.
 
+The
+[atomic calibration-observability batch](deform360_calibration_observability_batch.md)
+turns the ten calibration-object contact-versus-visual case builds and their
+object-balanced report into one fail-closed publication. It retains technical
+failures without replacement and publishes a valid negative result when the
+frozen support gate is not met.
+
+The
+[confirmation-opening authorization](deform360_confirmation_opening_authorization_v1.md)
+then binds a successful calibration-source terminal record, the supported
+observability report, the complete Stage-1 evidence-use ledger, and the exact
+frozen cohort before any confirmation payload may be opened.
+
 ## PhysTwin experiment families
 
 | Area | Primary document | Status and purpose |
