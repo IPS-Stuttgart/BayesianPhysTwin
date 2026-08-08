@@ -18,23 +18,27 @@ objects, or inspect target outcomes.
 
 ## Protected workflow
 
-The workflow is
+The reusable workflow is
 `.github/workflows/deform360-calibration-visual-production.yml`. Pull requests run
-hosted, data-free contract validation only. Payload access is restricted to a
-manual dispatch of the reviewed `main` revision on the protected
-`workstation2` runner with labels `self-hosted`, `Linux`, `X64`, and
-`nvidia-smi`.
+hosted, data-free contract validation only. The initial payload execution is
+requested exactly once by the reviewed
+`.github/workflows/launch-deform360-calibration-visual-production-once.yml`
+merge on `main`. A retry must rerun that original launcher workflow, preserving
+its implementation revision and frozen admission; there is no manual payload
+dispatch. Payload access is restricted to the protected `workstation2` runner
+with labels `self-hosted`, `Linux`, `X64`, and `nvidia-smi`.
 
 At runtime the workflow:
 
-1. invokes the reviewed reusable retained-source admission workflow already
-   merged on `main`;
-2. consumes its uploaded inventory, plan, admission, content identities, and
-   artifact digest without rebuilding a parallel custody path;
+1. downloads the frozen successful retained-source artifact from run
+   `31272512658` by exact artifact ID, name, and digest;
+2. verifies its internal `SHA256SUMS`, inventory ID, plan ID, admission ID,
+   ten-object roster, and all 324 admitted camera jobs;
 3. verifies clean, exact BayesianPhysTwin, Prob4D, and MotionCrafter revisions;
 4. bootstraps the exact model snapshots frozen by the provider lock;
-5. executes each admitted camera job through the pinned
-   `prob4d-motioncrafter` entry point; and
+5. attempts one pinned MotionCrafter model-set construction, then executes every
+   unfinished camera through a separate crash-safe Prob4D runner and progress
+   journal without any reload; and
 6. uploads only compact admission metadata, per-job seals or retained failure
    receipts, complete accounting, and environment evidence.
 
@@ -52,7 +56,7 @@ All source files are verified before the first model invocation. Any missing,
 changed, non-regular, or symlinked source aborts the complete run before partial
 scientific output is produced.
 
-The generated Prob4D command binds:
+Every generated Prob4D run configuration binds:
 
 - Prob4D revision `25d90ef7f78ba4307f4555cb636d666004e1bf66`;
 - MotionCrafter revision `9cb4e9679f5f34e249945544052464ef46324bc2`;
@@ -91,8 +95,9 @@ they are not replacement authorizations. A failure receipt records the stage,
 portable return code, hashes and byte counts of local logs, and complete lineage.
 It contains no alternative object or camera.
 
-The persistent run directory is keyed by the execution-admission ID. Re-running
-with `resume=true`:
+The persistent run directory is keyed by the execution-admission ID and exact
+BayesianPhysTwin implementation revision. Re-running the same revision with
+`resume=true`:
 
 - reuses a completed seal only when every execution identity still matches;
 - preserves a prior technical-failure receipt instead of silently retrying or
@@ -101,7 +106,9 @@ with `resume=true`:
   matches the exact run-spec hash.
 
 A process-level file lock prevents concurrent writers while allowing automatic
-release after cancellation or runner failure.
+release after cancellation or runner failure. The shared adapter changes only
+the per-job video, output directory, seed, and causal frame bounds. A change to
+any fixed model or inference setting fails closed before adapter reuse.
 
 ## Command
 
@@ -114,7 +121,6 @@ python scripts/science/execute_deform360_calibration_visual_production.py run \
   --model-set-binding motioncrafter-model-set.json \
   --retained-root /protected/calibration-processed/aligned \
   --output-root /protected/calibration-visual-production \
-  --prob4d-motioncrafter /exact/env/bin/prob4d-motioncrafter \
   --prob4d-root /exact/Prob4D \
   --motioncrafter-root /exact/MotionCrafter \
   --cache-dir /exact/huggingface/cache \

@@ -5,13 +5,15 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import gc
 import hashlib
 import json
 import os
 import stat
 import subprocess
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+import traceback
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
@@ -25,7 +27,6 @@ from bayesian_phystwin.deform360_calibration_visual_execution_admission import (
     load_deform360_calibration_visual_execution_admission,
 )
 from bayesian_phystwin.deform360_calibration_visual_production import (
-    build_deform360_calibration_visual_command,
     build_deform360_calibration_visual_prediction_seal,
     build_deform360_calibration_visual_production_result,
     build_deform360_calibration_visual_technical_failure,
@@ -49,6 +50,164 @@ class ProcessOutcome:
     return_code: int
     stdout: bytes
     stderr: bytes
+
+
+_VARIABLE_CONFIG_FIELDS = frozenset(
+    {"video_path", "output_directory", "seed", "frame_start", "frame_stop"}
+)
+
+
+class _SharedAdapterFactory:
+    """Load the pinned model set once and rebind only per-job run fields."""
+
+    def __init__(self, factory: Callable[[Any], Any]) -> None:
+        self._factory = factory
+        self._adapter: Any | None = None
+        self._fixed_config: dict[str, object] | None = None
+        self._creation_attempted = False
+        self.creation_attempt_count = 0
+        self.creation_count = 0
+
+    @staticmethod
+    def _fixed_record(config: Any) -> dict[str, object]:
+        record = asdict(config)
+        for field in _VARIABLE_CONFIG_FIELDS:
+            record.pop(field, None)
+        return {
+            key: str(value) if isinstance(value, Path) else cast(object, value)
+            for key, value in record.items()
+        }
+
+    @property
+    def adapter(self) -> Any | None:
+        return self._adapter
+
+    def __call__(self, config: Any) -> Any:
+        fixed = self._fixed_record(config)
+        if self._adapter is None:
+            if self._creation_attempted:
+                raise RuntimeError(
+                    "initial MotionCrafter adapter creation already failed"
+                )
+            self._creation_attempted = True
+            self.creation_attempt_count += 1
+            self._adapter = self._factory(config)
+            self._fixed_config = fixed
+            self.creation_count += 1
+        else:
+            if fixed != self._fixed_config:
+                raise ValueError("per-job MotionCrafter config changed fixed fields")
+            self._adapter.config = config
+        return self._adapter
+
+
+class _SharedMotionCrafterProducer:
+    """Run integrity-bound per-view journals through one loaded adapter."""
+
+    def __init__(
+        self,
+        *,
+        model_binding: Mapping[str, Any],
+        motioncrafter_root: Path,
+        cache_directory: Path,
+        provider_lock: Deform360VisualProviderLockV1,
+    ) -> None:
+        from prob4d.motioncrafter_integrity import (
+            verify_motioncrafter_prediction_manifest,
+        )
+        from prob4d.motioncrafter_models import PinnedMotionCrafterModelSet
+        from prob4d.motioncrafter_runner import SafeMotionCrafterRunner
+
+        sources = cast(Mapping[str, Mapping[str, str]], model_binding["sources"])
+        model_set = PinnedMotionCrafterModelSet.inspect(
+            model_type="determ",
+            unet_reference=sources["unet"]["repository"],
+            unet_revision=sources["unet"]["revision"],
+            vae_reference=sources["vae"]["repository"],
+            vae_revision=sources["vae"]["revision"],
+            image_vae_reference=sources["image_vae"]["repository"],
+            image_vae_revision=sources["image_vae"]["revision"],
+            base_pipeline_reference=sources["base_pipeline"]["repository"],
+            base_pipeline_revision=sources["base_pipeline"]["revision"],
+        )
+        if model_set.set_sha256 != model_binding["model_set_id"]:
+            raise ValueError("installed Prob4D model-set identity changed")
+        try:
+            installed_manifest = json.loads(model_set.manifest_json)
+        except (AttributeError, json.JSONDecodeError, TypeError) as error:
+            raise ValueError(
+                "installed Prob4D model-set manifest is invalid"
+            ) from error
+        if installed_manifest != model_binding["manifest"]:
+            raise ValueError("installed Prob4D model-set manifest changed")
+        self._model_set = model_set
+        self._motioncrafter_root = motioncrafter_root
+        self._cache_directory = cache_directory
+        self._provider_lock = provider_lock
+        self._runner_class = SafeMotionCrafterRunner
+        self._verifier = verify_motioncrafter_prediction_manifest
+        self._shared_factory = _SharedAdapterFactory(model_set.adapter_factory())
+
+    @property
+    def model_load_count(self) -> int:
+        return self._shared_factory.creation_count
+
+    @property
+    def model_load_attempt_count(self) -> int:
+        return self._shared_factory.creation_attempt_count
+
+    def produce(
+        self,
+        *,
+        job: Mapping[str, Any],
+        source_video_path: Path,
+        output_directory: Path,
+        resume: bool,
+    ) -> Path:
+        prefix = cast(Sequence[int], job["prefix_source_frame_range_half_open"])
+        config = self._model_set.build_config(
+            upstream_root=self._motioncrafter_root,
+            video_path=source_video_path,
+            output_directory=output_directory,
+            cache_directory=str(self._cache_directory),
+            height=self._provider_lock.height,
+            width=self._provider_lock.width,
+            window_size=self._provider_lock.window_size,
+            overlap=self._provider_lock.overlap,
+            num_inference_steps=5,
+            guidance_scale=1.0,
+            decode_chunk_size=25,
+            seed=cast(int, job["view_root_seed"]),
+            seed_policy="derived-per-call",
+            low_memory_usage=False,
+            frame_start=prefix[0],
+            frame_stop=prefix[1],
+            frame_stride=1,
+        )
+        manifest = self._runner_class(
+            config,
+            adapter_factory=self._shared_factory,
+        ).run(resume=resume)
+        if self.model_load_attempt_count > 1:
+            raise RuntimeError(
+                "MotionCrafter adapter creation was attempted more than once"
+            )
+        return cast(Path, manifest)
+
+    def verify(self, manifest_path: Path) -> dict[str, Any]:
+        return cast(
+            dict[str, Any],
+            self._verifier(manifest_path, verify_hashes=True),
+        )
+
+    def release_temporaries(self) -> None:
+        gc.collect()
+        adapter = self._shared_factory.adapter
+        torch = getattr(adapter, "torch", None)
+        cuda = getattr(torch, "cuda", None)
+        empty_cache = getattr(cuda, "empty_cache", None)
+        if callable(empty_cache):
+            empty_cache()
 
 
 def _duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -167,19 +326,6 @@ def _verify_source(root: Path, record: Mapping[str, Any], *, label: str) -> Path
     return path
 
 
-def _run(command: Sequence[str]) -> ProcessOutcome:
-    completed = subprocess.run(  # noqa: S603 - executable and argv are reviewed inputs
-        list(command),
-        check=False,
-        capture_output=True,
-    )
-    return ProcessOutcome(
-        return_code=int(completed.returncode),
-        stdout=bytes(completed.stdout),
-        stderr=bytes(completed.stderr),
-    )
-
-
 def _portable_return_code(value: int) -> int:
     return value if value >= 0 else 128 + abs(value)
 
@@ -228,22 +374,6 @@ def _verify_descriptor(
     if digest != record["sha256"] or count != record["byte_count"]:
         raise ValueError(f"{label} differs from its receipt descriptor")
     return path
-
-
-def _parse_stdout_json(outcome: ProcessOutcome, *, label: str) -> dict[str, Any]:
-    if outcome.return_code != 0:
-        raise ValueError(f"{label} returned nonzero")
-    try:
-        value = json.loads(
-            outcome.stdout.decode("utf-8"),
-            object_pairs_hook=_duplicate_keys,
-            parse_constant=_nonfinite,
-        )
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
-        raise ValueError(f"{label} did not emit strict JSON") from error
-    if not isinstance(value, dict):
-        raise ValueError(f"{label} JSON root must be an object")
-    return cast(dict[str, Any], value)
 
 
 def _provider_lock(
@@ -308,7 +438,7 @@ def _existing_receipt(
     implementation_revision: str,
     job: Mapping[str, Any],
     model_binding: Mapping[str, Any],
-    prob4d_executable: Path,
+    verify_prediction: Callable[[Path], Mapping[str, Any]],
     resume: bool,
 ) -> tuple[str, Path] | None:
     output = _safe_member(
@@ -376,18 +506,7 @@ def _existing_receipt(
             manifest_record,
             label="sealed prediction manifest",
         )
-        verified = _run(
-            (
-                str(prob4d_executable),
-                "--output-dir",
-                str(output),
-                "--verify-only",
-            )
-        )
-        verification = _parse_stdout_json(
-            verified,
-            label="Prob4D sealed prediction verifier",
-        )
+        verification = verify_prediction(manifest_path)
         contract = validate_deform360_motioncrafter_prediction_manifest(
             _load_json(manifest_path, label="sealed prediction manifest"),
             verification=verification,
@@ -460,7 +579,6 @@ def execute(
     model_binding_path: Path,
     retained_root: Path,
     output_root: Path,
-    prob4d_executable: Path,
     prob4d_root: Path,
     motioncrafter_root: Path,
     cache_directory: Path,
@@ -478,8 +596,6 @@ def execute(
         for character in attempt_id
     ):
         raise ValueError("attempt_id must contain only letters, digits, '-' and '_'")
-    if not prob4d_executable.is_file() or not os.access(prob4d_executable, os.X_OK):
-        raise ValueError("prob4d-motioncrafter executable is missing or not executable")
     admission = load_deform360_calibration_visual_execution_admission(admission_path)
     lock = _provider_lock(provider_lock_path, admission)
     binding = validate_deform360_motioncrafter_model_set_binding(
@@ -494,7 +610,7 @@ def execute(
     )
     _reject_symlinks(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
-    run_root = output_root / cast(str, admission["admission_id"])
+    run_root = output_root / cast(str, admission["admission_id"]) / implementation
     run_root.mkdir(parents=True, exist_ok=True)
     result_path = run_root / "visual-production-result.json"
     existing_result: dict[str, Any] | None = None
@@ -530,6 +646,13 @@ def execute(
             label=f"source timestamps {job_id}",
         )
 
+    producer = _SharedMotionCrafterProducer(
+        model_binding=binding,
+        motioncrafter_root=motioncrafter_root,
+        cache_directory=cache_directory,
+        provider_lock=lock,
+    )
+
     lock_path = run_root / ".production.lock"
     with lock_path.open("a+b") as lock_stream:
         try:
@@ -547,7 +670,7 @@ def execute(
                 implementation_revision=implementation,
                 job=job,
                 model_binding=binding,
-                prob4d_executable=prob4d_executable,
+                verify_prediction=producer.verify,
                 resume=resume,
             )
             if existing is not None:
@@ -574,22 +697,19 @@ def execute(
                 model_binding=binding,
             )
             command_id = content_id(descriptor)
-            command = build_deform360_calibration_visual_command(
-                executable=prob4d_executable,
-                source_video_path=sources[cast(str, job["job_id"])],
-                output_directory=output,
-                motioncrafter_root=motioncrafter_root,
-                cache_directory=cache_directory,
-                job=job,
-                provider_lock=lock,
-                model_binding=binding,
-                resume=resume,
-            )
             try:
-                produced = _run(command)
-            except Exception as error:  # pragma: no cover - process adapter boundary
-                produced = ProcessOutcome(1, b"", repr(error).encode())
-            if produced.return_code != 0:
+                manifest_path = producer.produce(
+                    job=job,
+                    source_video_path=sources[cast(str, job["job_id"])],
+                    output_directory=output,
+                    resume=resume,
+                )
+            except Exception:
+                outcome = ProcessOutcome(
+                    1,
+                    b"",
+                    traceback.format_exc().encode("utf-8", errors="replace"),
+                )
                 receipt = _failure(
                     run_root=run_root,
                     attempt_id=attempt_id,
@@ -599,8 +719,8 @@ def execute(
                     job=job,
                     command_id=command_id,
                     stage="motioncrafter-production",
-                    outcome=produced,
-                    detail=b"producer returned a nonzero exit status",
+                    outcome=outcome,
+                    detail=b"single-session producer raised an exception",
                 )
                 rows.append(
                     _result_row(
@@ -610,23 +730,12 @@ def execute(
                         receipt=receipt,
                     )
                 )
+                producer.release_temporaries()
                 continue
 
-            verified = ProcessOutcome(1, b"", b"")
+            verification_outcome = ProcessOutcome(1, b"", b"")
             try:
-                verified = _run(
-                    (
-                        str(prob4d_executable),
-                        "--output-dir",
-                        str(output),
-                        "--verify-only",
-                    )
-                )
-                verification = _parse_stdout_json(
-                    verified,
-                    label="Prob4D prediction verifier",
-                )
-                manifest_path = output / "predictions.json"
+                verification = producer.verify(manifest_path)
                 manifest = _load_json(manifest_path, label="prediction manifest")
                 verified_contract = (
                     validate_deform360_motioncrafter_prediction_manifest(
@@ -654,8 +763,9 @@ def execute(
                         verified_contract["member_count"],
                     ),
                 )
-            except Exception as error:
-                detail = repr(error).encode("utf-8", errors="replace")
+            except Exception:
+                detail = traceback.format_exc().encode("utf-8", errors="replace")
+                verification_outcome = ProcessOutcome(1, b"", detail)
                 receipt = _failure(
                     run_root=run_root,
                     attempt_id=attempt_id,
@@ -665,7 +775,7 @@ def execute(
                     job=job,
                     command_id=command_id,
                     stage="prediction-verification",
-                    outcome=verified,
+                    outcome=verification_outcome,
                     detail=detail,
                 )
                 rows.append(
@@ -676,6 +786,7 @@ def execute(
                         receipt=receipt,
                     )
                 )
+                producer.release_temporaries()
                 continue
             seal_path = output / "prediction-seal.json"
             write_atomic_json(seal, seal_path, overwrite=False)
@@ -686,6 +797,11 @@ def execute(
                     status="succeeded",
                     receipt=seal_path,
                 )
+            )
+            producer.release_temporaries()
+        if producer.model_load_attempt_count > 1:
+            raise RuntimeError(
+                "MotionCrafter adapter creation was attempted more than once"
             )
         result = build_deform360_calibration_visual_production_result(
             implementation_revision=implementation,
@@ -710,7 +826,6 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--model-set-binding", type=Path, required=True)
     run.add_argument("--retained-root", type=Path, required=True)
     run.add_argument("--output-root", type=Path, required=True)
-    run.add_argument("--prob4d-motioncrafter", type=Path, required=True)
     run.add_argument("--prob4d-root", type=Path, required=True)
     run.add_argument("--motioncrafter-root", type=Path, required=True)
     run.add_argument("--cache-dir", type=Path, required=True)
@@ -740,7 +855,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 model_binding_path=arguments.model_set_binding,
                 retained_root=arguments.retained_root,
                 output_root=arguments.output_root,
-                prob4d_executable=arguments.prob4d_motioncrafter,
                 prob4d_root=arguments.prob4d_root,
                 motioncrafter_root=arguments.motioncrafter_root,
                 cache_directory=arguments.cache_dir,
