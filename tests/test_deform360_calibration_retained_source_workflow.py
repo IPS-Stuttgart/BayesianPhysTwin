@@ -60,6 +60,19 @@ def test_reusable_workflow_is_reviewed_main_only_and_read_only() -> None:
     assert "secrets: inherit" not in source
 
 
+def test_self_hosted_runtime_uses_an_isolated_target_without_venv() -> None:
+    source = _source(REUSABLE)
+
+    assert "python3 -m venv" not in source
+    assert "Prepare exact admission source without system venv" in source
+    assert '--target "${site}"' in source
+    assert "--break-system-packages" in source
+    assert 'admission_pythonpath="${GITHUB_WORKSPACE}/src:${site}"' in source
+    assert 'export PYTHONPATH="${ADMISSION_PYTHONPATH}' in source
+    assert 'echo "ADMISSION_PYTHON=${base_python}"' in source
+    assert 'echo "ADMISSION_SITE=${site}"' in source
+
+
 def test_reusable_workflow_materializes_the_complete_metadata_chain() -> None:
     source = _source(REUSABLE)
     execution = source.split(
