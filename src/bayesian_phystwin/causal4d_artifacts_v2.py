@@ -18,6 +18,7 @@ from typing import Any
 
 import numpy as np
 
+from ._canonical_contracts import immutable_array
 from .legacy_artifacts import load_trusted_legacy_phystwin_pickle
 from .phystwin.artifacts import sha256_file
 
@@ -42,9 +43,7 @@ def _digest(value: str, *, name: str) -> str:
 
 
 def _readonly(values: np.ndarray, *, dtype: Any) -> np.ndarray:
-    array = np.asarray(values, dtype=dtype).copy()
-    array.setflags(write=False)
-    return array
+    return immutable_array(values, dtype=dtype)
 
 
 def _verify_identity(path: Path, expected_sha256: str, *, name: str) -> None:
