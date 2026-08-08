@@ -928,6 +928,9 @@ def select_persistent_visual_bias_candidate(
     run: PersistentVisualBiasRunV1,
     candidate: PersistentVisualBiasCandidateV1,
     *,
+    innovation_xyz: np.ndarray,
+    physical_jacobian: np.ndarray,
+    conditional_covariance: np.ndarray,
     accepted: bool,
     reason: str,
 ) -> PersistentVisualBiasRunV1:
@@ -977,6 +980,15 @@ def select_persistent_visual_bias_candidate(
         raise ValueError(
             "candidate information gain does not match posterior covariance"
         )
+    reproduced = propose_persistent_visual_bias_update(
+        run,
+        innovation_xyz=innovation_xyz,
+        physical_jacobian=physical_jacobian,
+        conditional_covariance=conditional_covariance,
+        physical_linearization_id=candidate.physical_linearization_id,
+    )
+    if reproduced.candidate_id != candidate.candidate_id:
+        raise ValueError("candidate does not match canonical solver reproduction")
     selected = posterior if accept else run.belief
     event = PersistentVisualBiasEventV1(
         event_type="measurement",
@@ -1021,6 +1033,9 @@ def apply_persistent_visual_bias_update(
     selected = select_persistent_visual_bias_candidate(
         run,
         candidate,
+        innovation_xyz=innovation_xyz,
+        physical_jacobian=physical_jacobian,
+        conditional_covariance=conditional_covariance,
         accepted=accepted,
         reason=reason,
     )

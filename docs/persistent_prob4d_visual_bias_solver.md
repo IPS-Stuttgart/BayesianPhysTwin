@@ -82,10 +82,19 @@ BayesianPhysTwin regret or observability guard.
 Candidate construction and deployment selection are deliberately separate:
 
 ```python
-candidate = propose_persistent_visual_bias_update(...)
+candidate = propose_persistent_visual_bias_update(
+    run,
+    innovation_xyz=innovation_at_current_prior,
+    physical_jacobian=physical_jacobian,
+    conditional_covariance=conditional_point_covariance,
+    physical_linearization_id=physical_linearization.artifact_id,
+)
 run = select_persistent_visual_bias_candidate(
     run,
     candidate,
+    innovation_xyz=innovation_at_current_prior,
+    physical_jacobian=physical_jacobian,
+    conditional_covariance=conditional_point_covariance,
     accepted=guard_decision.accepted,
     reason=guard_decision.reason,
 )
@@ -105,10 +114,16 @@ requires:
 - a posterior covariance that is a positive-semidefinite measurement
   contraction of the prior covariance; and
 - an information-gain diagnostic that exactly matches the prior and posterior
-  covariance determinants within the declared numerical tolerance.
+  covariance determinants within the declared numerical tolerance; and
+- exact reproduction of the complete candidate from the supplied innovation,
+  physical Jacobian, conditional covariance, active stream member, live prior,
+  and physical-linearization identity.
 
-These checks prevent a directly constructed or tampered candidate from reaching
-the guard merely because it carries a valid-looking candidate ID.
+Selection requires the same update arrays used during proposal. It reruns the
+canonical solver and compares the complete candidate identity before either an
+accept or fallback event is committed. This rejects changed posterior means,
+alternative contracting covariances, forged innovation diagnostics, and arrays
+that do not reproduce the proposed update.
 
 When accepted, the complete joint posterior becomes the next belief. When
 rejected, the selected belief is the exact prior belief object. Neither the
@@ -207,6 +222,8 @@ Focused regressions cover:
 - forged factor-update and observation-binding rejection;
 - posterior state-domain, covariance-root, and lineage mismatch rejection;
 - noncontracting covariance and misreported information-gain rejection;
+- solver-replay rejection of changed posterior means, alternative contracting
+  covariances, forged innovation diagnostics, and substituted update arrays;
 - irreversible NumPy immutability for retained and derived belief arrays; and
 - content-identity tamper detection.
 
