@@ -9,7 +9,9 @@ import numpy as np
 import pytest
 from test_prob4d_causal_lineage import _attested_belief, _belief
 
+import bayesian_phystwin.deform360_calibration_factor_materializer as factor_materializer
 from bayesian_phystwin.deform360_calibration_factor_materializer import (
+    Deform360KinematicContactConfig,
     build_deform360_kinematic_contact_anchor,
     materialize_deform360_calibration_factors,
     publish_deform360_calibration_factor_materialization,
@@ -183,6 +185,11 @@ def test_anchor_requires_two_unique_active_taxels() -> None:
         )
 
 
+def test_contact_config_rejects_boolean_metric_scale() -> None:
+    with pytest.raises(ValueError, match="localization_floor_m"):
+        Deform360KinematicContactConfig(localization_floor_m=True)
+
+
 def test_contact_anchor_archive_round_trip_and_tamper_rejection(
     tmp_path: Path,
 ) -> None:
@@ -203,6 +210,22 @@ def test_contact_anchor_archive_round_trip_and_tamper_rejection(
     np.savez_compressed(path, **payload)
     with pytest.raises(ValueError, match="artifact ID"):
         load_deform360_contact_anchor(path)
+
+
+def test_contact_anchor_archive_round_trip_without_bias(tmp_path: Path) -> None:
+    anchor = replace(
+        _anchor(),
+        bias_jacobian=None,
+        bias_prior_covariance=None,
+    )
+    path = tmp_path / "contact-anchor-without-bias.npz"
+
+    save_deform360_contact_anchor(path, anchor)
+    loaded = load_deform360_contact_anchor(path)
+
+    assert loaded.artifact_id == anchor.artifact_id
+    assert loaded.bias_jacobian is None
+    assert loaded.bias_prior_covariance is None
 
 
 def test_materializer_requires_calibrated_prob4d_before_innovation() -> None:
@@ -326,6 +349,34 @@ def test_published_materialization_matches_observability_batch_inputs(
         )
     assert lock.read_text(encoding="ascii") == "owned elsewhere\n"
     assert not locked_output.exists()
+
+
+def test_publication_detects_target_created_during_publish(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    belief = _attested_belief()
+    anchor = _anchor()
+    materialization = materialize_deform360_calibration_factors(
+        belief,
+        _linearization(),
+        anchor,
+        physical_prediction_xyz_m=belief.mean_xyz_m,
+        physical_query_jacobian=np.eye(2),
+    )
+    output = tmp_path / "materialized-race"
+    monkeypatch.setattr(factor_materializer.os.path, "lexists", lambda _path: True)
+
+    with pytest.raises(FileExistsError):
+        publish_deform360_calibration_factor_materialization(
+            output,
+            materialization,
+            anchor,
+        )
+
+    assert not output.exists()
+    assert not (tmp_path / ".materialized-race.publish.lock").exists()
+    assert not list(tmp_path.glob(".materialized-race.*.partial"))
 
 
 def test_cli_ordinary_file_rejects_parent_symlink(tmp_path: Path) -> None:
