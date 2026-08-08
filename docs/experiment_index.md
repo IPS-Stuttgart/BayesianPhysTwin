@@ -93,6 +93,13 @@ portable model-set identity before any of the ten selected calibration-object
 payloads may be opened.
 
 The
+[prepared-source inventory](deform360_calibration_prepared_inventory.md)
+binds the successful ten-object calibration-source run to the retained aligned
+RGB, tactile, and robot bytes on the protected runner. It records portable
+media and array contracts and rejects every confirmation object before real
+visual/contact observability inputs are produced.
+
+The
 [atomic calibration-observability batch](deform360_calibration_observability_batch.md)
 turns the ten calibration-object contact-versus-visual case builds and their
 object-balanced report into one fail-closed publication. It retains technical
