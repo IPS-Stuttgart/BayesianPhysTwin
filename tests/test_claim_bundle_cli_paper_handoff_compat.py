@@ -386,7 +386,11 @@ def test_paper_handoff_binding_inventory_and_root_schema_failures(
         handoff.verify_compact_claim_table_bindings(
             replace(
                 bundle,
-                artifacts=(bundle.artifacts[0], bundle.artifacts[0], *bundle.artifacts[1:]),
+                artifacts=(
+                    bundle.artifacts[0],
+                    bundle.artifacts[0],
+                    *bundle.artifacts[1:],
+                ),
             ),
             root=tmp_path,
         )
@@ -394,7 +398,10 @@ def test_paper_handoff_binding_inventory_and_root_schema_failures(
     duplicate_path = replace(bundle.artifacts[1], path=bundle.artifacts[2].path)
     with pytest.raises(ValueError, match="duplicate claim-bundle artifact path"):
         handoff.verify_compact_claim_table_bindings(
-            replace(bundle, artifacts=(bundle.artifacts[0], duplicate_path, bundle.artifacts[2])),
+            replace(
+                bundle,
+                artifacts=(bundle.artifacts[0], duplicate_path, bundle.artifacts[2]),
+            ),
             root=tmp_path,
         )
 
@@ -432,14 +439,22 @@ def test_paper_handoff_bound_artifact_failures(tmp_path: Path) -> None:
     wrong_kind = replace(bundle.artifacts[1], kind="figure")
     with pytest.raises(ValueError, match="absent from the claim bundle"):
         handoff.verify_compact_claim_table_bindings(
-            replace(bundle, artifacts=(bundle.artifacts[0], wrong_kind, bundle.artifacts[2])),
+            replace(
+                bundle,
+                artifacts=(bundle.artifacts[0], wrong_kind, bundle.artifacts[2]),
+            ),
             root=tmp_path,
         )
 
-    wrong_size = replace(bundle.artifacts[1], size_bytes=bundle.artifacts[1].size_bytes + 1)
+    wrong_size = replace(
+        bundle.artifacts[1], size_bytes=bundle.artifacts[1].size_bytes + 1
+    )
     with pytest.raises(ValueError, match="size differs"):
         handoff.verify_compact_claim_table_bindings(
-            replace(bundle, artifacts=(bundle.artifacts[0], wrong_size, bundle.artifacts[2])),
+            replace(
+                bundle,
+                artifacts=(bundle.artifacts[0], wrong_size, bundle.artifacts[2]),
+            ),
             root=tmp_path,
         )
 
