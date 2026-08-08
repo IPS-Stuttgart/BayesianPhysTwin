@@ -298,3 +298,28 @@ def test_update_contract_rejects_unverified_result_lineage() -> None:
     lineage = _lineage(runtime_verified=False)
     with pytest.raises(ValueError, match="lacks independently verified"):
         _update(result=_result(lineage))
+
+
+def test_update_contract_exposes_versioned_result_identities() -> None:
+    update = _update()
+
+    assert len(update.admission_id) == 64
+    assert update.legacy_update_id == update.admission_id
+    assert len(update.inference_result_id) == 64
+    assert update.update_id != update.admission_id
+
+
+def test_update_contract_rejects_untyped_result_decision_fields() -> None:
+    untyped_decision = _result(_lineage())
+    object.__setattr__(
+        untyped_decision,
+        "inference_admissible",
+        np.bool_(True),
+    )
+    with pytest.raises(TypeError, match="inference_admissible"):
+        _update(result=untyped_decision)
+
+    empty_reason = _result(_lineage())
+    object.__setattr__(empty_reason, "reason", "")
+    with pytest.raises(ValueError, match="reason"):
+        _update(result=empty_reason)
