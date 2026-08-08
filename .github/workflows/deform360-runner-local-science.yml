@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: deform360-runner-local-science
-  cancel-in-progress: false
+  group: deform360-runner-local-science-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
