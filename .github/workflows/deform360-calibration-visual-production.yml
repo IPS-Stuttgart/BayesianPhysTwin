@@ -322,8 +322,19 @@ jobs:
           set -euo pipefail
           env_root="${RUNNER_TEMP}/prob4d-motioncrafter-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           bash _prob4d/scripts/bootstrap_motioncrafter_env.sh "${GITHUB_WORKSPACE}/_motioncrafter" "${env_root}"
-          "${env_root}/bin/python" -m pip install --no-deps .
-          "${env_root}/bin/python" -m pip check
+          if command -v uv >/dev/null 2>&1; then
+            uv_bin="$(command -v uv)"
+          elif [[ -x "${HOME}/.local/bin/uv" ]]; then
+            uv_bin="${HOME}/.local/bin/uv"
+          else
+            echo "Prob4D bootstrap completed without leaving uv available." >&2
+            exit 1
+          fi
+          "${uv_bin}" pip install \
+            --python "${env_root}/bin/python" \
+            --no-deps \
+            .
+          "${uv_bin}" pip check --python "${env_root}/bin/python"
           echo "PRODUCTION_PYTHON=${env_root}/bin/python" >> "${GITHUB_ENV}"
       - name: Bootstrap exact immutable model snapshots
         env:

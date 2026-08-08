@@ -37,6 +37,15 @@ It stopped before admission download, model construction, and calibration-data
 access. Retry v2 excludes exactly those two checkout paths and initializes the
 compact failure-evidence root before any fallible setup step.
 
+Run `31275886113` then verified and downloaded the frozen admission artifact but
+failed during producer-environment bootstrap: Prob4D intentionally creates an
+unseeded `uv` environment, while the workflow incorrectly invoked
+`python -m pip`. It stopped before immutable model snapshots, retained
+source-byte reads, inference, or prediction output. Retry v3 uses the same `uv`
+installer selected by the frozen Prob4D bootstrap to install and check
+BayesianPhysTwin inside that environment. The roster, provider revisions,
+source files, and scientific configuration are unchanged.
+
 At runtime the workflow:
 
 1. downloads the frozen successful retained-source artifact from run

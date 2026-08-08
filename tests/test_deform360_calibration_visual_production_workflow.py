@@ -62,7 +62,8 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert r"target outcomes used: \`false\`" in text
     assert r"replacement allowed: \`false\`" in text
     assert r"pre-payload predecessor: run \`31274946936\`" in text
-    assert "2026-08-09-pre-payload-retry-v2" in text
+    assert r"environment-bootstrap predecessor: run \`31275886113\`" in text
+    assert "2026-08-09-environment-bootstrap-retry-v3" in text
 
 
 def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
@@ -79,6 +80,22 @@ def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() 
     ) < production.index("Check out exact reviewed BayesianPhysTwin main")
     assert 'if [[ ! -d "${processed}/aligned" ]]' in production
     assert "The frozen calibration-processed root is unavailable." in production
+
+
+def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> None:
+    text = _workflow()
+    bootstrap = text[
+        text.index("Bootstrap exact GPU producer environment") : text.index(
+            "Bootstrap exact immutable model snapshots"
+        )
+    ]
+
+    assert 'if command -v uv >/dev/null 2>&1' in bootstrap
+    assert 'uv_bin="${HOME}/.local/bin/uv"' in bootstrap
+    assert '"${uv_bin}" pip install \\\n' in bootstrap
+    assert '--python "${env_root}/bin/python"' in bootstrap
+    assert '"${uv_bin}" pip check --python "${env_root}/bin/python"' in bootstrap
+    assert '"${env_root}/bin/python" -m pip' not in bootstrap
 
 
 def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
