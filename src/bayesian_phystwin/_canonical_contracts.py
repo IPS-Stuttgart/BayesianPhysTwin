@@ -83,10 +83,20 @@ class FrozenList(list):
 
 
 def plain_json(value: Any) -> Any:
-    """Return ordinary JSON-compatible containers from frozen containers."""
+    """Return ordinary JSON-compatible containers from frozen containers.
+
+    JSON object keys are part of content-addressed contract identities. Reject
+    non-literal string keys instead of coercing them with ``str()`` because
+    coercion can collapse distinct Python mappings onto the same JSON object.
+    """
 
     if isinstance(value, Mapping):
-        return {str(key): plain_json(item) for key, item in value.items()}
+        result: dict[str, Any] = {}
+        for key, item in value.items():
+            if type(key) is not str:
+                raise ValueError("JSON object keys must be literal strings")
+            result[key] = plain_json(item)
+        return result
     if isinstance(value, (list, tuple)):
         return [plain_json(item) for item in value]
     return value
@@ -107,10 +117,20 @@ def frozen_finite_json_mapping(
 ) -> Mapping[str, Any]:
     """Copy, canonicalize, validate, and recursively freeze a JSON mapping."""
 
+    if values is None:
+        source: Mapping[str, Any] = {}
+    elif not isinstance(values, Mapping):
+        raise ValueError(f"{name} must be a mapping")
+    else:
+        source = values
+    try:
+        plain = plain_json(source)
+    except ValueError as error:
+        raise ValueError(f"{name} must use literal string object keys") from error
     try:
         normalized = json.loads(
             json.dumps(
-                plain_json(values or {}),
+                plain,
                 sort_keys=True,
                 allow_nan=False,
             )
