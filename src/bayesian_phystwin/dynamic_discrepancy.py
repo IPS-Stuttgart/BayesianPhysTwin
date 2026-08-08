@@ -10,6 +10,8 @@ from typing import Any, Mapping
 
 import numpy as np
 
+from ._canonical_contracts import immutable_array
+
 
 DYNAMIC_DISCREPANCY_SCHEMA_VERSION = 1
 LOCALIZATION_GRAPH_RANK = 4
@@ -41,9 +43,7 @@ def _is_sha256(value: Any) -> bool:
 
 
 def _readonly(values: np.ndarray, *, dtype: Any = float) -> np.ndarray:
-    result = np.asarray(values, dtype=dtype).copy()
-    result.setflags(write=False)
-    return result
+    return immutable_array(values, dtype=dtype)
 
 
 def _json_data(values: Mapping[str, Any], *, name: str) -> dict[str, Any]:
