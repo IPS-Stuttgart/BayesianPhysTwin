@@ -14,6 +14,8 @@ from typing import Literal
 
 import numpy as np
 
+from .calibration import finite_group_conformal_rank
+
 ConformalScore = Literal["scaled", "additive"]
 
 
@@ -101,7 +103,7 @@ def finite_group_conformal_quantile(
     if not 0.0 < nominal < 1.0:
         raise ValueError("coverage must lie in (0, 1)")
 
-    rank = math.ceil((len(scores) + 1) * nominal)
+    rank = finite_group_conformal_rank(len(scores), nominal)
     if rank > len(scores):
         return math.inf, rank
     return float(np.partition(scores, rank - 1)[rank - 1]), rank
