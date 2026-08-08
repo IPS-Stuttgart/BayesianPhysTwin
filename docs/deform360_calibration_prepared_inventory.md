@@ -74,9 +74,8 @@ The inventory never hashes one pathname and then reparses that pathname.
 NPY, NPZ, and camera-metadata JSON are parsed from the exact verified snapshot
 bytes. Replacing the source path after descriptor opening therefore cannot make
 the recorded digest describe different bytes from those used to derive shapes,
-dtypes, finite-value checks, array inventories, or metadata references. Small
-snapshots stay in memory and larger snapshots may spool to an anonymous temporary
-file; neither case publishes local paths.
+dtypes, finite-value checks, array inventories, or metadata references. Verified parse snapshots use anonymous temporary files on every supported Python
+version; those files are never named in or retained by the published inventory.
 
 ## Information boundary
 

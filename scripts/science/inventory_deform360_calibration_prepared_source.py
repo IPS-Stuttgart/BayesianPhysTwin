@@ -110,7 +110,6 @@ def _require(condition: bool | np.bool_, message: str) -> None:
 
 
 _READ_CHUNK_SIZE_BYTES = 1024 * 1024
-_SNAPSHOT_MEMORY_LIMIT_BYTES = 64 * 1024 * 1024
 
 
 class _BinarySink(Protocol):
@@ -252,10 +251,7 @@ def _numeric_contract(value: np.ndarray, *, name: str) -> dict[str, object]:
 
 
 def _npy_record(path: Path, *, root: Path, expected_sha256: str) -> dict[str, object]:
-    with tempfile.SpooledTemporaryFile(
-        max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
-        mode="w+b",
-    ) as snapshot:
+    with tempfile.TemporaryFile(mode="w+b") as snapshot:
         record = _read_stable_file(
             path,
             root=root,
@@ -277,10 +273,7 @@ def _npy_record(path: Path, *, root: Path, expected_sha256: str) -> dict[str, ob
 
 
 def _npz_record(path: Path, *, root: Path, expected_sha256: str) -> dict[str, object]:
-    with tempfile.SpooledTemporaryFile(
-        max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
-        mode="w+b",
-    ) as snapshot:
+    with tempfile.TemporaryFile(mode="w+b") as snapshot:
         record = _read_stable_file(
             path,
             root=root,
@@ -355,10 +348,7 @@ def _camera_record(
     timestamps = _file_record(camera_dir / "aligned_timestamps.txt", root=root)
     alignment = _file_record(camera_dir / "alignment.json", root=root)
     metadata_path = camera_dir / "metadata.json"
-    with tempfile.SpooledTemporaryFile(
-        max_size=_SNAPSHOT_MEMORY_LIMIT_BYTES,
-        mode="w+b",
-    ) as snapshot:
+    with tempfile.TemporaryFile(mode="w+b") as snapshot:
         metadata_file = _read_stable_file(
             metadata_path,
             root=root,
