@@ -13,7 +13,6 @@ import numpy as np
 
 from ._canonical_contracts import immutable_array
 
-
 DYNAMIC_DISCREPANCY_SCHEMA_VERSION = 1
 LOCALIZATION_GRAPH_RANK = 4
 
