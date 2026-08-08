@@ -8,7 +8,7 @@ from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep as _sleep
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from .contracts import (
     DATASET_REPOSITORY,
@@ -104,14 +104,19 @@ def _retryable_download_error(error: BaseException) -> bool:
     return bool(names & _RETRYABLE_EXCEPTION_NAMES)
 
 
+def _record_path(record: Mapping[str, Any]) -> str:
+    raw = record.get("path")
+    require(isinstance(raw, str), "download path is malformed")
+    return cast(str, raw)
+
+
 def _validated_download(
     *,
     record: Mapping[str, Any],
     root: Path,
     destination: Path,
 ) -> dict[str, Any]:
-    relative = record.get("path")
-    require(isinstance(relative, str), "download path is malformed")
+    relative = _record_path(record)
     expected = (root / relative).resolve()
     require(expected.is_relative_to(root), f"download path escaped root: {relative}")
     require(destination.resolve() == expected, f"download path changed: {relative}")
@@ -142,8 +147,7 @@ def _completed_download(
     record: Mapping[str, Any],
     root: Path,
 ) -> dict[str, Any] | None:
-    relative = record.get("path")
-    require(isinstance(relative, str), "download path is malformed")
+    relative = _record_path(record)
     candidate = root / relative
     require(not candidate.is_symlink(), f"download is a symlink: {relative}")
     if not candidate.exists():
@@ -161,8 +165,7 @@ def _download_once(
     root: Path,
     hub_download: Any,
 ) -> dict[str, Any]:
-    relative = record.get("path")
-    require(isinstance(relative, str), "download path is malformed")
+    relative = _record_path(record)
     destination = Path(
         hub_download(
             repo_id=DATASET_REPOSITORY,
@@ -312,11 +315,12 @@ def download_plan(
     for unit in units:
         if unit.object_id not in planned_objects:
             continue
-        metadata = by_path.get(unit.metadata_path)
+        raw_metadata = by_path.get(unit.metadata_path)
         require(
-            metadata is not None,
+            raw_metadata is not None,
             f"download omitted metadata: {unit.object_id}",
         )
+        metadata = cast(Mapping[str, Any], raw_metadata)
         require(
             metadata["downloaded_sha256"] == unit.metadata_sha256,
             f"metadata digest changed: {unit.object_id}",
