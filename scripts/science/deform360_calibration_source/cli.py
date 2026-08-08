@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
-from .download import download_plan
+from .download import DOWNLOAD_MAX_WORKERS, download_plan
 from .planning import build_plan
 from .prepare import prepare_sources
 
@@ -47,7 +48,7 @@ def _parser() -> argparse.ArgumentParser:
     download.add_argument("--plan", type=Path, required=True)
     download.add_argument("--data-root", type=Path, required=True)
     download.add_argument("--output", type=Path, required=True)
-    download.add_argument("--workers", type=int, default=8)
+    download.add_argument("--workers", type=int, default=DOWNLOAD_MAX_WORKERS)
 
     prepare = subparsers.add_parser(
         "prepare",
@@ -83,6 +84,7 @@ def main() -> int:
         )
         return 0 if result["gate"]["support_passed"] else 3
     if args.command == "download":
+        os.environ["HF_HUB_DISABLE_XET"] = "1"
         from huggingface_hub import hf_hub_download
 
         result = download_plan(
