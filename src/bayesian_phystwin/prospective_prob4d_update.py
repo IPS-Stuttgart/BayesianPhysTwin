@@ -5,12 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
 import numpy as np
 
+from ._canonical_contracts import plain_json
 from ._gauge_aware_contracts import GaugeAwareBeliefResult
 from .claim_bearing_prob4d import (
     build_claim_bearing_gauge_aware_batch_from_artifacts,
@@ -23,6 +24,8 @@ from .prior_aware_gauge_belief import (
 )
 
 CLAIM_BEARING_PROB4D_UPDATE_VERSION = 1
+CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION = 2
+CLAIM_BEARING_PROB4D_INFERENCE_RESULT_VERSION = 1
 
 
 def _validated_sha256(value: object, *, name: str) -> str:
@@ -64,12 +67,79 @@ def _validated_runtime_revision_source(value: object) -> str:
 def _canonical_id(payload: Mapping[str, object]) -> str:
     return hashlib.sha256(
         json.dumps(
-            dict(payload),
+            plain_json(payload),
             sort_keys=True,
             separators=(",", ":"),
             allow_nan=False,
         ).encode("utf-8")
     ).hexdigest()
+
+
+def _array_descriptor(value: np.ndarray) -> dict[str, object]:
+    array = np.ascontiguousarray(np.asarray(value, dtype=np.dtype("<f8")))
+    return {
+        "dtype": "<f8",
+        "shape": list(array.shape),
+        "sha256": hashlib.sha256(array.tobytes(order="C")).hexdigest(),
+    }
+
+
+def _inference_result_payload(result: GaugeAwareBeliefResult) -> dict[str, object]:
+    if type(result.inference_admissible) is not bool:
+        raise TypeError("result.inference_admissible must be a bool")
+    if type(result.reason) is not str or not result.reason:
+        raise ValueError("result.reason must be a nonempty string")
+    arrays = {
+        name: _array_descriptor(getattr(result, name))
+        for name in (
+            "state_coefficients",
+            "gauge_delta",
+            "shared_bias_coefficients",
+            "view_bias_coefficients",
+            "anchor_bias_coefficients",
+            "posterior_covariance",
+            "identifiable_state_transform",
+            "identifiable_fractions",
+            "query_sensitivity_fractions",
+            "robust_weights",
+            "anchor_robust_weights",
+        )
+    }
+    return {
+        "schema": "bayesian_phystwin.claim_bearing_prob4d_inference_result",
+        "schema_version": CLAIM_BEARING_PROB4D_INFERENCE_RESULT_VERSION,
+        "inference_admissible": result.inference_admissible,
+        "reason": result.reason,
+        "arrays": arrays,
+        "diagnostics": plain_json(result.diagnostics),
+        "input_lineage": plain_json(result.input_lineage),
+    }
+
+
+def _admission_payload(
+    *,
+    observation_artifact_id: str,
+    linearization_artifact_id: str,
+    provider_manifest_id: str,
+    calibration_artifact_ids: Mapping[str, str],
+    runtime_revision_source: str,
+    runtime_revision_independently_verified: bool,
+    result: GaugeAwareBeliefResult,
+) -> dict[str, object]:
+    return {
+        "schema": "bayesian_phystwin.claim_bearing_prob4d_update",
+        "schema_version": CLAIM_BEARING_PROB4D_UPDATE_VERSION,
+        "observation_artifact_id": observation_artifact_id,
+        "linearization_artifact_id": linearization_artifact_id,
+        "provider_manifest_id": provider_manifest_id,
+        "calibration_artifact_ids": dict(calibration_artifact_ids),
+        "runtime_revision_source": runtime_revision_source,
+        "runtime_revision_independently_verified": (
+            runtime_revision_independently_verified
+        ),
+        "inference_admissible": result.inference_admissible,
+        "reason": result.reason,
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +153,9 @@ class ClaimBearingProb4DUpdateV1:
     calibration_artifact_ids: Mapping[str, str]
     runtime_revision_source: str
     runtime_revision_independently_verified: bool
+    _admission_id: str = field(init=False, repr=False, compare=False)
+    _inference_result_id: str = field(init=False, repr=False, compare=False)
+    _update_id: str = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.result, GaugeAwareBeliefResult):
@@ -141,28 +214,56 @@ class ClaimBearingProb4DUpdateV1:
             runtime_revision_source,
         )
 
+        admission_payload = _admission_payload(
+            observation_artifact_id=self.observation_artifact_id,
+            linearization_artifact_id=self.linearization_artifact_id,
+            provider_manifest_id=self.provider_manifest_id,
+            calibration_artifact_ids=calibration_ids,
+            runtime_revision_source=runtime_revision_source,
+            runtime_revision_independently_verified=(
+                self.runtime_revision_independently_verified
+            ),
+            result=self.result,
+        )
+        admission_id = _canonical_id(admission_payload)
+        inference_result_id = _canonical_id(_inference_result_payload(self.result))
+        update_id = _canonical_id(
+            {
+                **admission_payload,
+                "identity_version": CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION,
+                "admission_id": admission_id,
+                "inference_result_id": inference_result_id,
+            }
+        )
+        object.__setattr__(self, "_admission_id", admission_id)
+        object.__setattr__(self, "_inference_result_id", inference_result_id)
+        object.__setattr__(self, "_update_id", update_id)
+
     @property
     def inference_admissible(self) -> bool:
         return self.result.inference_admissible
 
     @property
+    def admission_id(self) -> str:
+        """Return the historical provenance-and-decision identity."""
+
+        return self._admission_id
+
+    @property
+    def legacy_update_id(self) -> str:
+        """Backward-compatible name for the pre-hardening update identity."""
+
+        return self._admission_id
+
+    @property
+    def inference_result_id(self) -> str:
+        return self._inference_result_id
+
+    @property
     def update_id(self) -> str:
-        return _canonical_id(
-            {
-                "schema": "bayesian_phystwin.claim_bearing_prob4d_update",
-                "schema_version": CLAIM_BEARING_PROB4D_UPDATE_VERSION,
-                "observation_artifact_id": self.observation_artifact_id,
-                "linearization_artifact_id": self.linearization_artifact_id,
-                "provider_manifest_id": self.provider_manifest_id,
-                "calibration_artifact_ids": dict(self.calibration_artifact_ids),
-                "runtime_revision_source": self.runtime_revision_source,
-                "runtime_revision_independently_verified": (
-                    self.runtime_revision_independently_verified
-                ),
-                "inference_admissible": self.result.inference_admissible,
-                "reason": self.result.reason,
-            }
-        )
+        """Bind provider admission and the complete numerical inference result."""
+
+        return self._update_id
 
 
 def update_claim_bearing_prob4d_from_artifacts(
@@ -232,6 +333,8 @@ def update_claim_bearing_prob4d_from_artifacts(
 
 
 __all__ = [
+    "CLAIM_BEARING_PROB4D_INFERENCE_RESULT_VERSION",
+    "CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION",
     "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
     "ClaimBearingProb4DUpdateV1",
     "update_claim_bearing_prob4d_from_artifacts",
