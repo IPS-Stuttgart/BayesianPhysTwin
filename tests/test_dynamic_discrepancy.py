@@ -66,7 +66,9 @@ def test_dynamic_discrepancy_roundtrip_and_fields(tmp_path) -> None:
     loaded = load_dynamic_discrepancy_correction(written["manifest_path"])
 
     assert loaded.artifact_id == correction.artifact_id
-    np.testing.assert_allclose(loaded.position_field_m(), loaded.graph_basis @ coefficients)
+    np.testing.assert_allclose(
+        loaded.position_field_m(), loaded.graph_basis @ coefficients
+    )
     np.testing.assert_allclose(
         loaded.generalized_force_field_n(), loaded.graph_basis @ (3.0 * coefficients)
     )
