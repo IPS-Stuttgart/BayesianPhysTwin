@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 WORKFLOW = Path(".github/workflows/deform360-calibration-visual-production.yml")
+EXECUTOR = Path("scripts/science/execute_deform360_calibration_visual_production.py")
 
 
 def test_visual_production_workflow_is_main_only_and_resumable() -> None:
@@ -18,35 +19,75 @@ def test_visual_production_workflow_is_main_only_and_resumable() -> None:
     assert ".production.lock" not in text
 
 
-def test_visual_production_workflow_pins_every_external_source() -> None:
+def test_visual_production_pins_the_audited_admission_and_external_sources() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
     assert "25d90ef7f78ba4307f4555cb636d666004e1bf66" in text
     assert "9cb4e9679f5f34e249945544052464ef46324bc2" in text
+    assert 'ADMISSION_RUN_ID: "31272985733"' in text
+    assert 'ADMISSION_ARTIFACT_ID: "9026183221"' in text
     assert (
-        "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml" in text
-    )
-    assert "deform360-calibration-retained-source-admission-" in text
+        "ADMISSION_ARTIFACT_NAME: "
+        "deform360-calibration-retained-source-admission-31272985733-1"
+    ) in text
+    assert (
+        "ADMISSION_ARTIFACT_DIGEST: "
+        "sha256:d13a3aed7b63effab637215feee15c61d9cb69330dbe8f666a6e37b00b35b836"
+    ) in text
+    assert (
+        "ADMISSION_ID: "
+        "4dd68e209b4c1a206a209786f57b0a4a96bd102a79a0f8f60d436fabd5d584ba"
+    ) in text
+    assert "uses: actions/github-script@v8" in text
+    assert "listWorkflowRunArtifacts" in text
+    assert "artifact.digest !== expectedDigest" in text
+    assert "artifact.workflow_run.head_sha !== expectedHead" in text
+    assert "uses: actions/download-artifact@v8" in text
+    assert "artifact-ids: ${{ needs.admission-lock.outputs.artifact_id }}" in text
+    assert "digest-mismatch: error" in text
     assert "persist-credentials: false" in text
-    assert "actions/checkout@v7" in text
-    assert "actions/upload-artifact@v7" in text
+    assert "uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml" not in text
+    assert "needs.retained-source" not in text
 
 
-def test_visual_production_consumes_authoritative_custody_boundary() -> None:
+def test_visual_production_revalidates_the_complete_audited_artifact() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
-    assert "Authoritative retained-source admission" in text
-    assert "needs.retained-source.outputs.admission_id" in text
-    assert "needs.retained-source.outputs.artifact_digest" in text
+    assert "sha256sum --check --strict SHA256SUMS" in text
+    assert "ADMISSION_FILE_SHA256:" in text
+    assert "INVENTORY_FILE_SHA256:" in text
+    assert "PLAN_FILE_SHA256:" in text
+    assert "RECEIPT_FILE_SHA256:" in text
+    assert "audited receipt changed" in text
+    assert "admission inventory-file identity changed" in text
+    assert "admission plan-file identity changed" in text
+    assert "confirmation boundary opened" in text
+    assert "target boundary opened" in text
     assert "execute_deform360_calibration_visual_production.py" in text
     assert "calibration-visual-execution-admission.json" in text
     assert "prediction-seal.json" in text
     assert "visual-production-result.json" in text
 
 
+def test_source_bytes_are_revalidated_inside_the_locked_job_loop() -> None:
+    text = EXECUTOR.read_text(encoding="utf-8")
+
+    lock = text.index('with lock_path.open("a+b") as lock_stream:')
+    loop = text.index("        for job in jobs:", lock)
+    video = text.index("            source_video = _verify_source(", loop)
+    timestamps = text.index('job["source_timestamps"]', video)
+    existing = text.index("            existing = _existing_receipt(", timestamps)
+    command = text.index("            command = build_deform360_calibration_visual_command(", existing)
+    process = text.index("                produced = _run(command)", command)
+
+    assert lock < loop < video < timestamps < existing < command < process
+    assert "sources: dict[str, Path]" not in text
+    assert "source_video_path=source_video" in text
+
+
 def test_visual_production_artifact_excludes_large_predictions_and_targets() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
-    upload = text[text.index("Upload compact calibration-only production evidence") :]
+    upload = text[text.index("Upload compact production evidence") :]
 
     assert "*.npz" not in upload
     assert "predictions.json" not in upload
@@ -55,6 +96,26 @@ def test_visual_production_artifact_excludes_large_predictions_and_targets() -> 
     assert "confirmation_payloads_opened=false" in text
     assert "target_outcomes_used=false" in text
     assert "replacement_allowed=true" not in text
+
+
+def test_technical_failures_are_uploaded_then_fail_the_workflow() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    upload = text.index("Upload compact production evidence")
+    failure_gate = text.index("Fail workflow when technical failures were retained")
+    assert upload < failure_gate
+    assert "steps.production.outputs.terminal_code == '3'" in text
+    assert "exit 1" in text[failure_gate:]
+
+
+def test_transient_environment_and_evidence_are_removed() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    cleanup = text[text.index("Remove transient environment and evidence copies") :]
+
+    assert "PRODUCTION_ENV_ROOT" in cleanup
+    assert "EVIDENCE_ROOT" in cleanup
+    assert "ADMISSION_ROOT" in cleanup
+    assert cleanup.count("rm -rf") == 3
 
 
 def test_hugging_face_token_is_not_workflow_wide() -> None:
