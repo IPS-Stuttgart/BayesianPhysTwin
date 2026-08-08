@@ -1,4 +1,4 @@
-"""Canonical Euclidean distance from mask interior to background."""
+"""Canonical border-aware Euclidean distance from mask interior to background."""
 
 from __future__ import annotations
 
