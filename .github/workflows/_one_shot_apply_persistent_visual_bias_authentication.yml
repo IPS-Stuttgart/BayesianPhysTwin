@@ -1,0 +1,104 @@
+name: One-shot apply persistent visual-bias authentication
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - ".github/workflows/_one_shot_apply_persistent_visual_bias_authentication.yml"
+      - ".github/patches/persistent_visual_bias_solver_authentication.patch"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-persistent-visual-bias-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  apply:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/harden-persistent-visual-bias-candidate'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install validation tools
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Apply, format, and validate the exact patch
+        run: |
+          set -euo pipefail
+          patch=.github/patches/persistent_visual_bias_solver_authentication.patch
+          files=(
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+            tests/test_persistent_prob4d_visual_bias.py
+          )
+
+          git apply --check "${patch}"
+          git apply "${patch}"
+
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_prob4d_visual_bias_stream.py \
+            tests/test_prob4d_visual_bias_stream_crossrepo.py \
+            tests/test_persistent_prob4d_visual_bias.py \
+            tests/test_prob4d_visual_bias_update.py \
+            tests/test_prob4d_visual_bias_update_adversarial.py \
+            tests/test_prob4d_visual_bias_crossrepo.py \
+            tests/prob4d_factor_stream_contract_cases.py \
+            tests/test_observation_belief_gauge_adapter.py
+
+          python -m py_compile \
+            src/bayesian_phystwin/persistent_prob4d_visual_bias.py \
+            tests/test_persistent_prob4d_visual_bias.py
+
+          rm -f \
+            .github/workflows/_temporary_export_persistent_bias_fix_source.yml \
+            .github/workflows/_one_shot_apply_persistent_visual_bias_authentication.yml \
+            "${patch}"
+
+          git diff --check
+          test -z "$(git status --porcelain=v1 | grep -vE '^( M| D|\?\?) (docs/persistent_prob4d_visual_bias_solver.md|src/bayesian_phystwin/persistent_prob4d_visual_bias.py|tests/test_persistent_prob4d_visual_bias.py|.github/workflows/_temporary_export_persistent_bias_fix_source.yml|.github/workflows/_one_shot_apply_persistent_visual_bias_authentication.yml|.github/patches/persistent_visual_bias_solver_authentication.patch)$' || true)"
+
+      - name: Commit and publish the reviewed result
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Authenticate persistent visual-bias candidates by solver replay"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
