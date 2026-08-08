@@ -1,0 +1,123 @@
+name: Apply irreversible claim-array ownership patch
+
+on:
+  push:
+    branches:
+      - agent/irreversible-claim-array-ownership
+    paths:
+      - ".github/workflows/_one_shot_apply_immutable_arrays.yml"
+      - "scripts/_one_shot_apply_immutable_arrays.py"
+      - "scripts/_one_shot_immutable_arrays.patch.gz"
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/_one_shot_apply_immutable_arrays.yml"
+      - "scripts/_one_shot_apply_immutable_arrays.py"
+      - "scripts/_one_shot_immutable_arrays.patch.gz"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: >-
+    apply-irreversible-claim-array-ownership-${{
+    github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  apply-and-validate:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      ((github.event_name == 'push' &&
+        github.ref_name == 'agent/irreversible-claim-array-ownership') ||
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.ref ==
+          'agent/irreversible-claim-array-ownership'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out exact helper commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply exact reviewed patch
+        run: python scripts/_one_shot_apply_immutable_arrays.py
+
+      - name: Install validation environment
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m pip check
+
+      - name: Validate formatting, typing, and contracts
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/_canonical_contracts.py
+            src/bayesian_phystwin/_gauge_aware_contracts.py
+            src/bayesian_phystwin/observation_belief.py
+            src/bayesian_phystwin/physical_linearization.py
+            tests/test_gauge_aware_belief.py
+            tests/test_observation_belief.py
+            tests/test_prior_aware_and_linearization.py
+            tests/test_prospective_prob4d_update.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/physical_linearization.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_observation_belief.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_gauge_aware_belief.py \
+            tests/test_prospective_prob4d_update.py \
+            tests/test_observation_belief_gauge_adapter.py \
+            tests/test_prior_aware_likelihood_conformance.py \
+            tests/test_explicit_gauge_prob4d.py \
+            tests/test_sparse_explicit_gauge_prob4d.py \
+            tests/test_sparse_prior_aware_gauge_belief.py \
+            tests/test_prior_aware_gauge_belief_v2.py \
+            tests/test_claim_bearing_identifier_types.py
+          git diff --check
+
+      - name: Publish the reviewed final tree
+        env:
+          BRANCH: agent/irreversible-claim-array-ownership
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- \
+            CHANGELOG.md \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/physical_linearization.py \
+            tests/test_gauge_aware_belief.py \
+            tests/test_observation_belief.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_prospective_prob4d_update.py \
+            .github/workflows/_one_shot_apply_immutable_arrays.yml \
+            scripts/_one_shot_apply_immutable_arrays.py \
+            scripts/_one_shot_immutable_arrays.patch.gz
+          git commit -m \
+            "Make claim-bearing arrays irreversibly immutable"
+          git push origin "HEAD:${BRANCH}"
