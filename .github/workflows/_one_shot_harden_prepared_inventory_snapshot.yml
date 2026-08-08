@@ -1,9 +1,9 @@
 name: One-shot prepared inventory snapshot hardening
 
-# Final guarded retry after the byte-custody review.
 on:
-  push:
-    branches: [agent/deform360-prepared-source-inventory-v1]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
     paths:
       - ".github/workflows/_one_shot_harden_prepared_inventory_snapshot.yml"
       - "scripts/_one_shot_harden_prepared_inventory_snapshot.py"
@@ -11,23 +11,28 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
-  group: one-shot-prepared-inventory-snapshot-hardening
-  cancel-in-progress: true
+  group: one-shot-prepared-inventory-snapshot-hardening-pr-258
+  cancel-in-progress: false
 
 jobs:
   harden:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/agent/deform360-prepared-source-inventory-v1'
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.number == 258 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref ==
+        'agent/deform360-prepared-source-inventory-v1'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Check out exact branch revision
+      - name: Check out exact pull-request head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
