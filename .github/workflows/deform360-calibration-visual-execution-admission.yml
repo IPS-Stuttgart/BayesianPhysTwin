@@ -88,7 +88,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf build dist ./*.egg-info
+          rm -rf build dist ./*.egg-info src/*.egg-info
           python -m build --sdist
           archive="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
           test -n "${archive}"
@@ -99,8 +99,7 @@ jobs:
             <<<"${listing}"
           grep -Fq '/src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py' \
             <<<"${listing}"
-          git restore --worktree -- src/bayesian_phystwin.egg-info
-          rm -rf build dist
+          rm -rf build dist ./*.egg-info src/*.egg-info
 
       - name: Verify exact read-only repository state
         shell: bash
