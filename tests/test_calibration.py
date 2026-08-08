@@ -61,9 +61,7 @@ def test_maximum_finite_coverage_round_trips_through_rank_and_minimum(
 
 def test_float_immediately_above_rank_boundary_is_not_snapped_down() -> None:
     count = 5
-    coverage = float(
-        np.nextafter(maximum_finite_group_coverage(count), 1.0)
-    )
+    coverage = float(np.nextafter(maximum_finite_group_coverage(count), 1.0))
 
     assert finite_group_conformal_rank(count, coverage) == count + 1
 
