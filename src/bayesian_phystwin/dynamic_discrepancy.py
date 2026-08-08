@@ -330,7 +330,8 @@ def scale_coefficients_to_field_limit(
         raise ValueError("coefficient shape and maximum_node_norm must be valid")
     field = basis @ values
     before = float(np.max(np.linalg.norm(field, axis=1), initial=0.0))
-    scale = min(1.0, maximum_node_norm / max(before, np.finfo(float).tiny))
+    tiny = float(np.finfo(float).tiny)
+    scale = min(1.0, maximum_node_norm / max(before, tiny))
     limited = values * scale
     after = float(np.max(np.linalg.norm(basis @ limited, axis=1), initial=0.0))
     return limited, {
@@ -352,7 +353,9 @@ def write_dynamic_discrepancy_correction(
     target.parent.mkdir(parents=True, exist_ok=True)
     manifest_path = target.with_suffix(".json")
     arrays_path = target.with_suffix(".npz")
-    np.savez_compressed(arrays_path, **correction._array_payload())
+    np.savez_compressed(  # type: ignore[arg-type]
+        arrays_path, **correction._array_payload()
+    )
     manifest = {
         **correction._scalar_payload(),
         "artifact_id": correction.artifact_id,
