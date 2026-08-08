@@ -64,6 +64,20 @@ Camera metadata must cite the actual video, preview, timestamp, and alignment
 SHA-256 values observed on disk. All output paths are portable paths relative to
 the prepared root; absolute runner paths are never published.
 
+## Stable byte-custody reads
+
+Every retained file is opened once through a no-follow file descriptor, verified
+to be a regular file, streamed while hashing, and checked for unchanged device,
+inode, size, modification time, and change time before the descriptor is closed.
+The inventory never hashes one pathname and then reparses that pathname.
+
+NPY, NPZ, and camera-metadata JSON are parsed from the exact verified snapshot
+bytes. Replacing the source path after descriptor opening therefore cannot make
+the recorded digest describe different bytes from those used to derive shapes,
+dtypes, finite-value checks, array inventories, or metadata references. Small
+snapshots stay in memory and larger snapshots may spool to an anonymous temporary
+file; neither case publishes local paths.
+
 ## Information boundary
 
 The command acknowledges that the authorized calibration camera, tactile, and
