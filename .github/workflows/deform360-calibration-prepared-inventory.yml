@@ -214,34 +214,62 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ env.SOURCE_RUN_ID }}
 
-      - name: Set up isolated Python runtime
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install exact admission source in an isolated environment
+      - name: Prepare exact admission source without system venv
         shell: bash
         run: |
           set -euo pipefail
           site="${RUNNER_TEMP}/deform360-retained-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          python -m venv "${site}"
-          "${site}/bin/python" -m pip install \
-            "pip==25.2" \
-            "setuptools==80.9.0" \
-            "wheel==0.45.1" \
+          rm -rf -- "${site}"
+          mkdir -p -- "${site}"
+
+          base_python=""
+          for candidate in \
+            /usr/bin/python3.12 \
+            /usr/local/bin/python3.12 \
+            /usr/bin/python3 \
+            /usr/local/bin/python3
+          do
+            if [[ -x "${candidate}" ]]; then
+              base_python="${candidate}"
+              break
+            fi
+          done
+          if [[ -z "${base_python}" ]]; then
+            base_python="$(command -v python3 || true)"
+          fi
+          test -n "${base_python}"
+
+          "${base_python}" --version
+          "${base_python}" -m pip --version
+          "${base_python}" -m pip install \
+            --break-system-packages \
+            --no-cache-dir \
+            --target "${site}" \
             "numpy==2.2.6"
-          "${site}/bin/python" -m pip install --no-deps .
-          "${site}/bin/python" -m pip check
-          echo "ADMISSION_PYTHON=${site}/bin/python" >> "${GITHUB_ENV}"
-          echo "ADMISSION_SITE=${site}" >> "${GITHUB_ENV}"
+
+          admission_pythonpath="${GITHUB_WORKSPACE}/src:${site}"
+          PYTHONPATH="${admission_pythonpath}" "${base_python}" - <<'PY'
+          import numpy
+          import bayesian_phystwin
+
+          assert numpy.__version__ == "2.2.6"
+          assert bayesian_phystwin.__file__ is not None
+          print(f"numpy={numpy.__version__}")
+          print(f"bayesian_phystwin={bayesian_phystwin.__file__}")
+          PY
+
+          {
+            echo "ADMISSION_PYTHON=${base_python}"
+            echo "ADMISSION_PYTHONPATH=${admission_pythonpath}"
+            echo "ADMISSION_SITE=${site}"
+          } >> "${GITHUB_ENV}"
 
       - name: Inventory retained bytes and freeze visual admission
         id: materialize
         shell: bash
         run: |
           set -euo pipefail
+          export PYTHONPATH="${ADMISSION_PYTHONPATH}${PYTHONPATH:+:${PYTHONPATH}}"
           evidence="${RUNNER_TEMP}/deform360-retained-source-evidence"
           output_root="${RUNNER_TEMP}/deform360-retained-source-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           mkdir -p -- "${output_root}"

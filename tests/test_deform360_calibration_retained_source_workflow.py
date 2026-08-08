@@ -60,18 +60,17 @@ def test_reusable_workflow_is_reviewed_main_only_and_read_only() -> None:
     assert "secrets: inherit" not in source
 
 
-def test_self_hosted_install_uses_a_complete_pinned_python_runtime() -> None:
+def test_self_hosted_runtime_uses_an_isolated_target_without_venv() -> None:
     source = _source(REUSABLE)
-    inventory_job = source.split("\n  inventory:\n", maxsplit=1)[1]
 
-    setup = inventory_job.index("      - name: Set up isolated Python runtime\n")
-    install = inventory_job.index(
-        "      - name: Install exact admission source in an isolated environment\n"
-    )
-    assert setup < install
-    assert 'python-version: "3.12"' in inventory_job[setup:install]
-    assert "python3 -m venv" not in inventory_job
-    assert 'python -m venv "${site}"' in inventory_job
+    assert "python3 -m venv" not in source
+    assert "Prepare exact admission source without system venv" in source
+    assert '--target "${site}"' in source
+    assert "--break-system-packages" in source
+    assert 'admission_pythonpath="${GITHUB_WORKSPACE}/src:${site}"' in source
+    assert 'export PYTHONPATH="${ADMISSION_PYTHONPATH}' in source
+    assert 'echo "ADMISSION_PYTHON=${base_python}"' in source
+    assert 'echo "ADMISSION_SITE=${site}"' in source
 
 
 def test_reusable_workflow_materializes_the_complete_metadata_chain() -> None:
