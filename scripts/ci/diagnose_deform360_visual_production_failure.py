@@ -12,12 +12,8 @@ import stat
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
-_FAILURE_SCHEMA = (
-    "bayesian-phystwin.deform360-calibration-visual-technical-failure"
-)
-_DIAGNOSTIC_SCHEMA = (
-    "bayesian-phystwin.deform360-visual-production-failure-diagnostic"
-)
+_FAILURE_SCHEMA = "bayesian-phystwin.deform360-calibration-visual-technical-failure"
+_DIAGNOSTIC_SCHEMA = "bayesian-phystwin.deform360-visual-production-failure-diagnostic"
 _EXPECTED_PREDECESSOR_BOUNDARY = {
     "calibration_robot_state_opened": False,
     "calibration_tactile_payloads_opened": False,
@@ -36,25 +32,25 @@ def _sha256(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _literal_mapping(value: object, *, name: str) -> dict[str, Any]:
+def _mapping(value: object, *, name: str) -> dict[str, Any]:
     if not isinstance(value, dict) or any(type(key) is not str for key in value):
         raise ValueError(f"{name} must be a JSON object with literal string keys")
     return cast(dict[str, Any], value)
 
 
-def _lower_hex(value: object, *, name: str) -> str:
-    if (
-        type(value) is not str
-        or len(value) != 64
-        or any(character not in "0123456789abcdef" for character in value)
-    ):
-        raise ValueError(f"{name} must be one lowercase SHA-256 digest")
-    return value
-
-
 def _nonempty_literal(value: object, *, name: str) -> str:
     if type(value) is not str or not value or value != value.strip():
         raise ValueError(f"{name} must be one nonempty literal string")
+    return value
+
+
+def _lower_hex(value: object, *, name: str, length: int = 64) -> str:
+    if (
+        type(value) is not str
+        or len(value) != length
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise ValueError(f"{name} must be lowercase hexadecimal of length {length}")
     return value
 
 
@@ -118,7 +114,7 @@ def _stable_read(path: Path, *, expected_size: int | None = None) -> bytes:
 
 def _load_json(path: Path) -> dict[str, Any]:
     payload = json.loads(_stable_read(path).decode("utf-8"))
-    return _literal_mapping(payload, name=str(path))
+    return _mapping(payload, name=str(path))
 
 
 def _safe_member(root: Path, relative: object) -> Path:
@@ -144,7 +140,7 @@ def _safe_member(root: Path, relative: object) -> Path:
     return path
 
 
-def _write_new_text(path: Path, content: str) -> None:
+def _write_exclusive(path: Path, content: str) -> None:
     payload = content.encode("utf-8")
     flags = (
         os.O_WRONLY
@@ -232,14 +228,11 @@ def diagnose_failure(
     """Verify all retained receipts and publish one sanitized common traceback."""
 
     admission_id = _lower_hex(admission_id, name="admission_id")
-    implementation_revision = _nonempty_literal(
+    implementation_revision = _lower_hex(
         implementation_revision,
         name="implementation_revision",
+        length=40,
     )
-    if len(implementation_revision) != 40 or any(
-        character not in "0123456789abcdef" for character in implementation_revision
-    ):
-        raise ValueError("implementation_revision must be one exact commit SHA")
     attempt_id = _nonempty_literal(attempt_id, name="attempt_id")
     failed_workflow_run_id = _positive_integer(
         failed_workflow_run_id,
@@ -261,7 +254,7 @@ def diagnose_failure(
     visual_output_root = visual_output_root.absolute()
     run_root = visual_output_root / admission_id / implementation_revision
     failure_root = run_root / "failures"
-    _reject_symlinks(run_root)
+    _reject_symlinks(failure_root)
     if not failure_root.is_dir():
         raise ValueError("retained failure directory is missing")
     receipt_paths = sorted(failure_root.glob("*.json"))
@@ -293,13 +286,13 @@ def diagnose_failure(
             raise ValueError("retained failure completion kind changed")
         if receipt.get("status") != "failed":
             raise ValueError("retained failure status changed")
-        boundary = _literal_mapping(
+        boundary = _mapping(
             receipt.get("information_boundary"),
             name="retained failure information boundary",
         )
         if boundary != _EXPECTED_PREDECESSOR_BOUNDARY:
             raise ValueError("retained failure information boundary changed")
-        stderr = _literal_mapping(
+        stderr = _mapping(
             receipt.get("stderr"),
             name="retained stderr descriptor",
         )
@@ -329,7 +322,7 @@ def diagnose_failure(
     if representative is None:
         raise ValueError("no representative failure exists")
 
-    stderr_record = _literal_mapping(
+    stderr_record = _mapping(
         representative.get("stderr"),
         name="representative stderr descriptor",
     )
@@ -345,19 +338,21 @@ def diagnose_failure(
         stderr_path,
         expected_size=expected_stderr_bytes,
     )
-    observed_sha = _sha256(stderr_bytes)
-    if observed_sha != expected_stderr_sha256:
+    observed_sha256 = _sha256(stderr_bytes)
+    if observed_sha256 != expected_stderr_sha256:
         raise ValueError("representative traceback digest changed")
     traceback_text = stderr_bytes.decode("utf-8", errors="strict")
 
     replacements = dict(path_replacements or {})
-    replacements.setdefault(str(visual_output_root.parent.parent.parent), "<DEFORM360_STORAGE>")
+    replacements.setdefault(
+        str(visual_output_root.parent.parent.parent), "<DEFORM360_STORAGE>"
+    )
     sanitized, frames, exception_line = _sanitize_traceback(
         traceback_text,
         replacements=replacements,
     )
 
-    diagnostic = {
+    diagnostic: dict[str, object] = {
         "schema": _DIAGNOSTIC_SCHEMA,
         "schema_version": 1,
         "failed_workflow_run_id": failed_workflow_run_id,
@@ -368,7 +363,7 @@ def diagnose_failure(
         "unique_job_count": len(job_ids),
         "common_stage": "motioncrafter-production",
         "common_return_code": 1,
-        "common_stderr_sha256": observed_sha,
+        "common_stderr_sha256": observed_sha256,
         "common_stderr_bytes": len(stderr_bytes),
         "common_detail_sha256": next(iter(detail_hashes)),
         "exception_line": exception_line,
@@ -392,8 +387,8 @@ def diagnose_failure(
     _reject_symlinks(output_dir.parent)
     output_dir.mkdir(parents=True, exist_ok=False)
     diagnostic_text = json.dumps(diagnostic, indent=2, sort_keys=True) + "\n"
-    _write_new_text(output_dir / "diagnostic.json", diagnostic_text)
-    _write_new_text(output_dir / "sanitized-traceback.txt", sanitized)
+    _write_exclusive(output_dir / "diagnostic.json", diagnostic_text)
+    _write_exclusive(output_dir / "sanitized-traceback.txt", sanitized)
     print("=== Sanitized common traceback ===")
     print(sanitized, end="")
     print("=== End sanitized common traceback ===")
