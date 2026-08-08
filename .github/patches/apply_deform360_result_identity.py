@@ -55,6 +55,7 @@ INVENTORY_SEMANTICS = "exact-retained-calibration-rgb-tactile-robot-inventory-v2
             name="calibration source record SHA-256",
         ),
         "calibration_source_result_sha256": result_sha256,
+        "calibration_source_result_file_sha256": result_file_sha256,
         "object_count": len(objects),
 ''',
     )
@@ -81,6 +82,7 @@ DEFORM360_PREPARED_SOURCE_INVENTORY_SEMANTICS: Final = (
         '''        "visual_provider_lock_id",
         "calibration_source_run_record_sha256",
         "calibration_source_result_sha256",
+        "calibration_source_result_file_sha256",
         "object_count",
 ''',
     )
@@ -96,8 +98,32 @@ DEFORM360_PREPARED_SOURCE_INVENTORY_SEMANTICS: Final = (
         "visual_provider_lock_id",
         "calibration_source_run_record_sha256",
         "calibration_source_result_sha256",
+        "calibration_source_result_file_sha256",
     ):
         sha256_digest(inventory[field], name=field)
+''',
+    )
+    replace_once(
+        "src/bayesian_phystwin/deform360_calibration_visual_execution_admission.py",
+        '''    required_result_path = "sources/calibration-source/result.json"
+    if required_result_path not in source_artifacts:
+        raise ValueError("inventory does not bind the calibration-source result")
+
+    objects = _sequence(inventory["objects"], name="inventory objects")
+''',
+        '''    required_result_path = "sources/calibration-source/result.json"
+    if required_result_path not in source_artifacts:
+        raise ValueError("inventory does not bind the calibration-source result")
+    result_file_sha256 = sha256_digest(
+        source_artifacts[required_result_path],
+        name="inventory calibration-source result file",
+    )
+    if inventory["calibration_source_result_file_sha256"] != result_file_sha256:
+        raise ValueError(
+            "prepared-source inventory calibration-source result file differs"
+        )
+
+    objects = _sequence(inventory["objects"], name="inventory objects")
 ''',
     )
     replace_once(
@@ -111,10 +137,15 @@ DEFORM360_PREPARED_SOURCE_INVENTORY_SEMANTICS: Final = (
         raise ValueError("plan and inventory differ: calibration-source result")
 ''',
         '''    inventory_sources = cast(Mapping[str, Any], inventory["source_artifacts"])
-    sha256_digest(
-        inventory_sources["sources/calibration-source/result.json"],
-        name="inventory calibration-source result file",
+    result_file_sha256 = sha256_digest(
+        inventory["calibration_source_result_file_sha256"],
+        name="inventory calibration-source result file identity",
     )
+    if (
+        inventory_sources["sources/calibration-source/result.json"]
+        != result_file_sha256
+    ):
+        raise ValueError("plan and inventory differ: calibration-source result file")
     result_sha256 = sha256_digest(
         inventory["calibration_source_result_sha256"],
         name="inventory calibration-source result semantic identity",
@@ -146,6 +177,7 @@ DEFORM360_PREPARED_SOURCE_INVENTORY_SEMANTICS: Final = (
         "calibration_source_result_sha256": plan[
             "calibration_source_result_sha256"
         ],
+        "calibration_source_result_file_sha256": _digest("result-file"),
         "object_count": 10,
 ''',
     )
@@ -179,6 +211,9 @@ def test_admission_binds_semantic_and_file_result_identities_separately(
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
     result_file_sha256 = inventory["source_artifacts"][
         "sources/calibration-source/result.json"
+    ]
+    assert result_file_sha256 == inventory[
+        "calibration_source_result_file_sha256"
     ]
     assert result_file_sha256 != plan["calibration_source_result_sha256"]
 
@@ -238,7 +273,10 @@ def test_duplicate_keys_boolean_versions_and_tampering_are_rejected(
     assert value["calibration_source_result_sha256"] == inputs.chain.result[
         "result_sha256"
     ]
-    assert result_file_sha256 == _sha256(inputs.chain.result_path)
+    assert value["calibration_source_result_file_sha256"] == _sha256(
+        inputs.chain.result_path
+    )
+    assert result_file_sha256 == value["calibration_source_result_file_sha256"]
     assert result_file_sha256 != value["calibration_source_result_sha256"]
     assert value["object_count"] == 10
 ''',
@@ -255,9 +293,9 @@ information boundary.
 the exact source-file digests, the semantic calibration-source result identity,
 the action-selected window, all camera media contracts, tactile array contracts,
 robot array contracts, and the closed information boundary. Inventory schema
-version 2 deliberately carries both the result file digest and the result's
-internal `result_sha256`; they are different identities and neither substitutes
-for the other.
+version 2 deliberately carries explicit `calibration_source_result_file_sha256`
+and `calibration_source_result_sha256` fields; they are different identities and
+neither substitutes for the other.
 ''',
     )
     replace_once(
