@@ -70,7 +70,7 @@ def interior_mask_distance(mask: np.ndarray) -> np.ndarray:
 
     The image exterior is background. This makes a foreground pixel on an
     image edge exactly one pixel from background and gives identical
-    semantics with and without SciPy.
+    semantics with and without SciPy. Background pixels retain zero distance.
     """
 
     values = np.asarray(mask, dtype=bool)
