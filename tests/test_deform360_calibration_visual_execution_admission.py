@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 import pytest
+import test_deform360_calibration_prepared_inventory as inventory_cases
 import test_deform360_calibration_visual_production_plan as plan_cases
 
 import bayesian_phystwin.deform360_calibration_visual_execution_admission as admission_api
@@ -155,6 +156,34 @@ def _build(tmp_path: Path) -> dict[str, object]:
         prepared_source_inventory_path=inventory_path,
         implementation_revision=IMPLEMENTATION_REVISION,
     )
+
+
+def test_production_plan_and_inventory_share_result_file_identity(
+    tmp_path: Path,
+) -> None:
+    inputs, processed = inventory_cases._prepared_inputs(tmp_path)
+    plan = plan_cases._build(inputs)
+    inventory = inventory_cases._build(inputs, processed)
+    plan_path = tmp_path / "visual-production-plan.json"
+    inventory_path = tmp_path / "prepared-source-inventory.json"
+    save_deform360_calibration_visual_production_plan(plan_path, plan)
+    _write_json(inventory_path, inventory)
+
+    result_file_sha256 = hashlib.sha256(
+        inputs.chain.result_path.read_bytes()
+    ).hexdigest()
+    assert plan["calibration_source_result_sha256"] == result_file_sha256
+    assert (
+        inventory["source_artifacts"]["sources/calibration-source/result.json"]
+        == result_file_sha256
+    )
+
+    admission = build_deform360_calibration_visual_execution_admission(
+        visual_production_plan_path=plan_path,
+        prepared_source_inventory_path=inventory_path,
+        implementation_revision=IMPLEMENTATION_REVISION,
+    )
+    assert admission["calibration_source_result_sha256"] == result_file_sha256
 
 
 def test_admission_binds_all_jobs_to_exact_source_bytes(tmp_path: Path) -> None:

@@ -832,10 +832,7 @@ def build_deform360_calibration_visual_production_plan(
         "selection_artifact_sha256": selection_id,
         "visual_provider_lock_id": visual_lock_id,
         "calibration_source_run_record_sha256": run_record_id,
-        "calibration_source_result_sha256": cast(
-            str,
-            result_value["result_sha256"],
-        ),
+        "calibration_source_result_sha256": result_file_sha256,
         "confirmation_object_set_sha256": _canonical_sha256(
             {"object_ids": confirmation_ids}
         ),
