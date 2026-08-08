@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import pytest
 
+from bayesian_phystwin._canonical_contracts import frozen_finite_json_mapping
 from bayesian_phystwin.prob4d_provider_attestation import (
     compute_prob4d_provider_manifest_id,
     validate_prob4d_provider_attestation,
@@ -119,3 +120,14 @@ def test_provider_attestation_rejects_integer_calibration_digest() -> None:
             source_revision=_REVISION,
             require_claim_bearing=True,
         )
+
+
+def test_claim_metadata_rejects_falsey_non_mapping_root() -> None:
+    for value in ([], (), "", 0, False):
+        with pytest.raises(ValueError, match="metadata must be a mapping"):
+            frozen_finite_json_mapping(value)  # type: ignore[arg-type]
+
+
+def test_claim_metadata_rejects_non_string_keys_recursively() -> None:
+    with pytest.raises(ValueError, match="literal string object keys"):
+        frozen_finite_json_mapping({"nested": [{1: "value"}]})
