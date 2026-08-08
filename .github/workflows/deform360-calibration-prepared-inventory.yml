@@ -214,12 +214,19 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ env.SOURCE_RUN_ID }}
 
+      - name: Set up isolated Python runtime
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
       - name: Install exact admission source in an isolated environment
         shell: bash
         run: |
           set -euo pipefail
           site="${RUNNER_TEMP}/deform360-retained-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          python3 -m venv "${site}"
+          python -m venv "${site}"
           "${site}/bin/python" -m pip install \
             "pip==25.2" \
             "setuptools==80.9.0" \

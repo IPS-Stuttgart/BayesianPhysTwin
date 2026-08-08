@@ -60,6 +60,20 @@ def test_reusable_workflow_is_reviewed_main_only_and_read_only() -> None:
     assert "secrets: inherit" not in source
 
 
+def test_self_hosted_install_uses_a_complete_pinned_python_runtime() -> None:
+    source = _source(REUSABLE)
+    inventory_job = source.split("\n  inventory:\n", maxsplit=1)[1]
+
+    setup = inventory_job.index("      - name: Set up isolated Python runtime\n")
+    install = inventory_job.index(
+        "      - name: Install exact admission source in an isolated environment\n"
+    )
+    assert setup < install
+    assert 'python-version: "3.12"' in inventory_job[setup:install]
+    assert "python3 -m venv" not in inventory_job
+    assert 'python -m venv "${site}"' in inventory_job
+
+
 def test_reusable_workflow_materializes_the_complete_metadata_chain() -> None:
     source = _source(REUSABLE)
     execution = source.split(
