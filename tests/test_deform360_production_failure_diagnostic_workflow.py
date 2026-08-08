@@ -7,6 +7,9 @@ import yaml
 WORKFLOW = Path(
     ".github/workflows/diagnose-deform360-visual-production-failure-once.yml"
 )
+SCRIPT = Path("scripts/ci/diagnose_deform360_visual_production_failure.py")
+UNIT_TEST = Path("tests/test_diagnose_deform360_visual_production_failure.py")
+STATIC_TEST = Path("tests/test_deform360_production_failure_diagnostic_workflow.py")
 
 
 def _workflow() -> str:
@@ -27,7 +30,7 @@ def test_failure_diagnostic_is_valid_and_runs_once_after_reviewed_merge() -> Non
     assert "github.ref == 'refs/heads/main'" in text
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
     assert "runs-on: self-hosted" in text
-    assert "2026-08-09-common-traceback-v1" in text
+    assert "2026-08-09-common-traceback-v2" in text
 
 
 def test_failure_diagnostic_binds_exact_retained_execution() -> None:
@@ -48,60 +51,65 @@ def test_failure_diagnostic_binds_exact_retained_execution() -> None:
     )
     for value in expected:
         assert value in text
-    assert "expected {expected_count} failure receipts" in text
-    assert "retained failures do not share the expected traceback" in text
-    assert "representative traceback digest changed" in text
+    for option in (
+        "--visual-output-root",
+        "--admission-id",
+        "--implementation-revision",
+        "--attempt-id",
+        "--failed-workflow-run-id",
+        "--expected-job-count",
+        "--expected-stderr-sha256",
+        "--expected-stderr-bytes",
+        "--output-dir",
+    ):
+        assert option in text
 
 
-def test_failure_diagnostic_reads_only_receipts_and_retained_technical_log() -> None:
+def test_failure_diagnostic_validates_before_self_hosted_access() -> None:
     text = _workflow()
-    diagnostic = text[text.index("  diagnose:") :]
+    contracts = text[text.index("  contracts:") : text.index("  diagnose:")]
+    diagnose = text[text.index("  diagnose:") :]
 
-    assert 'failure_root = run_root / "failures"' in diagnostic
-    assert (
-        'stderr_path = safe_member(run_root, str(stderr_record["path"]))' in diagnostic
+    for path in (SCRIPT, UNIT_TEST, STATIC_TEST):
+        assert str(path) in contracts
+    assert "python -m ruff check" in contracts
+    assert "python -m ruff format --check" in contracts
+    assert "python -m mypy" in contracts
+    assert "python -m pytest" in contracts
+    assert "needs: contracts" in diagnose
+    runner_check = 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"'
+    assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
+    assert runner_check in diagnose
+    assert diagnose.index(runner_check) < diagnose.index(
+        "python scripts/ci/diagnose_deform360_visual_production_failure.py"
     )
-    assert "stable_read(stderr_path, expected_size=expected_bytes)" in diagnostic
-    assert "retained_technical_logs_opened" in diagnostic
-    assert "retained_calibration_camera_payloads_opened" in diagnostic
-    assert "calibration_tactile_payloads_opened" in diagnostic
-    assert "calibration_robot_state_opened" in diagnostic
-    assert "reserved_evaluation_frames_opened" in diagnostic
-    assert "adaptive_confirmation_payloads_opened" in diagnostic
-    assert "confirmation_payloads_opened" in diagnostic
-    assert "target_outcomes_used" in diagnostic
-    assert "replacement_allowed" in diagnostic
-    assert "/data-7fea8e2" not in diagnostic
-    assert "adaptive-confirmation-download-" not in diagnostic
-    assert "undistorted.mp4" not in diagnostic
-    assert "aligned_timestamps.txt" not in diagnostic
-    assert "np.load" not in diagnostic
-    assert "VideoReader" not in diagnostic
 
 
-def test_failure_diagnostic_rejects_symlinks_and_path_escape() -> None:
+def test_failure_diagnostic_wrapper_opens_no_dataset_payload() -> None:
     text = _workflow()
+    diagnose = text[text.index("  diagnose:") :]
 
-    assert "path contains a symbolic link" in text
-    assert "retained path contains a symlink" in text
-    assert 'getattr(os, "O_NOFOLLOW", 0)' in text
-    assert 'any(part in {"", ".", ".."} for part in pure.parts)' in text
-    assert "file changed while being read" in text
-    assert "not a regular file" in text
+    assert "/data-7fea8e2" not in diagnose
+    assert "adaptive-confirmation-download-" not in diagnose
+    assert "undistorted.mp4" not in diagnose
+    assert "aligned_timestamps.txt" not in diagnose
+    assert "np.load" not in diagnose
+    assert "VideoReader" not in diagnose
+    assert "motioncrafter" not in diagnose.lower()
+    assert "--visual-output-root" in diagnose
+    assert 'mkdir -p -- "${parent}"' in diagnose
+    assert 'echo "DIAGNOSTIC_ROOT=${diagnostic_root}" >> "${GITHUB_ENV}"' in diagnose
 
 
-def test_failure_diagnostic_sanitizes_paths_and_uploads_only_compact_text() -> None:
+def test_failure_diagnostic_uploads_only_compact_sanitized_evidence() -> None:
     text = _workflow()
+    upload = text[text.index("Upload compact failure diagnostic") :]
 
-    assert '"<GITHUB_WORKSPACE>"' in text
-    assert '"<RUNNER_TEMP>"' in text
-    assert '"<HOME>"' in text
-    assert '"<DEFORM360_STORAGE>"' in text
-    assert '"<ABSOLUTE_PATH>/"' in text
-    assert "sanitized-traceback.txt" in text
     assert "diagnostic.json" in text
+    assert "sanitized-traceback.txt" in text
     assert "SHA256SUMS" in text
-    assert "actions/upload-artifact@v7" in text
-    assert "*.bin" not in text
-    assert "*.npz" not in text
-    assert "retention-days: 90" in text
+    assert "actions/upload-artifact@v7" in upload
+    assert "*.bin" not in upload
+    assert "*.npz" not in upload
+    assert "retention-days: 90" in upload
+    assert "if-no-files-found: error" in upload
