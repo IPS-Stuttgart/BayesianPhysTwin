@@ -49,28 +49,32 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
+          def replace_once(text: str, old: str, new: str, *, name: str) -> str:
+              if text.count(old) != 1:
+                  raise SystemExit(f"{name} shape changed")
+              return text.replace(old, new)
+
           source_path = Path(
               "src/bayesian_phystwin/"
               "deform360_calibration_visual_execution_admission.py"
           )
           source = source_path.read_text(encoding="utf-8")
-
-          replacements = (
-              (
-                  "from pathlib import Path, PurePosixPath\n",
-                  "from pathlib import Path\n",
-                  "pathlib import",
-              ),
-              (
-                  "from ._canonical_contracts import plain_json\n",
-                  "from ._canonical_contracts import (\n"
-                  "    canonical_relative_posix_path,\n"
-                  "    plain_json,\n"
-                  ")\n",
-                  "canonical path import",
-              ),
-              (
-                  '''def _safe_relative_path(value: object, *, name: str) -> str:
+          source = replace_once(
+              source,
+              "from pathlib import Path, PurePosixPath\n",
+              "from pathlib import Path\n",
+              name="pathlib import",
+          )
+          source = replace_once(
+              source,
+              "from ._canonical_contracts import plain_json\n",
+              "from ._canonical_contracts import "
+              "canonical_relative_posix_path, plain_json\n",
+              name="canonical path import",
+          )
+          source = replace_once(
+              source,
+              '''def _safe_relative_path(value: object, *, name: str) -> str:
               text = _literal_string(value, name=name)
               path = PurePosixPath(text)
               if (
@@ -81,103 +85,99 @@ jobs:
                   raise ValueError(f"{name} must be a safe POSIX relative path")
               return path.as_posix()
           ''',
-                  '''def _safe_relative_path(value: object, *, name: str) -> str:
+              '''def _safe_relative_path(value: object, *, name: str) -> str:
               return canonical_relative_posix_path(
                   _literal_string(value, name=name),
                   name=name,
               )
           ''',
-                  "safe relative path validator",
-              ),
-              (
-                  '''        _literal_integer(item["episode_id"], name=f"{object_id} episode_id")
-              if item["synthetic_episode_index"] != 0:
-                  raise ValueError(f"inventory episode index changed: {object_id}")
-          ''',
-                  '''        _literal_integer(item["episode_id"], name=f"{object_id} episode_id")
-              synthetic_episode_index = _literal_integer(
-                  item["synthetic_episode_index"],
-                  name=f"{object_id} synthetic_episode_index",
-              )
-              if synthetic_episode_index != 0:
-                  raise ValueError(f"inventory episode index changed: {object_id}")
-          ''',
-                  "synthetic episode index validator",
-              ),
+              name="safe relative path validator",
           )
-          for old, new, name in replacements:
-              if source.count(old) != 1:
-                  raise SystemExit(f"{name} shape changed")
-              source = source.replace(old, new)
+          source = replace_once(
+              source,
+              '        if item["synthetic_episode_index"] != 0:\n'
+              '            raise ValueError('\
+              'f"inventory episode index changed: {object_id}")\n',
+              '        synthetic_episode_index = _literal_integer(\n'
+              '            item["synthetic_episode_index"],\n'
+              '            name=f"{object_id} synthetic_episode_index",\n'
+              '        )\n'
+              '        if synthetic_episode_index != 0:\n'
+              '            raise ValueError('\
+              'f"inventory episode index changed: {object_id}")\n',
+              name="synthetic episode index validator",
+          )
           source_path.write_text(source, encoding="utf-8")
 
           docs_path = Path("docs/deform360_calibration_visual_execution_admission.md")
           docs = docs_path.read_text(encoding="utf-8")
-          old = (
-              "Their exact verified bytes are parsed after device, inode, size, "
-              "modification\n time, and change time are checked before and after "
-              "reading.\n"
+          docs = replace_once(
+              docs,
+              "modification\n time, and change time",
+              "modification\ntime, and change time",
+              name="documentation line wrap",
           )
-          new = (
-              "Their exact verified bytes are parsed after device, inode, size, "
-              "modification\ntime, and change time are checked before and after "
-              "reading.\n"
-          )
-          if docs.count(old) != 1:
-              raise SystemExit("documentation line-wrap shape changed")
-          docs_path.write_text(docs.replace(old, new), encoding="utf-8")
+          docs_path.write_text(docs, encoding="utf-8")
 
           tests_path = Path(
               "tests/test_deform360_calibration_visual_execution_admission.py"
           )
           tests = tests_path.read_text(encoding="utf-8")
-          anchor = '''    with pytest.raises(ValueError, match="version changed"):
-              build_deform360_calibration_visual_execution_admission(
-                  visual_production_plan_path=plan_path,
-                  prepared_source_inventory_path=inventory_path,
-                  implementation_revision=IMPLEMENTATION_REVISION,
-              )
-
-              admission = _build(tmp_path / "tamper")
-          '''
-          replacement = '''    with pytest.raises(ValueError, match="version changed"):
-              build_deform360_calibration_visual_execution_admission(
-                  visual_production_plan_path=plan_path,
-                  prepared_source_inventory_path=inventory_path,
-                  implementation_revision=IMPLEMENTATION_REVISION,
-              )
-
-              plan_path, inventory_path, _plan = _inputs(tmp_path / "boolean-index")
-              inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-              inventory["objects"][0]["synthetic_episode_index"] = False
-              _rewrite_inventory(inventory_path, inventory)
-              with pytest.raises(ValueError, match="synthetic_episode_index"):
-                  build_deform360_calibration_visual_execution_admission(
-                      visual_production_plan_path=plan_path,
-                      prepared_source_inventory_path=inventory_path,
-                      implementation_revision=IMPLEMENTATION_REVISION,
-                  )
-
-              plan_path, inventory_path, _plan = _inputs(tmp_path / "path-alias")
-              inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-              video = inventory["objects"][0]["cameras"][0]["video"]
-              video["path"] = video["path"].replace(
-                  "/undistorted.mp4",
-                  "//undistorted.mp4",
-              )
-              _rewrite_inventory(inventory_path, inventory)
-              with pytest.raises(ValueError, match="canonical relative POSIX path"):
-                  build_deform360_calibration_visual_execution_admission(
-                      visual_production_plan_path=plan_path,
-                      prepared_source_inventory_path=inventory_path,
-                      implementation_revision=IMPLEMENTATION_REVISION,
-                  )
-
-              admission = _build(tmp_path / "tamper")
-          '''
-          if tests.count(anchor) != 1:
-              raise SystemExit("adversarial-test insertion point changed")
-          tests_path.write_text(tests.replace(anchor, replacement), encoding="utf-8")
+          anchor = (
+              '    with pytest.raises(ValueError, match="version changed"):\n'
+              "        build_deform360_calibration_visual_execution_admission(\n"
+              "            visual_production_plan_path=plan_path,\n"
+              "            prepared_source_inventory_path=inventory_path,\n"
+              "            implementation_revision=IMPLEMENTATION_REVISION,\n"
+              "        )\n\n"
+              '    admission = _build(tmp_path / "tamper")\n'
+          )
+          replacement = (
+              '    with pytest.raises(ValueError, match="version changed"):\n'
+              "        build_deform360_calibration_visual_execution_admission(\n"
+              "            visual_production_plan_path=plan_path,\n"
+              "            prepared_source_inventory_path=inventory_path,\n"
+              "            implementation_revision=IMPLEMENTATION_REVISION,\n"
+              "        )\n\n"
+              "    plan_path, inventory_path, _plan = _inputs(\n"
+              '        tmp_path / "boolean-index"\n'
+              "    )\n"
+              '    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))\n'
+              '    inventory["objects"][0]["synthetic_episode_index"] = False\n'
+              "    _rewrite_inventory(inventory_path, inventory)\n"
+              "    with pytest.raises(ValueError, match=\"synthetic_episode_index\"):\n"
+              "        build_deform360_calibration_visual_execution_admission(\n"
+              "            visual_production_plan_path=plan_path,\n"
+              "            prepared_source_inventory_path=inventory_path,\n"
+              "            implementation_revision=IMPLEMENTATION_REVISION,\n"
+              "        )\n\n"
+              "    plan_path, inventory_path, _plan = _inputs(\n"
+              '        tmp_path / "path-alias"\n'
+              "    )\n"
+              '    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))\n'
+              '    video = inventory["objects"][0]["cameras"][0]["video"]\n'
+              '    video["path"] = video["path"].replace(\n'
+              '        "/undistorted.mp4",\n'
+              '        "//undistorted.mp4",\n'
+              "    )\n"
+              "    _rewrite_inventory(inventory_path, inventory)\n"
+              "    with pytest.raises(\n"
+              '        ValueError, match="canonical relative POSIX path"\n'
+              "    ):\n"
+              "        build_deform360_calibration_visual_execution_admission(\n"
+              "            visual_production_plan_path=plan_path,\n"
+              "            prepared_source_inventory_path=inventory_path,\n"
+              "            implementation_revision=IMPLEMENTATION_REVISION,\n"
+              "        )\n\n"
+              '    admission = _build(tmp_path / "tamper")\n'
+          )
+          tests = replace_once(
+              tests,
+              anchor,
+              replacement,
+              name="adversarial-test insertion point",
+          )
+          tests_path.write_text(tests, encoding="utf-8")
           PY
 
       - name: Install exact validation environment
