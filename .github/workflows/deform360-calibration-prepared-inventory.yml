@@ -158,8 +158,10 @@ jobs:
           "${site}/bin/python" -m pip install \
             "pip==25.2" \
             "setuptools==80.9.0" \
-            "wheel==0.45.1"
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
           "${site}/bin/python" -m pip install --no-deps .
+          "${site}/bin/python" -m pip check
           echo "INVENTORY_PYTHON=${site}/bin/python" >> "${GITHUB_ENV}"
           echo "INVENTORY_SITE=${site}" >> "${GITHUB_ENV}"
 
