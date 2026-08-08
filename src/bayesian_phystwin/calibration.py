@@ -65,10 +65,7 @@ def finite_group_conformal_rank(
     )
     nominal, exact_nominal = _coverage_fraction(coverage)
     boundary_rank = int(round((count + 1) * nominal))
-    if (
-        1 <= boundary_rank <= count + 1
-        and nominal == boundary_rank / (count + 1)
-    ):
+    if 1 <= boundary_rank <= count + 1 and nominal == boundary_rank / (count + 1):
         return boundary_rank
     numerator = (count + 1) * exact_nominal.numerator
     return (numerator + exact_nominal.denominator - 1) // exact_nominal.denominator
