@@ -99,6 +99,7 @@ def test_validation_primitives_and_metadata_loader_fail_closed(
             admission_api._load_stable_json_object(target, label="metadata")
 
     with monkeypatch.context() as patch:
+
         def fail_read(_descriptor: int, _count: int) -> bytes:
             raise OSError("synthetic read failure")
 
@@ -263,9 +264,7 @@ def test_plan_inventory_binding_rejects_cross_artifact_drift(tmp_path: Path) -> 
     def reject(mutator: Any, match: str) -> None:
         nonlocal counter
         counter += 1
-        plan_path, inventory_path, _plan = cases._inputs(
-            tmp_path / f"case-{counter}"
-        )
+        plan_path, inventory_path, _plan = cases._inputs(tmp_path / f"case-{counter}")
         inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
         mutator(inventory)
         cases._rewrite_inventory(inventory_path, inventory)
@@ -504,9 +503,7 @@ def test_admission_validator_rejects_global_and_job_drift(tmp_path: Path) -> Non
 
     def change_complete_object_stratum(value: dict[str, object]) -> None:
         jobs = _at(value, ("jobs",))
-        object_id = next(
-            job["object_id"] for job in jobs if job["stratum"] == "sheet"
-        )
+        object_id = next(job["object_id"] for job in jobs if job["stratum"] == "sheet")
         for job in jobs:
             if job["object_id"] == object_id:
                 job["stratum"] = "volumetric"
