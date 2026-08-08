@@ -5,29 +5,32 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-calibration-visual-production.yml"
-      - "MANIFEST.in"
       - "docs/deform360_calibration_visual_production.md"
       - "scripts/science/execute_deform360_calibration_visual_production.py"
       - "src/bayesian_phystwin/deform360_calibration_visual_production.py"
       - "tests/test_deform360_calibration_visual_production.py"
       - "tests/test_deform360_calibration_visual_production_workflow.py"
+      - "pyproject.toml"
   workflow_dispatch:
     inputs:
       processed_root:
-        description: Persistent calibration-processed root
+        description: Protected Deform360 calibration-processed root
         required: false
+        default: /mnt/lexar4tb/deform360-official-hub-visuotactile-v1/calibration-processed
         type: string
       output_root:
-        description: Persistent visual-production root
+        description: Protected persistent visual-production root
         required: false
+        default: /mnt/lexar4tb/deform360-official-hub-visuotactile-v1/calibration-visual-production
         type: string
       hf_cache_dir:
-        description: Exact Hugging Face cache
+        description: Persistent Hugging Face model cache
         required: false
+        default: /mnt/lexar4tb/deform360-official-hub-visuotactile-v1/hf-cache
         type: string
       resume:
-        description: Revalidate exact receipts and resume matching journals
-        required: true
+        description: Revalidate and resume the exact admitted production
+        required: false
         default: true
         type: boolean
 
@@ -36,105 +39,181 @@ permissions:
   contents: read
 
 concurrency:
-  group: deform360-calibration-visual-production-${{ github.event_name == 'workflow_dispatch' && 'protected-main' || github.ref }}
+  group: deform360-calibration-visual-production
   cancel-in-progress: false
 
 env:
-  BPT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
-  MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
-  INPUT_PROCESSED_ROOT: ${{ inputs.processed_root }}
-  VAR_PROCESSED_ROOT: ${{ vars.DEFORM360_OFFICIAL_HUB_CALIBRATION_PROCESSED_ROOT }}
-  INPUT_OUTPUT_ROOT: ${{ inputs.output_root }}
-  VAR_OUTPUT_ROOT: ${{ vars.DEFORM360_CALIBRATION_VISUAL_OUTPUT_ROOT }}
-  INPUT_HF_CACHE_DIR: ${{ inputs.hf_cache_dir }}
-  VAR_HF_CACHE_DIR: ${{ vars.MOTIONCRAFTER_HF_CACHE_DIR }}
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
   PYTHONDONTWRITEBYTECODE: "1"
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TRANSFORMERS_OFFLINE: "0"
+  BPT_HEAD_SHA: ${{ github.sha }}
+  PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
+  MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
+  ADMISSION_RUN_ID: "31272985733"
+  ADMISSION_RUN_ATTEMPT: "1"
+  ADMISSION_RUN_HEAD_SHA: 6d8b29983a15eadf22dc26cdb563369e05a557d5
+  ADMISSION_ARTIFACT_ID: "9026183221"
+  ADMISSION_ARTIFACT_NAME: deform360-calibration-retained-source-admission-31272985733-1
+  ADMISSION_ARTIFACT_DIGEST: sha256:d13a3aed7b63effab637215feee15c61d9cb69330dbe8f666a6e37b00b35b836
+  ADMISSION_ID: 4dd68e209b4c1a206a209786f57b0a4a96bd102a79a0f8f60d436fabd5d584ba
+  INVENTORY_ID: 0cbf109f8ea572846f0d117880a6048840346d7b32fef7f47ba2c55f857f744c
+  PLAN_ID: c30d2ecdbf2702460171ec6c58f2cc9ae2c666b4e311f2517b539cdc14f2eea7
+  ADMISSION_FILE_SHA256: 56354d3a92dbb3bc510ecc7861aba23d0f1e7c6112dcad9fa38efd4505afb6af
+  INVENTORY_FILE_SHA256: 07621ad7e2f216d16b6273766f11efdfdf5e8b44288c80ea8352cc730c7f390e
+  PLAN_FILE_SHA256: add813796775adc22a11468a76c4d1f1b93f9eece0978a4fcabcade5134e9d5f
+  RECEIPT_FILE_SHA256: f596395e32122f3271ba2326a37a8c702179b277d21ed05ec3d85a77234d0647
 
 jobs:
   contracts:
-    name: Visual-production contracts / Python ${{ matrix.python-version }}
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+       github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.12"]
     steps:
-      - name: Check out exact proposed source
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install data-free validation environment
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]" "numpy>=1.24,<2.2"
+          python -m pip install "build>=1.2"
+          python -m pip check
+      - name: Validate production contracts without opening payloads
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_calibration_visual_production.py \
+            scripts/science/execute_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production_workflow.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_calibration_visual_production.py \
+            scripts/science/execute_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production_workflow.py
+          python -m mypy \
+            src/bayesian_phystwin/deform360_calibration_visual_production.py \
+            scripts/science/execute_deform360_calibration_visual_production.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_visual_production.py \
+            tests/test_deform360_calibration_visual_production_workflow.py
+          python -m py_compile \
+            src/bayesian_phystwin/deform360_calibration_visual_production.py \
+            scripts/science/execute_deform360_calibration_visual_production.py
+          python -m build --sdist
+
+  admission-lock:
+    if: github.event_name == 'workflow_dispatch'
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      artifact_id: ${{ steps.verify.outputs.artifact-id }}
+    steps:
+      - name: Verify audited retained-source artifact metadata
+        id: verify
+        uses: actions/github-script@v8
+        env:
+          EXPECTED_RUN_ID: ${{ env.ADMISSION_RUN_ID }}
+          EXPECTED_RUN_HEAD_SHA: ${{ env.ADMISSION_RUN_HEAD_SHA }}
+          EXPECTED_ARTIFACT_ID: ${{ env.ADMISSION_ARTIFACT_ID }}
+          EXPECTED_ARTIFACT_NAME: ${{ env.ADMISSION_ARTIFACT_NAME }}
+          EXPECTED_ARTIFACT_DIGEST: ${{ env.ADMISSION_ARTIFACT_DIGEST }}
+        with:
+          script: |
+            const runId = Number(process.env.EXPECTED_RUN_ID)
+            const artifactId = Number(process.env.EXPECTED_ARTIFACT_ID)
+            const expectedName = process.env.EXPECTED_ARTIFACT_NAME
+            const expectedDigest = process.env.EXPECTED_ARTIFACT_DIGEST
+            const expectedHead = process.env.EXPECTED_RUN_HEAD_SHA
+            if (!Number.isSafeInteger(runId) || !Number.isSafeInteger(artifactId)) {
+              throw new Error('audited admission run or artifact ID is invalid')
+            }
+            const response = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+              name: expectedName,
+              per_page: 100,
+            })
+            const matches = response.data.artifacts.filter(
+              artifact => artifact.name === expectedName && !artifact.expired,
+            )
+            if (matches.length !== 1) {
+              throw new Error(
+                `expected exactly one live audited artifact ${expectedName}; found ${matches.length}`,
+              )
+            }
+            const artifact = matches[0]
+            if (artifact.id !== artifactId) {
+              throw new Error(`audited artifact ID changed: ${artifact.id}`)
+            }
+            if (artifact.digest !== expectedDigest) {
+              throw new Error(
+                `audited artifact digest changed: expected ${expectedDigest}, got ${artifact.digest}`,
+              )
+            }
+            if (
+              !artifact.workflow_run ||
+              artifact.workflow_run.id !== runId ||
+              artifact.workflow_run.head_branch !== 'main' ||
+              artifact.workflow_run.head_sha !== expectedHead
+            ) {
+              throw new Error('audited artifact workflow lineage changed')
+            }
+            core.info(`Verified audited admission artifact ${artifact.id} at ${artifact.digest}`)
+            core.setOutput('artifact-id', String(artifact.id))
+
+  production:
+    if: github.event_name == 'workflow_dispatch'
+    needs:
+      - contracts
+      - admission-lock
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 360
+    steps:
+      - name: Publish evidence beacon before protected access
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "protocol=deform360-official-hub-visuotactile-v1"
+            echo "stage=calibration-visual-production"
+            echo "bpt_revision=${BPT_HEAD_SHA}"
+            echo "admission_run_id=${ADMISSION_RUN_ID}"
+            echo "admission_artifact_id=${ADMISSION_ARTIFACT_ID}"
+            echo "admission_artifact_digest=${ADMISSION_ARTIFACT_DIGEST}"
+            echo "admission_id=${ADMISSION_ID}"
+            echo "prob4d_revision=${PROB4D_REVISION}"
+            echo "motioncrafter_revision=${MOTIONCRAFTER_REVISION}"
+            echo "confirmation_payloads_opened=false"
+            echo "target_outcomes_used=false"
+            echo "replacement_allowed=false"
+          } | tee "${RUNNER_TEMP}/deform360-calibration-visual-production-beacon.txt"
+
+      - name: Check out exact BayesianPhysTwin main revision
         uses: actions/checkout@v7
         with:
           ref: ${{ env.BPT_HEAD_SHA }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Validate contracts and distribution membership
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install -e ".[dev,graph]"
-          python -m pip install "build>=1.2"
-          files=(
-            src/bayesian_phystwin/deform360_calibration_visual_production.py
-            scripts/science/execute_deform360_calibration_visual_production.py
-            tests/test_deform360_calibration_visual_production.py
-            tests/test_deform360_calibration_visual_production_workflow.py
-          )
-          python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
-          python -m mypy \
-            src/bayesian_phystwin/deform360_calibration_visual_production.py \
-            scripts/science/execute_deform360_calibration_visual_production.py
-          python -m pytest -q -p no:cacheprovider \
-            tests/test_deform360_calibration_visual_production.py \
-            tests/test_deform360_calibration_visual_production_workflow.py \
-            tests/test_deform360_calibration_visual_execution_admission.py \
-            tests/test_deform360_calibration_visual_execution_admission_edges.py
-          python -m build --sdist
-          archive="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
-          listing="$(tar -tzf "${archive}")"
-          grep -Fq '/docs/deform360_calibration_visual_production.md' <<<"${listing}"
-          grep -Fq '/scripts/science/execute_deform360_calibration_visual_production.py' <<<"${listing}"
-          grep -Fq '/src/bayesian_phystwin/deform360_calibration_visual_production.py' <<<"${listing}"
-          rm -rf build dist ./*.egg-info src/*.egg-info
-          git diff --exit-code
-          test -z "$(git status --porcelain=v1)"
 
-  retained-source:
-    name: Authoritative retained-source admission
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    needs: contracts
-    uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml
-
-  production:
-    name: Admitted all-camera production / workstation2
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    needs: [contracts, retained-source]
-    runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 360
-    steps:
-      - name: Publish calibration-only beacon
-        run: |
-          echo "retained_source_artifact_id=${{ needs.retained-source.outputs.artifact_id }}"
-          echo "retained_source_artifact_digest=${{ needs.retained-source.outputs.artifact_digest }}"
-          echo "reserved_evaluation_frames_opened=false"
-          echo "confirmation_payloads_opened=false"
-          echo "target_outcomes_used=false"
-      - name: Check out exact reviewed BayesianPhysTwin main
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-          clean: true
-      - name: Check out exact Prob4D provider
+      - name: Check out exact Prob4D provider revision
         uses: actions/checkout@v7
         with:
           repository: IPS-Stuttgart/Prob4D
@@ -143,7 +222,8 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
           clean: true
-      - name: Check out exact MotionCrafter provider
+
+      - name: Check out exact MotionCrafter revision
         uses: actions/checkout@v7
         with:
           repository: TencentARC/MotionCrafter
@@ -152,136 +232,349 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
           clean: true
-      - name: Resolve protected roots and verify exact repository state
+
+      - name: Resolve and separate protected roots
+        env:
+          PROCESSED_ROOT_INPUT: ${{ inputs.processed_root }}
+          OUTPUT_ROOT_INPUT: ${{ inputs.output_root }}
+          HF_CACHE_INPUT: ${{ inputs.hf_cache_dir }}
         shell: bash
         run: |
           set -euo pipefail
-          test "${GITHUB_REF}" = "refs/heads/main"
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${BPT_HEAD_SHA}"
           test "$(git -C _prob4d rev-parse HEAD)" = "${PROB4D_REVISION}"
           test "$(git -C _motioncrafter rev-parse HEAD)" = "${MOTIONCRAFTER_REVISION}"
-          test -z "$(git status --porcelain=v1)"
-          test -z "$(git -C _prob4d status --porcelain=v1)"
-          test -z "$(git -C _motioncrafter status --porcelain=v1)"
-          processed="${INPUT_PROCESSED_ROOT:-${VAR_PROCESSED_ROOT:-/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed}}"
-          output="${INPUT_OUTPUT_ROOT:-${VAR_OUTPUT_ROOT:-/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-visual-production}}"
-          cache="${INPUT_HF_CACHE_DIR:-${VAR_HF_CACHE_DIR:-${HOME}/.cache/huggingface/hub}}"
-          processed="$(realpath -m "${processed}")"
-          output="$(realpath -m "${output}")"
-          cache="$(realpath -m "${cache}")"
-          test -d "${processed}/aligned"
-          mkdir -p "${output}" "${cache}"
-          evidence="${RUNNER_TEMP}/deform360-visual-production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "${evidence}/admission" "${evidence}/compact"
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+          test -z "$(git -C _prob4d status --porcelain=v1 --untracked-files=no)"
+          test -z "$(git -C _motioncrafter status --porcelain=v1 --untracked-files=no)"
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          values = {
+              "processed": os.environ["PROCESSED_ROOT_INPUT"],
+              "output": os.environ["OUTPUT_ROOT_INPUT"],
+              "cache": os.environ["HF_CACHE_INPUT"],
+              "workspace": os.environ["GITHUB_WORKSPACE"],
+          }
+          roots = {
+              name: Path(value).expanduser().resolve(strict=False)
+              for name, value in values.items()
+          }
+          if not (roots["processed"] / "aligned").is_dir():
+              raise SystemExit("protected calibration aligned root is missing")
+
+          def overlap(left: Path, right: Path) -> bool:
+              return left == right or left in right.parents or right in left.parents
+
+          for other in ("processed", "cache", "workspace"):
+              if overlap(roots["output"], roots[other]):
+                  raise SystemExit(f"output root overlaps {other} root")
+          if overlap(roots["processed"], roots["cache"]):
+              raise SystemExit("model cache overlaps retained calibration root")
+
+          output = Path(os.environ["GITHUB_ENV"])
+          with output.open("a", encoding="utf-8") as stream:
+              stream.write(f"PROCESSED_ROOT={roots['processed']}\n")
+              stream.write(f"OUTPUT_ROOT={roots['output']}\n")
+              stream.write(f"HF_CACHE_DIR={roots['cache']}\n")
+              stream.write(
+                  "PRODUCTION_RUN_ROOT="
+                  f"{roots['output'] / os.environ['ADMISSION_ID']}\n"
+              )
+          PY
+
+          mkdir -p -- "${OUTPUT_ROOT}" "${HF_CACHE_DIR}"
+          evidence_root="${RUNNER_TEMP}/deform360-calibration-visual-production-evidence"
+          admission_root="${RUNNER_TEMP}/deform360-retained-source-admission"
+          rm -rf -- "${evidence_root}" "${admission_root}"
+          mkdir -p -- "${evidence_root}" "${admission_root}"
           {
-            echo "PROCESSED_ROOT=${processed}"
-            echo "VISUAL_OUTPUT_ROOT=${output}"
-            echo "MODEL_CACHE=${cache}"
-            echo "EVIDENCE_ROOT=${evidence}"
-            echo "ADMISSION_ROOT=${evidence}/admission"
-            echo "COMPACT_ROOT=${evidence}/compact"
+            echo "EVIDENCE_ROOT=${evidence_root}"
+            echo "ADMISSION_ROOT=${admission_root}"
           } >> "${GITHUB_ENV}"
-      - name: Download authoritative retained-source admission
+
+      - name: Download exact audited retained-source admission
         uses: actions/download-artifact@v8
         with:
-          name: deform360-calibration-retained-source-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          artifact-ids: ${{ needs.admission-lock.outputs.artifact_id }}
           path: ${{ env.ADMISSION_ROOT }}
-      - name: Verify reusable-workflow identities
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.ADMISSION_RUN_ID }}
+          digest-mismatch: error
+
+      - name: Verify audited admission bytes and closed boundary
         shell: bash
         run: |
           set -euo pipefail
-          admission="${ADMISSION_ROOT}/calibration-visual-execution-admission.json"
-          test -f "${admission}"
-          admission_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["admission_id"])' "${admission}")"
-          test "${admission_id}" = "${{ needs.retained-source.outputs.admission_id }}"
-          echo "ADMISSION_ID=${admission_id}" >> "${GITHUB_ENV}"
-          echo "PRODUCTION_RUN_ROOT=${VISUAL_OUTPUT_ROOT}/${admission_id}" >> "${GITHUB_ENV}"
+          if find "${ADMISSION_ROOT}" -type l -print -quit | grep -q .; then
+            echo "audited admission artifact contains a symbolic link" >&2
+            exit 1
+          fi
+          expected=$(cat <<'EOF'
+          SHA256SUMS
+          admission-console.json
+          calibration-visual-execution-admission.json
+          calibration-visual-production-plan.json
+          inventory-console.json
+          plan-console.json
+          plan-validation.json
+          prepared-source-inventory.json
+          receipt.json
+          EOF
+          )
+          actual=$(find "${ADMISSION_ROOT}" -maxdepth 1 -type f -printf '%f\n' | sort)
+          diff -u <(printf '%s\n' "${expected}" | sort) <(printf '%s\n' "${actual}")
+          (
+            cd "${ADMISSION_ROOT}"
+            sha256sum --check --strict SHA256SUMS
+          )
+          test "$(sha256sum "${ADMISSION_ROOT}/calibration-visual-execution-admission.json" | cut -d' ' -f1)" = "${ADMISSION_FILE_SHA256}"
+          test "$(sha256sum "${ADMISSION_ROOT}/prepared-source-inventory.json" | cut -d' ' -f1)" = "${INVENTORY_FILE_SHA256}"
+          test "$(sha256sum "${ADMISSION_ROOT}/calibration-visual-production-plan.json" | cut -d' ' -f1)" = "${PLAN_FILE_SHA256}"
+          test "$(sha256sum "${ADMISSION_ROOT}/receipt.json" | cut -d' ' -f1)" = "${RECEIPT_FILE_SHA256}"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["ADMISSION_ROOT"])
+
+          def pairs(items):
+              result = {}
+              for key, value in items:
+                  if key in result:
+                      raise ValueError(f"duplicate JSON key: {key}")
+                  result[key] = value
+              return result
+
+          def nonfinite(value):
+              raise ValueError(f"non-finite JSON constant: {value}")
+
+          def load(name):
+              return json.loads(
+                  (root / name).read_text(encoding="utf-8"),
+                  object_pairs_hook=pairs,
+                  parse_constant=nonfinite,
+              )
+
+          receipt = load("receipt.json")
+          inventory = load("prepared-source-inventory.json")
+          plan = load("calibration-visual-production-plan.json")
+          admission = load("calibration-visual-execution-admission.json")
+          expected = {
+              "workflow_run_id": int(os.environ["ADMISSION_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["ADMISSION_RUN_ATTEMPT"]),
+              "implementation_revision": os.environ["ADMISSION_RUN_HEAD_SHA"],
+              "inventory_id": os.environ["INVENTORY_ID"],
+              "plan_id": os.environ["PLAN_ID"],
+              "admission_id": os.environ["ADMISSION_ID"],
+              "object_count": 10,
+              "camera_view_count": 324,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "replacement_allowed": False,
+          }
+          changed = [key for key, value in expected.items() if receipt.get(key) != value]
+          if changed:
+              raise SystemExit(f"audited receipt changed: {changed}")
+          if inventory.get("inventory_id") != os.environ["INVENTORY_ID"]:
+              raise SystemExit("audited inventory ID changed")
+          if plan.get("plan_id") != os.environ["PLAN_ID"]:
+              raise SystemExit("audited plan ID changed")
+          if admission.get("admission_id") != os.environ["ADMISSION_ID"]:
+              raise SystemExit("audited admission ID changed")
+          if admission.get("inventory_id") != os.environ["INVENTORY_ID"]:
+              raise SystemExit("admission inventory join changed")
+          if admission.get("plan_id") != os.environ["PLAN_ID"]:
+              raise SystemExit("admission plan join changed")
+          if admission.get("inventory_file_sha256") != os.environ["INVENTORY_FILE_SHA256"]:
+              raise SystemExit("admission inventory-file identity changed")
+          if admission.get("plan_file_sha256") != os.environ["PLAN_FILE_SHA256"]:
+              raise SystemExit("admission plan-file identity changed")
+          if admission.get("information_boundary", {}).get("confirmation_payloads_opened") is not False:
+              raise SystemExit("admission confirmation boundary opened")
+          if admission.get("information_boundary", {}).get("target_outcomes_used") is not False:
+              raise SystemExit("admission target boundary opened")
+          PY
+
       - name: Bootstrap exact GPU producer environment
+        id: environment
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          env_root="${RUNNER_TEMP}/prob4d-motioncrafter-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          bash _prob4d/scripts/bootstrap_motioncrafter_env.sh "${GITHUB_WORKSPACE}/_motioncrafter" "${env_root}"
-          "${env_root}/bin/python" -m pip install --no-deps .
-          "${env_root}/bin/python" -m pip check
-          {
-            echo "PRODUCTION_PYTHON=${env_root}/bin/python"
-            echo "PROB4D_MOTIONCRAFTER=${env_root}/bin/prob4d-motioncrafter"
-          } >> "${GITHUB_ENV}"
-      - name: Bootstrap exact immutable model snapshots
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          "${PRODUCTION_PYTHON}" scripts/science/bootstrap_deform360_visual_provider_models.py \
-            --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
-            --cache-dir "${MODEL_CACHE}" \
-            --output "${ADMISSION_ROOT}/model-bootstrap.json"
-      - name: Execute or resume every admitted causal-prefix job
-        id: production
-        shell: bash
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          set -euo pipefail
-          resume=()
-          if [[ "${{ inputs.resume }}" == "true" ]]; then resume=(--resume); fi
-          set +e
-          "${PRODUCTION_PYTHON}" scripts/science/execute_deform360_calibration_visual_production.py run \
-            --admission "${ADMISSION_ROOT}/calibration-visual-execution-admission.json" \
-            --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
-            --model-set-binding protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/motioncrafter-model-set.json \
-            --retained-root "${PROCESSED_ROOT}/aligned" \
-            --output-root "${VISUAL_OUTPUT_ROOT}" \
-            --prob4d-motioncrafter "${PROB4D_MOTIONCRAFTER}" \
-            --prob4d-root "${GITHUB_WORKSPACE}/_prob4d" \
+          bash _prob4d/scripts/bootstrap_motioncrafter_env.sh \
             --motioncrafter-root "${GITHUB_WORKSPACE}/_motioncrafter" \
-            --cache-dir "${MODEL_CACHE}" \
-            --implementation-revision "${GITHUB_SHA}" \
-            --attempt-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
-            "${resume[@]}" | tee "${ADMISSION_ROOT}/production-console.json"
-          code=${PIPESTATUS[0]}
+            --venv-root "${RUNNER_TEMP}/prob4d-motioncrafter-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --python-version "3.10" \
+            --expected-prob4d-sha "${PROB4D_REVISION}" \
+            --expected-motioncrafter-sha "${MOTIONCRAFTER_REVISION}" \
+            --torch-index-url "https://download.pytorch.org/whl/cu121" \
+            --offline-cache-dir "${HF_CACHE_DIR}" \
+            --skip-smoke
+          environment_root="${RUNNER_TEMP}/prob4d-motioncrafter-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          environment="${environment_root}/venv"
+          test -x "${environment}/bin/python"
+          test -x "${environment}/bin/prob4d-motioncrafter"
+          "${environment}/bin/python" -m pip install --no-deps .
+          "${environment}/bin/python" -m pip check
+          {
+            echo "PRODUCTION_ENV_ROOT=${environment_root}"
+            echo "PRODUCTION_PYTHON=${environment}/bin/python"
+            echo "PROB4D_MOTIONCRAFTER=${environment}/bin/prob4d-motioncrafter"
+            echo "PROB4D_ROOT=${GITHUB_WORKSPACE}/_prob4d"
+            echo "MOTIONCRAFTER_ROOT=${GITHUB_WORKSPACE}/_motioncrafter"
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify and freeze exact cached model snapshots
+        id: models
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${PRODUCTION_PYTHON}" scripts/science/bootstrap_deform360_visual_provider_models.py \
+            --visual-provider-lock \
+            protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --cache-dir "${HF_CACHE_DIR}" \
+            --output "${ADMISSION_ROOT}/model-bootstrap.json"
+          test -s "${ADMISSION_ROOT}/model-bootstrap.json"
+
+      - name: Execute or resume every admitted calibration-camera job
+        id: production
+        env:
+          RESUME: ${{ inputs.resume }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            run
+            --admission "${ADMISSION_ROOT}/calibration-visual-execution-admission.json"
+            --visual-provider-lock \
+              protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json
+            --model-set-binding "${ADMISSION_ROOT}/model-bootstrap.json"
+            --retained-root "${PROCESSED_ROOT}/aligned"
+            --output-root "${OUTPUT_ROOT}"
+            --prob4d-motioncrafter "${PROB4D_MOTIONCRAFTER}"
+            --prob4d-root "${PROB4D_ROOT}"
+            --motioncrafter-root "${MOTIONCRAFTER_ROOT}"
+            --cache-dir "${HF_CACHE_DIR}"
+            --implementation-revision "${BPT_HEAD_SHA}"
+            --attempt-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          )
+          if [[ "${RESUME}" == "true" ]]; then
+            args+=(--resume)
+          fi
+          set +e
+          "${PRODUCTION_PYTHON}" \
+            scripts/science/execute_deform360_calibration_visual_production.py \
+            "${args[@]}" \
+            > "${ADMISSION_ROOT}/production-console.json"
+          code=$?
           set -e
-          if [[ "${code}" != 0 && "${code}" != 3 ]]; then exit "${code}"; fi
           echo "terminal_code=${code}" >> "${GITHUB_OUTPUT}"
-      - name: Collect compact seals and accounting evidence
+          if [[ "${code}" -ne 0 && "${code}" -ne 3 ]]; then
+            exit "${code}"
+          fi
+
+      - name: Collect compact claim-bound evidence
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "${COMPACT_ROOT}/admission"
-          cp -a "${ADMISSION_ROOT}/." "${COMPACT_ROOT}/admission/"
-          if [[ -n "${PRODUCTION_RUN_ROOT:-}" && -d "${PRODUCTION_RUN_ROOT}" ]]; then
-            mkdir -p "${COMPACT_ROOT}/production"
-            ( cd "${PRODUCTION_RUN_ROOT}" && find . -type f \( -name 'visual-production-result.json' -o -name 'prediction-seal.json' -o -path './failures/*.json' \) -print0 | sort -z | xargs -0 -r cp --parents -t "${COMPACT_ROOT}/production" )
+          mkdir -p -- "${EVIDENCE_ROOT}/admission" "${EVIDENCE_ROOT}/production"
+          cp -a -- "${ADMISSION_ROOT}/." "${EVIDENCE_ROOT}/admission/"
+          if [[ -d "${PRODUCTION_RUN_ROOT}" ]]; then
+            (
+              cd "${PRODUCTION_RUN_ROOT}"
+              find . -type f \
+                \( -name 'prediction-seal.json' \
+                   -o -name 'visual-production-result.json' \
+                   -o -path './failures/*.json' \
+                   -o -path './logs/*.bin' \) \
+                -print0 \
+                | sort -z \
+                | xargs -0 -r cp --parents -t "${EVIDENCE_ROOT}/production"
+            )
           fi
           {
-            echo "repository=${GITHUB_REPOSITORY}"
-            echo "bpt_revision=${GITHUB_SHA}"
+            echo "bpt_revision=${BPT_HEAD_SHA}"
             echo "prob4d_revision=${PROB4D_REVISION}"
             echo "motioncrafter_revision=${MOTIONCRAFTER_REVISION}"
-            echo "retained_source_artifact_id=${{ needs.retained-source.outputs.artifact_id }}"
-            echo "retained_source_artifact_digest=${{ needs.retained-source.outputs.artifact_digest }}"
+            echo "admission_run_id=${ADMISSION_RUN_ID}"
+            echo "admission_artifact_id=${ADMISSION_ARTIFACT_ID}"
+            echo "admission_artifact_digest=${ADMISSION_ARTIFACT_DIGEST}"
+            echo "admission_id=${ADMISSION_ID}"
+            echo "inventory_id=${INVENTORY_ID}"
+            echo "plan_id=${PLAN_ID}"
+            echo "production_exit_code=${{ steps.production.outputs.terminal_code }}"
             echo "reserved_evaluation_frames_opened=false"
             echo "confirmation_payloads_opened=false"
             echo "target_outcomes_used=false"
-            nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total --format=csv,noheader
-          } > "${COMPACT_ROOT}/environment.txt"
-          ( cd "${COMPACT_ROOT}" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
-      - name: Upload compact calibration-only production evidence
+            echo "replacement_allowed=false"
+          } > "${EVIDENCE_ROOT}/environment.txt"
+          (
+            cd "${EVIDENCE_ROOT}"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+          )
+
+      - name: Verify closed information boundary and exact checkouts
         if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: deform360-calibration-visual-production-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.COMPACT_ROOT }}
-          if-no-files-found: error
-          retention-days: 90
-      - name: Verify closed information boundary and clean tracked checkouts
-        if: always()
+        shell: bash
         run: |
           set -euo pipefail
           test -z "$(git status --porcelain=v1 --untracked-files=no)"
           test -z "$(git -C _prob4d status --porcelain=v1 --untracked-files=no)"
           test -z "$(git -C _motioncrafter status --porcelain=v1 --untracked-files=no)"
-          echo "reserved_evaluation_frames_opened=false"
-          echo "confirmation_payloads_opened=false"
-          echo "target_outcomes_used=false"
+          if [[ -d "${EVIDENCE_ROOT}" ]]; then
+            if find "${EVIDENCE_ROOT}" -type f \
+              \( -name '*.npz' -o -name '*.npy' -o -name '*.mp4' \) \
+              -print -quit | grep -q .; then
+              echo "large or raw payload escaped into compact evidence" >&2
+              exit 1
+            fi
+            if find "${EVIDENCE_ROOT}" -type f \
+              -path '*confirmation-processed*' \
+              -print -quit | grep -q .; then
+              echo "confirmation payload escaped into compact evidence" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Upload compact production evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-calibration-visual-production-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 90
+
+      - name: Remove transient environment and evidence copies
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${PRODUCTION_ENV_ROOT:-}" ]]; then
+            rm -rf -- "${PRODUCTION_ENV_ROOT}"
+          fi
+          if [[ -n "${EVIDENCE_ROOT:-}" ]]; then
+            rm -rf -- "${EVIDENCE_ROOT}"
+          fi
+          if [[ -n "${ADMISSION_ROOT:-}" ]]; then
+            rm -rf -- "${ADMISSION_ROOT}"
+          fi
+
+      - name: Fail workflow when technical failures were retained
+        if: always() && steps.production.outputs.terminal_code == '3'
+        shell: bash
+        run: |
+          echo "One or more admitted visual-production jobs ended in a retained technical failure." >&2
+          exit 1
