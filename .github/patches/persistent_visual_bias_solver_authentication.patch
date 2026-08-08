@@ -1,0 +1,296 @@
+diff --git a/docs/persistent_prob4d_visual_bias_solver.md b/docs/persistent_prob4d_visual_bias_solver.md
+index 310b5c0..1b27625 100644
+--- a/docs/persistent_prob4d_visual_bias_solver.md
++++ b/docs/persistent_prob4d_visual_bias_solver.md
+@@ -82,10 +82,19 @@ BayesianPhysTwin regret or observability guard.
+ Candidate construction and deployment selection are deliberately separate:
+ 
+ ```python
+-candidate = propose_persistent_visual_bias_update(...)
++candidate = propose_persistent_visual_bias_update(
++    run,
++    innovation_xyz=innovation_at_current_prior,
++    physical_jacobian=physical_jacobian,
++    conditional_covariance=conditional_point_covariance,
++    physical_linearization_id=physical_linearization.artifact_id,
++)
+ run = select_persistent_visual_bias_candidate(
+     run,
+     candidate,
++    innovation_xyz=innovation_at_current_prior,
++    physical_jacobian=physical_jacobian,
++    conditional_covariance=conditional_point_covariance,
+     accepted=guard_decision.accepted,
+     reason=guard_decision.reason,
+ )
+@@ -105,10 +114,16 @@ requires:
+ - a posterior covariance that is a positive-semidefinite measurement
+   contraction of the prior covariance; and
+ - an information-gain diagnostic that exactly matches the prior and posterior
+-  covariance determinants within the declared numerical tolerance.
++  covariance determinants within the declared numerical tolerance; and
++- exact reproduction of the complete candidate from the supplied innovation,
++  physical Jacobian, conditional covariance, active stream member, live prior,
++  and physical-linearization identity.
+ 
+-These checks prevent a directly constructed or tampered candidate from reaching
+-the guard merely because it carries a valid-looking candidate ID.
++Selection requires the same update arrays used during proposal. It reruns the
++canonical solver and compares the complete candidate identity before either an
++accept or fallback event is committed. This rejects changed posterior means,
++alternative contracting covariances, forged innovation diagnostics, and arrays
++that do not reproduce the proposed update.
+ 
+ When accepted, the complete joint posterior becomes the next belief. When
+ rejected, the selected belief is the exact prior belief object. Neither the
+@@ -207,6 +222,8 @@ Focused regressions cover:
+ - forged factor-update and observation-binding rejection;
+ - posterior state-domain, covariance-root, and lineage mismatch rejection;
+ - noncontracting covariance and misreported information-gain rejection;
++- solver-replay rejection of changed posterior means, alternative contracting
++  covariances, forged innovation diagnostics, and substituted update arrays;
+ - irreversible NumPy immutability for retained and derived belief arrays; and
+ - content-identity tamper detection.
+ 
+diff --git a/src/bayesian_phystwin/persistent_prob4d_visual_bias.py b/src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+index 4f812a6..e12720e 100644
+--- a/src/bayesian_phystwin/persistent_prob4d_visual_bias.py
++++ b/src/bayesian_phystwin/persistent_prob4d_visual_bias.py
+@@ -928,6 +928,9 @@ def select_persistent_visual_bias_candidate(
+     run: PersistentVisualBiasRunV1,
+     candidate: PersistentVisualBiasCandidateV1,
+     *,
++    innovation_xyz: np.ndarray,
++    physical_jacobian: np.ndarray,
++    conditional_covariance: np.ndarray,
+     accepted: bool,
+     reason: str,
+ ) -> PersistentVisualBiasRunV1:
+@@ -977,6 +980,15 @@ def select_persistent_visual_bias_candidate(
+         raise ValueError(
+             "candidate information gain does not match posterior covariance"
+         )
++    reproduced = propose_persistent_visual_bias_update(
++        run,
++        innovation_xyz=innovation_xyz,
++        physical_jacobian=physical_jacobian,
++        conditional_covariance=conditional_covariance,
++        physical_linearization_id=candidate.physical_linearization_id,
++    )
++    if reproduced.candidate_id != candidate.candidate_id:
++        raise ValueError("candidate does not match canonical solver reproduction")
+     selected = posterior if accept else run.belief
+     event = PersistentVisualBiasEventV1(
+         event_type="measurement",
+@@ -1021,6 +1033,9 @@ def apply_persistent_visual_bias_update(
+     selected = select_persistent_visual_bias_candidate(
+         run,
+         candidate,
++        innovation_xyz=innovation_xyz,
++        physical_jacobian=physical_jacobian,
++        conditional_covariance=conditional_covariance,
+         accepted=accepted,
+         reason=reason,
+     )
+diff --git a/tests/test_persistent_prob4d_visual_bias.py b/tests/test_persistent_prob4d_visual_bias.py
+index 3b35b04..8c9cf20 100644
+--- a/tests/test_persistent_prob4d_visual_bias.py
++++ b/tests/test_persistent_prob4d_visual_bias.py
+@@ -133,6 +133,28 @@ def _measurement_arrays(
+     return measurement, physical_jacobian, covariance
+ 
+ 
++def _select_candidate(
++    run,
++    candidate: PersistentVisualBiasCandidateV1,
++    *,
++    accepted: bool,
++    reason: str,
++    inputs: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
++):
++    innovation, jacobian, covariance = (
++        _measurement_arrays(1) if inputs is None else inputs
++    )
++    return select_persistent_visual_bias_candidate(
++        run,
++        candidate,
++        innovation_xyz=innovation,
++        physical_jacobian=jacobian,
++        conditional_covariance=covariance,
++        accepted=accepted,
++        reason=reason,
++    )
++
++
+ def _innovation(run: object, measurement: np.ndarray) -> np.ndarray:
+     belief = run.belief
+     prediction = np.zeros_like(measurement)
+@@ -206,7 +228,7 @@ def test_rejection_is_exact_object_fallback_and_consumes_update() -> None:
+         physical_linearization_id=_sha("1"),
+     )
+     prior = run.belief
+-    selected = select_persistent_visual_bias_candidate(
++    selected = _select_candidate(
+         run,
+         candidate,
+         accepted=False,
+@@ -217,7 +239,7 @@ def test_rejection_is_exact_object_fallback_and_consumes_update() -> None:
+     assert selected.next_update_index == 1
+     assert selected.events[-1].exact_fallback_reproduced is True
+     with pytest.raises(ValueError, match="stale or out of order"):
+-        select_persistent_visual_bias_candidate(
++        _select_candidate(
+             selected,
+             candidate,
+             accepted=True,
+@@ -437,7 +459,7 @@ def test_selection_rejects_forged_candidate_bindings(
+     run, candidate = _single_candidate()
+     forged = replace(candidate, **{field: _sha("f")}, candidate_id=None)
+     with pytest.raises(ValueError, match=message):
+-        select_persistent_visual_bias_candidate(
++        _select_candidate(
+             run,
+             forged,
+             accepted=False,
+@@ -476,7 +498,7 @@ def test_selection_rejects_incompatible_posterior_contract() -> None:
+         belief_id=None,
+     )
+     with pytest.raises(ValueError, match="physical state domain"):
+-        select_persistent_visual_bias_candidate(
++        _select_candidate(
+             run,
+             replace(
+                 candidate,
+@@ -495,7 +517,7 @@ def test_selection_rejects_incompatible_posterior_contract() -> None:
+         belief_id=None,
+     )
+     with pytest.raises(ValueError, match="covariance root"):
+-        select_persistent_visual_bias_candidate(
++        _select_candidate(
+             run,
+             replace(
+                 candidate,
+@@ -515,7 +537,7 @@ def test_selection_rejects_noncontracting_or_misreported_candidate() -> None:
+         belief_id=None,
+     )
+     with pytest.raises(ValueError, match="measurement contraction"):
+-        select_persistent_visual_bias_candidate(
++        _select_candidate(
+             run,
+             replace(
+                 candidate,
+@@ -528,7 +550,7 @@ def test_selection_rejects_noncontracting_or_misreported_candidate() -> None:
+         )
+ 
+     with pytest.raises(ValueError, match="information gain"):
+-        select_persistent_visual_bias_candidate(
++        _select_candidate(
+             run,
+             replace(
+                 candidate,
+@@ -540,6 +562,105 @@ def test_selection_rejects_noncontracting_or_misreported_candidate() -> None:
+         )
+ 
+ 
++@pytest.mark.parametrize("mean_field", ["physical_mean", "bias_latent_mean"])
++def test_selection_rejects_solver_inconsistent_posterior_mean(
++    mean_field: str,
++) -> None:
++    run, candidate = _single_candidate()
++    changed_mean = np.array(
++        getattr(candidate.posterior_belief, mean_field),
++        copy=True,
++    )
++    changed_mean[0] += 0.25
++    posterior = replace(
++        candidate.posterior_belief,
++        **{mean_field: changed_mean},
++        belief_id=None,
++    )
++    forged = replace(
++        candidate,
++        posterior_belief=posterior,
++        candidate_id=None,
++    )
++
++    with pytest.raises(ValueError, match="canonical solver reproduction"):
++        _select_candidate(
++            run,
++            forged,
++            accepted=True,
++            reason="reject-forged-posterior-mean",
++        )
++
++
++def test_selection_rejects_alternative_contracting_covariance() -> None:
++    run, candidate = _single_candidate()
++    prior_covariance = np.asarray(run.belief.joint_covariance)
++    candidate_covariance = np.asarray(candidate.posterior_belief.joint_covariance)
++    alternative_covariance = 0.5 * (
++        prior_covariance + candidate_covariance
++    )
++    prior_sign, prior_logdet = np.linalg.slogdet(prior_covariance)
++    alternative_sign, alternative_logdet = np.linalg.slogdet(
++        alternative_covariance
++    )
++    assert prior_sign > 0.0 and alternative_sign > 0.0
++    alternative_gain = 0.5 * float(prior_logdet - alternative_logdet)
++    posterior = replace(
++        candidate.posterior_belief,
++        joint_covariance=alternative_covariance,
++        belief_id=None,
++    )
++    forged = replace(
++        candidate,
++        posterior_belief=posterior,
++        information_gain_nats=alternative_gain,
++        candidate_id=None,
++    )
++
++    with pytest.raises(ValueError, match="canonical solver reproduction"):
++        _select_candidate(
++            run,
++            forged,
++            accepted=True,
++            reason="reject-alternative-contracting-covariance",
++        )
++
++
++def test_selection_rejects_forged_innovation_quadratic() -> None:
++    run, candidate = _single_candidate()
++    forged = replace(
++        candidate,
++        conditional_innovation_quadratic_per_dimension=(
++            candidate.conditional_innovation_quadratic_per_dimension + 1.0
++        ),
++        candidate_id=None,
++    )
++
++    with pytest.raises(ValueError, match="canonical solver reproduction"):
++        _select_candidate(
++            run,
++            forged,
++            accepted=True,
++            reason="reject-forged-innovation-quadratic",
++        )
++
++
++def test_selection_rejects_different_update_arrays() -> None:
++    run, candidate = _single_candidate()
++    innovation, jacobian, covariance = _measurement_arrays(1)
++    changed_innovation = np.array(innovation, copy=True)
++    changed_innovation[0, 0] += 0.5
++
++    with pytest.raises(ValueError, match="canonical solver reproduction"):
++        _select_candidate(
++            run,
++            candidate,
++            accepted=True,
++            reason="reject-different-update-arrays",
++            inputs=(changed_innovation, jacobian, covariance),
++        )
++
++
+ def test_persistent_belief_views_are_irreversibly_immutable() -> None:
+     run, _ = _single_candidate()
+     for array in (
