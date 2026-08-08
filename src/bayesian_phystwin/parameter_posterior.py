@@ -163,9 +163,10 @@ class ParameterEnsemble:
         """Systematic resampling with optional finite Gaussian jitter.
 
         ``jitter_std`` may be a scalar, one scale per parameter dimension, or
-        one scale per particle and dimension. Negative, non-finite, or
-        non-broadcast-compatible scales are rejected instead of being silently
-        ignored.
+        one scale per source particle and dimension. Particle-specific scales
+        follow the selected ancestor through resampling. Negative, non-finite,
+        or non-broadcast-compatible scales are rejected instead of being
+        silently ignored.
         """
 
         self._validate_state()
@@ -193,9 +194,12 @@ class ParameterEnsemble:
             order="C",
         )
         if np.any(jitter > 0.0):
+            jitter_scale = (
+                jitter[indexes] if jitter.shape == self.particles.shape else jitter
+            )
             particles += generator.normal(
                 loc=0.0,
-                scale=jitter,
+                scale=jitter_scale,
                 size=particles.shape,
             )
         if not np.all(np.isfinite(particles)):
