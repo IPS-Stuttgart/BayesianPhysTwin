@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.causal4d_artifacts_v2 import ReleasedPhysTwinVisualInputsV2
+from bayesian_phystwin.deform360_contact_anchor import Deform360ContactAnchorV1
 from bayesian_phystwin.dynamic_discrepancy import DynamicDiscrepancyCorrection
 
 
@@ -68,6 +69,22 @@ def _released_visual_inputs() -> ReleasedPhysTwinVisualInputsV2:
     )
 
 
+def _contact_anchor() -> Deform360ContactAnchorV1:
+    return Deform360ContactAnchorV1(
+        object_id="object-a",
+        episode_id=1,
+        causal_frame_stop=2,
+        sensor_names=("sensor-a",),
+        frame_ids=np.asarray([1], dtype=np.int64),
+        innovation_m=np.zeros((1, 3), dtype=np.float64),
+        covariance_m2=np.eye(3, dtype=np.float64)[None] * 1e-4,
+        state_jacobian=np.ones((1, 3, 1), dtype=np.float64),
+        correlation_group_ids=("contact-a",),
+        source_revision="f" * 40,
+        source_artifacts={"tactile.npy": "a" * 64},
+    )
+
+
 def _assert_irreversibly_immutable(array: np.ndarray) -> None:
     assert not array.flags.writeable
     with pytest.raises(ValueError):
@@ -105,3 +122,23 @@ def test_released_visual_inputs_cannot_mutate_behind_artifact_identity() -> None
         _assert_irreversibly_immutable(array)
 
     assert inputs.artifact_id == artifact_id
+
+
+def test_contact_anchor_arrays_cannot_be_reenabled_for_writes() -> None:
+    anchor = _contact_anchor()
+    artifact_id = anchor.artifact_id
+
+    arrays = (
+        anchor.frame_ids,
+        anchor.innovation_m,
+        anchor.covariance_m2,
+        anchor.state_jacobian,
+        anchor.prior_reliability,
+        anchor.prior_nominal_probability,
+        anchor.composite_weight,
+    )
+    for array in arrays:
+        assert array is not None
+        _assert_irreversibly_immutable(array)
+
+    assert anchor.artifact_id == artifact_id
