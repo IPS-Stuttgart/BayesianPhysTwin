@@ -9,7 +9,8 @@ on:
       - "scripts/_one_shot_fix_pr260_typing.py"
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: read
 
 concurrency:
   group: export-final-pr260-${{ github.event.pull_request.head.sha }}
@@ -130,10 +131,148 @@ jobs:
               | xargs -0 sha256sum > SHA256SUMS
           )
 
-      - name: Upload exact final tree
+      - name: Create detached validated commit object
+        shell: bash
+        env:
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          PARENT_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          FINAL_ROOT: ${{ runner.temp }}/pr260-final-tree
+          RECEIPT: ${{ runner.temp }}/pr260-detached-commit.json
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          api = os.environ["API_URL"]
+          repository = os.environ["REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          parent = os.environ["PARENT_SHA"]
+          root = Path(os.environ["FINAL_ROOT"])
+          receipt_path = Path(os.environ["RECEIPT"])
+
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "Content-Type": "application/json",
+          }
+
+          def request(method: str, path: str, payload: object | None = None) -> object:
+              data = None if payload is None else json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  f"{api}/repos/{repository}{path}",
+                  data=data,
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+
+          parent_commit = request("GET", f"/git/commits/{parent}")
+          if not isinstance(parent_commit, dict):
+              raise SystemExit("parent commit response is not an object")
+          base_tree = str(parent_commit["tree"]["sha"])
+
+          entries = []
+          file_paths = (
+              ".github/workflows/tests.yml",
+              "docs/deform360_calibration_visual_production_plan.md",
+              "scripts/science/build_deform360_calibration_visual_production_plan.py",
+              "src/bayesian_phystwin/deform360_calibration_visual_production_plan.py",
+              "tests/test_deform360_calibration_visual_production_plan.py",
+          )
+          blob_shas = {}
+          for relative in file_paths:
+              payload = (root / relative).read_bytes()
+              blob = request(
+                  "POST",
+                  "/git/blobs",
+                  {
+                      "content": base64.b64encode(payload).decode("ascii"),
+                      "encoding": "base64",
+                  },
+              )
+              if not isinstance(blob, dict):
+                  raise SystemExit(f"blob response is not an object: {relative}")
+              blob_sha = str(blob["sha"])
+              blob_shas[relative] = blob_sha
+              entries.append(
+                  {
+                      "path": relative,
+                      "mode": "100644",
+                      "type": "blob",
+                      "sha": blob_sha,
+                  }
+              )
+
+          for relative in (
+              ".github/workflows/_one_shot_finalize_pr260.yml",
+              ".github/workflows/_temporary_prepare_pr260_formatted_source.yml",
+              "scripts/_one_shot_fix_pr260_typing.py",
+          ):
+              entries.append(
+                  {
+                      "path": relative,
+                      "mode": "100644",
+                      "type": "blob",
+                      "sha": None,
+                  }
+              )
+
+          tree = request(
+              "POST",
+              "/git/trees",
+              {"base_tree": base_tree, "tree": entries},
+          )
+          if not isinstance(tree, dict):
+              raise SystemExit("tree response is not an object")
+          tree_sha = str(tree["sha"])
+          commit = request(
+              "POST",
+              "/git/commits",
+              {
+                  "message": "Finalize target-blind calibration visual production plan",
+                  "tree": tree_sha,
+                  "parents": [parent],
+              },
+          )
+          if not isinstance(commit, dict):
+              raise SystemExit("commit response is not an object")
+          commit_sha = str(commit["sha"])
+          receipt = {
+              "repository": repository,
+              "parent_sha": parent,
+              "tree_sha": tree_sha,
+              "commit_sha": commit_sha,
+              "blob_shas": blob_shas,
+              "deleted_paths": [
+                  ".github/workflows/_one_shot_finalize_pr260.yml",
+                  ".github/workflows/_temporary_prepare_pr260_formatted_source.yml",
+                  "scripts/_one_shot_fix_pr260_typing.py",
+              ],
+          }
+          receipt_path.write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: Upload exact final tree and detached commit receipt
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
         with:
-          name: pr260-final-tree-${{ github.event.pull_request.head.sha }}
-          path: ${{ runner.temp }}/pr260-final-tree/
+          name: pr260-detached-commit-${{ github.event.pull_request.head.sha }}
+          path: |
+            ${{ runner.temp }}/pr260-final-tree/
+            ${{ runner.temp }}/pr260-detached-commit.json
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 7
