@@ -103,7 +103,7 @@ def test_visual_production_validates_exact_decord_diagnostic_and_runtime() -> No
     assert 'check_output="$("${uv_bin}" pip check' in bootstrap
     assert "Found 1 incompatibility" in bootstrap
     assert "The package `decord` was built for a different platform" in bootstrap
-    assert 'printf \'%s\\n\' "${check_output}" >&2' in bootstrap
+    assert "printf '%s\\n' \"${check_output}\" >&2" in bootstrap
     assert '"${env_root}/bin/python" -m pip' not in bootstrap
     assert 'PYTHONPATH="${GITHUB_WORKSPACE}/_motioncrafter"' in bootstrap
     for module in (
