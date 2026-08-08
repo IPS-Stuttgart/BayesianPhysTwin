@@ -23,6 +23,7 @@ from ._canonical_contracts import (
     canonical_string_tuple,
     frozen_finite_json_mapping,
     genuine_integer,
+    immutable_array,
     integer_array,
     literal_lower_hex,
     plain_json,
@@ -51,9 +52,7 @@ def _require(condition: bool | np.bool_, message: str) -> None:
 
 
 def _readonly(values: object, *, dtype: Any) -> np.ndarray:
-    result = np.asarray(values, dtype=dtype).copy(order="C")
-    result.setflags(write=False)
-    return result
+    return immutable_array(values, dtype=dtype)
 
 
 def _finite_array(values: object, *, name: str, ndim: int) -> np.ndarray:
