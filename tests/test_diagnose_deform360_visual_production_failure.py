@@ -35,11 +35,11 @@ BOUNDARY = {
     "target_outcomes_used": False,
 }
 TRACEBACK = (
-    "Traceback (most recent call last):\n"
-    '  File "/home/runner/work/project/source/module.py", line 7, in run\n'
-    '    raise RuntimeError("boom")\n'
-    "RuntimeError: boom\n"
-).encode("utf-8")
+    b"Traceback (most recent call last):\n"
+    b'  File "/home/runner/work/project/source/module.py", line 7, in run\n'
+    b'    raise RuntimeError("boom")\n'
+    b"RuntimeError: boom\n"
+)
 
 
 def _write_json(path: Path, value: object) -> None:
