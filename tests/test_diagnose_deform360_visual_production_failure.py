@@ -165,7 +165,7 @@ def test_diagnostic_rejects_information_boundary_drift(tmp_path: Path) -> None:
 
 def test_diagnostic_rejects_changed_traceback_bytes(tmp_path: Path) -> None:
     visual_output_root, stderr_sha256, stderr_bytes = _fixture(tmp_path)
-    log_path = next(
+    log_path = sorted(
         (
             visual_output_root
             / ADMISSION_ID
@@ -173,7 +173,7 @@ def test_diagnostic_rejects_changed_traceback_bytes(tmp_path: Path) -> None:
             / "logs"
             / ATTEMPT_ID
         ).glob("*.bin")
-    )
+    )[0]
     log_path.write_bytes(TRACEBACK.replace(b"boom", b"boon"))
 
     with pytest.raises(ValueError, match="traceback digest changed"):
