@@ -59,7 +59,7 @@ unchanged for frozen experiments and exact historical semantics.
 ## Strict Prob4D update composition
 
 `update_claim_bearing_prob4d_from_artifacts` is the supported one-call
-composition for a new prospective Prob4D-to-Bayesian-PhysTwin experiment. It:
+composition for a new prospective Prob4D-to-BayesianPhysTwin experiment. It:
 
 1. validates the strict provider-v2 attestation and stream-v2 joint gauge
    covariance before forming an innovation;
@@ -81,6 +81,28 @@ update = update_claim_bearing_prob4d_from_artifacts(
     physical_prediction_xyz_m=physical_prediction,
 )
 ```
+
+### Claim-bearing update identity
+
+`ClaimBearingProb4DUpdateV1` separates the historical admission identity from
+the complete result identity. `admission_id` preserves the earlier digest over
+the observation, physical linearization, provider, calibration, runtime
+verification, admissibility decision, and reason. `inference_result_id` binds
+canonical little-endian float64 descriptors for every returned coefficient,
+covariance, identifiable basis, fraction, and robust weight, together with the
+complete diagnostics and input lineage.
+
+The public `update_id` uses identity revision 2 and binds both identities. Two
+updates with identical admitted inputs and the same textual decision therefore
+receive different IDs whenever their posterior means, nuisance estimates,
+covariance, robust responsibilities, identifiable subspace, diagnostics, or
+lineage differ. `legacy_update_id` remains an alias for `admission_id` so frozen
+records can explicitly identify the earlier provenance-only digest.
+
+This identity hardening does not relabel the working IRLS covariance as
+calibrated and does not change the estimator. A claim-bearing experiment must
+still freeze its solver configuration in the enclosing run or experiment
+manifest.
 
 This path deliberately does not consume the older trace-reduced exploratory
 Prob4D prefix interface. It also does not perform candidate deployment by
