@@ -214,6 +214,7 @@ class ClaimBearingProb4DUpdateV1:
             runtime_revision_source,
         )
 
+        inference_result_payload = _inference_result_payload(self.result)
         admission_payload = _admission_payload(
             observation_artifact_id=self.observation_artifact_id,
             linearization_artifact_id=self.linearization_artifact_id,
@@ -226,7 +227,7 @@ class ClaimBearingProb4DUpdateV1:
             result=self.result,
         )
         admission_id = _canonical_id(admission_payload)
-        inference_result_id = _canonical_id(_inference_result_payload(self.result))
+        inference_result_id = _canonical_id(inference_result_payload)
         update_id = _canonical_id(
             {
                 **admission_payload,
