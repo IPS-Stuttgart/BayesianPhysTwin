@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Stage verified calibration files from a runner-resident Deform360 snapshot.
 
-The script consumes an already sealed calibration-source plan and hard-links only
-its planned calibration files into the isolated calibration download root.  It
-never searches or opens a confirmation root.  Missing files are left for the
-existing exact-file downloader to fetch and verify.
+The script consumes an already sealed calibration-source plan and stages only
+its planned calibration files into the isolated calibration download root.
+Local reuse is copy-on-write only: a reflink is attempted after exact byte
+verification, and a failed reflink is left for the existing downloader to
+obtain.  The immutable raw snapshot is never hard-linked or copied eagerly.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -113,13 +114,36 @@ def _verify_regular_file(
     return size, sha_verified
 
 
+def _try_reflink(source: Path, destination: Path) -> bool:
+    """Create one CoW clone without falling back to a full byte copy."""
+
+    result = subprocess.run(
+        (
+            "cp",
+            "--reflink=always",
+            "--preserve=mode,timestamps",
+            "--",
+            str(source),
+            str(destination),
+        ),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        return True
+    if destination.exists():
+        destination.unlink()
+    return False
+
+
 def stage_local_calibration_cache(
     *,
     plan_path: Path,
     source_root: Path,
     destination_root: Path,
 ) -> dict[str, Any]:
-    """Hard-link locally available planned files into the calibration root."""
+    """Reflink locally available planned files into the calibration root."""
 
     plan_file = plan_path.expanduser().resolve()
     source = source_root.expanduser().resolve()
@@ -149,18 +173,20 @@ def stage_local_calibration_cache(
     )
 
     destination.mkdir(parents=True, exist_ok=True)
-    linked: list[str] = []
+    reflinked: list[str] = []
     reused: list[str] = []
-    missing: list[str] = []
+    missing_in_source: list[str] = []
+    reflink_unavailable: list[str] = []
     verified_sha256: list[str] = []
     staged_bytes = 0
+    records = _planned_records(plan)
 
-    for record in _planned_records(plan):
+    for record in records:
         relative = _relative_path(record)
         source_path = source / relative
         destination_path = destination / relative
         if not source_path.exists():
-            missing.append(relative)
+            missing_in_source.append(relative)
             continue
 
         size, sha_verified = _verify_regular_file(
@@ -182,22 +208,18 @@ def stage_local_calibration_cache(
             staged_bytes += size
             continue
 
-        try:
-            os.link(source_path, destination_path)
-        except OSError as error:
-            raise RuntimeError(
-                "hard-link staging failed; refusing to copy large raw payloads: "
-                f"{relative}: {error}"
-            ) from error
+        if not _try_reflink(source_path, destination_path):
+            reflink_unavailable.append(relative)
+            continue
         _verify_regular_file(
             destination_path,
             root=destination,
             record=record,
         )
-        linked.append(relative)
+        reflinked.append(relative)
         staged_bytes += size
 
-    records = _planned_records(plan)
+    download_fallback = sorted((*missing_in_source, *reflink_unavailable))
     payload: dict[str, Any] = {
         "schema": MANIFEST_SCHEMA,
         "schema_version": 1,
@@ -206,20 +228,26 @@ def stage_local_calibration_cache(
         "source_root": str(source),
         "destination_root": str(destination),
         "planned_file_count": len(records),
-        "locally_available_file_count": len(linked) + len(reused),
-        "hardlinked_file_count": len(linked),
+        "local_source_file_count": len(records) - len(missing_in_source),
+        "reflinked_file_count": len(reflinked),
         "reused_file_count": len(reused),
-        "missing_file_count": len(missing),
+        "missing_in_source_count": len(missing_in_source),
+        "reflink_unavailable_count": len(reflink_unavailable),
+        "download_fallback_file_count": len(download_fallback),
         "sha256_verified_file_count": len(verified_sha256),
         "staged_bytes": staged_bytes,
-        "missing_paths": missing,
+        "missing_in_source_paths": missing_in_source,
+        "reflink_unavailable_paths": reflink_unavailable,
+        "download_fallback_paths": download_fallback,
         "information_boundary": {
             "official_raw_payloads_opened_for_hash_verification": True,
-            "calibration_payloads_staged": True,
+            "calibration_payloads_staged": bool(reflinked or reused),
             "confirmation_payloads_opened": False,
             "adaptive_confirmation_root_accessed": False,
             "target_outcomes_used": False,
-            "copy_fallback_allowed": False,
+            "hardlink_allowed": False,
+            "full_copy_fallback_allowed": False,
+            "reflink_only": True,
         },
     }
     payload["manifest_sha256"] = _canonical_sha256(
