@@ -184,10 +184,15 @@ class _SharedMotionCrafterProducer:
             frame_stop=prefix[1],
             frame_stride=1,
         )
+        # The outer resume flag also covers receipt revalidation. Prob4D's
+        # narrower flag is valid only after a per-job bundle has begun.
+        resume_bundle = (
+            resume and output_directory.is_dir() and any(output_directory.iterdir())
+        )
         manifest = self._runner_class(
             config,
             adapter_factory=self._shared_factory,
-        ).run(resume=resume)
+        ).run(resume=resume_bundle)
         if self.model_load_attempt_count > 1:
             raise RuntimeError(
                 "MotionCrafter adapter creation was attempted more than once"

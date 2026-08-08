@@ -201,6 +201,11 @@ BayesianPhysTwin implementation revision. Re-running the same revision with
 - permits Prob4D to resume an interrupted bundle only when its crash journal
   matches the exact run-spec hash.
 
+The top-level resume request therefore does not force Prob4D's narrower resume
+mode onto a fresh job. A missing or empty per-job output starts normally;
+Prob4D receives `resume=true` only after that job has produced bundle state for
+the crash-safe runner to validate.
+
 A process-level file lock prevents concurrent writers while allowing automatic
 release after cancellation or runner failure. The shared adapter changes only
 the per-job video, output directory, seed, and causal frame bounds. A change to
