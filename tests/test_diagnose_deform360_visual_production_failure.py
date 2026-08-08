@@ -64,8 +64,7 @@ def _fixture(tmp_path: Path, *, job_count: int = 2) -> tuple[Path, str, int]:
         stderr_path.write_bytes(TRACEBACK)
         receipt = {
             "schema": (
-                "bayesian-phystwin.deform360-calibration-visual-"
-                "technical-failure"
+                "bayesian-phystwin.deform360-calibration-visual-technical-failure"
             ),
             "schema_version": 1,
             "admission_id": ADMISSION_ID,
@@ -130,7 +129,9 @@ def test_diagnostic_verifies_receipts_and_sanitizes_one_traceback(
     assert diagnostic["predecessor_information_boundary"] == BOUNDARY
     boundary = diagnostic["diagnostic_information_boundary"]
     assert boundary["retained_technical_logs_opened"] is True
-    assert boundary["retained_calibration_camera_payloads_opened_by_diagnostic"] is False
+    assert (
+        boundary["retained_calibration_camera_payloads_opened_by_diagnostic"] is False
+    )
     sanitized = (tmp_path / "diagnostic" / "sanitized-traceback.txt").read_text(
         encoding="utf-8"
     )
