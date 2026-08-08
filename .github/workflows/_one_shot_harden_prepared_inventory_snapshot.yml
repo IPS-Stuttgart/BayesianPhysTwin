@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/_one_shot_harden_prepared_inventory_snapshot.yml"
       - "scripts/_one_shot_harden_prepared_inventory_snapshot.py"
+      - "scripts/_one_shot_fix_prepared_inventory_transformer_typing.py"
       - "tests/test_deform360_calibration_prepared_inventory_snapshot.py"
 
 permissions:
@@ -47,6 +48,7 @@ jobs:
       - name: Apply exact reviewed source transformation
         run: |
           set -euo pipefail
+          python scripts/_one_shot_fix_prepared_inventory_transformer_typing.py
           python scripts/_one_shot_harden_prepared_inventory_snapshot.py
 
       - name: Install validation environment
@@ -91,7 +93,8 @@ jobs:
           set -euo pipefail
           rm -- \
             .github/workflows/_one_shot_harden_prepared_inventory_snapshot.yml \
-            scripts/_one_shot_harden_prepared_inventory_snapshot.py
+            scripts/_one_shot_harden_prepared_inventory_snapshot.py \
+            scripts/_one_shot_fix_prepared_inventory_transformer_typing.py
           git diff --check
           allowed='^(\.github/workflows/deform360-calibration-prepared-inventory\.yml|MANIFEST\.in|docs/deform360_calibration_prepared_inventory\.md|docs/experiment_index\.md|scripts/science/inventory_deform360_calibration_prepared_source\.py|tests/test_deform360_calibration_prepared_inventory\.py|tests/test_deform360_calibration_prepared_inventory_snapshot\.py)$'
           unexpected="$(git diff --name-only 0f403cbed8b5fc9ac585b5f7c237106809207b3f -- | grep -Ev "${allowed}" || true)"
