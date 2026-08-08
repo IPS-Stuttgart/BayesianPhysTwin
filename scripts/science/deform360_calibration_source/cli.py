@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
-from .download import download_plan
+from .download import (
+    DEFAULT_INITIAL_BACKOFF_SECONDS,
+    DEFAULT_MAX_ATTEMPTS,
+    DEFAULT_MAXIMUM_BACKOFF_SECONDS,
+    MAXIMUM_DOWNLOAD_WORKERS,
+    download_plan,
+)
 from .planning import build_plan
 from .prepare import prepare_sources
 
@@ -17,6 +24,15 @@ def _common_paths(args: argparse.Namespace) -> dict[str, Path]:
         "selection_path": args.selection_lock.resolve(),
         "provider_path": args.visual_provider_lock.resolve(),
     }
+
+
+def _prepare_public_hub_environment() -> None:
+    """Freeze the public, credential-free transfer backend before Hub import."""
+
+    os.environ["HF_HUB_DISABLE_XET"] = "1"
+    os.environ["HF_HUB_DISABLE_IMPLICIT_TOKEN"] = "1"
+    os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+    os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -47,7 +63,18 @@ def _parser() -> argparse.ArgumentParser:
     download.add_argument("--plan", type=Path, required=True)
     download.add_argument("--data-root", type=Path, required=True)
     download.add_argument("--output", type=Path, required=True)
-    download.add_argument("--workers", type=int, default=8)
+    download.add_argument("--workers", type=int, default=MAXIMUM_DOWNLOAD_WORKERS)
+    download.add_argument("--attempts", type=int, default=DEFAULT_MAX_ATTEMPTS)
+    download.add_argument(
+        "--initial-backoff-seconds",
+        type=float,
+        default=DEFAULT_INITIAL_BACKOFF_SECONDS,
+    )
+    download.add_argument(
+        "--maximum-backoff-seconds",
+        type=float,
+        default=DEFAULT_MAXIMUM_BACKOFF_SECONDS,
+    )
 
     prepare = subparsers.add_parser(
         "prepare",
@@ -83,6 +110,7 @@ def main() -> int:
         )
         return 0 if result["gate"]["support_passed"] else 3
     if args.command == "download":
+        _prepare_public_hub_environment()
         from huggingface_hub import hf_hub_download
 
         result = download_plan(
@@ -91,6 +119,9 @@ def main() -> int:
             data_root=args.data_root.resolve(),
             output_path=args.output.resolve(),
             max_workers=args.workers,
+            max_attempts=args.attempts,
+            initial_backoff_seconds=args.initial_backoff_seconds,
+            maximum_backoff_seconds=args.maximum_backoff_seconds,
             hub_download=hf_hub_download,
         )
         print(
@@ -98,6 +129,9 @@ def main() -> int:
                 {
                     "download_sha256": result["download_sha256"],
                     "file_count": len(result["files"]),
+                    "effective_max_workers": result["download_policy"][
+                        "effective_max_workers"
+                    ],
                 },
                 sort_keys=True,
             )
