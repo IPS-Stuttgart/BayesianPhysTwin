@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 REUSABLE = ROOT / ".github/workflows/deform360-calibration-prepared-inventory.yml"
 LAUNCHER = (
@@ -21,6 +23,14 @@ SUPERSEDED_RUN_ID = "31236230283"
 
 def _source(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def test_workflow_yaml_is_syntactically_valid() -> None:
+    for path in (REUSABLE, LAUNCHER):
+        value = yaml.load(_source(path), Loader=yaml.BaseLoader)
+        assert isinstance(value, dict)
+        assert "on" in value
+        assert "jobs" in value
 
 
 def test_reusable_workflow_binds_the_authoritative_source_execution() -> None:
