@@ -1,0 +1,79 @@
+name: Launch reviewed Deform360 retained-source admission once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-calibration-retained-source-once.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-calibration-retained-source-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute reviewed retained-source admission
+    uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml
+
+  receipt:
+    name: Publish retained-source admission receipt
+    if: always()
+    needs: execute
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post source-verified status to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.execute.result }}
+          ARTIFACT_ID: ${{ needs.execute.outputs.artifact_id }}
+          ARTIFACT_URL: ${{ needs.execute.outputs.artifact_url }}
+          ARTIFACT_DIGEST: ${{ needs.execute.outputs.artifact_digest }}
+          INVENTORY_ID: ${{ needs.execute.outputs.inventory_id }}
+          PLAN_ID: ${{ needs.execute.outputs.plan_id }}
+          ADMISSION_ID: ${{ needs.execute.outputs.admission_id }}
+          CAMERA_VIEW_COUNT: ${{ needs.execute.outputs.camera_view_count }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [[ "${RESULT}" == "success" ]]; then
+            status="completed successfully"
+          else
+            status="completed with result \`${RESULT}\`"
+          fi
+          body=$(cat <<EOF
+          ## Deform360 retained-source admission ${status}
+
+          - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - authoritative calibration-source run: \`31236564360\`
+          - authoritative source artifact: \`deform360-official-calibration-source-31236564360-1\`
+          - authoritative source artifact digest: \`sha256:866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2\`
+          - output artifact ID: \`${ARTIFACT_ID:-unavailable}\`
+          - output artifact digest: \`${ARTIFACT_DIGEST:-unavailable}\`
+          - prepared-source inventory ID: \`${INVENTORY_ID:-unavailable}\`
+          - visual-production plan ID: \`${PLAN_ID:-unavailable}\`
+          - visual-execution admission ID: \`${ADMISSION_ID:-unavailable}\`
+          - admitted camera jobs: \`${CAMERA_VIEW_COUNT:-unavailable}\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - replacement allowed: \`false\`
+
+          This execution inventories the already-authorized ten calibration objects and freezes the all-camera visual work list against the exact retained bytes. It does not run MotionCrafter or Prob4D, open any confirmation object, use a target outcome, or establish provider competence or physical-query benefit.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed retained-source admission request: 2026-08-09-authoritative-source-v1
