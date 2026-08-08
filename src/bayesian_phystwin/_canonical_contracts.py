@@ -214,6 +214,34 @@ def genuine_integer(
     return result
 
 
+def immutable_array(
+    values: object,
+    *,
+    dtype: Any | None = None,
+) -> np.ndarray:
+    """Return a C-contiguous array backed by immutable ``bytes`` storage.
+
+    ``array.setflags(write=False)`` is reversible for owning NumPy arrays. Public
+    content-addressed contracts instead use a ``bytes`` owner so callers cannot
+    re-enable write access and mutate a validated artifact in place.
+    """
+
+    array = np.array(values, dtype=dtype, copy=True, order="C")
+    if array.dtype.hasobject:
+        raise TypeError("contract arrays must not contain Python objects")
+    payload = array.tobytes(order="C")
+    return np.frombuffer(payload, dtype=array.dtype).reshape(array.shape)
+
+
+def immutable_integer_array(values: object, *, name: str) -> np.ndarray:
+    """Return a validated canonical int64 array with irreversible immutability."""
+
+    return immutable_array(
+        integer_array(values, name=name),
+        dtype=np.dtype(np.int64),
+    )
+
+
 def integer_array(values: object, *, name: str) -> np.ndarray:
     """Require an integer-typed array and return an owned canonical int64 copy."""
 
@@ -256,6 +284,8 @@ __all__ = [
     "frozen_finite_json_mapping",
     "genuine_boolean",
     "genuine_integer",
+    "immutable_array",
+    "immutable_integer_array",
     "integer_array",
     "literal_lower_hex",
     "plain_json",

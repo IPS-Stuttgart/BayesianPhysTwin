@@ -78,6 +78,7 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Core content-addressed observation and physical-linearization arrays now use immutable bytes-backed NumPy storage, so callers cannot re-enable write access after validation.
 - Claim-bearing hexadecimal identifiers now require literal lowercase strings;
   integers, bytes, and custom string subclasses are rejected instead of being
   admitted through lossy `str(value)` coercion. Deform360 source artifacts also

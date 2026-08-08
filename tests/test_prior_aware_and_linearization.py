@@ -738,3 +738,40 @@ def test_propagated_state_final_cholesky_failure_falls_back(monkeypatch) -> None
     assert call_count == 2
     assert not result.accepted
     assert result.reason == "singular-posterior"
+
+
+def test_physical_linearization_arrays_are_irreversibly_immutable(
+    tmp_path: Path,
+) -> None:
+    import numpy as np
+    import pytest
+
+    from bayesian_phystwin.physical_linearization import (
+        PhysicalLinearizationV1,
+        load_physical_linearization,
+        save_physical_linearization,
+    )
+
+    source = PhysicalLinearizationV1(
+        observation_artifact_id="a" * 64,
+        baseline_belief_id="b" * 64,
+        action_prefix_id="c" * 64,
+        simulator_revision="d" * 40,
+        frame_ids=np.asarray([0], dtype=np.int64),
+        entity_ids=np.asarray([0], dtype=np.int64),
+        view_indices=np.asarray([0], dtype=np.int64),
+        window_indices=np.asarray([0], dtype=np.int64),
+        state_jacobian=np.ones((1, 3, 1), dtype=np.float64),
+        query_state_jacobian=np.ones((1, 3, 1), dtype=np.float64),
+        physical_response_m=np.asarray([[0.01, 0.0, 0.0]], dtype=np.float64),
+    )
+    path = tmp_path / "immutable-linearization.npz"
+    save_physical_linearization(path, source)
+
+    for linearization in (source, load_physical_linearization(path)):
+        artifact_id = linearization.artifact_id
+        for name, array in linearization.arrays().items():
+            assert array.flags.writeable is False, name
+            with pytest.raises(ValueError):
+                array.setflags(write=True)
+        assert linearization.artifact_id == artifact_id

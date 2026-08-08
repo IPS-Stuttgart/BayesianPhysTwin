@@ -15,6 +15,8 @@ from ._canonical_contracts import (
     frozen_finite_json_mapping,
     genuine_boolean,
     genuine_integer,
+    immutable_array,
+    immutable_integer_array,
     integer_array,
     plain_json,
 )
@@ -44,15 +46,11 @@ def _validate_sha256(value: str, *, name: str) -> None:
 
 
 def _readonly(values: np.ndarray, *, dtype: Any | None = None) -> np.ndarray:
-    result = np.asarray(values, dtype=dtype).copy()
-    result.setflags(write=False)
-    return result
+    return immutable_array(values, dtype=dtype)
 
 
 def _readonly_integer(values: object, *, name: str) -> np.ndarray:
-    result = integer_array(values, name=name)
-    result.setflags(write=False)
-    return result
+    return immutable_integer_array(values, name=name)
 
 
 def _array_sha256(values: np.ndarray) -> str:

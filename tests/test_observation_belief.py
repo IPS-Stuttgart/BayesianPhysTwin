@@ -406,3 +406,19 @@ def test_sim3_transform_moves_covariance_and_factors() -> None:
         transformed.local_covariance_m2[0], 4.0 * belief.local_covariance_m2[0]
     )
     assert transformed.artifact_id != belief.artifact_id
+
+
+def test_observation_payload_arrays_are_irreversibly_immutable(
+    tmp_path: Path,
+) -> None:
+    source = _belief()
+    path = tmp_path / "immutable-observation.npz"
+    save_observation_belief(path, source)
+
+    for belief in (source, load_observation_belief(path)):
+        artifact_id = belief.artifact_id
+        for name, array in belief._arrays().items():
+            assert array.flags.writeable is False, name
+            with pytest.raises(ValueError):
+                array.setflags(write=True)
+        assert belief.artifact_id == artifact_id

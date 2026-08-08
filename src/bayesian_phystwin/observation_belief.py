@@ -21,7 +21,8 @@ from ._canonical_contracts import (
     canonical_string_tuple,
     frozen_finite_json_mapping,
     genuine_integer,
-    integer_array,
+    immutable_array,
+    immutable_integer_array,
     plain_json,
 )
 
@@ -69,15 +70,11 @@ def _validate_sha256(value: str, *, name: str) -> None:
 
 
 def _readonly_float(values: object) -> np.ndarray:
-    array = np.asarray(values, dtype=np.float64).copy()
-    array.setflags(write=False)
-    return array
+    return immutable_array(values, dtype=np.dtype(np.float64))
 
 
 def _readonly_integer(values: object, *, name: str) -> np.ndarray:
-    array = integer_array(values, name=name)
-    array.setflags(write=False)
-    return array
+    return immutable_integer_array(values, name=name)
 
 
 def _artifact_id(

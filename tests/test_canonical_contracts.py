@@ -393,3 +393,32 @@ def test_claim_bundle_adversarial_stable_core_controls(
     claim_bundle_adversarial_cases.test_paper_evidence_empty_distribution_profile_is_rejected(
         case_path("paper-empty-distributions")
     )
+
+
+def test_immutable_array_uses_irreversible_bytes_backing() -> None:
+    import numpy as np
+    import pytest
+
+    from bayesian_phystwin._canonical_contracts import (
+        immutable_array,
+        immutable_integer_array,
+    )
+
+    source = np.asarray([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    frozen = immutable_array(source, dtype=np.dtype(np.float64))
+    source[0, 0] = 99.0
+
+    assert frozen.flags.c_contiguous
+    assert frozen.flags.writeable is False
+    assert frozen.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+    with pytest.raises(ValueError):
+        frozen.setflags(write=True)
+
+    integers = immutable_integer_array([1, 2, 3], name="identities")
+    assert integers.dtype == np.dtype(np.int64)
+    assert integers.flags.writeable is False
+    with pytest.raises(ValueError):
+        integers.setflags(write=True)
+
+    with pytest.raises(TypeError, match="must not contain Python objects"):
+        immutable_array(np.asarray([object()], dtype=object))
