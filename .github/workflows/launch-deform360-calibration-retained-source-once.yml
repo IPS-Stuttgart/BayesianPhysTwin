@@ -16,14 +16,72 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify_source_artifact:
+    name: Verify authoritative source artifact identity
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.verify.outputs.artifact-id }}
+    steps:
+      - name: Compare server artifact identity with reviewed lock
+        id: verify
+        uses: actions/github-script@v8
+        env:
+          EXPECTED_RUN_ID: "31236564360"
+          EXPECTED_ARTIFACT_NAME: >-
+            deform360-official-calibration-source-31236564360-1
+          EXPECTED_ARTIFACT_DIGEST: >-
+            sha256:866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2
+        with:
+          script: |
+            const runId = Number(process.env.EXPECTED_RUN_ID)
+            const expectedName = process.env.EXPECTED_ARTIFACT_NAME
+            const expectedDigest = process.env.EXPECTED_ARTIFACT_DIGEST
+            if (!Number.isSafeInteger(runId) || runId <= 0) {
+              throw new Error('reviewed source run ID is invalid')
+            }
+            if (!expectedName || !expectedDigest) {
+              throw new Error('reviewed source artifact lock is incomplete')
+            }
+            const response = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+              name: expectedName,
+              per_page: 100,
+            })
+            const matches = response.data.artifacts.filter(
+              artifact => artifact.name === expectedName && !artifact.expired,
+            )
+            if (matches.length !== 1) {
+              throw new Error(
+                `expected exactly one live artifact ${expectedName}; found ${matches.length}`,
+              )
+            }
+            const artifact = matches[0]
+            if (artifact.digest !== expectedDigest) {
+              throw new Error(
+                `source artifact digest changed: expected ${expectedDigest}, got ${artifact.digest}`,
+              )
+            }
+            core.info(
+              `Verified source artifact ${artifact.id} at ${artifact.digest}`,
+            )
+            core.setOutput('artifact-id', String(artifact.id))
+
   execute:
     name: Execute reviewed retained-source admission
+    needs: verify_source_artifact
     uses: ./.github/workflows/deform360-calibration-prepared-inventory.yml
 
   receipt:
     name: Publish retained-source admission receipt
     if: always()
-    needs: execute
+    needs:
+      - verify_source_artifact
+      - execute
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,6 +90,10 @@ jobs:
       - name: Post source-verified status to issue 148
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_VERIFICATION_RESULT: >-
+            ${{ needs.verify_source_artifact.result }}
+          SOURCE_ARTIFACT_ID: >-
+            ${{ needs.verify_source_artifact.outputs.artifact_id }}
           RESULT: ${{ needs.execute.result }}
           ARTIFACT_ID: ${{ needs.execute.outputs.artifact_id }}
           ARTIFACT_URL: ${{ needs.execute.outputs.artifact_url }}
@@ -55,7 +117,9 @@ jobs:
           - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
           - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
           - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - source-artifact verification result: \`${SOURCE_VERIFICATION_RESULT}\`
           - authoritative calibration-source run: \`31236564360\`
+          - authoritative source artifact ID: \`${SOURCE_ARTIFACT_ID:-unavailable}\`
           - authoritative source artifact: \`deform360-official-calibration-source-31236564360-1\`
           - authoritative source artifact digest: \`sha256:866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2\`
           - output artifact ID: \`${ARTIFACT_ID:-unavailable}\`
