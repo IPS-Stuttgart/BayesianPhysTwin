@@ -19,16 +19,22 @@ evidence.
 
 ## Frozen successful source run
 
-The main-only self-hosted workflow is bound to:
+The main-only self-hosted workflow is bound to the authoritative least-privilege
+source execution:
 
-- workflow run `31236230283`;
-- compact artifact `deform360-official-calibration-source-31236230283-1`;
+- exact reviewed source revision
+  `0f403cbed8b5fc9ac585b5f7c237106809207b3f`;
+- workflow run `31236564360`;
+- compact artifact `deform360-official-calibration-source-31236564360-1`;
 - terminal-record ID
-  `2663a44b1d62b4032774c3a15884b4365580e8d11909ef9a4d4919c921ab21ee`;
+  `edf3692d88fed3c011ee44da2508b39e4755a0e97a83a26a0391fcfe433d7b74`;
 - ten prepared physical objects, five per stratum; and
 - the persistent `calibration-processed/aligned` runner root.
 
-It does not reuse the earlier failed transport run as scientific evidence.
+The earlier successful run `31236230283` remains valid execution history, but it
+is not the inventory input because it predates the final step-scoped optional
+credential boundary. The workflow also does not reuse the earlier failed
+transport run as scientific evidence.
 
 ## Validation order
 
