@@ -10,6 +10,7 @@ on:
       - "docs/experiment_index.md"
       - "scripts/science/inventory_deform360_calibration_prepared_source.py"
       - "tests/test_deform360_calibration_prepared_inventory.py"
+      - "tests/test_deform360_calibration_prepared_inventory_authoritative_run.py"
   workflow_dispatch:
 
 permissions:
@@ -72,6 +73,7 @@ jobs:
           files=(
             scripts/science/inventory_deform360_calibration_prepared_source.py
             tests/test_deform360_calibration_prepared_inventory.py
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
@@ -84,12 +86,14 @@ jobs:
           set -euo pipefail
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_calibration_prepared_inventory.py \
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py \
             tests/test_deform360_calibration_source_run_record.py \
             tests/test_deform360_calibration_observability_case_builder.py \
             tests/test_deform360_calibration_observability_batch.py
           python -m py_compile \
             scripts/science/inventory_deform360_calibration_prepared_source.py \
-            tests/test_deform360_calibration_prepared_inventory.py
+            tests/test_deform360_calibration_prepared_inventory.py \
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py
 
       - name: Verify exact read-only repository state
         shell: bash
@@ -108,8 +112,8 @@ jobs:
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 90
     env:
-      SOURCE_RUN_ID: "31236230283"
-      SOURCE_ARTIFACT_NAME: deform360-official-calibration-source-31236230283-1
+      SOURCE_RUN_ID: "31236564360"
+      SOURCE_ARTIFACT_NAME: deform360-official-calibration-source-31236564360-1
       PROCESSED_ROOT: >-
         ${{ vars.DEFORM360_OFFICIAL_HUB_CALIBRATION_PROCESSED_ROOT ||
         '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed' }}
