@@ -1,24 +1,54 @@
-name: Deform360 calibration prepared-source inventory
+name: Deform360 calibration retained-source admission
 
 on:
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/deform360-calibration-prepared-inventory.yml"
+      - ".github/workflows/launch-deform360-calibration-retained-source-once.yml"
       - "MANIFEST.in"
       - "docs/deform360_calibration_prepared_inventory.md"
+      - "docs/deform360_calibration_visual_execution_admission.md"
+      - "docs/deform360_calibration_visual_production_plan.md"
       - "docs/experiment_index.md"
+      - "scripts/science/admit_deform360_calibration_visual_execution.py"
+      - "scripts/science/build_deform360_calibration_visual_production_plan.py"
       - "scripts/science/inventory_deform360_calibration_prepared_source.py"
       - "tests/test_deform360_calibration_prepared_inventory.py"
       - "tests/test_deform360_calibration_prepared_inventory_authoritative_run.py"
+      - "tests/test_deform360_calibration_retained_source_workflow.py"
+      - "tests/test_deform360_calibration_visual_execution_admission.py"
+      - "tests/test_deform360_calibration_visual_production_plan.py"
+  workflow_call:
+    outputs:
+      artifact_id:
+        description: Uploaded retained-source admission artifact ID.
+        value: ${{ jobs.inventory.outputs.artifact_id }}
+      artifact_url:
+        description: Uploaded retained-source admission artifact URL.
+        value: ${{ jobs.inventory.outputs.artifact_url }}
+      artifact_digest:
+        description: Uploaded retained-source admission artifact digest.
+        value: ${{ jobs.inventory.outputs.artifact_digest }}
+      inventory_id:
+        description: Content identity of the prepared-source inventory.
+        value: ${{ jobs.inventory.outputs.inventory_id }}
+      plan_id:
+        description: Content identity of the visual-production plan.
+        value: ${{ jobs.inventory.outputs.plan_id }}
+      admission_id:
+        description: Content identity of the visual-execution admission.
+        value: ${{ jobs.inventory.outputs.admission_id }}
+      camera_view_count:
+        description: Number of admitted calibration camera jobs.
+        value: ${{ jobs.inventory.outputs.camera_view_count }}
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
-  group: deform360-calibration-prepared-inventory-${{ github.workflow }}-${{ github.ref }}
+  group: deform360-calibration-retained-source-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -29,10 +59,12 @@ env:
 
 jobs:
   contracts:
-    name: Prepared-source inventory contracts / Python ${{ matrix.python-version }}
+    name: Retained-source admission contracts / Python ${{ matrix.python-version }}
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -71,13 +103,20 @@ jobs:
         run: |
           set -euo pipefail
           files=(
+            scripts/science/admit_deform360_calibration_visual_execution.py
+            scripts/science/build_deform360_calibration_visual_production_plan.py
             scripts/science/inventory_deform360_calibration_prepared_source.py
             tests/test_deform360_calibration_prepared_inventory.py
             tests/test_deform360_calibration_prepared_inventory_authoritative_run.py
+            tests/test_deform360_calibration_retained_source_workflow.py
+            tests/test_deform360_calibration_visual_execution_admission.py
+            tests/test_deform360_calibration_visual_production_plan.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
+            scripts/science/admit_deform360_calibration_visual_execution.py \
+            scripts/science/build_deform360_calibration_visual_production_plan.py \
             scripts/science/inventory_deform360_calibration_prepared_source.py
 
       - name: Run focused and adjacent contracts
@@ -87,13 +126,21 @@ jobs:
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_calibration_prepared_inventory.py \
             tests/test_deform360_calibration_prepared_inventory_authoritative_run.py \
+            tests/test_deform360_calibration_retained_source_workflow.py \
+            tests/test_deform360_calibration_visual_production_plan.py \
+            tests/test_deform360_calibration_visual_execution_admission.py \
             tests/test_deform360_calibration_source_run_record.py \
             tests/test_deform360_calibration_observability_case_builder.py \
             tests/test_deform360_calibration_observability_batch.py
           python -m py_compile \
+            scripts/science/admit_deform360_calibration_visual_execution.py \
+            scripts/science/build_deform360_calibration_visual_production_plan.py \
             scripts/science/inventory_deform360_calibration_prepared_source.py \
             tests/test_deform360_calibration_prepared_inventory.py \
-            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py
+            tests/test_deform360_calibration_prepared_inventory_authoritative_run.py \
+            tests/test_deform360_calibration_retained_source_workflow.py \
+            tests/test_deform360_calibration_visual_execution_admission.py \
+            tests/test_deform360_calibration_visual_production_plan.py
 
       - name: Verify exact read-only repository state
         shell: bash
@@ -103,17 +150,29 @@ jobs:
           test -z "$(git status --porcelain=v1)"
 
   inventory:
-    name: Inventory successful retained calibration source / workstation2
+    name: Materialize retained-source admission / workstation2
     if: >-
-      github.event_name == 'workflow_dispatch' &&
+      github.event_name != 'pull_request' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     needs: contracts
+    permissions:
+      actions: read
+      contents: read
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
-    timeout-minutes: 90
+    timeout-minutes: 120
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_url: ${{ steps.upload.outputs.artifact-url }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      inventory_id: ${{ steps.materialize.outputs.inventory_id }}
+      plan_id: ${{ steps.materialize.outputs.plan_id }}
+      admission_id: ${{ steps.materialize.outputs.admission_id }}
+      camera_view_count: ${{ steps.materialize.outputs.camera_view_count }}
     env:
       SOURCE_RUN_ID: "31236564360"
       SOURCE_ARTIFACT_NAME: deform360-official-calibration-source-31236564360-1
+      SOURCE_ARTIFACT_DIGEST: 866c3f05e733e0cd6548e97ea4134476a37c7e01d09614cda2e86b3cb59d97d2
       PROCESSED_ROOT: >-
         ${{ vars.DEFORM360_OFFICIAL_HUB_CALIBRATION_PROCESSED_ROOT ||
         '/mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed' }}
@@ -122,8 +181,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Direct prepared-source inventory started"
+          echo "Direct retained-source admission started"
           echo "source_run_id=${SOURCE_RUN_ID}"
+          echo "source_artifact_name=${SOURCE_ARTIFACT_NAME}"
+          echo "source_artifact_digest=sha256:${SOURCE_ARTIFACT_DIGEST}"
           echo "confirmation_payloads_opened=false"
           echo "target_outcomes_used=false"
 
@@ -144,20 +205,20 @@ jobs:
           test -z "$(git status --porcelain=v1)"
           test -d "${PROCESSED_ROOT}/aligned"
 
-      - name: Download exact successful compact source evidence
+      - name: Download authoritative compact source evidence
         uses: actions/download-artifact@v7
         with:
           name: ${{ env.SOURCE_ARTIFACT_NAME }}
-          path: ${{ runner.temp }}/deform360-prepared-source-evidence
+          path: ${{ runner.temp }}/deform360-retained-source-evidence
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ env.SOURCE_RUN_ID }}
 
-      - name: Install exact inventory source in an isolated environment
+      - name: Install exact admission source in an isolated environment
         shell: bash
         run: |
           set -euo pipefail
-          site="${RUNNER_TEMP}/deform360-prepared-inventory-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          site="${RUNNER_TEMP}/deform360-retained-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           python3 -m venv "${site}"
           "${site}/bin/python" -m pip install \
             "pip==25.2" \
@@ -166,19 +227,22 @@ jobs:
             "numpy==2.2.6"
           "${site}/bin/python" -m pip install --no-deps .
           "${site}/bin/python" -m pip check
-          echo "INVENTORY_PYTHON=${site}/bin/python" >> "${GITHUB_ENV}"
-          echo "INVENTORY_SITE=${site}" >> "${GITHUB_ENV}"
+          echo "ADMISSION_PYTHON=${site}/bin/python" >> "${GITHUB_ENV}"
+          echo "ADMISSION_SITE=${site}" >> "${GITHUB_ENV}"
 
-      - name: Validate and inventory retained calibration bytes
-        id: inventory
+      - name: Inventory retained bytes and freeze visual admission
+        id: materialize
         shell: bash
         run: |
           set -euo pipefail
-          evidence="${RUNNER_TEMP}/deform360-prepared-source-evidence"
-          output_root="${RUNNER_TEMP}/deform360-prepared-inventory-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          evidence="${RUNNER_TEMP}/deform360-retained-source-evidence"
+          output_root="${RUNNER_TEMP}/deform360-retained-source-output-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           mkdir -p -- "${output_root}"
-          output="${output_root}/prepared-source-inventory.json"
-          "${INVENTORY_PYTHON}" \
+          inventory="${output_root}/prepared-source-inventory.json"
+          plan="${output_root}/calibration-visual-production-plan.json"
+          admission="${output_root}/calibration-visual-execution-admission.json"
+
+          "${ADMISSION_PYTHON}" \
             scripts/science/inventory_deform360_calibration_prepared_source.py \
             --source-protocol \
               protocols/deform360_official_hub_calibration_source_v1.json \
@@ -194,19 +258,129 @@ jobs:
             --run-record "${evidence}/execution-manifest.json" \
             --processed-root "${PROCESSED_ROOT}/aligned" \
             --implementation-revision "${GITHUB_SHA}" \
-            --output "${output}" \
+            --output "${inventory}" \
             | tee "${output_root}/inventory-console.json"
-          sha256sum "${output}" > "${output_root}/SHA256SUMS"
-          echo "output_root=${output_root}" >> "${GITHUB_OUTPUT}"
 
-      - name: Upload compact prepared-source inventory
+          "${ADMISSION_PYTHON}" \
+            scripts/science/build_deform360_calibration_visual_production_plan.py \
+            build \
+            --source-protocol \
+              protocols/deform360_official_hub_calibration_source_v1.json \
+            --stage0-protocol \
+              protocols/deform360_official_hub_visuotactile_v1.json \
+            --selection-lock \
+              protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-lock \
+              protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
+            --calibration-source-plan "${evidence}/calibration-source-plan.json" \
+            --calibration-source-download \
+              "${evidence}/calibration-download-manifest.json" \
+            --calibration-source-run-record "${evidence}/execution-manifest.json" \
+            --calibration-source-result "${evidence}/calibration-source-result.json" \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output "${plan}" \
+            | tee "${output_root}/plan-console.json"
+
+          "${ADMISSION_PYTHON}" \
+            scripts/science/build_deform360_calibration_visual_production_plan.py \
+            validate "${plan}" \
+            > "${output_root}/plan-validation.json"
+
+          "${ADMISSION_PYTHON}" \
+            scripts/science/admit_deform360_calibration_visual_execution.py \
+            --visual-production-plan "${plan}" \
+            --prepared-source-inventory "${inventory}" \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output "${admission}" \
+            | tee "${output_root}/admission-console.json"
+
+          OUTPUT_ROOT="${output_root}" \
+          SOURCE_RUN_ID="${SOURCE_RUN_ID}" \
+          SOURCE_ARTIFACT_NAME="${SOURCE_ARTIFACT_NAME}" \
+          SOURCE_ARTIFACT_DIGEST="${SOURCE_ARTIFACT_DIGEST}" \
+          "${ADMISSION_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from bayesian_phystwin.deform360_calibration_visual_execution_admission import (
+              load_deform360_calibration_visual_execution_admission,
+              validate_deform360_prepared_source_inventory,
+          )
+          from bayesian_phystwin.deform360_calibration_visual_production_plan import (
+              load_deform360_calibration_visual_production_plan,
+          )
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          inventory_path = root / "prepared-source-inventory.json"
+          inventory = validate_deform360_prepared_source_inventory(
+              json.loads(inventory_path.read_text(encoding="utf-8"))
+          )
+          plan = load_deform360_calibration_visual_production_plan(
+              root / "calibration-visual-production-plan.json"
+          )
+          admission = load_deform360_calibration_visual_execution_admission(
+              root / "calibration-visual-execution-admission.json"
+          )
+          summary = {
+              "schema": "bayesian-phystwin.deform360-retained-source-admission-receipt",
+              "schema_version": 1,
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "source_run_id": int(os.environ["SOURCE_RUN_ID"]),
+              "source_artifact_name": os.environ["SOURCE_ARTIFACT_NAME"],
+              "source_artifact_digest": "sha256:" + os.environ["SOURCE_ARTIFACT_DIGEST"],
+              "inventory_id": inventory["inventory_id"],
+              "plan_id": plan["plan_id"],
+              "admission_id": admission["admission_id"],
+              "object_count": admission["object_count"],
+              "camera_view_count": admission["camera_view_count"],
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "replacement_allowed": False,
+          }
+          (root / "receipt.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"output_root={root}\n")
+              output.write(f"inventory_id={inventory['inventory_id']}\n")
+              output.write(f"plan_id={plan['plan_id']}\n")
+              output.write(f"admission_id={admission['admission_id']}\n")
+              output.write(f"camera_view_count={admission['camera_view_count']}\n")
+          PY
+
+          (
+            cd "${output_root}"
+            sha256sum \
+              admission-console.json \
+              calibration-visual-execution-admission.json \
+              calibration-visual-production-plan.json \
+              inventory-console.json \
+              plan-console.json \
+              plan-validation.json \
+              prepared-source-inventory.json \
+              receipt.json \
+              > SHA256SUMS
+          )
+
+      - name: Upload compact retained-source admission
+        id: upload
         uses: actions/upload-artifact@v7
         with:
-          name: deform360-calibration-prepared-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform360-calibration-retained-source-admission-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ steps.inventory.outputs.output_root }}/prepared-source-inventory.json
-            ${{ steps.inventory.outputs.output_root }}/inventory-console.json
-            ${{ steps.inventory.outputs.output_root }}/SHA256SUMS
+            ${{ steps.materialize.outputs.output_root }}/admission-console.json
+            ${{ steps.materialize.outputs.output_root }}/calibration-visual-execution-admission.json
+            ${{ steps.materialize.outputs.output_root }}/calibration-visual-production-plan.json
+            ${{ steps.materialize.outputs.output_root }}/inventory-console.json
+            ${{ steps.materialize.outputs.output_root }}/plan-console.json
+            ${{ steps.materialize.outputs.output_root }}/plan-validation.json
+            ${{ steps.materialize.outputs.output_root }}/prepared-source-inventory.json
+            ${{ steps.materialize.outputs.output_root }}/receipt.json
+            ${{ steps.materialize.outputs.output_root }}/SHA256SUMS
           if-no-files-found: error
           retention-days: 90
 
@@ -216,8 +390,8 @@ jobs:
         run: |
           set -euo pipefail
           test -z "$(git status --porcelain=v1)"
-          if [[ -n "${INVENTORY_SITE:-}" ]]; then
-            rm -rf -- "${INVENTORY_SITE}"
+          if [[ -n "${ADMISSION_SITE:-}" ]]; then
+            rm -rf -- "${ADMISSION_SITE}"
           fi
           echo "confirmation_payloads_opened=false"
           echo "target_outcomes_used=false"
