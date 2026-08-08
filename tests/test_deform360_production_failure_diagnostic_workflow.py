@@ -36,8 +36,7 @@ def test_failure_diagnostic_binds_exact_retained_execution() -> None:
     expected = (
         'FAILED_PRODUCTION_RUN_ID: "31277475724"',
         "FAILED_PRODUCTION_ATTEMPT_ID: 31277475724-1",
-        "FAILED_IMPLEMENTATION_REVISION: "
-        "312d4a46545b547efcdab79d4f285473077887cf",
+        "FAILED_IMPLEMENTATION_REVISION: 312d4a46545b547efcdab79d4f285473077887cf",
         "ADMISSION_ID: "
         "715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15",
         'EXPECTED_JOB_COUNT: "324"',
@@ -59,7 +58,9 @@ def test_failure_diagnostic_reads_only_receipts_and_retained_technical_log() -> 
     diagnostic = text[text.index("  diagnose:") :]
 
     assert 'failure_root = run_root / "failures"' in diagnostic
-    assert 'stderr_path = safe_member(run_root, str(stderr_record["path"]))' in diagnostic
+    assert (
+        'stderr_path = safe_member(run_root, str(stderr_record["path"]))' in diagnostic
+    )
     assert "stable_read(stderr_path, expected_size=expected_bytes)" in diagnostic
     assert "retained_technical_logs_opened" in diagnostic
     assert "retained_calibration_camera_payloads_opened" in diagnostic
@@ -83,7 +84,7 @@ def test_failure_diagnostic_rejects_symlinks_and_path_escape() -> None:
 
     assert "path contains a symbolic link" in text
     assert "retained path contains a symlink" in text
-    assert 'os.O_NOFOLLOW' in text
+    assert "os.O_NOFOLLOW" in text
     assert 'any(part in {"", ".", ".."} for part in pure.parts)' in text
     assert "file changed while being read" in text
     assert "not a regular file" in text
