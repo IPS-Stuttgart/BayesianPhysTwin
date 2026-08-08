@@ -158,7 +158,7 @@ def test_repository_states_require_exact_unique_revisions(tmp_path: Path) -> Non
                 ),
             ),
         )
-    with pytest.raises(ValueError, match="exact 40-character"):
+    with pytest.raises(ValueError, match="exact lowercase Git revision"):
         RepositoryState(
             repository="FlorianPfaff/Prob4D",
             revision="main",
