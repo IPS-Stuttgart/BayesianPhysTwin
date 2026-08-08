@@ -28,6 +28,22 @@ def test_download_lane_disables_xet_and_accepts_only_optional_hf_token() -> None
     assert "secrets: inherit" not in dispatcher
 
 
+def test_hf_token_is_scoped_only_to_the_acquisition_step() -> None:
+    reusable = REUSABLE.read_text(encoding="utf-8")
+    workflow_prefix, jobs = reusable.split("\njobs:\n", maxsplit=1)
+    assert "HF_TOKEN:" not in workflow_prefix
+
+    acquisition_marker = (
+        "      - name: Validate and prepare the frozen calibration source\n"
+    )
+    acquisition, remainder = jobs.split(acquisition_marker, maxsplit=1)[1].split(
+        "\n      - name:",
+        maxsplit=1,
+    )
+    assert "HF_TOKEN: ${{ secrets.hf_token }}" in acquisition
+    assert "HF_TOKEN: ${{ secrets.hf_token }}" not in remainder
+
+
 def test_download_lane_never_prints_or_persists_token_value() -> None:
     reusable = REUSABLE.read_text(encoding="utf-8")
     direct = DIRECT_SCRIPT.read_text(encoding="utf-8")
