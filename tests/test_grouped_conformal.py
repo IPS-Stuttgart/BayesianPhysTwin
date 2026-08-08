@@ -224,3 +224,29 @@ def test_result_contract_rejects_invalid_values(kwargs: dict[str, object]) -> No
     values.update(kwargs)
     with pytest.raises(ValueError):
         GroupedConformalResult(**values)  # type: ignore[arg-type]
+
+
+def test_result_contract_rejects_forged_feasible_rank() -> None:
+    with pytest.raises(ValueError, match="finite_sample_rank"):
+        GroupedConformalResult(
+            upper_bound=np.ones(1),
+            calibration_group_scores=np.asarray([1.0, 2.0, 3.0]),
+            quantile=1.0,
+            finite_sample_rank=1,
+            calibration_group_count=3,
+            nominal_coverage=0.5,
+            score="scaled",
+        )
+
+
+def test_result_contract_rejects_forged_finite_quantile() -> None:
+    with pytest.raises(ValueError, match="quantile"):
+        GroupedConformalResult(
+            upper_bound=np.ones(1),
+            calibration_group_scores=np.asarray([1.0, 2.0, 3.0]),
+            quantile=1.0,
+            finite_sample_rank=2,
+            calibration_group_count=3,
+            nominal_coverage=0.5,
+            score="scaled",
+        )
