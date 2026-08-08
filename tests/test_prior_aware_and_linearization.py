@@ -263,6 +263,18 @@ def test_linearization_metadata_is_deeply_immutable_and_id_stable() -> None:
     assert "copy-only" not in linearization.metadata["nested"]["items"]
 
 
+def test_linearization_arrays_are_irreversibly_immutable() -> None:
+    linearization = _linearization()
+    artifact_id = linearization.artifact_id
+
+    for name, array in linearization.arrays().items():
+        assert not array.flags.writeable, name
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
+
+    assert linearization.artifact_id == artifact_id
+
+
 def test_linearization_round_trip_revalidates_content_address(tmp_path: Path) -> None:
     source = _linearization()
     path = tmp_path / "linearization.npz"
