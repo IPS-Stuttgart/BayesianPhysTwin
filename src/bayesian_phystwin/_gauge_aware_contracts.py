@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import numpy as np
 
-from ._canonical_contracts import frozen_finite_json_mapping
+from ._canonical_contracts import frozen_finite_json_mapping, immutable_array
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -16,10 +16,12 @@ def _require(condition: bool | np.bool_, message: str) -> None:
         raise ValueError(message)
 
 
-def _readonly(value: np.ndarray, *, dtype: Any = np.float64) -> np.ndarray:
-    result = np.asarray(value, dtype=dtype).copy()
-    result.setflags(write=False)
-    return result
+def _readonly(
+    value: object,
+    *,
+    dtype: Any | None = np.float64,
+) -> np.ndarray:
+    return immutable_array(value, dtype=dtype)
 
 
 def _finite_array(value: np.ndarray, name: str, ndim: int) -> np.ndarray:
@@ -676,9 +678,11 @@ class GaugeAwareSelection:
     selected_value: np.ndarray
 
     def __post_init__(self) -> None:
-        selected = np.asarray(self.selected_value).copy()
-        selected.setflags(write=False)
-        object.__setattr__(self, "selected_value", selected)
+        object.__setattr__(
+            self,
+            "selected_value",
+            _readonly(self.selected_value, dtype=None),
+        )
 
 
 def _fallback_result(

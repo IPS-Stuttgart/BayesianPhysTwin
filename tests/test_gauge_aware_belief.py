@@ -500,6 +500,89 @@ def test_regret_decision_must_be_bound_to_exact_candidate() -> None:
         )
 
 
+def test_gauge_aware_contract_arrays_are_irreversibly_immutable() -> None:
+    mode = np.linspace(-1.0, 1.0, 8)
+    batch = _batch(
+        mode,
+        0.01 * mode,
+        anchor_state=np.asarray([-1.0, 1.0]),
+        anchor_innovation_x=np.asarray([-0.01, 0.01]),
+        anchor_bias_mode=np.ones(2),
+    )
+    batch_array_names = (
+        "innovation_m",
+        "observation_covariance_m2",
+        "state_jacobian",
+        "gauge_jacobian",
+        "shared_bias_jacobian",
+        "view_bias_jacobian",
+        "query_state_jacobian",
+        "gauge_prior_covariance",
+        "prior_reliability",
+        "prior_nominal_probability",
+        "composite_weight",
+        "state_prior_covariance_m2",
+        "anchor_innovation_m",
+        "anchor_covariance_m2",
+        "anchor_state_jacobian",
+        "anchor_prior_reliability",
+        "anchor_prior_nominal_probability",
+        "anchor_composite_weight",
+        "anchor_bias_jacobian",
+        "anchor_bias_prior_covariance",
+    )
+    for name in batch_array_names:
+        array = getattr(batch, name)
+        assert array is not None, name
+        assert not array.flags.writeable, name
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
+
+    result = GaugeAwareBeliefResult(
+        inference_admissible=True,
+        reason="inference-admissible",
+        state_coefficients=np.asarray([0.0]),
+        gauge_delta=np.zeros(0),
+        shared_bias_coefficients=np.zeros(0),
+        view_bias_coefficients=np.zeros(0),
+        anchor_bias_coefficients=np.zeros(0),
+        posterior_covariance=np.asarray([[1.0]]),
+        identifiable_state_transform=np.asarray([[1.0]]),
+        identifiable_fractions=np.asarray([1.0]),
+        query_sensitivity_fractions=np.asarray([1.0]),
+        robust_weights=np.asarray([1.0]),
+        anchor_robust_weights=np.zeros(0),
+        diagnostics={"solver": "test"},
+    )
+    result_array_names = (
+        "state_coefficients",
+        "gauge_delta",
+        "shared_bias_coefficients",
+        "view_bias_coefficients",
+        "anchor_bias_coefficients",
+        "posterior_covariance",
+        "identifiable_state_transform",
+        "identifiable_fractions",
+        "query_sensitivity_fractions",
+        "robust_weights",
+        "anchor_robust_weights",
+    )
+    for name in result_array_names:
+        array = getattr(result, name)
+        assert not array.flags.writeable, name
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
+
+    selection = select_gauge_aware_candidate(
+        np.asarray([1.0], dtype=np.float32),
+        np.asarray([2.0], dtype=np.float32),
+        result,
+    )
+    assert selection.selected_value.dtype == np.dtype(np.float32)
+    with pytest.raises(ValueError):
+        selection.selected_value.setflags(write=True)
+
+
 def test_gauge_aware_batch_recursively_owns_and_freezes_metadata() -> None:
     nested = {"calibration_ids": ["gauge-v1", "camera-v2"]}
     metadata: dict[str, object] = {"provider": nested}
