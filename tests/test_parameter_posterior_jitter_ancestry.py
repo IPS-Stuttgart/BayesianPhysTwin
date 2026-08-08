@@ -10,7 +10,9 @@ class _RecordingGenerator:
     def random(self) -> float:
         return 0.5
 
-    def normal(self, *, loc: float, scale: np.ndarray, size: tuple[int, ...]) -> np.ndarray:
+    def normal(
+        self, *, loc: float, scale: np.ndarray, size: tuple[int, ...]
+    ) -> np.ndarray:
         assert loc == 0.0
         self.scale = np.asarray(scale, dtype=np.float64).copy()
         return np.zeros(size, dtype=np.float64)
