@@ -90,7 +90,7 @@ def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> No
         )
     ]
 
-    assert 'if command -v uv >/dev/null 2>&1' in bootstrap
+    assert "if command -v uv >/dev/null 2>&1" in bootstrap
     assert 'uv_bin="${HOME}/.local/bin/uv"' in bootstrap
     assert '"${uv_bin}" pip install \\\n' in bootstrap
     assert '--python "${env_root}/bin/python"' in bootstrap
