@@ -89,6 +89,10 @@ jobs:
             tests/test_legacy_artifacts.py \
             tests/test_causal4d_artifacts_v2.py \
             tests/test_phystwin_raw_cues.py \
+            tests/test_mask_distance_and_multiview_geometry_regressions.py \
+            tests/test_phystwin_cotracker3_cues.py \
+            tests/test_phystwin_motioncrafter_assimilation.py \
+            tests/test_phystwin_alltracker_cues.py \
             tests/test_gauge_aware_belief.py \
             tests/test_canonical_contracts.py \
             tests/test_claim_bearing_identifier_types.py \
@@ -377,7 +381,7 @@ jobs:
           graph_missing = graph_required - set(graph_payload["capabilities"])
           if graph_missing:
               raise SystemExit(
-                f"missing graph-provider capabilities: {sorted(graph_missing)}"
+                  f"missing graph-provider capabilities: {sorted(graph_missing)}"
               )
           if graph_payload["artifact_schema_versions"] != {
               "PhysTwinSpringGraph": 1
