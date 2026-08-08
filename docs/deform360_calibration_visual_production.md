@@ -16,6 +16,47 @@ The producer executes those admitted jobs and no others. It does not construct a
 new object split, select preferred cameras, replace failures, open confirmation
 objects, or inspect target outcomes.
 
+## Public-data technical-smoke gate
+
+The first complete provider attempt, workflow run `31277475724`, retained 324 of
+324 technical failures before inference. Its compact evidence showed one shared
+failure signature and no successful prediction. Source inspection then isolated
+a scope mismatch: the outer all-job invocation passed `resume=true` to every
+fresh per-job Prob4D bundle, while the pinned Prob4D runner accepts resume mode
+only after that individual bundle has written a progress journal. The source
+repair now maps an empty or absent job directory to `resume=false` and preserves
+`resume=true` only for a nonempty interrupted bundle. This is a technical defect
+and repair, not a scientific result.
+
+The fresh-resume retry at main revision `c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c`
+was separately authorized and launched before this smoke gate existed. For any
+later 324-job attempt, a separately versioned technical smoke must first run the
+exact production stack on one public calibration-camera prefix. The job is
+selected without payload or outcome access as the lexicographically smallest
+SHA-256 job ID in the frozen 324-job admission. The smoke:
+
+- re-hashes only that job's admitted RGB video and timestamp file;
+- uses the frozen Prob4D, MotionCrafter, model-set, seed, and 58-frame prefix;
+- verifies every generated prediction member and publishes the ordinary
+  prediction seal or a retained technical-failure receipt;
+- computes no track, Chamfer, calibration, or target metric; and
+- keeps reserved evaluation frames, robot state, tactile data, confirmation
+  payloads, and target outcomes closed.
+
+The gate neither changes nor duplicates the already launched retry.
+
+Its content-addressed `technical-smoke-result.json` authorizes one separately
+reviewed full calibration retry only when the selected job passes and the model
+is loaded exactly once. The workflow independently reloads that result and
+re-hashes its exact seal or failure receipt, then checks the target-free
+selection against the frozen admission, verifies the closed information
+boundary, and emits `technical-smoke-gate.json`. A technical failure authorizes
+nothing. The smoke is one-shot: it has no same-version resume or replacement
+path. A new attempt after failure requires a source-independent
+repair, a new reviewed implementation revision, and a new one-shot launcher. No
+human approval or new physical capture is part of this gate; the evidence is the
+already retained public Deform360 calibration prefix.
+
 ## Protected workflow
 
 The reusable workflow is
@@ -28,6 +69,13 @@ its implementation revision and frozen admission unless a source-independent
 defect is demonstrated before payload access. Such a repair requires a reviewed,
 versioned launcher revision that names its failed predecessor. There is no
 manual payload dispatch.
+
+The reusable workflow also recognizes the exact future caller path
+`.github/workflows/launch-deform360-calibration-visual-smoke-once.yml` only with
+scope `technical-smoke` and `resume=false`. That launcher is deliberately kept
+out of the implementation change: it is added in a second reviewed change only
+after the smoke contracts are green, so merging implementation cannot execute
+the provider.
 
 The runner that carries Deform360 is scheduled using only the `self-hosted`
 label. Before any protected-root access, the workflow additionally requires the
@@ -138,6 +186,10 @@ At runtime the workflow:
 7. uploads only compact admission metadata, storage evidence, per-job seals or
    retained failure receipts, complete accounting, and environment evidence.
 
+Under `technical-smoke`, step 6 executes only the frozen selected job, the
+compact accounting is `technical-smoke-result.json`, and a nonpassing result
+fails the workflow's advancement gate after compact evidence is uploaded.
+
 Large prediction arrays remain under the protected persistent output root. They
 are not copied into GitHub artifacts.
 
@@ -206,6 +258,10 @@ mode onto a fresh job. A missing or empty per-job output starts normally;
 Prob4D receives `resume=true` only after that job has produced bundle state for
 the crash-safe runner to validate.
 
+Technical-smoke output uses a separate `technical-smoke-v1` namespace. The
+smoke CLI rejects `resume=true` before any payload access and refuses any
+existing same-revision smoke directory before re-reading retained payloads.
+
 A process-level file lock prevents concurrent writers while allowing automatic
 release after cancellation or runner failure. The shared adapter changes only
 the per-job video, output directory, seed, and causal frame bounds. A change to
@@ -238,6 +294,12 @@ Exit codes are:
 
 A code-3 result is a completed negative operational outcome and remains eligible
 for downstream no-replacement accounting.
+
+The separately launched smoke uses the same arguments with the `smoke`
+subcommand and without `--resume`. For that command, exit code `0` means the
+single provider job and integrity checks passed, `3` means a retained technical
+failure with no retry authorization, and `2` means a structural or custody
+failure.
 
 ## Downstream observability handoff
 

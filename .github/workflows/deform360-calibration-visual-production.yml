@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/deform360-calibration-visual-production.yml"
       - ".github/workflows/launch-deform360-calibration-visual-production-once.yml"
+      - ".github/workflows/launch-deform360-calibration-visual-smoke-once.yml"
       - "MANIFEST.in"
       - "docs/deform360_calibration_visual_production.md"
       - "scripts/science/execute_deform360_calibration_visual_production.py"
@@ -23,6 +24,11 @@ on:
         required: false
         default: true
         type: boolean
+      execution_scope:
+        description: Exact reviewed execution scope (full or technical-smoke)
+        required: false
+        default: full
+        type: string
     secrets:
       HF_TOKEN:
         description: Optional Hugging Face token for immutable public snapshots
@@ -117,12 +123,17 @@ jobs:
           test -z "$(git status --porcelain=v1)"
 
   production:
-    name: Admitted all-camera production / sole Deform360 runner
+    name: ${{ inputs.execution_scope == 'technical-smoke' && 'One-job technical smoke / sole Deform360 runner' || 'Admitted all-camera production / sole Deform360 runner' }}
     if: >-
       inputs.execute_authorized == true &&
       github.event_name == 'push' &&
-      github.workflow_ref ==
-      'IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-calibration-visual-production-once.yml@refs/heads/main' &&
+      ((inputs.execution_scope == 'full' &&
+        github.workflow_ref ==
+        'IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-calibration-visual-production-once.yml@refs/heads/main') ||
+       (inputs.execution_scope == 'technical-smoke' &&
+        inputs.resume == false &&
+        github.workflow_ref ==
+        'IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-calibration-visual-smoke-once.yml@refs/heads/main')) &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     needs: contracts
@@ -136,7 +147,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          evidence="${RUNNER_TEMP}/deform360-visual-production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          evidence="${RUNNER_TEMP}/deform360-visual-${{ inputs.execution_scope }}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           mkdir -p "${evidence}/admission" "${evidence}/compact"
           {
             echo "EVIDENCE_ROOT=${evidence}"
@@ -151,7 +162,9 @@ jobs:
           echo "retained_source_artifact_digest=${AUTHORITATIVE_ADMISSION_ARTIFACT_DIGEST}"
           echo "retained_source_admission_id=${AUTHORITATIVE_ADMISSION_ID}"
           echo "admitted_camera_jobs=${AUTHORITATIVE_CAMERA_VIEW_COUNT}"
+          echo "execution_scope=${{ inputs.execution_scope }}"
           echo "model_loading_policy=single-session-shared-adapter-v1"
+          echo "scientific_metrics_computed=false"
           echo "official_raw_payload_opened=false"
           echo "reserved_evaluation_frames_opened=false"
           echo "adaptive_confirmation_payloads_opened=false"
@@ -448,7 +461,19 @@ jobs:
               raise SystemExit("target-outcome boundary changed")
           PY
           echo "ADMISSION_ID=${AUTHORITATIVE_ADMISSION_ID}" >> "${GITHUB_ENV}"
-          echo "PRODUCTION_RUN_ROOT=${VISUAL_OUTPUT_ROOT}/${AUTHORITATIVE_ADMISSION_ID}/${GITHUB_SHA}" >> "${GITHUB_ENV}"
+          case "${{ inputs.execution_scope }}" in
+            full)
+              run_root="${VISUAL_OUTPUT_ROOT}/${AUTHORITATIVE_ADMISSION_ID}/${GITHUB_SHA}"
+              ;;
+            technical-smoke)
+              run_root="${VISUAL_OUTPUT_ROOT}/technical-smoke-v1/${AUTHORITATIVE_ADMISSION_ID}/${GITHUB_SHA}"
+              ;;
+            *)
+              echo "Unrecognized visual-production execution scope." >&2
+              exit 1
+              ;;
+          esac
+          echo "PRODUCTION_RUN_ROOT=${run_root}" >> "${GITHUB_ENV}"
       - name: Bootstrap exact GPU producer environment
         shell: bash
         run: |
@@ -541,17 +566,23 @@ jobs:
             --spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
             --cache-dir "${MODEL_CACHE}" \
             --output "${ADMISSION_ROOT}/model-bootstrap.json"
-      - name: Execute or resume every admitted causal-prefix job
+      - name: Execute the exact admitted causal-prefix scope
         id: production
         shell: bash
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
+          scope="${{ inputs.execution_scope }}"
+          case "${scope}" in
+            full) command=run ;;
+            technical-smoke) command=smoke ;;
+            *) echo "Unrecognized execution scope." >&2; exit 1 ;;
+          esac
           resume=()
           if [[ "${{ inputs.resume }}" == "true" ]]; then resume=(--resume); fi
           set +e
-          "${PRODUCTION_PYTHON}" scripts/science/execute_deform360_calibration_visual_production.py run \
+          "${PRODUCTION_PYTHON}" scripts/science/execute_deform360_calibration_visual_production.py "${command}" \
             --admission "${ADMISSION_ROOT}/calibration-visual-execution-admission.json" \
             --visual-provider-lock protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json \
             --model-set-binding protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/motioncrafter-model-set.json \
@@ -567,6 +598,94 @@ jobs:
           set -e
           if [[ "${code}" != 0 && "${code}" != 3 ]]; then exit "${code}"; fi
           echo "terminal_code=${code}" >> "${GITHUB_OUTPUT}"
+      - name: Revalidate compact technical-smoke gate
+        id: smoke-gate
+        if: always() && inputs.execution_scope == 'technical-smoke'
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="${PRODUCTION_RUN_ROOT}/technical-smoke-result.json"
+          set +e
+          "${PRODUCTION_PYTHON}" scripts/science/execute_deform360_calibration_visual_production.py \
+            validate-smoke-bundle "${result}" \
+            --run-root "${PRODUCTION_RUN_ROOT}" \
+            > "${ADMISSION_ROOT}/technical-smoke-validation.json"
+          validation_code=$?
+          set -e
+          if [[ "${validation_code}" != 0 && "${validation_code}" != 3 ]]; then
+            exit "${validation_code}"
+          fi
+          SMOKE_RESULT="${result}" "${PRODUCTION_PYTHON}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["SMOKE_RESULT"]).read_text(encoding="utf-8"))
+          admission = json.loads(
+              (Path(os.environ["ADMISSION_ROOT"]) / "calibration-visual-execution-admission.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          selected = min(admission["jobs"], key=lambda row: row["job_id"])
+          expected = {
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "admission_id": os.environ["AUTHORITATIVE_ADMISSION_ID"],
+              "visual_provider_lock_id": admission["visual_provider_lock_id"],
+              "provider_revision": os.environ["PROB4D_REVISION"],
+              "motioncrafter_revision": os.environ["MOTIONCRAFTER_REVISION"],
+              "model_set_id": admission["model_set_id"],
+              "selection_rule": "lexicographically-smallest-admitted-job-id-v1",
+              "admitted_job_count": int(os.environ["AUTHORITATIVE_CAMERA_VIEW_COUNT"]),
+              "selected_job_id": selected["job_id"],
+              "selected_object_id": selected["object_id"],
+              "selected_episode_id": selected["episode_id"],
+              "selected_camera_id": selected["camera_id"],
+              "scientific_metrics_computed": False,
+          }
+          for field, value in expected.items():
+              if result.get(field) != value:
+                  raise SystemExit(f"technical smoke {field} changed")
+          boundary = result.get("information_boundary", {})
+          for field in (
+              "reserved_evaluation_frames_opened",
+              "calibration_tactile_payloads_opened",
+              "calibration_robot_state_opened",
+              "confirmation_payloads_opened",
+              "target_outcomes_used",
+              "replacement_allowed",
+          ):
+              if boundary.get(field) is not False:
+                  raise SystemExit(f"technical smoke boundary changed: {field}")
+          authorized = (
+              result.get("status") == "passed"
+              and result.get("full_calibration_retry_authorized") is True
+              and result.get("model_load_attempt_count") == 1
+              and result.get("model_load_count") == 1
+          )
+          gate = {
+              "schema": "bayesian-phystwin.deform360-calibration-visual-technical-smoke-gate",
+              "schema_version": 1,
+              "implementation_revision": result["implementation_revision"],
+              "admission_id": result["admission_id"],
+              "smoke_id": result["smoke_id"],
+              "selected_job_id": result["selected_job_id"],
+              "status": result["status"],
+              "full_calibration_retry_authorized": authorized,
+              "scientific_metrics_computed": False,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+          }
+          canonical = json.dumps(gate, sort_keys=True, separators=(",", ":")).encode()
+          gate["gate_id"] = hashlib.sha256(canonical).hexdigest()
+          destination = Path(os.environ["ADMISSION_ROOT"]) / "technical-smoke-gate.json"
+          destination.write_text(
+              json.dumps(gate, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as stream:
+              stream.write(f"authorized={str(authorized).lower()}\n")
+          PY
       - name: Collect compact seals and accounting evidence
         if: always()
         shell: bash
@@ -580,6 +699,7 @@ jobs:
               cd "${PRODUCTION_RUN_ROOT}"
               find . -type f \
                 \( -name 'visual-production-result.json' \
+                   -o -name 'technical-smoke-result.json' \
                    -o -name 'prediction-seal.json' \
                    -o -path './failures/*.json' \) \
                 -print0 | sort -z | xargs -0 -r cp --parents -t "${COMPACT_ROOT}/production"
@@ -609,7 +729,9 @@ jobs:
             echo "retained_source_plan_id=${AUTHORITATIVE_PLAN_ID}"
             echo "retained_source_admission_id=${AUTHORITATIVE_ADMISSION_ID}"
             echo "admitted_camera_jobs=${AUTHORITATIVE_CAMERA_VIEW_COUNT}"
+            echo "execution_scope=${{ inputs.execution_scope }}"
             echo "model_loading_policy=single-session-shared-adapter-v1"
+            echo "scientific_metrics_computed=false"
             echo "official_raw_payload_opened=false"
             echo "reserved_evaluation_frames_opened=false"
             echo "adaptive_confirmation_payloads_opened=false"
@@ -632,7 +754,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: deform360-calibration-visual-production-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform360-calibration-visual-${{ inputs.execution_scope == 'technical-smoke' && 'technical-smoke' || 'production' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.COMPACT_ROOT }}
           if-no-files-found: error
           retention-days: 90
@@ -648,3 +770,12 @@ jobs:
           echo "adaptive_confirmation_payloads_opened=false"
           echo "confirmation_payloads_opened=false"
           echo "target_outcomes_used=false"
+      - name: Enforce one-job technical-smoke advancement gate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.execution_scope }}" == "technical-smoke" ]]; then
+            test "${{ steps.production.outputs.terminal_code }}" = "0"
+            test "${{ steps.smoke-gate.outputs.authorized }}" = "true"
+          fi

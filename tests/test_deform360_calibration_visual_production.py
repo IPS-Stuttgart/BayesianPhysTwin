@@ -15,9 +15,12 @@ from bayesian_phystwin.deform360_calibration_visual_production import (
     build_deform360_calibration_visual_prediction_seal,
     build_deform360_calibration_visual_production_result,
     build_deform360_calibration_visual_technical_failure,
+    build_deform360_calibration_visual_technical_smoke,
     deform360_calibration_visual_command_descriptor,
+    select_deform360_calibration_visual_technical_smoke_job,
     validate_deform360_calibration_visual_prediction_seal,
     validate_deform360_calibration_visual_production_result,
+    validate_deform360_calibration_visual_technical_smoke,
     validate_deform360_motioncrafter_model_set_binding,
     validate_deform360_motioncrafter_prediction_manifest,
 )
@@ -531,6 +534,158 @@ def test_all_success_result_counts_complete_object() -> None:
     assert result["completely_succeeded_object_count"] == 1
 
 
+def test_technical_smoke_selection_and_gate_are_target_free_and_content_bound() -> None:
+    raw, _binding = _validated_binding()
+    lock = _lock(str(raw["model_set_id"]))
+    admission = _admission(lock)
+    admission["jobs"] = list(reversed(admission["jobs"]))
+    selected = select_deform360_calibration_visual_technical_smoke_job(admission)
+
+    assert selected["job_id"] == min(row["job_id"] for row in admission["jobs"])
+    smoke = build_deform360_calibration_visual_technical_smoke(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        provider_lock=lock,
+        selected_job=selected,
+        command_id="e" * 64,
+        status="passed",
+        receipt=_file("objects/selected/prediction-seal.json"),
+        receipt_schema="bayesian-phystwin.deform360-calibration-visual-prediction-seal",
+        receipt_id="f" * 64,
+        model_load_attempt_count=1,
+        model_load_count=1,
+    )
+
+    assert smoke["admitted_job_count"] == 2
+    assert smoke["full_calibration_retry_authorized"] is True
+    assert smoke["scientific_metrics_computed"] is False
+    assert smoke["information_boundary"] == PRODUCTION_INFORMATION_BOUNDARY
+
+    forged = copy.deepcopy(smoke)
+    forged["full_calibration_retry_authorized"] = False
+    forged["smoke_id"] = content_id(
+        {key: value for key, value in forged.items() if key != "smoke_id"}
+    )
+    with pytest.raises(ValueError, match="retry authorization"):
+        validate_deform360_calibration_visual_technical_smoke(forged)
+
+    nonselected = next(
+        row for row in admission["jobs"] if row["job_id"] != selected["job_id"]
+    )
+    with pytest.raises(ValueError, match="selection rule"):
+        build_deform360_calibration_visual_technical_smoke(
+            implementation_revision=IMPLEMENTATION_REVISION,
+            admission=admission,
+            provider_lock=lock,
+            selected_job=nonselected,
+            command_id="e" * 64,
+            status="passed",
+            receipt=_file("objects/nonselected/prediction-seal.json"),
+            receipt_schema=(
+                "bayesian-phystwin.deform360-calibration-visual-prediction-seal"
+            ),
+            receipt_id="f" * 64,
+            model_load_attempt_count=1,
+            model_load_count=1,
+        )
+
+
+def test_failed_technical_smoke_never_authorizes_full_calibration_retry() -> None:
+    raw, _binding = _validated_binding()
+    lock = _lock(str(raw["model_set_id"]))
+    admission = _admission(lock)
+    selected = select_deform360_calibration_visual_technical_smoke_job(admission)
+
+    smoke = build_deform360_calibration_visual_technical_smoke(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        provider_lock=lock,
+        selected_job=selected,
+        command_id="e" * 64,
+        status="technical-failure",
+        receipt=_file("failures/selected.json"),
+        receipt_schema="bayesian-phystwin.deform360-calibration-visual-technical-failure",
+        receipt_id="f" * 64,
+        model_load_attempt_count=1,
+        model_load_count=0,
+    )
+
+    assert smoke["status"] == "technical-failure"
+    assert smoke["full_calibration_retry_authorized"] is False
+
+    forged = copy.deepcopy(smoke)
+    forged["receipt_schema"] = (
+        "bayesian-phystwin.deform360-calibration-visual-prediction-seal"
+    )
+    forged["smoke_id"] = content_id(
+        {key: value for key, value in forged.items() if key != "smoke_id"}
+    )
+    with pytest.raises(ValueError, match="receipt schema"):
+        validate_deform360_calibration_visual_technical_smoke(forged)
+
+
+def test_technical_smoke_bundle_rehashes_and_revalidates_exact_receipt(
+    tmp_path: Path,
+) -> None:
+    import runpy
+
+    raw, _binding = _validated_binding()
+    lock = _lock(str(raw["model_set_id"]))
+    admission = _admission(lock)
+    selected = select_deform360_calibration_visual_technical_smoke_job(admission)
+    command_id = "e" * 64
+    seal = build_deform360_calibration_visual_prediction_seal(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        job=selected,
+        provider_lock=lock,
+        command_id=command_id,
+        prediction_manifest=_file("predictions.json", 500),
+        run_spec_sha256="f" * 64,
+        verified_member_count=4,
+    )
+    run_root = tmp_path / "run"
+    receipt_path = (
+        run_root / str(selected["output_relative_directory"]) / "prediction-seal.json"
+    )
+    receipt_path.parent.mkdir(parents=True)
+    receipt_bytes = json.dumps(seal, indent=2, sort_keys=True).encode() + b"\n"
+    receipt_path.write_bytes(receipt_bytes)
+    receipt_record = {
+        "path": receipt_path.relative_to(run_root).as_posix(),
+        "sha256": hashlib.sha256(receipt_bytes).hexdigest(),
+        "byte_count": len(receipt_bytes),
+    }
+    smoke = build_deform360_calibration_visual_technical_smoke(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        provider_lock=lock,
+        selected_job=selected,
+        command_id=command_id,
+        status="passed",
+        receipt=receipt_record,
+        receipt_schema=str(seal["schema"]),
+        receipt_id=str(seal["seal_id"]),
+        model_load_attempt_count=1,
+        model_load_count=1,
+    )
+    result_path = run_root / "technical-smoke-result.json"
+    result_path.write_text(
+        json.dumps(smoke, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    validate_bundle = namespace["validate_technical_smoke_bundle"]
+
+    assert validate_bundle(result_path=result_path, run_root=run_root) == smoke
+
+    receipt_path.write_bytes(receipt_bytes + b" ")
+    with pytest.raises(ValueError, match="descriptor"):
+        validate_bundle(result_path=result_path, run_root=run_root)
+
+
 def test_content_ids_change_with_numerical_or_lineage_fields() -> None:
     raw, _binding = _validated_binding()
     lock = _lock(str(raw["model_set_id"]))
@@ -691,6 +846,32 @@ def test_shared_adapter_factory_latches_initial_creation_failure() -> None:
     assert attempts == 1
     assert shared.creation_attempt_count == 1
     assert shared.creation_count == 0
+
+
+def test_technical_smoke_refuses_same_version_resume_before_payload_io(
+    tmp_path: Path,
+) -> None:
+    import runpy
+
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    execute_smoke = namespace["execute_technical_smoke"]
+
+    with pytest.raises(ValueError, match="one-shot"):
+        execute_smoke(
+            admission_path=tmp_path / "missing-admission.json",
+            provider_lock_path=tmp_path / "missing-lock.json",
+            model_binding_path=tmp_path / "missing-binding.json",
+            retained_root=tmp_path / "missing-retained",
+            output_root=tmp_path / "output",
+            prob4d_root=tmp_path / "missing-prob4d",
+            motioncrafter_root=tmp_path / "missing-motioncrafter",
+            cache_directory=tmp_path / "cache",
+            implementation_revision=IMPLEMENTATION_REVISION,
+            attempt_id="attempt-1",
+            resume=True,
+        )
 
 
 def test_shared_producer_matches_the_pinned_prob4d_public_api(
