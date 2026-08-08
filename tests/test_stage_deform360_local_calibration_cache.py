@@ -95,9 +95,7 @@ def test_stages_verified_files_by_reflink_and_leaves_missing_for_downloader(
     assert result["revision_mismatch_count"] == 0
     assert result["reflink_unavailable_count"] == 0
     assert result["download_fallback_file_count"] == 1
-    assert result["download_fallback_paths"] == [
-        missing.relative_to(source).as_posix()
-    ]
+    assert result["download_fallback_paths"] == [missing.relative_to(source).as_posix()]
     boundary = result["information_boundary"]
     assert boundary["adaptive_confirmation_root_accessed"] is False
     assert boundary["hardlink_allowed"] is False
