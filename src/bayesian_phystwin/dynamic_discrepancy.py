@@ -100,7 +100,10 @@ class DynamicDiscrepancyCorrection:
             if values.shape != (rank, 3) or not np.all(np.isfinite(values)):
                 raise ValueError(f"{name} must have finite shape (rank, 3)")
             object.__setattr__(self, name, values)
-        if self.prefix_frame_start < 0 or self.prefix_frame_stop <= self.prefix_frame_start:
+        if (
+            self.prefix_frame_start < 0
+            or self.prefix_frame_stop <= self.prefix_frame_start
+        ):
             raise ValueError("prefix interval must be nonempty and nonnegative")
         if self.frame_dt_s <= 0.0 or not np.isfinite(self.frame_dt_s):
             raise ValueError("frame_dt_s must be positive and finite")
@@ -112,9 +115,13 @@ class DynamicDiscrepancyCorrection:
             "graph_rank": LOCALIZATION_GRAPH_RANK,
         }
         if any(boundary.get(key) != value for key, value in required.items()):
-            raise ValueError("dynamic discrepancy artifact violates its information boundary")
+            raise ValueError(
+                "dynamic discrepancy artifact violates its information boundary"
+            )
         if self.prefix_frame_stop - self.prefix_frame_start != 7:
-            raise ValueError("prefix must contain the endpoint and exactly six O-plus frames")
+            raise ValueError(
+                "prefix must contain the endpoint and exactly six O-plus frames"
+            )
         checksums = dict(self.source_checksums)
         if not checksums or any(
             not key or not _is_sha256(value) for key, value in checksums.items()
