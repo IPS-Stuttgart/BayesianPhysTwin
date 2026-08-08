@@ -88,8 +88,14 @@ def _distribution(values: np.ndarray) -> dict[str, float | int | None]:
     finite = np.asarray(values, dtype=float)
     finite = finite[np.isfinite(finite)]
     if len(finite) == 0:
-        return {"count": 0, "minimum": None, "median": None, "mean": None,
-                "p95": None, "maximum": None}
+        return {
+            "count": 0,
+            "minimum": None,
+            "median": None,
+            "mean": None,
+            "p95": None,
+            "maximum": None,
+        }
     return {
         "count": int(len(finite)),
         "minimum": float(np.min(finite)),
@@ -139,10 +145,14 @@ class CoTracker3OnlineRunner:
         self._torch = torch
         self._iterations = iterations
         self._device = torch.device(device)
-        self._predictor = CoTrackerOnlinePredictor(
-            checkpoint=str(checkpoint_path),
-            window_len=window_length,
-        ).to(self._device).eval()
+        self._predictor = (
+            CoTrackerOnlinePredictor(
+                checkpoint=str(checkpoint_path),
+                window_len=window_length,
+            )
+            .to(self._device)
+            .eval()
+        )
 
     def track(self, video: np.ndarray, queries_xy: np.ndarray) -> CoTracker3Prediction:
         """Track frame-zero queries through one video prefix."""
@@ -168,9 +178,7 @@ class CoTracker3OnlineRunner:
 
         frame_count, height, width, _ = frames.shape
         query_tensor = torch.from_numpy(
-            np.column_stack(
-                [np.zeros(len(queries), dtype=np.float32), queries]
-            )
+            np.column_stack([np.zeros(len(queries), dtype=np.float32), queries])
         )[None].to(self._device)
         query_tensor[:, :, 1:] *= query_tensor.new_tensor(
             [
@@ -186,11 +194,16 @@ class CoTracker3OnlineRunner:
                 frame_count - self._predictor.step,
                 self._predictor.step,
             ):
-                chunk = torch.from_numpy(
-                    np.ascontiguousarray(
-                        frames[start : start + 2 * self._predictor.step]
+                chunk = (
+                    torch.from_numpy(
+                        np.ascontiguousarray(
+                            frames[start : start + 2 * self._predictor.step]
+                        )
                     )
-                ).permute(0, 3, 1, 2)[None].float().to(self._device)
+                    .permute(0, 3, 1, 2)[None]
+                    .float()
+                    .to(self._device)
+                )
                 batch, length, channels, source_height, source_width = chunk.shape
                 chunk = torch.nn.functional.interpolate(
                     chunk.reshape(
@@ -291,21 +304,15 @@ def triangulate_multiview_tracks(
                 tracks[camera, frame],
                 0.0,
             )
-            pixel_homogeneous = np.column_stack(
-                [camera_tracks, np.ones(track_count)]
-            )
+            pixel_homogeneous = np.column_stack([camera_tracks, np.ones(track_count)])
             rays_camera = pixel_homogeneous @ inverse_intrinsics[camera].T
             rays_world = rays_camera @ rotations[camera].T
             ray_norm = np.linalg.norm(rays_world, axis=1)
             rays_world /= np.maximum(ray_norm[:, None], 1e-12)
-            projectors = identity - np.einsum(
-                "ni,nj->nij", rays_world, rays_world
-            )
+            projectors = identity - np.einsum("ni,nj->nij", rays_world, rays_world)
             weighted = effective_weight[camera, :, None, None] * projectors
             matrix += weighted
-            right_hand_side += np.einsum(
-                "nij,j->ni", weighted, centers[camera]
-            )
+            right_hand_side += np.einsum("nij,j->ni", weighted, centers[camera])
         selected = (candidate_camera_counts[frame] >= 2) & (
             np.sum(effective_weight, axis=0) > 0.0
         )
@@ -373,9 +380,7 @@ def pack_multiview_triangulation(
         raise ValueError("camera_count must be nonnegative")
 
     valid = (
-        np.all(np.isfinite(points), axis=2)
-        & np.isfinite(reprojection)
-        & (counts >= 2)
+        np.all(np.isfinite(points), axis=2) & np.isfinite(reprojection) & (counts >= 2)
     )
     full_points = np.full(
         (frame_count, track_count, 3),
@@ -441,9 +446,7 @@ def load_cotracker3_multiview_observations(
             dtype=float,
         )
         quality = np.asarray(
-            archive["multiview_quality_probability_prefix"][
-                :, :train_end_frame
-            ],
+            archive["multiview_quality_probability_prefix"][:, :train_end_frame],
             dtype=float,
         )
         view_valid = np.asarray(
@@ -503,9 +506,8 @@ def load_cotracker3_multiview_observations(
         intrinsics,
         camera_to_world,
     )
-    initial_valid = (
-        np.all(np.isfinite(points[0]), axis=1)
-        & (camera_count[0] >= minimum_camera_count)
+    initial_valid = np.all(np.isfinite(points[0]), axis=1) & (
+        camera_count[0] >= minimum_camera_count
     )
     anchored = np.full_like(points, np.nan)
     anchored[:, initial_valid] = (
@@ -585,9 +587,7 @@ def load_cotracker3_multiview_depth_observations(
             dtype=float,
         )
         quality = np.asarray(
-            archive["multiview_quality_probability_prefix"][
-                :, :train_end_frame
-            ],
+            archive["multiview_quality_probability_prefix"][:, :train_end_frame],
             dtype=float,
         )
         archived_view_valid = np.asarray(
@@ -666,21 +666,14 @@ def load_cotracker3_multiview_depth_observations(
             selected = np.flatnonzero(inside)
             if len(selected) == 0:
                 continue
-            z_m = (
-                depth[pixels[selected, 1], pixels[selected, 0]].astype(float)
-                / 1000.0
-            )
+            z_m = depth[pixels[selected, 1], pixels[selected, 0]].astype(float) / 1000.0
             positive = np.isfinite(z_m) & (z_m > 0.0)
             selected = selected[positive]
             z_m = z_m[positive]
             if len(selected) == 0:
                 continue
-            homogeneous_pixels = np.column_stack(
-                [xy[selected], np.ones(len(selected))]
-            )
-            camera_points = (
-                homogeneous_pixels @ inverse_intrinsic.T
-            ) * z_m[:, None]
+            homogeneous_pixels = np.column_stack([xy[selected], np.ones(len(selected))])
+            camera_points = (homogeneous_pixels @ inverse_intrinsic.T) * z_m[:, None]
             homogeneous_camera = np.column_stack(
                 [camera_points, np.ones(len(camera_points))]
             )
@@ -914,9 +907,7 @@ def infer_cotracker3_ray_discrepancy(
             baseline[start_frame:end_frame] - centers[camera],
             axis=2,
         )
-        focal = float(
-            np.sqrt(intrinsics[camera, 0, 0] * intrinsics[camera, 1, 1])
-        )
+        focal = float(np.sqrt(intrinsics[camera, 0, 0] * intrinsics[camera, 1, 1]))
         metric_sigma[camera] = pixel_noise_std * distance / focal
 
     robust_weight = np.ones_like(quality)
@@ -937,9 +928,7 @@ def infer_cotracker3_ray_discrepancy(
         right_hand_side = np.zeros((track_count, 3), dtype=float)
         raw_observation_precision = np.where(
             view_valid,
-            quality
-            * robust_weight
-            / np.maximum(np.square(metric_sigma), 1e-12),
+            quality * robust_weight / np.maximum(np.square(metric_sigma), 1e-12),
             0.0,
         )
         temporal_sum = np.sum(raw_observation_precision, axis=1)
@@ -964,26 +953,22 @@ def infer_cotracker3_ray_discrepancy(
             1,
         )
         for camera in range(camera_count):
-            for local_frame, frame in enumerate(
-                range(start_frame, end_frame)
-            ):
+            for local_frame, frame in enumerate(range(start_frame, end_frame)):
                 selected = view_valid[camera, local_frame]
                 if not np.any(selected):
                     continue
                 current_precision = observation_precision[camera, local_frame]
                 weighted_projector = (
-                    current_precision[:, None, None]
-                    * projector[camera, local_frame]
+                    current_precision[:, None, None] * projector[camera, local_frame]
                 )
                 precision[selected] += weighted_projector[selected]
                 offset = centers[camera] - baseline[frame]
-                right_hand_side[selected] += (
-                    current_precision[selected, None]
-                    * np.einsum(
-                        "nij,nj->ni",
-                        projector[camera, local_frame, selected],
-                        offset[selected],
-                    )
+                right_hand_side[selected] += current_precision[
+                    selected, None
+                ] * np.einsum(
+                    "nij,nj->ni",
+                    projector[camera, local_frame, selected],
+                    offset[selected],
                 )
         mean = np.linalg.solve(
             precision,
@@ -992,9 +977,7 @@ def infer_cotracker3_ray_discrepancy(
         if iteration + 1 == robust_iterations:
             break
         for camera in range(camera_count):
-            for local_frame, frame in enumerate(
-                range(start_frame, end_frame)
-            ):
+            for local_frame, frame in enumerate(range(start_frame, end_frame)):
                 selected = view_valid[camera, local_frame]
                 if not np.any(selected):
                     continue
@@ -1008,9 +991,9 @@ def infer_cotracker3_ray_discrepancy(
                     axis=1,
                 )
                 standardized_sq = np.square(radial_px / pixel_noise_std)
-                student_weight = (
-                    degrees_of_freedom + 2.0
-                ) / (degrees_of_freedom + standardized_sq)
+                student_weight = (degrees_of_freedom + 2.0) / (
+                    degrees_of_freedom + standardized_sq
+                )
                 robust_weight[camera, local_frame] = np.where(
                     selected & (depth > 0.0),
                     np.clip(student_weight, 0.02, 1.0),
@@ -1207,8 +1190,7 @@ def build_phystwin_cotracker3_cues(
             forward.visibility_probability * forward.confidence_probability
         )
         archive_delta = np.linalg.norm(
-            forward.tracks_xy
-            - archived_tracks[: config.train_end_frame, :, ::-1],
+            forward.tracks_xy - archived_tracks[: config.train_end_frame, :, ::-1],
             axis=2,
         )
         parity[str(camera)] = _distribution(archive_delta)
@@ -1218,12 +1200,12 @@ def build_phystwin_cotracker3_cues(
         selected_forward_tracks = forward.tracks_xy[:, raw_ids]
         selected_forward_quality = forward_quality[:, raw_ids]
         source_tracks[: config.train_end_frame, selected] = selected_forward_tracks
-        confidence[: config.train_end_frame, selected] = (
-            forward.confidence_probability[:, raw_ids]
-        )
-        visibility[: config.train_end_frame, selected] = (
-            forward.visibility_probability[:, raw_ids]
-        )
+        confidence[: config.train_end_frame, selected] = forward.confidence_probability[
+            :, raw_ids
+        ]
+        visibility[: config.train_end_frame, selected] = forward.visibility_probability[
+            :, raw_ids
+        ]
         selected_cycle_error = np.linalg.norm(
             selected_forward_tracks - reverse_tracks[:, raw_ids], axis=2
         )
@@ -1245,9 +1227,7 @@ def build_phystwin_cotracker3_cues(
             inside = _pixels_inside_mask(frame_tracks, object_mask)
             values = np.zeros(len(selected), dtype=np.float32)
             indexes = np.flatnonzero(inside)
-            values[indexes] = distance[
-                pixels[indexes, 1], pixels[indexes, 0]
-            ]
+            values[indexes] = distance[pixels[indexes, 1], pixels[indexes, 0]]
             boundary[frame, selected] = values
 
         projected, eligible, surface_distance = _initial_multiview_eligibility(
@@ -1262,7 +1242,9 @@ def build_phystwin_cotracker3_cues(
         initial_surface_distance[camera] = surface_distance.astype(np.float32)
         cross_view = np.flatnonzero(eligible & (mapping.source_camera != camera))
         if len(cross_view):
-            cross_prediction = runner.track(video, projected[cross_view].astype(np.float32))
+            cross_prediction = runner.track(
+                video, projected[cross_view].astype(np.float32)
+            )
             multiview_tracks[camera][:, cross_view] = cross_prediction.tracks_xy
             multiview_quality[camera][:, cross_view] = (
                 cross_prediction.visibility_probability
@@ -1276,19 +1258,16 @@ def build_phystwin_cotracker3_cues(
             multiview_valid[camera, frame] = (
                 initial_eligible[camera]
                 & inside
-                & (
-                    multiview_quality[camera, frame]
-                    >= config.minimum_multiview_quality
-                )
+                & (multiview_quality[camera, frame] >= config.minimum_multiview_quality)
             )
 
     triangulated_points, reprojection_error, multiview_camera_count = (
         triangulate_multiview_tracks(
-        multiview_tracks,
-        multiview_valid,
-        multiview_quality,
-        intrinsics,
-        camera_to_world,
+            multiview_tracks,
+            multiview_valid,
+            multiview_quality,
+            intrinsics,
+            camera_to_world,
         )
     )
     reprojection_full = np.zeros((frame_count, track_count), dtype=np.float32)
@@ -1368,7 +1347,9 @@ def build_phystwin_cotracker3_cues(
         "inputs": {
             "final_data": str(Path(final_data_path).resolve()),
             "raw_case_dir": str(raw_path.resolve()),
-            "base_cues": None if base_cues_path is None else str(Path(base_cues_path).resolve()),
+            "base_cues": None
+            if base_cues_path is None
+            else str(Path(base_cues_path).resolve()),
         },
         "frame_count": frame_count,
         "training_frame_count": config.train_end_frame,
@@ -1408,9 +1389,7 @@ def build_phystwin_cotracker3_cues(
     return summary
 
 
-def write_cotracker3_cue_summary(
-    summary: dict[str, Any], path: str | Path
-) -> None:
+def write_cotracker3_cue_summary(summary: dict[str, Any], path: str | Path) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(

@@ -87,9 +87,7 @@ class PhysTwinAllTrackerMultiviewCueConfig:
         if self.maximum_cycle_error_px <= 0.0:
             raise ValueError("maximum_cycle_error_px must be positive")
         if self.multiview_initial_depth_tolerance_m <= 0.0:
-            raise ValueError(
-                "multiview_initial_depth_tolerance_m must be positive"
-            )
+            raise ValueError("multiview_initial_depth_tolerance_m must be positive")
 
     def source_config(self) -> PhysTwinAllTrackerCueConfig:
         """Return the exact config required of the source-only artifact."""
@@ -376,17 +374,13 @@ def build_phystwin_alltracker_cues(
             tracks[: config.train_end_frame, selected] = selected_tracks
             quality[: config.train_end_frame, selected] = selected_quality
             cycle_error[: config.train_end_frame, selected] = selected_cycle
-            cycle_valid[: config.train_end_frame, selected] = (
-                selected_cycle_valid
-            )
+            cycle_valid[: config.train_end_frame, selected] = selected_cycle_valid
             for frame in range(config.train_end_frame):
                 object_mask = np.asarray(
                     processed_masks[frame][camera]["object"],
                     dtype=bool,
                 )
-                distance = interior_mask_distance(object_mask) / max(
-                    object_mask.shape
-                )
+                distance = interior_mask_distance(object_mask) / max(object_mask.shape)
                 frame_tracks = selected_tracks[frame]
                 pixels = np.rint(frame_tracks).astype(np.int64)
                 inside = _pixels_inside_mask(frame_tracks, object_mask)
@@ -398,9 +392,7 @@ def build_phystwin_alltracker_cues(
                 "query_count": int(len(queries)),
                 "selected_source_count": int(len(selected)),
                 "quality": _distribution(selected_quality),
-                "cycle_error_px": _distribution(
-                    selected_cycle[selected_cycle_valid]
-                ),
+                "cycle_error_px": _distribution(selected_cycle[selected_cycle_valid]),
             }
     finally:
         runner.close()
@@ -416,9 +408,7 @@ def build_phystwin_alltracker_cues(
         cue_available=cue_available,
         source_camera=mapping.source_camera,
         source_track=mapping.source_track,
-        initial_match_distance_m=mapping.initial_match_distance_m.astype(
-            np.float32
-        ),
+        initial_match_distance_m=mapping.initial_match_distance_m.astype(np.float32),
     )
     summary: dict[str, Any] = {
         "schema_version": 1,
@@ -428,9 +418,7 @@ def build_phystwin_alltracker_cues(
             "name": "AllTracker",
             "molmomotion_revision": ALLTRACKER_MOLMOMOTION_REVISION,
             "runtime_source_sha256": runner.source_sha256,
-            "expected_runtime_source_sha256": (
-                ALLTRACKER_RUNTIME_SOURCE_SHA256
-            ),
+            "expected_runtime_source_sha256": (ALLTRACKER_RUNTIME_SOURCE_SHA256),
             "checkpoint_sha256": runner.checkpoint_sha256,
             "expected_checkpoint_sha256": ALLTRACKER_CHECKPOINT_SHA256,
             "device": device,
@@ -572,9 +560,7 @@ def build_phystwin_alltracker_multiview_cues(
             + ", ".join(existing_multiview)
         )
 
-    metadata = json.loads(
-        (raw_path / "metadata.json").read_text(encoding="utf-8")
-    )
+    metadata = json.loads((raw_path / "metadata.json").read_text(encoding="utf-8"))
     intrinsics = np.asarray(metadata["intrinsics"], dtype=float)
     with (raw_path / "calibrate.pkl").open("rb") as handle:
         camera_to_world = np.asarray(pickle.load(handle), dtype=float)
@@ -616,43 +602,35 @@ def build_phystwin_alltracker_multiview_cues(
     try:
         for camera in range(camera_count):
             video = _load_video_prefix(raw_path, camera, prefix_frames)
-            projected, eligible, surface_distance = (
-                _initial_multiview_eligibility(
-                    mapping.source_world_points,
-                    mapping.camera_points[camera],
-                    np.asarray(
-                        processed_masks[0][camera]["object"],
-                        dtype=bool,
-                    ),
-                    intrinsics[camera],
-                    camera_to_world[camera],
-                    depth_tolerance_m=(
-                        config.multiview_initial_depth_tolerance_m
-                    ),
-                )
+            projected, eligible, surface_distance = _initial_multiview_eligibility(
+                mapping.source_world_points,
+                mapping.camera_points[camera],
+                np.asarray(
+                    processed_masks[0][camera]["object"],
+                    dtype=bool,
+                ),
+                intrinsics[camera],
+                camera_to_world[camera],
+                depth_tolerance_m=(config.multiview_initial_depth_tolerance_m),
             )
             initial_eligible[camera] = eligible
-            initial_surface_distance[camera] = surface_distance.astype(
-                np.float32
-            )
+            initial_surface_distance[camera] = surface_distance.astype(np.float32)
             source_ids = np.flatnonzero(mapping.source_camera == camera)
             source_ids = source_ids[eligible[source_ids]]
             tracks[camera][:, source_ids] = cues["source_tracks_xy"][
                 :prefix_frames, source_ids
             ]
-            quality[camera][:, source_ids] = cues[
-                "source_quality_probability"
-            ][:prefix_frames, source_ids]
-            cycle_error[camera][:, source_ids] = cues[
-                "forward_backward_error_px"
-            ][:prefix_frames, source_ids]
-            cycle_valid[camera][:, source_ids] = cues[
-                "forward_backward_valid"
-            ][:prefix_frames, source_ids]
+            quality[camera][:, source_ids] = cues["source_quality_probability"][
+                :prefix_frames, source_ids
+            ]
+            cycle_error[camera][:, source_ids] = cues["forward_backward_error_px"][
+                :prefix_frames, source_ids
+            ]
+            cycle_valid[camera][:, source_ids] = cues["forward_backward_valid"][
+                :prefix_frames, source_ids
+            ]
 
-            cross_ids = np.flatnonzero(
-                eligible & (mapping.source_camera != camera)
-            )
+            cross_ids = np.flatnonzero(eligible & (mapping.source_camera != camera))
             if len(cross_ids):
                 forward = runner.track(
                     video,
@@ -665,19 +643,14 @@ def build_phystwin_alltracker_multiview_cues(
                 reverse_tracks = reverse.tracks_xy[::-1]
                 reverse_quality = reverse.quality_probability[::-1]
                 tracks[camera][:, cross_ids] = forward.tracks_xy
-                quality[camera][:, cross_ids] = (
-                    forward.quality_probability
-                )
+                quality[camera][:, cross_ids] = forward.quality_probability
                 cycle_error[camera][:, cross_ids] = np.linalg.norm(
                     forward.tracks_xy - reverse_tracks,
                     axis=2,
                 )
                 cycle_valid[camera][:, cross_ids] = (
-                    forward.quality_probability
-                    >= config.minimum_multiview_quality
-                ) & (
-                    reverse_quality >= config.minimum_multiview_quality
-                )
+                    forward.quality_probability >= config.minimum_multiview_quality
+                ) & (reverse_quality >= config.minimum_multiview_quality)
 
             for frame in range(prefix_frames):
                 object_mask = np.asarray(
@@ -688,15 +661,9 @@ def build_phystwin_alltracker_multiview_cues(
                 view_valid[camera, frame] = (
                     eligible
                     & inside
-                    & (
-                        quality[camera, frame]
-                        >= config.minimum_multiview_quality
-                    )
+                    & (quality[camera, frame] >= config.minimum_multiview_quality)
                     & cycle_valid[camera, frame]
-                    & (
-                        cycle_error[camera, frame]
-                        <= config.maximum_cycle_error_px
-                    )
+                    & (cycle_error[camera, frame] <= config.maximum_cycle_error_px)
                 )
             per_camera[str(camera)] = {
                 "initial_eligible_count": int(np.sum(eligible)),
@@ -735,13 +702,9 @@ def build_phystwin_alltracker_multiview_cues(
         dtype=np.int16,
     )
     triangulated = (
-        np.all(np.isfinite(points), axis=2)
-        & np.isfinite(reprojection)
-        & (support >= 2)
+        np.all(np.isfinite(points), axis=2) & np.isfinite(reprojection) & (support >= 2)
     )
-    full_reprojection[:prefix_frames][triangulated] = reprojection[
-        triangulated
-    ]
+    full_reprojection[:prefix_frames][triangulated] = reprojection[triangulated]
     full_reprojection_valid[:prefix_frames] = triangulated
     full_camera_count[:prefix_frames] = support
     augmented = {
@@ -782,9 +745,7 @@ def build_phystwin_alltracker_multiview_cues(
             "base_source_cues": {
                 "path": str(base_path.resolve()),
                 "sha256": _sha256(base_path),
-                "summary_sha256": _sha256(
-                    base_path.with_suffix(".summary.json")
-                ),
+                "summary_sha256": _sha256(base_path.with_suffix(".summary.json")),
             },
         },
         "camera_summaries": per_camera,
@@ -797,9 +758,7 @@ def build_phystwin_alltracker_multiview_cues(
             "three_view_visible_fraction": float(
                 np.mean((support >= 3) & mapping.final_visible[:prefix_frames])
             ),
-            "reprojection_error_px": _distribution(
-                reprojection[selected]
-            ),
+            "reprojection_error_px": _distribution(reprojection[selected]),
             "camera_count": _distribution(support[selected]),
         },
         "compatibility": {
