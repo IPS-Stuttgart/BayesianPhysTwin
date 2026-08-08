@@ -16,6 +16,7 @@ from bayesian_phystwin.claim_bundle_v1 import (
     verify_claim_bundle_artifacts,
     write_claim_bundle,
 )
+from bayesian_phystwin.paper_handoff_v1 import verify_claim_bundle_paper_handoff
 
 
 def _named_path(value: str) -> tuple[str, Path]:
@@ -47,6 +48,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="root used for portable artifact paths and digests",
     )
     build.add_argument(
+        "--verify-paper-handoff",
+        action="store_true",
+        help=(
+            "before publication, require every claim binding to select one real "
+            "compact-table row for the same claim"
+        ),
+    )
+    build.add_argument(
         "--force",
         action="store_true",
         help="atomically replace an existing bundle instead of failing closed",
@@ -63,6 +72,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="fail unless one claim-binding JSON artifact is present",
     )
+    validate.add_argument(
+        "--verify-paper-handoff",
+        action="store_true",
+        help=(
+            "require an artifact root and verify compact-table row identity for "
+            "every bound claim"
+        ),
+    )
+
+    paper_validate = subparsers.add_parser(
+        "paper-validate",
+        help="run full artifact and compact-table verification for paper intake",
+    )
+    paper_validate.add_argument("bundle", type=Path)
+    paper_validate.add_argument("--artifact-root", type=Path, required=True)
     return parser
 
 
@@ -104,23 +128,27 @@ def _build(args: argparse.Namespace) -> int:
         claim_binding_path=args.claim_binding,
         additional_artifacts=_additional_artifacts(args, root=root),
     )
+    paper_summary: dict[str, object] | None = None
+    if args.verify_paper_handoff:
+        if args.claim_binding is None:
+            raise ValueError("paper handoff verification requires --claim-binding")
+        paper_summary = verify_claim_bundle_paper_handoff(bundle, root=root)
     write_claim_bundle(args.bundle, bundle, overwrite=args.force)
-    print(
-        json.dumps(
-            {
-                "bundle": str(args.bundle.resolve()),
-                "bundle_id": bundle.bundle_id,
-                "schema_version": 1,
-                "run_manifest_id": bundle.run_manifest_id,
-                "evidence_fingerprint": bundle.evidence_fingerprint,
-                "claim_count": len(bundle.claim_ids),
-                "repository_count": len(bundle.repositories),
-                "artifact_count": len(bundle.artifacts),
-            },
-            indent=2,
-            sort_keys=True,
-        )
-    )
+
+    output: dict[str, object] = {
+        "bundle": str(args.bundle.resolve()),
+        "bundle_id": bundle.bundle_id,
+        "schema_version": 1,
+        "run_manifest_id": bundle.run_manifest_id,
+        "evidence_fingerprint": bundle.evidence_fingerprint,
+        "claim_count": len(bundle.claim_ids),
+        "repository_count": len(bundle.repositories),
+        "artifact_count": len(bundle.artifacts),
+    }
+    if paper_summary is not None:
+        output["paper_handoff_verified"] = True
+        output["paper_handoff"] = paper_summary
+    print(json.dumps(output, indent=2, sort_keys=True))
     return 0
 
 
@@ -131,8 +159,39 @@ def _validate(args: argparse.Namespace) -> int:
     )
     if args.require_claim_binding and not claim_binding_present:
         raise ValueError("claim bundle has no claim-binding artifact")
+    if args.verify_paper_handoff and args.artifact_root is None:
+        raise ValueError("paper handoff verification requires --artifact-root")
+
+    paper_summary: dict[str, object] | None = None
     if args.artifact_root is not None:
-        verify_claim_bundle_artifacts(bundle, root=args.artifact_root)
+        if args.verify_paper_handoff:
+            paper_summary = verify_claim_bundle_paper_handoff(
+                bundle,
+                root=args.artifact_root,
+            )
+        else:
+            verify_claim_bundle_artifacts(bundle, root=args.artifact_root)
+
+    output: dict[str, object] = {
+        "status": "valid",
+        "schema_version": 1,
+        "bundle_id": bundle.bundle_id,
+        "run_id": bundle.run_id,
+        "classification": bundle.classification,
+        "claim_count": len(bundle.claim_ids),
+        "claim_binding": "present" if claim_binding_present else "absent",
+        "artifacts_verified": args.artifact_root is not None,
+    }
+    if paper_summary is not None:
+        output["paper_handoff_verified"] = True
+        output["paper_handoff"] = paper_summary
+    print(json.dumps(output, indent=2, sort_keys=True))
+    return 0
+
+
+def _paper_validate(args: argparse.Namespace) -> int:
+    bundle = load_claim_bundle(args.bundle)
+    summary = verify_claim_bundle_paper_handoff(bundle, root=args.artifact_root)
     print(
         json.dumps(
             {
@@ -142,8 +201,9 @@ def _validate(args: argparse.Namespace) -> int:
                 "run_id": bundle.run_id,
                 "classification": bundle.classification,
                 "claim_count": len(bundle.claim_ids),
-                "claim_binding": ("present" if claim_binding_present else "absent"),
-                "artifacts_verified": args.artifact_root is not None,
+                "artifacts_verified": True,
+                "paper_handoff_verified": True,
+                **summary,
             },
             indent=2,
             sort_keys=True,
@@ -158,6 +218,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _build(args)
     if args.command_name == "validate":
         return _validate(args)
+    if args.command_name == "paper-validate":
+        return _paper_validate(args)
     raise AssertionError(f"unhandled command: {args.command_name}")
 
 
