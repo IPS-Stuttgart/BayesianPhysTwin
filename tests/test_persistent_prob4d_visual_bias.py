@@ -133,6 +133,28 @@ def _measurement_arrays(
     return measurement, physical_jacobian, covariance
 
 
+def _select_candidate(
+    run,
+    candidate: PersistentVisualBiasCandidateV1,
+    *,
+    accepted: bool,
+    reason: str,
+    inputs: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
+):
+    innovation, jacobian, covariance = (
+        _measurement_arrays(1) if inputs is None else inputs
+    )
+    return select_persistent_visual_bias_candidate(
+        run,
+        candidate,
+        innovation_xyz=innovation,
+        physical_jacobian=jacobian,
+        conditional_covariance=covariance,
+        accepted=accepted,
+        reason=reason,
+    )
+
+
 def _innovation(run: object, measurement: np.ndarray) -> np.ndarray:
     belief = run.belief
     prediction = np.zeros_like(measurement)
@@ -206,7 +228,7 @@ def test_rejection_is_exact_object_fallback_and_consumes_update() -> None:
         physical_linearization_id=_sha("1"),
     )
     prior = run.belief
-    selected = select_persistent_visual_bias_candidate(
+    selected = _select_candidate(
         run,
         candidate,
         accepted=False,
@@ -217,7 +239,7 @@ def test_rejection_is_exact_object_fallback_and_consumes_update() -> None:
     assert selected.next_update_index == 1
     assert selected.events[-1].exact_fallback_reproduced is True
     with pytest.raises(ValueError, match="stale or out of order"):
-        select_persistent_visual_bias_candidate(
+        _select_candidate(
             selected,
             candidate,
             accepted=True,
@@ -437,7 +459,7 @@ def test_selection_rejects_forged_candidate_bindings(
     run, candidate = _single_candidate()
     forged = replace(candidate, **{field: _sha("f")}, candidate_id=None)
     with pytest.raises(ValueError, match=message):
-        select_persistent_visual_bias_candidate(
+        _select_candidate(
             run,
             forged,
             accepted=False,
@@ -476,7 +498,7 @@ def test_selection_rejects_incompatible_posterior_contract() -> None:
         belief_id=None,
     )
     with pytest.raises(ValueError, match="physical state domain"):
-        select_persistent_visual_bias_candidate(
+        _select_candidate(
             run,
             replace(
                 candidate,
@@ -495,7 +517,7 @@ def test_selection_rejects_incompatible_posterior_contract() -> None:
         belief_id=None,
     )
     with pytest.raises(ValueError, match="covariance root"):
-        select_persistent_visual_bias_candidate(
+        _select_candidate(
             run,
             replace(
                 candidate,
@@ -515,7 +537,7 @@ def test_selection_rejects_noncontracting_or_misreported_candidate() -> None:
         belief_id=None,
     )
     with pytest.raises(ValueError, match="measurement contraction"):
-        select_persistent_visual_bias_candidate(
+        _select_candidate(
             run,
             replace(
                 candidate,
@@ -528,7 +550,7 @@ def test_selection_rejects_noncontracting_or_misreported_candidate() -> None:
         )
 
     with pytest.raises(ValueError, match="information gain"):
-        select_persistent_visual_bias_candidate(
+        _select_candidate(
             run,
             replace(
                 candidate,
@@ -537,6 +559,101 @@ def test_selection_rejects_noncontracting_or_misreported_candidate() -> None:
             ),
             accepted=False,
             reason="reject-misreported-gain",
+        )
+
+
+@pytest.mark.parametrize("mean_field", ["physical_mean", "bias_latent_mean"])
+def test_selection_rejects_solver_inconsistent_posterior_mean(
+    mean_field: str,
+) -> None:
+    run, candidate = _single_candidate()
+    changed_mean = np.array(
+        getattr(candidate.posterior_belief, mean_field),
+        copy=True,
+    )
+    changed_mean[0] += 0.25
+    posterior = replace(
+        candidate.posterior_belief,
+        **{mean_field: changed_mean},
+        belief_id=None,
+    )
+    forged = replace(
+        candidate,
+        posterior_belief=posterior,
+        candidate_id=None,
+    )
+
+    with pytest.raises(ValueError, match="canonical solver reproduction"):
+        _select_candidate(
+            run,
+            forged,
+            accepted=True,
+            reason="reject-forged-posterior-mean",
+        )
+
+
+def test_selection_rejects_alternative_contracting_covariance() -> None:
+    run, candidate = _single_candidate()
+    prior_covariance = np.asarray(run.belief.joint_covariance)
+    candidate_covariance = np.asarray(candidate.posterior_belief.joint_covariance)
+    alternative_covariance = 0.5 * (prior_covariance + candidate_covariance)
+    prior_sign, prior_logdet = np.linalg.slogdet(prior_covariance)
+    alternative_sign, alternative_logdet = np.linalg.slogdet(alternative_covariance)
+    assert prior_sign > 0.0 and alternative_sign > 0.0
+    alternative_gain = 0.5 * float(prior_logdet - alternative_logdet)
+    posterior = replace(
+        candidate.posterior_belief,
+        joint_covariance=alternative_covariance,
+        belief_id=None,
+    )
+    forged = replace(
+        candidate,
+        posterior_belief=posterior,
+        information_gain_nats=alternative_gain,
+        candidate_id=None,
+    )
+
+    with pytest.raises(ValueError, match="canonical solver reproduction"):
+        _select_candidate(
+            run,
+            forged,
+            accepted=True,
+            reason="reject-alternative-contracting-covariance",
+        )
+
+
+def test_selection_rejects_forged_innovation_quadratic() -> None:
+    run, candidate = _single_candidate()
+    forged = replace(
+        candidate,
+        conditional_innovation_quadratic_per_dimension=(
+            candidate.conditional_innovation_quadratic_per_dimension + 1.0
+        ),
+        candidate_id=None,
+    )
+
+    with pytest.raises(ValueError, match="canonical solver reproduction"):
+        _select_candidate(
+            run,
+            forged,
+            accepted=True,
+            reason="reject-forged-innovation-quadratic",
+        )
+
+
+def test_selection_rejects_different_update_arrays() -> None:
+    run, candidate = _single_candidate()
+    innovation, jacobian, covariance = _measurement_arrays(1)
+    changed_innovation = np.array(innovation, copy=True)
+    changed_innovation[0, 0] += 0.5
+
+    with pytest.raises(ValueError, match="canonical solver reproduction"):
+        _select_candidate(
+            run,
+            candidate,
+            accepted=True,
+            reason="reject-different-update-arrays",
+            inputs=(changed_innovation, jacobian, covariance),
         )
 
 
