@@ -711,6 +711,7 @@ def test_shared_producer_matches_the_pinned_prob4d_public_api(
     manifest = {"schema": "prob4d.motioncrafter-model-set.v2", "value": 1}
     created_adapters: list[object] = []
     runner_configs: list[object] = []
+    runner_resume_modes: list[tuple[str, bool]] = []
     verified_paths: list[Path] = []
 
     @dataclass(frozen=True)
@@ -763,10 +764,12 @@ def test_shared_producer_matches_the_pinned_prob4d_public_api(
             self.adapter_factory = adapter_factory
 
         def run(self, *, resume: bool) -> Path:
-            assert resume
+            runner_resume_modes.append((self.config.output_directory.name, resume))
             if self.config.output_directory.name == "resumed":
+                assert resume
                 self.config.output_directory.mkdir(parents=True, exist_ok=True)
                 return self.config.output_directory / "predictions.json"
+            assert not resume
             adapter = self.adapter_factory(self.config)
             runner_configs.append(adapter.config)
             self.config.output_directory.mkdir(parents=True, exist_ok=True)
@@ -804,16 +807,20 @@ def test_shared_producer_matches_the_pinned_prob4d_public_api(
         cache_directory=tmp_path / "cache",
         provider_lock=SimpleNamespace(height=320, width=640, window_size=25, overlap=8),
     )
+    resumed_output = tmp_path / "resumed"
+    resumed_output.mkdir()
+    (resumed_output / "motioncrafter-progress.json").write_text("{}", encoding="utf-8")
     resumed = producer.produce(
         job={"prefix_source_frame_range_half_open": [0, 58], "view_root_seed": 10},
         source_video_path=tmp_path / "resumed.mp4",
-        output_directory=tmp_path / "resumed",
+        output_directory=resumed_output,
         resume=True,
     )
-    assert resumed == tmp_path / "resumed" / "predictions.json"
+    assert resumed == resumed_output / "predictions.json"
     assert producer.model_load_attempt_count == 0
     assert producer.model_load_count == 0
 
+    (tmp_path / "a").mkdir()
     first = producer.produce(
         job={"prefix_source_frame_range_half_open": [0, 58], "view_root_seed": 11},
         source_video_path=tmp_path / "a.mp4",
@@ -834,5 +841,10 @@ def test_shared_producer_matches_the_pinned_prob4d_public_api(
     assert len(created_adapters) == 1
     assert len(runner_configs) == 2
     assert runner_configs[-1].video_path == tmp_path / "b.mp4"
+    assert runner_resume_modes == [
+        ("resumed", True),
+        ("a", False),
+        ("b", False),
+    ]
     assert producer.verify(second)["hashes_verified"] is True
     assert verified_paths == [second]
