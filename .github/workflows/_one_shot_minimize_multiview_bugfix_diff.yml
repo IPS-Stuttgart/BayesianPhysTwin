@@ -1,0 +1,112 @@
+name: One-shot minimal multiview bug-fix reconstruction
+
+on:
+  push:
+    branches: [agent/fix-multiview-boundary-bugs]
+    paths:
+      - ".github/workflows/_one_shot_minimize_multiview_bugfix_diff.yml"
+      - "scripts/_one_shot_minimize_multiview_bugfix_diff.py"
+      - "tests/test_multiview_boundary_source_builders.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-minimal-multiview-bugfix
+  cancel-in-progress: true
+
+jobs:
+  reconstruct:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/fix-multiview-boundary-bugs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Reconstruct the minimal reviewed diff
+        run: |
+          set -euo pipefail
+          python scripts/_one_shot_minimize_multiview_bugfix_diff.py
+
+      - name: Install validation environment
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m pip check
+
+      - name: Format and validate changed source
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/mask_distance.py
+            src/bayesian_phystwin/phystwin_alltracker_cues.py
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py
+            src/bayesian_phystwin/phystwin_raw_cues.py
+            tests/test_mask_distance_and_multiview_geometry_regressions.py
+            tests/test_multiview_boundary_source_builders.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/mask_distance.py \
+            src/bayesian_phystwin/phystwin_alltracker_cues.py \
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py \
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py \
+            src/bayesian_phystwin/phystwin_raw_cues.py
+
+      - name: Run focused and adjacent contracts
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_mask_distance_and_multiview_geometry_regressions.py \
+            tests/test_multiview_boundary_source_builders.py \
+            tests/test_phystwin_alltracker_cues.py \
+            tests/test_phystwin_cotracker3_cues.py \
+            tests/test_phystwin_motioncrafter_assimilation.py \
+            tests/test_phystwin_raw_cues.py
+          python -m py_compile \
+            src/bayesian_phystwin/mask_distance.py \
+            src/bayesian_phystwin/phystwin_alltracker_cues.py \
+            src/bayesian_phystwin/phystwin_cotracker3_cues.py \
+            src/bayesian_phystwin/phystwin_motioncrafter_assimilation.py \
+            src/bayesian_phystwin/phystwin_raw_cues.py \
+            tests/test_multiview_boundary_source_builders.py
+
+      - name: Remove temporary transport and verify final scope
+        run: |
+          set -euo pipefail
+          rm -- \
+            .github/workflows/_one_shot_minimize_multiview_bugfix_diff.yml \
+            scripts/_one_shot_minimize_multiview_bugfix_diff.py
+          git diff --check
+          unexpected="$(git diff --name-only 0f403cbed8b5fc9ac585b5f7c237106809207b3f -- | grep -E '^(.github/workflows/_one_shot|scripts/_one_shot)' || true)"
+          if [[ -n "${unexpected}" ]]; then
+            printf 'Temporary paths remain:\n%s\n' "${unexpected}" >&2
+            exit 1
+          fi
+
+      - name: Commit validated final source
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Minimize and cover multiview reliability fixes'
+          git push origin HEAD:agent/fix-multiview-boundary-bugs
