@@ -49,21 +49,26 @@ def finite_group_conformal_rank(
     calibration_group_count: int,
     coverage: float,
 ) -> int:
-    """Return ``ceil((n + 1) * coverage)`` using decimal-exact arithmetic.
+    """Return ``ceil((n + 1) * coverage)`` without float-boundary drift.
 
     The count is the number of independent calibration units, not the number of
-    frames, views, tracks, points, or taxels. Decimal-exact arithmetic avoids a
-    floating-point boundary such as ``0.9 / 0.1`` accidentally increasing the
-    finite-sample rank.
+    frames, views, tracks, points, or taxels. Decimal-exact arithmetic preserves
+    ordinary nominal values such as ``0.9``. A coverage value that is exactly the
+    binary-float representation of ``k / (n + 1)`` is also treated as that rank
+    boundary, so values returned by :func:`maximum_finite_group_coverage` round
+    trip without being spuriously promoted by one rank.
     """
 
     count = _positive_integer(
         calibration_group_count,
         name="calibration_group_count",
     )
-    _, nominal = _coverage_fraction(coverage)
-    numerator = (count + 1) * nominal.numerator
-    return (numerator + nominal.denominator - 1) // nominal.denominator
+    nominal, exact_nominal = _coverage_fraction(coverage)
+    boundary_rank = int(round((count + 1) * nominal))
+    if 1 <= boundary_rank <= count + 1 and nominal == boundary_rank / (count + 1):
+        return boundary_rank
+    numerator = (count + 1) * exact_nominal.numerator
+    return (numerator + exact_nominal.denominator - 1) // exact_nominal.denominator
 
 
 def maximum_finite_group_coverage(calibration_group_count: int) -> float:
@@ -79,9 +84,21 @@ def maximum_finite_group_coverage(calibration_group_count: int) -> float:
 def minimum_groups_for_finite_conformal(coverage: float) -> int:
     """Return the minimum independent-group count permitting a finite quantile."""
 
-    _, nominal = _coverage_fraction(coverage)
-    remaining = nominal.denominator - nominal.numerator
-    return (nominal.numerator + remaining - 1) // remaining
+    nominal, exact_nominal = _coverage_fraction(coverage)
+    remaining = exact_nominal.denominator - exact_nominal.numerator
+    upper = (exact_nominal.numerator + remaining - 1) // remaining
+
+    # The decimal-exact result is an upper bound. Search against the canonical
+    # rank function so recurring rational boundaries represented as floats (for
+    # example 10 / 11) remain consistent with finite_group_conformal_rank().
+    lower = 1
+    while lower < upper:
+        midpoint = (lower + upper) // 2
+        if finite_group_conformal_rank(midpoint, nominal) <= midpoint:
+            upper = midpoint
+        else:
+            lower = midpoint + 1
+    return lower
 
 
 @dataclass(frozen=True)

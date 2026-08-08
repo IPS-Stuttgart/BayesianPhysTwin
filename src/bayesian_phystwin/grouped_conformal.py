@@ -14,6 +14,8 @@ from typing import Literal
 
 import numpy as np
 
+from .calibration import finite_group_conformal_rank
+
 ConformalScore = Literal["scaled", "additive"]
 
 
@@ -101,7 +103,7 @@ def finite_group_conformal_quantile(
     if not 0.0 < nominal < 1.0:
         raise ValueError("coverage must lie in (0, 1)")
 
-    rank = math.ceil((len(scores) + 1) * nominal)
+    rank = finite_group_conformal_rank(len(scores), nominal)
     if rank > len(scores):
         return math.inf, rank
     return float(np.partition(scores, rank - 1)[rank - 1]), rank
@@ -157,14 +159,23 @@ class GroupedConformalResult:
         if not 0.0 < nominal < 1.0:
             raise ValueError("nominal_coverage must lie in (0, 1)")
         method = _score_name(self.score)
+        expected_rank = finite_group_conformal_rank(count, nominal)
+        if rank != expected_rank:
+            raise ValueError(
+                "finite_sample_rank must equal ceil((group_count + 1) * coverage)"
+            )
         quantile = float(self.quantile)
         if rank > count:
             if quantile != math.inf:
                 raise ValueError(
                     "an impossible finite-sample rank requires infinite quantile"
                 )
-        elif not math.isfinite(quantile):
-            raise ValueError("a feasible finite-sample rank requires finite quantile")
+        else:
+            expected_quantile = float(np.partition(scores, rank - 1)[rank - 1])
+            if not math.isfinite(quantile) or quantile != expected_quantile:
+                raise ValueError(
+                    "quantile must equal the declared finite-sample rank statistic"
+                )
 
         upper.setflags(write=False)
         scores.setflags(write=False)
