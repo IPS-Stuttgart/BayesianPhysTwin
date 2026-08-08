@@ -33,6 +33,9 @@ def test_visual_production_workflow_is_valid_main_only_and_resumable() -> None:
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
     assert "runs-on: self-hosted" in text
     assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" not in text
+    assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
+    assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
+    assert "command -v nvidia-smi >/dev/null 2>&1" in text
     assert "timeout-minutes: 1320" in text
     assert "cancel-in-progress: false" in text
     assert "--resume" in text
@@ -67,7 +70,9 @@ def test_one_shot_launcher_calls_only_the_reviewed_reusable_lane() -> None:
     assert r"replacement allowed: \`false\`" in text
     assert r"pre-payload predecessor: run \`31274946936\`" in text
     assert r"environment-bootstrap predecessor: run \`31275886113\`" in text
+    assert r"dependency-metadata predecessor: run \`31276893637\`" in text
     assert "2026-08-09-sole-self-hosted-layout-v4" in text
+    assert "2026-08-09-decord-runtime-validation-v5" in text
 
 
 def test_visual_production_excludes_nested_checkouts_and_seals_early_failures() -> None:
@@ -98,8 +103,35 @@ def test_visual_production_uses_uv_for_the_unseeded_producer_environment() -> No
     assert 'uv_bin="${HOME}/.local/bin/uv"' in bootstrap
     assert '"${uv_bin}" pip install \\\n' in bootstrap
     assert '--python "${env_root}/bin/python"' in bootstrap
-    assert '"${uv_bin}" pip check --python "${env_root}/bin/python"' in bootstrap
+    assert '"${uv_bin}" pip check \\\n' in bootstrap
+    assert "--color never" in bootstrap
+    assert "Found 1 incompatibility" in bootstrap
+    assert "The package `decord` was built for a different platform" in bootstrap
+    assert 'test -z "${unexpected}"' in bootstrap
+    assert "grep -Fxq 'Found 1 incompatibility'" in bootstrap
+    assert '[[ "${check_output}" != *"Found 1 incompatibility"* ]]' not in bootstrap
+    assert 'dist = importlib.metadata.distribution("decord")' in bootstrap
+    assert 'dist.version != "0.6.0"' in bootstrap
+    assert "Tag: cp36-cp36m-manylinux2010_x86_64" in bootstrap
+    assert "decord resolved outside the frozen environment" in bootstrap
+    assert "cpu(0)" in bootstrap
+    assert "torch.cuda.is_available()" in bootstrap
     assert '"${env_root}/bin/python" -m pip' not in bootstrap
+
+
+def test_visual_production_registers_but_does_not_stat_confirmation_root() -> None:
+    text = _workflow()
+
+    assert (
+        'adaptive_raw="$(realpath -m '
+        '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"' in text
+    )
+    assert 'adaptive_raw="$(realpath -e ' not in text
+    assert "adaptive.stat()" not in text
+    assert '"adaptive_confirmation_root_registered": True' in text
+    assert '"adaptive_confirmation_root_stat_performed": False' in text
+    assert '"adaptive_confirmation_payloads_opened": False' in text
+    assert r'\( -path "${official_raw}" -o -path "${adaptive_raw}" \) -prune' in text
 
 
 def test_visual_production_consumes_exact_frozen_admission_artifact() -> None:
@@ -130,7 +162,9 @@ def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
     assert "name: Admitted all-camera production / sole Deform360 runner" in text
     assert "runs-on: self-hosted" in text
     assert "runner_label_contract=self-hosted-only" in text
-    assert "command -v nvidia-smi" in text
+    assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
+    assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
+    assert "command -v nvidia-smi >/dev/null 2>&1" in text
     assert "nvidia-smi -L" in text
     assert "DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360" in text
     assert (
@@ -146,11 +180,18 @@ def test_visual_production_binds_the_sole_runner_and_exact_raw_roots() -> None:
     assert 'storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"' in text
     assert 'official_raw="$(realpath -e "${DEFORM360_OFFICIAL_RAW_ROOT}")"' in text
     assert (
-        'adaptive_raw="$(realpath -e '
+        'adaptive_raw="$(realpath -m '
         '"${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"' in text
     )
-    assert "adaptive_confirmation_directory_stat_only" in text
+    assert 'adaptive_raw="$(realpath -e ' not in text
+    assert "adaptive_confirmation_root_registered" in text
+    assert "adaptive_confirmation_root_stat_performed" in text
+    assert "adaptive.stat()" not in text
     assert "adaptive_confirmation_payloads_opened=false" in text
+    production = text[text.index("  production:") :]
+    assert production.index(
+        'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"'
+    ) < production.index('storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"')
 
 
 def test_visual_production_keeps_outputs_and_cache_on_the_dataset_volume() -> None:
@@ -218,6 +259,8 @@ def test_visual_production_artifact_excludes_large_predictions_and_targets() -> 
     assert "confirmation_payloads_opened=false" in text
     assert "target_outcomes_used=false" in text
     assert 'echo "job_status=${{ job.status }}"' in compact
+    assert 'echo "gpu_inventory=unavailable"' in compact
+    assert "decord_metadata_exception=0.6.0-cp36-tag-runtime-verified" in compact
     assert "replacement_allowed=true" not in text
 
 
