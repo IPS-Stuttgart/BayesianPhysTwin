@@ -4,8 +4,9 @@
 The script consumes an already sealed calibration-source plan and stages only
 its planned calibration files into the isolated calibration download root.
 Local reuse is copy-on-write only: a reflink is attempted after exact byte
-verification, and a failed reflink is left for the existing downloader to
-obtain.  The immutable raw snapshot is never hard-linked or copied eagerly.
+verification, and unavailable or revision-mismatched files are left for the
+existing downloader to obtain at the frozen revision.  The immutable raw
+snapshot is never hard-linked or copied eagerly.
 """
 
 from __future__ import annotations
@@ -84,52 +85,77 @@ def _planned_records(plan: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
     return tuple(records[path] for path in sorted(records))
 
 
-def _verify_regular_file(
-    path: Path,
-    *,
-    root: Path,
-    record: Mapping[str, Any],
-) -> tuple[int, bool]:
-    relative = _relative_path(record)
+def _regular_file_size(path: Path, *, root: Path, relative: str) -> int:
     _require(path.exists(), f"file disappeared: {relative}")
     _require(not path.is_symlink(), f"symlink is forbidden: {relative}")
     resolved = path.resolve()
     _require(resolved.is_relative_to(root), f"file escaped root: {relative}")
     _require(path.is_file(), f"not a regular file: {relative}")
+    return path.stat().st_size
 
-    size = path.stat().st_size
+
+def _source_compatibility(
+    path: Path,
+    *,
+    root: Path,
+    record: Mapping[str, Any],
+) -> tuple[int, bool, bool]:
+    """Return size, compatibility, and whether SHA-256 was verified."""
+
+    relative = _relative_path(record)
+    size = _regular_file_size(path, root=root, relative=relative)
+    declared_size = record.get("size")
+    if isinstance(declared_size, int) and size != declared_size:
+        return size, False, False
+
+    expected_sha256 = record.get("lfs_sha256")
+    if isinstance(expected_sha256, str):
+        _require(len(expected_sha256) == 64, f"bad LFS digest: {relative}")
+        observed = _sha256(path)
+        return size, observed == expected_sha256, True
+    return size, True, False
+
+
+def _verify_destination_file(
+    path: Path,
+    *,
+    root: Path,
+    record: Mapping[str, Any],
+) -> int:
+    relative = _relative_path(record)
+    size = _regular_file_size(path, root=root, relative=relative)
     declared_size = record.get("size")
     if isinstance(declared_size, int):
         _require(size == declared_size, f"size mismatch: {relative}")
-
     expected_sha256 = record.get("lfs_sha256")
-    sha_verified = False
     if isinstance(expected_sha256, str):
         _require(len(expected_sha256) == 64, f"bad LFS digest: {relative}")
         _require(
             _sha256(path) == expected_sha256,
             f"LFS digest mismatch: {relative}",
         )
-        sha_verified = True
-    return size, sha_verified
+    return size
 
 
 def _try_reflink(source: Path, destination: Path) -> bool:
     """Create one CoW clone without falling back to a full byte copy."""
 
-    result = subprocess.run(
-        (
-            "cp",
-            "--reflink=always",
-            "--preserve=mode,timestamps",
-            "--",
-            str(source),
-            str(destination),
-        ),
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            (
+                "cp",
+                "--reflink=always",
+                "--preserve=mode,timestamps",
+                "--",
+                str(source),
+                str(destination),
+            ),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return False
     if result.returncode == 0:
         return True
     if destination.exists():
@@ -143,7 +169,7 @@ def stage_local_calibration_cache(
     source_root: Path,
     destination_root: Path,
 ) -> dict[str, Any]:
-    """Reflink locally available planned files into the calibration root."""
+    """Reflink compatible planned files into the calibration root."""
 
     plan_file = plan_path.expanduser().resolve()
     source = source_root.expanduser().resolve()
@@ -176,8 +202,9 @@ def stage_local_calibration_cache(
     reflinked: list[str] = []
     reused: list[str] = []
     missing_in_source: list[str] = []
+    revision_mismatch: list[str] = []
     reflink_unavailable: list[str] = []
-    verified_sha256: list[str] = []
+    sha256_checked: list[str] = []
     staged_bytes = 0
     records = _planned_records(plan)
 
@@ -189,17 +216,20 @@ def stage_local_calibration_cache(
             missing_in_source.append(relative)
             continue
 
-        size, sha_verified = _verify_regular_file(
+        size, compatible, sha_checked = _source_compatibility(
             source_path,
             root=source,
             record=record,
         )
-        if sha_verified:
-            verified_sha256.append(relative)
+        if sha_checked:
+            sha256_checked.append(relative)
+        if not compatible:
+            revision_mismatch.append(relative)
+            continue
 
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         if destination_path.exists():
-            _verify_regular_file(
+            _verify_destination_file(
                 destination_path,
                 root=destination,
                 record=record,
@@ -211,7 +241,7 @@ def stage_local_calibration_cache(
         if not _try_reflink(source_path, destination_path):
             reflink_unavailable.append(relative)
             continue
-        _verify_regular_file(
+        _verify_destination_file(
             destination_path,
             root=destination,
             record=record,
@@ -219,7 +249,9 @@ def stage_local_calibration_cache(
         reflinked.append(relative)
         staged_bytes += size
 
-    download_fallback = sorted((*missing_in_source, *reflink_unavailable))
+    download_fallback = sorted(
+        (*missing_in_source, *revision_mismatch, *reflink_unavailable)
+    )
     payload: dict[str, Any] = {
         "schema": MANIFEST_SCHEMA,
         "schema_version": 1,
@@ -232,11 +264,13 @@ def stage_local_calibration_cache(
         "reflinked_file_count": len(reflinked),
         "reused_file_count": len(reused),
         "missing_in_source_count": len(missing_in_source),
+        "revision_mismatch_count": len(revision_mismatch),
         "reflink_unavailable_count": len(reflink_unavailable),
         "download_fallback_file_count": len(download_fallback),
-        "sha256_verified_file_count": len(verified_sha256),
+        "sha256_checked_file_count": len(sha256_checked),
         "staged_bytes": staged_bytes,
         "missing_in_source_paths": missing_in_source,
+        "revision_mismatch_paths": revision_mismatch,
         "reflink_unavailable_paths": reflink_unavailable,
         "download_fallback_paths": download_fallback,
         "information_boundary": {
