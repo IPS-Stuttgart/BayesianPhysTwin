@@ -1,0 +1,199 @@
+name: Temporary register PR 262 coverage
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize, reopened]
+    paths:
+      - ".github/workflows/_temporary_register_pr262_coverage.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: temporary-register-pr262-coverage-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
+
+jobs:
+  register:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.pull_request.number == 262 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref ==
+        'agent/deform360-visual-execution-admission-v1' &&
+      github.event.pull_request.user.login == 'FlorianPfaff'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Register admission tests in stable-core coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(".github/workflows/tests.yml")
+          source = path.read_text(encoding="utf-8")
+          entry = (
+              "            tests/test_deform360_calibration_visual_"
+              "execution_admission.py \\\n"
+          )
+          if entry in source:
+              raise SystemExit("admission coverage entry already exists")
+          anchor = (
+              "            tests/test_deform360_calibration_visual_"
+              "production_plan.py \\\n"
+          )
+          if source.count(anchor) != 1:
+              raise SystemExit("visual-production coverage anchor changed")
+          path.write_text(source.replace(anchor, anchor + entry), encoding="utf-8")
+          PY
+          git diff --check
+
+      - name: Install exact coverage environment
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]" "numpy>=1.24,<2.2"
+          python -m pip install "coverage==7.13.3"
+          python -m pip check
+
+      - name: Validate focused branch coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          module="bayesian_phystwin.deform360_calibration_visual_execution_admission"
+          python -m coverage run --branch --source="${module}" -m pytest -q \
+            tests/test_deform360_calibration_visual_execution_admission.py \
+            tests/test_deform360_calibration_visual_production_plan.py
+          python -m coverage json -o focused-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("focused-coverage.json").read_text(encoding="utf-8"))
+          files = report["files"]
+          matches = [
+              value
+              for name, value in files.items()
+              if name.endswith(
+                  "deform360_calibration_visual_execution_admission.py"
+              )
+          ]
+          if len(matches) != 1:
+              raise SystemExit("focused coverage did not identify exactly one module")
+          summary = matches[0]["summary"]
+          line_percent = 100.0 * (
+              summary["covered_lines"] / summary["num_statements"]
+          )
+          branch_total = summary["num_branches"]
+          branch_percent = 100.0 * (
+              summary["covered_branches"] / branch_total
+          )
+          print(
+              f"focused lines={line_percent:.2f}% "
+              f"branches={branch_percent:.2f}%"
+          )
+          if line_percent < 90.0 or branch_percent < 80.0:
+              raise SystemExit("focused coverage remains below repository floors")
+          PY
+
+      - name: Publish validated workflow blob
+        shell: bash
+        env:
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          PARENT_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RECEIPT: ${{ runner.temp }}/pr262-coverage-receipt.json
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          api = os.environ["API_URL"]
+          repository = os.environ["REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          parent = os.environ["PARENT_SHA"]
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "Content-Type": "application/json",
+          }
+
+          def request(method: str, path: str, payload: object | None = None) -> object:
+              data = None if payload is None else json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  f"{api}/repos/{repository}{path}",
+                  data=data,
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+
+          parent_commit = request("GET", f"/git/commits/{parent}")
+          if not isinstance(parent_commit, dict):
+              raise SystemExit("parent commit response is not an object")
+          payload = Path(".github/workflows/tests.yml").read_bytes()
+          blob = request(
+              "POST",
+              "/git/blobs",
+              {
+                  "content": base64.b64encode(payload).decode("ascii"),
+                  "encoding": "base64",
+              },
+          )
+          if not isinstance(blob, dict):
+              raise SystemExit("blob response is not an object")
+          receipt = {
+              "repository": repository,
+              "parent_sha": parent,
+              "base_tree_sha": str(parent_commit["tree"]["sha"]),
+              "blob_sha": str(blob["sha"]),
+              "path": ".github/workflows/tests.yml",
+              "deleted_paths": [
+                  ".github/workflows/_temporary_register_pr262_coverage.yml"
+              ],
+          }
+          Path(os.environ["RECEIPT"]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: Upload validated workflow and receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: pr262-coverage-registration-${{ github.event.pull_request.head.sha }}
+          path: |
+            .github/workflows/tests.yml
+            focused-coverage.json
+            ${{ runner.temp }}/pr262-coverage-receipt.json
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 2
