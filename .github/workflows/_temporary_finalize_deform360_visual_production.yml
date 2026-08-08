@@ -93,6 +93,7 @@ jobs:
             tests/test_deform360_calibration_visual_production.py
             tests/test_deform360_calibration_visual_production_workflow.py
           )
+          python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
