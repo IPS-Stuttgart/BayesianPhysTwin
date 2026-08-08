@@ -2,57 +2,79 @@
 
 ## Purpose
 
-This stage opens the retained calibration-camera bytes for the first time after
-three independent metadata contracts have been fixed:
+This stage executes the frozen calibration-camera work list against the exact
+retained bytes already admitted by the successful metadata custody run. It does
+not rebuild the object split, regenerate the visual plan, select preferred
+cameras, replace failures, open confirmation objects, or inspect target
+outcomes.
 
-1. the prepared-source inventory records the exact retained RGB and timestamp
-   files;
-2. the visual-production plan fixes every object/camera job, causal frame range,
-   seed, dependence group, and output location; and
-3. the visual-execution admission proves that every planned job names the exact
-   bytes present in the inventory.
+The authoritative input is GitHub Actions artifact `9026183221` from run
+`31272985733`:
 
-The producer executes those admitted jobs and no others. It does not construct a
-new object split, select preferred cameras, replace failures, open confirmation
-objects, or inspect target outcomes.
+- artifact name:
+  `deform360-calibration-retained-source-admission-31272985733-1`;
+- archive SHA-256:
+  `d13a3aed7b63effab637215feee15c61d9cb69330dbe8f666a6e37b00b35b836`;
+- inventory ID:
+  `0cbf109f8ea572846f0d117880a6048840346d7b32fef7f47ba2c55f857f744c`;
+- plan ID:
+  `c30d2ecdbf2702460171ec6c58f2cc9ae2c666b4e311f2517b539cdc14f2eea7`;
+- admission ID:
+  `4dd68e209b4c1a206a209786f57b0a4a96bd102a79a0f8f60d436fabd5d584ba`;
+- admitted physical objects: `10`; and
+- admitted object/camera jobs: `324`.
+
+The retained-source custody run had to inspect calibration RGB, timestamp,
+tactile, and robot-state bytes to establish their identities. Visual production
+does **not** repeat that materializer. It consumes the audited artifact and opens
+only the admitted calibration video and timestamp files needed by each visual
+job. Tactile arrays, robot-state arrays, confirmation objects, and target
+outcomes remain closed in this stage.
 
 ## Protected workflow
 
 The workflow is
 `.github/workflows/deform360-calibration-visual-production.yml`. Pull requests run
-hosted, data-free contract validation only. Payload access is restricted to a
-manual dispatch of the reviewed `main` revision on the protected
-`workstation2` runner with labels `self-hosted`, `Linux`, `X64`, and
-`nvidia-smi`.
+hosted, data-free contract validation only. Payload access requires a manual
+dispatch of a reviewed `main` revision on the protected `workstation2` runner
+with labels `self-hosted`, `Linux`, `X64`, and `nvidia-smi`.
 
-At runtime the workflow:
+Before protected execution, a hosted job queries GitHub's artifact metadata and
+fails unless there is exactly one live artifact with the pinned run ID, artifact
+ID, name, archive digest, branch, and source revision. The self-hosted job then:
 
-1. invokes the reviewed reusable retained-source admission workflow already
-   merged on `main`;
-2. consumes its uploaded inventory, plan, admission, content identities, and
-   artifact digest without rebuilding a parallel custody path;
-3. verifies clean, exact BayesianPhysTwin, Prob4D, and MotionCrafter revisions;
-4. bootstraps the exact model snapshots frozen by the provider lock;
-5. executes each admitted camera job through the pinned
+1. downloads that artifact by numeric ID with digest mismatch configured as an
+   error;
+2. rejects symbolic links and unexpected members;
+3. verifies every entry in its internal `SHA256SUMS` file and the separately
+   pinned inventory, plan, admission, and receipt hashes;
+4. verifies all terminal IDs and the closed confirmation/target boundary;
+5. verifies clean, exact BayesianPhysTwin, Prob4D, and MotionCrafter revisions;
+6. bootstraps the exact model snapshots frozen by the provider lock;
+7. executes each admitted camera job through the pinned
    `prob4d-motioncrafter` entry point; and
-6. uploads only compact admission metadata, per-job seals or retained failure
+8. uploads only compact admission metadata, per-job seals or retained failure
    receipts, complete accounting, and environment evidence.
 
 Large prediction arrays remain under the protected persistent output root. They
-are not copied into GitHub artifacts.
+are not copied into GitHub artifacts. Run-local Python environments, downloaded
+admission copies, and compact staging directories are removed after upload.
 
 ## Causal execution contract
 
-For every job, the producer first re-hashes both retained inputs:
+The process-level production lock is acquired before job validation or model
+execution. Immediately before each admitted job, the executor re-hashes:
 
-- `undistorted.mp4`;
-- `aligned_timestamps.txt`.
+- its exact `undistorted.mp4`; and
+- its exact `aligned_timestamps.txt`.
 
-All source files are verified before the first model invocation. Any missing,
-changed, non-regular, or symlinked source aborts the complete run before partial
-scientific output is produced.
+A missing, changed, non-regular, symlinked, or path-escaping source aborts the
+run. A resumed seal or failure receipt is accepted only after the corresponding
+source bytes have been revalidated.
 
-The generated Prob4D command binds:
+The complete video container is hashed to verify file identity. Prob4D's Decord
+adapter, however, requests only the admitted half-open causal prefix. The command
+binds:
 
 - Prob4D revision `25d90ef7f78ba4307f4555cb636d666004e1bf66`;
 - MotionCrafter revision `9cb4e9679f5f34e249945544052464ef46324bc2`;
@@ -63,8 +85,11 @@ The generated Prob4D command binds:
 - the admitted per-view root seed and `derived-per-call` seed schedule; and
 - only the admitted 58-frame causal prefix.
 
-The subsequent 18 prediction frames are recorded in the seal as reserved
-evaluation frames and remain unopened by this stage.
+The subsequent 18 prediction frames are represented in the admission as reserved
+evaluation frames. They are not decoded and are not passed to MotionCrafter.
+Prob4D independently hashes the input video into its run specification, so a
+change between the executor's source check and model startup is detected by the
+post-run manifest validation.
 
 ## Prediction seal
 
@@ -100,8 +125,10 @@ with `resume=true`:
 - permits Prob4D to resume an interrupted bundle only when its crash journal
   matches the exact run-spec hash.
 
-A process-level file lock prevents concurrent writers while allowing automatic
-release after cancellation or runner failure.
+Atomic no-clobber JSON publication and a process-level file lock prevent
+concurrent or last-writer-wins replacement. A code-3 result is uploaded as a
+complete negative operational record, after which the workflow deliberately
+fails rather than presenting retained technical failures as a green run.
 
 ## Command
 
@@ -126,11 +153,14 @@ python scripts/science/execute_deform360_calibration_visual_production.py run \
 Exit codes are:
 
 - `0`: every admitted view succeeded;
-- `3`: complete accounting with one or more retained technical failures;
+- `3`: complete accounting with one or more retained technical failures; and
 - `2`: provenance, source-byte, schema, publication, or infrastructure failure.
 
-A code-3 result is a completed negative operational outcome and remains eligible
-for downstream no-replacement accounting.
+Merging the implementation does not start GPU production. The first protected
+execution should be treated as an operational runtime preflight before assuming
+that 324 serial camera jobs fit within the workflow's six-hour limit. Model-load
+reuse or a provider-level batch interface must be introduced under a new bound
+execution contract if that preflight shows startup overhead is material.
 
 ## Downstream observability handoff
 
