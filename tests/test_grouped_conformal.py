@@ -3,6 +3,12 @@ import math
 import numpy as np
 import pytest
 
+from bayesian_phystwin.calibration import (
+    finite_group_conformal_rank,
+    maximum_finite_group_coverage,
+    minimum_groups_for_finite_conformal,
+    plan_finite_group_calibration,
+)
 from bayesian_phystwin.grouped_conformal import (
     GroupedConformalResult,
     finite_group_conformal_quantile,
@@ -33,6 +39,31 @@ def test_nine_groups_are_required_for_a_finite_ninety_percent_bound() -> None:
     assert impossible_rank == 9
     assert finite == 8.0
     assert finite_rank == 9
+
+
+def test_group_quantile_does_not_promote_exact_float_rank_boundary() -> None:
+    quantile, rank = finite_group_conformal_quantile(np.arange(24.0), 0.28)
+
+    assert rank == 7
+    assert quantile == 6.0
+
+
+@pytest.mark.parametrize("count", [5, 10, 12])
+def test_advertised_maximum_finite_coverage_round_trips(count: int) -> None:
+    coverage = maximum_finite_group_coverage(count)
+
+    assert finite_group_conformal_rank(count, coverage) == count
+    assert minimum_groups_for_finite_conformal(coverage) == count
+    design = plan_finite_group_calibration(
+        count,
+        coverage,
+        predictor_frozen_before_scores=True,
+        calibration_outcomes_used_for_selection=False,
+    )
+    assert design.finite_sample_rank == count
+
+    coverage_above = float(np.nextafter(coverage, 1.0))
+    assert finite_group_conformal_rank(count, coverage_above) == count + 1
 
 
 def test_scaled_bounds_cover_all_registered_future_endpoints_together() -> None:
