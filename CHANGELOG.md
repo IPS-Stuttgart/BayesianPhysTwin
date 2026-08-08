@@ -70,6 +70,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   design artifacts before confirmation payload access.
 - Decimal-exact finite-group split-conformal planning that rejects impossible
   coverage and adaptive reuse of calibration outcomes before target access.
+- A content-addressed posterior-query uncertainty artifact and explicit
+  `bayesian_phystwin.uncertainty` namespace that bind numerical inference, query
+  covariance semantics, estimator lineage, finite-group feasibility, and any
+  matching split-conformal calibration without relabelling raw covariance.
 - A fail-closed Deform360 calibration execution sealer that verifies the exact
   Stage-0 cohort, visual-provider lock, eight calibration decisions, cohort-wide
   evidence-use ledger, clean implementation revision, and source bytes before
