@@ -17,10 +17,10 @@ import math
 import os
 import stat
 from collections.abc import Mapping, Sequence
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any, Final, cast
 
-from ._canonical_contracts import plain_json
+from ._canonical_contracts import canonical_relative_posix_path, plain_json
 from ._portable_contracts import (
     content_id,
     exact_revision,
@@ -236,15 +236,10 @@ def _positive_number(value: object, *, name: str) -> float:
 
 
 def _safe_relative_path(value: object, *, name: str) -> str:
-    text = _literal_string(value, name=name)
-    path = PurePosixPath(text)
-    if (
-        path.is_absolute()
-        or "\\" in text
-        or any(part in {"", ".", ".."} for part in path.parts)
-    ):
-        raise ValueError(f"{name} must be a safe POSIX relative path")
-    return path.as_posix()
+    return canonical_relative_posix_path(
+        _literal_string(value, name=name),
+        name=name,
+    )
 
 
 def _frame_range(value: object, *, name: str, expected_count: int) -> list[int]:
@@ -520,7 +515,11 @@ def validate_deform360_prepared_source_inventory(
         object_id = _literal_string(item["object_id"], name="inventory object_id")
         object_ids.append(object_id)
         _literal_integer(item["episode_id"], name=f"{object_id} episode_id")
-        if item["synthetic_episode_index"] != 0:
+        synthetic_episode_index = _literal_integer(
+            item["synthetic_episode_index"],
+            name=f"{object_id} synthetic_episode_index",
+        )
+        if synthetic_episode_index != 0:
             raise ValueError(f"inventory episode index changed: {object_id}")
         stratum = _literal_string(item["stratum"], name=f"{object_id} stratum")
         if stratum not in strata:

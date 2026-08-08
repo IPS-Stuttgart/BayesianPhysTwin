@@ -281,6 +281,32 @@ def test_duplicate_keys_boolean_versions_and_tampering_are_rejected(
             implementation_revision=IMPLEMENTATION_REVISION,
         )
 
+    plan_path, inventory_path, _plan = _inputs(tmp_path / "boolean-index")
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["objects"][0]["synthetic_episode_index"] = False
+    _rewrite_inventory(inventory_path, inventory)
+    with pytest.raises(ValueError, match="synthetic_episode_index"):
+        build_deform360_calibration_visual_execution_admission(
+            visual_production_plan_path=plan_path,
+            prepared_source_inventory_path=inventory_path,
+            implementation_revision=IMPLEMENTATION_REVISION,
+        )
+
+    plan_path, inventory_path, _plan = _inputs(tmp_path / "path-alias")
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    video = inventory["objects"][0]["cameras"][0]["video"]
+    video["path"] = video["path"].replace(
+        "/undistorted.mp4",
+        "//undistorted.mp4",
+    )
+    _rewrite_inventory(inventory_path, inventory)
+    with pytest.raises(ValueError, match="canonical relative POSIX path"):
+        build_deform360_calibration_visual_execution_admission(
+            visual_production_plan_path=plan_path,
+            prepared_source_inventory_path=inventory_path,
+            implementation_revision=IMPLEMENTATION_REVISION,
+        )
+
     admission = _build(tmp_path / "tamper")
     tampered = copy.deepcopy(admission)
     tampered["jobs"][0]["source_video"]["byte_count"] += 1

@@ -52,7 +52,7 @@ Admission fails if any of the following occurs:
 
 The plan and inventory files are opened through stable no-follow descriptors.
 Their exact verified bytes are parsed after device, inode, size, modification
- time, and change time are checked before and after reading.
+time, and change time are checked before and after reading.
 
 ## Command
 
