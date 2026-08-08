@@ -34,6 +34,7 @@ def pytest_configure(config: object) -> None:
         *sorted(test_root.glob("test_horizon_conditioned_discrepancy*.py")),
         *sorted(test_root.glob("test_legacy_artifacts*.py")),
         *sorted(test_root.glob("test_observed_information_covariance*.py")),
+        *sorted(test_root.glob("test_phystwin_directional_endpoint_v2*.py")),
         *sorted(test_root.glob("test_prob4d_visual_bias_update*.py")),
         *sorted(test_root.glob("test_query_calibration*.py")),
         *sorted(test_root.glob("test_repository_provenance*.py")),
