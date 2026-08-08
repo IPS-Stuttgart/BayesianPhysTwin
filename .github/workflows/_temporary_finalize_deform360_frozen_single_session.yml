@@ -51,7 +51,7 @@ jobs:
           python -m pip install "build>=1.2"
           python -m pip check
 
-      - name: Apply exact source transformation
+      - name: Align and apply exact source transformation
         shell: bash
         run: |
           set -euo pipefail
@@ -62,46 +62,61 @@ jobs:
               ".github/patches/apply_deform360_visual_production_hardening.py"
           )
           source = path.read_text(encoding="utf-8")
-          old_prior = (
-              "from dataclasses import dataclass\n'''\n"
-              "        '''import argparse"
+          replacements = (
+              (
+                  "from dataclasses import dataclass\n'''\n"
+                  "        '''import argparse",
+                  "from dataclasses import dataclass\n"
+                  "from pathlib import Path, PurePosixPath\n"
+                  "from typing import Any, cast\n'''\n"
+                  "        '''import argparse",
+                  "prior import anchor",
+              ),
+              (
+                  "from dataclasses import asdict, dataclass\n'''\n"
+                  "    )",
+                  "from dataclasses import asdict, dataclass\n"
+                  "from pathlib import Path, PurePosixPath\n"
+                  "from typing import Any, cast\n'''\n"
+                  "    )",
+                  "replacement import anchor",
+              ),
+              (
+                  "    model_binding: Mapping[str, Any],\n"
+                  "    prob4d_executable: Path,\n"
+                  "    resume: bool,\n",
+                  "    model_binding: Mapping[str, Any],\n"
+                  "    prob4d_executable: Path,\n"
+                  "    job: Mapping[str, Any],\n"
+                  "    resume: bool,\n",
+                  "prior existing-result signature",
+              ),
+              (
+                  "    model_binding: Mapping[str, Any],\n"
+                  "    verify_prediction: Callable[[Path], Mapping[str, Any]],\n"
+                  "    resume: bool,\n",
+                  "    model_binding: Mapping[str, Any],\n"
+                  "    verify_prediction: Callable[[Path], Mapping[str, Any]],\n"
+                  "    job: Mapping[str, Any],\n"
+                  "    resume: bool,\n",
+                  "replacement existing-result signature",
+              ),
+              (
+                  'f"expected exactly one source fragment in {path}, observed {count}"',
+                  'f"expected exactly one source fragment in {path}, observed {count}; "'
+                  'f"anchor={old[:160]!r}"',
+                  "diagnostic error message",
+              ),
           )
-          new_prior = (
-              "from dataclasses import dataclass\n"
-              "from pathlib import Path, PurePosixPath\n"
-              "from typing import Any, cast\n'''\n"
-              "        '''import argparse"
-          )
-          old_replacement = (
-              "from dataclasses import asdict, dataclass\n'''\n"
-              "    )"
-          )
-          new_replacement = (
-              "from dataclasses import asdict, dataclass\n"
-              "from pathlib import Path, PurePosixPath\n"
-              "from typing import Any, cast\n'''\n"
-              "    )"
-          )
-          for old, new, label in (
-              (old_prior, new_prior, "prior import anchor"),
-              (old_replacement, new_replacement, "replacement import anchor"),
-          ):
+          for old, new, label in replacements:
               if source.count(old) != 1:
                   raise SystemExit(f"transformer {label} changed")
               source = source.replace(old, new)
-          old_error = (
-              'f"expected exactly one source fragment in {path}, observed {count}"'
-          )
-          new_error = (
-              'f"expected exactly one source fragment in {path}, observed {count}; "'
-              'f"anchor={old[:160]!r}"'
-          )
-          if source.count(old_error) != 1:
-              raise SystemExit("transformer error-message anchor changed")
-          source = source.replace(old_error, new_error)
           path.write_text(source, encoding="utf-8")
           PY
+
           python .github/patches/apply_deform360_visual_production_hardening.py
+
           python - <<'PY'
           from pathlib import Path
 
@@ -177,10 +192,12 @@ jobs:
           )
           blobs: dict[str, str] = {}
           for path in paths:
-              data = base64.b64encode(Path(path).read_bytes()).decode("ascii")
+              encoded = base64.b64encode(Path(path).read_bytes()).decode("ascii")
               request = urllib.request.Request(
                   f"{os.environ['GITHUB_API_URL']}/repos/{repository}/git/blobs",
-                  data=json.dumps({"content": data, "encoding": "base64"}).encode(),
+                  data=json.dumps(
+                      {"content": encoded, "encoding": "base64"}
+                  ).encode(),
                   headers={
                       "Accept": "application/vnd.github+json",
                       "Authorization": f"Bearer {token}",
@@ -194,7 +211,6 @@ jobs:
           receipt = {
               "schema": "bayesian-phystwin.temporary-frozen-single-session-finalization",
               "schema_version": 1,
-              "base_head_sha": os.environ["GITHUB_SHA"],
               "pull_request_head_sha": os.environ["GITHUB_SHA"],
               "blobs": blobs,
               "delete_paths": [
