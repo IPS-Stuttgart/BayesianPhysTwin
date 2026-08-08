@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+import bayesian_phystwin.deform360_calibration_visual_production as production_api
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_calibration_visual_production import (
     PRODUCTION_INFORMATION_BOUNDARY,
@@ -563,3 +564,16 @@ def test_content_ids_change_with_numerical_or_lineage_fields() -> None:
         content_id({key: value for key, value in base.items() if key != "failure_id"})
         == base["failure_id"]
     )
+
+
+def test_validation_primitives_reject_malformed_metadata() -> None:
+    with pytest.raises(ValueError, match="nonempty literal string"):
+        production_api._string("", name="value")
+    with pytest.raises(ValueError, match="integer >= 0"):
+        production_api._integer(False, name="value")
+    with pytest.raises(ValueError, match="JSON object"):
+        production_api._file_record([], name="file")
+    with pytest.raises(ValueError, match="JSON object"):
+        validate_deform360_motioncrafter_model_set_binding(
+            [], expected_model_set_id="0" * 64
+        )
