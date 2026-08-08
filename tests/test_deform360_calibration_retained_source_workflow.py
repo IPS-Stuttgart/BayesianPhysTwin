@@ -69,7 +69,10 @@ def test_self_hosted_install_uses_a_complete_pinned_python_runtime() -> None:
         "      - name: Install exact admission source in an isolated environment\n"
     )
     assert setup < install
-    assert 'python-version: "3.12"' in inventory_job[setup:install]
+    setup_block = inventory_job[setup:install]
+    assert 'python-version: "3.12"' in setup_block
+    assert "cache:" not in setup_block
+    assert "cache-dependency-path:" not in setup_block
     assert "python3 -m venv" not in inventory_job
     assert 'python -m venv "${site}"' in inventory_job
 
