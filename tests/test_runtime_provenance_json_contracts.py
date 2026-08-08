@@ -185,9 +185,7 @@ def test_related_repository_loader_retains_exact_valid_record(tmp_path: Path) ->
         "role": "observation",
     }
 
-    states = _load_repository_states(
-        _write_related(tmp_path / "related.json", record)
-    )
+    states = _load_repository_states(_write_related(tmp_path / "related.json", record))
 
     assert len(states) == 1
     assert states[0].as_dict() == record
