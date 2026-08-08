@@ -78,6 +78,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Content-addressed observation beliefs, physical linearizations, gauge-aware
+  batches, posterior results, and selection records now store arrays in
+  immutable bytes-backed NumPy views. Callers can no longer re-enable write
+  access and mutate a previously validated artifact or claim-bearing result.
 - Claim-bearing hexadecimal identifiers now require literal lowercase strings;
   integers, bytes, and custom string subclasses are rejected instead of being
   admitted through lossy `str(value)` coercion. Deform360 source artifacts also

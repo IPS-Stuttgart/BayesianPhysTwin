@@ -6,6 +6,10 @@ from typing import Any, cast
 import numpy as np
 import pytest
 
+from bayesian_phystwin._canonical_contracts import (
+    immutable_array,
+    immutable_integer_array,
+)
 from bayesian_phystwin.observation_belief import (
     ObservationBeliefV1,
     load_observation_belief,
@@ -98,6 +102,56 @@ def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     assert restored.summary()["observation_count"] == 4
     assert restored.mean_xyz_m.flags.writeable is False
     np.testing.assert_array_equal(restored.mean_xyz_m, belief.mean_xyz_m)
+
+
+def test_shared_immutable_arrays_use_byte_backing_and_canonical_storage() -> None:
+    source = np.arange(24, dtype=np.float32).reshape(4, 6)[:, ::2]
+    expected = np.asarray(source, dtype=np.float64).copy()
+
+    frozen = immutable_array(source, dtype=np.dtype(np.float64))
+
+    assert frozen.dtype == np.dtype(np.float64)
+    assert frozen.flags.c_contiguous
+    assert not frozen.flags.writeable
+    np.testing.assert_array_equal(frozen, expected)
+    source[...] = -1.0
+    np.testing.assert_array_equal(frozen, expected)
+    with pytest.raises(ValueError):
+        frozen.setflags(write=True)
+
+    empty = immutable_array(np.empty((0, 3), dtype=np.float64))
+    assert empty.shape == (0, 3)
+    with pytest.raises(ValueError):
+        empty.setflags(write=True)
+
+    with pytest.raises(TypeError, match="Python objects"):
+        immutable_array(np.asarray([object()], dtype=object))
+
+
+def test_shared_immutable_integer_arrays_validate_and_freeze_int64() -> None:
+    source = np.asarray([1, 2, 3], dtype=np.int16)
+    frozen = immutable_integer_array(source, name="ids")
+
+    assert frozen.dtype == np.dtype(np.int64)
+    np.testing.assert_array_equal(frozen, source)
+    source[:] = 9
+    np.testing.assert_array_equal(frozen, np.asarray([1, 2, 3]))
+    with pytest.raises(ValueError):
+        frozen.setflags(write=True)
+    with pytest.raises(ValueError, match="must contain integers"):
+        immutable_integer_array(np.asarray([1.0]), name="ids")
+
+
+def test_observation_arrays_are_irreversibly_immutable() -> None:
+    belief = _belief()
+    artifact_id = belief.artifact_id
+
+    for name, array in belief._arrays().items():
+        assert not array.flags.writeable, name
+        with pytest.raises(ValueError):
+            array.setflags(write=True)
+
+    assert belief.artifact_id == artifact_id
 
 
 def test_observation_metadata_is_deeply_immutable_and_digest_stable(

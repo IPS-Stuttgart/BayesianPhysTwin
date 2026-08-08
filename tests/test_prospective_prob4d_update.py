@@ -69,6 +69,37 @@ def _update(
     )
 
 
+def test_claim_update_identity_is_backed_by_irreversibly_immutable_result() -> None:
+    update = _update()
+    identities = (
+        update.admission_id,
+        update.inference_result_id,
+        update.update_id,
+    )
+
+    for name in (
+        "state_coefficients",
+        "gauge_delta",
+        "shared_bias_coefficients",
+        "view_bias_coefficients",
+        "anchor_bias_coefficients",
+        "posterior_covariance",
+        "identifiable_state_transform",
+        "identifiable_fractions",
+        "query_sensitivity_fractions",
+        "robust_weights",
+        "anchor_robust_weights",
+    ):
+        with pytest.raises(ValueError):
+            getattr(update.result, name).setflags(write=True)
+
+    assert (
+        update.admission_id,
+        update.inference_result_id,
+        update.update_id,
+    ) == identities
+
+
 def test_one_call_path_admits_before_solving_and_binds_lineage(monkeypatch) -> None:
     events: list[str] = []
     lineage = _lineage()
