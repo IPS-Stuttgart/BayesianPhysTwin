@@ -1,0 +1,312 @@
+name: Report Deform360 failure diagnosis
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-failure-diagnosis-reporter.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-failure-diagnosis-reporter.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: deform360-failure-diagnosis-reporter-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SOURCE_DIAGNOSIS_REVISION: 9ea5776a30d31f91fc5a0df42888a8893a70f8fb
+  SOURCE_PRODUCTION_RESULT_ID: 9f2f9c3d4bf9d4ec3b6fa1e917c4c3e906dbc69a0f9c57b9b546e73e41f6b4c2
+  SOURCE_WORKFLOW_FILE: deform360-visual-production-failure-diagnosis.yml
+  SOURCE_ARTIFACT_PREFIX: deform360-visual-production-failure-diagnosis-
+  TARGET_ISSUE: "148"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Validate diagnosis-reporting policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate read-only workflow lookup and issue-only publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          from pathlib import Path
+
+          text = Path(
+              ".github/workflows/deform360-failure-diagnosis-reporter.yml"
+          ).read_text(encoding="utf-8")
+          required = (
+              "actions: read",
+              "contents: read",
+              "issues: write",
+              "SOURCE_DIAGNOSIS_REVISION:",
+              "failure-diagnosis.json",
+              "official_raw_payload_opened",
+              "adaptive_confirmation_payloads_opened",
+              "target_outcomes_used",
+          )
+          for token in required:
+              if token not in text:
+                  raise SystemExit(f"missing reporter token: {token}")
+          for token in ("runs-on: self-hosted", "/mnt/lexar4tb", "checkout@v7"):
+              if token in text:
+                  raise SystemExit(f"reporter must remain hosted and data-free: {token}")
+          PY
+          git diff --check
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  report:
+    name: Publish exact diagnosis to issue 148
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve push run, verify artifact, and post the diagnosis
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import io
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import PurePosixPath
+          from typing import Any
+
+          api = os.environ["GITHUB_API_URL"]
+          repository = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+
+          def request_json(
+              method: str,
+              path: str,
+              payload: dict[str, Any] | None = None,
+          ) -> dict[str, Any]:
+              body = None
+              headers = {
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              }
+              if payload is not None:
+                  body = json.dumps(payload).encode("utf-8")
+                  headers["Content-Type"] = "application/json"
+              req = urllib.request.Request(
+                  f"{api}{path}",
+                  data=body,
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  value = json.load(response)
+              if not isinstance(value, dict):
+                  raise SystemExit(f"GitHub API response is not an object: {path}")
+              return value
+
+          query = urllib.parse.urlencode(
+              {"event": "push", "branch": "main", "per_page": 50}
+          )
+          runs = request_json(
+              "GET",
+              f"/repos/{repository}/actions/workflows/"
+              f"{os.environ['SOURCE_WORKFLOW_FILE']}/runs?{query}",
+          ).get("workflow_runs")
+          if not isinstance(runs, list):
+              raise SystemExit("workflow-run response is malformed")
+          matches = [
+              run
+              for run in runs
+              if isinstance(run, dict)
+              and run.get("head_sha") == os.environ["SOURCE_DIAGNOSIS_REVISION"]
+              and run.get("event") == "push"
+          ]
+          if len(matches) != 1:
+              raise SystemExit(
+                  f"expected one exact diagnosis push run, found {len(matches)}"
+              )
+          run = matches[0]
+          if run.get("status") != "completed" or run.get("conclusion") != "success":
+              raise SystemExit(
+                  "exact diagnosis run is not a completed success: "
+                  f"{run.get('status')}/{run.get('conclusion')}"
+              )
+          run_id = run.get("id")
+          run_url = run.get("html_url")
+          if not isinstance(run_id, int) or not isinstance(run_url, str):
+              raise SystemExit("diagnosis run identity is malformed")
+
+          artifacts = request_json(
+              "GET", f"/repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100"
+          ).get("artifacts")
+          if not isinstance(artifacts, list):
+              raise SystemExit("artifact response is malformed")
+          matches = [
+              artifact
+              for artifact in artifacts
+              if isinstance(artifact, dict)
+              and isinstance(artifact.get("name"), str)
+              and artifact["name"].startswith(os.environ["SOURCE_ARTIFACT_PREFIX"])
+              and artifact.get("expired") is False
+          ]
+          if len(matches) != 1:
+              raise SystemExit(
+                  f"expected one diagnosis artifact, found {len(matches)}"
+              )
+          artifact = matches[0]
+          artifact_id = artifact.get("id")
+          artifact_name = artifact.get("name")
+          artifact_digest = artifact.get("digest")
+          if not isinstance(artifact_id, int) or not isinstance(artifact_name, str):
+              raise SystemExit("diagnosis artifact identity is malformed")
+
+          req = urllib.request.Request(
+              f"{api}/repos/{repository}/actions/artifacts/{artifact_id}/zip",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urllib.request.urlopen(req, timeout=120) as response:
+              archive_bytes = response.read(20 * 1024 * 1024 + 1)
+          if len(archive_bytes) > 20 * 1024 * 1024:
+              raise SystemExit("diagnosis artifact exceeds 20 MiB")
+
+          with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
+              members = {member.filename: member for member in archive.infolist()}
+              for name, member in members.items():
+                  pure = PurePosixPath(name)
+                  if pure.is_absolute() or ".." in pure.parts:
+                      raise SystemExit(f"unsafe artifact member: {name}")
+                  mode = member.external_attr >> 16
+                  if mode & 0o170000 == 0o120000:
+                      raise SystemExit(f"symbolic-link artifact member: {name}")
+              expected = {
+                  "failure-diagnosis.json",
+                  "representative-stderr.bin",
+                  "environment.txt",
+                  "SHA256SUMS",
+              }
+              if set(members) != expected:
+                  raise SystemExit(
+                      f"diagnosis artifact members changed: {sorted(members)}"
+                  )
+              payloads = {name: archive.read(name) for name in expected}
+
+          checks: dict[str, str] = {}
+          for line in payloads["SHA256SUMS"].decode("utf-8").splitlines():
+              digest, name = line.split(maxsplit=1)
+              checks[name.lstrip("*")] = digest
+          for name in expected - {"SHA256SUMS"}:
+              if hashlib.sha256(payloads[name]).hexdigest() != checks.get(name):
+                  raise SystemExit(f"diagnosis checksum mismatch: {name}")
+
+          diagnosis = json.loads(payloads["failure-diagnosis.json"])
+          if not isinstance(diagnosis, dict):
+              raise SystemExit("diagnosis root is malformed")
+          if diagnosis.get("source_production_result_id") != os.environ[
+              "SOURCE_PRODUCTION_RESULT_ID"
+          ]:
+              raise SystemExit("diagnosis source result changed")
+          if diagnosis.get("receipt_count") != 324:
+              raise SystemExit("diagnosis receipt count changed")
+          if diagnosis.get("technical_failure_count") != 324:
+              raise SystemExit("diagnosis failure count changed")
+          if diagnosis.get("successful_job_count") != 0:
+              raise SystemExit("diagnosis success count changed")
+          representative = diagnosis.get("representative")
+          boundary = diagnosis.get("information_boundary")
+          if not isinstance(representative, dict) or not isinstance(boundary, dict):
+              raise SystemExit("diagnosis contents are malformed")
+          required_boundary = {
+              "official_raw_payload_opened": False,
+              "adaptive_confirmation_payloads_opened": False,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "replacement_allowed": False,
+          }
+          for key, expected_value in required_boundary.items():
+              if boundary.get(key) is not expected_value:
+                  raise SystemExit(f"diagnosis boundary changed: {key}")
+          stderr_text = representative.get("stderr_text")
+          if not isinstance(stderr_text, str) or not stderr_text.strip():
+              raise SystemExit("representative stderr is missing")
+          stderr_text = stderr_text.replace("```", "` ` `")
+
+          body = f"""## Deform360 visual-production shared-failure diagnosis
+
+- diagnosis workflow run: [{run_id}]({run_url})
+- diagnosis revision: `{os.environ['SOURCE_DIAGNOSIS_REVISION']}`
+- diagnosis artifact: `{artifact_name}` (`{artifact_id}`)
+- artifact digest: `{artifact_digest}`
+- diagnosis ID: `{diagnosis.get('diagnosis_id')}`
+- source production result: `{os.environ['SOURCE_PRODUCTION_RESULT_ID']}`
+- admitted jobs: `324`
+- successful jobs: `0`
+- retained technical failures: `324`
+- common stage: `{diagnosis.get('common_stage')}`
+- common stderr SHA-256: `{diagnosis.get('common_stderr_sha256')}`
+- common stderr bytes: `{diagnosis.get('common_stderr_byte_count')}`
+- representative object/camera: `{representative.get('object_id')}` / `{representative.get('camera_id')}`
+
+All 324 receipts have the same stderr digest and empty stdout. The bounded,
+digest-verified representative error is:
+
+```text
+{stderr_text.rstrip()}
+```
+
+Information boundary retained: official raw payloads unopened,
+adaptive-confirmation payloads unopened, confirmation payloads unopened,
+reserved evaluation frames unopened, target outcomes unused, and replacement
+forbidden. The failed calibration-only production had opened only the admitted
+retained camera prefixes and MotionCrafter prediction payloads. This diagnosis
+does not authorize target access or establish provider competence.
+"""
+          request_json(
+              "POST",
+              f"/repos/{repository}/issues/{os.environ['TARGET_ISSUE']}/comments",
+              {"body": body},
+          )
+          print(body)
+          PY
+
+# Reviewed diagnosis reporter request: 2026-08-09-v1
