@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from ._canonical_contracts import (
+    canonical_relative_posix_path,
     canonical_string_tuple,
     frozen_finite_json_mapping,
     plain_json,
@@ -138,7 +139,7 @@ def source_artifact_mapping(
     name: str,
     allow_empty: bool = False,
 ) -> Mapping[str, Any]:
-    """Validate and freeze a path-to-SHA-256 mapping."""
+    """Validate and freeze a canonical path-to-SHA-256 mapping."""
 
     if not isinstance(values, Mapping):
         raise ValueError(f"{name} must be a mapping")
@@ -146,9 +147,19 @@ def source_artifact_mapping(
         raise ValueError(f"{name} must not be empty")
     normalized: dict[str, str] = {}
     for path, digest in values.items():
-        if type(path) is not str or not path or path.strip() != path:
-            raise ValueError(f"{name} keys must be non-empty canonical paths")
-        normalized[path] = sha256_digest(digest, name=f"{name} entry {path}")
+        try:
+            canonical_path = canonical_relative_posix_path(
+                path,
+                name=f"{name} key",
+            )
+        except ValueError as error:
+            raise ValueError(
+                f"{name} keys must be canonical relative POSIX paths"
+            ) from error
+        normalized[canonical_path] = sha256_digest(
+            digest,
+            name=f"{name} entry {canonical_path}",
+        )
     return frozen_finite_json_mapping(normalized, name=name)
 
 
