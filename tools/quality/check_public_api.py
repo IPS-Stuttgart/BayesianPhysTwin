@@ -30,9 +30,7 @@ _FIELDS = frozenset(
 )
 _PROJECT_SECTION = re.compile(r"^\s*\[project\]\s*(?:#.*)?$")
 _SECTION = re.compile(r"^\s*\[[^]]+\]\s*(?:#.*)?$")
-_PROJECT_VERSION = re.compile(
-    r"^\s*version\s*=\s*(['\"])([^'\"]+)\1\s*(?:#.*)?$"
-)
+_PROJECT_VERSION = re.compile(r"^\s*version\s*=\s*(['\"])([^'\"]+)\1\s*(?:#.*)?$")
 
 
 class PublicApiError(ValueError):
@@ -79,9 +77,7 @@ def load_manifest(path: str | Path = DEFAULT_MANIFEST) -> dict[str, Any]:
     )
     symbols = [
         _literal(symbol, name=f"symbols[{index}]")
-        for index, symbol in enumerate(
-            _sequence(manifest["symbols"], name="symbols")
-        )
+        for index, symbol in enumerate(_sequence(manifest["symbols"], name="symbols"))
     ]
     if not symbols:
         raise PublicApiError("root API snapshot is empty")
