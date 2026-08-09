@@ -987,3 +987,24 @@ def test_frozen_sample_admissibility_policy_is_content_addressed() -> None:
     )
     assert policy["human_approval_required"] is False
     assert policy["new_measurements_required"] is False
+
+
+def test_sample_admissibility_policy_rejects_invalid_fraction_contracts(
+    tmp_path: Path,
+) -> None:
+    policy = json.loads(
+        _write_sample_admissibility_policy(tmp_path).read_text(encoding="utf-8")
+    )
+
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        validate_deform360_prob4d_sample_admissibility_policy(None)
+
+    for invalid, message in ((True, "must be a finite number"), (0.0, "is invalid")):
+        candidate = dict(policy)
+        candidate["minimum_supported_stream_fraction"] = invalid
+        identity = {
+            key: value for key, value in candidate.items() if key != "artifact_id"
+        }
+        candidate["artifact_id"] = content_id(identity)
+        with pytest.raises(ValueError, match=message):
+            validate_deform360_prob4d_sample_admissibility_policy(candidate)
