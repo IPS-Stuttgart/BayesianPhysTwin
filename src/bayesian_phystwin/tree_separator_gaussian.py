@@ -14,9 +14,7 @@ from typing import Final
 
 import numpy as np
 
-TREE_SEPARATOR_GAUSSIAN_IMPLEMENTATION: Final = (
-    "block-tree-schur-message-passing-v1"
-)
+TREE_SEPARATOR_GAUSSIAN_IMPLEMENTATION: Final = "block-tree-schur-message-passing-v1"
 
 
 class TreeSeparatorGaussianError(ValueError):
@@ -77,9 +75,7 @@ def _cholesky(value: np.ndarray, *, name: str) -> np.ndarray:
     try:
         return np.linalg.cholesky(symmetric)
     except np.linalg.LinAlgError as error:
-        raise TreeSeparatorGaussianError(
-            f"{name} is not positive definite"
-        ) from error
+        raise TreeSeparatorGaussianError(f"{name} is not positive definite") from error
 
 
 @dataclass(frozen=True, slots=True)
@@ -227,10 +223,7 @@ class TreeSeparatorGaussianSystemV1:
     ) -> tuple[np.ndarray, np.ndarray]:
         """Materialize the full precision only under an explicit byte budget."""
 
-        if isinstance(maximum_bytes, bool) or not isinstance(
-            maximum_bytes,
-            Integral,
-        ):
+        if isinstance(maximum_bytes, bool) or not isinstance(maximum_bytes, Integral):
             raise TypeError("maximum_bytes must be an integer")
         if maximum_bytes < 0:
             raise ValueError("maximum_bytes must be non-negative")
@@ -259,12 +252,12 @@ class TreeSeparatorGaussianSystemV1:
                 cross = self.parent_cross_precision[index]
                 precision[node_slice, parent_slice] = cross
                 precision[parent_slice, node_slice] = cross.T
-            precision[node_slice, separator_start:] = (
-                self.separator_cross_precision[index]
-            )
-            precision[separator_start:, node_slice] = (
-                self.separator_cross_precision[index].T
-            )
+            precision[node_slice, separator_start:] = self.separator_cross_precision[
+                index
+            ]
+            precision[separator_start:, node_slice] = self.separator_cross_precision[
+                index
+            ].T
         precision[separator_start:, separator_start:] = self.separator_precision
         information[separator_start:] = self.separator_information
         return precision, information
@@ -373,19 +366,11 @@ def solve_tree_separator_gaussian(
                 edge,
             )
             diagonal[parent] += edge.T @ parent_coefficient[index]
-            separator_cross[parent] += (
-                edge.T @ separator_coefficient[index]
-            )
+            separator_cross[parent] += edge.T @ separator_coefficient[index]
             node_information[parent] -= edge.T @ conditional_mean[index]
-        separator_precision += (
-            separator_cross[index].T @ separator_coefficient[index]
-        )
-        separator_information -= (
-            separator_cross[index].T @ conditional_mean[index]
-        )
-        log_determinant += 2.0 * float(
-            np.sum(np.log(np.diag(cholesky)))
-        )
+        separator_precision += separator_cross[index].T @ separator_coefficient[index]
+        separator_information -= separator_cross[index].T @ conditional_mean[index]
+        log_determinant += 2.0 * float(np.sum(np.log(np.diag(cholesky))))
 
     if separator_size:
         separator_cholesky = _cholesky(
@@ -400,9 +385,7 @@ def solve_tree_separator_gaussian(
             separator_cholesky,
             np.eye(separator_size, dtype=np.float64),
         )
-        log_determinant += 2.0 * float(
-            np.sum(np.log(np.diag(separator_cholesky)))
-        )
+        log_determinant += 2.0 * float(np.sum(np.log(np.diag(separator_cholesky))))
     else:
         separator_mean = np.zeros(0, dtype=np.float64)
         separator_covariance = np.zeros((0, 0), dtype=np.float64)
@@ -423,23 +406,16 @@ def solve_tree_separator_gaussian(
             parent_mapping = parent_coefficient[index]
             mean = mean + parent_mapping @ node_mean[parent]
             covariance = (
-                covariance
-                + parent_mapping @ node_covariance[parent] @ parent_mapping.T
+                covariance + parent_mapping @ node_covariance[parent] @ parent_mapping.T
             )
             if separator_size:
                 mean = mean + separator_mapping @ separator_mean
                 parent_cross = node_separator_cross_covariance[parent]
                 covariance = (
                     covariance
-                    + separator_mapping
-                    @ separator_covariance
-                    @ separator_mapping.T
-                    + parent_mapping
-                    @ parent_cross
-                    @ separator_mapping.T
-                    + separator_mapping
-                    @ parent_cross.T
-                    @ parent_mapping.T
+                    + separator_mapping @ separator_covariance @ separator_mapping.T
+                    + parent_mapping @ parent_cross @ separator_mapping.T
+                    + separator_mapping @ parent_cross.T @ parent_mapping.T
                 )
                 cross = (
                     parent_mapping @ parent_cross
@@ -451,9 +427,7 @@ def solve_tree_separator_gaussian(
             mean = mean + separator_mapping @ separator_mean
             covariance = (
                 covariance
-                + separator_mapping
-                @ separator_covariance
-                @ separator_mapping.T
+                + separator_mapping @ separator_covariance @ separator_mapping.T
             )
             cross = separator_mapping @ separator_covariance
         else:
@@ -475,9 +449,7 @@ def solve_tree_separator_gaussian(
         node_mean=node_mean,
         separator_mean=separator_mean,
         node_covariance=node_covariance,
-        node_separator_cross_covariance=(
-            node_separator_cross_covariance
-        ),
+        node_separator_cross_covariance=(node_separator_cross_covariance),
         separator_covariance=separator_covariance,
         log_determinant_precision=log_determinant,
     )
