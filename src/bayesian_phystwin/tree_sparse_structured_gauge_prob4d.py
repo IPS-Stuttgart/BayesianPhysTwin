@@ -158,9 +158,7 @@ class ClaimBearingTreeSparseProb4DUpdateV2:
         return frozen_finite_json_mapping(
             {
                 "schema": CLAIM_BEARING_TREE_SPARSE_STRUCTURED_UPDATE_SCHEMA,
-                "schema_version": (
-                    CLAIM_BEARING_TREE_SPARSE_STRUCTURED_UPDATE_VERSION
-                ),
+                "schema_version": (CLAIM_BEARING_TREE_SPARSE_STRUCTURED_UPDATE_VERSION),
                 "observation_artifact_id": self.observation_artifact_id,
                 "linearization_artifact_id": self.linearization_artifact_id,
                 "provider_manifest_id": self.provider_manifest_id,
@@ -171,9 +169,7 @@ class ClaimBearingTreeSparseProb4DUpdateV2:
                 ),
                 "inference_admissible": self.result.inference_admissible,
                 "reason": self.result.reason,
-                "covariance_representation": (
-                    self.result.covariance_representation
-                ),
+                "covariance_representation": (self.result.covariance_representation),
                 "dense_covariance_materialized": (
                     self.result.dense_covariance_materialized
                 ),

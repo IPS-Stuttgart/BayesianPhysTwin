@@ -23,9 +23,7 @@ from ._canonical_contracts import (
 )
 from ._gauge_aware_contracts import GaugeAwareBeliefResult
 
-STRUCTURED_GAUGE_AWARE_RESULT_SCHEMA = (
-    "bayesian_phystwin.structured_gauge_aware_result"
-)
+STRUCTURED_GAUGE_AWARE_RESULT_SCHEMA = "bayesian_phystwin.structured_gauge_aware_result"
 STRUCTURED_GAUGE_AWARE_RESULT_VERSION = 1
 DENSE_COVARIANCE_REPRESENTATION = "dense-covariance-v1"
 PRECISION_BACKED_COVARIANCE_REPRESENTATION = (
@@ -252,9 +250,7 @@ class PrecisionBackedCovarianceV1:
                 "estimated_dense_bytes": self.estimated_dense_bytes,
                 "stored_nbytes": self.stored_nbytes,
                 "state_covariance_sha256": _array_sha256(self.state_covariance),
-                "nuisance_precision_sha256": _array_sha256(
-                    self.nuisance_precision
-                ),
+                "nuisance_precision_sha256": _array_sha256(self.nuisance_precision),
                 "nuisance_covariance_sha256": (
                     None
                     if self.nuisance_covariance is None
@@ -281,22 +277,18 @@ class PrecisionBackedCovarianceV1:
                 raise ValueError(
                     "nuisance precision could not be materialized"
                 ) from error
-            nuisance_covariance = 0.5 * (
-                nuisance_covariance + nuisance_covariance.T
-            )
+            nuisance_covariance = 0.5 * (nuisance_covariance + nuisance_covariance.T)
         state_count = len(self.state_covariance)
-        result = np.zeros((self.dimension, self.dimension), dtype=np.float64)
+        result: np.ndarray = np.zeros(
+            (self.dimension, self.dimension), dtype=np.float64
+        )
         result[:state_count, :state_count] = self.state_covariance
         result[state_count:, state_count:] = nuisance_covariance
         return immutable_array(result, dtype=np.dtype(np.float64))
 
     def __array__(self, dtype: Any | None = None) -> np.ndarray:
         materialized = self.materialize()
-        return (
-            materialized
-            if dtype is None
-            else np.asarray(materialized, dtype=dtype)
-        )
+        return materialized if dtype is None else np.asarray(materialized, dtype=dtype)
 
 
 GaugeAwareCovarianceV1: TypeAlias = DenseCovarianceV1 | PrecisionBackedCovarianceV1
