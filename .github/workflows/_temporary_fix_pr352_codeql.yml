@@ -1,0 +1,158 @@
+name: Temporary fix PR 352 CodeQL checkout boundary
+
+on:
+  push:
+    branches:
+      - agent/harden-deform360-runner-bootstrap
+    paths:
+      - ".github/workflows/_temporary_fix_pr352_codeql.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-fix-pr352-codeql
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact event revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Verify exact branch tip
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git fetch --no-tags origin agent/harden-deform360-runner-bootstrap
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+
+      - name: Derive the reviewed checkout from the event context
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          contracts_path = Path(
+              ".github/workflows/deform360-runner-local-contracts.yml"
+          )
+          contracts = contracts_path.read_text(encoding="utf-8")
+          old_inputs = """  workflow_call:
+              inputs:
+                source_sha:
+                  description: Exact reviewed BayesianPhysTwin revision to validate.
+                  required: true
+                  type: string
+          """
+          new_inputs = """  workflow_call:
+          """
+          if old_inputs not in contracts:
+              raise SystemExit("workflow_call input block changed unexpectedly")
+          contracts = contracts.replace(old_inputs, new_inputs, 1)
+          old_ref = "          ref: ${{ inputs.source_sha }}\n"
+          new_ref = (
+              "          ref: ${{ "
+              "github.event.pull_request.head.sha || github.sha }}\n"
+          )
+          if old_ref not in contracts:
+              raise SystemExit("reusable checkout ref changed unexpectedly")
+          contracts = contracts.replace(old_ref, new_ref, 1)
+          contracts_path.write_text(contracts, encoding="utf-8")
+
+          science_path = Path(
+              ".github/workflows/deform360-runner-local-science.yml"
+          )
+          science = science_path.read_text(encoding="utf-8")
+          old_with = """    with:
+                source_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          """
+          if old_with not in science:
+              raise SystemExit("caller source_sha block changed unexpectedly")
+          science = science.replace(old_with, "", 1)
+          science_path.write_text(science, encoding="utf-8")
+
+          test_path = Path(
+              "tests/test_deform360_runner_local_science_workflow.py"
+          )
+          tests = test_path.read_text(encoding="utf-8")
+          old_assertions = """    assert (
+                  \"source_sha: ${{ github.event.pull_request.head.sha || github.sha }}\"
+                  in contracts
+              )
+              assert \"workflow_call:\" in reusable
+              assert \"source_sha:\" in reusable
+          """
+          new_assertions = """    assert \"with:\" not in contracts
+              assert \"workflow_call:\" in reusable
+              assert \"inputs:\" not in reusable
+              assert (
+                  \"ref: ${{ github.event.pull_request.head.sha || github.sha }}\"
+                  in reusable
+              )
+              assert \"inputs.source_sha\" not in reusable
+          """
+          if old_assertions not in tests:
+              raise SystemExit("workflow source_sha assertions changed unexpectedly")
+          tests = tests.replace(old_assertions, new_assertions, 1)
+          test_path.write_text(tests, encoding="utf-8")
+          PY
+
+      - name: Validate the permanent workflow product
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m ruff check tests/test_deform360_runner_local_science_workflow.py
+          python -m ruff format --check \
+            tests/test_deform360_runner_local_science_workflow.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_runner_local_science_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in (
+              Path(".github/workflows/deform360-runner-local-contracts.yml"),
+              Path(".github/workflows/deform360-runner-local-science.yml"),
+          ):
+              loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+              if not isinstance(loaded, dict):
+                  raise SystemExit(f"{path} is not a workflow mapping")
+          PY
+          rm .github/workflows/_temporary_fix_pr352_codeql.yml
+          git diff --check
+          actual="$(git status --porcelain --untracked-files=all \
+            | sed -E 's/^...//' | sort)"
+          expected="$(cat <<'EOF'
+          .github/workflows/_temporary_fix_pr352_codeql.yml
+          .github/workflows/deform360-runner-local-contracts.yml
+          .github/workflows/deform360-runner-local-science.yml
+          tests/test_deform360_runner_local_science_workflow.py
+          EOF
+          )"
+          test "$actual" = "$expected"
+
+      - name: Publish the exact reviewed product
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Bind runner bootstrap checkout to event SHA"
+          git fetch --no-tags origin agent/harden-deform360-runner-bootstrap
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/agent/harden-deform360-runner-bootstrap
