@@ -1,0 +1,374 @@
+name: Deform360 public robot metric-prefix smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-robot-metric-prefix-smoke.yml"
+      - ".github/workflows/launch-deform360-robot-metric-prefix-smoke-once.yml"
+      - "docs/deform360_prob4d_sample_materializer.md"
+      - "docs/deform360_prob4d_source_calibration.md"
+      - "docs/deform360_robot_metric_prefix.md"
+      - "protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json"
+      - "scripts/science/materialize_deform360_robot_metric_prefix.py"
+      - "src/bayesian_phystwin/deform360_robot_metric_prefix.py"
+      - "tests/test_deform360_robot_metric_prefix.py"
+      - "tests/test_deform360_robot_metric_prefix_smoke_workflow.py"
+  workflow_call:
+    inputs:
+      execute_authorized:
+        description: Run the single frozen public calibration-source smoke.
+        required: true
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-robot-metric-prefix-smoke
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  PRODUCTION_RUN_ID: "31279398563"
+  PRODUCTION_ARTIFACT_ID: "9031215572"
+  PRODUCTION_ARTIFACT_NAME: deform360-calibration-visual-production-31279398563-1
+  PRODUCTION_ARTIFACT_DIGEST: sha256:f6d3f637c8087da06616330d3784be1574f0d19410b4f485c29d03f0f09dafda
+  PRODUCTION_REVISION: c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  PRODUCTION_RESULT_ID: 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89
+  PRODUCTION_ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PREPARED_INVENTORY_SHA256: 4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007
+  METRIC_POLICY_ID: c90d48d558f020e61077c096ec641ba5f095ea4186060088ffdb9de3d83c7f34
+  PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed/aligned
+  METRIC_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-robot-metric-prefix-smoke-v1
+
+jobs:
+  contracts:
+    name: Public robot-gauge contracts / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact source and quality tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Run focused public-gauge contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/materialize_deform360_robot_metric_prefix.py
+            src/bayesian_phystwin/deform360_robot_metric_prefix.py
+            tests/test_deform360_robot_metric_prefix.py
+            tests/test_deform360_robot_metric_prefix_smoke_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_robot_metric_prefix.py \
+            src/bayesian_phystwin/deform360_robot_metric_prefix.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_robot_metric_prefix.py \
+            tests/test_deform360_robot_metric_prefix_smoke_workflow.py
+
+      - name: Verify read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  source-smoke:
+    name: One fixed public calibration camera / workstation2
+    needs: contracts
+    if: >-
+      inputs.execute_authorized == true &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: self-hosted
+    timeout-minutes: 45
+    steps:
+      - name: Bind the reviewed one-shot caller and sole source runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test "${{ github.workflow_ref }}" = \
+            "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-robot-metric-prefix-smoke-once.yml@refs/heads/main"
+          test "${{ inputs.execute_authorized }}" = "true"
+
+      - name: Check out exact reviewed main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the minimal pinned runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          python -m pip install --no-deps --no-build-isolation .
+          python -m pip check
+
+      - name: Verify authoritative compact-production artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${PRODUCTION_ARTIFACT_ID}")"
+          test "$(jq -r '.name' <<<"${metadata}")" = "${PRODUCTION_ARTIFACT_NAME}"
+          test "$(jq -r '.digest' <<<"${metadata}")" = "${PRODUCTION_ARTIFACT_DIGEST}"
+          test "$(jq -r '.workflow_run.id' <<<"${metadata}")" = "${PRODUCTION_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${metadata}")" = "${PRODUCTION_REVISION}"
+          test "$(jq -r '.expired' <<<"${metadata}")" = "false"
+
+      - name: Download only compact calibration-production evidence
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.PRODUCTION_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-public-robot-gauge-smoke/production-evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.PRODUCTION_RUN_ID }}
+
+      - name: Verify production lineage, accounting, and closed boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/production-evidence"
+          (cd "${evidence}" && sha256sum --check SHA256SUMS >/dev/null)
+          test "$(sha256sum "${evidence}/admission/prepared-source-inventory.json" | cut -d' ' -f1)" = \
+            "${PREPARED_INVENTORY_SHA256}"
+          python scripts/science/execute_deform360_calibration_visual_production.py \
+            validate-bundle "${evidence}/production/visual-production-result.json" \
+            --run-root "${evidence}/production" \
+            --admission "${evidence}/admission/calibration-visual-execution-admission.json" \
+            >/dev/null
+          EVIDENCE="${evidence}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["EVIDENCE"])
+          result = json.loads(
+              (root / "production/visual-production-result.json").read_text()
+          )
+          receipt = json.loads((root / "admission/receipt.json").read_text())
+          expected = {
+              "result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "implementation_revision": os.environ["PRODUCTION_REVISION"],
+              "admission_id": os.environ["PRODUCTION_ADMISSION_ID"],
+              "object_count": 10,
+              "camera_view_count": 324,
+              "succeeded_job_count": 324,
+              "technical_failure_job_count": 0,
+              "status": "all-jobs-succeeded",
+          }
+          if {key: result.get(key) for key in expected} != expected:
+              raise SystemExit("visual-production identity or accounting changed")
+          boundary = result["information_boundary"]
+          if not (
+              boundary["confirmation_payloads_opened"] is False
+              and boundary["target_outcomes_used"] is False
+              and boundary["reserved_evaluation_frames_opened"] is False
+              and boundary["replacement_allowed"] is False
+              and receipt["confirmation_payloads_opened"] is False
+              and receipt["target_outcomes_used"] is False
+              and receipt["replacement_allowed"] is False
+          ):
+              raise SystemExit("closed information boundary changed")
+
+          policy = json.loads(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_prob4d_robot_metric_gauge_v1.json"
+              ).read_text()
+          )
+          if not (
+              policy["artifact_id"] == os.environ["METRIC_POLICY_ID"]
+              and policy["confirmation_payloads_opened"] is False
+              and policy["future_frames_used"] is False
+              and policy["full_sequence_rendered_depth_used"] is False
+              and policy["human_approval_required"] is False
+              and policy["target_outcomes_used"] is False
+          ):
+              raise SystemExit("public robot-gauge policy changed")
+          PY
+
+      - name: Select the frozen first source camera before metric access
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/production-evidence"
+          EVIDENCE="${evidence}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["EVIDENCE"])
+          admission = json.loads(
+              (root / "admission/calibration-visual-execution-admission.json").read_text()
+          )
+          jobs = sorted(
+              admission["jobs"],
+              key=lambda row: (row["object_id"], row["camera_id"], row["job_id"]),
+          )
+          if len(jobs) != 324:
+              raise SystemExit("admitted camera roster changed")
+          job = jobs[0]
+          output = Path(os.environ["GITHUB_ENV"])
+          with output.open("a", encoding="utf-8") as stream:
+              stream.write(f"SMOKE_OBJECT_ID={job['object_id']}\n")
+              stream.write(f"SMOKE_CAMERA_ID={job['camera_id']}\n")
+              stream.write(f"SMOKE_JOB_ID={job['job_id']}\n")
+          PY
+
+      - name: Materialize released robot geometry for the causal prefix
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/production-evidence"
+          processed="$(realpath -e "${PROCESSED_ROOT}")"
+          test "${processed}" = "${PROCESSED_ROOT}"
+          output="${METRIC_OUTPUT_ROOT}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}/${SMOKE_JOB_ID}"
+          test ! -e "${output}"
+          mkdir -p "$(dirname "${output}")"
+          python scripts/science/materialize_deform360_robot_metric_prefix.py \
+            --prepared-source-inventory "${evidence}/admission/prepared-source-inventory.json" \
+            --processed-root "${processed}" \
+            --object-id "${SMOKE_OBJECT_ID}" \
+            --camera-id "${SMOKE_CAMERA_ID}" \
+            --processing-revision "${PROCESSING_REVISION}" \
+            --target-height 320 \
+            --target-width 640 \
+            --output-dir "${output}" \
+            > "${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/materialization.json"
+          echo "METRIC_SMOKE_OUTPUT=${output}" >> "${GITHUB_ENV}"
+
+      - name: Publish compact source-only support evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/compact"
+          mkdir -p "${compact}"
+          cp "${METRIC_SMOKE_OUTPUT}/metric-prefix.json" "${compact}/"
+          cp "${METRIC_SMOKE_OUTPUT}/metric-calibration.json" "${compact}/"
+          cp "${METRIC_SMOKE_OUTPUT}/SHA256SUMS" "${compact}/metric-SHA256SUMS"
+          METRIC_SMOKE_OUTPUT="${METRIC_SMOKE_OUTPUT}" COMPACT="${compact}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from bayesian_phystwin._portable_contracts import content_id
+
+          source = Path(os.environ["METRIC_SMOKE_OUTPUT"])
+          compact = Path(os.environ["COMPACT"])
+          metric = json.loads((source / "metric-prefix.json").read_text())
+          identity = {
+              "schema": "bayesian-phystwin.deform360-robot-metric-prefix-smoke-result",
+              "schema_version": 1,
+              "status": "metric-geometry-supported",
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "visual_production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "visual_production_revision": os.environ["PRODUCTION_REVISION"],
+              "metric_policy_id": os.environ["METRIC_POLICY_ID"],
+              "metric_artifact_id": metric["artifact_id"],
+              "job_id": os.environ["SMOKE_JOB_ID"],
+              "object_id": os.environ["SMOKE_OBJECT_ID"],
+              "camera_id": os.environ["SMOKE_CAMERA_ID"],
+              "projected_point_count": metric["projected_point_count"],
+              "causal_frame_range_half_open": metric[
+                  "causal_frame_range_half_open"
+              ],
+              "information_boundary": {
+                  "calibration_robot_state_opened": True,
+                  "calibration_tactile_payloads_opened": False,
+                  "confirmation_payloads_opened": False,
+                  "full_sequence_rendered_depth_used": False,
+                  "future_frames_used": False,
+                  "human_approval_required": False,
+                  "target_outcomes_used": False,
+              },
+              "claim_boundary": (
+                  "One fixed public calibration-camera geometry-support smoke; "
+                  "no visual-overlap, transfer, confirmation, benefit, or SOTA claim."
+              ),
+          }
+          result = {**identity, "result_id": content_id(identity)}
+          (compact / "smoke-result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=${GITHUB_SHA}"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "visual_production_run_id=${PRODUCTION_RUN_ID}"
+            echo "visual_production_result_id=${PRODUCTION_RESULT_ID}"
+            echo "calibration_robot_state_opened=true"
+            echo "calibration_tactile_payloads_opened=false"
+            echo "confirmation_payloads_opened=false"
+            echo "full_sequence_rendered_depth_used=false"
+            echo "future_frames_used=false"
+            echo "human_approval_required=false"
+            echo "target_outcomes_used=false"
+          } > "${compact}/environment.txt"
+          (
+            cd "${compact}"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\0' \
+              | sort -z | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact public source-only smoke evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-robot-metric-prefix-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deform360-public-robot-gauge-smoke/compact
+          if-no-files-found: error
+          retention-days: 90

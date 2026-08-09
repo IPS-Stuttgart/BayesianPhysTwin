@@ -79,7 +79,7 @@ python scripts/science/materialize_deform360_prob4d_calibration_samples.py \
   --metric-root /durable/deform360-metric-prefix \
   --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
   --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
-  --metric-prior-policy protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json \
+  --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
   --prob4d-checkout /path/to/exact/prob4d \
   --prob4d-revision 25d90ef7f78ba4307f4555cb636d666004e1bf66 \
   --processing-revision d8522a4403b766aeb387510c04e89032a56fdf35 \
@@ -103,6 +103,11 @@ python scripts/science/materialize_deform360_robot_metric_prefix.py \
   --target-width 640 \
   --output-dir /durable/metric-prefix/OBJECT_ID/CAMERA_ID
 ```
+
+This path is governed by
+`protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json`.
+The older metric-frame-prior lock names a different reconstruction input and is
+not silently reinterpreted as robot/taxel evidence.
 
 ## Claim boundary
 
