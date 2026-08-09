@@ -90,3 +90,28 @@ def test_manifest_compatibility_line_tracks_project_version() -> None:
 
     with pytest.raises(tool.PublicApiError, match="outside the manifest"):
         tool.validate_public_api(manifest, version="0.5.0")
+
+
+def test_project_version_parser_is_python_3_10_compatible(tmp_path: Path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        "[build-system]\n"
+        'requires = ["setuptools"]\n\n'
+        "[project]\n"
+        'name = "example"\n'
+        'version = "0.4.7"  # exact compatibility line\n\n'
+        "[project.urls]\n"
+        'Repository = "https://example.invalid"\n',
+        encoding="utf-8",
+    )
+
+    assert tool.project_version(pyproject) == "0.4.7"
+
+    pyproject.write_text(
+        "[project]\n"
+        'version = "0.4.7"\n'
+        'version = "0.4.8"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(tool.PublicApiError, match="one literal version"):
+        tool.project_version(pyproject)
