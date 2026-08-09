@@ -6,10 +6,9 @@ digital twins.
 Bayesian-PhysTwin treats learned tracks, depth points, masks, flow, and related
 4-D perception outputs as noisy pseudo-measurements. It combines them with a
 PhysTwin physical prior while keeping observation reliability, structured
-covariance, physical-parameter uncertainty, and simulator discrepancy
-explicit. When an update is not identifiable or fails a prospective guard, the
-library retains the physical baseline instead of silently applying an unsafe
-correction.
+covariance, physical-parameter uncertainty, and simulator discrepancy explicit.
+When an update is not identifiable or fails a prospective guard, the library
+retains the physical baseline instead of silently applying an unsafe correction.
 
 ## Scientific scope
 
@@ -19,7 +18,7 @@ This repository owns:
   provenance contracts;
 - reliability-aware and structured robust likelihoods;
 - recursive, gauge-aware, and prior-aware Bayesian updates;
-- guarded predictive-discrepancy and fallback logic;
+- guarded predictive-discrepancy and fallback logic; and
 - adapters and evaluation utilities for official PhysTwin artifacts.
 
 A predictive readout-discrepancy belief is not automatically a corrected latent
@@ -32,13 +31,29 @@ On the official ordered 22-case PhysTwin cohort, the frozen Bayesian anchor
 improves equal-case Chamfer distance by **12.09%** and track error by **12.78%**
 relative to re-evaluated released `inference.pkl` trajectories. The result is
 better than released PhysTwin under that protocol, but it is not overall state
-of the art against later published methods. A simple last-residual comparator
-is also marginally better on deterministic track error, and raw posterior
-covariance is not calibrated.
+of the art against later published methods.
 
-See the [full-22 evidence report](docs/phystwin_sota_22_v1.md) for the frozen
-cohort, uncertainty intervals, render metrics, provenance, and permitted claim
-boundary.
+The simple last-residual method is the principal matched deterministic
+comparator. It is nearly tied in Chamfer distance (`0.010185 m` versus
+`0.010180 m`) and marginally better in track error (`0.019156 m` versus
+`0.019205 m`). Raw posterior covariance is also severely undercalibrated:
+operational mean 3-D NEES is `1355.05`, nominal-90% ellipsoid coverage is
+`38.31%`, and the archived conformal bounds carry median case-mean upper-bound
+widths of approximately `38.87/42.68 mm` for CD/track.
+
+The [release-facing claim contract](docs/phystwin_release_claim_v1.md) keeps the
+point result, matched comparator, raw calibration failure, conformal
+risk–coverage–width result, and independent-validation boundary together. The
+[full-22 evidence report](docs/phystwin_sota_22_v1.md) remains the frozen source
+for the cohort, intervals, render metrics, provenance, and permitted
+within-contract claim.
+
+Independent real-provider transfer is not yet established. A retrospective
+19-interaction MotionCrafter test was negative, and the subsequent official-Hub
+Deform360 route stopped at its frozen source-support prerequisite: `313/324`
+streams were supported, `11` support negatives were retained, and `0` technical
+failures occurred. Source covariance was not fitted, the leave-one-object-out
+gate was not evaluated, and twelve confirmation objects remained closed.
 
 ## Architecture
 
@@ -98,8 +113,8 @@ graph, vision, data, or experiment-only dependencies.
 
 ## Research commands
 
-Additional research functionality is organized under grouped `bpt` routes.
-Use the built-in registries to discover current experiments, diagnostics, and
+Additional research functionality is organized under grouped `bpt` routes. Use
+the built-in registries to discover current experiments, diagnostics, and
 archived analysis protocols together with their lifecycle status and optional
 dependency requirements.
 
@@ -174,6 +189,9 @@ state-update and exact-fallback boundaries.
 
 ## Documentation map
 
+- [PhysTwin release-facing claim contract](docs/phystwin_release_claim_v1.md):
+  mandatory point-result, comparator, calibration, conformal-width, and
+  independent-validation wording for software releases.
 - [Command-line interface](docs/command_line.md): grouped routes, lifecycle
   registry, and contribution policy.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
