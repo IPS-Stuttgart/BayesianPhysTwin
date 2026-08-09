@@ -1,6 +1,329 @@
 from __future__ import annotations
 
-import base64
-import bz2
+import json
+import re
+import shutil
+from pathlib import Path
 
-exec(compile(bz2.decompress(base64.b64decode('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')), 'bpt_observation_contract_apply.py', 'exec'))
+ROOT = Path.cwd()
+SOURCE = ROOT / "_contract_source"
+PROB4D_REVISION = "b2953319e9b7afea04013c214c502b38c5a83489"
+BUNDLE_SHA256 = "a62c693a14c227daa1f4c8db850e691a1d0081df0c853cf0174c33d0b8504ce9"
+
+
+def read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def write(path: str, content: str) -> None:
+    destination = ROOT / path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(content, encoding="utf-8")
+
+
+def replace_once(path: str, old: str, new: str) -> None:
+    text = read(path)
+    if text.count(old) != 1:
+        raise RuntimeError(f"{path}: expected one exact replacement target")
+    write(path, text.replace(old, new))
+
+
+def insert_test_after(suite: list[str], anchor: str, value: str) -> None:
+    if value in suite:
+        return
+    try:
+        position = suite.index(anchor)
+    except ValueError as error:
+        raise RuntimeError(f"test-suite anchor {anchor!r} is missing") from error
+    suite.insert(position + 1, value)
+
+
+if not SOURCE.is_dir() or not (SOURCE / ".git").exists():
+    raise RuntimeError("exact Prob4D contract source checkout is missing")
+
+# Copy the neutral helper and byte-identical data-only corpus.
+shutil.copy2(
+    SOURCE / "src/prob4d/observation_contract_bundle.py",
+    ROOT / "src/bayesian_phystwin/observation_contract_bundle.py",
+)
+destination_bundle = ROOT / "src/bayesian_phystwin/contract_data/observation_belief_v1"
+if destination_bundle.exists():
+    shutil.rmtree(destination_bundle)
+shutil.copytree(
+    SOURCE / "src/prob4d/contract_data/observation_belief_v1",
+    destination_bundle,
+)
+shutil.copy2(
+    SOURCE / "docs/observation-contract-conformance.md",
+    ROOT / "docs/observation-contract-conformance.md",
+)
+
+# Keep the estimator implementation independent, but make the serialized loader
+# enforce the normative closed descriptor/member and exact-dtype rules.
+observation_path = "src/bayesian_phystwin/observation_belief.py"
+observation_text = read(observation_path)
+constant_anchor = (
+    'OBSERVATION_BELIEF_SCHEMA = "phys4d.observation_belief"\n'
+    "OBSERVATION_BELIEF_VERSION = 1\n"
+)
+constant_replacement = constant_anchor + '''
+
+_OBSERVATION_BELIEF_SERIALIZED_DESCRIPTOR_FIELDS = frozenset(
+    {
+        "schema_name",
+        "schema_version",
+        "case_id",
+        "stream_id",
+        "causal_frame_stop",
+        "view_names",
+        "window_names",
+        "factor_names",
+        "source_repository",
+        "source_revision",
+        "source_artifact_sha256",
+        "metadata",
+        "artifact_id",
+    }
+)
+_OBSERVATION_BELIEF_ARRAY_DTYPES = {
+    "declared_frame_ids": np.dtype(np.int64),
+    "mean_xyz_m": np.dtype(np.float64),
+    "frame_ids": np.dtype(np.int64),
+    "entity_ids": np.dtype(np.int64),
+    "view_indices": np.dtype(np.int64),
+    "window_indices": np.dtype(np.int64),
+    "correlation_group_ids": np.dtype(np.int64),
+    "factor_group_ids": np.dtype(np.int64),
+    "prior_reliability": np.dtype(np.float64),
+    "association_probability": np.dtype(np.float64),
+    "local_covariance_m2": np.dtype(np.float64),
+    "low_rank_factor_m": np.dtype(np.float64),
+    "group_ids": np.dtype(np.int64),
+    "group_prior_nominal_probability": np.dtype(np.float64),
+    "group_composite_weight": np.dtype(np.float64),
+}
+'''
+if observation_text.count(constant_anchor) != 1:
+    raise RuntimeError(f"{observation_path}: contract constant anchor changed")
+observation_text = observation_text.replace(constant_anchor, constant_replacement)
+
+new_loader = '''def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
+    """Load and fully revalidate an ``ObservationBeliefV1`` artifact."""
+
+    with np.load(path, allow_pickle=False) as archive:
+        required_members = {
+            "descriptor_json",
+            *_OBSERVATION_BELIEF_ARRAY_DTYPES,
+        }
+        members = set(archive.files)
+        missing = required_members - members
+        extra = members - required_members
+        if missing or extra:
+            raise ValueError(
+                "observation artifact members changed; "
+                f"missing={sorted(missing)}, extra={sorted(extra)}"
+            )
+
+        descriptor_member = np.asarray(archive["descriptor_json"])
+        if descriptor_member.shape != ():
+            raise ValueError("descriptor_json must be a scalar array")
+        raw_descriptor = descriptor_member.item()
+        if isinstance(raw_descriptor, bytes):
+            try:
+                raw_descriptor = raw_descriptor.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise ValueError("descriptor_json is not valid UTF-8") from error
+        if type(raw_descriptor) is not str:
+            raise ValueError("descriptor_json must contain a string")
+        try:
+            descriptor = json.loads(raw_descriptor)
+        except (TypeError, ValueError) as error:
+            raise ValueError("descriptor_json is not valid JSON") from error
+        if not isinstance(descriptor, dict):
+            raise ValueError("observation descriptor must be a JSON object")
+        if set(descriptor) != _OBSERVATION_BELIEF_SERIALIZED_DESCRIPTOR_FIELDS:
+            raise ValueError("observation descriptor fields changed")
+        if descriptor.get("schema_name") != OBSERVATION_BELIEF_SCHEMA:
+            raise ValueError("unsupported observation-belief schema")
+        version = genuine_integer(
+            descriptor.get("schema_version"),
+            name="observation-belief schema_version",
+            minimum=0,
+        )
+        if version != OBSERVATION_BELIEF_VERSION:
+            raise ValueError("unsupported observation-belief version")
+
+        arrays: dict[str, np.ndarray] = {}
+        for name, expected_dtype in _OBSERVATION_BELIEF_ARRAY_DTYPES.items():
+            values = np.asarray(archive[name])
+            if values.dtype != expected_dtype:
+                raise ValueError(
+                    f"{name} must have exact dtype {expected_dtype.name}"
+                )
+            arrays[name] = values
+
+    belief = ObservationBeliefV1(
+        case_id=descriptor["case_id"],
+        stream_id=descriptor["stream_id"],
+        causal_frame_stop=descriptor["causal_frame_stop"],
+        view_names=tuple(descriptor["view_names"]),
+        window_names=tuple(descriptor["window_names"]),
+        factor_names=tuple(descriptor["factor_names"]),
+        source_repository=descriptor["source_repository"],
+        source_revision=descriptor["source_revision"],
+        source_artifact_sha256=descriptor["source_artifact_sha256"],
+        metadata=descriptor["metadata"],
+        **arrays,
+    )
+    expected = descriptor["artifact_id"]
+    _validate_sha256(expected, name="artifact_id")
+    if belief.artifact_id != expected:
+        raise ValueError("observation artifact digest does not match its payload")
+    return belief'''
+loader_pattern = re.compile(
+    r"def load_observation_belief\(path: str \| Path\) -> ObservationBeliefV1:\n"
+    r".*?\n\n\n__all__ = \[",
+    flags=re.DOTALL,
+)
+observation_text, replacement_count = loader_pattern.subn(
+    lambda _: new_loader + "\n\n\n__all__ = [",
+    observation_text,
+    count=1,
+)
+if replacement_count != 1:
+    raise RuntimeError(f"{observation_path}: current loader target changed")
+write(observation_path, observation_text)
+
+# Package the corpus in wheels and source distributions.
+replace_once(
+    "pyproject.toml",
+    'bayesian_phystwin = ["py.typed"]',
+    '''bayesian_phystwin = [
+    "py.typed",
+    "contract_data/observation_belief_v1/*.json",
+    "contract_data/observation_belief_v1/vectors/*.json",
+]''',
+)
+manifest_path = "MANIFEST.in"
+manifest = read(manifest_path)
+for addition in (
+    "include docs/observation-contract-conformance.md",
+    "recursive-include src/bayesian_phystwin/contract_data/observation_belief_v1 *.json",
+):
+    if addition not in manifest.splitlines():
+        manifest += addition + "\n"
+write(manifest_path, manifest)
+
+# Register the focused conformance test in every relevant stable suite.
+suite_path = ".github/quality/test-suites.json"
+suite_payload = json.loads(read(suite_path))
+for suite_name in ("stable-core-coverage", "core-contracts", "provider-contract"):
+    insert_test_after(
+        suite_payload["suites"][suite_name],
+        "tests/test_observation_belief.py",
+        "tests/test_observation_contract_bundle.py",
+    )
+write(suite_path, json.dumps(suite_payload, indent=2) + "\n")
+
+# Verify the same installed bundle identity across all three wheels.
+golden_path = "scripts/run_three_repository_golden_path.sh"
+golden_text = read(golden_path)
+golden_anchor = '"${TEST_VENV}/bin/python" -m pip check\n'
+python_check = (
+    'from importlib import import_module; '
+    f'expected="{BUNDLE_SHA256}"; '
+    'names=("prob4d.observation_contract_bundle",'
+    '"bayesian_phystwin.observation_contract_bundle",'
+    '"causal4d.observation_contract_bundle"); '
+    'observed={name:import_module(name).observation_contract_bundle_manifest()'
+    '["bundle_sha256"] for name in names}; '
+    'assert set(observed.values())=={expected}, observed; '
+    'print(f"verified shared observation-contract bundle {expected}")'
+)
+golden_addition = (
+    golden_anchor
+    + '\nenv -u PYTHONPATH PYTHONNOUSERSITE=1 \\\n'
+    + '  "${TEST_VENV}/bin/python" -I -c '
+    + repr(python_check)
+    + "\n"
+)
+if golden_text.count(golden_anchor) != 1:
+    raise RuntimeError(f"{golden_path}: pip-check anchor changed")
+write(golden_path, golden_text.replace(golden_anchor, golden_addition))
+
+# Adapt the canonical producer test to this independent consumer implementation.
+source_test = (SOURCE / "tests/test_observation_contract_bundle.py").read_text(
+    encoding="utf-8"
+)
+source_test = re.sub(
+    r"from prob4d\.observation_contract import \(.*?\)\n"
+    r"from prob4d\.observation_validation import .*?\n",
+    '''from bayesian_phystwin.observation_belief import (
+    ObservationBeliefV1,
+    array_sha256,
+    load_observation_belief,
+    save_observation_belief,
+)
+''',
+    source_test,
+    count=1,
+    flags=re.DOTALL,
+)
+source_test = source_test.replace(
+    "from prob4d.observation_contract_bundle import (",
+    "from bayesian_phystwin.observation_contract_bundle import (",
+)
+source_test = source_test.replace(
+    "ObservationBeliefExportV1", "ObservationBeliefV1"
+)
+source_test = source_test.replace(
+    "save_observation_belief_export", "save_observation_belief"
+)
+source_test = source_test.replace(
+    "load_observation_belief_export", "load_observation_belief"
+)
+source_test = source_test.replace("belief.arrays().items()", "belief._arrays().items()")
+source_test += '''
+
+
+def test_bundle_report_and_unknown_names_fail_closed(capsys) -> None:
+    from bayesian_phystwin.observation_contract_bundle import main
+
+    assert main([]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["bundle_sha256"] == OBSERVATION_BELIEF_CONTRACT_BUNDLE_SHA256
+    with pytest.raises(KeyError):
+        observation_contract_vector("unknown")
+    with pytest.raises(KeyError):
+        invalid_observation_contract_vector("unknown")
+
+
+def test_loader_rejects_non_scalar_descriptor(tmp_path: Path) -> None:
+    vector = observation_contract_vector("minimal")
+    payload = dict(vector.descriptor)
+    payload["artifact_id"] = vector.expected_artifact_id
+    path = tmp_path / "descriptor-array.npz"
+    np.savez_compressed(
+        path,
+        descriptor_json=np.asarray(
+            [json.dumps(payload, sort_keys=True, separators=(",", ":"))]
+        ),
+        **vector.arrays,
+    )
+    with pytest.raises(ValueError, match="scalar"):
+        load_observation_belief(path)
+'''
+write("tests/test_observation_contract_bundle.py", source_test)
+
+# Remove the temporary nested checkout from the product tree.
+shutil.rmtree(SOURCE)
+print(
+    json.dumps(
+        {
+            "prob4d_revision": PROB4D_REVISION,
+            "bundle_sha256": BUNDLE_SHA256,
+            "status": "prepared",
+        },
+        sort_keys=True,
+    )
+)
