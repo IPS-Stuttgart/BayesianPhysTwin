@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-significant-bugs-20260809
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
