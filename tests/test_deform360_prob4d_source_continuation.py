@@ -80,9 +80,7 @@ def _batch(*, technical: bool = False, under_supported: bool = False) -> dict[st
         }
     )
     supported_count = sum(row["status"] == "supported" for row in jobs)
-    support_negative_count = sum(
-        row["status"] == "support-negative" for row in jobs
-    )
+    support_negative_count = sum(row["status"] == "support-negative" for row in jobs)
     technical_count = sum(row["status"] == "technical-failure" for row in jobs)
     return {
         "object_count": 2,
@@ -92,9 +90,7 @@ def _batch(*, technical: bool = False, under_supported: bool = False) -> dict[st
         "technical_failure_stream_count": technical_count,
         "supported_object_count": 2,
         "status": (
-            "technical-failures-retained"
-            if technical
-            else "support-negatives-retained"
+            "technical-failures-retained" if technical else "support-negatives-retained"
         ),
         "jobs": jobs,
     }
@@ -156,7 +152,9 @@ def test_supported_stream_reconstruction_excludes_negative_rows(
             "byte_count": 1,
         }
 
-    def metric_stream_records(**arguments: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    def metric_stream_records(
+        **arguments: Any,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         relative = Path(arguments["metric_directory"]).relative_to(
             arguments["metric_root"]
         )
@@ -220,8 +218,7 @@ def test_continuation_launcher_is_one_shot_and_has_no_manual_dispatch() -> None:
         "push": {
             "branches": ["main"],
             "paths": [
-                ".github/workflows/"
-                "launch-deform360-prob4d-source-continuation-once.yml"
+                ".github/workflows/launch-deform360-prob4d-source-continuation-once.yml"
             ],
         }
     }
