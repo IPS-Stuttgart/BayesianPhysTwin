@@ -52,6 +52,10 @@ The immutable `Causal4DTreeBlockQueryCovarianceV1` binds:
 - the accepted or rejected inference status and reason; and
 - the exact factorized linear-query covariance.
 
+Its `result_id` is computed from the complete descriptor, including the
+covariance digest and declared covariance semantics. Changing the update, query,
+inference status, or numerical covariance therefore changes the result identity.
+
 A rejected strict update remains queryable because its result carries the exact
 physical and nuisance prior fallback. The result does not relabel that fallback
 as accepted evidence.
