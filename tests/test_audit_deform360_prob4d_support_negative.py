@@ -240,9 +240,7 @@ def test_audit_accepts_the_early_terminal_support_negative(
     source, _metric, _pipeline = _fixture(tmp_path, monkeypatch)
     unrelated = tmp_path / "unrelated"
     unrelated.mkdir()
-    (tmp_path / "unrelated-link").symlink_to(
-        unrelated, target_is_directory=True
-    )
+    (tmp_path / "unrelated-link").symlink_to(unrelated, target_is_directory=True)
 
     receipt = MODULE.audit_support_negative(
         source,
