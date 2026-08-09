@@ -1,11 +1,6 @@
 name: Temporary fix PR 352 CodeQL checkout boundary
 
 on:
-  push:
-    branches:
-      - agent/harden-deform360-runner-bootstrap
-    paths:
-      - ".github/workflows/_temporary_fix_pr352_codeql.yml"
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
@@ -37,13 +32,15 @@ jobs:
           clean: true
 
       - name: Verify exact branch tip
+        env:
+          REVIEWED_HEAD: ${{ github.event.pull_request.head.sha }}
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse HEAD)" = "${REVIEWED_HEAD}"
           test -z "$(git status --porcelain --untracked-files=all)"
           git fetch --no-tags origin agent/harden-deform360-runner-bootstrap
-          test "$(git rev-parse FETCH_HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse FETCH_HEAD)" = "${REVIEWED_HEAD}"
 
       - name: Derive the reviewed checkout from the event context
         shell: bash
@@ -51,6 +48,11 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
+
+          input_expression = "$" + "{{ inputs.source_sha }}"
+          event_expression = (
+              "$" + "{{ github.event.pull_request.head.sha || github.sha }}"
+          )
 
           contracts_path = Path(
               ".github/workflows/deform360-runner-local-contracts.yml"
@@ -63,16 +65,11 @@ jobs:
                   required: true
                   type: string
           """
-          new_inputs = """  workflow_call:
-          """
           if old_inputs not in contracts:
               raise SystemExit("workflow_call input block changed unexpectedly")
-          contracts = contracts.replace(old_inputs, new_inputs, 1)
-          old_ref = "          ref: ${{ inputs.source_sha }}\n"
-          new_ref = (
-              "          ref: ${{ "
-              "github.event.pull_request.head.sha || github.sha }}\n"
-          )
+          contracts = contracts.replace(old_inputs, "  workflow_call:\n", 1)
+          old_ref = f"          ref: {input_expression}\n"
+          new_ref = f"          ref: {event_expression}\n"
           if old_ref not in contracts:
               raise SystemExit("reusable checkout ref changed unexpectedly")
           contracts = contracts.replace(old_ref, new_ref, 1)
@@ -82,9 +79,7 @@ jobs:
               ".github/workflows/deform360-runner-local-science.yml"
           )
           science = science_path.read_text(encoding="utf-8")
-          old_with = """    with:
-                source_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          """
+          old_with = f"    with:\n      source_sha: {event_expression}\n"
           if old_with not in science:
               raise SystemExit("caller source_sha block changed unexpectedly")
           science = science.replace(old_with, "", 1)
@@ -94,22 +89,23 @@ jobs:
               "tests/test_deform360_runner_local_science_workflow.py"
           )
           tests = test_path.read_text(encoding="utf-8")
-          old_assertions = """    assert (
-                  \"source_sha: ${{ github.event.pull_request.head.sha || github.sha }}\"
-                  in contracts
-              )
-              assert \"workflow_call:\" in reusable
-              assert \"source_sha:\" in reusable
-          """
-          new_assertions = """    assert \"with:\" not in contracts
-              assert \"workflow_call:\" in reusable
-              assert \"inputs:\" not in reusable
-              assert (
-                  \"ref: ${{ github.event.pull_request.head.sha || github.sha }}\"
-                  in reusable
-              )
-              assert \"inputs.source_sha\" not in reusable
-          """
+          old_assertions = (
+              "    assert (\n"
+              f"        \"source_sha: {event_expression}\"\n"
+              "        in contracts\n"
+              "    )\n"
+              "    assert \"workflow_call:\" in reusable\n"
+              "    assert \"source_sha:\" in reusable\n"
+          )
+          new_assertions = (
+              "    assert \"with:\" not in contracts\n"
+              "    assert \"workflow_call:\" in reusable\n"
+              "    assert \"inputs:\" not in reusable\n"
+              "    assert (\n"
+              f"        \"ref: {event_expression}\" in reusable\n"
+              "    )\n"
+              "    assert \"inputs.source_sha\" not in reusable\n"
+          )
           if old_assertions not in tests:
               raise SystemExit("workflow source_sha assertions changed unexpectedly")
           tests = tests.replace(old_assertions, new_assertions, 1)
@@ -153,6 +149,8 @@ jobs:
           test "$actual" = "$expected"
 
       - name: Publish the exact reviewed product
+        env:
+          REVIEWED_HEAD: ${{ github.event.pull_request.head.sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -162,5 +160,5 @@ jobs:
           git add -A
           git commit -m "Bind runner bootstrap checkout to event SHA"
           git fetch --no-tags origin agent/harden-deform360-runner-bootstrap
-          test "$(git rev-parse FETCH_HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse FETCH_HEAD)" = "${REVIEWED_HEAD}"
           git push origin HEAD:refs/heads/agent/harden-deform360-runner-bootstrap
