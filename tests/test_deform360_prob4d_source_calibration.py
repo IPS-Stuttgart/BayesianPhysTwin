@@ -3,13 +3,15 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import sys
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 
 import numpy as np
 import pytest
 
+from bayesian_phystwin import deform360_prob4d_source_calibration as calibration_api
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_prob4d_source_calibration import (
     POINT_CLUSTER_SEMANTICS,
@@ -20,6 +22,7 @@ from bayesian_phystwin.deform360_prob4d_source_calibration import (
     fit_and_publish_deform360_prob4d_source_calibration,
     fit_object_balanced_gauge_inflation,
     load_deform360_prob4d_calibration_samples,
+    load_pinned_prob4d_api,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -447,6 +450,75 @@ def test_information_boundary_must_be_an_object(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="information_boundary must be a JSON object"):
         _load(tmp_path, mutate_manifest=mutate)
+
+
+def test_pinned_prob4d_api_loads_the_complete_materializer_surface(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checkout = tmp_path / "Prob4D"
+    package_root = checkout / "src" / "prob4d"
+    package_root.mkdir(parents=True)
+    revision = "1" * 40
+
+    def fake_run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        assert kwargs["cwd"] == checkout.resolve()
+        if command == ["git", "rev-parse", "HEAD"]:
+            return SimpleNamespace(stdout=f"{revision}\n")
+        if command == ["git", "status", "--porcelain"]:
+            return SimpleNamespace(stdout="")
+        raise AssertionError(f"unexpected command: {command}")
+
+    monkeypatch.setattr(calibration_api.subprocess, "run", fake_run)
+    package = ModuleType("prob4d")
+    package.__file__ = str(package_root / "__init__.py")
+    package.__path__ = [str(package_root)]
+    monkeypatch.setitem(sys.modules, "prob4d", package)
+
+    expected: dict[str, object] = {}
+    modules = {
+        "alignment": (
+            "align_windows",
+            "alignment_covariance_context",
+            "estimate_sim3_robust",
+        ),
+        "calibration": (
+            "GaugeCovarianceCalibrationV1",
+            "PointUncertaintyCalibrationV1",
+            "fit_group_balanced_point_uncertainty_calibration",
+            "load_gauge_covariance_calibration",
+            "load_point_uncertainty_calibration",
+            "save_gauge_covariance_calibration",
+            "save_point_uncertainty_calibration",
+        ),
+        "calibration_compatibility": ("load_prediction_calibration_target",),
+        "data": ("PredictionWindow",),
+        "motioncrafter_integrity": ("verify_motioncrafter_prediction_manifest",),
+        "provider_v2": (
+            "MetricGaugeAnchor",
+            "load_metric_gauge_anchor",
+            "save_metric_gauge_anchor",
+        ),
+        "sim3": ("Sim3",),
+        "uncertainty": (
+            "DepthDisagreementModel",
+            "StructuredCovariance",
+            "accumulate_disagreement",
+        ),
+    }
+    for module_name, names in modules.items():
+        module = ModuleType(f"prob4d.{module_name}")
+        for name in names:
+            value = object()
+            setattr(module, name, value)
+            expected[name] = value
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+
+    api = load_pinned_prob4d_api(checkout, expected_revision=revision)
+
+    assert api.module is package
+    for name, value in expected.items():
+        assert getattr(api, name) is value
 
 
 def test_prediction_manifest_hash_is_verified(tmp_path: Path) -> None:
