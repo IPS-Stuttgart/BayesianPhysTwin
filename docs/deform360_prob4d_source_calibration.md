@@ -100,7 +100,7 @@ python scripts/science/fit_deform360_prob4d_source_calibration.py validate \
   --samples /path/to/source-calibration-samples.json \
   --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
   --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
-  --metric-prior-policy protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json \
+  --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
   --prediction-root /path/to/protected/calibration-predictions
 ```
 
@@ -111,7 +111,7 @@ python scripts/science/fit_deform360_prob4d_source_calibration.py fit \
   --samples /path/to/source-calibration-samples.json \
   --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
   --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
-  --metric-prior-policy protocols/locks/deform360_official_hub_visuotactile_v1_metric_frame_prior_policy.json \
+  --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
   --prediction-root /path/to/protected/calibration-predictions \
   --prob4d-checkout /path/to/exact/prob4d-checkout \
   --output-dir /path/to/new/source-calibration-result
