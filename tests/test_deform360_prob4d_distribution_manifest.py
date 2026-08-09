@@ -20,6 +20,7 @@ SOURCE_GATE_SDIST_MEMBERS = frozenset(
         "scripts/science/materialize_deform360_robot_metric_prefix.py",
         "scripts/science/materialize_deform360_prob4d_metric_batch.py",
         "scripts/science/evaluate_deform360_prob4d_source_gate.py",
+        "scripts/science/audit_deform360_prob4d_support_stop.py",
     }
 )
 
