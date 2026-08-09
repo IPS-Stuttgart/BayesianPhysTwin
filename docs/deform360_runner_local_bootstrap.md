@@ -4,9 +4,12 @@
 
 `deform360-runner-local-science.yml` is a storage-aware preparation and
 reproduction bootstrap for the sole Deform360 self-hosted runner. This bootstrap
-is not a claim-bearing experiment. It does not authorize confirmation access and
-must not be used to replace the registered source-gate, independent-audit,
-observability, or confirmation-opening chain.
+is not a claim-bearing experiment. It does not authorize confirmation access.
+The current official-Hub provider chain already ended at its frozen complete-
+stream source-support prerequisite with `313/324` supported streams and eleven
+retained support negatives; the twelve confirmation objects remain sealed.
+This bootstrap is retrospective preparation and reproduction infrastructure
+only. It cannot reopen, repair, replace, or advance that terminal result.
 
 The workflow is manually dispatchable only from trusted `main`. Pull requests
 call the reusable hosted contract workflow
@@ -86,16 +89,23 @@ missing-file download step, together with Xet disablement. Checkout, runner
 admission, package installation, inventories, local cache inspection,
 preparation, summaries, and artifact upload do not receive the token.
 
-## Downstream evidence chain
+## Historical evidence chain
 
-A successful bootstrap establishes only that frozen calibration source can be
-prepared reproducibly from the protected runner. Claim-bearing work remains in
-the registered chain documented by:
+A successful bootstrap establishes only that the frozen calibration source can
+be prepared reproducibly from the protected runner. The registered chain and
+its terminal source-support result are documented by:
 
 - [prepared-source inventory](deform360_calibration_prepared_inventory.md);
-- [Prob4D source calibration](deform360_prob4d_source_calibration.md);
-- [Prob4D source gate](deform360_prob4d_source_gate.md);
-- [atomic calibration-observability batch](deform360_calibration_observability_batch.md);
-- [confirmation-opening authorization](deform360_confirmation_opening_authorization_v1.md); and
+- [Prob4D source calibration contract](deform360_prob4d_source_calibration.md);
+- [Prob4D source-gate contract](deform360_prob4d_source_gate.md);
+- [atomic calibration-observability contract](deform360_calibration_observability_batch.md);
+- [confirmation-opening authorization contract](deform360_confirmation_opening_authorization_v1.md); and
 - the independent audit and immutable result records linked from the issue and
   paper repositories.
+
+For the current provider version, the source-support result stopped before
+source-calibration fitting, leave-one-object-out source evaluation,
+observability execution, or confirmation-opening authorization. Those later
+contracts are not completed evidence for this provider version. Any new
+Deform360 attempt requires a separately versioned provider or protocol and a new
+pre-outcome freeze; this bootstrap cannot supply a post-outcome rescue path.
