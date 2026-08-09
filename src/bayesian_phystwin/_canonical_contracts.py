@@ -234,7 +234,7 @@ def immutable_array(
 
 
 def integer_array(values: object, *, name: str) -> np.ndarray:
-    """Require an integer-typed array and return an owned canonical int64 copy."""
+    """Require an integer-typed array and return an owned little-endian int64 copy."""
 
     raw = np.asarray(values)
     integer_dtype = np.issubdtype(raw.dtype, np.integer) and not np.issubdtype(
@@ -246,7 +246,7 @@ def integer_array(values: object, *, name: str) -> np.ndarray:
         raw > np.iinfo(np.int64).max
     ):
         raise ValueError(f"{name} contains integers outside int64 range")
-    return np.array(raw, dtype=np.int64, copy=True, order="C")
+    return np.array(raw, dtype=np.dtype("<i8"), copy=True, order="C")
 
 
 def immutable_integer_array(values: object, *, name: str) -> np.ndarray:
@@ -254,7 +254,7 @@ def immutable_integer_array(values: object, *, name: str) -> np.ndarray:
 
     return immutable_array(
         integer_array(values, name=name),
-        dtype=np.dtype(np.int64),
+        dtype=np.dtype("<i8"),
     )
 
 
