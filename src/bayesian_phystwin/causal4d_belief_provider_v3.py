@@ -88,9 +88,7 @@ def infer_dynamic_bayesian_anchor_endpoint(
     """Infer a dynamic robust endpoint from an exclusive causal prefix."""
 
     settings = (
-        DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2
-        if config is None
-        else config
+        DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2 if config is None else config
     )
     if not isinstance(settings, DynamicEndpointModelAverageConfigV2):
         raise TypeError("config must be a DynamicEndpointModelAverageConfigV2")
