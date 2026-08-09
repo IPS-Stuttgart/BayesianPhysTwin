@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
@@ -142,6 +142,36 @@ def _admission_payload(
     }
 
 
+def _bind_claim_bearing_diagnostic_invariants(
+    result: GaugeAwareBeliefResult,
+) -> GaugeAwareBeliefResult:
+    """Record source-prior separation for the strict tree-sparse bridge.
+
+    The tree-sparse solver consumes source-provided reliability and nominal
+    probabilities before residual evaluation.  Its claim-bearing wrapper binds
+    those invariants into the numerical-result identity, matching the established
+    dense gauge-aware diagnostics without changing frozen non-tree paths.
+    """
+
+    if (
+        result.input_lineage.get(
+            "prob4d_claim_bearing_tree_sparse_bridge_version"
+        )
+        != 1
+    ):
+        return result
+    diagnostics = dict(result.diagnostics)
+    for name in (
+        "prior_reliability_uses_innovation",
+        "prior_nominal_probability_uses_innovation",
+    ):
+        current = diagnostics.get(name)
+        if current not in (None, False):
+            raise ValueError(f"claim-bearing result contradicts {name}")
+        diagnostics[name] = False
+    return replace(result, diagnostics=diagnostics)
+
+
 @dataclass(frozen=True, slots=True)
 class ClaimBearingProb4DUpdateV1:
     """Bound result of strict provider admission and prior-aware inference."""
@@ -160,6 +190,11 @@ class ClaimBearingProb4DUpdateV1:
     def __post_init__(self) -> None:
         if not isinstance(self.result, GaugeAwareBeliefResult):
             raise TypeError("result must be a GaugeAwareBeliefResult")
+        object.__setattr__(
+            self,
+            "result",
+            _bind_claim_bearing_diagnostic_invariants(self.result),
+        )
         for name, value in (
             ("observation_artifact_id", self.observation_artifact_id),
             ("linearization_artifact_id", self.linearization_artifact_id),
