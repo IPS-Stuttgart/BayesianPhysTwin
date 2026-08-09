@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 
 import numpy as np
 import pytest
@@ -12,6 +12,11 @@ from bayesian_phystwin._prior_aware_gauge_math import PriorAwareGaugeConfigV1
 from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
     TreeSparseGaugeDesignV1,
 )
+from bayesian_phystwin.tree_block_claim_contract import (
+    validate_tree_block_covariance,
+    validate_tree_block_factorization,
+    validate_tree_block_result,
+)
 from bayesian_phystwin.tree_block_sparse_gauge_belief import (
     TreeBlockGaugeAwareBeliefResultV1,
     update_tree_block_sparse_prior_aware_gauge_belief,
@@ -19,6 +24,9 @@ from bayesian_phystwin.tree_block_sparse_gauge_belief import (
 from bayesian_phystwin.tree_block_sparse_gauge_belief_v2 import (
     TREE_BLOCK_SPARSE_GAUGE_BELIEF_V2_IMPLEMENTATION,
     update_tree_block_sparse_prior_aware_gauge_belief_v2,
+)
+from bayesian_phystwin.tree_block_sparse_prob4d import (
+    ClaimBearingTreeBlockProb4DUpdateV1,
 )
 
 
@@ -113,6 +121,17 @@ def _converged_config() -> PriorAwareGaugeConfigV1:
     )
 
 
+def _unsafe_clone(value: object, **changes: object) -> object:
+    clone = object.__new__(type(value))
+    for field in fields(value):
+        object.__setattr__(
+            clone,
+            field.name,
+            changes.get(field.name, getattr(value, field.name)),
+        )
+    return clone
+
+
 def test_strict_v2_rejects_exhausted_tree_block_fixed_point() -> None:
     batch, tree = _fixture()
     config = _exhausted_config()
@@ -187,6 +206,156 @@ def test_strict_v2_preserves_underlying_rejection() -> None:
     assert result.diagnostics["underlying_inference_admissible"] is False
     np.testing.assert_array_equal(result.state_coefficients, 0.0)
     np.testing.assert_array_equal(result.gauge_delta, 0.0)
+
+
+def test_strict_v2_reconstructs_prior_for_malformed_underlying_rejection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    batch, tree = _fixture()
+    accepted = update_tree_block_sparse_prior_aware_gauge_belief(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+    malformed = replace(
+        accepted,
+        inference_admissible=False,
+        reason="synthetic-underlying-rejection",
+        state_coefficients=np.zeros_like(accepted.state_coefficients),
+        gauge_delta=np.zeros_like(accepted.gauge_delta),
+        shared_bias_coefficients=np.zeros_like(accepted.shared_bias_coefficients),
+        view_bias_coefficients=np.zeros_like(accepted.view_bias_coefficients),
+        anchor_bias_coefficients=np.zeros_like(accepted.anchor_bias_coefficients),
+    )
+    monkeypatch.setattr(
+        strict_module,
+        "update_tree_block_sparse_prior_aware_gauge_belief",
+        lambda *_args, **_kwargs: malformed,
+    )
+
+    result = update_tree_block_sparse_prior_aware_gauge_belief_v2(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+
+    assert not result.inference_admissible
+    assert result.reason == "synthetic-underlying-rejection"
+    assert result.covariance.descriptor() != malformed.covariance.descriptor()
+    np.testing.assert_allclose(
+        result.materialize_posterior_covariance(),
+        np.diag([0.04, 0.09]),
+        rtol=0.0,
+        atol=1.0e-14,
+    )
+
+
+def test_claim_contract_rejects_forged_tree_factors() -> None:
+    batch, tree = _fixture()
+    result = update_tree_block_sparse_prior_aware_gauge_belief_v2(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+    factorization = result.covariance.factorization
+
+    node_factor = np.array(factorization.node_cholesky, copy=True)
+    node_factor[0, 0, 0] = -node_factor[0, 0, 0]
+    forged_factorization = replace(factorization, node_cholesky=node_factor)
+    with pytest.raises(ValueError, match="positive diagonal"):
+        validate_tree_block_factorization(forged_factorization)
+
+    forged_factorization = replace(
+        factorization,
+        node_condition_numbers=factorization.node_condition_numbers * 2.0,
+    )
+    with pytest.raises(ValueError, match="do not match"):
+        validate_tree_block_factorization(forged_factorization)
+
+    forged_scalar = _unsafe_clone(
+        factorization,
+        global_condition_number=True,
+    )
+    with pytest.raises(TypeError, match="real number"):
+        validate_tree_block_factorization(forged_scalar)  # type: ignore[arg-type]
+
+
+def test_claim_contract_rejects_invalid_covariance_and_parameter_layout() -> None:
+    batch, tree = _fixture()
+    result = update_tree_block_sparse_prior_aware_gauge_belief_v2(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+    indefinite = replace(
+        result.covariance,
+        state_prior_covariance=np.asarray([[-0.04]], dtype=np.float64),
+    )
+    with pytest.raises(ValueError, match="positive semidefinite"):
+        validate_tree_block_result(replace(result, covariance=indefinite))
+
+    ambiguous = replace(
+        result,
+        gauge_delta=np.zeros(0, dtype=np.float64),
+        shared_bias_coefficients=np.zeros(1, dtype=np.float64),
+    )
+    with pytest.raises(ValueError, match="gauge dimension"):
+        validate_tree_block_result(ambiguous)
+
+    invalid_bias = _unsafe_clone(result.covariance, bias_count=-1)
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        validate_tree_block_covariance(invalid_bias)  # type: ignore[arg-type]
+
+    empty_state = _unsafe_clone(
+        result.covariance,
+        state_prior_covariance=np.zeros((0, 0), dtype=np.float64),
+        state_mapping=np.zeros((0, 0), dtype=np.float64),
+        bias_count=result.covariance.factorization.global_size,
+    )
+    assert validate_tree_block_covariance(empty_state) is empty_state
+
+
+def test_claim_contract_defensive_types_fail_closed() -> None:
+    with pytest.raises(TypeError, match="TreeBlockFactorizationV1"):
+        validate_tree_block_factorization(object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="TreeBlockPosteriorCovarianceV1"):
+        validate_tree_block_covariance(object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="TreeBlockGaugeAwareBeliefResultV1"):
+        validate_tree_block_result(object())  # type: ignore[arg-type]
+
+    batch, tree = _fixture()
+    result = update_tree_block_sparse_prior_aware_gauge_belief_v2(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+    with pytest.raises(TypeError, match="must be a bool"):
+        validate_tree_block_result(
+            result,
+            require_strict_admission=1,  # type: ignore[arg-type]
+        )
+
+
+def test_claim_wrapper_requires_strict_validated_tree_result() -> None:
+    batch, tree = _fixture()
+    raw = update_tree_block_sparse_prior_aware_gauge_belief(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+    with pytest.raises(ValueError, match="strict tree-block admission"):
+        ClaimBearingTreeBlockProb4DUpdateV1(
+            result=raw,
+            observation_artifact_id="a" * 64,
+            linearization_artifact_id="b" * 64,
+            provider_manifest_id="c" * 64,
+            calibration_artifact_ids={
+                "gauge_artifact_id": "d" * 64,
+                "point_artifact_id": "e" * 64,
+            },
+            runtime_revision_source="source_checkout",
+            runtime_revision_independently_verified=True,
+        )
 
 
 @pytest.mark.parametrize(
