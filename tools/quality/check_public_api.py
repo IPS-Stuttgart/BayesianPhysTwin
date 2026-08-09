@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
-import tomllib
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import ModuleType
@@ -27,6 +27,11 @@ _FIELDS = frozenset(
         "policy",
         "symbols",
     }
+)
+_PROJECT_SECTION = re.compile(r"^\s*\[project\]\s*(?:#.*)?$")
+_SECTION = re.compile(r"^\s*\[[^]]+\]\s*(?:#.*)?$")
+_PROJECT_VERSION = re.compile(
+    r"^\s*version\s*=\s*(['\"])([^'\"]+)\1\s*(?:#.*)?$"
 )
 
 
@@ -95,15 +100,31 @@ def load_manifest(path: str | Path = DEFAULT_MANIFEST) -> dict[str, Any]:
 
 
 def project_version(path: str | Path = DEFAULT_PYPROJECT) -> str:
-    """Read the exact project version from pyproject.toml."""
+    """Read one literal project version without requiring Python 3.11 tomllib."""
 
     source = Path(path)
     try:
-        value = tomllib.loads(source.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as error:
+        lines = source.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as error:
         raise PublicApiError("cannot read project metadata") from error
-    project = _mapping(value.get("project"), name="project metadata")
-    return _literal(project.get("version"), name="project version")
+
+    in_project = False
+    versions: list[str] = []
+    for line in lines:
+        if _PROJECT_SECTION.fullmatch(line):
+            in_project = True
+            continue
+        if _SECTION.fullmatch(line):
+            in_project = False
+            continue
+        if not in_project:
+            continue
+        match = _PROJECT_VERSION.fullmatch(line)
+        if match is not None:
+            versions.append(match.group(2))
+    if len(versions) != 1:
+        raise PublicApiError("project metadata must contain one literal version")
+    return _literal(versions[0], name="project version")
 
 
 def validate_public_api(
@@ -124,6 +145,9 @@ def validate_public_api(
             _sequence(manifest.get("symbols"), name="symbols")
         )
     ]
+    if len(expected) != len(set(expected)):
+        raise PublicApiError("root API snapshot contains duplicate symbols")
+
     imported = module if module is not None else importlib.import_module(package)
     if imported.__name__ != package:
         raise PublicApiError("imported module identity differs from the manifest")
