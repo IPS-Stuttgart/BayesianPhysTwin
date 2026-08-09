@@ -1,0 +1,172 @@
+name: Inventory Deform360 v4 reusable results once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/inventory-deform360-v4-results-once.yml"
+      - "scripts/ci/inventory_deform360_v4_results.py"
+      - "tests/test_inventory_deform360_v4_results.py"
+      - "tests/test_inventory_deform360_v4_results_workflow.py"
+      - "MANIFEST.in"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/inventory-deform360-v4-results-once.yml"
+      - "scripts/ci/inventory_deform360_v4_results.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inventory-deform360-v4-reusable-results-once
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_RUNNER_NAME: workstation2
+  DEFORM360_RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Results-inventory contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate bounded inventory implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          files=(
+            scripts/ci/inventory_deform360_v4_results.py
+            tests/test_inventory_deform360_v4_results.py
+            tests/test_inventory_deform360_v4_results_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy scripts/ci/inventory_deform360_v4_results.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_inventory_deform360_v4_results.py \
+            tests/test_inventory_deform360_v4_results_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          python -m compileall -q scripts/ci/inventory_deform360_v4_results.py
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  inventory:
+    name: Results-only structural inventory / workstation2
+    needs: contracts
+    if: >-
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: self-hosted
+    timeout-minutes: 45
+    steps:
+      - name: Admit sole runner and closed information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test -d "${DEFORM360_RESULTS_ROOT}"
+          test -d "${DEFORM360_OFFICIAL_RAW_ROOT}"
+          test -d "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
+          echo "results_tree_only=true"
+          echo "binary_scientific_payloads_loaded=false"
+          echo "raw_dataset_payloads_opened=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+          echo "confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "replacement_allowed=false"
+      - name: Check out exact protected main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Resolve a system Python without modifying the runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3 || command -v python)"
+          test -x "${python_bin}"
+          echo "INVENTORY_PYTHON=${python_bin}" >> "${GITHUB_ENV}"
+          "${python_bin}" --version
+      - name: Inventory only reusable result-side artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="${RUNNER_TEMP}/deform360-v4-results-inventory-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          test ! -e "${output}"
+          "${INVENTORY_PYTHON}" scripts/ci/inventory_deform360_v4_results.py \
+            --root "${DEFORM360_RESULTS_ROOT}" \
+            --forbidden-root "${DEFORM360_OFFICIAL_RAW_ROOT}" \
+            --forbidden-root "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}" \
+            --output "${output}" \
+            --maximum-depth 10 \
+            --maximum-entries 250000 \
+            --maximum-candidates 50000 \
+            --maximum-json-bytes 8388608
+          echo "INVENTORY_OUTPUT=${output}" >> "${GITHUB_ENV}"
+      - name: Verify and summarize the compact inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${INVENTORY_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["INVENTORY_OUTPUT"])
+          value = json.loads(path.read_text(encoding="utf-8"))
+          assert value["schema"] == (
+              "bayesian-phystwin.deform360-v4-results-inventory"
+          )
+          assert value["schema_version"] == 1
+          boundary = value["information_boundary"]
+          assert boundary == {
+              "results_tree_only": True,
+              "binary_scientific_payloads_loaded": False,
+              "raw_dataset_payloads_opened": False,
+              "adaptive_confirmation_payloads_opened": False,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "replacement_allowed": False,
+          }
+          print(json.dumps({
+              "inventory_id": value["inventory_id"],
+              "counts": value["counts"],
+              "candidate_schema_counts": value["candidate_schema_counts"],
+          }, indent=2, sort_keys=True))
+          PY
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Upload the results-only inventory
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-v4-results-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.INVENTORY_OUTPUT }}
+          if-no-files-found: error
+          retention-days: 30
+
+# One-shot structure-only inventory. No raw or adaptive-confirmation payload access.
