@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 WORKFLOW = Path(".github/workflows/deform360-runner-local-contracts.yml")
 
 
