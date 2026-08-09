@@ -141,8 +141,7 @@ def _metric_batch_module() -> ModuleType:
 
 def _source_gate_module() -> ModuleType:
     return _load_script(
-        _repository_root()
-        / "scripts/science/evaluate_deform360_prob4d_source_gate.py",
+        _repository_root() / "scripts/science/evaluate_deform360_prob4d_source_gate.py",
         module_name="deform360_source_gate_continuation_dependency",
     )
 
@@ -160,7 +159,9 @@ def validate_supported_batch_against_lock(
     minimum_streams = int(cohort["minimum_metric_streams_per_object"])
     expected_strata = {
         str(key): int(value)
-        for key, value in cast(Mapping[str, Any], cohort["exact_stratum_counts"]).items()
+        for key, value in cast(
+            Mapping[str, Any], cohort["exact_stratum_counts"]
+        ).items()
     }
 
     _require(
@@ -172,8 +173,7 @@ def validate_supported_batch_against_lock(
         "metric batch contains a technical failure",
     )
     _require(
-        batch.get("status")
-        in {"all-streams-supported", "support-negatives-retained"},
+        batch.get("status") in {"all-streams-supported", "support-negatives-retained"},
         "metric batch is not eligible for source-gate continuation",
     )
 
@@ -210,9 +210,7 @@ def validate_supported_batch_against_lock(
             {
                 "job_id": sha256_digest(row.get("job_id"), name="job_id"),
                 "object_id": object_id,
-                "camera_id": nonempty_string(
-                    row.get("camera_id"), name="camera_id"
-                ),
+                "camera_id": nonempty_string(row.get("camera_id"), name="camera_id"),
                 "reason": reason,
             }
         )
@@ -222,7 +220,10 @@ def validate_supported_batch_against_lock(
         "metric batch object roster differs from the source gate lock",
     )
     _require(
-        all(supported_by_object[object_id] >= minimum_streams for object_id in object_strata),
+        all(
+            supported_by_object[object_id] >= minimum_streams
+            for object_id in object_strata
+        ),
         "a frozen object has fewer supported streams than preregistered",
     )
     observed_strata = Counter(object_strata.values())
@@ -396,9 +397,7 @@ def publish_continuation(
     production_root_path = _ordinary_directory(
         production_root, name="visual production root"
     )
-    prediction_root_path = _ordinary_directory(
-        prediction_root, name="prediction root"
-    )
+    prediction_root_path = _ordinary_directory(prediction_root, name="prediction root")
     metric_root = _ordinary_directory(
         batch_root / module.METRIC_DIRECTORY_NAME,
         name="source metric root",
@@ -459,12 +458,8 @@ def publish_continuation(
             "object_count": batch["object_count"],
             "admitted_stream_count": batch["admitted_stream_count"],
             "supported_stream_count": batch["supported_stream_count"],
-            "support_negative_stream_count": batch[
-                "support_negative_stream_count"
-            ],
-            "technical_failure_stream_count": batch[
-                "technical_failure_stream_count"
-            ],
+            "support_negative_stream_count": batch["support_negative_stream_count"],
+            "technical_failure_stream_count": batch["technical_failure_stream_count"],
             "minimum_metric_streams_per_object": support[
                 "minimum_metric_streams_per_object"
             ],
@@ -512,7 +507,9 @@ def validate_continuation(directory: str | Path) -> dict[str, Any]:
     identity = dict(receipt)
     declared_id = sha256_digest(identity.pop("result_id"), name="result_id")
     _require(content_id(identity) == declared_id, "continuation result ID changed")
-    exact_revision(receipt.get("implementation_revision"), name="implementation_revision")
+    exact_revision(
+        receipt.get("implementation_revision"), name="implementation_revision"
+    )
     exact_revision(
         receipt.get("source_metric_batch_implementation_revision"),
         name="source metric batch implementation revision",
@@ -600,9 +597,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             metric_prior_policy_path=arguments.metric_prior_policy,
             source_gate_lock_path=arguments.source_gate_lock,
             expected_processing_revision=arguments.processing_revision,
-            expected_metric_batch_result_id=(
-                arguments.expected_metric_batch_result_id
-            ),
+            expected_metric_batch_result_id=(arguments.expected_metric_batch_result_id),
             expected_metric_batch_implementation_revision=(
                 arguments.expected_metric_batch_implementation_revision
             ),
