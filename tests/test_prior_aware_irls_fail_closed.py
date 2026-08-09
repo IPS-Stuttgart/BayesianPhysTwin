@@ -105,8 +105,8 @@ def test_prior_aware_solvers_fail_closed_when_mixture_iterations_are_exhausted()
         assert result.diagnostics["mixture_fixed_point_converged"] is False
         np.testing.assert_array_equal(result.state_coefficients, np.zeros(1))
         np.testing.assert_array_equal(result.gauge_delta, np.zeros(1))
-        np.testing.assert_array_equal(result.robust_weights, np.zeros(count := 4))
-        assert len(result.robust_weights) == count
+        np.testing.assert_array_equal(result.robust_weights, np.zeros(4))
+        assert len(result.robust_weights) == 4
 
     for result in sparse_results:
         np.testing.assert_allclose(result.posterior_covariance, dense.posterior_covariance)
