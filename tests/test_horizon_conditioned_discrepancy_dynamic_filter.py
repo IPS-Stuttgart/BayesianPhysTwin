@@ -50,8 +50,7 @@ def _reference_local_level(
         predicted = predicted_variance[mask]
         inlier_s = predicted + observation_variance
         outlier_s = (
-            predicted
-            + observation_variance * config.outlier_variance_multiplier
+            predicted + observation_variance * config.outlier_variance_multiplier
         )
         squared_norm = np.sum(np.square(innovation), axis=1)
         log_inlier = log_prior - 0.5 * (
