@@ -271,6 +271,7 @@ def validate_execution_protocol(
     )
     method = payload.get("method")
     _require(isinstance(method, Mapping), "execution method is missing")
+    assert isinstance(method, Mapping)
     _require(method.get("field") == SOURCE_FIELD, "correction field changed")
     _require(
         float(method.get("global_effective_scale", -1.0)) == BASE_EFFECTIVE_SCALE,
@@ -293,6 +294,7 @@ def validate_execution_protocol(
     )
     boundary = payload.get("prediction_input_boundary")
     _require(isinstance(boundary, Mapping), "prediction boundary is missing")
+    assert isinstance(boundary, Mapping)
     _require(
         int(boundary.get("authorized_template_mesh_count_per_take", -1)) == 1,
         "template-mesh allowance changed",
@@ -304,6 +306,7 @@ def validate_execution_protocol(
     )
     custody = payload.get("custody")
     _require(isinstance(custody, Mapping), "execution custody is missing")
+    assert isinstance(custody, Mapping)
     _require(
         int(custody.get("required_prediction_count", -1)) == 5, "barrier count changed"
     )
@@ -316,6 +319,7 @@ def validate_execution_protocol(
     )
     files = payload.get("implementation_file_sha256s")
     _require(isinstance(files, Mapping), "implementation file hashes are missing")
+    assert isinstance(files, Mapping)
     _require(
         set(files) == set(IMPLEMENTATION_FILE_PATHS), "implementation inventory changed"
     )
@@ -439,6 +443,7 @@ def validate_input_stage(
     _require(payload.get("held_v8_accessed") is False, "held-v8 was accessed")
     records = payload.get("inputs")
     _require(isinstance(records, list), "staged inputs are missing")
+    assert isinstance(records, list)
     paths = [str(row.get("archive_member", "")) for row in records]
     _require(len(paths) == len(set(paths)), "staged input member is duplicated")
     expected = {f"{take_id}/robot_data.json", expected_template}
@@ -799,6 +804,7 @@ def validate_prediction_barrier(
     _require(
         isinstance(rows, list) and len(rows) == 5, "barrier predictions are incomplete"
     )
+    assert isinstance(rows, list)
     _require(
         tuple(row.get("take_id") for row in rows) == TARGET_TAKE_IDS,
         "barrier prediction order changed",

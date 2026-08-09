@@ -99,9 +99,7 @@ def _valid_digest(value: object) -> bool:
 
 def _valid_git_revision(value: object) -> bool:
     text = str(value)
-    return len(text) in (40, 64) and all(
-        char in "0123456789abcdef" for char in text
-    )
+    return len(text) in (40, 64) and all(char in "0123456789abcdef" for char in text)
 
 
 def build_source_protocol(
@@ -117,14 +115,18 @@ def build_source_protocol(
     """Build the source-only all-action scale protocol."""
 
     expected = source_take_ids()
-    _require(set(archive_inventory) == set(expected), "source archive inventory changed")
+    _require(
+        set(archive_inventory) == set(expected), "source archive inventory changed"
+    )
     archives: dict[str, dict[str, Any]] = {}
     for take_id in expected:
         row = archive_inventory[take_id]
         relative_path = str(row.get("relative_path", ""))
         digest = str(row.get("sha256", ""))
         byte_count = int(row.get("bytes", -1))
-        _require(Path(relative_path).name == f"{take_id}.zip", "source archive path changed")
+        _require(
+            Path(relative_path).name == f"{take_id}.zip", "source archive path changed"
+        )
         _require(_valid_digest(digest), "source archive digest is invalid")
         _require(byte_count > 0, "source archive byte count is invalid")
         archives[take_id] = {
@@ -250,7 +252,9 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Validate a missing-five source protocol and return its fixed inventory."""
 
     _require(payload.get("schema_version") == 1, "source protocol schema changed")
-    _require(payload.get("artifact_kind") == PROTOCOL_KIND, "source protocol kind changed")
+    _require(
+        payload.get("artifact_kind") == PROTOCOL_KIND, "source protocol kind changed"
+    )
     _require(payload.get("protocol_id") == PROTOCOL_ID, "source protocol id changed")
     _require(
         payload.get("protocol_sha256") == protocol_sha256(payload),
@@ -258,6 +262,7 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     )
     cohort = payload.get("source_cohort")
     _require(isinstance(cohort, Mapping), "source cohort is missing")
+    assert isinstance(cohort, Mapping)
     _require(
         cohort.get("takes_by_object")
         == {name: list(takes) for name, takes in SOURCE_TAKES.items()},
@@ -277,6 +282,7 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     )
     method = payload.get("method")
     _require(isinstance(method, Mapping), "source method is missing")
+    assert isinstance(method, Mapping)
     _require(method.get("field") == SOURCE_FIELD, "source correction field changed")
     _require(
         tuple(float(value) for value in method.get("candidate_multipliers", ()))
@@ -294,6 +300,7 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     )
     implementation = payload.get("implementation")
     _require(isinstance(implementation, Mapping), "implementation binding is missing")
+    assert isinstance(implementation, Mapping)
     _require(
         implementation.get("upstream_commit") == UPSTREAM_COMMIT,
         "upstream commit changed",
@@ -311,6 +318,7 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
         _require(_valid_digest(implementation.get(field)), f"{field} is invalid")
     boundary = payload.get("information_boundary")
     _require(isinstance(boundary, Mapping), "information boundary is missing")
+    assert isinstance(boundary, Mapping)
     _require(
         boundary.get("unavailable_official_target_members_read") is False,
         "official target boundary changed",
@@ -318,6 +326,7 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     _require(boundary.get("held_v8_accessed") is False, "held-v8 boundary changed")
     source_gate = payload.get("source_gate")
     _require(isinstance(source_gate, Mapping), "source gate is missing")
+    assert isinstance(source_gate, Mapping)
     _require(
         int(source_gate.get("complete_take_count", -1)) == len(source_take_ids()),
         "source gate take count changed",
@@ -332,11 +341,14 @@ def validate_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]:
     )
     archive = payload.get("archive_inventory")
     _require(isinstance(archive, Mapping), "source archive inventory is missing")
+    assert isinstance(archive, Mapping)
     takes = archive.get("takes")
     _require(isinstance(takes, Mapping), "source archive rows are missing")
+    assert isinstance(takes, Mapping)
     _require(set(takes) == set(source_take_ids()), "source archive inventory changed")
     for take_id, row in takes.items():
         _require(isinstance(row, Mapping), "source archive row is invalid")
+        assert isinstance(row, Mapping)
         _require(_valid_digest(row.get("sha256")), "source archive digest is invalid")
         _require(int(row.get("bytes", -1)) > 0, "source archive size is invalid")
         _require(
@@ -369,10 +381,11 @@ def take_row_from_smoke(
 
     validation = validate_source_protocol(protocol)
     _require(payload.get("artifact_kind") == SMOKE_KIND, "source smoke kind changed")
-    _require(payload.get("future_observation_used") is False, "future observation was used")
     _require(
-        payload.get("missing5_source_protocol_sha256")
-        == validation["protocol_sha256"],
+        payload.get("future_observation_used") is False, "future observation was used"
+    )
+    _require(
+        payload.get("missing5_source_protocol_sha256") == validation["protocol_sha256"],
         "source protocol binding changed",
     )
     _require(
@@ -392,8 +405,11 @@ def take_row_from_smoke(
     )
     take = payload.get("take")
     _require(isinstance(take, Mapping), "source take metadata is missing")
+    assert isinstance(take, Mapping)
     take_id = str(take.get("id", ""))
-    _require(take_id in validation["source_take_ids"], "source take is outside protocol")
+    _require(
+        take_id in validation["source_take_ids"], "source take is outside protocol"
+    )
     expected_archive = validation["archive_inventory"][take_id]
     _require(
         payload.get("source_archive_sha256") == expected_archive["sha256"],
@@ -410,21 +426,29 @@ def take_row_from_smoke(
     _require(payload.get("held_v8_accessed") is False, "held-v8 boundary changed")
     upstream = payload.get("upstream")
     _require(isinstance(upstream, Mapping), "source upstream metadata is missing")
-    _require(upstream.get("git_commit") == UPSTREAM_COMMIT, "source upstream commit changed")
+    assert isinstance(upstream, Mapping)
+    _require(
+        upstream.get("git_commit") == UPSTREAM_COMMIT, "source upstream commit changed"
+    )
     aggregates = payload.get("aggregates")
     _require(isinstance(aggregates, Mapping), "source aggregates are missing")
+    assert isinstance(aggregates, Mapping)
     scores: dict[str, float] = {}
     for multiplier in CANDIDATE_MULTIPLIERS:
         row = aggregates.get(_score_key(multiplier))
         _require(isinstance(row, Mapping), "source multiplier score is missing")
+        assert isinstance(row, Mapping)
         score = float(row.get("mean_CD_UL1_mm", math.nan))
-        _require(math.isfinite(score) and score >= 0.0, "source multiplier score is invalid")
+        _require(
+            math.isfinite(score) and score >= 0.0, "source multiplier score is invalid"
+        )
         scores[f"{multiplier:g}"] = score
     updates = payload.get("updates")
     _require(
         isinstance(updates, Sequence) and not isinstance(updates, (str, bytes)),
         "source update rows are missing",
     )
+    assert isinstance(updates, Sequence) and not isinstance(updates, (str, bytes))
     supported = sum(
         bool(row.get("accepted")) and bool(row.get("action_supported"))
         for row in updates
@@ -441,6 +465,7 @@ def take_row_from_smoke(
 def _row_gain(row: Mapping[str, Any], multiplier: float) -> float:
     scores = row.get("scores_CD_UL1_mm")
     _require(isinstance(scores, Mapping), "source scale scores are missing")
+    assert isinstance(scores, Mapping)
     baseline = float(scores.get(f"{GLOBAL_MULTIPLIER:g}", math.nan))
     candidate = float(scores.get(f"{multiplier:g}", math.nan))
     _require(
@@ -460,7 +485,7 @@ def select_maximin_multiplier(rows: Sequence[Mapping[str, Any]]) -> dict[str, An
     objects = {object_name(take_id) for take_id in take_ids}
     _require(len(objects) == 1, "source actions change physical object")
 
-    candidates = []
+    candidates: list[dict[str, Any]] = []
     for multiplier in CANDIDATE_MULTIPLIERS:
         gains = tuple(_row_gain(row, multiplier) for row in source_rows)
         minimum = float(min(gains))
@@ -474,7 +499,7 @@ def select_maximin_multiplier(rows: Sequence[Mapping[str, Any]]) -> dict[str, An
             }
         )
     eligible = [row for row in candidates if row["minimum_gain"] >= -1e-12]
-    _require(eligible, "global source multiplier is unexpectedly ineligible")
+    _require(bool(eligible), "global source multiplier is unexpectedly ineligible")
     selected = max(
         eligible,
         key=lambda row: (
@@ -502,7 +527,7 @@ def select_cross_validated_multiplier(
 
     source_rows = tuple(rows)
     full = select_maximin_multiplier(source_rows)
-    loo = []
+    loo: list[dict[str, Any]] = []
     for index, held in enumerate(source_rows):
         training = source_rows[:index] + source_rows[index + 1 :]
         selected = select_maximin_multiplier(training)
@@ -524,7 +549,7 @@ def select_cross_validated_multiplier(
     )
     multiplier = float(full["multiplier"]) if promoted else GLOBAL_MULTIPLIER
     gains = tuple(_row_gain(row, multiplier) for row in source_rows)
-    deployed_loo = [
+    deployed_loo: list[dict[str, Any]] = [
         {
             "held_take_id": row["held_take_id"],
             "selected_multiplier": (
@@ -542,7 +567,9 @@ def select_cross_validated_multiplier(
         "multiplier": multiplier,
         "effective_scale": BASE_EFFECTIVE_SCALE * multiplier,
         "selection_reason": (
-            "cross-action-maximin-promoted" if promoted else "global-cross-validation-fallback"
+            "cross-action-maximin-promoted"
+            if promoted
+            else "global-cross-validation-fallback"
         ),
         "promoted": promoted,
         "source_relative_improvements": list(gains),
@@ -601,7 +628,9 @@ def synthetic_control_summary() -> dict[str, Any]:
                 }
             )
         positive_passes += int(select_cross_validated_multiplier(positive)["promoted"])
-        placebo_admissions += int(select_cross_validated_multiplier(placebo)["promoted"])
+        placebo_admissions += int(
+            select_cross_validated_multiplier(placebo)["promoted"]
+        )
     return {
         "positive_control_count": 12,
         "positive_detection_count": positive_passes,

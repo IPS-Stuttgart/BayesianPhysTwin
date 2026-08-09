@@ -59,10 +59,18 @@ seed, or gate.
 6. The result validator recomputes per-frame means, prospective V5-versus-V4
    gates, and the combined official-18 gates from immutable public-13 evidence.
 
-The frozen execution protocol has canonical SHA-256
-`62c8c9c81a5c3dd179864624ffca69769ace4a59c6e49c993aab42080b295064`
-and file SHA-256
-`891815ef468111dbeaeb6dd7e6642a9bb722cc7e919c61a2569b24588f32bfd8`.
+The current-main integration lock was issued before any target archive became
+available. Its canonical SHA-256 is
+`1bc0a3486c0b937000772fc74bfcab2ed4a4dd34f2d90d0199440bc043a59f7a`
+and its file SHA-256 is
+`eaa1eea978783f25255fe3667a0222689c7055b128b4e2cfcf052aa9a7e27cf2`.
+
+This lock supersedes the pre-integration execution digest
+`62c8c9c81a5c3dd179864624ffca69769ace4a59c6e49c993aab42080b295064`.
+The only bound implementation change is explicit static type narrowing after
+the existing runtime validation checks; the numerical prediction, fallback,
+surface sampling, scoring, and gate logic are unchanged. No author target
+archive or target outcome was available or accessed during the amendment.
 
 ## Public parity control
 
@@ -76,6 +84,9 @@ Frame-by-frame scoring over all 97 active frames had exactly 0 mm numerical
 difference for checkpoint, global, V4 0.375, and V5 0.25 arms. This is execution
 parity evidence only; it is not target evidence. The compact record is in
 `results/sota/pokeflex_missing5_execution_v5/public_parity_3dPrintedCylinder_T1.json`.
+That compact record remains bound to the pre-integration execution digest; the
+current-main lock requires a separately recorded parity replay before target
+execution.
 
 ## Claim boundary
 

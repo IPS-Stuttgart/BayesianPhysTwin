@@ -113,8 +113,11 @@ def _source_result_multipliers(
     )
     gate = source_result.get("source_gate")
     _require(isinstance(gate, Mapping), "source result gate is missing")
+    assert isinstance(gate, Mapping)
     _require(gate.get("passed") is True, "source result gate did not pass")
-    _require(int(gate.get("complete_take_count", -1)) == 30, "source result is incomplete")
+    _require(
+        int(gate.get("complete_take_count", -1)) == 30, "source result is incomplete"
+    )
     _require(
         int(gate.get("source_action_regression_count", -1)) == 0,
         "source result has a deployed action regression",
@@ -125,6 +128,7 @@ def _source_result_multipliers(
     )
     rows = source_result.get("objects")
     _require(isinstance(rows, Mapping), "source object rows are missing")
+    assert isinstance(rows, Mapping)
     expected_objects = {take.rpartition("_T")[0] for take in TARGET_MULTIPLIERS}
     _require(set(rows) == expected_objects, "source object inventory changed")
     multipliers = {name: float(row["multiplier"]) for name, row in rows.items()}
@@ -213,9 +217,7 @@ def build_completion_protocol(
             "field": SOURCE_FIELD,
             "base_effective_scale": BASE_EFFECTIVE_SCALE,
             "global_multiplier": GLOBAL_MULTIPLIER,
-            "target_multipliers": {
-                take: TARGET_MULTIPLIERS[take] for take in targets
-            },
+            "target_multipliers": {take: TARGET_MULTIPLIERS[take] for take in targets},
             "target_effective_scales": effective_scales,
             "v4_target_effective_scales": v4_scales,
             "unsupported_frame_action": "byte-identical released checkpoint",
@@ -292,7 +294,10 @@ def validate_completion_protocol(
         _require(observed == EXPECTED_PROTOCOL_SHA256, "registered completion changed")
     parent = payload.get("parent_v4")
     _require(isinstance(parent, Mapping), "parent V4 binding is missing")
-    _require(parent.get("protocol_sha256") == PARENT_PROTOCOL_SHA256, "parent V4 changed")
+    assert isinstance(parent, Mapping)
+    _require(
+        parent.get("protocol_sha256") == PARENT_PROTOCOL_SHA256, "parent V4 changed"
+    )
     _require(
         parent.get("protocol_file_sha256") == PARENT_PROTOCOL_FILE_SHA256,
         "parent V4 bytes changed",
@@ -300,12 +305,18 @@ def validate_completion_protocol(
     _require(parent.get("unchanged") is True, "parent V4 was not preserved")
     source = payload.get("source_calibration")
     _require(isinstance(source, Mapping), "source calibration binding is missing")
-    _require(source.get("protocol_sha256") == SOURCE_PROTOCOL_SHA256, "source protocol changed")
+    assert isinstance(source, Mapping)
+    _require(
+        source.get("protocol_sha256") == SOURCE_PROTOCOL_SHA256,
+        "source protocol changed",
+    )
     _require(
         source.get("protocol_file_sha256") == SOURCE_PROTOCOL_FILE_SHA256,
         "source protocol bytes changed",
     )
-    _require(source.get("result_sha256") == SOURCE_RESULT_SHA256, "source result changed")
+    _require(
+        source.get("result_sha256") == SOURCE_RESULT_SHA256, "source result changed"
+    )
     _require(
         source.get("result_file_sha256") == SOURCE_RESULT_FILE_SHA256,
         "source result bytes changed",
@@ -316,6 +327,7 @@ def validate_completion_protocol(
     )
     target = payload.get("target_cohort")
     _require(isinstance(target, Mapping), "target cohort is missing")
+    assert isinstance(target, Mapping)
     _require(
         tuple(target.get("take_ids", ())) == tuple(OFFICIAL18_MISSING_PUBLIC_TAKE_IDS),
         "target cohort changed",
@@ -331,11 +343,15 @@ def validate_completion_protocol(
     )
     method = payload.get("method")
     _require(isinstance(method, Mapping), "method is missing")
+    assert isinstance(method, Mapping)
     _require(method.get("selected_arm") == SELECTED_ARM, "selected arm changed")
     _require(method.get("field") == SOURCE_FIELD, "correction field changed")
     _require(
         dict(method.get("target_multipliers", {}))
-        == {take: TARGET_MULTIPLIERS[take] for take in OFFICIAL18_MISSING_PUBLIC_TAKE_IDS},
+        == {
+            take: TARGET_MULTIPLIERS[take]
+            for take in OFFICIAL18_MISSING_PUBLIC_TAKE_IDS
+        },
         "target multiplier map changed",
     )
     for take, multiplier in TARGET_MULTIPLIERS.items():
@@ -344,13 +360,16 @@ def validate_completion_protocol(
             math.isclose(scale, BASE_EFFECTIVE_SCALE * multiplier),
             "target effective scale changed",
         )
-    _require(method.get("target_outcome_adaptation") == "forbidden", "adaptation enabled")
+    _require(
+        method.get("target_outcome_adaptation") == "forbidden", "adaptation enabled"
+    )
     _require(
         method.get("unsupported_frame_action") == "byte-identical released checkpoint",
         "unsupported-frame fallback changed",
     )
     custody = payload.get("custody")
     _require(isinstance(custody, Mapping), "custody is missing")
+    assert isinstance(custody, Mapping)
     _require(
         custody.get("execution_implementation_lock_before_author_archive_access")
         is True,
@@ -366,8 +385,10 @@ def validate_completion_protocol(
     )
     gates = payload.get("gates")
     _require(isinstance(gates, Mapping), "target gates are missing")
+    assert isinstance(gates, Mapping)
     prospective = gates.get("prospective_v5_vs_v4")
     _require(isinstance(prospective, Mapping), "V5-versus-V4 gate is missing")
+    assert isinstance(prospective, Mapping)
     _require(
         float(prospective.get("minimum_per_object_relative_improvement", -1.0)) == 0.0,
         "per-object target safety gate changed",
@@ -384,14 +405,14 @@ def validate_completion_protocol(
     )
     official = gates.get("official18")
     _require(isinstance(official, Mapping), "official-18 gate is missing")
+    assert isinstance(official, Mapping)
     _require(official.get("v5_below_v4") is True, "V5-versus-V4 gate changed")
     _require(
         official.get("v5_below_published_6_498_mm") is True,
         "published-reference gate changed",
     )
     _require(
-        float(official.get("paired_bootstrap_upper_v5_minus_v4_mm_below", 1.0))
-        == 0.0,
+        float(official.get("paired_bootstrap_upper_v5_minus_v4_mm_below", 1.0)) == 0.0,
         "official-18 bootstrap gate changed",
     )
     _require(payload.get("held_v8_accessed") is False, "held-v8 boundary changed")
@@ -400,7 +421,8 @@ def validate_completion_protocol(
         "protocol_sha256": observed,
         "target_take_ids": tuple(OFFICIAL18_MISSING_PUBLIC_TAKE_IDS),
         "target_multipliers": {
-            take: TARGET_MULTIPLIERS[take] for take in OFFICIAL18_MISSING_PUBLIC_TAKE_IDS
+            take: TARGET_MULTIPLIERS[take]
+            for take in OFFICIAL18_MISSING_PUBLIC_TAKE_IDS
         },
     }
 

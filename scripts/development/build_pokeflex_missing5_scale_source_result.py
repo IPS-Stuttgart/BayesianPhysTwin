@@ -64,8 +64,7 @@ def main() -> None:
                 "result_sha256": payload["result_sha256"],
                 "source_gate": payload["source_gate"],
                 "selected_multipliers": {
-                    name: row["multiplier"]
-                    for name, row in payload["objects"].items()
+                    name: row["multiplier"] for name, row in payload["objects"].items()
                 },
             },
             indent=2,

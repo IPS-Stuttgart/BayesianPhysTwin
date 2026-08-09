@@ -25,13 +25,9 @@ from bayesian_phystwin.pokeflex_action_robust_scale import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = (
-    ROOT / "configs" / "sota" / "pokeflex_action_robust_all18_source_v4.json"
-)
+PROTOCOL = ROOT / "configs" / "sota" / "pokeflex_action_robust_all18_source_v4.json"
 PARENT = ROOT / "configs" / "sota" / "pokeflex_action_robust_scale_v3.json"
-CALIBRATION = (
-    ROOT / "configs" / "sota" / "pokeflex_action_robust_scale_all18_v4.json"
-)
+CALIBRATION = ROOT / "configs" / "sota" / "pokeflex_action_robust_scale_all18_v4.json"
 REMOTE_WRAPPER = (
     ROOT / "scripts" / "remote" / "run_pokeflex_action_robust_all18_source.py"
 )
@@ -44,9 +40,9 @@ def _smoke(take_id: str, protocol_digest: str, *, best: float = 2.0) -> dict:
         error = 10.0 if multiplier == 1.0 else 10.4
         if multiplier == best:
             error = 9.8
-        aggregates[
-            f"checkpoint_{SOURCE_FIELD}_residual_scale_{scale:g}"
-        ] = {"mean_CD_UL1_mm": error}
+        aggregates[f"checkpoint_{SOURCE_FIELD}_residual_scale_{scale:g}"] = {
+            "mean_CD_UL1_mm": error
+        }
     return {
         "schema_version": 1,
         "artifact_kind": "PokeFlexCheckpointBayesianRegistrationDevelopmentSmoke",
@@ -179,8 +175,7 @@ def test_builder_fails_closed_when_fewer_than_three_new_objects_transfer() -> No
         for take_id in selected
     }
     source_hashes = {
-        take_id: f"{index:064x}"
-        for index, take_id in enumerate(selected, start=1)
+        take_id: f"{index:064x}" for index, take_id in enumerate(selected, start=1)
     }
 
     with pytest.raises(ValueError, match="extension gate failed"):
@@ -205,15 +200,13 @@ def test_remote_wrapper_adds_zero_control_and_isolates_source_authorization(
         captured["args"] = args
         captured["kwargs"] = kwargs
         captured["authorized_objects"] = tuple(
-            fake_module.load_pokeflex_registration_protocol(None)["payload"][
-                "cohort"
-            ]["development_objects"]
+            fake_module.load_pokeflex_registration_protocol(None)["payload"]["cohort"][
+                "development_objects"
+            ]
         )
         return {
             "schema_version": 1,
-            "artifact_kind": (
-                "PokeFlexCheckpointBayesianRegistrationDevelopmentSmoke"
-            ),
+            "artifact_kind": ("PokeFlexCheckpointBayesianRegistrationDevelopmentSmoke"),
         }
 
     fake_module = types.ModuleType("run_pokeflex_checkpoint_registration_smoke")
@@ -224,7 +217,9 @@ def test_remote_wrapper_adds_zero_control_and_isolates_source_authorization(
         "run_pokeflex_checkpoint_registration_smoke",
         fake_module,
     )
-    spec = importlib.util.spec_from_file_location("all18_source_wrapper", REMOTE_WRAPPER)
+    spec = importlib.util.spec_from_file_location(
+        "all18_source_wrapper", REMOTE_WRAPPER
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

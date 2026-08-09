@@ -29,7 +29,9 @@ def main() -> None:
     parser.add_argument(
         "--parent-protocol",
         type=Path,
-        default=(ROOT / "configs" / "sota" / "pokeflex_action_robust_official18_v4.json"),
+        default=(
+            ROOT / "configs" / "sota" / "pokeflex_action_robust_official18_v4.json"
+        ),
     )
     parser.add_argument(
         "--source-protocol",
@@ -73,9 +75,7 @@ def main() -> None:
             {
                 "output": str(args.output.resolve()),
                 "protocol_sha256": payload["protocol_sha256"],
-                "target_effective_scales": payload["method"][
-                    "target_effective_scales"
-                ],
+                "target_effective_scales": payload["method"]["target_effective_scales"],
             },
             indent=2,
             sort_keys=True,

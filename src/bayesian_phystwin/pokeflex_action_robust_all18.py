@@ -126,6 +126,7 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
     )
     parent = payload.get("parent_calibration")
     _require(isinstance(parent, Mapping), "parent calibration binding is missing")
+    assert isinstance(parent, Mapping)
     _require(
         parent.get("calibration_sha256") == ACTION_ROBUST_SCALE_SHA256,
         "parent calibration changed",
@@ -136,6 +137,7 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
     )
     method = payload.get("method")
     _require(isinstance(method, Mapping), "source method is missing")
+    assert isinstance(method, Mapping)
     _require(method.get("field") == SOURCE_FIELD, "source field changed")
     _require(
         float(method.get("checkpoint_control_scale", np.nan)) == 0.0,
@@ -161,14 +163,19 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
 
     selection = payload.get("source_selection")
     _require(isinstance(selection, Mapping), "source selection is missing")
+    assert isinstance(selection, Mapping)
     _require(selection.get("salt") == SELECTION_SALT, "selection salt changed")
     objects = selection.get("objects")
     _require(isinstance(objects, Mapping), "source object map is missing")
-    _require(tuple(sorted(objects)) == tuple(sorted(NEW_OBJECTS)), "source objects changed")
-    selected_take_ids = []
+    assert isinstance(objects, Mapping)
+    _require(
+        tuple(sorted(objects)) == tuple(sorted(NEW_OBJECTS)), "source objects changed"
+    )
+    selected_take_ids: list[str] = []
     for object_name in NEW_OBJECTS:
         raw = objects[object_name]
         _require(isinstance(raw, Mapping), "source object row is invalid")
+        assert isinstance(raw, Mapping)
         candidates = tuple(str(value) for value in raw.get("eligible_take_ids", ()))
         selected = tuple(str(value) for value in raw.get("selected_take_ids", ()))
         official_target = str(raw.get("official_target_take_id", ""))
@@ -178,7 +185,9 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
             all(_object_name(value) == object_name for value in candidates),
             "source candidates change object",
         )
-        _require(official_target not in candidates, "official target entered source pool")
+        _require(
+            official_target not in candidates, "official target entered source pool"
+        )
         expected = tuple(sorted(candidates, key=_selection_digest)[:2])
         _require(selected == expected, "source pair is not the frozen salted selection")
         _require(official_target not in selected, "official target selected as source")
@@ -188,6 +197,7 @@ def validate_all18_source_protocol(payload: Mapping[str, Any]) -> dict[str, Any]
 
     boundary = payload.get("evidence_boundary")
     _require(isinstance(boundary, Mapping), "evidence boundary is missing")
+    assert isinstance(boundary, Mapping)
     _require(
         boundary.get("official_target_outcomes_used_for_v4_selection") is False,
         "official target outcomes entered v4 selection",
@@ -223,28 +233,33 @@ def source_row_from_smoke(
     _require(payload.get("schema_version") == 1, "source smoke schema changed")
     _require(payload.get("artifact_kind") == SOURCE_SMOKE_KIND, "source smoke changed")
     _require(
-        payload.get("all18_source_protocol_sha256")
-        == expected_protocol_sha256,
+        payload.get("all18_source_protocol_sha256") == expected_protocol_sha256,
         "source smoke uses another v4 protocol",
     )
     take = payload.get("take")
     _require(isinstance(take, Mapping), "source take metadata is missing")
+    assert isinstance(take, Mapping)
     _require(take.get("id") == expected_take_id, "source take identity changed")
-    _require(payload.get("future_observation_used") is False, "source prediction leaked")
+    _require(
+        payload.get("future_observation_used") is False, "source prediction leaked"
+    )
     fields = tuple(str(value) for value in payload.get("correction_fields", ()))
     _require(SOURCE_FIELD in fields, "source field is missing")
     aggregates = payload.get("aggregates")
     _require(isinstance(aggregates, Mapping), "source aggregates are missing")
-    scores = {}
+    assert isinstance(aggregates, Mapping)
+    scores: dict[str, float] = {}
     for multiplier in CANDIDATE_MULTIPLIERS:
         scale = BASE_EFFECTIVE_SCALE * multiplier
         raw = aggregates.get(_scale_name(scale))
         _require(isinstance(raw, Mapping), "source scale aggregate is missing")
+        assert isinstance(raw, Mapping)
         value = float(raw.get("mean_CD_UL1_mm", np.nan))
         _require(np.isfinite(value) and value > 0.0, "source scale score is invalid")
         scores[str(multiplier)] = value
     updates = payload.get("updates")
     _require(isinstance(updates, list), "source update records are missing")
+    assert isinstance(updates, list)
     support = sum(
         bool(row.get("accepted")) and bool(row.get("action_supported"))
         for row in updates
@@ -276,7 +291,9 @@ def build_all18_calibration(
     validate_action_robust_scale_calibration(parent_calibration)
     protocol_validation = validate_all18_source_protocol(source_protocol)
     expected = tuple(protocol_validation["selected_take_ids"])
-    _require(set(source_artifacts) == set(expected), "source artifact inventory changed")
+    _require(
+        set(source_artifacts) == set(expected), "source artifact inventory changed"
+    )
     _require(
         set(source_artifact_file_sha256s) == set(expected),
         "source artifact checksum inventory changed",
@@ -298,14 +315,20 @@ def build_all18_calibration(
     selected_by_object = source_protocol["source_selection"]["objects"]
     new_objects = {
         object_name: select_action_robust_multiplier(
-            [rows[take_id] for take_id in selected_by_object[object_name]["selected_take_ids"]]
+            [
+                rows[take_id]
+                for take_id in selected_by_object[object_name]["selected_take_ids"]
+            ]
         )
         for object_name in NEW_OBJECTS
     }
     objects = deepcopy(dict(parent_calibration["objects"]))
     _require(not (set(objects) & set(new_objects)), "new objects overlap parent map")
     objects.update(new_objects)
-    _require(tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)), "all18 map incomplete")
+    _require(
+        tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)),
+        "all18 map incomplete",
+    )
 
     gains = [
         float(gain)
@@ -365,8 +388,13 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Validate a generated all-18 source calibration."""
 
     _require(payload.get("schema_version") == 1, "calibration schema changed")
-    _require(payload.get("artifact_kind") == ALL18_CALIBRATION_KIND, "calibration kind changed")
-    _require(payload.get("calibration_id") == ALL18_CALIBRATION_ID, "calibration id changed")
+    _require(
+        payload.get("artifact_kind") == ALL18_CALIBRATION_KIND,
+        "calibration kind changed",
+    )
+    _require(
+        payload.get("calibration_id") == ALL18_CALIBRATION_ID, "calibration id changed"
+    )
     _require(
         payload.get("calibration_sha256") == calibration_sha256(payload),
         "calibration checksum mismatch",
@@ -390,6 +418,7 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
     )
     source_hashes = payload.get("source_artifact_file_sha256s")
     _require(isinstance(source_hashes, Mapping), "source artifact hashes are missing")
+    assert isinstance(source_hashes, Mapping)
     _require(len(source_hashes) == 12, "source artifact hash inventory changed")
     for take_id, digest in source_hashes.items():
         _require(
@@ -401,10 +430,17 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         )
     objects = payload.get("objects")
     _require(isinstance(objects, Mapping), "calibration object map is missing")
-    _require(tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)), "all18 map changed")
+    assert isinstance(objects, Mapping)
+    _require(
+        tuple(sorted(objects)) == tuple(sorted(EXPECTED_ALL18_OBJECTS)),
+        "all18 map changed",
+    )
     new_objects = payload.get("new_objects")
     _require(isinstance(new_objects, Mapping), "new object map is missing")
-    _require(tuple(sorted(new_objects)) == tuple(sorted(NEW_OBJECTS)), "new objects changed")
+    assert isinstance(new_objects, Mapping)
+    _require(
+        tuple(sorted(new_objects)) == tuple(sorted(NEW_OBJECTS)), "new objects changed"
+    )
     expected_source_takes = {
         str(take_id)
         for row in new_objects.values()
@@ -415,7 +451,9 @@ def validate_all18_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         "source artifact hash inventory changed",
     )
     gate = payload.get("source_gate")
-    _require(isinstance(gate, Mapping) and gate.get("passed") is True, "source gate failed")
+    _require(isinstance(gate, Mapping), "source gate is missing")
+    assert isinstance(gate, Mapping)
+    _require(gate.get("passed") is True, "source gate failed")
     return {
         "passed": True,
         "calibration_sha256": payload["calibration_sha256"],
@@ -431,7 +469,9 @@ def load_all18_source_protocol(path: str | Path) -> dict[str, Any]:
     return payload
 
 
-def load_source_artifacts(root: str | Path, take_ids: Sequence[str]) -> tuple[dict[str, Any], dict[str, str]]:
+def load_source_artifacts(
+    root: str | Path, take_ids: Sequence[str]
+) -> tuple[dict[str, Any], dict[str, str]]:
     """Load ``<take_id>.json`` source artifacts and bind their bytes."""
 
     source_root = Path(root)

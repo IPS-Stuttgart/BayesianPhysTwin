@@ -124,6 +124,7 @@ def test_public13_retrospective_context_is_numerical_not_confirmatory() -> None:
         if row["v4_all18_mean_CD_UL1_mm"] > row["global_mean_CD_UL1_mm"]
     ]
     assert [row["take_id"] for row in regressions] == ["3dPrintedBunny_T1"]
-    assert regressions[0]["v4_all18_mean_CD_UL1_mm"] < regressions[0][
-        "baseline_mean_CD_UL1_mm"
-    ]
+    assert (
+        regressions[0]["v4_all18_mean_CD_UL1_mm"]
+        < regressions[0]["baseline_mean_CD_UL1_mm"]
+    )

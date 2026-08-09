@@ -30,9 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REMOTE_RUNNER = (
     ROOT / "scripts" / "remote" / "run_pokeflex_missing5_scale_source_take.py"
 )
-FROZEN_PROTOCOL = (
-    ROOT / "configs" / "sota" / "pokeflex_missing5_scale_source_v5.json"
-)
+FROZEN_PROTOCOL = ROOT / "configs" / "sota" / "pokeflex_missing5_scale_source_v5.json"
 FROZEN_RESULT = (
     ROOT
     / "results"
@@ -87,9 +85,9 @@ def _smoke(
             score = 9.7
         elif multiplier != 1.0:
             score = 10.2
-        aggregates[
-            f"checkpoint_{SOURCE_FIELD}_residual_scale_{scale:g}"
-        ] = {"mean_CD_UL1_mm": score}
+        aggregates[f"checkpoint_{SOURCE_FIELD}_residual_scale_{scale:g}"] = {
+            "mean_CD_UL1_mm": score
+        }
     return {
         "schema_version": 1,
         "artifact_kind": "PokeFlexCheckpointBayesianRegistrationDevelopmentSmoke",
@@ -169,9 +167,7 @@ def test_frozen_source_result_passes_with_conservative_fallbacks() -> None:
     assert result["source_gate"]["complete_take_count"] == 30
     assert result["source_gate"]["source_action_regression_count"] == 0
     assert result["source_gate"]["deployed_loo_held_action_regression_count"] == 0
-    assert {
-        name: row["multiplier"] for name, row in result["objects"].items()
-    } == {
+    assert {name: row["multiplier"] for name, row in result["objects"].items()} == {
         "3dPrintedCylinder": 2.0,
         "3dPrintedHeart": 1.5,
         "3dPrintedPizza": 1.0,
@@ -295,9 +291,9 @@ def test_remote_wrapper_runs_exact_bank_and_restores_legacy_module(
     def fake_run_smoke(*args, **kwargs):
         captured["kwargs"] = kwargs
         captured["authorized_objects"] = tuple(
-            fake_module.load_pokeflex_registration_protocol(None)["payload"][
-                "cohort"
-            ]["development_objects"]
+            fake_module.load_pokeflex_registration_protocol(None)["payload"]["cohort"][
+                "development_objects"
+            ]
         )
         targets = []
         aggregates = {}
@@ -330,7 +326,9 @@ def test_remote_wrapper_runs_exact_bank_and_restores_legacy_module(
         "run_pokeflex_checkpoint_registration_smoke",
         fake_module,
     )
-    spec = importlib.util.spec_from_file_location("missing5_source_runner", REMOTE_RUNNER)
+    spec = importlib.util.spec_from_file_location(
+        "missing5_source_runner", REMOTE_RUNNER
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
