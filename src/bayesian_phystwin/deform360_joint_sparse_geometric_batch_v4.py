@@ -14,6 +14,8 @@ import numpy as np
 from .deform360_joint_sparse_geometric_candidates_v4 import _Candidate
 from .deform360_joint_sparse_geometric_common_v4 import (
     EXPECTED_DEVELOPMENT_BOUNDARY,
+    MATERIALIZER_SCHEMA,
+    MATERIALIZER_VERSION,
     _array_digest,
     _canonical_bytes,
     _require,
@@ -29,11 +31,31 @@ def _mode_matrices() -> np.ndarray:
     root6 = math.sqrt(6.0)
     return np.asarray(
         [
-            [[1.0 / root2, 0.0, 0.0], [0.0, -1.0 / root2, 0.0], [0.0, 0.0, 0.0]],
-            [[1.0 / root6, 0.0, 0.0], [0.0, 1.0 / root6, 0.0], [0.0, 0.0, -2.0 / root6]],
-            [[0.0, 1.0 / root2, 0.0], [1.0 / root2, 0.0, 0.0], [0.0, 0.0, 0.0]],
-            [[0.0, 0.0, 1.0 / root2], [0.0, 0.0, 0.0], [1.0 / root2, 0.0, 0.0]],
-            [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0 / root2], [0.0, 1.0 / root2, 0.0]],
+            [
+                [1.0 / root2, 0.0, 0.0],
+                [0.0, -1.0 / root2, 0.0],
+                [0.0, 0.0, 0.0],
+            ],
+            [
+                [1.0 / root6, 0.0, 0.0],
+                [0.0, 1.0 / root6, 0.0],
+                [0.0, 0.0, -2.0 / root6],
+            ],
+            [
+                [0.0, 1.0 / root2, 0.0],
+                [1.0 / root2, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ],
+            [
+                [0.0, 0.0, 1.0 / root2],
+                [0.0, 0.0, 0.0],
+                [1.0 / root2, 0.0, 0.0],
+            ],
+            [
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0 / root2],
+                [0.0, 1.0 / root2, 0.0],
+            ],
         ],
         dtype=np.float64,
     )
@@ -44,12 +66,25 @@ def _skew(value: np.ndarray) -> np.ndarray:
     return np.asarray([[0.0, -z, y], [z, 0.0, -x], [-y, x, 0.0]])
 
 
-def _covariance(point: np.ndarray, camera_center: np.ndarray, *, lateral: float, axial: float) -> np.ndarray:
-    ray = np.asarray(point, dtype=np.float64) - np.asarray(camera_center, dtype=np.float64)
+def _covariance(
+    point: np.ndarray,
+    camera_center: np.ndarray,
+    *,
+    lateral: float,
+    axial: float,
+) -> np.ndarray:
+    ray = np.asarray(point, dtype=np.float64) - np.asarray(
+        camera_center, dtype=np.float64
+    )
     norm = float(np.linalg.norm(ray))
-    _require(np.isfinite(norm) and norm > 1e-9, "metric point coincides with camera center")
+    _require(
+        np.isfinite(norm) and norm > 1e-9,
+        "metric point coincides with camera center",
+    )
     direction = ray / norm
-    return lateral**2 * np.eye(3) + (axial**2 - lateral**2) * np.outer(direction, direction)
+    return lateral**2 * np.eye(3) + (axial**2 - lateral**2) * np.outer(
+        direction, direction
+    )
 
 
 def _hash_record(value: Mapping[str, Any]) -> str:
@@ -128,7 +163,10 @@ def _build_object_batch(
         factor_ids.append(
             _hash_record(
                 {
-                    "schema": "bayesian-phystwin.deform360-joint-sparse-geometric-factor",
+                    "schema": (
+                        "bayesian-phystwin."
+                        "deform360-joint-sparse-geometric-factor"
+                    ),
                     "schema_version": 1,
                     "object_id": object_id,
                     "episode_id": episode_id,
@@ -150,7 +188,11 @@ def _build_object_batch(
         cluster_ids.append(item.spatial_cluster_id)
         group_ids.append(item.correlation_group_id)
     group_count = Counter(group_ids)
-    composite = np.asarray([1.0 / group_count[group] for group in group_ids])
+    effective_cap = float(policy["effective_samples_per_correlation_group"])
+    composite = np.asarray(
+        [1.0 / min(effective_cap, group_count[group]) for group in group_ids],
+        dtype=np.float64,
+    )
     gauge_count = len(gauge_ids)
     parents = np.zeros(gauge_count, dtype=np.int64)
     parents[0] = -1
@@ -158,7 +200,9 @@ def _build_object_batch(
     transitions[1:] = np.eye(7)
     scales = np.zeros((gauge_count, 7, 7), dtype=np.float64)
     scales[0] = np.eye(7) * cast(float, policy["root_gauge_prior_std_m"])
-    scales[1:] = np.eye(7) * cast(float, policy["camera_gauge_innovation_std_m"])
+    scales[1:] = np.eye(7) * cast(
+        float, policy["camera_gauge_innovation_std_m"]
+    )
     query = np.eye(5, dtype=np.float64)
     gauge_prior_id = _hash_record(
         {
@@ -174,7 +218,10 @@ def _build_object_batch(
     )
     observation_artifact_id = _hash_record(
         {
-            "schema": "bayesian-phystwin.deform360-joint-sparse-geometric-observation",
+            "schema": (
+                "bayesian-phystwin."
+                "deform360-joint-sparse-geometric-observation"
+            ),
             "schema_version": 1,
             "object_id": object_id,
             "episode_id": episode_id,
@@ -190,7 +237,10 @@ def _build_object_batch(
     )
     linearization_artifact_id = _hash_record(
         {
-            "schema": "bayesian-phystwin.deform360-joint-sparse-geometric-linearization",
+            "schema": (
+                "bayesian-phystwin."
+                "deform360-joint-sparse-geometric-linearization"
+            ),
             "schema_version": 1,
             "basis_semantics": policy["basis_semantics"],
             "gauge_semantics": policy["gauge_semantics"],
@@ -220,6 +270,7 @@ def _build_object_batch(
         "centroid_world_m": centroid.tolist(),
         "rms_radius_m": rms,
         "unique_frame_world_cluster_count": len(unique_points),
+        "effective_samples_per_correlation_group": effective_cap,
         "prediction_support_masks_used": True,
         "prediction_point_values_used": False,
         "prediction_residuals_used": False,
@@ -275,8 +326,15 @@ def _record_for_file(path: Path, *, root: Path) -> dict[str, object]:
 
 
 def _write_checksums(root: Path) -> None:
-    files = sorted(path for path in root.rglob("*") if path.is_file() and path.name != "SHA256SUMS")
+    files = sorted(
+        path
+        for path in root.rglob("*")
+        if path.is_file() and path.name != "SHA256SUMS"
+    )
     (root / "SHA256SUMS").write_text(
-        "".join(f"{_sha256_file(path)}  {path.relative_to(root).as_posix()}\n" for path in files),
+        "".join(
+            f"{_sha256_file(path)}  {path.relative_to(root).as_posix()}\n"
+            for path in files
+        ),
         encoding="ascii",
     )
