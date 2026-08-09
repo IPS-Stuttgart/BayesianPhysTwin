@@ -1,0 +1,94 @@
+name: Finalize Deform360 joint-sparse v4 branch once
+
+on:
+  push:
+    branches:
+      - agent/deform360-joint-sparse-observability-v4
+    paths:
+      - .github/workflows/_finalize-deform360-joint-sparse-v4-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-deform360-joint-sparse-v4-once
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/deform360-joint-sparse-observability-v4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/deform360-joint-sparse-observability-v4
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Merge main, format, register tests, remove helper, and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REPOSITORY}" = "IPS-Stuttgart/BayesianPhysTwin"
+          test "$(git branch --show-current)" = \
+            "agent/deform360-joint-sparse-observability-v4"
+          git fetch origin main
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-edit origin/main
+
+          python -m pip install "ruff==0.16.2"
+          files=(
+            src/bayesian_phystwin/deform360_joint_sparse_observability_v4.py
+            scripts/science/evaluate_deform360_joint_sparse_observability_v4.py
+            tests/test_deform360_joint_sparse_observability_v4.py
+            tests/test_deform360_joint_sparse_observability_v4_cli.py
+            tests/test_deform360_joint_sparse_observability_v4_workflow.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check --fix "${files[@]}"
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.github/quality/test-suites.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          additions = [
+              'tests/test_deform360_joint_sparse_observability_v4.py',
+              'tests/test_deform360_joint_sparse_observability_v4_cli.py',
+              'tests/test_deform360_joint_sparse_observability_v4_workflow.py',
+          ]
+          for suite in ('stable-core-coverage', 'core-contracts'):
+              entries = payload['suites'][suite]
+              for addition in additions:
+                  if addition not in entries:
+                      entries.append(addition)
+          path.write_text(
+              json.dumps(payload, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          PY
+
+          git rm .github/workflows/_finalize-deform360-joint-sparse-v4-once.yml
+          git diff --check
+          git add \
+            .github/quality/test-suites.json \
+            src/bayesian_phystwin/deform360_joint_sparse_observability_v4.py \
+            scripts/science/evaluate_deform360_joint_sparse_observability_v4.py \
+            tests/test_deform360_joint_sparse_observability_v4.py \
+            tests/test_deform360_joint_sparse_observability_v4_cli.py \
+            tests/test_deform360_joint_sparse_observability_v4_workflow.py
+          if ! git diff --cached --quiet; then
+            git commit -m "Finalize Deform360 joint-sparse observability v4"
+          fi
+          git push origin HEAD:agent/deform360-joint-sparse-observability-v4
