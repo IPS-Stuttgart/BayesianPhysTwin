@@ -129,3 +129,12 @@ registered evidence.
 ## Structured rejection result
 
 New claim-bearing runs that may reject large gauge trees should use [`structured_tree_sparse_fallback.md`](structured_tree_sparse_fallback.md). The historical dense result remains available only through explicit compatibility conversion.
+
+## Block-tree inference
+
+For accepted or rejected runs whose gauge-tree size makes quadratic
+precision storage material, use
+[`tree_block_schur_solver.md`](tree_block_schur_solver.md). It retains the
+transition/innovation tree through identifiability, robust inference and
+posterior uncertainty, while the earlier adapters remain frozen
+compatibility surfaces.
