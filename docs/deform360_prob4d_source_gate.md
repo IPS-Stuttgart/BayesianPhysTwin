@@ -87,6 +87,53 @@ A source-gate failure is therefore a valid terminal result for this method
 version. No manual approval, physical registration review, new recording, or
 robot execution is part of this public-data path.
 
+## Independent terminal-result audit
+
+The one-shot source workflow may stop before covariance fitting when the frozen
+all-stream support rule fails. That is a valid scientific terminal state, not a
+malformed source-gate result. The independent audit workflow therefore has two
+strictly separated paths:
+
+- `audit_deform360_prob4d_support_stop.py` validates a pre-calibration support
+  stop containing only the pipeline receipt and the checksummed metric-batch and
+  support receipts; and
+- `evaluate_deform360_prob4d_source_gate.py` validates a completed calibrated
+  source-gate bundle.
+
+For a support stop, the dedicated auditor reconstructs the complete metric-batch
+result, requires the exact pinned object and stream roster, verifies all retained
+support-negative and technical-failure accounting, requires all later stages to
+be skipped, and emits `validated-support-negative` or
+`validated-technical-negative` with confirmation access set to false. It does
+not invent a source-gate result ID or reinterpret a skipped calibration as a
+calibration failure.
+
+The support-stop command is target-closed and accepts only exact run, revision,
+provider, cohort, and admission identities:
+
+```bash
+python scripts/science/audit_deform360_prob4d_support_stop.py \
+  --source-root /path/to/compact-source-artifact \
+  --output-dir /path/to/new-independent-audit \
+  --source-run-id 31297018948 \
+  --source-run-attempt 1 \
+  --source-run-conclusion failure \
+  --source-head-sha ded8910becbbffe958dfd18c84ad91069e7087a4 \
+  --source-artifact-id 9033414269 \
+  --source-artifact-name deform360-prob4d-source-gate-31297018948-1 \
+  --auditor-revision <exact-auditor-revision> \
+  --expected-production-result-id 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89 \
+  --expected-admission-id 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15 \
+  --expected-prob4d-revision 25d90ef7f78ba4307f4555cb636d666004e1bf66 \
+  --expected-motioncrafter-revision 9cb4e9679f5f34e249945544052464ef46324bc2 \
+  --expected-object-count 10 \
+  --expected-admitted-stream-count 324
+```
+
+The output is a no-overwrite, recursively checksummed audit bundle. Error text is
+not copied into the portable receipt; only its exception type and SHA-256 digest
+are retained.
+
 ## Claim boundary
 
 A pass authorizes only a separately locked, independent evaluation on the
