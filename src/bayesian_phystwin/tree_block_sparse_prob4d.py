@@ -20,6 +20,7 @@ from .explicit_gauge_prob4d import (
 from .physical_linearization import PhysicalLinearizationV1
 from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1
 from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
+from .tree_block_claim_contract import validate_tree_block_result
 from .tree_block_sparse_gauge_belief import TreeBlockGaugeAwareBeliefResultV1
 from .tree_block_sparse_gauge_belief_v2 import (
     update_tree_block_sparse_prior_aware_gauge_belief_v2 as update_tree_block_sparse_prior_aware_gauge_belief,
@@ -64,6 +65,10 @@ class ClaimBearingTreeBlockProb4DUpdateV1:
     def __post_init__(self) -> None:
         if not isinstance(self.result, TreeBlockGaugeAwareBeliefResultV1):
             raise TypeError("result must be a TreeBlockGaugeAwareBeliefResultV1")
+        validate_tree_block_result(
+            self.result,
+            require_strict_admission=True,
+        )
         for name in (
             "observation_artifact_id",
             "linearization_artifact_id",
