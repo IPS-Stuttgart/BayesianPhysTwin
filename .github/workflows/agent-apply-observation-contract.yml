@@ -73,14 +73,14 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --no-cache-dir -e ".[dev]"
-          python -m ruff format \
-            src/bayesian_phystwin/observation_belief.py \
-            src/bayesian_phystwin/observation_contract_bundle.py \
+          files=(
+            src/bayesian_phystwin/observation_belief.py
+            src/bayesian_phystwin/observation_contract_bundle.py
             tests/test_observation_contract_bundle.py
-          python -m ruff check \
-            src/bayesian_phystwin/observation_belief.py \
-            src/bayesian_phystwin/observation_contract_bundle.py \
-            tests/test_observation_contract_bundle.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check --fix --unsafe-fixes "${files[@]}"
+          python -m ruff check "${files[@]}"
           python -m pytest -q \
             tests/test_observation_contract_bundle.py \
             tests/test_observation_belief.py \
