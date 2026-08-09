@@ -113,7 +113,9 @@ The dedicated read-only workflow checks:
 
 The real integration test creates a content-addressed Prob4D artifact, reloads
 it through the strict producer surface, admits it independently in
-BayesianPhysTwin, and executes the precision-form update.
+BayesianPhysTwin, and executes the precision-form update. The unit and serialized
+round-trip tests are both registered in the centralized `stable-core-coverage`
+and `core-contracts` suites.
 
 ## Scientific boundary
 
