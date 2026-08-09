@@ -41,9 +41,7 @@ def _replace_descriptor(
     encode: bool = False,
 ) -> None:
     text = descriptor if isinstance(descriptor, str) else json.dumps(descriptor)
-    payload["descriptor_json"] = np.asarray(
-        text.encode("utf-8") if encode else text
-    )
+    payload["descriptor_json"] = np.asarray(text.encode("utf-8") if encode else text)
 
 
 def _headers(path: Path) -> object:
