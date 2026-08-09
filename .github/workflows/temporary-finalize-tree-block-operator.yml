@@ -52,8 +52,11 @@ jobs:
               '        raw.dtype.kind not in {"b", "O", "U", "S"},\n': (
                   '        raw.dtype.kind in {"i", "u", "f"},\n'
               ),
-              '        basis = np.zeros(\n': (
+              '        basis = np.zeros((self.dimension, len(selected)), '
+              'dtype=np.float64)\n': (
                   '        basis: np.ndarray = np.zeros(\n'
+                  '            (self.dimension, len(selected)), dtype=np.float64\n'
+                  '        )\n'
               ),
           }
           for old, new in replacements.items():
