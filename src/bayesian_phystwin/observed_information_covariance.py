@@ -584,6 +584,8 @@ def observed_information_covariance_from_prior_aware_result(
         anchor_nuisance_white = anchor_nuisance
         anchor_whiteners = np.zeros((0, 3, 3), dtype=np.float64)
 
+    association_probability = np.asarray(batch.association_probability)
+    observation_row_weight = batch.prior_reliability * association_probability
     (
         observation_groups,
         observation_indices,
@@ -592,7 +594,7 @@ def observed_information_covariance_from_prior_aware_result(
         observation_group_power,
     ) = _group_layout(
         batch.correlation_group_ids,
-        batch.prior_reliability,
+        observation_row_weight,
         np.asarray(batch.prior_nominal_probability),
         np.asarray(batch.composite_weight),
         cfg.effective_samples_per_correlation_group,
@@ -682,11 +684,11 @@ def observed_information_covariance_from_prior_aware_result(
         len(batch.innovation_m), dtype=np.float64
     )
     for position, selected in enumerate(observation_indices):
-        active = selected[batch.prior_reliability[selected] > 0.0]
+        active = selected[observation_row_weight[selected] > 0.0]
         if len(active):
             squared = float(
                 np.sum(
-                    batch.prior_reliability[active]
+                    observation_row_weight[active]
                     * np.sum(np.square(white_residual[active]), axis=1)
                 )
             )
@@ -781,12 +783,12 @@ def observed_information_covariance_from_prior_aware_result(
 
     observed_information = working_information.copy()
     for position, selected in enumerate(observation_indices):
-        active = selected[batch.prior_reliability[selected] > 0.0]
+        active = selected[observation_row_weight[selected] > 0.0]
         if not len(active):
             continue
         score_direction = np.einsum(
             "m,mci,mc->i",
-            batch.prior_reliability[active],
+            observation_row_weight[active],
             observation_design[active],
             white_residual[active],
         )

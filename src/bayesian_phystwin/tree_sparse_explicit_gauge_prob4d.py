@@ -489,7 +489,10 @@ def _validate_claim_bearing_tree_sparse(
         envelope.artifact_id,
         name="tree-sparse envelope artifact_id",
     )
-    if _require_sha256(validated.artifact_id, name="validated artifact_id") != artifact_id:
+    if (
+        _require_sha256(validated.artifact_id, name="validated artifact_id")
+        != artifact_id
+    ):
         raise ValueError("validated tree-sparse artifact ID differs from its envelope")
     version = _require_integer(
         envelope.observation_artifact_schema_version,
@@ -497,7 +500,9 @@ def _validate_claim_bearing_tree_sparse(
         minimum=1,
     )
     if version != PROB4D_TREE_SPARSE_OBSERVATION_SCHEMA_VERSION:
-        raise ValueError("claim-bearing tree-sparse observations require schema version 1")
+        raise ValueError(
+            "claim-bearing tree-sparse observations require schema version 1"
+        )
     repository = _require_string(envelope.source_repository, name="source_repository")
     if repository != PROB4D_FROZEN_FACTOR_REPOSITORY:
         raise ValueError("tree-sparse envelope changed the frozen Prob4D identity")
@@ -600,10 +605,14 @@ def _validate_claim_bearing_tree_sparse(
     }
     for name, value in expected.items():
         if mirrored[name] != value:
-            raise ValueError(f"tree-sparse observation differs from envelope field {name}")
+            raise ValueError(
+                f"tree-sparse observation differs from envelope field {name}"
+            )
     manifest_gauges = _string_tuple(manifest.gauge_ids, name="manifest gauge_ids")
     if manifest_gauges != gauge_ids:
-        raise ValueError("tree-sparse observation gauge order differs from the envelope")
+        raise ValueError(
+            "tree-sparse observation gauge order differs from the envelope"
+        )
     bounds = _lineage_bounds(
         envelope.causal_source_lineage,
         gauge_ids=gauge_ids,
@@ -766,9 +775,6 @@ def build_claim_bearing_tree_sparse_prob4d_batch(
             count=count,
         )
     )
-    row_power = stack["association"] * stack["composite"]
-    if np.any(row_power <= 0.0):
-        raise ValueError("association-weighted composite power must be positive")
     tree_design = TreeSparseGaugeDesignV1(
         local_gauge_jacobian=stack["local_gauge"],
         gauge_indices=stack["gauge_indices"],
@@ -860,7 +866,8 @@ def build_claim_bearing_tree_sparse_prob4d_batch(
         correlation_group_ids=stack["groups"],
         prior_reliability=stack["reliability"],
         prior_nominal_probability=stack["nominal"],
-        composite_weight=row_power,
+        composite_weight=stack["composite"],
+        association_probability=stack["association"],
         physical_response_scale_m=linearization.physical_response_scale_m,
         state_prior_covariance_m2=state_prior_covariance_m2,
         anchor_innovation_m=anchor_innovation_m,
@@ -962,9 +969,7 @@ def load_claim_bearing_tree_sparse_prob4d(
         None,
     )
     if not callable(loader):
-        raise ImportError(
-            "installed Prob4D lacks the claim-bearing tree-sparse loader"
-        )
+        raise ImportError("installed Prob4D lacks the claim-bearing tree-sparse loader")
     return loader(Path(envelope_path))
 
 

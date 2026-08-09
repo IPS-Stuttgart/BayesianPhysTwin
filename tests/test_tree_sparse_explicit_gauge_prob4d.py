@@ -267,6 +267,14 @@ def test_claim_bearing_tree_adapter_matches_dense_prior_solver() -> None:
         linearization,
         physical_prediction_xyz_m=physical_prediction,
     )
+    np.testing.assert_allclose(
+        adapted.batch.association_probability,
+        np.asarray([0.9, 0.8, 0.85, 0.75]),
+    )
+    np.testing.assert_allclose(
+        adapted.batch.composite_weight,
+        np.asarray([0.5, 0.5, 0.4, 0.4]),
+    )
     parents, transitions, scales = _tree_arrays()
     dense_design = SparseGaugeDesignV1(
         local_gauge_jacobian=adapted.tree_gauge_design.local_gauge_jacobian,
@@ -300,10 +308,7 @@ def test_claim_bearing_tree_adapter_matches_dense_prior_solver() -> None:
             atol=5.0e-9,
             rtol=5.0e-8,
         )
-    assert (
-        tree_result.diagnostics["dense_gauge_prior_covariance_materialized"]
-        is False
-    )
+    assert tree_result.diagnostics["dense_gauge_prior_covariance_materialized"] is False
     assert tree_result.diagnostics["gauge_prior_representation"] == (
         "tree-transition-innovation-information-v1"
     )
@@ -328,9 +333,10 @@ def test_claim_bearing_tree_update_retains_evidence_identities() -> None:
         "point_artifact_id": _POINT_CALIBRATION_ID,
     }
     assert result.runtime_revision_independently_verified is True
-    assert result.result.input_lineage[
-        "prob4d_claim_bearing_tree_sparse_bridge_version"
-    ] == 1
+    assert (
+        result.result.input_lineage["prob4d_claim_bearing_tree_sparse_bridge_version"]
+        == 1
+    )
 
 
 def test_tree_adapter_rejects_row_outside_its_causal_source_window() -> None:

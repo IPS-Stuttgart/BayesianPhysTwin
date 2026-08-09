@@ -122,6 +122,8 @@ def update_prior_aware_gauge_belief(
         anchor_state_white = anchor_state
         anchor_nuisance_white = anchor_nuisance
         anchor_whiteners = np.zeros((0, 3, 3))
+    association_probability = np.asarray(batch.association_probability)
+    observation_row_weight = batch.prior_reliability * association_probability
     (
         observation_groups,
         observation_indices,
@@ -130,7 +132,7 @@ def update_prior_aware_gauge_belief(
         observation_group_power,
     ) = _group_layout(
         batch.correlation_group_ids,
-        batch.prior_reliability,
+        observation_row_weight,
         observation_nominal,
         observation_composite,
         cfg.effective_samples_per_correlation_group,
@@ -197,7 +199,9 @@ def update_prior_aware_gauge_belief(
         "minimum_robust_precision": cfg.minimum_robust_precision,
         "prior_nominal_probability_used_inside_mixture": True,
         "association_probability_used_as_reliability": False,
+        "association_probability_used_as_row_power": True,
         "row_reliability_semantics": "conditional-covariance-precision-scaling",
+        "row_association_semantics": "generalized-Bayes-row-power-v1",
         "group_composite_weight_semantics": "generalized-Bayes likelihood power",
         "observation_composite_weight_mode": batch.composite_weight_mode,
         "anchor_composite_weight_mode": batch.anchor_composite_weight_mode,
@@ -304,7 +308,7 @@ def update_prior_aware_gauge_belief(
         )
         white_residual = np.einsum("mij,mj->mi", whiteners, residual)
         for position, selected in enumerate(observation_indices):
-            active = selected[batch.prior_reliability[selected] > 0.0]
+            active = selected[observation_row_weight[selected] > 0.0]
             if not len(active):
                 observation_precision[position] = 0.0
                 observation_precision_derivative[position] = 0.0
@@ -319,7 +323,7 @@ def update_prior_aware_gauge_belief(
                 continue
             squared_mahalanobis = float(
                 np.sum(
-                    batch.prior_reliability[active]
+                    observation_row_weight[active]
                     * np.sum(np.square(white_residual[active]), axis=1)
                 )
             )
@@ -454,12 +458,12 @@ def update_prior_aware_gauge_belief(
 
     exact_hessian = normal.copy()
     for position, selected in enumerate(observation_indices):
-        active = selected[batch.prior_reliability[selected] > 0.0]
+        active = selected[observation_row_weight[selected] > 0.0]
         if not len(active):
             continue
         score_direction = np.einsum(
             "m,mci,mc->i",
-            batch.prior_reliability[active],
+            observation_row_weight[active],
             observation_design[active],
             final_white_residual[active],
         )
