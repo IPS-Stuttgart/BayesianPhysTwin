@@ -1,0 +1,623 @@
+name: Revalidate Deform360 Prob4D source-support negative v2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/revalidate-deform360-prob4d-source-support-negative-v2.yml"
+      - "tests/test_deform360_prob4d_source_support_auditor_v2.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/revalidate-deform360-prob4d-source-support-negative-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: revalidate-deform360-prob4d-source-support-negative-v2
+  cancel-in-progress: true
+
+env:
+  SOURCE_RUN_ID: "31297018948"
+  SOURCE_RUN_ATTEMPT: "1"
+  SOURCE_RUN_CONCLUSION: failure
+  SOURCE_HEAD_SHA: ded8910becbbffe958dfd18c84ad91069e7087a4
+  SOURCE_WORKFLOW_NAME: Launch reviewed Deform360 Prob4D public source gate once
+  SOURCE_WORKFLOW_PATH: .github/workflows/launch-deform360-prob4d-source-gate-once.yml
+  SOURCE_ARTIFACT_ID: "9033414269"
+  SOURCE_ARTIFACT_NAME: deform360-prob4d-source-gate-31297018948-1
+  SOURCE_ARTIFACT_DIGEST: sha256:7247a2a260509c4c226e7ca437aff09d090abf6d2ca08f471a2143ea7d4bf7de
+  VALIDATOR_REVISION: 94913b23c31ef3056a8a390c4f21d4bdca47426f
+  EXPECTED_METRIC_BATCH_RESULT_ID: f246394c84fd643b6ec8961dbcb2101a73c34e46d5eaf43961f28429aeb197eb
+  EXPECTED_VISUAL_PRODUCTION_RESULT_ID: 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89
+  EXPECTED_PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
+  EXPECTED_MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
+  ISSUE_NUMBER: "148"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Source-support auditor v2 contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install source-check tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate the dedicated early-terminal audit contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            tests/test_deform360_prob4d_source_support_auditor_v2.py
+          python -m ruff format --check \
+            tests/test_deform360_prob4d_source_support_auditor_v2.py
+          python -m py_compile \
+            tests/test_deform360_prob4d_source_support_auditor_v2.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_prob4d_source_support_auditor_v2.py \
+            tests/test_deform360_prob4d_source_workflow.py \
+            tests/test_deform360_prob4d_metric_batch.py \
+            tests/test_deform360_prob4d_metric_batch_regressions.py
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  audit:
+    name: Independently reconstruct the early source-support terminal
+    needs: contracts
+    if: >-
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out the exact hardened validator revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.VALIDATOR_REVISION }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the exact validator source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${VALIDATOR_REVISION}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Verify the exact source run and compact artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"${run}")" = "${SOURCE_WORKFLOW_NAME}"
+          test "$(jq -r '.path' <<<"${run}")" = "${SOURCE_WORKFLOW_PATH}"
+          test "$(jq -r '.event' <<<"${run}")" = "push"
+          test "$(jq -r '.head_branch' <<<"${run}")" = "main"
+          test "$(jq -r '.head_sha' <<<"${run}")" = "${SOURCE_HEAD_SHA}"
+          test "$(jq -r '.status' <<<"${run}")" = "completed"
+          test "$(jq -r '.conclusion' <<<"${run}")" = \
+            "${SOURCE_RUN_CONCLUSION}"
+          test "$(jq -r '.run_attempt' <<<"${run}")" = \
+            "${SOURCE_RUN_ATTEMPT}"
+          test "$(jq -r '.repository.full_name' <<<"${run}")" = \
+            "${GITHUB_REPOSITORY}"
+
+          artifact="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}")"
+          test "$(jq -r '.name' <<<"${artifact}")" = "${SOURCE_ARTIFACT_NAME}"
+          test "$(jq -r '.digest' <<<"${artifact}")" = \
+            "${SOURCE_ARTIFACT_DIGEST}"
+          test "$(jq -r '.expired' <<<"${artifact}")" = "false"
+          test "$(jq -r '.workflow_run.id' <<<"${artifact}")" = \
+            "${SOURCE_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${artifact}")" = \
+            "${SOURCE_HEAD_SHA}"
+
+      - name: Download only the exact compact source artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-source-support-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Reconstruct the frozen early support decision
+        id: validate
+        continue-on-error: true
+        env:
+          SOURCE_ROOT: ${{ runner.temp }}/deform360-source-support-source
+          AUDIT_ROOT: ${{ runner.temp }}/deform360-source-support-audit-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import importlib.util
+          import json
+          import os
+          import shutil
+          import subprocess
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          source = Path(os.environ["SOURCE_ROOT"])
+          audit = Path(os.environ["AUDIT_ROOT"])
+          audit.mkdir(parents=True, exist_ok=False)
+
+          def canonical_bytes(value: object) -> bytes:
+              return json.dumps(
+                  value,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+
+          def sha256_file(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          receipt: dict[str, object] = {
+              "schema": (
+                  "bayesian-phystwin."
+                  "deform360-prob4d-source-support-independent-audit"
+              ),
+              "schema_version": 2,
+              "source_workflow_run_id": int(os.environ["SOURCE_RUN_ID"]),
+              "source_workflow_run_attempt": int(
+                  os.environ["SOURCE_RUN_ATTEMPT"]
+              ),
+              "source_workflow_conclusion": os.environ[
+                  "SOURCE_RUN_CONCLUSION"
+              ],
+              "source_workflow_head_sha": os.environ["SOURCE_HEAD_SHA"],
+              "source_artifact_id": int(os.environ["SOURCE_ARTIFACT_ID"]),
+              "source_artifact_name": os.environ["SOURCE_ARTIFACT_NAME"],
+              "source_artifact_digest": os.environ[
+                  "SOURCE_ARTIFACT_DIGEST"
+              ],
+              "validator_revision": os.environ["VALIDATOR_REVISION"],
+              "audit_status": "invalid",
+              "terminal_stage": None,
+              "terminal_status": None,
+              "metric_batch_result_id": None,
+              "source_gate_evaluated": False,
+              "source_gate_result_id": None,
+              "source_gate_passed": None,
+              "confirmation_access_authorized": False,
+              "information_boundary": {
+                  "confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "future_frames_used": False,
+                  "replacement_allowed": False,
+              },
+          }
+
+          try:
+              if not source.is_dir():
+                  raise ValueError("downloaded source artifact is missing")
+              if any(path.is_symlink() for path in source.rglob("*")):
+                  raise ValueError(
+                      "downloaded source artifact contains a symbolic link"
+                  )
+              subprocess.run(
+                  ["sha256sum", "--check", "SHA256SUMS"],
+                  cwd=source,
+                  check=True,
+                  stdout=subprocess.DEVNULL,
+              )
+              relative_files = {
+                  path.relative_to(source).as_posix()
+                  for path in source.rglob("*")
+                  if path.is_file()
+              }
+              expected_files = {
+                  "SHA256SUMS",
+                  "pipeline-receipt.json",
+                  "metric-support/metric-batch-result.json",
+                  "metric-support/support-receipt.json",
+              }
+              if relative_files != expected_files:
+                  raise ValueError("compact source artifact roster changed")
+
+              pipeline_path = source / "pipeline-receipt.json"
+              metric_path = (
+                  source / "metric-support/metric-batch-result.json"
+              )
+              support_path = source / "metric-support/support-receipt.json"
+              pipeline = json.loads(pipeline_path.read_text(encoding="utf-8"))
+              support = json.loads(support_path.read_text(encoding="utf-8"))
+
+              expected_pipeline_fields = {
+                  "schema",
+                  "schema_version",
+                  "implementation_revision",
+                  "visual_production_result_id",
+                  "prob4d_revision",
+                  "motioncrafter_revision",
+                  "stage_outcomes",
+                  "stderr_sha256",
+                  "source_gate_result_id",
+                  "source_gate_passed",
+                  "confirmation_access_authorized",
+                  "information_boundary",
+              }
+              if set(pipeline) != expected_pipeline_fields:
+                  raise ValueError("source pipeline receipt fields changed")
+              if not (
+                  pipeline["schema"]
+                  == (
+                      "bayesian-phystwin."
+                      "deform360-prob4d-source-pipeline-receipt"
+                  )
+                  and pipeline["schema_version"] == 1
+                  and pipeline["implementation_revision"]
+                  == os.environ["SOURCE_HEAD_SHA"]
+                  and pipeline["visual_production_result_id"]
+                  == os.environ["EXPECTED_VISUAL_PRODUCTION_RESULT_ID"]
+                  and pipeline["prob4d_revision"]
+                  == os.environ["EXPECTED_PROB4D_REVISION"]
+                  and pipeline["motioncrafter_revision"]
+                  == os.environ["EXPECTED_MOTIONCRAFTER_REVISION"]
+              ):
+                  raise ValueError("source pipeline identity changed")
+              expected_stage_outcomes = {
+                  "metric_batch": "success",
+                  "support_gate": "failure",
+                  "samples": "skipped",
+                  "calibration": "skipped",
+                  "source_gate": "skipped",
+              }
+              if pipeline["stage_outcomes"] != expected_stage_outcomes:
+                  raise ValueError("early support terminal order changed")
+              if not (
+                  pipeline["source_gate_result_id"] is None
+                  and pipeline["source_gate_passed"] is None
+                  and pipeline["confirmation_access_authorized"] is None
+              ):
+                  raise ValueError(
+                      "early support terminal contains a source-gate decision"
+                  )
+              empty_sha = hashlib.sha256(b"").hexdigest()
+              if pipeline["stderr_sha256"] != {
+                  "metric-batch": empty_sha,
+                  "samples": empty_sha,
+                  "calibration": empty_sha,
+                  "source-gate": empty_sha,
+              }:
+                  raise ValueError("source pipeline stderr accounting changed")
+              pipeline_boundary = pipeline["information_boundary"]
+              expected_pipeline_boundary = {
+                  "public_released_measurements_used": True,
+                  "new_measurements_required": False,
+                  "human_approval_required": False,
+                  "confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "future_frames_used": False,
+                  "replacement_allowed": False,
+              }
+              if pipeline_boundary != expected_pipeline_boundary:
+                  raise ValueError("source pipeline boundary changed")
+
+              expected_support_fields = {
+                  "schema",
+                  "schema_version",
+                  "implementation_revision",
+                  "metric_batch_step_outcome",
+                  "metric_batch_result_id",
+                  "metric_batch_status",
+                  "metric_batch_stderr_sha256",
+                  "new_measurements_required",
+                  "human_approval_required",
+                  "confirmation_payloads_opened",
+                  "target_outcomes_used",
+              }
+              if set(support) != expected_support_fields:
+                  raise ValueError("support receipt fields changed")
+              if not (
+                  support["schema"]
+                  == (
+                      "bayesian-phystwin."
+                      "deform360-prob4d-source-support-receipt"
+                  )
+                  and support["schema_version"] == 1
+                  and support["implementation_revision"]
+                  == os.environ["SOURCE_HEAD_SHA"]
+                  and support["metric_batch_step_outcome"] == "success"
+                  and support["metric_batch_result_id"]
+                  == os.environ["EXPECTED_METRIC_BATCH_RESULT_ID"]
+                  and support["metric_batch_status"]
+                  == "support-negatives-retained"
+                  and support["metric_batch_stderr_sha256"] == empty_sha
+                  and support["new_measurements_required"] is False
+                  and support["human_approval_required"] is False
+                  and support["confirmation_payloads_opened"] is False
+                  and support["target_outcomes_used"] is False
+              ):
+                  raise ValueError("support receipt changed")
+
+              metric_validation_root = audit / "metric-batch-validation"
+              metric_validation_root.mkdir()
+              shutil.copy2(
+                  metric_path,
+                  metric_validation_root / "metric-batch-result.json",
+              )
+              metric_digest = sha256_file(
+                  metric_validation_root / "metric-batch-result.json"
+              )
+              (metric_validation_root / "SHA256SUMS").write_text(
+                  f"{metric_digest}  metric-batch-result.json\n",
+                  encoding="ascii",
+              )
+              script = Path(
+                  "scripts/science/"
+                  "materialize_deform360_prob4d_metric_batch.py"
+              )
+              spec = importlib.util.spec_from_file_location(
+                  "independent_metric_batch_validator", script
+              )
+              if spec is None or spec.loader is None:
+                  raise ValueError("cannot load metric-batch validator")
+              module = importlib.util.module_from_spec(spec)
+              sys.modules[spec.name] = module
+              spec.loader.exec_module(module)
+              metric = module.validate_deform360_prob4d_metric_batch(
+                  metric_validation_root
+              )
+
+              if not (
+                  metric["result_id"]
+                  == os.environ["EXPECTED_METRIC_BATCH_RESULT_ID"]
+                  and metric["implementation_revision"]
+                  == os.environ["SOURCE_HEAD_SHA"]
+                  and metric["production_result_id"]
+                  == os.environ["EXPECTED_VISUAL_PRODUCTION_RESULT_ID"]
+                  and metric["object_count"] == 10
+                  and metric["admitted_stream_count"] == 324
+                  and metric["supported_stream_count"] == 313
+                  and metric["support_negative_stream_count"] == 11
+                  and metric["technical_failure_stream_count"] == 0
+                  and metric["supported_object_count"] == 10
+                  and metric["plan_emitted"] is False
+                  and metric["plan_file"] is None
+                  and metric["status"] == "support-negatives-retained"
+              ):
+                  raise ValueError("frozen metric-support result changed")
+              if not (
+                  support["metric_batch_result_id"] == metric["result_id"]
+                  and support["metric_batch_status"] == metric["status"]
+              ):
+                  raise ValueError(
+                      "support receipt and metric result identities differ"
+                  )
+
+              negative_jobs = [
+                  row
+                  for row in metric["jobs"]
+                  if row["status"] == "support-negative"
+              ]
+              reasons = Counter(
+                  str(row["failure_reason"]) for row in negative_jobs
+              )
+              strata = Counter(str(row["stratum"]) for row in negative_jobs)
+              objects = Counter(str(row["object_id"]) for row in negative_jobs)
+              cameras = Counter(str(row["camera_id"]) for row in negative_jobs)
+              if reasons != Counter(
+                  {
+                      (
+                          "released-robot-geometry-outside-"
+                          "fixed-camera-prefix"
+                      ): 11
+                  }
+              ):
+                  raise ValueError("support-negative reason changed")
+              if strata != Counter({"sheet": 4, "volumetric": 7}):
+                  raise ValueError("support-negative stratum accounting changed")
+              if len(objects) != 6 or len(cameras) != 5:
+                  raise ValueError("support-negative localization changed")
+
+              shutil.copytree(source, audit / "source-artifact")
+              receipt.update(
+                  {
+                      "audit_status": "validated-support-negative",
+                      "terminal_stage": "metric-support",
+                      "terminal_status": metric["status"],
+                      "metric_batch_result_id": metric["result_id"],
+                      "source_gate_evaluated": False,
+                      "source_gate_result_id": None,
+                      "source_gate_passed": None,
+                      "confirmation_access_authorized": False,
+                      "admitted_stream_count": metric[
+                          "admitted_stream_count"
+                      ],
+                      "supported_stream_count": metric[
+                          "supported_stream_count"
+                      ],
+                      "support_negative_stream_count": metric[
+                          "support_negative_stream_count"
+                      ],
+                      "technical_failure_stream_count": metric[
+                          "technical_failure_stream_count"
+                      ],
+                      "supported_object_count": metric[
+                          "supported_object_count"
+                      ],
+                      "support_negative_object_count": len(objects),
+                      "support_negative_camera_count": len(cameras),
+                      "support_negative_by_stratum": dict(strata),
+                      "source_artifact_checksums_sha256": sha256_file(
+                          source / "SHA256SUMS"
+                      ),
+                      "pipeline_receipt_sha256": sha256_file(
+                          pipeline_path
+                      ),
+                      "support_receipt_sha256": sha256_file(support_path),
+                      "metric_batch_result_sha256": sha256_file(metric_path),
+                  }
+              )
+              identity = dict(receipt)
+              receipt["audit_id"] = hashlib.sha256(
+                  canonical_bytes(identity)
+              ).hexdigest()
+          except Exception as error:
+              receipt["error_type"] = type(error).__name__
+              receipt["error_sha256"] = hashlib.sha256(
+                  str(error).encode("utf-8")
+              ).hexdigest()
+              (audit / "independent-audit-receipt.json").write_text(
+                  json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+              raise
+
+          (audit / "independent-audit-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          (
+            cd "${AUDIT_ROOT}"
+            rm -rf metric-batch-validation
+            find . -type f ! -name SHA256SUMS -printf '%P\0' \
+              | sort -z | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Upload the corrected independent support audit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: deform360-prob4d-source-support-independent-audit-v2-${{ env.SOURCE_RUN_ID }}
+          path: ${{ runner.temp }}/deform360-source-support-audit-v2
+          if-no-files-found: error
+          retention-days: 180
+
+      - name: Publish the corrected independently reconstructed terminal
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_ROOT: ${{ runner.temp }}/deform360-source-support-audit-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="${AUDIT_ROOT}/independent-audit-receipt.json"
+          test -f "${receipt}"
+          status="$(jq -r '.audit_status' "${receipt}")"
+          audit_id="$(jq -r '.audit_id // "none"' "${receipt}")"
+          terminal_stage="$(jq -r '.terminal_stage // "none"' "${receipt}")"
+          terminal_status="$(jq -r '.terminal_status // "none"' "${receipt}")"
+          supported="$(jq -r '.supported_stream_count // "unknown"' "${receipt}")"
+          negatives="$(jq -r '.support_negative_stream_count // "unknown"' "${receipt}")"
+          technical="$(jq -r '.technical_failure_stream_count // "unknown"' "${receipt}")"
+          source_gate_evaluated="$(jq -r '.source_gate_evaluated' "${receipt}")"
+          authorized="$(jq -r '.confirmation_access_authorized' "${receipt}")"
+          error_type="$(jq -r '.error_type // "none"' "${receipt}")"
+          error_sha="$(jq -r '.error_sha256 // "none"' "${receipt}")"
+          body=$(cat <<EOF
+          ## Corrected independent Deform360 source-support audit: \`${status}\`
+
+          - source workflow run: \`${SOURCE_RUN_ID}\`, attempt \`${SOURCE_RUN_ATTEMPT}\`
+          - exact source revision: \`${SOURCE_HEAD_SHA}\`
+          - hardened validator revision: \`${VALIDATOR_REVISION}\`
+          - compact artifact ID: \`${SOURCE_ARTIFACT_ID}\`
+          - audit ID: \`${audit_id}\`
+          - terminal stage: \`${terminal_stage}\`
+          - terminal status: \`${terminal_status}\`
+          - supported streams: \`${supported}/324\`
+          - retained support-negative streams: \`${negatives}\`
+          - retained technical-failure streams: \`${technical}\`
+          - leave-one-object-out source gate evaluated: \`${source_gate_evaluated}\`
+          - confirmation access authorized: \`${authorized}\`
+          - audit error type: \`${error_type}\`
+          - audit error digest: \`${error_sha}\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - future frames used: \`false\`
+          - replacement allowed: \`false\`
+
+          The earlier v1 audit reported \`invalid\` because it assumed that every
+          terminal source artifact must contain a later \`source-gate\` directory.
+          This v2 audit independently validates the applicable earlier terminal:
+          the content-addressed metric batch, support receipt, exact stage order,
+          all 324 sealed stream rows, and the closed information boundary.
+          It changes no source result, camera roster, threshold, cohort, or method.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" \
+            -f body="${body}"
+
+      - name: Enforce completion of the corrected audit
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.validate.outcome }}" = "success"
+          receipt="${{ runner.temp }}/deform360-source-support-audit-v2/independent-audit-receipt.json"
+          test "$(jq -r '.audit_status' "${receipt}")" = \
+            "validated-support-negative"
+          test "$(jq -r '.source_gate_evaluated' "${receipt}")" = "false"
+          test "$(jq -r '.confirmation_access_authorized' "${receipt}")" = \
+            "false"
+          (
+            cd "${{ runner.temp }}/deform360-source-support-audit-v2"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          test "$(git rev-parse HEAD)" = "${VALIDATOR_REVISION}"
+          test -z "$(git status --porcelain=v1)"
+
+# Reviewed corrected early-terminal audit: 2026-08-09-v2
