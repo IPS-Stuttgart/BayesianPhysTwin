@@ -9,6 +9,7 @@ on:
       - "docs/deform360_prob4d_sample_materializer.md"
       - "docs/deform360_prob4d_source_calibration.md"
       - "docs/deform360_prob4d_source_gate.md"
+      - "protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json"
       - "protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json"
       - "protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json"
       - "scripts/science/materialize_deform360_prob4d_metric_batch.py"
@@ -16,6 +17,7 @@ on:
       - "scripts/science/fit_deform360_prob4d_source_calibration.py"
       - "scripts/science/evaluate_deform360_prob4d_source_gate.py"
       - "src/bayesian_phystwin/deform360_prob4d_sample_materializer.py"
+      - "src/bayesian_phystwin/deform360_prob4d_camera_eligibility.py"
       - "src/bayesian_phystwin/deform360_prob4d_source_calibration.py"
       - "tests/test_deform360_prob4d_metric_batch.py"
       - "tests/test_deform360_prob4d_metric_batch_regressions.py"
@@ -105,6 +107,7 @@ jobs:
             scripts/science/materialize_deform360_prob4d_calibration_samples.py
             scripts/science/fit_deform360_prob4d_source_calibration.py
             scripts/science/evaluate_deform360_prob4d_source_gate.py
+            src/bayesian_phystwin/deform360_prob4d_camera_eligibility.py
             src/bayesian_phystwin/deform360_prob4d_sample_materializer.py
             src/bayesian_phystwin/deform360_prob4d_source_calibration.py
             tests/test_deform360_prob4d_metric_batch.py
@@ -121,6 +124,7 @@ jobs:
             scripts/science/materialize_deform360_prob4d_calibration_samples.py \
             scripts/science/fit_deform360_prob4d_source_calibration.py \
             scripts/science/evaluate_deform360_prob4d_source_gate.py \
+            src/bayesian_phystwin/deform360_prob4d_camera_eligibility.py \
             src/bayesian_phystwin/deform360_prob4d_sample_materializer.py \
             src/bayesian_phystwin/deform360_prob4d_source_calibration.py
           python -m pytest -q -p no:cacheprovider \

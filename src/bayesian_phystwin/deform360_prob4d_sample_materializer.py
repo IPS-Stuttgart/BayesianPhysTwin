@@ -40,6 +40,12 @@ from .deform360_calibration_visual_production import (
     validate_deform360_calibration_visual_prediction_seal,
     validate_deform360_calibration_visual_production_result,
 )
+from .deform360_prob4d_camera_eligibility import (
+    SUPPORT_NEGATIVE_REASON,
+    VISIBLE_STREAM_PLAN_SEMANTICS,
+    VISIBLE_STREAM_PLAN_VERSION,
+    validate_deform360_prob4d_camera_eligibility_policy,
+)
 from .deform360_prob4d_source_calibration import (
     POINT_CLUSTER_SEMANTICS,
     SAMPLE_SCHEMA,
@@ -60,7 +66,7 @@ METRIC_PREFIX_ARRAYS: Final = frozenset(
 METRIC_SOURCE_KIND: Final = "released-deform360-robot-taxel-gauge-v1"
 COORDINATE_FRAME: Final = "deform360-world"
 
-_PLAN_FIELDS = frozenset(
+_PLAN_V1_FIELDS = frozenset(
     {
         "schema",
         "schema_version",
@@ -80,6 +86,13 @@ _PLAN_FIELDS = frozenset(
         "claim_boundary",
     }
 )
+_PLAN_V2_FIELDS = _PLAN_V1_FIELDS | frozenset(
+    {
+        "camera_eligibility_policy_file_sha256",
+        "camera_eligibility_policy_id",
+        "excluded_streams",
+    }
+)
 _CASE_FIELDS = frozenset(
     {
         "case_id",
@@ -97,6 +110,16 @@ _STREAM_FIELDS = frozenset(
         "prediction_manifest",
         "metric_prefix",
         "metric_calibration",
+    }
+)
+_EXCLUDED_STREAM_FIELDS = frozenset(
+    {
+        "job_id",
+        "object_id",
+        "episode_id",
+        "stratum",
+        "camera_id",
+        "reason",
     }
 )
 _FILE_FIELDS = frozenset({"path", "sha256", "byte_count"})
@@ -272,15 +295,50 @@ def _load_plan(
     selection_path: Path,
     visual_provider_spec_path: Path,
     metric_prior_policy_path: Path,
+    camera_eligibility_policy_path: Path | None,
 ) -> dict[str, Any]:
     plan = _load_json(path.resolve(strict=True), name="metric-prefix plan")
-    require_exact_fields(plan, expected=_PLAN_FIELDS, name="metric-prefix plan")
-    _require(
-        plan["schema"] == PLAN_SCHEMA
-        and plan["schema_version"] == PLAN_VERSION
-        and plan["semantics"] == PLAN_SEMANTICS,
-        "unsupported metric-prefix plan contract",
+    _require(plan.get("schema") == PLAN_SCHEMA, "unsupported metric-prefix plan")
+    version = genuine_integer(
+        plan.get("schema_version"), name="metric-prefix plan version", minimum=1
     )
+    if version == PLAN_VERSION:
+        require_exact_fields(plan, expected=_PLAN_V1_FIELDS, name="metric-prefix plan")
+        _require(
+            plan["semantics"] == PLAN_SEMANTICS,
+            "unsupported metric-prefix plan contract",
+        )
+        _require(
+            camera_eligibility_policy_path is None,
+            "version-1 plan cannot use a camera eligibility policy",
+        )
+    elif version == VISIBLE_STREAM_PLAN_VERSION:
+        require_exact_fields(plan, expected=_PLAN_V2_FIELDS, name="metric-prefix plan")
+        _require(
+            plan["semantics"] == VISIBLE_STREAM_PLAN_SEMANTICS,
+            "unsupported metric-prefix plan contract",
+        )
+        _require(
+            camera_eligibility_policy_path is not None,
+            "version-2 plan requires a camera eligibility policy",
+        )
+        eligibility_path = cast(Path, camera_eligibility_policy_path).resolve(
+            strict=True
+        )
+        policy = validate_deform360_prob4d_camera_eligibility_policy(
+            _load_json(eligibility_path, name="camera eligibility policy")
+        )
+        _require(
+            _sha256_file(eligibility_path)
+            == sha256_digest(
+                plan["camera_eligibility_policy_file_sha256"],
+                name="camera_eligibility_policy_file_sha256",
+            )
+            and plan["camera_eligibility_policy_id"] == policy["artifact_id"],
+            "camera eligibility policy differs from the metric-prefix plan",
+        )
+    else:
+        raise ValueError("unsupported metric-prefix plan contract")
     declared_id = sha256_digest(plan["plan_id"], name="plan_id")
     _require(
         declared_id
@@ -539,6 +597,7 @@ def materialize_deform360_prob4d_calibration_samples(
     selection_path: str | Path,
     visual_provider_spec_path: str | Path,
     metric_prior_policy_path: str | Path,
+    camera_eligibility_policy_path: str | Path | None = None,
     expected_processing_revision: str,
     api: Prob4DCalibrationApi | Any,
     output_directory: str | Path,
@@ -551,11 +610,17 @@ def materialize_deform360_prob4d_calibration_samples(
     selection_source = Path(selection_path).resolve(strict=True)
     provider_source = Path(visual_provider_spec_path).resolve(strict=True)
     metric_policy_source = Path(metric_prior_policy_path).resolve(strict=True)
+    eligibility_policy_source = (
+        None
+        if camera_eligibility_policy_path is None
+        else Path(camera_eligibility_policy_path).resolve(strict=True)
+    )
     plan = _load_plan(
         plan_source,
         selection_path=selection_source,
         visual_provider_spec_path=provider_source,
         metric_prior_policy_path=metric_policy_source,
+        camera_eligibility_policy_path=eligibility_policy_source,
     )
     _require(
         plan["processing_revision"]
@@ -599,6 +664,62 @@ def materialize_deform360_prob4d_calibration_samples(
     seen_cases: set[str] = set()
     seen_objects: set[str] = set()
     seen_jobs: set[str] = set()
+    excluded_jobs: dict[str, tuple[str, int, str, str]] = {}
+    if plan["schema_version"] == VISIBLE_STREAM_PLAN_VERSION:
+        raw_excluded = plan["excluded_streams"]
+        _require(
+            isinstance(raw_excluded, list),
+            "version-2 excluded streams must be an array",
+        )
+        excluded_order: list[tuple[str, str, str]] = []
+        for excluded_index, raw_excluded_stream in enumerate(raw_excluded):
+            _require(
+                isinstance(raw_excluded_stream, Mapping),
+                f"excluded stream {excluded_index} is invalid",
+            )
+            require_exact_fields(
+                raw_excluded_stream,
+                expected=_EXCLUDED_STREAM_FIELDS,
+                name=f"excluded stream {excluded_index}",
+            )
+            excluded_job_id = sha256_digest(
+                raw_excluded_stream["job_id"], name="excluded stream job_id"
+            )
+            excluded_object_id = nonempty_string(
+                raw_excluded_stream["object_id"], name="excluded stream object_id"
+            )
+            excluded_episode_id = genuine_integer(
+                raw_excluded_stream["episode_id"],
+                name="excluded stream episode_id",
+                minimum=0,
+            )
+            excluded_stratum = nonempty_string(
+                raw_excluded_stream["stratum"], name="excluded stream stratum"
+            )
+            excluded_camera_id = nonempty_string(
+                raw_excluded_stream["camera_id"], name="excluded stream camera_id"
+            )
+            _require(
+                raw_excluded_stream["reason"] == SUPPORT_NEGATIVE_REASON,
+                "excluded stream is not a target-free visibility negative",
+            )
+            _require(
+                excluded_job_id not in excluded_jobs,
+                "version-2 plan repeats an excluded stream",
+            )
+            excluded_jobs[excluded_job_id] = (
+                excluded_object_id,
+                excluded_episode_id,
+                excluded_stratum,
+                excluded_camera_id,
+            )
+            excluded_order.append(
+                (excluded_object_id, excluded_camera_id, excluded_job_id)
+            )
+        _require(
+            excluded_order == sorted(excluded_order),
+            "excluded streams are not sorted",
+        )
     normalized_cases: list[dict[str, Any]] = []
     case_order: list[tuple[str, int]] = []
     for case_index, raw_case in enumerate(raw_cases):
@@ -713,15 +834,48 @@ def materialize_deform360_prob4d_calibration_samples(
         )
     _require(case_order == sorted(case_order), "plan cases are not sorted")
 
+    case_identity_by_object = {
+        cast(str, case["object_id"]): (
+            cast(int, case["episode_id"]),
+            cast(str, case["stratum"]),
+        )
+        for case in normalized_cases
+    }
+    for object_id, episode_id, stratum, _camera_id in excluded_jobs.values():
+        _require(
+            case_identity_by_object.get(object_id) == (episode_id, stratum),
+            "excluded stream differs from its retained calibration case",
+        )
+
     succeeded_jobs = {
         cast(str, row["job_id"])
         for row in cast(Sequence[Mapping[str, Any]], production["jobs"])
         if row["status"] == "succeeded"
     }
-    _require(
-        seen_jobs == succeeded_jobs,
-        "metric-prefix plan must cover every and only successful production job",
-    )
+    if plan["schema_version"] == PLAN_VERSION:
+        _require(
+            seen_jobs == succeeded_jobs,
+            "metric-prefix plan must cover every and only successful production job",
+        )
+    else:
+        _require(
+            seen_jobs.isdisjoint(excluded_jobs)
+            and seen_jobs | set(excluded_jobs) == succeeded_jobs,
+            "visible-stream plan does not account for every production job",
+        )
+        production_rows = {
+            cast(str, row["job_id"]): row
+            for row in cast(Sequence[Mapping[str, Any]], production["jobs"])
+        }
+        for job_id, identity in excluded_jobs.items():
+            row = production_rows[job_id]
+            object_id, _episode_id, _stratum, camera_id = identity
+            _require(
+                row["status"] == "succeeded"
+                and row["object_id"] == object_id
+                and row["camera_id"] == camera_id,
+                "excluded stream differs from visual production",
+            )
 
     output = Path(output_directory).resolve()
     _require(not output.exists(), "output directory already exists")
@@ -751,6 +905,13 @@ def materialize_deform360_prob4d_calibration_samples(
         source_artifacts[plan_copy.relative_to(temporary).as_posix()] = _sha256_file(
             plan_copy
         )
+        if eligibility_policy_source is not None:
+            policy_copy = (
+                temporary / "source-artifacts" / "camera-eligibility-policy.json"
+            )
+            source_artifacts[policy_copy.relative_to(temporary).as_posix()] = (
+                _copy_bound_source(eligibility_policy_source, policy_copy)
+            )
 
         for case_index, case in enumerate(normalized_cases):
             case_predictions: list[dict[str, object]] = []
