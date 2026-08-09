@@ -1,0 +1,68 @@
+name: Format Deform360 joint-sparse geometric v4 once
+
+on:
+  push:
+    branches:
+      - agent/materialize-deform360-joint-sparse-geometric-v4
+    paths:
+      - .github/workflows/_format-deform360-joint-sparse-geometric-v4-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform360-joint-sparse-geometric-v4-once
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/materialize-deform360-joint-sparse-geometric-v4
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Apply deterministic source formatting and remove this helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = \
+            "agent/materialize-deform360-joint-sparse-geometric-v4"
+          test "$(git rev-list --count HEAD..origin/main)" = "0"
+          python -m pip install "ruff==0.16.2"
+          files=(
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+            scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
+            tests/test_deform360_joint_sparse_geometric_v4.py
+            tests/test_deform360_joint_sparse_geometric_v4_workflow.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          git rm .github/workflows/_format-deform360-joint-sparse-geometric-v4-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          git commit -m "Format Deform360 joint-sparse geometric v4"
+          git push origin HEAD:agent/materialize-deform360-joint-sparse-geometric-v4
