@@ -39,10 +39,11 @@ def test_canonical_integer_arrays_are_little_endian_on_every_host() -> None:
         "raw\\artifact.npy",
         "raw//artifact.npy",
         "raw/artifact.npy/",
+        " raw/artifact.npy ",
     ],
 )
 def test_source_artifact_mapping_rejects_nonportable_paths(path: str) -> None:
-    with pytest.raises(ValueError, match="canonical relative POSIX"):
+    with pytest.raises(ValueError, match="canonical paths.*relative POSIX"):
         source_artifact_mapping(
             {path: "a" * 64},
             name="source_artifacts",
