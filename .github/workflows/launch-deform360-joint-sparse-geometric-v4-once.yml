@@ -1,0 +1,378 @@
+name: Launch Deform360 joint-sparse geometric v4 once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-joint-sparse-geometric-v4-once.yml"
+      - "protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
+      - "src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py"
+      - "scripts/science/materialize_deform360_joint_sparse_geometric_v4.py"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-joint-sparse-geometric-v4-once
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_RUNNER_NAME: workstation2
+  DEFORM360_RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  PREDICTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  METRIC_BATCH_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-visible-source-gate-v2/146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89/136f72b996e9c76b0bab3ab5db5d0fe7172e0307/metric-batch
+  GEOMETRIC_V4_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-joint-sparse-geometric-v4
+  MATERIALIZER_POLICY_ID: 08405c7e85a4730b1affb0110f9d50bcb02db26462ce95bda374c8df83ef845b
+  ISSUE_NUMBER: "148"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  execute:
+    name: Materialize and evaluate development-only v4 / workstation2
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: self-hosted
+    timeout-minutes: 240
+    steps:
+      - name: Admit the sole runner and results-only namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test -d "${DEFORM360_RESULTS_ROOT}"
+          test -d "${PREDICTION_ROOT}"
+          test -d "${METRIC_BATCH_ROOT}"
+          test -f "${PREDICTION_ROOT}/visual-production-result.json"
+          case "${PREDICTION_ROOT}/" in
+            "${DEFORM360_RESULTS_ROOT}/"*) ;;
+            *) echo "prediction root leaves results namespace" >&2; exit 1 ;;
+          esac
+          case "${METRIC_BATCH_ROOT}/" in
+            "${DEFORM360_RESULTS_ROOT}/"*) ;;
+            *) echo "metric root leaves results namespace" >&2; exit 1 ;;
+          esac
+          for admitted in \
+            "${PREDICTION_ROOT}" \
+            "${METRIC_BATCH_ROOT}" \
+            "${GEOMETRIC_V4_OUTPUT_ROOT}"; do
+            case "${admitted}/" in
+              "${DEFORM360_OFFICIAL_RAW_ROOT}/"*|\
+              "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}/"*)
+                echo "results path overlaps a forbidden raw root" >&2
+                exit 1
+                ;;
+            esac
+          done
+          echo "results_tree_only=true"
+          echo "prediction_support_masks_used=true"
+          echo "released_robot_metric_points_used=true"
+          echo "prediction_point_values_used=false"
+          echo "prediction_residuals_used=false"
+          echo "calibration_outcomes_used=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+          echo "confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "replacement_allowed=false"
+
+      - name: Check out exact protected main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Build an isolated exact-source runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv_bin="$(command -v uv)"
+          test -x "${uv_bin}"
+          runtime="${RUNNER_TEMP}/deform360-joint-sparse-geometric-v4-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          export UV_CACHE_DIR="${RUNNER_TEMP}/uv-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          "${uv_bin}" venv --python 3.12 "${runtime}"
+          "${uv_bin}" pip install \
+            --python "${runtime}/bin/python" \
+            --no-cache-dir \
+            -e .
+          "${runtime}/bin/python" - <<'PY'
+          import numpy
+          import bayesian_phystwin.deform360_joint_sparse_geometric_materializer_v4
+          import bayesian_phystwin.deform360_joint_sparse_observability_v4
+          print(numpy.__version__)
+          PY
+          echo "V4_PYTHON=${runtime}/bin/python" >> "${GITHUB_ENV}"
+
+      - name: Materialize immutable geometric v4 factors
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_root="${GEOMETRIC_V4_OUTPUT_ROOT}/${MATERIALIZER_POLICY_ID}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          materialization="${run_root}/materialization"
+          evaluation="${run_root}/evaluation"
+          test ! -e "${run_root}"
+          "${V4_PYTHON}" \
+            scripts/science/materialize_deform360_joint_sparse_geometric_v4.py \
+            --metric-batch-root "${METRIC_BATCH_ROOT}" \
+            --prediction-root "${PREDICTION_ROOT}" \
+            --production-result "${PREDICTION_ROOT}/visual-production-result.json" \
+            --selection \
+              protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec \
+              protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-policy \
+              protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --camera-policy \
+              protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json \
+            --v4-policy \
+              protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json \
+            --materializer-policy \
+              protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output-dir "${materialization}"
+          (
+            cd "${materialization}"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          echo "V4_RUN_ROOT=${run_root}" >> "${GITHUB_ENV}"
+          echo "V4_MATERIALIZATION=${materialization}" >> "${GITHUB_ENV}"
+          echo "V4_EVALUATION=${evaluation}" >> "${GITHUB_ENV}"
+
+      - name: Evaluate the frozen object-level observability design
+        id: evaluate
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          "${V4_PYTHON}" \
+            scripts/science/evaluate_deform360_joint_sparse_observability_v4.py \
+            --policy \
+              protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json \
+            --manifest "${V4_MATERIALIZATION}/manifest.json" \
+            --output-dir "${V4_EVALUATION}"
+          status=$?
+          set -e
+          test "${status}" -eq 0 -o "${status}" -eq 3
+          (
+            cd "${V4_EVALUATION}"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build compact content-addressed execution evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUNNER_TEMP}/deform360-joint-sparse-geometric-v4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${compact}"
+          mkdir -p "${compact}/materialization" "${compact}/evaluation/cases"
+          cp "${V4_MATERIALIZATION}/materializer-policy.json" \
+            "${compact}/materialization/"
+          cp "${V4_MATERIALIZATION}/v4-policy.json" \
+            "${compact}/materialization/"
+          cp "${V4_MATERIALIZATION}/manifest.json" \
+            "${compact}/materialization/"
+          cp "${V4_MATERIALIZATION}/materialization-result.json" \
+            "${compact}/materialization/"
+          cp "${V4_EVALUATION}/development-report.json" \
+            "${compact}/evaluation/"
+          cp "${V4_EVALUATION}"/cases/*.json "${compact}/evaluation/cases/"
+          "${V4_PYTHON}" - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          compact = Path(os.environ["COMPACT_ROOT"])
+          materialization = json.loads(
+              (compact / "materialization/materialization-result.json").read_text()
+          )
+          manifest = json.loads(
+              (compact / "materialization/manifest.json").read_text()
+          )
+          report = json.loads(
+              (compact / "evaluation/development-report.json").read_text()
+          )
+          expected_boundary = {
+              "development_cohort_only": True,
+              "prediction_point_values_used": False,
+              "prediction_residuals_used": False,
+              "calibration_outcomes_used": False,
+              "confirmation_payloads_opened": False,
+              "adaptive_confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "future_frames_used": False,
+              "replacement_allowed": False,
+              "human_approval_required": False,
+              "new_measurements_required": False,
+          }
+          for value in (materialization, manifest, report):
+              if value["information_boundary"] != expected_boundary:
+                  raise SystemExit("v4 compact evidence boundary changed")
+          if report["confirmation_access_authorized"] is not False:
+              raise SystemExit("v4 report authorized confirmation")
+          evaluator_exit = int(os.environ["EVALUATOR_EXIT_CODE"])
+          if evaluator_exit not in {0, 3}:
+              raise SystemExit("unexpected evaluator exit code")
+          if bool(report["support_gate"]["passed"]) != (evaluator_exit == 0):
+              raise SystemExit("v4 support gate differs from evaluator exit")
+          identity = {
+              "schema": (
+                  "bayesian-phystwin."
+                  "deform360-joint-sparse-geometric-v4-execution-receipt"
+              ),
+              "schema_version": 1,
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "source_revision": os.environ["GITHUB_SHA"],
+              "materializer_policy_id": os.environ["MATERIALIZER_POLICY_ID"],
+              "materialization_id": materialization["materialization_id"],
+              "manifest_id": manifest["manifest_id"],
+              "development_report_id": report["report_id"],
+              "development_status": report["status"],
+              "support_gate": report["support_gate"],
+              "summary": report["summary"],
+              "evaluator_exit_code": evaluator_exit,
+              "persistent_run_root": os.environ["V4_RUN_ROOT"],
+              "confirmation_access_authorized": False,
+              "information_boundary": expected_boundary,
+          }
+          canonical = json.dumps(
+              identity,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          receipt = {
+              **identity,
+              "receipt_id": hashlib.sha256(canonical).hexdigest(),
+          }
+          (compact / "execution-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False)
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
+          (
+            cd "${compact}"
+            find . -type f ! -name SHA256SUMS -printf '%P\0' \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          echo "COMPACT_ROOT=${compact}" >> "${GITHUB_ENV}"
+          echo "ARTIFACT_NAME=deform360-joint-sparse-geometric-v4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "${GITHUB_ENV}"
+        env:
+          COMPACT_ROOT: ${{ runner.temp }}/deform360-joint-sparse-geometric-v4-${{ github.run_id }}-${{ github.run_attempt }}
+          EVALUATOR_EXIT_CODE: ${{ steps.evaluate.outputs.exit_code }}
+
+      - name: Upload compact development evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.COMPACT_ROOT }}
+          if-no-files-found: error
+          retention-days: 180
+
+      - name: Publish bounded terminal receipt to issue 148
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${V4_PYTHON}" - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          receipt = json.loads(
+              (Path(os.environ["COMPACT_ROOT"]) / "execution-receipt.json").read_text()
+          )
+          summary = receipt["summary"]
+          by_stratum = summary["by_stratum"]
+          body = f"""## Deform360 joint-sparse geometric v4 development result
+
+          - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
+          - exact protected-main revision: `{receipt['source_revision']}`
+          - materializer policy ID: `{receipt['materializer_policy_id']}`
+          - materialization ID: `{receipt['materialization_id']}`
+          - manifest ID: `{receipt['manifest_id']}`
+          - development report ID: `{receipt['development_report_id']}`
+          - receipt ID: `{receipt['receipt_id']}`
+          - status: `{receipt['development_status']}`
+          - supported objects: `{summary['supported_object_count']}/{summary['object_count']}`
+          - supported sheet objects: `{by_stratum['sheet']['supported_object_count']}/{by_stratum['sheet']['object_count']}`
+          - supported volumetric objects: `{by_stratum['volumetric']['supported_object_count']}/{by_stratum['volumetric']['object_count']}`
+          - technical-failure objects: `{summary['technical_failure_object_count']}`
+          - evaluator exit code: `{receipt['evaluator_exit_code']}`
+          - compact artifact: `{os.environ['ARTIFACT_NAME']}`
+          - prediction point values used: `false`
+          - prediction residuals used: `false`
+          - adaptive-confirmation payloads opened: `false`
+          - confirmation payloads opened: `false`
+          - target outcomes used: `false`
+          - confirmation access authorized: `false`
+
+          This is a development-only structural observability result on the ten
+          already-opened source objects. It does not establish Prob4D calibration,
+          BayesianPhysTwin physical-query benefit, confirmation accuracy,
+          Causal4D benefit, deployment safety, or state of the art.
+          """
+          body = "\n".join(line.strip() for line in body.splitlines()).strip() + "\n"
+          request = urllib.request.Request(
+              (
+                  f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}"
+                  f"/issues/{os.environ['ISSUE_NUMBER']}/comments"
+              ),
+              data=json.dumps({"body": body}).encode("utf-8"),
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "bayesian-phystwin-deform360-v4",
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=60) as response:
+              if response.status != 201:
+                  raise SystemExit(f"issue publication returned HTTP {response.status}")
+              payload = json.loads(response.read().decode("utf-8"))
+          print(f"published issue comment {payload['id']}")
+          PY
+
+      - name: Enforce exact source and closed terminal boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+          "${V4_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          receipt = json.loads(
+              (Path(os.environ["COMPACT_ROOT"]) / "execution-receipt.json").read_text()
+          )
+          assert receipt["confirmation_access_authorized"] is False
+          assert receipt["information_boundary"]["confirmation_payloads_opened"] is False
+          assert receipt["information_boundary"]["adaptive_confirmation_payloads_opened"] is False
+          assert receipt["information_boundary"]["target_outcomes_used"] is False
+          assert receipt["information_boundary"]["replacement_allowed"] is False
+          PY
+
+# One-shot development execution. No raw, adaptive-confirmation, or confirmation access.
