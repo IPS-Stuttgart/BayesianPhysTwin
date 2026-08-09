@@ -102,7 +102,7 @@ python scripts/science/materialize_deform360_prob4d_calibration_samples.py \
   --production-result production/visual-production-result.json \
   --production-root production \
   --prediction-root /durable/calibration-visual-production \
-  --metric-root /durable/deform360-metric-prefix \
+  --metric-root /durable/deform360-prob4d-metric-batch/metrics \
   --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
   --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
   --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \

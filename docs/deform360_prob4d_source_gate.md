@@ -101,18 +101,24 @@ fold and check, and recursively checksums the portable decision.
 ## Registered execution
 
 `.github/workflows/deform360-prob4d-source-gate.yml` registers the complete
-source-only pipeline. Pull requests run contracts only. Empirical execution is
-possible solely through the separately reviewed, main-branch one-shot caller
-`launch-deform360-prob4d-source-gate-once.yml`, with
-`execute_authorized=true`, on the named `workstation2` runner.
+source-only pipeline. Pull requests run contracts only. The frozen version-1
+execution used the separately reviewed main-branch caller
+`launch-deform360-prob4d-source-gate-once.yml`; that launcher remains
+byte-identical and is never reused. The version-2 execution is registered by the
+distinct one-shot caller
+`launch-deform360-prob4d-visible-source-gate-v2-once.yml`, which supplies
+`execute_authorized=true` and
+`eligibility_contract=v2-target-free-visible` on the named `workstation2`
+runner. Neither caller exposes a manual dispatch path.
 
-The runner consumes the already sealed ten-object visual production and the
-released Deform360 robot/camera measurements. It records complete-stream
-support before fitting, uploads compact negative or positive evidence before
-enforcement, permits no replacement stream, and opens no confirmation payload.
-A source-gate failure is therefore a valid terminal result for this method
-version. No manual approval, physical registration review, new recording, or
-robot execution is part of this public-data path.
+The version-2 runner consumes the same already sealed ten-object visual
+production and released Deform360 robot/camera measurements. It must reproduce
+the target-free accounting of 313 included streams and 11 retained visibility
+exclusions across all ten objects before fitting. It uploads compact negative or
+positive evidence before enforcement, permits no replacement stream, and opens
+no confirmation payload. A source-gate failure is therefore a valid terminal
+result for this method version. No manual approval, physical registration
+review, new recording, or robot execution is part of this public-data path.
 
 ## Claim boundary
 

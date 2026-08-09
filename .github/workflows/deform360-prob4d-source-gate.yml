@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/deform360-prob4d-source-gate.yml"
       - ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
+      - ".github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml"
       - "docs/deform360_prob4d_sample_materializer.md"
       - "docs/deform360_prob4d_source_calibration.md"
       - "docs/deform360_prob4d_source_gate.md"
@@ -31,6 +32,11 @@ on:
         description: Run the sole frozen public ten-object source gate.
         required: true
         type: boolean
+      eligibility_contract:
+        description: Select the frozen all-stream v1 or target-free visible-stream v2 contract.
+        required: false
+        type: string
+        default: v1-all-streams
 
 permissions:
   actions: read
@@ -61,10 +67,12 @@ env:
   PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
   MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
   METRIC_POLICY_ID: c90d48d558f020e61077c096ec641ba5f095ea4186060088ffdb9de3d83c7f34
+  CAMERA_ELIGIBILITY_POLICY_ID: 1540e20e847d9877a54ca7a1cdc5290f542de25c1e779c4cf145532f9dd3b9d0
   SOURCE_GATE_LOCK_ID: cc96d2cc03a5039479621acc7769690ef9bf8c15c00d418a0f14d3303ce3ebfb
   VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
   PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed/aligned
   SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-source-gate-v1
+  VISIBLE_SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-visible-source-gate-v2
 
 jobs:
   contracts:
@@ -158,8 +166,19 @@ jobs:
         run: |
           set -euo pipefail
           test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
-          test "${{ github.workflow_ref }}" = \
-            "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-prob4d-source-gate-once.yml@refs/heads/main"
+          case "${{ inputs.eligibility_contract }}" in
+            v1-all-streams)
+              expected_caller="IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-prob4d-source-gate-once.yml@refs/heads/main"
+              ;;
+            v2-target-free-visible)
+              expected_caller="IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml@refs/heads/main"
+              ;;
+            *)
+              echo "unsupported eligibility contract" >&2
+              exit 1
+              ;;
+          esac
+          test "${{ github.workflow_ref }}" = "${expected_caller}"
           test "${{ inputs.execute_authorized }}" = "true"
 
       - name: Check out exact reviewed main revision
@@ -210,7 +229,21 @@ jobs:
           work="${RUNNER_TEMP}/deform360-prob4d-source-gate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           compact="${work}/compact"
           evidence="${work}/production-evidence"
-          source="${SOURCE_OUTPUT_ROOT}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}"
+          case "${{ inputs.eligibility_contract }}" in
+            v1-all-streams)
+              source_base="${SOURCE_OUTPUT_ROOT}"
+              camera_policy=""
+              ;;
+            v2-target-free-visible)
+              source_base="${VISIBLE_SOURCE_OUTPUT_ROOT}"
+              camera_policy="${GITHUB_WORKSPACE}/protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json"
+              ;;
+            *)
+              echo "unsupported eligibility contract" >&2
+              exit 1
+              ;;
+          esac
+          source="${source_base}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}"
           test ! -e "${work}"
           test ! -e "${source}"
           mkdir -p "${compact}" "${evidence}" "$(dirname "${source}")"
@@ -224,6 +257,8 @@ jobs:
             echo "CALIBRATION_ROOT=${source}/source-calibration"
             echo "SOURCE_GATE_ROOT=${source}/source-gate"
             echo "PROB4D_CHECKOUT=${GITHUB_WORKSPACE}/_prob4d"
+            echo "ELIGIBILITY_CONTRACT=${{ inputs.eligibility_contract }}"
+            echo "CAMERA_ELIGIBILITY_POLICY=${camera_policy}"
           } >> "${GITHUB_ENV}"
 
       - name: Verify authoritative compact-production artifact metadata
@@ -313,6 +348,12 @@ jobs:
                   "deform360_official_hub_prob4d_source_gate_v1.json"
               ).read_text()
           )
+          camera = json.loads(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_prob4d_camera_eligibility_v2.json"
+              ).read_text()
+          )
           if not (
               metric["artifact_id"] == os.environ["METRIC_POLICY_ID"]
               and metric["confirmation_payloads_opened"] is False
@@ -331,6 +372,27 @@ jobs:
               and gate["information_boundary"]["target_outcomes_used"] is False
           ):
               raise SystemExit("public source-gate lock changed")
+          contract = os.environ["ELIGIBILITY_CONTRACT"]
+          if contract == "v2-target-free-visible":
+              if not (
+                  camera["artifact_id"]
+                  == os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
+                  and camera["minimum_supported_object_count"] == 10
+                  and camera["minimum_supported_streams_per_object"] == 2
+                  and camera["minimum_supported_stream_fraction"] == 0.9
+                  and camera["camera_images_used_for_eligibility"] is False
+                  and camera["prediction_residuals_used_for_eligibility"] is False
+                  and camera["calibration_outcomes_used_for_eligibility"] is False
+                  and camera["replacement_allowed"] is False
+                  and camera["confirmation_payloads_opened"] is False
+                  and camera["future_frames_used"] is False
+                  and camera["target_outcomes_used"] is False
+                  and camera["human_approval_required"] is False
+                  and camera["new_measurements_required"] is False
+              ):
+                  raise SystemExit("target-free camera-eligibility lock changed")
+          elif contract != "v1-all-streams":
+              raise SystemExit("unsupported eligibility contract")
           PY
 
       - name: Commit the durable no-overwrite source root
@@ -346,18 +408,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/science/materialize_deform360_prob4d_metric_batch.py \
-            --prepared-source-inventory "${PRODUCTION_EVIDENCE}/admission/prepared-source-inventory.json" \
-            --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json" \
-            --production-root "${VISUAL_PRODUCTION_ROOT}" \
-            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
-            --processed-root "${PROCESSED_ROOT}" \
-            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
-            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
-            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
-            --processing-revision "${PROCESSING_REVISION}" \
-            --implementation-revision "${GITHUB_SHA}" \
-            --output-dir "${METRIC_BATCH_ROOT}" \
+          metric_args=(
+            python scripts/science/materialize_deform360_prob4d_metric_batch.py
+            --prepared-source-inventory "${PRODUCTION_EVIDENCE}/admission/prepared-source-inventory.json"
+            --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json"
+            --production-root "${VISUAL_PRODUCTION_ROOT}"
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}"
+            --processed-root "${PROCESSED_ROOT}"
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json
+            --processing-revision "${PROCESSING_REVISION}"
+            --implementation-revision "${GITHUB_SHA}"
+            --output-dir "${METRIC_BATCH_ROOT}"
+          )
+          if [[ -n "${CAMERA_ELIGIBILITY_POLICY}" ]]; then
+            metric_args+=(
+              --camera-eligibility-policy "${CAMERA_ELIGIBILITY_POLICY}"
+            )
+          fi
+          "${metric_args[@]}" \
             > "${SOURCE_WORK_ROOT}/metric-batch.stdout" \
             2> "${SOURCE_WORK_ROOT}/metric-batch.stderr"
 
@@ -392,6 +462,13 @@ jobs:
               "schema": "bayesian-phystwin.deform360-prob4d-source-support-receipt",
               "schema_version": 1,
               "implementation_revision": os.environ["GITHUB_SHA"],
+              "eligibility_contract": os.environ["ELIGIBILITY_CONTRACT"],
+              "camera_eligibility_policy_id": (
+                  os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
+                  if os.environ["ELIGIBILITY_CONTRACT"]
+                  == "v2-target-free-visible"
+                  else None
+              ),
               "metric_batch_step_outcome": os.environ["METRIC_BATCH_OUTCOME"],
               "metric_batch_result_id": None if result is None else result["result_id"],
               "metric_batch_status": None if result is None else result["status"],
@@ -417,27 +494,70 @@ jobs:
           set -euo pipefail
           test "${METRIC_BATCH_OUTCOME}" = "success"
           (cd "${METRIC_BATCH_ROOT}" && sha256sum --check SHA256SUMS >/dev/null)
-          RESULT="${METRIC_BATCH_ROOT}/metric-batch-result.json" python - <<'PY'
+          RESULT="${METRIC_BATCH_ROOT}/metric-batch-result.json" \
+            PLAN="${METRIC_BATCH_ROOT}/metric-prefix-plan.json" python - <<'PY'
           import json
           import os
           from pathlib import Path
 
           result = json.loads(Path(os.environ["RESULT"]).read_text())
-          expected = {
+          common = {
               "implementation_revision": os.environ["GITHUB_SHA"],
               "production_result_id": os.environ["PRODUCTION_RESULT_ID"],
               "object_count": 10,
               "admitted_stream_count": 324,
-              "supported_stream_count": 324,
-              "support_negative_stream_count": 0,
               "technical_failure_stream_count": 0,
+              "supported_object_count": 10,
               "plan_emitted": True,
-              "status": "all-streams-supported",
           }
-          if {key: result.get(key) for key in expected} != expected:
-              raise SystemExit("complete frozen source support gate failed")
-          if not (Path(os.environ["METRIC_BATCH_ROOT"]) / "metric-prefix-plan.json").is_file():
+          if {key: result.get(key) for key in common} != common:
+              raise SystemExit("frozen source-support lineage or accounting changed")
+          plan_path = Path(os.environ["PLAN"])
+          if not plan_path.is_file():
               raise SystemExit("complete metric-prefix plan was not emitted")
+          plan = json.loads(plan_path.read_text())
+          contract = os.environ["ELIGIBILITY_CONTRACT"]
+          if contract == "v1-all-streams":
+              expected = {
+                  "supported_stream_count": 324,
+                  "support_negative_stream_count": 0,
+                  "status": "all-streams-supported",
+              }
+              if {key: result.get(key) for key in expected} != expected:
+                  raise SystemExit("complete frozen v1 source support gate failed")
+              if not (
+                  plan.get("schema_version") == 1
+                  and "camera_eligibility_policy_id" not in plan
+                  and "excluded_streams" not in plan
+              ):
+                  raise SystemExit("v1 all-stream metric-prefix plan changed")
+          elif contract == "v2-target-free-visible":
+              expected = {
+                  "supported_stream_count": 313,
+                  "support_negative_stream_count": 11,
+                  "status": "target-free-visible-streams-supported",
+              }
+              if {key: result.get(key) for key in expected} != expected:
+                  raise SystemExit("frozen v2 target-free visibility gate failed")
+              exclusions = plan.get("excluded_streams")
+              included = sum(len(case["streams"]) for case in plan.get("cases", []))
+              if not (
+                  plan.get("schema_version") == 2
+                  and plan.get("camera_eligibility_policy_id")
+                  == os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
+                  and isinstance(exclusions, list)
+                  and len(exclusions) == 11
+                  and included == 313
+                  and len(plan.get("cases", [])) == 10
+                  and all(
+                      row.get("reason")
+                      == "released-robot-geometry-outside-fixed-camera-prefix"
+                      for row in exclusions
+                  )
+              ):
+                  raise SystemExit("v2 retained-exclusion plan changed")
+          else:
+              raise SystemExit("unsupported eligibility contract")
           boundary = result["information_boundary"]
           if not (
               boundary["confirmation_payloads_opened"] is False
@@ -456,19 +576,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/science/materialize_deform360_prob4d_calibration_samples.py \
-            --plan "${METRIC_BATCH_ROOT}/metric-prefix-plan.json" \
-            --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json" \
-            --production-root "${VISUAL_PRODUCTION_ROOT}" \
-            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
-            --metric-root "${METRIC_BATCH_ROOT}/metric-prefix" \
-            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
-            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
-            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
-            --prob4d-checkout "${PROB4D_CHECKOUT}" \
-            --prob4d-revision "${PROB4D_REVISION}" \
-            --processing-revision "${PROCESSING_REVISION}" \
-            --output-dir "${SAMPLE_ROOT}" \
+          sample_args=(
+            python scripts/science/materialize_deform360_prob4d_calibration_samples.py
+            --plan "${METRIC_BATCH_ROOT}/metric-prefix-plan.json"
+            --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json"
+            --production-root "${VISUAL_PRODUCTION_ROOT}"
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}"
+            --metric-root "${METRIC_BATCH_ROOT}/metrics"
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json
+            --prob4d-checkout "${PROB4D_CHECKOUT}"
+            --prob4d-revision "${PROB4D_REVISION}"
+            --processing-revision "${PROCESSING_REVISION}"
+            --output-dir "${SAMPLE_ROOT}"
+          )
+          if [[ -n "${CAMERA_ELIGIBILITY_POLICY}" ]]; then
+            sample_args+=(
+              --camera-eligibility-policy "${CAMERA_ELIGIBILITY_POLICY}"
+            )
+          fi
+          "${sample_args[@]}" \
             > "${SOURCE_WORK_ROOT}/samples.stdout" \
             2> "${SOURCE_WORK_ROOT}/samples.stderr"
 
@@ -565,6 +693,13 @@ jobs:
               "schema": "bayesian-phystwin.deform360-prob4d-source-pipeline-receipt",
               "schema_version": 1,
               "implementation_revision": os.environ["GITHUB_SHA"],
+              "eligibility_contract": os.environ["ELIGIBILITY_CONTRACT"],
+              "camera_eligibility_policy_id": (
+                  os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
+                  if os.environ["ELIGIBILITY_CONTRACT"]
+                  == "v2-target-free-visible"
+                  else None
+              ),
               "visual_production_result_id": os.environ["PRODUCTION_RESULT_ID"],
               "prob4d_revision": os.environ["PROB4D_REVISION"],
               "motioncrafter_revision": os.environ["MOTIONCRAFTER_REVISION"],
