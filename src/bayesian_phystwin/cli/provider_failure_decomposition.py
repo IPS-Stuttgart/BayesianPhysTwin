@@ -47,12 +47,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "status_sha256": emitted["status_sha256"],
                 "record_count": emitted["record_count"],
                 "accepted_count": emitted["accepted_count"],
-                "classified_rejection_count": emitted[
-                    "classified_rejection_count"
-                ],
-                "unresolved_rejection_count": emitted[
-                    "unresolved_rejection_count"
-                ],
+                "classified_rejection_count": emitted["classified_rejection_count"],
+                "unresolved_rejection_count": emitted["unresolved_rejection_count"],
             },
             indent=2,
             sort_keys=True,
