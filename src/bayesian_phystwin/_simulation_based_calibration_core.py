@@ -58,10 +58,14 @@ def normalized_weights(
         raise ValueError(f"{name} must match the posterior draw count")
     if np.any(weights < 0.0):
         raise ValueError(f"{name} must be nonnegative")
-    total = float(np.sum(weights, dtype=np.float64))
+    maximum = float(np.max(weights))
+    if maximum <= 0.0:
+        raise ValueError(f"{name} must have positive finite total mass")
+    scaled = weights / maximum
+    total = float(np.sum(scaled, dtype=np.float64))
     if not np.isfinite(total) or total <= 0.0:
         raise ValueError(f"{name} must have positive finite total mass")
-    return weights / total
+    return scaled / total
 
 
 def weighted_randomized_pit(
