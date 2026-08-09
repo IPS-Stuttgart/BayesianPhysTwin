@@ -468,6 +468,29 @@ def test_repository_visible_camera_policy_is_content_addressed() -> None:
     assert policy["replacement_allowed"] is False
 
 
+def test_visible_camera_policy_rejects_non_object() -> None:
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        validate_deform360_prob4d_camera_eligibility_policy([])
+
+
+def test_visible_camera_policy_rejects_changed_content_id(tmp_path: Path) -> None:
+    policy = json.loads(_eligibility_policy(tmp_path).read_text(encoding="utf-8"))
+    policy["artifact_id"] = "0" * 64
+
+    with pytest.raises(ValueError, match="policy ID changed"):
+        validate_deform360_prob4d_camera_eligibility_policy(policy)
+
+
+def test_visible_camera_policy_rejects_non_numeric_fraction(tmp_path: Path) -> None:
+    policy = json.loads(_eligibility_policy(tmp_path).read_text(encoding="utf-8"))
+    policy["minimum_supported_stream_fraction"] = True
+    identity = {key: value for key, value in policy.items() if key != "artifact_id"}
+    policy["artifact_id"] = content_id(identity)
+
+    with pytest.raises(ValueError, match="must be a finite number"):
+        validate_deform360_prob4d_camera_eligibility_policy(policy)
+
+
 def test_metric_batch_hashes_technical_failure_detail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
