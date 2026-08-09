@@ -30,6 +30,42 @@ OBSERVATION_BELIEF_SCHEMA = "phys4d.observation_belief"
 OBSERVATION_BELIEF_VERSION = 1
 
 
+_OBSERVATION_BELIEF_SERIALIZED_DESCRIPTOR_FIELDS = frozenset(
+    {
+        "schema_name",
+        "schema_version",
+        "case_id",
+        "stream_id",
+        "causal_frame_stop",
+        "view_names",
+        "window_names",
+        "factor_names",
+        "source_repository",
+        "source_revision",
+        "source_artifact_sha256",
+        "metadata",
+        "artifact_id",
+    }
+)
+_OBSERVATION_BELIEF_ARRAY_DTYPES = {
+    "declared_frame_ids": np.dtype(np.int64),
+    "mean_xyz_m": np.dtype(np.float64),
+    "frame_ids": np.dtype(np.int64),
+    "entity_ids": np.dtype(np.int64),
+    "view_indices": np.dtype(np.int64),
+    "window_indices": np.dtype(np.int64),
+    "correlation_group_ids": np.dtype(np.int64),
+    "factor_group_ids": np.dtype(np.int64),
+    "prior_reliability": np.dtype(np.float64),
+    "association_probability": np.dtype(np.float64),
+    "local_covariance_m2": np.dtype(np.float64),
+    "low_rank_factor_m": np.dtype(np.float64),
+    "group_ids": np.dtype(np.int64),
+    "group_prior_nominal_probability": np.dtype(np.float64),
+    "group_composite_weight": np.dtype(np.float64),
+}
+
+
 def array_sha256(values: np.ndarray) -> str:
     """Hash an array including its dtype and shape."""
 
@@ -481,9 +517,38 @@ def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
     """Load and fully revalidate an ``ObservationBeliefV1`` artifact."""
 
     with np.load(path, allow_pickle=False) as archive:
-        if "descriptor_json" not in archive:
-            raise ValueError("observation artifact has no descriptor_json")
-        descriptor = json.loads(str(archive["descriptor_json"]))
+        required_members = {
+            "descriptor_json",
+            *_OBSERVATION_BELIEF_ARRAY_DTYPES,
+        }
+        members = set(archive.files)
+        missing = required_members - members
+        extra = members - required_members
+        if missing or extra:
+            raise ValueError(
+                "observation artifact members changed; "
+                f"missing={sorted(missing)}, extra={sorted(extra)}"
+            )
+
+        descriptor_member = np.asarray(archive["descriptor_json"])
+        if descriptor_member.shape != ():
+            raise ValueError("descriptor_json must be a scalar array")
+        raw_descriptor = descriptor_member.item()
+        if isinstance(raw_descriptor, bytes):
+            try:
+                raw_descriptor = raw_descriptor.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise ValueError("descriptor_json is not valid UTF-8") from error
+        if type(raw_descriptor) is not str:
+            raise ValueError("descriptor_json must contain a string")
+        try:
+            descriptor = json.loads(raw_descriptor)
+        except (TypeError, ValueError) as error:
+            raise ValueError("descriptor_json is not valid JSON") from error
+        if not isinstance(descriptor, dict):
+            raise ValueError("observation descriptor must be a JSON object")
+        if set(descriptor) != _OBSERVATION_BELIEF_SERIALIZED_DESCRIPTOR_FIELDS:
+            raise ValueError("observation descriptor fields changed")
         if descriptor.get("schema_name") != OBSERVATION_BELIEF_SCHEMA:
             raise ValueError("unsupported observation-belief schema")
         version = genuine_integer(
@@ -493,35 +558,14 @@ def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
         )
         if version != OBSERVATION_BELIEF_VERSION:
             raise ValueError("unsupported observation-belief version")
-        arrays = {
-            name: np.asarray(archive[name])
-            for name in archive.files
-            if name != "descriptor_json"
-        }
-    required_arrays = {
-        "declared_frame_ids",
-        "mean_xyz_m",
-        "frame_ids",
-        "entity_ids",
-        "view_indices",
-        "window_indices",
-        "correlation_group_ids",
-        "factor_group_ids",
-        "prior_reliability",
-        "association_probability",
-        "local_covariance_m2",
-        "low_rank_factor_m",
-        "group_ids",
-        "group_prior_nominal_probability",
-        "group_composite_weight",
-    }
-    missing = required_arrays - arrays.keys()
-    extra = arrays.keys() - required_arrays
-    if missing or extra:
-        raise ValueError(
-            "observation artifact arrays changed; "
-            f"missing={sorted(missing)}, extra={sorted(extra)}"
-        )
+
+        arrays: dict[str, np.ndarray] = {}
+        for name, expected_dtype in _OBSERVATION_BELIEF_ARRAY_DTYPES.items():
+            values = np.asarray(archive[name])
+            if values.dtype != expected_dtype:
+                raise ValueError(f"{name} must have exact dtype {expected_dtype.name}")
+            arrays[name] = values
+
     belief = ObservationBeliefV1(
         case_id=descriptor["case_id"],
         stream_id=descriptor["stream_id"],
@@ -535,7 +579,7 @@ def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
         metadata=descriptor["metadata"],
         **arrays,
     )
-    expected = descriptor.get("artifact_id", "")
+    expected = descriptor["artifact_id"]
     _validate_sha256(expected, name="artifact_id")
     if belief.artifact_id != expected:
         raise ValueError("observation artifact digest does not match its payload")

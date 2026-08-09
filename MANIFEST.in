@@ -48,3 +48,5 @@ include scripts/science/materialize_deform360_prob4d_metric_batch.py
 include scripts/science/evaluate_deform360_prob4d_source_gate.py
 include docs/deform360_calibration_visual_production.md
 include scripts/science/execute_deform360_calibration_visual_production.py
+include docs/observation-contract-conformance.md
+recursive-include src/bayesian_phystwin/contract_data/observation_belief_v1 *.json

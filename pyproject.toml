@@ -74,7 +74,11 @@ pyrecest = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-bayesian_phystwin = ["py.typed"]
+bayesian_phystwin = [
+    "py.typed",
+    "contract_data/observation_belief_v1/*.json",
+    "contract_data/observation_belief_v1/vectors/*.json",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

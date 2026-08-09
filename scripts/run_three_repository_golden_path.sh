@@ -168,6 +168,9 @@ python -m venv "${TEST_VENV}"
   pytest "${PROB4D_WHEEL}" "${BPT_WHEEL}" "${CAUSAL4D_WHEEL}"
 "${TEST_VENV}/bin/python" -m pip check
 
+env -u PYTHONPATH PYTHONNOUSERSITE=1 \
+  "${TEST_VENV}/bin/python" -I -c 'from importlib import import_module; expected="a62c693a14c227daa1f4c8db850e691a1d0081df0c853cf0174c33d0b8504ce9"; names=("prob4d.observation_contract_bundle","bayesian_phystwin.observation_contract_bundle","causal4d.observation_contract_bundle"); observed={name:import_module(name).observation_contract_bundle_manifest()["bundle_sha256"] for name in names}; assert set(observed.values())=={expected}, observed; print(f"verified shared observation-contract bundle {expected}")'
+
 shopt -s nullglob
 integration_tests=(
   "${BPT_BUILD_ROOT}"/integration_tests/test_three_repository_*.py

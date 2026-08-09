@@ -1,0 +1,249 @@
+{
+  "arrays": {
+    "closed": true,
+    "fields": {
+      "association_probability": {
+        "dtype": "float64",
+        "range": [
+          0.0,
+          1.0
+        ],
+        "shape": [
+          "N"
+        ]
+      },
+      "correlation_group_ids": {
+        "dtype": "int64",
+        "shape": [
+          "N"
+        ]
+      },
+      "declared_frame_ids": {
+        "dtype": "int64",
+        "shape": [
+          "F"
+        ]
+      },
+      "entity_ids": {
+        "dtype": "int64",
+        "shape": [
+          "N"
+        ]
+      },
+      "factor_group_ids": {
+        "dtype": "int64",
+        "shape": [
+          "N"
+        ]
+      },
+      "frame_ids": {
+        "dtype": "int64",
+        "shape": [
+          "N"
+        ]
+      },
+      "group_composite_weight": {
+        "dtype": "float64",
+        "lower_exclusive": true,
+        "range": [
+          0.0,
+          1.0
+        ],
+        "shape": [
+          "G"
+        ]
+      },
+      "group_ids": {
+        "dtype": "int64",
+        "shape": [
+          "G"
+        ]
+      },
+      "group_prior_nominal_probability": {
+        "dtype": "float64",
+        "range": [
+          0.0,
+          1.0
+        ],
+        "shape": [
+          "G"
+        ]
+      },
+      "local_covariance_m2": {
+        "dtype": "float64",
+        "shape": [
+          "N",
+          3,
+          3
+        ]
+      },
+      "low_rank_factor_m": {
+        "dtype": "float64",
+        "shape": [
+          "N",
+          3,
+          "R"
+        ]
+      },
+      "mean_xyz_m": {
+        "dtype": "float64",
+        "shape": [
+          "N",
+          3
+        ]
+      },
+      "prior_reliability": {
+        "dtype": "float64",
+        "range": [
+          0.0,
+          1.0
+        ],
+        "shape": [
+          "N"
+        ]
+      },
+      "view_indices": {
+        "dtype": "int64",
+        "shape": [
+          "N"
+        ]
+      },
+      "window_indices": {
+        "dtype": "int64",
+        "shape": [
+          "N"
+        ]
+      }
+    }
+  },
+  "compatibility": {
+    "producer_and_consumers_must_report_bundle_sha256": true,
+    "provider_specific_metadata_is_validated_separately": true,
+    "schema_changes_require_new_version": true
+  },
+  "content_address": {
+    "aggregate": [
+      "canonical descriptor bytes",
+      "for each array: UTF-8 member name",
+      "for each array: lowercase ASCII array SHA-256 hex digest"
+    ],
+    "array_digest": [
+      "numpy dtype.str encoded as ASCII",
+      "JSON shape with separators ',' ':' encoded as ASCII",
+      "C-contiguous raw bytes"
+    ],
+    "array_order": "lexicographic by member name",
+    "descriptor": "canonical JSON of the descriptor without artifact_id",
+    "hash": "sha256"
+  },
+  "contract_id": "phys4d.observation_belief.v1",
+  "descriptor": {
+    "closed": true,
+    "fields": {
+      "artifact_id": {
+        "excluded_from_content_address": true,
+        "format": "lowercase-sha256",
+        "serialized_only": true,
+        "type": "string"
+      },
+      "case_id": {
+        "nonempty": true,
+        "type": "string"
+      },
+      "causal_frame_stop": {
+        "exclusive": true,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "factor_names": {
+        "items": "nonempty-string",
+        "type": "array"
+      },
+      "metadata": {
+        "type": "finite-json-object"
+      },
+      "schema_name": {
+        "const": "phys4d.observation_belief",
+        "type": "string"
+      },
+      "schema_version": {
+        "const": 1,
+        "type": "integer"
+      },
+      "source_artifact_sha256": {
+        "format": "lowercase-sha256",
+        "type": "string"
+      },
+      "source_repository": {
+        "nonempty": true,
+        "type": "string"
+      },
+      "source_revision": {
+        "nonempty": true,
+        "type": "string"
+      },
+      "stream_id": {
+        "nonempty": true,
+        "type": "string"
+      },
+      "view_names": {
+        "items": "nonempty-string",
+        "minItems": 1,
+        "type": "array"
+      },
+      "window_names": {
+        "items": "nonempty-string",
+        "minItems": 1,
+        "type": "array"
+      }
+    }
+  },
+  "invariants": [
+    "declared_frame_ids is nonempty, nonnegative, strictly increasing, and every value is less than causal_frame_stop",
+    "frame_ids is contained in declared_frame_ids and every observation frame is less than causal_frame_stop",
+    "mean_xyz_m, covariance arrays, low-rank factors, probabilities, weights, and metadata are finite",
+    "local_covariance_m2 contains symmetric positive-definite 3x3 matrices",
+    "observation identity (frame_id, entity_id, view_index, window_index) is unique",
+    "view_indices and window_indices reference declared names",
+    "entity_ids, correlation_group_ids, and factor_group_ids are nonnegative",
+    "group_ids equals sorted unique correlation_group_ids",
+    "factor rank R equals len(factor_names)",
+    "all validated numeric arrays are defensively copied and read-only"
+  ],
+  "schema_name": "phys4d.observation_belief",
+  "schema_version": 1,
+  "serialization": {
+    "container": "npz",
+    "descriptor_encoding": "utf-8-json-scalar-array",
+    "descriptor_json": {
+      "allow_nan": false,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "sort_keys": true
+    },
+    "descriptor_member": "descriptor_json",
+    "extra_members_allowed": false,
+    "pickle_allowed": false,
+    "required_members": [
+      "descriptor_json",
+      "declared_frame_ids",
+      "mean_xyz_m",
+      "frame_ids",
+      "entity_ids",
+      "view_indices",
+      "window_indices",
+      "correlation_group_ids",
+      "factor_group_ids",
+      "prior_reliability",
+      "association_probability",
+      "local_covariance_m2",
+      "low_rank_factor_m",
+      "group_ids",
+      "group_prior_nominal_probability",
+      "group_composite_weight"
+    ]
+  },
+  "status": "normative"
+}
