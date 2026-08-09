@@ -55,10 +55,12 @@ with `query_identifiable: true`.
 ```
 
 Every `case_id` must be unique. Signals are tri-state booleans: `true`, `false`,
-or `null`. Metrics and metadata may contain any finite JSON values. Frames,
-points, tracks, views, and taxels should not be duplicated as independent cases
-when the registered statistical unit is a physical object or acquisition
-session.
+or `null`. Metrics and metadata may contain any finite JSON values. Duplicate
+JSON keys and non-finite constants are rejected before contract validation.
+Frames, points, tracks, views, and taxels should not be duplicated as independent
+cases when the registered statistical unit is a physical object or acquisition
+session. Record order is part of the portable evidence contract and should be
+frozen before publication.
 
 ## Failure taxonomy
 
@@ -90,16 +92,20 @@ bpt diagnostic run diagnose-provider-failures \
   source-provider-failure-report.json
 ```
 
-The output is written atomically and refuses to overwrite an existing path by
-default. Use `--overwrite` only for a deliberately non-claim-bearing local
-rerun.
+The input reader requires one unchanged ordinary UTF-8 JSON file, applies a
+finite 64 MiB default budget, rejects duplicate keys and non-finite constants,
+and records the exact raw byte digest. The output is written atomically and
+refuses to overwrite an existing path by default. Use `--overwrite` only for a
+deliberately non-claim-bearing local rerun.
 
 The report includes:
 
 - primary and any-cause counts with equal case weight;
 - accepted, classified-rejection, and unresolved-rejection totals;
 - per-case explicit failures, reason-derived evidence, and unresolved signals;
-- a canonical input digest and deterministic report identifier; and
+- a canonical input-content digest and portable report identifier;
+- a host-local `status_sha256` that additionally binds the exact input file path,
+  byte count, and raw input-file digest written into the output; and
 - the fixed taxonomy, precedence, and information boundary.
 
 The diagnostic should be run before proposing another provider variant. A new
