@@ -269,10 +269,7 @@ class DynamicEndpointModelAverageConfigV2:
                 family_count = len(set(kinds))
                 members = {kind: kinds.count(kind) for kind in set(kinds)}
                 prior = np.asarray(
-                    [
-                        1.0 / (family_count * members[kind])
-                        for kind in kinds
-                    ],
+                    [1.0 / (family_count * members[kind]) for kind in kinds],
                     dtype=np.float64,
                 )
             else:
@@ -305,9 +302,7 @@ class DynamicEndpointModelAverageConfigV2:
         return tuple(component_kind(component) for component in self.components)
 
 
-DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2 = (
-    DynamicEndpointModelAverageConfigV2()
-)
+DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2 = DynamicEndpointModelAverageConfigV2()
 
 
 def _component_matrices(
