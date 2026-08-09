@@ -1,4 +1,4 @@
-"""Claim-bearing tree-sparse updates with non-materializing fallback results."""
+"""Claim-bearing tree-sparse updates with strict, non-materializing fallback."""
 
 from __future__ import annotations
 
@@ -19,10 +19,10 @@ from .explicit_gauge_prob4d import (
 )
 from .physical_linearization import PhysicalLinearizationV1
 from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1
-from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
-from .sparse_prior_aware_gauge_belief import (
-    update_sparse_prior_aware_gauge_belief_structured,
+from .prior_aware_gauge_belief_v2 import (
+    update_sparse_prior_aware_gauge_belief_structured_v2 as update_sparse_prior_aware_gauge_belief_structured,
 )
+from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
 from .structured_gauge_aware_result import StructuredGaugeAwareBeliefResultV1
 from .tree_sparse_explicit_gauge_prob4d import (
     build_claim_bearing_tree_sparse_prob4d_batch,
@@ -233,7 +233,7 @@ def update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts(
     config: PriorAwareGaugeConfigV1 | None = None,
     metadata: Mapping[str, Any] | None = None,
 ) -> ClaimBearingTreeSparseProb4DUpdateV2:
-    """Run a claim-bearing update without dense covariance on rejection."""
+    """Run a strict claim-bearing update without dense covariance on rejection."""
 
     adapted = build_claim_bearing_tree_sparse_prob4d_batch(
         validated_observation,
