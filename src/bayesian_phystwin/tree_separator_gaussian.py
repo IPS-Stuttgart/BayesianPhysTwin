@@ -390,9 +390,9 @@ def solve_tree_separator_gaussian(
         separator_mean = np.zeros(0, dtype=np.float64)
         separator_covariance = np.zeros((0, 0), dtype=np.float64)
 
-    node_mean = np.empty((node_count, block_size), dtype=np.float64)
+    node_mean: np.ndarray = np.empty((node_count, block_size), dtype=np.float64)
     node_covariance = np.empty_like(diagonal)
-    node_separator_cross_covariance = np.empty(
+    node_separator_cross_covariance: np.ndarray = np.empty(
         (node_count, block_size, separator_size),
         dtype=np.float64,
     )
