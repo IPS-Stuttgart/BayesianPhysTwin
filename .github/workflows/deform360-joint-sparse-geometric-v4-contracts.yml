@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          output="${RUNNER_TEMP}/geometric-v4-contract-${{ matrix.python-version }}.txt"
+          output="${GITHUB_WORKSPACE}/geometric-v4-contract-${{ matrix.python-version }}.txt"
           : > "${output}"
           files=(
             src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
@@ -126,6 +126,14 @@ jobs:
           path: ${{ env.DIAGNOSTIC_PATH }}
           if-no-files-found: error
           retention-days: 7
+
+      - name: Remove local diagnostic file
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${DIAGNOSTIC_PATH}"
+          rm -f -- "${DIAGNOSTIC_PATH}"
 
       - name: Verify source-distribution membership
         if: steps.validate.outcome == 'success'
