@@ -58,9 +58,7 @@ _NONPOSITIVE_CURVATURE_REASON: Final = "strict-v2-non-positive-exact-mixture-cur
 _ILL_CONDITIONED_CURVATURE_REASON: Final = (
     "strict-v2-ill-conditioned-exact-mixture-curvature"
 )
-_CERTIFICATE_SCHEMA: Final = (
-    "bayesian_phystwin.prior_aware_gauge_admission_certificate"
-)
+_CERTIFICATE_SCHEMA: Final = "bayesian_phystwin.prior_aware_gauge_admission_certificate"
 _CERTIFICATE_VERSION: Final = 1
 _CERTIFICATE_KEY: Final = "strict_admission_certificate"
 _CERTIFICATE_BOOL_FIELDS: Final = (
@@ -120,15 +118,11 @@ class _PriorAwareGaugeAdmissionCertificateV1:
 
     def __post_init__(self) -> None:
         expected_reason = _admission_reason(
-            underlying_inference_admissible=(
-                self.underlying_inference_admissible
-            ),
+            underlying_inference_admissible=(self.underlying_inference_admissible),
             exact_mixture_objective=self.exact_mixture_objective,
             fixed_point_converged=self.fixed_point_converged,
             diagnostics_valid=self.diagnostics_valid,
-            positive_exact_mixture_curvature=(
-                self.positive_exact_mixture_curvature
-            ),
+            positive_exact_mixture_curvature=(self.positive_exact_mixture_curvature),
             condition_number_within_limit=self.condition_number_within_limit,
         )
         _require(
@@ -146,28 +140,18 @@ class _PriorAwareGaugeAdmissionCertificateV1:
         return {
             "schema": _CERTIFICATE_SCHEMA,
             "schema_version": _CERTIFICATE_VERSION,
-            "underlying_inference_admissible": (
-                self.underlying_inference_admissible
-            ),
+            "underlying_inference_admissible": (self.underlying_inference_admissible),
             "underlying_inference_reason": self.underlying_inference_reason,
             "exact_mixture_objective": self.exact_mixture_objective,
             "fixed_point_converged": self.fixed_point_converged,
             "diagnostics_valid": self.diagnostics_valid,
-            "positive_exact_mixture_curvature": (
-                self.positive_exact_mixture_curvature
-            ),
+            "positive_exact_mixture_curvature": (self.positive_exact_mixture_curvature),
             "condition_number_within_limit": self.condition_number_within_limit,
             "mixture_solution_delta": self.mixture_solution_delta,
             "mixture_stationarity_norm": self.mixture_stationarity_norm,
-            "exact_hessian_minimum_eigenvalue": (
-                self.exact_hessian_minimum_eigenvalue
-            ),
-            "exact_hessian_maximum_eigenvalue": (
-                self.exact_hessian_maximum_eigenvalue
-            ),
-            "exact_hessian_condition_number": (
-                self.exact_hessian_condition_number
-            ),
+            "exact_hessian_minimum_eigenvalue": (self.exact_hessian_minimum_eigenvalue),
+            "exact_hessian_maximum_eigenvalue": (self.exact_hessian_maximum_eigenvalue),
+            "exact_hessian_condition_number": (self.exact_hessian_condition_number),
             "maximum_exact_hessian_condition_number": (
                 self.maximum_exact_hessian_condition_number
             ),
@@ -281,9 +265,7 @@ def _build_admission_certificate(
     exact_objective = (
         diagnostics.get("robust_likelihood_objective") == _EXACT_MIXTURE_OBJECTIVE
     )
-    fixed_point_converged = (
-        diagnostics.get("mixture_fixed_point_converged") is True
-    )
+    fixed_point_converged = diagnostics.get("mixture_fixed_point_converged") is True
     solution_delta = _finite_diagnostic(diagnostics, "mixture_solution_delta")
     stationarity = _finite_diagnostic(diagnostics, "mixture_stationarity_norm")
     minimum = _finite_diagnostic(
