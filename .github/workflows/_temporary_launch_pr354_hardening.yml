@@ -1,0 +1,102 @@
+name: Temporary launch PR 354 certificate hardening
+
+on:
+  push:
+    branches:
+      - agent/strict-admission-certificate-v1
+    paths:
+      - ".github/workflows/_temporary_launch_pr354_hardening.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-launch-pr354-hardening
+  cancel-in-progress: false
+
+jobs:
+  launch:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact event revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Verify exact branch tip
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git fetch --no-tags origin agent/strict-admission-certificate-v1
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+
+      - name: Execute the reviewed transformer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          workflow = Path(
+              ".github/workflows/_temporary_harden_pr354_certificate.yml"
+          ).read_text(encoding="utf-8")
+          start_marker = "          python - <<'PY'\n"
+          end_marker = "\n          PY\n      - name: Validate focused certificate contracts"
+          start = workflow.index(start_marker) + len(start_marker)
+          end = workflow.index(end_marker, start)
+          source = textwrap.dedent(workflow[start:end])
+          exec(compile(source, "pr354-certificate-transformer", "exec"), {})
+          PY
+
+      - name: Validate focused certificate contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e '.[dev]'
+          files=(
+            src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+            tests/test_portable_contracts_strict_admission_certificate.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_portable_contracts_strict_admission_certificate.py \
+            tests/test_claim_bearing_strict_admission.py
+          python -m compileall -q \
+            src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+
+      - name: Publish only the hardened product
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm \
+            .github/workflows/_temporary_harden_pr354_certificate.yml \
+            .github/workflows/_temporary_launch_pr354_hardening.yml
+          git diff --check
+          actual="$(git status --porcelain --untracked-files=all \
+            | sed -E 's/^...//' | sort)"
+          expected="$(cat <<'EOF'
+          .github/workflows/_temporary_harden_pr354_certificate.yml
+          .github/workflows/_temporary_launch_pr354_hardening.yml
+          src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+          EOF
+          )"
+          test "$actual" = "$expected"
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m \
+            "Close strict-admission certificate reconstruction invariants"
+          git fetch --no-tags origin agent/strict-admission-certificate-v1
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/agent/strict-admission-certificate-v1
