@@ -6,7 +6,6 @@ on:
     paths:
       - ".github/workflows/query-calibration-v1.yml"
       - "src/bayesian_phystwin/query_calibration.py"
-      - "tests/conftest.py"
       - "tests/test_query_calibration*.py"
       - "docs/query_calibration_v1.md"
       - "docs/finite_group_calibration_design.md"
@@ -94,13 +93,11 @@ jobs:
         run: |
           python -m ruff check \
             src/bayesian_phystwin/query_calibration.py \
-            tests/conftest.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
             tests/test_query_calibration_hardening.py
           python -m ruff format --check \
             src/bayesian_phystwin/query_calibration.py \
-            tests/conftest.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
             tests/test_query_calibration_hardening.py
@@ -119,7 +116,6 @@ jobs:
             | tee "${QUERY_CALIBRATION_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/query_calibration.py \
-            tests/conftest.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
             tests/test_query_calibration_hardening.py
