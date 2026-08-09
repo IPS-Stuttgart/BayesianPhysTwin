@@ -42,9 +42,7 @@ def _admit_psd_2x2(value: np.ndarray, *, name: str) -> np.ndarray:
         raise DynamicEndpointNumericalError(f"{name} is non-finite")
     eigenvalues = np.linalg.eigvalsh(symmetric)
     if np.min(eigenvalues, initial=0.0) < -1e-12:
-        raise DynamicEndpointNumericalError(
-            f"{name} is not positive semidefinite"
-        )
+        raise DynamicEndpointNumericalError(f"{name} is not positive semidefinite")
     return symmetric
 
 
@@ -105,10 +103,7 @@ def _filter_component(
             )
             log_mixture = np.logaddexp(log_inlier, log_outlier)
             probability = np.exp(log_inlier - log_mixture)
-        if not all(
-            np.all(np.isfinite(value))
-            for value in (log_mixture, probability)
-        ):
+        if not all(np.all(np.isfinite(value)) for value in (log_mixture, probability)):
             raise ValueError("dynamic endpoint filtering produced non-finite numerics")
         log_evidence[mask] += log_mixture
 
@@ -124,12 +119,10 @@ def _filter_component(
             updated_covariance[:, 0, 0] = effective_variance
         else:
             inlier_gain = (
-                predicted_covariance[:, :, 0]
-                / inlier_innovation_variance[:, None]
+                predicted_covariance[:, :, 0] / inlier_innovation_variance[:, None]
             )
             outlier_gain = (
-                predicted_covariance[:, :, 0]
-                / outlier_innovation_variance[:, None]
+                predicted_covariance[:, :, 0] / outlier_innovation_variance[:, None]
             )
             inlier_mean = (
                 predicted_mean + inlier_gain[:, :, None] * innovation[:, None, :]
@@ -169,16 +162,22 @@ def _filter_component(
             )
             inlier_delta = inlier_mean - updated_mean
             outlier_delta = outlier_mean - updated_mean
-            inlier_spread = np.einsum(
-                "nai,nbi->nab",
-                inlier_delta,
-                inlier_delta,
-            ) / 3.0
-            outlier_spread = np.einsum(
-                "nai,nbi->nab",
-                outlier_delta,
-                outlier_delta,
-            ) / 3.0
+            inlier_spread = (
+                np.einsum(
+                    "nai,nbi->nab",
+                    inlier_delta,
+                    inlier_delta,
+                )
+                / 3.0
+            )
+            outlier_spread = (
+                np.einsum(
+                    "nai,nbi->nab",
+                    outlier_delta,
+                    outlier_delta,
+                )
+                / 3.0
+            )
             updated_covariance = probability[:, None, None] * (
                 inlier_covariance + inlier_spread
             ) + (1.0 - probability)[:, None, None] * (
@@ -206,9 +205,7 @@ def _normalized_component_weights(
     update_count: np.ndarray,
     config: DynamicEndpointModelAverageConfigV2,
 ) -> np.ndarray:
-    log_prior = np.log(
-        np.asarray(config.component_prior_probability, dtype=np.float64)
-    )
+    log_prior = np.log(np.asarray(config.component_prior_probability, dtype=np.float64))
     if config.evidence_pooling == "per_track":
         unnormalized = evidence + log_prior[None, :]
     else:
@@ -255,9 +252,7 @@ def infer_dynamic_endpoint_model_average(
         end_frame=end_frame,
     )
     settings = (
-        DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2
-        if config is None
-        else config
+        DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2 if config is None else config
     )
     if not isinstance(settings, DynamicEndpointModelAverageConfigV2):
         raise TypeError("config must be a DynamicEndpointModelAverageConfigV2")
