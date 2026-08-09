@@ -87,6 +87,13 @@ removal. Immediate fail-closed changes remain permitted when required to correct
 causal leakage, provenance ambiguity, unsafe artifact loading, or invalid
 scientific claims.
 
+The exact package-root export surface for the `0.4.x` line is retained in
+[`api/root-public-api-v0.4.json`](api/root-public-api-v0.4.json) and checked by
+[`tools/quality/check_public_api.py`](tools/quality/check_public_api.py). This is
+a drift ratchet for historical convenience imports, not a broader support
+promise. New interfaces should normally live in an explicit module or namespace;
+see [`docs/public_api_policy.md`](docs/public_api_policy.md).
+
 ## Reporting problems
 
 Report reproducible defects through the repository issue tracker. Include the
