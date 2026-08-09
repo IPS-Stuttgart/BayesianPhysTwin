@@ -19,10 +19,7 @@ def _compose_transition(
     earlier_process: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
     transition = later_transition @ earlier_transition
-    process = (
-        later_transition @ earlier_process @ later_transition.T
-        + later_process
-    )
+    process = later_transition @ earlier_process @ later_transition.T + later_process
     return transition, process
 
 
