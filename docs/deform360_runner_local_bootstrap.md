@@ -5,9 +5,8 @@
 `deform360-runner-local-science.yml` is a storage-aware preparation and
 reproduction bootstrap for the sole Deform360 self-hosted runner. This bootstrap
 is not a claim-bearing experiment. It does not authorize confirmation access and
-must not
-be used to replace the registered source-gate, independent-audit, observability,
-or confirmation-opening chain.
+must not be used to replace the registered source-gate, independent-audit,
+observability, or confirmation-opening chain.
 
 The workflow is manually dispatchable only from trusted `main`. Pull requests
 call the reusable hosted contract workflow
