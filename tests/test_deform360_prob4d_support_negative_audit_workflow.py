@@ -83,8 +83,7 @@ def test_support_negative_auditor_publishes_once_and_never_authorizes_confirmati
     assert "confirmation access authorized: \\`false\\`" in text
     assert "No stream was replaced" in text
     assert "adaptive-confirmation or target payload was opened" in text
-    assert (
+    expected_enforcement = (
         'test "$(jq -r \' .audit_status\' "${receipt}")" = "validated-negative"'
-        .replace("' .audit", "'.audit")
-        in text
-    )
+    ).replace("' .audit", "'.audit")
+    assert expected_enforcement in text
