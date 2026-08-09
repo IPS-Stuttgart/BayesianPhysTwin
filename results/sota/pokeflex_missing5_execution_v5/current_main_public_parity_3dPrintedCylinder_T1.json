@@ -1,0 +1,73 @@
+{
+  "all_passed": true,
+  "array_checks": {
+    "byte_identical": [
+      "action_supported",
+      "baseline_vertices_m",
+      "correction_rms_m",
+      "faces",
+      "global_vertices_m",
+      "history_end_frames",
+      "history_start_frames",
+      "robot_history_supported",
+      "source_frames",
+      "target_frames",
+      "update_accepted",
+      "update_supported",
+      "v5_vertices_m"
+    ],
+    "count": 13,
+    "maximum_absolute_difference": 0.0
+  },
+  "artifact_kind": "PokeFlexMissingFiveV5CurrentMainPublicExecutionParity",
+  "current_execution_protocol_sha256": "1bc0a3486c0b937000772fc74bfcab2ed4a4dd34f2d90d0199440bc043a59f7a",
+  "current_implementation_revision": "f87d982c77778ffe6b8247ae01d7c0dd2a0a350b",
+  "current_prediction_npz_sha256": "eb848a845912ae7440c0a193dbfc1403854d511347db9f81d6207afe0e3b1f8c",
+  "held_v8_accessed": false,
+  "legacy_prediction_npz_sha256": "c6a930af5342d10a19355e672ce998950dc497393817e4c7972958c2842cd921",
+  "legacy_scored_artifact_sha256": "777bc4c655c600c3afad7cdfed0aa20d37d85937ba9c52225104db123c1d8bcb",
+  "metadata": {
+    "frame_limit": 170,
+    "prediction_supported_frame_count": 97,
+    "scored_action_frame_count": 97,
+    "scored_supported_frame_count": 92,
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720,
+    "template_frame": 1
+  },
+  "preintegration_execution_protocol_sha256": "62c8c9c81a5c3dd179864624ffca69769ace4a59c6e49c993aab42080b295064",
+  "runtime": {
+    "numpy": "1.26.4",
+    "python": "3.10.12",
+    "scipy": "1.13.1",
+    "torch": "2.4.0+cu121",
+    "trimesh": "4.12.2"
+  },
+  "schema_version": 1,
+  "score_checks": {
+    "baseline_CD_UL1_mm": {
+      "all_exactly_equal": true,
+      "frame_count": 97,
+      "maximum_absolute_difference_mm": 0.0
+    },
+    "global_CD_UL1_mm": {
+      "all_exactly_equal": true,
+      "frame_count": 97,
+      "maximum_absolute_difference_mm": 0.0
+    },
+    "v4_CD_UL1_mm": {
+      "all_exactly_equal": true,
+      "frame_count": 97,
+      "maximum_absolute_difference_mm": 0.0
+    },
+    "v5_CD_UL1_mm": {
+      "all_exactly_equal": true,
+      "frame_count": 97,
+      "maximum_absolute_difference_mm": 0.0
+    }
+  },
+  "source_archive_sha256": "ffcd4b36ac501b2e2c96f08e84d4ae0469a4a0718724a2cfae7c1dc954808f1d",
+  "source_role": "previously opened public development take; implementation parity only",
+  "take_id": "3dPrintedCylinder_T1",
+  "target_cohort_accessed": false
+}

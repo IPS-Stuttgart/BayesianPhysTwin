@@ -1,0 +1,157 @@
+{
+  "archived_public13": {
+    "archived_v3_result_file_sha256": "619c46726aab0f7e81d2e943bd44820e521c9fe6285906add28af87203c15ebd",
+    "outcomes_previously_opened": true,
+    "path": "results/sota/pokeflex_action_robust_all18_v4_public13_retrospective/result.json",
+    "result_file_sha256": "9d6a3ce6e4d606485dcecfb12418199dc4bd3bbf43236e2d42f3f25f94a98a0e"
+  },
+  "artifact_kind": "PokeFlexActionRobustOfficial18V4Protocol",
+  "claim_boundary": "This lock completes the exact published PokeFlex 18-take split by combining an immutable retrospective public-13 score artifact with predictions sealed prospectively on the five exact author-supplied takes absent from the licensed public archive. Passing can authorize a direct full-split benchmark-improvement claim and a separate prospective five-take transfer claim. It can never make all eighteen outcomes prospectively untouched.",
+  "custody": {
+    "all_prediction_revisions_must_match": true,
+    "author_source_manifest_artifact_kind": "PokeFlexOfficial5AuthorSourceManifest",
+    "author_source_manifest_required": true,
+    "author_source_manifest_role": "bind exact take ids, archive and member hashes, stream inventory, episode length, and evaluator compatibility before any prediction or target decoding",
+    "prediction_and_scoring_are_separate": true,
+    "prediction_barrier_artifact_kind": "PokeFlexOfficial5V4PredictionBarrier",
+    "prediction_observation_history": "f-5 through f-1",
+    "prediction_robot_history": "through f-1",
+    "required_prospective_prediction_seal_count": 5,
+    "retry_policy": "no replacement; technical failures and exact fallbacks remain in the registered cohort",
+    "target_mesh_access_before_barrier": "forbidden"
+  },
+  "evaluation": {
+    "aggregation": "equal scored frames over the exact official 18-take split; object-balanced and five-take prospective values are additional diagnostics",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to target surface points in original metric coordinates",
+    "primary_metric": "CD_UL1_mm",
+    "published_kinect_CD_UL1_mm": 6.498,
+    "scored_frames": "force-y at f exceeds 3 N, matching the registered official evaluator",
+    "surface_sample_count": 10000,
+    "surface_sample_seed": 20260720
+  },
+  "forbidden": [
+    "opening a prospective target mesh before all five prediction seals pass",
+    "using frame f Kinect, robot, or target observations to predict frame f",
+    "changing the all-object calibration, field, metric, aggregation, gates, or fallback after this lock",
+    "replacing an unavailable or technically failed official take",
+    "selecting parameters from the opened public-13 or prospective five outcomes",
+    "calling the mixed-exposure official-18 result fully prospective",
+    "claiming a direct published comparison unless the released checkpoint reproduces 6.498 within the locked rounding tolerance",
+    "touching any Deform360 held-v8 artifact or process"
+  ],
+  "gates": {
+    "baseline_reproduction": {
+      "absolute_tolerance_mm": 0.0005,
+      "expected_CD_UL1_mm": 6.498,
+      "meaning": "the exact official evaluator and cohort reproduce the published three-decimal checkpoint value"
+    },
+    "bootstrap": {
+      "replicates": 20000,
+      "seed": 20260806,
+      "unit": "physical object",
+      "upper_quantile": 0.975
+    },
+    "direct_full18": {
+      "candidate_below_global": true,
+      "candidate_below_published_reference": true,
+      "paired_bootstrap_upper_difference_mm_below": 0.0
+    },
+    "prospective_missing5": {
+      "minimum_per_object_relative_improvement": 0.0,
+      "object_balanced_relative_improvement_above": 0.0,
+      "paired_bootstrap_upper_difference_mm_below": 0.0
+    }
+  },
+  "locked_at_utc": "2026-08-06T04:58:06Z",
+  "method": {
+    "base_scale": 0.125,
+    "calibration_file_sha256": "00cdf5732f5dbf7eb0f899ebbb536260d9e66c0a151b41eec81ffaaef4aaf110",
+    "calibration_path": "configs/sota/pokeflex_action_robust_scale_all18_v4.json",
+    "calibration_sha256": "e94eeb9bdd2cc69e245b0bd48d843e5f64cb039e1eb02841e4a784cbe4dbc880",
+    "field": "action_local_state_relative_0.4",
+    "multipliers": {
+      "3dPrintedBunny": 3.0,
+      "3dPrintedCylinder": 3.0,
+      "3dPrintedHeart": 1.5,
+      "3dPrintedPizza": 0.5,
+      "3dPrintedPyramid": 1.0,
+      "Beanbag": 4.0,
+      "FoamCylinder": 3.0,
+      "FoamDice": 4.0,
+      "FoamHalfSphere": 2.0,
+      "MemoryFoam": 1.5,
+      "Pillow": 2.0,
+      "PlushDice": 4.0,
+      "PlushMoon": 4.0,
+      "PlushOctopus": 3.0,
+      "PlushTurtle": 4.0,
+      "PlushVolleyball": 1.0,
+      "Sponge": 1.5,
+      "ToiletPaperRoll": 3.0
+    },
+    "selected_arm": "checkpoint_action_local_state_relative_0.4_residual_scale_0.125",
+    "target_outcome_adaptation": "forbidden",
+    "unsupported_frame_action": "byte-identical released checkpoint"
+  },
+  "protocol_id": "pokeflex-action-robust-official18-v4",
+  "protocol_sha256": "112a34e3af11f7fde44fa70de6b712d8b906ba81ea287b4897ad4a13692fed26",
+  "schema_version": 1,
+  "status": "prospective lock for the five unavailable official takes and mixed-exposure completion of the exact official 18-take split",
+  "target_cohort": {
+    "previously_opened_take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "FoamDice_T3",
+      "PlushMoon_T1",
+      "PlushOctopus_T6",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Beanbag_T6",
+      "FoamCylinder_T1",
+      "ToiletPaperRoll_T1"
+    ],
+    "prospective_take_ids": [
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "3dPrintedHeart_T14",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ],
+    "replacement_allowed": false,
+    "selection_basis": "the exact hard-coded validation list in the official evaluator; no substitute takes",
+    "take_ids": [
+      "MemoryFoam_T2",
+      "PlushVolleyball_T4",
+      "FoamHalfSphere_T3",
+      "3dPrintedBunny_T1",
+      "3dPrintedPyramid_T6",
+      "FoamDice_T3",
+      "PlushMoon_T1",
+      "PlushOctopus_T6",
+      "PlushDice_T8",
+      "PlushTurtle_T3",
+      "Pillow_T8",
+      "3dPrintedCylinder_T7",
+      "Beanbag_T6",
+      "3dPrintedHeart_T14",
+      "FoamCylinder_T1",
+      "ToiletPaperRoll_T1",
+      "Sponge_T10",
+      "3dPrintedPizza_T13"
+    ]
+  },
+  "upstream": {
+    "checkpoint_sha256": {
+      "attention_model.pth": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe",
+      "decoder.pth": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf",
+      "pointcloud_encoder.pth": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+    },
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "evaluator_path": "test/evaluate.py",
+    "evaluator_sha256": "ea1854ba5224b8aec2e8ba6b80fb762eba7314b925e87ca7775d810003615b60",
+    "repository": "https://github.com/pokeflex-dataset/reconstruction"
+  }
+}
