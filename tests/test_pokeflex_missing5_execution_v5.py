@@ -53,6 +53,16 @@ PUBLIC13_PATH = (
     / "result.json"
 )
 RUNNER_PATH = ROOT / "scripts" / "held" / "run_pokeflex_missing5_v5.py"
+CURRENT_MAIN_PARITY_PATH = (
+    ROOT
+    / "results"
+    / "sota"
+    / "pokeflex_missing5_execution_v5"
+    / "current_main_public_parity_3dPrintedCylinder_T1.json"
+)
+CURRENT_MAIN_PARITY_FILE_SHA256 = (
+    "83f7a312d739e6974fcc861159c9797a56f7b22a7ae72fb75581a662a5e6ae46"
+)
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -471,6 +481,58 @@ def test_split_scorer_matches_registered_surface_metric(tmp_path: Path) -> None:
         surface_sample(target_vertices, target_faces, count, seed),
     )
     assert row["frames"][0]["baseline_CD_UL1_mm"] == expected
+
+
+def test_current_main_public_parity_record_is_complete() -> None:
+    execution, _, _ = _protocols()
+    assert file_sha256(CURRENT_MAIN_PARITY_PATH) == CURRENT_MAIN_PARITY_FILE_SHA256
+    parity = _load(CURRENT_MAIN_PARITY_PATH)
+
+    assert parity["artifact_kind"] == (
+        "PokeFlexMissingFiveV5CurrentMainPublicExecutionParity"
+    )
+    assert (
+        parity["current_execution_protocol_sha256"]
+        == execution["execution_protocol_sha256"]
+    )
+    assert parity["all_passed"] is True
+    assert parity["take_id"] == "3dPrintedCylinder_T1"
+    assert parity["target_cohort_accessed"] is False
+    assert parity["held_v8_accessed"] is False
+
+    expected_arrays = {
+        "action_supported",
+        "baseline_vertices_m",
+        "correction_rms_m",
+        "faces",
+        "global_vertices_m",
+        "history_end_frames",
+        "history_start_frames",
+        "robot_history_supported",
+        "source_frames",
+        "target_frames",
+        "update_accepted",
+        "update_supported",
+        "v5_vertices_m",
+    }
+    array_checks = parity["array_checks"]
+    assert set(array_checks["byte_identical"]) == expected_arrays
+    assert array_checks["count"] == len(expected_arrays)
+    assert array_checks["maximum_absolute_difference"] == 0.0
+
+    score_checks = parity["score_checks"]
+    assert set(score_checks) == {
+        "baseline_CD_UL1_mm",
+        "global_CD_UL1_mm",
+        "v4_CD_UL1_mm",
+        "v5_CD_UL1_mm",
+    }
+    for check in score_checks.values():
+        assert check == {
+            "all_exactly_equal": True,
+            "frame_count": 97,
+            "maximum_absolute_difference_mm": 0.0,
+        }
 
 
 def test_result_evaluation_treats_public13_v5_as_unchanged_v4() -> None:

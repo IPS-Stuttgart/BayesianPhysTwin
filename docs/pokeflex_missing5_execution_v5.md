@@ -84,9 +84,18 @@ Frame-by-frame scoring over all 97 active frames had exactly 0 mm numerical
 difference for checkpoint, global, V4 0.375, and V5 0.25 arms. This is execution
 parity evidence only; it is not target evidence. The compact record is in
 `results/sota/pokeflex_missing5_execution_v5/public_parity_3dPrintedCylinder_T1.json`.
-That compact record remains bound to the pre-integration execution digest; the
-current-main lock requires a separately recorded parity replay before target
-execution.
+That compact record remains bound to the pre-integration execution digest.
+
+The current-main lock was then replayed independently on the same public take at
+implementation revision `f87d982c77778ffe6b8247ae01d7c0dd2a0a350b`.
+All 13 reusable legacy prediction, topology, frame, support, and diagnostic arrays
+were byte-identical. Frame-by-frame checkpoint, global, V4, and V5 scores again
+differed by exactly 0 mm on all 97 action frames. The replay had 97 supported
+prediction frames overall and 92 supported updates inside the scored action
+subset. The compact current-lock record is in
+`results/sota/pokeflex_missing5_execution_v5/current_main_public_parity_3dPrintedCylinder_T1.json`
+with file SHA-256
+`83f7a312d739e6974fcc861159c9797a56f7b22a7ae72fb75581a662a5e6ae46`.
 
 ## Claim boundary
 
