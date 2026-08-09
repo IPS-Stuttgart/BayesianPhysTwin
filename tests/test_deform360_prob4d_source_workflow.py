@@ -36,9 +36,7 @@ def test_public_source_gate_launcher_is_reviewed_main_only_and_one_shot() -> Non
     assert document["on"] == {
         "push": {
             "branches": ["main"],
-            "paths": [
-                ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
-            ],
+            "paths": [".github/workflows/launch-deform360-prob4d-source-gate-once.yml"],
         }
     }
     assert "workflow_dispatch:" not in text
