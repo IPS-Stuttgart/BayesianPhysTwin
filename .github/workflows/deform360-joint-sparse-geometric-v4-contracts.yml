@@ -1,0 +1,147 @@
+name: Deform360 joint-sparse geometric v4 contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-joint-sparse-geometric-v4-contracts.yml"
+      - ".github/workflows/launch-deform360-joint-sparse-geometric-v4-once.yml"
+      - "docs/deform360_joint_sparse_geometric_materializer_v4.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
+      - "scripts/science/materialize_deform360_joint_sparse_geometric_v4.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py"
+      - "tests/test_deform360_joint_sparse_geometric_v4.py"
+      - "tests/test_deform360_joint_sparse_geometric_v4_workflow.py"
+      - "MANIFEST.in"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-joint-sparse-geometric-v4-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Geometric v4 contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip install "build>=1.2"
+          python -m pip check
+
+      - name: Validate source, contracts, and workflow boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+            scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
+            tests/test_deform360_joint_sparse_geometric_v4.py
+            tests/test_deform360_joint_sparse_geometric_v4_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4.py \
+            tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
+            tests/test_deform360_joint_sparse_observability_v4.py \
+            tests/test_deform360_joint_sparse_observability_v4_cli.py \
+            tests/test_pull_request_workflow_integrity.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py \
+            scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+
+          for root in (Path("src"), Path("scripts"), Path("tests")):
+              for cache in root.rglob("__pycache__"):
+                  shutil.rmtree(cache)
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Verify source-distribution membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+
+          for path in (Path("build"), Path("dist")):
+              if path.exists():
+                  shutil.rmtree(path)
+          for pattern in ("*.egg-info", "src/*.egg-info"):
+              for path in Path().glob(pattern):
+                  shutil.rmtree(path)
+          PY
+          python -m build --sdist
+          archive="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          test -n "${archive}"
+          listing="$(tar -tzf "${archive}")"
+          members=(
+            docs/deform360_joint_sparse_geometric_materializer_v4.md
+            protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json
+            scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+          )
+          for member in "${members[@]}"; do
+            grep -Fq "/${member}" <<<"${listing}"
+          done
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+
+          for path in (Path("build"), Path("dist")):
+              if path.exists():
+                  shutil.rmtree(path)
+          for pattern in ("*.egg-info", "src/*.egg-info"):
+              for path in Path().glob(pattern):
+                  shutil.rmtree(path)
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
