@@ -616,9 +616,7 @@ def test_tree_prior_rejects_invalid_topology_and_factors(
     mutation: str,
     message: str,
 ) -> None:
-    prior = copy.deepcopy(
-        _validated_observation().observation.factors.gauge_tree_prior
-    )
+    prior = copy.deepcopy(_validated_observation().observation.factors.gauge_tree_prior)
     if mutation == "gauge-order":
         prior.gauge_ids = tuple(reversed(prior.gauge_ids))
     elif mutation == "semantics":
