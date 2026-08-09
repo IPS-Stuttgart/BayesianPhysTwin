@@ -143,7 +143,10 @@ def _fsync_directory(directory: Path) -> None:
     except OSError:
         return
     try:
-        os.fsync(descriptor)
+        try:
+            os.fsync(descriptor)
+        except OSError:
+            return
     finally:
         os.close(descriptor)
 
