@@ -1,0 +1,116 @@
+name: Temporary finalize Causal4D tree-block query provider
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/temporary-finalize-causal4d-tree-block-provider.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-causal4d-tree-block-provider-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/causal4d-tree-block-query-provider'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact reviewed branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+          clean: true
+
+      - name: Verify exact reviewed head
+        shell: bash
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
+
+      - name: Finalize provider, registry tests and release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          test = (
+              'tests/'
+              'test_structured_point_covariance_causal4d_tree_block_provider.py'
+          )
+          suites_path = Path('.github/quality/test-suites.json')
+          payload = json.loads(suites_path.read_text(encoding='utf-8'))
+          for suite_name in ('core-contracts', 'provider-contract'):
+              suite = payload['suites'][suite_name]
+              if test not in suite:
+                  anchor = suite.index('tests/test_tree_block_sparse_gauge_belief.py')
+                  suite.insert(anchor + 1, test)
+          suites_path.write_text(
+              json.dumps(payload, indent=2) + '\n', encoding='utf-8'
+          )
+
+          manifest = Path('MANIFEST.in')
+          text = manifest.read_text(encoding='utf-8')
+          line = 'include docs/causal4d_tree_block_query_provider.md'
+          if line not in text.splitlines():
+              text = text.rstrip() + '\n' + line + '\n'
+          manifest.write_text(text, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          entry = (
+              '- A versioned Causal4D provider for identity-bound linear-query '
+              'covariance\n'
+              '  from strict claim-bearing tree-block Prob4D updates without '
+              'dense joint\n'
+              '  covariance materialization.\n'
+          )
+          anchor = '### Added\n\n'
+          if entry not in text:
+              if text.count(anchor) != 1:
+                  raise SystemExit('changelog Added anchor changed')
+              text = text.replace(anchor, anchor + entry, 1)
+          changelog.write_text(text, encoding='utf-8')
+
+          Path(
+              '.github/workflows/'
+              'temporary-finalize-causal4d-tree-block-provider.yml'
+          ).unlink()
+          PY
+
+          python -m pip install --disable-pip-version-check --no-cache-dir -e ".[dev]"
+          files=(
+            src/bayesian_phystwin/causal4d_tree_block_provider_v1.py
+            tests/test_structured_point_covariance_causal4d_tree_block_provider.py
+          )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m mypy --python-version 3.12 \
+            src/bayesian_phystwin/causal4d_tree_block_provider_v1.py
+          python -m pytest -q \
+            tests/test_structured_point_covariance_causal4d_tree_block_provider.py \
+            tests/test_structured_point_covariance_tree_block_operator.py \
+            tests/test_tree_block_claim_contract.py \
+            tests/test_tree_block_sparse_gauge_belief.py \
+            tests/test_test_suite_manifest.py
+          python -m compileall -q src/bayesian_phystwin tests
+          git diff --check
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Finalize Causal4D tree-block query provider'
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
