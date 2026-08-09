@@ -129,12 +129,15 @@ def publish_provider_failure_report(
     emitted = cast(dict[str, Any], plain_json(report))
     emitted["input_artifact"] = plain_json(input_artifact)
     emitted["status_sha256"] = canonical_json_sha256(emitted)
-    serialized = json.dumps(
-        emitted,
-        allow_nan=False,
-        indent=2,
-        sort_keys=True,
-    ).encode("utf-8") + b"\n"
+    serialized = (
+        json.dumps(
+            emitted,
+            allow_nan=False,
+            indent=2,
+            sort_keys=True,
+        ).encode("utf-8")
+        + b"\n"
+    )
 
     output_path = Path(path).resolve(strict=False)
     output_path.parent.mkdir(parents=True, exist_ok=True)
