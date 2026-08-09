@@ -446,6 +446,22 @@ def update_prior_aware_gauge_belief(
             diagnostics,
             prior_covariance=full_prior,
         )
+    if not fixed_point_converged:
+        diagnostics.update(
+            {
+                "iterations": iteration_count,
+                "mixture_fixed_point_converged": False,
+                "mixture_solution_delta": solution_delta,
+                "mixture_stationarity_norm": stationarity_norm,
+                "condition_number": condition_number,
+            }
+        )
+        return _fallback_result(
+            batch,
+            "mixture-fixed-point-not-converged",
+            diagnostics,
+            prior_covariance=full_prior,
+        )
     try:
         reduced_covariance = _spd_covariance(normal)
     except np.linalg.LinAlgError:
