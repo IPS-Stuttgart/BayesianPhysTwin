@@ -69,6 +69,27 @@ _CERTIFICATE_BOOL_FIELDS: Final = (
     "positive_exact_mixture_curvature",
     "condition_number_within_limit",
 )
+_CERTIFICATE_FIELDS: Final = frozenset(
+    {
+        "schema",
+        "schema_version",
+        "underlying_inference_admissible",
+        "underlying_inference_reason",
+        "exact_mixture_objective",
+        "fixed_point_converged",
+        "diagnostics_valid",
+        "positive_exact_mixture_curvature",
+        "condition_number_within_limit",
+        "mixture_solution_delta",
+        "mixture_stationarity_norm",
+        "exact_hessian_minimum_eigenvalue",
+        "exact_hessian_maximum_eigenvalue",
+        "exact_hessian_condition_number",
+        "maximum_exact_hessian_condition_number",
+        "passed",
+        "reason",
+    }
+)
 
 GaugeDesignV1: TypeAlias = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1
 AdmissionInputResult: TypeAlias = (
@@ -188,27 +209,12 @@ class PriorAwareGaugeBeliefResultV2(GaugeAwareBeliefResult):
             == self.implementation_version,
             "v2 diagnostics do not identify strict admission version 2",
         )
-        certificate = self.diagnostics.get(_CERTIFICATE_KEY)
-        _require(
-            isinstance(certificate, Mapping),
-            "v2 diagnostics do not contain an admission certificate",
+        certificate_passed = _validate_tagged_certificate_diagnostics(
+            self.diagnostics,
+            inference_admissible=self.inference_admissible,
+            result_reason=self.reason,
         )
-        certificate_passed = _validate_certificate_mapping(certificate)
-        strict_passed = self.diagnostics.get("strict_admission_passed")
-        _require(
-            type(strict_passed) is bool and strict_passed == certificate_passed,
-            "v2 strict-admission flag differs from its certificate",
-        )
-        _require(
-            self.inference_admissible == certificate_passed,
-            "v2 inference admissibility differs from its certificate",
-        )
-        _require(
-            self.diagnostics.get("strict_admission_reason")
-            == certificate.get("reason"),
-            "v2 strict-admission reason differs from its certificate",
-        )
-        if not self.inference_admissible:
+        if not certificate_passed:
             for name in (
                 "state_coefficients",
                 "gauge_delta",
@@ -340,17 +346,127 @@ def _build_admission_certificate(
     )
 
 
+def _certificate_optional_real(
+    certificate: Mapping[str, object],
+    name: str,
+) -> float | None:
+    value = certificate.get(name)
+    if value is None:
+        return None
+    _require(
+        not isinstance(value, (bool, np.bool_)) and isinstance(value, Real),
+        f"v2 admission certificate field {name!r} must be a finite real or null",
+    )
+    result = float(value)
+    _require(
+        np.isfinite(result),
+        f"v2 admission certificate field {name!r} must be finite",
+    )
+    return result
+
+
 def _validate_certificate_mapping(certificate: Mapping[str, object]) -> bool:
     _require(
-        certificate.get("schema") == _CERTIFICATE_SCHEMA
-        and certificate.get("schema_version") == _CERTIFICATE_VERSION,
+        set(certificate) == _CERTIFICATE_FIELDS,
+        "v2 admission certificate fields changed",
+    )
+    _require(
+        type(certificate.get("schema")) is str
+        and certificate.get("schema") == _CERTIFICATE_SCHEMA,
         "v2 admission certificate has an unsupported schema",
+    )
+    schema_version = certificate.get("schema_version")
+    _require(
+        type(schema_version) is int and schema_version == _CERTIFICATE_VERSION,
+        "v2 admission certificate schema_version is unsupported",
+    )
+    underlying_reason = certificate.get("underlying_inference_reason")
+    _require(
+        type(underlying_reason) is str and bool(underlying_reason),
+        "v2 admission certificate underlying reason must be nonempty text",
     )
     for name in _CERTIFICATE_BOOL_FIELDS:
         _require(
             type(certificate.get(name)) is bool,
             f"v2 admission certificate field {name!r} must be a bool",
         )
+
+    solution_delta = _certificate_optional_real(
+        certificate,
+        "mixture_solution_delta",
+    )
+    stationarity = _certificate_optional_real(
+        certificate,
+        "mixture_stationarity_norm",
+    )
+    minimum = _certificate_optional_real(
+        certificate,
+        "exact_hessian_minimum_eigenvalue",
+    )
+    maximum = _certificate_optional_real(
+        certificate,
+        "exact_hessian_maximum_eigenvalue",
+    )
+    condition_number = _certificate_optional_real(
+        certificate,
+        "exact_hessian_condition_number",
+    )
+    maximum_condition_number = _certificate_optional_real(
+        certificate,
+        "maximum_exact_hessian_condition_number",
+    )
+    _require(
+        maximum_condition_number is not None and maximum_condition_number >= 1.0,
+        "v2 admission certificate maximum condition number must be finite and at least one",
+    )
+
+    diagnostics_valid = certificate["diagnostics_valid"] is True
+    if diagnostics_valid:
+        _require(
+            solution_delta is not None
+            and solution_delta >= 0.0
+            and stationarity is not None
+            and stationarity >= 0.0
+            and minimum is not None
+            and maximum is not None
+            and maximum >= minimum,
+            "v2 admission certificate numeric diagnostics are inconsistent",
+        )
+    expected_positive_curvature = bool(
+        diagnostics_valid and minimum is not None and minimum > 0.0
+    )
+    _require(
+        certificate["positive_exact_mixture_curvature"]
+        is expected_positive_curvature,
+        "v2 admission certificate curvature invariant is inconsistent",
+    )
+
+    if expected_positive_curvature:
+        assert minimum is not None
+        assert maximum is not None
+        with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+            expected_condition_number = float(np.divide(maximum, minimum))
+        _require(
+            np.isfinite(expected_condition_number)
+            and condition_number is not None
+            and condition_number == expected_condition_number,
+            "v2 admission certificate condition number is inconsistent with its Hessian spectrum",
+        )
+    else:
+        _require(
+            condition_number is None,
+            "v2 admission certificate condition number requires positive valid curvature",
+        )
+
+    expected_within_limit = bool(
+        expected_positive_curvature
+        and condition_number is not None
+        and condition_number <= maximum_condition_number
+    )
+    _require(
+        certificate["condition_number_within_limit"] is expected_within_limit,
+        "v2 admission certificate condition-number limit invariant is inconsistent",
+    )
     expected_passed = all(bool(certificate[name]) for name in _CERTIFICATE_BOOL_FIELDS)
     _require(
         type(certificate.get("passed")) is bool
@@ -363,19 +479,68 @@ def _validate_certificate_mapping(certificate: Mapping[str, object]) -> bool:
         ),
         exact_mixture_objective=bool(certificate["exact_mixture_objective"]),
         fixed_point_converged=bool(certificate["fixed_point_converged"]),
-        diagnostics_valid=bool(certificate["diagnostics_valid"]),
-        positive_exact_mixture_curvature=bool(
-            certificate["positive_exact_mixture_curvature"]
-        ),
-        condition_number_within_limit=bool(
-            certificate["condition_number_within_limit"]
-        ),
+        diagnostics_valid=diagnostics_valid,
+        positive_exact_mixture_curvature=expected_positive_curvature,
+        condition_number_within_limit=expected_within_limit,
     )
     _require(
-        certificate.get("reason") == expected_reason,
+        type(certificate.get("reason")) is str
+        and certificate.get("reason") == expected_reason,
         "v2 admission certificate reason invariant is inconsistent",
     )
     return expected_passed
+
+
+def _validate_tagged_certificate_diagnostics(
+    diagnostics: Mapping[str, object],
+    *,
+    inference_admissible: bool,
+    result_reason: str,
+) -> bool:
+    certificate = diagnostics.get(_CERTIFICATE_KEY)
+    _require(
+        isinstance(certificate, Mapping),
+        "v2 diagnostics do not contain an admission certificate",
+    )
+    certificate_passed = _validate_certificate_mapping(certificate)
+    strict_passed = diagnostics.get("strict_admission_passed")
+    _require(
+        type(strict_passed) is bool and strict_passed == certificate_passed,
+        "v2 strict-admission flag differs from its certificate",
+    )
+    _require(
+        type(inference_admissible) is bool
+        and inference_admissible == certificate_passed,
+        "v2 inference admissibility differs from its certificate",
+    )
+    _require(
+        diagnostics.get("strict_admission_reason") == certificate["reason"],
+        "v2 strict-admission reason differs from its certificate",
+    )
+    for name, certificate_name in (
+        ("underlying_inference_admissible", "underlying_inference_admissible"),
+        ("underlying_inference_reason", "underlying_inference_reason"),
+        ("strict_exact_hessian_condition_number", "exact_hessian_condition_number"),
+        (
+            "maximum_exact_hessian_condition_number",
+            "maximum_exact_hessian_condition_number",
+        ),
+    ):
+        _require(
+            diagnostics.get(name) == certificate[certificate_name],
+            f"v2 diagnostic {name!r} differs from its certificate",
+        )
+    underlying_admissible = certificate["underlying_inference_admissible"] is True
+    expected_result_reason = (
+        certificate["underlying_inference_reason"]
+        if certificate_passed or not underlying_admissible
+        else certificate["reason"]
+    )
+    _require(
+        type(result_reason) is str and result_reason == expected_result_reason,
+        "v2 result reason differs from its selected certificate path",
+    )
+    return certificate_passed
 
 
 def _tag_diagnostics(
@@ -443,6 +608,11 @@ def _as_structured_v2(
     result: StructuredGaugeAwareBeliefResultV1,
     diagnostics: Mapping[str, object],
 ) -> StructuredGaugeAwareBeliefResultV1:
+    _validate_tagged_certificate_diagnostics(
+        diagnostics,
+        inference_admissible=result.inference_admissible,
+        result_reason=result.reason,
+    )
     return StructuredGaugeAwareBeliefResultV1(
         inference_admissible=result.inference_admissible,
         reason=result.reason,
@@ -511,7 +681,13 @@ def _apply_structured_strict_admission(
     )
     if certificate.passed:
         return _as_structured_v2(result, tagged)
-    return fallback(fallback_reason, tagged)
+    selected = fallback(fallback_reason, tagged)
+    _validate_tagged_certificate_diagnostics(
+        selected.diagnostics,
+        inference_admissible=selected.inference_admissible,
+        result_reason=selected.reason,
+    )
+    return selected
 
 
 def update_prior_aware_gauge_belief_v2(
