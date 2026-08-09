@@ -123,9 +123,7 @@ def posterior_pit_matrix(
     truth_values = finite_float_array(truths, name="truths", ndim=2)
     replicate_count, draw_count, parameter_count = samples.shape
     if truth_values.shape != (replicate_count, parameter_count):
-        raise ValueError(
-            "truths must match the posterior replicate and parameter axes"
-        )
+        raise ValueError("truths must match the posterior replicate and parameter axes")
 
     weight_rows: np.ndarray | None
     if weights is None:
@@ -151,9 +149,7 @@ def posterior_pit_matrix(
                 ]
             )
         else:
-            raise ValueError(
-                "weights must have shape (draw,) or (replicate, draw)"
-            )
+            raise ValueError("weights must have shape (draw,) or (replicate, draw)")
 
     if tie_breakers is None:
         tie_values = np.full(truth_values.shape, 0.5, dtype=np.float64)
