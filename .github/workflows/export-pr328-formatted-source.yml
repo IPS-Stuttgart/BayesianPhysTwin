@@ -1,0 +1,43 @@
+name: Export PR 328 formatted source
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/export-pr328-formatted-source.yml"
+      - "scripts/science/admit_deform360_prob4d_metric_support.py"
+      - "tests/test_deform360_prob4d_metric_support_admission.py"
+      - "tests/test_deform360_prob4d_source_gate_v2_workflow.py"
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Format the exact reviewed files without publishing source changes
+        run: |
+          python -m pip install "ruff==0.16.2"
+          python -m ruff format \
+            scripts/science/admit_deform360_prob4d_metric_support.py \
+            tests/test_deform360_prob4d_metric_support_admission.py \
+            tests/test_deform360_prob4d_source_gate_v2_workflow.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pr328-formatted-source
+          path: |
+            scripts/science/admit_deform360_prob4d_metric_support.py
+            tests/test_deform360_prob4d_metric_support_admission.py
+            tests/test_deform360_prob4d_source_gate_v2_workflow.py
+          if-no-files-found: error
+          retention-days: 1
