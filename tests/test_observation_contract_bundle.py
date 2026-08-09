@@ -477,9 +477,7 @@ def test_synthetic_manifest_success_path(monkeypatch: pytest.MonkeyPatch) -> Non
         payload["bundle_sha256"],
     )
 
-    assert observation_contract_bundle_manifest()["files"] == {
-        "schema.json": digest
-    }
+    assert observation_contract_bundle_manifest()["files"] == {"schema.json": digest}
 
 
 @pytest.mark.parametrize(
@@ -536,9 +534,7 @@ def test_vector_rejects_corrupt_payloads(
     case: str,
     message: str,
 ) -> None:
-    payload: Any = copy.deepcopy(
-        contract_module._read_json("vectors/minimal.json")
-    )
+    payload: Any = copy.deepcopy(contract_module._read_json("vectors/minimal.json"))
     first_name = next(iter(payload["arrays"]))
     if case == "not-object":
         payload = []
