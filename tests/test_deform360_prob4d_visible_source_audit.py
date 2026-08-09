@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_prob4d_visible_source_audit import (
     EXPECTED_METRIC_BATCH_RESULT_ID,
     EXPECTED_PLAN_ID,
@@ -15,6 +16,9 @@ from bayesian_phystwin.deform360_prob4d_visible_source_audit import (
 )
 
 SOURCE = Path("results/sota/deform360_prob4d_visible_source_v2/source-artifact")
+INDEPENDENT_AUDIT = Path(
+    "results/sota/deform360_prob4d_visible_source_v2/independent-audit"
+)
 VALIDATOR_REVISION = "136f72b996e9c76b0bab3ab5db5d0fe7172e0307"
 ARTIFACT_DIGEST = (
     "sha256:caa8d5ea887ec5273c306dd8de59d57056181ef139c98ac7acb76185032a3828"
@@ -83,6 +87,28 @@ def test_exact_compact_source_terminal_is_independently_validated(
     digest, relative = (output / "SHA256SUMS").read_text(encoding="ascii").split()
     assert relative == "independent-audit-receipt.json"
     assert digest == hashlib.sha256((output / relative).read_bytes()).hexdigest()
+
+
+def test_hosted_independent_audit_receipt_is_preserved() -> None:
+    receipt_path = INDEPENDENT_AUDIT / "independent-audit-receipt.json"
+    manifest = (INDEPENDENT_AUDIT / "SHA256SUMS").read_text(encoding="ascii")
+    digest, relative = manifest.split()
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+
+    assert relative == receipt_path.name
+    assert digest == hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+    assert receipt["validator_revision"] == ("dbeab4f5a5c8279b82404b3dc911c39ddccab10d")
+    assert receipt["audit_status"] == (
+        "validated-source-sample-materialization-failure"
+    )
+    assert receipt["source_gate_evaluated"] is False
+    assert receipt["confirmation_access_authorized"] is False
+    assert receipt["information_boundary"]["human_approval_required"] is False
+    audit_id = receipt.pop("audit_id")
+    assert audit_id == content_id(receipt)
+    assert audit_id == (
+        "86d6998941fe76769a007494c1ff84ac820ada96f414504172cd2daacba26511"
+    )
 
 
 def test_audit_rejects_changed_compact_member_bytes(tmp_path: Path) -> None:

@@ -30,6 +30,24 @@ specific exception or causal diagnosis. A target-free post-open diagnostic found
 one supported stream with 31 projected points, but that observation is not
 evidence that the stream caused the materialization failure.
 
+## Independent audit
+
+GitHub-hosted audit run `31303263941` independently revalidated the compact
+artifact at merged validator revision
+`dbeab4f5a5c8279b82404b3dc911c39ddccab10d`. The audit completed without
+dataset, runner-root, confirmation, target-outcome, or held-protocol access. Its
+artifact is `deform360-prob4d-visible-source-v2-independent-audit-31301431579`,
+artifact ID `9035153180`, with GitHub artifact digest
+`sha256:f3da9ff4000d89cd1396761e41c65c566b771263d097603495280c52847103e3`.
+
+The validated audit ID is
+`86d6998941fe76769a007494c1ff84ac820ada96f414504172cd2daacba26511`.
+The committed receipt has SHA-256
+`0797061b7874b20c1d37eec3cb671897ac46fefac8e639545149e5c0cbca2d44` and
+records `public_released_measurements_used=true`,
+`new_measurements_required=false`, `human_approval_required=false`,
+`source_gate_evaluated=false`, and `confirmation_access_authorized=false`.
+
 ## Claim boundary
 
 This is a source-pipeline technical terminal, not a negative or positive model
