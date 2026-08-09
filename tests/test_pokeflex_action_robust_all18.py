@@ -14,6 +14,7 @@ from bayesian_phystwin.pokeflex_action_robust_all18 import (
     SOURCE_FIELD,
     build_all18_calibration,
     calibration_sha256,
+    load_source_artifacts,
     protocol_sha256,
     source_row_from_smoke,
     validate_all18_calibration,
@@ -158,6 +159,18 @@ def test_registered_all18_calibration_is_exact_and_source_bound() -> None:
     wrong_inventory["calibration_sha256"] = calibration_sha256(wrong_inventory)
     with pytest.raises(ValueError, match="hash inventory changed"):
         validate_all18_calibration(wrong_inventory)
+
+
+def test_source_artifact_loader_binds_nonempty_inventory_bytes(tmp_path: Path) -> None:
+    take_id = "FoamDice_T1"
+    artifact = tmp_path / f"{take_id}.json"
+    raw = b'{"artifact_kind":"source-smoke"}\n'
+    artifact.write_bytes(raw)
+
+    payloads, digests = load_source_artifacts(tmp_path, (take_id,))
+
+    assert payloads == {take_id: {"artifact_kind": "source-smoke"}}
+    assert digests == {take_id: hashlib.sha256(raw).hexdigest()}
 
 
 def test_builder_fails_closed_when_fewer_than_three_new_objects_transfer() -> None:

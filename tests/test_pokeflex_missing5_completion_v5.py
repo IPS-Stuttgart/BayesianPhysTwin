@@ -11,6 +11,7 @@ from bayesian_phystwin.pokeflex_missing5_completion_v5 import (
     SOURCE_RESULT_FILE_SHA256,
     TARGET_MULTIPLIERS,
     build_completion_protocol,
+    file_sha256,
     protocol_sha256,
     validate_completion_protocol,
 )
@@ -85,6 +86,13 @@ def test_registered_completion_protocol_is_exact() -> None:
     )
     assert protocol["target_cohort"]["target_outcomes_opened_at_lock"] is False
     assert protocol["held_v8_accessed"] is False
+
+
+def test_file_sha256_streams_registered_nonempty_protocol() -> None:
+    assert (
+        file_sha256(FROZEN_PROTOCOL)
+        == hashlib.sha256(FROZEN_PROTOCOL.read_bytes()).hexdigest()
+    )
 
 
 def test_resigned_target_scale_change_is_rejected() -> None:
