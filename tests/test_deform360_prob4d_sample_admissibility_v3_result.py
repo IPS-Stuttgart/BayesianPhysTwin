@@ -11,9 +11,7 @@ from bayesian_phystwin.deform360_prob4d_sample_admissibility_contract import (
     validate_deform360_prob4d_sample_admissibility_policy,
 )
 
-SOURCE = Path(
-    "results/sota/deform360_prob4d_sample_admissibility_v3/source-artifact"
-)
+SOURCE = Path("results/sota/deform360_prob4d_sample_admissibility_v3/source-artifact")
 SAMPLE_ROOT = SOURCE / "sample-admissibility"
 IMPLEMENTATION_REVISION = "0beaadab170e644fbaf3b4241d89d950e7a889ef"
 POLICY_ID = "25c0a43b720accb3bacd16933774b3773a6bc951443b02b88498ca542d5fc51c"
@@ -88,9 +86,7 @@ def test_frozen_v3_failure_is_dominated_by_spatial_redundancy() -> None:
 def test_frozen_v3_pipeline_kept_outcomes_closed() -> None:
     pipeline = json.loads((SOURCE / "pipeline-receipt.json").read_text())
     policy = validate_deform360_prob4d_sample_admissibility_policy(
-        json.loads(
-            (SAMPLE_ROOT / "sample-admissibility-policy.json").read_text()
-        )
+        json.loads((SAMPLE_ROOT / "sample-admissibility-policy.json").read_text())
     )
 
     assert policy["artifact_id"] == POLICY_ID
