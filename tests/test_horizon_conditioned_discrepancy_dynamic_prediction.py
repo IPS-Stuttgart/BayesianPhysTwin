@@ -146,9 +146,7 @@ def test_transition_power_matches_repeated_propagation() -> None:
         expected_transition = np.eye(2)
         expected_process = np.zeros((2, 2))
         for _ in range(horizon):
-            expected_process = (
-                transition @ expected_process @ transition.T + process
-            )
+            expected_process = transition @ expected_process @ transition.T + process
             expected_transition = transition @ expected_transition
         assert np.allclose(powered_transition, expected_transition)
         assert np.allclose(powered_process, expected_process)
