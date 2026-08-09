@@ -40,7 +40,7 @@ TREE_BLOCK_POSTERIOR_OPERATOR_BOUNDARY: Final = (
 def _numeric_array(value: object, *, name: str) -> np.ndarray:
     raw = np.asarray(value)
     _require(
-        raw.dtype.kind not in {"b", "O", "U", "S"},
+        raw.dtype.kind in {"i", "u", "f"},
         f"{name} must be numeric",
     )
     result = np.asarray(raw, dtype=np.float64)
@@ -167,9 +167,7 @@ class TreeBlockPosteriorOperatorV1:
         )
 
         state_solution = self.covariance.state_prior_covariance @ state_right
-        state_solution += mapping @ (
-            global_solution[:retained] - retained_right
-        )
+        state_solution += mapping @ (global_solution[:retained] - retained_right)
         result = np.concatenate(
             (
                 state_solution,
@@ -215,7 +213,7 @@ class TreeBlockPosteriorOperatorV1:
         """Return one unique selected coefficient marginal in caller order."""
 
         selected = _selected_indices(indices, dimension=self.dimension)
-        basis = np.zeros((self.dimension, len(selected)), dtype=np.float64)
+        basis: np.ndarray = np.zeros((self.dimension, len(selected)), dtype=np.float64)
         basis[selected, np.arange(len(selected))] = 1.0
         columns = self.apply(basis)
         result = columns[selected]

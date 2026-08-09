@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Any
 
 import numpy as np
 import pytest
@@ -42,7 +41,7 @@ def _factorization(
     )
     parent_coupling = np.zeros_like(node_precision)
     for index in range(1, node_count):
-        parent_coupling[index] = np.eye(block_size) * (0.05 + 0.01 * index)
+        parent_coupling[index] = np.eye(block_size) * (0.03 + 0.005 * (index % 5))
         if block_size >= 2:
             parent_coupling[index, 0, 1] = 0.012
             parent_coupling[index, 1, 0] = -0.008
@@ -54,7 +53,7 @@ def _factorization(
         for row in range(block_size):
             for column in range(global_size):
                 global_coupling[index, row, column] = (
-                    0.006 * (index + 1) * (row + 1) / (column + 1)
+                    0.002 * ((index % 7) + 1) * (row + 1) / (column + 1)
                 )
     system = TreeBlockNormalSystemV1(
         parent_indices=parents,
@@ -65,9 +64,9 @@ def _factorization(
         node_right=np.zeros((node_count, block_size), dtype=np.float64),
         global_right=np.zeros(global_size, dtype=np.float64),
     )
-    return system.eliminate_nodes(
+    return system.eliminate_nodes(maximum_condition_number=1.0e12).factor_global(
         maximum_condition_number=1.0e12
-    ).factor_global(maximum_condition_number=1.0e12)
+    )
 
 
 def _covariance(
