@@ -42,7 +42,7 @@ def test_receipt_workflow_does_not_modify_runner_environment() -> None:
     assert "scripts/ci/inventory_deform360_v4_results.py" in text
     assert "maximum-candidates 50000" in text
     assert "len(shortlist) >= 40" in text
-    assert "len(body.encode(\"utf-8\")) >= 60_000" in text
+    assert 'len(body.encode("utf-8")) >= 60_000' in text
 
 
 def test_receipt_workflow_publishes_traceable_compact_evidence() -> None:
