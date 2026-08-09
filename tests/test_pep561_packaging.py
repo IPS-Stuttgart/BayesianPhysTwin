@@ -29,9 +29,7 @@ def test_source_package_exposes_pep561_marker() -> None:
 def test_project_metadata_declares_typed_package_data() -> None:
     metadata = _project_metadata()
     classifiers = metadata["project"]["classifiers"]
-    package_data = metadata["tool"]["setuptools"]["package-data"][
-        "bayesian_phystwin"
-    ]
+    package_data = metadata["tool"]["setuptools"]["package-data"]["bayesian_phystwin"]
 
     assert "Typing :: Typed" in classifiers
     assert "py.typed" in package_data
