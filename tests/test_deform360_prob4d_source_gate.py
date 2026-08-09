@@ -12,7 +12,6 @@ import numpy as np
 import pytest
 
 import bayesian_phystwin.deform360_prob4d_source_gate_validation as gate_validation
-
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_prob4d_source_calibration import (
     RESULT_SCHEMA,
