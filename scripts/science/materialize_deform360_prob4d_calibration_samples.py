@@ -27,6 +27,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--selection", type=Path, required=True)
     parser.add_argument("--visual-provider-spec", type=Path, required=True)
     parser.add_argument("--metric-prior-policy", type=Path, required=True)
+    parser.add_argument("--camera-eligibility-policy", type=Path)
     parser.add_argument("--prob4d-checkout", type=Path, required=True)
     parser.add_argument("--prob4d-revision", required=True)
     parser.add_argument("--processing-revision", required=True)
@@ -55,6 +56,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         selection_path=arguments.selection,
         visual_provider_spec_path=arguments.visual_provider_spec,
         metric_prior_policy_path=arguments.metric_prior_policy,
+        camera_eligibility_policy_path=arguments.camera_eligibility_policy,
         expected_processing_revision=arguments.processing_revision,
         api=api,
         output_directory=arguments.output_dir,

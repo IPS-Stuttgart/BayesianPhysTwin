@@ -33,6 +33,12 @@ from bayesian_phystwin.deform360_calibration_visual_production import (
     validate_deform360_calibration_visual_prediction_seal,
     validate_deform360_calibration_visual_production_result,
 )
+from bayesian_phystwin.deform360_prob4d_camera_eligibility import (
+    SUPPORT_NEGATIVE_REASON,
+    VISIBLE_STREAM_PLAN_SEMANTICS,
+    VISIBLE_STREAM_PLAN_VERSION,
+    validate_deform360_prob4d_camera_eligibility_policy,
+)
 from bayesian_phystwin.deform360_prob4d_sample_materializer import (
     PLAN_SCHEMA,
     PLAN_SEMANTICS,
@@ -57,6 +63,10 @@ DEFORM360_PROB4D_METRIC_BATCH_VERSION: Final = 1
 DEFORM360_PROB4D_METRIC_BATCH_SEMANTICS: Final = (
     "all-sealed-calibration-streams-released-robot-gauge-v1"
 )
+DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_VERSION: Final = 2
+DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_SEMANTICS: Final = (
+    "target-free-robot-visible-calibration-streams-released-robot-gauge-v2"
+)
 METRIC_BATCH_RESULT_FILENAME: Final = "metric-batch-result.json"
 METRIC_PREFIX_PLAN_FILENAME: Final = "metric-prefix-plan.json"
 METRIC_DIRECTORY_NAME: Final = "metrics"
@@ -73,8 +83,41 @@ METRIC_PLAN_CLAIM_BOUNDARY: Final = (
     "with causal released robot-gauge evidence. It does not establish calibrated "
     "uncertainty, transfer, confirmation benefit, or state of the art."
 )
+VISIBLE_METRIC_PLAN_CLAIM_BOUNDARY: Final = (
+    "Source-only plan covering every frozen visual-production stream whose released "
+    "robot geometry is visible in the fixed causal prefix. Every excluded stream is "
+    "retained as a target-free visibility negative; no camera is replaced. The plan "
+    "does not establish calibrated uncertainty, transfer, confirmation benefit, or "
+    "state of the art."
+)
 
 _FILE_FIELDS = frozenset({"path", "sha256", "byte_count"})
+_VISIBLE_PLAN_FIELDS = frozenset(
+    {
+        "schema",
+        "schema_version",
+        "semantics",
+        "plan_id",
+        "protocol_id",
+        "selection_file_sha256",
+        "visual_provider_spec_file_sha256",
+        "metric_prior_policy_file_sha256",
+        "camera_eligibility_policy_file_sha256",
+        "camera_eligibility_policy_id",
+        "dataset_revision",
+        "processing_revision",
+        "prob4d_revision",
+        "motioncrafter_revision",
+        "visual_production_result_id",
+        "cases",
+        "excluded_streams",
+        "information_boundary",
+        "claim_boundary",
+    }
+)
+_EXCLUDED_STREAM_FIELDS = frozenset(
+    {"job_id", "object_id", "episode_id", "stratum", "camera_id", "reason"}
+)
 _RESULT_FIELDS = frozenset(
     {
         "schema",
@@ -262,6 +305,7 @@ def _validate_inputs(
     selection_path: Path,
     visual_provider_spec_path: Path,
     metric_prior_policy_path: Path,
+    camera_eligibility_policy_path: Path | None,
     expected_processing_revision: str,
 ) -> tuple[
     dict[str, Any],
@@ -269,6 +313,7 @@ def _validate_inputs(
     dict[str, Any],
     dict[str, Any],
     dict[str, Any],
+    dict[str, Any] | None,
 ]:
     production = validate_deform360_calibration_visual_production_result(
         _load_json(production_result_path, name="visual production result")
@@ -294,10 +339,24 @@ def _validate_inputs(
         visual_provider_spec_path, name="visual provider specification"
     )
     policy = _load_json(metric_prior_policy_path, name="metric prior policy")
+    eligibility_policy = (
+        None
+        if camera_eligibility_policy_path is None
+        else validate_deform360_prob4d_camera_eligibility_policy(
+            _load_json(
+                camera_eligibility_policy_path,
+                name="camera eligibility policy",
+            )
+        )
+    )
     protocol_id = nonempty_string(selection.get("protocol_id"), name="protocol_id")
     _require(
         provider.get("protocol_id") == protocol_id
-        and policy.get("protocol_id") == protocol_id,
+        and policy.get("protocol_id") == protocol_id
+        and (
+            eligibility_policy is None
+            or eligibility_policy["protocol_id"] == protocol_id
+        ),
         "source protocol identity changed",
     )
     provider_spec = _mapping(provider.get("provider"), name="Prob4D provider")
@@ -327,7 +386,7 @@ def _validate_inputs(
         len(selected_rows) == production["object_count"],
         "production object count differs from selection",
     )
-    return production, inventory, selection, provider, policy
+    return production, inventory, selection, provider, policy, eligibility_policy
 
 
 def _load_prediction_seal(
@@ -396,6 +455,9 @@ def _build_plan(
     selection_path: Path,
     visual_provider_spec_path: Path,
     metric_prior_policy_path: Path,
+    camera_eligibility_policy_path: Path | None,
+    camera_eligibility_policy: Mapping[str, Any] | None,
+    excluded_streams: Sequence[Mapping[str, Any]],
     processing_revision: str,
 ) -> dict[str, Any]:
     grouped: dict[tuple[str, int, str, tuple[int, int]], list[dict[str, Any]]] = (
@@ -447,8 +509,16 @@ def _build_plan(
     motioncrafter = _mapping(provider.get("motioncrafter"), name="MotionCrafter")
     identity: dict[str, Any] = {
         "schema": PLAN_SCHEMA,
-        "schema_version": PLAN_VERSION,
-        "semantics": PLAN_SEMANTICS,
+        "schema_version": (
+            PLAN_VERSION
+            if camera_eligibility_policy is None
+            else VISIBLE_STREAM_PLAN_VERSION
+        ),
+        "semantics": (
+            PLAN_SEMANTICS
+            if camera_eligibility_policy is None
+            else VISIBLE_STREAM_PLAN_SEMANTICS
+        ),
         "protocol_id": nonempty_string(
             selection.get("protocol_id"), name="protocol_id"
         ),
@@ -470,8 +540,24 @@ def _build_plan(
         "visual_production_result_id": production["result_id"],
         "cases": cases,
         "information_boundary": dict(_PLAN_BOUNDARY),
-        "claim_boundary": METRIC_PLAN_CLAIM_BOUNDARY,
+        "claim_boundary": (
+            METRIC_PLAN_CLAIM_BOUNDARY
+            if camera_eligibility_policy is None
+            else VISIBLE_METRIC_PLAN_CLAIM_BOUNDARY
+        ),
     }
+    if camera_eligibility_policy is not None:
+        _require(
+            camera_eligibility_policy_path is not None,
+            "camera eligibility policy path is missing",
+        )
+        identity["camera_eligibility_policy_file_sha256"] = _sha256_file(
+            cast(Path, camera_eligibility_policy_path)
+        )
+        identity["camera_eligibility_policy_id"] = camera_eligibility_policy[
+            "artifact_id"
+        ]
+        identity["excluded_streams"] = [dict(row) for row in excluded_streams]
     return {**identity, "plan_id": content_id(identity)}
 
 
@@ -485,6 +571,56 @@ def _write_checksums(root: Path) -> None:
     (root / "SHA256SUMS").write_text("".join(lines), encoding="ascii")
 
 
+def _visible_camera_gate_passes(
+    *,
+    jobs: Sequence[Mapping[str, Any]],
+    policy: Mapping[str, Any],
+    object_count: int,
+) -> bool:
+    """Apply only the frozen target-free robot-visibility eligibility rule."""
+
+    if any(row["status"] == "technical-failure" for row in jobs):
+        return False
+    if any(
+        row["status"] == "support-negative"
+        and row["failure_reason"] != policy["allowed_support_negative_reason"]
+        for row in jobs
+    ):
+        return False
+    supported_by_object: dict[str, int] = defaultdict(int)
+    for row in jobs:
+        if row["status"] == "supported":
+            supported_by_object[cast(str, row["object_id"])] += 1
+    minimum_per_object = cast(int, policy["minimum_supported_streams_per_object"])
+    supported_fraction = sum(supported_by_object.values()) / len(jobs)
+    return (
+        len(supported_by_object) >= cast(int, policy["minimum_supported_object_count"])
+        and len(supported_by_object) == object_count
+        and min(supported_by_object.values(), default=0) >= minimum_per_object
+        and supported_fraction
+        >= cast(float, policy["minimum_supported_stream_fraction"])
+    )
+
+
+def _excluded_visibility_streams(
+    jobs: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    excluded = [
+        {
+            "job_id": row["job_id"],
+            "object_id": row["object_id"],
+            "episode_id": row["episode_id"],
+            "stratum": row["stratum"],
+            "camera_id": row["camera_id"],
+            "reason": row["failure_reason"],
+        }
+        for row in jobs
+        if row["status"] == "support-negative"
+    ]
+    excluded.sort(key=lambda row: (row["object_id"], row["camera_id"], row["job_id"]))
+    return excluded
+
+
 def _validate_emitted_plan_binding(
     plan: Mapping[str, Any],
     *,
@@ -492,25 +628,56 @@ def _validate_emitted_plan_binding(
     jobs: Sequence[Any],
     source_artifacts: Mapping[str, Any],
     object_count: int,
+    eligibility_policy: Mapping[str, Any] | None,
 ) -> None:
     """Bind an emitted plan to the exact batch lineage and supported job roster."""
+
+    plan_version = genuine_integer(
+        plan.get("schema_version"), name="metric-prefix plan version", minimum=1
+    )
 
     _require(
         plan.get("visual_production_result_id") == result["production_result_id"],
         "metric-prefix plan uses a different production result",
     )
-    _require(
+    source_binding_matches = (
         plan.get("selection_file_sha256") == source_artifacts["selection.json"]
         and plan.get("visual_provider_spec_file_sha256")
         == source_artifacts["visual-provider-spec.json"]
         and plan.get("metric_prior_policy_file_sha256")
-        == source_artifacts["metric-prior-policy.json"],
-        "metric-prefix plan source artifacts differ from batch",
+        == source_artifacts["metric-prior-policy.json"]
     )
-    _require(
-        plan.get("claim_boundary") == METRIC_PLAN_CLAIM_BOUNDARY,
-        "metric-prefix plan claim boundary changed",
-    )
+    if plan_version == PLAN_VERSION:
+        _require(
+            source_binding_matches
+            and plan.get("semantics") == PLAN_SEMANTICS
+            and plan.get("claim_boundary") == METRIC_PLAN_CLAIM_BOUNDARY,
+            "metric-prefix plan source artifacts differ from batch",
+        )
+    elif plan_version == VISIBLE_STREAM_PLAN_VERSION:
+        require_exact_fields(
+            plan, expected=_VISIBLE_PLAN_FIELDS, name="visible-stream plan"
+        )
+        _require(
+            eligibility_policy is not None,
+            "visible-stream plan is missing its eligibility policy",
+        )
+        _require(
+            source_binding_matches
+            and plan.get("semantics") == VISIBLE_STREAM_PLAN_SEMANTICS
+            and plan.get("claim_boundary") == VISIBLE_METRIC_PLAN_CLAIM_BOUNDARY
+            and plan.get("camera_eligibility_policy_file_sha256")
+            == source_artifacts.get("camera-eligibility-policy.json")
+            and plan.get("camera_eligibility_policy_id")
+            == cast(Mapping[str, Any], eligibility_policy)["artifact_id"],
+            "visible-stream plan source artifacts differ from batch",
+        )
+        sha256_digest(
+            plan.get("camera_eligibility_policy_id"),
+            name="camera_eligibility_policy_id",
+        )
+    else:
+        raise ValueError("unsupported metric-prefix plan version")
 
     expected_jobs: dict[str, tuple[str, int, str, str]] = {}
     for index, raw in enumerate(jobs):
@@ -608,6 +775,54 @@ def _validate_emitted_plan_binding(
         planned_jobs == expected_jobs,
         "metric-prefix plan does not match supported batch jobs",
     )
+    if plan_version == VISIBLE_STREAM_PLAN_VERSION:
+        expected_excluded: dict[str, tuple[str, int, str, str, str]] = {}
+        for index, raw in enumerate(jobs):
+            row = _mapping(raw, name=f"metric batch job {index}")
+            if row["status"] != "support-negative":
+                continue
+            job_id = sha256_digest(row["job_id"], name="excluded job_id")
+            expected_excluded[job_id] = (
+                nonempty_string(row["object_id"], name="excluded object_id"),
+                genuine_integer(
+                    row["episode_id"], name="excluded episode_id", minimum=0
+                ),
+                nonempty_string(row["stratum"], name="excluded stratum"),
+                nonempty_string(row["camera_id"], name="excluded camera_id"),
+                nonempty_string(row["failure_reason"], name="excluded reason"),
+            )
+        observed_excluded: dict[str, tuple[str, int, str, str, str]] = {}
+        excluded_order: list[tuple[str, str, str]] = []
+        for index, raw in enumerate(
+            _sequence(plan.get("excluded_streams"), name="excluded streams")
+        ):
+            row = _mapping(raw, name=f"excluded stream {index}")
+            require_exact_fields(
+                row, expected=_EXCLUDED_STREAM_FIELDS, name=f"excluded stream {index}"
+            )
+            job_id = sha256_digest(row["job_id"], name="excluded job_id")
+            object_id = nonempty_string(row["object_id"], name="excluded object_id")
+            camera_id = nonempty_string(row["camera_id"], name="excluded camera_id")
+            _require(job_id not in observed_excluded, "excluded stream is repeated")
+            observed_excluded[job_id] = (
+                object_id,
+                genuine_integer(
+                    row["episode_id"], name="excluded episode_id", minimum=0
+                ),
+                nonempty_string(row["stratum"], name="excluded stratum"),
+                camera_id,
+                nonempty_string(row["reason"], name="excluded reason"),
+            )
+            excluded_order.append((object_id, camera_id, job_id))
+        _require(
+            excluded_order == sorted(excluded_order)
+            and observed_excluded == expected_excluded
+            and all(
+                identity[-1] == SUPPORT_NEGATIVE_REASON
+                for identity in observed_excluded.values()
+            ),
+            "visible-stream exclusions differ from retained support negatives",
+        )
 
 
 def validate_deform360_prob4d_metric_batch(
@@ -618,10 +833,22 @@ def validate_deform360_prob4d_metric_batch(
     root = _ordinary_directory(directory, name="metric batch")
     result = _load_json(root / METRIC_BATCH_RESULT_FILENAME, name="metric batch result")
     require_exact_fields(result, expected=_RESULT_FIELDS, name="metric batch result")
+    batch_version = genuine_integer(
+        result["schema_version"], name="metric batch version", minimum=1
+    )
     _require(
         result["schema"] == DEFORM360_PROB4D_METRIC_BATCH_SCHEMA
-        and result["schema_version"] == DEFORM360_PROB4D_METRIC_BATCH_VERSION
-        and result["semantics"] == DEFORM360_PROB4D_METRIC_BATCH_SEMANTICS,
+        and (
+            (
+                batch_version == DEFORM360_PROB4D_METRIC_BATCH_VERSION
+                and result["semantics"] == DEFORM360_PROB4D_METRIC_BATCH_SEMANTICS
+            )
+            or (
+                batch_version == DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_VERSION
+                and result["semantics"]
+                == DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_SEMANTICS
+            )
+        ),
         "metric batch contract changed",
     )
     identity = dict(result)
@@ -698,19 +925,35 @@ def validate_deform360_prob4d_metric_batch(
         "supported object count exceeds the frozen cohort",
     )
     source_artifacts = _mapping(result["source_artifacts"], name="source_artifacts")
+    expected_source_artifacts = {
+        "prepared-source-inventory.json",
+        "visual-production-result.json",
+        "selection.json",
+        "visual-provider-spec.json",
+        "metric-prior-policy.json",
+    }
+    if batch_version == DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_VERSION:
+        expected_source_artifacts.add("camera-eligibility-policy.json")
     _require(
-        set(source_artifacts)
-        == {
-            "prepared-source-inventory.json",
-            "visual-production-result.json",
-            "selection.json",
-            "visual-provider-spec.json",
-            "metric-prior-policy.json",
-        },
+        set(source_artifacts) == expected_source_artifacts,
         "metric batch source-artifact roster changed",
     )
     for name, digest in source_artifacts.items():
         sha256_digest(digest, name=f"source_artifacts.{name}")
+    eligibility_policy: dict[str, Any] | None = None
+    if batch_version == DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_VERSION:
+        eligibility_path = _ordinary_file(
+            root / "camera-eligibility-policy.json",
+            name="copied camera eligibility policy",
+        )
+        _require(
+            _sha256_file(eligibility_path)
+            == source_artifacts["camera-eligibility-policy.json"],
+            "copied camera eligibility policy changed",
+        )
+        eligibility_policy = validate_deform360_prob4d_camera_eligibility_policy(
+            _load_json(eligibility_path, name="copied camera eligibility policy")
+        )
     _require(
         result["claim_boundary"] == METRIC_BATCH_CLAIM_BOUNDARY,
         "metric batch claim boundary changed",
@@ -746,10 +989,20 @@ def validate_deform360_prob4d_metric_batch(
     if plan_emitted:
         plan_path, _ = _verify_file_record(root, result["plan_file"], name="plan file")
         plan = _load_json(plan_path, name="metric-prefix plan")
+        expected_plan_version = (
+            PLAN_VERSION
+            if batch_version == DEFORM360_PROB4D_METRIC_BATCH_VERSION
+            else VISIBLE_STREAM_PLAN_VERSION
+        )
+        expected_plan_semantics = (
+            PLAN_SEMANTICS
+            if batch_version == DEFORM360_PROB4D_METRIC_BATCH_VERSION
+            else VISIBLE_STREAM_PLAN_SEMANTICS
+        )
         _require(
             plan.get("schema") == PLAN_SCHEMA
-            and plan.get("schema_version") == PLAN_VERSION
-            and plan.get("semantics") == PLAN_SEMANTICS
+            and plan.get("schema_version") == expected_plan_version
+            and plan.get("semantics") == expected_plan_semantics
             and plan.get("information_boundary") == _PLAN_BOUNDARY,
             "metric-prefix plan contract changed",
         )
@@ -765,28 +1018,60 @@ def validate_deform360_prob4d_metric_batch(
             jobs=jobs,
             source_artifacts=source_artifacts,
             object_count=object_count,
+            eligibility_policy=eligibility_policy,
         )
-        _require(
-            counts
-            == {
-                "supported": len(jobs),
-                "support-negative": 0,
-                "technical-failure": 0,
-            }
-            and result["status"] == "all-streams-supported",
-            "metric-prefix plan emitted for an incomplete batch",
-        )
+        if batch_version == DEFORM360_PROB4D_METRIC_BATCH_VERSION:
+            _require(
+                counts
+                == {
+                    "supported": len(jobs),
+                    "support-negative": 0,
+                    "technical-failure": 0,
+                }
+                and result["status"] == "all-streams-supported",
+                "metric-prefix plan emitted for an incomplete batch",
+            )
+        else:
+            _require(
+                counts["technical-failure"] == 0
+                and counts["supported"] > 0
+                and counts["supported"] + counts["support-negative"] == len(jobs)
+                and eligibility_policy is not None
+                and _visible_camera_gate_passes(
+                    jobs=cast(Sequence[Mapping[str, Any]], jobs),
+                    policy=eligibility_policy,
+                    object_count=object_count,
+                )
+                and result["status"] == "target-free-visible-streams-supported",
+                "visible-stream plan emitted for an inadmissible batch",
+            )
     else:
         _require(result["plan_file"] is None, "unemitted plan has a file record")
-        expected_status = (
-            "technical-failures-retained"
-            if counts["technical-failure"]
-            else (
-                "support-negatives-retained"
-                if counts["support-negative"]
-                else "insufficient-multiview-support"
+        if batch_version == DEFORM360_PROB4D_METRIC_BATCH_VERSION:
+            expected_status = (
+                "technical-failures-retained"
+                if counts["technical-failure"]
+                else (
+                    "support-negatives-retained"
+                    if counts["support-negative"]
+                    else "insufficient-multiview-support"
+                )
             )
-        )
+        else:
+            expected_status = (
+                "technical-failures-retained"
+                if counts["technical-failure"]
+                else "camera-eligibility-gate-failed"
+            )
+            _require(
+                eligibility_policy is not None
+                and not _visible_camera_gate_passes(
+                    jobs=cast(Sequence[Mapping[str, Any]], jobs),
+                    policy=eligibility_policy,
+                    object_count=object_count,
+                ),
+                "eligible visible-stream batch did not emit a plan",
+            )
         _require(
             result["status"] == expected_status,
             "incomplete metric batch status changed",
@@ -814,6 +1099,7 @@ def materialize_deform360_prob4d_metric_batch(
     selection_path: str | Path,
     visual_provider_spec_path: str | Path,
     metric_prior_policy_path: str | Path,
+    camera_eligibility_policy_path: str | Path | None = None,
     expected_processing_revision: str,
     implementation_revision: str,
     output_directory: str | Path,
@@ -831,6 +1117,14 @@ def materialize_deform360_prob4d_metric_batch(
         visual_provider_spec_path, name="visual provider specification"
     )
     policy_source = _ordinary_file(metric_prior_policy_path, name="metric prior policy")
+    eligibility_policy_source = (
+        None
+        if camera_eligibility_policy_path is None
+        else _ordinary_file(
+            camera_eligibility_policy_path,
+            name="camera eligibility policy",
+        )
+    )
     production_root_path = _ordinary_directory(
         production_root, name="visual production root"
     )
@@ -840,12 +1134,20 @@ def materialize_deform360_prob4d_metric_batch(
     processing_revision = exact_revision(
         expected_processing_revision, name="expected_processing_revision"
     )
-    production, _inventory, selection, provider, _policy = _validate_inputs(
+    (
+        production,
+        _inventory,
+        selection,
+        provider,
+        _policy,
+        eligibility_policy,
+    ) = _validate_inputs(
         prepared_source_inventory_path=inventory_path,
         production_result_path=production_path,
         selection_path=selection_source,
         visual_provider_spec_path=provider_source,
         metric_prior_policy_path=policy_source,
+        camera_eligibility_policy_path=eligibility_policy_source,
         expected_processing_revision=processing_revision,
     )
     selected_identities = _source_selection_rows(selection)
@@ -1003,11 +1305,27 @@ def materialize_deform360_prob4d_metric_batch(
         plan: dict[str, Any] | None = None
         plan_record: dict[str, object] | None = None
         batch_status: str
-        if technical_failure_count:
-            batch_status = "technical-failures-retained"
-        elif support_negative_count:
-            batch_status = "support-negatives-retained"
+        if eligibility_policy is None:
+            should_build_plan = (
+                not technical_failure_count and not support_negative_count
+            )
+            batch_status = (
+                "technical-failures-retained"
+                if technical_failure_count
+                else "support-negatives-retained"
+            )
         else:
+            should_build_plan = _visible_camera_gate_passes(
+                jobs=result_jobs,
+                policy=eligibility_policy,
+                object_count=cast(int, production["object_count"]),
+            )
+            batch_status = (
+                "technical-failures-retained"
+                if technical_failure_count
+                else "camera-eligibility-gate-failed"
+            )
+        if should_build_plan:
             try:
                 plan = _build_plan(
                     streams=supported_streams,
@@ -1017,12 +1335,23 @@ def materialize_deform360_prob4d_metric_batch(
                     selection_path=selection_source,
                     visual_provider_spec_path=provider_source,
                     metric_prior_policy_path=policy_source,
+                    camera_eligibility_policy_path=eligibility_policy_source,
+                    camera_eligibility_policy=eligibility_policy,
+                    excluded_streams=_excluded_visibility_streams(result_jobs),
                     processing_revision=processing_revision,
                 )
             except _InsufficientMultiviewSupport:
-                batch_status = "insufficient-multiview-support"
+                batch_status = (
+                    "insufficient-multiview-support"
+                    if eligibility_policy is None
+                    else "camera-eligibility-gate-failed"
+                )
             else:
-                batch_status = "all-streams-supported"
+                batch_status = (
+                    "all-streams-supported"
+                    if eligibility_policy is None
+                    else "target-free-visible-streams-supported"
+                )
                 plan_path = temporary / METRIC_PREFIX_PLAN_FILENAME
                 _write_json(plan_path, plan)
                 plan_record = _file_record(plan_path, root=temporary)
@@ -1047,10 +1376,29 @@ def materialize_deform360_prob4d_metric_batch(
             "visual-provider-spec.json": _sha256_file(provider_source),
             "metric-prior-policy.json": _sha256_file(policy_source),
         }
+        if eligibility_policy_source is not None:
+            copied_eligibility_policy = temporary / "camera-eligibility-policy.json"
+            shutil.copyfile(eligibility_policy_source, copied_eligibility_policy)
+            _require(
+                _sha256_file(copied_eligibility_policy)
+                == _sha256_file(eligibility_policy_source),
+                "copied camera eligibility policy changed",
+            )
+            source_artifacts["camera-eligibility-policy.json"] = _sha256_file(
+                copied_eligibility_policy
+            )
         result_identity: dict[str, Any] = {
             "schema": DEFORM360_PROB4D_METRIC_BATCH_SCHEMA,
-            "schema_version": DEFORM360_PROB4D_METRIC_BATCH_VERSION,
-            "semantics": DEFORM360_PROB4D_METRIC_BATCH_SEMANTICS,
+            "schema_version": (
+                DEFORM360_PROB4D_METRIC_BATCH_VERSION
+                if eligibility_policy is None
+                else DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_VERSION
+            ),
+            "semantics": (
+                DEFORM360_PROB4D_METRIC_BATCH_SEMANTICS
+                if eligibility_policy is None
+                else DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_SEMANTICS
+            ),
             "implementation_revision": revision,
             "production_result_id": production["result_id"],
             "admission_id": production["admission_id"],
@@ -1096,6 +1444,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--selection", type=Path, required=True)
     parser.add_argument("--visual-provider-spec", type=Path, required=True)
     parser.add_argument("--metric-prior-policy", type=Path, required=True)
+    parser.add_argument("--camera-eligibility-policy", type=Path)
     parser.add_argument("--processing-revision", required=True)
     parser.add_argument("--implementation-revision", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -1113,6 +1462,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         selection_path=arguments.selection,
         visual_provider_spec_path=arguments.visual_provider_spec,
         metric_prior_policy_path=arguments.metric_prior_policy,
+        camera_eligibility_policy_path=arguments.camera_eligibility_policy,
         expected_processing_revision=arguments.processing_revision,
         implementation_revision=arguments.implementation_revision,
         output_directory=arguments.output_dir,
@@ -1125,6 +1475,8 @@ __all__ = [
     "DEFORM360_PROB4D_METRIC_BATCH_SCHEMA",
     "DEFORM360_PROB4D_METRIC_BATCH_SEMANTICS",
     "DEFORM360_PROB4D_METRIC_BATCH_VERSION",
+    "DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_SEMANTICS",
+    "DEFORM360_PROB4D_METRIC_BATCH_VISIBLE_VERSION",
     "METRIC_BATCH_RESULT_FILENAME",
     "METRIC_DIRECTORY_NAME",
     "METRIC_PREFIX_PLAN_FILENAME",

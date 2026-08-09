@@ -13,6 +13,33 @@ The thresholds are content-addressed before source residuals are evaluated in
 gate is terminal for this method version. Objects, cameras, and failures cannot
 be replaced.
 
+## Frozen version-1 result and version-2 scope
+
+The sole version-1 execution is a valid source-support negative. Of 324 frozen
+camera streams, 313 had released robot geometry in the causal prefix and 11
+were retained with the exact reason
+`released-robot-geometry-outside-fixed-camera-prefix`. There were no technical
+failures and every source object retained supported views, but version 1
+required 324 of 324 streams. It therefore stopped before camera images,
+prediction residuals, covariance fitting, or confirmation data were opened.
+Version 1 is not rerun, weakened, or reinterpreted.
+
+Version 2 is a separately content-addressed source protocol. Its camera
+eligibility is determined only from released synchronized robot/taxel geometry
+projected through released camera calibration over the immutable causal
+prefix. The policy requires all ten source objects, at least two supported
+streams per object, and at least 90% supported streams overall. An unsupported
+stream is retained in the plan provenance and excluded; it is never replaced.
+Any technical failure remains terminal. Camera pixels, prediction residuals,
+calibration outcomes, future frames, and confirmation outcomes cannot affect
+eligibility.
+
+The version-2 eligibility lock is
+`protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json`.
+Passing this eligibility check permits source covariance calibration to run;
+it is not the source calibration gate itself and does not authorize
+confirmation.
+
 ## Statistical unit
 
 The physical object is the transfer unit. Dense point rows first collapse by

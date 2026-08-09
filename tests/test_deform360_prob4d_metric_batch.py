@@ -10,6 +10,16 @@ from typing import Any
 
 import pytest
 
+from bayesian_phystwin._portable_contracts import content_id
+from bayesian_phystwin.deform360_prob4d_camera_eligibility import (
+    CAMERA_ELIGIBILITY_POLICY_SCHEMA,
+    CAMERA_ELIGIBILITY_POLICY_SEMANTICS,
+    CAMERA_ELIGIBILITY_POLICY_VERSION,
+    VISIBLE_STREAM_PLAN_SEMANTICS,
+    VISIBLE_STREAM_PLAN_VERSION,
+    validate_deform360_prob4d_camera_eligibility_policy,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/science/materialize_deform360_prob4d_metric_batch.py"
 SPEC = importlib.util.spec_from_file_location("deform360_prob4d_metric_batch", SCRIPT)
@@ -62,7 +72,7 @@ def _job_id(object_id: str, camera_id: str) -> str:
     return hashlib.sha256(f"{object_id}:{camera_id}".encode()).hexdigest()
 
 
-def _fixture(tmp_path: Path) -> dict[str, Any]:
+def _fixture(tmp_path: Path, *, camera_count: int = 2) -> dict[str, Any]:
     production_root = tmp_path / "production"
     prediction_root = tmp_path / "predictions"
     processed_root = tmp_path / "processed"
@@ -89,7 +99,7 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
                 "stratum": stratum,
             }
         )
-        for camera_index in range(2):
+        for camera_index in range(camera_count):
             camera_id = f"camera-{camera_index}"
             job_id = _job_id(object_id, camera_id)
             relative = (
@@ -137,8 +147,8 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         "visual_provider_lock_id": VISUAL_LOCK_ID,
         "model_set_id": MODEL_SET_ID,
         "object_count": 2,
-        "camera_view_count": 4,
-        "succeeded_job_count": 4,
+        "camera_view_count": len(production_jobs),
+        "succeeded_job_count": len(production_jobs),
         "technical_failure_job_count": 0,
         "status": "all-jobs-succeeded",
         "jobs": production_jobs,
@@ -192,6 +202,41 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         "implementation_revision": IMPLEMENTATION_REVISION,
         "output_directory": tmp_path / "batch",
     }
+
+
+def _eligibility_policy(
+    tmp_path: Path, *, minimum_supported_stream_fraction: float = 0.8
+) -> Path:
+    identity = {
+        "schema": CAMERA_ELIGIBILITY_POLICY_SCHEMA,
+        "schema_version": CAMERA_ELIGIBILITY_POLICY_VERSION,
+        "semantics": CAMERA_ELIGIBILITY_POLICY_SEMANTICS,
+        "protocol_id": PROTOCOL_ID,
+        "eligibility_evidence": "released robot projection over the causal prefix",
+        "eligible_status": "supported",
+        "support_negative_action": "retain-and-exclude",
+        "technical_failure_action": "terminal",
+        "allowed_support_negative_reason": (
+            "released-robot-geometry-outside-fixed-camera-prefix"
+        ),
+        "minimum_supported_streams_per_object": 2,
+        "minimum_supported_object_count": 2,
+        "minimum_supported_stream_fraction": minimum_supported_stream_fraction,
+        "camera_images_used_for_eligibility": False,
+        "prediction_residuals_used_for_eligibility": False,
+        "calibration_outcomes_used_for_eligibility": False,
+        "replacement_allowed": False,
+        "confirmation_payloads_opened": False,
+        "future_frames_used": False,
+        "target_outcomes_used": False,
+        "human_approval_required": False,
+        "new_measurements_required": False,
+        "claim_boundary": "unit target-free eligibility policy",
+    }
+    policy = {**identity, "artifact_id": content_id(identity)}
+    path = tmp_path / "camera-eligibility-policy.json"
+    _write_json(path, policy)
+    return path
 
 
 def _install_contract_stubs(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -312,6 +357,138 @@ def test_metric_batch_retains_support_negative_without_replacement(
     assert negative["failure_detail_sha256"] is None
     assert result["information_boundary"]["replacement_allowed"] is False
     validate_deform360_prob4d_metric_batch(output)
+
+
+def test_visible_camera_policy_emits_plan_and_retains_excluded_stream(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    arguments = _fixture(tmp_path, camera_count=3)
+    arguments["camera_eligibility_policy_path"] = _eligibility_policy(tmp_path)
+    _install_contract_stubs(monkeypatch)
+    _install_metric_stub(
+        monkeypatch,
+        failure=lambda object_id, camera_id: (
+            ValueError(SUPPORT_NEGATIVE_DETAIL)
+            if (object_id, camera_id) == ("object-1", "camera-2")
+            else None
+        ),
+    )
+
+    result = materialize_deform360_prob4d_metric_batch(**arguments)
+    output = Path(arguments["output_directory"])
+    plan = json.loads((output / METRIC_PREFIX_PLAN_FILENAME).read_text())
+
+    assert result["schema_version"] == 2
+    assert result["status"] == "target-free-visible-streams-supported"
+    assert result["supported_stream_count"] == 5
+    assert result["support_negative_stream_count"] == 1
+    assert result["technical_failure_stream_count"] == 0
+    assert result["plan_emitted"] is True
+    assert plan["schema_version"] == VISIBLE_STREAM_PLAN_VERSION
+    assert plan["semantics"] == VISIBLE_STREAM_PLAN_SEMANTICS
+    assert sum(len(case["streams"]) for case in plan["cases"]) == 5
+    assert plan["excluded_streams"] == [
+        {
+            "job_id": _job_id("object-1", "camera-2"),
+            "object_id": "object-1",
+            "episode_id": 1,
+            "stratum": "volumetric",
+            "camera_id": "camera-2",
+            "reason": "released-robot-geometry-outside-fixed-camera-prefix",
+        }
+    ]
+    assert (output / "camera-eligibility-policy.json").is_file()
+    validate_deform360_prob4d_metric_batch(output)
+
+
+def test_visible_camera_policy_refuses_below_threshold_without_replacement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    arguments = _fixture(tmp_path, camera_count=3)
+    arguments["camera_eligibility_policy_path"] = _eligibility_policy(
+        tmp_path, minimum_supported_stream_fraction=0.9
+    )
+    _install_contract_stubs(monkeypatch)
+    _install_metric_stub(
+        monkeypatch,
+        failure=lambda object_id, camera_id: (
+            ValueError(SUPPORT_NEGATIVE_DETAIL)
+            if (object_id, camera_id) == ("object-1", "camera-2")
+            else None
+        ),
+    )
+
+    result = materialize_deform360_prob4d_metric_batch(**arguments)
+    output = Path(arguments["output_directory"])
+
+    assert result["status"] == "camera-eligibility-gate-failed"
+    assert result["plan_emitted"] is False
+    assert not (output / METRIC_PREFIX_PLAN_FILENAME).exists()
+    validate_deform360_prob4d_metric_batch(output)
+
+
+def test_visible_camera_policy_keeps_technical_failure_terminal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    arguments = _fixture(tmp_path, camera_count=3)
+    arguments["camera_eligibility_policy_path"] = _eligibility_policy(tmp_path)
+    _install_contract_stubs(monkeypatch)
+    _install_metric_stub(
+        monkeypatch,
+        failure=lambda object_id, camera_id: (
+            ValueError("synthetic technical failure")
+            if (object_id, camera_id) == ("object-1", "camera-2")
+            else None
+        ),
+    )
+
+    result = materialize_deform360_prob4d_metric_batch(**arguments)
+    output = Path(arguments["output_directory"])
+
+    assert result["status"] == "technical-failures-retained"
+    assert result["technical_failure_stream_count"] == 1
+    assert result["plan_emitted"] is False
+    validate_deform360_prob4d_metric_batch(output)
+
+
+def test_repository_visible_camera_policy_is_content_addressed() -> None:
+    path = (
+        ROOT
+        / "protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json"
+    )
+    policy = validate_deform360_prob4d_camera_eligibility_policy(
+        json.loads(path.read_text(encoding="utf-8"))
+    )
+
+    assert policy["minimum_supported_streams_per_object"] == 2
+    assert policy["minimum_supported_object_count"] == 10
+    assert policy["minimum_supported_stream_fraction"] == 0.9
+    assert policy["camera_images_used_for_eligibility"] is False
+    assert policy["calibration_outcomes_used_for_eligibility"] is False
+    assert policy["replacement_allowed"] is False
+
+
+def test_visible_camera_policy_rejects_non_object() -> None:
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        validate_deform360_prob4d_camera_eligibility_policy([])
+
+
+def test_visible_camera_policy_rejects_changed_content_id(tmp_path: Path) -> None:
+    policy = json.loads(_eligibility_policy(tmp_path).read_text(encoding="utf-8"))
+    policy["artifact_id"] = "0" * 64
+
+    with pytest.raises(ValueError, match="policy ID changed"):
+        validate_deform360_prob4d_camera_eligibility_policy(policy)
+
+
+def test_visible_camera_policy_rejects_non_numeric_fraction(tmp_path: Path) -> None:
+    policy = json.loads(_eligibility_policy(tmp_path).read_text(encoding="utf-8"))
+    policy["minimum_supported_stream_fraction"] = True
+    identity = {key: value for key, value in policy.items() if key != "artifact_id"}
+    policy["artifact_id"] = content_id(identity)
+
+    with pytest.raises(ValueError, match="must be a finite number"):
+        validate_deform360_prob4d_camera_eligibility_policy(policy)
 
 
 def test_metric_batch_hashes_technical_failure_detail(

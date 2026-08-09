@@ -41,11 +41,16 @@ not an object-state target; mismatched or occluded rows remain calibration
 residuals rather than receiving residual-dependent prior confidence.
 
 The content-addressed metric-prefix plan uses schema
-`bayesian-phystwin.deform360-prob4d-metric-prefix-plan` version 1. It names every
-successful production job exactly once. Each stream binds `job_id`, `camera_id`,
-the sealed prediction manifest, metric-prefix NPZ, and metric-calibration file.
-The successful-job set must equal the production result's successful-job set;
-there is no view selection after prediction or target quality is observed.
+`bayesian-phystwin.deform360-prob4d-metric-prefix-plan`. Version 1 names every
+successful production job exactly once. Version 2 separately binds the frozen
+target-free camera-eligibility policy and partitions every successful
+production job into an included stream or a retained visibility exclusion.
+Each included stream binds `job_id`, `camera_id`, the sealed prediction
+manifest, metric-prefix NPZ, and metric-calibration file. The included and
+excluded sets must be disjoint and their union must equal the production
+result's successful-job set. There is no replacement and no view selection
+from camera images, prediction residuals, calibration outcomes, or future
+data.
 
 The registered batch constructor applies that rule to the complete frozen
 visual-production roster. It has three terminal states:
@@ -59,6 +64,14 @@ visual-production roster. It has three terminal states:
 Unsupported or failed cameras are never replaced. This distinction prevents a
 technical failure from being presented as a model result and prevents
 post-observation camera selection from changing the source cohort.
+
+Under the separately locked version-2 policy, target-free visibility negatives
+may produce `target-free-visible-streams-supported` only when all ten objects
+retain at least two supported streams, at least 90% of all frozen streams are
+supported, and no technical failure occurs. Every excluded stream remains in
+`excluded_streams` with its original production identity and the single
+allowed reason. Falling below any threshold produces
+`camera-eligibility-gate-failed` and no plan.
 
 ## Residual construction
 
@@ -93,6 +106,7 @@ python scripts/science/materialize_deform360_prob4d_calibration_samples.py \
   --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
   --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
   --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+  --camera-eligibility-policy protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json \
   --prob4d-checkout /path/to/exact/prob4d \
   --prob4d-revision 25d90ef7f78ba4307f4555cb636d666004e1bf66 \
   --processing-revision d8522a4403b766aeb387510c04e89032a56fdf35 \
@@ -130,16 +144,18 @@ python scripts/science/materialize_deform360_prob4d_metric_batch.py \
   --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
   --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
   --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+  --camera-eligibility-policy protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json \
   --processing-revision d8522a4403b766aeb387510c04e89032a56fdf35 \
   --implementation-revision "$(git rev-parse HEAD)" \
   --output-dir /durable/deform360-prob4d-metric-batch
 ```
 
 The batch recursively hashes every metric member and publishes
-`metric-batch-result.json`. `metric-prefix-plan.json` exists only when every
-sealed stream is supported and every object retains at least two cameras. The
-constructor reads released robot poses and camera calibration; it performs no
-new recording and requires no human approval.
+`metric-batch-result.json`. With the optional version-2 policy,
+`metric-prefix-plan.json` exists only when the locked target-free visibility
+thresholds pass; without it, the byte-compatible version-1 all-stream rule
+applies. The constructor reads released robot poses and camera calibration; it
+performs no new recording and requires no human approval.
 
 This path is governed by
 `protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json`.

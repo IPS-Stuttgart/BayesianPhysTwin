@@ -16,6 +16,14 @@ from bayesian_phystwin.deform360_calibration_visual_production import (
     DEFORM360_CALIBRATION_VISUAL_PRODUCTION_RESULT_SCHEMA,
     PRODUCTION_INFORMATION_BOUNDARY,
 )
+from bayesian_phystwin.deform360_prob4d_camera_eligibility import (
+    CAMERA_ELIGIBILITY_POLICY_SCHEMA,
+    CAMERA_ELIGIBILITY_POLICY_SEMANTICS,
+    CAMERA_ELIGIBILITY_POLICY_VERSION,
+    SUPPORT_NEGATIVE_REASON,
+    VISIBLE_STREAM_PLAN_SEMANTICS,
+    VISIBLE_STREAM_PLAN_VERSION,
+)
 from bayesian_phystwin.deform360_prob4d_sample_materializer import (
     PLAN_SCHEMA,
     PLAN_SEMANTICS,
@@ -439,6 +447,118 @@ def _write_fixture(tmp_path: Path) -> dict[str, Any]:
     }
 
 
+def _write_visible_camera_fixture(tmp_path: Path) -> dict[str, Any]:
+    fixture = _write_fixture(tmp_path)
+    production_path = Path(fixture["production"])
+    production = json.loads(production_path.read_text(encoding="utf-8"))
+    production_identity = {
+        key: value for key, value in production.items() if key != "result_id"
+    }
+
+    object_id = "object-00"
+    episode_id = 0
+    stratum = "sheet"
+    camera_id = "camera-2"
+    case_id = f"{object_id}-ep{episode_id:04d}"
+    relative_directory = f"{case_id}/{camera_id}"
+    prediction_directory = Path(fixture["prediction_root"]) / relative_directory
+    prediction_directory.mkdir(parents=True)
+    prediction_manifest_path = prediction_directory / "predictions.json"
+    prediction_manifest_path.write_text(
+        json.dumps({"format_version": 1, "overlap_windows": []}),
+        encoding="utf-8",
+    )
+    prediction_record = _record(
+        Path(fixture["prediction_root"]), prediction_manifest_path
+    )
+    sealed_prediction_record = {**prediction_record, "path": "predictions.json"}
+    job_id = hashlib.sha256(f"{case_id}:{camera_id}".encode()).hexdigest()
+    seal = _seal(
+        job_id=job_id,
+        object_id=object_id,
+        episode_id=episode_id,
+        stratum=stratum,
+        camera_id=camera_id,
+        output_relative_directory=relative_directory,
+        prediction_manifest=sealed_prediction_record,
+    )
+    receipt = _json_record(
+        Path(fixture["production_root"]),
+        f"{relative_directory}/prediction-seal.json",
+        seal,
+    )
+    production_identity["jobs"].append(
+        {
+            "job_id": job_id,
+            "object_id": object_id,
+            "camera_id": camera_id,
+            "status": "succeeded",
+            "receipt": receipt,
+        }
+    )
+    production_identity["jobs"].sort(
+        key=lambda row: (row["object_id"], row["camera_id"])
+    )
+    production_identity["camera_view_count"] = 17
+    production_identity["succeeded_job_count"] = 17
+    production = {
+        **production_identity,
+        "result_id": content_id(production_identity),
+    }
+    production_path.write_text(json.dumps(production), encoding="utf-8")
+
+    policy_identity = {
+        "schema": CAMERA_ELIGIBILITY_POLICY_SCHEMA,
+        "schema_version": CAMERA_ELIGIBILITY_POLICY_VERSION,
+        "semantics": CAMERA_ELIGIBILITY_POLICY_SEMANTICS,
+        "protocol_id": "unit-protocol",
+        "eligibility_evidence": "released robot projection over the causal prefix",
+        "eligible_status": "supported",
+        "support_negative_action": "retain-and-exclude",
+        "technical_failure_action": "terminal",
+        "allowed_support_negative_reason": SUPPORT_NEGATIVE_REASON,
+        "minimum_supported_streams_per_object": 2,
+        "minimum_supported_object_count": 8,
+        "minimum_supported_stream_fraction": 0.9,
+        "camera_images_used_for_eligibility": False,
+        "prediction_residuals_used_for_eligibility": False,
+        "calibration_outcomes_used_for_eligibility": False,
+        "replacement_allowed": False,
+        "confirmation_payloads_opened": False,
+        "future_frames_used": False,
+        "target_outcomes_used": False,
+        "human_approval_required": False,
+        "new_measurements_required": False,
+        "claim_boundary": "unit target-free eligibility policy",
+    }
+    policy = {**policy_identity, "artifact_id": content_id(policy_identity)}
+    policy_path = tmp_path / "camera-eligibility-policy.json"
+    policy_path.write_text(json.dumps(policy), encoding="utf-8")
+
+    plan_path = Path(fixture["plan"])
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan_identity = {key: value for key, value in plan.items() if key != "plan_id"}
+    plan_identity["schema_version"] = VISIBLE_STREAM_PLAN_VERSION
+    plan_identity["semantics"] = VISIBLE_STREAM_PLAN_SEMANTICS
+    plan_identity["visual_production_result_id"] = production["result_id"]
+    plan_identity["camera_eligibility_policy_file_sha256"] = _sha256(policy_path)
+    plan_identity["camera_eligibility_policy_id"] = policy["artifact_id"]
+    plan_identity["excluded_streams"] = [
+        {
+            "job_id": job_id,
+            "object_id": object_id,
+            "episode_id": episode_id,
+            "stratum": stratum,
+            "camera_id": camera_id,
+            "reason": SUPPORT_NEGATIVE_REASON,
+        }
+    ]
+    plan = {**plan_identity, "plan_id": content_id(plan_identity)}
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    fixture["camera_eligibility_policy"] = policy_path
+    return fixture
+
+
 def test_materializer_publishes_stream_anchors_and_clustered_causal_rows(
     tmp_path: Path,
 ) -> None:
@@ -518,4 +638,66 @@ def test_materializer_rejects_metric_archive_that_crosses_causal_boundary(
                 covariance_cluster_size_pixels=1,
                 minimum_point_rows_per_window=8,
             ),
+        )
+
+
+def test_materializer_accepts_visible_camera_plan_with_retained_exclusion(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_visible_camera_fixture(tmp_path)
+    output = tmp_path / "visible-output"
+
+    result = materialize_deform360_prob4d_calibration_samples(
+        plan_path=fixture["plan"],
+        production_result_path=fixture["production"],
+        production_root=fixture["production_root"],
+        prediction_root=fixture["prediction_root"],
+        metric_root=fixture["metric_root"],
+        selection_path=fixture["selection"],
+        visual_provider_spec_path=fixture["provider"],
+        metric_prior_policy_path=fixture["metric_policy"],
+        camera_eligibility_policy_path=fixture["camera_eligibility_policy"],
+        expected_processing_revision=PROCESSING_REVISION,
+        api=_api(),
+        output_directory=output,
+        config=Deform360Prob4DMaterializationConfig(
+            covariance_cluster_size_pixels=1,
+            maximum_metric_fit_correspondences=100,
+            maximum_point_rows_per_window=1_000,
+            minimum_point_rows_per_window=8,
+        ),
+    )
+
+    assert len(result["cases"]) == 8
+    assert sum(len(case["metric_references"]) for case in result["cases"]) == 16
+    assert (
+        "source-artifacts/camera-eligibility-policy.json" in result["source_artifacts"]
+    )
+    assert result["information_boundary"]["replacement_allowed"] is False
+
+
+def test_materializer_rejects_non_visibility_exclusion(tmp_path: Path) -> None:
+    fixture = _write_visible_camera_fixture(tmp_path)
+    plan_path = Path(fixture["plan"])
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan["excluded_streams"][0]["reason"] = "outcome-dependent-exclusion"
+    plan["plan_id"] = content_id(
+        {key: value for key, value in plan.items() if key != "plan_id"}
+    )
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="target-free visibility negative"):
+        materialize_deform360_prob4d_calibration_samples(
+            plan_path=fixture["plan"],
+            production_result_path=fixture["production"],
+            production_root=fixture["production_root"],
+            prediction_root=fixture["prediction_root"],
+            metric_root=fixture["metric_root"],
+            selection_path=fixture["selection"],
+            visual_provider_spec_path=fixture["provider"],
+            metric_prior_policy_path=fixture["metric_policy"],
+            camera_eligibility_policy_path=fixture["camera_eligibility_policy"],
+            expected_processing_revision=PROCESSING_REVISION,
+            api=_api(),
+            output_directory=tmp_path / "rejected-exclusion",
         )
