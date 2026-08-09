@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
-import bayesian_phystwin._dynamic_endpoint_filter as filter_module
 from bayesian_phystwin.contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 from bayesian_phystwin.dynamic_endpoint_model_average import (
     DampedTrendEndpointComponentV2,
     DynamicEndpointModelAverageConfigV2,
-    DynamicEndpointNumericalError,
     PersistenceEndpointComponentV2,
     infer_dynamic_endpoint_model_average,
-    predict_dynamic_endpoint_model_average,
 )
 
 
