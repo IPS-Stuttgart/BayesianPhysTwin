@@ -857,3 +857,312 @@ def test_update_from_path_loads_then_runs_claim_bearing_update(
         config=_config(),
     )
     assert result.observation_artifact_id == _ARTIFACT_ID
+
+
+def test_structured_rejection_does_not_materialize_dense_covariance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+    from bayesian_phystwin.structured_gauge_aware_result import (
+        PRECISION_BACKED_COVARIANCE_REPRESENTATION,
+        PrecisionBackedCovarianceV1,
+    )
+
+    adapted = _build(_validated_observation())
+    unsupported = replace(adapted.batch, prior_reliability=np.zeros(4))
+
+    def fail_materialization(self, *, maximum_bytes=None):
+        raise AssertionError("structured rejection materialized covariance")
+
+    monkeypatch.setattr(
+        PrecisionBackedCovarianceV1,
+        "materialize",
+        fail_materialization,
+    )
+    result = update_sparse_prior_aware_gauge_belief_structured(
+        unsupported,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+
+    assert not result.inference_admissible
+    assert result.covariance_representation == (
+        PRECISION_BACKED_COVARIANCE_REPRESENTATION
+    )
+    assert result.dense_covariance_materialized is False
+    assert result.diagnostics["result_dense_covariance_materialized"] is False
+    assert len(result.result_id) == 64
+
+
+def test_structured_rejection_materializes_only_through_explicit_conversion() -> None:
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief,
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+
+    adapted = _build(_validated_observation())
+    unsupported = replace(adapted.batch, prior_reliability=np.zeros(4))
+    structured = update_sparse_prior_aware_gauge_belief_structured(
+        unsupported,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    legacy = update_sparse_prior_aware_gauge_belief(
+        unsupported,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+
+    with pytest.raises(MemoryError, match="exceeding"):
+        structured.materialize_posterior_covariance(
+            maximum_bytes=structured.estimated_dense_covariance_bytes - 1
+        )
+    converted = structured.to_legacy()
+    np.testing.assert_allclose(
+        converted.posterior_covariance,
+        legacy.posterior_covariance,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    assert converted.reason == legacy.reason
+
+
+def test_structured_acceptance_is_numerically_identical_to_legacy() -> None:
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief,
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+    from bayesian_phystwin.structured_gauge_aware_result import DenseCovarianceV1
+
+    adapted = _build(_validated_observation())
+    structured = update_sparse_prior_aware_gauge_belief_structured(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    legacy = update_sparse_prior_aware_gauge_belief(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+
+    assert structured.inference_admissible
+    assert isinstance(structured.covariance, DenseCovarianceV1)
+    assert structured.dense_covariance_materialized is True
+    converted = structured.to_legacy()
+    for name in (
+        "state_coefficients",
+        "gauge_delta",
+        "posterior_covariance",
+        "robust_weights",
+    ):
+        np.testing.assert_allclose(
+            getattr(converted, name),
+            getattr(legacy, name),
+            atol=1e-12,
+            rtol=1e-12,
+        )
+
+
+def test_structured_and_legacy_solver_modes_are_context_local() -> None:
+    from bayesian_phystwin._gauge_aware_contracts import GaugeAwareBeliefResult
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief,
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+    from bayesian_phystwin.structured_gauge_aware_result import (
+        StructuredGaugeAwareBeliefResultV1,
+    )
+
+    adapted = _build(_validated_observation())
+    structured = update_sparse_prior_aware_gauge_belief_structured(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    legacy = update_sparse_prior_aware_gauge_belief(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    assert isinstance(structured, StructuredGaugeAwareBeliefResultV1)
+    assert isinstance(legacy, GaugeAwareBeliefResult)
+
+
+def test_claim_bearing_structured_rejection_binds_without_materialization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bayesian_phystwin.structured_gauge_aware_result import (
+        PrecisionBackedCovarianceV1,
+    )
+    from bayesian_phystwin.tree_sparse_structured_gauge_prob4d import (
+        update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts,
+    )
+
+    def fail_materialization(self, *, maximum_bytes=None):
+        raise AssertionError("claim identity materialized covariance")
+
+    monkeypatch.setattr(
+        PrecisionBackedCovarianceV1,
+        "materialize",
+        fail_materialization,
+    )
+    update = update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts(
+        _validated_observation(),
+        _linearization(),
+        physical_prediction_xyz_m=np.zeros((4, 3), dtype=np.float64),
+        state_prior_covariance_m2=np.zeros((2, 2), dtype=np.float64),
+        config=_config(),
+    )
+
+    assert not update.inference_admissible
+    assert update.dense_covariance_materialized is False
+    assert len(update.admission_id) == 64
+    assert len(update.structured_result_id) == 64
+    assert len(update.update_id) == 64
+    assert update.descriptor()["structured_result_id"] == update.structured_result_id
+
+
+def test_claim_bearing_structured_conversion_is_explicit_and_budgeted() -> None:
+    from bayesian_phystwin.tree_sparse_structured_gauge_prob4d import (
+        update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts,
+    )
+
+    update = update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts(
+        _validated_observation(),
+        _linearization(),
+        physical_prediction_xyz_m=np.zeros((4, 3), dtype=np.float64),
+        state_prior_covariance_m2=np.zeros((2, 2), dtype=np.float64),
+        config=_config(),
+    )
+    with pytest.raises(MemoryError, match="exceeding"):
+        update.to_legacy(maximum_covariance_bytes=1)
+    legacy = update.to_legacy()
+    assert legacy.result.reason == update.result.reason
+    assert legacy.observation_artifact_id == update.observation_artifact_id
+
+
+def test_legacy_sparse_result_diagnostics_remain_content_compatible() -> None:
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief,
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+
+    adapted = _build(_validated_observation())
+    legacy = update_sparse_prior_aware_gauge_belief(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    structured = update_sparse_prior_aware_gauge_belief_structured(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+
+    assert not any(key.startswith("result_") for key in legacy.diagnostics)
+    assert structured.diagnostics["result_dense_covariance_materialized"] is True
+    assert structured.diagnostics["result_covariance_representation"] == (
+        "dense-covariance-v1"
+    )
+
+
+def test_structured_covariance_contract_validation_branches() -> None:
+    import bayesian_phystwin.structured_gauge_aware_result as structured_module
+    from bayesian_phystwin.structured_gauge_aware_result import (
+        DenseCovarianceV1,
+        StructuredGaugeAwareBeliefResultV1,
+    )
+
+    empty = DenseCovarianceV1(np.zeros((0, 0), dtype=np.float64))
+    assert empty.dimension == 0
+    assert empty.materialize().shape == (0, 0)
+    assert empty.materialize(maximum_bytes=0).shape == (0, 0)
+    np.testing.assert_array_equal(
+        np.asarray(empty, dtype=np.float32),
+        np.zeros((0, 0), dtype=np.float32),
+    )
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        empty.materialize(maximum_bytes=True)
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        empty.materialize(maximum_bytes=-1)
+
+    neutral = structured_module._symmetric_matrix(
+        np.eye(1),
+        name="neutral",
+        positive_semidefinite=False,
+        positive_definite=False,
+    )
+    np.testing.assert_array_equal(neutral, np.eye(1))
+
+    adapted = _build(_validated_observation())
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+
+    valid = update_sparse_prior_aware_gauge_belief_structured(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    with pytest.raises(TypeError, match="inference_admissible"):
+        replace(valid, inference_admissible=1)
+    with pytest.raises(ValueError, match="reason"):
+        replace(valid, reason="")
+    with pytest.raises(TypeError, match="unsupported representation"):
+        replace(valid, covariance=object())
+    with pytest.raises(TypeError, match="GaugeAwareBeliefResult"):
+        StructuredGaugeAwareBeliefResultV1.from_legacy(object())
+
+
+def _rejected_structured_claim_update():
+    from bayesian_phystwin.tree_sparse_structured_gauge_prob4d import (
+        update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts,
+    )
+
+    return update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts(
+        _validated_observation(),
+        _linearization(),
+        physical_prediction_xyz_m=np.zeros((4, 3), dtype=np.float64),
+        state_prior_covariance_m2=np.zeros((2, 2), dtype=np.float64),
+        config=_config(),
+    )
+
+
+def test_structured_claim_update_rejects_invalid_wrapper_fields() -> None:
+    update = _rejected_structured_claim_update()
+    with pytest.raises(TypeError, match="StructuredGaugeAwareBeliefResultV1"):
+        replace(update, result=object())
+    with pytest.raises(TypeError, match="independently_verified"):
+        replace(update, runtime_revision_independently_verified=1)
+    with pytest.raises(ValueError, match="must be True"):
+        replace(update, runtime_revision_independently_verified=False)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("observation", "observation_artifact_id"),
+        ("calibration", "calibration_artifact_ids"),
+        ("runtime", "independently verified runtime"),
+    ],
+)
+def test_structured_claim_update_rejects_lineage_substitution(
+    mutation: str,
+    message: str,
+) -> None:
+    update = _rejected_structured_claim_update()
+    lineage = dict(update.result.input_lineage)
+    if mutation == "observation":
+        lineage["observation_artifact_id"] = "9" * 64
+    elif mutation == "calibration":
+        calibration = dict(lineage["prob4d_claim_bearing_calibration_artifact_ids"])
+        calibration["gauge_artifact_id"] = "8" * 64
+        lineage["prob4d_claim_bearing_calibration_artifact_ids"] = calibration
+    else:
+        lineage["prob4d_claim_bearing_runtime_revision_independently_verified"] = False
+    bad_result = replace(update.result, input_lineage=lineage)
+    with pytest.raises(ValueError, match=message):
+        replace(update, result=bad_result)
