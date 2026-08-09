@@ -210,14 +210,18 @@ class Deform360JointSparseObservabilityPolicyV4:
         object.__setattr__(
             self,
             "require_full_query_rank",
-            genuine_boolean(self.require_full_query_rank, name="require_full_query_rank"),
+            genuine_boolean(
+                self.require_full_query_rank, name="require_full_query_rank"
+            ),
         )
         for name in (
             "minimum_query_precision_eigenvalue",
             "relative_rank_tolerance",
             "absolute_rank_tolerance",
         ):
-            object.__setattr__(self, name, _positive(getattr(self, name), name=name, allow_zero=True))
+            object.__setattr__(
+                self, name, _positive(getattr(self, name), name=name, allow_zero=True)
+            )
         for name in (
             "maximum_query_condition_number",
             "effective_samples_per_correlation_group",
@@ -232,9 +236,13 @@ class Deform360JointSparseObservabilityPolicyV4:
         ):
             object.__setattr__(self, name, _fraction(getattr(self, name), name=name))
         object.__setattr__(self, "protocol_id", protocol)
-        object.__setattr__(self, "information_boundary", _boundary(self.information_boundary))
+        object.__setattr__(
+            self, "information_boundary", _boundary(self.information_boundary)
+        )
         expected = content_id(self.identity_record())
-        _require(self.policy_id is None or self.policy_id == expected, "policy_id changed")
+        _require(
+            self.policy_id is None or self.policy_id == expected, "policy_id changed"
+        )
         object.__setattr__(self, "policy_id", expected)
 
     def identity_record(self) -> dict[str, object]:
@@ -267,7 +275,9 @@ class Deform360JointSparseObservabilityPolicyV4:
         return {**self.identity_record(), "policy_id": self.policy_id}
 
     @classmethod
-    def from_record(cls, value: Mapping[str, Any]) -> "Deform360JointSparseObservabilityPolicyV4":
+    def from_record(
+        cls, value: Mapping[str, Any]
+    ) -> Deform360JointSparseObservabilityPolicyV4:
         expected = {
             "schema",
             "schema_version",
@@ -294,11 +304,29 @@ class Deform360JointSparseObservabilityPolicyV4:
             "policy_id",
         }
         _require(set(value) == expected, "policy fields changed")
-        _require(value["schema"] == DEFORM360_JOINT_SPARSE_POLICY_SCHEMA, "policy schema changed")
-        _require(value["schema_version"] == DEFORM360_JOINT_SPARSE_VERSION, "policy version changed")
-        _require(value["semantics"] == DEFORM360_JOINT_SPARSE_SEMANTICS, "policy semantics changed")
-        _require(value["claim_boundary"] == DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY, "claim boundary changed")
-        return cls(**{key: value[key] for key in expected - {"schema", "schema_version", "semantics", "claim_boundary"}})
+        _require(
+            value["schema"] == DEFORM360_JOINT_SPARSE_POLICY_SCHEMA,
+            "policy schema changed",
+        )
+        _require(
+            value["schema_version"] == DEFORM360_JOINT_SPARSE_VERSION,
+            "policy version changed",
+        )
+        _require(
+            value["semantics"] == DEFORM360_JOINT_SPARSE_SEMANTICS,
+            "policy semantics changed",
+        )
+        _require(
+            value["claim_boundary"] == DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY,
+            "claim boundary changed",
+        )
+        return cls(
+            **{
+                key: value[key]
+                for key in expected
+                - {"schema", "schema_version", "semantics", "claim_boundary"}
+            }
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -352,53 +380,117 @@ class Deform360JointSparseFactorBatchV4:
             "linearization_artifact_id",
             "gauge_prior_id",
         ):
-            object.__setattr__(self, name, sha256_digest(getattr(self, name), name=name))
+            object.__setattr__(
+                self, name, sha256_digest(getattr(self, name), name=name)
+            )
         object.__setattr__(
             self,
             "implementation_revision",
-            exact_revision(self.implementation_revision, name="implementation_revision"),
+            exact_revision(
+                self.implementation_revision, name="implementation_revision"
+            ),
         )
-        object.__setattr__(self, "object_id", _literal(self.object_id, name="object_id"))
-        object.__setattr__(self, "episode_id", genuine_integer(self.episode_id, name="episode_id", minimum=0))
+        object.__setattr__(
+            self, "object_id", _literal(self.object_id, name="object_id")
+        )
+        object.__setattr__(
+            self,
+            "episode_id",
+            genuine_integer(self.episode_id, name="episode_id", minimum=0),
+        )
         object.__setattr__(self, "stratum", _stratum(self.stratum))
-        covariance = _float_array(self.observation_covariance_m2, name="observation_covariance_m2", ndim=3)
+        covariance = _float_array(
+            self.observation_covariance_m2, name="observation_covariance_m2", ndim=3
+        )
         state = _float_array(self.state_jacobian, name="state_jacobian", ndim=3)
-        local = _float_array(self.local_gauge_jacobian, name="local_gauge_jacobian", ndim=3)
+        local = _float_array(
+            self.local_gauge_jacobian, name="local_gauge_jacobian", ndim=3
+        )
         count = len(covariance)
-        _require(count > 0 and covariance.shape == (count, 3, 3), "invalid observation covariance shape")
-        _require(state.shape[:2] == (count, 3) and state.shape[2] > 0, "invalid state Jacobian shape")
-        _require(local.shape[:2] == (count, 3) and local.shape[2] > 0, "invalid gauge Jacobian shape")
+        _require(
+            count > 0 and covariance.shape == (count, 3, 3),
+            "invalid observation covariance shape",
+        )
+        _require(
+            state.shape[:2] == (count, 3) and state.shape[2] > 0,
+            "invalid state Jacobian shape",
+        )
+        _require(
+            local.shape[:2] == (count, 3) and local.shape[2] > 0,
+            "invalid gauge Jacobian shape",
+        )
         for matrix in covariance:
-            _require(np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-12), "nonsymmetric covariance")
+            _require(
+                np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-12),
+                "nonsymmetric covariance",
+            )
             try:
                 np.linalg.cholesky(0.5 * (matrix + matrix.T))
             except np.linalg.LinAlgError as error:
                 raise ValueError("non-positive-definite covariance") from error
-        factor_ids = tuple(sha256_digest(value, name="factor_id") for value in _strings(self.factor_ids, name="factor_ids", count=count, unique=True))
+        factor_ids = tuple(
+            sha256_digest(value, name="factor_id")
+            for value in _strings(
+                self.factor_ids, name="factor_ids", count=count, unique=True
+            )
+        )
         camera_ids = _strings(self.camera_ids, name="camera_ids", count=count)
         window_ids = _strings(self.window_ids, name="window_ids", count=count)
-        cluster_ids = _strings(self.spatial_cluster_ids, name="spatial_cluster_ids", count=count)
-        group_ids = _strings(self.correlation_group_ids, name="correlation_group_ids", count=count)
+        cluster_ids = _strings(
+            self.spatial_cluster_ids, name="spatial_cluster_ids", count=count
+        )
+        group_ids = _strings(
+            self.correlation_group_ids, name="correlation_group_ids", count=count
+        )
         gauge_ids = _strings(self.gauge_ids, name="gauge_ids", unique=True)
         _require(bool(gauge_ids), "gauge_ids is empty")
         indices = _integer_array(self.gauge_indices, name="gauge_indices", ndim=1)
         parents = _integer_array(self.parent_indices, name="parent_indices", ndim=1)
-        transitions = _float_array(self.transition_matrices, name="transition_matrices", ndim=3)
-        scales = _float_array(self.innovation_scale_tril, name="innovation_scale_tril", ndim=3)
+        transitions = _float_array(
+            self.transition_matrices, name="transition_matrices", ndim=3
+        )
+        scales = _float_array(
+            self.innovation_scale_tril, name="innovation_scale_tril", ndim=3
+        )
         gauge_count = len(gauge_ids)
         block_size = local.shape[2]
-        _require(indices.shape == (count,) and np.all((indices >= 0) & (indices < gauge_count)), "invalid gauge indices")
-        _require(parents.shape == (gauge_count,) and parents[0] == -1, "invalid gauge tree root")
-        _require(all(0 <= int(parents[index]) < index for index in range(1, gauge_count)), "invalid gauge tree parent")
-        _require(transitions.shape == (gauge_count, block_size, block_size), "invalid transition shape")
+        _require(
+            indices.shape == (count,)
+            and np.all((indices >= 0) & (indices < gauge_count)),
+            "invalid gauge indices",
+        )
+        _require(
+            parents.shape == (gauge_count,) and parents[0] == -1,
+            "invalid gauge tree root",
+        )
+        _require(
+            all(0 <= int(parents[index]) < index for index in range(1, gauge_count)),
+            "invalid gauge tree parent",
+        )
+        _require(
+            transitions.shape == (gauge_count, block_size, block_size),
+            "invalid transition shape",
+        )
         _require(scales.shape == transitions.shape, "invalid innovation scale shape")
-        _require(np.allclose(scales, np.tril(scales), atol=1e-14, rtol=0.0), "innovation scale is not triangular")
-        _require(np.all(np.diagonal(scales, axis1=1, axis2=2) > 0.0), "innovation scale diagonal is not positive")
+        _require(
+            np.allclose(scales, np.tril(scales), atol=1e-14, rtol=0.0),
+            "innovation scale is not triangular",
+        )
+        _require(
+            np.all(np.diagonal(scales, axis1=1, axis2=2) > 0.0),
+            "innovation scale diagonal is not positive",
+        )
         query = _float_array(self.query_jacobian, name="query_jacobian", ndim=2)
-        _require(query.shape[1] == state.shape[2] and query.shape[0] > 0, "invalid query Jacobian shape")
+        _require(
+            query.shape[1] == state.shape[2] and query.shape[0] > 0,
+            "invalid query Jacobian shape",
+        )
         singular = np.linalg.svd(query, compute_uv=False)
         tolerance = max(1e-12, 1e-10 * float(singular[0]))
-        _require(int(np.count_nonzero(singular > tolerance)) == len(query), "query rows are dependent")
+        _require(
+            int(np.count_nonzero(singular > tolerance)) == len(query),
+            "query rows are dependent",
+        )
         probabilities: dict[str, np.ndarray] = {}
         for name, raw, strictly_positive in (
             ("prior_reliability", self.prior_reliability, False),
@@ -408,10 +500,24 @@ class Deform360JointSparseFactorBatchV4:
             values = _float_array(raw, name=name, ndim=1)
             _require(values.shape == (count,), f"{name} shape changed")
             lower = values > 0.0 if strictly_positive else values >= 0.0
-            _require(np.all(lower & (values <= 1.0)), f"{name} leaves probability range")
+            _require(
+                np.all(lower & (values <= 1.0)), f"{name} leaves probability range"
+            )
             probabilities[name] = values
-        shared = np.zeros((count, 3, 0), dtype=np.float64) if self.shared_bias_jacobian is None else _float_array(self.shared_bias_jacobian, name="shared_bias_jacobian", ndim=3)
-        view = np.zeros((count, 3, 0), dtype=np.float64) if self.view_bias_jacobian is None else _float_array(self.view_bias_jacobian, name="view_bias_jacobian", ndim=3)
+        shared = (
+            np.zeros((count, 3, 0), dtype=np.float64)
+            if self.shared_bias_jacobian is None
+            else _float_array(
+                self.shared_bias_jacobian, name="shared_bias_jacobian", ndim=3
+            )
+        )
+        view = (
+            np.zeros((count, 3, 0), dtype=np.float64)
+            if self.view_bias_jacobian is None
+            else _float_array(
+                self.view_bias_jacobian, name="view_bias_jacobian", ndim=3
+            )
+        )
         _require(shared.shape[:2] == (count, 3), "shared-bias row shape changed")
         _require(view.shape[:2] == (count, 3), "view-bias row shape changed")
         object.__setattr__(self, "protocol_id", protocol)
@@ -429,14 +535,34 @@ class Deform360JointSparseFactorBatchV4:
         object.__setattr__(self, "transition_matrices", transitions)
         object.__setattr__(self, "innovation_scale_tril", scales)
         object.__setattr__(self, "query_jacobian", query)
-        object.__setattr__(self, "shared_bias_jacobian", immutable_array(shared, dtype=np.dtype("<f8")))
-        object.__setattr__(self, "view_bias_jacobian", immutable_array(view, dtype=np.dtype("<f8")))
+        object.__setattr__(
+            self, "shared_bias_jacobian", immutable_array(shared, dtype=np.dtype("<f8"))
+        )
+        object.__setattr__(
+            self, "view_bias_jacobian", immutable_array(view, dtype=np.dtype("<f8"))
+        )
         for name, values in probabilities.items():
             object.__setattr__(self, name, values)
-        object.__setattr__(self, "excluded_factor_count", genuine_integer(self.excluded_factor_count, name="excluded_factor_count", minimum=0))
-        object.__setattr__(self, "source_artifacts", source_artifact_mapping(self.source_artifacts, name="source_artifacts", allow_empty=True))
-        object.__setattr__(self, "information_boundary", _boundary(self.information_boundary))
-        object.__setattr__(self, "metadata", frozen_finite_json_mapping(self.metadata, name="metadata"))
+        object.__setattr__(
+            self,
+            "excluded_factor_count",
+            genuine_integer(
+                self.excluded_factor_count, name="excluded_factor_count", minimum=0
+            ),
+        )
+        object.__setattr__(
+            self,
+            "source_artifacts",
+            source_artifact_mapping(
+                self.source_artifacts, name="source_artifacts", allow_empty=True
+            ),
+        )
+        object.__setattr__(
+            self, "information_boundary", _boundary(self.information_boundary)
+        )
+        object.__setattr__(
+            self, "metadata", frozen_finite_json_mapping(self.metadata, name="metadata")
+        )
         expected = content_id(self.identity_record())
         _require(self.input_id is None or self.input_id == expected, "input_id changed")
         object.__setattr__(self, "input_id", expected)
@@ -548,15 +674,38 @@ class Deform360JointSparseObservabilityResultV4:
     result_id: str | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "protocol_id", _literal(self.protocol_id, name="protocol_id"))
-        _require(self.protocol_id == DEFORM360_JOINT_SPARSE_PROTOCOL_ID, "protocol changed")
-        object.__setattr__(self, "input_id", sha256_digest(self.input_id, name="input_id"))
-        object.__setattr__(self, "policy_id", sha256_digest(self.policy_id, name="policy_id"))
-        object.__setattr__(self, "implementation_revision", exact_revision(self.implementation_revision, name="implementation_revision"))
-        object.__setattr__(self, "object_id", _literal(self.object_id, name="object_id"))
-        object.__setattr__(self, "episode_id", genuine_integer(self.episode_id, name="episode_id", minimum=0))
+        object.__setattr__(
+            self, "protocol_id", _literal(self.protocol_id, name="protocol_id")
+        )
+        _require(
+            self.protocol_id == DEFORM360_JOINT_SPARSE_PROTOCOL_ID, "protocol changed"
+        )
+        object.__setattr__(
+            self, "input_id", sha256_digest(self.input_id, name="input_id")
+        )
+        object.__setattr__(
+            self, "policy_id", sha256_digest(self.policy_id, name="policy_id")
+        )
+        object.__setattr__(
+            self,
+            "implementation_revision",
+            exact_revision(
+                self.implementation_revision, name="implementation_revision"
+            ),
+        )
+        object.__setattr__(
+            self, "object_id", _literal(self.object_id, name="object_id")
+        )
+        object.__setattr__(
+            self,
+            "episode_id",
+            genuine_integer(self.episode_id, name="episode_id", minimum=0),
+        )
         object.__setattr__(self, "stratum", _stratum(self.stratum))
-        _require(self.status in {"evaluated", "technical-failure-without-replacement"}, "invalid result status")
+        _require(
+            self.status in {"evaluated", "technical-failure-without-replacement"},
+            "invalid result status",
+        )
         for name in (
             "factor_count",
             "excluded_factor_count",
@@ -565,10 +714,22 @@ class Deform360JointSparseObservabilityResultV4:
             "distinct_spatial_cluster_count",
             "distinct_correlation_group_count",
         ):
-            object.__setattr__(self, name, genuine_integer(getattr(self, name), name=name, minimum=0))
-        object.__setattr__(self, "gate_passed", genuine_boolean(self.gate_passed, name="gate_passed"))
-        object.__setattr__(self, "information_boundary", _boundary(self.information_boundary))
-        object.__setattr__(self, "source_artifacts", source_artifact_mapping(self.source_artifacts, name="source_artifacts", allow_empty=True))
+            object.__setattr__(
+                self, name, genuine_integer(getattr(self, name), name=name, minimum=0)
+            )
+        object.__setattr__(
+            self, "gate_passed", genuine_boolean(self.gate_passed, name="gate_passed")
+        )
+        object.__setattr__(
+            self, "information_boundary", _boundary(self.information_boundary)
+        )
+        object.__setattr__(
+            self,
+            "source_artifacts",
+            source_artifact_mapping(
+                self.source_artifacts, name="source_artifacts", allow_empty=True
+            ),
+        )
         if self.status == "evaluated":
             numerical = (
                 self.state_dimension,
@@ -585,25 +746,77 @@ class Deform360JointSparseObservabilityResultV4:
                 self.leave_one_window_rank_fraction,
                 self.gate_checks,
             )
-            _require(all(value is not None for value in numerical), "evaluated result lacks diagnostics")
-            _require(self.failure_reason is None and self.failure_detail_sha256 is None, "evaluated result contains failure")
-            state_dimension = genuine_integer(self.state_dimension, name="state_dimension", minimum=1)
-            query_dimension = genuine_integer(self.query_dimension, name="query_dimension", minimum=1)
-            nuisance_dimension = genuine_integer(self.nuisance_dimension, name="nuisance_dimension", minimum=0)
+            _require(
+                all(value is not None for value in numerical),
+                "evaluated result lacks diagnostics",
+            )
+            _require(
+                self.failure_reason is None and self.failure_detail_sha256 is None,
+                "evaluated result contains failure",
+            )
+            state_dimension = genuine_integer(
+                self.state_dimension, name="state_dimension", minimum=1
+            )
+            query_dimension = genuine_integer(
+                self.query_dimension, name="query_dimension", minimum=1
+            )
+            nuisance_dimension = genuine_integer(
+                self.nuisance_dimension, name="nuisance_dimension", minimum=0
+            )
             state_rank = genuine_integer(self.state_rank, name="state_rank", minimum=0)
             query_rank = genuine_integer(self.query_rank, name="query_rank", minimum=0)
-            eigenvalues = tuple(_positive(value, name="query eigenvalue", allow_zero=True) for value in cast(tuple[float, ...], self.query_precision_eigenvalues))
-            _require(len(eigenvalues) == query_dimension and tuple(sorted(eigenvalues)) == eigenvalues, "invalid query spectrum")
-            minimum = _positive(self.minimum_query_precision_eigenvalue, name="minimum_query_precision_eigenvalue", allow_zero=True)
-            _require(np.isclose(minimum, eigenvalues[0], rtol=1e-10, atol=1e-12), "minimum eigenvalue changed")
-            condition = None if self.query_condition_number is None else _positive(self.query_condition_number, name="query_condition_number")
-            _require((query_rank == query_dimension) == (condition is not None), "condition/rank mismatch")
-            unobservable = _fraction(self.query_unobservable_fraction, name="query_unobservable_fraction")
-            trace = _positive(self.trace_query_precision, name="trace_query_precision", allow_zero=True)
-            camera = _fraction_mapping(cast(Mapping[str, float], self.single_camera_information_fraction), name="single_camera_information_fraction")
-            leave_camera = _fraction_mapping(cast(Mapping[str, float], self.leave_one_camera_rank_fraction), name="leave_one_camera_rank_fraction")
-            leave_window = _fraction_mapping(cast(Mapping[str, float], self.leave_one_window_rank_fraction), name="leave_one_window_rank_fraction")
-            checks = _boolean_mapping(cast(Mapping[str, bool], self.gate_checks), name="gate_checks")
+            eigenvalues = tuple(
+                _positive(value, name="query eigenvalue", allow_zero=True)
+                for value in cast(tuple[float, ...], self.query_precision_eigenvalues)
+            )
+            _require(
+                len(eigenvalues) == query_dimension
+                and tuple(sorted(eigenvalues)) == eigenvalues,
+                "invalid query spectrum",
+            )
+            minimum = _positive(
+                self.minimum_query_precision_eigenvalue,
+                name="minimum_query_precision_eigenvalue",
+                allow_zero=True,
+            )
+            _require(
+                np.isclose(minimum, eigenvalues[0], rtol=1e-10, atol=1e-12),
+                "minimum eigenvalue changed",
+            )
+            condition = (
+                None
+                if self.query_condition_number is None
+                else _positive(
+                    self.query_condition_number, name="query_condition_number"
+                )
+            )
+            _require(
+                (query_rank == query_dimension) == (condition is not None),
+                "condition/rank mismatch",
+            )
+            unobservable = _fraction(
+                self.query_unobservable_fraction, name="query_unobservable_fraction"
+            )
+            trace = _positive(
+                self.trace_query_precision,
+                name="trace_query_precision",
+                allow_zero=True,
+            )
+            camera = _fraction_mapping(
+                cast(Mapping[str, float], self.single_camera_information_fraction),
+                name="single_camera_information_fraction",
+            )
+            leave_camera = _fraction_mapping(
+                cast(Mapping[str, float], self.leave_one_camera_rank_fraction),
+                name="leave_one_camera_rank_fraction",
+            )
+            leave_window = _fraction_mapping(
+                cast(Mapping[str, float], self.leave_one_window_rank_fraction),
+                name="leave_one_window_rank_fraction",
+            )
+            checks = _boolean_mapping(
+                cast(Mapping[str, bool], self.gate_checks), name="gate_checks"
+            )
             _require(self.gate_passed == all(checks.values()), "gate decision changed")
             for name, value in (
                 ("state_dimension", state_dimension),
@@ -616,9 +829,18 @@ class Deform360JointSparseObservabilityResultV4:
                 ("query_condition_number", condition),
                 ("query_unobservable_fraction", unobservable),
                 ("trace_query_precision", trace),
-                ("single_camera_information_fraction", frozen_finite_json_mapping(camera)),
-                ("leave_one_camera_rank_fraction", frozen_finite_json_mapping(leave_camera)),
-                ("leave_one_window_rank_fraction", frozen_finite_json_mapping(leave_window)),
+                (
+                    "single_camera_information_fraction",
+                    frozen_finite_json_mapping(camera),
+                ),
+                (
+                    "leave_one_camera_rank_fraction",
+                    frozen_finite_json_mapping(leave_camera),
+                ),
+                (
+                    "leave_one_window_rank_fraction",
+                    frozen_finite_json_mapping(leave_window),
+                ),
                 ("gate_checks", frozen_finite_json_mapping(checks)),
             ):
                 object.__setattr__(self, name, value)
@@ -639,12 +861,25 @@ class Deform360JointSparseObservabilityResultV4:
                 self.leave_one_window_rank_fraction,
                 self.gate_checks,
             )
-            _require(all(value is None for value in numerical), "technical failure contains diagnostics")
+            _require(
+                all(value is None for value in numerical),
+                "technical failure contains diagnostics",
+            )
             _require(not self.gate_passed, "technical failure passed gate")
-            object.__setattr__(self, "failure_reason", _literal(self.failure_reason, name="failure_reason"))
-            object.__setattr__(self, "failure_detail_sha256", sha256_digest(self.failure_detail_sha256, name="failure_detail_sha256"))
+            object.__setattr__(
+                self,
+                "failure_reason",
+                _literal(self.failure_reason, name="failure_reason"),
+            )
+            object.__setattr__(
+                self,
+                "failure_detail_sha256",
+                sha256_digest(self.failure_detail_sha256, name="failure_detail_sha256"),
+            )
         expected = content_id(self.identity_record())
-        _require(self.result_id is None or self.result_id == expected, "result_id changed")
+        _require(
+            self.result_id is None or self.result_id == expected, "result_id changed"
+        )
         object.__setattr__(self, "result_id", expected)
 
     def identity_record(self) -> dict[str, object]:
@@ -671,15 +906,25 @@ class Deform360JointSparseObservabilityResultV4:
             "nuisance_dimension": self.nuisance_dimension,
             "state_rank": self.state_rank,
             "query_rank": self.query_rank,
-            "query_precision_eigenvalues": None if self.query_precision_eigenvalues is None else list(self.query_precision_eigenvalues),
+            "query_precision_eigenvalues": None
+            if self.query_precision_eigenvalues is None
+            else list(self.query_precision_eigenvalues),
             "minimum_query_precision_eigenvalue": self.minimum_query_precision_eigenvalue,
             "query_condition_number": self.query_condition_number,
             "query_unobservable_fraction": self.query_unobservable_fraction,
             "trace_query_precision": self.trace_query_precision,
-            "single_camera_information_fraction": None if self.single_camera_information_fraction is None else plain_json(self.single_camera_information_fraction),
-            "leave_one_camera_rank_fraction": None if self.leave_one_camera_rank_fraction is None else plain_json(self.leave_one_camera_rank_fraction),
-            "leave_one_window_rank_fraction": None if self.leave_one_window_rank_fraction is None else plain_json(self.leave_one_window_rank_fraction),
-            "gate_checks": None if self.gate_checks is None else plain_json(self.gate_checks),
+            "single_camera_information_fraction": None
+            if self.single_camera_information_fraction is None
+            else plain_json(self.single_camera_information_fraction),
+            "leave_one_camera_rank_fraction": None
+            if self.leave_one_camera_rank_fraction is None
+            else plain_json(self.leave_one_camera_rank_fraction),
+            "leave_one_window_rank_fraction": None
+            if self.leave_one_window_rank_fraction is None
+            else plain_json(self.leave_one_window_rank_fraction),
+            "gate_checks": None
+            if self.gate_checks is None
+            else plain_json(self.gate_checks),
             "gate_passed": self.gate_passed,
             "failure_reason": self.failure_reason,
             "failure_detail_sha256": self.failure_detail_sha256,
@@ -694,14 +939,20 @@ class Deform360JointSparseObservabilityResultV4:
 
 def _fraction_mapping(value: Mapping[str, float], *, name: str) -> dict[str, float]:
     _require(bool(value), f"{name} is empty")
-    result = {_literal(key, name=f"{name} key"): _fraction(item, name=f"{name}.{key}") for key, item in value.items()}
+    result = {
+        _literal(key, name=f"{name} key"): _fraction(item, name=f"{name}.{key}")
+        for key, item in value.items()
+    }
     _require(len(result) == len(value), f"{name} repeats keys")
     return result
 
 
 def _boolean_mapping(value: Mapping[str, bool], *, name: str) -> dict[str, bool]:
     _require(bool(value), f"{name} is empty")
-    result = {_literal(key, name=f"{name} key"): genuine_boolean(item, name=f"{name}.{key}") for key, item in value.items()}
+    result = {
+        _literal(key, name=f"{name} key"): genuine_boolean(item, name=f"{name}.{key}")
+        for key, item in value.items()
+    }
     _require(len(result) == len(value), f"{name} repeats keys")
     return result
 
@@ -740,8 +991,12 @@ def _row_weights(
         selected = np.flatnonzero(labels == group)
         active = selected[raw[selected] > 0.0]
         if len(active):
-            scale = min(policy.effective_samples_per_correlation_group, float(len(active))) / len(active)
-            result[active] = raw[active] * float(batch.composite_weight[selected[0]]) * scale
+            scale = min(
+                policy.effective_samples_per_correlation_group, float(len(active))
+            ) / len(active)
+            result[active] = (
+                raw[active] * float(batch.composite_weight[selected[0]]) * scale
+            )
     return result
 
 
@@ -758,7 +1013,10 @@ def _marginal_state_information(
     policy: Deform360JointSparseObservabilityPolicyV4,
     mask: np.ndarray,
 ) -> tuple[np.ndarray, int]:
-    _require(mask.shape == (len(batch.factor_ids),) and mask.dtype.kind == "b", "invalid factor mask")
+    _require(
+        mask.shape == (len(batch.factor_ids),) and mask.dtype.kind == "b",
+        "invalid factor mask",
+    )
     state_dimension = batch.state_dimension
     gauge_dimension = len(batch.gauge_ids) * batch.local_gauge_jacobian.shape[2]
     shared_dimension = cast(np.ndarray, batch.shared_bias_jacobian).shape[2]
@@ -770,10 +1028,14 @@ def _marginal_state_information(
     nuisance[:gauge_dimension, :gauge_dimension] = _tree_information(batch)
     if shared_dimension:
         selected = slice(gauge_dimension, gauge_dimension + shared_dimension)
-        nuisance[selected, selected] += np.eye(shared_dimension) / policy.shared_bias_prior_std_m**2
+        nuisance[selected, selected] += (
+            np.eye(shared_dimension) / policy.shared_bias_prior_std_m**2
+        )
     if view_dimension:
         selected = slice(gauge_dimension + shared_dimension, nuisance_dimension)
-        nuisance[selected, selected] += np.eye(view_dimension) / policy.view_bias_prior_std_m**2
+        nuisance[selected, selected] += (
+            np.eye(view_dimension) / policy.view_bias_prior_std_m**2
+        )
     weights = _row_weights(batch, policy)
     block_size = batch.local_gauge_jacobian.shape[2]
     for index in np.flatnonzero(mask & (weights > 0.0)):
@@ -786,23 +1048,38 @@ def _marginal_state_information(
         shared_start = gauge_dimension
         shared_stop = shared_start + shared_dimension
         if shared_dimension:
-            design[:, shared_start:shared_stop] = whitener @ cast(np.ndarray, batch.shared_bias_jacobian)[index]
+            design[:, shared_start:shared_stop] = (
+                whitener @ cast(np.ndarray, batch.shared_bias_jacobian)[index]
+            )
         if view_dimension:
-            design[:, shared_stop:] = whitener @ cast(np.ndarray, batch.view_bias_jacobian)[index]
+            design[:, shared_stop:] = (
+                whitener @ cast(np.ndarray, batch.view_bias_jacobian)[index]
+            )
         weight = float(weights[index])
         state_information += weight * state.T @ state
         cross += weight * state.T @ design
         nuisance += weight * design.T @ design
     try:
-        marginal = state_information - cross @ np.linalg.solve(0.5 * (nuisance + nuisance.T), cross.T)
+        marginal = state_information - cross @ np.linalg.solve(
+            0.5 * (nuisance + nuisance.T), cross.T
+        )
     except np.linalg.LinAlgError as error:
         raise ValueError("joint nuisance information is singular") from error
     marginal = 0.5 * (marginal + marginal.T)
     eigenvalues, eigenvectors = np.linalg.eigh(marginal)
-    tolerance = max(policy.absolute_rank_tolerance, policy.relative_rank_tolerance * max(float(np.max(np.abs(eigenvalues), initial=0.0)), 1.0))
-    _require(np.all(eigenvalues >= -tolerance), "marginal state information is indefinite")
+    tolerance = max(
+        policy.absolute_rank_tolerance,
+        policy.relative_rank_tolerance
+        * max(float(np.max(np.abs(eigenvalues), initial=0.0)), 1.0),
+    )
+    _require(
+        np.all(eigenvalues >= -tolerance), "marginal state information is indefinite"
+    )
     clipped = np.maximum(eigenvalues, 0.0)
-    return 0.5 * ((eigenvectors * clipped) @ eigenvectors.T + ((eigenvectors * clipped) @ eigenvectors.T).T), nuisance_dimension
+    return 0.5 * (
+        (eigenvectors * clipped) @ eigenvectors.T
+        + ((eigenvectors * clipped) @ eigenvectors.T).T
+    ), nuisance_dimension
 
 
 def _nullspace(value: np.ndarray, tolerance: float) -> np.ndarray:
@@ -818,18 +1095,30 @@ def _spectrum(
     nuisance_dimension: int,
 ) -> _Spectrum:
     eigenvalues, eigenvectors = np.linalg.eigh(0.5 * (information + information.T))
-    tolerance = max(policy.absolute_rank_tolerance, policy.relative_rank_tolerance * max(float(eigenvalues[-1]), 0.0))
+    tolerance = max(
+        policy.absolute_rank_tolerance,
+        policy.relative_rank_tolerance * max(float(eigenvalues[-1]), 0.0),
+    )
     positive = eigenvalues > tolerance
     state_rank = int(np.count_nonzero(positive))
     null = eigenvectors[:, ~positive]
     query_null = query @ null
     singular = np.linalg.svd(query_null.T, compute_uv=False)
-    null_tolerance = max(policy.absolute_rank_tolerance, policy.relative_rank_tolerance * float(singular[0] if len(singular) else 0.0))
-    combinations = np.eye(len(query)) if null.shape[1] == 0 else _nullspace(query_null.T, null_tolerance)
+    null_tolerance = max(
+        policy.absolute_rank_tolerance,
+        policy.relative_rank_tolerance * float(singular[0] if len(singular) else 0.0),
+    )
+    combinations = (
+        np.eye(len(query))
+        if null.shape[1] == 0
+        else _nullspace(query_null.T, null_tolerance)
+    )
     if state_rank == 0 or combinations.shape[1] == 0:
         query_information = np.zeros((len(query), len(query)))
     else:
-        inverse_state = (eigenvectors[:, positive] * (1.0 / eigenvalues[positive])) @ eigenvectors[:, positive].T
+        inverse_state = (
+            eigenvectors[:, positive] * (1.0 / eigenvalues[positive])
+        ) @ eigenvectors[:, positive].T
         covariance = combinations.T @ query @ inverse_state @ query.T @ combinations
         covariance = 0.5 * (covariance + covariance.T)
         try:
@@ -837,16 +1126,30 @@ def _spectrum(
         except np.linalg.LinAlgError as error:
             raise ValueError("identifiable query covariance is singular") from error
         query_information = combinations @ reduced_precision @ combinations.T
-    query_eigenvalues = np.linalg.eigvalsh(0.5 * (query_information + query_information.T))
+    query_eigenvalues = np.linalg.eigvalsh(
+        0.5 * (query_information + query_information.T)
+    )
     query_scale = max(float(query_eigenvalues[-1]), 0.0)
-    query_tolerance = max(policy.absolute_rank_tolerance, policy.relative_rank_tolerance * query_scale)
-    _require(np.all(query_eigenvalues >= -query_tolerance), "query information is indefinite")
+    query_tolerance = max(
+        policy.absolute_rank_tolerance, policy.relative_rank_tolerance * query_scale
+    )
+    _require(
+        np.all(query_eigenvalues >= -query_tolerance), "query information is indefinite"
+    )
     query_eigenvalues = np.maximum(query_eigenvalues, 0.0)
     query_rank = int(np.count_nonzero(query_eigenvalues > query_tolerance))
     positive_query = query_eigenvalues[query_eigenvalues > query_tolerance]
-    condition = None if query_rank < len(query) else float(positive_query[-1] / positive_query[0])
+    condition = (
+        None
+        if query_rank < len(query)
+        else float(positive_query[-1] / positive_query[0])
+    )
     query_norm = float(np.linalg.norm(query))
-    unobservable = 0.0 if query_norm == 0.0 else min(1.0, float(np.linalg.norm(query_null) / query_norm))
+    unobservable = (
+        0.0
+        if query_norm == 0.0
+        else min(1.0, float(np.linalg.norm(query_null) / query_norm))
+    )
     return _Spectrum(
         state_rank=state_rank,
         query_rank=query_rank,
@@ -889,12 +1192,20 @@ def evaluate_deform360_joint_sparse_observability_v4(
     for camera in cameras:
         selected = camera_array == camera
         only = _masked_spectrum(batch, policy, selected)
-        ratio = 0.0 if full.trace_precision == 0.0 else only.trace_precision / full.trace_precision
+        ratio = (
+            0.0
+            if full.trace_precision == 0.0
+            else only.trace_precision / full.trace_precision
+        )
         _require(-1e-12 <= ratio <= 1.0 + 1e-8, "camera information is not monotone")
         single_camera[camera] = float(np.clip(ratio, 0.0, 1.0))
-        leave_camera[camera] = _masked_spectrum(batch, policy, ~selected).query_rank / batch.query_dimension
+        leave_camera[camera] = (
+            _masked_spectrum(batch, policy, ~selected).query_rank
+            / batch.query_dimension
+        )
     leave_window = {
-        window: _masked_spectrum(batch, policy, window_array != window).query_rank / batch.query_dimension
+        window: _masked_spectrum(batch, policy, window_array != window).query_rank
+        / batch.query_dimension
         for window in windows
     }
     max_camera = max(single_camera.values())
@@ -904,13 +1215,21 @@ def evaluate_deform360_joint_sparse_observability_v4(
     checks = {
         "minimum_distinct_cameras": len(cameras) >= policy.minimum_distinct_cameras,
         "minimum_distinct_windows": len(windows) >= policy.minimum_distinct_windows,
-        "minimum_distinct_spatial_clusters": len(set(batch.spatial_cluster_ids)) >= policy.minimum_distinct_spatial_clusters,
-        "query_rank": full_rank if policy.require_full_query_rank else full.query_rank > 0,
-        "minimum_query_precision_eigenvalue": full.minimum_eigenvalue >= policy.minimum_query_precision_eigenvalue,
-        "maximum_query_condition_number": full.condition_number is not None and full.condition_number <= policy.maximum_query_condition_number,
-        "maximum_single_camera_information_fraction": max_camera <= policy.maximum_single_camera_information_fraction,
-        "minimum_leave_one_camera_rank_fraction": min_leave_camera >= policy.minimum_leave_one_camera_rank_fraction,
-        "minimum_leave_one_window_rank_fraction": min_leave_window >= policy.minimum_leave_one_window_rank_fraction,
+        "minimum_distinct_spatial_clusters": len(set(batch.spatial_cluster_ids))
+        >= policy.minimum_distinct_spatial_clusters,
+        "query_rank": full_rank
+        if policy.require_full_query_rank
+        else full.query_rank > 0,
+        "minimum_query_precision_eigenvalue": full.minimum_eigenvalue
+        >= policy.minimum_query_precision_eigenvalue,
+        "maximum_query_condition_number": full.condition_number is not None
+        and full.condition_number <= policy.maximum_query_condition_number,
+        "maximum_single_camera_information_fraction": max_camera
+        <= policy.maximum_single_camera_information_fraction,
+        "minimum_leave_one_camera_rank_fraction": min_leave_camera
+        >= policy.minimum_leave_one_camera_rank_fraction,
+        "minimum_leave_one_window_rank_fraction": min_leave_window
+        >= policy.minimum_leave_one_window_rank_fraction,
     }
     return Deform360JointSparseObservabilityResultV4(
         input_id=cast(str, batch.input_id),
@@ -1010,49 +1329,118 @@ class Deform360JointSparseDevelopmentReportV4:
     report_id: str | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "selection_artifact_sha256", sha256_digest(self.selection_artifact_sha256, name="selection_artifact_sha256"))
-        object.__setattr__(self, "visual_provider_lock_id", sha256_digest(self.visual_provider_lock_id, name="visual_provider_lock_id"))
-        object.__setattr__(self, "policy_id", sha256_digest(self.policy_id, name="policy_id"))
-        object.__setattr__(self, "implementation_revision", exact_revision(self.implementation_revision, name="implementation_revision"))
-        object.__setattr__(self, "protocol_id", _literal(self.protocol_id, name="protocol_id"))
-        _require(self.protocol_id == DEFORM360_JOINT_SPARSE_PROTOCOL_ID, "protocol changed")
+        object.__setattr__(
+            self,
+            "selection_artifact_sha256",
+            sha256_digest(
+                self.selection_artifact_sha256, name="selection_artifact_sha256"
+            ),
+        )
+        object.__setattr__(
+            self,
+            "visual_provider_lock_id",
+            sha256_digest(self.visual_provider_lock_id, name="visual_provider_lock_id"),
+        )
+        object.__setattr__(
+            self, "policy_id", sha256_digest(self.policy_id, name="policy_id")
+        )
+        object.__setattr__(
+            self,
+            "implementation_revision",
+            exact_revision(
+                self.implementation_revision, name="implementation_revision"
+            ),
+        )
+        object.__setattr__(
+            self, "protocol_id", _literal(self.protocol_id, name="protocol_id")
+        )
+        _require(
+            self.protocol_id == DEFORM360_JOINT_SPARSE_PROTOCOL_ID, "protocol changed"
+        )
         results = tuple(self.results)
-        _require(bool(results) and all(isinstance(value, Deform360JointSparseObservabilityResultV4) for value in results), "invalid report results")
+        _require(
+            bool(results)
+            and all(
+                isinstance(value, Deform360JointSparseObservabilityResultV4)
+                for value in results
+            ),
+            "invalid report results",
+        )
         identities = [(value.object_id, value.episode_id) for value in results]
-        _require(identities == sorted(identities) and len(identities) == len(set(identities)), "report results are unsorted or repeated")
-        _require(all(value.policy_id == self.policy_id and value.implementation_revision == self.implementation_revision for value in results), "report result lineage changed")
+        _require(
+            identities == sorted(identities)
+            and len(identities) == len(set(identities)),
+            "report results are unsorted or repeated",
+        )
+        _require(
+            all(
+                value.policy_id == self.policy_id
+                and value.implementation_revision == self.implementation_revision
+                for value in results
+            ),
+            "report result lineage changed",
+        )
         object.__setattr__(self, "results", results)
-        object.__setattr__(self, "source_artifacts", source_artifact_mapping(self.source_artifacts, name="source_artifacts", allow_empty=True))
-        object.__setattr__(self, "information_boundary", _boundary(self.information_boundary))
-        object.__setattr__(self, "metadata", frozen_finite_json_mapping(self.metadata, name="metadata"))
+        object.__setattr__(
+            self,
+            "source_artifacts",
+            source_artifact_mapping(
+                self.source_artifacts, name="source_artifacts", allow_empty=True
+            ),
+        )
+        object.__setattr__(
+            self, "information_boundary", _boundary(self.information_boundary)
+        )
+        object.__setattr__(
+            self, "metadata", frozen_finite_json_mapping(self.metadata, name="metadata")
+        )
         expected = content_id(self.identity_record())
-        _require(self.report_id is None or self.report_id == expected, "report_id changed")
+        _require(
+            self.report_id is None or self.report_id == expected, "report_id changed"
+        )
         object.__setattr__(self, "report_id", expected)
 
     def summary(self) -> dict[str, object]:
         by_stratum = {
             stratum: {
                 "object_count": sum(value.stratum == stratum for value in self.results),
-                "supported_object_count": sum(value.stratum == stratum and value.gate_passed for value in self.results),
-                "technical_failure_object_count": sum(value.stratum == stratum and value.status != "evaluated" for value in self.results),
+                "supported_object_count": sum(
+                    value.stratum == stratum and value.gate_passed
+                    for value in self.results
+                ),
+                "technical_failure_object_count": sum(
+                    value.stratum == stratum and value.status != "evaluated"
+                    for value in self.results
+                ),
             }
             for stratum in ("sheet", "volumetric")
         }
         return {
             "object_count": len(self.results),
             "supported_object_count": sum(value.gate_passed for value in self.results),
-            "technical_failure_object_count": sum(value.status != "evaluated" for value in self.results),
+            "technical_failure_object_count": sum(
+                value.status != "evaluated" for value in self.results
+            ),
             "by_stratum": by_stratum,
         }
 
-    def support_gate(self, policy: Deform360JointSparseObservabilityPolicyV4) -> dict[str, object]:
+    def support_gate(
+        self, policy: Deform360JointSparseObservabilityPolicyV4
+    ) -> dict[str, object]:
         _require(policy.policy_id == self.policy_id, "report/policy identity mismatch")
         summary = self.summary()
         by_stratum = cast(Mapping[str, Mapping[str, int]], summary["by_stratum"])
         checks = {
-            "minimum_supported_objects": cast(int, summary["supported_object_count"]) >= policy.minimum_supported_objects,
-            "minimum_supported_sheet_objects": by_stratum["sheet"]["supported_object_count"] >= policy.minimum_supported_objects_per_stratum,
-            "minimum_supported_volumetric_objects": by_stratum["volumetric"]["supported_object_count"] >= policy.minimum_supported_objects_per_stratum,
+            "minimum_supported_objects": cast(int, summary["supported_object_count"])
+            >= policy.minimum_supported_objects,
+            "minimum_supported_sheet_objects": by_stratum["sheet"][
+                "supported_object_count"
+            ]
+            >= policy.minimum_supported_objects_per_stratum,
+            "minimum_supported_volumetric_objects": by_stratum["volumetric"][
+                "supported_object_count"
+            ]
+            >= policy.minimum_supported_objects_per_stratum,
             "no_technical_failures": summary["technical_failure_object_count"] == 0,
         }
         return {"checks": checks, "passed": all(checks.values())}
@@ -1076,12 +1464,23 @@ class Deform360JointSparseDevelopmentReportV4:
             "claim_boundary": DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY,
         }
 
-    def to_record(self, policy: Deform360JointSparseObservabilityPolicyV4) -> dict[str, object]:
+    def to_record(
+        self, policy: Deform360JointSparseObservabilityPolicyV4
+    ) -> dict[str, object]:
         gate = self.support_gate(policy)
-        status = "development-design-supported" if gate["passed"] else "development-design-not-supported"
+        status = (
+            "development-design-supported"
+            if gate["passed"]
+            else "development-design-not-supported"
+        )
         if self.summary()["technical_failure_object_count"]:
             status = "development-technical-failures-retained"
-        return {**self.identity_record(), "report_id": self.report_id, "support_gate": gate, "status": status}
+        return {
+            **self.identity_record(),
+            "report_id": self.report_id,
+            "support_gate": gate,
+            "status": status,
+        }
 
 
 def build_deform360_joint_sparse_factor_batch_from_tree_sparse_v4(

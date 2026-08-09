@@ -71,12 +71,10 @@ def batch(
         state[5, 2, 2] = 1
     count = len(state)
     cameras = cameras or tuple(
-        "camera-a" if index < count // 2 else "camera-b"
-        for index in range(count)
+        "camera-a" if index < count // 2 else "camera-b" for index in range(count)
     )
     windows = windows or tuple(
-        "window-0" if index % 2 == 0 else "window-1"
-        for index in range(count)
+        "window-0" if index % 2 == 0 else "window-1" for index in range(count)
     )
     clusters = clusters or tuple(f"cluster-{index}" for index in range(count))
     groups = groups or tuple(f"group-{index}" for index in range(count))
@@ -121,9 +119,12 @@ def test_policy_roundtrip_and_default_boundary() -> None:
     assert record["schema"] == DEFORM360_JOINT_SPARSE_POLICY_SCHEMA
     assert record["claim_boundary"] == DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY
     assert Deform360JointSparseObservabilityPolicyV4.from_record(record) == value
-    assert default_deform360_joint_sparse_information_boundary_v4()[
-        "confirmation_payloads_opened"
-    ] is False
+    assert (
+        default_deform360_joint_sparse_information_boundary_v4()[
+            "confirmation_payloads_opened"
+        ]
+        is False
+    )
     with pytest.raises(ValueError, match="policy_id"):
         replace(value, minimum_distinct_cameras=3)
     bad = dict(record)
@@ -329,9 +330,7 @@ def test_technical_failure_and_reports_preserve_information_boundary() -> None:
     supported_volume = evaluate_deform360_joint_sparse_observability_v4(
         volume_batch, p, implementation_revision="8" * 40
     )
-    supported = replace(
-        report, report_id=None, results=(sheet, supported_volume)
-    )
+    supported = replace(report, report_id=None, results=(sheet, supported_volume))
     assert supported.to_record(p)["status"] == "development-design-supported"
     unsupported_policy = policy(minimum_supported_objects=3)
     unsupported = Deform360JointSparseDevelopmentReportV4(
@@ -340,9 +339,7 @@ def test_technical_failure_and_reports_preserve_information_boundary() -> None:
         policy_id=unsupported_policy.policy_id,
         implementation_revision="8" * 40,
         results=(
-            replace(
-                sheet, policy_id=unsupported_policy.policy_id, result_id=None
-            ),
+            replace(sheet, policy_id=unsupported_policy.policy_id, result_id=None),
             replace(
                 supported_volume,
                 policy_id=unsupported_policy.policy_id,
@@ -350,7 +347,10 @@ def test_technical_failure_and_reports_preserve_information_boundary() -> None:
             ),
         ),
     )
-    assert unsupported.to_record(unsupported_policy)["status"] == "development-design-not-supported"
+    assert (
+        unsupported.to_record(unsupported_policy)["status"]
+        == "development-design-not-supported"
+    )
     with pytest.raises(ValueError, match="identity"):
         report.support_gate(policy())
 
@@ -400,7 +400,9 @@ def test_adapter_reuses_tree_sparse_contract_without_residuals() -> None:
     )
     assert built.camera_ids == original.camera_ids
     assert built.window_ids == ("gauge-root",) * 6
-    assert built.metadata["source_adapter"] == "ClaimBearingTreeSparseProb4DAdapterResult"
+    assert (
+        built.metadata["source_adapter"] == "ClaimBearingTreeSparseProb4DAdapterResult"
+    )
     assert built.information_boundary["prediction_residuals_used"] is False
     with pytest.raises(ValueError, match="view IDs"):
         build_deform360_joint_sparse_factor_batch_from_tree_sparse_v4(
@@ -433,7 +435,9 @@ def test_adapter_reuses_tree_sparse_contract_without_residuals() -> None:
         ({"excluded_factor_count": -1}, "excluded_factor_count"),
     ],
 )
-def test_batch_contract_rejects_invalid_inputs(change: dict[str, object], match: str) -> None:
+def test_batch_contract_rejects_invalid_inputs(
+    change: dict[str, object], match: str
+) -> None:
     with pytest.raises((ValueError, TypeError), match=match):
         replace(batch(), input_id=None, **change)
 
