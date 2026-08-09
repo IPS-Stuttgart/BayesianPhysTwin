@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import runpy
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -731,7 +732,11 @@ def test_invalid_vector_interpreter_adds_well_formed_array(
     assert invalid.arrays["new_array"].flags.writeable is False
 
 
-def test_module_entrypoint_reports_manifest(capsys) -> None:
+def test_module_entrypoint_reports_manifest(
+    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["observation-contract-bundle"])
     with pytest.raises(SystemExit) as raised:
         runpy.run_module(
             "bayesian_phystwin.observation_contract_bundle",
