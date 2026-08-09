@@ -108,9 +108,7 @@ def test_project_version_parser_is_python_3_10_compatible(tmp_path: Path) -> Non
     assert tool.project_version(pyproject) == "0.4.7"
 
     pyproject.write_text(
-        "[project]\n"
-        'version = "0.4.7"\n'
-        'version = "0.4.8"\n',
+        '[project]\nversion = "0.4.7"\nversion = "0.4.8"\n',
         encoding="utf-8",
     )
     with pytest.raises(tool.PublicApiError, match="one literal version"):
