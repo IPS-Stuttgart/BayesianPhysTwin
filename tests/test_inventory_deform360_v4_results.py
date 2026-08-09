@@ -14,7 +14,9 @@ SCRIPT = ROOT / "scripts/ci/inventory_deform360_v4_results.py"
 
 
 def module() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("inventory_deform360_v4_results", SCRIPT)
+    spec = importlib.util.spec_from_file_location(
+        "inventory_deform360_v4_results", SCRIPT
+    )
     assert spec is not None and spec.loader is not None
     value = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = value
@@ -24,10 +26,14 @@ def module() -> ModuleType:
 
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
-def test_inventory_is_results_only_bounded_and_content_addressed(tmp_path: Path) -> None:
+def test_inventory_is_results_only_bounded_and_content_addressed(
+    tmp_path: Path,
+) -> None:
     inventory_module = module()
     results = tmp_path / "results"
     raw = tmp_path / "raw"
@@ -93,7 +99,9 @@ def test_inventory_is_results_only_bounded_and_content_addressed(tmp_path: Path)
         "prob4d.claim-bearing-tree-sparse-observation-envelope": 1
     }
     assert first["information_boundary"]["binary_scientific_payloads_loaded"] is False
-    assert first["information_boundary"]["adaptive_confirmation_payloads_opened"] is False
+    assert (
+        first["information_boundary"]["adaptive_confirmation_payloads_opened"] is False
+    )
 
 
 def test_inventory_rejects_overlapping_or_exhausted_scope(tmp_path: Path) -> None:
