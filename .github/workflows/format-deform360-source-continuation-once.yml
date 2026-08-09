@@ -1,9 +1,8 @@
 name: Format Deform360 source continuation once
 
 on:
-  push:
-    branches:
-      - fix/deform360-support-negative-continuation-v1
+  pull_request:
+    branches: [main]
     paths:
       - ".github/workflows/format-deform360-source-continuation-once.yml"
 
@@ -18,7 +17,10 @@ jobs:
   format:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/fix/deform360-support-negative-continuation-v1'
+      github.event.pull_request.head.repo.full_name ==
+        'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.pull_request.head.ref ==
+        'fix/deform360-support-negative-continuation-v1'
     runs-on: ubuntu-latest
     steps:
       - name: Check out exact branch head
