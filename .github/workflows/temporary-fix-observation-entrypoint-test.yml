@@ -46,19 +46,11 @@ jobs:
 
           path = Path('tests/test_observation_contract_bundle.py')
           text = path.read_text(encoding='utf-8')
-          replacements = {
-              'import runpy\n': 'import runpy\nimport sys\n',
-              '''def test_module_entrypoint_reports_manifest(capsys) -> None:
-                  with pytest.raises(SystemExit) as raised:
-              ''': '''def test_module_entrypoint_reports_manifest(
-                  capsys,
-                  monkeypatch: pytest.MonkeyPatch,
-              ) -> None:
-                  monkeypatch.setattr(sys, "argv", ["observation-contract-bundle"])
-                  with pytest.raises(SystemExit) as raised:
-              ''',
-          }
-          for old, new in replacements.items():
+          import_old = 'import runpy\n'
+          import_new = 'import runpy\nimport sys\n'
+          function_old = 'def test_module_entrypoint_reports_manifest(capsys) -> None:\n    with pytest.raises(SystemExit) as raised:\n'
+          function_new = 'def test_module_entrypoint_reports_manifest(\n    capsys,\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:\n    monkeypatch.setattr(sys, "argv", ["observation-contract-bundle"])\n    with pytest.raises(SystemExit) as raised:\n'
+          for old, new in ((import_old, import_new), (function_old, function_new)):
               if text.count(old) != 1:
                   raise SystemExit(f'expected test target was not present exactly once: {old!r}')
               text = text.replace(old, new)
