@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from numbers import Real
-from typing import Final
+from typing import Final, TypeAlias
 
 import numpy as np
 
@@ -57,8 +57,10 @@ _ILL_CONDITIONED_CURVATURE_REASON: Final = (
     "strict-v2-ill-conditioned-exact-mixture-curvature"
 )
 
-GaugeDesignV1 = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1
-AdmissionInputResult = GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1
+GaugeDesignV1: TypeAlias = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1
+AdmissionInputResult: TypeAlias = (
+    GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1
+)
 
 
 @dataclass(frozen=True)
@@ -139,9 +141,7 @@ def _tag_diagnostics(
             "strict_admission_version": PRIOR_AWARE_GAUGE_BELIEF_V2_VERSION,
             "strict_admission_passed": passed,
             "strict_admission_reason": reason,
-            "underlying_inference_admissible": (
-                underlying_result.inference_admissible
-            ),
+            "underlying_inference_admissible": (underlying_result.inference_admissible),
             "underlying_inference_reason": underlying_result.reason,
             "exact_mixture_objective_required": True,
             "fixed_point_convergence_required": True,
@@ -471,13 +471,9 @@ def update_sparse_prior_aware_gauge_belief_structured_v2(
             reason=reason,
             state_coefficients=np.zeros_like(result.state_coefficients),
             gauge_delta=np.zeros_like(result.gauge_delta),
-            shared_bias_coefficients=np.zeros_like(
-                result.shared_bias_coefficients
-            ),
+            shared_bias_coefficients=np.zeros_like(result.shared_bias_coefficients),
             view_bias_coefficients=np.zeros_like(result.view_bias_coefficients),
-            anchor_bias_coefficients=np.zeros_like(
-                result.anchor_bias_coefficients
-            ),
+            anchor_bias_coefficients=np.zeros_like(result.anchor_bias_coefficients),
             covariance=prior,
             identifiable_state_transform=np.zeros(
                 (len(result.state_coefficients), 0),
@@ -486,9 +482,7 @@ def update_sparse_prior_aware_gauge_belief_structured_v2(
             identifiable_fractions=np.zeros(0, dtype=np.float64),
             query_sensitivity_fractions=np.zeros(0, dtype=np.float64),
             robust_weights=np.zeros_like(result.robust_weights),
-            anchor_robust_weights=np.zeros_like(
-                result.anchor_robust_weights
-            ),
+            anchor_robust_weights=np.zeros_like(result.anchor_robust_weights),
             diagnostics=fallback_diagnostics,
             input_lineage=result.input_lineage,
         )

@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import pytest
 
+import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2
 import bayesian_phystwin.prospective_prob4d_update as prospective_update
 import bayesian_phystwin.tree_sparse_structured_gauge_prob4d as structured_update
 from bayesian_phystwin._gauge_aware_contracts import GaugeAwareObservationBatch
@@ -16,6 +18,7 @@ from bayesian_phystwin.prior_aware_gauge_belief_v2 import (
 from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
     TreeSparseGaugeDesignV1,
     update_sparse_prior_aware_gauge_belief,
+    update_sparse_prior_aware_gauge_belief_structured,
 )
 from bayesian_phystwin.structured_gauge_aware_result import (
     PRECISION_BACKED_COVARIANCE_REPRESENTATION,
@@ -122,3 +125,84 @@ def test_claim_bearing_entry_points_bind_strict_v2_solvers() -> None:
     assert structured_update.update_sparse_prior_aware_gauge_belief_structured is (
         update_sparse_prior_aware_gauge_belief_structured_v2
     )
+
+
+def _converged_config() -> PriorAwareGaugeConfigV1:
+    return replace(
+        _exhausted_config(),
+        maximum_iterations=100,
+        convergence_tolerance=1.0e-12,
+    )
+
+
+def test_tree_sparse_structured_v2_admits_converged_result() -> None:
+    batch, tree = _tree_fixture()
+    result = update_sparse_prior_aware_gauge_belief_structured_v2(
+        batch,
+        tree,
+        config=_converged_config(),
+    )
+    assert result.inference_admissible
+    assert result.diagnostics["strict_admission_passed"] is True
+    assert result.diagnostics["strict_admission_reason"] == "strict-admission-passed"
+
+
+def test_tree_sparse_structured_v2_preserves_underlying_rejection() -> None:
+    batch, tree = _tree_fixture()
+    config = replace(_converged_config(), maximum_state_update_m=1.0e-12)
+    result = update_sparse_prior_aware_gauge_belief_structured_v2(
+        batch,
+        tree,
+        config=config,
+    )
+    assert not result.inference_admissible
+    assert result.diagnostics["strict_admission_reason"] == (
+        "underlying-inference-rejected"
+    )
+    assert result.diagnostics["underlying_inference_admissible"] is False
+
+
+def test_tree_sparse_structured_v2_rejects_invalid_argument_types() -> None:
+    batch, tree = _tree_fixture()
+    with pytest.raises(TypeError, match="batch must"):
+        update_sparse_prior_aware_gauge_belief_structured_v2(object(), tree)  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="gauge must"):
+        update_sparse_prior_aware_gauge_belief_structured_v2(batch, object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="config must"):
+        update_sparse_prior_aware_gauge_belief_structured_v2(
+            batch,
+            tree,
+            config=object(),  # type: ignore[arg-type]
+        )
+    with pytest.raises(TypeError, match="admission_config must"):
+        update_sparse_prior_aware_gauge_belief_structured_v2(
+            batch,
+            tree,
+            admission_config=object(),  # type: ignore[arg-type]
+        )
+
+
+def test_dense_sparse_v2_rejects_structured_fallback_substitution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    batch, tree = _tree_fixture()
+    config = _exhausted_config()
+    historical = update_sparse_prior_aware_gauge_belief(batch, tree, config=config)
+    structured = update_sparse_prior_aware_gauge_belief_structured(
+        batch,
+        tree,
+        config=config,
+    )
+    assert historical.inference_admissible
+    monkeypatch.setattr(
+        strict_v2,
+        "update_sparse_prior_aware_gauge_belief",
+        lambda *_args, **_kwargs: historical,
+    )
+    monkeypatch.setattr(
+        strict_v2,
+        "_sparse_fallback_result",
+        lambda *_args, **_kwargs: structured,
+    )
+    with pytest.raises(RuntimeError, match="returned a structured result"):
+        update_sparse_prior_aware_gauge_belief_v2(batch, tree, config=config)
