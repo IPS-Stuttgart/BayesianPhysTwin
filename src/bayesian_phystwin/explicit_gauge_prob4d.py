@@ -34,9 +34,9 @@ from ._gauge_aware_contracts import (
     GaugeAwareObservationBatch,
 )
 from .physical_linearization import PhysicalLinearizationV1
-from .prior_aware_gauge_belief import (
-    PriorAwareGaugeConfigV1,
-    update_prior_aware_gauge_belief,
+from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1
+from .prior_aware_gauge_belief_v2 import (
+    update_prior_aware_gauge_belief_v2 as update_prior_aware_gauge_belief,
 )
 from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
 

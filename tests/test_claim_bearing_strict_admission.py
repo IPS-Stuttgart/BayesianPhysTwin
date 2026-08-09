@@ -6,8 +6,12 @@ from typing import Any
 import numpy as np
 import pytest
 
+import bayesian_phystwin.explicit_gauge_prob4d as explicit_update
 import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2
+import bayesian_phystwin.prob4d_visual_bias_update as visual_bias_update
 import bayesian_phystwin.prospective_prob4d_update as prospective_update
+import bayesian_phystwin.sparse_explicit_gauge_prob4d as sparse_update
+import bayesian_phystwin.tree_sparse_explicit_gauge_prob4d as tree_update
 import bayesian_phystwin.tree_sparse_structured_gauge_prob4d as structured_update
 from bayesian_phystwin._gauge_aware_contracts import GaugeAwareObservationBatch
 from bayesian_phystwin._prior_aware_gauge_math import PriorAwareGaugeConfigV1
@@ -141,10 +145,15 @@ def test_all_strict_v2_paths_reject_exhausted_v1_fixed_point() -> None:
     assert structured.diagnostics["result_dense_covariance_materialized"] is False
 
 
-def test_claim_bearing_entry_points_bind_strict_v2_solvers() -> None:
-    assert prospective_update.update_prior_aware_gauge_belief is (
-        update_prior_aware_gauge_belief_v2
-    )
+def test_all_claim_bearing_entry_points_bind_strict_v2_solvers() -> None:
+    for module in (prospective_update, explicit_update, visual_bias_update):
+        assert module.update_prior_aware_gauge_belief is (
+            update_prior_aware_gauge_belief_v2
+        )
+    for module in (sparse_update, tree_update):
+        assert module.update_sparse_prior_aware_gauge_belief is (
+            update_sparse_prior_aware_gauge_belief_v2
+        )
     assert structured_update.update_sparse_prior_aware_gauge_belief_structured is (
         update_sparse_prior_aware_gauge_belief_structured_v2
     )
