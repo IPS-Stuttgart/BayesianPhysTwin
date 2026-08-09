@@ -126,3 +126,6 @@ accepted path. It does **not** establish Prob4D competence on fresh objects,
 empirical uncertainty calibration, physical-query benefit, intervention
 benefit, deployment safety, or state of the art. Those claims require separate
 registered evidence.
+## Structured rejection result
+
+New claim-bearing runs that may reject large gauge trees should use [`structured_tree_sparse_fallback.md`](structured_tree_sparse_fallback.md). The historical dense result remains available only through explicit compatibility conversion.
