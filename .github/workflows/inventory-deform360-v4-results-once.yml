@@ -69,6 +69,7 @@ jobs:
             tests/test_inventory_deform360_v4_results_workflow.py \
             tests/test_pull_request_workflow_integrity.py
           python -m compileall -q scripts/ci/inventory_deform360_v4_results.py
+          find scripts/ci -type d -name __pycache__ -prune -exec rm -rf {} +
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
 
