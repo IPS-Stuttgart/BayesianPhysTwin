@@ -4,9 +4,7 @@ from pathlib import Path
 
 import yaml
 
-WORKFLOW = Path(
-    ".github/workflows/deform360-provider-failure-census-v1.yml"
-)
+WORKFLOW = Path(".github/workflows/deform360-provider-failure-census-v1.yml")
 
 
 def _text() -> str:
