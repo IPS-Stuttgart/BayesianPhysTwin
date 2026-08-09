@@ -1,0 +1,79 @@
+name: Apply IRLS formatting correction
+
+on:
+  push:
+    branches:
+      - agent/fix-irls-fixed-point-convergence
+
+permissions:
+  contents: write
+
+jobs:
+  format-test-and-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/fix-irls-fixed-point-convergence
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply exact Ruff formatting correction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/propagated_state_belief.py")
+          text = path.read_text(encoding="utf-8")
+          old = """        solution_delta = float(
+              np.max(np.abs(solution - previous), initial=0.0)
+          )
+          """
+          new = """        solution_delta = float(np.max(np.abs(solution - previous), initial=0.0))
+          """
+          if text.count(old) != 1:
+              raise RuntimeError("expected exactly one formatting target")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
+      - name: Install development tools
+        run: python -m pip install -e '.[dev]'
+
+      - name: Revalidate formatting and focused regressions
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/_gauge_aware_solver.py \
+            src/bayesian_phystwin/bias_aware_belief_v2.py \
+            src/bayesian_phystwin/propagated_state_belief.py \
+            tests/test_gauge_aware_belief.py \
+            tests/test_bias_aware_belief_v2.py \
+            tests/test_propagated_state_belief.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/_gauge_aware_solver.py \
+            src/bayesian_phystwin/bias_aware_belief_v2.py \
+            src/bayesian_phystwin/propagated_state_belief.py \
+            tests/test_gauge_aware_belief.py \
+            tests/test_bias_aware_belief_v2.py \
+            tests/test_propagated_state_belief.py
+          python -m pytest -q \
+            tests/test_gauge_aware_belief.py \
+            tests/test_bias_aware_belief_v2.py \
+            tests/test_propagated_state_belief.py
+          git diff --check
+
+      - name: Commit the verified correction
+        shell: bash
+        run: |
+          rm .github/workflows/agent-fix-irls-format.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/propagated_state_belief.py \
+            .github/workflows/agent-fix-irls-format.yml
+          git commit -m "Format propagated IRLS convergence check"
+          git push origin HEAD:agent/fix-irls-fixed-point-convergence
