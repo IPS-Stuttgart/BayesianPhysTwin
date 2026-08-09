@@ -16,9 +16,7 @@ from typing import Any
 
 SCHEMA = "bayesian-phystwin.deform360-runtime-lock-validation"
 SCHEMA_VERSION = 1
-_EXACT_REQUIREMENT = re.compile(
-    r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)$"
-)
+_EXACT_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;]+)$")
 
 
 class RuntimeLockError(ValueError):
@@ -95,9 +93,7 @@ def validate_runtime(
     installed = installed_distributions(site)
     allowed = {canonical_name(name) for name in allowed_local_names}
 
-    local = {
-        name: version for name, version in installed.items() if name in allowed
-    }
+    local = {name: version for name, version in installed.items() if name in allowed}
     third_party = {
         name: version for name, version in installed.items() if name not in allowed
     }
@@ -110,11 +106,7 @@ def validate_runtime(
         if name in locked and version != locked[name]
     }
     missing = (
-        {
-            name: version
-            for name, version in locked.items()
-            if name not in third_party
-        }
+        {name: version for name, version in locked.items() if name not in third_party}
         if require_complete
         else {}
     )
