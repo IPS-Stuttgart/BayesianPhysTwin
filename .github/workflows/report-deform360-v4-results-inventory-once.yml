@@ -1,0 +1,326 @@
+name: Publish Deform360 v4 results inventory receipt once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/report-deform360-v4-results-inventory-once.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: report-deform360-v4-results-inventory-once
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_RUNNER_NAME: workstation2
+  DEFORM360_RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  ISSUE_NUMBER: "148"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  report:
+    name: Results-only inventory receipt / workstation2
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: self-hosted
+    timeout-minutes: 45
+    steps:
+      - name: Admit sole runner and closed information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test -d "${DEFORM360_RESULTS_ROOT}"
+          test -d "${DEFORM360_OFFICIAL_RAW_ROOT}"
+          test -d "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
+          echo "results_tree_only=true"
+          echo "binary_scientific_payloads_loaded=false"
+          echo "raw_dataset_payloads_opened=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+          echo "confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "replacement_allowed=false"
+
+      - name: Check out exact protected main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Resolve a system Python without modifying the runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python_bin="$(command -v python3 || command -v python)"
+          test -x "${python_bin}"
+          echo "RECEIPT_PYTHON=${python_bin}" >> "${GITHUB_ENV}"
+          "${python_bin}" --version
+
+      - name: Build bounded results-only inventory and receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/deform360-v4-results-inventory-receipt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${root}"
+          mkdir -p "${root}"
+          inventory="${root}/inventory.json"
+          "${RECEIPT_PYTHON}" scripts/ci/inventory_deform360_v4_results.py \
+            --root "${DEFORM360_RESULTS_ROOT}" \
+            --forbidden-root "${DEFORM360_OFFICIAL_RAW_ROOT}" \
+            --forbidden-root "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}" \
+            --output "${inventory}" \
+            --maximum-depth 10 \
+            --maximum-entries 250000 \
+            --maximum-candidates 50000 \
+            --maximum-json-bytes 8388608
+          echo "RECEIPT_ROOT=${root}" >> "${GITHUB_ENV}"
+          echo "INVENTORY_PATH=${inventory}" >> "${GITHUB_ENV}"
+          echo "RECEIPT_PATH=${root}/receipt.json" >> "${GITHUB_ENV}"
+          echo "COMMENT_PATH=${root}/issue-comment.md" >> "${GITHUB_ENV}"
+          echo "ARTIFACT_NAME=deform360-v4-results-inventory-receipt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "${GITHUB_ENV}"
+
+      - name: Summarize schemas and v4-relevant result-side candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${RECEIPT_PYTHON}" - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from typing import Any
+
+          inventory_path = Path(os.environ["INVENTORY_PATH"])
+          receipt_path = Path(os.environ["RECEIPT_PATH"])
+          comment_path = Path(os.environ["COMMENT_PATH"])
+          inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+          expected_boundary = {
+              "results_tree_only": True,
+              "binary_scientific_payloads_loaded": False,
+              "raw_dataset_payloads_opened": False,
+              "adaptive_confirmation_payloads_opened": False,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "replacement_allowed": False,
+          }
+          if inventory.get("information_boundary") != expected_boundary:
+              raise SystemExit("inventory information boundary changed")
+
+          keywords = (
+              "joint",
+              "sparse",
+              "tree",
+              "gauge",
+              "factor",
+              "linearization",
+              "observation",
+              "query",
+              "covariance",
+          )
+          shortlist: list[dict[str, Any]] = []
+          for row in inventory.get("candidates", []):
+              fields = row.get("selected_fields")
+              selected = fields if isinstance(fields, dict) else {}
+              schema = selected.get("schema")
+              searchable = " ".join(
+                  (
+                      str(row.get("path", "")),
+                      "" if schema is None else str(schema),
+                      "" if selected.get("semantics") is None else str(selected["semantics"]),
+                  )
+              ).lower()
+              if not any(keyword in searchable for keyword in keywords):
+                  continue
+              shortlist.append(
+                  {
+                      "path": row.get("path"),
+                      "byte_count": row.get("byte_count"),
+                      "schema": schema,
+                      "schema_version": selected.get("schema_version"),
+                      "object_id": selected.get("object_id"),
+                      "episode_id": selected.get("episode_id"),
+                      "status": selected.get("status"),
+                      "artifact_id": selected.get("artifact_id"),
+                      "observation_artifact_id": selected.get(
+                          "observation_artifact_id"
+                      ),
+                      "linearization_artifact_id": selected.get(
+                          "linearization_artifact_id"
+                      ),
+                      "provider_manifest_id": selected.get("provider_manifest_id"),
+                      "gauge_tree_prior_artifact_id": selected.get(
+                          "gauge_tree_prior_artifact_id"
+                      ),
+                  }
+              )
+              if len(shortlist) >= 40:
+                  break
+
+          identity: dict[str, Any] = {
+              "schema": (
+                  "bayesian-phystwin."
+                  "deform360-v4-results-inventory-receipt"
+              ),
+              "schema_version": 1,
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "source_revision": os.environ["GITHUB_SHA"],
+              "inventory_id": inventory["inventory_id"],
+              "counts": inventory["counts"],
+              "candidate_schema_counts": inventory["candidate_schema_counts"],
+              "shortlist": shortlist,
+              "shortlist_truncated": len(shortlist) == 40,
+              "artifact_name": os.environ["ARTIFACT_NAME"],
+              "issue_number": int(os.environ["ISSUE_NUMBER"]),
+              "information_boundary": expected_boundary,
+          }
+          canonical = json.dumps(
+              identity,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          receipt = {
+              **identity,
+              "receipt_id": hashlib.sha256(canonical).hexdigest(),
+          }
+          receipt_path.write_text(
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False)
+              + "\n",
+              encoding="utf-8",
+          )
+
+          schema_json = json.dumps(
+              receipt["candidate_schema_counts"],
+              indent=2,
+              sort_keys=True,
+              allow_nan=False,
+          )
+          shortlist_json = json.dumps(
+              shortlist,
+              indent=2,
+              sort_keys=True,
+              allow_nan=False,
+          )
+          body = f"""## Deform360 v4 results-only inventory receipt
+
+          - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
+          - exact protected-main revision: `{receipt['source_revision']}`
+          - inventory ID: `{receipt['inventory_id']}`
+          - receipt ID: `{receipt['receipt_id']}`
+          - candidate files: `{receipt['counts']['candidate_count']}`
+          - regular files scanned: `{receipt['counts']['regular_file_count']}`
+          - symbolic links followed: `0`
+          - artifact name: `{receipt['artifact_name']}`
+          - adaptive-confirmation payloads opened: `false`
+          - confirmation payloads opened: `false`
+          - target outcomes used: `false`
+          - binary scientific payloads loaded: `false`
+
+          ### Candidate schema counts
+
+          ```json
+          {schema_json}
+          ```
+
+          ### Bounded v4-relevant shortlist
+
+          ```json
+          {shortlist_json}
+          ```
+
+          This receipt inventories only the runner-resident Deform360 results tree.
+          It does not evaluate v4, fit calibration, inspect a binary scientific
+          payload, authorize confirmation, or reinterpret any v1-v3 terminal.
+          """
+          body = "\n".join(line.strip() for line in body.splitlines()).strip() + "\n"
+          if len(body.encode("utf-8")) >= 60_000:
+              raise SystemExit("inventory issue receipt exceeds the bounded size")
+          comment_path.write_text(body, encoding="utf-8")
+          PY
+
+      - name: Verify compact receipt identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${RECEIPT_PYTHON}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          receipt = json.loads(Path(os.environ["RECEIPT_PATH"]).read_text())
+          supplied = receipt.pop("receipt_id")
+          canonical = json.dumps(
+              receipt,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          assert hashlib.sha256(canonical).hexdigest() == supplied
+          assert receipt["source_revision"] == os.environ["GITHUB_SHA"]
+          assert receipt["workflow_run_id"] == int(os.environ["GITHUB_RUN_ID"])
+          assert receipt["artifact_name"] == os.environ["ARTIFACT_NAME"]
+          PY
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact inventory and receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.RECEIPT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish bounded inventory receipt to issue 148
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${RECEIPT_PYTHON}" - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          issue = os.environ["ISSUE_NUMBER"]
+          token = os.environ["GITHUB_TOKEN"]
+          body = Path(os.environ["COMMENT_PATH"]).read_text(encoding="utf-8")
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{repository}/issues/{issue}/comments",
+              data=json.dumps({"body": body}).encode("utf-8"),
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "bayesian-phystwin-deform360-v4-inventory",
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=60) as response:
+              if response.status != 201:
+                  raise SystemExit(
+                      f"issue receipt publication returned HTTP {response.status}"
+                  )
+              payload = json.loads(response.read().decode("utf-8"))
+          print(f"published issue comment {payload['id']}")
+          PY
+
+# Push-only bounded receipt. No pull-request code executes on workstation2.
