@@ -9,6 +9,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- Exact factorized tree-block posterior covariance application, arbitrary linear
+  query and cross covariance, and selected marginals without complete dense
+  materialization.
 - An additive structured gauge-aware result and claim-bearing tree-sparse Prob4D update that preserve rejected prior uncertainty in precision form, report materialization cost, and require explicit budgeted conversion to the historical dense result.
 - An MIT license for project-authored source code and documentation.
 - Machine-readable software citation metadata in `CITATION.cff`.
