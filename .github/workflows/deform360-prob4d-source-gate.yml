@@ -18,6 +18,7 @@ on:
       - "src/bayesian_phystwin/deform360_prob4d_sample_materializer.py"
       - "src/bayesian_phystwin/deform360_prob4d_source_calibration.py"
       - "tests/test_deform360_prob4d_metric_batch.py"
+      - "tests/test_deform360_prob4d_metric_batch_regressions.py"
       - "tests/test_deform360_prob4d_sample_materializer.py"
       - "tests/test_deform360_prob4d_source_calibration.py"
       - "tests/test_deform360_prob4d_source_gate.py"
@@ -107,6 +108,7 @@ jobs:
             src/bayesian_phystwin/deform360_prob4d_sample_materializer.py
             src/bayesian_phystwin/deform360_prob4d_source_calibration.py
             tests/test_deform360_prob4d_metric_batch.py
+            tests/test_deform360_prob4d_metric_batch_regressions.py
             tests/test_deform360_prob4d_sample_materializer.py
             tests/test_deform360_prob4d_source_calibration.py
             tests/test_deform360_prob4d_source_gate.py
@@ -123,6 +125,7 @@ jobs:
             src/bayesian_phystwin/deform360_prob4d_source_calibration.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_prob4d_metric_batch.py \
+            tests/test_deform360_prob4d_metric_batch_regressions.py \
             tests/test_deform360_prob4d_sample_materializer.py \
             tests/test_deform360_prob4d_source_calibration.py \
             tests/test_deform360_prob4d_source_gate.py \
