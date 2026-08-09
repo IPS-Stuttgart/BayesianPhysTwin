@@ -41,6 +41,17 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
 
+      - name: Check out exact normative Prob4D source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: b2953319e9b7afea04013c214c502b38c5a83489
+          path: _contract_source
+          persist-credentials: false
+          clean: true
+          fetch-depth: 1
+          show-progress: false
+
       - name: Apply source consolidation and remove publication scaffolding
         shell: bash
         run: |
@@ -75,6 +86,7 @@ jobs:
             tests/test_observation_belief.py \
             tests/test_prob4d_joint_contract_fixture.py
           python -m compileall -q src/bayesian_phystwin tests
+          python -m bayesian_phystwin.observation_contract_bundle >/dev/null
           git diff --check
 
       - name: Commit consolidated contract
