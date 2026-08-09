@@ -20,9 +20,7 @@ from .tree_block_sparse_gauge_belief import (
     TreeBlockPosteriorCovarianceV1,
 )
 
-TREE_BLOCK_CLAIM_CONTRACT_SCHEMA: Final = (
-    "bayesian_phystwin.tree_block_claim_contract"
-)
+TREE_BLOCK_CLAIM_CONTRACT_SCHEMA: Final = "bayesian_phystwin.tree_block_claim_contract"
 TREE_BLOCK_CLAIM_CONTRACT_VERSION: Final = 1
 TREE_BLOCK_CLAIM_CONTRACT_BOUNDARY: Final = (
     "Structural and numerical-integrity validation only. Passing this contract "
@@ -279,8 +277,7 @@ def validate_tree_block_result(
             "result lacks strict tree-block admission version 2",
         )
         _require(
-            diagnostics.get("strict_admission_passed")
-            is result.inference_admissible,
+            diagnostics.get("strict_admission_passed") is result.inference_admissible,
             "strict admission status differs from result admissibility",
         )
     return result
