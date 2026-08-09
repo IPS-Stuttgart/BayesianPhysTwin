@@ -72,13 +72,14 @@ def _write_bundle(
             json.dumps({"case_id": case_id, "kind": "metric-calibration"}),
             encoding="utf-8",
         )
-        source_artifacts[
-            metric_source_path.relative_to(tmp_path).as_posix()
-        ] = _sha256(metric_source_path)
-        source_artifacts[
-            metric_calibration_path.relative_to(tmp_path).as_posix()
-        ] = _sha256(metric_calibration_path)
+        source_artifacts[metric_source_path.relative_to(tmp_path).as_posix()] = _sha256(
+            metric_source_path
+        )
+        source_artifacts[metric_calibration_path.relative_to(tmp_path).as_posix()] = (
+            _sha256(metric_calibration_path)
+        )
         prediction_records = []
+        metric_references = []
         for camera_index in range(2):
             relative = f"{case_id}/camera{camera_index}/prediction-manifest.json"
             path = prediction_root / relative
@@ -96,6 +97,18 @@ def _write_bundle(
                     "byte_count": path.stat().st_size,
                 }
             )
+            metric_references.append(
+                {
+                    "job_id": hashlib.sha256(relative.encode()).hexdigest(),
+                    "camera_id": f"camera{camera_index}",
+                    "window_id": f"window-{case_index}-{camera_index}",
+                    "frame_id": 10,
+                    "coordinate_frame": "deform360-world",
+                    "source_kind": "official-deform360-metric-prefix",
+                    "source_artifact_sha256": _sha256(metric_source_path),
+                    "calibration_artifact_sha256": _sha256(metric_calibration_path),
+                }
+            )
         cases.append(
             {
                 "case_id": case_id,
@@ -104,16 +117,7 @@ def _write_bundle(
                 "stratum": record["stratum"],
                 "causal_frame_range_half_open": [10, 16],
                 "prediction_manifests": prediction_records,
-                "metric_reference": {
-                    "window_id": f"window-{case_index}",
-                    "frame_id": 10,
-                    "coordinate_frame": "deform360-world",
-                    "source_kind": "official-deform360-metric-prefix",
-                    "source_artifact_sha256": _sha256(metric_source_path),
-                    "calibration_artifact_sha256": _sha256(
-                        metric_calibration_path
-                    ),
-                },
+                "metric_references": metric_references,
             }
         )
     case_count = len(cases)
@@ -124,9 +128,7 @@ def _write_bundle(
         "point_lateral_variance_m2": np.full(2 * case_count, 2e-6),
         "point_case_index": np.repeat(np.arange(case_count), 2),
         "point_frame_id": np.tile([10, 11], case_count),
-        "point_correlation_cluster_index": np.repeat(
-            np.arange(case_count), 2
-        ),
+        "point_correlation_cluster_index": np.repeat(np.arange(case_count), 2),
         "point_valid": np.ones(2 * case_count, dtype=np.bool_),
         "gauge_errors": np.tile(
             [[0.01, 0.001, 0.0, 0.0, 0.002, 0.0, 0.0]],
@@ -135,8 +137,12 @@ def _write_bundle(
         "gauge_covariance": np.tile(np.eye(7)[None, :, :] * 1e-4, (case_count, 1, 1)),
         "gauge_case_index": np.arange(case_count),
         "gauge_frame_id": np.full(case_count, 11),
-        "anchor_global_from_local": np.zeros((case_count, 7)),
-        "anchor_covariance": np.tile(np.eye(7)[None, :, :] * 1e-6, (case_count, 1, 1)),
+        "anchor_global_from_local": np.zeros((2 * case_count, 7)),
+        "anchor_covariance": np.tile(
+            np.eye(7)[None, :, :] * 1e-6,
+            (2 * case_count, 1, 1),
+        ),
+        "anchor_prediction_index": np.arange(2 * case_count),
     }
     if mutate_arrays is not None:
         mutate_arrays(arrays)
@@ -229,6 +235,26 @@ def test_source_sample_bundle_rejects_cluster_spanning_objects(tmp_path: Path) -
         arrays["point_correlation_cluster_index"][2:4] = 0
 
     with pytest.raises(ValueError, match="cluster spans physical objects"):
+        _load(tmp_path, mutate_arrays=mutate)
+
+
+def test_source_sample_bundle_rejects_camera_anchor_reordering(tmp_path: Path) -> None:
+    def mutate(manifest: dict[str, object]) -> None:
+        cases = cast(list[dict[str, object]], manifest["cases"])
+        references = cast(list[dict[str, object]], cases[0]["metric_references"])
+        references.reverse()
+
+    with pytest.raises(ValueError, match="camera/job order"):
+        _load(tmp_path, mutate_manifest=mutate)
+
+
+def test_source_sample_bundle_requires_one_anchor_per_prediction(
+    tmp_path: Path,
+) -> None:
+    def mutate(arrays: dict[str, np.ndarray]) -> None:
+        arrays["anchor_global_from_local"] = arrays["anchor_global_from_local"][:-1]
+
+    with pytest.raises(ValueError, match="one metric transform"):
         _load(tmp_path, mutate_arrays=mutate)
 
 
@@ -385,7 +411,7 @@ def test_fit_publishes_source_artifacts_without_authorizing_confirmation(
     assert result["physical_object_count"] == 8
     assert result["information_boundary"]["confirmation_access_authorized"] is False
     assert result["information_boundary"]["calibration_gate_evaluated"] is False
-    assert len(result["artifacts"]["metric_anchors"]) == 8
+    assert len(result["artifacts"]["metric_anchors"]) == 16
     assert (output / "SHA256SUMS").is_file()
     assert (output / "source-calibration-result.json").is_file()
 

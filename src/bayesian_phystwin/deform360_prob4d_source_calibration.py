@@ -48,14 +48,14 @@ from ._portable_contracts import (
 )
 
 SAMPLE_SCHEMA: Final = "bayesian-phystwin.deform360-prob4d-calibration-samples"
-SAMPLE_VERSION: Final = 1
+SAMPLE_VERSION: Final = 2
 SAMPLE_SEMANTICS: Final = (
-    "causal-metric-prefix-residuals-with-object-and-cluster-lineage-v1"
+    "causal-metric-prefix-residuals-with-stream-anchors-and-cluster-lineage-v2"
 )
 RESULT_SCHEMA: Final = "bayesian-phystwin.deform360-prob4d-source-calibration"
-RESULT_VERSION: Final = 1
+RESULT_VERSION: Final = 2
 RESULT_SEMANTICS: Final = (
-    "physical-object-balanced-prob4d-point-gauge-and-metric-anchor-fit-v1"
+    "physical-object-balanced-prob4d-point-gauge-and-stream-anchor-fit-v2"
 )
 POINT_CLUSTER_SEMANTICS: Final = (
     "one-effective-row-per-declared-camera-overlap-dependence-cluster-v1"
@@ -83,6 +83,7 @@ _ARRAY_KEYS = frozenset(
         "gauge_frame_id",
         "anchor_global_from_local",
         "anchor_covariance",
+        "anchor_prediction_index",
     }
 )
 _SAMPLE_FIELDS = frozenset(
@@ -115,14 +116,14 @@ _CASE_FIELDS = frozenset(
         "stratum",
         "causal_frame_range_half_open",
         "prediction_manifests",
-        "metric_reference",
+        "metric_references",
     }
 )
-_PREDICTION_FIELDS = frozenset(
-    {"job_id", "camera_id", "path", "sha256", "byte_count"}
-)
+_PREDICTION_FIELDS = frozenset({"job_id", "camera_id", "path", "sha256", "byte_count"})
 _METRIC_REFERENCE_FIELDS = frozenset(
     {
+        "job_id",
+        "camera_id",
         "window_id",
         "frame_id",
         "coordinate_frame",
@@ -207,14 +208,14 @@ def _confined_file(root: Path, relative: str, *, name: str) -> Path:
 
 def _verify_file_record(root: Path, record: Mapping[str, object], *, name: str) -> Path:
     path = _confined_file(root, cast(str, record["path"]), name=name)
-    _require(
-        path.stat().st_size == record["byte_count"], f"{name} byte_count changed"
-    )
+    _require(path.stat().st_size == record["byte_count"], f"{name} byte_count changed")
     _require(_sha256_file(path) == record["sha256"], f"{name} SHA-256 changed")
     return path
 
 
-def _finite_array(value: object, *, name: str, shape_tail: tuple[int, ...]) -> np.ndarray:
+def _finite_array(
+    value: object, *, name: str, shape_tail: tuple[int, ...]
+) -> np.ndarray:
     array = np.asarray(value, dtype=np.float64)
     _require(
         array.ndim == len(shape_tail) + 1 and array.shape[1:] == shape_tail,
@@ -242,7 +243,9 @@ def _integer_vector(value: object, *, name: str) -> np.ndarray:
 
 def _boolean_vector(value: object, *, name: str) -> np.ndarray:
     raw = np.asarray(value)
-    _require(raw.dtype.kind == "b" and raw.ndim == 1, f"{name} must be a Boolean vector")
+    _require(
+        raw.dtype.kind == "b" and raw.ndim == 1, f"{name} must be a Boolean vector"
+    )
     return immutable_array(raw, dtype=np.bool_)
 
 
@@ -269,7 +272,7 @@ def _sample_descriptor(value: Mapping[str, Any]) -> dict[str, Any]:
 
 
 @dataclass(frozen=True)
-class Deform360Prob4DCalibrationSamplesV1:
+class Deform360Prob4DCalibrationSamplesV2:
     """Validated source-only sample bundle and immutable numeric arrays."""
 
     manifest_path: Path
@@ -322,11 +325,17 @@ def _validate_cases(
         object_id = nonempty_string(raw_case["object_id"], name=f"{name}.object_id")
         episode_id = _integer(raw_case["episode_id"], name=f"{name}.episode_id")
         stratum = nonempty_string(raw_case["stratum"], name=f"{name}.stratum")
-        _require(object_id not in confirmation_object_ids, "confirmation object in samples")
+        _require(
+            object_id not in confirmation_object_ids, "confirmation object in samples"
+        )
         _require(case_id not in seen_cases, "duplicate calibration case_id")
-        _require(object_id not in seen_objects, "one physical object appears more than once")
+        _require(
+            object_id not in seen_objects, "one physical object appears more than once"
+        )
         locked = calibration_records.get((object_id, episode_id))
-        _require(locked is not None, "sample case is not in the locked calibration cohort")
+        _require(
+            locked is not None, "sample case is not in the locked calibration cohort"
+        )
         locked_record = cast(Mapping[str, Any], locked)
         _require(locked_record["stratum"] == stratum, "sample case stratum changed")
         frame_range = raw_case["causal_frame_range_half_open"]
@@ -359,7 +368,9 @@ def _validate_cases(
                 expected=_PREDICTION_FIELDS,
                 name=prediction_name,
             )
-            job_id = sha256_digest(raw_prediction["job_id"], name=f"{prediction_name}.job_id")
+            job_id = sha256_digest(
+                raw_prediction["job_id"], name=f"{prediction_name}.job_id"
+            )
             camera_id = nonempty_string(
                 raw_prediction["camera_id"], name=f"{prediction_name}.camera_id"
             )
@@ -367,46 +378,80 @@ def _validate_cases(
                 {field: raw_prediction[field] for field in _FILE_FIELDS},
                 name=prediction_name,
             )
-            _require(job_id not in seen_jobs, "prediction job appears in multiple cases")
-            _require(camera_id not in seen_cameras, "camera repeated within sample case")
+            _require(
+                job_id not in seen_jobs, "prediction job appears in multiple cases"
+            )
+            _require(
+                camera_id not in seen_cameras, "camera repeated within sample case"
+            )
             seen_jobs.add(job_id)
             seen_cameras.add(camera_id)
-            paths.append(_verify_file_record(prediction_root, record, name=prediction_name))
+            paths.append(
+                _verify_file_record(prediction_root, record, name=prediction_name)
+            )
             predictions.append({"job_id": job_id, "camera_id": camera_id, **record})
 
-        metric = raw_case["metric_reference"]
-        if not isinstance(metric, Mapping):
-            raise ValueError(f"{name}.metric_reference must be a JSON object")
-        require_exact_fields(
-            metric,
-            expected=_METRIC_REFERENCE_FIELDS,
-            name=f"{name}.metric_reference",
+        raw_metrics = raw_case["metric_references"]
+        _require(
+            isinstance(raw_metrics, Sequence)
+            and not isinstance(raw_metrics, (str, bytes))
+            and len(raw_metrics) == len(predictions),
+            f"{name}.metric_references must pair every prediction manifest",
         )
-        metric_frame = _integer(
-            metric["frame_id"], name=f"{name}.metric_reference.frame_id"
+        normalized_metrics: list[dict[str, object]] = []
+        expected_pairs = [
+            (prediction["job_id"], prediction["camera_id"])
+            for prediction in predictions
+        ]
+        observed_pairs: list[tuple[object, object]] = []
+        for metric_index, metric in enumerate(raw_metrics):
+            metric_name = f"{name}.metric_references[{metric_index}]"
+            if not isinstance(metric, Mapping):
+                raise ValueError(f"{metric_name} must be a JSON object")
+            require_exact_fields(
+                metric,
+                expected=_METRIC_REFERENCE_FIELDS,
+                name=metric_name,
+            )
+            metric_frame = _integer(metric["frame_id"], name=f"{metric_name}.frame_id")
+            _require(
+                metric_frame == start,
+                "metric prior must use the first causal frame",
+            )
+            job_id = sha256_digest(metric["job_id"], name=f"{metric_name}.job_id")
+            camera_id = nonempty_string(
+                metric["camera_id"], name=f"{metric_name}.camera_id"
+            )
+            observed_pairs.append((job_id, camera_id))
+            normalized_metrics.append(
+                {
+                    "job_id": job_id,
+                    "camera_id": camera_id,
+                    "window_id": nonempty_string(
+                        metric["window_id"], name=f"{metric_name}.window_id"
+                    ),
+                    "frame_id": metric_frame,
+                    "coordinate_frame": nonempty_string(
+                        metric["coordinate_frame"],
+                        name=f"{metric_name}.coordinate_frame",
+                    ),
+                    "source_kind": nonempty_string(
+                        metric["source_kind"], name=f"{metric_name}.source_kind"
+                    ),
+                    "source_artifact_sha256": sha256_digest(
+                        metric["source_artifact_sha256"],
+                        name=f"{metric_name}.source_artifact_sha256",
+                    ),
+                    "calibration_artifact_sha256": sha256_digest(
+                        metric["calibration_artifact_sha256"],
+                        name=f"{metric_name}.calibration_artifact_sha256",
+                    ),
+                }
+            )
+        _require(
+            observed_pairs == expected_pairs,
+            "metric references do not match prediction camera/job order",
         )
-        _require(metric_frame == start, "metric prior must use the first causal frame")
-        normalized_metric = {
-            "window_id": nonempty_string(
-                metric["window_id"], name=f"{name}.metric_reference.window_id"
-            ),
-            "frame_id": metric_frame,
-            "coordinate_frame": nonempty_string(
-                metric["coordinate_frame"],
-                name=f"{name}.metric_reference.coordinate_frame",
-            ),
-            "source_kind": nonempty_string(
-                metric["source_kind"], name=f"{name}.metric_reference.source_kind"
-            ),
-            "source_artifact_sha256": sha256_digest(
-                metric["source_artifact_sha256"],
-                name=f"{name}.metric_reference.source_artifact_sha256",
-            ),
-            "calibration_artifact_sha256": sha256_digest(
-                metric["calibration_artifact_sha256"],
-                name=f"{name}.metric_reference.calibration_artifact_sha256",
-            ),
-        }
         normalized.append(
             frozen_finite_json_mapping(
                 {
@@ -416,7 +461,7 @@ def _validate_cases(
                     "stratum": stratum,
                     "causal_frame_range_half_open": [start, stop],
                     "prediction_manifests": predictions,
-                    "metric_reference": normalized_metric,
+                    "metric_references": normalized_metrics,
                 },
                 name=name,
             )
@@ -441,7 +486,9 @@ def _validate_arrays(
 ) -> Mapping[str, np.ndarray]:
     _require(set(raw) == _ARRAY_KEYS, "calibration sample array names changed")
     case_count = len(cases)
-    point_errors = _finite_array(raw["point_errors_m"], name="point_errors_m", shape_tail=(3,))
+    point_errors = _finite_array(
+        raw["point_errors_m"], name="point_errors_m", shape_tail=(3,)
+    )
     point_count = len(point_errors)
     point_rays = _finite_array(
         raw["point_ray_directions"],
@@ -501,14 +548,28 @@ def _validate_arrays(
         "gauge case index is out of range",
     )
 
+    prediction_count = sum(
+        len(cast(Sequence[Mapping[str, Any]], case["prediction_manifests"]))
+        for case in cases
+    )
     anchors = _finite_array(
         raw["anchor_global_from_local"],
         name="anchor_global_from_local",
         shape_tail=(7,),
     )
-    _require(len(anchors) == case_count, "one metric transform is required per case")
+    _require(
+        len(anchors) == prediction_count,
+        "one metric transform is required per prediction stream",
+    )
     anchor_covariance = _validate_psd_stack(
-        raw["anchor_covariance"], name="anchor_covariance", count=case_count
+        raw["anchor_covariance"], name="anchor_covariance", count=prediction_count
+    )
+    anchor_prediction_index = _integer_vector(
+        raw["anchor_prediction_index"], name="anchor_prediction_index"
+    )
+    _require(
+        np.array_equal(anchor_prediction_index, np.arange(prediction_count)),
+        "metric anchors must follow the flattened prediction stream order",
     )
 
     cluster_owner: dict[int, int] = {}
@@ -532,7 +593,9 @@ def _validate_arrays(
             "point residual uses a frame outside the causal prefix",
         )
         _require(
-            np.all((gauge_frame[gauge_rows] >= start) & (gauge_frame[gauge_rows] < stop)),
+            np.all(
+                (gauge_frame[gauge_rows] >= start) & (gauge_frame[gauge_rows] < stop)
+            ),
             "gauge residual uses a frame outside the causal prefix",
         )
 
@@ -551,6 +614,7 @@ def _validate_arrays(
         "gauge_frame_id": gauge_frame,
         "anchor_global_from_local": immutable_array(anchors, dtype=np.float64),
         "anchor_covariance": immutable_array(anchor_covariance, dtype=np.float64),
+        "anchor_prediction_index": anchor_prediction_index,
     }
 
 
@@ -561,7 +625,7 @@ def load_deform360_prob4d_calibration_samples(
     visual_provider_spec_path: str | Path,
     metric_prior_policy_path: str | Path,
     prediction_root: str | Path,
-) -> Deform360Prob4DCalibrationSamplesV1:
+) -> Deform360Prob4DCalibrationSamplesV2:
     """Load and validate one source-only calibration sample bundle."""
 
     manifest_source = Path(manifest_path).resolve(strict=True)
@@ -576,7 +640,9 @@ def load_deform360_prob4d_calibration_samples(
         "unsupported calibration sample contract",
     )
     supplied_id = sha256_digest(manifest["bundle_id"], name="bundle_id")
-    _require(content_id(_sample_descriptor(manifest)) == supplied_id, "bundle_id changed")
+    _require(
+        content_id(_sample_descriptor(manifest)) == supplied_id, "bundle_id changed"
+    )
     protocol_id = nonempty_string(manifest["protocol_id"], name="protocol_id")
 
     selection_source = Path(selection_path).resolve(strict=True)
@@ -584,7 +650,9 @@ def load_deform360_prob4d_calibration_samples(
     metric_source = Path(metric_prior_policy_path).resolve(strict=True)
     _require(
         _sha256_file(selection_source)
-        == sha256_digest(manifest["selection_file_sha256"], name="selection_file_sha256"),
+        == sha256_digest(
+            manifest["selection_file_sha256"], name="selection_file_sha256"
+        ),
         "selection contract changed",
     )
     _require(
@@ -620,26 +688,39 @@ def load_deform360_prob4d_calibration_samples(
     )
     dataset = selection.get("dataset")
     _require(isinstance(dataset, Mapping), "selection dataset record is missing")
-    dataset_revision = exact_revision(manifest["dataset_revision"], name="dataset_revision")
-    _require(dataset.get("resolved_revision") == dataset_revision, "dataset revision changed")
+    dataset_revision = exact_revision(
+        manifest["dataset_revision"], name="dataset_revision"
+    )
+    _require(
+        dataset.get("resolved_revision") == dataset_revision, "dataset revision changed"
+    )
     provider_record = provider.get("provider")
     motioncrafter_record = provider.get("motioncrafter")
     _require(
-        isinstance(provider_record, Mapping) and isinstance(motioncrafter_record, Mapping),
+        isinstance(provider_record, Mapping)
+        and isinstance(motioncrafter_record, Mapping),
         "visual-provider revisions are missing",
     )
-    prob4d_revision = exact_revision(manifest["prob4d_revision"], name="prob4d_revision")
+    prob4d_revision = exact_revision(
+        manifest["prob4d_revision"], name="prob4d_revision"
+    )
     motioncrafter_revision = exact_revision(
         manifest["motioncrafter_revision"], name="motioncrafter_revision"
     )
-    _require(provider_record.get("revision") == prob4d_revision, "Prob4D revision changed")
+    _require(
+        provider_record.get("revision") == prob4d_revision, "Prob4D revision changed"
+    )
     _require(
         motioncrafter_record.get("revision") == motioncrafter_revision,
         "MotionCrafter revision changed",
     )
     image_resolution = (
-        _integer(motioncrafter_record.get("height"), name="MotionCrafter height", minimum=1),
-        _integer(motioncrafter_record.get("width"), name="MotionCrafter width", minimum=1),
+        _integer(
+            motioncrafter_record.get("height"), name="MotionCrafter height", minimum=1
+        ),
+        _integer(
+            motioncrafter_record.get("width"), name="MotionCrafter width", minimum=1
+        ),
     )
     window_size = _integer(
         motioncrafter_record.get("window_size"),
@@ -663,7 +744,9 @@ def load_deform360_prob4d_calibration_samples(
     boundary = manifest["information_boundary"]
     if not isinstance(boundary, Mapping):
         raise ValueError("information_boundary must be a JSON object")
-    require_exact_fields(boundary, expected=_BOUNDARY_FIELDS, name="information_boundary")
+    require_exact_fields(
+        boundary, expected=_BOUNDARY_FIELDS, name="information_boundary"
+    )
     for key, expected in _EXPECTED_BOUNDARY.items():
         observed = genuine_boolean(boundary[key], name=f"information_boundary.{key}")
         _require(observed is expected, f"information boundary changed: {key}")
@@ -694,7 +777,9 @@ def load_deform360_prob4d_calibration_samples(
     )
 
     arrays_record = _file_record(manifest["arrays"], name="arrays")
-    arrays_path = _verify_file_record(manifest_source.parent, arrays_record, name="arrays")
+    arrays_path = _verify_file_record(
+        manifest_source.parent, arrays_record, name="arrays"
+    )
     try:
         with np.load(arrays_path, allow_pickle=False) as archive:
             raw_arrays = {name: np.asarray(archive[name]) for name in archive.files}
@@ -707,12 +792,8 @@ def load_deform360_prob4d_calibration_samples(
         raise ValueError("source_artifacts must be a nonempty path-to-digest mapping")
     source_digests: set[str] = set()
     for raw_path, raw_digest in raw_source_artifacts.items():
-        relative = canonical_relative_posix_path(
-            raw_path, name="source artifact path"
-        )
-        digest = sha256_digest(
-            raw_digest, name=f"source_artifacts[{relative!r}]"
-        )
+        relative = canonical_relative_posix_path(raw_path, name="source artifact path")
+        digest = sha256_digest(raw_digest, name=f"source_artifacts[{relative!r}]")
         source = _confined_file(
             manifest_source.parent,
             relative,
@@ -721,20 +802,22 @@ def load_deform360_prob4d_calibration_samples(
         _require(_sha256_file(source) == digest, f"source artifact changed: {relative}")
         source_digests.add(digest)
     for case in cases:
-        metric = cast(Mapping[str, Any], case["metric_reference"])
-        _require(
-            metric["source_artifact_sha256"] in source_digests,
-            "metric reference source artifact is not present in the portable bundle",
-        )
-        _require(
-            metric["calibration_artifact_sha256"] in source_digests,
-            "metric reference calibration artifact is not present in the portable bundle",
-        )
-        for prediction in cast(Sequence[Mapping[str, Any]], case["prediction_manifests"]):
+        for metric in cast(Sequence[Mapping[str, Any]], case["metric_references"]):
+            _require(
+                metric["source_artifact_sha256"] in source_digests,
+                "metric reference source artifact is not present in the portable bundle",
+            )
+            _require(
+                metric["calibration_artifact_sha256"] in source_digests,
+                "metric reference calibration artifact is not present in the portable bundle",
+            )
+        for prediction in cast(
+            Sequence[Mapping[str, Any]], case["prediction_manifests"]
+        ):
             source_digests.add(cast(str, prediction["sha256"]))
     source_digests.add(cast(str, arrays_record["sha256"]))
     source_digests.add(_sha256_file(manifest_source))
-    return Deform360Prob4DCalibrationSamplesV1(
+    return Deform360Prob4DCalibrationSamplesV2(
         manifest_path=manifest_source,
         manifest_file_sha256=_sha256_file(manifest_source),
         bundle_id=supplied_id,
@@ -855,7 +938,9 @@ def collapse_point_correlation_clusters(
     case_index: np.ndarray,
     cluster_index: np.ndarray,
     valid: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Mapping[str, Any]]:
+) -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Mapping[str, Any]
+]:
     """Replace each declared dense dependence cluster by one ratio-equivalent row."""
 
     rays = np.asarray(ray_directions, dtype=np.float64)
@@ -865,11 +950,15 @@ def collapse_point_correlation_clusters(
     total_squared = np.sum(residual**2, axis=1)
     lateral_squared = np.maximum(total_squared - parallel_error**2, 0.0)
     parallel_ratio = parallel_error**2 / np.asarray(parallel_variance, dtype=np.float64)
-    lateral_ratio = lateral_squared / (2.0 * np.asarray(lateral_variance, dtype=np.float64))
+    lateral_ratio = lateral_squared / (
+        2.0 * np.asarray(lateral_variance, dtype=np.float64)
+    )
     cases = np.asarray(case_index, dtype=np.int64)
     clusters = np.asarray(cluster_index, dtype=np.int64)
     active = np.asarray(valid, dtype=np.bool_)
-    keys = sorted({(int(cases[row]), int(clusters[row])) for row in np.flatnonzero(active)})
+    keys = sorted(
+        {(int(cases[row]), int(clusters[row])) for row in np.flatnonzero(active)}
+    )
     _require(bool(keys), "no valid point correlation clusters")
     synthetic_errors: np.ndarray = np.zeros((len(keys), 3), dtype=np.float64)
     synthetic_rays: np.ndarray = np.zeros((len(keys), 3), dtype=np.float64)
@@ -886,7 +975,11 @@ def collapse_point_correlation_clusters(
         synthetic_errors[output_row, 0] = np.sqrt(2.0 * l_ratio)
         synthetic_case[output_row] = case
         diagnostics.append(
-            {"case_index": case, "cluster_index": cluster, "raw_row_count": int(np.sum(rows))}
+            {
+                "case_index": case,
+                "cluster_index": cluster,
+                "raw_row_count": int(np.sum(rows)),
+            }
         )
     report = frozen_finite_json_mapping(
         {
@@ -1008,7 +1101,7 @@ def load_pinned_prob4d_api(
     )
 
 
-def _calibration_target(samples: Deform360Prob4DCalibrationSamplesV1, api: Any) -> Any:
+def _calibration_target(samples: Deform360Prob4DCalibrationSamplesV2, api: Any) -> Any:
     targets = [
         api.load_prediction_calibration_target(path)
         for paths in samples.prediction_manifest_paths
@@ -1032,9 +1125,7 @@ def _calibration_target(samples: Deform360Prob4DCalibrationSamplesV1, api: Any) 
         "prediction manifest geometry differs from the frozen provider",
     )
     _require(
-        str(targets[0].model_identifier).startswith(
-            "prob4d.motioncrafter-model.v2:"
-        ),
+        str(targets[0].model_identifier).startswith("prob4d.motioncrafter-model.v2:"),
         "prediction manifest does not use the frozen derived-per-call seed policy",
     )
     return targets[0]
@@ -1050,7 +1141,7 @@ def _artifact_record(path: Path, artifact_id: str, root: Path) -> dict[str, obje
 
 
 def fit_and_publish_deform360_prob4d_source_calibration(
-    samples: Deform360Prob4DCalibrationSamplesV1,
+    samples: Deform360Prob4DCalibrationSamplesV2,
     *,
     api: Any,
     output_directory: str | Path,
@@ -1166,43 +1257,58 @@ def fit_and_publish_deform360_prob4d_source_calibration(
         anchor_root = temporary / "metric-anchors"
         anchor_root.mkdir()
         anchor_records: list[dict[str, object]] = []
-        for case_index, case in enumerate(samples.cases):
-            metric = cast(Mapping[str, Any], case["metric_reference"])
-            anchor = api.MetricGaugeAnchor(
-                window_id=metric["window_id"],
-                global_from_local=api.Sim3.from_vector(
-                    arrays["anchor_global_from_local"][case_index]
-                ),
-                covariance=arrays["anchor_covariance"][case_index],
-                coordinate_frame=metric["coordinate_frame"],
-                source_kind=metric["source_kind"],
-                source_artifact_sha256=metric["source_artifact_sha256"],
-                metadata={
-                    "calibration_artifact_sha256": metric[
-                        "calibration_artifact_sha256"
-                    ],
-                    "bayesian_phystwin_protocol_id": samples.protocol_id,
-                    "calibration_sample_bundle_id": samples.bundle_id,
-                    "case_id": case["case_id"],
-                    "object_id": case["object_id"],
-                    "frame_id": metric["frame_id"],
-                    "future_frames_used": False,
-                    "confirmation_payloads_opened": False,
-                },
-            )
-            anchor_path = anchor_root / f"{case['case_id']}-{anchor.artifact_id}.json"
-            api.save_metric_gauge_anchor(anchor_path, anchor)
-            _require(
-                api.load_metric_gauge_anchor(anchor_path).artifact_id == anchor.artifact_id,
-                "published metric anchor failed self-verification",
-            )
-            anchor_records.append(
-                {
-                    "case_id": case["case_id"],
-                    "object_id": case["object_id"],
-                    **_artifact_record(anchor_path, anchor.artifact_id, temporary),
-                }
-            )
+        anchor_index = 0
+        for case in samples.cases:
+            metrics = cast(Sequence[Mapping[str, Any]], case["metric_references"])
+            for metric in metrics:
+                _require(
+                    arrays["anchor_prediction_index"][anchor_index] == anchor_index,
+                    "metric-anchor prediction order changed",
+                )
+                anchor = api.MetricGaugeAnchor(
+                    window_id=metric["window_id"],
+                    global_from_local=api.Sim3.from_vector(
+                        arrays["anchor_global_from_local"][anchor_index]
+                    ),
+                    covariance=arrays["anchor_covariance"][anchor_index],
+                    coordinate_frame=metric["coordinate_frame"],
+                    source_kind=metric["source_kind"],
+                    source_artifact_sha256=metric["source_artifact_sha256"],
+                    metadata={
+                        "calibration_artifact_sha256": metric[
+                            "calibration_artifact_sha256"
+                        ],
+                        "bayesian_phystwin_protocol_id": samples.protocol_id,
+                        "calibration_sample_bundle_id": samples.bundle_id,
+                        "case_id": case["case_id"],
+                        "object_id": case["object_id"],
+                        "job_id": metric["job_id"],
+                        "camera_id": metric["camera_id"],
+                        "frame_id": metric["frame_id"],
+                        "future_frames_used": False,
+                        "confirmation_payloads_opened": False,
+                    },
+                )
+                anchor_path = anchor_root / (
+                    f"{case['case_id']}-stream-{anchor_index:04d}-"
+                    f"{anchor.artifact_id}.json"
+                )
+                api.save_metric_gauge_anchor(anchor_path, anchor)
+                _require(
+                    api.load_metric_gauge_anchor(anchor_path).artifact_id
+                    == anchor.artifact_id,
+                    "published metric anchor failed self-verification",
+                )
+                anchor_records.append(
+                    {
+                        "case_id": case["case_id"],
+                        "object_id": case["object_id"],
+                        "job_id": metric["job_id"],
+                        "camera_id": metric["camera_id"],
+                        **_artifact_record(anchor_path, anchor.artifact_id, temporary),
+                    }
+                )
+                anchor_index += 1
 
         descriptor: dict[str, Any] = {
             "schema": RESULT_SCHEMA,
@@ -1217,7 +1323,9 @@ def fit_and_publish_deform360_prob4d_source_calibration(
             "physical_object_count": len(samples.object_ids),
             "stratum_counts": {
                 stratum: sum(case["stratum"] == stratum for case in samples.cases)
-                for stratum in sorted({cast(str, case["stratum"]) for case in samples.cases})
+                for stratum in sorted(
+                    {cast(str, case["stratum"]) for case in samples.cases}
+                )
             },
             "point_effective_cluster_count": len(cluster_errors),
             "gauge_raw_row_count": len(arrays["gauge_errors"]),
@@ -1282,7 +1390,7 @@ __all__ = [
     "SAMPLE_SCHEMA",
     "SAMPLE_SEMANTICS",
     "SAMPLE_VERSION",
-    "Deform360Prob4DCalibrationSamplesV1",
+    "Deform360Prob4DCalibrationSamplesV2",
     "Prob4DCalibrationApi",
     "collapse_point_correlation_clusters",
     "fit_and_publish_deform360_prob4d_source_calibration",

@@ -39,7 +39,7 @@ row must lie inside that case's causal half-open frame range.
 ## Sample bundle
 
 The JSON manifest uses schema
-`bayesian-phystwin.deform360-prob4d-calibration-samples` version 1. Its
+`bayesian-phystwin.deform360-prob4d-calibration-samples` version 2. Its
 content-addressed `bundle_id` binds:
 
 - the locked selection, visual-provider specification, and metric-prior policy;
@@ -69,8 +69,16 @@ The NPZ has these exact members:
 | `gauge_covariance` | `(G, 7, 7)` | Uncalibrated correlated gauge covariance. |
 | `gauge_case_index` | `(G,)` | Physical-object case for each gauge row. |
 | `gauge_frame_id` | `(G,)` | Causal source frame for each gauge row. |
-| `anchor_global_from_local` | `(C, 7)` | First-causal-frame metric Sim(3) estimate. |
-| `anchor_covariance` | `(C, 7, 7)` | Metric-anchor covariance. |
+| `anchor_global_from_local` | `(P, 7)` | First-causal-frame metric Sim(3) estimate for each prediction stream. |
+| `anchor_covariance` | `(P, 7, 7)` | Per-stream metric-anchor covariance. |
+| `anchor_prediction_index` | `(P,)` | Exact flattened prediction-stream index for every anchor. |
+
+Here `C` is the number of physical-object cases and `P` is the number of
+successful camera prediction streams. Each camera has its own MotionCrafter
+local gauge, so each `metric_references` entry is paired by `job_id` and
+`camera_id` with one prediction manifest and one anchor. Reusing one object-level
+anchor across cameras is invalid even when all cameras share the same metric
+world frame.
 
 The input constructor is expected to use the official Deform360 reconstruction
 pipeline on the permitted prefix only. That constructor must publish its own
