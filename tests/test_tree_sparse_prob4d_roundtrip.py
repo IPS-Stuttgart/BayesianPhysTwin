@@ -136,7 +136,7 @@ def _factors():
         prior_nominal_probability=np.asarray([0.94, 0.94, 0.91, 0.91]),
         composite_weight=np.asarray([0.5, 0.5, 0.4, 0.4]),
         point_ids=np.asarray([10, 11, 20, 21], dtype=np.int64),
-        frame_indices=np.asarray([0, 1, 2, 3], dtype=np.int64),
+        frame_indices=np.asarray([0, 0, 2, 2], dtype=np.int64),
         view_ids=("camera-0", "camera-0", "camera-0", "camera-0"),
         factor_ids=("factor-0", "factor-0", "factor-1", "factor-1"),
         correlation_group_ids=(
@@ -163,7 +163,7 @@ def _linearization(artifact_id: str) -> PhysicalLinearizationV1:
         baseline_belief_id="2" * 64,
         action_prefix_id="3" * 64,
         simulator_revision="real-prob4d-roundtrip-simulator-v1",
-        frame_ids=np.asarray([0, 1, 2, 3], dtype=np.int64),
+        frame_ids=np.asarray([0, 0, 2, 2], dtype=np.int64),
         entity_ids=np.asarray([10, 11, 20, 21], dtype=np.int64),
         view_indices=np.zeros(4, dtype=np.int64),
         window_indices=np.asarray([0, 0, 1, 1], dtype=np.int64),
@@ -226,9 +226,9 @@ def test_real_prob4d_serialized_tree_sparse_roundtrip(tmp_path: Path) -> None:
     assert result.result.input_lineage["integration_source"] == (
         "real-prob4d-serialized-artifact"
     )
-    assert result.result.diagnostics[
-        "dense_gauge_prior_covariance_materialized"
-    ] is False
+    assert (
+        result.result.diagnostics["dense_gauge_prior_covariance_materialized"] is False
+    )
     assert result.result.diagnostics["gauge_prior_representation"] == (
         "tree-transition-innovation-information-v1"
     )
