@@ -211,6 +211,13 @@ fails the workflow's advancement gate after compact evidence is uploaded.
 Large prediction arrays remain under the protected persistent output root. They
 are not copied into GitHub artifacts.
 
+After successful production, the exploratory outputs remain source evidence,
+not claim-bearing observations. The separately documented
+[`deform360_prob4d_source_calibration.md`](deform360_prob4d_source_calibration.md)
+stage binds causal metric-prefix residuals to these prediction manifests and
+fits physical-object-balanced point and gauge covariance artifacts. It cannot
+authorize confirmation access.
+
 ## Causal execution contract
 
 For every job, the producer first re-hashes both retained inputs:
