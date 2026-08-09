@@ -36,9 +36,7 @@ def test_public_source_gate_launcher_is_reviewed_main_only_and_one_shot() -> Non
     assert document["on"] == {
         "push": {
             "branches": ["main"],
-            "paths": [
-                ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
-            ],
+            "paths": [".github/workflows/launch-deform360-prob4d-source-gate-once.yml"],
         }
     }
     assert "workflow_dispatch:" not in text
@@ -49,13 +47,9 @@ def test_public_source_gate_launcher_is_reviewed_main_only_and_one_shot() -> Non
     assert "runs-on: self-hosted" not in text
     assert "issues: write" in text
     assert '"repos/${GITHUB_REPOSITORY}/issues/148/comments"' in text
-    assert "/mnt/lexar4tb/datasets/deform360/data-7fea8e2" in text
-    assert (
-        "/mnt/lexar4tb/datasets/deform360/"
-        "adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370"
-        in text
-    )
-    assert "adaptive-confirmation payloads opened: \\`false\\`" in text
+    assert "source measurements: released public Deform360 calibration data" in text
+    assert "new measurements required: \\`false\\`" in text
+    assert "human approval required: \\`false\\`" in text
     assert "confirmation payloads opened: \\`false\\`" in text
     assert "target outcomes used: \\`false\\`" in text
 

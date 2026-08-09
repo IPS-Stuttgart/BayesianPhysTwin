@@ -46,10 +46,10 @@ jobs:
           - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
           - exact reviewed main revision: \`${GITHUB_SHA}\`
           - empirical runner: \`workstation2\` via the sole \`self-hosted\` label
-          - official/raw Deform360 root registered on runner: \`/mnt/lexar4tb/datasets/deform360/data-7fea8e2\`
-          - adaptive-confirmation download registered on runner: \`/mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370\`
+          - source measurements: released public Deform360 calibration data
+          - new measurements required: \`false\`
+          - human approval required: \`false\`
           - official/raw payload opened by this source-gate stage: \`false\`
-          - adaptive-confirmation payloads opened: \`false\`
           - confirmation payloads opened: \`false\`
           - future frames used: \`false\`
           - target outcomes used: \`false\`
