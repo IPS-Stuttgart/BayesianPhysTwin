@@ -20,6 +20,7 @@ from .sparse_prior_aware_gauge_belief import (
     TreeSparseGaugeDesignV1,
     _whiten_sparse_observations,
 )
+from .tree_block_claim_contract import validate_tree_block_result
 from .tree_block_sparse_gauge_belief import (
     TreeBlockGaugeAwareBeliefResultV1,
     TreeBlockPosteriorCovarianceV1,
@@ -232,20 +233,29 @@ def update_tree_block_sparse_prior_aware_gauge_belief_v2(
         gauge,
         config=cfg,
     )
+    validate_tree_block_result(result)
     if not result.inference_admissible:
-        return _copy_result(
-            result,
-            _tag_diagnostics(
-                result.diagnostics,
-                passed=False,
-                reason="underlying-inference-rejected",
-                underlying_result=result,
-            ),
+        diagnostics = _tag_diagnostics(
+            result.diagnostics,
+            passed=False,
+            reason="underlying-inference-rejected",
+            underlying_result=result,
+        )
+        fallback = _fallback_result(
+            batch=batch,
+            gauge=gauge,
+            reason=result.reason,
+            diagnostics=diagnostics,
+            covariance=_exact_prior_covariance(batch, gauge, cfg),
+        )
+        return validate_tree_block_result(
+            fallback,
+            require_strict_admission=True,
         )
 
     failure = _strict_failure(result.diagnostics)
     if failure is None:
-        return _copy_result(
+        admitted = _copy_result(
             result,
             _tag_diagnostics(
                 result.diagnostics,
@@ -254,6 +264,10 @@ def update_tree_block_sparse_prior_aware_gauge_belief_v2(
                 underlying_result=result,
             ),
         )
+        return validate_tree_block_result(
+            admitted,
+            require_strict_admission=True,
+        )
 
     diagnostics = _tag_diagnostics(
         result.diagnostics,
@@ -261,12 +275,16 @@ def update_tree_block_sparse_prior_aware_gauge_belief_v2(
         reason=failure,
         underlying_result=result,
     )
-    return _fallback_result(
+    fallback = _fallback_result(
         batch=batch,
         gauge=gauge,
         reason=failure,
         diagnostics=diagnostics,
         covariance=_exact_prior_covariance(batch, gauge, cfg),
+    )
+    return validate_tree_block_result(
+        fallback,
+        require_strict_admission=True,
     )
 
 
