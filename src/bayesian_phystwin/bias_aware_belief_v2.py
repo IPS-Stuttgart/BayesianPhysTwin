@@ -458,6 +458,8 @@ def update_bias_aware_state_v2(
 
     for iteration in range(cfg.maximum_iterations):
         previous = solution.copy()
+        previous_camera_robust = camera_robust.copy()
+        previous_anchor_robust = anchor_robust.copy()
         normal, right = posterior_system()
         try:
             system = _factor_system(
@@ -492,7 +494,25 @@ def update_bias_aware_state_v2(
                 cfg.degrees_of_freedom,
                 cfg.minimum_robust_weight,
             )
-        if np.linalg.norm(solution - previous) <= cfg.convergence_tolerance:
+        solution_delta = float(np.linalg.norm(solution - previous))
+        robust_weight_delta = max(
+            float(
+                np.max(
+                    np.abs(camera_robust - previous_camera_robust),
+                    initial=0.0,
+                )
+            ),
+            float(
+                np.max(
+                    np.abs(anchor_robust - previous_anchor_robust),
+                    initial=0.0,
+                )
+            ),
+        )
+        if (
+            solution_delta <= cfg.convergence_tolerance
+            and robust_weight_delta <= cfg.convergence_tolerance
+        ):
             break
 
     normal, right = posterior_system()

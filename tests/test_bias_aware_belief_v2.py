@@ -328,3 +328,40 @@ def test_v2_rechecks_the_final_irls_system_and_falls_back(
     assert result.reason == "ill-conditioned-posterior"
     assert result.diagnostics["numerical_failure_type"] == "SPDConditionError"
     assert result.state_coefficients_m.tobytes() == np.zeros((1, 3)).tobytes()
+
+
+def test_v2_irls_waits_for_robust_weight_fixed_point() -> None:
+    innovation = np.zeros((1, 1, 3), dtype=np.float64)
+    available = np.zeros((1, 1), dtype=bool)
+    anchor_innovation = np.asarray(
+        [[0.02, 0.0, 0.0], [-0.01, 0.0, 0.0]],
+        dtype=np.float64,
+    )
+
+    result = update_bias_aware_state_v2(
+        innovation,
+        available,
+        np.ones((1, 1), dtype=np.float64),
+        np.zeros((1, 0), dtype=np.float64),
+        anchor_innovation_m=anchor_innovation,
+        anchor_state_basis=np.asarray([[1.0], [2.0]], dtype=np.float64),
+        anchor_variance_m2=np.full(2, 1e-6, dtype=np.float64),
+        config=_v2_config(
+            state_prior_std_m=0.1,
+            maximum_iterations=8,
+            convergence_tolerance=1e-12,
+        ),
+    )
+
+    assert result.accepted
+    assert result.diagnostics["iterations"] >= 4
+    assert result.state_coefficients_m[0, 0] == pytest.approx(
+        -0.004875500609437576,
+        abs=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.anchor_robust_weights,
+        np.asarray([0.02, 1.0]),
+        atol=1e-12,
+        rtol=0.0,
+    )

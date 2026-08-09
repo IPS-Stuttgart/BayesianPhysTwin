@@ -143,3 +143,38 @@ def test_innovation_magnitude_does_not_change_prior_reliability() -> None:
     )
 
     np.testing.assert_array_equal(first.prior_reliability, second.prior_reliability)
+
+
+def test_propagated_irls_waits_for_robust_weight_fixed_point() -> None:
+    innovation = np.zeros((1, 2, 3), dtype=np.float64)
+    innovation[0, :, 0] = np.asarray([0.02, -0.01])
+    response = np.zeros((1, 2, 3, 1), dtype=np.float64)
+    response[0, :, 0, 0] = np.asarray([1.0, 2.0])
+
+    result = infer_propagated_state_belief(
+        innovation,
+        np.ones((1, 2), dtype=bool),
+        response,
+        np.zeros((2, 0), dtype=np.float64),
+        observation_variance_m2=np.full((1, 2), 1e-6, dtype=np.float64),
+        config=PropagatedStateBeliefConfig(
+            state_weight_prior_std=0.1,
+            maximum_iterations=8,
+            convergence_tolerance=1e-12,
+        ),
+    )
+
+    assert result.accepted
+    assert result.diagnostics["iterations"] >= 4
+    np.testing.assert_allclose(
+        result.state_weights,
+        np.asarray([-0.004875500609437576]),
+        atol=1e-12,
+        rtol=0.0,
+    )
+    np.testing.assert_allclose(
+        result.robust_weights[0],
+        np.asarray([0.02, 1.0]),
+        atol=1e-12,
+        rtol=0.0,
+    )
