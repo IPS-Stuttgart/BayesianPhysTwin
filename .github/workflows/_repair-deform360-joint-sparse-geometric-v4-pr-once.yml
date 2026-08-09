@@ -1,0 +1,406 @@
+name: Repair Deform360 geometric v4 typing from PR once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/_repair-deform360-joint-sparse-geometric-v4-pr-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-deform360-joint-sparse-geometric-v4-pr-once
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'agent/materialize-deform360-joint-sparse-geometric-v4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/materialize-deform360-joint-sparse-geometric-v4
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Narrow types, validate, remove helpers, and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = \
+            "agent/materialize-deform360-joint-sparse-geometric-v4"
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one occurrence, found {count}")
+              path.write_text(text.replace(old, new), encoding="utf-8")
+
+          common = Path("src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py")
+          replace_once(
+              common,
+              '''    calibration = cast(Mapping[str, Any], selection).get("calibration")
+    _require(
+        isinstance(calibration, list) and len(calibration) == 10,
+        "development selection changed",
+    )
+    rows: dict[tuple[str, int], str] = {}
+    for index, raw in enumerate(calibration):
+''',
+              '''    raw_calibration = cast(Mapping[str, Any], selection).get("calibration")
+    _require(
+        isinstance(raw_calibration, list) and len(raw_calibration) == 10,
+        "development selection changed",
+    )
+    calibration = cast(list[object], raw_calibration)
+    rows: dict[tuple[str, int], str] = {}
+    for index, raw in enumerate(calibration):
+''',
+          )
+
+          npz = Path("src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py")
+          replace_once(
+              npz,
+              "    expected_frames = np.arange(start, stop, dtype=np.int64)\n",
+              "    expected_frames: np.ndarray = np.arange(\n"
+              "        start, stop, dtype=np.int64\n"
+              "    )\n",
+          )
+          replace_once(
+              npz,
+              '''    raw_windows = manifest.get("overlap_windows")
+    _require(
+        isinstance(raw_windows, list) and bool(raw_windows),
+        "prediction windows are missing",
+    )
+''',
+              '''    raw_window_values = manifest.get("overlap_windows")
+    _require(
+        isinstance(raw_window_values, list) and bool(raw_window_values),
+        "prediction windows are missing",
+    )
+    raw_windows = cast(list[object], raw_window_values)
+''',
+          )
+          replace_once(
+              npz,
+              '''    members = integrity_map.get("members")
+    _require(isinstance(members, list), "prediction integrity members are missing")
+    descriptors: dict[str, Mapping[str, Any]] = {}
+    for index, raw in enumerate(members):
+        _require(isinstance(raw, Mapping), f"prediction member {index} changed")
+        descriptor = cast(Mapping[str, Any], raw)
+        relative = _safe_relative(descriptor.get("path"), name="prediction member path")
+''',
+              '''    member_values = integrity_map.get("members")
+    _require(
+        isinstance(member_values, list),
+        "prediction integrity members are missing",
+    )
+    members = cast(list[object], member_values)
+    descriptors: dict[str, Mapping[str, Any]] = {}
+    for index, raw_member in enumerate(members):
+        _require(
+            isinstance(raw_member, Mapping),
+            f"prediction member {index} changed",
+        )
+        descriptor = cast(Mapping[str, Any], raw_member)
+        relative: str = _safe_relative(
+            descriptor.get("path"), name="prediction member path"
+        )
+''',
+          )
+          replace_once(
+              npz,
+              '''    for index, raw in enumerate(raw_windows):
+        _require(isinstance(raw, Mapping), f"prediction window {index} changed")
+        record = cast(Mapping[str, Any], raw)
+        window_id = _literal(record.get("window_id"), name="window_id")
+        _require(window_id not in observed_ids, "prediction window ID repeats")
+        observed_ids.add(window_id)
+        relative = _safe_relative(record.get("path"), name="prediction window path")
+        descriptor = descriptors.get(relative)
+        _require(descriptor is not None, "prediction window lacks integrity descriptor")
+''',
+              '''    for index, raw_window in enumerate(raw_windows):
+        _require(
+            isinstance(raw_window, Mapping),
+            f"prediction window {index} changed",
+        )
+        record = cast(Mapping[str, Any], raw_window)
+        window_id = _literal(record.get("window_id"), name="window_id")
+        _require(window_id not in observed_ids, "prediction window ID repeats")
+        observed_ids.add(window_id)
+        relative: str = _safe_relative(
+            record.get("path"), name="prediction window path"
+        )
+        descriptor_value = descriptors.get(relative)
+        _require(
+            descriptor_value is not None,
+            "prediction window lacks integrity descriptor",
+        )
+        descriptor = cast(Mapping[str, Any], descriptor_value)
+''',
+          )
+          replace_once(
+              npz,
+              "        expected_frames = np.arange(window_start, window_stop, dtype=np.int64)\n",
+              "        expected_frames: np.ndarray = np.arange(\n"
+              "            window_start, window_stop, dtype=np.int64\n"
+              "        )\n",
+          )
+          replace_once(
+              npz,
+              "        support_digest = hashlib.sha256(\n",
+              "        support_digest: str = hashlib.sha256(\n",
+          )
+
+          candidates = Path("src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py")
+          replace_once(
+              candidates,
+              '''from .deform360_joint_sparse_geometric_npz_v4 import (
+    _load_camera_center,
+''',
+              '''from .deform360_joint_sparse_geometric_npz_v4 import (
+    _MetricFrame,
+    _load_camera_center,
+''',
+          )
+          replace_once(
+              candidates,
+              "    ranked = sorted(\n",
+              "    ranked: list[tuple[tuple[int, str, int, int], np.ndarray]] = sorted(\n",
+          )
+          replace_once(
+              candidates,
+              '''    metric_frames, image_shape = _load_metric_sparse_frames(
+        metric_prefix_path, causal_range=causal_range
+    )
+''',
+              '''    metric_result = _load_metric_sparse_frames(
+        metric_prefix_path, causal_range=causal_range
+    )
+    metric_frames: dict[int, _MetricFrame] = metric_result[0]
+    image_shape: tuple[int, int] = metric_result[1]
+''',
+          )
+          replace_once(
+              candidates,
+              '''            supported = window.valid_mask[local_index, metric.rows, metric.columns]
+            for row, column, point in zip(
+                metric.rows[supported],
+                metric.columns[supported],
+                metric.points_world_m[supported],
+                strict=True,
+            ):
+                voxel = _voxel(point, voxel_size)
+                cluster = _cluster_id(voxel)
+                key = (frame, cluster)
+                rank_key = (frame, cluster, int(row), int(column))
+                previous = unique.get(key)
+                if previous is None or rank_key < previous[0]:
+                    unique[key] = (rank_key, np.asarray(point, dtype=np.float64))
+''',
+              '''            supported: np.ndarray = window.valid_mask[
+                local_index, metric.rows, metric.columns
+            ]
+            for row_value, column_value, point in zip(
+                metric.rows[supported],
+                metric.columns[supported],
+                metric.points_world_m[supported],
+                strict=True,
+            ):
+                row = int(row_value)
+                column = int(column_value)
+                voxel = _voxel(point, voxel_size)
+                cluster = _cluster_id(voxel)
+                key = (frame, cluster)
+                rank_key = (frame, cluster, row, column)
+                previous = unique.get(key)
+                if previous is None or rank_key < previous[0]:
+                    unique[key] = (rank_key, np.asarray(point, dtype=np.float64))
+''',
+          )
+
+          materializer = Path("src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py")
+          replace_once(
+              materializer,
+              '''from .deform360_joint_sparse_observability_v4 import (
+    DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY,
+''',
+              '''from .deform360_joint_sparse_observability_v4 import (
+    DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY,
+    Deform360JointSparseFactorBatchV4,
+''',
+          )
+          replace_once(
+              materializer,
+              '''        raw_cases = plan.get("cases")
+        _require(
+            isinstance(raw_cases, list) and len(raw_cases) == 10,
+            "metric plan cohort changed",
+        )
+        excluded_rows = plan.get("excluded_streams")
+        _require(
+            isinstance(excluded_rows, list) and len(excluded_rows) == 11,
+            "metric plan exclusions changed",
+        )
+        excluded_by_object: Counter[str] = Counter()
+        for index, raw in enumerate(excluded_rows):
+            _require(isinstance(raw, Mapping), f"excluded stream {index} changed")
+            row = cast(Mapping[str, Any], raw)
+''',
+              '''        raw_case_values = plan.get("cases")
+        _require(
+            isinstance(raw_case_values, list) and len(raw_case_values) == 10,
+            "metric plan cohort changed",
+        )
+        raw_cases = cast(list[object], raw_case_values)
+        excluded_values = plan.get("excluded_streams")
+        _require(
+            isinstance(excluded_values, list) and len(excluded_values) == 11,
+            "metric plan exclusions changed",
+        )
+        excluded_rows = cast(list[object], excluded_values)
+        excluded_by_object: Counter[str] = Counter()
+        for index, raw_excluded in enumerate(excluded_rows):
+            _require(
+                isinstance(raw_excluded, Mapping),
+                f"excluded stream {index} changed",
+            )
+            row = cast(Mapping[str, Any], raw_excluded)
+''',
+          )
+          replace_once(
+              materializer,
+              '''        for case_index, raw_case in enumerate(raw_cases):
+            _require(
+                isinstance(raw_case, Mapping), f"metric plan case {case_index} changed"
+            )
+            case = cast(Mapping[str, Any], raw_case)
+''',
+              '''        for case_index, raw_case_value in enumerate(raw_cases):
+            _require(
+                isinstance(raw_case_value, Mapping),
+                f"metric plan case {case_index} changed",
+            )
+            case = cast(Mapping[str, Any], raw_case_value)
+''',
+          )
+          replace_once(
+              materializer,
+              '''            causal = case.get("causal_frame_range_half_open")
+            _require(
+                isinstance(causal, list) and len(causal) == 2, "causal range changed"
+            )
+            causal_range = (
+                _integer(causal[0], name="causal start"),
+                _integer(causal[1], name="causal stop", minimum=1),
+            )
+''',
+              '''            causal_value = case.get("causal_frame_range_half_open")
+            _require(
+                isinstance(causal_value, list) and len(causal_value) == 2,
+                "causal range changed",
+            )
+            causal = cast(list[object], causal_value)
+            causal_range = (
+                _integer(causal[0], name="causal start"),
+                _integer(causal[1], name="causal stop", minimum=1),
+            )
+''',
+          )
+          replace_once(
+              materializer,
+              '''            raw_streams = case.get("streams")
+            _require(
+                isinstance(raw_streams, list) and len(raw_streams) >= 2,
+                "object lacks retained streams",
+            )
+''',
+              '''            raw_stream_values = case.get("streams")
+            _require(
+                isinstance(raw_stream_values, list) and len(raw_stream_values) >= 2,
+                "object lacks retained streams",
+            )
+            raw_streams = cast(list[object], raw_stream_values)
+''',
+          )
+          replace_once(
+              materializer,
+              '''            for stream_index, raw_stream in enumerate(raw_streams):
+                _require(
+                    isinstance(raw_stream, Mapping), f"stream {stream_index} changed"
+                )
+                stream = cast(Mapping[str, Any], raw_stream)
+''',
+              '''            for stream_index, raw_stream_value in enumerate(raw_streams):
+                _require(
+                    isinstance(raw_stream_value, Mapping),
+                    f"stream {stream_index} changed",
+                )
+                stream = cast(Mapping[str, Any], raw_stream_value)
+''',
+          )
+          replace_once(
+              materializer,
+              '                job_id = sha256_digest(stream.get("job_id"), name="job_id")\n',
+              '                job_id: str = sha256_digest(\n'
+              '                    stream.get("job_id"), name="job_id"\n'
+              '                )\n',
+          )
+          replace_once(
+              materializer,
+              "            batch = _build_object_batch(\n",
+              "            batch: Deform360JointSparseFactorBatchV4 = (\n"
+              "                _build_object_batch(\n",
+          )
+          replace_once(
+              materializer,
+              '''                },
+            )
+            case_root = temporary / "cases" / f"{case_index:02d}-{object_id}"
+''',
+              '''                },
+                )
+            )
+            case_root = temporary / "cases" / f"{case_index:02d}-{object_id}"
+''',
+          )
+          PY
+          python -m pip install -e ".[dev]"
+          files=(
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy "${files[@]}"
+          git rm \
+            .github/workflows/_repair-deform360-joint-sparse-geometric-v4-pr-once.yml \
+            .github/workflows/_repair-deform360-joint-sparse-geometric-v4-typing-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          git commit -m "Repair Deform360 geometric v4 typing"
+          git push origin HEAD:agent/materialize-deform360-joint-sparse-geometric-v4
