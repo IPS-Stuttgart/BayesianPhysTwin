@@ -535,7 +535,8 @@ def _validate_emitted_plan_binding(
     for case_index, raw_case in enumerate(cases):
         case = _mapping(raw_case, name=f"metric-prefix plan case {case_index}")
         object_id = nonempty_string(
-            case.get("object_id"), name=f"metric-prefix plan case {case_index} object_id"
+            case.get("object_id"),
+            name=f"metric-prefix plan case {case_index} object_id",
         )
         episode_id = genuine_integer(
             case.get("episode_id"),
@@ -599,7 +600,9 @@ def _validate_emitted_plan_binding(
                 _validate_file_record(
                     stream.get(field), name=f"metric-prefix plan {field}"
                 )
-        _require(stream_order == sorted(stream_order), "metric-prefix plan streams unsorted")
+        _require(
+            stream_order == sorted(stream_order), "metric-prefix plan streams unsorted"
+        )
     _require(case_order == sorted(case_order), "metric-prefix plan cases unsorted")
     _require(
         planned_jobs == expected_jobs,
