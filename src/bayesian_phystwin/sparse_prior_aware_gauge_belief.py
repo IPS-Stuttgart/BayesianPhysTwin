@@ -367,15 +367,12 @@ def _sparse_fallback_result(
         0 if batch.anchor_innovation_m is None else len(batch.anchor_innovation_m)
     )
     structured = _STRUCTURED_RESULT_MODE.get()
-    result_diagnostics = dict(diagnostics)
-    result_diagnostics.update(
-        {
-            "result_covariance_representation": (
-                prior_covariance.representation
-                if structured
-                else DENSE_COVARIANCE_REPRESENTATION
-            ),
-            "result_dense_covariance_materialized": not structured,
+    result_diagnostics: Mapping[str, Any] = diagnostics
+    if structured:
+        result_diagnostics = {
+            **diagnostics,
+            "result_covariance_representation": prior_covariance.representation,
+            "result_dense_covariance_materialized": False,
             "result_estimated_dense_covariance_bytes": (
                 prior_covariance.estimated_dense_bytes
             ),
@@ -383,7 +380,6 @@ def _sparse_fallback_result(
                 prior_covariance.stored_nbytes
             ),
         }
-    )
     common = {
         "inference_admissible": False,
         "reason": reason,
@@ -1598,8 +1594,10 @@ def _update_sparse_prior_aware_gauge_belief_impl(
     shared_slice = slice(gauge_slice.stop, gauge_slice.stop + shared_count)
     view_slice = slice(shared_slice.stop, shared_slice.stop + view_count)
     anchor_bias_slice = slice(view_slice.stop, view_slice.stop + anchor_bias_count)
-    diagnostics.update(
-        {
+    result_diagnostics: Mapping[str, Any] = diagnostics
+    if _STRUCTURED_RESULT_MODE.get():
+        result_diagnostics = {
+            **diagnostics,
             "result_covariance_representation": DENSE_COVARIANCE_REPRESENTATION,
             "result_dense_covariance_materialized": True,
             "result_estimated_dense_covariance_bytes": int(covariance.nbytes),
@@ -1607,7 +1605,6 @@ def _update_sparse_prior_aware_gauge_belief_impl(
                 covariance.nbytes
             ),
         }
-    )
     legacy_result = GaugeAwareBeliefResult(
         inference_admissible=True,
         reason="inference-admissible",
@@ -1622,7 +1619,7 @@ def _update_sparse_prior_aware_gauge_belief_impl(
         query_sensitivity_fractions=query_fraction,
         robust_weights=ordinary_robust,
         anchor_robust_weights=anchor_robust,
-        diagnostics=diagnostics,
+        diagnostics=result_diagnostics,
         input_lineage={} if batch.metadata is None else batch.metadata,
     )
     if _STRUCTURED_RESULT_MODE.get():

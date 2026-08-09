@@ -1042,3 +1042,28 @@ def test_claim_bearing_structured_conversion_is_explicit_and_budgeted() -> None:
     legacy = update.to_legacy()
     assert legacy.result.reason == update.result.reason
     assert legacy.observation_artifact_id == update.observation_artifact_id
+
+
+def test_legacy_sparse_result_diagnostics_remain_content_compatible() -> None:
+    from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+        update_sparse_prior_aware_gauge_belief,
+        update_sparse_prior_aware_gauge_belief_structured,
+    )
+
+    adapted = _build(_validated_observation())
+    legacy = update_sparse_prior_aware_gauge_belief(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+    structured = update_sparse_prior_aware_gauge_belief_structured(
+        adapted.batch,
+        adapted.tree_gauge_design,
+        config=_config(),
+    )
+
+    assert not any(key.startswith("result_") for key in legacy.diagnostics)
+    assert structured.diagnostics["result_dense_covariance_materialized"] is True
+    assert structured.diagnostics["result_covariance_representation"] == (
+        "dense-covariance-v1"
+    )
