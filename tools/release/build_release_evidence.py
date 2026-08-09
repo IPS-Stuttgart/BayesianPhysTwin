@@ -25,9 +25,7 @@ _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[A-Za-z0-9.+-]*)?$")
 _PROJECT_SECTION = re.compile(r"^\s*\[project\]\s*(?:#.*)?$")
 _SECTION = re.compile(r"^\s*\[[^]]+\]\s*(?:#.*)?$")
-_PROJECT_VALUE = re.compile(
-    r"^\s*(name|version)\s*=\s*(['\"])([^'\"]+)\2\s*(?:#.*)?$"
-)
+_PROJECT_VALUE = re.compile(r"^\s*(name|version)\s*=\s*(['\"])([^'\"]+)\2\s*(?:#.*)?$")
 _CITATION_VERSION = re.compile(
     r"^version:\s*(?:\"([^\"]+)\"|'([^']+)'|([^#\n]+?))\s*(?:#.*)?$",
     re.MULTILINE,
@@ -187,9 +185,7 @@ def _wheel_record(path: Path, *, project: str, version: str) -> dict[str, object
     try:
         with zipfile.ZipFile(path) as archive:
             names = [item.filename for item in archive.infolist() if not item.is_dir()]
-            canonical = [
-                _canonical_archive_path(name, name="wheel") for name in names
-            ]
+            canonical = [_canonical_archive_path(name, name="wheel") for name in names]
             if len(canonical) != len(set(canonical)):
                 raise ReleaseEvidenceError("wheel contains duplicate members")
             metadata_members = [
@@ -370,9 +366,7 @@ def _build_environment_record(path: Path) -> dict[str, object]:
     )
     epoch = environment["source_date_epoch"]
     if isinstance(epoch, bool) or not isinstance(epoch, int) or epoch < 0:
-        raise ReleaseEvidenceError(
-            "source_date_epoch must be a nonnegative integer"
-        )
+        raise ReleaseEvidenceError("source_date_epoch must be a nonnegative integer")
     raw_packages = _mapping(environment["packages"], name="build packages")
     packages: dict[str, str] = {}
     for raw_name, raw_version in raw_packages.items():
