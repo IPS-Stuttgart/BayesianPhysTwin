@@ -65,8 +65,33 @@ The state marginal can be obtained without constructing gauge covariance:
 state_covariance = result.covariance.state_marginal_covariance()
 ```
 
-A complete covariance is an explicit, peak-memory-budgeted compatibility
-operation:
+### Exact covariance queries
+
+`TreeBlockPosteriorOperatorV1` applies the complete posterior covariance in the
+historical public coefficient order—physical state, flattened gauge nodes, then
+shared/view/anchor biases—without constructing the complete covariance matrix.
+It also evaluates arbitrary linear-query covariance, cross covariance, and
+selected coefficient marginals directly from the factors:
+
+```python
+from bayesian_phystwin.tree_block_posterior_operator import (
+    TreeBlockPosteriorOperatorV1,
+)
+
+operator = TreeBlockPosteriorOperatorV1(result.covariance)
+posterior_times_vector = operator.apply(vector)
+query_covariance = operator.linear_covariance(query_matrix)
+cross_covariance = operator.cross_covariance(left_query, right_query)
+selected_covariance = operator.marginal_covariance([0, 7, 18])
+```
+
+For `K` requested vectors or query rows, these operations allocate storage
+linear in the complete coefficient dimension times `K`; they never allocate an
+array with both dimensions equal to the complete coefficient dimension. The
+operator validates the stored factorization and does not change the existing
+factor, result, admission, or update identities.
+
+A complete covariance remains an explicit compatibility operation:
 
 ```python
 legacy = result.to_legacy(maximum_covariance_bytes=512 * 1024 * 1024)
