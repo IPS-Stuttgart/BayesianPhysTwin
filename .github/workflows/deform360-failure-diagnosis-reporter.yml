@@ -1,0 +1,193 @@
+name: Report Deform360 failure diagnosis
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-failure-diagnosis-reporter.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: deform360-failure-diagnosis-reporter-main
+  cancel-in-progress: false
+
+env:
+  SOURCE_DIAGNOSIS_REVISION: 9ea5776a30d31f91fc5a0df42888a8893a70f8fb
+  SOURCE_PRODUCTION_RESULT_ID: 9f2f9c3d4bf9d4ec3b6fa1e917c4c3e906dbc69a0f9c57b9b546e73e41f6b4c2
+  SOURCE_WORKFLOW_FILE: deform360-visual-production-failure-diagnosis.yml
+  SOURCE_ARTIFACT_PREFIX: deform360-visual-production-failure-diagnosis-
+  TARGET_ISSUE: "148"
+
+jobs:
+  report:
+    name: Verify and publish exact diagnosis
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve the exact trusted-main diagnosis
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          runs="$(${GH_TOKEN:+gh} api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/${SOURCE_WORKFLOW_FILE}/runs?event=push&branch=main&per_page=50")"
+          match_count="$(
+            jq --arg sha "${SOURCE_DIAGNOSIS_REVISION}" \
+              '[.workflow_runs[] | select(.head_sha == $sha and .event == "push")] | length' \
+              <<<"${runs}"
+          )"
+          test "${match_count}" = "1"
+          run_id="$(
+            jq -r --arg sha "${SOURCE_DIAGNOSIS_REVISION}" \
+              '.workflow_runs[] | select(.head_sha == $sha and .event == "push") | .id' \
+              <<<"${runs}"
+          )"
+          run_url="$(
+            jq -r --arg sha "${SOURCE_DIAGNOSIS_REVISION}" \
+              '.workflow_runs[] | select(.head_sha == $sha and .event == "push") | .html_url' \
+              <<<"${runs}"
+          )"
+          run_status="$(
+            jq -r --arg sha "${SOURCE_DIAGNOSIS_REVISION}" \
+              '.workflow_runs[] | select(.head_sha == $sha and .event == "push") | .status' \
+              <<<"${runs}"
+          )"
+          run_conclusion="$(
+            jq -r --arg sha "${SOURCE_DIAGNOSIS_REVISION}" \
+              '.workflow_runs[] | select(.head_sha == $sha and .event == "push") | .conclusion' \
+              <<<"${runs}"
+          )"
+          test "${run_status}" = "completed"
+          test "${run_conclusion}" = "success"
+
+          artifacts="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100")"
+          artifact_count="$(
+            jq --arg prefix "${SOURCE_ARTIFACT_PREFIX}" \
+              '[.artifacts[] | select((.name | startswith($prefix)) and (.expired == false))] | length' \
+              <<<"${artifacts}"
+          )"
+          test "${artifact_count}" = "1"
+          artifact_id="$(
+            jq -r --arg prefix "${SOURCE_ARTIFACT_PREFIX}" \
+              '.artifacts[] | select((.name | startswith($prefix)) and (.expired == false)) | .id' \
+              <<<"${artifacts}"
+          )"
+          artifact_name="$(
+            jq -r --arg prefix "${SOURCE_ARTIFACT_PREFIX}" \
+              '.artifacts[] | select((.name | startswith($prefix)) and (.expired == false)) | .name' \
+              <<<"${artifacts}"
+          )"
+          artifact_digest="$(
+            jq -r --arg prefix "${SOURCE_ARTIFACT_PREFIX}" \
+              '.artifacts[] | select((.name | startswith($prefix)) and (.expired == false)) | .digest' \
+              <<<"${artifacts}"
+          )"
+          {
+            echo "run_id=${run_id}"
+            echo "run_url=${run_url}"
+            echo "artifact_id=${artifact_id}"
+            echo "artifact_name=${artifact_name}"
+            echo "artifact_digest=${artifact_digest}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download and validate the compact diagnosis artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.resolve.outputs.run_id }}
+          ARTIFACT_NAME: ${{ steps.resolve.outputs.artifact_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf diagnosis
+          mkdir diagnosis
+          gh run download "${RUN_ID}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name "${ARTIFACT_NAME}" \
+            --dir diagnosis
+          test -z "$(find diagnosis -type l -print -quit)"
+          test -z "$(find diagnosis -mindepth 2 -print -quit)"
+          expected=$'SHA256SUMS\nenvironment.txt\nfailure-diagnosis.json\nrepresentative-stderr.bin'
+          actual="$(find diagnosis -maxdepth 1 -type f -printf '%f\n' | sort)"
+          test "${actual}" = "${expected}"
+          (
+            cd diagnosis
+            sha256sum -c SHA256SUMS
+          )
+          jq -e --arg result "${SOURCE_PRODUCTION_RESULT_ID}" '
+            .source_production_result_id == $result and
+            .receipt_count == 324 and
+            .successful_job_count == 0 and
+            .technical_failure_count == 324 and
+            .common_stderr_receipt_count == 324 and
+            .empty_stdout_receipt_count == 324 and
+            .information_boundary.official_raw_payload_opened == false and
+            .information_boundary.adaptive_confirmation_payloads_opened == false and
+            .information_boundary.confirmation_payloads_opened == false and
+            .information_boundary.reserved_evaluation_frames_opened == false and
+            .information_boundary.target_outcomes_used == false and
+            .information_boundary.replacement_allowed == false and
+            (.representative.stderr_text | type == "string" and length > 0)
+          ' diagnosis/failure-diagnosis.json >/dev/null
+
+      - name: Post exact diagnosis to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.resolve.outputs.run_id }}
+          RUN_URL: ${{ steps.resolve.outputs.run_url }}
+          ARTIFACT_ID: ${{ steps.resolve.outputs.artifact_id }}
+          ARTIFACT_NAME: ${{ steps.resolve.outputs.artifact_name }}
+          ARTIFACT_DIGEST: ${{ steps.resolve.outputs.artifact_digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          diagnosis_id="$(jq -r '.diagnosis_id' diagnosis/failure-diagnosis.json)"
+          stage="$(jq -r '.common_stage' diagnosis/failure-diagnosis.json)"
+          stderr_sha="$(jq -r '.common_stderr_sha256' diagnosis/failure-diagnosis.json)"
+          stderr_bytes="$(jq -r '.common_stderr_byte_count' diagnosis/failure-diagnosis.json)"
+          object_id="$(jq -r '.representative.object_id' diagnosis/failure-diagnosis.json)"
+          camera_id="$(jq -r '.representative.camera_id' diagnosis/failure-diagnosis.json)"
+          stderr_text="$(jq -r '.representative.stderr_text' diagnosis/failure-diagnosis.json)"
+          stderr_text="${stderr_text//\`\`\`/\` \` \`}"
+          {
+            printf '## Deform360 visual-production shared-failure diagnosis\n\n'
+            printf -- '- diagnosis workflow run: [%s](%s)\n' "${RUN_ID}" "${RUN_URL}"
+            printf -- '- diagnosis revision: `%s`\n' "${SOURCE_DIAGNOSIS_REVISION}"
+            printf -- '- diagnosis artifact: `%s` (`%s`)\n' "${ARTIFACT_NAME}" "${ARTIFACT_ID}"
+            printf -- '- artifact digest: `%s`\n' "${ARTIFACT_DIGEST}"
+            printf -- '- diagnosis ID: `%s`\n' "${diagnosis_id}"
+            printf -- '- source production result: `%s`\n' "${SOURCE_PRODUCTION_RESULT_ID}"
+            printf -- '- admitted jobs: `324`\n'
+            printf -- '- successful jobs: `0`\n'
+            printf -- '- retained technical failures: `324`\n'
+            printf -- '- common stage: `%s`\n' "${stage}"
+            printf -- '- common stderr SHA-256: `%s`\n' "${stderr_sha}"
+            printf -- '- common stderr bytes: `%s`\n' "${stderr_bytes}"
+            printf -- '- representative object/camera: `%s` / `%s`\n\n' \
+              "${object_id}" "${camera_id}"
+            printf 'All 324 receipts have the same stderr digest and empty stdout. '
+            printf 'The bounded, digest-verified representative error is:\n\n'
+            printf '```text\n%s\n```\n\n' "${stderr_text}"
+            printf 'Information boundary retained: official raw payloads unopened, '
+            printf 'adaptive-confirmation payloads unopened, confirmation payloads '
+            printf 'unopened, reserved evaluation frames unopened, target outcomes '
+            printf 'unused, and replacement forbidden. The failed calibration-only '
+            printf 'production had opened only the admitted retained camera prefixes '
+            printf 'and MotionCrafter prediction payloads. This diagnosis does not '
+            printf 'authorize target access or establish provider competence.\n'
+          } > diagnosis-comment.md
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${TARGET_ISSUE}/comments" \
+            -F body=@diagnosis-comment.md
+
+# Reviewed diagnosis reporter request: 2026-08-09-v4-marker

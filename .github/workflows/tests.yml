@@ -75,42 +75,39 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: Install NumPy-only package and coverage tools
+      - name: Install coverage test dependencies
         run: |
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,graph]"
           python -m pip install "coverage==7.13.3"
       - name: Run stable-core coverage suite
+        shell: bash
         run: |
-          python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
-            tests/test_causal4d_provider_v1.py \
-            tests/test_gauge_aware_belief.py \
-            tests/test_observation_belief.py \
-            tests/test_observation_belief_gauge_adapter.py \
-            tests/test_prob4d_causal_lineage.py \
-            tests/test_prob4d_joint_contract_fixture.py \
-            tests/test_cli_main.py \
-            tests/test_run_manifest.py \
-            tests/test_run_manifest_v2.py \
-            tests/test_run_manifest_cli.py \
-            tests/test_phystwin_profile.py \
-            tests/test_information_mass_invariants.py \
-            tests/test_quality_invariants.py
+          python tools/quality/test_suite_manifest.py list stable-core-coverage \
+            > "$RUNNER_TEMP/stable-core-tests.txt"
+          mapfile -t stable_tests < "$RUNNER_TEMP/stable-core-tests.txt"
+          test "${#stable_tests[@]}" -gt 0
+          python -m coverage run --branch --source=bayesian_phystwin \
+            -m pytest -q "${stable_tests[@]}"
 
           python -m coverage json -o package-coverage.json
 
           stable_files=(
             src/bayesian_phystwin/_gauge_aware_contracts.py
             src/bayesian_phystwin/_gauge_aware_solver.py
+            src/bayesian_phystwin/calibration.py
             src/bayesian_phystwin/causal4d_provider_v1.py
             src/bayesian_phystwin/cli/main.py
             src/bayesian_phystwin/cli/run_manifest.py
             src/bayesian_phystwin/gauge_aware_belief.py
+            src/bayesian_phystwin/deform360_contact_anchor.py
             src/bayesian_phystwin/observation_belief.py
             src/bayesian_phystwin/observation_belief_gauge_adapter.py
             src/bayesian_phystwin/phystwin_profile.py
             src/bayesian_phystwin/prob4d_causal_lineage.py
             src/bayesian_phystwin/prob4d_observation_contract.py
+            src/bayesian_phystwin/pseudo_measurements.py
             src/bayesian_phystwin/repository_provenance.py
+            src/bayesian_phystwin/robust_likelihood.py
             src/bayesian_phystwin/run_manifest.py
             src/bayesian_phystwin/run_manifest_v2.py
           )
@@ -173,21 +170,13 @@ jobs:
               raise SystemExit(f"optional dependencies leaked into core job: {present}")
           PY
       - name: Run core contract suite
+        shell: bash
         run: |
-          python -m pytest -q \
-            tests/test_causal4d_provider_v1.py \
-            tests/test_gauge_aware_belief.py \
-            tests/test_observation_belief.py \
-            tests/test_observation_belief_gauge_adapter.py \
-            tests/test_prob4d_causal_lineage.py \
-            tests/test_prob4d_joint_contract_fixture.py \
-            tests/test_cli_main.py \
-            tests/test_run_manifest.py \
-            tests/test_run_manifest_v2.py \
-            tests/test_run_manifest_cli.py \
-            tests/test_phystwin_profile.py \
-            tests/test_information_mass_invariants.py \
-            tests/test_quality_invariants.py
+          python tools/quality/test_suite_manifest.py list core-contracts \
+            > "$RUNNER_TEMP/core-contract-tests.txt"
+          mapfile -t core_tests < "$RUNNER_TEMP/core-contract-tests.txt"
+          test "${#core_tests[@]}" -gt 0
+          python -m pytest -q "${core_tests[@]}"
 
   full-suite:
     name: Full suite / Python ${{ matrix.python-version }}
@@ -234,18 +223,24 @@ jobs:
       - name: Install package
         run: python -m pip install -e ".[dev,graph,vision]"
       - name: Validate provider and observation boundaries
+        shell: bash
         run: |
-          python -m pytest -q \
-            tests/test_causal4d_provider_v1.py \
-            tests/test_gauge_aware_belief.py \
-            tests/test_observation_belief_gauge_adapter.py \
-            tests/test_observation_belief.py
+          python tools/quality/test_suite_manifest.py list provider-contract \
+            > "$RUNNER_TEMP/provider-contract-tests.txt"
+          mapfile -t provider_tests < "$RUNNER_TEMP/provider-contract-tests.txt"
+          test "${#provider_tests[@]}" -gt 0
+          python -m pytest -q "${provider_tests[@]}"
           bpt provider manifest \
             --provider-revision "${GITHUB_SHA}" \
             --output provider-manifest.json
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
+
+          from bayesian_phystwin.causal4d_graph_provider_v1 import (
+              causal4d_graph_provider_manifest,
+          )
 
           payload = json.loads(Path("provider-manifest.json").read_text())
           required = {
@@ -257,11 +252,31 @@ jobs:
           missing = required - set(payload["capabilities"])
           if missing:
               raise SystemExit(f"missing provider capabilities: {sorted(missing)}")
+
+          graph_payload = causal4d_graph_provider_manifest(
+              provider_revision=os.environ["GITHUB_SHA"]
+          )
+          graph_required = {"controller_grouping", "phystwin_spring_graph"}
+          graph_missing = graph_required - set(graph_payload["capabilities"])
+          if graph_missing:
+              raise SystemExit(
+                  f"missing graph-provider capabilities: {sorted(graph_missing)}"
+              )
+          if graph_payload["artifact_schema_versions"] != {
+              "PhysTwinSpringGraph": 1
+          }:
+              raise SystemExit("unexpected graph-provider artifact schema")
+          Path("graph-provider-manifest.json").write_text(
+              json.dumps(graph_payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
           PY
       - uses: actions/upload-artifact@v7
         with:
-          name: provider-manifest
-          path: provider-manifest.json
+          name: provider-manifests
+          path: |
+            provider-manifest.json
+            graph-provider-manifest.json
           retention-days: 14
 
   build:
@@ -330,5 +345,7 @@ jobs:
           "$bin/bpt" provider manifest --help
           "$bin/bpt" observation validate --help
           "$bin/bpt" run manifest --help
-          "$bin/bpt-provider-manifest" --help
-          "$bin/bpt-run-manifest" --help
+          "$bin/bpt" experiment list >/dev/null
+          "$bin/bpt" experiment describe phystwin-refit
+          "$bin/bpt" experiment describe seal-deform360-calibration >/dev/null
+          "$bin/bpt" experiment run seal-deform360-calibration --help >/dev/null

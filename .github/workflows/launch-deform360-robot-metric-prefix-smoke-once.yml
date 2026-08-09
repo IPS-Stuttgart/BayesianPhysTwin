@@ -1,0 +1,26 @@
+name: Launch reviewed Deform360 public robot metric-prefix smoke once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-robot-metric-prefix-smoke-once.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: launch-deform360-robot-metric-prefix-smoke-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute frozen public calibration-source smoke
+    uses: ./.github/workflows/deform360-robot-metric-prefix-smoke.yml
+    with:
+      execute_authorized: true
+    secrets: inherit
+
+# Reviewed public-source repair request: 2026-08-09-first-admitted-camera-v2
+# Run 31293249428 stopped at shared-pip import before public measurement access.

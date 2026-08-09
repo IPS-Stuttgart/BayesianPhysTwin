@@ -1,0 +1,271 @@
+{
+  "cache_preflight": {
+    "artifact_archive_sha256": "e12cb4ed5f39ac4f35e12e60a11abe402391e2e9bcd8ad73595816fccb529e01",
+    "artifact_id": 8891291233,
+    "content_inventory_sha256": "0089c45afb323e6d2e4312dd71d6e5a2cb359c056f007b5aeb09da33e03b7974",
+    "excluded_candidate_objects": [
+      "010-orange-cloth",
+      "012-hat-cloth",
+      "013-glove-cloth",
+      "014-glove-vinyl-cloth",
+      "017-chessboard-cloth",
+      "018-trashbag-cloth",
+      "019-trashbag-plastic-cloth",
+      "020-cutting-mat-cloth",
+      "023-cleaning-cloth",
+      "024-glass-cleaner-cloth",
+      "045-cat",
+      "047-rectangle-sponge",
+      "048-butter-sponge",
+      "050-boxing",
+      "053-squeezer",
+      "063-flower",
+      "084-apron-cloth",
+      "087-plastic-bag-blue-cloth",
+      "093-squeezable-fruit",
+      "109-pouch-cloth",
+      "126-jellyfish",
+      "137-kitchen-napkin-cloth",
+      "181-belt",
+      "182-plastic-sheets-cloth",
+      "185-cheese",
+      "191-sloth-green",
+      "195-hello-kitty-brown",
+      "196-hello-kitty-white"
+    ],
+    "finding": "The mounted cache contains no untouched official-release trajectory cohort; all candidate-name paths are prior-generated experiment outputs.",
+    "inventory_sha256": "71c9d25ac2325c9737feef622022d0c7c8a9854ba8d0b5c628913a11563a145c",
+    "workflow_run_id": 30906578152
+  },
+  "calibration": {
+    "frozen_quantities": [
+      "contact feature reduction and correlation groups",
+      "contact-to-state linearization and anchor covariance",
+      "anchor bias basis and prior",
+      "visual reliability and complete joint gauge semantics",
+      "normalized evidence semantics",
+      "physical response cap and nonlinear closure threshold",
+      "baseline-relative regret guard",
+      "group-balanced conformal interval multiplier"
+    ],
+    "minimum_supported_objects": 8,
+    "minimum_supported_objects_per_stratum": 4,
+    "technical_failures_retained_without_replacement": true,
+    "uses_confirmation_objects": false
+  },
+  "causal_contract": {
+    "cutoff_convention": "exclusive",
+    "future_geometry_before_prediction_seal": "forbidden",
+    "future_held_out_views_before_prediction_seal": "forbidden",
+    "tactile_or_proprioceptive_samples_at_or_after_cutoff": "forbidden",
+    "visual_source_frames_at_or_after_cutoff": "forbidden"
+  },
+  "claim_boundary": "Fresh-object, object-balanced evaluation of an explicit-gauge Bayesian physical-twin update with an independent tactile/proprioceptive contact anchor. A positive result may support transfer beyond the released PhysTwin cohort, but not official Deform360 Table-4 parity, calibrated raw covariance, state-of-the-art reconstruction, universal safety, or material-parameter identification.",
+  "contact_anchor_contract": {
+    "admitted_anchor_units": "displacement-equivalent-m",
+    "camera_gauge_in_anchor": false,
+    "correlation_grouping": "at least one declared group per sensor and contact episode; neighboring taxels or repeated samples may not be treated as independent",
+    "optional_bias": "sensor-family baseline/drift nuisance with an explicit prior",
+    "raw_taxels_as_independent_cartesian_rows": false,
+    "required_mapping": "frozen contact/proprioception linearization fitted on calibration objects only",
+    "schema": "bayesian-phystwin.deform360-contact-anchor",
+    "schema_version": 1,
+    "source_tactile_units": "unitless-peak-relative"
+  },
+  "dataset": {
+    "object_metadata_filename": "metadata.json",
+    "raw_prefix": "raw",
+    "repo_id": "brownu/deform360",
+    "repo_type": "dataset",
+    "requested_revision": "main",
+    "resolved_revision": "must-be-recorded-by-stage-0-selection"
+  },
+  "decision_rule": {
+    "positive_requires": [
+      "primary guarded visuotactile mean loss improves at least 10 percent over physical baseline",
+      "primary guarded visuotactile mean loss improves at least 5 percent over last residual",
+      "paired object-bootstrap 95 percent upper bound is below zero versus both comparators",
+      "harmful accepted-object rate is at most 5 percent",
+      "no registered stratum mean regresses by more than 2 percent",
+      "every rejection is byte-exact physical fallback",
+      "tactile/proprioceptive anchor improves point loss or harmful-update control over the otherwise identical visual-only arm",
+      "coverage and full interval width are reported without claiming raw Gaussian calibration"
+    ],
+    "target_retuning_prohibited": true,
+    "valid_negative_result": true
+  },
+  "endpoints": {
+    "aggregation": "equal physical-object mass with paired object bootstrap",
+    "bootstrap_samples": 10000,
+    "bootstrap_seed": 20260805,
+    "primary": [
+      {
+        "annotation_independence": "must not reuse tactile refinement as its defining target",
+        "direction": "lower",
+        "id": "future-held-out-view-depth-or-geometry-loss"
+      },
+      {
+        "direction": "lower",
+        "id": "harmful-accepted-object-rate"
+      }
+    ],
+    "secondary": [
+      "future-released-particle-or-control-point-error",
+      "symmetric-chamfer",
+      "fallback-rate",
+      "90-percent-coverage",
+      "full-interval-width",
+      "tail-regression",
+      "nonlinear-closure-error"
+    ],
+    "statistical_unit": "physical object"
+  },
+  "implementation_base_revision": "60551a12de96da7dbaeefe4c6c83cd5c923427e6",
+  "information_boundary": {
+    "camera_media_opened": false,
+    "confirmation_payload_access_before_serialized_calibration": "forbidden",
+    "geometry_annotations_opened": false,
+    "object_directory_names_allowed": true,
+    "object_metadata_json_allowed": true,
+    "post_confirmation_retuning": "forbidden",
+    "robot_arrays_opened": false,
+    "selected_raw_payload_access_before_committed_selection": "forbidden",
+    "stage_0": "official object-directory names and selected object metadata.json only",
+    "tactile_arrays_opened": false,
+    "target_outcomes_opened": false
+  },
+  "locked_at": "2026-08-05",
+  "methods": [
+    {
+      "fallback": null,
+      "id": "physical-baseline",
+      "information": [
+        "physical-prior"
+      ],
+      "role": "baseline"
+    },
+    {
+      "fallback": "physical-baseline",
+      "id": "last-residual",
+      "information": [
+        "physical-prior",
+        "causal-prefix-last-readout-residual"
+      ],
+      "role": "strong-comparator"
+    },
+    {
+      "fallback": "physical-baseline",
+      "id": "visual-explicit-gauge-persistent",
+      "information": [
+        "physical-prior",
+        "causal-prefix-visual-factors",
+        "persistent-identities",
+        "complete-joint-gauge-prior"
+      ],
+      "role": "mechanism-ablation"
+    },
+    {
+      "fallback": "physical-baseline",
+      "id": "contact-anchor-only",
+      "information": [
+        "physical-prior",
+        "causal-prefix-tactile-proprioceptive-anchor"
+      ],
+      "role": "modality-ablation"
+    },
+    {
+      "fallback": "physical-baseline",
+      "id": "visuotactile-explicit-gauge-guarded",
+      "information": [
+        "physical-prior",
+        "causal-prefix-visual-factors",
+        "persistent-identities",
+        "complete-joint-gauge-prior",
+        "independent-tactile-proprioceptive-anchor",
+        "calibration-only-regret-guard"
+      ],
+      "role": "primary"
+    },
+    {
+      "fallback": "physical-baseline",
+      "id": "visuotactile-explicit-gauge-unguarded",
+      "information": [
+        "physical-prior",
+        "causal-prefix-visual-factors",
+        "persistent-identities",
+        "complete-joint-gauge-prior",
+        "independent-tactile-proprioceptive-anchor"
+      ],
+      "role": "harm-prevention-ablation"
+    },
+    {
+      "fallback": "physical-baseline",
+      "id": "visuotactile-biased-anchor-control",
+      "information": [
+        "physical-prior",
+        "causal-prefix-visual-factors",
+        "persistent-identities",
+        "complete-joint-gauge-prior",
+        "tactile-proprioceptive-anchor-with-shared-bias-nuisance"
+      ],
+      "role": "identifiability-control"
+    }
+  ],
+  "official_processing": {
+    "future_processing_revision_change_requires_new_protocol": true,
+    "repository": "lhy0807/deform360",
+    "required_stages": [
+      "download-selected-object",
+      "undistort-selected-episode-and-frozen-camera-subset",
+      "process-tactile-selected-episode",
+      "robot",
+      "gripper-masks",
+      "reconstruct",
+      "depth",
+      "tracking",
+      "pcd",
+      "control-points"
+    ],
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  },
+  "prior_protocols": {
+    "v1": {
+      "expected_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+      "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+    },
+    "v2": {
+      "expected_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+      "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+    }
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "schema": "bayesian-phystwin/deform360-official-hub-visuotactile-protocol",
+  "schema_version": 1,
+  "selection": {
+    "calibration_objects_per_stratum": 5,
+    "confirmation_objects_per_stratum": 6,
+    "episode_rank": "SHA256(seed:episode:role:object_id:episode_id)",
+    "episodes_per_object": 1,
+    "filament_claim": false,
+    "filament_exclusion_reason": "The frozen historical filament vocabulary has no untouched object after prior cohorts and the cache-preflight exclusion are applied.",
+    "object_rank": "SHA256(seed:object:stratum:object_id)",
+    "replacement_allowed_after_metadata_selection": false,
+    "replacement_allowed_after_payload_access": false,
+    "seed": "deform360-official-hub-visuotactile-v1",
+    "strata": [
+      "sheet",
+      "volumetric"
+    ]
+  },
+  "stage_order": [
+    "merge protocol, contact-anchor contract, tests, and official-Hub metadata workflow",
+    "resolve and record exact official dataset revision",
+    "select objects from names only and episodes from metadata.json only",
+    "commit exact selection and content_selection_sha256",
+    "download and process calibration objects only",
+    "serialize and hash every calibrated method, guard, and interval choice",
+    "open confirmation raw payloads exactly once",
+    "publish object-level positive or negative evidence without replacement or rescue tuning"
+  ],
+  "status": "locked-before-official-raw-payload-access"
+}

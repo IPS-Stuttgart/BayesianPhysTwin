@@ -6,7 +6,6 @@ import re
 from importlib.metadata import metadata, version
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DISTRIBUTION_NAME = "bayesian-phystwin"
 
@@ -38,8 +37,28 @@ def test_citation_matches_installed_distribution() -> None:
     assert _cff_scalar("version") == version(DISTRIBUTION_NAME)
     assert _cff_scalar("license") == "MIT"
     assert _cff_scalar("repository-code") == (
-        "https://github.com/FlorianPfaff/Bayesian-PhysTwin"
+        "https://github.com/IPS-Stuttgart/BayesianPhysTwin"
     )
+
+
+def test_distribution_links_use_canonical_organization_repository() -> None:
+    package_metadata = metadata(DISTRIBUTION_NAME)
+    project_urls = {}
+    for raw_value in package_metadata.get_all("Project-URL") or ():
+        label, separator, url = raw_value.partition(",")
+        assert separator
+        project_urls[label.strip()] = url.strip()
+    canonical = "https://github.com/IPS-Stuttgart/BayesianPhysTwin"
+    assert project_urls["Repository"] == canonical
+    assert project_urls["Documentation"] == f"{canonical}/tree/main/docs"
+    assert project_urls["Issues"] == f"{canonical}/issues"
+    assert _cff_scalar("url") == canonical
+    assert _cff_scalar("repository-code") == canonical
+    for path in (ROOT / "README.md", ROOT / "THIRD_PARTY_NOTICES.md"):
+        text = path.read_text(encoding="utf-8")
+        assert "github.com/FlorianPfaff/Bayesian-PhysTwin" not in text
+        assert "github.com/FlorianPfaff/Prob4D" not in text
+        assert "github.com/FlorianPfaff/Causal4D" not in text
 
 
 def test_distribution_declares_spdx_license_expression() -> None:
@@ -56,9 +75,17 @@ def test_third_party_notice_records_pinned_restrictions() -> None:
         "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
         "Creative Commons Attribution-NonCommercial 4.0",
         "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257",
+        "9cb4e9679f5f34e249945544052464ef46324bc2",
+        "fc7b18d5657184607bf4501b02d64ada7540b4e3",
+        "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+        "9e43909513c6714f1bc78bcb44d96e733cd242aa",
+        "CreativeML Open RAIL-M",
+        "stable-video-diffusion-community",
         "academic purposes",
         "commercial or production use",
         "European Union",
+        "never included in this repository",
+        "never redistributed by Bayesian PhysTwin",
     )
     for term in required:
         assert term in notice

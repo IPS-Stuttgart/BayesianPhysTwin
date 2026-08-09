@@ -42,6 +42,37 @@ for Causal4D.
 The normative provider details are maintained in
 [`docs/causal4d_provider_v1.md`](docs/causal4d_provider_v1.md).
 
+The fixed endpoint surface
+`bayesian_phystwin.causal4d_belief_provider_v1` remains the compatibility
+boundary for frozen discrepancy-endpoint consumers. The additive
+`causal4d_belief_provider_v2` exposes evidence-weighted endpoint model averaging
+and horizon-dependent model-based covariance. Adopting provider v2 is an
+explicit consumer decision; it does not change provider v1 and does not imply
+that the raw covariance is prospectively calibrated.
+
+## Command-line compatibility
+
+The current package installs one executable, `bpt`. Direct grouped routes are
+the supported operational interface. Research commands remain available only
+through their lifecycle catalogs:
+
+```text
+bpt experiment ...
+bpt diagnostic ...
+bpt archive ...
+```
+
+Historical `bpt-*` executable names are retained as registry metadata, not as
+installed aliases. Use `bpt commands migrate LEGACY_ALIAS` to obtain the current
+grouped invocation. Frozen releases and tags preserve the executable surface
+with which their artifacts were created, and historical manifest command
+strings remain immutable provenance.
+
+Adding a command must not add another `[project.scripts]` entry. A new stable
+route requires installed wheel and source-distribution coverage. Reclassifying
+an experiment, diagnostic, or archived command requires an explicit owner and
+documentation update.
+
 ## Public and experimental interfaces
 
 Versioned artifact schemas, the Causal4D provider module, and commands exercised
@@ -55,6 +86,13 @@ a supported interface is deprecated for at least one compatibility line before
 removal. Immediate fail-closed changes remain permitted when required to correct
 causal leakage, provenance ambiguity, unsafe artifact loading, or invalid
 scientific claims.
+
+The exact package-root export surface for the `0.4.x` line is retained in
+[`api/root-public-api-v0.4.json`](api/root-public-api-v0.4.json) and checked by
+[`tools/quality/check_public_api.py`](tools/quality/check_public_api.py). This is
+a drift ratchet for historical convenience imports, not a broader support
+promise. New interfaces should normally live in an explicit module or namespace;
+see [`docs/public_api_policy.md`](docs/public_api_policy.md).
 
 ## Reporting problems
 

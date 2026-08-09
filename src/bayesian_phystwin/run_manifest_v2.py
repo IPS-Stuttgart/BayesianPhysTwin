@@ -81,9 +81,9 @@ def _canonical_json(value: Mapping[str, Any]) -> bytes:
 
 def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
     try:
-        return json.loads(
-            json.dumps(dict(value), sort_keys=True, allow_nan=False)
-        )
+        payload = json.dumps(dict(value), sort_keys=True, allow_nan=False)
+        result = json.loads(payload)
+        return cast(dict[str, Any], result)
     except (TypeError, ValueError) as error:
         raise ValueError(f"{name} must contain finite JSON data") from error
 
@@ -166,7 +166,9 @@ class RunManifestV2:
         repository = str(self.repository).strip()
         parts = repository.split("/")
         if not self.run_id or len(parts) != 2 or any(not part for part in parts):
-            raise ValueError("run ID must be nonempty and repository must use owner/name")
+            raise ValueError(
+                "run ID must be nonempty and repository must use owner/name"
+            )
         if not isinstance(self.dirty, bool):
             raise ValueError("dirty must be boolean")
         if not self.command or any(not str(token) for token in self.command):
@@ -204,8 +206,7 @@ class RunManifestV2:
             raise ValueError("claim_ids must be unique nonempty identifiers")
 
         versions = {
-            str(name): str(value)
-            for name, value in self.package_versions.items()
+            str(name): str(value) for name, value in self.package_versions.items()
         }
         if any(not name or not value for name, value in versions.items()):
             raise ValueError("package version entries must be nonempty")
@@ -375,9 +376,7 @@ def load_run_manifest_v2(path: str | Path) -> RunManifestV2:
                 name="related_repositories",
             )
         ),
-        command=tuple(
-            map(str, _require_sequence(payload["command"], name="command"))
-        ),
+        command=tuple(map(str, _require_sequence(payload["command"], name="command"))),
         classification=cast(RunClassification, classification),
         statistical_unit=str(payload["statistical_unit"]),
         information_boundary=dict(
@@ -389,9 +388,7 @@ def load_run_manifest_v2(path: str | Path) -> RunManifestV2:
         configuration=dict(
             _require_mapping(payload["configuration"], name="configuration")
         ),
-        seeds=tuple(
-            map(int, _require_sequence(payload["seeds"], name="seeds"))
-        ),
+        seeds=tuple(map(int, _require_sequence(payload["seeds"], name="seeds"))),
         inputs=tuple(
             _artifact_from_dict(_require_mapping(value, name="input artifact"))
             for value in _require_sequence(payload["inputs"], name="inputs")

@@ -139,8 +139,7 @@ def test_paper_evidence_profile_matches_manifest_artifacts(tmp_path: Path) -> No
 
     assert bindings.prob4d_stream_contract.version == 2
     assert (
-        manifest.information_boundary[PAPER_EVIDENCE_PROFILE_KEY]
-        == bindings.as_dict()
+        manifest.information_boundary[PAPER_EVIDENCE_PROFILE_KEY] == bindings.as_dict()
     )
 
 
@@ -209,9 +208,7 @@ def test_profile_requires_claim_and_freeze_identifiers(tmp_path: Path) -> None:
         validate_paper_evidence_manifest(replace(manifest, claim_ids=()))
 
     with pytest.raises(ValueError, match="method_freeze_id"):
-        validate_paper_evidence_manifest(
-            replace(manifest, method_freeze_id="")
-        )
+        validate_paper_evidence_manifest(replace(manifest, method_freeze_id=""))
 
 
 def test_profile_rejects_dirty_participating_repository(tmp_path: Path) -> None:

@@ -58,10 +58,11 @@ Prob4D or another 4-D perception feeder
                                            Causal4D provider artifacts
 ```
 
-[Prob4D](https://github.com/FlorianPfaff/Prob4D) can export the portable
+[Prob4D](https://github.com/IPS-Stuttgart/Prob4D) can export the portable
 `ObservationBeliefV1` contract. Bayesian-PhysTwin owns the reliability-aware
-belief update and PhysTwin provider boundary. [Causal4D](https://github.com/FlorianPfaff/Causal4D)
-separately owns abduction, intervention, and counterfactual prediction.
+belief update and PhysTwin provider boundary.
+[Causal4D](https://github.com/IPS-Stuttgart/Causal4D) separately owns abduction,
+intervention, and counterfactual prediction.
 
 ## Installation
 
@@ -77,17 +78,53 @@ the pinned PyRecEst integration.
 
 ## Stable command surface
 
-The grouped `bpt` interface is the only installed executable. Stable operations
-use the routes below; non-stable research commands are discovered with
-`bpt experiment list` and invoked with `bpt experiment run ID`.
+The package installs exactly one executable: `bpt`.
 
-| Command | Purpose |
-| --- | --- |
-| `bpt provider manifest` | Print the versioned Causal4D provider capability manifest. |
-| `bpt observation validate` | Validate or summarize an `ObservationBeliefV1` artifact. |
-| `bpt residual replay` | Replay exported residuals through the robust likelihood. |
-| `bpt benchmark synthetic` | Run the controlled synthetic benchmark. |
-| `bpt run manifest` | Create or validate content-addressed run provenance. |
+<!-- bpt-stable-commands:begin -->
+| Command | Purpose | Documentation |
+| --- | --- | --- |
+| `bpt provider manifest` | Print the Causal4D provider capability manifest. | [Guide](docs/causal4d_provider_v1.md) |
+| `bpt observation validate` | Validate or summarize an ObservationBeliefV1 artifact. | [Guide](docs/observation_belief_contract.md) |
+| `bpt residual replay` | Replay exported residuals through the robust likelihood. | [Guide](docs/residual_replay.md) |
+| `bpt benchmark synthetic` | Run the controlled synthetic benchmark. | [Guide](docs/synthetic_benchmark.md) |
+| `bpt evidence summarize` | Summarize matched guarded prospective evidence. | [Guide](docs/decisive_evidence_protocol.md) |
+| `bpt evidence bundle` | Build or validate a content-addressed claim bundle. | [Guide](docs/claim_bundle_v1.md) |
+| `bpt run manifest` | Create or validate a content-addressed run manifest. | [Guide](docs/reproducible_runs.md) |
+<!-- bpt-stable-commands:end -->
+
+The dispatcher imports only the selected command module. Rendering help,
+listing commands, and inspecting metadata therefore do not require optional
+graph, vision, data, or experiment-only dependencies.
+
+## Research commands
+
+Additional research functionality is organized under grouped `bpt` routes.
+Use the built-in registries to discover current experiments, diagnostics, and
+archived analysis protocols together with their lifecycle status and optional
+dependency requirements.
+
+```bash
+# Current research protocols
+bpt experiment list
+bpt experiment describe confirm-phystwin-bayesian-anchor
+bpt experiment run confirm-phystwin-bayesian-anchor --help
+
+# Audits and analyses
+bpt diagnostic list
+bpt diagnostic describe audit-phystwin-calibration
+
+# Archived analysis protocols and negative results
+bpt archive list
+bpt archive describe evaluate-phystwin-state-injection
+
+# Complete machine-readable registry
+bpt commands list --json
+```
+
+See [command-line interface](docs/command_line.md) for lifecycle definitions and
+the contribution procedure.
+
+## Common stable workflows
 
 Replay the bundled residual example:
 
@@ -97,32 +134,25 @@ bpt residual replay examples/residuals_demo.csv \
   --scored-csv outputs/residuals_demo/scored.csv
 ```
 
-See [residual replay](docs/residual_replay.md) for the export schema,
-statistical model, and output metrics.
+Summarize matched guarded evidence with common fallback treatment:
 
-## Reproduce the controlled benchmark
+```bash
+bpt evidence summarize \
+  runs/prospective/evidence.json \
+  runs/prospective/summary.json \
+  --reference-method last_residual
+```
 
-The following command runs the documented fixed-graph benchmark used for
-parameter recovery, calibration, corruption, and action-informativeness
-controls:
+Run the controlled fixed-graph benchmark:
 
 ```bash
 bpt benchmark synthetic \
   --seeds 1000:1020 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
-  --bias-process-variance 1e-5 \
-  --bias-initial-variance 1e-7 \
-  --bias-cue-persistence 0.85 \
-  --bias-cue-threshold 0.20 \
-  --bias-minimum-run-length 5 \
   --output-json runs/synthetic_v3/results.json \
-  --output-csv runs/synthetic_v3/aggregate.csv \
-  --output-reliability-csv runs/synthetic_v3/reliability.csv
+  --output-csv runs/synthetic_v3/aggregate.csv
 ```
-
-The complete frozen protocol and baseline definitions are in the
-[synthetic benchmark documentation](docs/synthetic_benchmark.md).
 
 ## Python API
 
@@ -144,8 +174,20 @@ state-update and exact-fallback boundaries.
 
 ## Documentation map
 
+- [Command-line interface](docs/command_line.md): grouped routes, lifecycle
+  registry, and contribution policy.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, experimental command families, and placement policy.
+- [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
+  risk–coverage, exact fallback, tail regressions, and calibration summaries.
+- [Prospective belief updates](docs/prospective_belief_updates_v1.md):
+  evidence-weighted endpoint uncertainty, strict Prob4D update composition,
+  gap-aware reliability, and their empirical claim boundaries.
+- [Deform360 visual-provider locks](docs/deform360_visual_provider_lock_v1.md):
+  target-blind producer identity before calibration data and calibration-derived
+  method locks before confirmation data.
+- [Finite-group calibration design](docs/finite_group_calibration_design.md):
+  independent-object rank limits, information order, and fail-closed planning.
 - [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
   surface and provenance boundary.
 - [PhysTwin integration](docs/phystwin_integration.md): upstream artifacts,

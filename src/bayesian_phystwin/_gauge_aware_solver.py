@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import numpy as np
 
 from ._gauge_aware_contracts import (
+    COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
+    COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
     GaugeAwareBeliefConfig,
     GaugeAwareBeliefResult,
     GaugeAwareObservationBatch,
@@ -30,20 +32,30 @@ class _RegretDecision(Protocol):
     reason: str
 
 
+def _cholesky_solve(cholesky: np.ndarray, right: np.ndarray) -> np.ndarray:
+    return np.linalg.solve(cholesky.T, np.linalg.solve(cholesky, right))
+
+
 def _correlation_group_weights(
     group_ids: tuple[str, ...],
     reliability: np.ndarray,
     prior_nominal_probability: np.ndarray,
     composite_weight: np.ndarray,
     effective_samples_per_group: float,
+    *,
+    composite_weight_mode: str = COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
 ) -> tuple[np.ndarray, dict[str, int]]:
-    weights = np.zeros(len(group_ids), dtype=np.float64)
+    weights: np.ndarray = np.zeros(len(group_ids), dtype=np.float64)
     counts: dict[str, int] = {}
     for group_id in group_ids:
         counts[group_id] = counts.get(group_id, 0) + 1
     for index, group_id in enumerate(group_ids):
         count = counts[group_id]
-        group_scale = min(effective_samples_per_group, float(count)) / count
+        group_scale = (
+            1.0
+            if composite_weight_mode == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
+            else min(effective_samples_per_group, float(count)) / count
+        )
         weights[index] = (
             reliability[index]
             * prior_nominal_probability[index]
@@ -62,11 +74,11 @@ def _whiten_observations(
     name: str,
 ) -> tuple[np.ndarray, tuple[np.ndarray, ...], np.ndarray]:
     count = len(target)
-    whitened_target = np.empty((count, 3), dtype=np.float64)
+    whitened_target: np.ndarray = np.empty((count, 3), dtype=np.float64)
     whitened_designs = tuple(
         np.empty_like(design, dtype=np.float64) for design in designs
     )
-    whiteners = np.empty((count, 3, 3), dtype=np.float64)
+    whiteners: np.ndarray = np.empty((count, 3, 3), dtype=np.float64)
     for index in range(count):
         whitener = _positive_definite_whitener(
             covariance[index], f"{name} covariance {index}"
@@ -116,9 +128,7 @@ def _query_identifiable_transform(
                 "projected_state_design_norm": projected_norm,
             },
         )
-    _, singular_values, right_transpose = np.linalg.svd(
-        projected, full_matrices=False
-    )
+    _, singular_values, right_transpose = np.linalg.svd(projected, full_matrices=False)
     tolerance = max(projected.shape) * np.finfo(np.float64).eps * singular_values[0]
     candidate_count = int(np.sum(singular_values > tolerance))
     candidates = right_transpose[:candidate_count].T
@@ -141,9 +151,7 @@ def _query_identifiable_transform(
             np.linalg.norm(projected @ direction) / total_norm
         )
         query_fraction = (
-            query_norms[index] / maximum_query_norm
-            if maximum_query_norm > 0.0
-            else 0.0
+            query_norms[index] / maximum_query_norm if maximum_query_norm > 0.0 else 0.0
         )
         if (
             identifiable_fraction >= minimum_identifiable_fraction
@@ -236,26 +244,24 @@ def _assemble_full_posterior(
     ]
 
     whitened_state_covariance = np.eye(state_count, dtype=np.float64)
-    whitened_state_covariance += state_transform @ (
-        reduced_state_covariance - np.eye(reduced_state_count)
-    ) @ state_transform.T
+    whitened_state_covariance += (
+        state_transform
+        @ (reduced_state_covariance - np.eye(reduced_state_count))
+        @ state_transform.T
+    )
     state_covariance = (
-        state_prior_square_root
-        @ whitened_state_covariance
-        @ state_prior_square_root.T
+        state_prior_square_root @ whitened_state_covariance @ state_prior_square_root.T
     )
     state_covariance = 0.5 * (state_covariance + state_covariance.T)
 
-    full_covariance = np.zeros(
+    full_covariance: np.ndarray = np.zeros(
         (state_count + nuisance_count, state_count + nuisance_count),
         dtype=np.float64,
     )
     full_covariance[:state_count, :state_count] = state_covariance
     if nuisance_count:
         state_nuisance = (
-            state_prior_square_root
-            @ state_transform
-            @ reduced_state_nuisance
+            state_prior_square_root @ state_transform @ reduced_state_nuisance
         )
         full_covariance[:state_count, state_count:] = state_nuisance
         full_covariance[state_count:, :state_count] = state_nuisance.T
@@ -295,10 +301,12 @@ def update_gauge_aware_belief(
     base_weight, group_counts = _correlation_group_weights(
         batch.correlation_group_ids,
         batch.prior_reliability,
-        batch.prior_nominal_probability,
-        batch.composite_weight,
+        cast(np.ndarray, batch.prior_nominal_probability),
+        cast(np.ndarray, batch.composite_weight),
         cfg.effective_samples_per_correlation_group,
+        composite_weight_mode=batch.composite_weight_mode,
     )
+    anchor_base_weight: np.ndarray
     if batch.anchor_innovation_m is None:
         anchor_base_weight = np.zeros(0, dtype=np.float64)
         anchor_group_counts: dict[str, int] = {}
@@ -316,6 +324,7 @@ def update_gauge_aware_belief(
             batch.anchor_prior_nominal_probability,
             batch.anchor_composite_weight,
             cfg.effective_samples_per_anchor_correlation_group,
+            composite_weight_mode=batch.anchor_composite_weight_mode,
         )
 
     diagnostics: dict[str, Any] = {
@@ -345,8 +354,12 @@ def update_gauge_aware_belief(
         "prior_reliability_uses_innovation": False,
         "prior_nominal_probability_uses_innovation": False,
         "association_probability_used_as_reliability": False,
+        "observation_composite_weight_mode": batch.composite_weight_mode,
+        "anchor_composite_weight_mode": batch.anchor_composite_weight_mode,
         "correlation_treatment": (
-            "separate effective-sample caps for observation and anchor groups"
+            "provider-final per-row observation power; no consumer recap"
+            if batch.composite_weight_mode == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
+            else "consumer effective-sample cap after composite weighting"
         ),
         "state_subspace_coordinates": "prior-whitened",
         "unsupported_state_prior_preserved": True,
@@ -414,8 +427,8 @@ def update_gauge_aware_belief(
             anchor_whiteners,
         ) = _whiten_observations(
             batch.anchor_innovation_m,
-            batch.anchor_covariance_m2,
-            (batch.anchor_state_jacobian, raw_anchor_nuisance),
+            cast(np.ndarray, batch.anchor_covariance_m2),
+            (cast(np.ndarray, batch.anchor_state_jacobian), raw_anchor_nuisance),
             anchor_base_weight,
             name="anchor",
         )
@@ -457,9 +470,7 @@ def update_gauge_aware_belief(
             identifiability_nuisance,
             query_state_whitened,
             minimum_identifiable_fraction=cfg.minimum_identifiable_fraction,
-            minimum_query_sensitivity_fraction=(
-                cfg.minimum_query_sensitivity_fraction
-            ),
+            minimum_query_sensitivity_fraction=(cfg.minimum_query_sensitivity_fraction),
         )
     )
     diagnostics.update(identifiability)
@@ -545,7 +556,29 @@ def update_gauge_aware_belief(
                 anchor_target_w,
                 optimize=True,
             )
+        normal = 0.5 * (normal + normal.T)
         return normal, right
+
+    def solve_posterior(
+        posterior_normal: np.ndarray,
+        posterior_right: np.ndarray,
+    ) -> tuple[np.ndarray | None, np.ndarray | None, float, str | None]:
+        condition_number = float(np.linalg.cond(posterior_normal))
+        if (
+            not np.isfinite(condition_number)
+            or condition_number > cfg.maximum_condition_number
+        ):
+            return None, None, condition_number, "ill-conditioned-posterior"
+        try:
+            cholesky = np.linalg.cholesky(posterior_normal)
+        except np.linalg.LinAlgError:
+            return None, None, condition_number, "singular-posterior"
+        return (
+            _cholesky_solve(cholesky, posterior_right),
+            cholesky,
+            condition_number,
+            None,
+        )
 
     state_mapping = state_prior_square_root @ transform
     raw_state_reduced = np.einsum(
@@ -575,37 +608,27 @@ def update_gauge_aware_belief(
     )
 
     normal = prior_precision.copy()
-    iteration = 0
-    for iteration in range(cfg.maximum_iterations):
+    iterations = 0
+    for _ in range(cfg.maximum_iterations):
+        iterations += 1
         previous = solution.copy()
+        previous_robust = robust.copy()
+        previous_anchor_robust = anchor_robust.copy()
         normal, right = posterior_system()
-        condition_number = float(np.linalg.cond(normal))
-        if (
-            not np.isfinite(condition_number)
-            or condition_number > cfg.maximum_condition_number
-        ):
+        solved, _, condition_number, failure = solve_posterior(normal, right)
+        if failure is not None or solved is None:
             diagnostics["condition_number"] = condition_number
             return _fallback_result(
                 batch,
-                "ill-conditioned-posterior",
+                failure or "singular-posterior",
                 diagnostics,
                 prior_covariance=full_prior_covariance,
             )
-        try:
-            solution = np.linalg.solve(normal, right)
-        except np.linalg.LinAlgError:
-            return _fallback_result(
-                batch,
-                "singular-posterior",
-                diagnostics,
-                prior_covariance=full_prior_covariance,
-            )
+        solution = solved
         residual = batch.innovation_m - np.einsum(
             "mci,i->mc", raw_observation_design, solution, optimize=True
         )
-        whitened_residual = np.einsum(
-            "mij,mj->mi", whiteners, residual, optimize=True
-        )
+        whitened_residual = np.einsum("mij,mj->mi", whiteners, residual, optimize=True)
         robust = _student_t_weights(
             np.sum(np.square(whitened_residual), axis=1),
             dimension=3,
@@ -627,20 +650,38 @@ def update_gauge_aware_belief(
                 minimum=cfg.minimum_robust_weight,
             )
             anchor_robust[~active_anchor] = 0.0
-        if np.linalg.norm(solution - previous) <= cfg.convergence_tolerance:
+        solution_delta = float(np.linalg.norm(solution - previous))
+        robust_weight_delta = max(
+            float(np.max(np.abs(robust - previous_robust), initial=0.0)),
+            float(
+                np.max(
+                    np.abs(anchor_robust - previous_anchor_robust),
+                    initial=0.0,
+                )
+            ),
+        )
+        if (
+            solution_delta <= cfg.convergence_tolerance
+            and robust_weight_delta <= cfg.convergence_tolerance
+        ):
             break
 
     normal, right = posterior_system()
-    try:
-        solution = np.linalg.solve(normal, right)
-        reduced_covariance = np.linalg.inv(normal)
-    except np.linalg.LinAlgError:
+    solved, cholesky, condition_number, failure = solve_posterior(normal, right)
+    if failure is not None or solved is None or cholesky is None:
+        diagnostics["condition_number"] = condition_number
         return _fallback_result(
             batch,
-            "singular-posterior",
+            failure or "singular-posterior",
             diagnostics,
             prior_covariance=full_prior_covariance,
         )
+    solution = solved
+    reduced_covariance = _cholesky_solve(
+        cholesky,
+        np.eye(joint_dimension, dtype=np.float64),
+    )
+    reduced_covariance = 0.5 * (reduced_covariance + reduced_covariance.T)
 
     reduced_state_solution = solution[:reduced_state_count]
     whitened_state_solution = transform @ reduced_state_solution
@@ -658,9 +699,7 @@ def update_gauge_aware_belief(
     gauge_slice = slice(0, gauge_count)
     shared_slice = slice(gauge_slice.stop, gauge_slice.stop + shared_count)
     view_slice = slice(shared_slice.stop, shared_slice.stop + view_count)
-    anchor_bias_slice = slice(
-        view_slice.stop, view_slice.stop + anchor_bias_count
-    )
+    anchor_bias_slice = slice(view_slice.stop, view_slice.stop + anchor_bias_count)
     query_update = np.einsum(
         "qcs,s->qc",
         batch.query_state_jacobian,
@@ -670,14 +709,15 @@ def update_gauge_aware_belief(
     query_update_norm = np.linalg.norm(query_update, axis=1)
     maximum_query_update = float(np.max(query_update_norm, initial=0.0))
     relative_limit = (
-        cfg.maximum_update_to_physical_response_ratio
-        * batch.physical_response_scale_m
+        cfg.maximum_update_to_physical_response_ratio * batch.physical_response_scale_m
     )
     update_limit = min(cfg.maximum_state_update_m, relative_limit)
     diagnostics.update(
         {
-            "iterations": iteration + 1,
-            "condition_number": float(np.linalg.cond(normal)),
+            "iterations": iterations,
+            "condition_number": condition_number,
+            "posterior_solver": "cholesky",
+            "final_system_uses_returned_robust_weights": True,
             "minimum_robust_weight": (
                 float(np.min(robust[active_observation]))
                 if np.any(active_observation)
@@ -729,15 +769,9 @@ def update_gauge_aware_belief(
 
     if nuisance_count:
         cross = full_covariance[:state_count, state_count:]
-        state_variance = np.diag(
-            full_covariance[:state_count, :state_count]
-        )[:, None]
-        nuisance_variance = np.diag(
-            full_covariance[state_count:, state_count:]
-        )[None]
-        denominator = np.sqrt(
-            np.maximum(state_variance * nuisance_variance, 1e-30)
-        )
+        state_variance = np.diag(full_covariance[:state_count, :state_count])[:, None]
+        nuisance_variance = np.diag(full_covariance[state_count:, state_count:])[None]
+        denominator = np.sqrt(np.maximum(state_variance * nuisance_variance, 1e-30))
         diagnostics["maximum_state_nuisance_posterior_correlation"] = float(
             np.max(np.abs(cross / denominator), initial=0.0)
         )
@@ -759,7 +793,7 @@ def update_gauge_aware_belief(
         robust_weights=robust,
         anchor_robust_weights=anchor_robust,
         diagnostics=diagnostics,
-        input_lineage=batch.metadata,
+        input_lineage=batch.metadata or {},
     )
 
 
@@ -775,9 +809,7 @@ def decode_gauge_aware_query(
     )
     if not result.inference_admissible:
         return np.zeros(query.shape[:2], dtype=np.float64)
-    return np.einsum(
-        "qcs,s->qc", query, result.state_coefficients, optimize=True
-    )
+    return np.einsum("qcs,s->qc", query, result.state_coefficients, optimize=True)
 
 
 def _same_array_bytes(first: np.ndarray, second: np.ndarray) -> bool:
@@ -803,8 +835,7 @@ def select_gauge_aware_candidate(
     candidate_input = np.asarray(candidate)
     _require(candidate_input.shape == baseline_input.shape, "candidate shape changed")
     _require(
-        np.all(np.isfinite(baseline_input))
-        and np.all(np.isfinite(candidate_input)),
+        np.all(np.isfinite(baseline_input)) and np.all(np.isfinite(candidate_input)),
         "candidate values must be finite",
     )
 

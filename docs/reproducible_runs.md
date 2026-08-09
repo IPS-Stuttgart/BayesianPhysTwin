@@ -11,8 +11,8 @@ cross-repository and runtime evidence context needed by paper-facing results.
 `bayesian_phystwin.run_manifest`. Existing frozen bundles retain their exact
 content addresses.
 
-`RunManifestV2` lives in `bayesian_phystwin.run_manifest_v2`. The grouped and
-legacy manifest CLIs create V2 records and validate both V1 and V2. V2 adds:
+`RunManifestV2` lives in `bayesian_phystwin.run_manifest_v2`. The grouped
+manifest CLI creates V2 records and validates both V1 and V2. V2 adds:
 
 - automatic primary-repository revision and dirty-state discovery;
 - exact role-bearing locks for participating PhysTwin, Prob4D, Causal4D, paper,
@@ -66,7 +66,7 @@ bpt run manifest create runs/example/manifest.json \
   --run-id phystwin-full22-anchor-v1 \
   --classification confirmatory \
   --statistical-unit interaction \
-  --command-line 'bpt-confirm-phystwin-bayesian-anchor ...' \
+  --command-line 'bpt experiment run confirm-phystwin-bayesian-anchor ...' \
   --repository-root . \
   --related-repositories-json runs/example/repositories.lock.json \
   --configuration-json runs/example/config.lock.json \
@@ -86,8 +86,12 @@ bpt run manifest create runs/example/manifest.json \
 `runtime.json` can add numerical execution details Python cannot infer
 portably, such as GPU model, CUDA and driver versions, Warp and Torch builds,
 container-image digest, and deterministic versus atomic spring-force mode.
-Environment variables are never collected wholesale; only explicitly named
-variables are recorded.
+It cannot replace Python version, operating system, machine, processor, byte
+order, or the explicitly selected environment captured by the runtime. Runtime,
+configuration, information-boundary, and related-repository JSON reject
+duplicate object keys and non-finite constants rather than relying on parser
+coercion. Environment variables are never collected wholesale; only explicitly
+named canonical identifiers are recorded.
 
 Every V2 manifest binds:
 
@@ -106,9 +110,9 @@ Every V2 manifest binds:
 `manifest_id` covers the complete finalized record, including `created_utc` and
 free-form notes.
 
-`evidence_fingerprint` excludes only the creation timestamp and notes. It remains
-stable when the same scientific record is copied into a paper bundle with
-different archival commentary. It still covers repositories, command,
+`evidence_fingerprint` excludes only the creation timestamp and notes. It
+remains stable when the same scientific record is copied into a paper bundle
+with different archival commentary. It still covers repositories, command,
 configuration, information boundary, artifacts, runtime, claims, and protocol
 identifiers.
 
@@ -133,10 +137,11 @@ claim/runtime records.
 A manifest does not turn a run into scientific evidence by itself. Method
 freezing, split integrity, target-data sealing, negative controls, statistical
 analysis, and claim review remain separate requirements. Paper-promotable
-entries in the canonical `BayesianPhysTwin-Paper` claim registry should cite the
-validated manifest ID, evidence fingerprint, and compact result-artifact
+entries in the canonical `BayesianPhysTwin-Paper` claim registry should cite
+the validated manifest ID, evidence fingerprint, and compact result-artifact
 digests.
 
-The compatibility entry point `bpt-run-manifest` remains available. The grouped
-`bpt run manifest` command is the preferred stable interface; historical
-experiment-specific commands remain supported for frozen runs.
+Only `bpt` is installed. Historical manifests may retain removed `bpt-*`
+command strings as immutable provenance, while current non-stable commands use
+the `experiment`, `diagnostic`, or `archive` lifecycle runner selected by the
+registry.

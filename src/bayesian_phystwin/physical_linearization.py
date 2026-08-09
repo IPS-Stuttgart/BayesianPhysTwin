@@ -4,11 +4,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
+
+from ._canonical_contracts import (
+    frozen_finite_json_mapping,
+    genuine_boolean,
+    genuine_integer,
+    immutable_array,
+    immutable_integer_array,
+    integer_array,
+    plain_json,
+)
 
 PHYSICAL_LINEARIZATION_SCHEMA = "bayesian_phystwin.physical_linearization"
 PHYSICAL_LINEARIZATION_VERSION = 1
@@ -18,28 +29,28 @@ NONLINEAR_CLOSURE_VERSION = 1
 
 def _canonical_json(values: Mapping[str, Any]) -> bytes:
     return json.dumps(
-        dict(values), sort_keys=True, separators=(",", ":"), allow_nan=False
+        plain_json(values),
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
     ).encode("utf-8")
 
 
 def _validate_sha256(value: str, *, name: str) -> None:
-    if len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
-def _validated_json(values: Mapping[str, Any]) -> dict[str, Any]:
-    try:
-        return json.loads(json.dumps(dict(values), sort_keys=True, allow_nan=False))
-    except (TypeError, ValueError) as error:
-        raise ValueError("metadata must contain finite JSON values") from error
+def _readonly(values: object, *, dtype: Any | None = None) -> np.ndarray:
+    return immutable_array(values, dtype=dtype)
 
 
-def _readonly(values: np.ndarray, *, dtype: Any | None = None) -> np.ndarray:
-    result = np.asarray(values, dtype=dtype).copy()
-    result.setflags(write=False)
-    return result
+def _readonly_integer(values: object, *, name: str) -> np.ndarray:
+    return immutable_integer_array(values, name=name)
 
 
 def _array_sha256(values: np.ndarray) -> str:
@@ -86,16 +97,18 @@ class PhysicalLinearizationV1:
             ("action_prefix_id", self.action_prefix_id),
         ):
             _validate_sha256(value, name=name)
-        if not self.simulator_revision:
+        if not isinstance(self.simulator_revision, str) or not self.simulator_revision:
             raise ValueError("simulator_revision must be nonempty")
-        frame_ids = _readonly(self.frame_ids, dtype=np.int64)
-        entity_ids = _readonly(self.entity_ids, dtype=np.int64)
-        view_indices = _readonly(self.view_indices, dtype=np.int64)
-        window_indices = _readonly(self.window_indices, dtype=np.int64)
+        frame_ids = _readonly_integer(self.frame_ids, name="frame_ids")
+        entity_ids = _readonly_integer(self.entity_ids, name="entity_ids")
+        view_indices = _readonly_integer(self.view_indices, name="view_indices")
+        window_indices = _readonly_integer(self.window_indices, name="window_indices")
         state = _readonly(self.state_jacobian, dtype=np.float64)
         query = _readonly(self.query_state_jacobian, dtype=np.float64)
         response = _readonly(self.physical_response_m, dtype=np.float64)
         count = len(frame_ids)
+        if frame_ids.shape != (count,):
+            raise ValueError(f"frame_ids must have shape ({count},)")
         for name, values in (
             ("entity_ids", entity_ids),
             ("view_indices", view_indices),
@@ -108,23 +121,11 @@ class PhysicalLinearizationV1:
                 "linearization row identities must be nonempty and nonnegative"
             )
         if np.any(view_indices < 0) or np.any(window_indices < 0):
-            raise ValueError(
-                "linearization view/window identities must be nonnegative"
-            )
-        if (
-            state.ndim != 3
-            or state.shape[:2] != (count, 3)
-            or state.shape[2] < 1
-        ):
-            raise ValueError(
-                "state_jacobian must have shape (N, 3, S) with S >= 1"
-            )
+            raise ValueError("linearization view/window identities must be nonnegative")
+        if state.ndim != 3 or state.shape[:2] != (count, 3) or state.shape[2] < 1:
+            raise ValueError("state_jacobian must have shape (N, 3, S) with S >= 1")
         state_count = state.shape[2]
-        if (
-            query.ndim != 3
-            or query.shape[1:] != (3, state_count)
-            or len(query) == 0
-        ):
+        if query.ndim != 3 or query.shape[1:] != (3, state_count) or len(query) == 0:
             raise ValueError("query_state_jacobian must have shape (Q, 3, S)")
         if response.shape != query.shape[:2]:
             raise ValueError("physical_response_m must have shape (Q, 3)")
@@ -136,9 +137,7 @@ class PhysicalLinearizationV1:
             raise ValueError(
                 "physical response must contain a nonzero query displacement"
             )
-        order = np.lexsort(
-            (window_indices, view_indices, entity_ids, frame_ids)
-        )
+        order = np.lexsort((window_indices, view_indices, entity_ids, frame_ids))
         keys = np.column_stack(
             (
                 frame_ids[order],
@@ -156,7 +155,11 @@ class PhysicalLinearizationV1:
         object.__setattr__(self, "state_jacobian", state)
         object.__setattr__(self, "query_state_jacobian", query)
         object.__setattr__(self, "physical_response_m", response)
-        object.__setattr__(self, "metadata", _validated_json(self.metadata))
+        object.__setattr__(
+            self,
+            "metadata",
+            frozen_finite_json_mapping(self.metadata),
+        )
 
     @property
     def physical_response_scale_m(self) -> float:
@@ -170,7 +173,7 @@ class PhysicalLinearizationV1:
             "baseline_belief_id": self.baseline_belief_id,
             "action_prefix_id": self.action_prefix_id,
             "simulator_revision": self.simulator_revision,
-            "metadata": dict(self.metadata),
+            "metadata": plain_json(self.metadata),
         }
 
     def arrays(self) -> dict[str, np.ndarray]:
@@ -196,11 +199,12 @@ def validate_observation_linearization_alignment(
     """Fail closed on artifact or row-order mismatches."""
 
     if str(observation_belief.artifact_id) != linearization.observation_artifact_id:
-        raise ValueError(
-            "linearization does not identify this observation artifact"
-        )
+        raise ValueError("linearization does not identify this observation artifact")
     for name in ("frame_ids", "entity_ids", "view_indices", "window_indices"):
-        observed = np.asarray(getattr(observation_belief, name), dtype=np.int64)
+        observed = integer_array(
+            getattr(observation_belief, name),
+            name=f"observation {name}",
+        )
         expected = np.asarray(getattr(linearization, name), dtype=np.int64)
         if not np.array_equal(observed, expected):
             raise ValueError(f"observation and linearization {name} differ")
@@ -263,18 +267,18 @@ def save_physical_linearization(
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor = linearization.descriptor()
     descriptor["artifact_id"] = linearization.artifact_id
-    np.savez_compressed(
-        target,
-        descriptor_json=np.asarray(
+    archive_payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
             json.dumps(
                 descriptor,
                 sort_keys=True,
                 separators=(",", ":"),
                 allow_nan=False,
             )
-        ),
-        **linearization.arrays(),
-    )
+        )
+    }
+    archive_payload.update(linearization.arrays())
+    np.savez_compressed(target, **archive_payload)
 
 
 def load_physical_linearization(path: str | Path) -> PhysicalLinearizationV1:
@@ -289,10 +293,12 @@ def load_physical_linearization(path: str | Path) -> PhysicalLinearizationV1:
         }
     if descriptor.get("schema_name") != PHYSICAL_LINEARIZATION_SCHEMA:
         raise ValueError("unsupported physical-linearization schema")
-    if (
-        int(descriptor.get("schema_version", -1))
-        != PHYSICAL_LINEARIZATION_VERSION
-    ):
+    version = genuine_integer(
+        descriptor.get("schema_version"),
+        name="physical-linearization schema_version",
+        minimum=0,
+    )
+    if version != PHYSICAL_LINEARIZATION_VERSION:
         raise ValueError("unsupported physical-linearization version")
     required = {
         "frame_ids",
@@ -316,9 +322,7 @@ def load_physical_linearization(path: str | Path) -> PhysicalLinearizationV1:
     expected = str(descriptor.get("artifact_id", ""))
     _validate_sha256(expected, name="artifact_id")
     if result.artifact_id != expected:
-        raise ValueError(
-            "physical-linearization digest does not match its payload"
-        )
+        raise ValueError("physical-linearization digest does not match its payload")
     return result
 
 
@@ -346,18 +350,23 @@ class NonlinearClosureV1:
             self.relative_tolerance,
         )
         if any(not np.isfinite(value) or value < 0.0 for value in values):
-            raise ValueError(
-                "nonlinear-closure values must be finite and nonnegative"
-            )
+            raise ValueError("nonlinear-closure values must be finite and nonnegative")
+        candidate_valid = genuine_boolean(
+            self.candidate_valid,
+            name="candidate_valid",
+        )
         expected = (
             self.absolute_error_m <= self.absolute_tolerance_m
             or self.relative_error <= self.relative_tolerance
         )
-        if self.candidate_valid != expected:
-            raise ValueError(
-                "candidate_valid does not match the closure tolerances"
-            )
-        object.__setattr__(self, "metadata", _validated_json(self.metadata))
+        if candidate_valid != expected:
+            raise ValueError("candidate_valid does not match the closure tolerances")
+        object.__setattr__(self, "candidate_valid", candidate_valid)
+        object.__setattr__(
+            self,
+            "metadata",
+            frozen_finite_json_mapping(self.metadata),
+        )
 
     def descriptor(self) -> dict[str, Any]:
         return {
@@ -369,7 +378,7 @@ class NonlinearClosureV1:
             "absolute_tolerance_m": self.absolute_tolerance_m,
             "relative_tolerance": self.relative_tolerance,
             "candidate_valid": self.candidate_valid,
-            "metadata": dict(self.metadata),
+            "metadata": plain_json(self.metadata),
         }
 
     @property
@@ -404,25 +413,23 @@ def evaluate_nonlinear_closure(
     ):
         raise ValueError("closure query arrays must be finite")
     if (
-        absolute_tolerance_m < 0.0
+        not np.isfinite(absolute_tolerance_m)
+        or not np.isfinite(relative_tolerance)
+        or not np.isfinite(denominator_floor_m)
+        or absolute_tolerance_m < 0.0
         or relative_tolerance < 0.0
         or denominator_floor_m <= 0.0
     ):
         raise ValueError(
-            "closure tolerances must be nonnegative and floor positive"
+            "closure tolerances must be finite and nonnegative and floor positive"
         )
     remainder = nonlinear - linearized
-    absolute_error = float(
-        np.max(np.linalg.norm(remainder, axis=1), initial=0.0)
-    )
+    absolute_error = float(np.max(np.linalg.norm(remainder, axis=1), initial=0.0))
     predicted_change = linearized - baseline
-    denominator = max(
-        float(np.linalg.norm(predicted_change)), denominator_floor_m
-    )
+    denominator = max(float(np.linalg.norm(predicted_change)), denominator_floor_m)
     relative_error = float(np.linalg.norm(remainder) / denominator)
     candidate_valid = (
-        absolute_error <= absolute_tolerance_m
-        or relative_error <= relative_tolerance
+        absolute_error <= absolute_tolerance_m or relative_error <= relative_tolerance
     )
     return NonlinearClosureV1(
         linearization_artifact_id=linearization_artifact_id,

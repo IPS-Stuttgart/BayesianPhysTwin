@@ -1,0 +1,103 @@
+name: Horizon-conditioned discrepancy contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/horizon-conditioned-discrepancy.yml"
+      - "src/bayesian_phystwin/_horizon_discrepancy_common.py"
+      - "src/bayesian_phystwin/_horizon_discrepancy_contract.py"
+      - "src/bayesian_phystwin/_horizon_discrepancy_fit.py"
+      - "src/bayesian_phystwin/_horizon_discrepancy_prediction.py"
+      - "src/bayesian_phystwin/horizon_conditioned_discrepancy.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "tests/test_horizon_conditioned_discrepancy.py"
+      - "tests/test_endpoint_model_average.py"
+      - "docs/horizon_conditioned_discrepancy.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: horizon-conditioned-discrepancy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Source-group horizon contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install NumPy-only contract environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate formatting, typing, and focused contracts
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/_horizon_discrepancy_common.py \
+            src/bayesian_phystwin/_horizon_discrepancy_contract.py \
+            src/bayesian_phystwin/_horizon_discrepancy_fit.py \
+            src/bayesian_phystwin/_horizon_discrepancy_prediction.py \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            tests/test_horizon_conditioned_discrepancy.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/_horizon_discrepancy_common.py \
+            src/bayesian_phystwin/_horizon_discrepancy_contract.py \
+            src/bayesian_phystwin/_horizon_discrepancy_fit.py \
+            src/bayesian_phystwin/_horizon_discrepancy_prediction.py \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py \
+            tests/test_horizon_conditioned_discrepancy.py
+          python -m mypy --no-site-packages \
+            src/bayesian_phystwin/_horizon_discrepancy_common.py \
+            src/bayesian_phystwin/_horizon_discrepancy_contract.py \
+            src/bayesian_phystwin/_horizon_discrepancy_fit.py \
+            src/bayesian_phystwin/_horizon_discrepancy_prediction.py \
+            src/bayesian_phystwin/horizon_conditioned_discrepancy.py \
+            src/bayesian_phystwin/causal4d_belief_provider_v2.py
+          python -m pytest -q \
+            tests/test_horizon_conditioned_discrepancy.py \
+            tests/test_endpoint_model_average.py
+          python -m compileall -q src/bayesian_phystwin
+
+      - name: Verify provider capability surface
+        run: |
+          python - <<'PY'
+          from bayesian_phystwin.causal4d_belief_provider_v2 import (
+              causal4d_belief_provider_v2_manifest,
+          )
+
+          manifest = causal4d_belief_provider_v2_manifest(
+              provider_revision="f" * 40
+          )
+          required = {
+              "source_calibrated_horizon_discrepancy",
+              "mean_reverting_discrepancy_prediction",
+          }
+          missing = required - set(manifest["capabilities"])
+          if missing:
+              raise SystemExit(f"missing provider capabilities: {sorted(missing)}")
+          schemas = manifest["artifact_schema_versions"]
+          if schemas.get("HorizonDiscrepancyCalibration") != 1:
+              raise SystemExit("unexpected horizon calibration schema")
+          if schemas.get("HorizonConditionedEndpointPrediction") != 1:
+              raise SystemExit("unexpected horizon prediction schema")
+          PY

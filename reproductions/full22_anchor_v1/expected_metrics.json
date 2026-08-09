@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "source_revision": "e393bb6ff61d44815afd8d09dfc5334cb55d5524",
+  "source_protocol_id": "ee11310a84b92ff2158018a13ef09989e641e7c0ea84733fe8a6abf267093c65",
+  "data_manifest_identity_sha256": "f67534421ee2f81ec823171427fb0ac66d3ac1762eb1f5b7624ddda92d057ffc",
+  "legacy_data_manifest_sha256": "c986f9fffe99e63f842bb48eb1d394a6b87663f5c4a4fb99f2a58855875fb125",
+  "absolute_tolerance_m": 5e-7,
+  "methods": {
+    "released_phystwin": {
+      "equal_case": {
+        "chamfer_distance_m": 0.011579,
+        "track_error_m": 0.022019
+      },
+      "frame_weighted": {
+        "chamfer_distance_m": 0.010784,
+        "track_error_m": 0.022241
+      }
+    },
+    "bayesian_anchor": {
+      "equal_case": {
+        "chamfer_distance_m": 0.010180,
+        "track_error_m": 0.019205
+      },
+      "frame_weighted": {
+        "chamfer_distance_m": 0.009477,
+        "track_error_m": 0.019763
+      }
+    }
+  }
+}

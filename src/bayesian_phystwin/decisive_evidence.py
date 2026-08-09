@@ -1,16 +1,17 @@
-"""Matched selective-risk diagnostics for prospective PhysTwin evidence."""
+"""Threshold-native and matched selective-risk diagnostics."""
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
 
 DECISIVE_EVIDENCE_INPUT_CONTRACT = "bayesian-phystwin-decisive-evidence-v1"
-DECISIVE_EVIDENCE_SUMMARY_CONTRACT = (
-    "bayesian-phystwin-decisive-evidence-summary-v1"
+DECISIVE_EVIDENCE_SUMMARY_CONTRACT = "bayesian-phystwin-decisive-evidence-summary-v1"
+THRESHOLD_RISK_COVERAGE_CONTRACT = "bayesian-phystwin-threshold-risk-coverage-v1"
+MATCHED_COUNT_RISK_COVERAGE_CONTRACT = (
+    "bayesian-phystwin-matched-count-risk-coverage-v1"
 )
 DEFAULT_TARGET_COVERAGES = tuple(float(value) / 10.0 for value in range(11))
 DEFAULT_REGRESSION_QUANTILES = (0.90, 0.95)
@@ -124,7 +125,9 @@ def _horizon(value: object, *, name: str) -> str:
     raise ValueError(f"{name} must be a nonempty label or nonnegative number")
 
 
-def _parse_intervals(value: object, *, record_name: str) -> tuple[IntervalObservation, ...]:
+def _parse_intervals(
+    value: object, *, record_name: str
+) -> tuple[IntervalObservation, ...]:
     if value is None:
         return ()
     raw_intervals = _sequence(value, name=f"{record_name}.intervals")
@@ -148,9 +151,7 @@ def _parse_intervals(value: object, *, record_name: str) -> tuple[IntervalObserv
             IntervalObservation(
                 nominal_coverage=nominal,
                 covered=_boolean(interval.get("covered"), name=f"{name}.covered"),
-                width=_number(
-                    interval.get("width"), name=f"{name}.width", minimum=0.0
-                ),
+                width=_number(interval.get("width"), name=f"{name}.width", minimum=0.0),
             )
         )
     return tuple(sorted(intervals, key=lambda item: item.nominal_coverage))
@@ -205,20 +206,14 @@ def parse_decisive_evidence(payload: Mapping[str, object]) -> EvidenceBundle:
         raise ValueError("schema_version must be the integer 1")
     contract = payload.get("contract", DECISIVE_EVIDENCE_INPUT_CONTRACT)
     if contract != DECISIVE_EVIDENCE_INPUT_CONTRACT:
-        raise ValueError(
-            f"contract must be {DECISIVE_EVIDENCE_INPUT_CONTRACT!r}"
-        )
+        raise ValueError(f"contract must be {DECISIVE_EVIDENCE_INPUT_CONTRACT!r}")
     raw_reference = payload.get("reference_method")
     reference_method = (
-        None
-        if raw_reference is None
-        else _text(raw_reference, name="reference_method")
+        None if raw_reference is None else _text(raw_reference, name="reference_method")
     )
     records = tuple(
         _parse_record(value, index=index)
-        for index, value in enumerate(
-            _sequence(payload.get("records"), name="records")
-        )
+        for index, value in enumerate(_sequence(payload.get("records"), name="records"))
     )
     if not records:
         raise ValueError("records must not be empty")
@@ -271,9 +266,7 @@ def parse_decisive_evidence(payload: Mapping[str, object]) -> EvidenceBundle:
         statistical_unit=_text(
             payload.get("statistical_unit"), name="statistical_unit"
         ),
-        claim_boundary=_text(
-            payload.get("claim_boundary"), name="claim_boundary"
-        ),
+        claim_boundary=_text(payload.get("claim_boundary"), name="claim_boundary"),
         reference_method=reference_method,
         records=records,
     )
@@ -446,7 +439,7 @@ def _coverage_count(target: float, count: int) -> int:
     return min(count, max(0, int(np.floor(target * count + 0.5))))
 
 
-def _risk_coverage_curves(
+def _matched_count_risk_coverage_curves(
     records_by_method: Mapping[str, Sequence[EvidenceRecord]],
     *,
     coverages: tuple[float, ...],
@@ -467,7 +460,9 @@ def _risk_coverage_curves(
         accepted_count = _coverage_count(target, unit_count)
         for method in methods:
             records = records_by_method[method]
-            ranked = sorted(records, key=lambda record: (record.risk_score, record.unit_id))
+            ranked = sorted(
+                records, key=lambda record: (record.risk_score, record.unit_id)
+            )
             accepted_ids = {record.unit_id for record in ranked[:accepted_count]}
             losses = np.asarray(
                 [by_method_unit[method][unit].loss for unit in unit_order], dtype=float
@@ -552,6 +547,8 @@ def _risk_coverage_curves(
             raise AssertionError("validated reference unit set diverged")
 
     return {
+        "contract": MATCHED_COUNT_RISK_COVERAGE_CONTRACT,
+        "role": "secondary_equal_count_diagnostic",
         "risk_score_order": "lower_is_safer",
         "selection_rule": (
             "accept the exact same count per method at each target coverage; sort "
@@ -559,6 +556,101 @@ def _risk_coverage_curves(
             "rejected units use the common exact fallback"
         ),
         "target_coverages": list(coverages),
+        "methods": curves,
+    }
+
+
+def _threshold_risk_coverage_curves(
+    records_by_method: Mapping[str, Sequence[EvidenceRecord]],
+    *,
+    quantiles: tuple[float, ...],
+) -> dict[str, object]:
+    """Evaluate inclusive score thresholds without splitting tied units."""
+
+    curves: dict[str, list[dict[str, object]]] = {}
+    for method, method_records in sorted(records_by_method.items()):
+        records = tuple(
+            sorted(
+                method_records,
+                key=lambda record: (
+                    record.risk_score,
+                    record.loss,
+                    record.fallback_loss,
+                    record.deployed_loss,
+                    record.group_id,
+                    record.horizon,
+                    record.accepted,
+                ),
+            )
+        )
+        losses = np.asarray([record.loss for record in records], dtype=float)
+        fallbacks = np.asarray(
+            [record.fallback_loss for record in records], dtype=float
+        )
+        risk_scores = np.asarray([record.risk_score for record in records], dtype=float)
+        thresholds: tuple[float | None, ...] = (None,) + tuple(
+            float(value) for value in np.unique(risk_scores)
+        )
+        points: list[dict[str, object]] = []
+        for threshold in thresholds:
+            accepted = (
+                np.zeros(len(records), dtype=bool)
+                if threshold is None
+                else risk_scores <= threshold
+            )
+            accepted_count = int(np.sum(accepted))
+            coverage = accepted_count / len(records)
+            deployed_losses = np.where(accepted, losses, fallbacks)
+            harmful = accepted & (losses > fallbacks)
+            points.append(
+                {
+                    "threshold": threshold,
+                    "coverage": coverage,
+                    "attained_coverage": coverage,
+                    "accepted_count": accepted_count,
+                    "fallback_count": len(records) - accepted_count,
+                    "fallback_frequency": 1.0 - coverage,
+                    "exact_fallback_verified": True,
+                    "maximum_accepted_risk_score": (
+                        None
+                        if not accepted_count
+                        else float(np.max(risk_scores[accepted]))
+                    ),
+                    "boundary_tie_count": (
+                        0
+                        if threshold is None
+                        else int(np.sum(risk_scores == threshold))
+                    ),
+                    "boundary_tie_split": False,
+                    "selective_mean_loss": (
+                        None if not accepted_count else float(np.mean(losses[accepted]))
+                    ),
+                    "harmful_accepted_count": int(np.sum(harmful)),
+                    "harmful_update_frequency_accepted": (
+                        None
+                        if not accepted_count
+                        else float(np.sum(harmful) / accepted_count)
+                    ),
+                    "deployed": _loss_summary(
+                        deployed_losses, fallbacks, quantiles=quantiles
+                    ),
+                }
+            )
+        curves[method] = points
+
+    return {
+        "contract": THRESHOLD_RISK_COVERAGE_CONTRACT,
+        "role": "primary_threshold_native_view",
+        "risk_score_order": "lower_is_safer",
+        "selection_rule": (
+            "include the zero-acceptance exact-fallback endpoint, then accept every "
+            "unit with risk_score <= each distinct threshold; tied scores enter "
+            "together and rejected units use the common exact fallback"
+        ),
+        "confirmatory_threshold_freeze": (
+            "select thresholds using source or calibration data and freeze them "
+            "before target outcomes are opened"
+        ),
         "methods": curves,
     }
 
@@ -611,7 +703,11 @@ def _rank_conditioning(
 ) -> dict[str, object]:
     available = [record for record in records if record.identifiable_rank is not None]
     ranks = sorted(
-        {record.identifiable_rank for record in available if record.identifiable_rank is not None}
+        {
+            record.identifiable_rank
+            for record in available
+            if record.identifiable_rank is not None
+        }
     )
     return {
         "available_count": len(available),
@@ -620,7 +716,11 @@ def _rank_conditioning(
             {
                 "rank": rank,
                 "summary": _conditioned_summary(
-                    [record for record in available if record.identifiable_rank == rank],
+                    [
+                        record
+                        for record in available
+                        if record.identifiable_rank == rank
+                    ],
                     quantiles=quantiles,
                 ),
             }
@@ -646,7 +746,9 @@ def _interval_calibration(records: Sequence[EvidenceRecord]) -> dict[str, object
                 "coverage_error": float(
                     np.mean([interval.covered for interval in intervals]) - nominal
                 ),
-                "mean_width": float(np.mean([interval.width for interval in intervals])),
+                "mean_width": float(
+                    np.mean([interval.width for interval in intervals])
+                ),
                 "median_width": float(
                     np.median([interval.width for interval in intervals])
                 ),
@@ -713,7 +815,10 @@ def analyze_decisive_evidence(
             records_by_method.setdefault(record.method, []).append(record)
         for records in records_by_method.values():
             records.sort(key=lambda record: record.unit_id)
-        if resolved_reference is not None and resolved_reference not in records_by_method:
+        if (
+            resolved_reference is not None
+            and resolved_reference not in records_by_method
+        ):
             raise ValueError(
                 f"reference method {resolved_reference!r} is absent for metric {metric!r}"
             )
@@ -754,18 +859,28 @@ def analyze_decisive_evidence(
             method_summaries[method] = method_summary
 
         first_method = next(iter(records_by_method))
+        threshold_risk_coverage = _threshold_risk_coverage_curves(
+            records_by_method,
+            quantiles=quantiles,
+        )
+        matched_count_risk_coverage = _matched_count_risk_coverage_curves(
+            records_by_method,
+            coverages=coverages,
+            quantiles=quantiles,
+            reference_method=resolved_reference,
+        )
         metric_summaries[metric] = {
             "unit_count": len(records_by_method[first_method]),
             "group_count": len(
                 {record.group_id for record in records_by_method[first_method]}
             ),
             "methods": method_summaries,
-            "matched_risk_coverage": _risk_coverage_curves(
-                records_by_method,
-                coverages=coverages,
-                quantiles=quantiles,
-                reference_method=resolved_reference,
-            ),
+            "threshold_risk_coverage": threshold_risk_coverage,
+            "matched_count_risk_coverage": matched_count_risk_coverage,
+            "matched_risk_coverage": {
+                **matched_count_risk_coverage,
+                "deprecated_alias_for": "matched_count_risk_coverage",
+            },
         }
 
     return {
@@ -782,6 +897,9 @@ def analyze_decisive_evidence(
             "reliability_edges": list(edges),
             "risk_score_order": "lower_is_safer",
             "matched_fallback": True,
+            "primary_risk_coverage_contract": THRESHOLD_RISK_COVERAGE_CONTRACT,
+            "secondary_risk_coverage_contract": (MATCHED_COUNT_RISK_COVERAGE_CONTRACT),
+            "confirmatory_thresholds_must_be_source_or_calibration_frozen": True,
         },
         "metrics": metric_summaries,
     }

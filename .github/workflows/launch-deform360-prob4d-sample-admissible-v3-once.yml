@@ -1,0 +1,77 @@
+name: Launch reviewed Deform360 Prob4D sample-admissible source gate v3 once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-prob4d-sample-admissible-v3-once.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-prob4d-sample-admissible-v3-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute frozen sample-admissible ten-object public source gate v3
+    uses: ./.github/workflows/deform360-prob4d-source-gate.yml
+    with:
+      execute_authorized: true
+      eligibility_contract: v3-target-free-sample-admissible
+
+  receipt:
+    name: Publish public sample-admissible source-gate receipt
+    if: always()
+    needs: execute
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post custody-preserving status to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.execute.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          body=$(cat <<EOF
+          ## Deform360 Prob4D sample-admissible source gate v3 completed with result \`${RESULT}\`
+
+          - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - eligibility contract: \`v3-target-free-sample-admissible\`
+          - empirical runner: \`workstation2\` via the sole \`self-hosted\` label
+          - source measurements: released public real-world Deform360 calibration data
+          - Prob4D role: decoded-uniform observation and covariance-calibration feeder
+          - new measurements required: \`false\`
+          - human approval required: \`false\`
+          - provider point values used for eligibility: \`false\`
+          - prediction residuals used for eligibility: \`false\`
+          - unsupported streams replaced: \`false\`
+          - confirmation payloads opened: \`false\`
+          - future frames used: \`false\`
+          - target outcomes used: \`false\`
+
+          This launcher executes exactly one frozen ten-object public source-only
+          run. Target-free robot/camera geometry first retains visible streams;
+          integrity-bound provider masks and released metric masks then enforce the
+          exact downstream per-window sample contract. Weak-support streams remain
+          recorded exclusions and are never replaced. Only the separately frozen
+          automated calibration gate may authorize an independently locked
+          confirmation evaluation. This is not confirmation evidence and does not
+          authorize target-informed retuning.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed one-shot target-free sample-admissible public source request: 2026-08-09-v3

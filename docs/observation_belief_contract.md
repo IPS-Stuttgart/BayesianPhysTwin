@@ -5,6 +5,12 @@ perception feeder and Bayesian-PhysTwin. It is a content-addressed, non-pickled
 NPZ artifact. The same schema is emitted by Prob4D and can be validated by
 Causal4D without importing either provider.
 
+Descriptor metadata is copied, normalized through finite canonical JSON, and
+exposed as recursively immutable dict/list-compatible containers. Mutating
+caller-owned containers after construction, or attempting nested mutation
+through the belief, therefore cannot change an existing artifact content
+address.
+
 ## Information boundary
 
 Every row carries an absolute source-frame ID, and the descriptor declares an
@@ -14,7 +20,7 @@ mix reconstruction-only future frames into a predictive update.
 
 The identity tuple `(frame_id, entity_id, view_index, window_index)` must be
 unique. Association probability and prior reliability are stored separately.
-The prior nominal probability used by the robust likelihood is supplied per
+The prior nominal probability used by the robust mixture is supplied per
 effective group and is not recomputed from the physical innovation.
 
 ## Structured covariance
@@ -40,23 +46,50 @@ has a frozen prior nominal probability and a composite-likelihood weight in
 `(0, 1]`, allowing dense pixels or overlapping windows to be capped rather than
 counted as independent samples.
 
-## Bayesian-PhysTwin likelihood
+## Robust score semantics
 
-`grouped_student_t_mixture_likelihood` evaluates, for every effective group,
+Bayesian-PhysTwin exposes two grouped Student-t operations over this artifact.
+They share one normalized nominal/outlier mixture kernel but represent different
+scientific quantities.
+
+### Covariance-marginalized diagnostic
+
+`grouped_student_t_mixture_likelihood` preserves the historical portable score.
+It folds local covariance and shared low-rank factors into one group covariance
+and evaluates it with Cholesky solves and Woodbury identities. Independent
+factor groups are accumulated as separate rank-sized systems, so neither a dense
+covariance matrix nor a dense all-groups factor matrix is formed.
+
+This diagnostic intentionally does not use `prior_reliability`. Its
+machine-readable semantics are
 
 ```text
-rho_g t_nu(r_g; 0, Psi_g)
-+ (1-rho_g) t_nu(r_g; 0, lambda_out Psi_g)
+covariance-marginalized-student-t-score-v1
 ```
 
-where `Psi_g = (nu-2)/nu C_g`, so `C_g` is the covariance of the nominal
-Student-t component. Block-diagonal local covariance plus shared low-rank
-factors are evaluated with the Woodbury identity; a dense covariance matrix is
-not formed.
+It must not be described as the conditional objective optimized by the
+prior-aware solver.
 
-The posterior nominal responsibility may depend on the residual. The supplied
-prior nominal probability never does. Association support is reported as a
-separate diagnostic.
+### Conditional reliability-weighted objective
+
+`conditional_grouped_student_t_mixture_objective` evaluates the exact grouped
+objective used by `update_prior_aware_gauge_belief` at a supplied conditional
+prediction. That prediction must already include the evaluated state and
+nuisance contributions. Local covariance remains conditional, row reliability
+enters the group Mahalanobis distance once, zero-reliability rows are inert, and
+provider-final information powers are not capped a second time.
+
+Its machine-readable semantics are
+
+```text
+conditional-reliability-weighted-student-t-objective-v1
+```
+
+The posterior nominal responsibility may depend on the residual in both grouped
+operations. The supplied prior nominal probability never does. Association
+support remains a separate diagnostic. See
+[Student-t mixture semantics and conformance](likelihood_conformance.md) for the
+equations, the strict-minimax distinction, and executable parity checks.
 
 ## Gauge-aware state adapter
 
@@ -83,10 +116,10 @@ state update identifiable.
 
 ## Strict Prob4D causal stream
 
-An artifact whose repository and stream identify
-`FlorianPfaff/Prob4D` and `prob4d:causal-overlap-window-points` receives an
-additional provider-independent admission check before the physical innovation
-is formed. Bayesian-PhysTwin verifies that:
+An artifact whose repository and stream identify a supported Prob4D repository
+and `prob4d:causal-overlap-window-points` receives an additional
+provider-independent admission check before the physical innovation is formed.
+Bayesian-PhysTwin verifies that:
 
 - the source revision is exact rather than `unknown`;
 - the seven gauge factor names and factor-group/window mapping are unchanged;
@@ -108,13 +141,13 @@ provider-specific claims are never inferred from its repository name alone.
 Validate an artifact:
 
 ```bash
-bpt-validate-observation-belief observation_belief.npz
+bpt observation validate observation_belief.npz
 ```
 
 Score a prediction aligned row-for-row with the artifact:
 
 ```bash
-bpt-validate-observation-belief observation_belief.npz \
+bpt observation validate observation_belief.npz \
   --predicted-npz physical_prediction.npz \
   --predicted-key predicted_xyz_m \
   --summary-json outputs/observation_score.json

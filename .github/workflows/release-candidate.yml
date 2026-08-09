@@ -1,0 +1,169 @@
+name: Release candidate evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/release-candidate.yml"
+      - ".github/quality/test-suites.json"
+      - "MANIFEST.in"
+      - "CHANGELOG.md"
+      - "CITATION.cff"
+      - "SUPPORT.md"
+      - "api/**"
+      - "docs/public_api_policy.md"
+      - "docs/releasing.md"
+      - "pyproject.toml"
+      - "tests/test_release_candidate_evidence.py"
+      - "tests/test_release_candidate_workflow_policy.py"
+      - "tests/test_release_metadata.py"
+      - "tools/quality/check_public_api.py"
+      - "tools/release/**"
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+  TZ: UTC
+
+jobs:
+  evidence:
+    name: Build release candidate evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_REVISION }}
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned release toolchain
+        run: |
+          python -m pip install --upgrade "pip==26.1.2"
+          python -m pip install \
+            "build==1.5.0" \
+            "pip-audit==2.10.1" \
+            "setuptools==83.0.0" \
+            "twine==6.2.0" \
+            "wheel==0.47.0"
+
+      - name: Bind deterministic build time to the candidate revision
+        shell: bash
+        run: |
+          source_date_epoch=$(git show -s --format=%ct "${SOURCE_REVISION}")
+          [[ "${source_date_epoch}" =~ ^[0-9]+$ ]]
+          echo "SOURCE_DATE_EPOCH=${source_date_epoch}" >> "${GITHUB_ENV}"
+
+      - name: Record the complete build environment
+        run: |
+          python - <<'PY'
+          import importlib.metadata
+          import json
+          import os
+          import platform
+          import re
+          from pathlib import Path
+
+          packages = {}
+          for distribution in importlib.metadata.distributions():
+              raw_name = distribution.metadata.get("Name")
+              if not raw_name:
+                  raise SystemExit("installed distribution lacks a project name")
+              name = re.sub(r"[-_.]+", "-", raw_name).lower()
+              existing = packages.get(name)
+              if existing is not None and existing != distribution.version:
+                  raise SystemExit(f"conflicting installed versions for {name}")
+              packages[name] = distribution.version
+
+          payload = {
+              "schema": "bayesian-phystwin.release-build-environment",
+              "schema_version": 1,
+              "python_implementation": platform.python_implementation(),
+              "python_version": platform.python_version(),
+              "source_date_epoch": int(os.environ["SOURCE_DATE_EPOCH"]),
+              "packages": dict(sorted(packages.items())),
+          }
+          Path("build-environment.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Build wheel and source distribution
+        shell: bash
+        run: |
+          rm -rf build dist
+          find . -maxdepth 1 -type d -name '*.egg-info' -exec rm -rf {} +
+          python -m build --no-isolation
+          python -m twine check --strict dist/*
+
+      - name: Resolve, audit, and retain the runtime SBOM
+        run: |
+          python -m pip_audit \
+            --strict \
+            --progress-spinner off \
+            --format cyclonedx-json \
+            --output release-sbom.cdx.json \
+            .
+
+      - name: Build content-addressed release evidence
+        shell: bash
+        run: |
+          tag_arguments=()
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag_arguments+=(--expected-tag "${GITHUB_REF_NAME}")
+          fi
+          python tools/release/build_release_evidence.py \
+            dist \
+            --sbom release-sbom.cdx.json \
+            --build-environment build-environment.json \
+            --source-revision "${SOURCE_REVISION}" \
+            --output release-evidence.json \
+            "${tag_arguments[@]}"
+
+      - name: Summarize release evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          evidence = json.loads(Path("release-evidence.json").read_text())
+          with Path("release-summary.md").open("w", encoding="utf-8") as stream:
+              stream.write("### Release candidate evidence\n\n")
+              stream.write(f"- Version: `{evidence['project_version']}`\n")
+              stream.write(f"- Candidate tag: `{evidence['release_tag']}`\n")
+              stream.write(f"- Source: `{evidence['source_revision']}`\n")
+              stream.write(f"- Evidence ID: `{evidence['evidence_id']}`\n")
+          PY
+          cat release-summary.md >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload release candidate bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-candidate-${{ env.SOURCE_REVISION }}
+          path: |
+            build-environment.json
+            dist/
+            release-evidence.json
+            release-sbom.cdx.json
+            release-summary.md
+          if-no-files-found: error
+          retention-days: 30

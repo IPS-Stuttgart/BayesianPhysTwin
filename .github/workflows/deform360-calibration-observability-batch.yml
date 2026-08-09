@@ -1,0 +1,174 @@
+name: Deform360 calibration observability batch contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-observability-batch.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_calibration_observability_batch.md"
+      - "docs/experiment_index.md"
+      - "scripts/science/build_deform360_calibration_observability_batch.py"
+      - "tests/test_deform360_calibration_observability_batch.py"
+      - "tests/test_deform360_calibration_observability_batch_boundaries.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-observability-batch-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Atomic ten-object batch / Python ${{ matrix.python-version }}
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Create isolated evidence root
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/deform360-observability-batch-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${{ matrix.python-version }}"
+          mkdir -p -- "${root}"
+          echo "BATCH_EVIDENCE_ROOT=${root}" >> "${GITHUB_ENV}"
+
+      - name: Install exact source and quality tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "build==1.3.0"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Record exact environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "revision=$(git rev-parse HEAD)"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            python --version
+            python -m pip --version
+            python -m pip freeze --all
+          } | tee "${BATCH_EVIDENCE_ROOT}/environment.txt"
+
+      - name: Check batch source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/build_deform360_calibration_observability_batch.py
+            tests/test_deform360_calibration_observability_batch.py
+            tests/test_deform360_calibration_observability_batch_boundaries.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/build_deform360_calibration_observability_batch.py
+
+      - name: Run batch and adjacent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_observability_batch.py \
+            tests/test_deform360_calibration_observability_batch_boundaries.py \
+            tests/test_deform360_calibration_observability_case_builder.py \
+            tests/test_deform360_calibration_observability_report.py \
+            tests/test_deform360_calibration_source_run_record.py \
+            | tee "${BATCH_EVIDENCE_ROOT}/pytest.txt"
+          python -m py_compile \
+            scripts/science/build_deform360_calibration_observability_batch.py \
+            tests/test_deform360_calibration_observability_batch.py \
+            tests/test_deform360_calibration_observability_batch_boundaries.py
+
+      - name: Audit source-distribution membership
+        shell: bash
+        run: |
+          set -euo pipefail
+          dist="${BATCH_EVIDENCE_ROOT}/dist"
+          python -m build --sdist --no-isolation --outdir "${dist}"
+          python - <<'PY'
+          import os
+          import tarfile
+          from pathlib import Path, PurePosixPath
+
+          dist = Path(os.environ["BATCH_EVIDENCE_ROOT"]) / "dist"
+          archives = sorted(dist.glob("*.tar.gz"))
+          if len(archives) != 1:
+              raise SystemExit(f"expected one sdist, found {archives}")
+          with tarfile.open(archives[0], "r:gz") as handle:
+              members = {
+                  PurePosixPath(*PurePosixPath(item.name).parts[1:]).as_posix()
+                  for item in handle.getmembers()
+                  if len(PurePosixPath(item.name).parts) > 1
+              }
+          required = {
+              "docs/deform360_calibration_observability_batch.md",
+              "scripts/science/build_deform360_calibration_observability_batch.py",
+          }
+          missing = sorted(required - members)
+          if missing:
+              raise SystemExit(f"observability batch assets missing from sdist: {missing}")
+          PY
+
+      - name: Verify exact read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact batch evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-observability-batch-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.BATCH_EVIDENCE_ROOT }}/environment.txt
+            ${{ env.BATCH_EVIDENCE_ROOT }}/pytest.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+# Hosted, data-free, exact-head contract validation only.

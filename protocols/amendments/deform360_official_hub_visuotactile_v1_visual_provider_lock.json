@@ -1,0 +1,87 @@
+{
+  "amendment_id": "deform360-official-hub-visuotactile-v1-visual-provider-lock",
+  "calibration_lock": {
+    "must_be_committed_before_confirmation_payload_access": true,
+    "required_bindings": [
+      "visual_provider_lock_id",
+      "official Stage-0 selection_lock_id",
+      "exact finite-group calibration-design artifact ID",
+      "exact calibration object IDs",
+      "visual covariance, reliability, and identity calibration ID",
+      "contact-anchor mapping, covariance, grouping, and bias calibration ID",
+      "baseline-relative regret guard and nonlinear-closure policy ID",
+      "finite-group interval calibration ID, group count, and achieved rank"
+    ],
+    "schema": "bayesian-phystwin.deform360-visual-calibration-lock",
+    "schema_version": 1,
+    "target_outcomes_used": false
+  },
+  "claim_boundary": "This amendment closes the visual-producer ambiguity before selected raw payload access. It is protocol and contract infrastructure, not observation-quality, physical-prediction, calibration, safety, state-of-the-art, or Causal4D evidence.",
+  "finite_group_calibration_design": {
+    "artifact_id": "697261131ae83a08a0ce437c7b837f32ab4870c6c0cc4256784373b3ce19f1c8",
+    "calibration_group_count": 10,
+    "conformal_rank": 10,
+    "must_be_bound_by_calibration_lock": true,
+    "nominal_coverage": 0.9,
+    "path": "protocols/amendments/deform360_official_hub_visuotactile_v1_calibration_separation.json",
+    "policy_selection_uses_calibration_outcomes": false
+  },
+  "information_boundary": {
+    "camera_media_opened": false,
+    "confirmation_payloads_opened": false,
+    "geometry_annotations_opened": false,
+    "robot_arrays_opened": false,
+    "selected_raw_payloads_opened": false,
+    "tactile_arrays_opened": false,
+    "target_outcomes_opened": false
+  },
+  "locked_at": "2026-08-05",
+  "parent_protocol": {
+    "canonical_json_sha256": "55534067fb0b3d7965eb66438cbec2ac5b85bcf5378abd1a73785479a5cdbeab",
+    "id": "deform360-official-hub-visuotactile-v1",
+    "path": "protocols/deform360_official_hub_visuotactile_v1.json"
+  },
+  "rationale": "The parent protocol fixes persistent visual identities and complete joint gauge semantics but does not yet bind one exact Prob4D revision, MotionCrafter model set, seed policy, window geometry, storage mode, initial metric-frame prior, or additional-anchor policy. Those choices can materially change the visual arm and must be frozen without target access.",
+  "schema": "bayesian-phystwin/deform360-visuotactile-protocol-amendment",
+  "schema_version": 1,
+  "selection_lock": {
+    "canonical_selection_sha256": "b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222",
+    "complete_artifact_sha256": "dc1c2d192fbb841d2f0e290d77f21d697983b3f8bfbcae476e71fe902309cd82",
+    "content_selection_sha256": "f3d3ac25020ec85cad3fadf097259930437baae2b50b4c7f21f61d4823fc649b",
+    "dataset_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+    "path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+  },
+  "stage_order": [
+    "merge this target-blind amendment and lock-contract implementation",
+    "create and commit one exact visual-provider lock before downloading selected calibration payloads",
+    "freeze the deployed predictor, score, guard, grouping rule, and endpoint set from external or source-only evidence before interval-calibration scores are inspected",
+    "download and process calibration objects only",
+    "create and commit one exact calibration lock before opening confirmation payloads",
+    "open confirmation payloads exactly once and publish the registered positive or negative result"
+  ],
+  "status": "locked-before-selected-calibration-payload-access",
+  "visual_provider_lock": {
+    "fixed_semantics": {
+      "causal_cutoff_convention": "exclusive",
+      "full_joint_gauge_covariance": true,
+      "persistent_material_identities": true,
+      "provider_api_version": 2,
+      "stream_contract_version": 2
+    },
+    "must_be_committed_before_selected_calibration_payload_access": true,
+    "required_bindings": [
+      "exact IPS-Stuttgart/Prob4D revision and provider manifest",
+      "independently retained provider-attestation bytes",
+      "exact TencentARC/MotionCrafter revision and immutable model-set identity",
+      "root seed and effective per-object seed policy",
+      "window size, overlap, resolution, and dense-storage dtype",
+      "mandatory initial metric-frame prior identity",
+      "additional metric anchors: none or independently sparse",
+      "gauge rank cap and minimum retained covariance-trace fraction"
+    ],
+    "schema": "bayesian-phystwin.deform360-visual-provider-lock",
+    "schema_version": 1,
+    "selected_raw_payloads_opened": false,
+    "target_outcomes_used": false
+  }
+}

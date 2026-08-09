@@ -1,0 +1,106 @@
+name: Deform360 calibration download resilience
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-calibration-download-resilience.yml"
+      - ".github/workflows/deform360-official-hub-calibration-source-reusable.yml"
+      - ".github/workflows/dispatch-deform360-calibration-source-pr-target.yml"
+      - "docs/deform360_calibration_download_resilience.md"
+      - "scripts/science/deform360_calibration_source/cli.py"
+      - "scripts/science/deform360_calibration_source/download.py"
+      - "tests/test_deform360_calibration_download_retry.py"
+      - "tests/test_deform360_calibration_download_transport_policy.py"
+      - "tests/test_deform360_official_hub_calibration_source.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-calibration-download-resilience-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  contracts:
+    name: Frozen acquisition transport / Python ${{ matrix.python-version }}
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact validation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Check focused source quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/deform360_calibration_source/cli.py
+            scripts/science/deform360_calibration_source/download.py
+            tests/test_deform360_calibration_download_retry.py
+            tests/test_deform360_calibration_download_transport_policy.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/deform360_calibration_source/cli.py \
+            scripts/science/deform360_calibration_source/download.py
+
+      - name: Run focused and adjacent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_calibration_download_retry.py \
+            tests/test_deform360_calibration_download_transport_policy.py \
+            tests/test_deform360_official_hub_calibration_source.py \
+            tests/test_deform360_calibration_source_direct_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          python -m py_compile \
+            scripts/science/deform360_calibration_source/cli.py \
+            scripts/science/deform360_calibration_source/download.py \
+            tests/test_deform360_calibration_download_retry.py \
+            tests/test_deform360_calibration_download_transport_policy.py
+
+      - name: Verify exact read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"

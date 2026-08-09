@@ -1,0 +1,633 @@
+{
+  "artifact_kind": "PokeFlexActionRobustScaleCalibrationExtension",
+  "base_effective_scale": 0.125,
+  "calibration_id": "pokeflex-action-robust-scale-all18-v4",
+  "calibration_sha256": "e94eeb9bdd2cc69e245b0bd48d843e5f64cb039e1eb02841e4a784cbe4dbc880",
+  "candidate_multipliers": [
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0
+  ],
+  "claim_boundary": "This source-only extension completes a scale map for all eighteen public object identities. It is not an official-split result, and the five unresolved official records still require author mapping.",
+  "global_multiplier": 1.0,
+  "new_objects": {
+    "3dPrintedBunny": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.022077883314191884,
+      "minimum_source_relative_improvement": 0.012965247150691245,
+      "multiplier": 3.0,
+      "object_name": "3dPrintedBunny",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.03119051947769252,
+        0.012965247150691245
+      ],
+      "source_supported_frame_counts": [
+        93,
+        47
+      ],
+      "source_take_ids": [
+        "3dPrintedBunny_T4",
+        "3dPrintedBunny_T2"
+      ]
+    },
+    "3dPrintedHeart": {
+      "effective_scale": 0.1875,
+      "mean_source_relative_improvement": 0.0026858735905721286,
+      "minimum_source_relative_improvement": 0.0019538870130655817,
+      "multiplier": 1.5,
+      "object_name": "3dPrintedHeart",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        2.0,
+        1.5
+      ],
+      "source_relative_improvements": [
+        0.003417860168078675,
+        0.0019538870130655817
+      ],
+      "source_supported_frame_counts": [
+        63,
+        76
+      ],
+      "source_take_ids": [
+        "3dPrintedHeart_T6",
+        "3dPrintedHeart_T4"
+      ]
+    },
+    "FoamDice": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.028299302511687635,
+      "minimum_source_relative_improvement": 0.022962292696886863,
+      "multiplier": 4.0,
+      "object_name": "FoamDice",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.022962292696886863,
+        0.03363631232648841
+      ],
+      "source_supported_frame_counts": [
+        92,
+        93
+      ],
+      "source_take_ids": [
+        "FoamDice_T1",
+        "FoamDice_T4"
+      ]
+    },
+    "MemoryFoam": {
+      "effective_scale": 0.1875,
+      "mean_source_relative_improvement": 0.005094590028953078,
+      "minimum_source_relative_improvement": 0.003396253615438999,
+      "multiplier": 1.5,
+      "object_name": "MemoryFoam",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        1.5,
+        1.5
+      ],
+      "source_relative_improvements": [
+        0.003396253615438999,
+        0.006792926442467157
+      ],
+      "source_supported_frame_counts": [
+        34,
+        43
+      ],
+      "source_take_ids": [
+        "MemoryFoam_T4",
+        "MemoryFoam_T6"
+      ]
+    },
+    "PlushOctopus": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.014491042721326496,
+      "minimum_source_relative_improvement": 0.004710597252532257,
+      "multiplier": 3.0,
+      "object_name": "PlushOctopus",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.024271488190120736,
+        0.004710597252532257
+      ],
+      "source_supported_frame_counts": [
+        76,
+        66
+      ],
+      "source_take_ids": [
+        "PlushOctopus_T4",
+        "PlushOctopus_T5"
+      ]
+    },
+    "ToiletPaperRoll": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.014586133941786126,
+      "minimum_source_relative_improvement": 0.009252847207747725,
+      "multiplier": 3.0,
+      "object_name": "ToiletPaperRoll",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.01991942067582453,
+        0.009252847207747725
+      ],
+      "source_supported_frame_counts": [
+        59,
+        47
+      ],
+      "source_take_ids": [
+        "ToiletPaperRoll_T4",
+        "ToiletPaperRoll_T5"
+      ]
+    }
+  },
+  "objects": {
+    "3dPrintedBunny": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.022077883314191884,
+      "minimum_source_relative_improvement": 0.012965247150691245,
+      "multiplier": 3.0,
+      "object_name": "3dPrintedBunny",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.03119051947769252,
+        0.012965247150691245
+      ],
+      "source_supported_frame_counts": [
+        93,
+        47
+      ],
+      "source_take_ids": [
+        "3dPrintedBunny_T4",
+        "3dPrintedBunny_T2"
+      ]
+    },
+    "3dPrintedCylinder": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.028003813816223466,
+      "minimum_source_relative_improvement": 0.013717177793582235,
+      "multiplier": 3.0,
+      "object_name": "3dPrintedCylinder",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.013717177793582235,
+        0.0422904498388647
+      ],
+      "source_supported_frame_counts": [
+        127,
+        92
+      ],
+      "source_take_ids": [
+        "3dPrintedCylinder_T5",
+        "3dPrintedCylinder_T1"
+      ]
+    },
+    "3dPrintedHeart": {
+      "effective_scale": 0.1875,
+      "mean_source_relative_improvement": 0.0026858735905721286,
+      "minimum_source_relative_improvement": 0.0019538870130655817,
+      "multiplier": 1.5,
+      "object_name": "3dPrintedHeart",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        2.0,
+        1.5
+      ],
+      "source_relative_improvements": [
+        0.003417860168078675,
+        0.0019538870130655817
+      ],
+      "source_supported_frame_counts": [
+        63,
+        76
+      ],
+      "source_take_ids": [
+        "3dPrintedHeart_T6",
+        "3dPrintedHeart_T4"
+      ]
+    },
+    "3dPrintedPizza": {
+      "effective_scale": 0.0625,
+      "mean_source_relative_improvement": 0.0015742702862626265,
+      "minimum_source_relative_improvement": 0.0010405529829988181,
+      "multiplier": 0.5,
+      "object_name": "3dPrintedPizza",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        0.5,
+        0.5
+      ],
+      "source_relative_improvements": [
+        0.0021079875895264346,
+        0.0010405529829988181
+      ],
+      "source_supported_frame_counts": [
+        59,
+        53
+      ],
+      "source_take_ids": [
+        "3dPrintedPizza_T6",
+        "3dPrintedPizza_T4"
+      ]
+    },
+    "3dPrintedPyramid": {
+      "effective_scale": 0.125,
+      "mean_source_relative_improvement": 0.0,
+      "minimum_source_relative_improvement": 0.0,
+      "multiplier": 1.0,
+      "object_name": "3dPrintedPyramid",
+      "selection_reason": "global-lower-envelope-fallback",
+      "source_best_multipliers": [
+        0.5,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.0,
+        0.0
+      ],
+      "source_supported_frame_counts": [
+        61,
+        62
+      ],
+      "source_take_ids": [
+        "3dPrintedPyramid_T4",
+        "3dPrintedPyramid_T5"
+      ]
+    },
+    "Beanbag": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.02794720897325085,
+      "minimum_source_relative_improvement": 0.02579063507922423,
+      "multiplier": 4.0,
+      "object_name": "Beanbag",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.03010378286727747,
+        0.02579063507922423
+      ],
+      "source_supported_frame_counts": [
+        32,
+        51
+      ],
+      "source_take_ids": [
+        "Beanbag_T3",
+        "Beanbag_T1"
+      ]
+    },
+    "FoamCylinder": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.011694924595206676,
+      "minimum_source_relative_improvement": 0.009556019521019357,
+      "multiplier": 3.0,
+      "object_name": "FoamCylinder",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.009556019521019357,
+        0.013833829669393996
+      ],
+      "source_supported_frame_counts": [
+        70,
+        36
+      ],
+      "source_take_ids": [
+        "FoamCylinder_T3",
+        "FoamCylinder_T6"
+      ]
+    },
+    "FoamDice": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.028299302511687635,
+      "minimum_source_relative_improvement": 0.022962292696886863,
+      "multiplier": 4.0,
+      "object_name": "FoamDice",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.022962292696886863,
+        0.03363631232648841
+      ],
+      "source_supported_frame_counts": [
+        92,
+        93
+      ],
+      "source_take_ids": [
+        "FoamDice_T1",
+        "FoamDice_T4"
+      ]
+    },
+    "FoamHalfSphere": {
+      "effective_scale": 0.25,
+      "mean_source_relative_improvement": 0.018508679146485622,
+      "minimum_source_relative_improvement": 0.015276089328808758,
+      "multiplier": 2.0,
+      "object_name": "FoamHalfSphere",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        3.0,
+        2.0
+      ],
+      "source_relative_improvements": [
+        0.021741268964162484,
+        0.015276089328808758
+      ],
+      "source_supported_frame_counts": [
+        67,
+        76
+      ],
+      "source_take_ids": [
+        "FoamHalfSphere_T5",
+        "FoamHalfSphere_T6"
+      ]
+    },
+    "MemoryFoam": {
+      "effective_scale": 0.1875,
+      "mean_source_relative_improvement": 0.005094590028953078,
+      "minimum_source_relative_improvement": 0.003396253615438999,
+      "multiplier": 1.5,
+      "object_name": "MemoryFoam",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        1.5,
+        1.5
+      ],
+      "source_relative_improvements": [
+        0.003396253615438999,
+        0.006792926442467157
+      ],
+      "source_supported_frame_counts": [
+        34,
+        43
+      ],
+      "source_take_ids": [
+        "MemoryFoam_T4",
+        "MemoryFoam_T6"
+      ]
+    },
+    "Pillow": {
+      "effective_scale": 0.25,
+      "mean_source_relative_improvement": 0.00390855372401108,
+      "minimum_source_relative_improvement": 0.00244363089459027,
+      "multiplier": 2.0,
+      "object_name": "Pillow",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        2.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.00244363089459027,
+        0.00537347655343189
+      ],
+      "source_supported_frame_counts": [
+        76,
+        80
+      ],
+      "source_take_ids": [
+        "Pillow_T7",
+        "Pillow_T3"
+      ]
+    },
+    "PlushDice": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.03319764188615287,
+      "minimum_source_relative_improvement": 0.032694363509433395,
+      "multiplier": 4.0,
+      "object_name": "PlushDice",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.032694363509433395,
+        0.03370092026287236
+      ],
+      "source_supported_frame_counts": [
+        66,
+        65
+      ],
+      "source_take_ids": [
+        "PlushDice_T1",
+        "PlushDice_T6"
+      ]
+    },
+    "PlushMoon": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.009998688397071447,
+      "minimum_source_relative_improvement": 0.00974823362759773,
+      "multiplier": 4.0,
+      "object_name": "PlushMoon",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.010249143166545165,
+        0.00974823362759773
+      ],
+      "source_supported_frame_counts": [
+        64,
+        77
+      ],
+      "source_take_ids": [
+        "PlushMoon_T5",
+        "PlushMoon_T4"
+      ]
+    },
+    "PlushOctopus": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.014491042721326496,
+      "minimum_source_relative_improvement": 0.004710597252532257,
+      "multiplier": 3.0,
+      "object_name": "PlushOctopus",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.024271488190120736,
+        0.004710597252532257
+      ],
+      "source_supported_frame_counts": [
+        76,
+        66
+      ],
+      "source_take_ids": [
+        "PlushOctopus_T4",
+        "PlushOctopus_T5"
+      ]
+    },
+    "PlushTurtle": {
+      "effective_scale": 0.5,
+      "mean_source_relative_improvement": 0.017536445376098053,
+      "minimum_source_relative_improvement": 0.01196200308332926,
+      "multiplier": 4.0,
+      "object_name": "PlushTurtle",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.023110887668866847,
+        0.01196200308332926
+      ],
+      "source_supported_frame_counts": [
+        76,
+        58
+      ],
+      "source_take_ids": [
+        "PlushTurtle_T5",
+        "PlushTurtle_T6"
+      ]
+    },
+    "PlushVolleyball": {
+      "effective_scale": 0.125,
+      "mean_source_relative_improvement": 0.0,
+      "minimum_source_relative_improvement": 0.0,
+      "multiplier": 1.0,
+      "object_name": "PlushVolleyball",
+      "selection_reason": "insufficient-repeated-action-support",
+      "source_best_multipliers": [
+        1.0,
+        1.0
+      ],
+      "source_relative_improvements": [
+        0.0,
+        0.0
+      ],
+      "source_supported_frame_counts": [
+        0,
+        0
+      ],
+      "source_take_ids": [
+        "PlushVolleyball_T3",
+        "PlushVolleyball_T6"
+      ]
+    },
+    "Sponge": {
+      "effective_scale": 0.1875,
+      "mean_source_relative_improvement": 0.002283343221382889,
+      "minimum_source_relative_improvement": 0.000583427779636586,
+      "multiplier": 1.5,
+      "object_name": "Sponge",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        1.5,
+        4.0
+      ],
+      "source_relative_improvements": [
+        0.000583427779636586,
+        0.003983258663129192
+      ],
+      "source_supported_frame_counts": [
+        83,
+        91
+      ],
+      "source_take_ids": [
+        "Sponge_T4",
+        "Sponge_T5"
+      ]
+    },
+    "ToiletPaperRoll": {
+      "effective_scale": 0.375,
+      "mean_source_relative_improvement": 0.014586133941786126,
+      "minimum_source_relative_improvement": 0.009252847207747725,
+      "multiplier": 3.0,
+      "object_name": "ToiletPaperRoll",
+      "selection_reason": "repeated-action-maximin",
+      "source_best_multipliers": [
+        4.0,
+        3.0
+      ],
+      "source_relative_improvements": [
+        0.01991942067582453,
+        0.009252847207747725
+      ],
+      "source_supported_frame_counts": [
+        59,
+        47
+      ],
+      "source_take_ids": [
+        "ToiletPaperRoll_T4",
+        "ToiletPaperRoll_T5"
+      ]
+    }
+  },
+  "official18_evaluation_authorized": false,
+  "official_target_outcomes_used_for_v4_selection": false,
+  "parent_calibration_file_sha256": "96fe0046d15dfdd150b3f2f695b678a5b2b8a6acd790978624b120f6fa6408b0",
+  "parent_calibration_sha256": "78d3c74e4246ec6b69cbcfe113ed04324bf1a9f49d543194df8a7a87d7f09157",
+  "schema_version": 1,
+  "source_artifact_file_sha256s": {
+    "3dPrintedBunny_T2": "da7ef4a433e6a08c07eb1ca4fa94bdfc83fa3567b06fe8ceee8797d8db11b30b",
+    "3dPrintedBunny_T4": "1034f93f386af99b9a5749622546ae48ea54dee9a0087098c05201ce9cf35543",
+    "3dPrintedHeart_T4": "4e9876b9e69a02a4a9d08962f1b364c24f0d3cc54291d696381ca93d350561bb",
+    "3dPrintedHeart_T6": "77571e30210169ee53001944654108ca2f39c0a82a9ce025f266a11b1564b3b0",
+    "FoamDice_T1": "6d15ef2600fbc6a81b173f0bdb2b352252789c4e238b4f9e181527794c1c82c7",
+    "FoamDice_T4": "ad18b1299ead92a118b12e247835e9e68dfe281cb3b86db8c6db141b10f3359b",
+    "MemoryFoam_T4": "85c9d51ba3e8c0a41e0499731a698161e8900e97d7c8423847e2e2fa50079834",
+    "MemoryFoam_T6": "25ebe33efca7cb2f197e98f39e70b8caecb2a187143eda0f709ee7e7b8cc94b6",
+    "PlushOctopus_T4": "9f503799204bdc4d4767e5e72f5fb7b80f7dca6e1a856d70273beeabde76f579",
+    "PlushOctopus_T5": "7ab06d4de9d77ce086ac170383b89f4fd4f2068a4d22bce379dbb55fee04a3bf",
+    "ToiletPaperRoll_T4": "c6ccca2b68ebb2301332e1912d2aa38106d9ca041f4b4677b96ffd4e3758ed7d",
+    "ToiletPaperRoll_T5": "0e2384a6c639db37fd3c8adf63f74d4104071348d2d27097681cd1c55421e127"
+  },
+  "source_gate": {
+    "adjusted_new_object_count": 6,
+    "controls_passed": true,
+    "mean_source_action_relative_improvement": 0.014539137684752892,
+    "minimum_source_action_relative_improvement": 0.0019538870130655817,
+    "new_source_action_count": 12,
+    "new_source_object_count": 6,
+    "passed": true,
+    "source_action_regression_count": 0
+  },
+  "source_protocol_sha256": "7a7b291418964ed7ccaf54f2eb4e2db25badf35edc3cb68d4ca484e0b0a6ed03",
+  "synthetic_controls": {
+    "passed": true,
+    "placebo_control_count": 12,
+    "placebo_deviation_count": 0,
+    "positive_control_count": 12,
+    "positive_detection_count": 12
+  }
+}

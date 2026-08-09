@@ -33,9 +33,19 @@ The prior-aware update keeps the observation concepts separate:
 - posterior nominal responsibility is an output of the residual update.
 
 Each declared correlation group receives one nominal/outlier multivariate
-Student-t mixture. The degrees of freedom must exceed two because input matrices
-are interpreted as covariances. The returned covariance is a working
-Laplace/IRLS covariance and still requires prospective coverage evaluation.
+Student-t mixture. Row reliability scales the conditional covariance precision,
+while the group composite weight and effective-sample cap form one common
+generalized-Bayes power. A zero-reliability row is excluded from the group
+Mahalanobis distance and cannot change the responsibility of supported rows.
+The degrees of freedom must exceed two because input matrices are interpreted as
+covariances.
+
+The exact mixture score is the default. Setting a positive
+`minimum_robust_precision` is an explicitly reported tail approximation. The
+returned covariance is a working Gauss-Newton/IRLS covariance rather than the
+exact mixture Hessian and still requires prospective coverage evaluation. See
+[the executable likelihood audit](likelihood_conformance.md) for the equations,
+strict-solver distinction, and conformance tests.
 
 ## Row-bound physical linearization
 

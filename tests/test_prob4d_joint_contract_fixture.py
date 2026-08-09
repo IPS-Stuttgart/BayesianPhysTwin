@@ -17,9 +17,7 @@ from bayesian_phystwin.prob4d_causal_lineage import (
     validate_prob4d_causal_observation_belief,
 )
 
-FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "prob4d_joint_observation_v1.json"
-)
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "prob4d_joint_observation_v1.json"
 
 
 def _belief() -> tuple[ObservationBeliefV1, str]:
@@ -95,16 +93,12 @@ def test_joint_gauge_fixture_has_identical_content_address_and_semantics() -> No
     # The same latent column affects observations from different windows. The
     # adapter must therefore retain one shared nuisance vector, not duplicate it
     # once per window.
-    cross_covariance = (
-        belief.low_rank_factor_m[0] @ belief.low_rank_factor_m[2].T
-    )
+    cross_covariance = belief.low_rank_factor_m[0] @ belief.low_rank_factor_m[2].T
     assert cross_covariance[0, 0] != 0.0
 
 
 def test_explicit_v2_binds_calibration_and_propagated_anchor_covariance() -> None:
-    validation = validate_prob4d_causal_observation_belief(
-        _explicit_v2_belief()
-    )
+    validation = validate_prob4d_causal_observation_belief(_explicit_v2_belief())
 
     assert validation["stream_contract_version"] == 2
     assert validation["stream_contract_version_inferred"] is False
@@ -120,9 +114,7 @@ def test_explicit_v2_rejects_missing_calibration_digest() -> None:
     del metadata["metric_gauge_anchor"]["calibration_artifact_sha256"]
 
     with pytest.raises(ValueError, match="calibration_artifact_sha256"):
-        validate_prob4d_causal_observation_belief(
-            replace(belief, metadata=metadata)
-        )
+        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
 
 
 def test_explicit_v2_rejects_untracked_anchor_covariance() -> None:
@@ -131,9 +123,7 @@ def test_explicit_v2_rejects_untracked_anchor_covariance() -> None:
     metadata["metric_anchor_covariance_in_joint_factor"] = False
 
     with pytest.raises(ValueError, match="include metric-anchor covariance"):
-        validate_prob4d_causal_observation_belief(
-            replace(belief, metadata=metadata)
-        )
+        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
 
 
 def test_joint_gauge_fixture_rejects_per_window_factor_groups() -> None:
@@ -151,9 +141,7 @@ def test_joint_gauge_fixture_rejects_rank_metadata_drift() -> None:
     metadata["gauge_posterior"]["exported_factor_rank"] = 4
 
     with pytest.raises(ValueError, match="rank differs"):
-        validate_prob4d_causal_observation_belief(
-            replace(belief, metadata=metadata)
-        )
+        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
 
 
 def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
@@ -162,6 +150,12 @@ def test_joint_gauge_fixture_rejects_cross_window_claim_drift() -> None:
     metadata["joint_cross_window_gauge_covariance_represented"] = False
 
     with pytest.raises(ValueError, match="covariance flags differ"):
-        validate_prob4d_causal_observation_belief(
-            replace(belief, metadata=metadata)
-        )
+        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
+
+
+# The stable-core coverage job invokes this file explicitly. Import the recursive
+# factor-stream, timestamp-binding, and directional-endpoint contract cases here
+# so their new package code is covered by the same line and branch ratchets.
+from prob4d_factor_stream_contract_cases import *  # noqa: E402,F403
+from test_phystwin_directional_endpoint_v2 import *  # noqa: E402,F403
+from test_prob4d_observation_timestamp_binding_invariants import *  # noqa: E402,F403

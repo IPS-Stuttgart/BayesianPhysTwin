@@ -2,22 +2,26 @@
 
 from __future__ import annotations
 
-import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any, cast
 
 import numpy as np
 
+from ._canonical_contracts import frozen_finite_json_mapping, immutable_array
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
+
+def _require(condition: bool | np.bool_, message: str) -> None:
+    if not bool(condition):
         raise ValueError(message)
 
 
-def _readonly(value: np.ndarray, *, dtype: Any = np.float64) -> np.ndarray:
-    result = np.asarray(value, dtype=dtype).copy()
-    result.setflags(write=False)
-    return result
+def _readonly(
+    value: object,
+    *,
+    dtype: Any | None = np.float64,
+) -> np.ndarray:
+    return immutable_array(value, dtype=dtype)
 
 
 def _finite_array(value: np.ndarray, name: str, ndim: int) -> np.ndarray:
@@ -27,17 +31,8 @@ def _finite_array(value: np.ndarray, name: str, ndim: int) -> np.ndarray:
     return result
 
 
-def _validated_metadata(values: Mapping[str, Any] | None) -> dict[str, Any]:
-    try:
-        return json.loads(
-            json.dumps(
-                dict(values or {}),
-                sort_keys=True,
-                allow_nan=False,
-            )
-        )
-    except (TypeError, ValueError) as error:
-        raise ValueError("metadata must contain finite JSON values") from error
+def _validated_metadata(values: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    return frozen_finite_json_mapping(values, name="metadata")
 
 
 def _symmetric(value: np.ndarray) -> np.ndarray:
@@ -150,6 +145,25 @@ def _probability_vector(
     return result
 
 
+COMPOSITE_WEIGHT_MODE_CONSUMER_CAP = "consumer-effective-sample-cap-v1"
+COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL = "provider-final-per-row-v1"
+_COMPOSITE_WEIGHT_MODES = frozenset(
+    {
+        COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
+        COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
+    }
+)
+
+
+def _validated_composite_weight_mode(value: str, name: str) -> str:
+    mode = str(value)
+    _require(
+        mode in _COMPOSITE_WEIGHT_MODES,
+        f"{name} must be one of {sorted(_COMPOSITE_WEIGHT_MODES)}",
+    )
+    return mode
+
+
 @dataclass(frozen=True)
 class GaugeAwareBeliefConfig:
     """Prior, robustness, identifiability, and plausibility settings."""
@@ -231,6 +245,9 @@ class GaugeAwareObservationBatch:
     anchor_bias_jacobian: np.ndarray | None = None
     anchor_bias_prior_covariance: np.ndarray | None = None
     metadata: Mapping[str, Any] | None = None
+    composite_weight_mode: str = COMPOSITE_WEIGHT_MODE_CONSUMER_CAP
+    anchor_composite_weight_mode: str = COMPOSITE_WEIGHT_MODE_CONSUMER_CAP
+    association_probability: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         innovation = _finite_array(self.innovation_m, "innovation_m", 2)
@@ -241,13 +258,9 @@ class GaugeAwareObservationBatch:
         )
         state = _finite_array(self.state_jacobian, "state_jacobian", 3)
         gauge = _finite_array(self.gauge_jacobian, "gauge_jacobian", 3)
-        shared = _finite_array(
-            self.shared_bias_jacobian, "shared_bias_jacobian", 3
-        )
+        shared = _finite_array(self.shared_bias_jacobian, "shared_bias_jacobian", 3)
         view = _finite_array(self.view_bias_jacobian, "view_bias_jacobian", 3)
-        query = _finite_array(
-            self.query_state_jacobian, "query_state_jacobian", 3
-        )
+        query = _finite_array(self.query_state_jacobian, "query_state_jacobian", 3)
         count = len(innovation)
         _require(innovation.shape == (count, 3), "innovation_m must have shape (M, 3)")
         _require(
@@ -266,7 +279,7 @@ class GaugeAwareObservationBatch:
         ):
             _require(value.shape[:2] == (count, 3), f"{name} row shape changed")
         _require(
-            query.ndim == 3 and query.shape[1:] == (3, state_count) and len(query),
+            query.ndim == 3 and query.shape[1:] == (3, state_count) and len(query) > 0,
             "query_state_jacobian must have shape (Q, 3, S)",
         )
         gauge_count = gauge.shape[2]
@@ -292,6 +305,12 @@ class GaugeAwareObservationBatch:
             self.prior_reliability,
             count,
             name="prior_reliability",
+            default=1.0,
+        )
+        association_probability = _probability_vector(
+            self.association_probability,
+            count,
+            name="association_probability",
             default=1.0,
         )
         nominal_probability = _probability_vector(
@@ -353,24 +372,30 @@ class GaugeAwareObservationBatch:
             "anchor metadata requires anchor observations",
         )
 
-        anchor_innovation = None
-        anchor_covariance = None
-        anchor_state = None
+        anchor_innovation: np.ndarray | None = None
+        anchor_covariance: np.ndarray | None = None
+        anchor_state: np.ndarray | None = None
         anchor_groups: tuple[str, ...] | None = None
-        anchor_reliability = None
-        anchor_nominal_probability = None
-        anchor_composite_weight = None
-        anchor_bias = None
-        anchor_bias_prior = None
+        anchor_reliability: np.ndarray | None = None
+        anchor_nominal_probability: np.ndarray | None = None
+        anchor_composite_weight: np.ndarray | None = None
+        anchor_bias: np.ndarray | None = None
+        anchor_bias_prior: np.ndarray | None = None
         if has_anchor:
             anchor_innovation = _finite_array(
-                self.anchor_innovation_m, "anchor_innovation_m", 2
+                cast(np.ndarray, self.anchor_innovation_m),
+                "anchor_innovation_m",
+                2,
             )
             anchor_covariance = _finite_array(
-                self.anchor_covariance_m2, "anchor_covariance_m2", 3
+                cast(np.ndarray, self.anchor_covariance_m2),
+                "anchor_covariance_m2",
+                3,
             )
             anchor_state = _finite_array(
-                self.anchor_state_jacobian, "anchor_state_jacobian", 3
+                cast(np.ndarray, self.anchor_state_jacobian),
+                "anchor_state_jacobian",
+                3,
             )
             anchor_count = len(anchor_innovation)
             _require(
@@ -438,7 +463,7 @@ class GaugeAwareObservationBatch:
                     "anchor bias covariance is missing",
                 )
                 anchor_bias_prior = _finite_array(
-                    self.anchor_bias_prior_covariance,
+                    cast(np.ndarray, self.anchor_bias_prior_covariance),
                     "anchor_bias_prior_covariance",
                     2,
                 )
@@ -452,6 +477,15 @@ class GaugeAwareObservationBatch:
                     eigenvalue_floor=1e-12,
                 )
 
+        composite_weight_mode = _validated_composite_weight_mode(
+            self.composite_weight_mode,
+            "composite_weight_mode",
+        )
+        anchor_composite_weight_mode = _validated_composite_weight_mode(
+            self.anchor_composite_weight_mode,
+            "anchor_composite_weight_mode",
+        )
+
         for name, value in (
             ("innovation_m", innovation),
             ("observation_covariance_m2", covariance),
@@ -462,6 +496,7 @@ class GaugeAwareObservationBatch:
             ("query_state_jacobian", query),
             ("gauge_prior_covariance", gauge_prior),
             ("prior_reliability", reliability),
+            ("association_probability", association_probability),
             ("prior_nominal_probability", nominal_probability),
             ("composite_weight", composite_weight),
         ):
@@ -524,6 +559,12 @@ class GaugeAwareObservationBatch:
             "anchor_bias_prior_covariance",
             None if anchor_bias_prior is None else _readonly(anchor_bias_prior),
         )
+        object.__setattr__(self, "composite_weight_mode", composite_weight_mode)
+        object.__setattr__(
+            self,
+            "anchor_composite_weight_mode",
+            anchor_composite_weight_mode,
+        )
         object.__setattr__(self, "metadata", _validated_metadata(self.metadata))
 
 
@@ -562,9 +603,7 @@ class GaugeAwareBeliefResult:
         covariance = np.asarray(self.posterior_covariance, dtype=np.float64)
         transform = np.asarray(self.identifiable_state_transform, dtype=np.float64)
         fractions = np.asarray(self.identifiable_fractions, dtype=np.float64)
-        query_fractions = np.asarray(
-            self.query_sensitivity_fractions, dtype=np.float64
-        )
+        query_fractions = np.asarray(self.query_sensitivity_fractions, dtype=np.float64)
         robust = np.asarray(self.robust_weights, dtype=np.float64)
         anchor_robust = np.asarray(self.anchor_robust_weights, dtype=np.float64)
         _require(
@@ -576,13 +615,7 @@ class GaugeAwareBeliefResult:
             == 1,
             "coefficient arrays must be vectors",
         )
-        dimension = (
-            len(state)
-            + len(gauge)
-            + len(shared)
-            + len(view)
-            + len(anchor_bias)
-        )
+        dimension = len(state) + len(gauge) + len(shared) + len(view) + len(anchor_bias)
         _require(
             covariance.shape == (dimension, dimension),
             "posterior covariance has changed shape",
@@ -653,9 +686,11 @@ class GaugeAwareSelection:
     selected_value: np.ndarray
 
     def __post_init__(self) -> None:
-        selected = np.asarray(self.selected_value).copy()
-        selected.setflags(write=False)
-        object.__setattr__(self, "selected_value", selected)
+        object.__setattr__(
+            self,
+            "selected_value",
+            _readonly(self.selected_value, dtype=None),
+        )
 
 
 def _fallback_result(
@@ -690,5 +725,5 @@ def _fallback_result(
         robust_weights=np.zeros(len(batch.innovation_m)),
         anchor_robust_weights=np.zeros(anchor_count),
         diagnostics=diagnostics,
-        input_lineage=batch.metadata,
+        input_lineage=batch.metadata or {},
     )

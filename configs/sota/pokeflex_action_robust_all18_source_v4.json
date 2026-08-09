@@ -1,0 +1,149 @@
+{
+  "artifact_kind": "PokeFlexActionRobustAll18SourceProtocol",
+  "claim_boundary": "This is a source-only calibration extension. It neither reopens nor authorizes an official-split evaluation, and it cannot resolve the five unavailable legacy validation records.",
+  "evidence_boundary": {
+    "author_mapping_required_before_official18": true,
+    "exact_v4_multiplier_bank_outcomes_opened_before_lock": false,
+    "held_v8_accessed": false,
+    "official18_evaluation_authorized": false,
+    "official_target_outcomes_used_for_v4_selection": false,
+    "public13_target_outcomes_already_opened_under_v3": true,
+    "selected_source_takes_previously_exposed": true
+  },
+  "gates": {
+    "minimum_adjusted_new_object_count": 3,
+    "minimum_mean_source_action_relative_improvement": 0,
+    "required_source_action_regression_count": 0,
+    "synthetic_positive_and_placebo_controls_required": true
+  },
+  "method": {
+    "base_effective_scale": 0.125,
+    "candidate_multipliers": [
+      0.5,
+      1.0,
+      1.5,
+      2.0,
+      3.0,
+      4.0
+    ],
+    "checkpoint_control_scale": 0.0,
+    "effective_scales": [
+      0.0625,
+      0.125,
+      0.1875,
+      0.25,
+      0.375,
+      0.5
+    ],
+    "field": "action_local_state_relative_0.4",
+    "selector": "the unchanged v3 two-action maximin selector with multiplier-one fallback",
+    "source_runner": "scripts/remote/run_pokeflex_checkpoint_registration_smoke.py",
+    "unsupported_frame_action": "byte-identical released checkpoint"
+  },
+  "official_split_provenance": {
+    "audit_file_sha256": "fbc829724a8b6c53c44d28e6ec61dad3302fa39ed71ac369c5c900037b01b406",
+    "audit_sha256": "c62f496ffea3e0dc9551cd7c9eb993ddf50eedea5f407d5a4fb51c7b153095c9",
+    "decision": "author_mapping_or_processed_validation_set_required",
+    "path": "results/sota/pokeflex_official_split_provenance_v2/public_inventory_audit.json"
+  },
+  "parent_calibration": {
+    "calibration_sha256": "78d3c74e4246ec6b69cbcfe113ed04324bf1a9f49d543194df8a7a87d7f09157",
+    "file_sha256": "96fe0046d15dfdd150b3f2f695b678a5b2b8a6acd790978624b120f6fa6408b0",
+    "path": "configs/sota/pokeflex_action_robust_scale_v3.json"
+  },
+  "prior_exposure": {
+    "action_guard_development_lock_file_sha256": "a05087a0a90bdb075396d70d48e944d208ffa227a72ac5da2598fe5b3c12b591",
+    "action_guard_development_lock_sha256": "4796ca2cf1f45d9e6cd810de13650126ef3f9dba48087f3d839754d2c37630c6",
+    "action_robust_exclusion_audit_file_sha256": "cffcf0cf2a0d54a2e9fbba232ca88ebeb6ea114b3fc4364d83f6548a6d7bfce5",
+    "action_robust_exclusion_audit_sha256": "8f6fb4c9c7faec43c0ff98acc1b480073fe1f2ba3c6f534036ceb1b86059e67b",
+    "scope": "Only takes already exposed by prior source-development or exposure audits are eligible. Exposure does not grant target status or prospective evidence."
+  },
+  "protocol_id": "pokeflex-action-robust-all18-source-v4",
+  "protocol_sha256": "7a7b291418964ed7ccaf54f2eb4e2db25badf35edc3cb68d4ca484e0b0a6ed03",
+  "schema_version": 1,
+  "source_selection": {
+    "objects": {
+      "3dPrintedBunny": {
+        "eligible_take_ids": [
+          "3dPrintedBunny_T2",
+          "3dPrintedBunny_T3",
+          "3dPrintedBunny_T4",
+          "3dPrintedBunny_T5",
+          "3dPrintedBunny_T6",
+          "3dPrintedBunny_T7"
+        ],
+        "official_target_take_id": "3dPrintedBunny_T1",
+        "selected_take_ids": [
+          "3dPrintedBunny_T4",
+          "3dPrintedBunny_T2"
+        ]
+      },
+      "3dPrintedHeart": {
+        "eligible_take_ids": [
+          "3dPrintedHeart_T1",
+          "3dPrintedHeart_T4",
+          "3dPrintedHeart_T5",
+          "3dPrintedHeart_T6"
+        ],
+        "official_target_take_id": "3dPrintedHeart_T14",
+        "selected_take_ids": [
+          "3dPrintedHeart_T6",
+          "3dPrintedHeart_T4"
+        ]
+      },
+      "FoamDice": {
+        "eligible_take_ids": [
+          "FoamDice_T1",
+          "FoamDice_T4",
+          "FoamDice_T5",
+          "FoamDice_T6"
+        ],
+        "official_target_take_id": "FoamDice_T3",
+        "selected_take_ids": [
+          "FoamDice_T1",
+          "FoamDice_T4"
+        ]
+      },
+      "MemoryFoam": {
+        "eligible_take_ids": [
+          "MemoryFoam_T1",
+          "MemoryFoam_T4",
+          "MemoryFoam_T5",
+          "MemoryFoam_T6"
+        ],
+        "official_target_take_id": "MemoryFoam_T2",
+        "selected_take_ids": [
+          "MemoryFoam_T4",
+          "MemoryFoam_T6"
+        ]
+      },
+      "PlushOctopus": {
+        "eligible_take_ids": [
+          "PlushOctopus_T1",
+          "PlushOctopus_T4",
+          "PlushOctopus_T5"
+        ],
+        "official_target_take_id": "PlushOctopus_T6",
+        "selected_take_ids": [
+          "PlushOctopus_T4",
+          "PlushOctopus_T5"
+        ]
+      },
+      "ToiletPaperRoll": {
+        "eligible_take_ids": [
+          "ToiletPaperRoll_T4",
+          "ToiletPaperRoll_T5",
+          "ToiletPaperRoll_T6"
+        ],
+        "official_target_take_id": "ToiletPaperRoll_T1",
+        "selected_take_ids": [
+          "ToiletPaperRoll_T4",
+          "ToiletPaperRoll_T5"
+        ]
+      }
+    },
+    "rule": "within each fixed eligible inventory, choose the two takes with the smallest SHA256(salt || NUL || take_id)",
+    "salt": "pokeflex-action-robust-all18-source-v4"
+  },
+  "status": "pre-outcome source lock; exact v4 multiplier-bank outcomes unopened"
+}

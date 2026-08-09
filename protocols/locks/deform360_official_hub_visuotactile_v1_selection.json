@@ -1,0 +1,278 @@
+{
+  "available_raw_object_count": 192,
+  "cache_preflight": {
+    "artifact_archive_sha256": "e12cb4ed5f39ac4f35e12e60a11abe402391e2e9bcd8ad73595816fccb529e01",
+    "artifact_id": 8891291233,
+    "content_inventory_sha256": "0089c45afb323e6d2e4312dd71d6e5a2cb359c056f007b5aeb09da33e03b7974",
+    "excluded_candidate_objects": [
+      "010-orange-cloth",
+      "012-hat-cloth",
+      "013-glove-cloth",
+      "014-glove-vinyl-cloth",
+      "017-chessboard-cloth",
+      "018-trashbag-cloth",
+      "019-trashbag-plastic-cloth",
+      "020-cutting-mat-cloth",
+      "023-cleaning-cloth",
+      "024-glass-cleaner-cloth",
+      "045-cat",
+      "047-rectangle-sponge",
+      "048-butter-sponge",
+      "050-boxing",
+      "053-squeezer",
+      "063-flower",
+      "084-apron-cloth",
+      "087-plastic-bag-blue-cloth",
+      "093-squeezable-fruit",
+      "109-pouch-cloth",
+      "126-jellyfish",
+      "137-kitchen-napkin-cloth",
+      "181-belt",
+      "182-plastic-sheets-cloth",
+      "185-cheese",
+      "191-sloth-green",
+      "195-hello-kitty-brown",
+      "196-hello-kitty-white"
+    ],
+    "finding": "The mounted cache contains no untouched official-release trajectory cohort; all candidate-name paths are prior-generated experiment outputs.",
+    "inventory_sha256": "71c9d25ac2325c9737feef622022d0c7c8a9854ba8d0b5c628913a11563a145c",
+    "workflow_run_id": 30906578152
+  },
+  "content_selection_sha256": "f3d3ac25020ec85cad3fadf097259930437baae2b50b4c7f21f61d4823fc649b",
+  "dataset": {
+    "raw_prefix": "raw",
+    "repo_id": "brownu/deform360",
+    "requested_revision": "main",
+    "resolved_revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+  },
+  "excluded_object_count": 92,
+  "implementation_revision": "8b5c065ed06ff4f94bcc2367f0d7e08f9b8c85a7",
+  "information_boundary": {
+    "camera_media_opened": false,
+    "geometry_annotations_opened": false,
+    "object_directory_names_opened": true,
+    "object_metadata_json_opened": true,
+    "opened_metadata_paths": [
+      "raw/026-sock-cloth/metadata.json",
+      "raw/030-bandage-cloth/metadata.json",
+      "raw/031-cotton-cloth/metadata.json",
+      "raw/036-napkin-cloth/metadata.json",
+      "raw/057-kitchen-sponge/metadata.json",
+      "raw/058-roll-napkin/metadata.json",
+      "raw/095-watermelon/metadata.json",
+      "raw/102-stress-ball/metadata.json",
+      "raw/105-clay-cloth/metadata.json",
+      "raw/107-mitt-cloth/metadata.json",
+      "raw/115-cotton-gauze-cloth/metadata.json",
+      "raw/152-slime/metadata.json",
+      "raw/153-cake/metadata.json",
+      "raw/155-crystal-slime/metadata.json",
+      "raw/156-mesh-produce-bag-cloth/metadata.json",
+      "raw/166-glove-green-cloth/metadata.json",
+      "raw/167-glove-gray-cloth/metadata.json",
+      "raw/186-monster/metadata.json",
+      "raw/187-white-bear/metadata.json",
+      "raw/190-monkey/metadata.json",
+      "raw/193-frog/metadata.json",
+      "raw/198-kneepad-cloth/metadata.json"
+    ],
+    "robot_arrays_opened": false,
+    "tactile_arrays_opened": false,
+    "target_outcomes_opened": false
+  },
+  "next_gate": "commit this exact selection and its content SHA-256 before downloading or processing any selected raw camera, tactile, robot, or geometry payload",
+  "official_processing": {
+    "future_processing_revision_change_requires_new_protocol": true,
+    "repository": "lhy0807/deform360",
+    "required_stages": [
+      "download-selected-object",
+      "undistort-selected-episode-and-frozen-camera-subset",
+      "process-tactile-selected-episode",
+      "robot",
+      "gripper-masks",
+      "reconstruct",
+      "depth",
+      "tracking",
+      "pcd",
+      "control-points"
+    ],
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  },
+  "prior_protocols": {
+    "v1": {
+      "config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+      "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+    },
+    "v2": {
+      "config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+      "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json"
+    }
+  },
+  "protocol_id": "deform360-official-hub-visuotactile-v1",
+  "protocol_sha256": "55534067fb0b3d7965eb66438cbec2ac5b85bcf5378abd1a73785479a5cdbeab",
+  "replacement_allowed_after_payload_access": false,
+  "schema": "bayesian-phystwin/deform360-official-hub-selection-v1",
+  "schema_version": 1,
+  "selection": {
+    "calibration": [
+      {
+        "episode_id": 0,
+        "metadata_path": "raw/167-glove-gray-cloth/metadata.json",
+        "metadata_sha256": "08690b978b1f72dce283bfc11e07f1e0ffac7f29e26bd6bc3642911e7d5ae659",
+        "object_id": "167-glove-gray-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 2,
+        "metadata_path": "raw/198-kneepad-cloth/metadata.json",
+        "metadata_sha256": "198b9ea8c9262935a9c7827379f659fcaa931bd1a9f8cdea8e6f9f5f96a86b89",
+        "object_id": "198-kneepad-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 7,
+        "metadata_path": "raw/026-sock-cloth/metadata.json",
+        "metadata_sha256": "fada5567bdfceab0398c8e5f043ae026030de7f9d8de5f0e720f7bf236f2dbc0",
+        "object_id": "026-sock-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 0,
+        "metadata_path": "raw/031-cotton-cloth/metadata.json",
+        "metadata_sha256": "c2c5d30efc85fea22b52d1b5317c3a8084f272ef79154f313441a79c35adaa08",
+        "object_id": "031-cotton-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 9,
+        "metadata_path": "raw/036-napkin-cloth/metadata.json",
+        "metadata_sha256": "3eca16d7f72ce1d83828d60fdc98fa942843d12cd1aa20846f036a3e882547a6",
+        "object_id": "036-napkin-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 5,
+        "metadata_path": "raw/153-cake/metadata.json",
+        "metadata_sha256": "1aa51cf0c34dc55a702458dddf63c346c1742f3220cab67552225d37b32fcdbc",
+        "object_id": "153-cake",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 8,
+        "metadata_path": "raw/152-slime/metadata.json",
+        "metadata_sha256": "b41ada1608a4b77e45dc93c3d3c95f4b248cf60708fdcf67079d73c6412379e5",
+        "object_id": "152-slime",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 6,
+        "metadata_path": "raw/186-monster/metadata.json",
+        "metadata_sha256": "87aba693bfe3a1f306ce2a3b82b9d2c14f8be9382fdf9e5c0d515cfc115e3e03",
+        "object_id": "186-monster",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 1,
+        "metadata_path": "raw/058-roll-napkin/metadata.json",
+        "metadata_sha256": "83a6ef10e5c516b2744d7a96425da75b921a64e8a864f225dd57a2a2a98b2b21",
+        "object_id": "058-roll-napkin",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 7,
+        "metadata_path": "raw/193-frog/metadata.json",
+        "metadata_sha256": "fc39119b57a69793f0723d52b8547e10abaec281aa702921c9a4e991028f5bab",
+        "object_id": "193-frog",
+        "stratum": "volumetric"
+      }
+    ],
+    "confirmation": [
+      {
+        "episode_id": 1,
+        "metadata_path": "raw/166-glove-green-cloth/metadata.json",
+        "metadata_sha256": "054b64a85d9b76f008298faadf34e081fbbfa98302905e3bea9bc0fa6826a9c1",
+        "object_id": "166-glove-green-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 9,
+        "metadata_path": "raw/115-cotton-gauze-cloth/metadata.json",
+        "metadata_sha256": "0d54c7950f4c4a4806c80fb3a52a82c5cbf78ea4f24f8aa562da5669f86dc951",
+        "object_id": "115-cotton-gauze-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 1,
+        "metadata_path": "raw/030-bandage-cloth/metadata.json",
+        "metadata_sha256": "a80dfdc2b3799417660c9cd5e34f4664cb8cad684b9c8157cf232792f1f1a53f",
+        "object_id": "030-bandage-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 4,
+        "metadata_path": "raw/156-mesh-produce-bag-cloth/metadata.json",
+        "metadata_sha256": "631d9ae763a98741f54d0d8ebe262d883760865c97cbc2d95b9e9500817c080e",
+        "object_id": "156-mesh-produce-bag-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 3,
+        "metadata_path": "raw/107-mitt-cloth/metadata.json",
+        "metadata_sha256": "86ff56a328e68985f7d71f4b0fdefdd99a6a47a3959057926b8e78ba7639de3c",
+        "object_id": "107-mitt-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 6,
+        "metadata_path": "raw/105-clay-cloth/metadata.json",
+        "metadata_sha256": "9308ab4e7ad9809fe3607f2b7bf0e7e0292e1a76fa34bbc01eeabc96599c7943",
+        "object_id": "105-clay-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 2,
+        "metadata_path": "raw/187-white-bear/metadata.json",
+        "metadata_sha256": "2db60d8d4955449cd39900592b53c7bcad37889eb7f75ae9025359e52442b5bc",
+        "object_id": "187-white-bear",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 4,
+        "metadata_path": "raw/057-kitchen-sponge/metadata.json",
+        "metadata_sha256": "872a275732932033040c7f6a44616bd872a6d571b521e55f877d8e9b5b4d03c6",
+        "object_id": "057-kitchen-sponge",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 1,
+        "metadata_path": "raw/190-monkey/metadata.json",
+        "metadata_sha256": "515882441ca7b4466a5b67d9be58e1af3966f5feb1bbae8eeaf61e46f09920ea",
+        "object_id": "190-monkey",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 3,
+        "metadata_path": "raw/095-watermelon/metadata.json",
+        "metadata_sha256": "0da75db909d10344305288a28611e547ac416ed72ecbf4e9939ffb7c5d6a2cd0",
+        "object_id": "095-watermelon",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 1,
+        "metadata_path": "raw/102-stress-ball/metadata.json",
+        "metadata_sha256": "2a9a2913b2c361869271f99217b84184891f02c64aad39c7d352aa164a516bbd",
+        "object_id": "102-stress-ball",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 4,
+        "metadata_path": "raw/155-crystal-slime/metadata.json",
+        "metadata_sha256": "68b2b1c1439a6d749b8b28b54fdd2219ae5dde2fcf1db635125d4a1529a20772",
+        "object_id": "155-crystal-slime",
+        "stratum": "volumetric"
+      }
+    ]
+  },
+  "selection_artifact_sha256": "dc1c2d192fbb841d2f0e290d77f21d697983b3f8bfbcae476e71fe902309cd82",
+  "selection_sha256": "b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222"
+}

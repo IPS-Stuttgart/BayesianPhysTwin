@@ -6,6 +6,8 @@ that remain identifiable beyond gauge and observation-bias uncertainty.
 """
 
 from ._gauge_aware_contracts import (
+    COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
+    COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
     GaugeAwareBeliefConfig,
     GaugeAwareBeliefResult,
     GaugeAwareObservationBatch,
@@ -18,6 +20,8 @@ from ._gauge_aware_solver import (
 )
 
 __all__ = [
+    "COMPOSITE_WEIGHT_MODE_CONSUMER_CAP",
+    "COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL",
     "GaugeAwareBeliefConfig",
     "GaugeAwareBeliefResult",
     "GaugeAwareObservationBatch",

@@ -1,0 +1,233 @@
+name: Three-repository installed-wheel golden path
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/three-repository-golden-path.yml"
+      - "scripts/run_three_repository_golden_path.sh"
+      - "integration_tests/**"
+      - "tests/fixtures/prob4d_joint_observation_v1.json"
+      - "tests/test_prob4d_joint_contract_fixture.py"
+      - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_three_repository_workflow.py"
+      - "tests/test_endpoint_model_average.py"
+      - "tests/test_prospective_prob4d_update.py"
+      - "docs/three_repository_golden_path.md"
+      - "docs/prospective_belief_updates_v1.md"
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_graph_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_public_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_scientific_provider_v1.py"
+      - "src/bayesian_phystwin/contracts/**"
+      - "src/bayesian_phystwin/phystwin/**"
+      - "src/bayesian_phystwin/cli/provider_manifest.py"
+      - "src/bayesian_phystwin/evidence_policy.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "src/bayesian_phystwin/prospective_prob4d_update.py"
+      - "src/bayesian_phystwin/observation_belief.py"
+      - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
+      - "src/bayesian_phystwin/prob4d_causal_lineage.py"
+      - "src/bayesian_phystwin/prob4d_observation_contract.py"
+      - "src/bayesian_phystwin/prob4d_provider_attestation.py"
+      - "src/bayesian_phystwin/gauge_aware_belief.py"
+      - "src/bayesian_phystwin/_gauge_aware_contracts.py"
+      - "src/bayesian_phystwin/_gauge_aware_solver.py"
+      - "src/bayesian_phystwin/repository_provenance.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/run_manifest_v2.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/three-repository-golden-path.yml"
+      - "scripts/run_three_repository_golden_path.sh"
+      - "integration_tests/**"
+      - "tests/fixtures/prob4d_joint_observation_v1.json"
+      - "tests/test_prob4d_joint_contract_fixture.py"
+      - "tests/test_prob4d_causal_lineage.py"
+      - "tests/test_three_repository_workflow.py"
+      - "tests/test_endpoint_model_average.py"
+      - "tests/test_prospective_prob4d_update.py"
+      - "docs/three_repository_golden_path.md"
+      - "docs/prospective_belief_updates_v1.md"
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_belief_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_graph_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_public_provider_v1.py"
+      - "src/bayesian_phystwin/causal4d_scientific_provider_v1.py"
+      - "src/bayesian_phystwin/contracts/**"
+      - "src/bayesian_phystwin/phystwin/**"
+      - "src/bayesian_phystwin/cli/provider_manifest.py"
+      - "src/bayesian_phystwin/evidence_policy.py"
+      - "src/bayesian_phystwin/endpoint_model_average.py"
+      - "src/bayesian_phystwin/prospective_prob4d_update.py"
+      - "src/bayesian_phystwin/observation_belief.py"
+      - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
+      - "src/bayesian_phystwin/prob4d_causal_lineage.py"
+      - "src/bayesian_phystwin/prob4d_observation_contract.py"
+      - "src/bayesian_phystwin/prob4d_provider_attestation.py"
+      - "src/bayesian_phystwin/gauge_aware_belief.py"
+      - "src/bayesian_phystwin/_gauge_aware_contracts.py"
+      - "src/bayesian_phystwin/_gauge_aware_solver.py"
+      - "src/bayesian_phystwin/repository_provenance.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/run_manifest_v2.py"
+  repository_dispatch:
+    types:
+      - prob4d-compatibility
+      - causal4d-compatibility
+  workflow_dispatch:
+    inputs:
+      prob4d_ref:
+        description: Prob4D branch, tag, or commit to validate
+        required: false
+        default: main
+      causal4d_ref:
+        description: Causal4D branch, tag, or commit to validate
+        required: false
+        default: main
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    three-repository-golden-path-${{ github.workflow }}-${{ github.ref }}-
+    ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}-
+    ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
+  cancel-in-progress: true
+
+env:
+  PROB4D_REF: >-
+    ${{ github.event.client_payload.prob4d_ref || inputs.prob4d_ref || 'main' }}
+  CAUSAL4D_REF: >-
+    ${{ github.event.client_payload.causal4d_ref || inputs.causal4d_ref || 'main' }}
+  PROB4D_CHECKOUT_REPOSITORY: IPS-Stuttgart/Prob4D
+
+jobs:
+  consumer-contract-fixture:
+    name: BPT + Causal4D consumer fixture / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out Bayesian-PhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: bayesian-phystwin
+          persist-credentials: false
+
+      - name: Check out public Causal4D consumer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_REF }}
+          path: causal4d
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            bayesian-phystwin/pyproject.toml
+            causal4d/pyproject.toml
+
+      - name: Install both consumer packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./bayesian-phystwin[dev]"
+          python -m pip install -e "./causal4d[dev]"
+
+      - name: Validate the Bayesian-PhysTwin consumer fixture
+        run: |
+          python -m pytest -q \
+            bayesian-phystwin/tests/test_prob4d_joint_contract_fixture.py \
+            bayesian-phystwin/tests/test_prob4d_causal_lineage.py \
+            bayesian-phystwin/tests/test_three_repository_workflow.py
+
+      - name: Validate the Causal4D consumer fixture
+        run: |
+          python -m pytest -q \
+            causal4d/tests/test_prob4d_joint_contract_fixture.py \
+            causal4d/tests/test_observation_contract_bundle.py \
+            causal4d/tests/test_observation_lineage.py
+
+      - name: Record fixture-gate scope
+        run: |
+          {
+            echo "### Always-executed consumer contract fixture"
+            echo
+            echo "BayesianPhysTwin and Causal4D independently validated the checked-in observation fixture."
+            echo "This detects consumer/schema drift but does not replace the"
+            echo "installed-wheel Prob4D -> BayesianPhysTwin -> Causal4D gate."
+            echo
+            echo "Causal4D ref: \`${CAUSAL4D_REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  installed-wheel-golden-path:
+    name: Prob4D -> BPT -> Causal4D / Python 3.12
+    needs: consumer-contract-fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out Bayesian-PhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: bayesian-phystwin
+          persist-credentials: false
+
+      - name: Check out public Prob4D producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.PROB4D_CHECKOUT_REPOSITORY }}
+          ref: ${{ env.PROB4D_REF }}
+          path: prob4d
+          persist-credentials: false
+
+      - name: Check out public Causal4D consumer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_REF }}
+          path: causal4d
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            bayesian-phystwin/pyproject.toml
+            prob4d/pyproject.toml
+            causal4d/pyproject.toml
+
+      - name: Build, install, and execute the isolated golden path
+        run: |
+          bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
+            bayesian-phystwin \
+            prob4d \
+            causal4d
+
+      - name: Record tested repository refs
+        run: |
+          {
+            echo "### Tested repository refs"
+            echo
+            echo "- Prob4D ref: \`${PROB4D_REF}\`"
+            echo "- Prob4D checkout repository: \`${PROB4D_CHECKOUT_REPOSITORY}\`"
+            echo "- Prob4D project identity: \`github-repository-id:1295794737\`"
+            echo "- BayesianPhysTwin: \`${GITHUB_SHA}\`"
+            echo "- Causal4D: \`${CAUSAL4D_REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
