@@ -5,6 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "security-scanning.yml"
+DEPENDABOT = ROOT / ".github" / "dependabot.yml"
+SECURITY_POLICY = ROOT / "SECURITY.md"
 ACTION_REFERENCE = re.compile(r"^\s*uses:\s+([^\s@]+)@([^\s#]+)", re.MULTILINE)
 
 
@@ -60,3 +62,24 @@ def test_all_third_party_actions_are_pinned_to_full_commit_shas() -> None:
         assert re.fullmatch(r"[0-9a-f]{40}", revision), (
             f"{action} must use a full lowercase commit SHA, got {revision!r}"
         )
+
+
+def test_dependabot_groups_python_tools_and_action_updates() -> None:
+    text = DEPENDABOT.read_text(encoding="utf-8")
+
+    assert "package-ecosystem: pip" in text
+    assert "package-ecosystem: github-actions" in text
+    assert text.count("interval: weekly") == 2
+    assert "open-pull-requests-limit: 5" in text
+    assert "development-tools:" in text
+    assert "github-actions:" in text
+    assert '          - "*"' in text
+
+
+def test_private_vulnerability_reporting_is_documented() -> None:
+    text = SECURITY_POLICY.read_text(encoding="utf-8")
+
+    assert "Do not disclose a suspected vulnerability in a public issue" in text
+    assert "private vulnerability-reporting" in text
+    assert "self-hosted runners" in text
+    assert "content-addressed identities" in text
