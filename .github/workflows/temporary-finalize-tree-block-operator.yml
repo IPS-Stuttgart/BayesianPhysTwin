@@ -96,6 +96,7 @@ jobs:
             src/bayesian_phystwin/tree_block_posterior_operator.py
             tests/test_structured_point_covariance_tree_block_operator.py
           )
+          python -m ruff check --fix "${files[@]}"
           python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
           python -m mypy --python-version 3.12 \
