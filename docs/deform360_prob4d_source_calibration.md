@@ -17,6 +17,11 @@ It does not authorize confirmation access. A separate registered observability,
 transfer, and coverage gate must pass before the twelve confirmation objects can
 be opened.
 
+That automated decision is specified in
+`docs/deform360_prob4d_source_gate.md` and locked by
+`protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json`. It uses
+leave-one-physical-object-out source transfer and requires no human approval.
+
 ## Statistical units
 
 Dense overlapping pixels are correlated and are not treated as independent
