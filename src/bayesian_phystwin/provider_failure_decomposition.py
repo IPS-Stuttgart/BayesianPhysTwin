@@ -16,9 +16,7 @@ from typing import Any, Final, cast
 
 from ._canonical_contracts import frozen_finite_json_mapping, plain_json
 
-PROVIDER_FAILURE_EVIDENCE_SCHEMA: Final = (
-    "bayesian_phystwin.provider_failure_evidence"
-)
+PROVIDER_FAILURE_EVIDENCE_SCHEMA: Final = "bayesian_phystwin.provider_failure_evidence"
 PROVIDER_FAILURE_EVIDENCE_VERSION: Final = 1
 PROVIDER_FAILURE_REPORT_SCHEMA: Final = (
     "bayesian_phystwin.provider_failure_decomposition"
@@ -45,9 +43,7 @@ _SIGNAL_TO_CATEGORY: Final[dict[str, str]] = {
     "physical_guard_passed": "physical-model-or-readout-mismatch",
 }
 
-CLASSIFICATION_PRECEDENCE: Final[tuple[str, ...]] = tuple(
-    _SIGNAL_TO_CATEGORY.values()
-)
+CLASSIFICATION_PRECEDENCE: Final[tuple[str, ...]] = tuple(_SIGNAL_TO_CATEGORY.values())
 
 _REASON_TO_SIGNAL: Final[dict[str, str]] = {
     "no-observation-support": "provider_support_complete",
