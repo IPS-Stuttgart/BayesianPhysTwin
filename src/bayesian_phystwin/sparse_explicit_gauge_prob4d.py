@@ -33,11 +33,13 @@ from .explicit_gauge_prob4d import (
 )
 from .physical_linearization import PhysicalLinearizationV1
 from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1
+from .prior_aware_gauge_belief_v2 import (
+    update_sparse_prior_aware_gauge_belief_v2 as update_sparse_prior_aware_gauge_belief,
+)
 from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
 from .sparse_prior_aware_gauge_belief import (
     SPARSE_PRIOR_AWARE_GAUGE_SOLVER_VERSION,
     SparseGaugeDesignV1,
-    update_sparse_prior_aware_gauge_belief,
 )
 
 NATIVE_SPARSE_EXPLICIT_GAUGE_BRIDGE_VERSION = 1
