@@ -1,21 +1,32 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-import bayesian_phystwin.deform360_prob4d_metric_batch as metric_batch
-from bayesian_phystwin.deform360_prob4d_metric_batch import (
-    METRIC_BATCH_RESULT_FILENAME,
-    METRIC_DIRECTORY_NAME,
-    METRIC_PREFIX_PLAN_FILENAME,
-    SUPPORT_NEGATIVE_DETAIL,
-    materialize_deform360_prob4d_metric_batch,
-    validate_deform360_prob4d_metric_batch,
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts/science/materialize_deform360_prob4d_metric_batch.py"
+SPEC = importlib.util.spec_from_file_location("deform360_prob4d_metric_batch", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+metric_batch = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = metric_batch
+SPEC.loader.exec_module(metric_batch)
+
+METRIC_BATCH_RESULT_FILENAME = metric_batch.METRIC_BATCH_RESULT_FILENAME
+METRIC_DIRECTORY_NAME = metric_batch.METRIC_DIRECTORY_NAME
+METRIC_PREFIX_PLAN_FILENAME = metric_batch.METRIC_PREFIX_PLAN_FILENAME
+SUPPORT_NEGATIVE_DETAIL = metric_batch.SUPPORT_NEGATIVE_DETAIL
+materialize_deform360_prob4d_metric_batch = (
+    metric_batch.materialize_deform360_prob4d_metric_batch
+)
+validate_deform360_prob4d_metric_batch = (
+    metric_batch.validate_deform360_prob4d_metric_batch
 )
 
 PROCESSING_REVISION = "1" * 40
