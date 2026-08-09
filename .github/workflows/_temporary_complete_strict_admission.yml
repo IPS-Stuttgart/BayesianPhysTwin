@@ -1,0 +1,163 @@
+name: Temporary complete strict-admission patch
+
+on:
+  push:
+    branches:
+      - agent/fix-significant-bugs-20260809
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Route every claim-bearing adapter through strict v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "src/bayesian_phystwin/explicit_gauge_prob4d.py": (
+                  "from .prior_aware_gauge_belief import (\n"
+                  "    PriorAwareGaugeConfigV1,\n"
+                  "    update_prior_aware_gauge_belief,\n"
+                  ")\n",
+                  "from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1\n"
+                  "from .prior_aware_gauge_belief_v2 import (\n"
+                  "    update_prior_aware_gauge_belief_v2 as update_prior_aware_gauge_belief,\n"
+                  ")\n",
+              ),
+              "src/bayesian_phystwin/prob4d_visual_bias_update.py": (
+                  "from .prior_aware_gauge_belief import (\n"
+                  "    PriorAwareGaugeConfigV1,\n"
+                  "    update_prior_aware_gauge_belief,\n"
+                  ")\n",
+                  "from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1\n"
+                  "from .prior_aware_gauge_belief_v2 import (\n"
+                  "    update_prior_aware_gauge_belief_v2 as update_prior_aware_gauge_belief,\n"
+                  ")\n",
+              ),
+              "src/bayesian_phystwin/sparse_explicit_gauge_prob4d.py": (
+                  "from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1\n"
+                  "from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1\n"
+                  "from .sparse_prior_aware_gauge_belief import (\n"
+                  "    SPARSE_PRIOR_AWARE_GAUGE_SOLVER_VERSION,\n"
+                  "    SparseGaugeDesignV1,\n"
+                  "    update_sparse_prior_aware_gauge_belief,\n"
+                  ")\n",
+                  "from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1\n"
+                  "from .prior_aware_gauge_belief_v2 import (\n"
+                  "    update_sparse_prior_aware_gauge_belief_v2 as update_sparse_prior_aware_gauge_belief,\n"
+                  ")\n"
+                  "from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1\n"
+                  "from .sparse_prior_aware_gauge_belief import (\n"
+                  "    SPARSE_PRIOR_AWARE_GAUGE_SOLVER_VERSION,\n"
+                  "    SparseGaugeDesignV1,\n"
+                  ")\n",
+              ),
+              "src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py": (
+                  "from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1\n"
+                  "from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1\n"
+                  "from .sparse_prior_aware_gauge_belief import (\n"
+                  "    SPARSE_PRIOR_AWARE_GAUGE_SOLVER_VERSION,\n"
+                  "    TreeSparseGaugeDesignV1,\n"
+                  "    update_sparse_prior_aware_gauge_belief,\n"
+                  ")\n",
+                  "from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1\n"
+                  "from .prior_aware_gauge_belief_v2 import (\n"
+                  "    update_sparse_prior_aware_gauge_belief_v2 as update_sparse_prior_aware_gauge_belief,\n"
+                  ")\n"
+                  "from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1\n"
+                  "from .sparse_prior_aware_gauge_belief import (\n"
+                  "    SPARSE_PRIOR_AWARE_GAUGE_SOLVER_VERSION,\n"
+                  "    TreeSparseGaugeDesignV1,\n"
+                  ")\n",
+              ),
+          }
+
+          for name, (old, new) in replacements.items():
+              path = Path(name)
+              text = path.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(
+                      f"expected one historical solver import in {name}; "
+                      f"found {text.count(old)}"
+                  )
+              path.write_text(text.replace(old, new))
+
+          path = Path("tests/test_claim_bearing_strict_admission.py")
+          text = path.read_text()
+          old_imports = (
+              "import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2\n"
+              "import bayesian_phystwin.prospective_prob4d_update as prospective_update\n"
+              "import bayesian_phystwin.tree_sparse_structured_gauge_prob4d as structured_update\n"
+          )
+          new_imports = (
+              "import bayesian_phystwin.explicit_gauge_prob4d as explicit_update\n"
+              "import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2\n"
+              "import bayesian_phystwin.prob4d_visual_bias_update as visual_bias_update\n"
+              "import bayesian_phystwin.prospective_prob4d_update as prospective_update\n"
+              "import bayesian_phystwin.sparse_explicit_gauge_prob4d as sparse_update\n"
+              "import bayesian_phystwin.tree_sparse_explicit_gauge_prob4d as tree_update\n"
+              "import bayesian_phystwin.tree_sparse_structured_gauge_prob4d as structured_update\n"
+          )
+          if text.count(old_imports) != 1:
+              raise SystemExit("unexpected strict-admission test import block")
+          text = text.replace(old_imports, new_imports)
+
+          old_test = (
+              "def test_claim_bearing_entry_points_bind_strict_v2_solvers() -> None:\n"
+              "    assert prospective_update.update_prior_aware_gauge_belief is (\n"
+              "        update_prior_aware_gauge_belief_v2\n"
+              "    )\n"
+              "    assert structured_update.update_sparse_prior_aware_gauge_belief_structured is (\n"
+              "        update_sparse_prior_aware_gauge_belief_structured_v2\n"
+              "    )\n"
+          )
+          new_test = (
+              "def test_all_claim_bearing_entry_points_bind_strict_v2_solvers() -> None:\n"
+              "    for module in (prospective_update, explicit_update, visual_bias_update):\n"
+              "        assert module.update_prior_aware_gauge_belief is (\n"
+              "            update_prior_aware_gauge_belief_v2\n"
+              "        )\n"
+              "    for module in (sparse_update, tree_update):\n"
+              "        assert module.update_sparse_prior_aware_gauge_belief is (\n"
+              "            update_sparse_prior_aware_gauge_belief_v2\n"
+              "        )\n"
+              "    assert structured_update.update_sparse_prior_aware_gauge_belief_structured is (\n"
+              "        update_sparse_prior_aware_gauge_belief_structured_v2\n"
+              "    )\n"
+          )
+          if text.count(old_test) != 1:
+              raise SystemExit("unexpected strict-admission binding test block")
+          path.write_text(text.replace(old_test, new_test))
+          PY
+
+          python -m compileall -q src/bayesian_phystwin tests/test_claim_bearing_strict_admission.py
+          rm .github/workflows/_temporary_complete_strict_admission.yml
+
+      - name: Commit completed patch and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/explicit_gauge_prob4d.py \
+            src/bayesian_phystwin/prob4d_visual_bias_update.py \
+            src/bayesian_phystwin/sparse_explicit_gauge_prob4d.py \
+            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py \
+            tests/test_claim_bearing_strict_admission.py \
+            .github/workflows/_temporary_complete_strict_admission.yml
+          git commit -m "Route all claim-bearing adapters through strict admission"
+          git push origin HEAD:agent/fix-significant-bugs-20260809
