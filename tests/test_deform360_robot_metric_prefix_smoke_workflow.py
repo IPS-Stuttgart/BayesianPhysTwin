@@ -31,6 +31,20 @@ def test_robot_metric_smoke_is_public_source_only_and_one_shot() -> None:
     assert 'succeeded_job_count": 324' in text
     assert 'technical_failure_job_count": 0' in text
     assert 'test ! -e "${output}"' in text
+    assert "continue-on-error: true" in text
+    assert "steps.metric_materialization.outcome" in text
+    assert 'status = "metric-geometry-support-negative"' in text
+    assert 'status = "technical-failure"' in text
+    assert "released-robot-geometry-outside-fixed-camera-prefix" in text
+    assert "materialization_stderr_sha256" in text
+    assert '"calibration_robot_state_access_attempted": True' in text
+    assert 'None if status == "technical-failure" else True' in text
+    assert 'echo "calibration_robot_state_access_attempted=true"' in text
+    assert 'echo "calibration_robot_state_opened=true"' not in text
+    assert "Enforce the frozen source-support gate" in text
+    assert text.index("Upload compact public source-only smoke evidence") < text.index(
+        "Enforce the frozen source-support gate"
+    )
     assert "jobs = sorted(" in text
     assert "job = jobs[0]" in text
     assert "rendered_depth.h5" not in text

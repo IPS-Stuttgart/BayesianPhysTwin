@@ -265,13 +265,18 @@ jobs:
           PY
 
       - name: Materialize released robot geometry for the causal prefix
+        id: metric_materialization
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
+          run_root="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke"
+          mkdir -p "${run_root}"
           evidence="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/production-evidence"
+          output="${METRIC_OUTPUT_ROOT}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}/${SMOKE_JOB_ID}"
+          echo "METRIC_SMOKE_OUTPUT=${output}" >> "${GITHUB_ENV}"
           processed="$(realpath -e "${PROCESSED_ROOT}")"
           test "${processed}" = "${PROCESSED_ROOT}"
-          output="${METRIC_OUTPUT_ROOT}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}/${SMOKE_JOB_ID}"
           test ! -e "${output}"
           mkdir -p "$(dirname "${output}")"
           python scripts/science/materialize_deform360_robot_metric_prefix.py \
@@ -283,46 +288,88 @@ jobs:
             --target-height 320 \
             --target-width 640 \
             --output-dir "${output}" \
-            > "${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/materialization.json"
-          echo "METRIC_SMOKE_OUTPUT=${output}" >> "${GITHUB_ENV}"
+            > "${run_root}/materialization.json" \
+            2> "${run_root}/materialization.stderr"
 
       - name: Publish compact source-only support evidence
+        if: always()
+        env:
+          MATERIALIZATION_OUTCOME: ${{ steps.metric_materialization.outcome }}
         shell: bash
         run: |
           set -euo pipefail
           compact="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/compact"
           mkdir -p "${compact}"
-          cp "${METRIC_SMOKE_OUTPUT}/metric-prefix.json" "${compact}/"
-          cp "${METRIC_SMOKE_OUTPUT}/metric-calibration.json" "${compact}/"
-          cp "${METRIC_SMOKE_OUTPUT}/SHA256SUMS" "${compact}/metric-SHA256SUMS"
           METRIC_SMOKE_OUTPUT="${METRIC_SMOKE_OUTPUT}" COMPACT="${compact}" python - <<'PY'
+          import hashlib
           import json
           import os
+          import shutil
           from pathlib import Path
 
           from bayesian_phystwin._portable_contracts import content_id
 
           source = Path(os.environ["METRIC_SMOKE_OUTPUT"])
           compact = Path(os.environ["COMPACT"])
-          metric = json.loads((source / "metric-prefix.json").read_text())
+          run_root = Path(os.environ["RUNNER_TEMP"]) / (
+              "deform360-public-robot-gauge-smoke"
+          )
+          outcome = os.environ["MATERIALIZATION_OUTCOME"]
+          if outcome not in {"success", "failure"}:
+              raise SystemExit("unknown materialization step outcome")
+
+          error_path = run_root / "materialization.stderr"
+          error_bytes = error_path.read_bytes() if error_path.is_file() else b""
+          expected_negative = (
+              b"ValueError: released robot geometry is outside this camera prefix"
+          )
+          if outcome == "success":
+              metric = json.loads((source / "metric-prefix.json").read_text())
+              for source_name, destination_name in (
+                  ("metric-prefix.json", "metric-prefix.json"),
+                  ("metric-calibration.json", "metric-calibration.json"),
+                  ("SHA256SUMS", "metric-SHA256SUMS"),
+              ):
+                  shutil.copy2(source / source_name, compact / destination_name)
+              status = "metric-geometry-supported"
+              failure_reason = None
+              metric_artifact_id = metric["artifact_id"]
+              projected_point_count = metric["projected_point_count"]
+              causal_frame_range = metric["causal_frame_range_half_open"]
+          elif expected_negative in error_bytes and not source.exists():
+              status = "metric-geometry-support-negative"
+              failure_reason = "released-robot-geometry-outside-fixed-camera-prefix"
+              metric_artifact_id = None
+              projected_point_count = 0
+              causal_frame_range = None
+          else:
+              status = "technical-failure"
+              failure_reason = "unexpected-metric-materialization-failure"
+              metric_artifact_id = None
+              projected_point_count = None
+              causal_frame_range = None
+
           identity = {
               "schema": "bayesian-phystwin.deform360-robot-metric-prefix-smoke-result",
               "schema_version": 1,
-              "status": "metric-geometry-supported",
+              "status": status,
               "implementation_revision": os.environ["GITHUB_SHA"],
               "visual_production_result_id": os.environ["PRODUCTION_RESULT_ID"],
               "visual_production_revision": os.environ["PRODUCTION_REVISION"],
               "metric_policy_id": os.environ["METRIC_POLICY_ID"],
-              "metric_artifact_id": metric["artifact_id"],
+              "metric_artifact_id": metric_artifact_id,
               "job_id": os.environ["SMOKE_JOB_ID"],
               "object_id": os.environ["SMOKE_OBJECT_ID"],
               "camera_id": os.environ["SMOKE_CAMERA_ID"],
-              "projected_point_count": metric["projected_point_count"],
-              "causal_frame_range_half_open": metric[
-                  "causal_frame_range_half_open"
-              ],
+              "projected_point_count": projected_point_count,
+              "causal_frame_range_half_open": causal_frame_range,
+              "failure_reason": failure_reason,
+              "materialization_stderr_sha256": hashlib.sha256(error_bytes).hexdigest(),
               "information_boundary": {
-                  "calibration_robot_state_opened": True,
+                  "calibration_robot_state_access_attempted": True,
+                  "calibration_robot_state_opened": (
+                      None if status == "technical-failure" else True
+                  ),
                   "calibration_tactile_payloads_opened": False,
                   "confirmation_payloads_opened": False,
                   "full_sequence_rendered_depth_used": False,
@@ -348,7 +395,8 @@ jobs:
             echo "runner_name=${RUNNER_NAME}"
             echo "visual_production_run_id=${PRODUCTION_RUN_ID}"
             echo "visual_production_result_id=${PRODUCTION_RESULT_ID}"
-            echo "calibration_robot_state_opened=true"
+            echo "materialization_outcome=${MATERIALIZATION_OUTCOME}"
+            echo "calibration_robot_state_access_attempted=true"
             echo "calibration_tactile_payloads_opened=false"
             echo "confirmation_payloads_opened=false"
             echo "full_sequence_rendered_depth_used=false"
@@ -366,9 +414,29 @@ jobs:
           test -z "$(git status --porcelain=v1)"
 
       - name: Upload compact public source-only smoke evidence
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: deform360-robot-metric-prefix-smoke-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/deform360-public-robot-gauge-smoke/compact
           if-no-files-found: error
           retention-days: 90
+
+      - name: Enforce the frozen source-support gate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUNNER_TEMP}/deform360-public-robot-gauge-smoke/compact"
+          test -f "${compact}/smoke-result.json"
+          (cd "${compact}" && sha256sum --check SHA256SUMS >/dev/null)
+          RESULT="${compact}/smoke-result.json" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT"]).read_text())
+          status = result.get("status")
+          if status != "metric-geometry-supported":
+              raise SystemExit(f"public robot-gauge source gate failed: {status}")
+          PY
