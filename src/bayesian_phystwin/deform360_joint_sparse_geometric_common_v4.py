@@ -80,7 +80,13 @@ PLAN_CASE_FIELDS: Final = frozenset(
     }
 )
 PLAN_STREAM_FIELDS: Final = frozenset(
-    {"job_id", "camera_id", "prediction_manifest", "metric_prefix", "metric_calibration"}
+    {
+        "job_id",
+        "camera_id",
+        "prediction_manifest",
+        "metric_prefix",
+        "metric_calibration",
+    }
 )
 PLAN_EXCLUDED_FIELDS: Final = frozenset(
     {"job_id", "object_id", "episode_id", "stratum", "camera_id", "reason"}
@@ -105,6 +111,7 @@ POLICY_FIELDS: Final = frozenset(
         "query_semantics",
         "world_voxel_size_m",
         "maximum_factors_per_camera_window",
+        "effective_samples_per_correlation_group",
         "lateral_observation_std_m",
         "axial_observation_std_m",
         "minimum_object_rms_radius_m",
@@ -212,7 +219,10 @@ def _safe_relative(value: object, *, name: str) -> str:
     path = PurePosixPath(text)
     _require(not path.is_absolute(), f"{name} must be relative")
     _require(path.as_posix() == text, f"{name} is not canonical")
-    _require(all(part not in {"", ".", ".."} for part in path.parts), f"{name} is unsafe")
+    _require(
+        all(part not in {"", ".", ".."} for part in path.parts),
+        f"{name} is unsafe",
+    )
     return text
 
 
@@ -235,11 +245,15 @@ def _file_record(value: object, *, name: str) -> dict[str, object]:
     return {
         "path": _safe_relative(record["path"], name=f"{name}.path"),
         "sha256": sha256_digest(record["sha256"], name=f"{name}.sha256"),
-        "byte_count": _integer(record["byte_count"], name=f"{name}.byte_count", minimum=1),
+        "byte_count": _integer(
+            record["byte_count"], name=f"{name}.byte_count", minimum=1
+        ),
     }
 
 
-def _verify_record(root: Path, value: object, *, name: str) -> tuple[Path, dict[str, object]]:
+def _verify_record(
+    root: Path, value: object, *, name: str
+) -> tuple[Path, dict[str, object]]:
     record = _file_record(value, name=name)
     path = _confined_file(root, record["path"], name=f"{name}.path")
     _require(path.stat().st_size == record["byte_count"], f"{name} byte count changed")
@@ -258,12 +272,31 @@ def _write_json(path: Path, value: object) -> None:
 def validate_materializer_policy(value: Mapping[str, Any]) -> dict[str, Any]:
     """Validate the frozen, source-independent geometric materializer policy."""
 
-    require_exact_fields(value, expected=POLICY_FIELDS, name="geometric materializer policy")
-    _require(value["schema"] == MATERIALIZER_POLICY_SCHEMA, "materializer policy schema changed")
-    _require(value["schema_version"] == MATERIALIZER_POLICY_VERSION, "materializer policy version changed")
-    _require(value["semantics"] == MATERIALIZER_POLICY_SEMANTICS, "materializer policy semantics changed")
-    _require(value["protocol_id"] == DEFORM360_JOINT_SPARSE_PROTOCOL_ID, "materializer protocol changed")
-    _require(value["development_cohort_role"] == "opened-v1-v3-development-only", "cohort role changed")
+    require_exact_fields(
+        value,
+        expected=POLICY_FIELDS,
+        name="geometric materializer policy",
+    )
+    _require(
+        value["schema"] == MATERIALIZER_POLICY_SCHEMA,
+        "materializer policy schema changed",
+    )
+    _require(
+        value["schema_version"] == MATERIALIZER_POLICY_VERSION,
+        "materializer policy version changed",
+    )
+    _require(
+        value["semantics"] == MATERIALIZER_POLICY_SEMANTICS,
+        "materializer policy semantics changed",
+    )
+    _require(
+        value["protocol_id"] == DEFORM360_JOINT_SPARSE_PROTOCOL_ID,
+        "materializer protocol changed",
+    )
+    _require(
+        value["development_cohort_role"] == "opened-v1-v3-development-only",
+        "cohort role changed",
+    )
     for name in (
         "selection_artifact_sha256",
         "visual_provider_lock_id",
@@ -279,6 +312,7 @@ def validate_materializer_policy(value: Mapping[str, Any]) -> dict[str, Any]:
         exact_revision(value[name], name=name)
     for name in (
         "world_voxel_size_m",
+        "effective_samples_per_correlation_group",
         "lateral_observation_std_m",
         "axial_observation_std_m",
         "minimum_object_rms_radius_m",
@@ -322,8 +356,14 @@ def validate_materializer_policy(value: Mapping[str, Any]) -> dict[str, Any]:
         "new_measurements_required": False,
     }
     for name, expected in expected_flags.items():
-        _require(type(value[name]) is bool and value[name] is expected, f"materializer boundary changed: {name}")
-    _require(value["claim_boundary"] == MATERIALIZER_CLAIM_BOUNDARY, "materializer claim boundary changed")
+        _require(
+            type(value[name]) is bool and value[name] is expected,
+            f"materializer boundary changed: {name}",
+        )
+    _require(
+        value["claim_boundary"] == MATERIALIZER_CLAIM_BOUNDARY,
+        "materializer claim boundary changed",
+    )
     identity = dict(value)
     declared = sha256_digest(identity.pop("artifact_id"), name="artifact_id")
     _require(content_id(identity) == declared, "materializer policy ID changed")
@@ -341,7 +381,10 @@ def _verify_recursive_checksums(root: Path) -> None:
         path = _confined_file(root, relative, name=f"checksum member {index}")
         _require(relative not in observed, "metric batch checksum path repeats")
         observed.add(relative)
-        _require(_sha256_file(path) == digest, f"metric batch checksum changed: {relative}")
+        _require(
+            _sha256_file(path) == digest,
+            f"metric batch checksum changed: {relative}",
+        )
     expected = {
         path.relative_to(root).as_posix()
         for path in root.rglob("*")
@@ -354,7 +397,10 @@ def _selection_rows(value: Mapping[str, Any]) -> dict[tuple[str, int], str]:
     selection = value.get("selection")
     _require(isinstance(selection, Mapping), "selection root changed")
     calibration = cast(Mapping[str, Any], selection).get("calibration")
-    _require(isinstance(calibration, list) and len(calibration) == 10, "development selection changed")
+    _require(
+        isinstance(calibration, list) and len(calibration) == 10,
+        "development selection changed",
+    )
     rows: dict[tuple[str, int], str] = {}
     for index, raw in enumerate(calibration):
         _require(isinstance(raw, Mapping), f"selection row {index} changed")
