@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import yaml
 
 WORKFLOW = Path(".github/workflows/deform360-prob4d-source-gate.yml")
 LAUNCHER = Path(".github/workflows/launch-deform360-prob4d-source-gate-once.yml")
+VISIBLE_LAUNCHER = Path(
+    ".github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml"
+)
 AUDITOR = Path(".github/workflows/revalidate-deform360-prob4d-source-gate-once.yml")
+V1_LAUNCHER_SHA256 = "61f229877e7d6600e2d9042f86fdc8c205d7bf5eb1f6efd734b3ee68fe58ab72"
 
 
 def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None:
@@ -26,6 +31,12 @@ def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
     assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
     assert "launch-deform360-prob4d-source-gate-once.yml@refs/heads/main" in text
+    assert (
+        "launch-deform360-prob4d-visible-source-gate-v2-once.yml@refs/heads/main"
+        in text
+    )
+    inputs = document["on"]["workflow_call"]["inputs"]
+    assert inputs["eligibility_contract"]["default"] == "v1-all-streams"
     assert "cancel-in-progress: false" in text
 
 
@@ -52,6 +63,39 @@ def test_public_source_gate_launcher_is_reviewed_main_only_and_one_shot() -> Non
     assert "new measurements required: \\`false\\`" in text
     assert "human approval required: \\`false\\`" in text
     assert "confirmation payloads opened: \\`false\\`" in text
+    assert "target outcomes used: \\`false\\`" in text
+    assert hashlib.sha256(LAUNCHER.read_bytes()).hexdigest() == V1_LAUNCHER_SHA256
+
+
+def test_visible_source_gate_v2_launcher_is_reviewed_main_only_and_one_shot() -> None:
+    text = VISIBLE_LAUNCHER.read_text(encoding="utf-8")
+    document = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(document, dict)
+    assert document["on"] == {
+        "push": {
+            "branches": ["main"],
+            "paths": [
+                ".github/workflows/"
+                "launch-deform360-prob4d-visible-source-gate-v2-once.yml"
+            ],
+        }
+    }
+    assert "workflow_dispatch:" not in text
+    assert "pull_request:" not in text
+    assert "uses: ./.github/workflows/deform360-prob4d-source-gate.yml" in text
+    assert "execute_authorized: true" in text
+    assert "eligibility_contract: v2-target-free-visible" in text
+    assert "cancel-in-progress: false" in text
+    assert "runs-on: self-hosted" not in text
+    assert "issues: write" in text
+    assert '"repos/${GITHUB_REPOSITORY}/issues/148/comments"' in text
+    assert "released public real-world Deform360 calibration data" in text
+    assert "new measurements required: \\`false\\`" in text
+    assert "human approval required: \\`false\\`" in text
+    assert "unsupported visibility streams replaced: \\`false\\`" in text
+    assert "confirmation payloads opened: \\`false\\`" in text
+    assert "future frames used: \\`false\\`" in text
     assert "target outcomes used: \\`false\\`" in text
 
 
@@ -94,6 +138,26 @@ def test_public_source_gate_workflow_preserves_custody_and_exact_fallback() -> N
     assert '"supported_stream_count": 324' in text
     assert '"support_negative_stream_count": 0' in text
     assert '"technical_failure_stream_count": 0' in text
+
+
+def test_visible_source_gate_v2_is_exact_target_free_and_no_replacement() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "v2-target-free-visible" in text
+    assert "1540e20e847d9877a54ca7a1cdc5290f" in text
+    assert "deform360-prob4d-visible-source-gate-v2" in text
+    assert '"supported_stream_count": 313' in text
+    assert '"support_negative_stream_count": 11' in text
+    assert '"status": "target-free-visible-streams-supported"' in text
+    assert 'plan.get("schema_version") == 2' in text
+    assert "len(exclusions) == 11" in text
+    assert "included == 313" in text
+    assert "released-robot-geometry-outside-fixed-camera-prefix" in text
+    assert '--metric-root "${METRIC_BATCH_ROOT}/metrics"' in text
+    assert '--metric-root "${METRIC_BATCH_ROOT}/metric-prefix"' not in text
+    assert '--camera-eligibility-policy "${CAMERA_ELIGIBILITY_POLICY}"' in text
+    assert '"eligibility_contract": os.environ["ELIGIBILITY_CONTRACT"]' in text
+    assert "camera_eligibility_policy_id" in text
 
 
 def test_public_source_gate_uploads_both_negative_and_positive_decisions() -> None:
