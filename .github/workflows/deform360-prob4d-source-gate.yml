@@ -7,18 +7,24 @@ on:
       - ".github/workflows/deform360-prob4d-source-gate.yml"
       - ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
       - ".github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml"
+      - ".github/workflows/launch-deform360-prob4d-sample-admissible-v3-once.yml"
       - "docs/deform360_prob4d_sample_materializer.md"
+      - "docs/deform360_prob4d_sample_admissibility_v3.md"
       - "docs/deform360_prob4d_source_calibration.md"
       - "docs/deform360_prob4d_source_gate.md"
       - "protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json"
+      - "protocols/locks/deform360_official_hub_prob4d_sample_admissibility_v3.json"
       - "protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json"
       - "protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json"
       - "scripts/science/materialize_deform360_prob4d_metric_batch.py"
       - "scripts/science/materialize_deform360_prob4d_calibration_samples.py"
+      - "scripts/science/materialize_deform360_prob4d_sample_admissibility.py"
       - "scripts/science/fit_deform360_prob4d_source_calibration.py"
       - "scripts/science/evaluate_deform360_prob4d_source_gate.py"
       - "src/bayesian_phystwin/deform360_prob4d_sample_materializer.py"
       - "src/bayesian_phystwin/deform360_prob4d_camera_eligibility.py"
+      - "src/bayesian_phystwin/deform360_prob4d_sample_admissibility.py"
+      - "src/bayesian_phystwin/deform360_prob4d_sample_admissibility_contract.py"
       - "src/bayesian_phystwin/deform360_prob4d_source_calibration.py"
       - "tests/test_deform360_prob4d_metric_batch.py"
       - "tests/test_deform360_prob4d_metric_batch_regressions.py"
@@ -33,7 +39,7 @@ on:
         required: true
         type: boolean
       eligibility_contract:
-        description: Select the frozen all-stream v1 or target-free visible-stream v2 contract.
+        description: Select the frozen v1, visible-stream v2, or sample-admissible v3 contract.
         required: false
         type: string
         default: v1-all-streams
@@ -68,11 +74,13 @@ env:
   MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
   METRIC_POLICY_ID: c90d48d558f020e61077c096ec641ba5f095ea4186060088ffdb9de3d83c7f34
   CAMERA_ELIGIBILITY_POLICY_ID: 1540e20e847d9877a54ca7a1cdc5290f542de25c1e779c4cf145532f9dd3b9d0
+  SAMPLE_ADMISSIBILITY_POLICY_ID: 25c0a43b720accb3bacd16933774b3773a6bc951443b02b88498ca542d5fc51c
   SOURCE_GATE_LOCK_ID: cc96d2cc03a5039479621acc7769690ef9bf8c15c00d418a0f14d3303ce3ebfb
   VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
   PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed/aligned
   SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-source-gate-v1
   VISIBLE_SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-visible-source-gate-v2
+  SAMPLE_ADMISSIBLE_SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-sample-admissible-source-gate-v3
 
 jobs:
   contracts:
@@ -113,9 +121,12 @@ jobs:
           files=(
             scripts/science/materialize_deform360_prob4d_metric_batch.py
             scripts/science/materialize_deform360_prob4d_calibration_samples.py
+            scripts/science/materialize_deform360_prob4d_sample_admissibility.py
             scripts/science/fit_deform360_prob4d_source_calibration.py
             scripts/science/evaluate_deform360_prob4d_source_gate.py
             src/bayesian_phystwin/deform360_prob4d_camera_eligibility.py
+            src/bayesian_phystwin/deform360_prob4d_sample_admissibility.py
+            src/bayesian_phystwin/deform360_prob4d_sample_admissibility_contract.py
             src/bayesian_phystwin/deform360_prob4d_sample_materializer.py
             src/bayesian_phystwin/deform360_prob4d_source_calibration.py
             tests/test_deform360_prob4d_metric_batch.py
@@ -130,9 +141,12 @@ jobs:
           python -m mypy \
             scripts/science/materialize_deform360_prob4d_metric_batch.py \
             scripts/science/materialize_deform360_prob4d_calibration_samples.py \
+            scripts/science/materialize_deform360_prob4d_sample_admissibility.py \
             scripts/science/fit_deform360_prob4d_source_calibration.py \
             scripts/science/evaluate_deform360_prob4d_source_gate.py \
             src/bayesian_phystwin/deform360_prob4d_camera_eligibility.py \
+            src/bayesian_phystwin/deform360_prob4d_sample_admissibility.py \
+            src/bayesian_phystwin/deform360_prob4d_sample_admissibility_contract.py \
             src/bayesian_phystwin/deform360_prob4d_sample_materializer.py \
             src/bayesian_phystwin/deform360_prob4d_source_calibration.py
           python -m pytest -q -p no:cacheprovider \
@@ -172,6 +186,9 @@ jobs:
               ;;
             v2-target-free-visible)
               expected_caller="IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml@refs/heads/main"
+              ;;
+            v3-target-free-sample-admissible)
+              expected_caller="IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-prob4d-sample-admissible-v3-once.yml@refs/heads/main"
               ;;
             *)
               echo "unsupported eligibility contract" >&2
@@ -233,10 +250,17 @@ jobs:
             v1-all-streams)
               source_base="${SOURCE_OUTPUT_ROOT}"
               camera_policy=""
+              sample_policy=""
               ;;
             v2-target-free-visible)
               source_base="${VISIBLE_SOURCE_OUTPUT_ROOT}"
               camera_policy="${GITHUB_WORKSPACE}/protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json"
+              sample_policy=""
+              ;;
+            v3-target-free-sample-admissible)
+              source_base="${SAMPLE_ADMISSIBLE_SOURCE_OUTPUT_ROOT}"
+              camera_policy="${GITHUB_WORKSPACE}/protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json"
+              sample_policy="${GITHUB_WORKSPACE}/protocols/locks/deform360_official_hub_prob4d_sample_admissibility_v3.json"
               ;;
             *)
               echo "unsupported eligibility contract" >&2
@@ -253,12 +277,14 @@ jobs:
             echo "PRODUCTION_EVIDENCE=${evidence}"
             echo "SOURCE_RUN_ROOT=${source}"
             echo "METRIC_BATCH_ROOT=${source}/metric-batch"
+            echo "SAMPLE_ADMISSIBILITY_ROOT=${source}/sample-admissibility"
             echo "SAMPLE_ROOT=${source}/source-calibration-samples"
             echo "CALIBRATION_ROOT=${source}/source-calibration"
             echo "SOURCE_GATE_ROOT=${source}/source-gate"
             echo "PROB4D_CHECKOUT=${GITHUB_WORKSPACE}/_prob4d"
             echo "ELIGIBILITY_CONTRACT=${{ inputs.eligibility_contract }}"
             echo "CAMERA_ELIGIBILITY_POLICY=${camera_policy}"
+            echo "SAMPLE_ADMISSIBILITY_POLICY=${sample_policy}"
           } >> "${GITHUB_ENV}"
 
       - name: Verify authoritative compact-production artifact metadata
@@ -354,6 +380,12 @@ jobs:
                   "deform360_official_hub_prob4d_camera_eligibility_v2.json"
               ).read_text()
           )
+          sample = json.loads(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_prob4d_sample_admissibility_v3.json"
+              ).read_text()
+          )
           if not (
               metric["artifact_id"] == os.environ["METRIC_POLICY_ID"]
               and metric["confirmation_payloads_opened"] is False
@@ -373,7 +405,10 @@ jobs:
           ):
               raise SystemExit("public source-gate lock changed")
           contract = os.environ["ELIGIBILITY_CONTRACT"]
-          if contract == "v2-target-free-visible":
+          if contract in (
+              "v2-target-free-visible",
+              "v3-target-free-sample-admissible",
+          ):
               if not (
                   camera["artifact_id"]
                   == os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
@@ -391,6 +426,29 @@ jobs:
                   and camera["new_measurements_required"] is False
               ):
                   raise SystemExit("target-free camera-eligibility lock changed")
+              if contract == "v3-target-free-sample-admissible" and not (
+                  sample["artifact_id"]
+                  == os.environ["SAMPLE_ADMISSIBILITY_POLICY_ID"]
+                  and sample["minimum_metric_gauge_correspondences_per_window"] == 8
+                  and sample["minimum_metric_gauge_spatial_clusters_per_window"] == 8
+                  and sample["maximum_metric_fit_correspondences"] == 100000
+                  and sample["minimum_held_prefix_point_rows_per_window"] == 32
+                  and sample["covariance_cluster_size_pixels"] == 32
+                  and sample["minimum_supported_object_count"] == 10
+                  and sample["minimum_supported_streams_per_object"] == 2
+                  and sample["minimum_supported_stream_fraction"] == 0.9
+                  and sample["prediction_support_masks_used_for_eligibility"] is True
+                  and sample["prediction_point_values_used_for_eligibility"] is False
+                  and sample["prediction_residuals_used_for_eligibility"] is False
+                  and sample["calibration_outcomes_used_for_eligibility"] is False
+                  and sample["replacement_allowed"] is False
+                  and sample["confirmation_payloads_opened"] is False
+                  and sample["future_frames_used"] is False
+                  and sample["target_outcomes_used"] is False
+                  and sample["human_approval_required"] is False
+                  and sample["new_measurements_required"] is False
+              ):
+                  raise SystemExit("target-free sample-admissibility lock changed")
           elif contract != "v1-all-streams":
               raise SystemExit("unsupported eligibility contract")
           PY
@@ -466,7 +524,16 @@ jobs:
               "camera_eligibility_policy_id": (
                   os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
                   if os.environ["ELIGIBILITY_CONTRACT"]
-                  == "v2-target-free-visible"
+                  in (
+                      "v2-target-free-visible",
+                      "v3-target-free-sample-admissible",
+                  )
+                  else None
+              ),
+              "sample_admissibility_policy_id": (
+                  os.environ["SAMPLE_ADMISSIBILITY_POLICY_ID"]
+                  if os.environ["ELIGIBILITY_CONTRACT"]
+                  == "v3-target-free-sample-admissible"
                   else None
               ),
               "metric_batch_step_outcome": os.environ["METRIC_BATCH_OUTCOME"],
@@ -531,7 +598,10 @@ jobs:
                   and "excluded_streams" not in plan
               ):
                   raise SystemExit("v1 all-stream metric-prefix plan changed")
-          elif contract == "v2-target-free-visible":
+          elif contract in (
+              "v2-target-free-visible",
+              "v3-target-free-sample-admissible",
+          ):
               expected = {
                   "supported_stream_count": 313,
                   "support_negative_stream_count": 11,
@@ -569,16 +639,138 @@ jobs:
               raise SystemExit("metric-batch boundary changed")
           PY
 
-      - name: Materialize correlation-aware public calibration samples
-        id: samples
-        if: steps.support_gate.outcome == 'success'
+      - name: Materialize target-free sample admissibility
+        id: sample_admissibility
+        if: >-
+          steps.support_gate.outcome == 'success' &&
+          inputs.eligibility_contract == 'v3-target-free-sample-admissible'
         continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
+          python scripts/science/materialize_deform360_prob4d_sample_admissibility.py \
+            --plan "${METRIC_BATCH_ROOT}/metric-prefix-plan.json" \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --metric-root "${METRIC_BATCH_ROOT}/metrics" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --camera-eligibility-policy "${CAMERA_ELIGIBILITY_POLICY}" \
+            --sample-admissibility-policy "${SAMPLE_ADMISSIBILITY_POLICY}" \
+            --prob4d-checkout "${PROB4D_CHECKOUT}" \
+            --prob4d-revision "${PROB4D_REVISION}" \
+            --processing-revision "${PROCESSING_REVISION}" \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output-dir "${SAMPLE_ADMISSIBILITY_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/sample-admissibility.stdout" \
+            2> "${SOURCE_WORK_ROOT}/sample-admissibility.stderr"
+
+      - name: Enforce frozen target-free sample-admissibility gate
+        id: sample_admissibility_gate
+        if: >-
+          always() &&
+          steps.support_gate.outcome == 'success' &&
+          inputs.eligibility_contract == 'v3-target-free-sample-admissible'
+        continue-on-error: true
+        env:
+          SAMPLE_ADMISSIBILITY_OUTCOME: ${{ steps.sample_admissibility.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${SAMPLE_ADMISSIBILITY_OUTCOME}" = "success"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from bayesian_phystwin.deform360_prob4d_sample_admissibility import (
+              validate_deform360_prob4d_sample_admissibility_result,
+          )
+
+          root = Path(os.environ["SAMPLE_ADMISSIBILITY_ROOT"])
+          result = validate_deform360_prob4d_sample_admissibility_result(root)
+          expected = {
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "sample_admissibility_policy_id": os.environ[
+                  "SAMPLE_ADMISSIBILITY_POLICY_ID"
+              ],
+              "admitted_stream_count": 324,
+              "prior_excluded_stream_count": 11,
+              "candidate_stream_count": 313,
+              "technical_failure_stream_count": 0,
+              "supported_object_count": 10,
+              "plan_emitted": True,
+              "status": "target-free-sample-admissibility-supported",
+          }
+          if {key: result.get(key) for key in expected} != expected:
+              raise SystemExit("frozen sample-admissibility gate failed")
+          if (
+              result["admissible_stream_count"]
+              + result["support_negative_stream_count"]
+              != result["candidate_stream_count"]
+              or result["admissible_stream_count"]
+              / result["admitted_stream_count"]
+              < 0.9
+          ):
+              raise SystemExit("sample-admissibility accounting changed")
+          plan_path = root / "metric-prefix-plan-v3.json"
+          plan = json.loads(plan_path.read_text())
+          included = sum(len(case["streams"]) for case in plan["cases"])
+          exclusions = plan["excluded_streams"]
+          if not (
+              plan["schema_version"] == 3
+              and plan["sample_admissibility_policy_id"]
+              == os.environ["SAMPLE_ADMISSIBILITY_POLICY_ID"]
+              and len(plan["cases"]) == 10
+              and all(len(case["streams"]) >= 2 for case in plan["cases"])
+              and included == result["admissible_stream_count"]
+              and len(exclusions)
+              == result["prior_excluded_stream_count"]
+              + result["support_negative_stream_count"]
+              and all(
+                  row["reason"]
+                  in {
+                      "released-robot-geometry-outside-fixed-camera-prefix",
+                      "insufficient-target-free-held-prefix-sample-support",
+                  }
+                  for row in exclusions
+              )
+          ):
+              raise SystemExit("sample-admissible plan accounting changed")
+          boundary = result["information_boundary"]
+          if not (
+              boundary["public_released_measurements_used"] is True
+              and boundary["prediction_support_masks_opened"] is True
+              and boundary["prediction_point_values_used"] is False
+              and boundary["prediction_residuals_used"] is False
+              and boundary["calibration_outcomes_used"] is False
+              and boundary["confirmation_payloads_opened"] is False
+              and boundary["target_outcomes_used"] is False
+              and boundary["future_frames_used"] is False
+              and boundary["replacement_allowed"] is False
+              and boundary["human_approval_required"] is False
+              and boundary["new_measurements_required"] is False
+          ):
+              raise SystemExit("sample-admissibility boundary changed")
+          PY
+
+      - name: Materialize correlation-aware public calibration samples
+        id: samples
+        if: >-
+          steps.support_gate.outcome == 'success' &&
+          (inputs.eligibility_contract != 'v3-target-free-sample-admissible' ||
+          steps.sample_admissibility_gate.outcome == 'success')
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          sample_plan="${METRIC_BATCH_ROOT}/metric-prefix-plan.json"
+          if [[ "${ELIGIBILITY_CONTRACT}" = "v3-target-free-sample-admissible" ]]; then
+            sample_plan="${SAMPLE_ADMISSIBILITY_ROOT}/metric-prefix-plan-v3.json"
+          fi
           sample_args=(
             python scripts/science/materialize_deform360_prob4d_calibration_samples.py
-            --plan "${METRIC_BATCH_ROOT}/metric-prefix-plan.json"
+            --plan "${sample_plan}"
             --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json"
             --production-root "${VISUAL_PRODUCTION_ROOT}"
             --prediction-root "${VISUAL_PRODUCTION_ROOT}"
@@ -594,6 +786,11 @@ jobs:
           if [[ -n "${CAMERA_ELIGIBILITY_POLICY}" ]]; then
             sample_args+=(
               --camera-eligibility-policy "${CAMERA_ELIGIBILITY_POLICY}"
+            )
+          fi
+          if [[ -n "${SAMPLE_ADMISSIBILITY_POLICY}" ]]; then
+            sample_args+=(
+              --sample-admissibility-policy "${SAMPLE_ADMISSIBILITY_POLICY}"
             )
           fi
           "${sample_args[@]}" \
@@ -644,15 +841,22 @@ jobs:
         env:
           METRIC_BATCH_OUTCOME: ${{ steps.metric_batch.outcome }}
           SUPPORT_GATE_OUTCOME: ${{ steps.support_gate.outcome }}
+          SAMPLE_ADMISSIBILITY_OUTCOME: ${{ steps.sample_admissibility.outcome }}
+          SAMPLE_ADMISSIBILITY_GATE_OUTCOME: ${{ steps.sample_admissibility_gate.outcome }}
           SAMPLE_OUTCOME: ${{ steps.samples.outcome }}
           CALIBRATION_OUTCOME: ${{ steps.calibration.outcome }}
           SOURCE_GATE_OUTCOME: ${{ steps.gate.outcome }}
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "${COMPACT_ROOT}/samples" \
+          mkdir -p "${COMPACT_ROOT}/sample-admissibility" \
+            "${COMPACT_ROOT}/samples" \
             "${COMPACT_ROOT}/source-calibration" \
             "${COMPACT_ROOT}/source-gate"
+          if [[ -d "${SAMPLE_ADMISSIBILITY_ROOT}" ]]; then
+            cp -a "${SAMPLE_ADMISSIBILITY_ROOT}/." \
+              "${COMPACT_ROOT}/sample-admissibility/"
+          fi
           if [[ -f "${SAMPLE_ROOT}/samples.json" ]]; then
             cp "${SAMPLE_ROOT}/samples.json" "${COMPACT_ROOT}/samples/"
           fi
@@ -678,12 +882,24 @@ jobs:
           stages = {
               "metric_batch": os.environ["METRIC_BATCH_OUTCOME"],
               "support_gate": os.environ["SUPPORT_GATE_OUTCOME"],
+              "sample_admissibility": os.environ[
+                  "SAMPLE_ADMISSIBILITY_OUTCOME"
+              ],
+              "sample_admissibility_gate": os.environ[
+                  "SAMPLE_ADMISSIBILITY_GATE_OUTCOME"
+              ],
               "samples": os.environ["SAMPLE_OUTCOME"],
               "calibration": os.environ["CALIBRATION_OUTCOME"],
               "source_gate": os.environ["SOURCE_GATE_OUTCOME"],
           }
           stderr_hashes = {}
-          for name in ("metric-batch", "samples", "calibration", "source-gate"):
+          for name in (
+              "metric-batch",
+              "sample-admissibility",
+              "samples",
+              "calibration",
+              "source-gate",
+          ):
               path = work / f"{name}.stderr"
               payload = path.read_bytes() if path.is_file() else b""
               stderr_hashes[name] = hashlib.sha256(payload).hexdigest()
@@ -697,7 +913,16 @@ jobs:
               "camera_eligibility_policy_id": (
                   os.environ["CAMERA_ELIGIBILITY_POLICY_ID"]
                   if os.environ["ELIGIBILITY_CONTRACT"]
-                  == "v2-target-free-visible"
+                  in (
+                      "v2-target-free-visible",
+                      "v3-target-free-sample-admissible",
+                  )
+                  else None
+              ),
+              "sample_admissibility_policy_id": (
+                  os.environ["SAMPLE_ADMISSIBILITY_POLICY_ID"]
+                  if os.environ["ELIGIBILITY_CONTRACT"]
+                  == "v3-target-free-sample-admissible"
                   else None
               ),
               "visual_production_result_id": os.environ["PRODUCTION_RESULT_ID"],
@@ -745,6 +970,8 @@ jobs:
         env:
           METRIC_BATCH_OUTCOME: ${{ steps.metric_batch.outcome }}
           SUPPORT_GATE_OUTCOME: ${{ steps.support_gate.outcome }}
+          SAMPLE_ADMISSIBILITY_OUTCOME: ${{ steps.sample_admissibility.outcome }}
+          SAMPLE_ADMISSIBILITY_GATE_OUTCOME: ${{ steps.sample_admissibility_gate.outcome }}
           SAMPLE_OUTCOME: ${{ steps.samples.outcome }}
           CALIBRATION_OUTCOME: ${{ steps.calibration.outcome }}
           SOURCE_GATE_OUTCOME: ${{ steps.gate.outcome }}
@@ -753,6 +980,12 @@ jobs:
           set -euo pipefail
           test "${METRIC_BATCH_OUTCOME}" = "success"
           test "${SUPPORT_GATE_OUTCOME}" = "success"
+          if [[ "${ELIGIBILITY_CONTRACT}" = "v3-target-free-sample-admissible" ]]; then
+            test "${SAMPLE_ADMISSIBILITY_OUTCOME}" = "success"
+            test "${SAMPLE_ADMISSIBILITY_GATE_OUTCOME}" = "success"
+            (cd "${COMPACT_ROOT}/sample-admissibility" && \
+              sha256sum --check SHA256SUMS >/dev/null)
+          fi
           test "${SAMPLE_OUTCOME}" = "success"
           test "${CALIBRATION_OUTCOME}" = "success"
           test "${SOURCE_GATE_OUTCOME}" = "success"
