@@ -41,9 +41,6 @@
       "tests/test_deform360_prob4d_source_gate.py",
       "tests/test_deform360_prob4d_visible_source_audit.py",
       "tests/test_deform360_robot_metric_prefix.py",
-      "tests/test_deform360_joint_sparse_observability_v4.py",
-      "tests/test_deform360_joint_sparse_observability_v4_cli.py",
-      "tests/test_deform360_joint_sparse_observability_v4_workflow.py",
       "tests/test_evidence_use_ledger.py",
       "tests/test_decisive_evidence.py",
       "tests/test_decisive_evidence_bootstrap.py",
@@ -70,6 +67,7 @@
       "tests/test_sparse_explicit_gauge_prob4d.py",
       "tests/test_tree_sparse_explicit_gauge_prob4d.py",
       "tests/test_tree_sparse_prob4d_roundtrip.py",
+      "tests/test_tree_block_sparse_gauge_belief.py",
       "tests/test_structured_reliability.py",
       "tests/test_source_competence*.py",
       "tests/test_drift_bias.py",
@@ -122,7 +120,10 @@
       "tests/test_structured_point_covariance*.py",
       "tests/test_quality_invariants.py",
       "tests/test_public_api_manifest.py",
-      "tests/test_test_suite_manifest.py"
+      "tests/test_test_suite_manifest.py",
+      "tests/test_deform360_joint_sparse_observability_v4.py",
+      "tests/test_deform360_joint_sparse_observability_v4_cli.py",
+      "tests/test_deform360_joint_sparse_observability_v4_workflow.py"
     ],
     "core-contracts": [
       "tests/test_causal4d_graph_provider_v1.py",
@@ -139,9 +140,6 @@
       "tests/test_deform360_calibration_bundle.py",
       "tests/test_deform360_calibration_execution.py",
       "tests/test_deform360_calibration_execution_boundaries.py",
-      "tests/test_deform360_joint_sparse_observability_v4.py",
-      "tests/test_deform360_joint_sparse_observability_v4_cli.py",
-      "tests/test_deform360_joint_sparse_observability_v4_workflow.py",
       "tests/test_evidence_use_ledger.py",
       "tests/test_decisive_evidence.py",
       "tests/test_decisive_evidence_bootstrap.py",
@@ -164,6 +162,7 @@
       "tests/test_sparse_explicit_gauge_prob4d.py",
       "tests/test_tree_sparse_explicit_gauge_prob4d.py",
       "tests/test_tree_sparse_prob4d_roundtrip.py",
+      "tests/test_tree_block_sparse_gauge_belief.py",
       "tests/test_structured_reliability.py",
       "tests/test_drift_bias.py",
       "tests/test_phystwin_bayesian_anchor.py",
@@ -183,7 +182,10 @@
       "tests/test_information_mass_invariants.py",
       "tests/test_quality_invariants.py",
       "tests/test_public_api_manifest.py",
-      "tests/test_test_suite_manifest.py"
+      "tests/test_test_suite_manifest.py",
+      "tests/test_deform360_joint_sparse_observability_v4.py",
+      "tests/test_deform360_joint_sparse_observability_v4_cli.py",
+      "tests/test_deform360_joint_sparse_observability_v4_workflow.py"
     ],
     "provider-contract": [
       "tests/test_causal4d_graph_provider_v1.py",
@@ -201,7 +203,8 @@
       "tests/test_deform360_visual_provider_lock.py",
       "tests/test_observation_belief_gauge_adapter.py",
       "tests/test_observation_belief.py",
-      "tests/test_observation_contract_bundle.py"
+      "tests/test_observation_contract_bundle.py",
+      "tests/test_tree_block_sparse_gauge_belief.py"
     ]
   },
   "subset_requirements": [
