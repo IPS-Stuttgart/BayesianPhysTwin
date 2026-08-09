@@ -353,10 +353,10 @@ def _certificate_optional_real(
     value = certificate.get(name)
     if value is None:
         return None
-    _require(
-        not isinstance(value, (bool, np.bool_)) and isinstance(value, Real),
-        f"v2 admission certificate field {name!r} must be a finite real or null",
-    )
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(
+            f"v2 admission certificate field {name!r} must be a finite real or null"
+        )
     result = float(value)
     _require(
         np.isfinite(result),
@@ -415,10 +415,10 @@ def _validate_certificate_mapping(certificate: Mapping[str, object]) -> bool:
         certificate,
         "maximum_exact_hessian_condition_number",
     )
-    _require(
-        maximum_condition_number is not None and maximum_condition_number >= 1.0,
-        "v2 admission certificate maximum condition number must be finite and at least one",
-    )
+    if maximum_condition_number is None or maximum_condition_number < 1.0:
+        raise ValueError(
+            "v2 admission certificate maximum condition number must be finite and at least one"
+        )
 
     diagnostics_valid = certificate["diagnostics_valid"] is True
     if diagnostics_valid:
@@ -497,10 +497,8 @@ def _validate_tagged_certificate_diagnostics(
     result_reason: str,
 ) -> bool:
     certificate = diagnostics.get(_CERTIFICATE_KEY)
-    _require(
-        isinstance(certificate, Mapping),
-        "v2 diagnostics do not contain an admission certificate",
-    )
+    if not isinstance(certificate, Mapping):
+        raise ValueError("v2 diagnostics do not contain an admission certificate")
     certificate_passed = _validate_certificate_mapping(certificate)
     strict_passed = diagnostics.get("strict_admission_passed")
     _require(
