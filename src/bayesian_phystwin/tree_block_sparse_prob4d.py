@@ -23,11 +23,15 @@ from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
 from .tree_block_claim_contract import validate_tree_block_result
 from .tree_block_sparse_gauge_belief import TreeBlockGaugeAwareBeliefResultV1
 from .tree_block_sparse_gauge_belief_v2 import (
-    update_tree_block_sparse_prior_aware_gauge_belief_v2 as update_tree_block_sparse_prior_aware_gauge_belief,
+    update_tree_block_sparse_prior_aware_gauge_belief_v2,
 )
 from .tree_sparse_explicit_gauge_prob4d import (
     build_claim_bearing_tree_sparse_prob4d_batch,
     load_claim_bearing_tree_sparse_prob4d,
+)
+
+update_tree_block_sparse_prior_aware_gauge_belief = (
+    update_tree_block_sparse_prior_aware_gauge_belief_v2
 )
 
 CLAIM_BEARING_TREE_BLOCK_PROB4D_SCHEMA = (
