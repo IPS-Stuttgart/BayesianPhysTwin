@@ -27,6 +27,7 @@ from bayesian_phystwin.deform360_joint_sparse_geometric_npz_v4 import (
 )
 from bayesian_phystwin.deform360_joint_sparse_observability_v4 import (
     Deform360JointSparseObservabilityPolicyV4,
+    _row_weights,
     evaluate_deform360_joint_sparse_observability_v4,
 )
 
@@ -183,7 +184,7 @@ def _write_prediction_fixture(root: Path) -> Path:
 def test_materializer_policy_is_content_addressed_and_target_closed() -> None:
     policy = _policy()
     assert policy["artifact_id"] == (
-        "4a643a9e28118257fc56dafbadb11aee6a3f66db96c2b6b43cc89c1a8b4306ed"
+        "08405c7e85a4730b1affb0110f9d50bcb02db26462ce95bda374c8df83ef845b"
     )
     assert policy["claim_boundary"] == MATERIALIZER_CLAIM_BOUNDARY
     assert policy["prediction_support_masks_used"] is True
@@ -231,6 +232,39 @@ def test_batch_is_order_invariant_and_group_power_is_not_duplicated() -> None:
     assert all(np.isclose(value, 1.0) for value in grouped.values())
     assert forward.metadata["prediction_point_values_used"] is False
     assert forward.metadata["prediction_residuals_used"] is False
+
+
+def test_group_power_remains_one_above_the_consumer_cap() -> None:
+    policy = _policy()
+    candidates = [
+        _candidate(
+            camera=f"camera-{index:03d}",
+            window="window-0",
+            frame=10,
+            cluster=0,
+            point=(0.1, 0.0, 0.0),
+        )
+        for index in range(80)
+    ]
+    batch = _build_object_batch(
+        candidates=candidates,
+        selection_artifact_sha256=str(policy["selection_artifact_sha256"]),
+        visual_provider_lock_id=str(policy["visual_provider_lock_id"]),
+        implementation_revision="a" * 40,
+        object_id="development-object",
+        episode_id=0,
+        stratum="sheet",
+        excluded_factor_count=0,
+        source_artifacts={"source/metric.json": "b" * 64},
+        policy=policy,
+        metadata={"test_fixture": True},
+    )
+    v4_policy = Deform360JointSparseObservabilityPolicyV4.from_record(
+        json.loads(V4_POLICY.read_text(encoding="utf-8"))
+    )
+    weights = _row_weights(batch, v4_policy)
+    assert np.isclose(np.sum(weights), 1.0)
+    assert np.allclose(batch.composite_weight, 1.0 / 64.0)
 
 
 def test_joint_sparse_batch_reaches_the_object_level_evaluator() -> None:
