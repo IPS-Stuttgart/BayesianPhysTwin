@@ -37,6 +37,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          sed -i \
+            's/        information = np.zeros/        information: np.ndarray = np.zeros/' \
+            scripts/_temporary_tree_sparse_solver_patch.py
           python scripts/_temporary_tree_sparse_solver_patch.py
           python -m pip install --disable-pip-version-check -e ".[dev]"
           python -m ruff format src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py
