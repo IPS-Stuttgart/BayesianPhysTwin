@@ -71,6 +71,22 @@ Publication is atomic and no-overwrite. The result copies the exact gate lock,
 binds the sample bundle and source-calibration result by hash, records every
 fold and check, and recursively checksums the portable decision.
 
+## Registered execution
+
+`.github/workflows/deform360-prob4d-source-gate.yml` registers the complete
+source-only pipeline. Pull requests run contracts only. Empirical execution is
+possible solely through the separately reviewed, main-branch one-shot caller
+`launch-deform360-prob4d-source-gate-once.yml`, with
+`execute_authorized=true`, on the named `workstation2` runner.
+
+The runner consumes the already sealed ten-object visual production and the
+released Deform360 robot/camera measurements. It records complete-stream
+support before fitting, uploads compact negative or positive evidence before
+enforcement, permits no replacement stream, and opens no confirmation payload.
+A source-gate failure is therefore a valid terminal result for this method
+version. No manual approval, physical registration review, new recording, or
+robot execution is part of this public-data path.
+
 ## Claim boundary
 
 A pass authorizes only a separately locked, independent evaluation on the

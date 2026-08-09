@@ -1,0 +1,663 @@
+name: Deform360 Prob4D public source gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-prob4d-source-gate.yml"
+      - ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
+      - "docs/deform360_prob4d_sample_materializer.md"
+      - "docs/deform360_prob4d_source_calibration.md"
+      - "docs/deform360_prob4d_source_gate.md"
+      - "protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json"
+      - "protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json"
+      - "scripts/science/materialize_deform360_prob4d_metric_batch.py"
+      - "scripts/science/materialize_deform360_prob4d_calibration_samples.py"
+      - "scripts/science/fit_deform360_prob4d_source_calibration.py"
+      - "scripts/science/evaluate_deform360_prob4d_source_gate.py"
+      - "src/bayesian_phystwin/deform360_prob4d_sample_materializer.py"
+      - "src/bayesian_phystwin/deform360_prob4d_source_calibration.py"
+      - "tests/test_deform360_prob4d_metric_batch.py"
+      - "tests/test_deform360_prob4d_metric_batch_regressions.py"
+      - "tests/test_deform360_prob4d_sample_materializer.py"
+      - "tests/test_deform360_prob4d_source_calibration.py"
+      - "tests/test_deform360_prob4d_source_gate.py"
+      - "tests/test_deform360_prob4d_source_workflow.py"
+  workflow_call:
+    inputs:
+      execute_authorized:
+        description: Run the sole frozen public ten-object source gate.
+        required: true
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: deform360-prob4d-public-source-gate-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  PRODUCTION_RUN_ID: "31279398563"
+  PRODUCTION_ARTIFACT_ID: "9031215572"
+  PRODUCTION_ARTIFACT_NAME: deform360-calibration-visual-production-31279398563-1
+  PRODUCTION_ARTIFACT_DIGEST: sha256:f6d3f637c8087da06616330d3784be1574f0d19410b4f485c29d03f0f09dafda
+  PRODUCTION_REVISION: c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  PRODUCTION_RESULT_ID: 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89
+  PRODUCTION_ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
+  PREPARED_INVENTORY_SHA256: 4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
+  MOTIONCRAFTER_REVISION: 9cb4e9679f5f34e249945544052464ef46324bc2
+  METRIC_POLICY_ID: c90d48d558f020e61077c096ec641ba5f095ea4186060088ffdb9de3d83c7f34
+  SOURCE_GATE_LOCK_ID: cc96d2cc03a5039479621acc7769690ef9bf8c15c00d418a0f14d3303ce3ebfb
+  VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed/aligned
+  SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-source-gate-v1
+
+jobs:
+  contracts:
+    name: Public source-gate contracts / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact source and quality tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Run focused source-gate contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/materialize_deform360_prob4d_metric_batch.py
+            scripts/science/materialize_deform360_prob4d_calibration_samples.py
+            scripts/science/fit_deform360_prob4d_source_calibration.py
+            scripts/science/evaluate_deform360_prob4d_source_gate.py
+            src/bayesian_phystwin/deform360_prob4d_sample_materializer.py
+            src/bayesian_phystwin/deform360_prob4d_source_calibration.py
+            tests/test_deform360_prob4d_metric_batch.py
+            tests/test_deform360_prob4d_metric_batch_regressions.py
+            tests/test_deform360_prob4d_sample_materializer.py
+            tests/test_deform360_prob4d_source_calibration.py
+            tests/test_deform360_prob4d_source_gate.py
+            tests/test_deform360_prob4d_source_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_prob4d_metric_batch.py \
+            scripts/science/materialize_deform360_prob4d_calibration_samples.py \
+            scripts/science/fit_deform360_prob4d_source_calibration.py \
+            scripts/science/evaluate_deform360_prob4d_source_gate.py \
+            src/bayesian_phystwin/deform360_prob4d_sample_materializer.py \
+            src/bayesian_phystwin/deform360_prob4d_source_calibration.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_prob4d_metric_batch.py \
+            tests/test_deform360_prob4d_metric_batch_regressions.py \
+            tests/test_deform360_prob4d_sample_materializer.py \
+            tests/test_deform360_prob4d_source_calibration.py \
+            tests/test_deform360_prob4d_source_gate.py \
+            tests/test_deform360_prob4d_source_workflow.py
+
+      - name: Verify read-only repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  source-gate:
+    name: Sole ten-object public source gate / workstation2
+    needs: contracts
+    if: >-
+      inputs.execute_authorized == true &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: self-hosted
+    timeout-minutes: 720
+    steps:
+      - name: Bind the reviewed one-shot caller and sole source runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test "${{ github.workflow_ref }}" = \
+            "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-prob4d-source-gate-once.yml@refs/heads/main"
+          test "${{ inputs.execute_authorized }}" = "true"
+
+      - name: Check out exact reviewed main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact frozen Prob4D source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: FlorianPfaff/Prob4D
+          ref: ${{ env.PROB4D_REVISION }}
+          path: _prob4d
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install one isolated CPU calibration runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="${RUNNER_TEMP}/deform360-prob4d-source-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${runtime}"
+          python -m venv --copies "${runtime}"
+          echo "${runtime}/bin" >> "${GITHUB_PATH}"
+          echo "SOURCE_RUNTIME=${runtime}" >> "${GITHUB_ENV}"
+          runtime_python="${runtime}/bin/python"
+          "${runtime_python}" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          "${runtime_python}" -m pip install --no-deps --no-build-isolation .
+          "${runtime_python}" -m pip check
+
+      - name: Initialize no-overwrite source and compact roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="${RUNNER_TEMP}/deform360-prob4d-source-gate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          compact="${work}/compact"
+          evidence="${work}/production-evidence"
+          source="${SOURCE_OUTPUT_ROOT}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}"
+          test ! -e "${work}"
+          test ! -e "${source}"
+          mkdir -p "${compact}" "${evidence}" "$(dirname "${source}")"
+          {
+            echo "SOURCE_WORK_ROOT=${work}"
+            echo "COMPACT_ROOT=${compact}"
+            echo "PRODUCTION_EVIDENCE=${evidence}"
+            echo "SOURCE_RUN_ROOT=${source}"
+            echo "METRIC_BATCH_ROOT=${source}/metric-batch"
+            echo "SAMPLE_ROOT=${source}/source-calibration-samples"
+            echo "CALIBRATION_ROOT=${source}/source-calibration"
+            echo "SOURCE_GATE_ROOT=${source}/source-gate"
+            echo "PROB4D_CHECKOUT=${GITHUB_WORKSPACE}/_prob4d"
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify authoritative compact-production artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${PRODUCTION_ARTIFACT_ID}")"
+          test "$(jq -r '.name' <<<"${metadata}")" = "${PRODUCTION_ARTIFACT_NAME}"
+          test "$(jq -r '.digest' <<<"${metadata}")" = "${PRODUCTION_ARTIFACT_DIGEST}"
+          test "$(jq -r '.workflow_run.id' <<<"${metadata}")" = "${PRODUCTION_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${metadata}")" = "${PRODUCTION_REVISION}"
+          test "$(jq -r '.expired' <<<"${metadata}")" = "false"
+
+      - name: Download only compact calibration-production evidence
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.PRODUCTION_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-prob4d-source-gate-${{ github.run_id }}-${{ github.run_attempt }}/production-evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.PRODUCTION_RUN_ID }}
+
+      - name: Verify frozen public source lineage and closed boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd "${PRODUCTION_EVIDENCE}" && sha256sum --check SHA256SUMS >/dev/null)
+          test "$(sha256sum "${PRODUCTION_EVIDENCE}/admission/prepared-source-inventory.json" | cut -d' ' -f1)" = \
+            "${PREPARED_INVENTORY_SHA256}"
+          test "$(realpath -e "${VISUAL_PRODUCTION_ROOT}")" = "${VISUAL_PRODUCTION_ROOT}"
+          test "$(realpath -e "${PROCESSED_ROOT}")" = "${PROCESSED_ROOT}"
+          cmp -s \
+            "${VISUAL_PRODUCTION_ROOT}/visual-production-result.json" \
+            "${PRODUCTION_EVIDENCE}/production/visual-production-result.json"
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C "${PROB4D_CHECKOUT}" rev-parse HEAD)" = "${PROB4D_REVISION}"
+          test -z "$(git -C "${PROB4D_CHECKOUT}" status --porcelain=v1)"
+          python scripts/science/execute_deform360_calibration_visual_production.py \
+            validate-bundle \
+            "${PRODUCTION_EVIDENCE}/production/visual-production-result.json" \
+            --run-root "${PRODUCTION_EVIDENCE}/production" \
+            --admission "${PRODUCTION_EVIDENCE}/admission/calibration-visual-execution-admission.json" \
+            >/dev/null
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["PRODUCTION_EVIDENCE"])
+          result = json.loads(
+              (evidence / "production/visual-production-result.json").read_text()
+          )
+          expected = {
+              "result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "implementation_revision": os.environ["PRODUCTION_REVISION"],
+              "admission_id": os.environ["PRODUCTION_ADMISSION_ID"],
+              "provider_revision": os.environ["PROB4D_REVISION"],
+              "motioncrafter_revision": os.environ["MOTIONCRAFTER_REVISION"],
+              "object_count": 10,
+              "camera_view_count": 324,
+              "succeeded_job_count": 324,
+              "technical_failure_job_count": 0,
+              "status": "all-jobs-succeeded",
+          }
+          if {key: result.get(key) for key in expected} != expected:
+              raise SystemExit("visual-production identity or accounting changed")
+          boundary = result["information_boundary"]
+          for field in (
+              "confirmation_payloads_opened",
+              "target_outcomes_used",
+              "replacement_allowed",
+          ):
+              if boundary.get(field) is not False:
+                  raise SystemExit(f"visual-production boundary changed: {field}")
+
+          metric = json.loads(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_prob4d_robot_metric_gauge_v1.json"
+              ).read_text()
+          )
+          gate = json.loads(
+              Path(
+                  "protocols/locks/"
+                  "deform360_official_hub_prob4d_source_gate_v1.json"
+              ).read_text()
+          )
+          if not (
+              metric["artifact_id"] == os.environ["METRIC_POLICY_ID"]
+              and metric["confirmation_payloads_opened"] is False
+              and metric["future_frames_used"] is False
+              and metric["full_sequence_rendered_depth_used"] is False
+              and metric["human_approval_required"] is False
+              and metric["target_outcomes_used"] is False
+          ):
+              raise SystemExit("public robot-gauge policy changed")
+          if not (
+              gate["artifact_id"] == os.environ["SOURCE_GATE_LOCK_ID"]
+              and gate["information_boundary"]["confirmation_payloads_opened"] is False
+              and gate["information_boundary"]["future_frames_used"] is False
+              and gate["information_boundary"]["human_approval_required"] is False
+              and gate["information_boundary"]["new_measurements_required"] is False
+              and gate["information_boundary"]["target_outcomes_used"] is False
+          ):
+              raise SystemExit("public source-gate lock changed")
+          PY
+
+      - name: Commit the durable no-overwrite source root
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "${SOURCE_RUN_ROOT}"
+          mkdir "${SOURCE_RUN_ROOT}"
+
+      - name: Materialize every frozen public robot-gauge stream
+        id: metric_batch
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/materialize_deform360_prob4d_metric_batch.py \
+            --prepared-source-inventory "${PRODUCTION_EVIDENCE}/admission/prepared-source-inventory.json" \
+            --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json" \
+            --production-root "${VISUAL_PRODUCTION_ROOT}" \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --processed-root "${PROCESSED_ROOT}" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --processing-revision "${PROCESSING_REVISION}" \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output-dir "${METRIC_BATCH_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/metric-batch.stdout" \
+            2> "${SOURCE_WORK_ROOT}/metric-batch.stderr"
+
+      - name: Publish compact support evidence before enforcement
+        if: always()
+        env:
+          METRIC_BATCH_OUTCOME: ${{ steps.metric_batch.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${COMPACT_ROOT}/metric-support"
+          METRIC_BATCH_ROOT="${METRIC_BATCH_ROOT}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          source = Path(os.environ["METRIC_BATCH_ROOT"])
+          compact = Path(os.environ["COMPACT_ROOT"]) / "metric-support"
+          result_path = source / "metric-batch-result.json"
+          plan_path = source / "metric-prefix-plan.json"
+          stderr_path = Path(os.environ["SOURCE_WORK_ROOT"]) / "metric-batch.stderr"
+          stderr_bytes = stderr_path.read_bytes() if stderr_path.is_file() else b""
+          result = None
+          if result_path.is_file():
+              shutil.copy2(result_path, compact / result_path.name)
+              result = json.loads(result_path.read_text())
+          if plan_path.is_file():
+              shutil.copy2(plan_path, compact / plan_path.name)
+          receipt = {
+              "schema": "bayesian-phystwin.deform360-prob4d-source-support-receipt",
+              "schema_version": 1,
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "metric_batch_step_outcome": os.environ["METRIC_BATCH_OUTCOME"],
+              "metric_batch_result_id": None if result is None else result["result_id"],
+              "metric_batch_status": None if result is None else result["status"],
+              "metric_batch_stderr_sha256": hashlib.sha256(stderr_bytes).hexdigest(),
+              "new_measurements_required": False,
+              "human_approval_required": False,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+          }
+          (compact / "support-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+
+      - name: Enforce complete frozen stream support
+        id: support_gate
+        if: always()
+        continue-on-error: true
+        env:
+          METRIC_BATCH_OUTCOME: ${{ steps.metric_batch.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${METRIC_BATCH_OUTCOME}" = "success"
+          (cd "${METRIC_BATCH_ROOT}" && sha256sum --check SHA256SUMS >/dev/null)
+          RESULT="${METRIC_BATCH_ROOT}/metric-batch-result.json" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT"]).read_text())
+          expected = {
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "object_count": 10,
+              "admitted_stream_count": 324,
+              "supported_stream_count": 324,
+              "support_negative_stream_count": 0,
+              "technical_failure_stream_count": 0,
+              "plan_emitted": True,
+              "status": "all-streams-supported",
+          }
+          if {key: result.get(key) for key in expected} != expected:
+              raise SystemExit("complete frozen source support gate failed")
+          if not (Path(os.environ["METRIC_BATCH_ROOT"]) / "metric-prefix-plan.json").is_file():
+              raise SystemExit("complete metric-prefix plan was not emitted")
+          boundary = result["information_boundary"]
+          if not (
+              boundary["confirmation_payloads_opened"] is False
+              and boundary["target_outcomes_used"] is False
+              and boundary["future_frames_used"] is False
+              and boundary["replacement_allowed"] is False
+              and boundary["human_approval_required"] is False
+          ):
+              raise SystemExit("metric-batch boundary changed")
+          PY
+
+      - name: Materialize correlation-aware public calibration samples
+        id: samples
+        if: steps.support_gate.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/materialize_deform360_prob4d_calibration_samples.py \
+            --plan "${METRIC_BATCH_ROOT}/metric-prefix-plan.json" \
+            --production-result "${PRODUCTION_EVIDENCE}/production/visual-production-result.json" \
+            --production-root "${VISUAL_PRODUCTION_ROOT}" \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --metric-root "${METRIC_BATCH_ROOT}/metric-prefix" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --prob4d-checkout "${PROB4D_CHECKOUT}" \
+            --prob4d-revision "${PROB4D_REVISION}" \
+            --processing-revision "${PROCESSING_REVISION}" \
+            --output-dir "${SAMPLE_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/samples.stdout" \
+            2> "${SOURCE_WORK_ROOT}/samples.stderr"
+
+      - name: Fit source-only object-balanced Prob4D calibration
+        id: calibration
+        if: steps.samples.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/fit_deform360_prob4d_source_calibration.py fit \
+            --samples "${SAMPLE_ROOT}/samples.json" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --prob4d-checkout "${PROB4D_CHECKOUT}" \
+            --output-dir "${CALIBRATION_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/calibration.stdout" \
+            2> "${SOURCE_WORK_ROOT}/calibration.stderr"
+
+      - name: Evaluate the frozen automated public source gate
+        id: gate
+        if: steps.calibration.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/evaluate_deform360_prob4d_source_gate.py \
+            --samples "${SAMPLE_ROOT}/samples.json" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --source-calibration-root "${CALIBRATION_ROOT}" \
+            --source-calibration-result "${CALIBRATION_ROOT}/source-calibration-result.json" \
+            --gate-lock protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output-dir "${SOURCE_GATE_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/source-gate.stdout" \
+            2> "${SOURCE_WORK_ROOT}/source-gate.stderr"
+
+      - name: Collect compact source decision before enforcement
+        if: always()
+        env:
+          METRIC_BATCH_OUTCOME: ${{ steps.metric_batch.outcome }}
+          SUPPORT_GATE_OUTCOME: ${{ steps.support_gate.outcome }}
+          SAMPLE_OUTCOME: ${{ steps.samples.outcome }}
+          CALIBRATION_OUTCOME: ${{ steps.calibration.outcome }}
+          SOURCE_GATE_OUTCOME: ${{ steps.gate.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${COMPACT_ROOT}/samples" \
+            "${COMPACT_ROOT}/source-calibration" \
+            "${COMPACT_ROOT}/source-gate"
+          if [[ -f "${SAMPLE_ROOT}/samples.json" ]]; then
+            cp "${SAMPLE_ROOT}/samples.json" "${COMPACT_ROOT}/samples/"
+          fi
+          if [[ -f "${SAMPLE_ROOT}/samples.npz" ]]; then
+            sha256sum "${SAMPLE_ROOT}/samples.npz" \
+              | sed "s#${SAMPLE_ROOT}/##" \
+              > "${COMPACT_ROOT}/samples/numeric-payload-SHA256SUMS"
+          fi
+          if [[ -d "${CALIBRATION_ROOT}" ]]; then
+            cp -a "${CALIBRATION_ROOT}/." "${COMPACT_ROOT}/source-calibration/"
+          fi
+          if [[ -d "${SOURCE_GATE_ROOT}" ]]; then
+            cp -a "${SOURCE_GATE_ROOT}/." "${COMPACT_ROOT}/source-gate/"
+          fi
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          work = Path(os.environ["SOURCE_WORK_ROOT"])
+          compact = Path(os.environ["COMPACT_ROOT"])
+          stages = {
+              "metric_batch": os.environ["METRIC_BATCH_OUTCOME"],
+              "support_gate": os.environ["SUPPORT_GATE_OUTCOME"],
+              "samples": os.environ["SAMPLE_OUTCOME"],
+              "calibration": os.environ["CALIBRATION_OUTCOME"],
+              "source_gate": os.environ["SOURCE_GATE_OUTCOME"],
+          }
+          stderr_hashes = {}
+          for name in ("metric-batch", "samples", "calibration", "source-gate"):
+              path = work / f"{name}.stderr"
+              payload = path.read_bytes() if path.is_file() else b""
+              stderr_hashes[name] = hashlib.sha256(payload).hexdigest()
+          gate_path = Path(os.environ["SOURCE_GATE_ROOT"]) / "source-gate-result.json"
+          gate = json.loads(gate_path.read_text()) if gate_path.is_file() else None
+          receipt = {
+              "schema": "bayesian-phystwin.deform360-prob4d-source-pipeline-receipt",
+              "schema_version": 1,
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "visual_production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "prob4d_revision": os.environ["PROB4D_REVISION"],
+              "motioncrafter_revision": os.environ["MOTIONCRAFTER_REVISION"],
+              "stage_outcomes": stages,
+              "stderr_sha256": stderr_hashes,
+              "source_gate_result_id": None if gate is None else gate["result_id"],
+              "source_gate_passed": None if gate is None else gate["gate_passed"],
+              "confirmation_access_authorized": (
+                  None if gate is None else gate["confirmation_access_authorized"]
+              ),
+              "information_boundary": {
+                  "public_released_measurements_used": True,
+                  "new_measurements_required": False,
+                  "human_approval_required": False,
+                  "confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "future_frames_used": False,
+                  "replacement_allowed": False,
+              },
+          }
+          (compact / "pipeline-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+          (
+            cd "${COMPACT_ROOT}"
+            find . -type f ! -path './SHA256SUMS' -printf '%P\0' \
+              | sort -z | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Upload compact public source-only decision
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-prob4d-source-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deform360-prob4d-source-gate-${{ github.run_id }}-${{ github.run_attempt }}/compact
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce the frozen automated source decision
+        if: always()
+        env:
+          METRIC_BATCH_OUTCOME: ${{ steps.metric_batch.outcome }}
+          SUPPORT_GATE_OUTCOME: ${{ steps.support_gate.outcome }}
+          SAMPLE_OUTCOME: ${{ steps.samples.outcome }}
+          CALIBRATION_OUTCOME: ${{ steps.calibration.outcome }}
+          SOURCE_GATE_OUTCOME: ${{ steps.gate.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${METRIC_BATCH_OUTCOME}" = "success"
+          test "${SUPPORT_GATE_OUTCOME}" = "success"
+          test "${SAMPLE_OUTCOME}" = "success"
+          test "${CALIBRATION_OUTCOME}" = "success"
+          test "${SOURCE_GATE_OUTCOME}" = "success"
+          (cd "${COMPACT_ROOT}" && sha256sum --check SHA256SUMS >/dev/null)
+          (cd "${COMPACT_ROOT}/source-calibration" && \
+            sha256sum --check SHA256SUMS >/dev/null)
+          python - <<'PY'
+          import importlib.util
+          import os
+          import sys
+          from pathlib import Path
+
+          script = Path("scripts/science/evaluate_deform360_prob4d_source_gate.py")
+          spec = importlib.util.spec_from_file_location("source_gate_validator", script)
+          if spec is None or spec.loader is None:
+              raise SystemExit("cannot load source gate validator")
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          result = module.validate_source_gate_result(Path(os.environ["SOURCE_GATE_ROOT"]))
+          if not (
+              result["gate_passed"] is True
+              and result["confirmation_access_authorized"] is True
+              and result["gate_lock_id"] == os.environ["SOURCE_GATE_LOCK_ID"]
+              and result["implementation_revision"] == os.environ["GITHUB_SHA"]
+              and result["information_boundary"]["confirmation_payloads_opened"] is False
+              and result["information_boundary"]["human_approval_required"] is False
+              and result["information_boundary"]["new_measurements_required"] is False
+              and result["information_boundary"]["target_outcomes_used"] is False
+          ):
+              raise SystemExit("frozen public source gate did not authorize confirmation")
+          PY
+
+      - name: Remove isolated runtime and auxiliary checkout
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "${SOURCE_RUNTIME:-}" "${GITHUB_WORKSPACE}/_prob4d"
+
+      - name: Verify read-only BayesianPhysTwin checkout
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
