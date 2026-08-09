@@ -9,7 +9,9 @@ from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
+import pytest
 
+import bayesian_phystwin.deform360_prob4d_source_gate_validation as gate_validation
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_prob4d_source_calibration import (
     RESULT_SCHEMA,
@@ -213,3 +215,24 @@ def test_gate_rejects_older_source_calibration_contract(tmp_path: Path) -> None:
             implementation_revision="c" * 40,
             output_directory=tmp_path / "gate",
         )
+
+
+def test_source_gate_validation_helpers_fail_closed() -> None:
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        gate_validation._mapping([], name="mapping")
+    with pytest.raises(ValueError, match="must be a JSON array"):
+        gate_validation._sequence("not-an-array", name="sequence")
+    with pytest.raises(ValueError, match="nonempty literal string"):
+        gate_validation._literal_string(" ", name="literal")
+    with pytest.raises(ValueError, match="integer >= 1"):
+        gate_validation._integer(0, name="integer", minimum=1)
+    with pytest.raises(ValueError, match="must be a boolean"):
+        gate_validation._boolean(1, name="boolean")
+    with pytest.raises(ValueError, match="must be numeric"):
+        gate_validation._real(True, name="real")
+    with pytest.raises(ValueError, match="must be finite"):
+        gate_validation._real(float("inf"), name="real")
+    with pytest.raises(ValueError, match="must be >= 0.0"):
+        gate_validation._real(-1.0, name="real", minimum=0.0)
+    with pytest.raises(ValueError, match="must be <= 1.0"):
+        gate_validation._real(2.0, name="real", maximum=1.0)

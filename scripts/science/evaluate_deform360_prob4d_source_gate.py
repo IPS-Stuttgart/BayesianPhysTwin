@@ -45,6 +45,9 @@ from bayesian_phystwin.deform360_prob4d_source_calibration import (
     collapse_point_correlation_clusters,
     load_deform360_prob4d_calibration_samples,
 )
+from bayesian_phystwin.deform360_prob4d_source_gate_validation import (
+    validate_source_gate_decision_evidence,
+)
 from bayesian_phystwin.deform360_public_contact_prefix import (
     _ordinary_directory,
     _ordinary_file,
@@ -884,6 +887,7 @@ def validate_source_gate_result(directory: str | Path) -> dict[str, Any]:
         and _sha256_file(lock_path) == result["gate_lock_file_sha256"],
         "copied source gate lock changed",
     )
+    validate_source_gate_decision_evidence(result, lock)
     checksum_path = _ordinary_file(root / "SHA256SUMS", name="source gate SHA256SUMS")
     expected = "".join(
         f"{_sha256_file(path)}  {path.relative_to(root).as_posix()}\n"
