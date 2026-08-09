@@ -164,8 +164,7 @@ def _build_object_batch(
             _hash_record(
                 {
                     "schema": (
-                        "bayesian-phystwin."
-                        "deform360-joint-sparse-geometric-factor"
+                        "bayesian-phystwin.deform360-joint-sparse-geometric-factor"
                     ),
                     "schema_version": 1,
                     "object_id": object_id,
@@ -200,9 +199,7 @@ def _build_object_batch(
     transitions[1:] = np.eye(7)
     scales = np.zeros((gauge_count, 7, 7), dtype=np.float64)
     scales[0] = np.eye(7) * cast(float, policy["root_gauge_prior_std_m"])
-    scales[1:] = np.eye(7) * cast(
-        float, policy["camera_gauge_innovation_std_m"]
-    )
+    scales[1:] = np.eye(7) * cast(float, policy["camera_gauge_innovation_std_m"])
     query = np.eye(5, dtype=np.float64)
     gauge_prior_id = _hash_record(
         {
@@ -219,8 +216,7 @@ def _build_object_batch(
     observation_artifact_id = _hash_record(
         {
             "schema": (
-                "bayesian-phystwin."
-                "deform360-joint-sparse-geometric-observation"
+                "bayesian-phystwin.deform360-joint-sparse-geometric-observation"
             ),
             "schema_version": 1,
             "object_id": object_id,
@@ -238,8 +234,7 @@ def _build_object_batch(
     linearization_artifact_id = _hash_record(
         {
             "schema": (
-                "bayesian-phystwin."
-                "deform360-joint-sparse-geometric-linearization"
+                "bayesian-phystwin.deform360-joint-sparse-geometric-linearization"
             ),
             "schema_version": 1,
             "basis_semantics": policy["basis_semantics"],
@@ -327,9 +322,7 @@ def _record_for_file(path: Path, *, root: Path) -> dict[str, object]:
 
 def _write_checksums(root: Path) -> None:
     files = sorted(
-        path
-        for path in root.rglob("*")
-        if path.is_file() and path.name != "SHA256SUMS"
+        path for path in root.rglob("*") if path.is_file() and path.name != "SHA256SUMS"
     )
     (root / "SHA256SUMS").write_text(
         "".join(

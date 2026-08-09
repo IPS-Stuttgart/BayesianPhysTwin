@@ -27,7 +27,9 @@ def _voxel(point: np.ndarray, size: float) -> tuple[int, int, int]:
 
 
 def _cluster_id(voxel: tuple[int, int, int]) -> str:
-    return hashlib.sha256(f"world-voxel-v1:{voxel[0]}:{voxel[1]}:{voxel[2]}".encode()).hexdigest()
+    return hashlib.sha256(
+        f"world-voxel-v1:{voxel[0]}:{voxel[1]}:{voxel[2]}".encode()
+    ).hexdigest()
 
 
 def _deterministic_select(
@@ -122,7 +124,9 @@ def _collect_stream_candidates(
         dropped += len(ordered) - len(selected)
         window_counts[window.window_id] = len(selected)
         support_key = hashlib.sha256(window.window_id.encode("utf-8")).hexdigest()
-        support_artifacts[f"support/{job_id}/{support_key}.mask"] = window.support_digest
+        support_artifacts[f"support/{job_id}/{support_key}.mask"] = (
+            window.support_digest
+        )
         for (frame, cluster, row, column), point in selected:
             group = hashlib.sha256(
                 f"frame-world-voxel-v1:{object_id}:{episode_id}:{frame}:{cluster}".encode()

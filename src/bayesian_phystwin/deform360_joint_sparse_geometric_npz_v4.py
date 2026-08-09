@@ -36,15 +36,22 @@ def _zip_members(path: Path) -> dict[str, zipfile.ZipInfo]:
         raise ValueError(f"cannot inspect NPZ archive {path}") from error
     names = [info.filename for info in infos]
     _require(len(names) == len(set(names)), "NPZ archive repeats members")
-    _require(all(not info.is_dir() for info in infos), "NPZ archive contains a directory")
+    _require(
+        all(not info.is_dir() for info in infos), "NPZ archive contains a directory"
+    )
     return {info.filename: info for info in infos}
 
 
-def _load_npy_member(path: Path, member: str, *, maximum_uncompressed_bytes: int) -> np.ndarray:
+def _load_npy_member(
+    path: Path, member: str, *, maximum_uncompressed_bytes: int
+) -> np.ndarray:
     infos = _zip_members(path)
     _require(member in infos, f"NPZ member {member!r} is missing")
     info = infos[member]
-    _require(info.file_size <= maximum_uncompressed_bytes, f"NPZ member {member!r} exceeds its bound")
+    _require(
+        info.file_size <= maximum_uncompressed_bytes,
+        f"NPZ member {member!r} exceeds its bound",
+    )
     try:
         with zipfile.ZipFile(path) as archive, archive.open(info) as stream:
             result = np.lib.format.read_array(stream, allow_pickle=False)
@@ -77,17 +84,32 @@ def _load_metric_sparse_frames(
     causal_range: tuple[int, int],
 ) -> tuple[dict[int, _MetricFrame], tuple[int, int]]:
     infos = _zip_members(path)
-    _require(set(infos) == METRIC_ARRAY_MEMBERS, "metric-prefix NPZ member roster changed")
+    _require(
+        set(infos) == METRIC_ARRAY_MEMBERS, "metric-prefix NPZ member roster changed"
+    )
     start, stop = causal_range
     expected_frames = np.arange(start, stop, dtype=np.int64)
-    frames = _load_npy_member(path, "frame_indices.npy", maximum_uncompressed_bytes=1024 * 1024)
-    _require(frames.dtype.kind in "iu" and np.array_equal(frames, expected_frames), "metric frame indices changed")
-    valid = _load_npy_member(path, "valid_mask.npy", maximum_uncompressed_bytes=256 * 1024 * 1024)
-    _require(valid.dtype.kind == "b" and valid.ndim == 3 and len(valid) == len(frames), "metric valid mask changed")
+    frames = _load_npy_member(
+        path, "frame_indices.npy", maximum_uncompressed_bytes=1024 * 1024
+    )
+    _require(
+        frames.dtype.kind in "iu" and np.array_equal(frames, expected_frames),
+        "metric frame indices changed",
+    )
+    valid = _load_npy_member(
+        path, "valid_mask.npy", maximum_uncompressed_bytes=256 * 1024 * 1024
+    )
+    _require(
+        valid.dtype.kind == "b" and valid.ndim == 3 and len(valid) == len(frames),
+        "metric valid mask changed",
+    )
     height, width = map(int, valid.shape[1:])
     info = infos["points_world_m.npy"]
     maximum_points_bytes = len(frames) * height * width * 3 * 8 + 1024 * 1024
-    _require(info.file_size <= maximum_points_bytes, "metric point member exceeds expected size")
+    _require(
+        info.file_size <= maximum_points_bytes,
+        "metric point member exceeds expected size",
+    )
     output: dict[int, _MetricFrame] = {}
     try:
         with zipfile.ZipFile(path) as archive, archive.open(info) as stream:
@@ -95,17 +117,25 @@ def _load_metric_sparse_frames(
             shape, fortran_order, dtype = np.lib.format._read_array_header(  # type: ignore[attr-defined]
                 stream, version
             )
-            _require(shape == (len(frames), height, width, 3), "metric point shape changed")
+            _require(
+                shape == (len(frames), height, width, 3), "metric point shape changed"
+            )
             _require(not fortran_order, "metric point array changed storage order")
-            _require(np.dtype(dtype) == np.dtype(np.float64), "metric point dtype changed")
+            _require(
+                np.dtype(dtype) == np.dtype(np.float64), "metric point dtype changed"
+            )
             frame_bytes = height * width * 3 * np.dtype(np.float64).itemsize
             for local_index, frame in enumerate(frames):
                 payload = _read_exact(stream, frame_bytes)
-                points = np.frombuffer(payload, dtype=np.float64).reshape(height, width, 3)
+                points = np.frombuffer(payload, dtype=np.float64).reshape(
+                    height, width, 3
+                )
                 mask = valid[local_index]
                 rows, columns = np.nonzero(mask)
                 selected = np.array(points[rows, columns], dtype=np.float64, copy=True)
-                _require(np.all(np.isfinite(selected)), "valid metric points are non-finite")
+                _require(
+                    np.all(np.isfinite(selected)), "valid metric points are non-finite"
+                )
                 output[int(frame)] = _MetricFrame(
                     rows=np.asarray(rows, dtype=np.int64),
                     columns=np.asarray(columns, dtype=np.int64),
@@ -119,17 +149,36 @@ def _load_metric_sparse_frames(
     return output, (height, width)
 
 
-def _load_camera_center(path: Path, *, object_id: str, episode_id: int, camera_id: str) -> tuple[np.ndarray, str]:
-    value = cast(dict[str, Any], load_strict_json_object(path, label="metric calibration"))
-    _require(value.get("schema") == "bayesian-phystwin.deform360-robot-metric-calibration", "metric calibration schema changed")
+def _load_camera_center(
+    path: Path, *, object_id: str, episode_id: int, camera_id: str
+) -> tuple[np.ndarray, str]:
+    value = cast(
+        dict[str, Any], load_strict_json_object(path, label="metric calibration")
+    )
+    _require(
+        value.get("schema") == "bayesian-phystwin.deform360-robot-metric-calibration",
+        "metric calibration schema changed",
+    )
     _require(value.get("schema_version") == 1, "metric calibration version changed")
-    _require(value.get("object_id") == object_id and value.get("episode_id") == episode_id, "metric calibration object changed")
+    _require(
+        value.get("object_id") == object_id and value.get("episode_id") == episode_id,
+        "metric calibration object changed",
+    )
     _require(value.get("camera_id") == camera_id, "metric calibration camera changed")
     matrix = np.asarray(value.get("camera_to_world"), dtype=np.float64)
-    _require(matrix.shape == (4, 4) and np.all(np.isfinite(matrix)), "camera transform changed")
-    _require(np.allclose(matrix[3], [0.0, 0.0, 0.0, 1.0], atol=1e-10, rtol=0.0), "camera transform is not homogeneous")
+    _require(
+        matrix.shape == (4, 4) and np.all(np.isfinite(matrix)),
+        "camera transform changed",
+    )
+    _require(
+        np.allclose(matrix[3], [0.0, 0.0, 0.0, 1.0], atol=1e-10, rtol=0.0),
+        "camera transform is not homogeneous",
+    )
     rotation = matrix[:3, :3]
-    _require(np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-6, rtol=0.0), "camera rotation changed")
+    _require(
+        np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-6, rtol=0.0),
+        "camera rotation changed",
+    )
     calibration_id = sha256_digest(value.get("calibration_id"), name="calibration_id")
     return np.asarray(matrix[:3, 3], dtype=np.float64), calibration_id
 
@@ -152,19 +201,36 @@ def _load_prediction_support_windows(
     image_shape: tuple[int, int],
     expected_motioncrafter_revision: str,
 ) -> tuple[list[_SupportWindow], str]:
-    manifest = cast(dict[str, Any], load_strict_json_object(path, label="prediction manifest"))
+    manifest = cast(
+        dict[str, Any], load_strict_json_object(path, label="prediction manifest")
+    )
     _require(manifest.get("format_version") == 1, "prediction manifest version changed")
-    _require(manifest.get("motioncrafter_commit") == expected_motioncrafter_revision, "prediction MotionCrafter revision changed")
+    _require(
+        manifest.get("motioncrafter_commit") == expected_motioncrafter_revision,
+        "prediction MotionCrafter revision changed",
+    )
     raw_windows = manifest.get("overlap_windows")
-    _require(isinstance(raw_windows, list) and bool(raw_windows), "prediction windows are missing")
+    _require(
+        isinstance(raw_windows, list) and bool(raw_windows),
+        "prediction windows are missing",
+    )
     integrity = manifest.get("artifact_integrity")
     _require(isinstance(integrity, Mapping), "prediction integrity record is missing")
     integrity_map = cast(Mapping[str, Any], integrity)
-    _require(integrity_map.get("schema") == MOTIONCRAFTER_INTEGRITY_SCHEMA, "prediction integrity schema changed")
+    _require(
+        integrity_map.get("schema") == MOTIONCRAFTER_INTEGRITY_SCHEMA,
+        "prediction integrity schema changed",
+    )
     run_spec = integrity_map.get("run_spec")
     _require(isinstance(run_spec, Mapping), "prediction run spec is missing")
-    run_spec_sha = sha256_digest(integrity_map.get("run_spec_sha256"), name="run_spec_sha256")
-    _require(hashlib.sha256(_canonical_bytes(cast(Mapping[str, Any], run_spec))).hexdigest() == run_spec_sha, "prediction run-spec digest changed")
+    run_spec_sha = sha256_digest(
+        integrity_map.get("run_spec_sha256"), name="run_spec_sha256"
+    )
+    _require(
+        hashlib.sha256(_canonical_bytes(cast(Mapping[str, Any], run_spec))).hexdigest()
+        == run_spec_sha,
+        "prediction run-spec digest changed",
+    )
     members = integrity_map.get("members")
     _require(isinstance(members, list), "prediction integrity members are missing")
     descriptors: dict[str, Mapping[str, Any]] = {}
@@ -190,23 +256,58 @@ def _load_prediction_support_windows(
         relative = _safe_relative(record.get("path"), name="prediction window path")
         descriptor = descriptors.get(relative)
         _require(descriptor is not None, "prediction window lacks integrity descriptor")
-        _require(descriptor.get("kind") == "independently_decoded_overlap_window", "prediction window kind changed")
+        _require(
+            descriptor.get("kind") == "independently_decoded_overlap_window",
+            "prediction window kind changed",
+        )
         member_path = _confined_file(path.parent, relative, name="prediction window")
-        _require(member_path.stat().st_size == descriptor.get("bytes"), "prediction window byte count changed")
-        _require(_sha256_file(member_path) == descriptor.get("sha256"), "prediction window SHA-256 changed")
+        _require(
+            member_path.stat().st_size == descriptor.get("bytes"),
+            "prediction window byte count changed",
+        )
+        _require(
+            _sha256_file(member_path) == descriptor.get("sha256"),
+            "prediction window SHA-256 changed",
+        )
         window_start = _integer(record.get("start_frame"), name="window start")
         window_stop = _integer(record.get("stop_frame"), name="window stop", minimum=1)
-        _require(start <= window_start < window_stop <= stop, "prediction window crosses causal range")
+        _require(
+            start <= window_start < window_stop <= stop,
+            "prediction window crosses causal range",
+        )
         infos = _zip_members(member_path)
-        _require(PREDICTION_REQUIRED_MEMBERS <= set(infos), "prediction support members are missing")
-        _require(set(infos) <= PREDICTION_ALLOWED_MEMBERS, "prediction window member roster changed")
-        frame_indices = _load_npy_member(member_path, "frame_indices.npy", maximum_uncompressed_bytes=1024 * 1024)
+        _require(
+            PREDICTION_REQUIRED_MEMBERS <= set(infos),
+            "prediction support members are missing",
+        )
+        _require(
+            set(infos) <= PREDICTION_ALLOWED_MEMBERS,
+            "prediction window member roster changed",
+        )
+        frame_indices = _load_npy_member(
+            member_path, "frame_indices.npy", maximum_uncompressed_bytes=1024 * 1024
+        )
         expected_frames = np.arange(window_start, window_stop, dtype=np.int64)
-        _require(frame_indices.dtype.kind in "iu" and np.array_equal(frame_indices, expected_frames), "prediction support frames changed")
-        valid = _load_npy_member(member_path, "valid_mask.npy", maximum_uncompressed_bytes=256 * 1024 * 1024)
-        _require(valid.dtype.kind == "b" and valid.shape == (len(expected_frames), *image_shape), "prediction support shape changed")
-        stored_window_id = _load_npy_member(member_path, "window_id.npy", maximum_uncompressed_bytes=1024 * 1024)
-        _require(stored_window_id.shape == () and str(stored_window_id.item()) == window_id, "prediction support window ID changed")
+        _require(
+            frame_indices.dtype.kind in "iu"
+            and np.array_equal(frame_indices, expected_frames),
+            "prediction support frames changed",
+        )
+        valid = _load_npy_member(
+            member_path, "valid_mask.npy", maximum_uncompressed_bytes=256 * 1024 * 1024
+        )
+        _require(
+            valid.dtype.kind == "b"
+            and valid.shape == (len(expected_frames), *image_shape),
+            "prediction support shape changed",
+        )
+        stored_window_id = _load_npy_member(
+            member_path, "window_id.npy", maximum_uncompressed_bytes=1024 * 1024
+        )
+        _require(
+            stored_window_id.shape == () and str(stored_window_id.item()) == window_id,
+            "prediction support window ID changed",
+        )
         support_digest = hashlib.sha256(
             _array_digest(np.asarray(frame_indices, dtype=np.int64)).encode("ascii")
             + _array_digest(np.asarray(valid, dtype=np.bool_)).encode("ascii")
@@ -223,5 +324,7 @@ def _load_prediction_support_windows(
             )
         )
     output.sort(key=lambda item: (item.start_frame, item.stop_frame, item.window_id))
-    _require(output[0].start_frame == start, "prediction windows miss causal prefix start")
+    _require(
+        output[0].start_frame == start, "prediction windows miss causal prefix start"
+    )
     return output, run_spec_sha

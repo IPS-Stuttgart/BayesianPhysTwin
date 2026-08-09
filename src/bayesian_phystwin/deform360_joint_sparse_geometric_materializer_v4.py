@@ -75,15 +75,27 @@ def materialize_manifest(
 ) -> dict[str, Any]:
     """Publish one complete v4 development manifest from retained results."""
 
-    metric_batch = _ordinary_directory(Path(metric_batch_root), name="metric batch root")
+    metric_batch = _ordinary_directory(
+        Path(metric_batch_root), name="metric batch root"
+    )
     prediction = _ordinary_directory(Path(prediction_root), name="prediction root")
-    production_path = _ordinary_file(Path(production_result_path), name="production result")
+    production_path = _ordinary_file(
+        Path(production_result_path), name="production result"
+    )
     selection_source = _ordinary_file(Path(selection_path), name="selection")
-    provider_source = _ordinary_file(Path(visual_provider_spec_path), name="provider specification")
-    metric_policy_source = _ordinary_file(Path(metric_policy_path), name="metric policy")
-    camera_policy_source = _ordinary_file(Path(camera_policy_path), name="camera policy")
+    provider_source = _ordinary_file(
+        Path(visual_provider_spec_path), name="provider specification"
+    )
+    metric_policy_source = _ordinary_file(
+        Path(metric_policy_path), name="metric policy"
+    )
+    camera_policy_source = _ordinary_file(
+        Path(camera_policy_path), name="camera policy"
+    )
     v4_policy_source = _ordinary_file(Path(v4_policy_path), name="v4 policy")
-    materializer_policy_source = _ordinary_file(Path(materializer_policy_path), name="materializer policy")
+    materializer_policy_source = _ordinary_file(
+        Path(materializer_policy_path), name="materializer policy"
+    )
     revision = exact_revision(implementation_revision, name="implementation_revision")
     metric_result, plan, production, v4_policy, policy = _validate_sources(
         metric_batch_root=metric_batch,
@@ -103,40 +115,65 @@ def materialize_manifest(
     temporary.mkdir(mode=0o700)
     metric_root = _ordinary_directory(metric_batch / "metrics", name="metric root")
     try:
-        shutil.copyfile(materializer_policy_source, temporary / "materializer-policy.json")
+        shutil.copyfile(
+            materializer_policy_source, temporary / "materializer-policy.json"
+        )
         shutil.copyfile(v4_policy_source, temporary / "v4-policy.json")
         raw_cases = plan.get("cases")
-        _require(isinstance(raw_cases, list) and len(raw_cases) == 10, "metric plan cohort changed")
+        _require(
+            isinstance(raw_cases, list) and len(raw_cases) == 10,
+            "metric plan cohort changed",
+        )
         excluded_rows = plan.get("excluded_streams")
-        _require(isinstance(excluded_rows, list) and len(excluded_rows) == 11, "metric plan exclusions changed")
+        _require(
+            isinstance(excluded_rows, list) and len(excluded_rows) == 11,
+            "metric plan exclusions changed",
+        )
         excluded_by_object: Counter[str] = Counter()
         for index, raw in enumerate(excluded_rows):
             _require(isinstance(raw, Mapping), f"excluded stream {index} changed")
             row = cast(Mapping[str, Any], raw)
-            require_exact_fields(row, expected=PLAN_EXCLUDED_FIELDS, name=f"excluded stream {index}")
-            _require(row.get("reason") == "released-robot-geometry-outside-fixed-camera-prefix", "excluded stream reason changed")
-            excluded_by_object[_literal(row.get("object_id"), name="excluded object_id")] += 1
+            require_exact_fields(
+                row, expected=PLAN_EXCLUDED_FIELDS, name=f"excluded stream {index}"
+            )
+            _require(
+                row.get("reason")
+                == "released-robot-geometry-outside-fixed-camera-prefix",
+                "excluded stream reason changed",
+            )
+            excluded_by_object[
+                _literal(row.get("object_id"), name="excluded object_id")
+            ] += 1
         manifest_cases: list[dict[str, Any]] = []
         case_summaries: list[dict[str, Any]] = []
         plan_order: list[tuple[str, int]] = []
         for case_index, raw_case in enumerate(raw_cases):
-            _require(isinstance(raw_case, Mapping), f"metric plan case {case_index} changed")
+            _require(
+                isinstance(raw_case, Mapping), f"metric plan case {case_index} changed"
+            )
             case = cast(Mapping[str, Any], raw_case)
-            require_exact_fields(case, expected=PLAN_CASE_FIELDS, name=f"metric plan case {case_index}")
+            require_exact_fields(
+                case, expected=PLAN_CASE_FIELDS, name=f"metric plan case {case_index}"
+            )
             object_id = _literal(case.get("object_id"), name="object_id")
             episode_id = _integer(case.get("episode_id"), name="episode_id")
             stratum = _literal(case.get("stratum"), name="stratum")
             _require(stratum in {"sheet", "volumetric"}, "stratum changed")
             plan_order.append((object_id, episode_id))
             causal = case.get("causal_frame_range_half_open")
-            _require(isinstance(causal, list) and len(causal) == 2, "causal range changed")
+            _require(
+                isinstance(causal, list) and len(causal) == 2, "causal range changed"
+            )
             causal_range = (
                 _integer(causal[0], name="causal start"),
                 _integer(causal[1], name="causal stop", minimum=1),
             )
             _require(causal_range[0] < causal_range[1], "causal range is empty")
             raw_streams = case.get("streams")
-            _require(isinstance(raw_streams, list) and len(raw_streams) >= 2, "object lacks retained streams")
+            _require(
+                isinstance(raw_streams, list) and len(raw_streams) >= 2,
+                "object lacks retained streams",
+            )
             candidates: list[_Candidate] = []
             dropped = 0
             sources: dict[str, str] = {
@@ -145,47 +182,67 @@ def materialize_manifest(
                 "locks/metric-policy.json": _sha256_file(metric_policy_source),
                 "locks/camera-policy.json": _sha256_file(camera_policy_source),
                 "locks/v4-policy.json": _sha256_file(v4_policy_source),
-                "locks/materializer-policy.json": _sha256_file(materializer_policy_source),
-                "sources/metric-batch-result.json": _sha256_file(metric_batch / "metric-batch-result.json"),
-                "sources/metric-prefix-plan.json": _sha256_file(metric_batch / "metric-prefix-plan.json"),
+                "locks/materializer-policy.json": _sha256_file(
+                    materializer_policy_source
+                ),
+                "sources/metric-batch-result.json": _sha256_file(
+                    metric_batch / "metric-batch-result.json"
+                ),
+                "sources/metric-prefix-plan.json": _sha256_file(
+                    metric_batch / "metric-prefix-plan.json"
+                ),
                 "sources/visual-production-result.json": _sha256_file(production_path),
             }
             stream_metadata: list[dict[str, Any]] = []
             for stream_index, raw_stream in enumerate(raw_streams):
-                _require(isinstance(raw_stream, Mapping), f"stream {stream_index} changed")
+                _require(
+                    isinstance(raw_stream, Mapping), f"stream {stream_index} changed"
+                )
                 stream = cast(Mapping[str, Any], raw_stream)
-                require_exact_fields(stream, expected=PLAN_STREAM_FIELDS, name=f"stream {stream_index}")
+                require_exact_fields(
+                    stream, expected=PLAN_STREAM_FIELDS, name=f"stream {stream_index}"
+                )
                 job_id = sha256_digest(stream.get("job_id"), name="job_id")
                 camera_id = _literal(stream.get("camera_id"), name="camera_id")
                 prediction_manifest, _ = _verify_record(
-                    prediction, stream.get("prediction_manifest"), name="prediction manifest"
+                    prediction,
+                    stream.get("prediction_manifest"),
+                    name="prediction manifest",
                 )
                 metric_prefix, _ = _verify_record(
                     metric_root, stream.get("metric_prefix"), name="metric prefix"
                 )
                 metric_calibration, _ = _verify_record(
-                    metric_root, stream.get("metric_calibration"), name="metric calibration"
+                    metric_root,
+                    stream.get("metric_calibration"),
+                    name="metric calibration",
                 )
-                selected, stream_dropped, stream_sources, details = _collect_stream_candidates(
-                    job_id=job_id,
-                    camera_id=camera_id,
-                    causal_range=causal_range,
-                    prediction_manifest_path=prediction_manifest,
-                    metric_prefix_path=metric_prefix,
-                    metric_calibration_path=metric_calibration,
-                    object_id=object_id,
-                    episode_id=episode_id,
-                    policy=policy,
+                selected, stream_dropped, stream_sources, details = (
+                    _collect_stream_candidates(
+                        job_id=job_id,
+                        camera_id=camera_id,
+                        causal_range=causal_range,
+                        prediction_manifest_path=prediction_manifest,
+                        metric_prefix_path=metric_prefix,
+                        metric_calibration_path=metric_calibration,
+                        object_id=object_id,
+                        episode_id=episode_id,
+                        policy=policy,
+                    )
                 )
                 candidates.extend(selected)
                 dropped += stream_dropped
                 overlap = set(sources) & set(stream_sources)
-                _require(not overlap, f"source artifact paths repeat: {sorted(overlap)}")
+                _require(
+                    not overlap, f"source artifact paths repeat: {sorted(overlap)}"
+                )
                 sources.update(stream_sources)
                 stream_metadata.append(details)
             batch = _build_object_batch(
                 candidates=candidates,
-                selection_artifact_sha256=cast(str, policy["selection_artifact_sha256"]),
+                selection_artifact_sha256=cast(
+                    str, policy["selection_artifact_sha256"]
+                ),
                 visual_provider_lock_id=cast(str, policy["visual_provider_lock_id"]),
                 implementation_revision=revision,
                 object_id=object_id,
@@ -230,7 +287,9 @@ def materialize_manifest(
                     "excluded_factor_count": batch.excluded_factor_count,
                     "distinct_camera_count": len(set(batch.camera_ids)),
                     "distinct_window_count": len(set(batch.window_ids)),
-                    "distinct_spatial_cluster_count": len(set(batch.spatial_cluster_ids)),
+                    "distinct_spatial_cluster_count": len(
+                        set(batch.spatial_cluster_ids)
+                    ),
                     "prior_excluded_stream_count": excluded_by_object[object_id],
                 }
             )
@@ -281,7 +340,9 @@ def materialize_manifest(
         raise
     return cast(
         dict[str, Any],
-        load_strict_json_object(target / "materialization-result.json", label="materialization result"),
+        load_strict_json_object(
+            target / "materialization-result.json", label="materialization result"
+        ),
     )
 
 

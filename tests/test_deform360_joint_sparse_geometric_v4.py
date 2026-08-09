@@ -33,14 +33,11 @@ from bayesian_phystwin.deform360_joint_sparse_observability_v4 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 MATERIALIZER_POLICY = (
-    ROOT
-    / "protocols/locks/"
+    ROOT / "protocols/locks/"
     "deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
 )
 V4_POLICY = (
-    ROOT
-    / "protocols/locks/"
-    "deform360_official_hub_joint_sparse_observability_v4.json"
+    ROOT / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
 )
 
 
@@ -335,7 +332,5 @@ def test_prediction_loader_uses_support_only_and_verifies_file_digest(
             path,
             causal_range=(10, 12),
             image_shape=(3, 4),
-            expected_motioncrafter_revision=str(
-                _policy()["motioncrafter_revision"]
-            ),
+            expected_motioncrafter_revision=str(_policy()["motioncrafter_revision"]),
         )

@@ -31,7 +31,10 @@ def test_launch_passes_only_retained_result_roots_to_the_materializer() -> None:
     )[1].split("--output-dir", maxsplit=1)[0]
     assert '--metric-batch-root "${METRIC_BATCH_ROOT}"' in command
     assert '--prediction-root "${PREDICTION_ROOT}"' in command
-    assert '--production-result "${PREDICTION_ROOT}/visual-production-result.json"' in command
+    assert (
+        '--production-result "${PREDICTION_ROOT}/visual-production-result.json"'
+        in command
+    )
     assert "DEFORM360_OFFICIAL_RAW_ROOT" not in command
     assert "DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT" not in command
     assert "data-7fea8e2" not in command

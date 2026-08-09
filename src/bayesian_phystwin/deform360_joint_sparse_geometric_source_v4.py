@@ -133,9 +133,9 @@ def _validate_sources(
         == {
             "path": "metric-prefix-plan.json",
             "sha256": _sha256_file(metric_batch_root / "metric-prefix-plan.json"),
-            "byte_count": (
-                metric_batch_root / "metric-prefix-plan.json"
-            ).stat().st_size,
+            "byte_count": (metric_batch_root / "metric-prefix-plan.json")
+            .stat()
+            .st_size,
         },
         "metric batch plan file binding changed",
     )
@@ -195,8 +195,7 @@ def _validate_sources(
         "visual provider lock changed",
     )
     _require(
-        production.get("provider_revision")
-        == materializer_policy["prob4d_revision"],
+        production.get("provider_revision") == materializer_policy["prob4d_revision"],
         "Prob4D production revision changed",
     )
     _require(
@@ -263,8 +262,7 @@ def _validate_sources(
         "provider specification bytes differ from plan",
     )
     _require(
-        _sha256_file(metric_policy_path)
-        == plan.get("metric_prior_policy_file_sha256"),
+        _sha256_file(metric_policy_path) == plan.get("metric_prior_policy_file_sha256"),
         "metric policy bytes differ from plan",
     )
     _require(

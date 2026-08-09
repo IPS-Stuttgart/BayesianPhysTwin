@@ -45,12 +45,8 @@ METRIC_BATCH_SEMANTICS: Final = (
 )
 METRIC_PLAN_SCHEMA: Final = "bayesian-phystwin.deform360-prob4d-metric-prefix-plan"
 METRIC_PLAN_VERSION: Final = 2
-METRIC_PLAN_SEMANTICS: Final = (
-    "target-free-robot-visible-integrity-bound-streams-with-causal-public-metric-prefix-v2"
-)
-MOTIONCRAFTER_INTEGRITY_SCHEMA: Final = (
-    "prob4d.motioncrafter-artifact-integrity.v1"
-)
+METRIC_PLAN_SEMANTICS: Final = "target-free-robot-visible-integrity-bound-streams-with-causal-public-metric-prefix-v2"
+MOTIONCRAFTER_INTEGRITY_SCHEMA: Final = "prob4d.motioncrafter-artifact-integrity.v1"
 METRIC_ARRAY_MEMBERS: Final = frozenset(
     {"frame_indices.npy", "points_world_m.npy", "valid_mask.npy"}
 )
@@ -164,7 +160,9 @@ def _positive(value: object, *, name: str) -> float:
     raw = np.asarray(value)
     _require(raw.shape == () and raw.dtype.kind in "iuf", f"{name} is not scalar")
     result = float(raw.item())
-    _require(np.isfinite(result) and result > 0.0, f"{name} must be finite and positive")
+    _require(
+        np.isfinite(result) and result > 0.0, f"{name} must be finite and positive"
+    )
     return result
 
 
