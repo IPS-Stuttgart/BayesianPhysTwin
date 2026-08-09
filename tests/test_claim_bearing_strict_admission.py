@@ -85,6 +85,7 @@ def test_tree_sparse_v2_rejects_exhausted_v1_fixed_point() -> None:
     batch, tree = _tree_fixture()
     config = _exhausted_config()
 
+    # One iteration intentionally exercises exhaustion before the fixed point.
     historical = update_sparse_prior_aware_gauge_belief(
         batch,
         tree,
