@@ -49,6 +49,17 @@ jobs:
         run: |
           set -euo pipefail
           python .github/agent-patches/apply_structured_tree_sparse_fallback.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/bayesian_phystwin/structured_gauge_aware_result.py')
+          text = path.read_text(encoding='utf-8')
+          old = '        result = np.zeros((self.dimension, self.dimension), dtype=np.float64)\n'
+          new = '        result: np.ndarray = np.zeros(\n            (self.dimension, self.dimension), dtype=np.float64\n        )\n'
+          if text.count(old) != 1:
+              raise SystemExit('materialization buffer target changed')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
           rm .github/agent-patches/apply_structured_tree_sparse_fallback.py
           rm .github/workflows/agent-apply-structured-tree-sparse-fallback.yml
 
