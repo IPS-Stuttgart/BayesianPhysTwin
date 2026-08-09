@@ -14,6 +14,24 @@ from test_group_sandwich_covariance import (
     test_row_and_group_permutation_is_content_invariant,
     test_splitting_a_group_changes_the_claim_identity,
 )
+from test_posterior_uncertainty import (
+    test_already_calibrated_source_semantics_are_rejected,
+    test_artifact_identity_round_trips_and_detects_substitution,
+    test_calibration_is_bound_to_the_predictor_and_query_set,
+    test_calibration_with_another_predictor_is_rejected,
+    test_calibration_with_another_query_set_is_rejected,
+    test_invalid_query_covariance_fails_closed,
+    test_maximum_ten_group_coverage_round_trips_as_finite,
+    test_nonworking_covariance_requires_estimator_identity,
+    test_semantics_and_covariance_dimension_must_agree,
+    test_ten_groups_report_ninety_five_percent_as_unavailable,
+    test_uncalibrated_artifact_keeps_raw_semantics_explicit,
+    test_uncertainty_record_binds_artifact_identity,
+    test_wrong_contract_types_are_rejected,
+)
+from test_uncertainty_public_surface import (
+    test_uncertainty_namespace_is_narrow_and_explicit,
+)
 
 from bayesian_phystwin import BinaryCalibrationMetrics, binary_calibration_metrics
 from bayesian_phystwin.calibration import (
@@ -33,6 +51,23 @@ _GROUP_SANDWICH_COVARIANCE_STABLE_TESTS = (
     test_result_rejects_covariance_not_generated_by_declared_scores,
     test_row_and_group_permutation_is_content_invariant,
     test_splitting_a_group_changes_the_claim_identity,
+)
+
+_POSTERIOR_UNCERTAINTY_STABLE_TESTS = (
+    test_already_calibrated_source_semantics_are_rejected,
+    test_artifact_identity_round_trips_and_detects_substitution,
+    test_calibration_is_bound_to_the_predictor_and_query_set,
+    test_calibration_with_another_predictor_is_rejected,
+    test_calibration_with_another_query_set_is_rejected,
+    test_invalid_query_covariance_fails_closed,
+    test_maximum_ten_group_coverage_round_trips_as_finite,
+    test_nonworking_covariance_requires_estimator_identity,
+    test_semantics_and_covariance_dimension_must_agree,
+    test_ten_groups_report_ninety_five_percent_as_unavailable,
+    test_uncalibrated_artifact_keeps_raw_semantics_explicit,
+    test_uncertainty_namespace_is_narrow_and_explicit,
+    test_uncertainty_record_binds_artifact_identity,
+    test_wrong_contract_types_are_rejected,
 )
 
 
