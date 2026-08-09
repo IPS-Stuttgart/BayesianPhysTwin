@@ -18,9 +18,18 @@ from bayesian_phystwin.deform360_calibration_factor_materializer import (
     materialize_deform360_calibration_factors,
     publish_deform360_calibration_factor_materialization,
 )
+from bayesian_phystwin.deform360_calibration_visual_execution_admission import (
+    _load_stable_json_object,
+    validate_deform360_prepared_source_inventory,
+)
 from bayesian_phystwin.deform360_contact_anchor import (
     load_deform360_contact_anchor,
     save_deform360_contact_anchor,
+)
+from bayesian_phystwin.deform360_public_contact_prefix import (
+    build_deform360_tactile_axis_map,
+    materialize_deform360_public_contact_prefix,
+    save_deform360_tactile_axis_map,
 )
 from bayesian_phystwin.observation_belief import load_observation_belief
 from bayesian_phystwin.physical_linearization import load_physical_linearization
@@ -82,6 +91,34 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    axis_map = subparsers.add_parser(
+        "tactile-axis-map",
+        help="bind a source-only tactile-group to released robot-axis mapping",
+    )
+    axis_map.add_argument("--prepared-source-inventory", type=Path, required=True)
+    axis_map.add_argument("--object-id", required=True)
+    axis_map.add_argument("--group-to-robot-axis", type=Path, required=True)
+    axis_map.add_argument("--selection-evidence-id", required=True)
+    axis_map.add_argument(
+        "--selection-semantics",
+        default="locked-source-only-calibration-v1",
+    )
+    axis_map.add_argument("--output", type=Path, required=True)
+
+    public_prefix = subparsers.add_parser(
+        "public-contact-prefix",
+        help="materialize released tactile and robot-prefix evidence",
+    )
+    public_prefix.add_argument(
+        "--prepared-source-inventory",
+        type=Path,
+        required=True,
+    )
+    public_prefix.add_argument("--processed-root", type=Path, required=True)
+    public_prefix.add_argument("--tactile-axis-map", type=Path, required=True)
+    public_prefix.add_argument("--object-id", required=True)
+    public_prefix.add_argument("--output-dir", type=Path, required=True)
+
     anchor = subparsers.add_parser(
         "contact-anchor",
         help="reduce public tactile/robot prefix evidence to grouped metric rows",
@@ -116,6 +153,54 @@ def _parser() -> argparse.ArgumentParser:
     posterior.add_argument("--metadata", type=Path)
     posterior.add_argument("--output-dir", type=Path, required=True)
     return parser
+
+
+def _tactile_axis_map(arguments: argparse.Namespace) -> int:
+    inventory_path = _ordinary_file(
+        arguments.prepared_source_inventory,
+        name="prepared-source inventory",
+    )
+    inventory_value, _inventory_sha256, _inventory_bytes = _load_stable_json_object(
+        inventory_path,
+        label="prepared-source inventory",
+    )
+    inventory = validate_deform360_prepared_source_inventory(inventory_value)
+    matches = [
+        item
+        for item in inventory["objects"]
+        if item["object_id"] == arguments.object_id
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"prepared-source inventory does not contain {arguments.object_id!r}"
+        )
+    group_to_axis = _mapping(
+        arguments.group_to_robot_axis,
+        name="group-to-robot-axis mapping",
+    )
+    value = build_deform360_tactile_axis_map(
+        object_id=arguments.object_id,
+        episode_id=matches[0]["episode_id"],
+        prepared_source_inventory_id=inventory["inventory_id"],
+        group_to_robot_axis=group_to_axis,
+        selection_evidence_id=arguments.selection_evidence_id,
+        selection_semantics=arguments.selection_semantics,
+    )
+    save_deform360_tactile_axis_map(value, arguments.output)
+    print(json.dumps(value, sort_keys=True))
+    return 0
+
+
+def _public_contact_prefix(arguments: argparse.Namespace) -> int:
+    value = materialize_deform360_public_contact_prefix(
+        prepared_source_inventory_path=arguments.prepared_source_inventory,
+        processed_root=arguments.processed_root,
+        tactile_axis_map_path=arguments.tactile_axis_map,
+        object_id=arguments.object_id,
+        output_directory=arguments.output_dir,
+    )
+    print(json.dumps(value, sort_keys=True))
+    return 0 if value["status"] == "materialized" else 3
 
 
 def _contact_anchor(arguments: argparse.Namespace) -> int:
@@ -221,6 +306,10 @@ def _posterior(arguments: argparse.Namespace) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
     try:
+        if arguments.command == "tactile-axis-map":
+            return _tactile_axis_map(arguments)
+        if arguments.command == "public-contact-prefix":
+            return _public_contact_prefix(arguments)
         if arguments.command == "contact-anchor":
             return _contact_anchor(arguments)
         if arguments.command == "posterior":

@@ -31,6 +31,7 @@ def pytest_configure(config: object) -> None:
             test_root.glob("test_deform360_calibration_visual_execution_admission*.py")
         ),
         *sorted(test_root.glob("test_deform360_calibration_factor_materializer*.py")),
+        *sorted(test_root.glob("test_deform360_public_contact_prefix*.py")),
         *sorted(test_root.glob("test_guard_harm_risk*.py")),
         *sorted(test_root.glob("test_horizon_conditioned_discrepancy*.py")),
         *sorted(test_root.glob("test_irreversible_artifact_arrays*.py")),
