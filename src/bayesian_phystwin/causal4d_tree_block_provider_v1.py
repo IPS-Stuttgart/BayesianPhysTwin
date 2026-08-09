@@ -17,7 +17,11 @@ from typing import Any, Final
 
 import numpy as np
 
-from ._canonical_contracts import frozen_finite_json_mapping, immutable_array, plain_json
+from ._canonical_contracts import (
+    frozen_finite_json_mapping,
+    immutable_array,
+    plain_json,
+)
 from .contracts.provider import (
     installed_distribution_revision,
     installed_distribution_version,
@@ -55,9 +59,7 @@ CAUSAL4D_TREE_BLOCK_PROVIDER_ARTIFACT_SCHEMA_VERSIONS: Final = {
     "TreeBlockGaugeAwareBeliefResult": TREE_BLOCK_GAUGE_AWARE_RESULT_VERSION,
     "TreeBlockPosteriorCovariance": TREE_BLOCK_POSTERIOR_COVARIANCE_VERSION,
     "TreeBlockPosteriorOperator": TREE_BLOCK_POSTERIOR_OPERATOR_VERSION,
-    "Causal4DTreeBlockQueryCovariance": (
-        CAUSAL4D_TREE_BLOCK_QUERY_COVARIANCE_VERSION
-    ),
+    "Causal4DTreeBlockQueryCovariance": (CAUSAL4D_TREE_BLOCK_QUERY_COVARIANCE_VERSION),
 }
 CAUSAL4D_TREE_BLOCK_PROVIDER_INFERENCE_ROLE: Final = (
     "claim-bearing tree-block posterior linear-query covariance"
@@ -179,7 +181,10 @@ class Causal4DTreeBlockQueryCovarianceV1:
             "query_matrix_sha256",
         ):
             object.__setattr__(self, name, _sha256(getattr(self, name), name=name))
-        if type(self.coefficient_dimension) is not int or self.coefficient_dimension < 1:
+        if (
+            type(self.coefficient_dimension) is not int
+            or self.coefficient_dimension < 1
+        ):
             raise ValueError("coefficient_dimension must be a positive integer")
         if type(self.inference_admissible) is not bool:
             raise TypeError("inference_admissible must be a bool")
@@ -310,15 +315,11 @@ def causal4d_tree_block_provider_manifest(
             CAUSAL4D_TREE_BLOCK_PROVIDER_ARTIFACT_SCHEMA_VERSIONS
         ),
         "metadata": {
-            "provider_api": (
-                "bayesian_phystwin.causal4d_tree_block_provider_v1"
-            ),
+            "provider_api": ("bayesian_phystwin.causal4d_tree_block_provider_v1"),
             "provider_api_version": CAUSAL4D_TREE_BLOCK_PROVIDER_API_VERSION,
             "inference_role": CAUSAL4D_TREE_BLOCK_PROVIDER_INFERENCE_ROLE,
             "compatibility": CAUSAL4D_TREE_BLOCK_PROVIDER_COMPATIBILITY,
-            "raw_covariance_claim": (
-                CAUSAL4D_TREE_BLOCK_PROVIDER_RAW_COVARIANCE_CLAIM
-            ),
+            "raw_covariance_claim": (CAUSAL4D_TREE_BLOCK_PROVIDER_RAW_COVARIANCE_CLAIM),
             "claim_boundary": CAUSAL4D_TREE_BLOCK_PROVIDER_BOUNDARY,
         },
     }

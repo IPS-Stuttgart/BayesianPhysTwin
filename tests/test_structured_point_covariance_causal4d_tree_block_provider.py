@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
+from test_structured_point_covariance_tree_block_operator import _covariance
 
 from bayesian_phystwin.causal4d_tree_block_provider_v1 import (
     CAUSAL4D_TREE_BLOCK_PROVIDER_API_VERSION,
@@ -25,7 +26,6 @@ from bayesian_phystwin.tree_block_sparse_gauge_belief import (
 from bayesian_phystwin.tree_block_sparse_prob4d import (
     ClaimBearingTreeBlockProb4DUpdateV1,
 )
-from test_structured_point_covariance_tree_block_operator import _covariance
 
 _IDS = tuple(character * 64 for character in "abcdef")
 
@@ -166,7 +166,9 @@ def test_provider_never_calls_complete_covariance_materialization(
         del args, kwargs
         raise AssertionError("dense covariance path used")
 
-    monkeypatch.setattr(TreeBlockPosteriorCovarianceV1, "materialize", fail_materialization)
+    monkeypatch.setattr(
+        TreeBlockPosteriorCovarianceV1, "materialize", fail_materialization
+    )
     result = evaluate_claim_bearing_tree_block_query(
         update,
         query,
