@@ -1,0 +1,49 @@
+name: Format support-negative audit once
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-support-negative-audit-once
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.pull_request.head.repo.full_name == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.pull_request.head.ref == 'fix/deform360-support-negative-audit-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact audit branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/deform360-support-negative-audit-v2
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Format, remove this helper, and publish the clean head
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REPOSITORY}" = "IPS-Stuttgart/BayesianPhysTwin"
+          python -m pip install "ruff==0.16.2"
+          python -m ruff format \
+            scripts/ci/audit_deform360_prob4d_support_negative.py \
+            tests/test_audit_deform360_prob4d_support_negative.py
+          git rm .github/workflows/format-support-negative-audit-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/ci/audit_deform360_prob4d_support_negative.py \
+            tests/test_audit_deform360_prob4d_support_negative.py \
+            .github/workflows/format-support-negative-audit-once.yml
+          git commit -m "Format support-negative audit"
+          git push origin HEAD:fix/deform360-support-negative-audit-v2
