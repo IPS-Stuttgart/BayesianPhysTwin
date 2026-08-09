@@ -148,13 +148,15 @@ def source_artifact_mapping(
     normalized: dict[str, str] = {}
     for path, digest in values.items():
         try:
+            if type(path) is not str or path.strip() != path:
+                raise ValueError(f"{name} key must not contain surrounding whitespace")
             canonical_path = canonical_relative_posix_path(
                 path,
                 name=f"{name} key",
             )
         except ValueError as error:
             raise ValueError(
-                f"{name} keys must be canonical relative POSIX paths"
+                f"{name} keys must be canonical paths using relative POSIX syntax"
             ) from error
         normalized[canonical_path] = sha256_digest(
             digest,
