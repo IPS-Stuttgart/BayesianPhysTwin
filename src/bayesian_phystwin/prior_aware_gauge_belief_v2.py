@@ -27,12 +27,15 @@ from ._prior_aware_gauge_math import (
 from .prior_aware_gauge_belief import update_prior_aware_gauge_belief
 from .sparse_prior_aware_gauge_belief import (
     SparseGaugeDesignV1,
+    TreeSparseGaugeDesignV1,
     _sparse_fallback_result,
     update_sparse_prior_aware_gauge_belief,
+    update_sparse_prior_aware_gauge_belief_structured,
 )
 from .sparse_prior_aware_gauge_belief import (
     _prior_covariances as _sparse_prior_covariances,
 )
+from .structured_gauge_aware_result import StructuredGaugeAwareBeliefResultV1
 
 PRIOR_AWARE_GAUGE_BELIEF_V2_SCHEMA: Final = "bayesian_phystwin.prior_aware_gauge_belief"
 PRIOR_AWARE_GAUGE_BELIEF_V2_VERSION: Final = 2
@@ -53,6 +56,9 @@ _NONPOSITIVE_CURVATURE_REASON: Final = "strict-v2-non-positive-exact-mixture-cur
 _ILL_CONDITIONED_CURVATURE_REASON: Final = (
     "strict-v2-ill-conditioned-exact-mixture-curvature"
 )
+
+GaugeDesignV1 = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1
+AdmissionInputResult = GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1
 
 
 @dataclass(frozen=True)
@@ -122,7 +128,7 @@ def _tag_diagnostics(
     admission: PriorAwareGaugeAdmissionConfigV2,
     passed: bool,
     reason: str,
-    underlying_result: GaugeAwareBeliefResult,
+    underlying_result: AdmissionInputResult,
 ) -> dict[str, object]:
     tagged = dict(diagnostics)
     tagged.update(
@@ -133,7 +139,9 @@ def _tag_diagnostics(
             "strict_admission_version": PRIOR_AWARE_GAUGE_BELIEF_V2_VERSION,
             "strict_admission_passed": passed,
             "strict_admission_reason": reason,
-            "underlying_inference_admissible": (underlying_result.inference_admissible),
+            "underlying_inference_admissible": (
+                underlying_result.inference_admissible
+            ),
             "underlying_inference_reason": underlying_result.reason,
             "exact_mixture_objective_required": True,
             "fixed_point_convergence_required": True,
@@ -163,6 +171,29 @@ def _as_v2(
         view_bias_coefficients=result.view_bias_coefficients,
         anchor_bias_coefficients=result.anchor_bias_coefficients,
         posterior_covariance=result.posterior_covariance,
+        identifiable_state_transform=result.identifiable_state_transform,
+        identifiable_fractions=result.identifiable_fractions,
+        query_sensitivity_fractions=result.query_sensitivity_fractions,
+        robust_weights=result.robust_weights,
+        anchor_robust_weights=result.anchor_robust_weights,
+        diagnostics=diagnostics,
+        input_lineage=result.input_lineage,
+    )
+
+
+def _as_structured_v2(
+    result: StructuredGaugeAwareBeliefResultV1,
+    diagnostics: Mapping[str, object],
+) -> StructuredGaugeAwareBeliefResultV1:
+    return StructuredGaugeAwareBeliefResultV1(
+        inference_admissible=result.inference_admissible,
+        reason=result.reason,
+        state_coefficients=result.state_coefficients,
+        gauge_delta=result.gauge_delta,
+        shared_bias_coefficients=result.shared_bias_coefficients,
+        view_bias_coefficients=result.view_bias_coefficients,
+        anchor_bias_coefficients=result.anchor_bias_coefficients,
+        covariance=result.covariance,
         identifiable_state_transform=result.identifiable_state_transform,
         identifiable_fractions=result.identifiable_fractions,
         query_sensitivity_fractions=result.query_sensitivity_fractions,
@@ -257,6 +288,47 @@ def _apply_strict_admission(
     return _as_v2(fallback(failure, tagged), tagged)
 
 
+def _apply_structured_strict_admission(
+    result: StructuredGaugeAwareBeliefResultV1,
+    *,
+    admission: PriorAwareGaugeAdmissionConfigV2,
+    fallback: Callable[
+        [str, Mapping[str, object]],
+        StructuredGaugeAwareBeliefResultV1,
+    ],
+) -> StructuredGaugeAwareBeliefResultV1:
+    if not result.inference_admissible:
+        diagnostics = _tag_diagnostics(
+            result.diagnostics,
+            admission=admission,
+            passed=False,
+            reason="underlying-inference-rejected",
+            underlying_result=result,
+        )
+        return _as_structured_v2(result, diagnostics)
+
+    diagnostics = dict(result.diagnostics)
+    failure = _strict_failure(diagnostics, admission)
+    if failure is None:
+        tagged = _tag_diagnostics(
+            diagnostics,
+            admission=admission,
+            passed=True,
+            reason="strict-admission-passed",
+            underlying_result=result,
+        )
+        return _as_structured_v2(result, tagged)
+
+    tagged = _tag_diagnostics(
+        diagnostics,
+        admission=admission,
+        passed=False,
+        reason=failure,
+        underlying_result=result,
+    )
+    return fallback(failure, tagged)
+
+
 def update_prior_aware_gauge_belief_v2(
     batch: GaugeAwareObservationBatch,
     *,
@@ -299,7 +371,7 @@ def update_prior_aware_gauge_belief_v2(
 
 def update_sparse_prior_aware_gauge_belief_v2(
     batch: GaugeAwareObservationBatch,
-    gauge: SparseGaugeDesignV1,
+    gauge: GaugeDesignV1,
     *,
     config: PriorAwareGaugeConfigV1 | None = None,
     admission_config: PriorAwareGaugeAdmissionConfigV2 | None = None,
@@ -308,8 +380,10 @@ def update_sparse_prior_aware_gauge_belief_v2(
 
     if not isinstance(batch, GaugeAwareObservationBatch):
         raise TypeError("batch must be a GaugeAwareObservationBatch")
-    if not isinstance(gauge, SparseGaugeDesignV1):
-        raise TypeError("gauge must be a SparseGaugeDesignV1")
+    if not isinstance(gauge, (SparseGaugeDesignV1, TreeSparseGaugeDesignV1)):
+        raise TypeError(
+            "gauge must be a SparseGaugeDesignV1 or TreeSparseGaugeDesignV1"
+        )
     if config is not None and not isinstance(config, PriorAwareGaugeConfigV1):
         raise TypeError("config must be a PriorAwareGaugeConfigV1")
     if admission_config is not None and not isinstance(
@@ -330,15 +404,96 @@ def update_sparse_prior_aware_gauge_belief_v2(
         diagnostics: Mapping[str, object],
     ) -> GaugeAwareBeliefResult:
         _, _, prior = _sparse_prior_covariances(batch, gauge, cfg)
-        return _sparse_fallback_result(
+        fallback_result = _sparse_fallback_result(
             batch,
             gauge,
             reason,
             diagnostics,
             prior_covariance=prior,
         )
+        if not isinstance(fallback_result, GaugeAwareBeliefResult):
+            raise RuntimeError("dense strict-v2 fallback returned a structured result")
+        return fallback_result
 
     return _apply_strict_admission(
+        result,
+        admission=admission,
+        fallback=fallback,
+    )
+
+
+def update_sparse_prior_aware_gauge_belief_structured_v2(
+    batch: GaugeAwareObservationBatch,
+    gauge: GaugeDesignV1,
+    *,
+    config: PriorAwareGaugeConfigV1 | None = None,
+    admission_config: PriorAwareGaugeAdmissionConfigV2 | None = None,
+) -> StructuredGaugeAwareBeliefResultV1:
+    """Run structured sparse inference and retain exact prior on strict rejection."""
+
+    if not isinstance(batch, GaugeAwareObservationBatch):
+        raise TypeError("batch must be a GaugeAwareObservationBatch")
+    if not isinstance(gauge, (SparseGaugeDesignV1, TreeSparseGaugeDesignV1)):
+        raise TypeError(
+            "gauge must be a SparseGaugeDesignV1 or TreeSparseGaugeDesignV1"
+        )
+    if config is not None and not isinstance(config, PriorAwareGaugeConfigV1):
+        raise TypeError("config must be a PriorAwareGaugeConfigV1")
+    if admission_config is not None and not isinstance(
+        admission_config,
+        PriorAwareGaugeAdmissionConfigV2,
+    ):
+        raise TypeError("admission_config must be a PriorAwareGaugeAdmissionConfigV2")
+    cfg = config or PriorAwareGaugeConfigV1()
+    admission = admission_config or PriorAwareGaugeAdmissionConfigV2()
+    result = update_sparse_prior_aware_gauge_belief_structured(
+        batch,
+        gauge,
+        config=cfg,
+    )
+
+    def fallback(
+        reason: str,
+        diagnostics: Mapping[str, object],
+    ) -> StructuredGaugeAwareBeliefResultV1:
+        _, _, prior = _sparse_prior_covariances(batch, gauge, cfg)
+        fallback_diagnostics = {
+            **diagnostics,
+            "result_covariance_representation": prior.representation,
+            "result_dense_covariance_materialized": False,
+            "result_estimated_dense_covariance_bytes": prior.estimated_dense_bytes,
+            "result_stored_covariance_bytes_before_materialization": (
+                prior.stored_nbytes
+            ),
+        }
+        return StructuredGaugeAwareBeliefResultV1(
+            inference_admissible=False,
+            reason=reason,
+            state_coefficients=np.zeros_like(result.state_coefficients),
+            gauge_delta=np.zeros_like(result.gauge_delta),
+            shared_bias_coefficients=np.zeros_like(
+                result.shared_bias_coefficients
+            ),
+            view_bias_coefficients=np.zeros_like(result.view_bias_coefficients),
+            anchor_bias_coefficients=np.zeros_like(
+                result.anchor_bias_coefficients
+            ),
+            covariance=prior,
+            identifiable_state_transform=np.zeros(
+                (len(result.state_coefficients), 0),
+                dtype=np.float64,
+            ),
+            identifiable_fractions=np.zeros(0, dtype=np.float64),
+            query_sensitivity_fractions=np.zeros(0, dtype=np.float64),
+            robust_weights=np.zeros_like(result.robust_weights),
+            anchor_robust_weights=np.zeros_like(
+                result.anchor_robust_weights
+            ),
+            diagnostics=fallback_diagnostics,
+            input_lineage=result.input_lineage,
+        )
+
+    return _apply_structured_strict_admission(
         result,
         admission=admission,
         fallback=fallback,
@@ -353,5 +508,6 @@ __all__ = [
     "PriorAwareGaugeAdmissionConfigV2",
     "PriorAwareGaugeBeliefResultV2",
     "update_prior_aware_gauge_belief_v2",
+    "update_sparse_prior_aware_gauge_belief_structured_v2",
     "update_sparse_prior_aware_gauge_belief_v2",
 ]
