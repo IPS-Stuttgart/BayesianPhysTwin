@@ -6,6 +6,11 @@ on:
       - agent/harden-deform360-runner-bootstrap
     paths:
       - ".github/workflows/_temporary_fix_pr352_codeql.yml"
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+    paths:
+      - ".github/workflows/_temporary_fix_pr352_codeql.yml"
 
 permissions:
   contents: write
@@ -16,14 +21,17 @@ concurrency:
 
 jobs:
   fix:
-    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'agent/harden-deform360-runner-bootstrap'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out exact event revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -32,10 +40,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           test -z "$(git status --porcelain --untracked-files=all)"
           git fetch --no-tags origin agent/harden-deform360-runner-bootstrap
-          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse FETCH_HEAD)" = "${{ github.event.pull_request.head.sha }}"
 
       - name: Derive the reviewed checkout from the event context
         shell: bash
@@ -154,5 +162,5 @@ jobs:
           git add -A
           git commit -m "Bind runner bootstrap checkout to event SHA"
           git fetch --no-tags origin agent/harden-deform360-runner-bootstrap
-          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse FETCH_HEAD)" = "${{ github.event.pull_request.head.sha }}"
           git push origin HEAD:refs/heads/agent/harden-deform360-runner-bootstrap
