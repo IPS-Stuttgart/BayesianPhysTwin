@@ -89,6 +89,27 @@ def test_dense_sparse_v2_rejects_structured_fallback_substitution(
 '''
 
 
+def update_source() -> None:
+    path = Path("src/bayesian_phystwin/prior_aware_gauge_belief_v2.py")
+    text = path.read_text(encoding="utf-8")
+    if "from typing import Final, TypeAlias\n" not in text:
+        text = text.replace(
+            "from typing import Final\n",
+            "from typing import Final, TypeAlias\n",
+            1,
+        )
+    text = text.replace(
+        "GaugeDesignV1 = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1\n"
+        "AdmissionInputResult = GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1\n",
+        "GaugeDesignV1: TypeAlias = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1\n"
+        "AdmissionInputResult: TypeAlias = (\n"
+        "    GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1\n"
+        ")\n",
+        1,
+    )
+    path.write_text(text, encoding="utf-8")
+
+
 def update_tests() -> None:
     path = Path("tests/test_claim_bearing_strict_admission.py")
     text = path.read_text(encoding="utf-8")
@@ -135,6 +156,7 @@ def update_manifest() -> None:
 
 
 def main() -> None:
+    update_source()
     update_tests()
     update_manifest()
 
