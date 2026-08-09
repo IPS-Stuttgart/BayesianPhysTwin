@@ -48,6 +48,9 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/_temporary_tree_sparse_association_patch.py
+          sed -i \
+            's/_require(gauge_ids and all(gauge_ids),/_require(bool(gauge_ids) and all(gauge_ids),/g' \
+            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py
           python -m pip install --disable-pip-version-check -e ".[dev]"
           python -m pip check
           files=(
