@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 WORKFLOW = Path(".github/workflows/deform360-prob4d-source-gate.yml")
+LAUNCHER = Path(".github/workflows/launch-deform360-prob4d-source-gate-once.yml")
 
 
 def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None:
@@ -25,6 +26,38 @@ def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None
     assert 'test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"' in text
     assert "launch-deform360-prob4d-source-gate-once.yml@refs/heads/main" in text
     assert "cancel-in-progress: false" in text
+
+
+def test_public_source_gate_launcher_is_reviewed_main_only_and_one_shot() -> None:
+    text = LAUNCHER.read_text(encoding="utf-8")
+    document = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(document, dict)
+    assert document["on"] == {
+        "push": {
+            "branches": ["main"],
+            "paths": [
+                ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
+            ],
+        }
+    }
+    assert "workflow_dispatch:" not in text
+    assert "pull_request:" not in text
+    assert "uses: ./.github/workflows/deform360-prob4d-source-gate.yml" in text
+    assert "execute_authorized: true" in text
+    assert "cancel-in-progress: false" in text
+    assert "runs-on: self-hosted" not in text
+    assert "issues: write" in text
+    assert '"repos/${GITHUB_REPOSITORY}/issues/148/comments"' in text
+    assert "/mnt/lexar4tb/datasets/deform360/data-7fea8e2" in text
+    assert (
+        "/mnt/lexar4tb/datasets/deform360/"
+        "adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370"
+        in text
+    )
+    assert "adaptive-confirmation payloads opened: \\`false\\`" in text
+    assert "confirmation payloads opened: \\`false\\`" in text
+    assert "target outcomes used: \\`false\\`" in text
 
 
 def test_public_source_gate_workflow_pins_the_complete_real_data_lineage() -> None:
