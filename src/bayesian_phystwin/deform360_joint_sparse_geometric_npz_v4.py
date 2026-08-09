@@ -24,6 +24,7 @@ from .deform360_joint_sparse_geometric_common_v4 import (
     _literal,
     _require,
     _safe_relative,
+    _sha256_file,
 )
 
 
@@ -192,6 +193,7 @@ def _load_prediction_support_windows(
         _require(descriptor.get("kind") == "independently_decoded_overlap_window", "prediction window kind changed")
         member_path = _confined_file(path.parent, relative, name="prediction window")
         _require(member_path.stat().st_size == descriptor.get("bytes"), "prediction window byte count changed")
+        _require(_sha256_file(member_path) == descriptor.get("sha256"), "prediction window SHA-256 changed")
         window_start = _integer(record.get("start_frame"), name="window start")
         window_stop = _integer(record.get("stop_frame"), name="window stop", minimum=1)
         _require(start <= window_start < window_stop <= stop, "prediction window crosses causal range")
