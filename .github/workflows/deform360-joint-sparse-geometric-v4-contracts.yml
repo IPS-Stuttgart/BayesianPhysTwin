@@ -56,9 +56,13 @@ jobs:
           python -m pip check
 
       - name: Validate source, contracts, and workflow boundary
+        id: validate
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          output="${RUNNER_TEMP}/geometric-v4-contract-${{ matrix.python-version }}.txt"
+          : > "${output}"
           files=(
             src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
             src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
@@ -70,36 +74,61 @@ jobs:
             tests/test_deform360_joint_sparse_geometric_v4.py
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py
           )
-          python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
-          python -m mypy \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
-          python -m pytest -q -p no:cacheprovider \
-            tests/test_deform360_joint_sparse_geometric_v4.py \
-            tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
-            tests/test_deform360_joint_sparse_observability_v4.py \
-            tests/test_deform360_joint_sparse_observability_v4_cli.py \
-            tests/test_pull_request_workflow_integrity.py
-          python -m compileall -q \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py \
-            scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
-          python - <<'PY'
-          import shutil
-          from pathlib import Path
+          {
+            echo "HEAD=$(git rev-parse HEAD)"
+            echo "PYTHON=$(python --version 2>&1)"
+            echo "=== RUFF ==="
+            python -m ruff check "${files[@]}"
+            ruff_status=$?
+            echo "RUFF_EXIT=${ruff_status}"
+            echo "=== FORMAT ==="
+            python -m ruff format --check "${files[@]}"
+            format_status=$?
+            echo "FORMAT_EXIT=${format_status}"
+            echo "=== MYPY ==="
+            python -m mypy \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+            mypy_status=$?
+            echo "MYPY_EXIT=${mypy_status}"
+            echo "=== PYTEST ==="
+            python -m pytest -q -p no:cacheprovider \
+              tests/test_deform360_joint_sparse_geometric_v4.py \
+              tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
+              tests/test_deform360_joint_sparse_observability_v4.py \
+              tests/test_deform360_joint_sparse_observability_v4_cli.py \
+              tests/test_pull_request_workflow_integrity.py
+            pytest_status=$?
+            echo "PYTEST_EXIT=${pytest_status}"
+            echo "=== COMPILE ==="
+            python -m compileall -q \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py \
+              scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
+            compile_status=$?
+            echo "COMPILE_EXIT=${compile_status}"
+          } 2>&1 | tee "${output}"
+          echo "DIAGNOSTIC_PATH=${output}" >> "${GITHUB_ENV}"
+          test "${ruff_status:-1}" -eq 0 \
+            -a "${format_status:-1}" -eq 0 \
+            -a "${mypy_status:-1}" -eq 0 \
+            -a "${pytest_status:-1}" -eq 0 \
+            -a "${compile_status:-1}" -eq 0
 
-          for root in (Path("src"), Path("scripts"), Path("tests")):
-              for cache in root.rglob("__pycache__"):
-                  shutil.rmtree(cache)
-          PY
-          git diff --exit-code
-          test -z "$(git status --porcelain=v1)"
+      - name: Upload contract diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: geometric-v4-contract-diagnostics-${{ matrix.python-version }}
+          path: ${{ env.DIAGNOSTIC_PATH }}
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Verify source-distribution membership
+        if: steps.validate.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -145,3 +174,10 @@ jobs:
           PY
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
+
+      - name: Enforce contract result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.validate.outcome }}" = "success"
