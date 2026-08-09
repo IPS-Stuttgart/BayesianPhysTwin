@@ -18,9 +18,9 @@ from .claim_bearing_prob4d import (
 )
 from .observation_belief import ObservationBeliefV1
 from .physical_linearization import PhysicalLinearizationV1
-from .prior_aware_gauge_belief import (
-    PriorAwareGaugeConfigV1,
-    update_prior_aware_gauge_belief,
+from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1
+from .prior_aware_gauge_belief_v2 import (
+    update_prior_aware_gauge_belief_v2 as update_prior_aware_gauge_belief,
 )
 
 CLAIM_BEARING_PROB4D_UPDATE_VERSION = 1
@@ -314,8 +314,9 @@ def update_claim_bearing_prob4d_from_artifacts(
     """Validate stream-v2 evidence before forming and solving the update.
 
     This is the supported one-call composition for prospective Prob4D-to-BPT
-    experiments. It deliberately uses the prior-aware grouped-mixture solver;
-    frozen provider-v1 and exploratory adapters remain separate entry points.
+    experiments. It deliberately uses strict-v2 admission around the historical
+    prior-aware grouped-mixture solver; frozen provider-v1 and exploratory
+    adapters remain separate entry points.
     """
 
     adapted = build_claim_bearing_gauge_aware_batch_from_artifacts(
