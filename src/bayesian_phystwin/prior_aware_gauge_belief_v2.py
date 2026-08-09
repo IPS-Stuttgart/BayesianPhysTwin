@@ -49,12 +49,27 @@ PRIOR_AWARE_GAUGE_BELIEF_V2_CLAIM_BOUNDARY: Final = (
 )
 
 _EXACT_MIXTURE_OBJECTIVE: Final = "exact-group-mixture-gradient"
+_PASS_REASON: Final = "strict-admission-passed"
+_UNDERLYING_REJECTION_REASON: Final = "underlying-inference-rejected"
 _FIXED_POINT_REASON: Final = "strict-v2-fixed-point-not-converged"
 _NONEXACT_REASON: Final = "strict-v2-non-exact-mixture-objective"
 _INVALID_DIAGNOSTICS_REASON: Final = "strict-v2-invalid-admission-diagnostics"
 _NONPOSITIVE_CURVATURE_REASON: Final = "strict-v2-non-positive-exact-mixture-curvature"
 _ILL_CONDITIONED_CURVATURE_REASON: Final = (
     "strict-v2-ill-conditioned-exact-mixture-curvature"
+)
+_CERTIFICATE_SCHEMA: Final = (
+    "bayesian_phystwin.prior_aware_gauge_admission_certificate"
+)
+_CERTIFICATE_VERSION: Final = 1
+_CERTIFICATE_KEY: Final = "strict_admission_certificate"
+_CERTIFICATE_BOOL_FIELDS: Final = (
+    "underlying_inference_admissible",
+    "exact_mixture_objective",
+    "fixed_point_converged",
+    "diagnostics_valid",
+    "positive_exact_mixture_curvature",
+    "condition_number_within_limit",
 )
 
 GaugeDesignV1: TypeAlias = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1
@@ -81,6 +96,84 @@ class PriorAwareGaugeAdmissionConfigV2:
             "maximum exact-Hessian condition number must be finite and at least one",
         )
         object.__setattr__(self, "maximum_exact_hessian_condition_number", value)
+
+
+@dataclass(frozen=True)
+class _PriorAwareGaugeAdmissionCertificateV1:
+    """One immutable decision record shared by every strict-v2 solver path."""
+
+    underlying_inference_admissible: bool
+    underlying_inference_reason: str
+    exact_mixture_objective: bool
+    fixed_point_converged: bool
+    diagnostics_valid: bool
+    positive_exact_mixture_curvature: bool
+    condition_number_within_limit: bool
+    mixture_solution_delta: float | None
+    mixture_stationarity_norm: float | None
+    exact_hessian_minimum_eigenvalue: float | None
+    exact_hessian_maximum_eigenvalue: float | None
+    exact_hessian_condition_number: float | None
+    maximum_exact_hessian_condition_number: float
+    passed: bool
+    reason: str
+
+    def __post_init__(self) -> None:
+        expected_reason = _admission_reason(
+            underlying_inference_admissible=(
+                self.underlying_inference_admissible
+            ),
+            exact_mixture_objective=self.exact_mixture_objective,
+            fixed_point_converged=self.fixed_point_converged,
+            diagnostics_valid=self.diagnostics_valid,
+            positive_exact_mixture_curvature=(
+                self.positive_exact_mixture_curvature
+            ),
+            condition_number_within_limit=self.condition_number_within_limit,
+        )
+        _require(
+            self.reason == expected_reason,
+            "strict admission certificate reason violates the decision invariant",
+        )
+        _require(
+            self.passed == (expected_reason == _PASS_REASON),
+            "strict admission certificate pass flag violates the decision invariant",
+        )
+
+    def as_mapping(self) -> dict[str, object]:
+        """Return the finite JSON payload embedded in result diagnostics."""
+
+        return {
+            "schema": _CERTIFICATE_SCHEMA,
+            "schema_version": _CERTIFICATE_VERSION,
+            "underlying_inference_admissible": (
+                self.underlying_inference_admissible
+            ),
+            "underlying_inference_reason": self.underlying_inference_reason,
+            "exact_mixture_objective": self.exact_mixture_objective,
+            "fixed_point_converged": self.fixed_point_converged,
+            "diagnostics_valid": self.diagnostics_valid,
+            "positive_exact_mixture_curvature": (
+                self.positive_exact_mixture_curvature
+            ),
+            "condition_number_within_limit": self.condition_number_within_limit,
+            "mixture_solution_delta": self.mixture_solution_delta,
+            "mixture_stationarity_norm": self.mixture_stationarity_norm,
+            "exact_hessian_minimum_eigenvalue": (
+                self.exact_hessian_minimum_eigenvalue
+            ),
+            "exact_hessian_maximum_eigenvalue": (
+                self.exact_hessian_maximum_eigenvalue
+            ),
+            "exact_hessian_condition_number": (
+                self.exact_hessian_condition_number
+            ),
+            "maximum_exact_hessian_condition_number": (
+                self.maximum_exact_hessian_condition_number
+            ),
+            "passed": self.passed,
+            "reason": self.reason,
+        }
 
 
 @dataclass(frozen=True)
@@ -111,6 +204,38 @@ class PriorAwareGaugeBeliefResultV2(GaugeAwareBeliefResult):
             == self.implementation_version,
             "v2 diagnostics do not identify strict admission version 2",
         )
+        certificate = self.diagnostics.get(_CERTIFICATE_KEY)
+        _require(
+            isinstance(certificate, Mapping),
+            "v2 diagnostics do not contain an admission certificate",
+        )
+        certificate_passed = _validate_certificate_mapping(certificate)
+        strict_passed = self.diagnostics.get("strict_admission_passed")
+        _require(
+            type(strict_passed) is bool and strict_passed == certificate_passed,
+            "v2 strict-admission flag differs from its certificate",
+        )
+        _require(
+            self.inference_admissible == certificate_passed,
+            "v2 inference admissibility differs from its certificate",
+        )
+        _require(
+            self.diagnostics.get("strict_admission_reason")
+            == certificate.get("reason"),
+            "v2 strict-admission reason differs from its certificate",
+        )
+        if not self.inference_admissible:
+            for name in (
+                "state_coefficients",
+                "gauge_delta",
+                "shared_bias_coefficients",
+                "view_bias_coefficients",
+                "anchor_bias_coefficients",
+            ):
+                _require(
+                    np.count_nonzero(getattr(self, name)) == 0,
+                    "rejected v2 results must preserve zero candidate coefficients",
+                )
 
 
 def _finite_diagnostic(
@@ -124,13 +249,158 @@ def _finite_diagnostic(
     return result if np.isfinite(result) else None
 
 
+def _admission_reason(
+    *,
+    underlying_inference_admissible: bool,
+    exact_mixture_objective: bool,
+    fixed_point_converged: bool,
+    diagnostics_valid: bool,
+    positive_exact_mixture_curvature: bool,
+    condition_number_within_limit: bool,
+) -> str:
+    if not underlying_inference_admissible:
+        return _UNDERLYING_REJECTION_REASON
+    if not exact_mixture_objective:
+        return _NONEXACT_REASON
+    if not fixed_point_converged:
+        return _FIXED_POINT_REASON
+    if not diagnostics_valid:
+        return _INVALID_DIAGNOSTICS_REASON
+    if not positive_exact_mixture_curvature:
+        return _NONPOSITIVE_CURVATURE_REASON
+    if not condition_number_within_limit:
+        return _ILL_CONDITIONED_CURVATURE_REASON
+    return _PASS_REASON
+
+
+def _build_admission_certificate(
+    result: AdmissionInputResult,
+    admission: PriorAwareGaugeAdmissionConfigV2,
+) -> _PriorAwareGaugeAdmissionCertificateV1:
+    diagnostics = result.diagnostics
+    exact_objective = (
+        diagnostics.get("robust_likelihood_objective") == _EXACT_MIXTURE_OBJECTIVE
+    )
+    fixed_point_converged = (
+        diagnostics.get("mixture_fixed_point_converged") is True
+    )
+    solution_delta = _finite_diagnostic(diagnostics, "mixture_solution_delta")
+    stationarity = _finite_diagnostic(diagnostics, "mixture_stationarity_norm")
+    minimum = _finite_diagnostic(
+        diagnostics,
+        "exact_reduced_mixture_hessian_minimum_eigenvalue",
+    )
+    maximum = _finite_diagnostic(
+        diagnostics,
+        "exact_reduced_mixture_hessian_maximum_eigenvalue",
+    )
+    declared_positive = diagnostics.get(
+        "exact_reduced_mixture_hessian_positive_definite"
+    )
+    diagnostics_valid = (
+        solution_delta is not None
+        and solution_delta >= 0.0
+        and stationarity is not None
+        and stationarity >= 0.0
+        and minimum is not None
+        and maximum is not None
+        and maximum >= minimum
+        and type(declared_positive) is bool
+        and declared_positive == (minimum > 0.0)
+    )
+    condition_number: float | None = None
+    if (
+        diagnostics_valid
+        and minimum is not None
+        and maximum is not None
+        and minimum > 0.0
+    ):
+        with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+            candidate_condition = float(np.divide(maximum, minimum))
+        if np.isfinite(candidate_condition):
+            condition_number = candidate_condition
+        else:
+            diagnostics_valid = False
+    positive_curvature = bool(
+        diagnostics_valid and minimum is not None and minimum > 0.0
+    )
+    condition_number_within_limit = bool(
+        positive_curvature
+        and condition_number is not None
+        and condition_number <= admission.maximum_exact_hessian_condition_number
+    )
+    reason = _admission_reason(
+        underlying_inference_admissible=result.inference_admissible,
+        exact_mixture_objective=exact_objective,
+        fixed_point_converged=fixed_point_converged,
+        diagnostics_valid=diagnostics_valid,
+        positive_exact_mixture_curvature=positive_curvature,
+        condition_number_within_limit=condition_number_within_limit,
+    )
+    return _PriorAwareGaugeAdmissionCertificateV1(
+        underlying_inference_admissible=result.inference_admissible,
+        underlying_inference_reason=result.reason,
+        exact_mixture_objective=exact_objective,
+        fixed_point_converged=fixed_point_converged,
+        diagnostics_valid=diagnostics_valid,
+        positive_exact_mixture_curvature=positive_curvature,
+        condition_number_within_limit=condition_number_within_limit,
+        mixture_solution_delta=solution_delta,
+        mixture_stationarity_norm=stationarity,
+        exact_hessian_minimum_eigenvalue=minimum,
+        exact_hessian_maximum_eigenvalue=maximum,
+        exact_hessian_condition_number=condition_number,
+        maximum_exact_hessian_condition_number=(
+            admission.maximum_exact_hessian_condition_number
+        ),
+        passed=reason == _PASS_REASON,
+        reason=reason,
+    )
+
+
+def _validate_certificate_mapping(certificate: Mapping[str, object]) -> bool:
+    _require(
+        certificate.get("schema") == _CERTIFICATE_SCHEMA
+        and certificate.get("schema_version") == _CERTIFICATE_VERSION,
+        "v2 admission certificate has an unsupported schema",
+    )
+    for name in _CERTIFICATE_BOOL_FIELDS:
+        _require(
+            type(certificate.get(name)) is bool,
+            f"v2 admission certificate field {name!r} must be a bool",
+        )
+    expected_passed = all(bool(certificate[name]) for name in _CERTIFICATE_BOOL_FIELDS)
+    _require(
+        type(certificate.get("passed")) is bool
+        and certificate.get("passed") == expected_passed,
+        "v2 admission certificate pass invariant is inconsistent",
+    )
+    expected_reason = _admission_reason(
+        underlying_inference_admissible=bool(
+            certificate["underlying_inference_admissible"]
+        ),
+        exact_mixture_objective=bool(certificate["exact_mixture_objective"]),
+        fixed_point_converged=bool(certificate["fixed_point_converged"]),
+        diagnostics_valid=bool(certificate["diagnostics_valid"]),
+        positive_exact_mixture_curvature=bool(
+            certificate["positive_exact_mixture_curvature"]
+        ),
+        condition_number_within_limit=bool(
+            certificate["condition_number_within_limit"]
+        ),
+    )
+    _require(
+        certificate.get("reason") == expected_reason,
+        "v2 admission certificate reason invariant is inconsistent",
+    )
+    return expected_passed
+
+
 def _tag_diagnostics(
     diagnostics: Mapping[str, object],
     *,
     admission: PriorAwareGaugeAdmissionConfigV2,
-    passed: bool,
-    reason: str,
-    underlying_result: AdmissionInputResult,
+    certificate: _PriorAwareGaugeAdmissionCertificateV1,
 ) -> dict[str, object]:
     tagged = dict(diagnostics)
     tagged.update(
@@ -139,10 +409,16 @@ def _tag_diagnostics(
             "implementation_version": PRIOR_AWARE_GAUGE_BELIEF_V2_VERSION,
             "implementation_id": PRIOR_AWARE_GAUGE_BELIEF_V2_IMPLEMENTATION,
             "strict_admission_version": PRIOR_AWARE_GAUGE_BELIEF_V2_VERSION,
-            "strict_admission_passed": passed,
-            "strict_admission_reason": reason,
-            "underlying_inference_admissible": (underlying_result.inference_admissible),
-            "underlying_inference_reason": underlying_result.reason,
+            "strict_admission_passed": certificate.passed,
+            "strict_admission_reason": certificate.reason,
+            "underlying_inference_admissible": (
+                certificate.underlying_inference_admissible
+            ),
+            "underlying_inference_reason": certificate.underlying_inference_reason,
+            "strict_exact_hessian_condition_number": (
+                certificate.exact_hessian_condition_number
+            ),
+            _CERTIFICATE_KEY: certificate.as_mapping(),
             "exact_mixture_objective_required": True,
             "fixed_point_convergence_required": True,
             "positive_exact_mixture_curvature_required": True,
@@ -204,50 +480,24 @@ def _as_structured_v2(
     )
 
 
-def _strict_failure(
-    diagnostics: dict[str, object],
+def _strict_admission_payload(
+    result: AdmissionInputResult,
     admission: PriorAwareGaugeAdmissionConfigV2,
-) -> str | None:
-    if diagnostics.get("robust_likelihood_objective") != _EXACT_MIXTURE_OBJECTIVE:
-        return _NONEXACT_REASON
-    if diagnostics.get("mixture_fixed_point_converged") is not True:
-        return _FIXED_POINT_REASON
-
-    solution_delta = _finite_diagnostic(diagnostics, "mixture_solution_delta")
-    stationarity = _finite_diagnostic(diagnostics, "mixture_stationarity_norm")
-    minimum = _finite_diagnostic(
-        diagnostics,
-        "exact_reduced_mixture_hessian_minimum_eigenvalue",
+) -> tuple[
+    _PriorAwareGaugeAdmissionCertificateV1,
+    dict[str, object],
+    str,
+]:
+    certificate = _build_admission_certificate(result, admission)
+    tagged = _tag_diagnostics(
+        result.diagnostics,
+        admission=admission,
+        certificate=certificate,
     )
-    maximum = _finite_diagnostic(
-        diagnostics,
-        "exact_reduced_mixture_hessian_maximum_eigenvalue",
+    fallback_reason = (
+        result.reason if not result.inference_admissible else certificate.reason
     )
-    declared_positive = diagnostics.get(
-        "exact_reduced_mixture_hessian_positive_definite"
-    )
-    if (
-        solution_delta is None
-        or solution_delta < 0.0
-        or stationarity is None
-        or stationarity < 0.0
-        or minimum is None
-        or maximum is None
-        or maximum < minimum
-        or type(declared_positive) is not bool
-        or declared_positive != (minimum > 0.0)
-    ):
-        return _INVALID_DIAGNOSTICS_REASON
-    if minimum <= 0.0:
-        return _NONPOSITIVE_CURVATURE_REASON
-
-    condition_number = maximum / minimum
-    if not np.isfinite(condition_number):
-        return _INVALID_DIAGNOSTICS_REASON
-    diagnostics["strict_exact_hessian_condition_number"] = condition_number
-    if condition_number > admission.maximum_exact_hessian_condition_number:
-        return _ILL_CONDITIONED_CURVATURE_REASON
-    return None
+    return certificate, tagged, fallback_reason
 
 
 def _apply_strict_admission(
@@ -256,36 +506,12 @@ def _apply_strict_admission(
     admission: PriorAwareGaugeAdmissionConfigV2,
     fallback: Callable[[str, Mapping[str, object]], GaugeAwareBeliefResult],
 ) -> PriorAwareGaugeBeliefResultV2:
-    if not result.inference_admissible:
-        diagnostics = _tag_diagnostics(
-            result.diagnostics,
-            admission=admission,
-            passed=False,
-            reason="underlying-inference-rejected",
-            underlying_result=result,
-        )
-        return _as_v2(result, diagnostics)
-
-    diagnostics = dict(result.diagnostics)
-    failure = _strict_failure(diagnostics, admission)
-    if failure is None:
-        tagged = _tag_diagnostics(
-            diagnostics,
-            admission=admission,
-            passed=True,
-            reason="strict-admission-passed",
-            underlying_result=result,
-        )
-        return _as_v2(result, tagged)
-
-    tagged = _tag_diagnostics(
-        diagnostics,
-        admission=admission,
-        passed=False,
-        reason=failure,
-        underlying_result=result,
+    certificate, tagged, fallback_reason = _strict_admission_payload(
+        result,
+        admission,
     )
-    return _as_v2(fallback(failure, tagged), tagged)
+    selected = result if certificate.passed else fallback(fallback_reason, tagged)
+    return _as_v2(selected, tagged)
 
 
 def _apply_structured_strict_admission(
@@ -297,36 +523,13 @@ def _apply_structured_strict_admission(
         StructuredGaugeAwareBeliefResultV1,
     ],
 ) -> StructuredGaugeAwareBeliefResultV1:
-    if not result.inference_admissible:
-        diagnostics = _tag_diagnostics(
-            result.diagnostics,
-            admission=admission,
-            passed=False,
-            reason="underlying-inference-rejected",
-            underlying_result=result,
-        )
-        return _as_structured_v2(result, diagnostics)
-
-    diagnostics = dict(result.diagnostics)
-    failure = _strict_failure(diagnostics, admission)
-    if failure is None:
-        tagged = _tag_diagnostics(
-            diagnostics,
-            admission=admission,
-            passed=True,
-            reason="strict-admission-passed",
-            underlying_result=result,
-        )
-        return _as_structured_v2(result, tagged)
-
-    tagged = _tag_diagnostics(
-        diagnostics,
-        admission=admission,
-        passed=False,
-        reason=failure,
-        underlying_result=result,
+    certificate, tagged, fallback_reason = _strict_admission_payload(
+        result,
+        admission,
     )
-    return fallback(failure, tagged)
+    if certificate.passed:
+        return _as_structured_v2(result, tagged)
+    return fallback(fallback_reason, tagged)
 
 
 def update_prior_aware_gauge_belief_v2(
