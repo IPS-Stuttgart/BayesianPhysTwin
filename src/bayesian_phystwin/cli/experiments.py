@@ -95,6 +95,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "diagnose-phystwin-structure": (
         "bayesian_phystwin.cli.phystwin_structural_diagnostic"
     ),
+    "diagnose-provider-failures": (
+        "bayesian_phystwin.cli.provider_failure_decomposition"
+    ),
     "download-deform360-selective-virtual-sensing": (
         "bayesian_phystwin.cli.deform360_selective_virtual_sensing_download"
     ),

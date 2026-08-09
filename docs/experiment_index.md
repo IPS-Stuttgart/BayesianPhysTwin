@@ -51,6 +51,14 @@ historical `bpt-*` name when one existed. Historical aliases are inspection and
 migration metadata only; use `bpt commands migrate LEGACY_ALIAS` to obtain the
 current grouped route.
 
+### Provider failure decomposition
+
+[`bpt diagnostic run diagnose-provider-failures`](provider_failure_decomposition.md)
+attributes frozen source-only provider and guarded-update failures to a fixed,
+equal-case taxonomy. It preserves multiple observed causes, leaves unresolved
+rejections explicit, and never changes an acceptance decision or authorizes
+target access.
+
 ## Frozen and claim-bearing evidence
 
 ### Official PhysTwin full-22 evaluation
