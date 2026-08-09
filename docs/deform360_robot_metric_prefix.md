@@ -29,3 +29,12 @@ once through the robust metric-gauge fit.
 This is a gauge-calibration input, not an object-state observation. A source
 gate still has to establish adequate support, calibration, and transfer before
 any confirmation payload can open.
+
+## Execution lineage
+
+The first reviewed one-shot execution, GitHub Actions run `31293249428`, stopped
+inside the shared Python installation before artifact download or public robot
+measurement access. It is a technical failure, not scientific evidence. The
+second request keeps the frozen source roster and method unchanged, binds that
+failed run as provenance, and creates a clean per-run virtual environment before
+the public source-only smoke. Neither request requires human approval.

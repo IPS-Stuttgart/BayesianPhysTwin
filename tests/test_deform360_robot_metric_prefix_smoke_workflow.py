@@ -28,6 +28,7 @@ def test_robot_metric_smoke_is_public_source_only_and_one_shot() -> None:
     assert 'PRODUCTION_RUN_ID: "31279398563"' in text
     assert 'PRODUCTION_ARTIFACT_ID: "9031215572"' in text
     assert "PRODUCTION_RESULT_ID: 146f885351b2af" in text
+    assert 'PRIOR_TECHNICAL_RUN_ID: "31293249428"' in text
     assert 'succeeded_job_count": 324' in text
     assert 'technical_failure_job_count": 0' in text
     assert 'test ! -e "${output}"' in text
@@ -37,9 +38,14 @@ def test_robot_metric_smoke_is_public_source_only_and_one_shot() -> None:
     assert 'status = "technical-failure"' in text
     assert "released-robot-geometry-outside-fixed-camera-prefix" in text
     assert "materialization_stderr_sha256" in text
-    assert '"calibration_robot_state_access_attempted": True' in text
-    assert 'None if status == "technical-failure" else True' in text
-    assert 'echo "calibration_robot_state_access_attempted=true"' in text
+    assert "python -m venv --copies" in text
+    assert 'echo "${runtime}/bin" >> "${GITHUB_PATH}"' in text
+    assert '"${runtime_python}" -m pip install' in text
+    assert '"prior_technical_run_id": os.environ["PRIOR_TECHNICAL_RUN_ID"]' in text
+    assert '"metric-materialization-not-reached"' in text
+    assert '"calibration_robot_state_access_attempted": access_attempted' in text
+    assert "None if access_attempted else False" in text
+    assert 'echo "calibration_robot_state_access_attempted=${access_attempted}"' in text
     assert 'echo "calibration_robot_state_opened=true"' not in text
     assert "Enforce the frozen source-support gate" in text
     assert text.index("Upload compact public source-only smoke evidence") < text.index(
@@ -56,6 +62,8 @@ def test_robot_metric_smoke_is_public_source_only_and_one_shot() -> None:
     assert "workflow_dispatch:" not in launcher
     assert "execute_authorized: true" in launcher
     assert "cancel-in-progress: false" in launcher
+    assert "2026-08-09-first-admitted-camera-v2" in launcher
+    assert "Run 31293249428 stopped" in launcher
 
 
 def test_robot_metric_policy_names_the_new_evidence_source() -> None:
