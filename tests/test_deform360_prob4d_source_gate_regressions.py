@@ -66,7 +66,5 @@ def test_validator_rejects_rehashed_false_gate_relabelled_as_passed(
     forged["status"] = "source-gate-passed"
     _rewrite_result_integrity(output, forged)
 
-    with pytest.raises(
-        ValueError, match="checks differ from stored decision evidence"
-    ):
+    with pytest.raises(ValueError, match="checks differ from stored decision evidence"):
         source_gate.validate_source_gate_result(output)

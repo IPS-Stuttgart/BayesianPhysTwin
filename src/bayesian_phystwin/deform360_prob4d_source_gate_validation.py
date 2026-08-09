@@ -87,7 +87,9 @@ def _real(
 def _ordered_mean(values: Sequence[float]) -> float:
     ordered = sorted(float(value) for value in values)
     _require(bool(ordered), "mean requires observations")
-    _require(all(math.isfinite(value) for value in ordered), "mean values must be finite")
+    _require(
+        all(math.isfinite(value) for value in ordered), "mean values must be finite"
+    )
     return math.fsum(ordered) / len(ordered)
 
 
@@ -240,7 +242,9 @@ def validate_source_gate_decision_evidence(
             "point_cluster_count": _integer(
                 row.get("point_cluster_count"), name="point_cluster_count"
             ),
-            "gauge_row_count": _integer(row.get("gauge_row_count"), name="gauge_row_count"),
+            "gauge_row_count": _integer(
+                row.get("gauge_row_count"), name="gauge_row_count"
+            ),
         }
 
     folds: list[dict[str, Any]] = []
@@ -264,7 +268,9 @@ def validate_source_gate_decision_evidence(
             "source gate fold fields changed",
         )
         object_id = _literal_string(row.get("object_id"), name="fold object_id")
-        _require(object_id not in seen_fold_objects, "source gate folds repeat an object")
+        _require(
+            object_id not in seen_fold_objects, "source gate folds repeat an object"
+        )
         seen_fold_objects.add(object_id)
         stratum = _literal_string(row.get("stratum"), name="fold stratum")
         _require(object_id in support, "source gate fold has no matching support row")
@@ -290,9 +296,13 @@ def validate_source_gate_decision_evidence(
             _same_real(stored_factor_ratio, recomputed_factor_ratio),
             "source gate fold factor ratio differs from stored factors",
         )
-        point_before = _metric(row.get("point_before"), name=f"fold {index} point_before")
+        point_before = _metric(
+            row.get("point_before"), name=f"fold {index} point_before"
+        )
         point_after = _metric(row.get("point_after"), name=f"fold {index} point_after")
-        gauge_before = _metric(row.get("gauge_before"), name=f"fold {index} gauge_before")
+        gauge_before = _metric(
+            row.get("gauge_before"), name=f"fold {index} gauge_before"
+        )
         gauge_after = _metric(row.get("gauge_after"), name=f"fold {index} gauge_after")
         expected_fold_passed = (
             point_after["coverage_90"] >= minimum_point_fold
@@ -316,7 +326,9 @@ def validate_source_gate_decision_evidence(
             }
         )
 
-    _require(set(support) == seen_fold_objects, "source gate support and fold rosters differ")
+    _require(
+        set(support) == seen_fold_objects, "source gate support and fold rosters differ"
+    )
     observed_stratum_counts: dict[str, int] = {}
     for fold in folds:
         stratum = cast(str, fold["stratum"])
@@ -335,7 +347,10 @@ def validate_source_gate_decision_evidence(
 
     def balanced(section: str, metric: str, selected: Sequence[int]) -> float:
         return _ordered_mean(
-            [cast(dict[str, float], folds[index][section])[metric] for index in selected]
+            [
+                cast(dict[str, float], folds[index][section])[metric]
+                for index in selected
+            ]
         )
 
     all_indices = tuple(range(object_count))
@@ -378,13 +393,17 @@ def validate_source_gate_decision_evidence(
         "source gate aggregate stratum roster changed",
     )
     normalized_aggregate["strata"] = {}
-    for stratum, expected in cast(dict[str, dict[str, float]], expected_aggregate["strata"]).items():
+    for stratum, expected in cast(
+        dict[str, dict[str, float]], expected_aggregate["strata"]
+    ).items():
         row = _mapping(aggregate_strata[stratum], name=f"aggregate.strata.{stratum}")
         _require(
             set(row) == {"object_count", "point_coverage_90", "gauge_coverage_90"},
             "source gate aggregate stratum fields changed",
         )
-        object_total = _integer(row.get("object_count"), name="aggregate stratum object_count")
+        object_total = _integer(
+            row.get("object_count"), name="aggregate stratum object_count"
+        )
         point_coverage = _real(
             row.get("point_coverage_90"),
             name="aggregate stratum point_coverage_90",
@@ -478,8 +497,12 @@ def validate_source_gate_decision_evidence(
     }
     for stratum in sorted(observed_stratum_counts):
         row = normalized_aggregate["strata"][stratum]
-        checks[f"{stratum}_point_transfer"] = row["point_coverage_90"] >= minimum_point_fold
-        checks[f"{stratum}_gauge_transfer"] = row["gauge_coverage_90"] >= minimum_gauge_fold
+        checks[f"{stratum}_point_transfer"] = (
+            row["point_coverage_90"] >= minimum_point_fold
+        )
+        checks[f"{stratum}_gauge_transfer"] = (
+            row["gauge_coverage_90"] >= minimum_gauge_fold
+        )
 
     stored_checks = _mapping(result.get("checks"), name="checks")
     _require(
