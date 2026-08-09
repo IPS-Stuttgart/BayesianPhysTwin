@@ -247,6 +247,7 @@ class GaugeAwareObservationBatch:
     metadata: Mapping[str, Any] | None = None
     composite_weight_mode: str = COMPOSITE_WEIGHT_MODE_CONSUMER_CAP
     anchor_composite_weight_mode: str = COMPOSITE_WEIGHT_MODE_CONSUMER_CAP
+    association_probability: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         innovation = _finite_array(self.innovation_m, "innovation_m", 2)
@@ -304,6 +305,12 @@ class GaugeAwareObservationBatch:
             self.prior_reliability,
             count,
             name="prior_reliability",
+            default=1.0,
+        )
+        association_probability = _probability_vector(
+            self.association_probability,
+            count,
+            name="association_probability",
             default=1.0,
         )
         nominal_probability = _probability_vector(
@@ -489,6 +496,7 @@ class GaugeAwareObservationBatch:
             ("query_state_jacobian", query),
             ("gauge_prior_covariance", gauge_prior),
             ("prior_reliability", reliability),
+            ("association_probability", association_probability),
             ("prior_nominal_probability", nominal_probability),
             ("composite_weight", composite_weight),
         ):

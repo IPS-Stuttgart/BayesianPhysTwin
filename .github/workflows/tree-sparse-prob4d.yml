@@ -1,0 +1,136 @@
+name: Tree-sparse Prob4D integration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/quality/test-suites.json"
+      - ".github/workflows/tree-sparse-prob4d.yml"
+      - "docs/claim-bearing-tree-sparse-prob4d.md"
+      - "src/bayesian_phystwin/_gauge_aware_contracts.py"
+      - "src/bayesian_phystwin/*gauge*.py"
+      - "src/bayesian_phystwin/observed_information_covariance.py"
+      - "tests/test_*gauge*.py"
+      - "tests/test_tree_sparse_prob4d_roundtrip.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tree-sparse-prob4d-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development environment
+        run: |
+          set -euo pipefail
+          python -m pip install --no-cache-dir -e ".[dev]"
+          python -m pip check
+
+      - name: Check focused quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/_gauge_aware_contracts.py
+            src/bayesian_phystwin/observed_information_covariance.py
+            src/bayesian_phystwin/prior_aware_gauge_belief.py
+            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py
+            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py
+            tests/test_tree_sparse_explicit_gauge_prob4d.py
+            tests/test_tree_sparse_prob4d_roundtrip.py
+          )
+          python -m ruff check -- "${files[@]}"
+          python -m ruff format --check --diff "${files[@]}"
+          python -m mypy --python-version 3.12 \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/observed_information_covariance.py \
+            src/bayesian_phystwin/prior_aware_gauge_belief.py \
+            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py \
+            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py
+
+      - name: Run focused and adjacent tests
+        run: |
+          set -euo pipefail
+          python -m pytest -q \
+            tests/test_gauge_aware_belief.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_prior_aware_likelihood_conformance.py \
+            tests/test_information_mass_invariants.py \
+            tests/test_observed_information_covariance.py \
+            tests/test_explicit_gauge_prob4d.py \
+            tests/test_sparse_prior_aware_gauge_belief.py \
+            tests/test_sparse_explicit_gauge_prob4d.py \
+            tests/test_tree_sparse_explicit_gauge_prob4d.py
+          python -m compileall -q src/bayesian_phystwin tests
+
+  real-producer-roundtrip:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install consumer and exact merged producer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --no-cache-dir -e ".[dev]"
+          python -m pip install --no-cache-dir \
+            "prob4d @ git+https://github.com/IPS-Stuttgart/Prob4D@b2953319e9b7afea04013c214c502b38c5a83489"
+          python -m pip check
+          python - <<'PY'
+          import sys
+          import prob4d
+          import bayesian_phystwin.tree_sparse_explicit_gauge_prob4d
+
+          forbidden = {"torch", "diffusers", "decord"}
+          loaded = sorted(forbidden & set(sys.modules))
+          if loaded:
+              raise SystemExit(f"optional GPU dependencies loaded: {loaded}")
+          print(f"Prob4D import: {prob4d.__file__}")
+          PY
+
+      - name: Run serialized producer-to-consumer round trip
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_tree_sparse_prob4d_roundtrip.py
+          python -m compileall -q \
+            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py \
+            tests/test_tree_sparse_prob4d_roundtrip.py
