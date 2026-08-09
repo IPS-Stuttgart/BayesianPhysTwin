@@ -637,3 +637,30 @@ def test_gauge_aware_result_recursively_owns_and_freezes_provenance() -> None:
         result.diagnostics["solver"]["iterations"].append(3)
     with pytest.raises(TypeError, match="immutable"):
         result.input_lineage["provider"]["calibration_ids"][0] = "mutated"
+
+
+def test_gauge_aware_irls_waits_for_robust_weight_fixed_point() -> None:
+    mode = np.asarray([1.0, 2.0])
+    batch = _batch(mode, np.asarray([0.02, -0.01]))
+
+    result = update_gauge_aware_belief(
+        batch,
+        config=GaugeAwareBeliefConfig(
+            effective_samples_per_correlation_group=2.0,
+            maximum_iterations=8,
+            convergence_tolerance=1e-12,
+        ),
+    )
+
+    assert result.inference_admissible
+    assert result.diagnostics["iterations"] >= 4
+    assert result.state_coefficients[0] == pytest.approx(
+        -0.004875500609437576,
+        abs=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.robust_weights,
+        np.asarray([0.02, 1.0]),
+        atol=1e-12,
+        rtol=0.0,
+    )

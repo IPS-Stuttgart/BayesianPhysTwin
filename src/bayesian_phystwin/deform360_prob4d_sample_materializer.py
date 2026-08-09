@@ -46,6 +46,12 @@ from .deform360_prob4d_camera_eligibility import (
     VISIBLE_STREAM_PLAN_VERSION,
     validate_deform360_prob4d_camera_eligibility_policy,
 )
+from .deform360_prob4d_sample_admissibility_contract import (
+    SAMPLE_ADMISSIBLE_PLAN_SEMANTICS,
+    SAMPLE_ADMISSIBLE_PLAN_VERSION,
+    SAMPLE_SUPPORT_NEGATIVE_REASON,
+    validate_deform360_prob4d_sample_admissibility_policy,
+)
 from .deform360_prob4d_source_calibration import (
     POINT_CLUSTER_SEMANTICS,
     SAMPLE_SCHEMA,
@@ -91,6 +97,12 @@ _PLAN_V2_FIELDS = _PLAN_V1_FIELDS | frozenset(
         "camera_eligibility_policy_file_sha256",
         "camera_eligibility_policy_id",
         "excluded_streams",
+    }
+)
+_PLAN_V3_FIELDS = _PLAN_V2_FIELDS | frozenset(
+    {
+        "sample_admissibility_policy_file_sha256",
+        "sample_admissibility_policy_id",
     }
 )
 _CASE_FIELDS = frozenset(
@@ -296,6 +308,7 @@ def _load_plan(
     visual_provider_spec_path: Path,
     metric_prior_policy_path: Path,
     camera_eligibility_policy_path: Path | None,
+    sample_admissibility_policy_path: Path | None = None,
 ) -> dict[str, Any]:
     plan = _load_json(path.resolve(strict=True), name="metric-prefix plan")
     _require(plan.get("schema") == PLAN_SCHEMA, "unsupported metric-prefix plan")
@@ -309,8 +322,9 @@ def _load_plan(
             "unsupported metric-prefix plan contract",
         )
         _require(
-            camera_eligibility_policy_path is None,
-            "version-1 plan cannot use a camera eligibility policy",
+            camera_eligibility_policy_path is None
+            and sample_admissibility_policy_path is None,
+            "version-1 plan cannot use an eligibility policy",
         )
     elif version == VISIBLE_STREAM_PLAN_VERSION:
         require_exact_fields(plan, expected=_PLAN_V2_FIELDS, name="metric-prefix plan")
@@ -321,6 +335,10 @@ def _load_plan(
         _require(
             camera_eligibility_policy_path is not None,
             "version-2 plan requires a camera eligibility policy",
+        )
+        _require(
+            sample_admissibility_policy_path is None,
+            "version-2 plan cannot use a sample admissibility policy",
         )
         eligibility_path = cast(Path, camera_eligibility_policy_path).resolve(
             strict=True
@@ -336,6 +354,47 @@ def _load_plan(
             )
             and plan["camera_eligibility_policy_id"] == policy["artifact_id"],
             "camera eligibility policy differs from the metric-prefix plan",
+        )
+    elif version == SAMPLE_ADMISSIBLE_PLAN_VERSION:
+        require_exact_fields(plan, expected=_PLAN_V3_FIELDS, name="metric-prefix plan")
+        _require(
+            plan["semantics"] == SAMPLE_ADMISSIBLE_PLAN_SEMANTICS,
+            "unsupported metric-prefix plan contract",
+        )
+        _require(
+            camera_eligibility_policy_path is not None
+            and sample_admissibility_policy_path is not None,
+            "version-3 plan requires camera and sample eligibility policies",
+        )
+        eligibility_path = cast(Path, camera_eligibility_policy_path).resolve(
+            strict=True
+        )
+        camera_policy = validate_deform360_prob4d_camera_eligibility_policy(
+            _load_json(eligibility_path, name="camera eligibility policy")
+        )
+        _require(
+            _sha256_file(eligibility_path)
+            == sha256_digest(
+                plan["camera_eligibility_policy_file_sha256"],
+                name="camera_eligibility_policy_file_sha256",
+            )
+            and plan["camera_eligibility_policy_id"] == camera_policy["artifact_id"],
+            "camera eligibility policy differs from the metric-prefix plan",
+        )
+        sample_policy_path = cast(Path, sample_admissibility_policy_path).resolve(
+            strict=True
+        )
+        sample_policy = validate_deform360_prob4d_sample_admissibility_policy(
+            _load_json(sample_policy_path, name="sample admissibility policy")
+        )
+        _require(
+            _sha256_file(sample_policy_path)
+            == sha256_digest(
+                plan["sample_admissibility_policy_file_sha256"],
+                name="sample_admissibility_policy_file_sha256",
+            )
+            and plan["sample_admissibility_policy_id"] == sample_policy["artifact_id"],
+            "sample admissibility policy differs from the metric-prefix plan",
         )
     else:
         raise ValueError("unsupported metric-prefix plan contract")
@@ -598,6 +657,7 @@ def materialize_deform360_prob4d_calibration_samples(
     visual_provider_spec_path: str | Path,
     metric_prior_policy_path: str | Path,
     camera_eligibility_policy_path: str | Path | None = None,
+    sample_admissibility_policy_path: str | Path | None = None,
     expected_processing_revision: str,
     api: Prob4DCalibrationApi | Any,
     output_directory: str | Path,
@@ -615,13 +675,41 @@ def materialize_deform360_prob4d_calibration_samples(
         if camera_eligibility_policy_path is None
         else Path(camera_eligibility_policy_path).resolve(strict=True)
     )
+    sample_policy_source = (
+        None
+        if sample_admissibility_policy_path is None
+        else Path(sample_admissibility_policy_path).resolve(strict=True)
+    )
     plan = _load_plan(
         plan_source,
         selection_path=selection_source,
         visual_provider_spec_path=provider_source,
         metric_prior_policy_path=metric_policy_source,
         camera_eligibility_policy_path=eligibility_policy_source,
+        sample_admissibility_policy_path=sample_policy_source,
     )
+    if plan["schema_version"] == SAMPLE_ADMISSIBLE_PLAN_VERSION:
+        _require(
+            sample_policy_source is not None,
+            "version-3 plan requires a sample admissibility policy",
+        )
+        sample_policy = validate_deform360_prob4d_sample_admissibility_policy(
+            _load_json(
+                cast(Path, sample_policy_source),
+                name="sample admissibility policy",
+            )
+        )
+        _require(
+            sample_policy["minimum_metric_gauge_correspondences_per_window"] == 8
+            and sample_policy["minimum_metric_gauge_spatial_clusters_per_window"] == 8
+            and sample_policy["maximum_metric_fit_correspondences"]
+            == cfg.maximum_metric_fit_correspondences
+            and sample_policy["minimum_held_prefix_point_rows_per_window"]
+            == cfg.minimum_point_rows_per_window
+            and sample_policy["covariance_cluster_size_pixels"]
+            == cfg.covariance_cluster_size_pixels,
+            "sample materialization settings differ from the admissibility policy",
+        )
     _require(
         plan["processing_revision"]
         == exact_revision(
@@ -665,11 +753,14 @@ def materialize_deform360_prob4d_calibration_samples(
     seen_objects: set[str] = set()
     seen_jobs: set[str] = set()
     excluded_jobs: dict[str, tuple[str, int, str, str]] = {}
-    if plan["schema_version"] == VISIBLE_STREAM_PLAN_VERSION:
+    if plan["schema_version"] in (
+        VISIBLE_STREAM_PLAN_VERSION,
+        SAMPLE_ADMISSIBLE_PLAN_VERSION,
+    ):
         raw_excluded = plan["excluded_streams"]
         _require(
             isinstance(raw_excluded, list),
-            "version-2 excluded streams must be an array",
+            "excluded streams must be an array",
         )
         excluded_order: list[tuple[str, str, str]] = []
         for excluded_index, raw_excluded_stream in enumerate(raw_excluded):
@@ -699,9 +790,17 @@ def materialize_deform360_prob4d_calibration_samples(
             excluded_camera_id = nonempty_string(
                 raw_excluded_stream["camera_id"], name="excluded stream camera_id"
             )
+            allowed_reasons = {SUPPORT_NEGATIVE_REASON}
+            if plan["schema_version"] == SAMPLE_ADMISSIBLE_PLAN_VERSION:
+                allowed_reasons.add(SAMPLE_SUPPORT_NEGATIVE_REASON)
+            reason_error = (
+                "excluded stream is not a target-free visibility negative"
+                if plan["schema_version"] == VISIBLE_STREAM_PLAN_VERSION
+                else "excluded stream is not an admitted target-free support negative"
+            )
             _require(
-                raw_excluded_stream["reason"] == SUPPORT_NEGATIVE_REASON,
-                "excluded stream is not a target-free visibility negative",
+                raw_excluded_stream["reason"] in allowed_reasons,
+                reason_error,
             )
             _require(
                 excluded_job_id not in excluded_jobs,
@@ -911,6 +1010,13 @@ def materialize_deform360_prob4d_calibration_samples(
             )
             source_artifacts[policy_copy.relative_to(temporary).as_posix()] = (
                 _copy_bound_source(eligibility_policy_source, policy_copy)
+            )
+        if sample_policy_source is not None:
+            sample_policy_copy = (
+                temporary / "source-artifacts" / "sample-admissibility-policy.json"
+            )
+            source_artifacts[sample_policy_copy.relative_to(temporary).as_posix()] = (
+                _copy_bound_source(sample_policy_source, sample_policy_copy)
             )
 
         for case_index, case in enumerate(normalized_cases):

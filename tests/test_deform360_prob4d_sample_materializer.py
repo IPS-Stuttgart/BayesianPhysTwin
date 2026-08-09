@@ -24,6 +24,20 @@ from bayesian_phystwin.deform360_prob4d_camera_eligibility import (
     VISIBLE_STREAM_PLAN_SEMANTICS,
     VISIBLE_STREAM_PLAN_VERSION,
 )
+from bayesian_phystwin.deform360_prob4d_sample_admissibility import (
+    SAMPLE_ADMISSIBLE_PLAN_FILENAME,
+    materialize_deform360_prob4d_sample_admissibility,
+    validate_deform360_prob4d_sample_admissibility_result,
+)
+from bayesian_phystwin.deform360_prob4d_sample_admissibility_contract import (
+    SAMPLE_ADMISSIBILITY_POLICY_SCHEMA,
+    SAMPLE_ADMISSIBILITY_POLICY_SEMANTICS,
+    SAMPLE_ADMISSIBILITY_POLICY_VERSION,
+    SAMPLE_ADMISSIBLE_PLAN_SEMANTICS,
+    SAMPLE_ADMISSIBLE_PLAN_VERSION,
+    SAMPLE_SUPPORT_NEGATIVE_REASON,
+    validate_deform360_prob4d_sample_admissibility_policy,
+)
 from bayesian_phystwin.deform360_prob4d_sample_materializer import (
     PLAN_SCHEMA,
     PLAN_SEMANTICS,
@@ -559,6 +573,76 @@ def _write_visible_camera_fixture(tmp_path: Path) -> dict[str, Any]:
     return fixture
 
 
+def _write_sample_admissibility_policy(tmp_path: Path) -> Path:
+    identity = {
+        "schema": SAMPLE_ADMISSIBILITY_POLICY_SCHEMA,
+        "schema_version": SAMPLE_ADMISSIBILITY_POLICY_VERSION,
+        "semantics": SAMPLE_ADMISSIBILITY_POLICY_SEMANTICS,
+        "protocol_id": "unit-protocol",
+        "eligibility_evidence": "unit provider and metric masks",
+        "eligible_status": "admissible",
+        "support_negative_action": "retain-and-exclude",
+        "technical_failure_action": "terminal",
+        "allowed_support_negative_reason": SAMPLE_SUPPORT_NEGATIVE_REASON,
+        "minimum_metric_gauge_correspondences_per_window": 8,
+        "minimum_metric_gauge_spatial_clusters_per_window": 8,
+        "maximum_metric_fit_correspondences": 100,
+        "minimum_held_prefix_point_rows_per_window": 8,
+        "covariance_cluster_size_pixels": 1,
+        "minimum_supported_streams_per_object": 2,
+        "minimum_supported_object_count": 8,
+        "minimum_supported_stream_fraction": 0.9,
+        "prediction_support_masks_used_for_eligibility": True,
+        "prediction_point_values_used_for_eligibility": False,
+        "prediction_residuals_used_for_eligibility": False,
+        "calibration_outcomes_used_for_eligibility": False,
+        "replacement_allowed": False,
+        "confirmation_payloads_opened": False,
+        "future_frames_used": False,
+        "target_outcomes_used": False,
+        "human_approval_required": False,
+        "new_measurements_required": False,
+        "claim_boundary": "unit target-free sample admissibility",
+    }
+    policy = {**identity, "artifact_id": content_id(identity)}
+    path = tmp_path / "sample-admissibility-policy.json"
+    path.write_text(json.dumps(policy), encoding="utf-8")
+    return path
+
+
+def _refresh_plan(plan_path: Path) -> dict[str, Any]:
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan["plan_id"] = content_id(
+        {key: value for key, value in plan.items() if key != "plan_id"}
+    )
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    return plan
+
+
+def _materialize_sample_admissibility(
+    fixture: dict[str, Any],
+    *,
+    policy_path: Path,
+    output: Path,
+) -> dict[str, Any]:
+    return dict(
+        materialize_deform360_prob4d_sample_admissibility(
+            plan_path=fixture["plan"],
+            prediction_root=fixture["prediction_root"],
+            metric_root=fixture["metric_root"],
+            selection_path=fixture["selection"],
+            visual_provider_spec_path=fixture["provider"],
+            metric_prior_policy_path=fixture["metric_policy"],
+            camera_eligibility_policy_path=fixture["camera_eligibility_policy"],
+            sample_admissibility_policy_path=policy_path,
+            expected_processing_revision=PROCESSING_REVISION,
+            implementation_revision=IMPLEMENTATION_REVISION,
+            api=_api(),
+            output_directory=output,
+        )
+    )
+
+
 def test_materializer_publishes_stream_anchors_and_clustered_causal_rows(
     tmp_path: Path,
 ) -> None:
@@ -701,3 +785,226 @@ def test_materializer_rejects_non_visibility_exclusion(tmp_path: Path) -> None:
             api=_api(),
             output_directory=tmp_path / "rejected-exclusion",
         )
+
+
+def test_sample_admissibility_emits_v3_plan_consumable_by_materializer(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_visible_camera_fixture(tmp_path)
+    policy_path = _write_sample_admissibility_policy(tmp_path)
+    preflight = tmp_path / "sample-admissibility"
+
+    result = _materialize_sample_admissibility(
+        fixture,
+        policy_path=policy_path,
+        output=preflight,
+    )
+
+    assert result["status"] == "target-free-sample-admissibility-supported"
+    assert result["plan_emitted"] is True
+    assert result["admitted_stream_count"] == 17
+    assert result["prior_excluded_stream_count"] == 1
+    assert result["admissible_stream_count"] == 16
+    assert result["support_negative_stream_count"] == 0
+    assert result["technical_failure_stream_count"] == 0
+    assert result["information_boundary"]["prediction_point_values_used"] is False
+    assert validate_deform360_prob4d_sample_admissibility_result(preflight) == result
+
+    plan = json.loads((preflight / SAMPLE_ADMISSIBLE_PLAN_FILENAME).read_text())
+    assert plan["schema_version"] == SAMPLE_ADMISSIBLE_PLAN_VERSION
+    assert plan["semantics"] == SAMPLE_ADMISSIBLE_PLAN_SEMANTICS
+    assert (
+        plan["sample_admissibility_policy_id"]
+        == json.loads(policy_path.read_text())["artifact_id"]
+    )
+
+    samples = tmp_path / "v3-samples"
+    sample_result = materialize_deform360_prob4d_calibration_samples(
+        plan_path=preflight / SAMPLE_ADMISSIBLE_PLAN_FILENAME,
+        production_result_path=fixture["production"],
+        production_root=fixture["production_root"],
+        prediction_root=fixture["prediction_root"],
+        metric_root=fixture["metric_root"],
+        selection_path=fixture["selection"],
+        visual_provider_spec_path=fixture["provider"],
+        metric_prior_policy_path=fixture["metric_policy"],
+        camera_eligibility_policy_path=fixture["camera_eligibility_policy"],
+        sample_admissibility_policy_path=policy_path,
+        expected_processing_revision=PROCESSING_REVISION,
+        api=_api(),
+        output_directory=samples,
+        config=Deform360Prob4DMaterializationConfig(
+            covariance_cluster_size_pixels=1,
+            maximum_metric_fit_correspondences=100,
+            maximum_point_rows_per_window=1_000,
+            minimum_point_rows_per_window=8,
+        ),
+    )
+    assert len(sample_result["cases"]) == 8
+    assert (
+        "source-artifacts/sample-admissibility-policy.json"
+        in sample_result["source_artifacts"]
+    )
+    (preflight / "unchecked.txt").write_text("not checksummed", encoding="utf-8")
+    with pytest.raises(ValueError, match="checksum coverage changed"):
+        validate_deform360_prob4d_sample_admissibility_result(preflight)
+
+
+def test_sample_admissibility_uses_masks_without_opening_point_values(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_visible_camera_fixture(tmp_path)
+    plan_path = Path(fixture["plan"])
+    plan = json.loads(plan_path.read_text())
+    stream = plan["cases"][0]["streams"][0]
+    manifest_path = (
+        Path(fixture["prediction_root"]) / stream["prediction_manifest"]["path"]
+    )
+    manifest = json.loads(manifest_path.read_text())
+    for window in manifest["overlap_windows"]:
+        window_path = manifest_path.parent / window["path"]
+        with np.load(window_path, allow_pickle=False) as archive:
+            frames = np.asarray(archive["frame_indices"])
+            points = np.asarray(archive["point_map"], dtype=np.float64)
+            valid = np.asarray(archive["valid_mask"])
+        points[:] = np.nan
+        np.savez_compressed(
+            window_path,
+            frame_indices=frames,
+            point_map=points,
+            valid_mask=valid,
+        )
+    metric_path = Path(fixture["metric_root"]) / stream["metric_prefix"]["path"]
+    with np.load(metric_path, allow_pickle=False) as archive:
+        frames = np.asarray(archive["frame_indices"])
+        points = np.asarray(archive["points_world_m"], dtype=np.float64)
+        valid = np.asarray(archive["valid_mask"])
+    points[:] = np.nan
+    np.savez_compressed(
+        metric_path,
+        frame_indices=frames,
+        points_world_m=points,
+        valid_mask=valid,
+    )
+    stream["metric_prefix"]["sha256"] = _sha256(metric_path)
+    stream["metric_prefix"]["byte_count"] = metric_path.stat().st_size
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    _refresh_plan(plan_path)
+
+    result = _materialize_sample_admissibility(
+        fixture,
+        policy_path=_write_sample_admissibility_policy(tmp_path),
+        output=tmp_path / "mask-only",
+    )
+
+    assert result["plan_emitted"] is True
+    assert result["admissible_stream_count"] == 16
+    assert result["technical_failure_stream_count"] == 0
+
+
+def test_sample_admissibility_retains_support_negative_and_blocks_weak_object(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_visible_camera_fixture(tmp_path)
+    plan = json.loads(Path(fixture["plan"]).read_text())
+    stream = plan["cases"][0]["streams"][0]
+    manifest_path = (
+        Path(fixture["prediction_root"]) / stream["prediction_manifest"]["path"]
+    )
+    manifest = json.loads(manifest_path.read_text())
+    window_path = manifest_path.parent / manifest["overlap_windows"][0]["path"]
+    with np.load(window_path, allow_pickle=False) as archive:
+        frames = np.asarray(archive["frame_indices"])
+        points = np.asarray(archive["point_map"])
+        valid = np.asarray(archive["valid_mask"])
+    valid[:] = False
+    np.savez_compressed(
+        window_path,
+        frame_indices=frames,
+        point_map=points,
+        valid_mask=valid,
+    )
+
+    output = tmp_path / "support-negative"
+    result = _materialize_sample_admissibility(
+        fixture,
+        policy_path=_write_sample_admissibility_policy(tmp_path),
+        output=output,
+    )
+
+    assert result["status"] == "sample-admissibility-gate-failed"
+    assert result["plan_emitted"] is False
+    assert result["support_negative_stream_count"] == 1
+    failed = next(row for row in result["jobs"] if row["status"] == "support-negative")
+    assert failed["failure_reason"] == SAMPLE_SUPPORT_NEGATIVE_REASON
+    assert not (output / SAMPLE_ADMISSIBLE_PLAN_FILENAME).exists()
+    assert validate_deform360_prob4d_sample_admissibility_result(output) == result
+
+
+def test_sample_admissibility_hashes_technical_detail_and_emits_no_plan(
+    tmp_path: Path,
+) -> None:
+    fixture = _write_visible_camera_fixture(tmp_path)
+    plan_path = Path(fixture["plan"])
+    plan = json.loads(plan_path.read_text())
+    record = plan["cases"][0]["streams"][0]["prediction_manifest"]
+    manifest_path = Path(fixture["prediction_root"]) / record["path"]
+    manifest_path.write_text("{", encoding="utf-8")
+    record["sha256"] = _sha256(manifest_path)
+    record["byte_count"] = manifest_path.stat().st_size
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    _refresh_plan(plan_path)
+
+    output = tmp_path / "technical-failure"
+    result = _materialize_sample_admissibility(
+        fixture,
+        policy_path=_write_sample_admissibility_policy(tmp_path),
+        output=output,
+    )
+
+    assert result["status"] == "technical-failures-retained"
+    assert result["technical_failure_stream_count"] == 1
+    assert result["plan_emitted"] is False
+    failed = next(row for row in result["jobs"] if row["status"] == "technical-failure")
+    assert len(failed["failure_detail_sha256"]) == 64
+    assert (
+        "cannot read prediction manifest"
+        not in (output / "sample-admissibility-result.json").read_text()
+    )
+    assert validate_deform360_prob4d_sample_admissibility_result(output) == result
+
+
+def test_frozen_sample_admissibility_policy_is_content_addressed() -> None:
+    policy_path = (
+        Path(__file__).parents[1]
+        / "protocols/locks/deform360_official_hub_prob4d_sample_admissibility_v3.json"
+    )
+    policy = validate_deform360_prob4d_sample_admissibility_policy(
+        json.loads(policy_path.read_text())
+    )
+    assert policy["artifact_id"] == (
+        "25c0a43b720accb3bacd16933774b3773a6bc951443b02b88498ca542d5fc51c"
+    )
+    assert policy["human_approval_required"] is False
+    assert policy["new_measurements_required"] is False
+
+
+def test_sample_admissibility_policy_rejects_invalid_fraction_contracts(
+    tmp_path: Path,
+) -> None:
+    policy = json.loads(
+        _write_sample_admissibility_policy(tmp_path).read_text(encoding="utf-8")
+    )
+
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        validate_deform360_prob4d_sample_admissibility_policy(None)
+
+    for invalid, message in ((True, "must be a finite number"), (0.0, "is invalid")):
+        candidate = dict(policy)
+        candidate["minimum_supported_stream_fraction"] = invalid
+        identity = {
+            key: value for key, value in candidate.items() if key != "artifact_id"
+        }
+        candidate["artifact_id"] = content_id(identity)
+        with pytest.raises(ValueError, match=message):
+            validate_deform360_prob4d_sample_admissibility_policy(candidate)

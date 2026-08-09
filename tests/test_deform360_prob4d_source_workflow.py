@@ -10,6 +10,9 @@ LAUNCHER = Path(".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
 VISIBLE_LAUNCHER = Path(
     ".github/workflows/launch-deform360-prob4d-visible-source-gate-v2-once.yml"
 )
+SAMPLE_ADMISSIBLE_LAUNCHER = Path(
+    ".github/workflows/launch-deform360-prob4d-sample-admissible-v3-once.yml"
+)
 AUDITOR = Path(".github/workflows/revalidate-deform360-prob4d-source-gate-once.yml")
 V1_LAUNCHER_SHA256 = "61f229877e7d6600e2d9042f86fdc8c205d7bf5eb1f6efd734b3ee68fe58ab72"
 
@@ -34,6 +37,9 @@ def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None
     assert (
         "launch-deform360-prob4d-visible-source-gate-v2-once.yml@refs/heads/main"
         in text
+    )
+    assert (
+        "launch-deform360-prob4d-sample-admissible-v3-once.yml@refs/heads/main" in text
     )
     inputs = document["on"]["workflow_call"]["inputs"]
     assert inputs["eligibility_contract"]["default"] == "v1-all-streams"
@@ -99,6 +105,37 @@ def test_visible_source_gate_v2_launcher_is_reviewed_main_only_and_one_shot() ->
     assert "target outcomes used: \\`false\\`" in text
 
 
+def test_sample_admissible_v3_launcher_is_reviewed_main_only_and_one_shot() -> None:
+    text = SAMPLE_ADMISSIBLE_LAUNCHER.read_text(encoding="utf-8")
+    document = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(document, dict)
+    assert document["on"] == {
+        "push": {
+            "branches": ["main"],
+            "paths": [
+                ".github/workflows/"
+                "launch-deform360-prob4d-sample-admissible-v3-once.yml"
+            ],
+        }
+    }
+    assert "workflow_dispatch:" not in text
+    assert "pull_request:" not in text
+    assert "uses: ./.github/workflows/deform360-prob4d-source-gate.yml" in text
+    assert "execute_authorized: true" in text
+    assert "eligibility_contract: v3-target-free-sample-admissible" in text
+    assert "cancel-in-progress: false" in text
+    assert "runs-on: self-hosted" not in text
+    assert "released public real-world Deform360 calibration data" in text
+    assert "new measurements required: \\`false\\`" in text
+    assert "human approval required: \\`false\\`" in text
+    assert "provider point values used for eligibility: \\`false\\`" in text
+    assert "prediction residuals used for eligibility: \\`false\\`" in text
+    assert "unsupported streams replaced: \\`false\\`" in text
+    assert "confirmation payloads opened: \\`false\\`" in text
+    assert "target outcomes used: \\`false\\`" in text
+
+
 def test_public_source_gate_workflow_pins_the_complete_real_data_lineage() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
@@ -158,6 +195,27 @@ def test_visible_source_gate_v2_is_exact_target_free_and_no_replacement() -> Non
     assert '--camera-eligibility-policy "${CAMERA_ELIGIBILITY_POLICY}"' in text
     assert '"eligibility_contract": os.environ["ELIGIBILITY_CONTRACT"]' in text
     assert "camera_eligibility_policy_id" in text
+
+
+def test_sample_admissible_v3_is_mask_only_and_contract_aligned() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "v3-target-free-sample-admissible" in text
+    assert "25c0a43b720accb3bacd16933774b3773" in text
+    assert "deform360-prob4d-sample-admissible-source-gate-v3" in text
+    assert "Materialize target-free sample admissibility" in text
+    assert "Enforce frozen target-free sample-admissibility gate" in text
+    assert '--sample-admissibility-policy "${SAMPLE_ADMISSIBILITY_POLICY}"' in text
+    assert '"prediction_support_masks_opened"] is True' in text
+    assert '"prediction_point_values_used"] is False' in text
+    assert '"prediction_residuals_used"] is False' in text
+    assert '"calibration_outcomes_used"] is False' in text
+    assert '"admitted_stream_count": 324' in text
+    assert '"prior_excluded_stream_count": 11' in text
+    assert '"candidate_stream_count": 313' in text
+    assert 'result["admissible_stream_count"]' in text
+    assert 'all(len(case["streams"]) >= 2' in text
+    assert "insufficient-target-free-held-prefix-sample-support" in text
 
 
 def test_public_source_gate_uploads_both_negative_and_positive_decisions() -> None:

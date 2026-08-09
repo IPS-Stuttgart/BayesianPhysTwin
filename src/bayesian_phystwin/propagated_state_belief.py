@@ -385,6 +385,7 @@ def infer_propagated_state_belief(
     for iteration in range(cfg.maximum_iterations):
         iterations = iteration + 1
         previous = solution.copy()
+        previous_robust = robust.copy()
         normal, right = posterior_system(robust)
         solved, _, condition_number, failure = solve_posterior(normal, right)
         if failure is not None or solved is None:
@@ -406,9 +407,13 @@ def infer_propagated_state_belief(
             cfg.minimum_robust_weight,
             1.0,
         )
+        solution_delta = float(np.max(np.abs(solution - previous), initial=0.0))
+        robust_weight_delta = float(
+            np.max(np.abs(robust - previous_robust), initial=0.0)
+        )
         if (
-            np.max(np.abs(solution - previous), initial=0.0)
-            <= cfg.convergence_tolerance
+            solution_delta <= cfg.convergence_tolerance
+            and robust_weight_delta <= cfg.convergence_tolerance
         ):
             break
 

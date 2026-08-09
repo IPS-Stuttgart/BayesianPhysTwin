@@ -57,6 +57,28 @@ versioned package boundaries. Their always-executed fixture gate is distinct
 from the credentialed installed-wheel evidence gate; a skipped private producer
 must never be reported as executed evidence.
 
+## Security and dependency checks
+
+The separate `Security scanning` workflow runs on pull requests, `main`, a weekly
+schedule, and manual dispatch. It has repository-level read-only permissions and
+contains two independent lanes:
+
+- CodeQL scans Python and GitHub Actions sources with the extended security query
+  suite; and
+- a pinned `pip-audit` installation resolves and audits the base runtime project,
+  emits JSON, and archives the report even when the audit fails.
+
+Third-party actions in that workflow are pinned to full commit SHAs, checkout
+credentials are not persisted, and no repository secret is consumed. The policy
+is exercised by `tests/test_security_scanning_workflow_policy.py`, which rejects
+write permissions, unpinned actions, hidden continuation after failure, and
+secret use.
+
+Dependabot checks Python declarations and GitHub Actions weekly. Development-tool
+updates and Actions updates are grouped to limit pull-request noise. A dependency
+update remains subject to the ordinary test, compatibility, and scientific
+boundary checks; an automated version bump is not sufficient evidence for merge.
+
 ## Randomized invariants
 
 `tests/test_quality_invariants.py` uses deterministic random seeds and runs on

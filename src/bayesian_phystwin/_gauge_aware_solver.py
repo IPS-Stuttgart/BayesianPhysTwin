@@ -612,6 +612,8 @@ def update_gauge_aware_belief(
     for _ in range(cfg.maximum_iterations):
         iterations += 1
         previous = solution.copy()
+        previous_robust = robust.copy()
+        previous_anchor_robust = anchor_robust.copy()
         normal, right = posterior_system()
         solved, _, condition_number, failure = solve_posterior(normal, right)
         if failure is not None or solved is None:
@@ -648,7 +650,20 @@ def update_gauge_aware_belief(
                 minimum=cfg.minimum_robust_weight,
             )
             anchor_robust[~active_anchor] = 0.0
-        if np.linalg.norm(solution - previous) <= cfg.convergence_tolerance:
+        solution_delta = float(np.linalg.norm(solution - previous))
+        robust_weight_delta = max(
+            float(np.max(np.abs(robust - previous_robust), initial=0.0)),
+            float(
+                np.max(
+                    np.abs(anchor_robust - previous_anchor_robust),
+                    initial=0.0,
+                )
+            ),
+        )
+        if (
+            solution_delta <= cfg.convergence_tolerance
+            and robust_weight_delta <= cfg.convergence_tolerance
+        ):
             break
 
     normal, right = posterior_system()
