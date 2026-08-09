@@ -1,0 +1,105 @@
+name: Temporary fix PR 365 certificate typing
+
+on:
+  push:
+    branches: [agent/fix-strict-admission-fallback-clean]
+    paths:
+      - .github/workflows/_temporary_fix_pr365_mypy.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/fix-strict-admission-fallback-clean
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Apply exact MyPy narrowings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/prior_aware_gauge_belief_v2.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = [
+              (
+                  "from typing import Final, TypeAlias\n",
+                  "from typing import Final, TypeAlias, cast\n",
+              ),
+              (
+                  "    result = float(value)\n",
+                  "    result = float(cast(float, value))\n",
+              ),
+              (
+                  '''    _require(
+              maximum_condition_number is not None and maximum_condition_number >= 1.0,
+              "v2 admission certificate maximum condition number must be finite and at least one",
+          )
+
+          diagnostics_valid = certificate["diagnostics_valid"] is True
+          ''',
+                  '''    _require(
+              maximum_condition_number is not None and maximum_condition_number >= 1.0,
+              "v2 admission certificate maximum condition number must be finite and at least one",
+          )
+              maximum_condition_limit = cast(float, maximum_condition_number)
+
+          diagnostics_valid = certificate["diagnostics_valid"] is True
+          ''',
+              ),
+              (
+                  "        and condition_number <= maximum_condition_number\n",
+                  "        and condition_number <= maximum_condition_limit\n",
+              ),
+              (
+                  '''    certificate = diagnostics.get(_CERTIFICATE_KEY)
+              _require(
+                  isinstance(certificate, Mapping),
+                  "v2 diagnostics do not contain an admission certificate",
+              )
+              certificate_passed = _validate_certificate_mapping(certificate)
+          ''',
+                  '''    certificate_value = diagnostics.get(_CERTIFICATE_KEY)
+              _require(
+                  isinstance(certificate_value, Mapping),
+                  "v2 diagnostics do not contain an admission certificate",
+              )
+              certificate = cast(Mapping[str, object], certificate_value)
+              certificate_passed = _validate_certificate_mapping(certificate)
+          ''',
+              ),
+          ]
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f"typing anchor count changed: {old[:60]!r}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+      - name: Validate focused product
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e '.[dev]'
+          python -m ruff format src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+          python -m ruff check src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+          python -m mypy src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_claim_bearing_strict_admission.py \
+            tests/test_portable_contracts_strict_admission_certificate.py
+      - name: Commit exact source patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/bayesian_phystwin/prior_aware_gauge_belief_v2.py
+          git commit -m 'Narrow strict certificate validation types'
+          git push origin HEAD:agent/fix-strict-admission-fallback-clean
