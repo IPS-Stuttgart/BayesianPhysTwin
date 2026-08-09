@@ -186,6 +186,24 @@ At runtime the workflow:
 7. uploads only compact admission metadata, storage evidence, per-job seals or
    retained failure receipts, complete accounting, and environment evidence.
 
+Before publication, the compact-copy validator re-hashes every copied receipt,
+validates it as either a prediction seal or retained technical failure, and
+requires exact agreement with the complete accounting record on job, object,
+camera, admission, implementation, provider, MotionCrafter, model-set, status,
+and output location. Cross-wired or duplicated receipts therefore cannot pass
+merely because each individual JSON document is internally valid. The compact
+artifact's canonical `SHA256SUMS` includes the resulting validation record.
+
+The same check can be repeated after artifact download without opening any
+prediction array:
+
+```bash
+python scripts/science/execute_deform360_calibration_visual_production.py \
+  validate-bundle compact/production/visual-production-result.json \
+  --run-root compact/production \
+  --admission compact/admission/calibration-visual-execution-admission.json
+```
+
 Under `technical-smoke`, step 6 executes only the frozen selected job, the
 compact accounting is `technical-smoke-result.json`, and a nonpassing result
 fails the workflow's advancement gate after compact evidence is uploaded.

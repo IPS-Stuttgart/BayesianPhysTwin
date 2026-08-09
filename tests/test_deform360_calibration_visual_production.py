@@ -260,6 +260,23 @@ def _file(path: str, byte_count: int = 10) -> dict[str, object]:
     return {"path": path, "sha256": "d" * 64, "byte_count": byte_count}
 
 
+def _write_json_record(
+    *,
+    root: Path,
+    relative: str,
+    value: object,
+) -> dict[str, object]:
+    path = root / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(value, indent=2, sort_keys=True).encode() + b"\n"
+    path.write_bytes(payload)
+    return {
+        "path": relative,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "byte_count": len(payload),
+    }
+
+
 def test_model_binding_command_and_descriptor_are_exact_and_portable() -> None:
     raw, binding = _validated_binding()
     lock = _lock(str(raw["model_set_id"]))
@@ -684,6 +701,165 @@ def test_technical_smoke_bundle_rehashes_and_revalidates_exact_receipt(
     receipt_path.write_bytes(receipt_bytes + b" ")
     with pytest.raises(ValueError, match="descriptor"):
         validate_bundle(result_path=result_path, run_root=run_root)
+
+
+def test_production_bundle_rehashes_every_success_and_failure_receipt(
+    tmp_path: Path,
+) -> None:
+    import runpy
+
+    raw, _binding = _validated_binding()
+    lock = _lock(str(raw["model_set_id"]))
+    admission = _admission(lock)
+    first, second = admission["jobs"]
+    seal = build_deform360_calibration_visual_prediction_seal(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        job=first,
+        provider_lock=lock,
+        command_id="e" * 64,
+        prediction_manifest=_file("predictions.json", 500),
+        run_spec_sha256="f" * 64,
+        verified_member_count=4,
+    )
+    failure = build_deform360_calibration_visual_technical_failure(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        job=second,
+        provider_lock=lock,
+        command_id="1" * 64,
+        stage="motioncrafter-production",
+        return_code=7,
+        detail=b"synthetic failure",
+        stdout=_file("logs/out.bin", 0),
+        stderr=_file("logs/err.bin", 12),
+    )
+    run_root = tmp_path / "run"
+    seal_record = _write_json_record(
+        root=run_root,
+        relative=(f"{first['output_relative_directory']}/prediction-seal.json"),
+        value=seal,
+    )
+    failure_record = _write_json_record(
+        root=run_root,
+        relative=f"failures/{second['job_id']}.json",
+        value=failure,
+    )
+    result = build_deform360_calibration_visual_production_result(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        provider_lock=lock,
+        jobs=[
+            {
+                "job_id": first["job_id"],
+                "object_id": first["object_id"],
+                "camera_id": first["camera_id"],
+                "status": "succeeded",
+                "receipt": seal_record,
+            },
+            {
+                "job_id": second["job_id"],
+                "object_id": second["object_id"],
+                "camera_id": second["camera_id"],
+                "status": "technical-failure",
+                "receipt": failure_record,
+            },
+        ],
+    )
+    result_path = run_root / "visual-production-result.json"
+    result_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    validate_bundle = namespace["validate_production_bundle"]
+    validate_bundle.__globals__[  # type: ignore[attr-defined]
+        "load_deform360_calibration_visual_execution_admission"
+    ] = lambda _path: admission
+
+    assert (
+        validate_bundle(
+            result_path=result_path,
+            run_root=run_root,
+            admission_path=tmp_path / "admission.json",
+        )
+        == result
+    )
+
+    failure_path = run_root / str(failure_record["path"])
+    failure_path.write_bytes(failure_path.read_bytes() + b" ")
+    with pytest.raises(ValueError, match="descriptor"):
+        validate_bundle(
+            result_path=result_path,
+            run_root=run_root,
+            admission_path=tmp_path / "admission.json",
+        )
+
+
+def test_production_bundle_rejects_cross_wired_valid_receipt_lineage(
+    tmp_path: Path,
+) -> None:
+    import runpy
+
+    raw, _binding = _validated_binding()
+    lock = _lock(str(raw["model_set_id"]))
+    admission = _admission(lock)
+    first, second = admission["jobs"]
+    records: list[dict[str, object]] = []
+    for index, job in enumerate((first, second)):
+        seal = build_deform360_calibration_visual_prediction_seal(
+            implementation_revision=IMPLEMENTATION_REVISION,
+            admission=admission,
+            job=job,
+            provider_lock=lock,
+            command_id=f"{index + 1}" * 64,
+            prediction_manifest=_file("predictions.json", 500),
+            run_spec_sha256="f" * 64,
+            verified_member_count=4,
+        )
+        records.append(
+            _write_json_record(
+                root=tmp_path,
+                relative=f"receipts/{index}/prediction-seal.json",
+                value=seal,
+            )
+        )
+    result = build_deform360_calibration_visual_production_result(
+        implementation_revision=IMPLEMENTATION_REVISION,
+        admission=admission,
+        provider_lock=lock,
+        jobs=[
+            {
+                "job_id": job["job_id"],
+                "object_id": job["object_id"],
+                "camera_id": job["camera_id"],
+                "status": "succeeded",
+                "receipt": records[1 - index],
+            }
+            for index, job in enumerate((first, second))
+        ],
+    )
+    result_path = tmp_path / "visual-production-result.json"
+    result_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    namespace = runpy.run_path(
+        "scripts/science/execute_deform360_calibration_visual_production.py"
+    )
+    validate_bundle = namespace["validate_production_bundle"]
+    validate_bundle.__globals__[  # type: ignore[attr-defined]
+        "load_deform360_calibration_visual_execution_admission"
+    ] = lambda _path: admission
+
+    with pytest.raises(ValueError, match="lineage changed"):
+        validate_bundle(
+            result_path=result_path,
+            run_root=tmp_path,
+            admission_path=tmp_path / "admission.json",
+        )
 
 
 def test_content_ids_change_with_numerical_or_lineage_fields() -> None:

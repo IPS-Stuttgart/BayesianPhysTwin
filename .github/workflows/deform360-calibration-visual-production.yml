@@ -704,6 +704,20 @@ jobs:
                    -o -path './failures/*.json' \) \
                 -print0 | sort -z | xargs -0 -r cp --parents -t "${COMPACT_ROOT}/production"
             )
+            production_result="${COMPACT_ROOT}/production/visual-production-result.json"
+            if [[ -f "${production_result}" ]]; then
+              validation_code=0
+              "${PRODUCTION_PYTHON}" \
+                scripts/science/execute_deform360_calibration_visual_production.py \
+                validate-bundle "${production_result}" \
+                --run-root "${COMPACT_ROOT}/production" \
+                --admission "${COMPACT_ROOT}/admission/calibration-visual-execution-admission.json" \
+                > "${COMPACT_ROOT}/production-bundle-validation.json" \
+                || validation_code=$?
+              if [[ "${validation_code}" != 0 && "${validation_code}" != 3 ]]; then
+                exit "${validation_code}"
+              fi
+            fi
           fi
           {
             echo "repository=${GITHUB_REPOSITORY}"
