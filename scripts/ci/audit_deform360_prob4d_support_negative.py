@@ -25,17 +25,13 @@ SOURCE_ARTIFACT_DIGEST: Final = (
 PRODUCTION_RESULT_ID: Final = (
     "146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89"
 )
-ADMISSION_ID: Final = (
-    "715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15"
-)
+ADMISSION_ID: Final = "715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15"
 PROB4D_REVISION: Final = "25d90ef7f78ba4307f4555cb636d666004e1bf66"
 MOTIONCRAFTER_REVISION: Final = "9cb4e9679f5f34e249945544052464ef46324bc2"
 METRIC_BATCH_RESULT_ID: Final = (
     "f246394c84fd643b6ec8961dbcb2101a73c34e46d5eaf43961f28429aeb197eb"
 )
-SUPPORT_NEGATIVE_REASON: Final = (
-    "released-robot-geometry-outside-fixed-camera-prefix"
-)
+SUPPORT_NEGATIVE_REASON: Final = "released-robot-geometry-outside-fixed-camera-prefix"
 OBJECT_COUNT: Final = 10
 ADMITTED_STREAM_COUNT: Final = 324
 SUPPORTED_STREAM_COUNT: Final = 313
@@ -423,8 +419,7 @@ def _validate_metric_result(value: dict[str, Any]) -> dict[str, object]:
                 minimum=1,
             )
             _require(
-                row["failure_reason"] is None
-                and row["failure_detail_sha256"] is None,
+                row["failure_reason"] is None and row["failure_detail_sha256"] is None,
                 "supported stream contains failure evidence",
             )
         else:
@@ -454,8 +449,7 @@ def _validate_metric_result(value: dict[str, Any]) -> dict[str, object]:
         "supported object count changed",
     )
     _require(
-        reasons
-        == Counter({SUPPORT_NEGATIVE_REASON: SUPPORT_NEGATIVE_STREAM_COUNT}),
+        reasons == Counter({SUPPORT_NEGATIVE_REASON: SUPPORT_NEGATIVE_STREAM_COUNT}),
         "support-negative reason changed",
     )
     _require(
@@ -479,9 +473,7 @@ def _validate_metric_result(value: dict[str, Any]) -> dict[str, object]:
     }
 
 
-def _validate_support_receipt(
-    value: dict[str, Any], metric: Mapping[str, Any]
-) -> None:
+def _validate_support_receipt(value: dict[str, Any], metric: Mapping[str, Any]) -> None:
     _exact_fields(value, SUPPORT_RECEIPT_FIELDS, "support receipt")
     expected = {
         "schema": "bayesian-phystwin.deform360-prob4d-source-support-receipt",
