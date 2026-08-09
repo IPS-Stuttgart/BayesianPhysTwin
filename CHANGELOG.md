@@ -9,6 +9,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- A versioned Causal4D provider for identity-bound linear-query covariance
+  from strict claim-bearing tree-block Prob4D updates without dense joint
+  covariance materialization.
 - Exact factorized tree-block posterior covariance application, arbitrary linear
   query and cross covariance, and selected marginals without complete dense
   materialization.
