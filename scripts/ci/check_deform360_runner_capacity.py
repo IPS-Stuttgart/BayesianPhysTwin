@@ -267,9 +267,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", required=True, type=Path)
     parser.add_argument("--processed-root", required=True, type=Path)
     parser.add_argument("--cache-root", required=True, type=Path)
-    parser.add_argument(
-        "--reserve-bytes", type=int, default=DEFAULT_RESERVE_BYTES
-    )
+    parser.add_argument("--reserve-bytes", type=int, default=DEFAULT_RESERVE_BYTES)
     parser.add_argument(
         "--processed-multiplier",
         type=float,
