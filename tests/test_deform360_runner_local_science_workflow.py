@@ -7,9 +7,7 @@ from pathlib import Path
 
 WORKFLOW = Path(".github/workflows/deform360-runner-local-science.yml")
 CONTRACT_WORKFLOW = Path(".github/workflows/deform360-runner-local-contracts.yml")
-RUNTIME_LOCK = Path(
-    "requirements/locks/deform360-runner-local-science-py312.txt"
-)
+RUNTIME_LOCK = Path("requirements/locks/deform360-runner-local-science-py312.txt")
 GUIDE = Path("docs/deform360_runner_local_bootstrap.md")
 OFFICIAL_ROOT = "/mnt/lexar4tb/datasets/deform360/data-7fea8e2"
 ADAPTIVE_ROOT = (
@@ -112,12 +110,12 @@ def test_runtime_is_exactly_locked_and_verified() -> None:
         "scipy==1.18.0",
     ):
         assert required in lock_lines
-    assert text.count("--constraint \"${RUNTIME_LOCK}\"") >= 2
+    assert text.count('--constraint "${RUNTIME_LOCK}"') >= 2
     assert "--no-build-isolation" in text
     assert "verify_deform360_runtime_lock.py" in text
     assert "--require-complete" in text
     assert "runtime-lock-validation.json" in text
-    assert "--constraint \"${RUNTIME_LOCK}\"" in reusable
+    assert '--constraint "${RUNTIME_LOCK}"' in reusable
     assert "verify_deform360_runtime_lock.py" in reusable
 
 
@@ -128,9 +126,11 @@ def test_hugging_face_token_is_scoped_only_to_exact_download_step() -> None:
         "      - name: Download and hash only missing frozen calibration files",
         "      - name: Prepare synchronized calibration RGB tactile and robot source",
     )
-    before_download = text[: text.index(
-        "      - name: Download and hash only missing frozen calibration files"
-    )]
+    before_download = text[
+        : text.index(
+            "      - name: Download and hash only missing frozen calibration files"
+        )
+    ]
     prepare_marker = (
         "      - name: Prepare synchronized calibration RGB tactile and robot source"
     )
@@ -138,7 +138,7 @@ def test_hugging_face_token_is_scoped_only_to_exact_download_step() -> None:
 
     assert text.count("${{ secrets.HF_TOKEN }}") == 1
     assert "${{ secrets.HF_TOKEN }}" in download
-    assert "HF_HUB_DISABLE_XET: \"1\"" in download
+    assert 'HF_HUB_DISABLE_XET: "1"' in download
     assert "${{ secrets.HF_TOKEN }}" not in before_download
     assert "${{ secrets.HF_TOKEN }}" not in after_download
 
