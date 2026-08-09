@@ -407,9 +407,7 @@ def infer_propagated_state_belief(
             cfg.minimum_robust_weight,
             1.0,
         )
-        solution_delta = float(
-            np.max(np.abs(solution - previous), initial=0.0)
-        )
+        solution_delta = float(np.max(np.abs(solution - previous), initial=0.0))
         robust_weight_delta = float(
             np.max(np.abs(robust - previous_robust), initial=0.0)
         )

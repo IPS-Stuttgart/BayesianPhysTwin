@@ -178,3 +178,27 @@ def test_propagated_irls_waits_for_robust_weight_fixed_point() -> None:
         atol=1e-12,
         rtol=0.0,
     )
+
+
+def test_propagated_irls_takes_nonstationary_solution_branch() -> None:
+    innovation = np.zeros((1, 1, 3), dtype=np.float64)
+    innovation[0, 0, 0] = 0.01
+    response = np.zeros((1, 1, 3, 1), dtype=np.float64)
+    response[0, 0, 0, 0] = 1.0
+
+    result = infer_propagated_state_belief(
+        innovation,
+        np.ones((1, 1), dtype=bool),
+        response,
+        np.zeros((1, 0), dtype=np.float64),
+        observation_variance_m2=np.full((1, 1), 1e-6, dtype=np.float64),
+        config=PropagatedStateBeliefConfig(
+            state_weight_prior_std=0.1,
+            maximum_iterations=1,
+            convergence_tolerance=1e-12,
+        ),
+    )
+
+    assert result.accepted
+    assert result.diagnostics["iterations"] == 1
+    assert result.state_weights[0] > 0.0
