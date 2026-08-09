@@ -1,0 +1,83 @@
+name: Format Deform360 source continuation once
+
+on:
+  push:
+    branches:
+      - fix/deform360-support-negative-continuation-v1
+    paths:
+      - ".github/workflows/format-deform360-source-continuation-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform360-source-continuation-once
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/fix/deform360-support-negative-continuation-v1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/deform360-support-negative-continuation-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Apply deterministic formatting and portable digest records
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff==0.16.2"
+          python -m ruff format \
+            scripts/science/continue_deform360_prob4d_source_gate.py \
+            tests/test_deform360_prob4d_source_continuation.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              ".github/workflows/deform360-prob4d-source-continuation.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          replacements = {
+              '''          sha256sum "${SOURCE_METRIC_BATCH_ROOT}/SHA256SUMS" \\
+            > "${COMPACT_ROOT}/source-metric-batch/source-SHA256SUMS.digest"
+''': '''          sha256sum "${SOURCE_METRIC_BATCH_ROOT}/SHA256SUMS" \\
+            | cut -d" " -f1 \\
+            > "${COMPACT_ROOT}/source-metric-batch/source-SHA256SUMS.digest"
+''',
+              '''            sha256sum "${SAMPLE_ROOT}/samples.npz" \\
+              > "${COMPACT_ROOT}/samples/numeric-payload.digest"
+''': '''            sha256sum "${SAMPLE_ROOT}/samples.npz" \\
+              | cut -d" " -f1 \\
+              > "${COMPACT_ROOT}/samples/numeric-payload.digest"
+''',
+          }
+          for source, replacement in replacements.items():
+              if source not in text:
+                  raise SystemExit("expected digest command was not found")
+              text = text.replace(source, replacement, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          git rm .github/workflows/format-deform360-source-continuation-once.yml
+          git diff --check
+
+      - name: Commit the reviewed formatting-only repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/science/continue_deform360_prob4d_source_gate.py \
+            tests/test_deform360_prob4d_source_continuation.py \
+            .github/workflows/deform360-prob4d-source-continuation.yml \
+            .github/workflows/format-deform360-source-continuation-once.yml
+          git commit -m "Format source-continuation contracts"
+          git push origin HEAD:fix/deform360-support-negative-continuation-v1
