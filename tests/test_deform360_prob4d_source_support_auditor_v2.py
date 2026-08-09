@@ -4,9 +4,7 @@ from pathlib import Path
 
 import yaml
 
-AUDITOR = Path(
-    ".github/workflows/revalidate-deform360-prob4d-source-support-negative-v2.yml"
-)
+AUDITOR = Path(".github/workflows/revalidate-deform360-prob4d-source-support-negative-v2.yml")
 
 
 def _text() -> str:
