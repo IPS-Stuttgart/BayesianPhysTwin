@@ -160,3 +160,7 @@ The official/raw and adaptive-confirmation locations are registered only as
 forbidden lexical boundaries and are not passed to the materializer command.
 The execution cannot authorize confirmation, replace factors, cameras, or
 objects, or turn a development pass into a performance claim.
+
+Pull requests execute only the hosted, read-only contract matrix. The data-bearing
+`workstation2` job is push-only and can start only after reviewed source reaches
+protected `main`.
