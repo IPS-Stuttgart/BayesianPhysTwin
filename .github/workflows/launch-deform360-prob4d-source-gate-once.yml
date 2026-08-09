@@ -1,0 +1,84 @@
+name: Launch reviewed Deform360 Prob4D source gate once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-prob4d-source-gate-once.yml"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: launch-deform360-prob4d-source-gate-once
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    name: Execute frozen source-only Prob4D gate
+    uses: ./.github/workflows/deform360-prob4d-source-gate.yml
+    with:
+      execute_authorized: true
+    secrets: inherit
+
+  receipt:
+    name: Publish source-gate receipt
+    if: always()
+    needs: execute
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post source-only decision to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_RESULT: ${{ needs.execute.result }}
+          SOURCE_GATE_STATUS: ${{ needs.execute.outputs.status }}
+          SOURCE_GATE_RESULT_ID: ${{ needs.execute.outputs.result_id }}
+          SOURCE_GATE_PASSED: ${{ needs.execute.outputs.gate_passed }}
+          CONFIRMATION_ACCESS_AUTHORIZED: ${{ needs.execute.outputs.confirmation_access_authorized }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          status="${SOURCE_GATE_STATUS:-workflow-${WORKFLOW_RESULT}}"
+          result_id="${SOURCE_GATE_RESULT_ID:-unavailable}"
+          gate_passed="${SOURCE_GATE_PASSED:-false}"
+          authorized="${CONFIRMATION_ACCESS_AUTHORIZED:-false}"
+          body=$(cat <<EOF
+          ## Deform360 Prob4D source gate completed
+
+          - workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - workflow attempt: \`${GITHUB_RUN_ATTEMPT}\`
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - workflow result: \`${WORKFLOW_RESULT}\`
+          - terminal status: \`${status}\`
+          - result ID: \`${result_id}\`
+          - frozen source gate passed: \`${gate_passed}\`
+          - source-gate evaluation authorization: \`${authorized}\`
+          - physical calibration objects: \`10\`
+          - Prob4D revision: \`25d90ef7f78ba4307f4555cb636d666004e1bf66\`
+          - adaptive-confirmation payloads opened: \`false\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - future frames used: \`false\`
+          - replacement allowed: \`false\`
+          - new measurements required: \`false\`
+          - human scientific approval required: \`false\`
+
+          A passing source gate authorizes only the separately locked independent
+          evaluation stage. It is not confirmation evidence, physical-query benefit,
+          deployment validation, or a state-of-the-art result. A failed source gate
+          is the complete registered result for this method revision and must not be
+          rescued by replacing objects, cameras, or thresholds.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed source-gate execution request: 2026-08-09-object-balanced-v1

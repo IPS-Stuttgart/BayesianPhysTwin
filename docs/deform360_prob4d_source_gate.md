@@ -71,6 +71,38 @@ Publication is atomic and no-overwrite. The result copies the exact gate lock,
 binds the sample bundle and source-calibration result by hash, records every
 fold and check, and recursively checksums the portable decision.
 
+## Registered protected execution
+
+The repository workflow
+`.github/workflows/deform360-prob4d-source-gate.yml` executes the complete
+source-only chain on `workstation2` from one reviewed launcher revision:
+
+```text
+exact successful 324-stream visual production
+  -> complete released robot-gauge metric batch
+  -> source-calibration sample bundle
+  -> object-balanced Prob4D point/gauge calibration
+  -> frozen leave-one-object-out source gate
+```
+
+Pull requests run only hosted, data-free contract tests. The self-hosted job is
+admitted only when
+`.github/workflows/launch-deform360-prob4d-source-gate-once.yml` is merged on
+the canonical `main` branch. It binds the exact retained-source admission,
+Prob4D revision, processing revision, successful visual-production revision,
+ten-object roster, source-gate lock, and output namespace.
+
+Every stage is atomic and no-overwrite. A rerun of the same reviewed revision
+revalidates completed stage artifacts rather than rebuilding or replacing them.
+A support-negative metric batch or failed source gate is retained as the
+complete registered result. Technical failures are uploaded before the workflow
+fails.
+
+Large predictions and numeric sample arrays remain on the protected Deform360
+volume. The GitHub artifact contains only compact manifests, decisions,
+checksums, and the source-gate receipt. The adaptive-confirmation and
+confirmation roots are outside the workflow's input interface.
+
 ## Claim boundary
 
 A pass authorizes only a separately locked, independent evaluation on the
