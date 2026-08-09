@@ -1,0 +1,241 @@
+name: Deform360 joint-sparse observability v4
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/quality/test-suites.json"
+      - ".github/workflows/deform360-joint-sparse-observability-v4.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_joint_sparse_observability_v4.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
+      - "scripts/science/evaluate_deform360_joint_sparse_observability_v4.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_observability_v4.py"
+      - "tests/test_deform360_joint_sparse_observability_v4*.py"
+  workflow_dispatch:
+    inputs:
+      execute_authorized:
+        description: Run the frozen development-only v4 diagnostic on workstation2
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-joint-sparse-observability-v4-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_RUNNER_NAME: workstation2
+  DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360
+  DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  VAR_MANIFEST: ${{ vars.DEFORM360_JOINT_SPARSE_V4_MANIFEST }}
+  POLICY_PATH: protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Joint-sparse v4 contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate implementation, policy, workflow, and packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip install "build>=1.2"
+          files=(
+            src/bayesian_phystwin/deform360_joint_sparse_observability_v4.py
+            scripts/science/evaluate_deform360_joint_sparse_observability_v4.py
+            tests/test_deform360_joint_sparse_observability_v4.py
+            tests/test_deform360_joint_sparse_observability_v4_cli.py
+            tests/test_deform360_joint_sparse_observability_v4_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_joint_sparse_observability_v4.py \
+            scripts/science/evaluate_deform360_joint_sparse_observability_v4.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_observability_v4.py \
+            tests/test_deform360_joint_sparse_observability_v4_cli.py \
+            tests/test_deform360_joint_sparse_observability_v4_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from bayesian_phystwin.deform360_joint_sparse_observability_v4 import (
+              Deform360JointSparseObservabilityPolicyV4,
+          )
+          path = Path(
+              "protocols/locks/"
+              "deform360_official_hub_joint_sparse_observability_v4.json"
+          )
+          value = json.loads(path.read_text(encoding="utf-8"))
+          Deform360JointSparseObservabilityPolicyV4.from_record(value)
+          PY
+          rm -rf build dist ./*.egg-info src/*.egg-info
+          python -m build --sdist
+          archive="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          test -n "${archive}"
+          listing="$(tar -tzf "${archive}")"
+          grep -Fq '/docs/deform360_joint_sparse_observability_v4.md' <<<"${listing}"
+          grep -Fq '/protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json' <<<"${listing}"
+          grep -Fq '/scripts/science/evaluate_deform360_joint_sparse_observability_v4.py' <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_joint_sparse_observability_v4.py' <<<"${listing}"
+          rm -rf build dist ./*.egg-info src/*.egg-info
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  execute:
+    name: Development-only object-level observability / workstation2
+    if: >-
+      inputs.execute_authorized == true &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: self-hosted
+    timeout-minutes: 180
+    steps:
+      - name: Publish target-closed execution beacon
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner_contract=self-hosted-only"
+          echo "authorized_runner_name=${AUTHORIZED_RUNNER_NAME}"
+          echo "official_raw_root=${DEFORM360_OFFICIAL_RAW_ROOT}"
+          echo "adaptive_confirmation_root=${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
+          echo "development_cohort_only=true"
+          echo "prediction_point_values_used=false"
+          echo "prediction_residuals_used=false"
+          echo "confirmation_payloads_opened=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "future_frames_used=false"
+          echo "replacement_allowed=false"
+      - name: Check out exact protected main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the exact reviewed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Resolve only the registered results-side manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          storage="$(realpath -e "${DEFORM360_STORAGE_ROOT}")"
+          official="$(realpath -e "${DEFORM360_OFFICIAL_RAW_ROOT}")"
+          adaptive="$(realpath -e "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"
+          test "${storage}" = "${DEFORM360_STORAGE_ROOT}"
+          test "${official}" = "${DEFORM360_OFFICIAL_RAW_ROOT}"
+          test "${adaptive}" = "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
+          test -n "${VAR_MANIFEST}"
+          manifest="$(realpath -e "${VAR_MANIFEST}")"
+          test -f "${manifest}"
+          test ! -L "${manifest}"
+          case "${manifest}" in
+            "${storage}/results/"*) ;;
+            *) echo "v4 manifest must be below the Deform360 results tree" >&2; exit 2 ;;
+          esac
+          case "${manifest}" in
+            "${official}"/*|"${adaptive}"/*)
+              echo "v4 manifest must not be under a raw-data root" >&2
+              exit 2
+              ;;
+          esac
+          output="${storage}/results/bayesian-phystwin/deform360-joint-sparse-observability-v4/run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          {
+            echo "V4_MANIFEST=${manifest}"
+            echo "V4_OUTPUT=${output}"
+          } >> "${GITHUB_ENV}"
+      - name: Evaluate the frozen development diagnostic
+        id: evaluate
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python scripts/science/evaluate_deform360_joint_sparse_observability_v4.py \
+            --policy "${POLICY_PATH}" \
+            --manifest "${V4_MANIFEST}" \
+            --output-dir "${V4_OUTPUT}"
+          status=$?
+          set -e
+          test "${status}" = "0" -o "${status}" = "3"
+          echo "scientific_exit_code=${status}" >> "${GITHUB_OUTPUT}"
+      - name: Verify compact target-closed evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd "${V4_OUTPUT}"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          report="${V4_OUTPUT}/development-report.json"
+          jq -e '
+            .confirmation_access_authorized == false and
+            .information_boundary.development_cohort_only == true and
+            .information_boundary.prediction_point_values_used == false and
+            .information_boundary.prediction_residuals_used == false and
+            .information_boundary.confirmation_payloads_opened == false and
+            .information_boundary.adaptive_confirmation_payloads_opened == false and
+            .information_boundary.target_outcomes_used == false and
+            .information_boundary.future_frames_used == false and
+            .information_boundary.replacement_allowed == false and
+            (.status == "development-design-supported" or
+             .status == "development-design-not-supported" or
+             .status == "development-technical-failures-retained")
+          ' "${report}" >/dev/null
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Upload compact development evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-joint-sparse-observability-v4-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.V4_OUTPUT }}
+          if-no-files-found: error
+          retention-days: 180
+
+# Reviewed development-only v4 diagnostic; no confirmation authorization.
