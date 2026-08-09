@@ -5,8 +5,7 @@ from pathlib import Path
 import yaml
 
 AUDITOR = Path(
-    ".github/workflows/"
-    "revalidate-deform360-prob4d-source-support-negative-v2.yml"
+    ".github/workflows/revalidate-deform360-prob4d-source-support-negative-v2.yml"
 )
 
 
@@ -48,9 +47,7 @@ def test_v2_auditor_reconstructs_the_early_support_terminal() -> None:
     download = text.index("Download only the exact compact source artifact")
     validate = text.index("Reconstruct the frozen early support decision")
     upload = text.index("Upload the corrected independent support audit")
-    publish = text.index(
-        "Publish the corrected independently reconstructed terminal"
-    )
+    publish = text.index("Publish the corrected independently reconstructed terminal")
     enforce = text.index("Enforce completion of the corrected audit")
     assert verify < download < validate < upload < publish < enforce
 
@@ -85,8 +82,8 @@ def test_v2_auditor_corrects_only_the_audit_interpretation() -> None:
     assert "This v2 audit independently validates" in text
     assert "It changes no source result, camera roster, threshold" in text
     assert "validated-support-negative" in text
-    assert "source_gate_evaluated' \"${receipt}\")\" = \"false\"" in text
-    assert "confirmation_access_authorized' \"${receipt}\")\"" in text
+    assert 'source_gate_evaluated\' "${receipt}")" = "false"' in text
+    assert 'confirmation_access_authorized\' "${receipt}")"' in text
     assert "retention-days: 180" in text
     assert "continue-on-error: true" in text
     assert "sha256sum --check SHA256SUMS" in text
@@ -99,9 +96,7 @@ def test_v2_auditor_runs_contracts_before_the_one_shot_audit() -> None:
     assert "github.event_name != 'pull_request'" in text
     assert "github.ref == 'refs/heads/main'" in text
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in text
-    assert (
-        "tests/test_deform360_prob4d_source_support_auditor_v2.py" in text
-    )
+    assert "tests/test_deform360_prob4d_source_support_auditor_v2.py" in text
     assert "tests/test_deform360_prob4d_source_workflow.py" in text
     assert "tests/test_deform360_prob4d_metric_batch.py" in text
     assert "tests/test_deform360_prob4d_metric_batch_regressions.py" in text
