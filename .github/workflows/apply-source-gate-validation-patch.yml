@@ -45,12 +45,10 @@ jobs:
               text = text.replace(import_anchor, import_block + import_anchor, 1)
 
           validation_call = "    validate_source_gate_decision_evidence(result, lock)\n"
-          validation_anchor = '''    _require(
-              lock["artifact_id"] == result["gate_lock_id"]
-              and _sha256_file(lock_path) == result["gate_lock_file_sha256"],
-              "copied source gate lock changed",
+          validation_anchor = (
+              '        "copied source gate lock changed",\n'
+              "    )\n"
           )
-          '''
           if validation_call not in text:
               if text.count(validation_anchor) != 1:
                   raise SystemExit("source-gate validation anchor changed")
