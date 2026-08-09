@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from copy import deepcopy
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -15,6 +16,11 @@ from bayesian_phystwin.provider_failure_decomposition import (
     ProviderFailureSignalsV1,
     analyze_provider_failure_evidence,
     decompose_provider_failure,
+)
+from bayesian_phystwin.provider_failure_report_io import (
+    canonical_json_sha256,
+    load_provider_failure_input,
+    publish_provider_failure_report,
 )
 
 _SIGNAL_NAMES = (
@@ -111,7 +117,7 @@ def test_report_decomposes_primary_and_multi_cause_failures() -> None:
         ]
     )
 
-    report = analyze_provider_failure_evidence(payload)
+    report = cast(dict[str, Any], analyze_provider_failure_evidence(payload))
 
     assert report["record_count"] == 10
     assert report["accepted_count"] == 1
@@ -178,7 +184,7 @@ def test_accepted_record_rejects_failed_gate_evidence() -> None:
             "case_id values must be unique",
         ),
         (
-            _payload([_record("invalid", accepted=1)]),
+            _payload([_record("invalid", accepted=cast(Any, 1))]),
             "accepted must be a bool",
         ),
         (
@@ -186,7 +192,7 @@ def test_accepted_record_rejects_failed_gate_evidence() -> None:
                 [
                     _record(
                         "invalid-signal",
-                        signals={**_signals(), "technical_valid": 1},
+                        signals={**_signals(), "technical_valid": cast(Any, 1)},
                     )
                 ]
             ),
@@ -213,15 +219,15 @@ def test_report_identity_is_canonical_and_input_sensitive() -> None:
     assert isinstance(second_records, list)
     second_records[0]["metrics"] = {"a": 1, "b": 2}
 
-    first_report = analyze_provider_failure_evidence(first)
-    second_report = analyze_provider_failure_evidence(second)
+    first_report = cast(dict[str, Any], analyze_provider_failure_evidence(first))
+    second_report = cast(dict[str, Any], analyze_provider_failure_evidence(second))
     assert first_report["report_id"] == second_report["report_id"]
     assert first_report["input_content_sha256"] == second_report[
         "input_content_sha256"
     ]
 
     second_records[0]["metrics"] = {"a": 1, "b": 3}
-    changed = analyze_provider_failure_evidence(second)
+    changed = cast(dict[str, Any], analyze_provider_failure_evidence(second))
     assert changed["report_id"] != first_report["report_id"]
 
 
@@ -236,10 +242,129 @@ def test_cli_writes_atomically_and_requires_explicit_overwrite(
     )
 
     assert main([str(input_path), str(output_path)]) == 0
-    report = json.loads(output_path.read_text(encoding="utf-8"))
+    report = cast(
+        dict[str, Any],
+        json.loads(output_path.read_text(encoding="utf-8")),
+    )
     assert report["input_artifact"]["sha256"]
     assert report["unresolved_rejection_count"] == 1
+    status_sha256 = report.pop("status_sha256")
+    assert status_sha256 == canonical_json_sha256(report)
 
     with pytest.raises(FileExistsError):
         main([str(input_path), str(output_path)])
     assert main([str(input_path), str(output_path), "--overwrite"]) == 0
+
+
+def test_cli_rejects_duplicate_keys_and_nonfinite_constants(tmp_path: Path) -> None:
+    output_path = tmp_path / "report.json"
+    duplicate_path = tmp_path / "duplicate.json"
+    duplicate_path.write_text(
+        '{"schema":"first","schema":"second"}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate key"):
+        main([str(duplicate_path), str(output_path)])
+
+    nonfinite_path = tmp_path / "nonfinite.json"
+    nonfinite_path.write_text(
+        '{"schema":NaN}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="non-finite constant"):
+        main([str(nonfinite_path), str(output_path)])
+
+
+def test_cli_rejects_non_object_and_invalid_json(tmp_path: Path) -> None:
+    output_path = tmp_path / "report.json"
+    array_path = tmp_path / "array.json"
+    array_path.write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError, match="must contain a JSON object"):
+        main([str(array_path), str(output_path)])
+
+    invalid_path = tmp_path / "invalid.json"
+    invalid_path.write_text("{", encoding="utf-8")
+    with pytest.raises(ValueError, match="not valid JSON"):
+        main([str(invalid_path), str(output_path)])
+
+
+def test_strict_input_rejects_duplicate_keys_and_nonfinite_constants(
+    tmp_path: Path,
+) -> None:
+    duplicate = tmp_path / "duplicate.json"
+    duplicate.write_text('{"a":1,"a":2}', encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate key"):
+        load_provider_failure_input(duplicate)
+
+    nonfinite = tmp_path / "nonfinite.json"
+    nonfinite.write_text('{"a":NaN}', encoding="utf-8")
+    with pytest.raises(ValueError, match="non-finite constant"):
+        load_provider_failure_input(nonfinite)
+
+
+def test_strict_input_binds_raw_bytes_and_enforces_budget(tmp_path: Path) -> None:
+    path = tmp_path / "input.json"
+    path.write_text('{"a":1}', encoding="utf-8")
+    payload, artifact = load_provider_failure_input(path)
+    assert payload == {"a": 1}
+    assert artifact["path"] == str(path.resolve())
+    assert artifact["bytes"] == path.stat().st_size
+    assert len(cast(str, artifact["sha256"])) == 64
+
+    with pytest.raises(ValueError, match="byte budget"):
+        load_provider_failure_input(path, maximum_input_bytes=1)
+    with pytest.raises(TypeError, match="genuine integer"):
+        load_provider_failure_input(path, maximum_input_bytes=True)
+    with pytest.raises(ValueError, match="positive"):
+        load_provider_failure_input(path, maximum_input_bytes=0)
+
+
+def test_atomic_publication_adds_host_local_status_and_no_clobber(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "report.json"
+    report = {"schema": "example", "report_id": "0" * 64, "value": 3}
+    artifact = {"path": "/source/input.json", "sha256": "1" * 64, "bytes": 7}
+
+    emitted = publish_provider_failure_report(
+        output,
+        report,
+        input_artifact=artifact,
+    )
+    loaded = cast(dict[str, Any], json.loads(output.read_text(encoding="utf-8")))
+    assert loaded == emitted
+    status = loaded.pop("status_sha256")
+    assert status == canonical_json_sha256(loaded)
+
+    with pytest.raises(FileExistsError):
+        publish_provider_failure_report(
+            output,
+            report,
+            input_artifact=artifact,
+        )
+    replaced = publish_provider_failure_report(
+        output,
+        {**report, "value": 4},
+        input_artifact=artifact,
+        overwrite=True,
+    )
+    assert replaced["value"] == 4
+
+
+def test_publication_rejects_owned_fields_and_invalid_overwrite(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "report.json"
+    with pytest.raises(ValueError, match="publication-owned fields"):
+        publish_provider_failure_report(
+            output,
+            {"input_artifact": {}},
+            input_artifact={},
+        )
+    with pytest.raises(TypeError, match="overwrite must be a bool"):
+        publish_provider_failure_report(
+            output,
+            {},
+            input_artifact={},
+            overwrite=cast(Any, 1),
+        )
