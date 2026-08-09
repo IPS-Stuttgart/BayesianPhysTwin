@@ -3,7 +3,9 @@
 `ObservationBeliefV1` remains the portable observation contract and retains its
 existing content identity. The explicit module
 `bayesian_phystwin.observation_belief_io_v2` adds a stricter execution boundary
-for archives received from another process, workflow, host, or repository.
+for archives received from another process, workflow, host, or repository. The
+module is deliberately not re-exported from the package root, so callers opt in
+to the v2 resource and durability semantics explicitly.
 
 ## Reading
 
