@@ -61,9 +61,9 @@ def _diagnostics(
     central_90 = np.empty(parameter_count, dtype=np.float64)
     central_95 = np.empty(parameter_count, dtype=np.float64)
     tail_5 = np.empty((parameter_count, 2), dtype=np.float64)
-    positions = (
-        2.0 * np.arange(1, replicate_count + 1, dtype=np.float64) - 1.0
-    ) / (2.0 * replicate_count)
+    positions = (2.0 * np.arange(1, replicate_count + 1, dtype=np.float64) - 1.0) / (
+        2.0 * replicate_count
+    )
 
     for parameter in range(parameter_count):
         values = pit_values[:, parameter]
@@ -83,18 +83,11 @@ def _diagnostics(
             )
         )
         cramer_von_mises[parameter] = float(
-            1.0 / (12.0 * replicate_count)
-            + np.sum(np.square(ordered - positions))
+            1.0 / (12.0 * replicate_count) + np.sum(np.square(ordered - positions))
         )
-        central_50[parameter] = float(
-            np.mean((values >= 0.25) & (values <= 0.75))
-        )
-        central_90[parameter] = float(
-            np.mean((values >= 0.05) & (values <= 0.95))
-        )
-        central_95[parameter] = float(
-            np.mean((values >= 0.025) & (values <= 0.975))
-        )
+        central_50[parameter] = float(np.mean((values >= 0.25) & (values <= 0.75)))
+        central_90[parameter] = float(np.mean((values >= 0.05) & (values <= 0.95)))
+        central_95[parameter] = float(np.mean((values >= 0.025) & (values <= 0.975)))
         tail_5[parameter, 0] = float(np.mean(values < 0.05))
         tail_5[parameter, 1] = float(np.mean(values > 0.95))
 
@@ -164,8 +157,7 @@ class SimulationBasedCalibrationSummaryV1:
             name="histogram_counts",
         )
         derived = tuple(
-            immutable_array(array, dtype=np.dtype("<f8"))
-            for array in diagnostics[1:]
+            immutable_array(array, dtype=np.dtype("<f8")) for array in diagnostics[1:]
         )
         object.__setattr__(self, "group_ids", groups)
         object.__setattr__(self, "parameter_names", parameters)
