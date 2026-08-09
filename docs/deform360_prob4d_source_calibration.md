@@ -5,8 +5,8 @@
 This stage uses released real-world Deform360 measurements. It requires no new
 recording, robot execution, contact-registration review, or human scientific
 approval. The inputs are the locked calibration objects' causal multiview RGB
-prefixes and an official Deform360 metric-prefix reconstruction generated from
-those same public recordings.
+prefixes and sparse metric gauge points obtained from the released synchronized
+robot trajectory and released camera calibration.
 
 The MotionCrafter producer intentionally writes exploratory Prob4D outputs.
 They are not claim-bearing until point uncertainty, cross-window Sim(3) gauge
@@ -80,10 +80,16 @@ local gauge, so each `metric_references` entry is paired by `job_id` and
 anchor across cameras is invalid even when all cameras share the same metric
 world frame.
 
-The input constructor is expected to use the official Deform360 reconstruction
-pipeline on the permitted prefix only. That constructor must publish its own
-source artifacts and hashes; this fitter does not infer metric scale from
-MotionCrafter predictions.
+The input constructor projects released gripper/taxel geometry onto the exact
+MotionCrafter cover-resized camera grid. It reads no released full-sequence
+rendered depth, confirmation payloads, or target outcome, and no robot value
+after the registered prefix contributes.
+That constructor publishes its source artifacts and hashes; this fitter does
+not infer metric scale from MotionCrafter predictions. The projected geometry
+calibrates the visual gauge only and is not treated as an object-state target.
+
+The registered constructor and its metric-prefix/stream contract are specified
+in `docs/deform360_prob4d_sample_materializer.md`.
 
 ## Commands
 

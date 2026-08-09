@@ -1011,6 +1011,11 @@ class Prob4DCalibrationApi:
     Sim3: Any
     StructuredCovariance: Any
     DepthDisagreementModel: Any
+    PredictionWindow: Any
+    accumulate_disagreement: Any
+    align_windows: Any
+    alignment_covariance_context: Any
+    estimate_sim3_robust: Any
     fit_group_balanced_point_uncertainty_calibration: Any
     load_gauge_covariance_calibration: Any
     load_metric_gauge_anchor: Any
@@ -1019,6 +1024,7 @@ class Prob4DCalibrationApi:
     save_gauge_covariance_calibration: Any
     save_metric_gauge_anchor: Any
     save_point_uncertainty_calibration: Any
+    verify_motioncrafter_prediction_manifest: Any
 
 
 def load_pinned_prob4d_api(
@@ -1055,6 +1061,11 @@ def load_pinned_prob4d_api(
     sys.path.insert(0, str(source))
     try:
         import prob4d
+        from prob4d.alignment import (
+            align_windows,
+            alignment_covariance_context,
+            estimate_sim3_robust,
+        )
         from prob4d.calibration import (
             GaugeCovarianceCalibrationV1,
             PointUncertaintyCalibrationV1,
@@ -1067,6 +1078,10 @@ def load_pinned_prob4d_api(
         from prob4d.calibration_compatibility import (
             load_prediction_calibration_target,
         )
+        from prob4d.data import PredictionWindow
+        from prob4d.motioncrafter_integrity import (
+            verify_motioncrafter_prediction_manifest,
+        )
         from prob4d.provider_v2 import (
             MetricGaugeAnchor,
             load_metric_gauge_anchor,
@@ -1076,6 +1091,7 @@ def load_pinned_prob4d_api(
         from prob4d.uncertainty import (
             DepthDisagreementModel,
             StructuredCovariance,
+            accumulate_disagreement,
         )
     finally:
         if sys.path[0] == str(source):
@@ -1088,6 +1104,11 @@ def load_pinned_prob4d_api(
         Sim3=Sim3,
         StructuredCovariance=StructuredCovariance,
         DepthDisagreementModel=DepthDisagreementModel,
+        PredictionWindow=PredictionWindow,
+        accumulate_disagreement=accumulate_disagreement,
+        align_windows=align_windows,
+        alignment_covariance_context=alignment_covariance_context,
+        estimate_sim3_robust=estimate_sim3_robust,
         fit_group_balanced_point_uncertainty_calibration=(
             fit_group_balanced_point_uncertainty_calibration
         ),
@@ -1098,6 +1119,9 @@ def load_pinned_prob4d_api(
         save_gauge_covariance_calibration=save_gauge_covariance_calibration,
         save_metric_gauge_anchor=save_metric_gauge_anchor,
         save_point_uncertainty_calibration=save_point_uncertainty_calibration,
+        verify_motioncrafter_prediction_manifest=(
+            verify_motioncrafter_prediction_manifest
+        ),
     )
 
 
