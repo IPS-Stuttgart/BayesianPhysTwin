@@ -129,26 +129,18 @@ def test_report_decomposes_primary_and_multi_cause_failures() -> None:
     assert len(report["report_id"]) == 64
     records = {record["case_id"]: record for record in report["records"]}
     assert records["accepted"]["primary_category"] == "accepted"
-    assert records["support"]["primary_category"] == (
-        "unsupported-provider-geometry"
-    )
+    assert records["support"]["primary_category"] == ("unsupported-provider-geometry")
     assert records["identifiability"]["primary_category"] == (
         "unidentifiable-physical-query"
     )
-    assert records["identifiability"]["reason_derived_signal"] == (
-        "query_identifiable"
-    )
+    assert records["identifiability"]["reason_derived_signal"] == ("query_identifiable")
     assert records["gauge-and-covariance"]["failed_categories"] == [
         "coherent-gauge-or-common-mode-bias",
         "provider-covariance-miscalibration",
     ]
-    assert records["fixed-point"]["primary_category"] == (
-        "numerical-non-convergence"
-    )
+    assert records["fixed-point"]["primary_category"] == ("numerical-non-convergence")
     assert records["unresolved"]["classification_complete"] is False
-    assert report["any_category_counts"][
-        "provider-covariance-miscalibration"
-    ] == 1
+    assert report["any_category_counts"]["provider-covariance-miscalibration"] == 1
 
 
 def test_reason_derived_failure_rejects_explicit_pass_contradiction() -> None:
@@ -222,9 +214,7 @@ def test_report_identity_is_canonical_and_input_sensitive() -> None:
     first_report = cast(dict[str, Any], analyze_provider_failure_evidence(first))
     second_report = cast(dict[str, Any], analyze_provider_failure_evidence(second))
     assert first_report["report_id"] == second_report["report_id"]
-    assert first_report["input_content_sha256"] == second_report[
-        "input_content_sha256"
-    ]
+    assert first_report["input_content_sha256"] == second_report["input_content_sha256"]
 
     second_records[0]["metrics"] = {"a": 1, "b": 3}
     changed = cast(dict[str, Any], analyze_provider_failure_evidence(second))
