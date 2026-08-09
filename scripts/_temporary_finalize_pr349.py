@@ -94,9 +94,12 @@ def update_tests() -> None:
     text = path.read_text(encoding="utf-8")
     if "import pytest\n" not in text:
         text = text.replace(
-            "import numpy as np\n",
-            "import numpy as np\nimport pytest\n\n"
-            "import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2\n",
+            "import numpy as np\n\n"
+            "import bayesian_phystwin.prospective_prob4d_update as prospective_update\n",
+            "import numpy as np\n"
+            "import pytest\n\n"
+            "import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2\n"
+            "import bayesian_phystwin.prospective_prob4d_update as prospective_update\n",
             1,
         )
     if "update_sparse_prior_aware_gauge_belief_structured," not in text:
