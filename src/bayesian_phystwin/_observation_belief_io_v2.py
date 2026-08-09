@@ -196,12 +196,12 @@ def _read_npy_header(
                 shape, _, dtype = np.lib.format.read_array_header_1_0(
                     stream,
                     max_header_size=limits.maximum_npy_header_bytes,
-                )
+                )  # type: ignore[call-arg]
             elif version == (2, 0):
                 shape, _, dtype = np.lib.format.read_array_header_2_0(
                     stream,
                     max_header_size=limits.maximum_npy_header_bytes,
-                )
+                )  # type: ignore[call-arg]
             else:
                 raise ValueError(f"unsupported NPY format version {version!r}")
         except (EOFError, TypeError, ValueError) as error:
