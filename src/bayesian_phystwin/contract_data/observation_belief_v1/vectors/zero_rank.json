@@ -1,0 +1,231 @@
+{
+  "arrays": {
+    "association_probability": {
+      "dtype": "float64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0.9,
+        0.8
+      ]
+    },
+    "correlation_group_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        4,
+        5
+      ]
+    },
+    "declared_frame_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0,
+        2
+      ]
+    },
+    "entity_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        7,
+        7
+      ]
+    },
+    "factor_group_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0,
+        0
+      ]
+    },
+    "frame_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0,
+        2
+      ]
+    },
+    "group_composite_weight": {
+      "dtype": "float64",
+      "shape": [
+        2
+      ],
+      "values": [
+        1.0,
+        0.5
+      ]
+    },
+    "group_ids": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        4,
+        5
+      ]
+    },
+    "group_prior_nominal_probability": {
+      "dtype": "float64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0.95,
+        0.5
+      ]
+    },
+    "local_covariance_m2": {
+      "dtype": "float64",
+      "shape": [
+        2,
+        3,
+        3
+      ],
+      "values": [
+        [
+          [
+            0.0001,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0002,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0003
+          ]
+        ],
+        [
+          [
+            0.0004,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0005,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0006
+          ]
+        ]
+      ]
+    },
+    "low_rank_factor_m": {
+      "dtype": "float64",
+      "shape": [
+        2,
+        3,
+        0
+      ],
+      "values": [
+        [
+          [],
+          [],
+          []
+        ],
+        [
+          [],
+          [],
+          []
+        ]
+      ]
+    },
+    "mean_xyz_m": {
+      "dtype": "float64",
+      "shape": [
+        2,
+        3
+      ],
+      "values": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.2,
+          -0.1,
+          1.5
+        ]
+      ]
+    },
+    "prior_reliability": {
+      "dtype": "float64",
+      "shape": [
+        2
+      ],
+      "values": [
+        1.0,
+        0.25
+      ]
+    },
+    "view_indices": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0,
+        1
+      ]
+    },
+    "window_indices": {
+      "dtype": "int64",
+      "shape": [
+        2
+      ],
+      "values": [
+        0,
+        0
+      ]
+    }
+  },
+  "descriptor": {
+    "case_id": "generic-zero-rank",
+    "causal_frame_stop": 3,
+    "factor_names": [],
+    "metadata": {
+      "coordinate_frame": "world",
+      "metric_units": "m"
+    },
+    "schema_name": "phys4d.observation_belief",
+    "schema_version": 1,
+    "source_artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "source_repository": "example/metric-feeder",
+    "source_revision": "cccccccccccccccccccccccccccccccccccccccc",
+    "stream_id": "generic:metric-points",
+    "view_names": [
+      "camera0",
+      "camera1"
+    ],
+    "window_names": [
+      "prefix"
+    ]
+  },
+  "expected_artifact_id": "ded80e623b297ad2739f33e3d46f0244b5f252d670dc0872c6a0676c26dadecd",
+  "vector_version": 1
+}

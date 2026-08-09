@@ -1,5 +1,22 @@
+from __future__ import annotations
+
+import sys
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover - exercised by the Python 3.10 CI lane
+    import tomli as tomllib
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _project_metadata() -> dict[str, Any]:
+    with (ROOT / "pyproject.toml").open("rb") as handle:
+        return tomllib.load(handle)
 
 
 def test_source_package_exposes_pep561_marker() -> None:
@@ -10,9 +27,11 @@ def test_source_package_exposes_pep561_marker() -> None:
 
 
 def test_project_metadata_declares_typed_package_data() -> None:
-    pyproject = (Path(__file__).parents[1] / "pyproject.toml").read_text(
-        encoding="utf-8"
-    )
+    metadata = _project_metadata()
+    classifiers = metadata["project"]["classifiers"]
+    package_data = metadata["tool"]["setuptools"]["package-data"]["bayesian_phystwin"]
 
-    assert '"Typing :: Typed"' in pyproject
-    assert 'bayesian_phystwin = ["py.typed"]' in pyproject
+    assert "Typing :: Typed" in classifiers
+    assert "py.typed" in package_data
+    assert "contract_data/observation_belief_v1/*.json" in package_data
+    assert "contract_data/observation_belief_v1/vectors/*.json" in package_data
