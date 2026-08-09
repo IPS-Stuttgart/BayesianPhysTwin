@@ -29,10 +29,10 @@ def test_release_candidate_uses_exact_revision_and_tag_version_gate() -> None:
     text = _text()
 
     assert (
-        'SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}'
+        "SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}"
         in text
     )
-    assert 'ref: ${{ env.SOURCE_REVISION }}' in text
+    assert "ref: ${{ env.SOURCE_REVISION }}" in text
     assert '      - "v*"' in text
     assert '--expected-tag "${GITHUB_REF_NAME}"' in text
     assert '--source-revision "${SOURCE_REVISION}"' in text
