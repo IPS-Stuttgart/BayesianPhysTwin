@@ -1,0 +1,172 @@
+name: Temporary structured result contract coverage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/temporary-cover-structured-result-contracts.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-structured-result-coverage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cover:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/structured-tree-sparse-fallback'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out exact reviewed branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+          clean: true
+
+      - name: Verify exact reviewed head
+        shell: bash
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
+
+      - name: Add adversarial structured-result tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('tests/test_tree_sparse_explicit_gauge_prob4d.py')
+          text = path.read_text(encoding='utf-8')
+          marker = 'def test_structured_covariance_contract_validation_branches'
+          if marker in text:
+              raise SystemExit('structured contract coverage tests already exist')
+          addition = r'''
+
+
+          def test_structured_covariance_contract_validation_branches() -> None:
+              import bayesian_phystwin.structured_gauge_aware_result as structured_module
+              from bayesian_phystwin.structured_gauge_aware_result import (
+                  DenseCovarianceV1,
+                  StructuredGaugeAwareBeliefResultV1,
+              )
+
+              empty = DenseCovarianceV1(np.zeros((0, 0), dtype=np.float64))
+              assert empty.dimension == 0
+              assert empty.materialize().shape == (0, 0)
+              assert empty.materialize(maximum_bytes=0).shape == (0, 0)
+              np.testing.assert_array_equal(
+                  np.asarray(empty, dtype=np.float32),
+                  np.zeros((0, 0), dtype=np.float32),
+              )
+              with pytest.raises(ValueError, match="nonnegative integer"):
+                  empty.materialize(maximum_bytes=True)
+              with pytest.raises(ValueError, match="nonnegative integer"):
+                  empty.materialize(maximum_bytes=-1)
+
+              neutral = structured_module._symmetric_matrix(
+                  np.eye(1),
+                  name="neutral",
+                  positive_semidefinite=False,
+                  positive_definite=False,
+              )
+              np.testing.assert_array_equal(neutral, np.eye(1))
+
+              adapted = _build(_validated_observation())
+              from bayesian_phystwin.sparse_prior_aware_gauge_belief import (
+                  update_sparse_prior_aware_gauge_belief_structured,
+              )
+
+              valid = update_sparse_prior_aware_gauge_belief_structured(
+                  adapted.batch,
+                  adapted.tree_gauge_design,
+                  config=_config(),
+              )
+              with pytest.raises(TypeError, match="inference_admissible"):
+                  replace(valid, inference_admissible=1)
+              with pytest.raises(ValueError, match="reason"):
+                  replace(valid, reason="")
+              with pytest.raises(TypeError, match="unsupported representation"):
+                  replace(valid, covariance=object())
+              with pytest.raises(TypeError, match="GaugeAwareBeliefResult"):
+                  StructuredGaugeAwareBeliefResultV1.from_legacy(object())
+
+
+          def _rejected_structured_claim_update():
+              from bayesian_phystwin.tree_sparse_structured_gauge_prob4d import (
+                  update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts,
+              )
+
+              return update_claim_bearing_tree_sparse_prob4d_structured_from_artifacts(
+                  _validated_observation(),
+                  _linearization(),
+                  physical_prediction_xyz_m=np.zeros((4, 3), dtype=np.float64),
+                  state_prior_covariance_m2=np.zeros((2, 2), dtype=np.float64),
+                  config=_config(),
+              )
+
+
+          def test_structured_claim_update_rejects_invalid_wrapper_fields() -> None:
+              update = _rejected_structured_claim_update()
+              with pytest.raises(TypeError, match="StructuredGaugeAwareBeliefResultV1"):
+                  replace(update, result=object())
+              with pytest.raises(TypeError, match="independently_verified"):
+                  replace(update, runtime_revision_independently_verified=1)
+              with pytest.raises(ValueError, match="must be True"):
+                  replace(update, runtime_revision_independently_verified=False)
+
+
+          @pytest.mark.parametrize(
+              ("mutation", "message"),
+              [
+                  ("observation", "observation_artifact_id"),
+                  ("calibration", "calibration_artifact_ids"),
+                  ("runtime", "independently verified runtime"),
+              ],
+          )
+          def test_structured_claim_update_rejects_lineage_substitution(
+              mutation: str,
+              message: str,
+          ) -> None:
+              update = _rejected_structured_claim_update()
+              lineage = dict(update.result.input_lineage)
+              if mutation == "observation":
+                  lineage["observation_artifact_id"] = "9" * 64
+              elif mutation == "calibration":
+                  calibration = dict(
+                      lineage["prob4d_claim_bearing_calibration_artifact_ids"]
+                  )
+                  calibration["gauge_artifact_id"] = "8" * 64
+                  lineage["prob4d_claim_bearing_calibration_artifact_ids"] = calibration
+              else:
+                  lineage[
+                      "prob4d_claim_bearing_runtime_revision_independently_verified"
+                  ] = False
+              bad_result = replace(update.result, input_lineage=lineage)
+              with pytest.raises(ValueError, match=message):
+                  replace(update, result=bad_result)
+          '''
+          path.write_text(text.rstrip() + addition + '\n', encoding='utf-8')
+          Path('.github/workflows/temporary-cover-structured-result-contracts.yml').unlink()
+          PY
+
+          python -m pip install --no-cache-dir -e ".[dev]"
+          python -m ruff format tests/test_tree_sparse_explicit_gauge_prob4d.py
+          python -m ruff check tests/test_tree_sparse_explicit_gauge_prob4d.py
+          python -m pytest -q tests/test_tree_sparse_explicit_gauge_prob4d.py
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tests/test_tree_sparse_explicit_gauge_prob4d.py \
+            .github/workflows/temporary-cover-structured-result-contracts.yml
+          git diff --cached --check
+          git commit -m 'Cover structured result contract branches'
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
