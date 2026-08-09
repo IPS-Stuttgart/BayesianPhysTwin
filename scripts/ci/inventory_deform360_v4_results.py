@@ -179,7 +179,9 @@ def _outside_forbidden(root: Path, forbidden: Sequence[Path]) -> None:
     for blocked in forbidden:
         resolved = _regular_directory(blocked, name="forbidden root")
         _require(
-            root != resolved and resolved not in root.parents and root not in resolved.parents,
+            root != resolved
+            and resolved not in root.parents
+            and root not in resolved.parents,
             "results root overlaps a forbidden raw-data root",
         )
 
@@ -221,7 +223,9 @@ def inventory_results(
             raise ValueError("cannot scan results directory") from error
         for entry in entries:
             entry_count += 1
-            _require(entry_count <= maximum_entries, "results inventory entry bound exceeded")
+            _require(
+                entry_count <= maximum_entries, "results inventory entry bound exceeded"
+            )
             entry_path = Path(entry.path)
             relative = _normal_relative(entry_path, admitted_root)
             try:
@@ -289,9 +293,7 @@ def inventory_results(
         },
         "suffix_counts": dict(sorted(suffix_counts.items())),
         "candidate_schema_counts": dict(sorted(schema_counts.items())),
-        "candidate_directory_counts": dict(
-            sorted(candidate_directory_counts.items())
-        ),
+        "candidate_directory_counts": dict(sorted(candidate_directory_counts.items())),
         "candidates": candidates,
         "information_boundary": {
             "results_tree_only": True,
@@ -303,20 +305,26 @@ def inventory_results(
             "replacement_allowed": False,
         },
     }
-    return {**identity, "inventory_id": hashlib.sha256(_canonical_bytes(identity)).hexdigest()}
+    return {
+        **identity,
+        "inventory_id": hashlib.sha256(_canonical_bytes(identity)).hexdigest(),
+    }
 
 
 def _write_no_clobber(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     _require(not os.path.lexists(path), "inventory output already exists")
     temporary = path.parent / f".{path.name}.tmp-{uuid.uuid4().hex}"
-    payload = json.dumps(
-        value,
-        indent=2,
-        sort_keys=True,
-        ensure_ascii=False,
-        allow_nan=False,
-    ).encode("utf-8") + b"\n"
+    payload = (
+        json.dumps(
+            value,
+            indent=2,
+            sort_keys=True,
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        + b"\n"
+    )
     try:
         with temporary.open("xb") as stream:
             stream.write(payload)
