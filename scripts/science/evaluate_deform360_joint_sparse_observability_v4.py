@@ -276,7 +276,7 @@ def _load_batch(
     _require("array_records" in descriptor, "v4 input array records are missing")
     declared_array_records = descriptor.pop("array_records")
     arrays = _load_arrays(arrays_path)
-    batch = Deform360JointSparseFactorBatchV4(**descriptor, **arrays)
+    batch = Deform360JointSparseFactorBatchV4(**descriptor, **arrays)  # type: ignore[arg-type]
     _require(
         batch.identity_record()["array_records"] == declared_array_records,
         "v4 input array records changed",

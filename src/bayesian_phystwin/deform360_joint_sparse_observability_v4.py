@@ -845,7 +845,7 @@ class Deform360JointSparseObservabilityResultV4:
             ):
                 object.__setattr__(self, name, value)
         else:
-            numerical = (
+            technical_numerical = (
                 self.state_dimension,
                 self.query_dimension,
                 self.nuisance_dimension,
@@ -862,7 +862,7 @@ class Deform360JointSparseObservabilityResultV4:
                 self.gate_checks,
             )
             _require(
-                all(value is None for value in numerical),
+                all(value is None for value in technical_numerical),
                 "technical failure contains diagnostics",
             )
             _require(not self.gate_passed, "technical failure passed gate")
@@ -985,7 +985,7 @@ def _row_weights(
     policy: Deform360JointSparseObservabilityPolicyV4,
 ) -> np.ndarray:
     raw = batch.prior_reliability * batch.association_probability
-    result = np.zeros(len(raw), dtype=np.float64)
+    result: np.ndarray = np.zeros(len(raw), dtype=np.float64)
     labels = np.asarray(batch.correlation_group_ids, dtype=object)
     for group in dict.fromkeys(batch.correlation_group_ids):
         selected = np.flatnonzero(labels == group)
@@ -1181,7 +1181,7 @@ def evaluate_deform360_joint_sparse_observability_v4(
 
     _require(batch.protocol_id == policy.protocol_id, "batch/policy protocol mismatch")
     revision = exact_revision(implementation_revision, name="implementation_revision")
-    all_rows = np.ones(len(batch.factor_ids), dtype=np.bool_)
+    all_rows: np.ndarray = np.ones(len(batch.factor_ids), dtype=np.bool_)
     full = _masked_spectrum(batch, policy, all_rows)
     cameras = sorted(set(batch.camera_ids))
     windows = sorted(set(batch.window_ids))
