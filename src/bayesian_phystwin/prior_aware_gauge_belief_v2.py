@@ -378,7 +378,7 @@ def _validate_certificate_mapping(certificate: Mapping[str, object]) -> bool:
     schema_version = certificate.get("schema_version")
     _require(
         type(schema_version) is int and schema_version == _CERTIFICATE_VERSION,
-        "v2 admission certificate schema_version is unsupported",
+        "v2 admission certificate has an unsupported schema_version",
     )
     underlying_reason = certificate.get("underlying_inference_reason")
     _require(
@@ -436,8 +436,7 @@ def _validate_certificate_mapping(certificate: Mapping[str, object]) -> bool:
         diagnostics_valid and minimum is not None and minimum > 0.0
     )
     _require(
-        certificate["positive_exact_mixture_curvature"]
-        is expected_positive_curvature,
+        certificate["positive_exact_mixture_curvature"] is expected_positive_curvature,
         "v2 admission certificate curvature invariant is inconsistent",
     )
 
