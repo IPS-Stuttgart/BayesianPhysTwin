@@ -1,0 +1,381 @@
+name: Revalidate reviewed Deform360 Prob4D source result once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/revalidate-deform360-prob4d-source-gate-once.yml"
+  workflow_run:
+    workflows:
+      - "Launch reviewed Deform360 Prob4D public source gate once"
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: revalidate-deform360-prob4d-source-gate-v1
+  cancel-in-progress: true
+
+env:
+  SOURCE_HEAD_SHA: ded8910becbbffe958dfd18c84ad91069e7087a4
+  VALIDATOR_REVISION: 94913b23c31ef3056a8a390c4f21d4bdca47426f
+  SOURCE_WORKFLOW_NAME: Launch reviewed Deform360 Prob4D public source gate once
+  SOURCE_WORKFLOW_PATH: .github/workflows/launch-deform360-prob4d-source-gate-once.yml
+  SOURCE_ARTIFACT_PREFIX: deform360-prob4d-source-gate
+  ISSUE_NUMBER: "148"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  audit:
+    name: Independently reconstruct the frozen source decision
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (
+        github.event.workflow_run.repository.full_name ==
+          'IPS-Stuttgart/BayesianPhysTwin' &&
+        github.event.workflow_run.head_sha ==
+          'ded8910becbbffe958dfd18c84ad91069e7087a4' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event == 'push'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out the exact hardened validator revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.VALIDATOR_REVISION }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the exact validator source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${VALIDATOR_REVISION}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Locate and verify the sole reviewed source run
+        id: locate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          run_id=""
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
+            run_id="$(jq -r '.workflow_run.id' "${GITHUB_EVENT_PATH}")"
+          else
+            for _ in $(seq 1 600); do
+              response="$(gh api --method GET \
+                "repos/${GITHUB_REPOSITORY}/actions/runs" \
+                -f event=push \
+                -f head_sha="${SOURCE_HEAD_SHA}" \
+                -f per_page=100)"
+              mapfile -t run_ids < <(
+                jq -r --arg name "${SOURCE_WORKFLOW_NAME}" \
+                  '.workflow_runs[] | select(.name == $name) | .id' \
+                  <<<"${response}"
+              )
+              if (( ${#run_ids[@]} > 1 )); then
+                echo "more than one reviewed source workflow run exists" >&2
+                exit 2
+              fi
+              if (( ${#run_ids[@]} == 1 )); then
+                candidate="$(gh api \
+                  "repos/${GITHUB_REPOSITORY}/actions/runs/${run_ids[0]}")"
+                if [[ "$(jq -r '.status' <<<"${candidate}")" == "completed" ]]; then
+                  run_id="${run_ids[0]}"
+                  break
+                fi
+              fi
+              sleep 30
+            done
+          fi
+
+          test -n "${run_id}"
+          run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}")"
+          test "$(jq -r '.name' <<<"${run}")" = "${SOURCE_WORKFLOW_NAME}"
+          test "$(jq -r '.path' <<<"${run}")" = "${SOURCE_WORKFLOW_PATH}"
+          test "$(jq -r '.event' <<<"${run}")" = "push"
+          test "$(jq -r '.head_branch' <<<"${run}")" = "main"
+          test "$(jq -r '.head_sha' <<<"${run}")" = "${SOURCE_HEAD_SHA}"
+          test "$(jq -r '.status' <<<"${run}")" = "completed"
+          test "$(jq -r '.run_attempt' <<<"${run}")" = "1"
+          test "$(jq -r '.repository.full_name' <<<"${run}")" = \
+            "${GITHUB_REPOSITORY}"
+
+          run_attempt="$(jq -r '.run_attempt' <<<"${run}")"
+          conclusion="$(jq -r '.conclusion' <<<"${run}")"
+          run_url="$(jq -r '.html_url' <<<"${run}")"
+          artifact_name="${SOURCE_ARTIFACT_PREFIX}-${run_id}-${run_attempt}"
+
+          artifacts="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts")"
+          mapfile -t artifact_ids < <(
+            jq -r --arg name "${artifact_name}" \
+              '.artifacts[] | select(.name == $name and .expired == false) | .id' \
+              <<<"${artifacts}"
+          )
+          test "${#artifact_ids[@]}" = "1"
+
+          {
+            echo "run_id=${run_id}"
+            echo "run_attempt=${run_attempt}"
+            echo "conclusion=${conclusion}"
+            echo "run_url=${run_url}"
+            echo "artifact_name=${artifact_name}"
+            echo "artifact_id=${artifact_ids[0]}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download only the compact source-gate artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ steps.locate.outputs.artifact_name }}
+          path: ${{ runner.temp }}/deform360-source-gate-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.locate.outputs.run_id }}
+
+      - name: Reconstruct every frozen decision from stored evidence
+        id: validate
+        continue-on-error: true
+        env:
+          SOURCE_ROOT: ${{ runner.temp }}/deform360-source-gate-source
+          AUDIT_ROOT: ${{ runner.temp }}/deform360-source-gate-audit
+          SOURCE_RUN_ID: ${{ steps.locate.outputs.run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ steps.locate.outputs.run_attempt }}
+          SOURCE_RUN_CONCLUSION: ${{ steps.locate.outputs.conclusion }}
+          SOURCE_ARTIFACT_ID: ${{ steps.locate.outputs.artifact_id }}
+          SOURCE_ARTIFACT_NAME: ${{ steps.locate.outputs.artifact_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import importlib.util
+          import json
+          import os
+          import shutil
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          source = Path(os.environ["SOURCE_ROOT"])
+          audit = Path(os.environ["AUDIT_ROOT"])
+          audit.mkdir(parents=True, exist_ok=False)
+
+          receipt: dict[str, object] = {
+              "schema": (
+                  "bayesian-phystwin.deform360-prob4d-source-gate-independent-audit"
+              ),
+              "schema_version": 1,
+              "source_workflow_run_id": int(os.environ["SOURCE_RUN_ID"]),
+              "source_workflow_run_attempt": int(os.environ["SOURCE_RUN_ATTEMPT"]),
+              "source_workflow_conclusion": os.environ["SOURCE_RUN_CONCLUSION"],
+              "source_workflow_head_sha": os.environ["SOURCE_HEAD_SHA"],
+              "source_artifact_id": int(os.environ["SOURCE_ARTIFACT_ID"]),
+              "source_artifact_name": os.environ["SOURCE_ARTIFACT_NAME"],
+              "validator_revision": os.environ["VALIDATOR_REVISION"],
+              "audit_status": "invalid",
+              "source_gate_result_id": None,
+              "source_gate_passed": None,
+              "confirmation_access_authorized": False,
+              "information_boundary": {
+                  "confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "future_frames_used": False,
+                  "replacement_allowed": False,
+              },
+          }
+
+          try:
+              if not source.is_dir():
+                  raise ValueError("downloaded source artifact is missing")
+              if any(path.is_symlink() for path in source.rglob("*")):
+                  raise ValueError("downloaded source artifact contains a symbolic link")
+              subprocess.run(
+                  ["sha256sum", "--check", "SHA256SUMS"],
+                  cwd=source,
+                  check=True,
+                  stdout=subprocess.DEVNULL,
+              )
+
+              pipeline_path = source / "pipeline-receipt.json"
+              pipeline = json.loads(pipeline_path.read_text(encoding="utf-8"))
+              if pipeline.get("implementation_revision") != os.environ["SOURCE_HEAD_SHA"]:
+                  raise ValueError("source pipeline revision changed")
+
+              script = Path(
+                  "scripts/science/evaluate_deform360_prob4d_source_gate.py"
+              )
+              spec = importlib.util.spec_from_file_location(
+                  "independent_source_gate_validator", script
+              )
+              if spec is None or spec.loader is None:
+                  raise ValueError("cannot load independent source-gate validator")
+              module = importlib.util.module_from_spec(spec)
+              sys.modules[spec.name] = module
+              spec.loader.exec_module(module)
+              result = module.validate_source_gate_result(source / "source-gate")
+
+              if result["implementation_revision"] != os.environ["SOURCE_HEAD_SHA"]:
+                  raise ValueError("source-gate implementation revision changed")
+              if pipeline.get("source_gate_result_id") != result["result_id"]:
+                  raise ValueError("pipeline and source-gate result identities differ")
+              if pipeline.get("source_gate_passed") is not result["gate_passed"]:
+                  raise ValueError("pipeline and source-gate decisions differ")
+              if (
+                  pipeline.get("confirmation_access_authorized")
+                  is not result["confirmation_access_authorized"]
+              ):
+                  raise ValueError("pipeline and source-gate authorizations differ")
+
+              boundary = result["information_boundary"]
+              for field in (
+                  "confirmation_payloads_opened",
+                  "target_outcomes_used",
+                  "future_frames_used",
+                  "replacement_allowed",
+              ):
+                  if boundary[field] is not False:
+                      raise ValueError(f"source information boundary changed: {field}")
+
+              shutil.copytree(source / "source-gate", audit / "source-gate")
+              shutil.copy2(pipeline_path, audit / "pipeline-receipt.json")
+              receipt.update(
+                  {
+                      "audit_status": (
+                          "validated-pass"
+                          if result["gate_passed"]
+                          else "validated-negative"
+                      ),
+                      "source_gate_result_id": result["result_id"],
+                      "source_gate_passed": result["gate_passed"],
+                      "confirmation_access_authorized": result[
+                          "confirmation_access_authorized"
+                      ],
+                      "source_gate_result_sha256": hashlib.sha256(
+                          (source / "source-gate/source-gate-result.json").read_bytes()
+                      ).hexdigest(),
+                      "source_artifact_checksums_sha256": hashlib.sha256(
+                          (source / "SHA256SUMS").read_bytes()
+                      ).hexdigest(),
+                  }
+              )
+          except Exception as error:
+              receipt["error_type"] = type(error).__name__
+              receipt["error_sha256"] = hashlib.sha256(
+                  str(error).encode("utf-8")
+              ).hexdigest()
+              (audit / "independent-audit-receipt.json").write_text(
+                  json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8",
+              )
+              raise
+
+          (audit / "independent-audit-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          (
+            cd "${AUDIT_ROOT}"
+            find . -type f ! -path './SHA256SUMS' -printf '%P\0' \
+              | sort -z | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Upload the independent source-gate audit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-prob4d-source-gate-independent-audit-${{ steps.locate.outputs.run_id }}
+          path: ${{ runner.temp }}/deform360-source-gate-audit
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish the independently reconstructed decision
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_ROOT: ${{ runner.temp }}/deform360-source-gate-audit
+          SOURCE_RUN_ID: ${{ steps.locate.outputs.run_id }}
+          SOURCE_RUN_URL: ${{ steps.locate.outputs.run_url }}
+          SOURCE_RUN_CONCLUSION: ${{ steps.locate.outputs.conclusion }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="${AUDIT_ROOT}/independent-audit-receipt.json"
+          test -f "${receipt}"
+          status="$(jq -r '.audit_status' "${receipt}")"
+          result_id="$(jq -r '.source_gate_result_id // "none"' "${receipt}")"
+          passed="$(jq -r '.source_gate_passed // "unknown"' "${receipt}")"
+          authorized="$(jq -r '.confirmation_access_authorized' "${receipt}")"
+          error_type="$(jq -r '.error_type // "none"' "${receipt}")"
+          error_sha="$(jq -r '.error_sha256 // "none"' "${receipt}")"
+          body=$(cat <<EOF
+          ## Independent Deform360 Prob4D source-gate audit: \`${status}\`
+
+          - source workflow run: [\`${SOURCE_RUN_ID}\`](${SOURCE_RUN_URL})
+          - source workflow conclusion: \`${SOURCE_RUN_CONCLUSION}\`
+          - exact source revision: \`${SOURCE_HEAD_SHA}\`
+          - hardened validator revision: \`${VALIDATOR_REVISION}\`
+          - source-gate result ID: \`${result_id}\`
+          - gate passed: \`${passed}\`
+          - confirmation access authorized by this gate: \`${authorized}\`
+          - audit error type: \`${error_type}\`
+          - audit error digest: \`${error_sha}\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - replacement allowed: \`false\`
+
+          The audit reconstructs every frozen decision from the retained support,
+          fold, aggregate, stratum, and gate-lock evidence. A validated negative
+          is a complete terminal result for this method version. A validated pass
+          permits only the separately sealed confirmation chain; it does not itself
+          open confirmation inputs or target outcomes.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" \
+            -f body="${body}"
+
+      - name: Enforce completion of the independent audit
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.validate.outcome }}" = "success"
+          (cd "${{ runner.temp }}/deform360-source-gate-audit" && \
+            sha256sum --check SHA256SUMS >/dev/null)
+          test "$(git rev-parse HEAD)" = "${VALIDATOR_REVISION}"
+          test -z "$(git status --porcelain=v1)"
+
+# Reviewed one-shot independent source-result audit: 2026-08-09-v1
