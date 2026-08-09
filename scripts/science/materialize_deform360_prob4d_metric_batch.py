@@ -138,6 +138,10 @@ _PLAN_BOUNDARY: Final = {
 }
 
 
+class _InsufficientMultiviewSupport(ValueError):
+    """Raised only when a frozen object has fewer than two supported streams."""
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
@@ -419,10 +423,10 @@ def _build_plan(
         grouped.items()
     ):
         case_streams.sort(key=lambda item: (item["camera_id"], item["job_id"]))
-        _require(
-            len(case_streams) >= 2,
-            "every calibration object requires at least two supported streams",
-        )
+        if len(case_streams) < 2:
+            raise _InsufficientMultiviewSupport(
+                "every calibration object requires at least two supported streams"
+            )
         case_identity = {
             "schema": "bayesian-phystwin.deform360-prob4d-metric-case-id-v1",
             "object_id": object_id,
@@ -481,6 +485,131 @@ def _write_checksums(root: Path) -> None:
     (root / "SHA256SUMS").write_text("".join(lines), encoding="ascii")
 
 
+def _validate_emitted_plan_binding(
+    plan: Mapping[str, Any],
+    *,
+    result: Mapping[str, Any],
+    jobs: Sequence[Any],
+    source_artifacts: Mapping[str, Any],
+    object_count: int,
+) -> None:
+    """Bind an emitted plan to the exact batch lineage and supported job roster."""
+
+    _require(
+        plan.get("visual_production_result_id") == result["production_result_id"],
+        "metric-prefix plan uses a different production result",
+    )
+    _require(
+        plan.get("selection_file_sha256") == source_artifacts["selection.json"]
+        and plan.get("visual_provider_spec_file_sha256")
+        == source_artifacts["visual-provider-spec.json"]
+        and plan.get("metric_prior_policy_file_sha256")
+        == source_artifacts["metric-prior-policy.json"],
+        "metric-prefix plan source artifacts differ from batch",
+    )
+    _require(
+        plan.get("claim_boundary") == METRIC_PLAN_CLAIM_BOUNDARY,
+        "metric-prefix plan claim boundary changed",
+    )
+
+    expected_jobs: dict[str, tuple[str, int, str, str]] = {}
+    for index, raw in enumerate(jobs):
+        row = _mapping(raw, name=f"metric batch job {index}")
+        if row["status"] != "supported":
+            continue
+        job_id = sha256_digest(row["job_id"], name="job_id")
+        identity = (
+            nonempty_string(row["object_id"], name="job object_id"),
+            genuine_integer(row["episode_id"], name="job episode_id", minimum=0),
+            nonempty_string(row["stratum"], name="job stratum"),
+            nonempty_string(row["camera_id"], name="job camera_id"),
+        )
+        _require(job_id not in expected_jobs, "metric batch repeats a job ID")
+        expected_jobs[job_id] = identity
+
+    cases = _sequence(plan.get("cases"), name="metric-prefix plan cases")
+    _require(len(cases) == object_count, "metric-prefix plan object roster changed")
+    planned_jobs: dict[str, tuple[str, int, str, str]] = {}
+    seen_objects: set[str] = set()
+    case_order: list[tuple[str, int]] = []
+    for case_index, raw_case in enumerate(cases):
+        case = _mapping(raw_case, name=f"metric-prefix plan case {case_index}")
+        object_id = nonempty_string(
+            case.get("object_id"),
+            name=f"metric-prefix plan case {case_index} object_id",
+        )
+        episode_id = genuine_integer(
+            case.get("episode_id"),
+            name=f"metric-prefix plan case {case_index} episode_id",
+            minimum=0,
+        )
+        stratum = nonempty_string(
+            case.get("stratum"), name=f"metric-prefix plan case {case_index} stratum"
+        )
+        _require(object_id not in seen_objects, "metric-prefix plan repeats an object")
+        seen_objects.add(object_id)
+        case_order.append((object_id, episode_id))
+        expected_case_id = content_id(
+            {
+                "schema": "bayesian-phystwin.deform360-prob4d-metric-case-id-v1",
+                "object_id": object_id,
+                "episode_id": episode_id,
+            }
+        )
+        _require(
+            case.get("case_id") == expected_case_id,
+            "metric-prefix plan case ID changed",
+        )
+        raw_range = _sequence(
+            case.get("causal_frame_range_half_open"),
+            name=f"metric-prefix plan case {case_index} causal range",
+        )
+        _require(len(raw_range) == 2, "metric-prefix plan causal range is invalid")
+        start = genuine_integer(
+            raw_range[0], name="metric-prefix plan causal start", minimum=0
+        )
+        stop = genuine_integer(
+            raw_range[1], name="metric-prefix plan causal stop", minimum=0
+        )
+        _require(start < stop, "metric-prefix plan causal range is empty")
+        streams = _sequence(
+            case.get("streams"), name=f"metric-prefix plan case {case_index} streams"
+        )
+        _require(
+            len(streams) >= 2,
+            "every calibration object requires at least two supported streams",
+        )
+        stream_order: list[tuple[str, str]] = []
+        for stream_index, raw_stream in enumerate(streams):
+            stream = _mapping(
+                raw_stream,
+                name=f"metric-prefix plan case {case_index} stream {stream_index}",
+            )
+            job_id = sha256_digest(stream.get("job_id"), name="stream job_id")
+            camera_id = nonempty_string(
+                stream.get("camera_id"), name="stream camera_id"
+            )
+            _require(job_id not in planned_jobs, "metric-prefix plan repeats a job")
+            planned_jobs[job_id] = (object_id, episode_id, stratum, camera_id)
+            stream_order.append((camera_id, job_id))
+            for field in (
+                "prediction_manifest",
+                "metric_prefix",
+                "metric_calibration",
+            ):
+                _validate_file_record(
+                    stream.get(field), name=f"metric-prefix plan {field}"
+                )
+        _require(
+            stream_order == sorted(stream_order), "metric-prefix plan streams unsorted"
+        )
+    _require(case_order == sorted(case_order), "metric-prefix plan cases unsorted")
+    _require(
+        planned_jobs == expected_jobs,
+        "metric-prefix plan does not match supported batch jobs",
+    )
+
+
 def validate_deform360_prob4d_metric_batch(
     directory: str | Path,
 ) -> dict[str, Any]:
@@ -517,7 +646,12 @@ def validate_deform360_prob4d_metric_batch(
         _require(status in counts, "unsupported metric batch job status")
         counts[status] += 1
         object_id = nonempty_string(row["object_id"], name="job object_id")
+        genuine_integer(row["episode_id"], name="job episode_id", minimum=0)
+        nonempty_string(row["stratum"], name="job stratum")
         camera_id = nonempty_string(row["camera_id"], name="job camera_id")
+        canonical_relative_posix_path(
+            row["output_relative_directory"], name="job output_relative_directory"
+        )
         job_id = sha256_digest(row["job_id"], name="job_id")
         ordering.append((object_id, camera_id, job_id))
         if status == "supported":
@@ -624,6 +758,13 @@ def validate_deform360_prob4d_metric_batch(
             content_id({key: value for key, value in plan.items() if key != "plan_id"})
             == declared_plan_id,
             "metric-prefix plan ID changed",
+        )
+        _validate_emitted_plan_binding(
+            plan,
+            result=result,
+            jobs=jobs,
+            source_artifacts=source_artifacts,
+            object_count=object_count,
         )
         _require(
             counts
@@ -878,7 +1019,7 @@ def materialize_deform360_prob4d_metric_batch(
                     metric_prior_policy_path=policy_source,
                     processing_revision=processing_revision,
                 )
-            except ValueError:
+            except _InsufficientMultiviewSupport:
                 batch_status = "insufficient-multiview-support"
             else:
                 batch_status = "all-streams-supported"
