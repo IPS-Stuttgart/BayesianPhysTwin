@@ -4,6 +4,10 @@ This path uses measurements already released by Deform360. It does not require
 new capture, a robot experiment, or human approval. It is calibration-only and
 does not authorize access to confirmation objects or target outcomes.
 
+Published Deform360 numbers and the boundary for any state-of-the-art claim are
+recorded separately in
+[Public Deform360 benchmark comparators](deform360_public_sota_comparators.md).
+
 The `tactile-axis-map` command binds each tactile gripper group to one released
 robot axis. The map must be produced by a locked source-only rule and is
 content-addressed. In particular, bimanual stream names are not silently
