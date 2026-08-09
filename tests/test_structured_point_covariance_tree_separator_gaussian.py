@@ -42,23 +42,15 @@ def _system(
     ).astype(np.float64)
     for index in range(node_count):
         factor = rng.normal(size=(block_size, block_size))
-        node_precision[index] = (
-            factor.T @ factor + 3.0 * np.eye(block_size)
-        )
+        node_precision[index] = factor.T @ factor + 3.0 * np.eye(block_size)
         if parents[index] >= 0:
             parent_cross[index] = rng.normal(
                 scale=0.15,
                 size=(block_size, block_size),
             )
-    separator_precision = (
-        np.eye(separator_size, dtype=np.float64) * 3.0
-    )
-    node_information = rng.normal(
-        size=(node_count, block_size)
-    ).astype(np.float64)
-    separator_information = rng.normal(
-        size=separator_size
-    ).astype(np.float64)
+    separator_precision = np.eye(separator_size, dtype=np.float64) * 3.0
+    node_information = rng.normal(size=(node_count, block_size)).astype(np.float64)
+    separator_information = rng.normal(size=separator_size).astype(np.float64)
 
     provisional = TreeSeparatorGaussianSystemV1(
         parent_indices=parents,
@@ -74,9 +66,8 @@ def _system(
     if minimum_eigenvalue <= 1.0:
         shift = 1.0 - minimum_eigenvalue
         node_precision = node_precision + shift * np.eye(block_size)
-        separator_precision = (
-            separator_precision
-            + shift * np.eye(separator_size, dtype=np.float64)
+        separator_precision = separator_precision + shift * np.eye(
+            separator_size, dtype=np.float64
         )
     return TreeSeparatorGaussianSystemV1(
         parent_indices=parents,
