@@ -73,8 +73,12 @@ def _diagnostics(
             range=(0.0, 1.0),
         )
         ordered = np.sort(values)
-        upper = np.arange(1, replicate_count + 1, dtype=np.float64)
-        lower = np.arange(replicate_count, dtype=np.float64)
+        upper: np.ndarray = np.arange(
+            1,
+            replicate_count + 1,
+            dtype=np.float64,
+        )
+        lower: np.ndarray = np.arange(replicate_count, dtype=np.float64)
         mean[parameter] = float(np.mean(values))
         ks[parameter] = float(
             max(
