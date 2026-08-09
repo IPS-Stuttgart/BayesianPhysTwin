@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import runpy
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, cast
@@ -358,3 +360,114 @@ def test_publication_rejects_owned_fields_and_invalid_overwrite(
             input_artifact={},
             overwrite=cast(Any, 1),
         )
+
+
+def test_signal_contract_boundary_paths() -> None:
+    assert ProviderFailureSignalsV1.from_mapping(None) == ProviderFailureSignalsV1()
+    with pytest.raises(ValueError, match="signals must be a mapping"):
+        ProviderFailureSignalsV1.from_mapping(cast(Any, []))
+    with pytest.raises(ValueError, match="literal string keys"):
+        ProviderFailureSignalsV1.from_mapping(cast(Any, {1: True}))
+    with pytest.raises(ValueError, match="unknown fields"):
+        ProviderFailureSignalsV1.from_mapping({"unknown": True})
+    with pytest.raises(ValueError, match="must be a bool or null"):
+        ProviderFailureSignalsV1(technical_valid=cast(Any, 1))
+
+
+@pytest.mark.parametrize(
+    ("updates", "message"),
+    [
+        ({"case_id": cast(Any, 1)}, "case_id"),
+        ({"accepted": cast(Any, 1)}, "accepted"),
+        ({"result_reason": cast(Any, 1)}, "result_reason"),
+        ({"signals": cast(Any, {})}, "signals must be ProviderFailureSignalsV1"),
+    ],
+)
+def test_direct_evidence_contract_boundary_paths(
+    updates: dict[str, Any], message: str
+) -> None:
+    arguments: dict[str, Any] = {
+        "case_id": "case",
+        "accepted": False,
+        "result_reason": "rejected",
+        "signals": ProviderFailureSignalsV1(),
+        "metrics": {},
+    }
+    arguments.update(updates)
+    with pytest.raises(ValueError, match=message):
+        ProviderFailureEvidenceV1(**arguments)
+
+
+@pytest.mark.parametrize(
+    ("record", "message"),
+    [
+        (cast(Any, []), "must be a mapping"),
+        ({**_record("case"), "extra": True}, "unknown fields"),
+        ({"case_id": "case"}, "missing fields"),
+        ({**_record("case"), "case_id": 1}, "case_id"),
+        ({**_record("case"), "accepted": 1}, "accepted"),
+        ({**_record("case"), "result_reason": 1}, "result_reason"),
+        ({**_record("case"), "signals": []}, "signals must be a mapping"),
+        ({**_record("case"), "metrics": []}, "metrics must be a mapping"),
+    ],
+)
+def test_record_mapping_boundary_paths(record: Any, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        ProviderFailureEvidenceV1.from_mapping(record)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        (cast(Any, []), "must be a mapping"),
+        (cast(Any, {1: True}), "literal string keys"),
+        ({**_payload([_record("case")]), "extra": True}, "unknown fields"),
+        (
+            {**_payload([_record("case")]), "schema_version": 99},
+            "unsupported schema version",
+        ),
+        ({**_payload([_record("case")]), "provider_id": 1}, "provider_id"),
+        ({**_payload([_record("case")]), "records": "case"}, "records must"),
+        ({**_payload([_record("case")]), "records": [1]}, "record must be a mapping"),
+        ({**_payload([_record("case")]), "records": []}, "must not be empty"),
+        ({**_payload([_record("case")]), "metadata": []}, "metadata must"),
+    ],
+)
+def test_payload_boundary_paths(payload: Any, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        analyze_provider_failure_evidence(payload)
+
+
+def test_strict_input_rejects_nonordinary_and_non_utf8_files(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="ordinary file"):
+        load_provider_failure_input(tmp_path)
+
+    invalid_utf8 = tmp_path / "invalid-utf8.json"
+    invalid_utf8.write_bytes(b"\xff")
+    with pytest.raises(ValueError, match="UTF-8 JSON"):
+        load_provider_failure_input(invalid_utf8)
+
+
+def test_cli_module_entrypoint(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    input_path = tmp_path / "input.json"
+    output_path = tmp_path / "report.json"
+    input_path.write_text(
+        json.dumps(_payload([_record("case")]), sort_keys=True),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "provider_failure_decomposition",
+            str(input_path),
+            str(output_path),
+        ],
+    )
+    with pytest.raises(SystemExit) as error:
+        runpy.run_module(
+            "bayesian_phystwin.cli.provider_failure_decomposition",
+            run_name="__main__",
+        )
+    assert error.value.code == 0
+    assert output_path.is_file()
