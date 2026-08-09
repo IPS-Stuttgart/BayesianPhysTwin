@@ -64,7 +64,7 @@ def installed_distributions(site: Path) -> dict[str, str]:
         raise RuntimeLockError("runtime site must be a real directory")
     installed: dict[str, str] = {}
     for distribution in importlib.metadata.distributions(path=[str(site)]):
-        raw_name = distribution.metadata.get("Name")
+        raw_name = distribution.metadata["Name"]
         if not raw_name:
             raise RuntimeLockError(
                 "installed distribution is missing its Name metadata"
