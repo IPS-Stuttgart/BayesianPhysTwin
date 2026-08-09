@@ -158,9 +158,7 @@ def _verify_record(root: Path, value: object, *, name: str) -> Path:
     candidate = root / PurePosixPath(cast(str, record["path"]))
     path = _ordinary_file(candidate, name=name)
     _require(root == path or root in path.parents, f"{name} escapes manifest root")
-    _require(
-        path.stat().st_size == record["byte_count"], f"{name} byte count changed"
-    )
+    _require(path.stat().st_size == record["byte_count"], f"{name} byte count changed")
     _require(_sha256_file(path) == record["sha256"], f"{name} SHA-256 changed")
     return path
 
@@ -241,7 +239,9 @@ def _validate_manifest(
 def _load_arrays(path: Path) -> dict[str, np.ndarray]:
     try:
         with np.load(path, allow_pickle=False) as archive:
-            _require(set(archive.files) == ARRAY_NAMES, "v4 factor array roster changed")
+            _require(
+                set(archive.files) == ARRAY_NAMES, "v4 factor array roster changed"
+            )
             return {name: np.asarray(archive[name]) for name in sorted(ARRAY_NAMES)}
     except (OSError, ValueError) as error:
         raise ValueError("cannot read v4 factor arrays") from error
@@ -270,8 +270,7 @@ def _load_batch(
         "v4 input semantics changed",
     )
     _require(
-        descriptor.pop("claim_boundary", None)
-        == DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY,
+        descriptor.pop("claim_boundary", None) == DEFORM360_JOINT_SPARSE_CLAIM_BOUNDARY,
         "v4 input claim boundary changed",
     )
     _require("array_records" in descriptor, "v4 input array records are missing")
@@ -306,8 +305,7 @@ def _load_batch(
 def _write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(plain_json(value), indent=2, sort_keys=True, allow_nan=False)
-        + "\n",
+        json.dumps(plain_json(value), indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
 
@@ -377,9 +375,7 @@ def evaluate_manifest(
         "policy.json": _sha256_file(policy_source),
     }
     report = Deform360JointSparseDevelopmentReportV4(
-        selection_artifact_sha256=cast(
-            str, manifest["selection_artifact_sha256"]
-        ),
+        selection_artifact_sha256=cast(str, manifest["selection_artifact_sha256"]),
         visual_provider_lock_id=cast(str, manifest["visual_provider_lock_id"]),
         policy_id=cast(str, policy.policy_id),
         implementation_revision=cast(str, manifest["implementation_revision"]),

@@ -4,9 +4,7 @@ from pathlib import Path
 
 import yaml
 
-WORKFLOW = Path(
-    ".github/workflows/deform360-joint-sparse-observability-v4.yml"
-)
+WORKFLOW = Path(".github/workflows/deform360-joint-sparse-observability-v4.yml")
 
 
 def test_v4_workflow_is_contract_only_on_pull_requests() -> None:

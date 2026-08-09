@@ -54,7 +54,9 @@ def batch(object_id: str, stratum: str) -> Deform360JointSparseFactorBatchV4:
         selection_artifact_sha256="1" * 64,
         visual_provider_lock_id="2" * 64,
         observation_artifact_id=hashlib.sha256(f"obs:{object_id}".encode()).hexdigest(),
-        linearization_artifact_id=hashlib.sha256(f"lin:{object_id}".encode()).hexdigest(),
+        linearization_artifact_id=hashlib.sha256(
+            f"lin:{object_id}".encode()
+        ).hexdigest(),
         implementation_revision="3" * 40,
         object_id=object_id,
         episode_id=0,
@@ -93,9 +95,7 @@ def write_bundle(
         json.dumps(policy.to_record(), indent=2, sort_keys=True) + "\n"
     )
     cases = []
-    for index, (object_id, stratum) in enumerate(
-        (("a", "sheet"), ("b", "volumetric"))
-    ):
+    for index, (object_id, stratum) in enumerate((("a", "sheet"), ("b", "volumetric"))):
         item = batch(object_id, stratum)
         descriptor = item.identity_record()
         descriptor["input_id"] = item.input_id
@@ -132,9 +132,7 @@ def write_bundle(
     }
     manifest["manifest_id"] = content_id(manifest)
     manifest_path = root / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n"
-    )
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return policy_path, manifest_path
 
 
