@@ -148,17 +148,12 @@ def _bind_claim_bearing_diagnostic_invariants(
     """Record source-prior separation for the strict tree-sparse bridge.
 
     The tree-sparse solver consumes source-provided reliability and nominal
-    probabilities before residual evaluation.  Its claim-bearing wrapper binds
+    probabilities before residual evaluation. Its claim-bearing wrapper binds
     those invariants into the numerical-result identity, matching the established
     dense gauge-aware diagnostics without changing frozen non-tree paths.
     """
 
-    if (
-        result.input_lineage.get(
-            "prob4d_claim_bearing_tree_sparse_bridge_version"
-        )
-        != 1
-    ):
+    if result.input_lineage.get("prob4d_claim_bearing_tree_sparse_bridge_version") != 1:
         return result
     diagnostics = dict(result.diagnostics)
     for name in (
