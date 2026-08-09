@@ -71,7 +71,7 @@ def _optional_boolean(value: object, *, name: str) -> bool | None:
     return cast(bool, value)
 
 
-def _require_literal_keys(values: Mapping[Any, Any], *, name: str) -> None:
+def _require_literal_keys(values: Mapping[str, object], *, name: str) -> None:
     if any(type(key) is not str for key in values):
         raise ValueError(f"{name} must use literal string keys")
 
