@@ -60,6 +60,7 @@ DIAGNOSTIC_IDS: Final = frozenset(
     compare-phystwin-sota
     diagnose-phystwin-bias
     diagnose-deform360-raw-pairwise
+    diagnose-provider-failures
     audit-phystwin-state-decay
     audit-phystwin-state-modes
     aggregate-phystwin-state-modes
@@ -86,6 +87,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "deform360-bias-aware-result": (
         "aggregate the sealed Deform360 bias-aware prospective result"
     ),
+    "diagnose-provider-failures": (
+        "attribute source-only provider and guarded-update rejection causes"
+    ),
     "seal-deform360-calibration": (
         "seal all target-blind Deform360 calibration choices before confirmation"
     ),
@@ -106,6 +110,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "evaluate-deform360-online-belief": "deform360-online-belief-v1",
     "seal-deform360-calibration": "deform360-official-hub-visuotactile-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
+    "diagnose-provider-failures": "provider-failure-decomposition-v1",
 }
 
 
