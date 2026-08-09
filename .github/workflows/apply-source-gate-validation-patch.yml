@@ -4,18 +4,25 @@ on:
   push:
     branches:
       - agent/harden-source-gate-validation
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.head_ref == 'agent/harden-source-gate-validation')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: agent/harden-source-gate-validation
       - name: Wire independent evidence validation
         shell: bash
         run: |
@@ -64,4 +71,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add scripts/science/evaluate_deform360_prob4d_source_gate.py
           git commit -m "Wire hardened source gate validation"
-          git push
+          git push origin HEAD:agent/harden-source-gate-validation
