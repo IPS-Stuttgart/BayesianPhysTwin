@@ -1,28 +1,32 @@
-name: Temporary tree-sparse adapter finalizer
+name: Temporary tree-sparse association finalizer
 
 on:
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/_temporary_tree_sparse_adapter_finalize.yml"
+      - "scripts/_temporary_tree_sparse_association_patch.py"
+      - "src/bayesian_phystwin/_gauge_aware_contracts.py"
+      - "src/bayesian_phystwin/prior_aware_gauge_belief.py"
       - "src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py"
+      - "src/bayesian_phystwin/observed_information_covariance.py"
+      - "src/bayesian_phystwin/explicit_gauge_prob4d.py"
+      - "src/bayesian_phystwin/sparse_explicit_gauge_prob4d.py"
       - "src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py"
-      - "tests/test_sparse_prior_aware_gauge_belief.py"
-      - "tests/test_sparse_explicit_gauge_prob4d.py"
       - "tests/test_tree_sparse_explicit_gauge_prob4d.py"
 
 permissions:
   contents: write
 
 concurrency:
-  group: temporary-tree-sparse-adapter-${{ github.ref }}
+  group: temporary-tree-sparse-association-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   finalize:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out exact reviewed branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,47 +43,61 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Format and validate the exact adapter source
+      - name: Apply and validate row-level association power
         shell: bash
         run: |
           set -euo pipefail
+          python scripts/_temporary_tree_sparse_association_patch.py
           python -m pip install --disable-pip-version-check -e ".[dev]"
           python -m pip check
-          python -m ruff format \
-            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py \
+          files=(
+            src/bayesian_phystwin/_gauge_aware_contracts.py
+            src/bayesian_phystwin/prior_aware_gauge_belief.py
+            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py
+            src/bayesian_phystwin/observed_information_covariance.py
+            src/bayesian_phystwin/explicit_gauge_prob4d.py
+            src/bayesian_phystwin/sparse_explicit_gauge_prob4d.py
+            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py
             tests/test_tree_sparse_explicit_gauge_prob4d.py
-          python -m ruff check \
-            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py \
-            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py \
-            tests/test_sparse_prior_aware_gauge_belief.py \
-            tests/test_sparse_explicit_gauge_prob4d.py \
-            tests/test_tree_sparse_explicit_gauge_prob4d.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
           python -m mypy --python-version 3.12 \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/prior_aware_gauge_belief.py \
             src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py \
+            src/bayesian_phystwin/observed_information_covariance.py \
+            src/bayesian_phystwin/explicit_gauge_prob4d.py \
+            src/bayesian_phystwin/sparse_explicit_gauge_prob4d.py \
             src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py
           python -m pytest -q \
+            tests/test_prior_aware_gauge_belief.py \
+            tests/test_information_mass_invariants.py \
+            tests/test_observed_information_covariance.py \
+            tests/test_explicit_gauge_prob4d.py \
             tests/test_sparse_prior_aware_gauge_belief.py \
             tests/test_sparse_explicit_gauge_prob4d.py \
             tests/test_tree_sparse_explicit_gauge_prob4d.py
-          python -m compileall -q \
-            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py \
-            src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py \
-            tests/test_tree_sparse_explicit_gauge_prob4d.py
+          python -m compileall -q src/bayesian_phystwin tests
 
-      - name: Publish validated source and remove temporary workflow
+      - name: Publish validated source and remove temporary machinery
         shell: bash
         run: |
           set -euo pipefail
           rm .github/workflows/_temporary_tree_sparse_adapter_finalize.yml
+          rm scripts/_temporary_tree_sparse_association_patch.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/prior_aware_gauge_belief.py \
+            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py \
+            src/bayesian_phystwin/observed_information_covariance.py \
+            src/bayesian_phystwin/explicit_gauge_prob4d.py \
+            src/bayesian_phystwin/sparse_explicit_gauge_prob4d.py \
             src/bayesian_phystwin/tree_sparse_explicit_gauge_prob4d.py \
             tests/test_tree_sparse_explicit_gauge_prob4d.py \
-            .github/workflows/_temporary_tree_sparse_adapter_finalize.yml
-          if git diff --cached --quiet; then
-            echo "No source changes required."
-            exit 0
-          fi
-          git commit -m "Finalize claim-bearing tree-sparse adapter [tree-sparse-adapter-finalize]"
+            .github/workflows/_temporary_tree_sparse_adapter_finalize.yml \
+            scripts/_temporary_tree_sparse_association_patch.py
+          git commit -m "Preserve row association power in grouped Prob4D updates [tree-sparse-association]"
           git push origin HEAD:agent/consume-claim-bearing-tree-sparse-prob4d
