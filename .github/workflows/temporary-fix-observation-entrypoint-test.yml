@@ -1,27 +1,41 @@
 name: Temporary observation entrypoint test correction
 
 on:
-  push:
-    branches:
-      - agent/observation-contract-conformance
+  pull_request:
+    branches: [main]
     paths:
       - .github/workflows/temporary-fix-observation-entrypoint-test.yml
 
 permissions:
   contents: write
 
+concurrency:
+  group: temporary-observation-entrypoint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   correct-test:
-    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/observation-contract-conformance'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check out exact branch head
+      - name: Check out exact reviewed branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.ref }}
           persist-credentials: true
           clean: true
+
+      - name: Verify exact reviewed head
+        shell: bash
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
 
       - name: Seal module argv and remove this workflow
         shell: bash
@@ -58,4 +72,4 @@ jobs:
             .github/workflows/temporary-fix-observation-entrypoint-test.yml
           git diff --cached --check
           git commit -m 'Seal observation-contract module entrypoint arguments'
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
