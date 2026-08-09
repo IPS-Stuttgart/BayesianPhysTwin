@@ -122,11 +122,11 @@ def test_source_result_auditor_is_exact_run_bound_and_target_closed() -> None:
     assert isinstance(document, dict)
     assert "workflow_run:" in text
     assert "workflow_dispatch:" in text
-    assert 'branches: [main]' in text
+    assert "branches: [main]" in text
     assert "SOURCE_HEAD_SHA: ded8910becbb" in text
     assert "VALIDATOR_REVISION: 94913b23c31e" in text
     assert "Launch reviewed Deform360 Prob4D public source gate once" in text
-    assert "run_attempt' <<<\"${run}\")\" = \"1\"" in text
+    assert 'run_attempt\' <<<"${run}")" = "1"' in text
     assert "runs-on: ubuntu-latest" in text
     assert "runs-on: self-hosted" not in text
     assert "actions: read" in text
@@ -148,7 +148,7 @@ def test_source_result_auditor_derives_decision_before_publication() -> None:
     publish = text.index("Publish the independently reconstructed decision")
     enforce = text.index("Enforce completion of the independent audit")
     assert download < validate < upload < publish < enforce
-    assert "validate_source_gate_result(source / \"source-gate\")" in text
+    assert 'validate_source_gate_result(source / "source-gate")' in text
     assert "source pipeline revision changed" in text
     assert "pipeline and source-gate decisions differ" in text
     assert "validated-negative" in text
