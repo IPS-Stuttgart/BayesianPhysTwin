@@ -7,6 +7,8 @@ implementation separately from any scientific result.
 
 - The v4 contracts, numerical evaluator, portable manifest loader, frozen policy,
   tests, package membership, and guarded workflow are implemented.
+- The review branch includes the runner-local bootstrap hardening merged on
+  `main` as `002d11222cc7aa782bf46b51e598e28ce6220ecd`.
 - No v4 manifest derived from runner-resident Deform360 factors has been
   evaluated by this implementation.
 - No v4 scientific pass or support-negative result is claimed by the code-only
