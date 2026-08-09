@@ -38,6 +38,30 @@ def test_weighted_randomized_pit_validates_probability_inputs() -> None:
         weighted_randomized_pit([0.0, np.nan], 0.5)
 
 
+def test_low_level_validation_boundaries_are_fail_closed() -> None:
+    class RejectArrayConversion:
+        def __array__(self, dtype: object = None) -> np.ndarray:
+            del dtype
+            raise TypeError("conversion forbidden")
+
+    with pytest.raises(ValueError, match="real numeric"):
+        weighted_randomized_pit(["not-numeric"], 0.0)
+    with pytest.raises(ValueError, match="dimensions"):
+        posterior_pit_matrix(np.zeros((2, 3)), np.zeros((2, 1)))
+    with pytest.raises(ValueError, match="finite real scalar"):
+        weighted_randomized_pit([0.0], True)
+    with pytest.raises(ValueError, match="finite real scalar"):
+        weighted_randomized_pit([0.0], RejectArrayConversion())
+    with pytest.raises(ValueError, match="finite real scalar"):
+        weighted_randomized_pit([0.0], [0.0])
+    with pytest.raises(ValueError, match="finite real scalar"):
+        weighted_randomized_pit([0.0], np.inf)
+    with pytest.raises(ValueError, match="posterior draw count"):
+        weighted_randomized_pit([0.0, 1.0], 0.5, weights=[1.0])
+
+    assert weighted_randomized_pit([0.0, 1.0], 0.5) == pytest.approx(0.5)
+
+
 def test_posterior_pit_matrix_supports_shared_and_per_group_weights() -> None:
     samples = np.asarray(
         [
@@ -67,6 +91,14 @@ def test_posterior_pit_matrix_supports_shared_and_per_group_weights() -> None:
     assert not shared.flags.writeable
     with pytest.raises(ValueError):
         shared.setflags(write=True)
+
+
+def test_posterior_pit_matrix_supports_default_weights_and_ties() -> None:
+    values = posterior_pit_matrix(
+        np.asarray([[[0.0], [1.0]]]),
+        np.asarray([[0.5]]),
+    )
+    np.testing.assert_allclose(values, [[0.5]])
 
 
 def test_posterior_pit_matrix_rejects_shape_and_tie_drift() -> None:
