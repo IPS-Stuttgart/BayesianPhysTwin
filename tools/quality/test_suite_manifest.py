@@ -39,7 +39,9 @@ def _load_json(path: Path) -> Mapping[str, Any]:
             object_pairs_hook=_unique_json_object,
         )
     except OSError as error:
-        raise ManifestError(f"cannot read test-suite manifest {path}: {error}") from error
+        raise ManifestError(
+            f"cannot read test-suite manifest {path}: {error}"
+        ) from error
     except json.JSONDecodeError as error:
         raise ManifestError(f"invalid test-suite JSON: {error}") from error
     if not isinstance(payload, Mapping):
@@ -80,13 +82,17 @@ def _expand_pattern(repository_root: Path, pattern: str) -> tuple[str, ...]:
         try:
             relative = candidate.relative_to(repository_root)
         except ValueError as error:
-            raise ManifestError(f"test pattern escaped the repository: {pattern}") from error
+            raise ManifestError(
+                f"test pattern escaped the repository: {pattern}"
+            ) from error
         if candidate.is_symlink():
             raise ManifestError(f"test-suite member must not be a symlink: {relative}")
         if not candidate.is_file():
             raise ManifestError(f"test-suite member is not a file: {relative}")
         relative_posix = relative.as_posix()
-        if not relative_posix.startswith("tests/") or not relative_posix.endswith(".py"):
+        if not relative_posix.startswith("tests/") or not relative_posix.endswith(
+            ".py"
+        ):
             raise ManifestError(f"invalid expanded test-suite member: {relative_posix}")
         expanded.append(relative_posix)
     return tuple(expanded)
@@ -185,8 +191,7 @@ def load_test_suites(
         missing_members = sorted(set(suites[subset]) - set(suites[superset]))
         if missing_members:
             raise ManifestError(
-                f"suite {subset!r} is not contained in {superset!r}: "
-                f"{missing_members}"
+                f"suite {subset!r} is not contained in {superset!r}: {missing_members}"
             )
     return suites
 
