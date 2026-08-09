@@ -1,27 +1,31 @@
 name: Temporary finalize PR 349
 
 on:
-  push:
-    branches:
-      - agent/fail-closed-prior-aware-irls
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/_temporary_finalize_pr349.yml"
+      - ".github/quality/test-suites.json"
+      - "src/bayesian_phystwin/prior_aware_gauge_belief_v2.py"
+      - "tests/test_claim_bearing_strict_admission.py"
 
 permissions:
   contents: write
 
 concurrency:
-  group: temporary-finalize-pr349
-  cancel-in-progress: false
+  group: temporary-finalize-pr349-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   finalize:
-    if: ${{ !contains(github.event.head_commit.message, '[finalize-pr349]') }}
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Check out exact branch head
+      - name: Check out exact reviewed branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -45,18 +49,20 @@ jobs:
 
           test_path = Path("tests/test_claim_bearing_strict_admission.py")
           text = test_path.read_text(encoding="utf-8")
-          text = text.replace(
-              "import numpy as np\n",
-              "import numpy as np\nimport pytest\n\n"
-              "import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2\n",
-              1,
-          )
-          text = text.replace(
-              "    update_sparse_prior_aware_gauge_belief,\n",
-              "    update_sparse_prior_aware_gauge_belief,\n"
-              "    update_sparse_prior_aware_gauge_belief_structured,\n",
-              1,
-          )
+          if "import pytest\n" not in text:
+              text = text.replace(
+                  "import numpy as np\n",
+                  "import numpy as np\nimport pytest\n\n"
+                  "import bayesian_phystwin.prior_aware_gauge_belief_v2 as strict_v2\n",
+                  1,
+              )
+          if "update_sparse_prior_aware_gauge_belief_structured," not in text:
+              text = text.replace(
+                  "    update_sparse_prior_aware_gauge_belief,\n",
+                  "    update_sparse_prior_aware_gauge_belief,\n"
+                  "    update_sparse_prior_aware_gauge_belief_structured,\n",
+                  1,
+              )
           block = r'''
 
 
@@ -160,8 +166,7 @@ def test_dense_sparse_v2_rejects_structured_fallback_substitution(
             config=config,
         )
 '''
-          marker = "def _converged_config()"
-          if marker not in text:
+          if "def _converged_config()" not in text:
               text = text.rstrip() + block + "\n"
           test_path.write_text(text, encoding="utf-8")
 
