@@ -15,12 +15,6 @@ concurrency:
 
 jobs:
   format:
-    if: >-
-      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.event.pull_request.head.repo.full_name ==
-        'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.event.pull_request.head.ref ==
-        'fix/deform360-support-negative-continuation-v1'
     runs-on: ubuntu-latest
     steps:
       - name: Check out exact branch head
@@ -35,6 +29,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "${GITHUB_REPOSITORY}" = "IPS-Stuttgart/BayesianPhysTwin"
+          test "${{ github.event.pull_request.head.repo.full_name }}" = \
+            "IPS-Stuttgart/BayesianPhysTwin"
+          test "${{ github.event.pull_request.head.ref }}" = \
+            "fix/deform360-support-negative-continuation-v1"
           python -m pip install "ruff==0.16.2"
           python -m ruff format \
             scripts/science/continue_deform360_prob4d_source_gate.py \
@@ -69,7 +68,7 @@ jobs:
           git rm .github/workflows/format-deform360-source-continuation-once.yml
           git diff --check
 
-      - name: Commit the reviewed formatting-only repair
+      - name: Commit the formatting-only repair
         shell: bash
         run: |
           set -euo pipefail
