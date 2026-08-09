@@ -785,7 +785,7 @@ def test_tree_rejection_materializes_lazy_prior_only_for_fallback_result() -> No
         config=_config(),
     )
     assert result.inference_admissible is False
-    assert result.reason == "no-observation-support"
+    assert result.reason == "no-identifiable-query-state"
     assert result.posterior_covariance.shape == (16, 16)
     assert np.all(np.isfinite(result.posterior_covariance))
 
