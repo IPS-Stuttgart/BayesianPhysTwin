@@ -1,4 +1,4 @@
-name: Temporary tree-sparse solver artifact
+name: Temporary tree-sparse solver publisher
 
 on:
   pull_request:
@@ -9,23 +9,24 @@ on:
       - "src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: temporary-tree-sparse-solver-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  generate:
+  publish:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Check out exact reviewed head
+      - name: Check out exact reviewed branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
+          fetch-depth: 0
+          persist-credentials: true
           clean: true
 
       - name: Set up Python 3.12
@@ -33,7 +34,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate and validate patched solver
+      - name: Generate and validate exact solver source
         shell: bash
         run: |
           set -euo pipefail
@@ -50,10 +51,17 @@ jobs:
             tests/test_sparse_prior_aware_gauge_belief.py \
             tests/test_sparse_explicit_gauge_prob4d.py
 
-      - name: Upload exact patched solver
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
-        with:
-          name: tree-sparse-solver-source
-          path: src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py
-          if-no-files-found: error
-          retention-days: 1
+      - name: Publish validated source and remove temporary machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/_temporary_tree_sparse_solver_patch.yml
+          rm scripts/_temporary_tree_sparse_solver_patch.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/sparse_prior_aware_gauge_belief.py \
+            .github/workflows/_temporary_tree_sparse_solver_patch.yml \
+            scripts/_temporary_tree_sparse_solver_patch.py
+          git commit -m "Add precision-form causal-tree gauge priors [tree-sparse-solver-patch]"
+          git push origin HEAD:agent/consume-claim-bearing-tree-sparse-prob4d
