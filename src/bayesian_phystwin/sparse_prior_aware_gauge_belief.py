@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
@@ -28,8 +29,17 @@ from ._prior_aware_gauge_math import (
     _student_t_mixture_statistics,
     _whiten,
 )
+from .structured_gauge_aware_result import (
+    DENSE_COVARIANCE_REPRESENTATION,
+    PrecisionBackedCovarianceV1,
+    StructuredGaugeAwareBeliefResultV1,
+)
 
 SPARSE_PRIOR_AWARE_GAUGE_SOLVER_VERSION = 1
+_STRUCTURED_RESULT_MODE: ContextVar[bool] = ContextVar(
+    "bayesian_phystwin_sparse_structured_result_mode",
+    default=False,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -306,32 +316,6 @@ class TreeSparseGaugeDesignV1:
 GaugeDesignV1 = SparseGaugeDesignV1 | TreeSparseGaugeDesignV1
 
 
-class _LazyPriorCovariance:
-    """Materialize a dense prior only when a rejected result requires it."""
-
-    def __init__(
-        self,
-        state_covariance: np.ndarray,
-        nuisance_precision: np.ndarray,
-        nuisance_covariance: np.ndarray | None,
-    ) -> None:
-        self._state_covariance = state_covariance
-        self._nuisance_precision = nuisance_precision
-        self._nuisance_covariance = nuisance_covariance
-
-    def __array__(self, dtype: Any | None = None) -> np.ndarray:
-        nuisance_covariance = self._nuisance_covariance
-        if nuisance_covariance is None:
-            identity = np.eye(len(self._nuisance_precision), dtype=np.float64)
-            nuisance_covariance = np.linalg.solve(
-                self._nuisance_precision,
-                identity,
-            )
-            nuisance_covariance = 0.5 * (nuisance_covariance + nuisance_covariance.T)
-        result = _block_diagonal([self._state_covariance, nuisance_covariance])
-        return result if dtype is None else np.asarray(result, dtype=dtype)
-
-
 @dataclass(frozen=True, slots=True)
 class _NuisanceLayout:
     gauge_parameter_count: int
@@ -371,8 +355,8 @@ def _sparse_fallback_result(
     reason: str,
     diagnostics: Mapping[str, Any],
     *,
-    prior_covariance: np.ndarray | _LazyPriorCovariance,
-) -> GaugeAwareBeliefResult:
+    prior_covariance: PrecisionBackedCovarianceV1,
+) -> GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1:
     state_count = batch.state_jacobian.shape[2]
     shared_count = batch.shared_bias_jacobian.shape[2]
     view_count = batch.view_bias_jacobian.shape[2]
@@ -382,22 +366,44 @@ def _sparse_fallback_result(
     anchor_count = (
         0 if batch.anchor_innovation_m is None else len(batch.anchor_innovation_m)
     )
+    structured = _STRUCTURED_RESULT_MODE.get()
+    result_diagnostics: Mapping[str, Any] = diagnostics
+    if structured:
+        result_diagnostics = {
+            **diagnostics,
+            "result_covariance_representation": prior_covariance.representation,
+            "result_dense_covariance_materialized": False,
+            "result_estimated_dense_covariance_bytes": (
+                prior_covariance.estimated_dense_bytes
+            ),
+            "result_stored_covariance_bytes_before_materialization": (
+                prior_covariance.stored_nbytes
+            ),
+        }
+    common = {
+        "inference_admissible": False,
+        "reason": reason,
+        "state_coefficients": np.zeros(state_count),
+        "gauge_delta": np.zeros(gauge.gauge_parameter_count),
+        "shared_bias_coefficients": np.zeros(shared_count),
+        "view_bias_coefficients": np.zeros(view_count),
+        "anchor_bias_coefficients": np.zeros(anchor_bias_count),
+        "identifiable_state_transform": np.zeros((state_count, 0)),
+        "identifiable_fractions": np.zeros(0),
+        "query_sensitivity_fractions": np.zeros(0),
+        "robust_weights": np.zeros(len(batch.innovation_m)),
+        "anchor_robust_weights": np.zeros(anchor_count),
+        "diagnostics": result_diagnostics,
+        "input_lineage": batch.metadata or {},
+    }
+    if structured:
+        return StructuredGaugeAwareBeliefResultV1(
+            covariance=prior_covariance,
+            **common,
+        )
     return GaugeAwareBeliefResult(
-        inference_admissible=False,
-        reason=reason,
-        state_coefficients=np.zeros(state_count),
-        gauge_delta=np.zeros(gauge.gauge_parameter_count),
-        shared_bias_coefficients=np.zeros(shared_count),
-        view_bias_coefficients=np.zeros(view_count),
-        anchor_bias_coefficients=np.zeros(anchor_bias_count),
-        posterior_covariance=np.asarray(prior_covariance, dtype=np.float64),
-        identifiable_state_transform=np.zeros((state_count, 0)),
-        identifiable_fractions=np.zeros(0),
-        query_sensitivity_fractions=np.zeros(0),
-        robust_weights=np.zeros(len(batch.innovation_m)),
-        anchor_robust_weights=np.zeros(anchor_count),
-        diagnostics=diagnostics,
-        input_lineage=batch.metadata or {},
+        posterior_covariance=prior_covariance.materialize(),
+        **common,
     )
 
 
@@ -405,7 +411,7 @@ def _prior_covariances(
     batch: GaugeAwareObservationBatch,
     gauge: GaugeDesignV1,
     config: PriorAwareGaugeConfigV1,
-) -> tuple[np.ndarray, np.ndarray, _LazyPriorCovariance]:
+) -> tuple[np.ndarray, np.ndarray, PrecisionBackedCovarianceV1]:
     state_count = batch.state_jacobian.shape[2]
     state = (
         np.eye(state_count) * config.state_prior_std_m**2
@@ -459,7 +465,7 @@ def _prior_covariances(
     return (
         state,
         nuisance_precision,
-        _LazyPriorCovariance(state, nuisance_precision, nuisance_covariance),
+        PrecisionBackedCovarianceV1(state, nuisance_precision, nuisance_covariance),
     )
 
 
@@ -961,12 +967,12 @@ def _anchor_score_direction(
     return direction
 
 
-def update_sparse_prior_aware_gauge_belief(
+def _update_sparse_prior_aware_gauge_belief_impl(
     batch: GaugeAwareObservationBatch,
     gauge: GaugeDesignV1,
     *,
     config: PriorAwareGaugeConfigV1 | None = None,
-) -> GaugeAwareBeliefResult:
+) -> GaugeAwareBeliefResult | StructuredGaugeAwareBeliefResultV1:
     """Infer a prior-aware state without materializing a dense gauge design."""
 
     if not isinstance(batch, GaugeAwareObservationBatch):
@@ -1458,23 +1464,6 @@ def update_sparse_prior_aware_gauge_belief(
             diagnostics,
             prior_covariance=full_prior,
         )
-    if not fixed_point_converged:
-        diagnostics.update(
-            {
-                "iterations": iteration_count,
-                "mixture_fixed_point_converged": False,
-                "mixture_solution_delta": solution_delta,
-                "mixture_stationarity_norm": stationarity_norm,
-                "condition_number": condition_number,
-            }
-        )
-        return _sparse_fallback_result(
-            batch,
-            gauge,
-            "mixture-fixed-point-not-converged",
-            diagnostics,
-            prior_covariance=full_prior,
-        )
     try:
         reduced_covariance = _spd_covariance(normal)
     except np.linalg.LinAlgError:
@@ -1605,7 +1594,18 @@ def update_sparse_prior_aware_gauge_belief(
     shared_slice = slice(gauge_slice.stop, gauge_slice.stop + shared_count)
     view_slice = slice(shared_slice.stop, shared_slice.stop + view_count)
     anchor_bias_slice = slice(view_slice.stop, view_slice.stop + anchor_bias_count)
-    return GaugeAwareBeliefResult(
+    result_diagnostics: Mapping[str, Any] = diagnostics
+    if _STRUCTURED_RESULT_MODE.get():
+        result_diagnostics = {
+            **diagnostics,
+            "result_covariance_representation": DENSE_COVARIANCE_REPRESENTATION,
+            "result_dense_covariance_materialized": True,
+            "result_estimated_dense_covariance_bytes": int(covariance.nbytes),
+            "result_stored_covariance_bytes_before_materialization": int(
+                covariance.nbytes
+            ),
+        }
+    legacy_result = GaugeAwareBeliefResult(
         inference_admissible=True,
         reason="inference-admissible",
         state_coefficients=state_coefficients,
@@ -1619,9 +1619,56 @@ def update_sparse_prior_aware_gauge_belief(
         query_sensitivity_fractions=query_fraction,
         robust_weights=ordinary_robust,
         anchor_robust_weights=anchor_robust,
-        diagnostics=diagnostics,
+        diagnostics=result_diagnostics,
         input_lineage={} if batch.metadata is None else batch.metadata,
     )
+    if _STRUCTURED_RESULT_MODE.get():
+        return StructuredGaugeAwareBeliefResultV1.from_legacy(legacy_result)
+    return legacy_result
+
+
+def update_sparse_prior_aware_gauge_belief(
+    batch: GaugeAwareObservationBatch,
+    gauge: GaugeDesignV1,
+    *,
+    config: PriorAwareGaugeConfigV1 | None = None,
+) -> GaugeAwareBeliefResult:
+    """Return the historical complete dense-covariance result."""
+
+    token = _STRUCTURED_RESULT_MODE.set(False)
+    try:
+        result = _update_sparse_prior_aware_gauge_belief_impl(
+            batch,
+            gauge,
+            config=config,
+        )
+    finally:
+        _STRUCTURED_RESULT_MODE.reset(token)
+    if not isinstance(result, GaugeAwareBeliefResult):
+        raise RuntimeError("dense sparse-solver mode returned a structured result")
+    return result
+
+
+def update_sparse_prior_aware_gauge_belief_structured(
+    batch: GaugeAwareObservationBatch,
+    gauge: GaugeDesignV1,
+    *,
+    config: PriorAwareGaugeConfigV1 | None = None,
+) -> StructuredGaugeAwareBeliefResultV1:
+    """Return a structured result and avoid dense covariance on rejection."""
+
+    token = _STRUCTURED_RESULT_MODE.set(True)
+    try:
+        result = _update_sparse_prior_aware_gauge_belief_impl(
+            batch,
+            gauge,
+            config=config,
+        )
+    finally:
+        _STRUCTURED_RESULT_MODE.reset(token)
+    if not isinstance(result, StructuredGaugeAwareBeliefResultV1):
+        raise RuntimeError("structured sparse-solver mode returned a legacy result")
+    return result
 
 
 __all__ = [
@@ -1629,4 +1676,5 @@ __all__ = [
     "SparseGaugeDesignV1",
     "TreeSparseGaugeDesignV1",
     "update_sparse_prior_aware_gauge_belief",
+    "update_sparse_prior_aware_gauge_belief_structured",
 ]
