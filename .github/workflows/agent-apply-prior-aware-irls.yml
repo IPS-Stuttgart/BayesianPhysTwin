@@ -1,6 +1,9 @@
 name: Apply prior-aware IRLS fail-closed patch
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - agent/fail-closed-prior-aware-irls
