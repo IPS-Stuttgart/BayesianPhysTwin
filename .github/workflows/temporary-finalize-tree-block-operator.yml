@@ -44,6 +44,24 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
+          source_path = Path(
+              'src/bayesian_phystwin/tree_block_posterior_operator.py'
+          )
+          text = source_path.read_text(encoding='utf-8')
+          replacements = {
+              '        raw.dtype.kind not in {"b", "O", "U", "S"},\n': (
+                  '        raw.dtype.kind in {"i", "u", "f"},\n'
+              ),
+              '        basis = np.zeros(\n': (
+                  '        basis: np.ndarray = np.zeros(\n'
+              ),
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'source finalization target changed: {old!r}')
+              text = text.replace(old, new)
+          source_path.write_text(text, encoding='utf-8')
+
           test_path = Path(
               'tests/test_structured_point_covariance_tree_block_operator.py'
           )
