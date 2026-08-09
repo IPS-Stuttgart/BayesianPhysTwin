@@ -138,9 +138,7 @@ def test_archive_byte_budget_is_enforced_before_numpy_loading(
         raise AssertionError("np.load must not run before archive preflight")
 
     monkeypatch.setattr(io_v2.np, "load", forbidden_load)
-    limits = ObservationBeliefIOLimitsV2(
-        maximum_archive_bytes=path.stat().st_size - 1
-    )
+    limits = ObservationBeliefIOLimitsV2(maximum_archive_bytes=path.stat().st_size - 1)
 
     with pytest.raises(ValueError, match="archive byte budget"):
         load_observation_belief_bounded_v2(path, limits=limits)

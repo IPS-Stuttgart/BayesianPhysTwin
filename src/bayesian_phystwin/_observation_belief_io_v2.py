@@ -51,9 +51,7 @@ _ARRAY_DTYPES: Final = {
 _REQUIRED_ZIP_MEMBERS: Final = frozenset(
     {"descriptor_json.npy", *(f"{name}.npy" for name in _ARRAY_DTYPES)}
 )
-_ALLOWED_COMPRESSIONS: Final = frozenset(
-    {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
-)
+_ALLOWED_COMPRESSIONS: Final = frozenset({zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED})
 
 
 @dataclass(frozen=True)
@@ -149,8 +147,10 @@ def strict_descriptor_json(text: str) -> Mapping[str, Any]:
 def validate_sha256(value: object, *, name: str) -> str:
     """Return one strict lowercase SHA-256 digest."""
 
-    if not isinstance(value, str) or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
     return value
