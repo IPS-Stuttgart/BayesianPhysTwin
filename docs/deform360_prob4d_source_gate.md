@@ -93,3 +93,47 @@ A pass authorizes only a separately locked, independent evaluation on the
 public confirmation objects. It is not itself confirmation evidence and does
 not establish prediction improvement, Causal4D benefit, safety, official
 benchmark parity, or state of the art.
+
+## Versioned continuation after retained camera support negatives
+
+The first protected execution produced an immutable metric-batch result with
+`313/324` supported streams, `11/324` source-side support negatives, zero
+technical failures, and support for all ten objects. The support negatives all
+mean that released robot geometry lies outside a fixed camera prefix. They are
+retained in the denominator and are not replaced.
+
+That execution stopped before sample materialization because its orchestration
+required all 324 cameras even though the preregistered gate lock requires only
+at least two supported metric streams per physical object. Every object in the
+immutable batch has between 29 and 35 supported streams. The actual
+object-balanced covariance fit and leave-one-object-out source gate therefore
+did not run, and the stopped workflow is neither a positive nor a negative
+scientific gate result.
+
+`admit_deform360_prob4d_metric_support.py` provides a separate versioned
+continuation. It leaves the original metric batch byte-for-byte unchanged,
+verifies its recursive checksums and exact result identity, reads the support
+minimum from the pre-existing source-gate lock, and emits a plan over supported
+streams only when every object passes that frozen minimum and no technical
+failure exists. The admission result binds the full source batch, all retained
+support-negative counts, the exact lock, the emitted plan, and a no-replacement
+information boundary.
+
+The one-shot workflow
+`.github/workflows/continue-deform360-prob4d-source-gate-v2.yml` binds the exact
+predecessor batch and then executes:
+
+```text
+immutable complete v1 metric batch
+  -> frozen per-object support admission
+  -> supported-stream metric plan
+  -> source sample materialization using metric-batch/metrics
+  -> object-balanced source calibration
+  -> unchanged frozen leave-one-object-out gate
+```
+
+This continuation changes no estimator, object split, covariance threshold,
+proper score, or gate margin. It also corrects the orchestration path from the
+nonexistent `metric-prefix/` directory to the contract-defined `metrics/`
+directory. A valid negative remains a complete outcome. Confirmation data stay
+closed regardless of the result.

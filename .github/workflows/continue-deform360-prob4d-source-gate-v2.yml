@@ -1,0 +1,614 @@
+name: Continue Deform360 Prob4D source gate v2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/continue-deform360-prob4d-source-gate-v2.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_prob4d_source_gate.md"
+      - "scripts/science/admit_deform360_prob4d_metric_support.py"
+      - "tests/test_deform360_prob4d_metric_support_admission.py"
+      - "tests/test_deform360_prob4d_source_gate_v2_workflow.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/continue-deform360-prob4d-source-gate-v2.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: continue-deform360-prob4d-source-gate-v2
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  LEGACY_SOURCE_REVISION: ded8910becbbffe958dfd18c84ad91069e7087a4
+  LEGACY_SOURCE_RUN_ID: "31297018948"
+  LEGACY_METRIC_BATCH_RESULT_ID: f246394c84fd643b6ec8961dbcb2101a73c34e46d5eaf43961f28429aeb197eb
+  LEGACY_METRIC_BATCH_RESULT_SHA256: 679550aff53d3b615f63c66ee78318258893867511dd6c33100d1cf10c0f5be6
+  PRODUCTION_RESULT_ID: 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89
+  PRODUCTION_ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
+  PRODUCTION_REVISION: c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  PROCESSING_REVISION: d8522a4403b766aeb387510c04e89032a56fdf35
+  PROB4D_REVISION: 25d90ef7f78ba4307f4555cb636d666004e1bf66
+  SOURCE_GATE_LOCK_ID: cc96d2cc03a5039479621acc7769690ef9bf8c15c00d418a0f14d3303ce3ebfb
+  VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  LEGACY_METRIC_BATCH_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-source-gate-v1/146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89/ded8910becbbffe958dfd18c84ad91069e7087a4/metric-batch
+  SOURCE_OUTPUT_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-source-gate-v2
+
+jobs:
+  contracts:
+    name: Source-gate v2 contracts / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out exact proposed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the target-closed continuation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            scripts/science/admit_deform360_prob4d_metric_support.py
+            tests/test_deform360_prob4d_metric_support_admission.py
+            tests/test_deform360_prob4d_source_gate_v2_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/admit_deform360_prob4d_metric_support.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_prob4d_metric_support_admission.py \
+            tests/test_deform360_prob4d_source_gate_v2_workflow.py \
+            tests/test_deform360_prob4d_metric_batch.py \
+            tests/test_deform360_prob4d_metric_batch_regressions.py \
+            tests/test_deform360_prob4d_sample_materializer.py \
+            tests/test_deform360_prob4d_source_calibration.py \
+            tests/test_deform360_prob4d_source_gate.py
+          git diff --check
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  continue-source-gate:
+    name: Continue exact source-only gate / workstation2
+    needs: contracts
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.workflow_ref ==
+      'IPS-Stuttgart/BayesianPhysTwin/.github/workflows/continue-deform360-prob4d-source-gate-v2.yml@refs/heads/main'
+    runs-on: self-hosted
+    timeout-minutes: 720
+    outputs:
+      status: ${{ steps.final.outputs.status }}
+      result_id: ${{ steps.final.outputs.result_id }}
+      gate_passed: ${{ steps.final.outputs.gate_passed }}
+      confirmation_access_authorized: ${{ steps.final.outputs.confirmation_access_authorized }}
+    steps:
+      - name: Bind sole runner before checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          echo "legacy_source_run=${LEGACY_SOURCE_RUN_ID}"
+          echo "authorized_payload_scope=ten-public-calibration-objects-only"
+          echo "support_negative_streams_retained=11"
+          echo "confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "future_frames_used=false"
+          echo "replacement_allowed=false"
+
+      - name: Check out exact reviewed main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact frozen Prob4D source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: ${{ env.PROB4D_REVISION }}
+          path: _prob4d
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up complete Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install isolated CPU calibration runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="${RUNNER_TEMP}/deform360-prob4d-source-v2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${runtime}"
+          python -m venv --copies "${runtime}"
+          runtime_python="${runtime}/bin/python"
+          "${runtime_python}" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          "${runtime_python}" -m pip install --no-deps --no-build-isolation .
+          "${runtime_python}" -m pip check
+          {
+            echo "SOURCE_RUNTIME=${runtime}"
+            echo "SOURCE_PYTHON=${runtime_python}"
+            echo "PROB4D_CHECKOUT=${GITHUB_WORKSPACE}/_prob4d"
+          } >> "${GITHUB_ENV}"
+
+      - name: Commit a new no-overwrite v2 source root
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="${RUNNER_TEMP}/deform360-prob4d-source-v2-work-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          compact="${work}/compact"
+          source="${SOURCE_OUTPUT_ROOT}/${PRODUCTION_RESULT_ID}/${GITHUB_SHA}"
+          test ! -e "${work}"
+          test ! -e "${source}"
+          mkdir -p "${compact}" "$(dirname "${source}")"
+          mkdir "${source}"
+          {
+            echo "SOURCE_WORK_ROOT=${work}"
+            echo "COMPACT_ROOT=${compact}"
+            echo "SOURCE_RUN_ROOT=${source}"
+            echo "SUPPORT_ADMISSION_ROOT=${source}/metric-support-admission"
+            echo "SAMPLE_ROOT=${source}/source-calibration-samples"
+            echo "CALIBRATION_ROOT=${source}/source-calibration"
+            echo "SOURCE_GATE_ROOT=${source}/source-gate"
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify the immutable v1 metric batch and frozen locks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(realpath -e "${LEGACY_METRIC_BATCH_ROOT}")" = \
+            "${LEGACY_METRIC_BATCH_ROOT}"
+          test "$(realpath -e "${VISUAL_PRODUCTION_ROOT}")" = \
+            "${VISUAL_PRODUCTION_ROOT}"
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git -C "${PROB4D_CHECKOUT}" rev-parse HEAD)" = \
+            "${PROB4D_REVISION}"
+          test -z "$(git -C "${PROB4D_CHECKOUT}" status --porcelain=v1)"
+          (
+            cd "${LEGACY_METRIC_BATCH_ROOT}"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          test "$(sha256sum "${LEGACY_METRIC_BATCH_ROOT}/metric-batch-result.json" | cut -d' ' -f1)" = \
+            "${LEGACY_METRIC_BATCH_RESULT_SHA256}"
+          LEGACY_RESULT="${LEGACY_METRIC_BATCH_ROOT}/metric-batch-result.json" \
+          "${SOURCE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from collections import Counter
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["LEGACY_RESULT"]).read_text())
+          expected = {
+              "result_id": os.environ["LEGACY_METRIC_BATCH_RESULT_ID"],
+              "implementation_revision": os.environ["LEGACY_SOURCE_REVISION"],
+              "production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "admission_id": os.environ["PRODUCTION_ADMISSION_ID"],
+              "object_count": 10,
+              "admitted_stream_count": 324,
+              "supported_stream_count": 313,
+              "support_negative_stream_count": 11,
+              "technical_failure_stream_count": 0,
+              "supported_object_count": 10,
+              "plan_emitted": False,
+              "status": "support-negatives-retained",
+          }
+          if {key: result.get(key) for key in expected} != expected:
+              raise SystemExit("immutable v1 metric batch changed")
+          counts = Counter(row["object_id"] for row in result["jobs"] if row["status"] == "supported")
+          if set(counts) != {row["object_id"] for row in result["jobs"]}:
+              raise SystemExit("one or more source objects lost all support")
+          if min(counts.values()) < 29:
+              raise SystemExit("immutable per-object support accounting changed")
+          if any(
+              row["failure_reason"]
+              != "released-robot-geometry-outside-fixed-camera-prefix"
+              for row in result["jobs"]
+              if row["status"] == "support-negative"
+          ):
+              raise SystemExit("support-negative classification changed")
+          PY
+          "${SOURCE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          gate = json.loads(
+              Path(
+                  "protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json"
+              ).read_text()
+          )
+          if gate["artifact_id"] != os.environ["SOURCE_GATE_LOCK_ID"]:
+              raise SystemExit("source-gate lock identity changed")
+          if gate["cohort"]["minimum_metric_streams_per_object"] != 2:
+              raise SystemExit("frozen per-object support minimum changed")
+          for field in (
+              "confirmation_payloads_opened",
+              "future_frames_used",
+              "human_approval_required",
+              "new_measurements_required",
+              "replacement_allowed",
+              "target_outcomes_used",
+          ):
+              if gate["information_boundary"][field] is not False:
+                  raise SystemExit(f"source-gate boundary changed: {field}")
+          PY
+
+      - name: Admit supported streams under the frozen object minimum
+        id: support_admission
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${SOURCE_PYTHON}" \
+            scripts/science/admit_deform360_prob4d_metric_support.py \
+            --metric-batch-root "${LEGACY_METRIC_BATCH_ROOT}" \
+            --production-result "${VISUAL_PRODUCTION_ROOT}/visual-production-result.json" \
+            --production-root "${VISUAL_PRODUCTION_ROOT}" \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --source-gate-lock protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json \
+            --processing-revision "${PROCESSING_REVISION}" \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output-dir "${SUPPORT_ADMISSION_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/support-admission.stdout" \
+            2> "${SOURCE_WORK_ROOT}/support-admission.stderr"
+
+      - name: Enforce only the preregistered per-object support rule
+        id: support_gate
+        if: always()
+        continue-on-error: true
+        env:
+          SUPPORT_ADMISSION_OUTCOME: ${{ steps.support_admission.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${SUPPORT_ADMISSION_OUTCOME}" = "success"
+          (
+            cd "${SUPPORT_ADMISSION_ROOT}"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          RESULT="${SUPPORT_ADMISSION_ROOT}/metric-support-admission-result.json" \
+          "${SOURCE_PYTHON}" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT"]).read_text())
+          expected = {
+              "source_metric_batch_result_id": os.environ[
+                  "LEGACY_METRIC_BATCH_RESULT_ID"
+              ],
+              "source_gate_lock_id": os.environ["SOURCE_GATE_LOCK_ID"],
+              "production_result_id": os.environ["PRODUCTION_RESULT_ID"],
+              "object_count": 10,
+              "admitted_stream_count": 324,
+              "supported_stream_count": 313,
+              "support_negative_stream_count": 11,
+              "technical_failure_stream_count": 0,
+              "supported_object_count": 10,
+              "minimum_supported_streams_per_object": 2,
+              "plan_emitted": True,
+              "status": "admitted-with-retained-support-negatives",
+          }
+          if {key: result.get(key) for key in expected} != expected:
+              raise SystemExit("frozen object-level support admission failed")
+          if min(row["supported_stream_count"] for row in result["support_by_object"]) < 2:
+              raise SystemExit("an object is below the preregistered support minimum")
+          if sum(row["support_negative_stream_count"] for row in result["support_by_object"]) != 11:
+              raise SystemExit("retained support-negative accounting changed")
+          if result["information_boundary"]["replacement_allowed"] is not False:
+              raise SystemExit("support admission permits replacement")
+          plan = Path(os.environ["SUPPORT_ADMISSION_ROOT"]) / "metric-prefix-plan.json"
+          if not plan.is_file():
+              raise SystemExit("supported metric plan was not emitted")
+          PY
+
+      - name: Materialize correlation-aware source samples
+        id: samples
+        if: steps.support_gate.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${SOURCE_PYTHON}" \
+            scripts/science/materialize_deform360_prob4d_calibration_samples.py \
+            --plan "${SUPPORT_ADMISSION_ROOT}/metric-prefix-plan.json" \
+            --production-result "${VISUAL_PRODUCTION_ROOT}/visual-production-result.json" \
+            --production-root "${VISUAL_PRODUCTION_ROOT}" \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --metric-root "${LEGACY_METRIC_BATCH_ROOT}/metrics" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --prob4d-checkout "${PROB4D_CHECKOUT}" \
+            --prob4d-revision "${PROB4D_REVISION}" \
+            --processing-revision "${PROCESSING_REVISION}" \
+            --output-dir "${SAMPLE_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/samples.stdout" \
+            2> "${SOURCE_WORK_ROOT}/samples.stderr"
+
+      - name: Fit object-balanced source calibration
+        id: calibration
+        if: steps.samples.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${SOURCE_PYTHON}" \
+            scripts/science/fit_deform360_prob4d_source_calibration.py fit \
+            --samples "${SAMPLE_ROOT}/samples.json" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --prob4d-checkout "${PROB4D_CHECKOUT}" \
+            --output-dir "${CALIBRATION_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/calibration.stdout" \
+            2> "${SOURCE_WORK_ROOT}/calibration.stderr"
+
+      - name: Evaluate the unchanged frozen source gate
+        id: gate
+        if: steps.calibration.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${SOURCE_PYTHON}" \
+            scripts/science/evaluate_deform360_prob4d_source_gate.py \
+            --samples "${SAMPLE_ROOT}/samples.json" \
+            --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+            --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+            --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+            --prediction-root "${VISUAL_PRODUCTION_ROOT}" \
+            --source-calibration-root "${CALIBRATION_ROOT}" \
+            --source-calibration-result "${CALIBRATION_ROOT}/source-calibration-result.json" \
+            --gate-lock protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json \
+            --implementation-revision "${GITHUB_SHA}" \
+            --output-dir "${SOURCE_GATE_ROOT}" \
+            > "${SOURCE_WORK_ROOT}/source-gate.stdout" \
+            2> "${SOURCE_WORK_ROOT}/source-gate.stderr"
+
+      - name: Collect compact decision before enforcement
+        if: always()
+        env:
+          SUPPORT_ADMISSION_OUTCOME: ${{ steps.support_admission.outcome }}
+          SUPPORT_GATE_OUTCOME: ${{ steps.support_gate.outcome }}
+          SAMPLE_OUTCOME: ${{ steps.samples.outcome }}
+          CALIBRATION_OUTCOME: ${{ steps.calibration.outcome }}
+          SOURCE_GATE_OUTCOME: ${{ steps.gate.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${COMPACT_ROOT}"
+          for pair in \
+            "${LEGACY_METRIC_BATCH_ROOT}/metric-batch-result.json:legacy-metric-batch-result.json" \
+            "${SUPPORT_ADMISSION_ROOT}/metric-support-admission-result.json:metric-support-admission-result.json" \
+            "${SUPPORT_ADMISSION_ROOT}/metric-prefix-plan.json:metric-prefix-plan.json" \
+            "${SAMPLE_ROOT}/samples.json:samples.json" \
+            "${CALIBRATION_ROOT}/source-calibration-result.json:source-calibration-result.json"; do
+            source="${pair%%:*}"
+            name="${pair#*:}"
+            if [[ -f "${source}" ]]; then
+              cp "${source}" "${COMPACT_ROOT}/${name}"
+            fi
+          done
+          if [[ -d "${SOURCE_GATE_ROOT}" ]]; then
+            cp -a "${SOURCE_GATE_ROOT}" "${COMPACT_ROOT}/source-gate"
+          fi
+          "${SOURCE_PYTHON}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          compact = Path(os.environ["COMPACT_ROOT"])
+          receipt = {
+              "schema": "bayesian-phystwin.deform360-prob4d-source-gate-v2-pipeline",
+              "schema_version": 1,
+              "implementation_revision": os.environ["GITHUB_SHA"],
+              "legacy_source_revision": os.environ["LEGACY_SOURCE_REVISION"],
+              "legacy_source_run_id": int(os.environ["LEGACY_SOURCE_RUN_ID"]),
+              "legacy_metric_batch_result_id": os.environ[
+                  "LEGACY_METRIC_BATCH_RESULT_ID"
+              ],
+              "support_admission_outcome": os.environ[
+                  "SUPPORT_ADMISSION_OUTCOME"
+              ],
+              "support_gate_outcome": os.environ["SUPPORT_GATE_OUTCOME"],
+              "sample_outcome": os.environ["SAMPLE_OUTCOME"],
+              "calibration_outcome": os.environ["CALIBRATION_OUTCOME"],
+              "source_gate_outcome": os.environ["SOURCE_GATE_OUTCOME"],
+              "retained_support_negative_stream_count": 11,
+              "confirmation_payloads_opened": False,
+              "target_outcomes_used": False,
+              "future_frames_used": False,
+              "replacement_allowed": False,
+              "new_measurements_required": False,
+              "human_approval_required": False,
+              "claim_boundary": (
+                  "This continuation repairs only source-stage support admission "
+                  "and metric-root routing. A passing source gate authorizes only "
+                  "a separately locked confirmation evaluation."
+              ),
+          }
+          canonical = json.dumps(
+              receipt, sort_keys=True, separators=(",", ":"), allow_nan=False
+          ).encode()
+          receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+          (compact / "pipeline-receipt.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          lines = []
+          for path in sorted(
+              path for path in compact.rglob("*") if path.is_file()
+          ):
+              lines.append(
+                  f"{hashlib.sha256(path.read_bytes()).hexdigest()}  "
+                  f"{path.relative_to(compact).as_posix()}\n"
+              )
+          (compact / "SHA256SUMS").write_text("".join(lines), encoding="ascii")
+          PY
+
+      - name: Upload compact source-only continuation evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-prob4d-source-gate-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.COMPACT_ROOT }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Validate and expose the registered result
+        id: final
+        if: always()
+        env:
+          SUPPORT_GATE_OUTCOME: ${{ steps.support_gate.outcome }}
+          SAMPLE_OUTCOME: ${{ steps.samples.outcome }}
+          CALIBRATION_OUTCOME: ${{ steps.calibration.outcome }}
+          SOURCE_GATE_OUTCOME: ${{ steps.gate.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${SUPPORT_GATE_OUTCOME}" = "success"
+          test "${SAMPLE_OUTCOME}" = "success"
+          test "${CALIBRATION_OUTCOME}" = "success"
+          test "${SOURCE_GATE_OUTCOME}" = "success"
+          RESULT_ROOT="${SOURCE_GATE_ROOT}" "${SOURCE_PYTHON}" - <<'PY' >> "${GITHUB_OUTPUT}"
+          import importlib.util
+          import os
+          import sys
+          from pathlib import Path
+
+          script = Path("scripts/science/evaluate_deform360_prob4d_source_gate.py")
+          spec = importlib.util.spec_from_file_location("source_gate_v2_validator", script)
+          if spec is None or spec.loader is None:
+              raise SystemExit("cannot load source-gate validator")
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          result = module.validate_source_gate_result(Path(os.environ["RESULT_ROOT"]))
+          boundary = result["information_boundary"]
+          for field in (
+              "confirmation_payloads_opened",
+              "target_outcomes_used",
+              "future_frames_used",
+              "replacement_allowed",
+          ):
+              if boundary[field] is not False:
+                  raise SystemExit(f"source-gate boundary changed: {field}")
+          print(f"status={result['status']}")
+          print(f"result_id={result['result_id']}")
+          print(f"gate_passed={'true' if result['gate_passed'] else 'false'}")
+          print(
+              "confirmation_access_authorized="
+              f"{'true' if result['confirmation_access_authorized'] else 'false'}"
+          )
+          PY
+
+      - name: Remove run-local runtime and compact staging
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "${SOURCE_RUNTIME:-}" "${SOURCE_WORK_ROOT:-}"
+
+  receipt:
+    name: Publish the source-gate v2 result
+    if: always() && github.event_name == 'push'
+    needs: continue-source-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post the bounded result to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_RESULT: ${{ needs.continue-source-gate.result }}
+          STATUS: ${{ needs.continue-source-gate.outputs.status }}
+          RESULT_ID: ${{ needs.continue-source-gate.outputs.result_id }}
+          GATE_PASSED: ${{ needs.continue-source-gate.outputs.gate_passed }}
+          AUTHORIZED: ${{ needs.continue-source-gate.outputs.confirmation_access_authorized }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          body=$(cat <<EOF
+          ## Deform360 Prob4D source gate v2 completed
+
+          - workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - job result: \`${JOB_RESULT}\`
+          - registered status: \`${STATUS:-technical-failure}\`
+          - source-gate result ID: \`${RESULT_ID:-unavailable}\`
+          - source gate passed: \`${GATE_PASSED:-false}\`
+          - confirmation evaluation authorized: \`${AUTHORIZED:-false}\`
+          - immutable predecessor run: \`${LEGACY_SOURCE_RUN_ID}\`
+          - retained support-negative streams: \`11/324\`
+          - technical metric failures: \`0/324\`
+          - minimum supported streams per object: \`29\`
+          - preregistered minimum per object: \`2\`
+          - replacement streams used: \`false\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - future frames used: \`false\`
+          - new measurements required: \`false\`
+          - human approval required: \`false\`
+
+          The v1 metric batch remains immutable. This continuation retains all
+          324 stream outcomes, applies only the already-frozen object-level
+          support minimum, corrects the metric-root routing, and runs the
+          unchanged object-balanced source calibration and gate. A pass permits
+          only the separately locked confirmation evaluation; a valid negative
+          is the complete scientific outcome for this method revision.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed source-only continuation request: 2026-08-09-retained-support-v2
