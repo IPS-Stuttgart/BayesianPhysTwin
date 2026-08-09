@@ -1,0 +1,183 @@
+name: Revalidate reviewed Deform360 Prob4D support negative once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/revalidate-deform360-prob4d-support-negative-once.yml"
+      - "scripts/science/audit_deform360_prob4d_support_negative.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: revalidate-deform360-prob4d-support-negative-v1
+  cancel-in-progress: true
+
+env:
+  SOURCE_RUN_ID: "31297018948"
+  SOURCE_RUN_ATTEMPT: "1"
+  SOURCE_HEAD_SHA: ded8910becbbffe958dfd18c84ad91069e7087a4
+  SOURCE_WORKFLOW_NAME: Launch reviewed Deform360 Prob4D public source gate once
+  SOURCE_WORKFLOW_PATH: .github/workflows/launch-deform360-prob4d-source-gate-once.yml
+  SOURCE_ARTIFACT_ID: "9033414269"
+  SOURCE_ARTIFACT_NAME: deform360-prob4d-source-gate-31297018948-1
+  SOURCE_ARTIFACT_DIGEST: sha256:7247a2a260509c4c226e7ca437aff09d090abf6d2ca08f471a2143ea7d4bf7de
+  AUDITOR_SCRIPT: scripts/science/audit_deform360_prob4d_support_negative.py
+  AUDITOR_WORKFLOW: .github/workflows/revalidate-deform360-prob4d-support-negative-once.yml
+  ISSUE_NUMBER: "148"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  audit:
+    name: Validate the frozen early support-negative terminal
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the exact auditor revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Locate the exact source run and compact artifact
+        id: locate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"${run}")" = "${SOURCE_WORKFLOW_NAME}"
+          test "$(jq -r '.path' <<<"${run}")" = "${SOURCE_WORKFLOW_PATH}"
+          test "$(jq -r '.event' <<<"${run}")" = "push"
+          test "$(jq -r '.head_branch' <<<"${run}")" = "main"
+          test "$(jq -r '.head_sha' <<<"${run}")" = "${SOURCE_HEAD_SHA}"
+          test "$(jq -r '.status' <<<"${run}")" = "completed"
+          test "$(jq -r '.conclusion' <<<"${run}")" = "failure"
+          test "$(jq -r '.run_attempt' <<<"${run}")" = "${SOURCE_RUN_ATTEMPT}"
+          test "$(jq -r '.repository.full_name' <<<"${run}")" = "${GITHUB_REPOSITORY}"
+
+          artifact="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}")"
+          test "$(jq -r '.id' <<<"${artifact}")" = "${SOURCE_ARTIFACT_ID}"
+          test "$(jq -r '.name' <<<"${artifact}")" = "${SOURCE_ARTIFACT_NAME}"
+          test "$(jq -r '.expired' <<<"${artifact}")" = "false"
+          test "$(jq -r '.digest' <<<"${artifact}")" = "${SOURCE_ARTIFACT_DIGEST}"
+          test "$(jq -r '.workflow_run.id' <<<"${artifact}")" = "${SOURCE_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${artifact}")" = "${SOURCE_HEAD_SHA}"
+          echo "run_url=$(jq -r '.html_url' <<<"${run}")" >> "${GITHUB_OUTPUT}"
+
+      - name: Download only the immutable compact source artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-source-support-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Independently validate the early support-negative terminal
+        id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "${AUDITOR_SCRIPT}" \
+            --source-root "${RUNNER_TEMP}/deform360-source-support-source" \
+            --output-directory "${RUNNER_TEMP}/deform360-source-support-audit" \
+            --source-run-id "${SOURCE_RUN_ID}" \
+            --source-run-attempt "${SOURCE_RUN_ATTEMPT}" \
+            --source-artifact-id "${SOURCE_ARTIFACT_ID}" \
+            --source-artifact-name "${SOURCE_ARTIFACT_NAME}" \
+            --source-artifact-digest "${SOURCE_ARTIFACT_DIGEST}" \
+            --auditor-revision "${GITHUB_SHA}" \
+            --auditor-workflow "${AUDITOR_WORKFLOW}"
+
+      - name: Upload the independent support-negative audit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-prob4d-support-negative-independent-audit-${{ env.SOURCE_RUN_ID }}
+          path: ${{ runner.temp }}/deform360-source-support-audit
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish the corrected terminal decision
+        if: steps.validate.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_URL: ${{ steps.locate.outputs.run_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="${RUNNER_TEMP}/deform360-source-support-audit/independent-support-audit-receipt.json"
+          marker="<!-- deform360-prob4d-support-negative-independent-audit-v1 -->"
+          existing="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments?per_page=100" \
+            --jq "[.[] | select(.body | contains(\"${marker}\"))] | length")"
+          if [[ "${existing}" != "0" ]]; then
+            echo "The immutable support-negative audit is already published."
+            exit 0
+          fi
+          status="$(jq -r '.audit_status' "${receipt}")"
+          result_id="$(jq -r '.metric_batch_result_id' "${receipt}")"
+          supported="$(jq -r '.supported_stream_count' "${receipt}")"
+          negative="$(jq -r '.support_negative_stream_count' "${receipt}")"
+          technical="$(jq -r '.technical_failure_stream_count' "${receipt}")"
+          roster_id="$(jq -r '.support_negative_roster_id' "${receipt}")"
+          body=$(cat <<EOF
+          ${marker}
+          ## Independent Deform360 Prob4D support audit: \`${status}\`
+
+          - source workflow run: [\`${SOURCE_RUN_ID}\`](${SOURCE_RUN_URL})
+          - exact source revision: \`${SOURCE_HEAD_SHA}\`
+          - exact compact artifact: \`${SOURCE_ARTIFACT_ID}\`
+          - terminal stage: \`support-gate\`
+          - metric-batch result ID: \`${result_id}\`
+          - released robot-gauge support: \`${supported} / 324\`
+          - retained support-negative streams: \`${negative}\`
+          - support-negative roster ID: \`${roster_id}\`
+          - technical failures: \`${technical}\`
+          - overall source gate passed: \`false\`
+          - confirmation access authorized: \`false\`
+          - confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - replacement allowed: \`false\`
+
+          This is a complete, valid negative for the frozen method version: 11 sealed
+          object/camera streams place released robot geometry outside the fixed causal
+          camera prefix. The chain stopped before sample materialization, calibration,
+          source-gate evaluation, and confirmation. No stream was replaced and no
+          adaptive-confirmation or target payload was opened.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" \
+            -f body="${body}"
+
+      - name: Enforce the independently validated terminal
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.validate.outcome }}" = "success"
+          audit_root="${RUNNER_TEMP}/deform360-source-support-audit"
+          receipt="${audit_root}/independent-support-audit-receipt.json"
+          test "$(jq -r '.audit_status' "${receipt}")" = "validated-negative"
+          test "$(jq -r '.terminal_stage' "${receipt}")" = "support-gate"
+          test "$(jq -r '.source_gate_passed' "${receipt}")" = "false"
+          test "$(jq -r '.confirmation_access_authorized' "${receipt}")" = "false"
+          (cd "${audit_root}" && sha256sum --check SHA256SUMS >/dev/null)
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+# Reviewed one-shot support-negative audit: 2026-08-09-v1
