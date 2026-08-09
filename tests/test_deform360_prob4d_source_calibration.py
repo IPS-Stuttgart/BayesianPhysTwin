@@ -441,6 +441,14 @@ def test_confirmation_boundary_cannot_be_true(tmp_path: Path) -> None:
         _load(tmp_path, mutate_manifest=mutate)
 
 
+def test_information_boundary_must_be_an_object(tmp_path: Path) -> None:
+    def mutate(manifest: dict[str, object]) -> None:
+        manifest["information_boundary"] = []
+
+    with pytest.raises(ValueError, match="information_boundary must be a JSON object"):
+        _load(tmp_path, mutate_manifest=mutate)
+
+
 def test_prediction_manifest_hash_is_verified(tmp_path: Path) -> None:
     manifest, prediction_root = _write_bundle(tmp_path)
     payload = json.loads(manifest.read_text(encoding="utf-8"))
