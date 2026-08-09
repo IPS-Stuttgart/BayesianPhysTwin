@@ -30,15 +30,16 @@ jobs:
 
           path = Path("tests/test_deform360_prob4d_source_gate.py")
           text = path.read_text(encoding="utf-8")
-          import_line = (
+          imports = (
+              "import pytest\n\n"
               "import bayesian_phystwin.deform360_prob4d_source_gate_validation "
               "as gate_validation\n"
           )
-          if import_line not in text:
-              anchor = "import pytest\n"
+          if "as gate_validation\n" not in text:
+              anchor = "import numpy as np\n"
               if text.count(anchor) != 1:
-                  raise SystemExit("pytest import anchor changed")
-              text = text.replace(anchor, anchor + "\n" + import_line, 1)
+                  raise SystemExit("numpy import anchor changed")
+              text = text.replace(anchor, anchor + imports, 1)
 
           marker = "def test_source_gate_validation_helpers_fail_closed() -> None:\n"
           if marker not in text:
