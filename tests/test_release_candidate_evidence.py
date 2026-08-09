@@ -61,9 +61,7 @@ def _write_project(root: Path, *, version: str = "0.4.0") -> None:
 
 def _metadata(version: str) -> bytes:
     return (
-        "Metadata-Version: 2.4\n"
-        "Name: bayesian-phystwin\n"
-        f"Version: {version}\n\n"
+        f"Metadata-Version: 2.4\nName: bayesian-phystwin\nVersion: {version}\n\n"
     ).encode()
 
 
@@ -207,9 +205,7 @@ def test_builds_content_addressed_release_evidence(tmp_path: Path) -> None:
     assert evidence["release_tag"] == "v0.4.0"
     assert evidence["tag_validated"] is True
     assert evidence["artifacts"]["wheel"]["project_version"] == "0.4.0"
-    assert evidence["artifacts"]["sdist"]["archive_root"] == (
-        "bayesian_phystwin-0.4.0"
-    )
+    assert evidence["artifacts"]["sdist"]["archive_root"] == ("bayesian_phystwin-0.4.0")
     assert evidence["artifacts"]["sbom"]["bom_format"] == "CycloneDX"
 
     supplied_id = evidence["evidence_id"]
