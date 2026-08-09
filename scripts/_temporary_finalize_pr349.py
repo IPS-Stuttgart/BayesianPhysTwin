@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -155,10 +156,46 @@ def update_manifest() -> None:
     )
 
 
+def commit_generated_source() -> None:
+    subprocess.run(
+        ["git", "config", "user.name", "github-actions[bot]"],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "config",
+            "user.email",
+            "41898282+github-actions[bot]@users.noreply.github.com",
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "add",
+            ".github/quality/test-suites.json",
+            "src/bayesian_phystwin/prior_aware_gauge_belief_v2.py",
+            "tests/test_claim_bearing_strict_admission.py",
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "commit",
+            "-m",
+            "Complete strict-admission coverage [finalize-pr349]",
+        ],
+        check=True,
+    )
+
+
 def main() -> None:
     update_source()
     update_tests()
     update_manifest()
+    commit_generated_source()
 
 
 if __name__ == "__main__":
