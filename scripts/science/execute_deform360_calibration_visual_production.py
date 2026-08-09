@@ -1077,6 +1077,129 @@ def validate_technical_smoke_bundle(
     return result
 
 
+def validate_production_bundle(
+    *,
+    result_path: Path,
+    run_root: Path,
+    admission_path: Path,
+) -> dict[str, Any]:
+    """Re-hash every receipt and validate its production-result lineage."""
+
+    expected_result = _safe_member(
+        run_root,
+        "visual-production-result.json",
+        label="visual production result",
+    )
+    if result_path.absolute() != expected_result.absolute():
+        raise ValueError("visual production result path changed")
+    result = validate_deform360_calibration_visual_production_result(
+        _load_json(result_path, label="visual production result")
+    )
+    admission = load_deform360_calibration_visual_execution_admission(admission_path)
+    admission_identity = {
+        "admission_id": admission["admission_id"],
+        "visual_provider_lock_id": admission["visual_provider_lock_id"],
+        "provider_revision": admission["provider_revision"],
+        "motioncrafter_revision": admission["motioncrafter_revision"],
+        "model_set_id": admission["model_set_id"],
+        "object_count": admission["object_count"],
+        "camera_view_count": admission["camera_view_count"],
+    }
+    if {key: result.get(key) for key in admission_identity} != admission_identity:
+        raise ValueError("production result differs from the execution admission")
+    admitted_jobs = {
+        cast(str, job["job_id"]): cast(Mapping[str, Any], job)
+        for job in cast(Sequence[Mapping[str, Any]], admission["jobs"])
+    }
+    if set(admitted_jobs) != {
+        cast(str, row["job_id"])
+        for row in cast(Sequence[Mapping[str, Any]], result["jobs"])
+    }:
+        raise ValueError("production result job roster differs from the admission")
+    common = {
+        "implementation_revision": result["implementation_revision"],
+        "admission_id": result["admission_id"],
+        "provider_revision": result["provider_revision"],
+        "motioncrafter_revision": result["motioncrafter_revision"],
+        "visual_provider_lock_id": result["visual_provider_lock_id"],
+        "model_set_id": result["model_set_id"],
+    }
+    observed_receipt_ids: set[str] = set()
+    for index, raw_row in enumerate(result["jobs"]):
+        row = cast(Mapping[str, Any], raw_row)
+        job = admitted_jobs[cast(str, row["job_id"])]
+        row_identity = {
+            "job_id": job["job_id"],
+            "object_id": job["object_id"],
+            "camera_id": job["camera_id"],
+        }
+        if {key: row.get(key) for key in row_identity} != row_identity:
+            raise ValueError(f"production result job {index} differs from admission")
+        receipt_path = _verify_descriptor(
+            run_root,
+            cast(Mapping[str, Any], row["receipt"]),
+            label=f"production receipt {index}",
+        )
+        receipt_value = _load_json(
+            receipt_path,
+            label=f"production receipt {index}",
+        )
+        if row["status"] == "succeeded":
+            receipt = validate_deform360_calibration_visual_prediction_seal(
+                receipt_value
+            )
+            receipt_id = cast(str, receipt["seal_id"])
+            expected_name = "prediction-seal.json"
+        else:
+            receipt = validate_deform360_calibration_visual_technical_failure(
+                receipt_value
+            )
+            receipt_id = cast(str, receipt["failure_id"])
+            expected_name = f"{row['job_id']}.json"
+        expected = {
+            **common,
+            "job_id": row["job_id"],
+            "object_id": row["object_id"],
+            "episode_id": job["episode_id"],
+            "stratum": job["stratum"],
+            "camera_id": row["camera_id"],
+            "output_relative_directory": job["output_relative_directory"],
+        }
+        if {key: receipt.get(key) for key in expected} != expected:
+            raise ValueError(f"production receipt {index} lineage changed")
+        if receipt_id in observed_receipt_ids:
+            raise ValueError("production result reuses a receipt content ID")
+        observed_receipt_ids.add(receipt_id)
+        if receipt_path.name != expected_name:
+            raise ValueError(f"production receipt {index} path changed")
+        output = PurePosixPath(cast(str, receipt["output_relative_directory"]))
+        relative = PurePosixPath(receipt_path.relative_to(run_root).as_posix())
+        if row["status"] == "succeeded":
+            prefix = cast(Sequence[int], job["prefix_source_frame_range_half_open"])
+            prediction = cast(
+                Sequence[int], job["prediction_source_frame_range_half_open"]
+            )
+            source_identity = {
+                "source_video": job["source_video"],
+                "source_timestamps": job["source_timestamps"],
+                "causal_prefix_frame_range_half_open": list(prefix),
+                "reserved_evaluation_frame_range_half_open": [
+                    prefix[1],
+                    prediction[1],
+                ],
+            }
+            if {key: receipt.get(key) for key in source_identity} != source_identity:
+                raise ValueError(f"production receipt {index} source contract changed")
+        if row["status"] == "succeeded" and relative.parent != output:
+            raise ValueError(f"production receipt {index} output path changed")
+        if (
+            row["status"] == "technical-failure"
+            and relative.parent.as_posix() != "failures"
+        ):
+            raise ValueError(f"production receipt {index} failure path changed")
+    return result
+
+
 def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--admission", type=Path, required=True)
     parser.add_argument("--visual-provider-lock", type=Path, required=True)
@@ -1108,6 +1231,13 @@ def _parser() -> argparse.ArgumentParser:
         help="validate one compact visual-production result",
     )
     validate.add_argument("path", type=Path)
+    validate_bundle = subparsers.add_parser(
+        "validate-bundle",
+        help="re-hash a production result and every compact receipt",
+    )
+    validate_bundle.add_argument("path", type=Path)
+    validate_bundle.add_argument("--run-root", type=Path, required=True)
+    validate_bundle.add_argument("--admission", type=Path, required=True)
     validate_smoke = subparsers.add_parser(
         "validate-smoke-result",
         help="validate one compact technical-smoke result",
@@ -1128,6 +1258,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if arguments.command == "validate-result":
             result = validate_deform360_calibration_visual_production_result(
                 _load_json(arguments.path, label="visual production result")
+            )
+        elif arguments.command == "validate-bundle":
+            result = validate_production_bundle(
+                result_path=arguments.path,
+                run_root=arguments.run_root,
+                admission_path=arguments.admission,
             )
         elif arguments.command == "validate-smoke-result":
             result = validate_deform360_calibration_visual_technical_smoke(

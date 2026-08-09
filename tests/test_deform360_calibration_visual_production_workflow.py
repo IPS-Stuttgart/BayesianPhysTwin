@@ -284,6 +284,10 @@ def test_visual_production_artifact_excludes_large_predictions_and_targets() -> 
     assert "scientific_metrics_computed=false" in text
     assert "Revalidate compact technical-smoke gate" in text
     assert 'validate-smoke-bundle "${result}"' in text
+    assert 'validate-bundle "${production_result}"' in compact
+    assert '--run-root "${COMPACT_ROOT}/production"' in compact
+    assert '--admission "${COMPACT_ROOT}/admission/' in compact
+    assert "production-bundle-validation.json" in compact
     assert '--run-root "${PRODUCTION_RUN_ROOT}"' in text
     assert 'selected = min(admission["jobs"], key=lambda row: row["job_id"])' in text
     assert "technical-smoke-gate.json" in text
