@@ -47,6 +47,19 @@ the sealed prediction manifest, metric-prefix NPZ, and metric-calibration file.
 The successful-job set must equal the production result's successful-job set;
 there is no view selection after prediction or target quality is observed.
 
+The registered batch constructor applies that rule to the complete frozen
+visual-production roster. It has three terminal states:
+
+- `all-streams-supported` emits the plan consumed below;
+- `support-negatives-retained` records cameras where released robot geometry is
+  outside the fixed prefix and emits no plan; and
+- `technical-failures-retained` records a hashed software-failure detail and
+  emits no plan.
+
+Unsupported or failed cameras are never replaced. This distinction prevents a
+technical failure from being presented as a model result and prevents
+post-observation camera selection from changing the source cohort.
+
 ## Residual construction
 
 For each overlapping MotionCrafter window, the materializer fits a local-to-
@@ -103,6 +116,30 @@ python scripts/science/materialize_deform360_robot_metric_prefix.py \
   --target-width 640 \
   --output-dir /durable/metric-prefix/OBJECT_ID/CAMERA_ID
 ```
+
+For the frozen production, generate every registered stream and the plan in one
+atomic, no-overwrite publication:
+
+```bash
+python scripts/science/materialize_deform360_prob4d_metric_batch.py \
+  --prepared-source-inventory prepared-source-inventory.json \
+  --production-result production/visual-production-result.json \
+  --production-root /durable/calibration-visual-production \
+  --prediction-root /durable/calibration-visual-production \
+  --processed-root /durable/calibration-processed/aligned \
+  --selection protocols/locks/deform360_official_hub_visuotactile_v1_selection.json \
+  --visual-provider-spec protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider_spec.json \
+  --metric-prior-policy protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json \
+  --processing-revision d8522a4403b766aeb387510c04e89032a56fdf35 \
+  --implementation-revision "$(git rev-parse HEAD)" \
+  --output-dir /durable/deform360-prob4d-metric-batch
+```
+
+The batch recursively hashes every metric member and publishes
+`metric-batch-result.json`. `metric-prefix-plan.json` exists only when every
+sealed stream is supported and every object retains at least two cameras. The
+constructor reads released robot poses and camera calibration; it performs no
+new recording and requires no human approval.
 
 This path is governed by
 `protocols/locks/deform360_official_hub_prob4d_robot_metric_gauge_v1.json`.
