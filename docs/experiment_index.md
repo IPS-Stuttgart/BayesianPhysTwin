@@ -1,9 +1,10 @@
 # Experiment and evidence index
 
-This page is the navigation layer for research workflows in Bayesian-PhysTwin.
-The root README documents only the stable project identity, interfaces, and
-onboarding path. Claim-bearing numbers belong in frozen evidence reports, and
-current project status belongs in the canonical paper repository.
+This page is the navigation layer for research workflows in BayesianPhysTwin.
+The root README documents the stable project identity, interfaces, onboarding
+path, and bounded current evidence. Claim-bearing numbers belong in frozen
+evidence reports, and current ecosystem status belongs in the canonical paper
+repository.
 
 The package installs only `bpt`. Stable operations use direct grouped routes;
 research workflows are classified as current experiments, diagnostics, or
@@ -26,12 +27,12 @@ archived reproduction paths in the command registry.
 The observation-to-state boundary is described in
 [gauge-aware observation update](gauge_aware_observation_update.md) and
 [prior-aware guarded update](prior_aware_guarded_update.md). These documents
-state the identifiability, covariance, causal-cutoff, and exact-fallback rules
-that apply independently of any one experiment.
+state the identifiability, covariance, causal-cutoff, convergence-admission, and
+exact-fallback rules that apply independently of any one experiment.
 
 ## Command lifecycle
 
-Use the registry rather than maintaining a static list here:
+Use the registry rather than maintaining a second static command list:
 
 ```bash
 bpt experiment list
@@ -56,61 +57,103 @@ current grouped route.
 ### Official PhysTwin full-22 evaluation
 
 The [PhysTwin full-22 evidence report](phystwin_sota_22_v1.md) is the frozen
-source for the released-cohort comparison, uncertainty intervals, render
-reproduction, provenance, ownership boundary, and permitted claim language.
-It supports improvement over released PhysTwin under the recorded protocol; it
-does not support an overall state-of-the-art claim or calibrated raw posterior
-covariance.
+source for the released-cohort comparison, confirmation intervals, render
+reproduction, provenance, ownership boundary, and permitted within-contract
+claim.
+
+The [release-facing claim contract](phystwin_release_claim_v1.md) binds the
+positive result to its required companion evidence:
+
+- the Bayesian anchor improves equal-case Chamfer distance and track error by
+  `12.09%` and `12.78%` versus re-evaluated released PhysTwin;
+- last residual is the principal matched deterministic comparator and is
+  marginally better on equal-case track error;
+- raw posterior covariance is severely undercalibrated; and
+- conformal coverage is a separate width-bearing result under stated
+  assumptions.
+
+The result supports improvement over released PhysTwin under the recorded
+contract. It does not support a unique deterministic-winner claim, calibrated
+raw covariance, dynamically identified state correction, independent-object
+transfer, or overall state of the art.
 
 The
 [frozen full-22 reproduction capsule](../reproductions/full22_anchor_v1/README.md)
 records the exact source revision, protocol and data identities, two-stage
 source command, expected paper-facing metrics, fail-closed verification, and a
 strict `RunManifestV2` bundle. The capsule has been reproduced independently on
-`workstation2` and a fresh GitHub-hosted runtime and is the current portable
-reproduction record.
+`workstation2` and a fresh GitHub-hosted runtime.
 
-### Deform360 prospective validation
+### Controlled Prob4D-to-BayesianPhysTwin mechanism
 
-The
-[Deform360 bias-aware prospective v2 protocol](deform360_bias_aware_prospective_v2.md)
-and its
-[frozen result](deform360_bias_aware_prospective_v2_result.md) record a
-prospective calibration gate. The target-free support gate passed, the fresh
-accuracy gate failed, and reserved targets remained unopened. This is a negative
-prospective result, not a target evaluation.
+The controlled explicit-joint-gauge benchmark is positive on a disjoint
+synthetic calibration/target split. Persistent explicit-gauge deployment changes
+RMSE from `6.166` to `0.534 mm`, accepts `373/384` target groups, has zero
+harmful accepted updates, and retains exact fallback for every rejection.
 
-The
+This is controlled mechanism evidence. It does not establish real provider
+competence, fresh-object physical benefit, deployment calibration, or Causal4D
+benefit. The current real-provider evidence below remains decisive for physical
+escalation.
+
+### Real-provider and Deform360 boundary
+
+A retrospective MotionCrafter transfer on 19 already-open PhysTwin interactions
+was negative: physical fallback is `6.899 mm`, marginal-gauge deployment is
+`6.942 mm`, and the explicit-persistent guard accepts no updates and reproduces
+fallback exactly. That cohort may not be tuned into replacement confirmation.
+
+The later
 [official-Hub Deform360 visuotactile v1 protocol](deform360_official_hub_visuotactile_v1.md)
-is the next independent-object gate. It replaces contaminated mounted-cache
-trajectories with an exact official raw-data revision and adds an independent
-contact anchor to the existing explicit-gauge solver.
+froze ten calibration objects, twelve distinct confirmation objects, every
+admitted camera stream, and no replacement after source-outcome access.
 
-The [visual-provider freeze](deform360_visual_provider_freeze.md) is the next
-data-free execution step. It resolves the exact cached MotionCrafter model
-revisions, Prob4D provider manifest and attestation, metric-frame policy, and
-portable model-set identity before any of the ten selected calibration-object
-payloads may be opened.
+Its completed execution chain is:
 
-The
-[prepared-source inventory](deform360_calibration_prepared_inventory.md)
-binds the successful ten-object calibration-source run to the retained aligned
-RGB, tactile, and robot bytes on the protected runner. It records portable
-media and array contracts and rejects every confirmation object before real
-visual/contact observability inputs are produced.
+1. all `10/10` calibration objects were prepared;
+2. all `324/324` admitted visual-production jobs succeeded;
+3. the frozen released robot/camera support gate retained `11` support-negative
+   streams, with `313/324` supported and `0` technical failures; and
+4. no source covariance was fitted, no leave-one-object-out source gate was
+   evaluated, and confirmation access was not authorized.
 
-The
-[atomic calibration-observability batch](deform360_calibration_observability_batch.md)
-turns the ten calibration-object contact-versus-visual case builds and their
-object-balanced report into one fail-closed publication. It retains technical
-failures without replacement and publishes a valid negative result when the
-frozen support gate is not met.
+The provider version is terminal at this source-support boundary. Deleting
+cameras, fitting only the supported streams, changing the fixed prefix,
+replacing objects, or opening the twelve confirmation objects would violate the
+frozen information order. This is a valid real-data source-support negative, not
+a fitted-covariance failure.
 
-The
-[confirmation-opening authorization](deform360_confirmation_opening_authorization_v1.md)
-then binds a successful calibration-source terminal record, the supported
-observability report, the complete Stage-1 evidence-use ledger, and the exact
-frozen cohort before any confirmation payload may be opened.
+The implementation documents remain useful as frozen contracts and execution
+history:
+
+- [visual-provider freeze](deform360_visual_provider_freeze.md);
+- [prepared-source inventory](deform360_calibration_prepared_inventory.md);
+- [atomic calibration-observability batch](deform360_calibration_observability_batch.md);
+  and
+- [confirmation-opening authorization](deform360_confirmation_opening_authorization_v1.md).
+
+They must not be read as an active authorization chain for the completed provider
+version. Exact run, artifact, per-stream, and unopened-confirmation evidence is
+maintained in the canonical paper repository's
+[Deform360 source-support result](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform360_prob4d_source_support_negative_2026-08-09.md).
+
+A future Deform360 attempt requires a separately versioned provider or protocol
+whose complete camera/robot support feasibility is frozen before source residual
+outcomes are opened. The ten opened calibration objects cannot become a fresh
+replacement confirmation cohort.
+
+### Prospective PokeFlex transfer
+
+A conservative action-local correction has positive prospective new-interaction
+evidence on previously studied PokeFlex objects. The fresh12 and disjoint fresh6
+panels improve their frozen object-balanced metrics, while the retrospective
+public official13 panel corroborates the direction without replacing unavailable
+official takes.
+
+This supports a bounded same-object new-interaction claim, not unseen-object
+generalization, per-frame safety, general uncertainty calibration, or a
+full-split state-of-the-art claim. See the dedicated frozen result documents and
+the canonical paper-side manuscript for exact numbers and provenance.
 
 ## PhysTwin experiment families
 
@@ -124,16 +167,16 @@ frozen cohort before any confirmation payload may be opened.
 | Bias-aware guarded updates | [Bias-aware guarded belief](bias_aware_guarded_belief_v1.md) | Generic guarded-update method and source-only acceptance logic. |
 
 Detailed commands live with the protocol they implement. New commands should be
-registered under `bpt` and documented in their dedicated report rather than
-appended to the root README.
+registered under `bpt` and documented in a dedicated report rather than appended
+to the root README.
 
 ## Cross-repository interfaces
 
 - [Prob4D](https://github.com/IPS-Stuttgart/Prob4D) may emit the versioned,
   content-addressed `ObservationBeliefV1` artifact consumed here.
 - [Causal4D](https://github.com/IPS-Stuttgart/Causal4D) owns Bayesian
-  abduction-intervention-prediction and consumes the versioned provider and
-  belief artifacts exported by Bayesian-PhysTwin.
+  abduction–intervention–prediction and consumes versioned provider and belief
+  artifacts exported by BayesianPhysTwin.
 - [Causal4D migration](causal4d_migration.md) records the historical command and
   tag boundary after Causal4D moved into its own repository.
 - [BayesianPhysTwin-Paper](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper)
@@ -157,11 +200,12 @@ Use the following placement rule when adding work:
    the root README.
 2. Put each experimental protocol, controls, status, and command sequence in a
    dedicated document under `docs/`.
-3. Put frozen machine-readable evidence under `results/` or the corresponding
-   evidence location named by the protocol.
+3. Put frozen machine-readable evidence under `results/` or the evidence
+   location named by the protocol.
 4. Put current paper scope and claim status in `BayesianPhysTwin-Paper`.
 5. Put Causal4D-specific methods and acquisition status in the Causal4D
    repository.
 
-This separation keeps onboarding stable while preserving negative results and
-complete experimental provenance.
+This separation keeps onboarding stable while preserving negative results,
+complete experimental provenance, and the distinction between engineering
+hardening and empirical evidence.
