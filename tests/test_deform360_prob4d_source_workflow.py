@@ -6,6 +6,7 @@ import yaml
 
 WORKFLOW = Path(".github/workflows/deform360-prob4d-source-gate.yml")
 LAUNCHER = Path(".github/workflows/launch-deform360-prob4d-source-gate-once.yml")
+AUDITOR = Path(".github/workflows/revalidate-deform360-prob4d-source-gate-once.yml")
 
 
 def test_public_source_gate_workflow_is_contract_only_on_pull_requests() -> None:
@@ -112,3 +113,46 @@ def test_public_source_gate_uploads_both_negative_and_positive_decisions() -> No
     assert "steps.gate.outcome" in text
     assert 'result["confirmation_access_authorized"] is True' in text
     assert 'result["gate_passed"] is True' in text
+
+
+def test_source_result_auditor_is_exact_run_bound_and_target_closed() -> None:
+    text = AUDITOR.read_text(encoding="utf-8")
+    document = yaml.load(text, Loader=yaml.BaseLoader)
+
+    assert isinstance(document, dict)
+    assert "workflow_run:" in text
+    assert "workflow_dispatch:" in text
+    assert 'branches: [main]' in text
+    assert "SOURCE_HEAD_SHA: ded8910becbb" in text
+    assert "VALIDATOR_REVISION: 94913b23c31e" in text
+    assert "Launch reviewed Deform360 Prob4D public source gate once" in text
+    assert "run_attempt' <<<\"${run}\")\" = \"1\"" in text
+    assert "runs-on: ubuntu-latest" in text
+    assert "runs-on: self-hosted" not in text
+    assert "actions: read" in text
+    assert "contents: read" in text
+    assert "issues: write" in text
+    assert "cancel-in-progress: true" in text
+    assert '"confirmation_payloads_opened": False' in text
+    assert '"target_outcomes_used": False' in text
+    assert '"future_frames_used": False' in text
+    assert '"replacement_allowed": False' in text
+
+
+def test_source_result_auditor_derives_decision_before_publication() -> None:
+    text = AUDITOR.read_text(encoding="utf-8")
+
+    download = text.index("Download only the compact source-gate artifact")
+    validate = text.index("Reconstruct every frozen decision from stored evidence")
+    upload = text.index("Upload the independent source-gate audit")
+    publish = text.index("Publish the independently reconstructed decision")
+    enforce = text.index("Enforce completion of the independent audit")
+    assert download < validate < upload < publish < enforce
+    assert "validate_source_gate_result(source / \"source-gate\")" in text
+    assert "source pipeline revision changed" in text
+    assert "pipeline and source-gate decisions differ" in text
+    assert "validated-negative" in text
+    assert "continue-on-error: true" in text
+    assert "sha256sum --check SHA256SUMS" in text
+    assert "A validated negative" in text
+    assert 'test "${{ steps.validate.outcome }}" = "success"' in text
