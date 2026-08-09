@@ -85,6 +85,9 @@ cross_covariance = operator.cross_covariance(left_query, right_query)
 selected_covariance = operator.marginal_covariance([0, 7, 18])
 ```
 
+Vectors and query matrices must be finite real-valued numeric arrays. Boolean,
+object, string, and complex inputs are rejected instead of being coerced.
+
 For `K` requested vectors or query rows, these operations allocate storage
 linear in the complete coefficient dimension times `K`; they never allocate an
 array with both dimensions equal to the complete coefficient dimension. The
