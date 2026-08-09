@@ -14,6 +14,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Any, Protocol, TypeVar, cast
 
 import numpy as np
@@ -344,6 +345,9 @@ class Deform360ContactAnchorV1:
     def artifact_id(self) -> str:
         """Return a content address over descriptors, provenance, and arrays."""
 
+        return hashlib.sha256(_canonical_json(self._descriptor())).hexdigest()
+
+    def _descriptor(self) -> dict[str, object]:
         arrays: dict[str, object] = {
             "frame_ids": _array_record(self.frame_ids),
             "innovation_m": _array_record(self.innovation_m),
@@ -364,7 +368,7 @@ class Deform360ContactAnchorV1:
             arrays["bias_prior_covariance"] = _array_record(
                 cast(np.ndarray, self.bias_prior_covariance)
             )
-        descriptor = {
+        return {
             "schema": DEFORM360_CONTACT_ANCHOR_SCHEMA,
             "schema_version": DEFORM360_CONTACT_ANCHOR_VERSION,
             "semantics": DEFORM360_CONTACT_ANCHOR_SEMANTICS,
@@ -381,7 +385,27 @@ class Deform360ContactAnchorV1:
             "metadata": self.metadata,
             "arrays": arrays,
         }
-        return hashlib.sha256(_canonical_json(descriptor)).hexdigest()
+
+    def _arrays(self) -> dict[str, np.ndarray]:
+        arrays = {
+            "frame_ids": self.frame_ids,
+            "innovation_m": self.innovation_m,
+            "covariance_m2": self.covariance_m2,
+            "state_jacobian": self.state_jacobian,
+            "prior_reliability": cast(np.ndarray, self.prior_reliability),
+            "prior_nominal_probability": cast(
+                np.ndarray,
+                self.prior_nominal_probability,
+            ),
+            "composite_weight": cast(np.ndarray, self.composite_weight),
+        }
+        if self.bias_jacobian is not None:
+            arrays["bias_jacobian"] = self.bias_jacobian
+            arrays["bias_prior_covariance"] = cast(
+                np.ndarray,
+                self.bias_prior_covariance,
+            )
+        return arrays
 
     def summary(self) -> dict[str, object]:
         """Return compact lineage suitable for a gauge-aware batch."""
@@ -461,6 +485,128 @@ def attach_deform360_contact_anchor(
     )
 
 
+def save_deform360_contact_anchor(
+    path: str | Path,
+    anchor: Deform360ContactAnchorV1,
+) -> None:
+    """Write a non-pickled, content-addressed contact-anchor archive."""
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = anchor._descriptor()
+    descriptor["artifact_id"] = anchor.artifact_id
+    payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
+            json.dumps(
+                descriptor,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+        )
+    }
+    payload.update(anchor._arrays())
+    np.savez_compressed(target, **payload)
+
+
+def load_deform360_contact_anchor(
+    path: str | Path,
+) -> Deform360ContactAnchorV1:
+    """Load and fully revalidate a contact-anchor archive."""
+
+    try:
+        with np.load(path, allow_pickle=False) as archive:
+            _require(
+                "descriptor_json" in archive,
+                "contact anchor has no descriptor_json",
+            )
+            descriptor = json.loads(str(archive["descriptor_json"]))
+            arrays = {
+                name: np.asarray(archive[name])
+                for name in archive.files
+                if name != "descriptor_json"
+            }
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot load contact anchor: {path}") from error
+
+    _require(
+        isinstance(descriptor, Mapping),
+        "contact-anchor descriptor must be a mapping",
+    )
+    _require(
+        descriptor.get("schema") == DEFORM360_CONTACT_ANCHOR_SCHEMA,
+        "unsupported contact-anchor schema",
+    )
+    _require(
+        genuine_integer(
+            descriptor.get("schema_version"),
+            name="contact-anchor schema_version",
+            minimum=0,
+        )
+        == DEFORM360_CONTACT_ANCHOR_VERSION,
+        "unsupported contact-anchor version",
+    )
+    for key, expected in (
+        ("semantics", DEFORM360_CONTACT_ANCHOR_SEMANTICS),
+        ("source_repository", DEFORM360_SOURCE_REPOSITORY),
+        ("source_units", DEFORM360_TACTILE_SOURCE_UNITS),
+        ("anchor_units", DEFORM360_CONTACT_ANCHOR_UNITS),
+    ):
+        _require(descriptor.get(key) == expected, f"contact-anchor {key} changed")
+
+    required = {
+        "frame_ids",
+        "innovation_m",
+        "covariance_m2",
+        "state_jacobian",
+        "prior_reliability",
+        "prior_nominal_probability",
+        "composite_weight",
+    }
+    optional = {"bias_jacobian", "bias_prior_covariance"}
+    _require(
+        not (required - arrays.keys()),
+        f"contact anchor is missing arrays {sorted(required - arrays.keys())}",
+    )
+    _require(
+        not (arrays.keys() - required - optional),
+        "contact anchor contains unexpected arrays",
+    )
+    _require(
+        ("bias_jacobian" in arrays) == ("bias_prior_covariance" in arrays),
+        "contact anchor bias arrays must be supplied together",
+    )
+
+    anchor = Deform360ContactAnchorV1(
+        object_id=descriptor.get("object_id"),
+        episode_id=descriptor.get("episode_id"),
+        causal_frame_stop=descriptor.get("causal_frame_stop"),
+        sensor_names=descriptor.get("sensor_names"),
+        frame_ids=arrays["frame_ids"],
+        innovation_m=arrays["innovation_m"],
+        covariance_m2=arrays["covariance_m2"],
+        state_jacobian=arrays["state_jacobian"],
+        correlation_group_ids=descriptor.get("correlation_group_ids"),
+        source_revision=descriptor.get("source_revision"),
+        source_artifacts=descriptor.get("source_artifacts"),
+        prior_reliability=arrays["prior_reliability"],
+        prior_nominal_probability=arrays["prior_nominal_probability"],
+        composite_weight=arrays["composite_weight"],
+        bias_jacobian=arrays.get("bias_jacobian"),
+        bias_prior_covariance=arrays.get("bias_prior_covariance"),
+        metadata=descriptor.get("metadata"),
+    )
+    _require(
+        descriptor.get("artifact_id") == anchor.artifact_id,
+        "contact-anchor artifact ID does not match its payload",
+    )
+    _require(
+        descriptor.get("arrays") == anchor._descriptor().get("arrays"),
+        "contact-anchor array records do not match its payload",
+    )
+    return anchor
+
+
 __all__ = [
     "DEFORM360_CONTACT_ANCHOR_SCHEMA",
     "DEFORM360_CONTACT_ANCHOR_SEMANTICS",
@@ -470,4 +616,6 @@ __all__ = [
     "DEFORM360_TACTILE_SOURCE_UNITS",
     "Deform360ContactAnchorV1",
     "attach_deform360_contact_anchor",
+    "load_deform360_contact_anchor",
+    "save_deform360_contact_anchor",
 ]
