@@ -8,7 +8,6 @@ on:
       - "scripts/ci/inventory_deform360_v4_results.py"
       - "tests/test_inventory_deform360_v4_results.py"
       - "tests/test_inventory_deform360_v4_results_workflow.py"
-      - "MANIFEST.in"
   push:
     branches: [main]
     paths:
@@ -46,7 +45,7 @@ jobs:
           persist-credentials: false
           clean: true
       - name: Set up Python 3.12
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
