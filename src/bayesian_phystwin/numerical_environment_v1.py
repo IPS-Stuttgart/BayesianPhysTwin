@@ -399,7 +399,12 @@ class NumericalEnvironmentV1:
 def _capture_installed_distributions() -> tuple[InstalledDistributionV1, ...]:
     versions: dict[str, str] = {}
     for distribution in importlib.metadata.distributions():
-        raw_name = distribution.metadata.get("Name")
+        try:
+            raw_name = distribution.metadata["Name"]
+        except KeyError as error:
+            raise ValueError(
+                "installed distribution is missing its Name metadata"
+            ) from error
         if not raw_name:
             raise ValueError("installed distribution is missing its Name metadata")
         name = _canonical_distribution_name(str(raw_name))

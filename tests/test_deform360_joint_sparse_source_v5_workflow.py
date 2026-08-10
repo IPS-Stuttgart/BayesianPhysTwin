@@ -26,6 +26,7 @@ def test_source_contract_workflow_is_hosted_and_data_closed() -> None:
     assert "numpy pyyaml pytest ruff mypy" in text
     assert "mypy --no-site-packages" in text
     assert "deform360_joint_sparse_source_evidence_v5.py" in text
+    assert "deform360_joint_sparse_physical_source_v5.py" in text
     assert "materialize_deform360_joint_sparse_source_evidence_v5.py" in text
 
 
@@ -49,6 +50,10 @@ def test_source_execution_artifacts_are_in_source_distribution() -> None:
     )
     assert (
         "include scripts/science/evaluate_deform360_joint_sparse_source_v5.py" in lines
+    )
+    assert (
+        "include scripts/science/"
+        "materialize_deform360_joint_sparse_physical_source_v5.py" in lines
     )
     assert (
         "include scripts/science/"
