@@ -1,8 +1,8 @@
 # Prospective belief updates v1
 
-This document defines two additive development interfaces. Neither interface
-changes the frozen fixed-anchor provider, released PhysTwin reproduction, or any
-existing empirical claim.
+This document defines three additive development interfaces. None of these
+interfaces changes the frozen fixed-anchor provider, released PhysTwin
+reproduction, or any existing empirical claim.
 
 ## Evidence-weighted endpoint uncertainty
 
@@ -55,6 +55,55 @@ bounds remain a separate layer.
 Causal4D consumers may use the additive
 `bayesian_phystwin.causal4d_belief_provider_v2` module. Provider v1 remains
 unchanged for frozen experiments and exact historical semantics.
+
+## Structured discrepancy field
+
+`bayesian_phystwin.structured_discrepancy` extends endpoint uncertainty from
+independent tracks to one object-level field in a frozen orthonormal spatial
+basis. Each robust random-walk component carries a shared coefficient mean and
+covariance, while omitted spatial directions retain a marginal-preserving
+diagonal initial/process remainder derived from projector leverage.
+
+The interface uses one component-weight vector for the complete field and
+exposes exact factorized covariance for arbitrary linear queries without
+materializing the complete `(3 * tracks) x (3 * tracks)` matrix. Any complete
+orthonormal basis with binary reliability and one component is numerically
+equivalent to the existing independent endpoint filter after reparameterization.
+
+```python
+import numpy as np
+
+from bayesian_phystwin.structured_discrepancy import (
+    infer_structured_discrepancy,
+    predict_structured_discrepancy,
+    structured_discrepancy_query_moments,
+)
+
+basis = np.ones((residual_m.shape[1], 1)) / np.sqrt(residual_m.shape[1])
+posterior = infer_structured_discrepancy(
+    residual_m,
+    valid,
+    basis,
+    prior_reliability=prior_reliability,
+    end_frame=train_end,
+)
+prediction = predict_structured_discrepancy(posterior, horizon_steps=20)
+query_moments = structured_discrepancy_query_moments(
+    prediction,
+    registered_query_jacobian,
+)
+```
+
+The basis must be selected and frozen without target outcomes. Its generalized
+component score deliberately caps vertex-count evidence by averaging cumulative
+marginal mixture scores over supported tracks. This is not an exact correlated
+mixture marginal likelihood. The result remains a readout/model-discrepancy
+belief, not a physically identified simulator-state update, and raw covariance
+still requires independent object/session calibration.
+
+See [structured discrepancy field v1](structured_discrepancy_field_v1.md) for
+the model, covariance algebra, identity-basis parity, validation rules, and
+scientific boundary.
 
 ## Strict Prob4D update composition
 
