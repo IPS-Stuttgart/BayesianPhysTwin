@@ -7,10 +7,10 @@ v1-v3 support negatives and the development-only joint-sparse observability v4
 protocol.
 
 The earlier experiments asked whether every camera stream was independently
-sufficient. That is the wrong unit for a multi-view Bayesian model. A camera can
-be only partially informative while the object-level collection of cameras,
-causal windows, metric anchors, contact factors, and gauge priors is jointly
-identifiable.
+sufficient. That is the wrong unit for a multi-view Bayesian model.
+A camera can be only partially informative while the object-level collection
+of cameras, causal windows, metric anchors, contact factors, and gauge priors is
+jointly identifiable.
 
 Version 5 therefore asks the claim-bearing question directly:
 
