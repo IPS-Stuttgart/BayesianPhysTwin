@@ -335,9 +335,7 @@ class ClaimBearingProb4DCandidateV1:
                 "covariance_semantics dimension must match posterior covariance"
             )
         expected_method = (
-            "irls_working"
-            if self.inference_admissible
-            else "exact_prior_fallback"
+            "irls_working" if self.inference_admissible else "exact_prior_fallback"
         )
         if semantics.method != expected_method:
             raise ValueError(
