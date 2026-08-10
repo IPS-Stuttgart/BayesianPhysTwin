@@ -28,8 +28,7 @@ IMPLEMENTATION_PATH: Final = Path(__file__).with_name(
 
 def _load_implementation() -> ModuleType:
     if len(EXPECTED_DATASET_SHA256) != 64 or any(
-        character not in "0123456789abcdef"
-        for character in EXPECTED_DATASET_SHA256
+        character not in "0123456789abcdef" for character in EXPECTED_DATASET_SHA256
     ):
         raise RuntimeError("authoritative dataset SHA-256 is malformed")
     spec = importlib.util.spec_from_file_location(
@@ -49,7 +48,7 @@ def _load_implementation() -> ModuleType:
         raise RuntimeError(
             "implementation dataset identity differs from the reviewed lock"
         )
-    module.DATASET_SHA256 = EXPECTED_DATASET_SHA256
+    setattr(module, "DATASET_SHA256", EXPECTED_DATASET_SHA256)
     return module
 
 
