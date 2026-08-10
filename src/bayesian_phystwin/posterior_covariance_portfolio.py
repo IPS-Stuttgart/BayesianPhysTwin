@@ -35,9 +35,7 @@ from .posterior_covariance_semantics import (
 )
 from .posterior_uncertainty import PosteriorQueryUncertaintyV1
 
-POSTERIOR_COVARIANCE_SOURCE_SCHEMA = (
-    "bayesian_phystwin.posterior_covariance_source"
-)
+POSTERIOR_COVARIANCE_SOURCE_SCHEMA = "bayesian_phystwin.posterior_covariance_source"
 POSTERIOR_COVARIANCE_SOURCE_VERSION = 1
 POSTERIOR_QUERY_COVARIANCE_PORTFOLIO_SCHEMA = (
     "bayesian_phystwin.posterior_query_covariance_portfolio"
@@ -68,9 +66,7 @@ def _literal_string(value: object, *, name: str) -> str:
 
 def _method(value: object, *, name: str) -> PosteriorCovarianceMethod:
     if type(value) is not str or value not in POSTERIOR_COVARIANCE_METHODS:
-        raise ValueError(
-            f"{name} must be one of {list(POSTERIOR_COVARIANCE_METHODS)}"
-        )
+        raise ValueError(f"{name} must be one of {list(POSTERIOR_COVARIANCE_METHODS)}")
     return cast(PosteriorCovarianceMethod, value)
 
 
@@ -88,7 +84,7 @@ def _validated_covariance(value: object, *, name: str) -> FloatArray:
     symmetric = 0.5 * (covariance + covariance.T)
     eigenvalues = np.linalg.eigvalsh(symmetric)
     scale = max(1.0, float(np.max(np.abs(eigenvalues))))
-    tolerance = 1e-12 + 1e-10 * scale
+    tolerance = max(1, len(covariance)) * np.finfo(np.float64).eps * scale * 100.0
     if float(np.min(eigenvalues)) < -tolerance:
         raise ValueError(f"{name} must be positive semidefinite")
     return immutable_array(symmetric, dtype=np.dtype("<f8"))
@@ -335,9 +331,7 @@ class PosteriorQueryCovariancePortfolioV1:
             source = source_by_method[method]
             source_id = cast(str, source.artifact_id)
             expected_covariance = query @ source.covariance @ query.T
-            expected_covariance = 0.5 * (
-                expected_covariance + expected_covariance.T
-            )
+            expected_covariance = 0.5 * (expected_covariance + expected_covariance.T)
             if not np.allclose(
                 entry.source_query_covariance_m2,
                 expected_covariance,
@@ -360,6 +354,14 @@ class PosteriorQueryCovariancePortfolioV1:
             if entry_metadata.get("parameter_dimension") != parameter_dimension:
                 raise ValueError("portfolio entry parameter dimension changed")
             semantics = entry.source_covariance_semantics
+            expected_semantics = _projected_semantics(
+                source.covariance_semantics,
+                dimension=query_dimension,
+                source_id=source_id,
+                query_matrix_sha256=query_matrix_sha256,
+            )
+            if semantics.artifact_id != expected_semantics.artifact_id:
+                raise ValueError("portfolio projected covariance semantics changed")
             semantics_metadata = semantics.metadata
             if semantics_metadata.get("query_matrix_sha256") != query_matrix_sha256:
                 raise ValueError(
@@ -430,6 +432,14 @@ class PosteriorQueryCovariancePortfolioV1:
                 raise ValueError("rejected portfolio must contain only exact fallback")
             if unavailable:
                 raise ValueError("rejected portfolio cannot list alternative methods")
+            fallback_source = source_by_method["exact_prior_fallback"]
+            fallback_reason = fallback_source.covariance_semantics.metadata.get(
+                "fallback_reason"
+            )
+            if fallback_reason != reason:
+                raise ValueError(
+                    "rejected portfolio reason does not match exact fallback"
+                )
 
         metadata = frozen_finite_json_mapping(
             self.metadata,

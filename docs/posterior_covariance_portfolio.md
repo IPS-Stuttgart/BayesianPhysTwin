@@ -81,9 +81,10 @@ The builder applies `Q P Q.T` to every source and creates one
 semantics record points back to its full-parameter source.
 
 The final portfolio retains the query matrix and every source. Construction
-therefore recomputes each projected covariance and independently verifies the
-query, source, semantics, and estimator identities. A manually assembled entry
-cannot substitute a different covariance with matching labels.
+therefore recomputes each projected covariance and the complete projected
+semantics, then independently verifies the query, source, semantics, and
+estimator identities. A manually assembled entry cannot substitute a different
+covariance or interpretation with matching labels.
 
 ## Complete accounting
 
@@ -114,8 +115,9 @@ silently disappearing. The portfolio records
 coverage.
 
 A rejected inference result has a different contract. It contains exactly one
-`exact_prior_fallback` covariance, retains the rejection reason, and cannot list
-accepted-update alternatives. Use
+`exact_prior_fallback` covariance, requires the portfolio reason to match the
+fallback covariance's recorded reason, and cannot list accepted-update
+alternatives. Use
 `exact_prior_fallback_covariance_source(...)` to bind this case explicitly.
 
 ## Calibration boundary

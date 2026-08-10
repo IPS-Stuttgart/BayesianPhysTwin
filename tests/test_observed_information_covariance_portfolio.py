@@ -260,9 +260,7 @@ def test_convenience_sources_bind_required_semantics() -> None:
         source_artifact_id="c" * 64,
     )
     assert working.method == "irls_working"
-    assert working.covariance_semantics.metadata["portfolio_source"] == (
-        "working-irls"
-    )
+    assert working.covariance_semantics.metadata["portfolio_source"] == ("working-irls")
     with pytest.raises(ValueError, match="contradicts portfolio_source"):
         working_covariance_source(
             RESULT_ID,
@@ -356,6 +354,7 @@ def test_portfolio_recomputes_projection_and_revalidates_identities() -> None:
     tampered_covariance = replace(
         working,
         source_query_covariance_m2=np.eye(2) * 99.0,
+        artifact_id=None,
     )
     entries = tuple(
         tampered_covariance if entry is working else entry
@@ -368,10 +367,10 @@ def test_portfolio_recomputes_projection_and_revalidates_identities() -> None:
     tampered_metadata = replace(
         observed,
         metadata={**observed.metadata, "query_matrix_sha256": "0" * 64},
+        artifact_id=None,
     )
     entries = tuple(
-        tampered_metadata if entry is observed else entry
-        for entry in portfolio.entries
+        tampered_metadata if entry is observed else entry for entry in portfolio.entries
     )
     with pytest.raises(ValueError, match="query matrix identity"):
         replace(portfolio, entries=entries)
@@ -430,3 +429,63 @@ def test_portfolio_identity_changes_with_query_or_unavailable_reason() -> None:
         first.entry("group_sandwich")
     with pytest.raises(KeyError):
         first.source("group_sandwich")
+
+
+def test_portfolio_hardening_rejects_semantic_and_reason_drift() -> None:
+    portfolio = build_posterior_query_covariance_portfolio(
+        RESULT_ID,
+        QUERY_ID,
+        np.eye(2),
+        _accepted_sources(),
+        inference_admissible=True,
+        reason="inference-admissible",
+    )
+    working = portfolio.entry("irls_working")
+    semantics = working.source_covariance_semantics
+    tampered_semantics = PosteriorCovarianceSemanticsV1(
+        method=semantics.method,
+        dimension=semantics.dimension,
+        likelihood_power_semantics="different-generalized-bayes-power-v1",
+        prior_included=semantics.prior_included,
+        generalized_bayes=semantics.generalized_bayes,
+        mixture_curvature_exact=semantics.mixture_curvature_exact,
+        group_score_correction=semantics.group_score_correction,
+        calibrated=False,
+        metadata=semantics.metadata,
+    )
+    tampered_entry = replace(
+        working,
+        source_covariance_semantics=tampered_semantics,
+        artifact_id=None,
+    )
+    entries = tuple(
+        tampered_entry if entry is working else entry for entry in portfolio.entries
+    )
+    with pytest.raises(ValueError, match="projected covariance semantics changed"):
+        replace(portfolio, entries=entries, artifact_id=None)
+
+    fallback = exact_prior_fallback_covariance_source(
+        RESULT_ID,
+        np.eye(2),
+        source_artifact_id="f" * 64,
+        reason="no-identifiable-query-state",
+    )
+    with pytest.raises(ValueError, match="reason does not match exact fallback"):
+        build_posterior_query_covariance_portfolio(
+            RESULT_ID,
+            QUERY_ID,
+            np.eye(2),
+            [fallback],
+            inference_admissible=False,
+            reason="different-rejection-reason",
+        )
+
+
+def test_portfolio_source_rejects_large_scale_material_indefiniteness() -> None:
+    with pytest.raises(ValueError, match="positive semidefinite"):
+        PosteriorCovarianceSourceV1(
+            inference_result_id=RESULT_ID,
+            source_artifact_id="c" * 64,
+            covariance=np.diag([1.0e12, -1.0]),
+            covariance_semantics=_semantics("irls_working", np.eye(2)),
+        )
