@@ -5,6 +5,10 @@ from typing import cast
 import numpy as np
 import pytest
 
+from _posterior_covariance_portfolio_support import (
+    RESULT_ID,
+    semantics,
+)
 from bayesian_phystwin.group_sandwich_covariance import (
     GroupSandwichCovarianceResultV1,
 )
@@ -16,11 +20,6 @@ from bayesian_phystwin.posterior_covariance_portfolio import (
     group_sandwich_covariance_source,
     observed_information_covariance_source,
     working_covariance_source,
-)
-
-from _posterior_covariance_portfolio_support import (
-    RESULT_ID,
-    semantics,
 )
 
 
