@@ -293,6 +293,29 @@ def test_filter_rejects_invalid_reliability_and_group_contracts() -> None:
         )
 
 
+def test_filter_rejects_unidentifiable_support_and_nonstring_groups() -> None:
+    residual = np.asarray([[[0.01, 0.0, 0.0], [0.0, 0.0, 0.0]]])
+    valid = np.asarray([[True, False]])
+    basis = np.asarray([[0.0], [1.0]])
+
+    belief = fit_graph_dynamic_discrepancy(
+        residual,
+        valid,
+        basis,
+        frame_dt_s=1.0,
+    )
+
+    assert belief.update_reasons == ("no-identifiable-graph-support",)
+    with pytest.raises(ValueError, match="literal nonempty strings"):
+        fit_graph_dynamic_discrepancy(
+            residual,
+            valid,
+            basis,
+            frame_dt_s=1.0,
+            correlation_group_ids=np.asarray([[1, 1]], dtype=object),
+        )
+
+
 def test_filter_rejects_ill_conditioned_and_implausible_updates() -> None:
     residual = np.asarray([[[0.01, 0.0, 0.0]]])
     valid = np.ones((1, 1), dtype=bool)
