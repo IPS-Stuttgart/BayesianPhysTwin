@@ -59,31 +59,21 @@ def test_group_cap_changes_power_but_not_outlier_classification() -> None:
 
 
 def test_student_t_group_weight_uses_covariance_parameterization() -> None:
-    residual = np.asarray([[[3.0, 0.0, 0.0], [0.0, 0.0, 0.0]]])
-    valid = np.asarray([[True, False]])
-    basis = np.asarray([[0.0], [1.0]])
+    from bayesian_phystwin import _graph_dynamic_discrepancy_filter as module
+
     config = GraphDynamicDiscrepancyConfigV1(
-        observation_std_m=1.0,
         degrees_of_freedom=5.0,
-        process_position_std_m=0.0,
-        process_acceleration_std_mps2=0.0,
-        maximum_node_position_m=1.0,
-        maximum_node_velocity_mps=1.0,
     )
 
-    belief = fit_graph_dynamic_discrepancy(
-        residual,
-        valid,
-        basis,
-        frame_dt_s=1.0,
-        config=config,
-    )
+    weight = module._student_t_group_weight(9.0, 3, config)
 
-    diagnostics = belief.diagnostics["frame_diagnostics"][0]
     # Covariance parameterization: (nu + d) / (nu - 2 + Mahalanobis^2).
-    assert diagnostics["correlation_group_robust_weight"] == [
-        pytest.approx((5.0 + 3.0) / (5.0 - 2.0 + 9.0))
-    ]
+    assert weight == pytest.approx((5.0 + 3.0) / (5.0 - 2.0 + 9.0))
+    assert module._student_t_group_weight(0.0, 3, config) == 1.0
+    with pytest.raises(ValueError, match="nonnegative"):
+        module._student_t_group_weight(-1.0, 3, config)
+    with pytest.raises(ValueError, match="positive"):
+        module._student_t_group_weight(1.0, 0, config)
 
 
 def test_public_contracts_reject_numeric_strings_and_falsey_config() -> None:
