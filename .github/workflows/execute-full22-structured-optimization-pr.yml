@@ -47,23 +47,72 @@ jobs:
 
           import yaml
 
-          workflow = Path(
+          staged = Path(
               ".github/workflows/repair-full22-structured-marginals.yml"
           )
-          payload = yaml.safe_load(workflow.read_text(encoding="utf-8"))
+          payload = yaml.safe_load(staged.read_text(encoding="utf-8"))
           scripts = {
               step["name"]: step["run"]
               for step in payload["jobs"]["repair"]["steps"]
               if "run" in step
           }
-          for name in (
-              "Apply exact structured-marginal and compact-readout adapters",
-              "Validate the isolated optimization",
+          subprocess.run(
+              [
+                  "bash",
+                  "-lc",
+                  scripts[
+                      "Apply exact structured-marginal and compact-readout adapters"
+                  ],
+              ],
+              check=True,
+          )
+
+          workflow = Path(
+              ".github/workflows/"
+              "full22-discrepancy-candidate-tournament-v1.yml"
+          )
+          workflow_text = workflow.read_text(encoding="utf-8")
+          start_marker = "      - name: Upload compact tournament readout\n"
+          end_marker = "      - name: Upload complete tournament evidence\n"
+          if (
+              workflow_text.count(start_marker) != 1
+              or workflow_text.count(end_marker) != 1
           ):
-              subprocess.run(
-                  ["bash", "-lc", scripts[name]],
-                  check=True,
-              )
+              raise SystemExit("unexpected compact-readout workflow markers")
+          start = workflow_text.index(start_marker)
+          end = workflow_text.index(end_marker, start)
+          compact_step = '''      - name: Upload compact tournament readout
+            if: always()
+            uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+            with:
+              name: >-
+                bpt-full22-discrepancy-readout-${{ github.run_id }}-${{
+                github.run_attempt }}
+              path: |
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/scientific-readout.json
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/result/*.json
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/admission/admission_manifest.json
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/predictions/*/prediction_manifest.json
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/prefix/prefix_manifest.json
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/candidate-revisions.txt
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/data-manifest.json
+                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/pip-freeze.txt
+              if-no-files-found: ignore
+              retention-days: 30
+
+          '''
+          workflow.write_text(
+              workflow_text[:start] + compact_step + workflow_text[end:],
+              encoding="utf-8",
+          )
+          subprocess.run(
+              [
+                  "bash",
+                  "-lc",
+                  scripts["Validate the isolated optimization"],
+              ],
+              check=True,
+          )
           Path(
               ".github/full22-structured-marginal-optimization-trigger.txt"
           ).unlink(missing_ok=True)
