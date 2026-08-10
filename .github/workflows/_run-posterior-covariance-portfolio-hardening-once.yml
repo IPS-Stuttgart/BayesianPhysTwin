@@ -58,10 +58,10 @@ jobs:
           python -m compileall -q \
             src/bayesian_phystwin/posterior_covariance_portfolio.py \
             tests/test_observed_information_covariance_portfolio.py
-          python -m pytest -q \
+          python -m pytest -q -p no:cacheprovider \
             tests/test_observed_information_covariance_portfolio.py \
             tests/test_observed_information_covariance.py \
-            tests/test_observed_information_covariance_contracts.py
+            tests/test_group_sandwich_covariance.py
           git diff --check
 
       - name: Publish hardened branch
