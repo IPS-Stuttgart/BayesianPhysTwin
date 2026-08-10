@@ -7,6 +7,12 @@ on:
     paths:
       - .github/workflows/_apply-discrepancy-tournament-v1-once.yml
       - tools/one_shot/apply-discrepancy-tournament-v1.py.part*
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/_apply-discrepancy-tournament-v1-once.yml
+      - tools/one_shot/apply-discrepancy-tournament-v1.py.part*
 
 permissions:
   contents: write
@@ -19,7 +25,10 @@ jobs:
   apply:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/agent/discrepancy-candidate-tournament-v1'
+      ((github.event_name == 'push' &&
+        github.ref == 'refs/heads/agent/discrepancy-candidate-tournament-v1') ||
+       (github.event_name == 'pull_request' &&
+        github.head_ref == 'agent/discrepancy-candidate-tournament-v1'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
