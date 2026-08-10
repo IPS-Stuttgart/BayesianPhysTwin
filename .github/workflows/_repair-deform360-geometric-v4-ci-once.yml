@@ -1,0 +1,237 @@
+name: Repair Deform360 geometric v4 CI once
+
+on:
+  push:
+    branches:
+      - agent/materialize-deform360-joint-sparse-geometric-v4
+    paths:
+      - .github/workflows/_repair-deform360-geometric-v4-ci-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-deform360-geometric-v4-ci-once
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/materialize-deform360-joint-sparse-geometric-v4
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Repair typing and workflow contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "agent/materialize-deform360-joint-sparse-geometric-v4"
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one occurrence, found {count}")
+              target.write_text(text.replace(old, new), encoding="utf-8")
+
+          common = "src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py"
+          replace_once(
+              common,
+              '    calibration = cast(Mapping[str, Any], selection).get("calibration")\n'
+              '    _require(\n'
+              '        isinstance(calibration, list) and len(calibration) == 10,\n'
+              '        "development selection changed",\n'
+              '    )\n'
+              '    rows: dict[tuple[str, int], str] = {}\n'
+              '    for index, raw in enumerate(calibration):\n',
+              '    raw_calibration = cast(Mapping[str, Any], selection).get("calibration")\n'
+              '    _require(\n'
+              '        isinstance(raw_calibration, list) and len(raw_calibration) == 10,\n'
+              '        "development selection changed",\n'
+              '    )\n'
+              '    calibration = cast(list[object], raw_calibration)\n'
+              '    rows: dict[tuple[str, int], str] = {}\n'
+              '    for index, raw in enumerate(calibration):\n',
+          )
+
+          npz = "src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py"
+          replace_once(
+              npz,
+              '    expected_frames = np.arange(start, stop, dtype=np.int64)\n',
+              '    expected_frames: np.ndarray = np.arange(start, stop, dtype=np.int64)\n',
+          )
+          replace_once(
+              npz,
+              '    for index, raw in enumerate(members):\n',
+              '    for index, raw in enumerate(cast(list[object], members)):\n',
+          )
+          replace_once(
+              npz,
+              '    for index, raw in enumerate(raw_windows):\n',
+              '    for index, raw in enumerate(cast(list[object], raw_windows)):\n',
+          )
+          replace_once(
+              npz,
+              '        descriptor = descriptors.get(relative)\n'
+              '        _require(descriptor is not None, "prediction window lacks integrity descriptor")\n',
+              '        descriptor = descriptors.get(relative)\n'
+              '        _require(descriptor is not None, "prediction window lacks integrity descriptor")\n'
+              '        descriptor = cast(Mapping[str, Any], descriptor)\n',
+          )
+          replace_once(
+              npz,
+              '        expected_frames = np.arange(window_start, window_stop, dtype=np.int64)\n',
+              '        expected_frames: np.ndarray = np.arange(\n'
+              '            window_start, window_stop, dtype=np.int64\n'
+              '        )\n',
+          )
+
+          source = "src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py"
+          replace_once(
+              source,
+              '    for index, raw_case in enumerate(raw_plan_cases):\n',
+              '    for index, raw_case in enumerate(cast(list[object], raw_plan_cases)):\n',
+          )
+
+          candidates = "src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py"
+          replace_once(
+              candidates,
+              'from .deform360_joint_sparse_geometric_npz_v4 import (\n'
+              '    _load_camera_center,\n',
+              'from .deform360_joint_sparse_geometric_npz_v4 import (\n'
+              '    _MetricFrame,\n'
+              '    _load_camera_center,\n',
+          )
+          replace_once(
+              candidates,
+              '            metric = metric_frames.get(frame)\n'
+              '            _require(metric is not None, "prediction window leaves metric prefix")\n',
+              '            metric = metric_frames.get(frame)\n'
+              '            _require(metric is not None, "prediction window leaves metric prefix")\n'
+              '            metric = cast(_MetricFrame, metric)\n',
+          )
+
+          batch = "src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py"
+          for old, new in (
+              ('    state = np.zeros((count, 3, 5), dtype=np.float64)\n',
+               '    state: np.ndarray = np.zeros((count, 3, 5), dtype=np.float64)\n'),
+              ('    local_gauge = np.zeros((count, 3, 7), dtype=np.float64)\n',
+               '    local_gauge: np.ndarray = np.zeros((count, 3, 7), dtype=np.float64)\n'),
+              ('    covariance = np.zeros((count, 3, 3), dtype=np.float64)\n',
+               '    covariance: np.ndarray = np.zeros((count, 3, 3), dtype=np.float64)\n'),
+              ('    gauge_indices = np.empty(count, dtype=np.int64)\n',
+               '    gauge_indices: np.ndarray = np.empty(count, dtype=np.int64)\n'),
+              ('    parents = np.zeros(gauge_count, dtype=np.int64)\n',
+               '    parents: np.ndarray = np.zeros(gauge_count, dtype=np.int64)\n'),
+              ('    transitions = np.zeros((gauge_count, 7, 7), dtype=np.float64)\n',
+               '    transitions: np.ndarray = np.zeros((gauge_count, 7, 7), dtype=np.float64)\n'),
+              ('    scales = np.zeros((gauge_count, 7, 7), dtype=np.float64)\n',
+               '    scales: np.ndarray = np.zeros((gauge_count, 7, 7), dtype=np.float64)\n'),
+              ('    view = np.zeros((count, 3, 0), dtype=np.float64)\n',
+               '    view: np.ndarray = np.zeros((count, 3, 0), dtype=np.float64)\n'),
+          ):
+              replace_once(batch, old, new)
+
+          materializer = "src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py"
+          replace_once(
+              materializer,
+              '        for index, raw in enumerate(excluded_rows):\n',
+              '        for index, raw in enumerate(cast(list[object], excluded_rows)):\n',
+          )
+          replace_once(
+              materializer,
+              '        for case_index, raw_case in enumerate(raw_cases):\n',
+              '        for case_index, raw_case in enumerate(cast(list[object], raw_cases)):\n',
+          )
+          replace_once(
+              materializer,
+              '                _integer(causal[0], name="causal start"),\n'
+              '                _integer(causal[1], name="causal stop", minimum=1),\n',
+              '                _integer(cast(list[object], causal)[0], name="causal start"),\n'
+              '                _integer(\n'
+              '                    cast(list[object], causal)[1], name="causal stop", minimum=1\n'
+              '                ),\n',
+          )
+          replace_once(
+              materializer,
+              '            for stream_index, raw_stream in enumerate(raw_streams):\n',
+              '            for stream_index, raw_stream in enumerate(\n'
+              '                cast(list[object], raw_streams)\n'
+              '            ):\n',
+          )
+          replace_once(
+              materializer,
+              '                    "retained_stream_count": len(raw_streams),\n',
+              '                    "retained_stream_count": len(cast(list[object], raw_streams)),\n',
+          )
+          replace_once(
+              materializer,
+              '            with arrays_path.open("xb") as stream:\n'
+              '                np.savez_compressed(stream, **_npz_payload(batch))\n',
+              '            with arrays_path.open("xb") as archive_stream:\n'
+              '                np.savez_compressed(archive_stream, **_npz_payload(batch))\n',
+          )
+
+          workflow_test = "tests/test_deform360_joint_sparse_geometric_v4_workflow.py"
+          replace_once(
+              workflow_test,
+              '    command = text.split(\n',
+              '    command = text.rsplit(\n',
+          )
+          PY
+
+          git rm \
+            .github/workflows/_repair-deform360-joint-sparse-geometric-v4-pr-once.yml \
+            .github/workflows/_repair-deform360-joint-sparse-geometric-v4-typing-once.yml \
+            .github/workflows/_diagnose-deform360-joint-sparse-geometric-v4-pytest.yml
+
+          python -m pip install -e ".[dev]"
+          files=(
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+            tests/test_deform360_joint_sparse_geometric_v4_workflow.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4.py \
+            tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
+            tests/test_deform360_joint_sparse_observability_v4.py \
+            tests/test_deform360_joint_sparse_observability_v4_cli.py \
+            tests/test_deform360_joint_sparse_observability_v4_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          git add -u .github/workflows
+          git commit -m "Fix Deform360 geometric v4 CI"
+          git push origin HEAD:agent/materialize-deform360-joint-sparse-geometric-v4
