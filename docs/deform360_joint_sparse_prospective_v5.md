@@ -26,6 +26,10 @@ Version 5 therefore asks the claim-bearing question directly:
 
 The machine-readable design lock is
 `protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json`.
+The source-independent execution amendment that binds the exact B0 generator and
+the per-fold source decision is
+`protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json`.
+It leaves this design lock, cohort, endpoints, and confirmation rule unchanged.
 
 ## Why this is a genuinely new experiment
 
