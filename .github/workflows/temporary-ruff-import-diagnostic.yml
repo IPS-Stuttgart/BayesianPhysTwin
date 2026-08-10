@@ -1,0 +1,32 @@
+name: Temporary Ruff import diagnostic
+
+on:
+  push:
+    branches:
+      - agent/fix-bias-aware-input-contracts
+
+permissions:
+  contents: read
+
+jobs:
+  import-diff:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install quality tools
+        run: python -m pip install -e ".[dev]"
+      - name: Print Ruff's exact import fix
+        run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/bias_aware_input_contract.py \
+            tests/test_bias_aware_input_contracts.py
+          git diff -- \
+            src/bayesian_phystwin/bias_aware_input_contract.py \
+            tests/test_bias_aware_input_contracts.py
