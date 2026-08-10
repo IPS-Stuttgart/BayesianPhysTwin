@@ -1,0 +1,130 @@
+name: Add tree-separator parity validation tests
+
+on:
+  push:
+    branches: [agent/tree-separator-shadow-parity-v1]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-tree-separator-parity-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  add-tests:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/tree-separator-shadow-parity-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/tree-separator-shadow-parity-v1
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Add fail-closed validation coverage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "tests/test_structured_point_covariance_tree_separator_gaussian_parity.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          marker = "\ndef test_conversion_rejects_the_wrong_type() -> None:\n"
+          if text.count(marker) != 1:
+              raise SystemExit("unexpected final-test marker count")
+          addition = r'''
+
+@pytest.mark.parametrize(
+    ("overrides", "error", "message"),
+    [
+        ({"normal_system_id": 7}, TypeError, "normal_system_id"),
+        ({"normal_system_id": "not-a-digest"}, ValueError, "SHA-256"),
+        ({"node_count": 0}, ValueError, "node_count"),
+        ({"separator_size": -1}, ValueError, "separator_size"),
+        ({"selected_node_indices": "0"}, TypeError, "sequence of integers"),
+        ({"selected_node_indices": (True,)}, TypeError, "must be an integer"),
+        ({"metrics": []}, TypeError, "metrics must be a mapping"),
+        ({"metrics": {"unexpected": 0.0}}, ValueError, "metric fields"),
+        (
+            {"dense_precision_avoided_bytes": 1.0},
+            TypeError,
+            "must be an integer",
+        ),
+        (
+            {"dense_precision_avoided_bytes": -1},
+            ValueError,
+            "must be non-negative",
+        ),
+        ({"passed": 1}, TypeError, "passed must be a bool"),
+    ],
+)
+def test_report_rejects_malformed_fields(
+    overrides: dict[str, object],
+    error: type[Exception],
+    message: str,
+) -> None:
+    report = evaluate_tree_separator_gaussian_parity(
+        _system(),
+        maximum_condition_number=1.0e12,
+    )
+    with pytest.raises(error, match=message):
+        replace(report, **overrides)  # type: ignore[arg-type]
+
+
+def test_identity_and_evaluation_reject_wrong_types() -> None:
+    with pytest.raises(TypeError, match="TreeBlockNormalSystemV1"):
+        tree_block_normal_system_id(object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="TreeBlockNormalSystemV1"):
+        evaluate_tree_separator_gaussian_parity(
+            object(),  # type: ignore[arg-type]
+            maximum_condition_number=1.0e12,
+        )
+'''
+          path.write_text(text.replace(marker, addition + marker, 1), encoding="utf-8")
+          Path(
+              ".github/workflows/add-tree-separator-parity-validation-tests.yml"
+          ).unlink()
+          PY
+      - name: Validate focused contract coverage
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff check \
+            src/bayesian_phystwin/tree_separator_gaussian_parity.py \
+            tests/test_structured_point_covariance_tree_separator_gaussian_parity.py
+          python -m ruff format \
+            tests/test_structured_point_covariance_tree_separator_gaussian_parity.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/tree_separator_gaussian_parity.py \
+            tests/test_structured_point_covariance_tree_separator_gaussian_parity.py
+          python -m mypy src/bayesian_phystwin/tree_separator_gaussian_parity.py
+          python -m pytest -q \
+            tests/test_structured_point_covariance_tree_separator_gaussian_parity.py \
+            tests/test_structured_point_covariance_tree_separator_gaussian.py \
+            tests/test_structured_point_covariance_tree_block_coverage_edges.py \
+            tests/test_structured_point_covariance_tree_block_operator.py \
+            tests/test_tree_block_sparse_gauge_belief.py \
+            tests/test_structured_point_covariance_causal4d_tree_block_provider.py \
+            tests/test_portable_contracts_tree_block_strict_admission.py
+          git diff --check
+      - name: Publish tests and remove helper workflow
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            tests/test_structured_point_covariance_tree_separator_gaussian_parity.py \
+            .github/workflows/add-tree-separator-parity-validation-tests.yml
+          git diff --cached --check
+          git commit -m "Cover tree-separator parity validation branches"
+          git push origin HEAD:agent/tree-separator-shadow-parity-v1
