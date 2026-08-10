@@ -80,7 +80,9 @@ to equal the ordinary result exactly.
 
 The trace is a separate artifact. It is deliberately not inserted into the
 production result diagnostics or input lineage, because doing so would change the
-historical result content address.
+historical result content address. The caller also owns any persistence or
+publication of the trace; merely invoking the traced entry point does not write
+an artifact or mutate the input contracts.
 
 ## Cost boundary
 
