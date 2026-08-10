@@ -1,0 +1,63 @@
+name: Register Deform360 source-support tests once
+
+on:
+  push:
+    branches:
+      - agent/deform360-source-support-failure-census-v1
+    paths:
+      - ".github/workflows/register-deform360-source-support-tests-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: register-deform360-source-support-tests-once
+  cancel-in-progress: false
+
+jobs:
+  register:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/deform360-source-support-failure-census-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Register the test without changing coverage floors
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = \
+            "refs/heads/agent/deform360-source-support-failure-census-v1"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(".github/quality/test-suites.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          test_path = "tests/test_deform360_source_support_failure_evidence_v1.py"
+          anchor = "tests/test_deform360_provider_failure_census_v1.py"
+          for suite_name in ("stable-core-coverage", "core-contracts"):
+              suite = payload["suites"][suite_name]
+              if test_path in suite:
+                  raise SystemExit(f"{test_path} is already in {suite_name}")
+              if suite.count(anchor) != 1:
+                  raise SystemExit(f"coverage anchor changed in {suite_name}")
+              suite.insert(suite.index(anchor) + 1, test_path)
+          path.write_text(
+              json.dumps(payload, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python tools/quality/test_suite_manifest.py validate
+          test "$(git diff --name-only)" = ".github/quality/test-suites.json"
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- .github/quality/test-suites.json
+          git commit -m "Register Deform360 source-support coverage tests"
+          git push origin HEAD:agent/deform360-source-support-failure-census-v1
