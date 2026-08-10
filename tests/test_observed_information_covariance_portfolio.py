@@ -3,6 +3,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from bayesian_phystwin._posterior_covariance_portfolio_common import (
+    canonical_string,
+    covariance_method,
+    projected_semantics,
+    validated_covariance,
+    validated_query_matrix,
+)
 from bayesian_phystwin.posterior_covariance_portfolio import (
     PosteriorCovarianceSourceV1,
     PosteriorQueryCovariancePortfolioV1,
@@ -249,3 +256,61 @@ def test_portfolio_identity_binds_query_and_unavailability_reason() -> None:
         first.entry("group_sandwich")
     with pytest.raises(KeyError):
         first.source("group_sandwich")
+
+
+@pytest.mark.parametrize("value", [None, "", " padded "])
+def test_common_validator_rejects_noncanonical_strings(value: object) -> None:
+    with pytest.raises(ValueError, match="canonical string"):
+        canonical_string(value, name="value")
+
+
+@pytest.mark.parametrize("value", [None, "unknown"])
+def test_common_validator_rejects_unknown_covariance_methods(value: object) -> None:
+    with pytest.raises(ValueError, match="must be one of"):
+        covariance_method(value, name="method")
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        (np.asarray([[True]]), "real numeric"),
+        (np.ones((2, 3)), "square matrix"),
+        (np.empty((0, 0)), "nonempty and finite"),
+        (np.diag([1.0, -1.0]), "positive semidefinite"),
+    ],
+)
+def test_common_validator_rejects_invalid_covariance_directly(
+    value: np.ndarray,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        validated_covariance(value, name="covariance")
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        (np.asarray([[True]]), "real numeric"),
+        (np.asarray([[np.nan]]), "finite"),
+    ],
+)
+def test_common_validator_rejects_invalid_query_directly(
+    value: np.ndarray,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        validated_query_matrix(value)
+
+
+def test_common_validator_rejects_projected_semantics_metadata_drift() -> None:
+    semantics = working_irls_covariance_semantics(
+        np.eye(1),
+        metadata={"query_matrix_sha256": "0" * 64},
+    )
+    with pytest.raises(ValueError, match="metadata contradicts"):
+        projected_semantics(
+            semantics,
+            dimension=1,
+            source_id="1" * 64,
+            query_id="2" * 64,
+        )
