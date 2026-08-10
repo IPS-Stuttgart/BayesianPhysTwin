@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import copy
-import importlib.metadata
-import json
-from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
@@ -11,17 +7,13 @@ import pytest
 
 import bayesian_phystwin.numerical_environment_v1 as numerical_environment
 from bayesian_phystwin.numerical_environment_v1 import (
-    NUMERICAL_ENVIRONMENT_RUNTIME_KEY,
     DependencyLockV1,
     InstalledDistributionV1,
     NumericalEnvironmentV1,
-    capture_numerical_environment_v1,
     embed_numerical_environment_v1,
-    main,
     numerical_environment_from_dict,
     validate_embedded_numerical_environment_v1,
 )
-
 
 def _controls() -> dict[str, str | None]:
     return {

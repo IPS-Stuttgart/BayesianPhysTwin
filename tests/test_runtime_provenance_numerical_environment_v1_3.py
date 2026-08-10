@@ -16,12 +16,10 @@ from bayesian_phystwin.numerical_environment_v1 import (
     InstalledDistributionV1,
     NumericalEnvironmentV1,
     capture_numerical_environment_v1,
-    embed_numerical_environment_v1,
     main,
     numerical_environment_from_dict,
     validate_embedded_numerical_environment_v1,
 )
-
 
 def _controls() -> dict[str, str | None]:
     return {
