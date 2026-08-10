@@ -15,8 +15,7 @@ from bayesian_phystwin.deform360_joint_sparse_geometric_npz_v4 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = (
-    ROOT
-    / "protocols/locks/"
+    ROOT / "protocols/locks/"
     "deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
 )
 
