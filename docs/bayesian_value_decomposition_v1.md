@@ -72,6 +72,30 @@ For each metric and horizon report:
 - risk--coverage curves; and
 - results conditioned on source reliability and identifiable rank.
 
+## Practical-equivalence decision
+
+A tiny signed point-loss difference is not, by itself, evidence of a meaningful
+win or loss. For each physical loss used to compare `bayesian_full_guarded` with
+`last_residual`, freeze an absolute practical margin from independent
+measurement resolution or application tolerance before target outcomes are
+opened. Do not infer the margin from the observed method difference.
+
+Generate the matched decisive-evidence bundle with the probabilistic scorer,
+then run:
+
+```bash
+bpt diagnostic run assess-practical-equivalence \
+  decisive-evidence.json \
+  practical-equivalence-policy.json \
+  practical-equivalence-report.json
+```
+
+The [practical-equivalence contract](practical_equivalence.md) reports raw and
+deployed superiority, noninferiority, equivalence, and clear-inferiority gates
+using paired equal-group bootstrap intervals. Retrospective margins, dependent
+claimed groups, or insufficient registered group counts remain diagnostic and
+cannot authorize a decision.
+
 A positive result supports only the registered readout/model-discrepancy and
 physical-query contract. It does not by itself establish a dynamically
 admissible simulator-state correction, general calibration, deployment safety,
