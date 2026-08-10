@@ -1,0 +1,154 @@
+{
+  "claim_boundary": "A passing source gate authorizes exactly one independent evaluation on the twelve locked public Deform360 confirmation objects. It is not confirmation evidence and does not establish unseen-object generalization, calibrated deployment uncertainty, Causal4D benefit, safety, official benchmark parity, or state of the art.",
+  "cohort": {
+    "development_objects": [
+      {
+        "episode_id": 7,
+        "object_id": "026-sock-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 0,
+        "object_id": "031-cotton-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 9,
+        "object_id": "036-napkin-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 1,
+        "object_id": "058-roll-napkin",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 8,
+        "object_id": "152-slime",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 5,
+        "object_id": "153-cake",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 0,
+        "object_id": "167-glove-gray-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "episode_id": 6,
+        "object_id": "186-monster",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 7,
+        "object_id": "193-frog",
+        "stratum": "volumetric"
+      },
+      {
+        "episode_id": 2,
+        "object_id": "198-kneepad-cloth",
+        "stratum": "sheet"
+      }
+    ],
+    "exact_object_count": 10,
+    "exact_stratum_counts": {
+      "sheet": 5,
+      "volumetric": 5
+    },
+    "selection_artifact_file_sha256": "4dd12af9889d64976095eb9e237eeb655f9675ff7d5940aa5dfc1d4ee11f295c",
+    "selection_artifact_sha256": "dc1c2d192fbb841d2f0e290d77f21d697983b3f8bfbcae476e71fe902309cd82",
+    "selection_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
+    "selection_sha256": "b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222"
+  },
+  "execution_lock_id": "0e459056660dc3fb940f3d1c01ad7439cc0340989952a8f868b25c4d7f756f1f",
+  "information_boundary": {
+    "confirmation_payloads_opened": false,
+    "development_suffix_allowed_only_after_fold_prediction_seal": true,
+    "future_object_observations_allowed_for_prediction": false,
+    "human_selection_allowed": false,
+    "replacement_allowed": false,
+    "target_outcomes_used": false
+  },
+  "physical_baseline": {
+    "automatic_mode": "warp_twin",
+    "fallback_mode": "persistence_fallback",
+    "frame_count": 76,
+    "frame_zero_object_observation_only": true,
+    "generation_rule": "automatic-warp-twin-when-admissible-otherwise-exact-persistence-v1",
+    "known_robot_action_is_not_a_future_object_observation": true,
+    "method_id": "B0_physical_fallback",
+    "minimum_frame_zero_node_count": 128,
+    "official_phystwin_real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "rejected_or_unsupported_deployed_artifact_id": "exact-B0-artifact-id",
+    "source_files_sha256": {
+      "scripts/remote/run_deform360_bias_aware_frame_zero.py": "d51410521cd8a894a653d930c2e80257b27099f033fe45951a2d091ec142fdec",
+      "scripts/remote/run_deform360_bias_aware_physical_prior.py": "e5d81207e89ccaa170a3711708d8ee5ba6b4b181fb08ab17819a35e8c0a9a4ff",
+      "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py": "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6",
+      "src/bayesian_phystwin/deform360_bias_aware_prospective_physical.py": "9f87a8aec1bd8bd8ae35865b819bae75d2a1d8d97d4950ca90b96ca90fa21226",
+      "src/bayesian_phystwin/deform360_frame_zero_depth_initializer.py": "ff92c1531a4e4bd492408f626dc5515d084d5a9a538123c99d32f087b66cc6d8"
+    }
+  },
+  "prospective_policy": {
+    "file_sha256": "f1d5d7cf5252df1f9157de1560d4338c3914ad262e6a4637f63630151b67cddb",
+    "path": "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json",
+    "policy_id": "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749"
+  },
+  "public_measurements": {
+    "dataset_repository": "brownu/deform360",
+    "dataset_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+    "human_approval_required": false,
+    "measurement_modalities": [
+      "released-calibrated-rgb",
+      "released-tactile-arrays",
+      "released-robot-state-and-action",
+      "released-camera-calibration",
+      "released-held-out-view-geometry"
+    ],
+    "new_measurements_required": false,
+    "prob4d_role": "used-as-the-frozen-probabilistic-visual-observation-feeder",
+    "released_real_world_recordings": true
+  },
+  "schema": "bayesian-phystwin.deform360-joint-sparse-source-execution-lock",
+  "schema_version": 1,
+  "semantics": "public-real-world-nested-source-gate-before-confirmation-v1",
+  "source_gate": {
+    "conformal_score": "additive-object-maximum-v1",
+    "fold_conformal_rank": 9,
+    "fold_training_object_count": 9,
+    "harmful_update_relative_margin": 0.02,
+    "maximum_risk_coverage": 0.98,
+    "maximum_stratum_mean_regression": 0.02,
+    "minimum_contact_increment_over_visual_only": 0.02,
+    "minimum_passing_objects": 8,
+    "minimum_passing_objects_per_stratum": 4,
+    "minimum_relative_improvement_vs_last_causal_residual": 0.05,
+    "minimum_relative_improvement_vs_physical_fallback": 0.1,
+    "minimum_risk_coverage": 0.8,
+    "nominal_conformal_coverage": 0.9,
+    "per_fold_pass_requires": [
+      "training-threshold-available",
+      "held-out-candidate-accepted",
+      "at-least-10-percent-held-out-gain-vs-B0",
+      "at-least-5-percent-held-out-gain-vs-B1",
+      "at-least-2-percent-held-out-contact-increment-vs-V1",
+      "held-out-additive-conformal-upper-bound-covers",
+      "no-accepted-harm-over-2-percent",
+      "every-rejection-exactly-identifies-B0"
+    ],
+    "prediction_and_risk_sealed_before_development_suffix_scoring": true,
+    "source_evidence_layout": "ten-outer-fold-batches-each-with-nine-inner-cross-fitted-training-forecasts-v1",
+    "risk_score_semantics": "lower-is-safer-inclusive-threshold-v1",
+    "risk_threshold_fit": "largest-complete-tied-score-block-within-coverage-and-zero-training-harm-v1",
+    "source_decision_requires_all_aggregate_checks": true,
+    "source_evaluator_file_sha256": "f65b58d577d3a15e901e18bd934cb5f7a1af0943762c2201d2e9b8f105a617b0",
+    "source_evaluator_path": "src/bayesian_phystwin/deform360_joint_sparse_source_gate_v5.py",
+    "source_runner_file_sha256": "7d6da69d6180b456819d30fd3cb07b7e985aa751de3281a6cd05c9a956da955b",
+    "source_runner_path": "scripts/science/evaluate_deform360_joint_sparse_source_v5.py",
+    "strategy": "outer-leave-one-object-out-with-inner-cross-fitted-training-forecasts-then-full-source-refit-v1",
+    "tie_policy": "accept-complete-tied-score-blocks-never-split-by-object-id"
+  }
+}

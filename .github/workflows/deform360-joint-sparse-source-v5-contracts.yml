@@ -1,0 +1,65 @@
+name: Deform360 joint-sparse source v5 contracts
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/deform360-joint-sparse-source-v5-contracts.yml"
+      - "docs/deform360_joint_sparse_source_execution_v5.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+      - "scripts/science/evaluate_deform360_joint_sparse_source_v5.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_gate_v5.py"
+      - "tests/test_deform360_joint_sparse_source_gate_v5.py"
+      - "tests/test_deform360_joint_sparse_source_v5_workflow.py"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deform360-joint-sparse-source-v5-contracts.yml"
+      - "docs/deform360_joint_sparse_source_execution_v5.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+      - "scripts/science/evaluate_deform360_joint_sparse_source_v5.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_gate_v5.py"
+      - "tests/test_deform360_joint_sparse_source_gate_v5.py"
+      - "tests/test_deform360_joint_sparse_source_v5_workflow.py"
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Source v5 contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.14"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install contract dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          numpy pyyaml pytest ruff mypy
+      - name: Run source-gate contracts
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m pytest -q
+          tests/test_deform360_joint_sparse_source_gate_v5.py
+          tests/test_deform360_joint_sparse_source_v5_workflow.py
+      - name: Run static checks
+        run: |
+          ruff check \
+            src/bayesian_phystwin/deform360_joint_sparse_source_gate_v5.py \
+            scripts/science/evaluate_deform360_joint_sparse_source_v5.py \
+            tests/test_deform360_joint_sparse_source_gate_v5.py \
+            tests/test_deform360_joint_sparse_source_v5_workflow.py
+          mypy \
+            src/bayesian_phystwin/deform360_joint_sparse_source_gate_v5.py \
+            scripts/science/evaluate_deform360_joint_sparse_source_v5.py
