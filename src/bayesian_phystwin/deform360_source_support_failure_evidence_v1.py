@@ -104,9 +104,7 @@ _EXPECTED_BOUNDARY: Final[dict[str, bool]] = {
     "replacement_allowed": False,
     "human_approval_required": False,
 }
-_EXPECTED_OBJECTS: Final[
-    tuple[tuple[str, int, str, int, tuple[str, ...]], ...]
-] = (
+_EXPECTED_OBJECTS: Final[tuple[tuple[str, int, str, int, tuple[str, ...]], ...]] = (
     (
         "026-sock-cloth",
         7,
@@ -740,12 +738,8 @@ def build_deform360_source_support_failure_evidence_v1(
             "source_object_count": batch["object_count"],
             "source_plan_emitted": batch["plan_emitted"],
             "source_artifacts": source_artifacts,
-            "aggregation_policy_id": (
-                DEFORM360_SOURCE_SUPPORT_AGGREGATION_POLICY_ID
-            ),
-            "aggregation_semantics": (
-                DEFORM360_SOURCE_SUPPORT_AGGREGATION_SEMANTICS
-            ),
+            "aggregation_policy_id": (DEFORM360_SOURCE_SUPPORT_AGGREGATION_POLICY_ID),
+            "aggregation_semantics": (DEFORM360_SOURCE_SUPPORT_AGGREGATION_SEMANTICS),
             "direct_object_failure_count": 6,
             "unresolved_global_rejection_count": 4,
             "claim_boundary": DEFORM360_SOURCE_SUPPORT_FAILURE_CLAIM_BOUNDARY,

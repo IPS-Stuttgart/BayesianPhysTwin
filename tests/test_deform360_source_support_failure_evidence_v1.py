@@ -24,8 +24,7 @@ from bayesian_phystwin.deform360_source_support_failure_evidence_v1 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = (
-    ROOT
-    / "scripts/science/materialize_deform360_source_support_failure_evidence_v1.py"
+    ROOT / "scripts/science/materialize_deform360_source_support_failure_evidence_v1.py"
 )
 SPEC = importlib.util.spec_from_file_location(
     "deform360_source_support_failure_evidence_materializer",
@@ -398,9 +397,7 @@ def test_materializer_is_atomic_and_reuses_only_identical_content(
         "provider-failure-evidence.json",
     ]
     evidence = target / "provider-failure-evidence.json"
-    assert hashlib.sha256(evidence.read_bytes()).hexdigest() == first[
-        "evidence_sha256"
-    ]
+    assert hashlib.sha256(evidence.read_bytes()).hexdigest() == first["evidence_sha256"]
     receipt = json.loads((target / "materialization-receipt.json").read_text())
     assert receipt["classified_rejection_count"] == 6
     assert receipt["unresolved_rejection_count"] == 4
@@ -446,10 +443,7 @@ def test_one_shot_workflow_is_source_only_and_binds_the_frozen_result() -> None:
     assert "AUTHORIZED_RUNNER_NAME: workstation2" in text
     assert "31297018948" in text
     assert "9033414269" in text
-    assert (
-        "679550aff53d3b615f63c66ee78318258893867511dd6c33100d1cf10c0f5be6"
-        in text
-    )
+    assert "679550aff53d3b615f63c66ee78318258893867511dd6c33100d1cf10c0f5be6" in text
     assert "materialize_deform360_source_support_failure_evidence_v1.py" in text
     assert "validate_deform360_provider_failure_census_payload" in text
     assert "bpt diagnostic run diagnose-provider-failures" in text
@@ -464,13 +458,10 @@ def test_one_shot_workflow_is_source_only_and_binds_the_frozen_result() -> None:
     assert "actions/upload-artifact@v7" in text
     assert "MANIFEST.in" in text
     manifest = MANIFEST.read_text(encoding="utf-8")
-    assert (
-        "include docs/deform360_source_support_failure_evidence_v1.md" in manifest
-    )
+    assert "include docs/deform360_source_support_failure_evidence_v1.md" in manifest
     assert (
         "include scripts/science/"
-        "materialize_deform360_source_support_failure_evidence_v1.py"
-        in manifest
+        "materialize_deform360_source_support_failure_evidence_v1.py" in manifest
     )
     assert "issues: write" in text
     assert "secrets." not in text
