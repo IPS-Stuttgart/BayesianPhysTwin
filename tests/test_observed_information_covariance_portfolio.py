@@ -3,17 +3,16 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from bayesian_phystwin.posterior_covariance_portfolio import (
-    build_posterior_query_covariance_portfolio,
-    exact_prior_fallback_covariance_source,
-)
-
 from _posterior_covariance_portfolio_support import (
     QUERY_ID,
     RESULT_ID,
     accepted_sources,
     one_method_portfolio,
     source,
+)
+from bayesian_phystwin.posterior_covariance_portfolio import (
+    build_posterior_query_covariance_portfolio,
+    exact_prior_fallback_covariance_source,
 )
 
 
