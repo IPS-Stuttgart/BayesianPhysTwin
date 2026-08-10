@@ -1,4 +1,4 @@
-"""One-call strict Prob4D admission and prior-aware Bayesian update."""
+"""Strict Prob4D admission, candidate inference, and provenance binding."""
 
 from __future__ import annotations
 
@@ -18,6 +18,11 @@ from .claim_bearing_prob4d import (
 )
 from .observation_belief import ObservationBeliefV1
 from .physical_linearization import PhysicalLinearizationV1
+from .posterior_covariance_semantics import (
+    PosteriorCovarianceSemanticsV1,
+    exact_prior_fallback_covariance_semantics,
+    working_irls_covariance_semantics,
+)
 from .prior_aware_gauge_belief import PriorAwareGaugeConfigV1
 from .prior_aware_gauge_belief_v2 import (
     update_prior_aware_gauge_belief_v2 as update_prior_aware_gauge_belief,
@@ -26,6 +31,9 @@ from .prior_aware_gauge_belief_v2 import (
 CLAIM_BEARING_PROB4D_UPDATE_VERSION = 1
 CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION = 2
 CLAIM_BEARING_PROB4D_INFERENCE_RESULT_VERSION = 1
+CLAIM_BEARING_PROB4D_CANDIDATE_VERSION = 1
+CLAIM_BEARING_PROB4D_CANDIDATE_IDENTITY_VERSION = 1
+CLAIM_BEARING_PROB4D_CANDIDATE_RESULT_VERSION = 1
 
 
 def _validated_sha256(value: object, *, name: str) -> str:
@@ -297,6 +305,152 @@ class ClaimBearingProb4DUpdateV1:
         return self._update_id
 
 
+@dataclass(frozen=True, slots=True)
+class ClaimBearingProb4DCandidateV1:
+    """Covariance-typed candidate belief before complete deployment selection.
+
+    This contract wraps the frozen V1 update identity rather than replacing it.
+    An accepted strict solve carries working IRLS covariance semantics. A rejected
+    solve carries exact-prior-fallback semantics. Neither path is a deployment
+    decision; nonlinear closure, the source-frozen guard, and complete-belief
+    selection remain separate.
+    """
+
+    update_v1: ClaimBearingProb4DUpdateV1
+    covariance_semantics: PosteriorCovarianceSemanticsV1
+    _candidate_result_id: str = field(init=False, repr=False, compare=False)
+    _candidate_id: str = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.update_v1, ClaimBearingProb4DUpdateV1):
+            raise TypeError("update_v1 must be a ClaimBearingProb4DUpdateV1")
+        semantics = self.covariance_semantics
+        if not isinstance(semantics, PosteriorCovarianceSemanticsV1):
+            raise TypeError(
+                "covariance_semantics must be a PosteriorCovarianceSemanticsV1"
+            )
+        dimension = self.result.posterior_covariance.shape[0]
+        if semantics.dimension != dimension:
+            raise ValueError(
+                "covariance_semantics dimension must match posterior covariance"
+            )
+        expected_method = (
+            "irls_working"
+            if self.inference_admissible
+            else "exact_prior_fallback"
+        )
+        if semantics.method != expected_method:
+            raise ValueError(
+                "covariance_semantics method contradicts the admission decision"
+            )
+        if self.inference_admissible:
+            if not semantics.prior_included or not semantics.generalized_bayes:
+                raise ValueError(
+                    "working IRLS semantics contradict the claim-bearing solver"
+                )
+        elif semantics.metadata.get("fallback_reason") != self.reason:
+            raise ValueError(
+                "exact-prior semantics do not bind the rejected result reason"
+            )
+        if semantics.calibrated:
+            raise ValueError(
+                "claim-bearing candidate covariance must remain explicitly raw"
+            )
+
+        result_payload = {
+            "schema": "bayesian_phystwin.claim_bearing_prob4d_candidate_result",
+            "schema_version": CLAIM_BEARING_PROB4D_CANDIDATE_RESULT_VERSION,
+            "v1_inference_result_id": self.update_v1.inference_result_id,
+            "covariance_semantics_id": semantics.artifact_id,
+        }
+        candidate_result_id = _canonical_id(result_payload)
+        object.__setattr__(self, "_candidate_result_id", candidate_result_id)
+        object.__setattr__(self, "covariance_semantics", semantics)
+        object.__setattr__(self, "_candidate_id", _canonical_id(self.descriptor()))
+
+    @property
+    def result(self) -> GaugeAwareBeliefResult:
+        return self.update_v1.result
+
+    @property
+    def inference_admissible(self) -> bool:
+        return self.update_v1.inference_admissible
+
+    @property
+    def reason(self) -> str:
+        return self.result.reason
+
+    @property
+    def admission_id(self) -> str:
+        return self.update_v1.admission_id
+
+    @property
+    def v1_update_id(self) -> str:
+        return self.update_v1.update_id
+
+    @property
+    def v1_inference_result_id(self) -> str:
+        return self.update_v1.inference_result_id
+
+    @property
+    def candidate_result_id(self) -> str:
+        return self._candidate_result_id
+
+    @property
+    def candidate_id(self) -> str:
+        return self._candidate_id
+
+    def descriptor(self) -> dict[str, object]:
+        return {
+            "schema": "bayesian_phystwin.claim_bearing_prob4d_candidate",
+            "schema_version": CLAIM_BEARING_PROB4D_CANDIDATE_VERSION,
+            "identity_version": CLAIM_BEARING_PROB4D_CANDIDATE_IDENTITY_VERSION,
+            "admission_id": self.admission_id,
+            "v1_update_id": self.v1_update_id,
+            "v1_inference_result_id": self.v1_inference_result_id,
+            "candidate_result_id": self.candidate_result_id,
+            "covariance_semantics_id": self.covariance_semantics.artifact_id,
+            "inference_admissible": self.inference_admissible,
+            "reason": self.reason,
+        }
+
+    def to_record(self) -> dict[str, object]:
+        return {
+            **self.descriptor(),
+            "covariance_semantics": self.covariance_semantics.to_record(),
+            "candidate_id": self.candidate_id,
+        }
+
+
+def bind_claim_bearing_prob4d_candidate(
+    update: ClaimBearingProb4DUpdateV1,
+    *,
+    covariance_semantics: PosteriorCovarianceSemanticsV1 | None = None,
+) -> ClaimBearingProb4DCandidateV1:
+    """Bind typed covariance meaning to one frozen V1 inference result."""
+
+    if not isinstance(update, ClaimBearingProb4DUpdateV1):
+        raise TypeError("update must be a ClaimBearingProb4DUpdateV1")
+    semantics = covariance_semantics
+    if semantics is None:
+        metadata = {"source": "claim-bearing-prob4d-strict-v2"}
+        if update.inference_admissible:
+            semantics = working_irls_covariance_semantics(
+                update.result.posterior_covariance,
+                metadata=metadata,
+            )
+        else:
+            semantics = exact_prior_fallback_covariance_semantics(
+                update.result.posterior_covariance,
+                reason=update.result.reason,
+                metadata=metadata,
+            )
+    return ClaimBearingProb4DCandidateV1(
+        update_v1=update,
+        covariance_semantics=semantics,
+    )
+
+
 def update_claim_bearing_prob4d_from_artifacts(
     observation_belief: ObservationBeliefV1,
     linearization: PhysicalLinearizationV1,
@@ -313,10 +467,11 @@ def update_claim_bearing_prob4d_from_artifacts(
 ) -> ClaimBearingProb4DUpdateV1:
     """Validate stream-v2 evidence before forming and solving the update.
 
-    This is the supported one-call composition for prospective Prob4D-to-BPT
-    experiments. It deliberately uses strict-v2 admission around the historical
-    prior-aware grouped-mixture solver; frozen provider-v1 and exploratory
-    adapters remain separate entry points.
+    This is the frozen V1 one-call composition. It deliberately uses strict-v2
+    admission around the historical prior-aware grouped-mixture solver. New
+    prospective callers should use
+    ``infer_claim_bearing_prob4d_candidate_from_artifacts`` so the covariance
+    interpretation is bound before complete-belief selection.
     """
 
     adapted = build_claim_bearing_gauge_aware_batch_from_artifacts(
@@ -364,10 +519,52 @@ def update_claim_bearing_prob4d_from_artifacts(
     )
 
 
+def infer_claim_bearing_prob4d_candidate_from_artifacts(
+    observation_belief: ObservationBeliefV1,
+    linearization: PhysicalLinearizationV1,
+    *,
+    physical_prediction_xyz_m: np.ndarray,
+    shared_bias_jacobian: np.ndarray | None = None,
+    view_bias_jacobian: np.ndarray | None = None,
+    state_prior_covariance_m2: np.ndarray | None = None,
+    anchor_innovation_m: np.ndarray | None = None,
+    anchor_covariance_m2: np.ndarray | None = None,
+    anchor_state_jacobian: np.ndarray | None = None,
+    config: PriorAwareGaugeConfigV1 | None = None,
+    covariance_semantics: PosteriorCovarianceSemanticsV1 | None = None,
+    **anchor_dependence: Any,
+) -> ClaimBearingProb4DCandidateV1:
+    """Infer a covariance-typed candidate without making a deployment decision."""
+
+    update = update_claim_bearing_prob4d_from_artifacts(
+        observation_belief,
+        linearization,
+        physical_prediction_xyz_m=physical_prediction_xyz_m,
+        shared_bias_jacobian=shared_bias_jacobian,
+        view_bias_jacobian=view_bias_jacobian,
+        state_prior_covariance_m2=state_prior_covariance_m2,
+        anchor_innovation_m=anchor_innovation_m,
+        anchor_covariance_m2=anchor_covariance_m2,
+        anchor_state_jacobian=anchor_state_jacobian,
+        config=config,
+        **anchor_dependence,
+    )
+    return bind_claim_bearing_prob4d_candidate(
+        update,
+        covariance_semantics=covariance_semantics,
+    )
+
+
 __all__ = [
+    "CLAIM_BEARING_PROB4D_CANDIDATE_IDENTITY_VERSION",
+    "CLAIM_BEARING_PROB4D_CANDIDATE_RESULT_VERSION",
+    "CLAIM_BEARING_PROB4D_CANDIDATE_VERSION",
     "CLAIM_BEARING_PROB4D_INFERENCE_RESULT_VERSION",
     "CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION",
     "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
+    "ClaimBearingProb4DCandidateV1",
     "ClaimBearingProb4DUpdateV1",
+    "bind_claim_bearing_prob4d_candidate",
+    "infer_claim_bearing_prob4d_candidate_from_artifacts",
     "update_claim_bearing_prob4d_from_artifacts",
 ]
