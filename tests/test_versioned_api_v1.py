@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import bayesian_phystwin.v1 as v1
+from bayesian_phystwin import v1
 
 
 EXPECTED_PUBLIC_API = {
