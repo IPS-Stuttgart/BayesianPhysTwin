@@ -44,6 +44,9 @@ jobs:
           set -euo pipefail
           test "$(git branch --show-current)" = \
             "agent/discrepancy-candidate-tournament-v1"
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin refs/heads/main
           fetched_main="$(git rev-parse FETCH_HEAD)"
           test "${fetched_main}" != "$(git rev-parse HEAD)"
@@ -72,8 +75,5 @@ jobs:
           rm .github/workflows/_refresh-discrepancy-tournament-pr-v2-once.yml
           git add -A
           git diff --cached --check
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Merge exact current main into discrepancy tournament branch"
           git push origin HEAD:agent/discrepancy-candidate-tournament-v1
