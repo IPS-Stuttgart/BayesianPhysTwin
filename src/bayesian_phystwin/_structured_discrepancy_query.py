@@ -53,7 +53,7 @@ def structured_discrepancy_query_moments(
         track_count=len(belief.spatial_basis),
     )
     mean = np.einsum("qnc,nc->q", query, belief.mean_m)
-    covariance = np.zeros((len(query), len(query)), dtype=np.float64)
+    covariance: np.ndarray = np.zeros((len(query), len(query)), dtype=np.float64)
     for index, weight in enumerate(belief.component_weights):
         within = np.zeros_like(covariance)
         coefficient_covariance = belief.component_coefficient_covariance_m2[index]
