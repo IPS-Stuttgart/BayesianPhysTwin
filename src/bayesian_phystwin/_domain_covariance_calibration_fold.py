@@ -18,6 +18,7 @@ from ._domain_covariance_calibration_common import (
 )
 from ._portable_contracts import content_id, sha256_digest
 
+
 @dataclass(frozen=True, slots=True)
 class DomainCovarianceFoldV1:
     """One leave-one-group-out predictive calibration record."""

@@ -9,11 +9,11 @@ from dataclasses import dataclass
 import numpy as np
 
 from ._domain_covariance_calibration_common import (
+    _COORDINATE_COVERAGE_Z90,
+    _GAUSSIAN_CONSTANT,
     DOMAIN_COVARIANCE_DATA_SCHEMA,
     DOMAIN_COVARIANCE_DATA_VERSION,
     DomainCovarianceCalibrationConfigV1,
-    _COORDINATE_COVERAGE_Z90,
-    _GAUSSIAN_CONSTANT,
     _array_record,
     _canonical_float_array,
     _canonical_string,
@@ -75,8 +75,7 @@ def _prepare_group(
         raise ValueError("all calibration groups must have the same dimension")
     if covariance_array.shape != (len(samples), dimension, dimension):
         raise ValueError(
-            "each covariance array must have shape "
-            "(sample_count, dimension, dimension)"
+            "each covariance array must have shape (sample_count, dimension, dimension)"
         )
     transpose = np.swapaxes(covariance_array, -1, -2)
     if not np.allclose(
@@ -115,12 +114,7 @@ def _prepare_group(
 
 def _reference_variance(groups: Sequence[_CalibrationGroup]) -> float:
     group_medians = [
-        float(
-            np.median(
-                np.sum(group.eigenvalues, axis=1)
-                / group.residuals.shape[1]
-            )
-        )
+        float(np.median(np.sum(group.eigenvalues, axis=1) / group.residuals.shape[1]))
         for group in groups
     ]
     result = float(np.median(np.asarray(group_medians, dtype=np.float64)))
@@ -154,8 +148,7 @@ def _group_normalized_energy(
     eigenvalues = scale * group.eigenvalues + floor_variance
     dimension = group.residuals.shape[1]
     return float(
-        np.mean(np.sum(group.projected_residual_sq / eigenvalues, axis=1))
-        / dimension
+        np.mean(np.sum(group.projected_residual_sq / eigenvalues, axis=1)) / dimension
     )
 
 
@@ -166,12 +159,9 @@ def _group_coordinate_coverage(
     floor_variance: float,
 ) -> float:
     variances = (
-        scale * np.diagonal(group.covariances, axis1=-2, axis2=-1)
-        + floor_variance
+        scale * np.diagonal(group.covariances, axis1=-2, axis2=-1) + floor_variance
     )
-    covered = np.abs(group.residuals) <= (
-        _COORDINATE_COVERAGE_Z90 * np.sqrt(variances)
-    )
+    covered = np.abs(group.residuals) <= (_COORDINATE_COVERAGE_Z90 * np.sqrt(variances))
     return float(np.mean(covered))
 
 
@@ -281,5 +271,3 @@ def _calibration_data_id(
             "records": records,
         }
     )
-
-

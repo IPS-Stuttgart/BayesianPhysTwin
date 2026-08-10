@@ -79,8 +79,7 @@ def apply_domain_covariance_calibration(
     if applied:
         identity = np.eye(certificate.dimension, dtype=np.float64)
         calibrated = (
-            transform.scale * symmetric
-            + transform.isotropic_floor_variance * identity
+            transform.scale * symmetric + transform.isotropic_floor_variance * identity
         )
         selected = immutable_array(calibrated, dtype=np.dtype("<f8"))
         output_id = _array_id(selected)

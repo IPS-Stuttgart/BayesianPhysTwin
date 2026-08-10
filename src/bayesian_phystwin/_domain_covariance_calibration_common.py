@@ -22,25 +22,17 @@ import numpy as np
 from ._canonical_contracts import genuine_integer
 from ._portable_contracts import content_id
 
-DOMAIN_COVARIANCE_CALIBRATION_SCHEMA = (
-    "bayesian_phystwin.domain_covariance_calibration"
-)
+DOMAIN_COVARIANCE_CALIBRATION_SCHEMA = "bayesian_phystwin.domain_covariance_calibration"
 DOMAIN_COVARIANCE_CALIBRATION_VERSION = 1
-DOMAIN_COVARIANCE_TRANSFORM_SCHEMA = (
-    "bayesian_phystwin.domain_covariance_transform"
-)
+DOMAIN_COVARIANCE_TRANSFORM_SCHEMA = "bayesian_phystwin.domain_covariance_transform"
 DOMAIN_COVARIANCE_TRANSFORM_VERSION = 1
 DOMAIN_COVARIANCE_FOLD_SCHEMA = "bayesian_phystwin.domain_covariance_fold"
 DOMAIN_COVARIANCE_FOLD_VERSION = 1
 DOMAIN_COVARIANCE_DATA_SCHEMA = "bayesian_phystwin.domain_covariance_data"
 DOMAIN_COVARIANCE_DATA_VERSION = 1
-DOMAIN_COVARIANCE_APPLICATION_SCHEMA = (
-    "bayesian_phystwin.domain_covariance_application"
-)
+DOMAIN_COVARIANCE_APPLICATION_SCHEMA = "bayesian_phystwin.domain_covariance_application"
 DOMAIN_COVARIANCE_APPLICATION_VERSION = 1
-DOMAIN_COVARIANCE_GUARD_METRIC = (
-    "leave-one-group-out-geometric-gaussian-loss-ratio"
-)
+DOMAIN_COVARIANCE_GUARD_METRIC = "leave-one-group-out-geometric-gaussian-loss-ratio"
 
 _GAUSSIAN_CONSTANT = math.log(2.0 * math.pi)
 _COORDINATE_COVERAGE_Z90 = 1.6448536269514722
@@ -258,9 +250,7 @@ class DomainCovarianceCalibrationConfigV1:
             "minimum_scale": self.minimum_scale,
             "maximum_scale": self.maximum_scale,
             "scale_grid_size": self.scale_grid_size,
-            "minimum_positive_floor_ratio": (
-                self.minimum_positive_floor_ratio
-            ),
+            "minimum_positive_floor_ratio": (self.minimum_positive_floor_ratio),
             "maximum_floor_ratio": self.maximum_floor_ratio,
             "floor_grid_size": self.floor_grid_size,
             "symmetry_tolerance": self.symmetry_tolerance,
@@ -268,5 +258,3 @@ class DomainCovarianceCalibrationConfigV1:
             "score_tolerance": self.score_tolerance,
             "log_loss_ratio_clip": self.log_loss_ratio_clip,
         }
-
-

@@ -18,6 +18,7 @@ from ._domain_covariance_calibration_common import (
 )
 from ._portable_contracts import content_id, sha256_digest
 
+
 @dataclass(frozen=True, slots=True)
 class DomainCovarianceTransformV1:
     """One final all-calibration-groups transform for a declared domain."""

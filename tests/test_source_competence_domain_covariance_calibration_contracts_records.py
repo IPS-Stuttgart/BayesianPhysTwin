@@ -4,26 +4,21 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
-
-from bayesian_phystwin.domain_covariance_calibration import (
-    DomainCovarianceCalibrationCertificateV1,
-    DomainCovarianceCalibrationConfigV1,
-    apply_domain_covariance_calibration,
-    fit_domain_covariance_calibration,
-)
 from domain_covariance_calibration_test_helpers import (
     _certificate,
     _certificate_arguments,
     _guard_for_folds,
-    _inputs,
 )
+
+from bayesian_phystwin.domain_covariance_calibration import (
+    DomainCovarianceCalibrationCertificateV1,
+    apply_domain_covariance_calibration,
+)
+
 
 def test_certificate_and_fold_loss_identities_reject_forgery() -> None:
     certificate = _certificate()
-    assert (
-        replace(certificate, artifact_id=certificate.artifact_id)
-        == certificate
-    )
+    assert replace(certificate, artifact_id=certificate.artifact_id) == certificate
     with pytest.raises(ValueError, match="artifact_id"):
         replace(certificate, artifact_id="0" * 64)
 
@@ -37,6 +32,7 @@ def test_certificate_and_fold_loss_identities_reject_forgery() -> None:
         DomainCovarianceCalibrationCertificateV1(  # type: ignore[arg-type]
             **arguments
         )
+
 
 def test_application_record_contract_rejects_inconsistent_ids() -> None:
     from bayesian_phystwin.domain_covariance_calibration import (
@@ -73,6 +69,7 @@ def test_application_record_contract_rejects_inconsistent_ids() -> None:
             calibration_applied=False,
             reason="",
         )
+
 
 def test_application_covariance_validation_fails_closed() -> None:
     certificate = _certificate()

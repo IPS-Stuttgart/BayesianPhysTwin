@@ -2,21 +2,17 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-import numpy as np
 import pytest
-
-from bayesian_phystwin.domain_covariance_calibration import (
-    DomainCovarianceCalibrationCertificateV1,
-    DomainCovarianceCalibrationConfigV1,
-    apply_domain_covariance_calibration,
-    fit_domain_covariance_calibration,
-)
 from domain_covariance_calibration_test_helpers import (
     _certificate,
     _certificate_arguments,
     _guard_for_folds,
-    _inputs,
 )
+
+from bayesian_phystwin.domain_covariance_calibration import (
+    DomainCovarianceCalibrationCertificateV1,
+)
+
 
 def test_transform_and_fold_contracts_reject_tampering() -> None:
     certificate = _certificate()
@@ -49,6 +45,7 @@ def test_transform_and_fold_contracts_reject_tampering() -> None:
         )
     with pytest.raises(ValueError, match="log_loss_ratio"):
         replace(fold, log_loss_ratio=0.0, artifact_id=None)
+
 
 def test_certificate_roster_and_grid_invariants_reject_tampering() -> None:
     certificate = _certificate()
@@ -90,9 +87,7 @@ def test_certificate_roster_and_grid_invariants_reject_tampering() -> None:
 
     folds = list(certificate.fold_records)
     foreign_index = next(
-        index
-        for index, fold in enumerate(folds)
-        if fold.domain_id == "quasi-static"
+        index for index, fold in enumerate(folds) if fold.domain_id == "quasi-static"
     )
     folds[foreign_index] = replace(
         folds[foreign_index],
@@ -110,6 +105,7 @@ def test_certificate_roster_and_grid_invariants_reject_tampering() -> None:
         DomainCovarianceCalibrationCertificateV1(
             **{**base, "fold_records": folds}  # type: ignore[arg-type]
         )
+
 
 def test_certificate_transform_and_fold_values_must_match_frozen_grid() -> None:
     certificate = _certificate()
@@ -178,6 +174,7 @@ def test_certificate_transform_and_fold_values_must_match_frozen_grid() -> None:
                 **{**base, "fold_records": folds}  # type: ignore[arg-type]
             )
 
+
 def test_certificate_rejects_mismatched_embedded_guard() -> None:
     certificate = _certificate()
     base = _certificate_arguments(certificate)
@@ -204,8 +201,7 @@ def test_certificate_rejects_mismatched_embedded_guard() -> None:
             _guard_for_folds(
                 certificate,
                 folds,
-                domain_ids=("foreign",)
-                + tuple(item.domain_id for item in folds[1:]),
+                domain_ids=("foreign",) + tuple(item.domain_id for item in folds[1:]),
             ),
             "domain rosters",
         ),

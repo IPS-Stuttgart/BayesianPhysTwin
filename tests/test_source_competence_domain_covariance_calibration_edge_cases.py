@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
+from domain_covariance_calibration_test_helpers import _certificate, _inputs
 
 from bayesian_phystwin.domain_covariance_calibration import (
     DomainCovarianceCalibrationCertificateV1,
@@ -11,7 +12,7 @@ from bayesian_phystwin.domain_covariance_calibration import (
     apply_domain_covariance_calibration,
     fit_domain_covariance_calibration,
 )
-from domain_covariance_calibration_test_helpers import _certificate, _inputs
+
 
 def test_batch_covariance_application_preserves_shape_and_psd() -> None:
     raw = np.stack((np.eye(3), 2.0 * np.eye(3)))
@@ -25,6 +26,7 @@ def test_batch_covariance_application_preserves_shape_and_psd() -> None:
     assert record.calibration_applied
     assert calibrated.shape == raw.shape
     assert np.all(np.linalg.eigvalsh(calibrated) > 0.0)
+
 
 @pytest.mark.parametrize(
     ("field", "value", "match"),
@@ -45,6 +47,7 @@ def test_malformed_rosters_fail_closed(
     with pytest.raises(ValueError, match=match):
         fit_domain_covariance_calibration(**arguments)  # type: ignore[arg-type]
 
+
 def test_non_positive_definite_calibration_covariance_is_rejected() -> None:
     arguments = _inputs()
     covariances = list(arguments["covariances"])
@@ -55,6 +58,7 @@ def test_non_positive_definite_calibration_covariance_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="positive definite"):
         fit_domain_covariance_calibration(**arguments)  # type: ignore[arg-type]
+
 
 def test_single_group_domain_cannot_be_cross_fitted() -> None:
     arguments = _inputs()
@@ -69,6 +73,7 @@ def test_single_group_domain_cannot_be_cross_fitted() -> None:
 
     with pytest.raises(ValueError, match="at least two groups"):
         fit_domain_covariance_calibration(**arguments)  # type: ignore[arg-type]
+
 
 def test_forged_fold_loss_ratio_breaks_guard_binding() -> None:
     certificate = _certificate()
@@ -90,6 +95,7 @@ def test_forged_fold_loss_ratio_breaks_guard_binding() -> None:
             metadata=certificate.metadata,
         )
 
+
 def test_config_rejects_deflation_and_invalid_floor_grid() -> None:
     with pytest.raises(ValueError, match="minimum_scale"):
         DomainCovarianceCalibrationConfigV1(minimum_scale=0.9)
@@ -98,6 +104,7 @@ def test_config_rejects_deflation_and_invalid_floor_grid() -> None:
             floor_grid_size=2,
             minimum_positive_floor_ratio=0.0,
         )
+
 
 def test_application_rejects_nonarray_and_dimension_mismatch() -> None:
     certificate = _certificate()

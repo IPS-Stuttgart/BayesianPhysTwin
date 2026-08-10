@@ -145,9 +145,7 @@ def _guard_for_folds(
 
     records = tuple(folds)
     domains = (
-        tuple(item.domain_id for item in records)
-        if domain_ids is None
-        else domain_ids
+        tuple(item.domain_id for item in records) if domain_ids is None else domain_ids
     )
     metadata = {
         "covariance_calibration_data_id": certificate.calibration_data_id,
@@ -168,9 +166,7 @@ def _guard_for_folds(
             else statistical_unit
         ),
         metric=(
-            DOMAIN_COVARIANCE_CALIBRATION_GUARD_METRIC
-            if metric is None
-            else metric
+            DOMAIN_COVARIANCE_CALIBRATION_GUARD_METRIC if metric is None else metric
         ),
         group_ids=tuple(item.held_out_group_id for item in records),
         domain_ids=domains,

@@ -18,8 +18,8 @@ from ._domain_covariance_calibration_common import (
     DomainCovarianceCalibrationConfigV1,
 )
 from ._domain_covariance_calibration_fit import (
-    _CalibrationGroup,
     _calibration_data_id,
+    _CalibrationGroup,
     _fit_scale_and_floor,
     _group_balanced_energy,
     _group_balanced_score,

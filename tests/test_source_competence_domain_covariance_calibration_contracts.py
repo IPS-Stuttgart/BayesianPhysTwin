@@ -1,22 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 import numpy as np
 import pytest
-
-from bayesian_phystwin.domain_covariance_calibration import (
-    DomainCovarianceCalibrationCertificateV1,
-    DomainCovarianceCalibrationConfigV1,
-    apply_domain_covariance_calibration,
-    fit_domain_covariance_calibration,
-)
 from domain_covariance_calibration_test_helpers import (
     _certificate,
-    _certificate_arguments,
-    _guard_for_folds,
     _inputs,
 )
+
+from bayesian_phystwin.domain_covariance_calibration import (
+    DomainCovarianceCalibrationConfigV1,
+    fit_domain_covariance_calibration,
+)
+
 
 def test_singleton_and_disabled_grids_are_explicit() -> None:
     config = DomainCovarianceCalibrationConfigV1(
@@ -32,6 +27,7 @@ def test_singleton_and_disabled_grids_are_explicit() -> None:
         minimum_positive_floor_ratio=0.25,
     )
     assert one_floor.floor_ratio_grid() == (0.0, 0.25)
+
 
 @pytest.mark.parametrize(
     ("field", "value"),
@@ -53,6 +49,7 @@ def test_config_rejects_noncanonical_numeric_values(
             **{field: value}
         )
 
+
 @pytest.mark.parametrize(
     ("field", "value", "match"),
     (
@@ -73,6 +70,7 @@ def test_fit_rejects_noncanonical_top_level_inputs(
     with pytest.raises(ValueError, match=match):
         fit_domain_covariance_calibration(**arguments)  # type: ignore[arg-type]
 
+
 def test_fit_rejects_nonfinite_residual_and_wrong_config_types() -> None:
     arguments = _inputs()
     residuals = list(arguments["residuals"])
@@ -87,6 +85,7 @@ def test_fit_rejects_nonfinite_residual_and_wrong_config_types() -> None:
         _certificate(config=object())
     with pytest.raises(TypeError, match="CalibrationDomainGuardConfigV1"):
         _certificate(guard_config=object())
+
 
 def test_group_shapes_and_symmetry_fail_closed() -> None:
     arguments = _inputs()

@@ -10,11 +10,11 @@ likelihood. Domain support is then decided from leave-one-group-out predictive
 loss ratios through :mod:`bayesian_phystwin.calibration_domain_guard`.
 """
 
-from ._domain_covariance_calibration_apply_api import (
-    apply_domain_covariance_calibration,
-)
 from ._domain_covariance_calibration_application_record import (
     DomainCovarianceCalibrationApplicationV1,
+)
+from ._domain_covariance_calibration_apply_api import (
+    apply_domain_covariance_calibration,
 )
 from ._domain_covariance_calibration_certificate_record import (
     DomainCovarianceCalibrationCertificateV1,

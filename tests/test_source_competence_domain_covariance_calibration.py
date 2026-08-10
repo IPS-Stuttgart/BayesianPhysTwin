@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 import numpy as np
 import pytest
+from domain_covariance_calibration_test_helpers import _certificate, _inputs
 
 from bayesian_phystwin.domain_covariance_calibration import (
-    DomainCovarianceCalibrationCertificateV1,
-    DomainCovarianceCalibrationConfigV1,
     apply_domain_covariance_calibration,
     fit_domain_covariance_calibration,
 )
-from domain_covariance_calibration_test_helpers import _certificate, _inputs
+
 
 def test_cross_fitted_calibration_authorizes_only_undercovered_domain() -> None:
     certificate = _certificate()
@@ -30,6 +27,7 @@ def test_cross_fitted_calibration_authorizes_only_undercovered_domain() -> None:
     assert quasi_static.scale == 1.0
     assert quasi_static.isotropic_floor_variance == 0.0
 
+
 def test_each_predictive_fold_excludes_its_held_out_group() -> None:
     certificate = _certificate()
 
@@ -37,14 +35,13 @@ def test_each_predictive_fold_excludes_its_held_out_group() -> None:
     for fold in certificate.fold_records:
         assert fold.held_out_group_id not in fold.training_group_ids
         assert len(fold.training_group_ids) == 2
-    dynamic = [
-        fold for fold in certificate.fold_records if fold.domain_id == "dynamic"
-    ]
+    dynamic = [fold for fold in certificate.fold_records if fold.domain_id == "dynamic"]
     assert all(fold.log_loss_ratio < 0.0 for fold in dynamic)
     assert all(
         fold.calibrated_normalized_energy < fold.raw_normalized_energy
         for fold in dynamic
     )
+
 
 def test_supported_domain_applies_immutable_covariance_inflation() -> None:
     raw = np.eye(3)
@@ -63,6 +60,7 @@ def test_supported_domain_applies_immutable_covariance_inflation() -> None:
     with pytest.raises(ValueError):
         calibrated[0, 0] = 0.0
 
+
 def test_rejected_domain_returns_exact_covariance_object() -> None:
     raw = np.eye(3)
 
@@ -77,6 +75,7 @@ def test_rejected_domain_returns_exact_covariance_object() -> None:
     assert record.input_covariance_id == record.output_covariance_id
     assert record.reason == "calibration-domain-rejected"
 
+
 def test_unknown_domain_returns_exact_covariance_object() -> None:
     raw = np.eye(3)
 
@@ -89,6 +88,7 @@ def test_unknown_domain_returns_exact_covariance_object() -> None:
     assert selected is raw
     assert not record.calibration_applied
     assert record.reason == "unknown-calibration-domain"
+
 
 @pytest.mark.parametrize(
     ("frozen_before", "application_used", "independent"),
@@ -117,6 +117,7 @@ def test_nonprospective_certificate_forces_exact_array_fallback(
     assert not record.calibration_applied
     assert record.reason == "calibration-information-boundary-rejected"
 
+
 def test_group_and_sample_permutations_preserve_certificate_identity() -> None:
     first = _certificate()
     arguments = _inputs()
@@ -142,6 +143,7 @@ def test_group_and_sample_permutations_preserve_certificate_identity() -> None:
 
     assert second.calibration_data_id == first.calibration_data_id
     assert second.artifact_id == first.artifact_id
+
 
 def test_group_balancing_prevents_long_group_from_changing_equal_group_result() -> None:
     first = _certificate()
