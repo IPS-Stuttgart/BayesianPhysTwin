@@ -94,9 +94,13 @@ def _source_objects(
                     for camera in likelihood
                 ],
                 "contact_prefix": {
-                    "path": "contact",
-                    "manifest_file_sha256": "2" * 64,
-                    "materialization_id": "3" * 64,
+                    "status": "unavailable",
+                    "path": None,
+                    "manifest_file_sha256": None,
+                    "materialization_id": None,
+                    "unavailable_reason": (
+                        source_runner.CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON
+                    ),
                 },
             }
         )
@@ -120,14 +124,12 @@ def _endpoint_archive(path: Path, *, raw_start: int) -> None:
 
 def test_technical_source_dry_run_seals_before_scoring(
     tmp_path: Path,
-    monkeypatch: Any,
 ) -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
     input_root = tmp_path / "prefix-inputs"
     input_root.mkdir()
     _physical_archive(input_root / "physical.npz")
     (input_root / "invalid-provider.npz").write_bytes(b"not-an-npz")
-    (input_root / "contact").mkdir()
     source_plan = source_runner.build_deform360_joint_sparse_source_prediction_plan_v5(
         lock=lock,
         implementation_revision=REVISION,
@@ -139,11 +141,6 @@ def test_technical_source_dry_run_seals_before_scoring(
     )
     source_plan_path = tmp_path / "source-plan.json"
     write_atomic_json(source_plan, source_plan_path, overwrite=False)
-    monkeypatch.setattr(
-        source_runner,
-        "_verified_contact_directory",
-        lambda root, record: root / cast(str, record["path"]),
-    )
     prediction_root = tmp_path / "predictions"
     prediction_receipt = (
         source_runner.publish_deform360_joint_sparse_source_prediction_panel_v5(

@@ -3,33 +3,45 @@
 ## What the measurements are
 
 This experiment uses measurements already released by Deform360: calibrated RGB,
-tactile arrays, robot state and action, camera calibration, and held-out-view
-geometry. These are real-world recordings. The protocol requires no new recording,
-robot execution, contact-registration session, or manually supplied approval.
+robot state and action, camera calibration, and tactile arrays retained for
+provenance. Endpoint geometry is derived after prediction sealing from released
+RGB; it is not a new measurement. These are real-world recordings. The protocol
+requires no new recording, robot execution, contact-registration session, or
+manually supplied approval.
 
 The only authorization in this path is a content-addressed machine decision. A
 passing ten-object source gate may authorize one opening of the twelve locked
 public confirmation objects. A person cannot waive a failed check, substitute an
 object, split a tied risk score, or select a favorable result.
 
-## Additive execution lock
+## Pre-outcome public-release amendment
 
-The frozen scientific design remains
+The original scientific design remains recorded in
 `protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json`. The
 additive execution amendment is
 `protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json`.
-It resolves two implementation details before development suffix scoring:
+Before any development suffix was opened, the public metadata contract exposed a
+source-independent defect: Deform360 preserves tactile sensor names without
+assigning them to robot axes. Inferring or manually choosing that identity would
+introduce an unregistered intervention variable. The amendment therefore:
 
 1. `B0_physical_fallback` is the frozen automatic Warp twin when its frame-zero
    geometry is admissible, and exact persistence otherwise. Both modes remain in
    the denominator and are reported separately.
-2. A source fold passes only when its held-out update is accepted, improves by the
-   registered margins against B0, B1, and visual-only V1, is covered by its
-   source-only interval, is not harmful, and preserves exact B0 fallback.
+2. Makes `V1_joint_sparse_visual_guarded` the sole primary candidate for this
+   public-data execution.
+3. Requires exact no-contact fallback whenever the released tactile-to-robot axis
+   identity is unavailable. An invented or operator-supplied map is rejected.
+4. Retains the tactile arms only as non-authorizing diagnostics. This execution
+   cannot support a tactile-benefit claim.
+5. Requires a source fold to improve by the registered margins against B0 and B1,
+   be covered by its source-only interval, avoid harm, and preserve exact B0
+   fallback.
 
 The amendment binds the exact v5 policy, cohort, public dataset revision, physical
-generator components, source evaluator, and CLI by SHA-256. It does not modify the
-v5 cohort, endpoint, confirmation decision, or claim boundary.
+generator components, source evaluator, and source runner by SHA-256. It does not
+modify the cohort or endpoint. It narrows the claim from visuotactile benefit to
+visual Bayesian updating and records that narrowing before source outcomes.
 
 ## Nested source decision
 
@@ -48,9 +60,9 @@ correction is the maximum training-object nonconformity score.
 The held-out development suffix is opened only after its candidate forecast,
 uncertainty forecast, and risk score have been sealed. It scores that fold but
 cannot change the threshold or interval. At least 8/10 folds and 4/5 in each
-stratum must pass. Aggregate 10% gain over B0, 5% over B1, 2% contact increment
-over V1, no harmful accepted update, no stratum regression over 2%, and a valid
-full-source refit are also required.
+stratum must pass. Aggregate 10% gain over B0, 5% over B1, no harmful accepted
+update, no stratum regression over 2%, and a valid full-source refit are also
+required. Tactile-arm performance is reported but never enters this decision.
 
 If any check fails, `confirmation_access_authorized` is false. No confirmation
 payload is opened and the negative source result is complete.
@@ -113,7 +125,8 @@ silent output replacement.
 
 ## Claim boundary
 
-A passing source result authorizes evaluation; it is not evaluation evidence. It
-does not establish performance on the confirmation objects, broader unseen-object
+The passing source result authorizes evaluation of visual V1 on one independent
+cohort; it is not evaluation evidence. It does not authorize a tactile claim or
+establish performance on the confirmation objects, broader unseen-object
 generalization, deployment calibration, safety, Causal4D benefit, official
 benchmark parity, or state of the art.

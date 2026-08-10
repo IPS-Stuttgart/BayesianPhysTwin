@@ -614,6 +614,15 @@ def run_deform360_joint_sparse_prediction_v5(
         float(batch.physical_response_scale_m),
         float(np.finfo(float).eps),
     )
+    visual_trajectory = trajectories[V1_VISUAL_GUARDED]
+    visual_correction = _correction_rms_m(
+        visual_trajectory[evaluation_start:evaluation_stop],
+        baseline[evaluation_start:evaluation_stop],
+    )
+    visual_uncertainty = _query_uncertainty_rms_m(
+        problem.future_state_jacobian_m[evaluation_start:evaluation_stop],
+        visual_result,
+    )
     joint_trajectory = trajectories[VT2_VISUOTACTILE_UNGUARDED]
     joint_correction = _correction_rms_m(
         joint_trajectory[evaluation_start:evaluation_stop],
@@ -628,15 +637,13 @@ def run_deform360_joint_sparse_prediction_v5(
         / np.sqrt(len(joint_result.state_coefficients))
     )
     risk_score = (
-        joint_correction / response_scale
-        + joint_uncertainty / response_scale
-        + disagreement / response_scale
-        + _normalized_rejection(joint_result)
+        visual_correction / response_scale
+        + visual_uncertainty / response_scale
+        + _normalized_rejection(visual_result)
         + (
             0.0
             if problem.factor_admitted
-            and contact_available
-            and joint_result.inference_admissible
+            and visual_result.inference_admissible
             else 4.0
         )
     )
@@ -670,7 +677,11 @@ def run_deform360_joint_sparse_prediction_v5(
         "physical_mode": problem.physical_mode,
         "causal_frame_stop": problem.causal_frame_stop,
         "evaluation_frame_range_half_open": list(evaluation_range),
+        "risk_score_candidate_method_id": V1_VISUAL_GUARDED,
         "risk_components": {
+            "visual_correction_rms_m": visual_correction,
+            "visual_query_uncertainty_rms_m": visual_uncertainty,
+            "visual_robust_rejection_fraction": _normalized_rejection(visual_result),
             "joint_correction_rms_m": joint_correction,
             "joint_query_uncertainty_rms_m": joint_uncertainty,
             "visual_contact_state_disagreement_m": disagreement,

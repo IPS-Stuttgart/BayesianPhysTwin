@@ -76,13 +76,26 @@ SOURCE_PLAN_BOUNDARY: Final = {
     "prob4d_used": True,
     "public_released_prefix_measurements_used": True,
     "replacement_allowed": False,
+    "tactile_without_registered_axis_identity": "exact-no-contact-fallback",
     "target_outcomes_used": False,
 }
+
+CONTACT_PREFIX_AVAILABLE: Final = "available"
+CONTACT_PREFIX_UNAVAILABLE: Final = "unavailable"
+CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON: Final = (
+    "released-tactile-robot-axis-identity-unavailable"
+)
 
 _FILE_FIELDS = frozenset({"path", "sha256"})
 _PHYSICAL_FIELDS = frozenset({"path", "physical_mode", "sha256"})
 _CONTACT_FIELDS = frozenset(
-    {"manifest_file_sha256", "materialization_id", "path"}
+    {
+        "manifest_file_sha256",
+        "materialization_id",
+        "path",
+        "status",
+        "unavailable_reason",
+    }
 )
 _VISUAL_FIELDS = frozenset({"camera_id", "decoded_uniform", "metric_prefix"})
 _OBJECT_FIELDS = frozenset(
@@ -188,6 +201,54 @@ def _normalized_file_record(value: object, *, name: str) -> dict[str, str]:
     }
 
 
+def _normalized_contact_record(value: object) -> dict[str, Any]:
+    record = _mapping(value, name="contact_prefix")
+    require_exact_fields(record, expected=_CONTACT_FIELDS, name="contact_prefix")
+    status = record.get("status")
+    _require(
+        status in {CONTACT_PREFIX_AVAILABLE, CONTACT_PREFIX_UNAVAILABLE},
+        "contact-prefix status changed",
+    )
+    if status == CONTACT_PREFIX_AVAILABLE:
+        _require(
+            record.get("unavailable_reason") is None,
+            "available contact prefix has an unavailable reason",
+        )
+        return {
+            "status": CONTACT_PREFIX_AVAILABLE,
+            "path": canonical_relative_posix_path(
+                record.get("path"), name="contact_prefix.path"
+            ),
+            "manifest_file_sha256": sha256_digest(
+                record.get("manifest_file_sha256"),
+                name="contact_prefix.manifest_file_sha256",
+            ),
+            "materialization_id": sha256_digest(
+                record.get("materialization_id"),
+                name="contact_prefix.materialization_id",
+            ),
+            "unavailable_reason": None,
+        }
+    _require(
+        record.get("path") is None
+        and record.get("manifest_file_sha256") is None
+        and record.get("materialization_id") is None,
+        "unavailable contact prefix must not identify an observation artifact",
+    )
+    _require(
+        record.get("unavailable_reason")
+        == CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON,
+        "contact-prefix unavailability reason changed",
+    )
+    return {
+        "status": CONTACT_PREFIX_UNAVAILABLE,
+        "path": None,
+        "manifest_file_sha256": None,
+        "materialization_id": None,
+        "unavailable_reason": CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON,
+    }
+
+
 def _normalized_object(
     value: object,
     *,
@@ -241,21 +302,7 @@ def _normalized_object(
         "physical_mode": physical_mode,
     }
 
-    contact_raw = _mapping(row.get("contact_prefix"), name="contact_prefix")
-    require_exact_fields(contact_raw, expected=_CONTACT_FIELDS, name="contact_prefix")
-    contact = {
-        "path": canonical_relative_posix_path(
-            contact_raw.get("path"), name="contact_prefix.path"
-        ),
-        "manifest_file_sha256": sha256_digest(
-            contact_raw.get("manifest_file_sha256"),
-            name="contact_prefix.manifest_file_sha256",
-        ),
-        "materialization_id": sha256_digest(
-            contact_raw.get("materialization_id"),
-            name="contact_prefix.materialization_id",
-        ),
-    }
+    contact = _normalized_contact_record(row.get("contact_prefix"))
 
     windows: list[dict[str, Any]] = []
     for index, raw_window in enumerate(
@@ -315,6 +362,22 @@ def build_deform360_joint_sparse_source_prediction_plan_v5(
         _normalized_object(value, cohort=cohort)
         for value in objects
     ]
+    measurements = _mapping(
+        lock.get("public_measurements"), name="public_measurements"
+    )
+    _require(
+        measurements.get("tactile_axis_identity_policy")
+        == "unavailable-in-release-exact-no-contact-fallback",
+        "source lock changed the tactile-axis policy",
+    )
+    _require(
+        all(
+            cast(Mapping[str, Any], item["contact_prefix"])["status"]
+            == CONTACT_PREFIX_UNAVAILABLE
+            for item in normalized
+        ),
+        "source plan invents an unregistered tactile-to-robot axis identity",
+    )
     normalized.sort(key=lambda item: cast(str, item["object_id"]))
     _require(
         [item["object_id"] for item in normalized] == sorted(cohort),
@@ -759,21 +822,28 @@ def publish_deform360_joint_sparse_source_prediction_panel_v5(
                     ),
                 }
             )
-        contact_path = _verified_contact_directory(
-            root,
-            cast(Mapping[str, Any], row["contact_prefix"]),
-        )
         contact_record = cast(Mapping[str, Any], row["contact_prefix"])
-        object_sources.update(
-            {
-                f"contact/{object_id}/contact-prefix.json": cast(
-                    str, contact_record["manifest_file_sha256"]
-                ),
-                f"contact/{object_id}/materialization-id": cast(
-                    str, contact_record["materialization_id"]
-                ),
-            }
-        )
+        if contact_record["status"] == CONTACT_PREFIX_AVAILABLE:
+            contact_path: Path | None = _verified_contact_directory(
+                root,
+                contact_record,
+            )
+            object_sources.update(
+                {
+                    f"contact/{object_id}/contact-prefix.json": cast(
+                        str, contact_record["manifest_file_sha256"]
+                    ),
+                    f"contact/{object_id}/materialization-id": cast(
+                        str, contact_record["materialization_id"]
+                    ),
+                }
+            )
+        else:
+            contact_path = None
+            unavailable_reason = cast(str, contact_record["unavailable_reason"])
+            object_sources[f"contact/{object_id}/unavailable-policy"] = (
+                hashlib.sha256(unavailable_reason.encode("ascii")).hexdigest()
+            )
         episode_id, _stratum = cohort[object_id]
         technical_failure: tuple[str, Exception] | None = None
         visual_rows = []
@@ -788,13 +858,17 @@ def publish_deform360_joint_sparse_source_prediction_panel_v5(
                     source_artifact_ids=object_sources,
                 )
                 visual_rows.append(rows)
-            contact = prepare_deform360_joint_sparse_contact_rows_v5(
-                contact_prefix_directory=contact_path,
-                object_id=object_id,
-                episode_id=episode_id,
-                raw_prefix_range_half_open=raw_prefix,
-                physical_prediction_m=physical,
-                source_artifact_ids=object_sources,
+            contact = (
+                None
+                if contact_path is None
+                else prepare_deform360_joint_sparse_contact_rows_v5(
+                    contact_prefix_directory=contact_path,
+                    object_id=object_id,
+                    episode_id=episode_id,
+                    raw_prefix_range_half_open=raw_prefix,
+                    physical_prediction_m=physical,
+                    source_artifact_ids=object_sources,
+                )
             )
             residual = estimate_deform360_last_causal_residual_v5(
                 visual_windows=tuple(visual_rows),

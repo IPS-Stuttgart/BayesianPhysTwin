@@ -57,9 +57,9 @@ def _evidence(
         losses = {
             "B0_physical_fallback": 10.0,
             "B1_last_causal_residual": 9.0,
-            "V1_joint_sparse_visual_guarded": 8.5,
+            "V1_joint_sparse_visual_guarded": candidate_loss,
             "T1_contact_anchor_only": 9.25,
-            "VT2_joint_sparse_visuotactile_unguarded": candidate_loss,
+            "VT2_joint_sparse_visuotactile_unguarded": 7.6,
             "VT3_joint_sparse_visuotactile_anchor_bias": 7.6,
         }
         assert set(losses) == set(RAW_METHOD_IDS)
@@ -166,28 +166,42 @@ def test_execution_lock_binds_public_data_and_machine_gate() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
 
     assert lock["execution_lock_id"] == (
-        "30a216f42e46ff92df3ce49f49a635d57b41b5f9019b27d4166127650719aced"
+        "4b33735f99753a3a7aa007eb31f9cdeab3acd44e553c5334a5e0e1c7cbbf6552"
     )
     assert lock["public_measurements"] == {
         "dataset_repository": "brownu/deform360",
         "dataset_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+        "endpoint_geometry_derivation_repository": "lhy0807/deform360",
+        "endpoint_geometry_derivation_revision": (
+            "d8522a4403b766aeb387510c04e89032a56fdf35"
+        ),
+        "endpoint_geometry_opened_after_prediction_seal": True,
         "human_approval_required": False,
         "measurement_modalities": [
             "released-calibrated-rgb",
             "released-tactile-arrays",
             "released-robot-state-and-action",
             "released-camera-calibration",
-            "released-held-out-view-geometry",
+            "post-seal-geometry-derived-from-released-rgb",
         ],
         "new_measurements_required": False,
         "prob4d_role": "used-as-the-frozen-probabilistic-visual-observation-feeder",
         "released_real_world_recordings": True,
+        "sensor_name_semantics": (
+            "preserved-without-ambiguous-left-right-robot-assignment"
+        ),
+        "tactile_axis_identity_policy": (
+            "unavailable-in-release-exact-no-contact-fallback"
+        ),
     }
     assert lock["physical_baseline"]["generation_rule"] == (
         "automatic-warp-twin-when-admissible-otherwise-exact-persistence-v1"
     )
     assert lock["source_gate"]["minimum_passing_objects"] == 8
     assert lock["source_gate"]["minimum_passing_objects_per_stratum"] == 4
+    assert lock["source_gate"]["primary_candidate_method_id"] == (
+        "V1_joint_sparse_visual_guarded"
+    )
     assert lock["source_gate"]["tie_policy"] == (
         "accept-complete-tied-score-blocks-never-split-by-object-id"
     )
@@ -216,13 +230,15 @@ def test_execution_lock_binds_unchanged_policy_selection_and_code() -> None:
             ).hexdigest()
             == lock["source_gate"][digest_key]
         )
+    for relative, expected in lock["source_gate"]["source_files_sha256"].items():
+        assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
 
 
 @pytest.mark.parametrize(
     ("path", "value", "match"),
     [
         (("schema",), "changed", "schema changed"),
-        (("schema_version",), 2, "version changed"),
+        (("schema_version",), 3, "version changed"),
         (("semantics",), "changed", "semantics changed"),
         (
             ("public_measurements", "released_real_world_recordings"),
@@ -240,6 +256,16 @@ def test_execution_lock_binds_unchanged_policy_selection_and_code() -> None:
             "requires human approval",
         ),
         (("public_measurements", "prob4d_role"), "changed", "Prob4D role"),
+        (
+            ("public_measurements", "tactile_axis_identity_policy"),
+            "changed",
+            "tactile-axis policy",
+        ),
+        (
+            ("public_measurements", "endpoint_geometry_derivation_revision"),
+            "0" * 40,
+            "released-data derivation",
+        ),
         (("prospective_policy", "policy_id"), "0" * 64, "prospective policy"),
         (("cohort", "selection_sha256"), "1" * 64, "selected cohort"),
         (("physical_baseline", "generation_rule"), "changed", "physical baseline"),
@@ -291,6 +317,10 @@ def test_transferable_source_evidence_passes_without_human_approval() -> None:
     assert result["full_source_fit"]["accepted_count"] == 9
     assert result["information_boundary"]["human_approval_required"] is False
     assert result["information_boundary"]["new_measurements_required"] is False
+    assert result["primary_candidate_method_id"] == (
+        "V1_joint_sparse_visual_guarded"
+    )
+    assert result["tactile_claim_authorized"] is False
     authorization = result["confirmation_opening_authorization"]
     assert authorization["authorized"] is True
     assert authorization["confirmation_payloads_opened"] is False

@@ -57,7 +57,7 @@ def _losses() -> dict[str, float]:
     result = {
         "B0_physical_fallback": 10.0,
         "B1_last_causal_residual": 9.0,
-        "V1_joint_sparse_visual_guarded": 8.5,
+        "V1_joint_sparse_visual_guarded": 7.5,
         "T1_contact_anchor_only": 9.25,
         "VT2_joint_sparse_visuotactile_unguarded": 7.5,
         "VT3_joint_sparse_visuotactile_anchor_bias": 7.6,

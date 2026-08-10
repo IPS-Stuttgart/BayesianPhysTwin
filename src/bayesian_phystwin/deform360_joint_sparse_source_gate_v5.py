@@ -4,7 +4,10 @@ The gate consumes predictions and risk scores sealed before development suffixes
 were scored. Each outer fold selects its guard from nine inner cross-fitted
 physical-object forecasts, preserves complete risk-score ties, and deploys the
 exact physical fallback whenever the candidate is rejected. Confirmation data
-are neither needed nor permitted here.
+are neither needed nor permitted here. The registered public-data amendment uses
+the visual arm as the primary candidate because the released sensor names do not
+identify tactile groups with robot axes; tactile arms remain non-authorizing
+diagnostics.
 """
 
 from __future__ import annotations
@@ -31,9 +34,9 @@ from ._portable_contracts import (
 EXECUTION_LOCK_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-execution-lock"
 )
-EXECUTION_LOCK_VERSION: Final = 1
+EXECUTION_LOCK_VERSION: Final = 2
 EXECUTION_LOCK_SEMANTICS: Final = (
-    "public-real-world-nested-source-gate-before-confirmation-v1"
+    "public-real-world-visual-primary-source-gate-before-confirmation-v2"
 )
 SOURCE_EVIDENCE_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-evidence"
@@ -45,8 +48,10 @@ SOURCE_EVIDENCE_SEMANTICS: Final = (
 SOURCE_RESULT_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-gate-result"
 )
-SOURCE_RESULT_VERSION: Final = 1
-SOURCE_RESULT_SEMANTICS: Final = "nested-loo-public-source-gate-before-confirmation-v1"
+SOURCE_RESULT_VERSION: Final = 2
+SOURCE_RESULT_SEMANTICS: Final = (
+    "nested-loo-public-visual-source-gate-before-confirmation-v2"
+)
 
 PROSPECTIVE_POLICY_ID: Final = (
     "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749"
@@ -63,8 +68,9 @@ RAW_METHOD_IDS: Final = (
     "VT2_joint_sparse_visuotactile_unguarded",
     "VT3_joint_sparse_visuotactile_anchor_bias",
 )
-PRIMARY_RAW_METHOD: Final = "VT2_joint_sparse_visuotactile_unguarded"
-PRIMARY_DEPLOYED_METHOD: Final = "VT1_joint_sparse_visuotactile_guarded"
+PRIMARY_RAW_METHOD: Final = "V1_joint_sparse_visual_guarded"
+PRIMARY_DEPLOYED_METHOD: Final = "V1_joint_sparse_visual_guarded"
+TACTILE_CLAIM_POLICY: Final = "disabled-without-registered-public-axis-identity"
 
 _LOCK_FIELDS = frozenset(
     {
@@ -233,11 +239,30 @@ def load_deform360_joint_sparse_source_execution_lock_v5(
         "used-as-the-frozen-probabilistic-visual-observation-feeder"
     ):
         raise ValueError("execution lock changed the Prob4D role")
+    if measurements.get("tactile_axis_identity_policy") != (
+        "unavailable-in-release-exact-no-contact-fallback"
+    ):
+        raise ValueError("execution lock changed the tactile-axis policy")
+    if (
+        measurements.get("sensor_name_semantics")
+        != "preserved-without-ambiguous-left-right-robot-assignment"
+        or measurements.get("endpoint_geometry_derivation_repository")
+        != "lhy0807/deform360"
+        or measurements.get("endpoint_geometry_derivation_revision")
+        != "d8522a4403b766aeb387510c04e89032a56fdf35"
+        or measurements.get("endpoint_geometry_opened_after_prediction_seal")
+        is not True
+    ):
+        raise ValueError("execution lock changed the released-data derivation")
 
     policy = _mapping(lock.get("prospective_policy"), name="prospective_policy")
     cohort = _mapping(lock.get("cohort"), name="cohort")
     if policy.get("policy_id") != PROSPECTIVE_POLICY_ID:
         raise ValueError("execution lock changed the prospective policy")
+    if policy.get("application") != (
+        "visual-primary-public-release-amendment-before-source-outcomes-v1"
+    ) or policy.get("tactile_primary_claim_suspended") is not True:
+        raise ValueError("execution lock changed the public-release amendment")
     if cohort.get("selection_sha256") != SELECTION_SHA256:
         raise ValueError("execution lock changed the selected cohort")
     baseline = _mapping(lock.get("physical_baseline"), name="physical_baseline")
@@ -250,14 +275,15 @@ def load_deform360_joint_sparse_source_execution_lock_v5(
         "harmful_update_relative_margin": 0.02,
         "maximum_risk_coverage": 0.98,
         "maximum_stratum_mean_regression": 0.02,
-        "minimum_contact_increment_over_visual_only": 0.02,
         "minimum_passing_objects": 8,
         "minimum_passing_objects_per_stratum": 4,
         "minimum_relative_improvement_vs_last_causal_residual": 0.05,
         "minimum_relative_improvement_vs_physical_fallback": 0.1,
         "minimum_risk_coverage": 0.8,
         "nominal_conformal_coverage": 0.9,
+        "primary_candidate_method_id": PRIMARY_RAW_METHOD,
         "risk_score_semantics": "lower-is-safer-inclusive-threshold-v1",
+        "tactile_claim_policy": TACTILE_CLAIM_POLICY,
         "tie_policy": "accept-complete-tied-score-blocks-never-split-by-object-id",
     }
     if any(gate.get(key) != value for key, value in expected_gate_values.items()):
@@ -612,7 +638,6 @@ def _fold_result(
     deployed = _deployed_method(held_out, accepted)
     fallback = held_out.methods["B0_physical_fallback"]
     last_residual = held_out.methods["B1_last_causal_residual"]
-    visual = held_out.methods["V1_joint_sparse_visual_guarded"]
     quantile, interval_upper, interval_covered = _interval(
         training, held_out, threshold=threshold
     )
@@ -627,10 +652,6 @@ def _fold_result(
             deployed.loss_mm, last_residual.loss_mm
         )
         >= float(gate["minimum_relative_improvement_vs_last_causal_residual"]),
-        "minimum_contact_increment": _relative_improvement(
-            deployed.loss_mm, visual.loss_mm
-        )
-        >= float(gate["minimum_contact_increment_over_visual_only"]),
         "interval_covered": interval_covered,
         "accepted_update_not_harmful": (
             not accepted or deployed.loss_mm <= (1.0 + harm_margin) * fallback.loss_mm
@@ -694,6 +715,10 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
     visual_losses = [
         record.methods["V1_joint_sparse_visual_guarded"].loss_mm for record in records
     ]
+    unregistered_contact_losses = [
+        record.methods["VT2_joint_sparse_visuotactile_unguarded"].loss_mm
+        for record in records
+    ]
     fold_by_id = {str(fold["object_id"]): fold for fold in folds}
     passing_by_stratum = {
         stratum: sum(
@@ -744,7 +769,7 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
         _mean(deployed_losses), _mean(residual_losses)
     )
     contact_increment = _relative_improvement(
-        _mean(deployed_losses), _mean(visual_losses)
+        _mean(unregistered_contact_losses), _mean(visual_losses)
     )
     checks = {
         "minimum_passing_objects": passing_count
@@ -759,8 +784,6 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
         >= float(gate["minimum_relative_improvement_vs_physical_fallback"]),
         "aggregate_gain_vs_last_residual": gain_residual
         >= float(gate["minimum_relative_improvement_vs_last_causal_residual"]),
-        "aggregate_contact_increment": contact_increment
-        >= float(gate["minimum_contact_increment_over_visual_only"]),
         "no_harmful_accepted_update": all(
             bool(fold["checks"]["accepted_update_not_harmful"]) for fold in folds
         ),
@@ -782,6 +805,8 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
             "execution_lock_id": lock["execution_lock_id"],
             "source_evidence_id": evidence["evidence_id"],
             "confirmation_payloads_opened": False,
+            "primary_candidate_method_id": PRIMARY_RAW_METHOD,
+            "tactile_claim_authorized": False,
             "authorized": True,
         }
         authorization = {
@@ -798,10 +823,13 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
         "folds": folds,
         "aggregate": {
             "accepted_count": accepted_count,
-            "contact_increment_over_visual_only": contact_increment,
+            "unregistered_contact_arm_increment_over_visual_only": contact_increment,
             "mean_deployed_loss_mm": _mean(deployed_losses),
             "mean_last_causal_residual_loss_mm": _mean(residual_losses),
             "mean_physical_fallback_loss_mm": _mean(fallback_losses),
+            "mean_unregistered_contact_arm_loss_mm": _mean(
+                unregistered_contact_losses
+            ),
             "passing_count": passing_count,
             "passing_count_by_stratum": passing_by_stratum,
             "relative_improvement_vs_last_causal_residual": gain_residual,
@@ -816,6 +844,9 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
         },
         "checks": checks,
         "gate_passed": gate_passed,
+        "primary_candidate_method_id": PRIMARY_RAW_METHOD,
+        "tactile_claim_authorized": False,
+        "tactile_claim_policy": TACTILE_CLAIM_POLICY,
         "confirmation_access_authorized": gate_passed,
         "confirmation_opening_authorization": authorization,
         "status": "source-gate-passed" if gate_passed else "source-gate-failed",

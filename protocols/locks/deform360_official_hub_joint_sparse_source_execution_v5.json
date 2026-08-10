@@ -1,5 +1,5 @@
 {
-  "claim_boundary": "A passing source gate authorizes exactly one independent evaluation on the twelve locked public Deform360 confirmation objects. It is not confirmation evidence and does not establish unseen-object generalization, calibrated deployment uncertainty, Causal4D benefit, safety, official benchmark parity, or state of the art.",
+  "claim_boundary": "A passing source gate authorizes exactly one independent evaluation of the guarded visual V1 method on the twelve locked public Deform360 confirmation objects. The released tactile streams do not identify tactile groups with robot axes, so this execution cannot authorize a tactile-benefit claim. It is not confirmation evidence and does not establish unseen-object generalization, calibrated deployment uncertainty, Causal4D benefit, safety, official benchmark parity, or state of the art.",
   "cohort": {
     "development_objects": [
       {
@@ -63,7 +63,7 @@
     "selection_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
     "selection_sha256": "b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222"
   },
-  "execution_lock_id": "30a216f42e46ff92df3ce49f49a635d57b41b5f9019b27d4166127650719aced",
+  "execution_lock_id": "4b33735f99753a3a7aa007eb31f9cdeab3acd44e553c5334a5e0e1c7cbbf6552",
   "information_boundary": {
     "confirmation_payloads_opened": false,
     "development_suffix_allowed_only_after_fold_prediction_seal": true,
@@ -93,28 +93,35 @@
     }
   },
   "prospective_policy": {
+    "application": "visual-primary-public-release-amendment-before-source-outcomes-v1",
     "file_sha256": "f1d5d7cf5252df1f9157de1560d4338c3914ad262e6a4637f63630151b67cddb",
     "path": "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json",
-    "policy_id": "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749"
+    "policy_id": "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749",
+    "tactile_primary_claim_suspended": true
   },
   "public_measurements": {
     "dataset_repository": "brownu/deform360",
     "dataset_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+    "endpoint_geometry_derivation_repository": "lhy0807/deform360",
+    "endpoint_geometry_derivation_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "endpoint_geometry_opened_after_prediction_seal": true,
     "human_approval_required": false,
     "measurement_modalities": [
       "released-calibrated-rgb",
       "released-tactile-arrays",
       "released-robot-state-and-action",
       "released-camera-calibration",
-      "released-held-out-view-geometry"
+      "post-seal-geometry-derived-from-released-rgb"
     ],
     "new_measurements_required": false,
     "prob4d_role": "used-as-the-frozen-probabilistic-visual-observation-feeder",
-    "released_real_world_recordings": true
+    "released_real_world_recordings": true,
+    "sensor_name_semantics": "preserved-without-ambiguous-left-right-robot-assignment",
+    "tactile_axis_identity_policy": "unavailable-in-release-exact-no-contact-fallback"
   },
   "schema": "bayesian-phystwin.deform360-joint-sparse-source-execution-lock",
-  "schema_version": 1,
-  "semantics": "public-real-world-nested-source-gate-before-confirmation-v1",
+  "schema_version": 2,
+  "semantics": "public-real-world-visual-primary-source-gate-before-confirmation-v2",
   "source_gate": {
     "conformal_score": "additive-object-maximum-v1",
     "fold_conformal_rank": 9,
@@ -122,33 +129,45 @@
     "harmful_update_relative_margin": 0.02,
     "maximum_risk_coverage": 0.98,
     "maximum_stratum_mean_regression": 0.02,
-    "minimum_contact_increment_over_visual_only": 0.02,
     "minimum_passing_objects": 8,
     "minimum_passing_objects_per_stratum": 4,
     "minimum_relative_improvement_vs_last_causal_residual": 0.05,
     "minimum_relative_improvement_vs_physical_fallback": 0.1,
     "minimum_risk_coverage": 0.8,
     "nominal_conformal_coverage": 0.9,
+    "primary_candidate_method_id": "V1_joint_sparse_visual_guarded",
     "per_fold_pass_requires": [
       "training-threshold-available",
       "held-out-candidate-accepted",
       "at-least-10-percent-held-out-gain-vs-B0",
       "at-least-5-percent-held-out-gain-vs-B1",
-      "at-least-2-percent-held-out-contact-increment-vs-V1",
       "held-out-additive-conformal-upper-bound-covers",
       "no-accepted-harm-over-2-percent",
       "every-rejection-exactly-identifies-B0"
     ],
     "prediction_and_risk_sealed_before_development_suffix_scoring": true,
     "source_evidence_layout": "ten-outer-fold-batches-each-with-nine-inner-cross-fitted-training-forecasts-v1",
+    "source_files_sha256": {
+      "scripts/science/materialize_deform360_joint_sparse_source_endpoint_plan_v5.py": "23316e626e35a2196cbac97fb4594d2adbb2e74bd9c06e8d9a91e27b7ecf9a2e",
+      "scripts/science/materialize_deform360_joint_sparse_source_plan_v5.py": "dacfb67a8d5083ac43fb2ee06efcb33503d197e7ae08409d34db968c886f7a82",
+      "scripts/science/run_deform360_joint_sparse_source_predictions_v5.py": "bc47ccf20f735d13b5670a3708f3f1a16393eb3d6be5b2259a9aa0f5c74bae5f",
+      "scripts/science/score_deform360_joint_sparse_source_v5.py": "68e5d1d3bcf12f88b7a1d7a7547740081a427856e40735e089e13a7c6b744e2a",
+      "src/bayesian_phystwin/deform360_joint_sparse_endpoint_v5.py": "00ad9b250e4569ea710698464c70ac69ed5af05f532ef42cb183bb4857ceebe4",
+      "src/bayesian_phystwin/deform360_joint_sparse_materializer_v5.py": "90471395ff205c872a14648b58437697cc5503685730508a00f77834fd13ae7d",
+      "src/bayesian_phystwin/deform360_joint_sparse_prediction_v5.py": "1876694be25f36a5c78d4409adedcfd5910253589938ff493d609d5f2cb75b76",
+      "src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py": "021d3c7db154ee8f1f3189391a23bee2a0c317bc7ca1e282269a1437fc8606d5",
+      "src/bayesian_phystwin/deform360_joint_sparse_source_evidence_v5.py": "b5756dd6bc71ec82fe7e3353b83159f824894698aa8a71ad2960984dd02f3930",
+      "src/bayesian_phystwin/deform360_joint_sparse_source_scoring_v5.py": "e94bdd76a35bae3b3bc8eb7e3e0d7103659fa9d6a7b9b46e2cfdc9ae9b1138a4"
+    },
     "risk_score_semantics": "lower-is-safer-inclusive-threshold-v1",
     "risk_threshold_fit": "largest-complete-tied-score-block-within-coverage-and-zero-training-harm-v1",
     "source_decision_requires_all_aggregate_checks": true,
-    "source_evaluator_file_sha256": "1008d3112fff3c9b43cc96c19e0b3e81c3fb6c481ae626b00202f44ec51d44e4",
+    "source_evaluator_file_sha256": "34d716e2d0722295e94ee8bd80e85179b6061665b9d764fd34522577e89f0e5e",
     "source_evaluator_path": "src/bayesian_phystwin/deform360_joint_sparse_source_gate_v5.py",
-    "source_runner_file_sha256": "7d6da69d6180b456819d30fd3cb07b7e985aa751de3281a6cd05c9a956da955b",
-    "source_runner_path": "scripts/science/evaluate_deform360_joint_sparse_source_v5.py",
-    "strategy": "outer-leave-one-object-out-with-inner-cross-fitted-training-forecasts-then-full-source-refit-v1",
+    "source_runner_file_sha256": "9a219450193ba40bd6caa6fd1404924468e524ae08db146b14385e41b579dee5",
+    "source_runner_path": "src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5.py",
+    "strategy": "outer-leave-one-object-out-visual-primary-with-inner-cross-fitted-training-forecasts-then-full-source-refit-v2",
+    "tactile_claim_policy": "disabled-without-registered-public-axis-identity",
     "tie_policy": "accept-complete-tied-score-blocks-never-split-by-object-id"
   }
 }

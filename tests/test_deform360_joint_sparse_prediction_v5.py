@@ -203,6 +203,10 @@ def test_missing_contact_fails_closed_without_crashing() -> None:
     baseline = result.trajectories_m[B0_PHYSICAL_FALLBACK]
 
     assert result.diagnostics["contact_available"] is False
+    assert result.diagnostics["risk_score_candidate_method_id"] == (
+        V1_VISUAL_GUARDED
+    )
+    assert not np.array_equal(result.trajectories_m[V1_VISUAL_GUARDED], baseline)
     assert not result.inference_results[T1_CONTACT_ONLY].inference_admissible
     for method in (
         T1_CONTACT_ONLY,
@@ -210,6 +214,19 @@ def test_missing_contact_fails_closed_without_crashing() -> None:
         VT3_VISUOTACTILE_ANCHOR_BIAS,
     ):
         assert np.array_equal(result.trajectories_m[method], baseline)
+
+
+def test_visual_risk_score_does_not_depend_on_unregistered_contact() -> None:
+    with_contact = run_deform360_joint_sparse_prediction_v5(
+        _problem(_batch(with_contact=True)),
+        config=_config(),
+    )
+    without_contact = run_deform360_joint_sparse_prediction_v5(
+        _problem(_batch(with_contact=False)),
+        config=_config(),
+    )
+
+    assert with_contact.risk_score == without_contact.risk_score
 
 
 def test_failed_joint_admission_is_byte_exact_physical_fallback() -> None:

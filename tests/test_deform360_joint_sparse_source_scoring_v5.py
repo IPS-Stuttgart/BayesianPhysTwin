@@ -23,6 +23,7 @@ from bayesian_phystwin.deform360_joint_sparse_source_gate_v5 import (
     load_deform360_joint_sparse_source_execution_lock_v5,
 )
 from bayesian_phystwin.deform360_joint_sparse_source_runner_v5 import (
+    CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON,
     SOURCE_PANEL_RECEIPT_SCHEMA,
     SOURCE_PANEL_RECEIPT_VERSION,
     SOURCE_PLAN_BOUNDARY,
@@ -87,9 +88,13 @@ def _source_plan(lock: Mapping[str, Any]) -> dict[str, Any]:
                     for camera in likelihood
                 ],
                 "contact_prefix": {
-                    "path": f"objects/{index:02d}/contact",
-                    "manifest_file_sha256": _digest(f"contact-{index}"),
-                    "materialization_id": _digest(f"materialization-{index}"),
+                    "status": "unavailable",
+                    "path": None,
+                    "manifest_file_sha256": None,
+                    "materialization_id": None,
+                    "unavailable_reason": (
+                        CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON
+                    ),
                 },
             }
         )

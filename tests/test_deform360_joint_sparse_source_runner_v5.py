@@ -75,9 +75,13 @@ def _objects():
                     for camera_index, camera in enumerate(likelihood)
                 ],
                 "contact_prefix": {
-                    "path": f"objects/{index:02d}/contact-prefix",
-                    "manifest_file_sha256": f"{index + 60:064x}",
-                    "materialization_id": f"{index + 80:064x}",
+                    "status": "unavailable",
+                    "path": None,
+                    "manifest_file_sha256": None,
+                    "materialization_id": None,
+                    "unavailable_reason": (
+                        runner.CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON
+                    ),
                 },
             }
         )
@@ -98,6 +102,10 @@ def test_source_plan_is_prefix_only_and_reserves_endpoint_by_identity() -> None:
     assert plan["information_boundary"]["human_approval_required"] is False
     assert plan["information_boundary"]["new_measurements_required"] is False
     assert plan["information_boundary"]["prob4d_used"] is True
+    assert (
+        plan["information_boundary"]["tactile_without_registered_axis_identity"]
+        == "exact-no-contact-fallback"
+    )
     for row in plan["objects"]:
         reserved = set(row["reserved_endpoint_camera_ids"])
         likelihood = {window["camera_id"] for window in row["visual_windows"]}
@@ -109,6 +117,41 @@ def test_source_plan_is_prefix_only_and_reserves_endpoint_by_identity() -> None:
         )
         == plan
     )
+
+
+def test_source_plan_accepts_only_the_locked_unavailable_contact_reason() -> None:
+    values = _objects()
+    plan = runner.build_deform360_joint_sparse_source_prediction_plan_v5(
+        lock=_lock(),
+        implementation_revision="1" * 40,
+        objects=values,
+    )
+    assert plan["objects"][0]["contact_prefix"]["status"] == "unavailable"
+
+    values[0]["contact_prefix"]["unavailable_reason"] = "operator-waived"
+    with pytest.raises(ValueError, match="unavailability reason"):
+        runner.build_deform360_joint_sparse_source_prediction_plan_v5(
+            lock=_lock(),
+            implementation_revision="1" * 40,
+            objects=values,
+        )
+
+
+def test_source_plan_rejects_an_invented_tactile_axis_identity() -> None:
+    values = _objects()
+    values[0]["contact_prefix"] = {
+        "status": "available",
+        "path": "objects/00/contact-prefix",
+        "manifest_file_sha256": "6" * 64,
+        "materialization_id": "8" * 64,
+        "unavailable_reason": None,
+    }
+    with pytest.raises(ValueError, match="unregistered tactile-to-robot axis"):
+        runner.build_deform360_joint_sparse_source_prediction_plan_v5(
+            lock=_lock(),
+            implementation_revision="1" * 40,
+            objects=values,
+        )
 
 
 def test_source_plan_rejects_reserved_endpoint_camera_in_likelihood() -> None:
