@@ -2,10 +2,21 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Mapping, Sequence
 from typing import Final, cast
 
+from ._canonical_contracts import plain_json
+from .prior_aware_gauge_belief_v2 import (
+    PRIOR_AWARE_GAUGE_BELIEF_V2_IMPLEMENTATION,
+    _validate_certificate_mapping,
+)
+from .prospective_prob4d_update import (
+    CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION,
+    CLAIM_BEARING_PROB4D_UPDATE_VERSION,
+)
 from .provider_failure_decomposition import analyze_provider_failure_evidence
 from .provider_failure_evidence_adapters import (
     CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY,
@@ -67,6 +78,16 @@ _ADAPTER_METRIC_FIELDS: Final[frozenset[str]] = frozenset(
 _DIGEST_PATTERN: Final = re.compile(r"[0-9a-f]{64}")
 
 
+def _canonical_id(payload: Mapping[str, object]) -> str:
+    encoded = json.dumps(
+        plain_json(payload),
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _literal_mapping(value: object, *, name: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} must be a mapping")
@@ -88,7 +109,10 @@ def _nonempty_text(value: object, *, name: str) -> str:
 
 
 def _record_metrics(record: Mapping[str, object]) -> Mapping[str, object]:
-    return cast(Mapping[str, object], record["metrics"])
+    value = record.get("metrics")
+    if value is None:
+        return {}
+    return cast(Mapping[str, object], value)
 
 
 def _contains_adapter_fields(records: Sequence[Mapping[str, object]]) -> bool:
@@ -98,47 +122,59 @@ def _contains_adapter_fields(records: Sequence[Mapping[str, object]]) -> bool:
     )
 
 
-def _validate_calibration_ids(value: object, *, index: int) -> None:
+def _validate_calibration_ids(
+    value: object,
+    *,
+    index: int,
+) -> dict[str, str]:
     calibration_ids = _literal_mapping(
         value,
         name=f"record {index} calibration_artifact_ids",
     )
     if not calibration_ids:
         raise ValueError(f"record {index} calibration_artifact_ids must not be empty")
+    result: dict[str, str] = {}
     for name, digest in calibration_ids.items():
         if not name:
             raise ValueError(
                 f"record {index} calibration artifact names must be nonempty"
             )
-        _lowercase_sha256(
+        result[name] = _lowercase_sha256(
             digest,
             name=f"record {index} calibration artifact {name!r}",
         )
+    return result
 
 
 def _validate_strict_certificate(
     value: object,
     *,
     accepted: bool,
+    result_reason: str,
     index: int,
-) -> None:
+) -> Mapping[str, object]:
     certificate = _literal_mapping(
         value,
         name=f"record {index} strict_admission_certificate",
     )
-    for name in ("passed", "underlying_inference_admissible"):
-        if type(certificate.get(name)) is not bool:
-            raise ValueError(
-                f"record {index} certificate field {name!r} must be a bool"
-            )
-    _nonempty_text(
-        certificate.get("reason"),
-        name=f"record {index} certificate reason",
-    )
-    if certificate["passed"] is not accepted:
+    certificate_passed = _validate_certificate_mapping(certificate)
+    if certificate_passed is not accepted:
         raise ValueError(
             f"record {index} certificate passed decision differs from accepted"
         )
+    underlying_admissible = (
+        certificate["underlying_inference_admissible"] is True
+    )
+    expected_result_reason = (
+        certificate["underlying_inference_reason"]
+        if certificate_passed or not underlying_admissible
+        else certificate["reason"]
+    )
+    if result_reason != expected_result_reason:
+        raise ValueError(
+            f"record {index} result reason differs from the certificate path"
+        )
+    return certificate
 
 
 def _validate_adapter_metadata(metadata: Mapping[str, object]) -> list[object]:
@@ -173,10 +209,11 @@ def _validate_adapter_record(
 ) -> None:
     case_id = cast(str, record["case_id"])
     accepted = cast(bool, record["accepted"])
+    result_reason = cast(str, record["result_reason"])
     binding_map = _literal_mapping(binding, name=f"record binding {index}")
     if binding_map.get("case_id") != case_id:
         raise ValueError(f"record binding {index} case_id differs from record order")
-    update_id = _lowercase_sha256(
+    bound_update_id = _lowercase_sha256(
         binding_map.get("update_id"),
         name=f"record binding {index} update_id",
     )
@@ -199,24 +236,40 @@ def _validate_adapter_record(
         != CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
     ):
         raise ValueError(f"record {index} adapter boundary is not canonical")
-    if metrics.get("claim_bearing_update_id") != update_id:
-        raise ValueError(f"record {index} update ID differs from metadata binding")
 
-    for name in (
-        "claim_bearing_admission_id",
-        "claim_bearing_inference_result_id",
-        "observation_artifact_id",
-        "linearization_artifact_id",
-    ):
-        _lowercase_sha256(metrics.get(name), name=f"record {index} {name}")
+    update_id = _lowercase_sha256(
+        metrics.get("claim_bearing_update_id"),
+        name=f"record {index} claim_bearing_update_id",
+    )
+    if update_id != bound_update_id:
+        raise ValueError(f"record {index} update ID differs from metadata binding")
+    admission_id = _lowercase_sha256(
+        metrics.get("claim_bearing_admission_id"),
+        name=f"record {index} claim_bearing_admission_id",
+    )
+    inference_result_id = _lowercase_sha256(
+        metrics.get("claim_bearing_inference_result_id"),
+        name=f"record {index} claim_bearing_inference_result_id",
+    )
+    observation_artifact_id = _lowercase_sha256(
+        metrics.get("observation_artifact_id"),
+        name=f"record {index} observation_artifact_id",
+    )
+    linearization_artifact_id = _lowercase_sha256(
+        metrics.get("linearization_artifact_id"),
+        name=f"record {index} linearization_artifact_id",
+    )
     bound_provider_id = _lowercase_sha256(
         metrics.get("provider_manifest_id"),
         name=f"record {index} provider_manifest_id",
     )
     if bound_provider_id != provider_id:
         raise ValueError(f"record {index} provider identity differs from payload")
-    _validate_calibration_ids(metrics.get("calibration_artifact_ids"), index=index)
-    _nonempty_text(
+    calibration_ids = _validate_calibration_ids(
+        metrics.get("calibration_artifact_ids"),
+        index=index,
+    )
+    runtime_revision_source = _nonempty_text(
         metrics.get("runtime_revision_source"),
         name=f"record {index} runtime_revision_source",
     )
@@ -224,13 +277,17 @@ def _validate_adapter_record(
         raise ValueError(
             f"record {index} runtime revision must be independently verified"
         )
-    _nonempty_text(
-        metrics.get("strict_result_implementation_id"),
-        name=f"record {index} strict_result_implementation_id",
-    )
+    if (
+        metrics.get("strict_result_implementation_id")
+        != PRIOR_AWARE_GAUGE_BELIEF_V2_IMPLEMENTATION
+    ):
+        raise ValueError(
+            f"record {index} strict result implementation is unsupported"
+        )
     _validate_strict_certificate(
         metrics.get("strict_admission_certificate"),
         accepted=accepted,
+        result_reason=result_reason,
         index=index,
     )
 
@@ -238,6 +295,36 @@ def _validate_adapter_record(
     if signals.get("technical_valid") is not True:
         raise ValueError(
             f"record {index} adapter evidence must establish technical_valid=true"
+        )
+
+    admission_payload: dict[str, object] = {
+        "schema": "bayesian_phystwin.claim_bearing_prob4d_update",
+        "schema_version": CLAIM_BEARING_PROB4D_UPDATE_VERSION,
+        "observation_artifact_id": observation_artifact_id,
+        "linearization_artifact_id": linearization_artifact_id,
+        "provider_manifest_id": bound_provider_id,
+        "calibration_artifact_ids": calibration_ids,
+        "runtime_revision_source": runtime_revision_source,
+        "runtime_revision_independently_verified": True,
+        "inference_admissible": accepted,
+        "reason": result_reason,
+    }
+    expected_admission_id = _canonical_id(admission_payload)
+    if admission_id != expected_admission_id:
+        raise ValueError(
+            f"record {index} admission ID does not match its bound decision"
+        )
+    expected_update_id = _canonical_id(
+        {
+            **admission_payload,
+            "identity_version": CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION,
+            "admission_id": expected_admission_id,
+            "inference_result_id": inference_result_id,
+        }
+    )
+    if update_id != expected_update_id:
+        raise ValueError(
+            f"record {index} update ID does not bind admission and inference result"
         )
 
 
