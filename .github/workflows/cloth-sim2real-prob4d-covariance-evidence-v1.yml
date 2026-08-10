@@ -1,0 +1,411 @@
+name: Cloth Sim2Real Prob4D covariance evidence v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cloth-sim2real-prob4d-covariance-evidence-v1.yml"
+      - "scripts/science/run_cloth_sim2real_prob4d_covariance_ablation_v1.py"
+      - "scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py"
+      - "tests/test_cloth_sim2real_prob4d_covariance_ablation_v1.py"
+      - "tests/test_cloth_sim2real_prob4d_covariance_dataset_lock_v1.py"
+      - "tests/test_prob4d_covariance_ablation.py"
+      - "src/bayesian_phystwin/prob4d_covariance_ablation.py"
+      - "src/bayesian_phystwin/strict_json_report_io.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloth-sim2real-prob4d-covariance-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LEGACY_REVISION: 94fe5d0012e66b93d73bf9474df2b28f2a83d153
+  BENCHMARK_REVISION: 178a9b9722191c51cf0dcbc3cf0dc03701b09eb3
+  SIM_UTILS_REVISION: e4d107965c09d7a31da33b5b3e14a2bdbbfe79a4
+  DATASET_SHA256: 268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f
+  DATASET_SIZE_BYTES: "3762021195"
+  LEGACY_DATASET_TOKEN: 268d07d90da770278106028b3c704340bbac48dbd03bb4afd563630fb6de7ec
+  DATASET_URL: https://zenodo.org/records/13823986/files/Benchmarking_cloth.zip?download=1
+  AUTHORIZED_RUNNER_NAME: workstation2
+  CACHE_ROOT: /mnt/lexar4tb/datasets/cloth-sim2real-covariance-v1
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  MUJOCO_GL: egl
+
+jobs:
+  contracts:
+    name: Covariance attribution contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate implementation, dataset lock, and mathematical oracles
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          files=(
+            scripts/science/run_cloth_sim2real_prob4d_covariance_ablation_v1.py
+            scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py
+            tests/test_cloth_sim2real_prob4d_covariance_ablation_v1.py
+            tests/test_cloth_sim2real_prob4d_covariance_dataset_lock_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/run_cloth_sim2real_prob4d_covariance_ablation_v1.py \
+            scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_cloth_sim2real_prob4d_covariance_ablation_v1.py \
+            tests/test_cloth_sim2real_prob4d_covariance_dataset_lock_v1.py \
+            tests/test_prob4d_covariance_ablation.py
+          python -m compileall -q \
+            scripts/science/run_cloth_sim2real_prob4d_covariance_ablation_v1.py \
+            scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py
+          find scripts tests -type d -name __pycache__ -prune -exec rm -rf {} +
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  evidence:
+    name: Sealed five-way real-cloth covariance attribution / workstation2
+    needs: contracts
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       github.repository == 'IPS-Stuttgart/BayesianPhysTwin')
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 240
+    steps:
+      - name: Admit evidence runner and scientific boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test "${#DATASET_SHA256}" -eq 64
+          echo "fresh_confirmation=false"
+          echo "retrospective_real_physical_attribution=true"
+          echo "original_repeat2_outcomes_previously_opened=true"
+          echo "new_predictions_sealed_before_new_future_reads=true"
+          echo "claim_authorized=false"
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Check out exact frozen Cloth Sim2Real campaign
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/BayesianPhysTwin
+          ref: ${{ env.LEGACY_REVISION }}
+          path: frozen-campaign
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Check out exact benchmark simulator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: dblanm/benchmarking_cloth
+          ref: ${{ env.BENCHMARK_REVISION }}
+          path: benchmarking-cloth
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Check out pinned simulator utilities
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Barbany/sim_utils
+          ref: ${{ env.SIM_UTILS_REVISION }}
+          path: sim-utils
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+      - name: Set up Python 3.10
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+      - name: Install frozen simulation and analysis stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "numpy==1.26.4" \
+            "scipy==1.11.4" \
+            "mujoco==3.1.0" \
+            "gym==0.26.1" \
+            "matplotlib==3.8.4" \
+            "hydra-core==1.3.2" \
+            "omegaconf==2.3.0" \
+            "imageio==2.34.2" \
+            "packaging==24.1"
+          python -m pip install --no-deps -e sim-utils
+          python -m pip install --no-deps -e benchmarking-cloth
+          python -m pip install -e ".[dev,graph]"
+          python - <<'PY'
+          import gym
+          import mujoco
+          import numpy
+          import scipy
+          from bcm.envs import get_env
+          from bcm.manipulation_utils import generate_full_trajectory
+
+          del get_env, generate_full_trajectory
+          print({
+              "gym": gym.__version__,
+              "mujoco": mujoco.__version__,
+              "numpy": numpy.__version__,
+              "scipy": scipy.__version__,
+          })
+          PY
+      - name: Revalidate implementation before any data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/run_cloth_sim2real_prob4d_covariance_ablation_v1.py
+            scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py
+            tests/test_cloth_sim2real_prob4d_covariance_ablation_v1.py
+            tests/test_cloth_sim2real_prob4d_covariance_dataset_lock_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/run_cloth_sim2real_prob4d_covariance_ablation_v1.py \
+            scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_cloth_sim2real_prob4d_covariance_ablation_v1.py \
+            tests/test_cloth_sim2real_prob4d_covariance_dataset_lock_v1.py \
+            tests/test_prob4d_covariance_ablation.py
+          find scripts tests -type d -name __pycache__ -prune -exec rm -rf {} +
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+      - name: Acquire and verify the exact public dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${CACHE_ROOT}"
+          archive="${CACHE_ROOT}/Benchmarking_cloth-${DATASET_SHA256}.zip"
+          partial="${archive}.part"
+          legacy_partial="${CACHE_ROOT}/Benchmarking_cloth-${LEGACY_DATASET_TOKEN}.zip.part"
+          sha_ok() {
+            local path="$1"
+            [[ -f "${path}" ]] &&
+              [[ "$(sha256sum "${path}" | cut -d' ' -f1)" = "${DATASET_SHA256}" ]]
+          }
+          size_ok() {
+            local path="$1"
+            [[ -f "${path}" ]] &&
+              [[ "$(stat -c '%s' "${path}")" = "${DATASET_SIZE_BYTES}" ]]
+          }
+          if ! sha_ok "${archive}" || ! size_ok "${archive}"; then
+            rm -f "${archive}"
+            if [[ ! -e "${partial}" && -f "${legacy_partial}" ]]; then
+              mv "${legacy_partial}" "${partial}"
+            fi
+            if [[ -f "${partial}" ]]; then
+              current_size="$(stat -c '%s' "${partial}")"
+              if [[ "${current_size}" -eq "${DATASET_SIZE_BYTES}" ]]; then
+                if sha_ok "${partial}"; then
+                  mv "${partial}" "${archive}"
+                else
+                  rm -f "${partial}"
+                fi
+              elif [[ "${current_size}" -lt "${DATASET_SIZE_BYTES}" ]]; then
+                curl --fail --location \
+                  --retry 8 --retry-all-errors --retry-delay 10 \
+                  --continue-at - --output "${partial}" "${DATASET_URL}" || true
+                if size_ok "${partial}" && sha_ok "${partial}"; then
+                  mv "${partial}" "${archive}"
+                fi
+              else
+                rm -f "${partial}"
+              fi
+            fi
+            if ! sha_ok "${archive}" || ! size_ok "${archive}"; then
+              rm -f "${archive}" "${partial}"
+              curl --fail --location \
+                --retry 8 --retry-all-errors --retry-delay 10 \
+                --output "${partial}" "${DATASET_URL}"
+              size_ok "${partial}"
+              sha_ok "${partial}"
+              mv "${partial}" "${archive}"
+            fi
+          fi
+          size_ok "${archive}"
+          sha_ok "${archive}"
+          extract="${CACHE_ROOT}/dataset-${DATASET_SHA256}"
+          marker="${extract}/.archive-sha256"
+          if [[ ! -f "${marker}" ]] || \
+             [[ "$(cat "${marker}")" != "${DATASET_SHA256}" ]]; then
+            temporary="${CACHE_ROOT}/.extract-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            rm -rf "${temporary}"
+            mkdir -p "${temporary}"
+            unzip -q "${archive}" -d "${temporary}"
+            test -d "${temporary}/Benchmarking_cloth"
+            rm -rf "${extract}"
+            mv "${temporary}" "${extract}"
+            printf '%s\n' "${DATASET_SHA256}" > "${marker}"
+          fi
+          test -d "${extract}/Benchmarking_cloth/chequered_rag_2"
+          echo "DATASET_ROOT=${extract}" >> "${GITHUB_ENV}"
+      - name: Reproduce the twelve frozen MuJoCo physical baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="frozen-campaign/results/sota/cloth_sim2real_online_belief_v1/dataset_manifest.json"
+          baseline_root="${CACHE_ROOT}/baselines-${BENCHMARK_REVISION}-${LEGACY_REVISION}"
+          mkdir -p "${baseline_root}"
+          cases="${RUNNER_TEMP}/cloth-cases.txt"
+          python - "${manifest}" > "${cases}" <<'PY'
+          import json
+          import sys
+
+          manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+          for case in sorted(manifest["cases"], key=lambda row: row["case_id"]):
+              if case["split"] in {"calibration", "target"}:
+                  print(case["case_id"])
+          PY
+          test "$(wc -l < "${cases}")" -eq 12
+          while IFS= read -r case_id; do
+            safe="${case_id//\//_}"
+            output="${baseline_root}/${safe}.npz"
+            metadata="${baseline_root}/${safe}.json"
+            if [[ -f "${output}" && -f "${metadata}" ]]; then
+              expected="$(python - "${metadata}" <<'PY'
+          import json
+          import sys
+          print(json.load(open(sys.argv[1], encoding="utf-8"))["npz_sha256"])
+          PY
+              )"
+              if [[ "$(sha256sum "${output}" | cut -d' ' -f1)" = "${expected}" ]]; then
+                echo "reuse_baseline=${case_id}"
+                continue
+              fi
+            fi
+            temporary="${baseline_root}/.${safe}-${GITHUB_RUN_ID}.npz"
+            rm -f "${temporary}" "${temporary%.npz}.json"
+            PYTHONPATH="${PWD}/frozen-campaign/src:${PWD}/benchmarking-cloth" \
+              python frozen-campaign/scripts/held/run_cloth_sim2real_v1.py \
+                simulate \
+                --benchmark-code-root benchmarking-cloth \
+                --case-id "${case_id}" \
+                --output "${temporary}"
+            mv "${temporary}" "${output}"
+            mv "${temporary%.npz}.json" "${metadata}"
+          done < "${cases}"
+          echo "BASELINE_ROOT=${baseline_root}" >> "${GITHUB_ENV}"
+      - name: Seal and score the five covariance treatments
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="${RUNNER_TEMP}/cloth-sim2real-covariance-evidence"
+          rm -rf "${output}"
+          manifest="frozen-campaign/results/sota/cloth_sim2real_online_belief_v1/dataset_manifest.json"
+          frozen_results="frozen-campaign/results/sota/cloth_sim2real_online_belief_v1"
+          PYTHONPATH="${PWD}/frozen-campaign/src" \
+            python scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py \
+              --manifest "${manifest}" \
+              --dataset-root "${DATASET_ROOT}" \
+              --baseline-root "${BASELINE_ROOT}" \
+              --frozen-results-root "${frozen_results}" \
+              --output "${output}"
+          PYTHONPATH="${PWD}/src" \
+            python -m bayesian_phystwin.cli.prob4d_covariance_ablation \
+              "${output}/ablation_input.json" \
+              "${output}/ablation_report.json"
+          echo "EVIDENCE_OUTPUT=${output}" >> "${GITHUB_ENV}"
+      - name: Verify and compact the claim-bounded evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUNNER_TEMP}/cloth-sim2real-covariance-compact"
+          rm -rf "${compact}"
+          mkdir -p "${compact}/cases"
+          cp "${EVIDENCE_OUTPUT}/scientific_result.json" "${compact}/"
+          cp "${EVIDENCE_OUTPUT}/ablation_input.json" "${compact}/"
+          cp "${EVIDENCE_OUTPUT}/ablation_report.json" "${compact}/"
+          find "${EVIDENCE_OUTPUT}" -type f \
+            \( -name prediction_seal.json -o -name result.json \) \
+            -print0 | while IFS= read -r -d '' path; do
+              relative="${path#${EVIDENCE_OUTPUT}/}"
+              target="${compact}/cases/${relative}"
+              mkdir -p "$(dirname "${target}")"
+              cp "${path}" "${target}"
+            done
+          export SOURCE_REVISION="$(git rev-parse HEAD)"
+          python - "${compact}" <<'PY'
+          import json
+          import os
+          import pathlib
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          result = json.loads((root / "scientific_result.json").read_text())
+          report = json.loads((root / "ablation_report.json").read_text())
+          expected = os.environ["DATASET_SHA256"]
+          assert len(expected) == 64
+          assert result["dataset_sha256"] == expected
+          assert result["fresh_confirmation"] is False
+          assert result["retrospective_target_rerun"] is True
+          assert result["future_outcomes_opened_after_new_prediction_seals"] is True
+          assert result["claim_authorized"] is False
+          assert report["complete_five_way_ablation"] is True
+          assert report["only_covariance_treatment_varied"] is True
+          assert report["claim_authorized"] is False
+          provenance = {
+              "schema": "bayesian_phystwin.cloth_covariance_workflow_provenance",
+              "schema_version": 1,
+              "source_revision": os.environ["SOURCE_REVISION"],
+              "legacy_revision": os.environ["LEGACY_REVISION"],
+              "benchmark_revision": os.environ["BENCHMARK_REVISION"],
+              "sim_utils_revision": os.environ["SIM_UTILS_REVISION"],
+              "dataset_sha256": expected,
+              "dataset_size_bytes": int(os.environ["DATASET_SIZE_BYTES"]),
+              "runner_name": os.environ["RUNNER_NAME"],
+              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+              "workflow_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "fresh_confirmation": False,
+              "claim_authorized": False,
+              "result_id": result["result_id"],
+              "report_id": report["report_id"],
+          }
+          (root / "workflow_provenance.json").write_text(
+              json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "result_id": result["result_id"],
+              "report_id": report["report_id"],
+              "calibration_multipliers": result["calibration_multipliers"],
+              "variant_summaries": result["variant_summaries"],
+          }, indent=2, sort_keys=True))
+          PY
+          echo "COMPACT_EVIDENCE=${compact}" >> "${GITHUB_ENV}"
+          test "$(git rev-parse HEAD)" = \
+            "${{ github.event.pull_request.head.sha || github.sha }}"
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+      - name: Upload compact covariance evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: cloth-sim2real-prob4d-covariance-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.COMPACT_EVIDENCE }}
+          if-no-files-found: error
+          retention-days: 90
