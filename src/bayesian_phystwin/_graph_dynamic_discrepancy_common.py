@@ -10,9 +10,7 @@ from typing import Any, Final
 
 import numpy as np
 
-GRAPH_DYNAMIC_DISCREPANCY_SCHEMA: Final = (
-    "bayesian_phystwin.graph_dynamic_discrepancy"
-)
+GRAPH_DYNAMIC_DISCREPANCY_SCHEMA: Final = "bayesian_phystwin.graph_dynamic_discrepancy"
 GRAPH_DYNAMIC_DISCREPANCY_VERSION: Final = 1
 GRAPH_DYNAMIC_DISCREPANCY_BOUNDARY: Final = (
     "Predictive readout/model-discrepancy belief only. It is not a latent "
@@ -73,9 +71,7 @@ def _readonly(
 
 def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
     try:
-        return json.loads(
-            json.dumps(dict(value), sort_keys=True, allow_nan=False)
-        )
+        return json.loads(json.dumps(dict(value), sort_keys=True, allow_nan=False))
     except (TypeError, ValueError) as error:
         raise ValueError(f"{name} must contain finite JSON data") from error
 
@@ -219,9 +215,7 @@ def _transition_and_noise(
             ],
         ]
     )
-    process_noise[:coordinate_count, :coordinate_count] += (
-        position_variance * identity
-    )
+    process_noise[:coordinate_count, :coordinate_count] += position_variance * identity
     return transition, _symmetric(process_noise), control
 
 
