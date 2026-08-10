@@ -32,9 +32,7 @@ from .complete_belief_selection import (
 
 CALIBRATION_DOMAIN_GUARD_SCHEMA = "bayesian_phystwin.calibration_domain_guard"
 CALIBRATION_DOMAIN_GUARD_VERSION = 1
-CALIBRATION_DOMAIN_DECISION_SCHEMA = (
-    "bayesian_phystwin.calibration_domain_decision"
-)
+CALIBRATION_DOMAIN_DECISION_SCHEMA = "bayesian_phystwin.calibration_domain_decision"
 CALIBRATION_DOMAIN_DECISION_VERSION = 1
 CALIBRATION_DOMAIN_DATA_SCHEMA = "bayesian_phystwin.calibration_domain_data"
 CALIBRATION_DOMAIN_DATA_VERSION = 1
@@ -135,9 +133,7 @@ class CalibrationDomainGuardConfigV1:
             name="numerical_tolerance",
         )
         if not 0.0 <= minimum_mean <= 1.0:
-            raise ValueError(
-                "minimum_mean_relative_improvement must lie in [0, 1]"
-            )
+            raise ValueError("minimum_mean_relative_improvement must lie in [0, 1]")
         if not 0.0 < minimum_win_fraction <= 1.0:
             raise ValueError("minimum_win_fraction must lie in (0, 1]")
         if not 0.0 <= maximum_regression <= 1.0:
@@ -285,26 +281,18 @@ def _evaluate_domain(
         raise ValueError("relative_improvements length must match group_ids")
     count = len(groups)
     tolerance = config.numerical_tolerance
-    required_win_count = int(
-        math.ceil(config.minimum_win_fraction * count - tolerance)
-    )
+    required_win_count = int(math.ceil(config.minimum_win_fraction * count - tolerance))
     win_count = sum(item > tolerance for item in improvements)
     mean_improvement = float(np.mean(np.asarray(improvements, dtype=np.float64)))
     worst_improvement = min(improvements)
     reasons: list[str] = []
     if count < config.minimum_group_count:
         reasons.append("insufficient-calibration-groups")
-    if (
-        mean_improvement + tolerance
-        < config.minimum_mean_relative_improvement
-    ):
+    if mean_improvement + tolerance < config.minimum_mean_relative_improvement:
         reasons.append("mean-improvement-below-threshold")
     if win_count < required_win_count:
         reasons.append("insufficient-calibration-wins")
-    if (
-        worst_improvement
-        < -config.maximum_single_group_relative_regression - tolerance
-    ):
+    if worst_improvement < -config.maximum_single_group_relative_regression - tolerance:
         reasons.append("single-group-regression-exceeds-limit")
     supported = not reasons
     if supported:
@@ -356,8 +344,7 @@ class CalibrationDomainGuardCertificateV1:
         )
         decisions = tuple(self.decisions)
         if not decisions or any(
-            not isinstance(item, CalibrationDomainDecisionV1)
-            for item in decisions
+            not isinstance(item, CalibrationDomainDecisionV1) for item in decisions
         ):
             raise TypeError(
                 "decisions must contain CalibrationDomainDecisionV1 records"
@@ -466,9 +453,7 @@ class CalibrationDomainGuardCertificateV1:
                 "application_outcomes_used_for_guard_selection": (
                     self.application_outcomes_used_for_guard_selection
                 ),
-                "calibration_groups_independent": (
-                    self.calibration_groups_independent
-                ),
+                "calibration_groups_independent": (self.calibration_groups_independent),
                 "deployment_admissible": self.deployment_admissible,
             },
             "metadata": plain_json(self.metadata),
@@ -495,9 +480,7 @@ def fit_calibration_domain_guard(
 ) -> CalibrationDomainGuardCertificateV1:
     """Fit domain support using only one frozen calibration partition."""
 
-    guard_config = (
-        CalibrationDomainGuardConfigV1() if config is None else config
-    )
+    guard_config = CalibrationDomainGuardConfigV1() if config is None else config
     if not isinstance(guard_config, CalibrationDomainGuardConfigV1):
         raise TypeError("config must be a CalibrationDomainGuardConfigV1")
     partition_id = sha256_digest(
@@ -512,12 +495,7 @@ def fit_calibration_domain_guard(
         raise ValueError("group_ids must not contain duplicates")
     candidate = _loss_vector(candidate_losses, name="candidate_losses")
     fallback = _loss_vector(fallback_losses, name="fallback_losses")
-    if not (
-        len(groups)
-        == len(domains)
-        == len(candidate)
-        == len(fallback)
-    ):
+    if not (len(groups) == len(domains) == len(candidate) == len(fallback)):
         raise ValueError(
             "group_ids, domain_ids, candidate_losses, and fallback_losses "
             "must have equal lengths"
@@ -546,11 +524,7 @@ def fit_calibration_domain_guard(
     )
     decisions: list[CalibrationDomainDecisionV1] = []
     for domain_id in sorted(set(domains)):
-        indices = [
-            index
-            for index in order
-            if domains[index] == domain_id
-        ]
+        indices = [index for index in order if domains[index] == domain_id]
         relative = tuple(
             float((fallback[index] - candidate[index]) / fallback[index])
             for index in indices
@@ -594,9 +568,7 @@ def select_calibration_domain_guarded_belief(
     """Select one complete belief without receiving an application outcome."""
 
     if not isinstance(certificate, CalibrationDomainGuardCertificateV1):
-        raise TypeError(
-            "certificate must be a CalibrationDomainGuardCertificateV1"
-        )
+        raise TypeError("certificate must be a CalibrationDomainGuardCertificateV1")
     domain = _canonical_string(domain_id, name="domain_id")
     common = sha256_digest(common_domain_id, name="common_domain_id")
     inference_ok = genuine_boolean(
@@ -608,9 +580,7 @@ def select_calibration_domain_guarded_belief(
         decision is not None and decision.calibration_supported
     )
     accepted = (
-        inference_ok
-        and certificate.deployment_admissible
-        and calibration_supported
+        inference_ok and certificate.deployment_admissible and calibration_supported
     )
     if not inference_ok:
         reason = "inference-rejected"
@@ -632,9 +602,7 @@ def select_calibration_domain_guarded_belief(
         "domain_decision_id": None if decision is None else decision.artifact_id,
         "domain_reasons": [] if decision is None else list(decision.reasons),
         "calibration_supported": calibration_supported,
-        "certificate_deployment_admissible": (
-            certificate.deployment_admissible
-        ),
+        "certificate_deployment_admissible": (certificate.deployment_admissible),
         "routing_reason": reason,
         "caller": plain_json(caller_metadata),
     }
