@@ -132,10 +132,10 @@ def test_complete_portfolio_orders_and_projects_one_common_query() -> None:
 def test_accepted_portfolio_requires_complete_method_accounting() -> None:
     portfolio = _one_method_portfolio()
     assert portfolio.methods == ("irls_working",)
-    assert tuple(portfolio.unavailable_methods) == (
-        "laplace_observed_information",
-        "group_sandwich",
-    )
+    assert dict(portfolio.unavailable_methods) == {
+        "laplace_observed_information": "not-positive-definite",
+        "group_sandwich": "too-few-independent-groups",
+    }
 
     with pytest.raises(ValueError, match="contain or explain"):
         build_posterior_query_covariance_portfolio(
