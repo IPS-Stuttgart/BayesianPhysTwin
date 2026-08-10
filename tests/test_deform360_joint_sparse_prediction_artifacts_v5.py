@@ -109,18 +109,16 @@ def _publish(path: Path, *, admitted: bool = True, contact: bool = True):
     return problem, result, seal
 
 
-def test_prediction_artifact_round_trip_and_deterministic_archive(tmp_path: Path) -> None:
+def test_prediction_artifact_round_trip_and_deterministic_archive(
+    tmp_path: Path,
+) -> None:
     _, result, first_seal = _publish(tmp_path / "first")
     _, _, second_seal = _publish(tmp_path / "second")
-    loaded_seal, loaded = load_deform360_joint_sparse_prediction_v5(
-        tmp_path / "first"
-    )
+    loaded_seal, loaded = load_deform360_joint_sparse_prediction_v5(tmp_path / "first")
 
     assert loaded.result_id == result.result_id
     assert loaded_seal["prediction_seal_id"] == first_seal["prediction_seal_id"]
-    assert first_seal["archive"]["file_sha256"] == second_seal["archive"][
-        "file_sha256"
-    ]
+    assert first_seal["archive"]["file_sha256"] == second_seal["archive"]["file_sha256"]
     assert first_seal["prediction_fit_object_ids"] == ["002-b", "003-c"]
     assert loaded.trajectories_m[B0_PHYSICAL_FALLBACK].dtype == np.float32
 

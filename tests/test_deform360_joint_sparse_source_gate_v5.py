@@ -166,7 +166,7 @@ def test_execution_lock_binds_public_data_and_machine_gate() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
 
     assert lock["execution_lock_id"] == (
-        "4b33735f99753a3a7aa007eb31f9cdeab3acd44e553c5334a5e0e1c7cbbf6552"
+        "91c326f253eac24725562eed66991da2c83a137aebdde9ccd7727aa20d091c8f"
     )
     assert lock["public_measurements"] == {
         "dataset_repository": "brownu/deform360",
@@ -317,9 +317,7 @@ def test_transferable_source_evidence_passes_without_human_approval() -> None:
     assert result["full_source_fit"]["accepted_count"] == 9
     assert result["information_boundary"]["human_approval_required"] is False
     assert result["information_boundary"]["new_measurements_required"] is False
-    assert result["primary_candidate_method_id"] == (
-        "V1_joint_sparse_visual_guarded"
-    )
+    assert result["primary_candidate_method_id"] == ("V1_joint_sparse_visual_guarded")
     assert result["tactile_claim_authorized"] is False
     authorization = result["confirmation_opening_authorization"]
     assert authorization["authorized"] is True

@@ -196,8 +196,7 @@ class Deform360JointSparsePrefixFitV5:
         )
         _require(len(set(identifiers)) == len(identifiers), "fit object IDs repeat")
         _require(
-            type(self.suffix_outcomes_used) is bool
-            and not self.suffix_outcomes_used,
+            type(self.suffix_outcomes_used) is bool and not self.suffix_outcomes_used,
             "prefix fit must not use suffix outcomes",
         )
         for name in (
@@ -261,28 +260,18 @@ class Deform360JointSparsePrefixFitV5:
                 "fit_object_ids": list(self.fit_object_ids),
                 "source_artifact_ids": dict(self.source_artifact_ids),
                 "fallback_point_std_m": self.fallback_point_std_m,
-                "observation_variance_floor_m2": (
-                    self.observation_variance_floor_m2
-                ),
+                "observation_variance_floor_m2": (self.observation_variance_floor_m2),
                 "root_gauge_prior_std_m": self.root_gauge_prior_std_m,
-                "camera_gauge_innovation_std_m": (
-                    self.camera_gauge_innovation_std_m
-                ),
-                "window_gauge_innovation_std_m": (
-                    self.window_gauge_innovation_std_m
-                ),
+                "camera_gauge_innovation_std_m": (self.camera_gauge_innovation_std_m),
+                "window_gauge_innovation_std_m": (self.window_gauge_innovation_std_m),
                 "shared_bias_prior_std_m": self.shared_bias_prior_std_m,
                 "view_bias_prior_std_m": self.view_bias_prior_std_m,
                 "state_prior_std_m": self.state_prior_std_m,
                 "contact_anchor_bias_std_m": self.contact_anchor_bias_std_m,
                 "association_scale_m": self.association_scale_m,
-                "maximum_association_distance_m": (
-                    self.maximum_association_distance_m
-                ),
+                "maximum_association_distance_m": (self.maximum_association_distance_m),
                 "association_entropy_strength": self.association_entropy_strength,
-                "overlap_disagreement_scale_m": (
-                    self.overlap_disagreement_scale_m
-                ),
+                "overlap_disagreement_scale_m": (self.overlap_disagreement_scale_m),
                 "boundary_reliability_scale_pixels": (
                     self.boundary_reliability_scale_pixels
                 ),
@@ -413,13 +402,9 @@ class Deform360JointSparseVisualWindowRowsV5:
                     "frame_indices": _array_sha256(self.frame_indices),
                     "pixel_yx": _array_sha256(self.pixel_yx),
                     "point_world_m": _array_sha256(self.point_world_m),
-                    "point_covariance_m2": _array_sha256(
-                        self.point_covariance_m2
-                    ),
+                    "point_covariance_m2": _array_sha256(self.point_covariance_m2),
                     "source_confidence": _array_sha256(self.source_confidence),
-                    "mask_distance_pixels": _array_sha256(
-                        self.mask_distance_pixels
-                    ),
+                    "mask_distance_pixels": _array_sha256(self.mask_distance_pixels),
                     "overlap_disagreement_m": _array_sha256(
                         self.overlap_disagreement_m
                     ),
@@ -487,8 +472,7 @@ def extract_deform360_joint_sparse_visual_rows_v5(
     valid = _readonly_boolean(valid_mask, name="valid_mask", ndim=3)
     mask = _readonly_boolean(object_mask, name="object_mask", ndim=3)
     _require(
-        points.shape[:-1] == valid.shape == mask.shape
-        and len(frames) == len(points),
+        points.shape[:-1] == valid.shape == mask.shape and len(frames) == len(points),
         "visual window arrays disagree",
     )
     _require(
@@ -538,7 +522,9 @@ def extract_deform360_joint_sparse_visual_rows_v5(
         disagreement = np.zeros(valid.shape, dtype=np.float64)
     else:
         disagreement = np.asarray(overlap_disagreement_m, dtype=np.float64)
-        _require(disagreement.shape == valid.shape, "overlap disagreement shape changed")
+        _require(
+            disagreement.shape == valid.shape, "overlap disagreement shape changed"
+        )
     if contributor_count is None:
         contributors = np.ones(valid.shape, dtype=np.int64)
     else:
@@ -677,17 +663,13 @@ def _nearest_neighbors(
     indices: np.ndarray = np.empty((len(query), count), dtype=np.int64)
     for start in range(0, len(query), chunk_size):
         stop = min(start + chunk_size, len(query))
-        squared = np.sum(
-            np.square(query[start:stop, None] - reference[None]), axis=2
-        )
+        squared = np.sum(np.square(query[start:stop, None] - reference[None]), axis=2)
         local = np.argpartition(squared, kth=count - 1, axis=1)[:, :count]
         local_squared = np.take_along_axis(squared, local, axis=1)
         order = np.argsort(local_squared, axis=1, kind="mergesort")
         local = np.take_along_axis(local, order, axis=1)
         indices[start:stop] = local
-        distances[start:stop] = np.sqrt(
-            np.take_along_axis(squared, local, axis=1)
-        )
+        distances[start:stop] = np.sqrt(np.take_along_axis(squared, local, axis=1))
     return distances, indices
 
 
@@ -716,9 +698,7 @@ def _association(
     )
     if weights.shape[1] > 1:
         entropy /= math.log(weights.shape[1])
-    distance_probability = np.exp(
-        -0.5 * np.square(distance[:, 0] / maximum_distance_m)
-    )
+    distance_probability = np.exp(-0.5 * np.square(distance[:, 0] / maximum_distance_m))
     distance_probability[distance[:, 0] > maximum_distance_m] = 0.0
     probability = distance_probability * np.exp(-entropy_strength * entropy)
     return indices, weights, entropy, np.clip(probability, 0.0, 1.0)
@@ -731,9 +711,7 @@ def _state_basis(
 ) -> tuple[np.ndarray, np.ndarray, float]:
     reference = physical[causal_frame_stop - 1]
     centroid = np.mean(reference, axis=0)
-    rms = float(
-        np.sqrt(np.mean(np.sum(np.square(reference - centroid), axis=1)))
-    )
+    rms = float(np.sqrt(np.mean(np.sum(np.square(reference - centroid), axis=1))))
     rms = max(rms, 1e-6)
     frame_centroid = np.mean(physical, axis=1, keepdims=True)
     normalized = (physical - frame_centroid) / rms
@@ -844,9 +822,7 @@ def _rank(value: np.ndarray) -> tuple[int, np.ndarray, float | None]:
     positive = eigenvalues > tolerance
     rank = int(np.count_nonzero(positive))
     condition = (
-        None
-        if rank < len(eigenvalues)
-        else float(eigenvalues[-1] / eigenvalues[0])
+        None if rank < len(eigenvalues) else float(eigenvalues[-1] / eigenvalues[0])
     )
     return rank, eigenvalues, condition
 
@@ -877,7 +853,10 @@ class Deform360JointSparseAdmissionResultV5:
         checks = dict(self.checks)
         _require(
             bool(checks)
-            and all(type(key) is str and type(value) is bool for key, value in checks.items()),
+            and all(
+                type(key) is str and type(value) is bool
+                for key, value in checks.items()
+            ),
             "admission checks changed",
         )
         _require(self.gate_passed == all(checks.values()), "gate decision changed")
@@ -927,7 +906,9 @@ class Deform360JointSparseAdmissionResultV5:
             "input_id",
             sha256_digest(self.input_id, name="admission input_id"),
         )
-        object.__setattr__(self, "checks", MappingProxyType(dict(sorted(checks.items()))))
+        object.__setattr__(
+            self, "checks", MappingProxyType(dict(sorted(checks.items())))
+        )
         object.__setattr__(self, "query_precision_eigenvalues", eigenvalues)
         object.__setattr__(self, "query_condition_number", condition)
 
@@ -944,16 +925,12 @@ class Deform360JointSparseAdmissionResultV5:
                 "excluded_factor_count": self.excluded_factor_count,
                 "distinct_camera_count": self.distinct_camera_count,
                 "distinct_window_count": self.distinct_window_count,
-                "distinct_spatial_cluster_count": (
-                    self.distinct_spatial_cluster_count
-                ),
+                "distinct_spatial_cluster_count": (self.distinct_spatial_cluster_count),
                 "distinct_correlation_group_count": (
                     self.distinct_correlation_group_count
                 ),
                 "query_rank": self.query_rank,
-                "query_precision_eigenvalues": list(
-                    self.query_precision_eigenvalues
-                ),
+                "query_precision_eigenvalues": list(self.query_precision_eigenvalues),
                 "query_condition_number": self.query_condition_number,
                 "maximum_single_camera_information_fraction": (
                     self.maximum_single_camera_information_fraction
@@ -1064,8 +1041,7 @@ def materialize_deform360_joint_sparse_prediction_v5(
         "invalid causal_frame_stop",
     )
     _require(
-        type(association_candidate_count) is int
-        and association_candidate_count >= 1,
+        type(association_candidate_count) is int and association_candidate_count >= 1,
         "invalid association_candidate_count",
     )
     cluster_size = _positive(
@@ -1095,12 +1071,24 @@ def materialize_deform360_joint_sparse_prediction_v5(
     _require(bool(visual_windows), "at least one visual window is required")
     windows = tuple(visual_windows)
     _require(
-        all(isinstance(value, Deform360JointSparseVisualWindowRowsV5) for value in windows),
+        all(
+            isinstance(value, Deform360JointSparseVisualWindowRowsV5)
+            for value in windows
+        ),
         "visual window type changed",
     )
     key_order = tuple((value.camera_id, value.window_id) for value in windows)
     _require(len(set(key_order)) == len(key_order), "visual camera/window repeats")
-    windows = tuple(sorted(windows, key=lambda value: (value.camera_id, int(np.min(value.frame_indices)), value.window_id)))
+    windows = tuple(
+        sorted(
+            windows,
+            key=lambda value: (
+                value.camera_id,
+                int(np.min(value.frame_indices)),
+                value.window_id,
+            ),
+        )
+    )
     _require(
         all(np.all(value.frame_indices < causal_frame_stop) for value in windows),
         "visual rows leave the causal prefix",
@@ -1148,22 +1136,25 @@ def materialize_deform360_joint_sparse_prediction_v5(
         [value.point_covariance_m2 for value in windows], axis=0
     )
     confidence = np.concatenate([value.source_confidence for value in windows])
-    mask_distance = np.concatenate(
-        [value.mask_distance_pixels for value in windows]
-    )
-    disagreement = np.concatenate(
-        [value.overlap_disagreement_m for value in windows]
-    )
+    mask_distance = np.concatenate([value.mask_distance_pixels for value in windows])
+    disagreement = np.concatenate([value.overlap_disagreement_m for value in windows])
     contributors = np.concatenate([value.contributor_count for value in windows])
     camera_ids = tuple(
-        camera for value in windows for camera in [value.camera_id] * len(value.frame_indices)
+        camera
+        for value in windows
+        for camera in [value.camera_id] * len(value.frame_indices)
     )
     window_ids = tuple(
-        window for value in windows for window in [value.window_id] * len(value.frame_indices)
+        window
+        for value in windows
+        for window in [value.window_id] * len(value.frame_indices)
     )
     row_count = len(points)
     gauge_indices = np.asarray(
-        [window_gauge_index[(camera, window)] for camera, window in zip(camera_ids, window_ids, strict=True)],
+        [
+            window_gauge_index[(camera, window)]
+            for camera, window in zip(camera_ids, window_ids, strict=True)
+        ],
         dtype=np.int64,
     )
 
@@ -1218,9 +1209,7 @@ def materialize_deform360_joint_sparse_prediction_v5(
         local_gauge[index, :, 3:6] = -_skew(normalized)
         local_gauge[index, :, 6] = normalized
 
-    full_gauge: np.ndarray = np.zeros(
-        (row_count, 3, gauge_count * 7), dtype=np.float64
-    )
+    full_gauge: np.ndarray = np.zeros((row_count, 3, gauge_count * 7), dtype=np.float64)
     for index, gauge_index in enumerate(gauge_indices):
         block = slice(int(gauge_index) * 7, (int(gauge_index) + 1) * 7)
         full_gauge[index, :, block] = local_gauge[index]
@@ -1247,10 +1236,7 @@ def materialize_deform360_joint_sparse_prediction_v5(
 
     boundary_reliability = fit.boundary_reliability_floor + (
         1.0 - fit.boundary_reliability_floor
-    ) * (
-        1.0
-        - np.exp(-mask_distance / fit.boundary_reliability_scale_pixels)
-    )
+    ) * (1.0 - np.exp(-mask_distance / fit.boundary_reliability_scale_pixels))
     overlap_reliability = np.exp(
         -0.5 * np.square(disagreement / fit.overlap_disagreement_scale_m)
     )
@@ -1306,9 +1292,7 @@ def materialize_deform360_joint_sparse_prediction_v5(
     cameras = tuple(sorted(set(camera_ids)))
     camera_index = {camera: index for index, camera in enumerate(cameras)}
     shared_bias = np.broadcast_to(np.eye(3), (row_count, 3, 3)).copy()
-    view_bias: np.ndarray = np.zeros(
-        (row_count, 3, 3 * len(cameras)), dtype=np.float64
-    )
+    view_bias: np.ndarray = np.zeros((row_count, 3, 3 * len(cameras)), dtype=np.float64)
     for index, camera in enumerate(camera_ids):
         block = slice(3 * camera_index[camera], 3 * (camera_index[camera] + 1))
         view_bias[index, :, block] = np.eye(3)
@@ -1372,9 +1356,7 @@ def materialize_deform360_joint_sparse_prediction_v5(
             np.eye(3),
             (contact_count, 3, 3),
         ).copy()
-        anchor_bias_prior = (
-            fit.contact_anchor_bias_std_m**2 * np.eye(3)
-        )
+        anchor_bias_prior = fit.contact_anchor_bias_std_m**2 * np.eye(3)
         contact_sources = contact_rows.source_artifact_ids
 
     all_sources = _merge_sources(
@@ -1474,10 +1456,10 @@ def materialize_deform360_joint_sparse_prediction_v5(
     shared_stop = gauge_stop + 3
     nuisance_prior[:gauge_stop, :gauge_stop] = gauge_prior_covariance
     nuisance_prior[gauge_stop:shared_stop, gauge_stop:shared_stop] = (
-        fit.shared_bias_prior_std_m**2 * np.eye(3)
+        fit.shared_bias_prior_std_m** 2 * np.eye(3)
     )
-    nuisance_prior[shared_stop:, shared_stop:] = (
-        fit.view_bias_prior_std_m**2 * np.eye(3 * len(cameras))
+    nuisance_prior[shared_stop:, shared_stop:] = fit.view_bias_prior_std_m**2 * np.eye(
+        3 * len(cameras)
     )
     row_weight = _effective_row_weight(
         correlation_groups,
@@ -1528,8 +1510,7 @@ def materialize_deform360_joint_sparse_prediction_v5(
         "minimum_distinct_spatial_clusters": len(set(spatial_clusters)) >= 8,
         "query_rank": query_rank == state_count,
         "minimum_query_precision_eigenvalue": float(eigenvalues[0]) >= 1e-9,
-        "maximum_query_condition_number": condition is not None
-        and condition <= 1e10,
+        "maximum_query_condition_number": condition is not None and condition <= 1e10,
         "maximum_single_camera_information_fraction": maximum_camera <= 0.85,
         "minimum_leave_one_camera_rank_fraction": minimum_leave_camera >= 0.75,
         "minimum_leave_one_window_rank_fraction": minimum_leave_window >= 0.75,

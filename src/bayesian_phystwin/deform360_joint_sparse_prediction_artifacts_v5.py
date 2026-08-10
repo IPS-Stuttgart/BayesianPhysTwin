@@ -273,10 +273,15 @@ def _canonical_fit_object_ids(values: Sequence[str]) -> tuple[str, ...]:
     if isinstance(values, (str, bytes)):
         raise TypeError("prediction_fit_object_ids must be a sequence")
     result = tuple(
-        sorted(nonempty_string(value, name="prediction fit object ID") for value in values)
+        sorted(
+            nonempty_string(value, name="prediction fit object ID") for value in values
+        )
     )
     _require(len(result) == len(set(result)), "prediction fit object IDs repeat")
-    _require(all(value.strip() == value for value in result), "fit object ID is not canonical")
+    _require(
+        all(value.strip() == value for value in result),
+        "fit object ID is not canonical",
+    )
     return result
 
 
@@ -468,9 +473,7 @@ def _result_from_seal_and_arrays(
                 _array_member_name("inference", method_id, "gauge_delta")
             ],
             shared_bias_coefficients=arrays[
-                _array_member_name(
-                    "inference", method_id, "shared_bias_coefficients"
-                )
+                _array_member_name("inference", method_id, "shared_bias_coefficients")
             ],
             view_bias_coefficients=arrays[
                 _array_member_name("inference", method_id, "view_bias_coefficients")
@@ -627,9 +630,7 @@ def load_deform360_joint_sparse_prediction_v5(
             features[method_id],
             name=f"predicted loss {method_id}",
         )
-    method_ids = _mapping(
-        seal.get("method_artifact_ids"), name="method_artifact_ids"
-    )
+    method_ids = _mapping(seal.get("method_artifact_ids"), name="method_artifact_ids")
     _require(set(method_ids) == set(RAW_METHOD_IDS), "method artifact roster changed")
     for method_id in RAW_METHOD_IDS:
         sha256_digest(method_ids[method_id], name=f"method artifact {method_id}")

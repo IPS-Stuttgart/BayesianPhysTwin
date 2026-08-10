@@ -42,9 +42,7 @@ def _views(*, empty: bool = False):
     all_cameras = ("cam-a", "cam-b", "cam-c", "cam-d")
     selected = select_reserved_endpoint_views_v5("001-test", all_cameras)
     mask = np.zeros((2, 5, 5), dtype=bool) if empty else np.ones((2, 5, 5), dtype=bool)
-    intrinsics = np.asarray(
-        [[100.0, 0.0, 2.0], [0.0, 100.0, 2.0], [0.0, 0.0, 1.0]]
-    )
+    intrinsics = np.asarray([[100.0, 0.0, 2.0], [0.0, 100.0, 2.0], [0.0, 0.0, 1.0]])
     views = tuple(
         Deform360ReservedViewGeometryV5(
             object_id="001-test",
@@ -96,7 +94,9 @@ def test_endpoint_scores_exact_geometry_after_prediction_seal() -> None:
     assert report["cell_count_per_method"] == 4
     assert report["method_loss_mm"][RAW_METHOD_IDS[0]] < 1e-6
     assert report["method_loss_mm"][VT2_VISUOTACTILE_UNGUARDED] > 0.0
-    assert report["information_boundary"]["future_geometry_used_for_prediction"] is False
+    assert (
+        report["information_boundary"]["future_geometry_used_for_prediction"] is False
+    )
     assert report["information_boundary"]["tactile_used_to_define_target"] is False
     assert report["information_boundary"]["development_suffix_used_for_scoring"] is True
     assert (
@@ -173,9 +173,7 @@ def test_unregistered_endpoint_camera_is_rejected() -> None:
         frame_indices=np.asarray([1, 2]),
         depth_m=np.ones((2, 5, 5), dtype=np.float32),
         object_mask=np.ones((2, 5, 5), dtype=bool),
-        intrinsics=np.asarray(
-            [[100.0, 0.0, 2.0], [0.0, 100.0, 2.0], [0.0, 0.0, 1.0]]
-        ),
+        intrinsics=np.asarray([[100.0, 0.0, 2.0], [0.0, 100.0, 2.0], [0.0, 0.0, 1.0]]),
         camera_to_world=np.eye(4),
         source_artifact_ids={"depth/replacement.h5": "a" * 64},
     )
@@ -215,7 +213,9 @@ def test_confirmation_scoring_requires_machine_authorization() -> None:
     except (TypeError, ValueError) as error:
         assert "opening_authorization_id" in str(error)
     else:
-        raise AssertionError("confirmation scoring opened without machine authorization")
+        raise AssertionError(
+            "confirmation scoring opened without machine authorization"
+        )
 
     report = score_deform360_joint_sparse_endpoint_v5(
         object_id="001-test",

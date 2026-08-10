@@ -55,9 +55,7 @@ def _fixture(
     )
     local = np.stack([base + [0.001 * index, 0.0, 0.0] for index in range(5)])
     # Row-vector convention used by MotionCrafter association.
-    linear = 1.5 * np.asarray(
-        [[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
-    )
+    linear = 1.5 * np.asarray([[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
     translation = np.asarray([0.20, -0.10, 0.05])
     world = local @ linear + translation
     world[-1, ..., 0] += future_bias_m
@@ -79,11 +77,9 @@ def _fixture(
 
     metric_points = np.full((4, height, width, 3), np.nan, dtype=np.float64)
     metric_valid = np.zeros((4, height, width), dtype=np.bool_)
-    candidates = [
-        (row, column)
-        for row in (1, 5, 9, 13)
-        for column in (1, 5, 9, 13)
-    ][:metric_cluster_count]
+    candidates = [(row, column) for row in (1, 5, 9, 13) for column in (1, 5, 9, 13)][
+        :metric_cluster_count
+    ]
     for row, column in candidates:
         metric_valid[0, row, column] = True
         metric_points[0, row, column] = world[0, row, column]

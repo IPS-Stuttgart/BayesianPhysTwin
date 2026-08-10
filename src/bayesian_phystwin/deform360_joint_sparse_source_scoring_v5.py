@@ -313,7 +313,10 @@ def validate_deform360_joint_sparse_source_endpoint_plan_v5(
 ) -> dict[str, Any]:
     plan = _mapping(value, name="source endpoint plan")
     require_exact_fields(plan, expected=_PLAN_FIELDS, name="source endpoint plan")
-    _require(plan.get("schema") == SOURCE_ENDPOINT_PLAN_SCHEMA, "endpoint plan schema changed")
+    _require(
+        plan.get("schema") == SOURCE_ENDPOINT_PLAN_SCHEMA,
+        "endpoint plan schema changed",
+    )
     _require(
         plan.get("schema_version") == SOURCE_ENDPOINT_PLAN_VERSION,
         "endpoint plan version changed",
@@ -361,7 +364,9 @@ def _prediction_directory(
 ) -> Path:
     outer_index = ordered_ids.index(outer_id)
     target_index = ordered_ids.index(target_id)
-    return prediction_root / f"{outer_index:02d}-{outer_id}/{target_index:02d}-{target_id}"
+    return (
+        prediction_root / f"{outer_index:02d}-{outer_id}/{target_index:02d}-{target_id}"
+    )
 
 
 def _validate_prediction_artifact(
@@ -618,10 +623,14 @@ def publish_deform360_joint_sparse_source_scores_v5(
                 "source prediction seal file digest changed",
             )
             source_seal = validate_deform360_joint_sparse_source_prediction_seal_v5(
-                load_strict_json_object(source_seal_path, label="source prediction seal"),
+                load_strict_json_object(
+                    source_seal_path, label="source prediction seal"
+                ),
                 lock,
             )
-            _require(source_seal == records[pair], "source prediction seal order changed")
+            _require(
+                source_seal == records[pair], "source prediction seal order changed"
+            )
             directory = _prediction_directory(
                 prediction_root / "predictions",
                 ordered_ids=ordered_ids,

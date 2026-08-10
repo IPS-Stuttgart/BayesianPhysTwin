@@ -348,7 +348,9 @@ def test_joint_sparse_adapter_keeps_contact_reliability_residual_independent(
     np.testing.assert_array_equal(first.prior_reliability, np.ones(len(frames)))
     assert np.all(np.linalg.eigvalsh(first.covariance_m2) > 0.0)
     assert len(set(first.correlation_group_ids)) == 1
-    assert all(group.startswith("deform360-contact:") for group in first.correlation_group_ids)
+    assert all(
+        group.startswith("deform360-contact:") for group in first.correlation_group_ids
+    )
     assert "public-contact-prefix/contact-prefix.json" in first.source_artifact_ids
 
 

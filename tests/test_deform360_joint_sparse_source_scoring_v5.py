@@ -92,9 +92,7 @@ def _source_plan(lock: Mapping[str, Any]) -> dict[str, Any]:
                     "path": None,
                     "manifest_file_sha256": None,
                     "materialization_id": None,
-                    "unavailable_reason": (
-                        CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON
-                    ),
+                    "unavailable_reason": (CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON),
                 },
             }
         )
@@ -140,9 +138,7 @@ def _prediction_batch(lock: Mapping[str, Any]) -> dict[str, Any]:
                     physical_mode="warp_twin",
                     risk_score=1.0,
                     prediction_fit_artifact_id=_digest(f"fit-{outer_id}-{object_id}"),
-                    prediction_fit_object_ids=tuple(
-                        sorted(set(object_ids) - excluded)
-                    ),
+                    prediction_fit_object_ids=tuple(sorted(set(object_ids) - excluded)),
                     methods=methods,
                     source_artifacts={
                         f"sources/{outer_id}/{object_id}.json": _digest(
@@ -255,9 +251,9 @@ def test_endpoint_plan_rejects_a_likelihood_camera_as_endpoint() -> None:
     lock, source_plan, batch, receipt = _fixture()
     objects = _endpoint_objects(source_plan)
     first_source = cast(Sequence[Mapping[str, Any]], source_plan["objects"])[0]
-    likelihood_camera = cast(Sequence[Mapping[str, Any]], first_source["visual_windows"])[
-        0
-    ]["camera_id"]
+    likelihood_camera = cast(
+        Sequence[Mapping[str, Any]], first_source["visual_windows"]
+    )[0]["camera_id"]
     objects[0]["reserved_views"][0]["camera_id"] = likelihood_camera
     with pytest.raises(ValueError, match="reserved-view roster"):
         build_deform360_joint_sparse_source_endpoint_plan_v5(

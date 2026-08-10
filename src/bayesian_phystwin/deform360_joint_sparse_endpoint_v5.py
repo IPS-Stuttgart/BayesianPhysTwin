@@ -28,9 +28,7 @@ from .deform360_joint_sparse_prediction_v5 import RAW_METHOD_IDS
 
 ENDPOINT_SCHEMA: Final = "bayesian-phystwin.deform360-joint-sparse-endpoint"
 ENDPOINT_VERSION: Final = 1
-ENDPOINT_SEMANTICS: Final = (
-    "reserved-view-masked-depth-surface-symmetric-chamfer-v1"
-)
+ENDPOINT_SEMANTICS: Final = "reserved-view-masked-depth-surface-symmetric-chamfer-v1"
 RESERVED_VIEW_RANKING_DOMAIN: Final = b"v5-endpoint-view-v1"
 TARGET_PIXEL_RANKING_DOMAIN: Final = b"v5-endpoint-target-pixel-v1"
 EvaluationRoleV5 = Literal["development_source", "independent_confirmation"]
@@ -76,7 +74,9 @@ def _finite_array(value: object, *, name: str, ndim: int) -> np.ndarray:
 
 def _camera_id(value: object) -> str:
     result = nonempty_string(value, name="camera_id")
-    _require(result.strip() == result and "\x00" not in result, "camera_id is not canonical")
+    _require(
+        result.strip() == result and "\x00" not in result, "camera_id is not canonical"
+    )
     return result
 
 
@@ -126,8 +126,7 @@ class Deform360JointSparseEndpointConfigV5:
             type(self.evaluation_frame_range_half_open) is tuple
             and len(self.evaluation_frame_range_half_open) == 2
             and all(
-                type(value) is int
-                for value in self.evaluation_frame_range_half_open
+                type(value) is int for value in self.evaluation_frame_range_half_open
             ),
             "evaluation frame range must contain two exact integers",
         )
@@ -183,9 +182,7 @@ class Deform360JointSparseEndpointConfigV5:
             "minimum_target_points_per_frame_view": (
                 self.minimum_target_points_per_frame_view
             ),
-            "prediction_occlusion_tolerance_m": (
-                self.prediction_occlusion_tolerance_m
-            ),
+            "prediction_occlusion_tolerance_m": (self.prediction_occlusion_tolerance_m),
             "technical_failure_penalty_mm": self.technical_failure_penalty_mm,
             "distance_chunk_size": self.distance_chunk_size,
             "reserved_view_ranking": (
@@ -280,10 +277,14 @@ class Deform360ReservedViewGeometryV5:
         )
         object.__setattr__(self, "object_id", object_id)
         object.__setattr__(self, "camera_id", camera_id)
-        object.__setattr__(self, "frame_indices", immutable_array(frames, dtype=np.int64))
+        object.__setattr__(
+            self, "frame_indices", immutable_array(frames, dtype=np.int64)
+        )
         object.__setattr__(self, "depth_m", immutable_array(depth, dtype=depth.dtype))
         object.__setattr__(self, "object_mask", immutable_array(mask, dtype=bool))
-        object.__setattr__(self, "intrinsics", immutable_array(intrinsics, dtype=np.float64))
+        object.__setattr__(
+            self, "intrinsics", immutable_array(intrinsics, dtype=np.float64)
+        )
         object.__setattr__(
             self,
             "camera_to_world",
@@ -384,9 +385,7 @@ def _visible_prediction(
     camera_points = (points_world_m - translation) @ rotation
     z = camera_points[:, 2]
     finite = np.all(np.isfinite(camera_points), axis=1)
-    depth_valid = (
-        finite & (z >= config.minimum_depth_m) & (z <= config.maximum_depth_m)
-    )
+    depth_valid = finite & (z >= config.minimum_depth_m) & (z <= config.maximum_depth_m)
     safe_z = np.where(depth_valid, z, 1.0)
     u = intrinsics[0, 0] * camera_points[:, 0] / safe_z + intrinsics[0, 2]
     v = intrinsics[1, 1] * camera_points[:, 1] / safe_z + intrinsics[1, 2]
@@ -394,11 +393,7 @@ def _visible_prediction(
     rows = np.floor(v + 0.5).astype(np.int64)
     height, width = depth.shape
     inside = (
-        depth_valid
-        & (rows >= 0)
-        & (rows < height)
-        & (columns >= 0)
-        & (columns < width)
+        depth_valid & (rows >= 0) & (rows < height) & (columns >= 0) & (columns < width)
     )
     indices = np.nonzero(inside)[0]
     if not len(indices):
@@ -480,7 +475,8 @@ def score_deform360_joint_sparse_endpoint_v5(
     )
     by_camera = {view.camera_id: view for view in reserved_views}
     _require(
-        len(by_camera) == len(reserved_views) and tuple(sorted(by_camera)) == tuple(sorted(selected)),
+        len(by_camera) == len(reserved_views)
+        and tuple(sorted(by_camera)) == tuple(sorted(selected)),
         "reserved endpoint view roster changed",
     )
     start, stop = cfg.evaluation_frame_range_half_open
@@ -539,7 +535,9 @@ def score_deform360_joint_sparse_endpoint_v5(
             prepared[(camera_id, int(frame))] = (depth, valid, target)
 
     technical_failure = bool(missing_cells)
-    per_method_cells: dict[str, list[float]] = {method_id: [] for method_id in RAW_METHOD_IDS}
+    per_method_cells: dict[str, list[float]] = {
+        method_id: [] for method_id in RAW_METHOD_IDS
+    }
     prediction_support_failures: dict[str, int] = {
         method_id: 0 for method_id in RAW_METHOD_IDS
     }
@@ -743,8 +741,7 @@ def validate_deform360_joint_sparse_endpoint_report_v5(
         )
     )
     _require(
-        len(camera_ids) == reserved_count
-        and len(set(camera_ids)) == len(camera_ids),
+        len(camera_ids) == reserved_count and len(set(camera_ids)) == len(camera_ids),
         "reserved camera roster changed",
     )
     raw_cell_count = payload.get("cell_count_per_method")
@@ -776,9 +773,7 @@ def validate_deform360_joint_sparse_endpoint_report_v5(
             for value in _sequence(cells[method_id], name=f"{method_id} cell losses")
         )
         _require(len(method_cells) == cell_count, f"{method_id} cell count changed")
-        method_loss = _finite_nonnegative(
-            losses[method_id], name=f"{method_id} loss"
-        )
+        method_loss = _finite_nonnegative(losses[method_id], name=f"{method_id} loss")
         _require(
             np.isclose(
                 method_loss,

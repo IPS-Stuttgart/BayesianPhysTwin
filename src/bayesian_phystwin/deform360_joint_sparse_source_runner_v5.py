@@ -60,9 +60,7 @@ SOURCE_PLAN_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-prediction-plan"
 )
 SOURCE_PLAN_VERSION: Final = 5
-SOURCE_PLAN_SEMANTICS: Final = (
-    "public-prefix-only-nested-source-prediction-plan-v1"
-)
+SOURCE_PLAN_SEMANTICS: Final = "public-prefix-only-nested-source-prediction-plan-v1"
 SOURCE_PANEL_RECEIPT_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-prediction-receipt"
 )
@@ -236,8 +234,7 @@ def _normalized_contact_record(value: object) -> dict[str, Any]:
         "unavailable contact prefix must not identify an observation artifact",
     )
     _require(
-        record.get("unavailable_reason")
-        == CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON,
+        record.get("unavailable_reason") == CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON,
         "contact-prefix unavailability reason changed",
     )
     return {
@@ -358,13 +355,8 @@ def build_deform360_joint_sparse_source_prediction_plan_v5(
     """Build the portable prefix-only plan before any suffix is opened."""
 
     cohort = _cohort(lock)
-    normalized = [
-        _normalized_object(value, cohort=cohort)
-        for value in objects
-    ]
-    measurements = _mapping(
-        lock.get("public_measurements"), name="public_measurements"
-    )
+    normalized = [_normalized_object(value, cohort=cohort) for value in objects]
+    measurements = _mapping(lock.get("public_measurements"), name="public_measurements")
     _require(
         measurements.get("tactile_axis_identity_policy")
         == "unavailable-in-release-exact-no-contact-fallback",
@@ -687,9 +679,10 @@ def _technical_fallback_problem(
         "confirmation_payloads_opened": False,
     }
     failure_id = content_id(failure_identity)
-    response = physical[evaluation_start:evaluation_stop] - persistence[
-        evaluation_start:evaluation_stop
-    ]
+    response = (
+        physical[evaluation_start:evaluation_stop]
+        - persistence[evaluation_start:evaluation_stop]
+    )
     response_scale = max(
         float(np.sqrt(np.mean(np.sum(np.square(response), axis=2)))),
         1e-9,
@@ -841,9 +834,9 @@ def publish_deform360_joint_sparse_source_prediction_panel_v5(
         else:
             contact_path = None
             unavailable_reason = cast(str, contact_record["unavailable_reason"])
-            object_sources[f"contact/{object_id}/unavailable-policy"] = (
-                hashlib.sha256(unavailable_reason.encode("ascii")).hexdigest()
-            )
+            object_sources[f"contact/{object_id}/unavailable-policy"] = hashlib.sha256(
+                unavailable_reason.encode("ascii")
+            ).hexdigest()
         episode_id, _stratum = cohort[object_id]
         technical_failure: tuple[str, Exception] | None = None
         visual_rows = []
@@ -1001,7 +994,9 @@ def publish_deform360_joint_sparse_source_prediction_panel_v5(
                     for method_id in RAW_METHOD_IDS
                 },
                 source_artifacts={
-                    **dict(cast(Mapping[str, str], prediction_seal["source_artifact_ids"])),
+                    **dict(
+                        cast(Mapping[str, str], prediction_seal["source_artifact_ids"])
+                    ),
                     f"predictions/{relative_directory}/{PREDICTION_SEAL_FILENAME}": (
                         _sha256_file(prediction_directory / PREDICTION_SEAL_FILENAME)
                     ),
@@ -1011,7 +1006,9 @@ def publish_deform360_joint_sparse_source_prediction_panel_v5(
                 source_seal,
                 lock,
             )
-            source_seal_path = source_seal_root / f"{outer_index:02d}-{target_index:02d}.json"
+            source_seal_path = (
+                source_seal_root / f"{outer_index:02d}-{target_index:02d}.json"
+            )
             _publish_or_validate_json(
                 source_seal,
                 source_seal_path,

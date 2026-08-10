@@ -21,7 +21,10 @@ from bayesian_phystwin.deform360_joint_sparse_source_gate_v5 import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCK = ROOT / "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+LOCK = (
+    ROOT
+    / "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+)
 RUNNER_SCRIPT = (
     ROOT / "scripts/science/run_deform360_joint_sparse_source_predictions_v5.py"
 )

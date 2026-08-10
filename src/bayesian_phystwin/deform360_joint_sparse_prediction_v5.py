@@ -29,9 +29,7 @@ B1_LAST_CAUSAL_RESIDUAL: Final = "B1_last_causal_residual"
 V1_VISUAL_GUARDED: Final = "V1_joint_sparse_visual_guarded"
 T1_CONTACT_ONLY: Final = "T1_contact_anchor_only"
 VT2_VISUOTACTILE_UNGUARDED: Final = "VT2_joint_sparse_visuotactile_unguarded"
-VT3_VISUOTACTILE_ANCHOR_BIAS: Final = (
-    "VT3_joint_sparse_visuotactile_anchor_bias"
-)
+VT3_VISUOTACTILE_ANCHOR_BIAS: Final = "VT3_joint_sparse_visuotactile_anchor_bias"
 RAW_METHOD_IDS: Final = (
     B0_PHYSICAL_FALLBACK,
     B1_LAST_CAUSAL_RESIDUAL,
@@ -221,8 +219,7 @@ class Deform360JointSparsePredictionInputV5:
             type(self.evaluation_frame_range_half_open) is tuple
             and len(self.evaluation_frame_range_half_open) == 2
             and all(
-                type(value) is int
-                for value in self.evaluation_frame_range_half_open
+                type(value) is int for value in self.evaluation_frame_range_half_open
             ),
             "evaluation frame range must be a pair of exact integers",
         )
@@ -336,9 +333,7 @@ class Deform360JointSparsePredictionInputV5:
                 "evaluation_frame_range_half_open": list(
                     self.evaluation_frame_range_half_open
                 ),
-                "physical_prediction_sha256": _array_sha256(
-                    self.physical_prediction_m
-                ),
+                "physical_prediction_sha256": _array_sha256(self.physical_prediction_m),
                 "persistence_sha256": _array_sha256(self.persistence_m),
                 "last_causal_residual_sha256": _array_sha256(
                     self.last_causal_residual_m
@@ -633,7 +628,9 @@ def run_deform360_joint_sparse_prediction_v5(
         joint_result,
     )
     disagreement = float(
-        np.linalg.norm(visual_result.state_coefficients - contact_result.state_coefficients)
+        np.linalg.norm(
+            visual_result.state_coefficients - contact_result.state_coefficients
+        )
         / np.sqrt(len(joint_result.state_coefficients))
     )
     risk_score = (
@@ -642,8 +639,7 @@ def run_deform360_joint_sparse_prediction_v5(
         + _normalized_rejection(visual_result)
         + (
             0.0
-            if problem.factor_admitted
-            and visual_result.inference_admissible
+            if problem.factor_admitted and visual_result.inference_admissible
             else 4.0
         )
     )

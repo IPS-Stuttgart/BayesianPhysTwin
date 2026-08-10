@@ -40,9 +40,7 @@ from .phystwin_motioncrafter_association import (
 METRIC_PREFIX_MEMBERS: Final = frozenset(
     {"frame_indices", "points_world_m", "valid_mask"}
 )
-METRIC_GAUGE_SCHEMA: Final = (
-    "bayesian-phystwin.deform360-joint-sparse-metric-gauge-fit"
-)
+METRIC_GAUGE_SCHEMA: Final = "bayesian-phystwin.deform360-joint-sparse-metric-gauge-fit"
 METRIC_GAUGE_VERSION: Final = 5
 CONTACT_LOCALIZATION_FLOOR_M: Final = 0.005
 CONTACT_ASSOCIATION_SCALE_M: Final = 0.010
@@ -129,8 +127,7 @@ class Deform360JointSparseMetricGaugeFitV5:
             "inlier count exceeds input count",
         )
         _require(
-            self.inlier_independent_cluster_count
-            <= self.independent_cluster_count,
+            self.inlier_independent_cluster_count <= self.independent_cluster_count,
             "inlier cluster count exceeds input cluster count",
         )
         _require(
@@ -606,8 +603,7 @@ def prepare_deform360_joint_sparse_contact_rows_v5(
     _require(manifest["object_id"] == identifier, "contact object_id changed")
     _require(manifest["episode_id"] == episode_id, "contact episode_id changed")
     _require(
-        manifest["prefix_raw_frame_range_half_open"]
-        == [prefix_start, prefix_stop],
+        manifest["prefix_raw_frame_range_half_open"] == [prefix_start, prefix_stop],
         "contact prefix range changed",
     )
     if manifest["status"] == "support-negative":
@@ -711,8 +707,7 @@ def estimate_deform360_last_causal_residual_v5(
         "causal_frame_stop must be a positive integer",
     )
     _require(
-        type(association_candidate_count) is int
-        and association_candidate_count >= 1,
+        type(association_candidate_count) is int and association_candidate_count >= 1,
         "association_candidate_count must be a positive integer",
     )
     for name, value in (

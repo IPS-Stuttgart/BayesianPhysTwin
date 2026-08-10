@@ -203,9 +203,7 @@ def test_missing_contact_fails_closed_without_crashing() -> None:
     baseline = result.trajectories_m[B0_PHYSICAL_FALLBACK]
 
     assert result.diagnostics["contact_available"] is False
-    assert result.diagnostics["risk_score_candidate_method_id"] == (
-        V1_VISUAL_GUARDED
-    )
+    assert result.diagnostics["risk_score_candidate_method_id"] == (V1_VISUAL_GUARDED)
     assert not np.array_equal(result.trajectories_m[V1_VISUAL_GUARDED], baseline)
     assert not result.inference_results[T1_CONTACT_ONLY].inference_admissible
     for method in (

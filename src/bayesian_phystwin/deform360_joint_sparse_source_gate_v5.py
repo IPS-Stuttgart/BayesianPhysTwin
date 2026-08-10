@@ -259,9 +259,11 @@ def load_deform360_joint_sparse_source_execution_lock_v5(
     cohort = _mapping(lock.get("cohort"), name="cohort")
     if policy.get("policy_id") != PROSPECTIVE_POLICY_ID:
         raise ValueError("execution lock changed the prospective policy")
-    if policy.get("application") != (
-        "visual-primary-public-release-amendment-before-source-outcomes-v1"
-    ) or policy.get("tactile_primary_claim_suspended") is not True:
+    if (
+        policy.get("application")
+        != ("visual-primary-public-release-amendment-before-source-outcomes-v1")
+        or policy.get("tactile_primary_claim_suspended") is not True
+    ):
         raise ValueError("execution lock changed the public-release amendment")
     if cohort.get("selection_sha256") != SELECTION_SHA256:
         raise ValueError("execution lock changed the selected cohort")
@@ -827,9 +829,7 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
             "mean_deployed_loss_mm": _mean(deployed_losses),
             "mean_last_causal_residual_loss_mm": _mean(residual_losses),
             "mean_physical_fallback_loss_mm": _mean(fallback_losses),
-            "mean_unregistered_contact_arm_loss_mm": _mean(
-                unregistered_contact_losses
-            ),
+            "mean_unregistered_contact_arm_loss_mm": _mean(unregistered_contact_losses),
             "passing_count": passing_count,
             "passing_count_by_stratum": passing_by_stratum,
             "relative_improvement_vs_last_causal_residual": gain_residual,

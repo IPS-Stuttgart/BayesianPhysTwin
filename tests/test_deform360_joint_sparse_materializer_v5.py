@@ -65,9 +65,7 @@ def _visual_windows(
                     camera_id=camera,
                     window_id=window_id,
                     frame_indices=np.full(16, frame, dtype=np.int64),
-                    pixel_yx=np.column_stack(
-                        (np.arange(16), np.arange(16) + frame)
-                    ),
+                    pixel_yx=np.column_stack((np.arange(16), np.arange(16) + frame)),
                     point_world_m=physical[frame] + shift,
                     point_covariance_m2=covariance,
                     source_confidence=np.full(16, 0.9),
