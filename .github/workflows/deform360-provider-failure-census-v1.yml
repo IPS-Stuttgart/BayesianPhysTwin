@@ -1,0 +1,386 @@
+name: Deform360 source-only provider failure census v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-provider-failure-census-v1.yml"
+      - "docs/deform360_provider_failure_census_v1.md"
+      - "src/bayesian_phystwin/deform360_provider_failure_census_v1.py"
+      - "src/bayesian_phystwin/provider_failure_decomposition.py"
+      - "src/bayesian_phystwin/provider_failure_evidence_adapters.py"
+      - "src/bayesian_phystwin/provider_failure_report_io.py"
+      - "src/bayesian_phystwin/cli/provider_failure_decomposition.py"
+      - "tests/test_deform360_provider_failure_census_v1.py"
+      - "tests/test_deform360_provider_failure_census_v1_workflow.py"
+      - "tests/test_provider_failure_decomposition.py"
+      - "tests/test_provider_failure_evidence_adapters.py"
+  workflow_dispatch:
+    inputs:
+      execute_authorized:
+        description: Run the source-only census on the Deform360 runner
+        required: true
+        default: false
+        type: boolean
+      evidence_relative_path:
+        description: Canonical JSON path below the Deform360 results directory
+        required: true
+        type: string
+      expected_input_sha256:
+        description: Lowercase SHA-256 of the exact source-only evidence JSON
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-provider-failure-census-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_RUNNER_NAME: workstation2
+  DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360
+  DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Provider-failure census contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate the diagnostic and workflow boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          files=(
+            src/bayesian_phystwin/deform360_provider_failure_census_v1.py
+            tests/test_deform360_provider_failure_census_v1.py
+            tests/test_deform360_provider_failure_census_v1_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_provider_failure_decomposition.py \
+            tests/test_provider_failure_evidence_adapters.py \
+            tests/test_deform360_provider_failure_census_v1.py \
+            tests/test_deform360_provider_failure_census_v1_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          bpt diagnostic run diagnose-provider-failures --help >/dev/null
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  execute:
+    name: Source-only provider failure census / workstation2
+    if: >-
+      inputs.execute_authorized == true &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: self-hosted
+    timeout-minutes: 60
+    env:
+      INPUT_EVIDENCE_RELATIVE_PATH: ${{ inputs.evidence_relative_path }}
+      INPUT_EXPECTED_SHA256: ${{ inputs.expected_input_sha256 }}
+    steps:
+      - name: Publish the closed-information execution beacon
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner_contract=self-hosted-only"
+          echo "authorized_runner_name=${AUTHORIZED_RUNNER_NAME}"
+          echo "storage_root=${DEFORM360_STORAGE_ROOT}"
+          echo "official_raw_root_registered=true"
+          echo "adaptive_confirmation_root_registered=true"
+          echo "raw_tree_traversal_allowed=false"
+          echo "source_only=true"
+          echo "confirmation_payloads_opened=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "future_frames_used=false"
+          echo "replacement_allowed=false"
+      - name: Check out exact protected main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the exact reviewed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Resolve one immutable results-side evidence file
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          storage="$(realpath -e -- "${DEFORM360_STORAGE_ROOT}")"
+          official="$(realpath -e -- "${DEFORM360_OFFICIAL_RAW_ROOT}")"
+          adaptive="$(realpath -e -- "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"
+          test "${storage}" = "${DEFORM360_STORAGE_ROOT}"
+          test "${official}" = "${DEFORM360_OFFICIAL_RAW_ROOT}"
+          test "${adaptive}" = "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
+          test -d "${official}"
+          test -d "${adaptive}"
+
+          results="$(realpath -e -- "${storage}/results")"
+          test "${results}" = "${storage}/results"
+          test -d "${results}"
+
+          relative="${INPUT_EVIDENCE_RELATIVE_PATH}"
+          python - "${relative}" <<'PY'
+          import re
+          import sys
+          from pathlib import PurePosixPath
+
+          raw = sys.argv[1]
+          if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*\.json", raw):
+              raise SystemExit("evidence path must be a canonical relative JSON path")
+          path = PurePosixPath(raw)
+          if path.is_absolute() or path.as_posix() != raw:
+              raise SystemExit("evidence path must be canonical and relative")
+          if any(part in {"", ".", ".."} for part in path.parts):
+              raise SystemExit("evidence path must not contain dot segments")
+          PY
+
+          expected_path="${results}/${relative}"
+          evidence="$(realpath -e -- "${expected_path}")"
+          test "${evidence}" = "${expected_path}"
+          test -f "${evidence}"
+          test ! -L "${evidence}"
+          case "${evidence}" in
+            "${results}/"*) ;;
+            *) echo "evidence must remain below the Deform360 results tree" >&2; exit 2 ;;
+          esac
+          case "${evidence}" in
+            "${official}"/*|"${adaptive}"/*)
+              echo "evidence must not resolve below a raw-data root" >&2
+              exit 2
+              ;;
+          esac
+
+          expected_sha="${INPUT_EXPECTED_SHA256}"
+          [[ "${expected_sha}" =~ ^[0-9a-f]{64}$ ]]
+          actual_sha="$(sha256sum -- "${evidence}" | awk '{print $1}')"
+          test "${actual_sha}" = "${expected_sha}"
+          input_bytes="$(stat -c '%s' -- "${evidence}")"
+          test "${input_bytes}" -le 67108864
+
+          output_parent="${results}/bayesian-phystwin/deform360-provider-failure-census-v1"
+          mkdir -p -- "${output_parent}"
+          output="${output_parent}/run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          mkdir -- "${output}"
+          output="$(realpath -e -- "${output}")"
+          case "${output}" in
+            "${results}/"*) ;;
+            *) echo "output must remain below the Deform360 results tree" >&2; exit 2 ;;
+          esac
+
+          {
+            echo "CENSUS_INPUT=${evidence}"
+            echo "CENSUS_INPUT_RELATIVE=${relative}"
+            echo "CENSUS_INPUT_SHA256=${actual_sha}"
+            echo "CENSUS_INPUT_BYTES=${input_bytes}"
+            echo "CENSUS_OUTPUT=${output}"
+          } >> "${GITHUB_ENV}"
+      - name: Validate the source-only evidence boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "${CENSUS_INPUT}" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          from bayesian_phystwin.deform360_provider_failure_census_v1 import (
+              validate_deform360_provider_failure_census_payload,
+          )
+          from bayesian_phystwin.provider_failure_report_io import (
+              load_provider_failure_input,
+          )
+
+          payload, artifact = load_provider_failure_input(Path(sys.argv[1]))
+          validate_deform360_provider_failure_census_payload(payload)
+          if artifact["sha256"] != os.environ["CENSUS_INPUT_SHA256"]:
+              raise SystemExit("strict loader input digest differs from dispatch")
+          if artifact["bytes"] != int(os.environ["CENSUS_INPUT_BYTES"]):
+              raise SystemExit("strict loader input size differs from preflight")
+          PY
+      - name: Run the equal-case provider failure decomposition
+        shell: bash
+        run: |
+          set -euo pipefail
+          bpt diagnostic run diagnose-provider-failures \
+            "${CENSUS_INPUT}" \
+            "${CENSUS_OUTPUT}/provider-failure-report.json" \
+            | tee "${CENSUS_OUTPUT}/command-summary.json"
+      - name: Build compact scientific and execution summaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="${CENSUS_OUTPUT}/provider-failure-report.json"
+          jq -e \
+            --arg input_sha "${CENSUS_INPUT_SHA256}" \
+            --argjson input_bytes "${CENSUS_INPUT_BYTES}" '
+              .schema == "bayesian_phystwin.provider_failure_decomposition" and
+              .schema_version == 1 and
+              .equal_case_weighting == true and
+              .input_artifact.sha256 == $input_sha and
+              .input_artifact.bytes == $input_bytes and
+              .metadata.split == "source-only" and
+              (.metadata.statistical_unit == "physical-object" or
+               .metadata.statistical_unit == "acquisition-session" or
+               .metadata.statistical_unit == "physical-object-session") and
+              .metadata.confirmation_payloads_opened == false and
+              .metadata.adaptive_confirmation_payloads_opened == false and
+              .metadata.target_outcomes_used == false and
+              .metadata.future_frames_used == false and
+              .metadata.replacement_allowed == false and
+              (.accepted_count + .rejected_count == .record_count) and
+              (.classified_rejection_count + .unresolved_rejection_count ==
+               .rejected_count)
+            ' "${report}" >/dev/null
+
+          jq -r '
+            [
+              "# Deform360 source-only provider failure census",
+              "",
+              ("Provider: `" + .provider_id + "`"),
+              ("Statistical unit: `" + .metadata.statistical_unit + "`"),
+              ("Evidence adapter: `" +
+               (.metadata.adapter_schema // "generic-provider-failure-evidence") +
+               "`"),
+              ("Independent cases: " + (.record_count | tostring)),
+              ("Accepted: " + (.accepted_count | tostring)),
+              ("Classified rejections: " +
+               (.classified_rejection_count | tostring)),
+              ("Unresolved rejections: " +
+               (.unresolved_rejection_count | tostring)),
+              "",
+              "## Primary attribution",
+              "",
+              (.primary_category_counts | to_entries[] |
+               "- `" + .key + "`: " + (.value | tostring)),
+              "",
+              "This is source-only diagnostic evidence. It does not authorize " +
+              "confirmation access or change any frozen acceptance decision."
+            ] | .[]
+          ' "${report}" > "${CENSUS_OUTPUT}/summary.md"
+
+          python - "${report}" "${CENSUS_OUTPUT}/execution-receipt.json" <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          report_path = Path(sys.argv[1])
+          output_path = Path(sys.argv[2])
+          report = json.loads(report_path.read_text(encoding="utf-8"))
+          metadata = report["metadata"]
+          receipt = {
+              "schema": "bayesian_phystwin.deform360_provider_failure_census_run",
+              "schema_version": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "runner_name": os.environ["RUNNER_NAME"],
+              "input_relative_path": os.environ["CENSUS_INPUT_RELATIVE"],
+              "input_sha256": os.environ["CENSUS_INPUT_SHA256"],
+              "input_bytes": int(os.environ["CENSUS_INPUT_BYTES"]),
+              "provider_id": report["provider_id"],
+              "statistical_unit": metadata["statistical_unit"],
+              "adapter_schema": metadata.get("adapter_schema"),
+              "adapter_schema_version": metadata.get("adapter_schema_version"),
+              "report_id": report["report_id"],
+              "status_sha256": report["status_sha256"],
+              "record_count": report["record_count"],
+              "accepted_count": report["accepted_count"],
+              "classified_rejection_count": report[
+                  "classified_rejection_count"
+              ],
+              "unresolved_rejection_count": report[
+                  "unresolved_rejection_count"
+              ],
+              "information_boundary": {
+                  "source_only": True,
+                  "raw_tree_traversal_allowed": False,
+                  "confirmation_payloads_opened": False,
+                  "adaptive_confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "future_frames_used": False,
+                  "replacement_allowed": False,
+              },
+          }
+          canonical = json.dumps(
+              receipt,
+              allow_nan=False,
+              separators=(",", ":"),
+              sort_keys=True,
+          ).encode("utf-8")
+          receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+          output_path.write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          (
+            cd "${CENSUS_OUTPUT}"
+            sha256sum \
+              command-summary.json \
+              execution-receipt.json \
+              provider-failure-report.json \
+              summary.md \
+              > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Upload compact source-only evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-provider-failure-census-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CENSUS_OUTPUT }}
+          if-no-files-found: error
+          retention-days: 180
+
+# Source-only diagnostic; raw trees are registered but never traversed.
