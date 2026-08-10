@@ -112,8 +112,10 @@ def _require_text(value: Any, *, name: str) -> str:
 
 
 def _require_sha256(value: Any, *, name: str) -> str:
-    if type(value) is not str or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        type(value) is not str
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
     return value
@@ -244,9 +246,7 @@ class DecisionMetricV1:
         threshold = value["threshold_value"]
         return cls(
             name=_require_text(value["name"], name="metric name"),
-            comparison=_require_text(
-                value["comparison"], name="metric comparison"
-            ),
+            comparison=_require_text(value["comparison"], name="metric comparison"),
             rule=_require_text(value["rule"], name="metric rule"),
             observed_value=_require_finite_number(
                 value["observed_value"], name="observed_value"
@@ -338,9 +338,7 @@ class EvidenceDecisionV1:
         if len(limitations) != len(set(limitations)):
             raise ValueError("limitations must be unique")
         if status in {"degraded", "inconclusive"} and not limitations:
-            raise ValueError(
-                f"{status} decisions must record at least one limitation"
-            )
+            raise ValueError(f"{status} decisions must record at least one limitation")
 
         object.__setattr__(
             self,
@@ -448,9 +446,7 @@ def build_evidence_decision(
         raise ValueError("claim_id is not declared by the run manifest")
     protocol_id = _require_text(manifest.protocol_id, name="protocol_id")
     if claim_authorized and manifest.classification != "confirmatory":
-        raise ValueError(
-            "claim authorization requires a confirmatory run manifest"
-        )
+        raise ValueError("claim authorization requires a confirmatory run manifest")
 
     summary = Path(evidence_summary_path)
     if summary.is_symlink() or not summary.is_file():
@@ -527,8 +523,7 @@ def write_evidence_decision(
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = (
-        json.dumps(decision.as_dict(), indent=2, sort_keys=True, allow_nan=False)
-        + "\n"
+        json.dumps(decision.as_dict(), indent=2, sort_keys=True, allow_nan=False) + "\n"
     ).encode("utf-8")
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{destination.name}.",
