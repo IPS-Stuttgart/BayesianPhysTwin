@@ -76,10 +76,6 @@ def _validate_deployment_semantics(
             not intervals_present,
             "interval records are forbidden when interval coverage is disabled",
         )
-        _require(
-            evidence.config.maximum_interval_coverage_shortfall == 0.0,
-            "interval coverage shortfall must be zero when intervals are disabled",
-        )
     else:
         _require(intervals_present, "registered interval records are missing")
         _require(
