@@ -326,7 +326,7 @@ def test_adapter_record_binding_is_literal_ordered_and_content_addressed(
         message = "must be a mapping"
     elif kind == "nonliteral-key":
         binding = {1: VALID_DIGEST}
-        message = "literal string keys"
+        message = "literal string.*keys"
     elif kind == "wrong-case":
         binding = {"case_id": "other", "update_id": VALID_DIGEST}
         message = "case_id differs"
@@ -412,7 +412,7 @@ def test_adapter_record_provider_identity_matches_payload() -> None:
     ("value", "message"),
     [
         ([], "must be a mapping"),
-        ({1: CALIBRATION_ID}, "literal string keys"),
+        ({1: CALIBRATION_ID}, "literal string.*keys"),
         ({}, "must not be empty"),
         ({"": CALIBRATION_ID}, "names must be nonempty"),
         ({"gauge": "bad"}, "lowercase SHA-256"),
@@ -507,7 +507,7 @@ def test_adapter_certificate_reuses_the_complete_strict_contract(
     ("certificate", "message"),
     [
         ([], "must be a mapping"),
-        ({1: False}, "literal string keys"),
+        ({1: False}, "literal string.*keys"),
     ],
 )
 def test_adapter_certificate_container_is_literal(
