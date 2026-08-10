@@ -47,9 +47,7 @@ class GraphDynamicDiscrepancyForecastV1:
             self.joint_covariance_m2,
             name="joint_covariance_m2",
         )
-        _require(
-            horizons.ndim == 1 and len(horizons) > 0, "horizon_steps is empty"
-        )
+        _require(horizons.ndim == 1 and len(horizons) > 0, "horizon_steps is empty")
         _require(nodes.ndim == 1 and len(nodes) > 0, "node_indices is empty")
         _require(np.all(horizons >= 1), "horizon_steps must be positive")
         _require(
