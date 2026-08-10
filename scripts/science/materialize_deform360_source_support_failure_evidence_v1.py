@@ -125,8 +125,7 @@ def _checksums(directory: Path) -> dict[str, str]:
 
 def _checksum_bytes(checksums: dict[str, str]) -> bytes:
     return "".join(
-        f"{checksums[name]}  {name}\n"
-        for name in (EVIDENCE_FILENAME, RECEIPT_FILENAME)
+        f"{checksums[name]}  {name}\n" for name in (EVIDENCE_FILENAME, RECEIPT_FILENAME)
     ).encode("utf-8")
 
 
@@ -237,9 +236,7 @@ def materialize_deform360_source_support_failure_evidence_v1(
         raise ValueError("evidence output root escapes the results root")
 
     target = output_root / evidence_sha256
-    evidence_relative_path = (
-        target / EVIDENCE_FILENAME
-    ).relative_to(root).as_posix()
+    evidence_relative_path = (target / EVIDENCE_FILENAME).relative_to(root).as_posix()
     receipt = _receipt(
         lock=lock,
         evidence_relative_path=evidence_relative_path,
