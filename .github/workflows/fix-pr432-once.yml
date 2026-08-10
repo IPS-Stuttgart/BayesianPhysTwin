@@ -1,4 +1,4 @@
-name: Repair PR 432 once
+name: Repair and sync PR 432 once
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 jobs:
   repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -27,10 +27,16 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Apply typed metadata access
+      - name: Merge current main and apply typed metadata access
         shell: bash
         run: |
           set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+
           python - <<'PY'
           from pathlib import Path
 
@@ -38,11 +44,16 @@ jobs:
           text = path.read_text(encoding="utf-8")
           old = '        raw_name = distribution.metadata.get("Name")\n'
           new = '        raw_name = distribution.metadata["Name"]\n'
-          if text.count(old) != 1:
+          if text.count(old) == 1 and text.count(new) == 0:
+              text = text.replace(old, new, 1)
+          elif text.count(old) != 0 or text.count(new) != 1:
               raise SystemExit("unexpected installed-distribution metadata access")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          path.write_text(text, encoding="utf-8")
           Path(".github/workflows/fix-pr432-once.yml").unlink()
           PY
+
+          git add -A
+          git commit -m "Sync and repair numerical environment profiles"
 
           python -m pip install -e ".[dev]"
           python -m mypy src/bayesian_phystwin/numerical_environment_v1.py
@@ -56,16 +67,4 @@ jobs:
           python -m ruff format --check \
             src/bayesian_phystwin/numerical_environment_v1.py
           git diff --check
-
-      - name: Publish repaired head
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            src/bayesian_phystwin/numerical_environment_v1.py \
-            .github/workflows/fix-pr432-once.yml
-          git commit -m "Use typed package metadata access"
           git push origin HEAD:agent/numerical-environment-profile-v1
