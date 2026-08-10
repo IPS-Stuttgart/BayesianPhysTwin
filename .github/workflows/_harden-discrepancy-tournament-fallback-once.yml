@@ -45,136 +45,8 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Apply exact interval-fallback hardening
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path: str, old: str, new: str) -> None:
-              target = Path(path)
-              text = target.read_text(encoding="utf-8")
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(
-                      f"{path}: expected one replacement marker, found {count}"
-                  )
-              target.write_text(text.replace(old, new), encoding="utf-8")
-
-          contract_old = "\n".join(
-              [
-                  "        _require(",
-                  "            fallback_record.proper_score",
-                  "            == fallback_record.fallback_proper_score,",
-                  '            f"{unit_id} fallback raw proper score changed",',
-                  "        )",
-                  "",
-                  '    evaluation = _parse_evaluation(payload["evaluation"])',
-              ]
-          )
-          contract_new = "\n".join(
-              [
-                  "        _require(",
-                  "            fallback_record.proper_score",
-                  "            == fallback_record.fallback_proper_score,",
-                  '            f"{unit_id} fallback raw proper score changed",',
-                  "        )",
-                  "        for record in unit_records:",
-                  "            if record.accepted:",
-                  "                continue",
-                  "            _require(",
-                  "                record.interval_covered",
-                  "                == fallback_record.interval_covered,",
-                  '                f"{unit_id} rejected interval coverage differs "',
-                  '                "from exact fallback",',
-                  "            )",
-                  "            _require(",
-                  "                record.interval_width",
-                  "                == fallback_record.interval_width,",
-                  '                f"{unit_id} rejected interval width differs "',
-                  '                "from exact fallback",',
-                  "            )",
-                  "",
-                  '    evaluation = _parse_evaluation(payload["evaluation"])',
-              ]
-          )
-          replace_once(
-              "src/bayesian_phystwin/_discrepancy_tournament_contracts.py",
-              contract_old,
-              contract_new,
-          )
-
-          test_new = "\n".join(
-              [
-                  "@pytest.mark.parametrize(",
-                  '    ("field", "value", "message"),',
-                  "    [",
-                  "        (",
-                  '            "interval_covered",',
-                  "            False,",
-                  '            "rejected interval coverage differs from exact fallback",',
-                  "        ),",
-                  "        (",
-                  '            "interval_width",',
-                  "            1.0,",
-                  '            "rejected interval width differs from exact fallback",',
-                  "        ),",
-                  "    ],",
-                  ")",
-                  "def test_rejected_candidate_must_retain_exact_fallback_interval(",
-                  "    field: str,",
-                  "    value: object,",
-                  "    message: str,",
-                  ") -> None:",
-                  "    payload = _payload()",
-                  '    records = payload["records"]',
-                  "    assert isinstance(records, list)",
-                  "    row = next(",
-                  "        record",
-                  "        for record in records",
-                  '        if record["candidate_id"] == "structured"',
-                  '        and record["group_id"] == "group-0"',
-                  "    )",
-                  '    row["accepted"] = False',
-                  '    row["deployed_point_loss"] = row["fallback_point_loss"]',
-                  '    row["deployed_proper_score"] = row["fallback_proper_score"]',
-                  "    row[field] = value",
-                  "",
-                  "    with pytest.raises(ValueError, match=message):",
-                  "        parse_discrepancy_candidate_tournament(payload)",
-                  "",
-                  "",
-                  "def test_information_boundary_and_interval_coverage_fail_closed() -> None:",
-              ]
-          )
-          replace_once(
-              "tests/test_horizon_conditioned_discrepancy_tournament.py",
-              "def test_information_boundary_and_interval_coverage_fail_closed() -> None:",
-              test_new,
-          )
-
-          doc_old = "\n".join(
-              [
-                  "A rejected candidate must deploy the exact physical-fallback values. The",
-                  "registered physical-fallback candidate must itself be rejected and reproduce its",
-                  "raw fallback values exactly.",
-              ]
-          )
-          doc_new = "\n".join(
-              [
-                  "A rejected candidate must deploy the exact physical-fallback point loss,",
-                  "proper score, interval coverage decision, and complete interval width. The",
-                  "registered physical-fallback candidate must itself be rejected and reproduce its",
-                  "raw fallback values exactly.",
-              ]
-          )
-          replace_once(
-              "docs/discrepancy_candidate_tournament_v1.md",
-              doc_old,
-              doc_new,
-          )
-          PY
+      - name: Apply fail-closed hardening
+        run: python tools/one_shot/harden_discrepancy_tournament_v1.py
 
       - name: Install development environment
         run: |
@@ -187,6 +59,7 @@ jobs:
           set -euo pipefail
           files=(
             src/bayesian_phystwin/_discrepancy_tournament_contracts.py
+            src/bayesian_phystwin/_discrepancy_tournament_analysis.py
             tests/test_horizon_conditioned_discrepancy_tournament.py
           )
           python -m ruff check --fix -- "${files[@]}"
@@ -194,7 +67,8 @@ jobs:
           python -m ruff check -- "${files[@]}"
           python -m ruff format --check -- "${files[@]}"
           python -m mypy \
-            src/bayesian_phystwin/_discrepancy_tournament_contracts.py
+            src/bayesian_phystwin/_discrepancy_tournament_contracts.py \
+            src/bayesian_phystwin/_discrepancy_tournament_analysis.py
           python -m pytest -q \
             tests/test_horizon_conditioned_discrepancy_tournament.py \
             tests/test_horizon_conditioned_discrepancy_tournament_cli.py \
@@ -203,15 +77,16 @@ jobs:
           python -m compileall -q src tests
           git diff --check
 
-      - name: Remove one-use workflow and publish
+      - name: Remove one-use files and publish
         shell: bash
         run: |
           set -euo pipefail
           rm .github/workflows/_harden-discrepancy-tournament-fallback-once.yml
+          rm tools/one_shot/harden_discrepancy_tournament_v1.py
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
-          git commit -m "Require exact interval fallback in discrepancy tournament"
+          git commit -m "Harden source-only discrepancy tournament"
           git push origin HEAD:agent/discrepancy-candidate-tournament-v1
