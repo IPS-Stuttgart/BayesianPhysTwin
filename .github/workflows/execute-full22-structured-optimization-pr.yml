@@ -91,7 +91,9 @@ jobs:
           behavior, the locked protocol identity, and the claim boundary unchanged.
           """
           documentation.write_text(
-              original_documentation.rstrip() + addition + "\n",
+              original_documentation.rstrip()
+              + addition.rstrip()
+              + "\n",
               encoding="utf-8",
           )
 
