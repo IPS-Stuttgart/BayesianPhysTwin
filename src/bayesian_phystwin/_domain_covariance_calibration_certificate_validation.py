@@ -7,7 +7,11 @@ from typing import Any
 
 import numpy as np
 
-from ._canonical_contracts import frozen_finite_json_mapping, genuine_integer
+from ._canonical_contracts import (
+    frozen_finite_json_mapping,
+    genuine_boolean,
+    genuine_integer,
+)
 from ._domain_covariance_calibration_common import (
     DOMAIN_COVARIANCE_CALIBRATION_SCHEMA,
     DOMAIN_COVARIANCE_CALIBRATION_VERSION,
@@ -28,6 +32,11 @@ from .calibration_domain_guard import (
 def normalize_certificate_fields(certificate: Any) -> tuple[object, ...]:
     """Validate and canonicalize fields shared by the certificate record."""
 
+    predictor_id = sha256_digest(certificate.predictor_id, name="predictor_id")
+    predictor_frozen = genuine_boolean(
+        certificate.predictor_frozen_before_calibration_outcomes,
+        name="predictor_frozen_before_calibration_outcomes",
+    )
     partition_id = sha256_digest(
         certificate.calibration_partition_id,
         name="calibration_partition_id",
@@ -74,6 +83,8 @@ def normalize_certificate_fields(certificate: Any) -> tuple[object, ...]:
         name="domain covariance calibration metadata",
     )
     return (
+        predictor_id,
+        predictor_frozen,
         partition_id,
         statistical_unit,
         residual_definition,
@@ -170,6 +181,10 @@ def validate_guard_binding(certificate: Any) -> None:
         calibration_groups_independent=guard.calibration_groups_independent,
         config=guard.config,
         metadata={
+            "predictor_id": certificate.predictor_id,
+            "predictor_frozen_before_calibration_outcomes": (
+                certificate.predictor_frozen_before_calibration_outcomes
+            ),
             "covariance_calibration_data_id": certificate.calibration_data_id,
             "covariance_calibration_schema": DOMAIN_COVARIANCE_CALIBRATION_SCHEMA,
             "covariance_calibration_version": DOMAIN_COVARIANCE_CALIBRATION_VERSION,
