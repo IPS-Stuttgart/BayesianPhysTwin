@@ -3,6 +3,8 @@ name: Apply tree-block IRLS parity trace
 on:
   push:
     branches: [agent/tree-block-irls-parity-trace-v1]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -15,7 +17,13 @@ jobs:
   apply:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/agent/tree-block-irls-parity-trace-v1'
+      (
+        github.ref == 'refs/heads/agent/tree-block-irls-parity-trace-v1' ||
+        (
+          github.head_ref == 'agent/tree-block-irls-parity-trace-v1' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
