@@ -62,90 +62,117 @@ jobs:
                   )
               target.write_text(text.replace(old, new), encoding="utf-8")
 
+          contract_old = "\n".join(
+              [
+                  "        _require(",
+                  "            fallback_record.proper_score",
+                  "            == fallback_record.fallback_proper_score,",
+                  '            f"{unit_id} fallback raw proper score changed",',
+                  "        )",
+                  "",
+                  '    evaluation = _parse_evaluation(payload["evaluation"])',
+              ]
+          )
+          contract_new = "\n".join(
+              [
+                  "        _require(",
+                  "            fallback_record.proper_score",
+                  "            == fallback_record.fallback_proper_score,",
+                  '            f"{unit_id} fallback raw proper score changed",',
+                  "        )",
+                  "        for record in unit_records:",
+                  "            if record.accepted:",
+                  "                continue",
+                  "            _require(",
+                  "                record.interval_covered",
+                  "                == fallback_record.interval_covered,",
+                  '                f"{unit_id} rejected interval coverage differs "',
+                  '                "from exact fallback",',
+                  "            )",
+                  "            _require(",
+                  "                record.interval_width",
+                  "                == fallback_record.interval_width,",
+                  '                f"{unit_id} rejected interval width differs "',
+                  '                "from exact fallback",',
+                  "            )",
+                  "",
+                  '    evaluation = _parse_evaluation(payload["evaluation"])',
+              ]
+          )
           replace_once(
               "src/bayesian_phystwin/_discrepancy_tournament_contracts.py",
-              '''        _require(
-              fallback_record.proper_score == fallback_record.fallback_proper_score,
-              f"{unit_id} fallback raw proper score changed",
+              contract_old,
+              contract_new,
           )
 
-      evaluation = _parse_evaluation(payload["evaluation"])
-          ''',
-              '''        _require(
-              fallback_record.proper_score == fallback_record.fallback_proper_score,
-              f"{unit_id} fallback raw proper score changed",
+          test_new = "\n".join(
+              [
+                  "@pytest.mark.parametrize(",
+                  '    ("field", "value", "message"),',
+                  "    [",
+                  "        (",
+                  '            "interval_covered",',
+                  "            False,",
+                  '            "rejected interval coverage differs from exact fallback",',
+                  "        ),",
+                  "        (",
+                  '            "interval_width",',
+                  "            1.0,",
+                  '            "rejected interval width differs from exact fallback",',
+                  "        ),",
+                  "    ],",
+                  ")",
+                  "def test_rejected_candidate_must_retain_exact_fallback_interval(",
+                  "    field: str,",
+                  "    value: object,",
+                  "    message: str,",
+                  ") -> None:",
+                  "    payload = _payload()",
+                  '    records = payload["records"]',
+                  "    assert isinstance(records, list)",
+                  "    row = next(",
+                  "        record",
+                  "        for record in records",
+                  '        if record["candidate_id"] == "structured"',
+                  '        and record["group_id"] == "group-0"',
+                  "    )",
+                  '    row["accepted"] = False',
+                  '    row["deployed_point_loss"] = row["fallback_point_loss"]',
+                  '    row["deployed_proper_score"] = row["fallback_proper_score"]',
+                  "    row[field] = value",
+                  "",
+                  "    with pytest.raises(ValueError, match=message):",
+                  "        parse_discrepancy_candidate_tournament(payload)",
+                  "",
+                  "",
+                  "def test_information_boundary_and_interval_coverage_fail_closed() -> None:",
+              ]
           )
-          for record in unit_records:
-              if record.accepted:
-                  continue
-              _require(
-                  record.interval_covered == fallback_record.interval_covered,
-                  f"{unit_id} rejected interval coverage differs from exact fallback",
-              )
-              _require(
-                  record.interval_width == fallback_record.interval_width,
-                  f"{unit_id} rejected interval width differs from exact fallback",
-              )
-
-      evaluation = _parse_evaluation(payload["evaluation"])
-          ''',
-          )
-
           replace_once(
               "tests/test_horizon_conditioned_discrepancy_tournament.py",
-              '''def test_information_boundary_and_interval_coverage_fail_closed() -> None:
-          ''',
-              '''@pytest.mark.parametrize(
-          ("field", "value", "message"),
-          [
-              (
-                  "interval_covered",
-                  False,
-                  "rejected interval coverage differs from exact fallback",
-              ),
-              (
-                  "interval_width",
-                  1.0,
-                  "rejected interval width differs from exact fallback",
-              ),
-          ],
-      )
-      def test_rejected_candidate_must_retain_exact_fallback_interval(
-          field: str,
-          value: object,
-          message: str,
-      ) -> None:
-          payload = _payload()
-          records = payload["records"]
-          assert isinstance(records, list)
-          row = next(
-              record
-              for record in records
-              if record["candidate_id"] == "structured"
-              and record["group_id"] == "group-0"
-          )
-          row["accepted"] = False
-          row["deployed_point_loss"] = row["fallback_point_loss"]
-          row["deployed_proper_score"] = row["fallback_proper_score"]
-          row[field] = value
-
-          with pytest.raises(ValueError, match=message):
-              parse_discrepancy_candidate_tournament(payload)
-
-
-      def test_information_boundary_and_interval_coverage_fail_closed() -> None:
-          ''',
+              "def test_information_boundary_and_interval_coverage_fail_closed() -> None:",
+              test_new,
           )
 
+          doc_old = "\n".join(
+              [
+                  "A rejected candidate must deploy the exact physical-fallback values. The",
+                  "registered physical-fallback candidate must itself be rejected and reproduce its",
+                  "raw fallback values exactly.",
+              ]
+          )
+          doc_new = "\n".join(
+              [
+                  "A rejected candidate must deploy the exact physical-fallback point loss,",
+                  "proper score, interval coverage decision, and complete interval width. The",
+                  "registered physical-fallback candidate must itself be rejected and reproduce its",
+                  "raw fallback values exactly.",
+              ]
+          )
           replace_once(
               "docs/discrepancy_candidate_tournament_v1.md",
-              '''A rejected candidate must deploy the exact physical-fallback values. The
-      registered physical-fallback candidate must itself be rejected and reproduce its
-      raw fallback values exactly.''',
-              '''A rejected candidate must deploy the exact physical-fallback point loss,
-      proper score, interval coverage decision, and complete interval width. The
-      registered physical-fallback candidate must itself be rejected and reproduce its
-      raw fallback values exactly.''',
+              doc_old,
+              doc_new,
           )
           PY
 
