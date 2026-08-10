@@ -6,8 +6,6 @@ import pytest
 import bayesian_phystwin
 from bayesian_phystwin.bias_aware_belief import (
     BiasAwareStateUpdateResult,
-)
-from bayesian_phystwin.bias_aware_belief import (
     update_bias_aware_state as update_bias_aware_state_frozen_v1,
 )
 from bayesian_phystwin.bias_aware_belief_v2 import update_bias_aware_state_v2
