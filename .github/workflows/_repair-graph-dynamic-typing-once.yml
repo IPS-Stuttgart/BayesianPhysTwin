@@ -1,0 +1,165 @@
+name: Repair graph dynamic typing once
+
+on:
+  push:
+    branches:
+      - agent/graph-dynamic-discrepancy-v1
+    paths:
+      - .github/workflows/_repair-graph-dynamic-typing-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-graph-dynamic-typing-once
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/graph-dynamic-discrepancy-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/graph-dynamic-discrepancy-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Fix graph dynamic typing and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "agent/graph-dynamic-discrepancy-v1"
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f"{path}: expected {expected} occurrences, found {count}")
+              target.write_text(text.replace(old, new), encoding="utf-8")
+
+          common = "src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py"
+          replace_exact(
+              common,
+              "    result = np.empty((2, rank, 3), dtype=np.float64)\n",
+              "    result: np.ndarray = np.empty((2, rank, 3), dtype=np.float64)\n",
+          )
+
+          contract = "src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py"
+          replace_exact(
+              contract,
+              '        _require(horizons.ndim == 1 and len(horizons), "horizon_steps is empty")\n',
+              '        _require(\n'
+              '            horizons.ndim == 1 and len(horizons) > 0, "horizon_steps is empty"\n'
+              '        )\n',
+          )
+          replace_exact(
+              contract,
+              '        _require(nodes.ndim == 1 and len(nodes), "node_indices is empty")\n',
+              '        _require(nodes.ndim == 1 and len(nodes) > 0, "node_indices is empty")\n',
+          )
+          replace_exact(
+              contract,
+              "        state = np.zeros((2, node_count, 3), dtype=np.float64)\n",
+              "        state: np.ndarray = np.zeros((2, node_count, 3), dtype=np.float64)\n",
+              expected=2,
+          )
+
+          forecast = "src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py"
+          replace_exact(
+              forecast,
+              '    _require(raw_horizons.ndim == 1 and len(raw_horizons), "horizons are empty")\n',
+              '    _require(\n'
+              '        raw_horizons.ndim == 1 and len(raw_horizons) > 0, "horizons are empty"\n'
+              '    )\n',
+          )
+          replace_exact(
+              forecast,
+              "    if node_indices is None:\n",
+              "    nodes: np.ndarray\n    if node_indices is None:\n",
+          )
+          replace_exact(
+              forecast,
+              '        _require(raw_nodes.ndim == 1 and len(raw_nodes), "node_indices is empty")\n',
+              '        _require(\n'
+              '            raw_nodes.ndim == 1 and len(raw_nodes) > 0, "node_indices is empty"\n'
+              '        )\n',
+          )
+          replace_exact(
+              forecast,
+              "    if modal_acceleration_mps2 is None:\n",
+              "    acceleration: np.ndarray\n    if modal_acceleration_mps2 is None:\n",
+          )
+          replace_exact(
+              forecast,
+              "    mean = np.empty((len(horizons), len(nodes), 3), dtype=np.float64)\n",
+              "    mean: np.ndarray = np.empty(\n        (len(horizons), len(nodes), 3), dtype=np.float64\n    )\n",
+          )
+          replace_exact(
+              forecast,
+              "    covariance = np.empty(\n",
+              "    covariance: np.ndarray = np.empty(\n",
+          )
+
+          observation = "src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py"
+          replace_exact(
+              observation,
+              "    if supplied is None:\n",
+              "    result: np.ndarray\n    if supplied is None:\n",
+          )
+          replace_exact(
+              observation,
+              "        design = np.zeros((3, dimension), dtype=np.float64)\n",
+              "        design: np.ndarray = np.zeros((3, dimension), dtype=np.float64)\n",
+          )
+          replace_exact(
+              observation,
+              "        weights = np.empty(len(group_nodes), dtype=np.float64)\n",
+              "        weights: np.ndarray = np.empty(len(group_nodes), dtype=np.float64)\n",
+          )
+          PY
+
+          python -m pip install -e ".[dev]"
+          files=(
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/run_manifest.py \
+            src/bayesian_phystwin/repository_provenance.py \
+            src/bayesian_phystwin/run_manifest_v2.py \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/run_manifest.py \
+            src/bayesian_phystwin/gauge_aware_belief.py \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/prob4d_causal_lineage.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_filter.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_fit.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py \
+            src/bayesian_phystwin/graph_dynamic_discrepancy.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          git commit -m "Fix graph dynamic discrepancy typing"
+          git push origin HEAD:agent/graph-dynamic-discrepancy-v1
