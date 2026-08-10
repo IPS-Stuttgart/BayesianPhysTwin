@@ -1,0 +1,58 @@
+name: Format Deform360 v6 source once
+
+on:
+  push:
+    branches:
+      - agent/deform360-fresh-object-session-v6-source-gate
+    paths:
+      - ".github/workflows/format-deform360-v6-source-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-deform360-v6-source-once
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/deform360-fresh-object-session-v6-source-gate
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Apply deterministic Ruff formatting and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = \
+            "refs/heads/agent/deform360-fresh-object-session-v6-source-gate"
+          python -m pip install "ruff==0.16.2"
+          files=(
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py
+            tests/test_deform360_fresh_object_session_source_v6.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          rm .github/workflows/format-deform360-v6-source-once.yml
+          test "$(git status --short | wc -l)" -eq 3
+
+      - name: Commit the reviewed deterministic formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py \
+            tests/test_deform360_fresh_object_session_source_v6.py \
+            .github/workflows/format-deform360-v6-source-once.yml
+          git commit -m "Format the Deform360 v6 source gate"
+          git push origin HEAD:agent/deform360-fresh-object-session-v6-source-gate
