@@ -99,6 +99,7 @@ jobs:
               unit_test_lines = [
                   "",
                   "",
+                  "",
                   "def test_registered_statistical_unit_is_deployment_valid() -> None:",
                   "    from bayesian_phystwin.discrepancy_candidate_tournament import (",
                   "        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,",
@@ -118,6 +119,7 @@ jobs:
           )
           if status_test_marker not in test_text:
               status_test_lines = [
+                  "",
                   "",
                   "",
                   "def test_metric_arbitration_reports_completion_status() -> None:",
@@ -168,6 +170,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev,graph]"
+          python -m ruff format \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
           python -m ruff check \
             scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
             tests/test_full22_discrepancy_candidate_tournament_v1.py
