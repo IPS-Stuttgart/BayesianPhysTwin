@@ -407,3 +407,11 @@ def test_publication_is_atomic_and_refuses_silent_overwrite(tmp_path: Path) -> N
     assert json.loads(output.read_text(encoding="utf-8")) == first
     with pytest.raises(FileExistsError):
         publish_deform360_joint_sparse_source_gate_v5(evidence_path, LOCK_PATH, output)
+
+
+def test_source_evidence_assembler_contracts_are_registered(tmp_path: Path) -> None:
+    from tests.test_deform360_joint_sparse_source_evidence_v5 import (
+        exercise_source_evidence_contracts_v5,
+    )
+
+    exercise_source_evidence_contracts_v5(tmp_path)
