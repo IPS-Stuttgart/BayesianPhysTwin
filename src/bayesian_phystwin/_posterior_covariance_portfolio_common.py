@@ -22,9 +22,7 @@ from .posterior_covariance_semantics import (
     PosteriorCovarianceSemanticsV1,
 )
 
-POSTERIOR_COVARIANCE_SOURCE_SCHEMA = (
-    "bayesian_phystwin.posterior_covariance_source"
-)
+POSTERIOR_COVARIANCE_SOURCE_SCHEMA = "bayesian_phystwin.posterior_covariance_source"
 POSTERIOR_COVARIANCE_SOURCE_VERSION = 1
 POSTERIOR_QUERY_COVARIANCE_PORTFOLIO_SCHEMA = (
     "bayesian_phystwin.posterior_query_covariance_portfolio"
@@ -77,12 +75,12 @@ def validated_covariance(value: object, *, name: str) -> FloatArray:
         raise ValueError(f"{name} must be symmetric")
     symmetric = 0.5 * (matrix + matrix.T)
     eigenvalues = np.linalg.eigvalsh(symmetric)
-    scale = max(1.0, float(np.max(np.abs(eigenvalues))))
+    scale = max(1.0, float(np.linalg.norm(symmetric, ord=2)))
     tolerance = (
-        max(1, len(matrix))
+        64.0
+        * max(1, len(symmetric))
         * np.finfo(np.float64).eps
         * scale
-        * 100.0
     )
     if float(np.min(eigenvalues)) < -tolerance:
         raise ValueError(f"{name} must be positive semidefinite")
