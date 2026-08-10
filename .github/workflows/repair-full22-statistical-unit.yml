@@ -2,7 +2,8 @@ name: Repair full-22 tournament statistical unit
 
 on:
   push:
-    branches: [agent/full22-discrepancy-tournament-v1]
+    branches:
+      - agent/full22-discrepancy-tournament-v1
 
 permissions:
   contents: write
@@ -60,25 +61,28 @@ jobs:
 
           tests = Path("tests/test_full22_discrepancy_candidate_tournament_v1.py")
           test_text = tests.read_text(encoding="utf-8")
-          addition = '''
-
-
-def test_registered_statistical_unit_is_deployment_valid() -> None:
-    from bayesian_phystwin.discrepancy_candidate_tournament import (
-        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,
-    )
-
-    module = _module()
-    assert module.STATISTICAL_UNIT == "physical-object-session"
-    assert (
-        module.STATISTICAL_UNIT
-        in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS
-    )
-'''
           marker = "def test_registered_statistical_unit_is_deployment_valid()"
           if marker in test_text:
               raise SystemExit("statistical-unit regression test already exists")
-          tests.write_text(test_text.rstrip() + addition + "\n", encoding="utf-8")
+          test_lines = [
+              "",
+              "",
+              "def test_registered_statistical_unit_is_deployment_valid() -> None:",
+              "    from bayesian_phystwin.discrepancy_candidate_tournament import (",
+              "        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,",
+              "    )",
+              "",
+              "    module = _module()",
+              '    assert module.STATISTICAL_UNIT == "physical-object-session"',
+              "    assert (",
+              "        module.STATISTICAL_UNIT",
+              "        in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS",
+              "    )",
+          ]
+          tests.write_text(
+              test_text.rstrip() + "\n".join(test_lines) + "\n",
+              encoding="utf-8",
+          )
 
           Path(".github/workflows/repair-full22-statistical-unit.yml").unlink()
           PY
@@ -97,7 +101,8 @@ def test_registered_statistical_unit_is_deployment_valid() -> None:
             tests/test_full22_discrepancy_candidate_tournament_v1.py \
             tests/test_horizon_conditioned_discrepancy_tournament.py \
             tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
-            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py
+            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py \
+            tests/test_pull_request_workflow_integrity.py
           git diff --check
 
       - name: Publish the repair and remove this workflow
@@ -112,5 +117,3 @@ def test_registered_statistical_unit_is_deployment_valid() -> None:
           git diff --cached --check
           git commit -m "Fix full-22 tournament statistical unit"
           git push origin HEAD:agent/full22-discrepancy-tournament-v1
-
-# Registered on the branch before this triggering push.
