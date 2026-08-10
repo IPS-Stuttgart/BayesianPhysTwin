@@ -249,7 +249,7 @@ def _validate_adapter_binding(
         payload.get("provider_id"),
         name="adapter payload provider_id",
     )
-    for index, (record, binding) in enumerate(zip(records, bindings)):
+    for index, (record, binding) in enumerate(zip(records, bindings, strict=True)):
         _validate_adapter_record(
             record=record,
             binding=binding,
