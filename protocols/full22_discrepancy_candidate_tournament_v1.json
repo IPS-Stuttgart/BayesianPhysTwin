@@ -1,0 +1,179 @@
+{
+  "basis": {
+    "basis_id": "frame-zero-gaussian-kernel-rank4-v1",
+    "diagonal_tie_break": 1e-12,
+    "eigen_order": "descending",
+    "geometry": "released PhysTwin frame-zero tracked physical positions only",
+    "kernel": "exp(-squared_distance/(2*median_nonzero_distance^2))",
+    "rank": 4,
+    "sign_convention": "largest-absolute entry nonnegative",
+    "target_outcomes_used": false
+  },
+  "candidates": [
+    {
+      "candidate_id": "physical_fallback",
+      "configuration": {
+        "correction": "zero",
+        "raw_covariance": "zero"
+      },
+      "declared_parameter_count": 0,
+      "family": "released-phystwin-no-correction",
+      "runner": "physical_fallback",
+      "source_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa"
+    },
+    {
+      "candidate_id": "last_residual",
+      "configuration": {
+        "mean": "last valid residual at causal cutoff",
+        "raw_covariance": "zero"
+      },
+      "declared_parameter_count": 0,
+      "family": "deterministic-persistence",
+      "runner": "last_residual",
+      "source_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa"
+    },
+    {
+      "candidate_id": "independent_endpoint_v1",
+      "configuration": {
+        "api": "bayesian_phystwin.endpoint_model_average",
+        "config": "ModelAveragedEndpointConfigV1 default"
+      },
+      "declared_parameter_count": 15,
+      "family": "independent-local-level-model-average",
+      "runner": "independent_endpoint_v1",
+      "source_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa"
+    },
+    {
+      "candidate_id": "dynamic_endpoint_v2",
+      "configuration": {
+        "api": "bayesian_phystwin.dynamic_endpoint_model_average",
+        "balance_component_families": true,
+        "config": "DynamicEndpointModelAverageConfigV2 default components",
+        "evidence_pooling": "object"
+      },
+      "declared_parameter_count": 25,
+      "family": "persistence-local-level-damped-trend-model-average",
+      "runner": "dynamic_endpoint_v2",
+      "source_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa"
+    },
+    {
+      "candidate_id": "structured_kernel_rank4_v1",
+      "configuration": {
+        "api": "bayesian_phystwin.structured_discrepancy",
+        "basis_id": "frame-zero-gaussian-kernel-rank4-v1",
+        "config": "StructuredDiscrepancyConfigV1 default"
+      },
+      "declared_parameter_count": 29,
+      "family": "structured-low-rank-endpoint",
+      "runner": "structured_kernel_rank4_v1",
+      "source_revision": "265cfe8488fdb40f2c1c72c67385e0e88bab2595"
+    },
+    {
+      "candidate_id": "graph_dynamic_kernel_rank4_v1",
+      "configuration": {
+        "api": "bayesian_phystwin.graph_dynamic_discrepancy",
+        "basis_id": "frame-zero-gaussian-kernel-rank4-v1",
+        "convergence_tolerance": 1e-08,
+        "degrees_of_freedom": 5.0,
+        "effective_samples_per_correlation_group": 64.0,
+        "frame_dt_s": 1.0,
+        "initial_position_std_m": 0.01,
+        "initial_velocity_std_mps": 0.0025,
+        "maximum_condition_number": 1000000000000.0,
+        "maximum_iterations": 20,
+        "maximum_node_position_m": 0.01,
+        "maximum_node_velocity_mps": 0.01,
+        "minimum_robust_weight": 0.0,
+        "observation_std_m": 0.0025,
+        "process_acceleration_std_mps2": 0.00025,
+        "process_position_std_m": 0.0005,
+        "time_interpretation": "one normalized frame; no physical-time claim",
+        "velocity_retention": 0.95
+      },
+      "declared_parameter_count": 11,
+      "family": "graph-modal-position-velocity",
+      "runner": "graph_dynamic_kernel_rank4_v1",
+      "source_revision": "f49eecdbbbe31fc36b1a64ab6284a9e69d8851b3"
+    }
+  ],
+  "claim_boundary": "The released PhysTwin 22-case cohort has already informed method development. This experiment may select one discrepancy candidate for a separately frozen future protocol, but it is not fresh independent validation, calibrated deployment uncertainty, a physical-state claim, or state-of-the-art evidence.",
+  "cohort": {
+    "execution_crossfit": "leave-one-physical-execution-out selection replay",
+    "expected_case_count": 22,
+    "fit_fraction": 0.75,
+    "name": "released-phystwin-full22",
+    "statistical_unit": "physical execution (one released PhysTwin case)",
+    "temporal_nesting": {
+      "fit": "[0, fit_end)",
+      "future_outcomes_available_to_candidate_prediction": false,
+      "guard_validation": "[fit_end, train_end)",
+      "scored_future": "[train_end, frame_count)"
+    }
+  },
+  "contract": "bayesian-phystwin-full22-discrepancy-candidate-tournament",
+  "guard": {
+    "exact_rejection_fallback": "released PhysTwin trajectory",
+    "maximum_allowed_regret_m": 0.0,
+    "maximum_residual_m": 0.01,
+    "minimum_validation_frame_count": 1,
+    "policy": "metric-specific-baseline-relative-validation-regret-v1",
+    "primary_metrics": [
+      "official one-way L1 Chamfer distance",
+      "official manual-track Euclidean error"
+    ],
+    "quantile_method": "higher",
+    "within_execution_regret_quantile": 0.9
+  },
+  "information_boundary": {
+    "admission_manifest_sealed_before_future_scoring": true,
+    "claim_authorized": false,
+    "confirmation_payload_used": false,
+    "prediction_manifests_sealed_before_admission": true,
+    "replacement_allowed": false,
+    "target_outcome_used": false
+  },
+  "orchestration_base_revision": "811ae1df163027e7d84f16d236b459b84b75f2aa",
+  "repository": "IPS-Stuttgart/BayesianPhysTwin",
+  "schema_version": 1,
+  "scoring": {
+    "covariance_eigenvalue_floor_m2": 1e-12,
+    "future_target_used_for_prediction": false,
+    "horizon_bins": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "interval_semantics_id": "none",
+    "nominal_interval_coverage": null,
+    "point_tournaments": [
+      {
+        "name": "track",
+        "point_loss_id": "official-manual-track-euclidean-error-m"
+      },
+      {
+        "name": "chamfer",
+        "point_loss_id": "official-one-way-l1-chamfer-distance-m"
+      }
+    ],
+    "proper_score_id": "mean-valid-track-gaussian-nll-common-5mm-floor-v1",
+    "proper_score_observation_std_m": 0.005
+  },
+  "selection": {
+    "bootstrap_samples": 10000,
+    "bootstrap_seed": 20260810,
+    "maximum_harmful_accepted_count": 0,
+    "maximum_interval_coverage_shortfall": 0.0,
+    "maximum_mean_proper_score_regression": 0.0,
+    "maximum_worst_group_relative_regression": 0.05,
+    "metric_arbitration": "Advance one non-reference candidate only when both metric-specific tournaments pass and select the same candidate; otherwise retain last_residual.",
+    "minimum_group_count": 10,
+    "minimum_relative_point_improvement": 0.0,
+    "numerical_tolerance": 1e-12,
+    "physical_fallback_candidate": "physical_fallback",
+    "reference_candidate": "last_residual",
+    "require_crossfit_stability": true,
+    "require_paired_point_upper_bound_nonpositive": true,
+    "runtime_tie_break": "disabled by setting CandidateSpec.runtime_milliseconds=0 for every arm; observed wall-clock runtime remains diagnostic in prediction manifests"
+  },
+  "status": "retrospective-source-only-non-claim-bearing"
+}
