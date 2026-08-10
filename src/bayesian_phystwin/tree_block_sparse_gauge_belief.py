@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -49,6 +49,9 @@ TREE_BLOCK_POSTERIOR_COVARIANCE_SCHEMA = (
 TREE_BLOCK_POSTERIOR_COVARIANCE_VERSION = 1
 TREE_BLOCK_GAUGE_AWARE_RESULT_SCHEMA = "bayesian_phystwin.tree_block_gauge_aware_result"
 TREE_BLOCK_GAUGE_AWARE_RESULT_VERSION = 1
+
+
+_TreeBlockSystemObserver = Callable[[str, int, TreeBlockNormalSystemV1], None]
 
 
 def _array_sha256(value: np.ndarray) -> str:
@@ -1062,13 +1065,14 @@ def _fallback_result(
     )
 
 
-def update_tree_block_sparse_prior_aware_gauge_belief(
+def _update_tree_block_sparse_prior_aware_gauge_belief(
     batch: GaugeAwareObservationBatch,
     gauge: TreeSparseGaugeDesignV1,
     *,
     config: PriorAwareGaugeConfigV1 | None = None,
+    system_observer: _TreeBlockSystemObserver | None = None,
 ) -> TreeBlockGaugeAwareBeliefResultV1:
-    """Infer state and gauges without any dense gauge-sized matrix."""
+    """Run the production update with an optional read-only system observer."""
 
     if not isinstance(batch, GaugeAwareObservationBatch):
         raise TypeError("batch must be a GaugeAwareObservationBatch")
@@ -1510,6 +1514,8 @@ def update_tree_block_sparse_prior_aware_gauge_belief(
                 diagnostics=diagnostics,
                 covariance=fallback_covariance,
             )
+        if system_observer is not None:
+            system_observer("irls-solve", iteration_count, system)
         previous = np.concatenate((global_solution, node_solution.reshape(-1)))
         global_solution, node_solution = factorization.solve(
             system.global_right,
@@ -1535,6 +1541,8 @@ def update_tree_block_sparse_prior_aware_gauge_belief(
                 diagnostics=diagnostics,
                 covariance=fallback_covariance,
             )
+        if system_observer is not None:
+            system_observer("irls-final", iteration_count, final_system)
         global_residual, node_residual = final_system.residual(
             global_solution,
             node_solution,
@@ -1669,6 +1677,21 @@ def update_tree_block_sparse_prior_aware_gauge_belief(
             ),
         },
         input_lineage=batch.metadata or {},
+    )
+
+
+def update_tree_block_sparse_prior_aware_gauge_belief(
+    batch: GaugeAwareObservationBatch,
+    gauge: TreeSparseGaugeDesignV1,
+    *,
+    config: PriorAwareGaugeConfigV1 | None = None,
+) -> TreeBlockGaugeAwareBeliefResultV1:
+    """Infer state and gauges without any dense gauge-sized matrix."""
+
+    return _update_tree_block_sparse_prior_aware_gauge_belief(
+        batch,
+        gauge,
+        config=config,
     )
 
 
