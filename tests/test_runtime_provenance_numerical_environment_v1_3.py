@@ -21,10 +21,9 @@ from bayesian_phystwin.numerical_environment_v1 import (
     validate_embedded_numerical_environment_v1,
 )
 
+
 def _controls() -> dict[str, str | None]:
-    return {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    return {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
 
 
 def _lock(*, digest: str = "a" * 64) -> DependencyLockV1:
@@ -56,7 +55,6 @@ def _profile(
         ),
         dependency_lock=lock,
     )
-
 
 
 def test_missing_embedded_profile_can_be_optional_or_required() -> None:
@@ -98,13 +96,9 @@ def test_capture_binds_real_inventory_controls_and_lock(
 
 def test_capture_rejects_incomplete_lock_arguments(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="requires dependency_lock"):
-        capture_numerical_environment_v1(
-            dependency_lock_name="requirements.lock"
-        )
+        capture_numerical_environment_v1(dependency_lock_name="requirements.lock")
     with pytest.raises(FileNotFoundError):
-        capture_numerical_environment_v1(
-            dependency_lock=tmp_path / "missing.lock"
-        )
+        capture_numerical_environment_v1(dependency_lock=tmp_path / "missing.lock")
 
 
 def test_module_cli_captures_validates_and_does_not_overwrite(

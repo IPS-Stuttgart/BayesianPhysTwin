@@ -14,10 +14,9 @@ from bayesian_phystwin.numerical_environment_v1 import (
     numerical_environment_from_dict,
 )
 
+
 def _controls() -> dict[str, str | None]:
-    return {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    return {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
 
 
 def _lock(*, digest: str = "a" * 64) -> DependencyLockV1:
@@ -51,7 +50,6 @@ def _profile(
     )
 
 
-
 def test_profile_round_trip_is_canonical_and_content_addressed() -> None:
     profile = _profile(lock=_lock())
 
@@ -61,9 +59,7 @@ def test_profile_round_trip_is_canonical_and_content_addressed() -> None:
 
     assert restored == profile
     assert restored.profile_id == profile.profile_id
-    assert profile.numpy_configuration_text == (
-        "Build Dependencies:\n  blas: test\n"
-    )
+    assert profile.numpy_configuration_text == ("Build Dependencies:\n  blas: test\n")
     assert len(profile.numpy_configuration_sha256) == 64
     assert len(profile.installed_distributions_sha256) == 64
 

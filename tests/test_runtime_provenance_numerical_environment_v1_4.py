@@ -13,10 +13,9 @@ from bayesian_phystwin.numerical_environment_v1 import (
     numerical_environment_from_dict,
 )
 
+
 def _controls() -> dict[str, str | None]:
-    return {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    return {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
 
 
 def _lock(*, digest: str = "a" * 64) -> DependencyLockV1:
@@ -48,7 +47,6 @@ def _profile(
         ),
         dependency_lock=lock,
     )
-
 
 
 @pytest.mark.parametrize(
@@ -109,9 +107,7 @@ def test_multiline_configuration_validation_covers_empty_control_and_size() -> N
     assert normalized == "(no NumPy build configuration reported)\n"
 
     with pytest.raises(ValueError, match="exceeds one MiB"):
-        numerical_environment._normalize_numpy_configuration(
-            "x" * (1024 * 1024 + 1)
-        )
+        numerical_environment._normalize_numpy_configuration("x" * (1024 * 1024 + 1))
 
 
 def test_distribution_and_profile_boundary_validation(
@@ -131,9 +127,7 @@ def test_distribution_and_profile_boundary_validation(
             logical_cpu_count=None,
             byte_order="middle",
             execution_controls=_controls(),
-            installed_distributions=(
-                InstalledDistributionV1("numpy", np.__version__),
-            ),
+            installed_distributions=(InstalledDistributionV1("numpy", np.__version__),),
         )
 
     long_control = _controls()
@@ -184,9 +178,7 @@ def test_distribution_and_profile_boundary_validation(
             logical_cpu_count=None,
             byte_order="little",
             execution_controls=_controls(),
-            installed_distributions=(
-                InstalledDistributionV1("numpy", np.__version__),
-            ),
+            installed_distributions=(InstalledDistributionV1("numpy", np.__version__),),
             dependency_lock=cast(Any, {}),
         )
 
