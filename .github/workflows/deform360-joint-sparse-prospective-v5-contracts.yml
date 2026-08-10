@@ -1,0 +1,93 @@
+name: Deform360 joint-sparse prospective v5 contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-joint-sparse-prospective-v5-contracts.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_joint_sparse_prospective_v5.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json"
+      - "tests/test_deform360_joint_sparse_prospective_v5_protocol.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-joint-sparse-prospective-v5-contracts.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_joint_sparse_prospective_v5.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json"
+      - "tests/test_deform360_joint_sparse_prospective_v5_protocol.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-joint-sparse-prospective-v5-contracts-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Prospective v5 design contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the frozen target-closed experiment design
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          files=(
+            tests/test_deform360_joint_sparse_prospective_v5_protocol.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_prospective_v5_protocol.py \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/locks/"
+              "deform360_official_hub_joint_sparse_prospective_v5.json"
+          )
+          policy = json.loads(path.read_text(encoding="utf-8"))
+          declared = policy.pop("policy_id")
+          canonical = json.dumps(
+              policy,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          observed = hashlib.sha256(canonical).hexdigest()
+          if observed != declared:
+              raise SystemExit("prospective v5 policy identity changed")
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
