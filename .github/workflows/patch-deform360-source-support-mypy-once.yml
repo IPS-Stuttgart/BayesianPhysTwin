@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: patch-deform360-source-support-mypy-once-fast
+  group: patch-deform360-source-support-mypy-once-fast-v2
   cancel-in-progress: false
 
 jobs:
@@ -41,15 +41,14 @@ jobs:
               "deform360_source_support_failure_evidence_v1.py"
           )
           text = path.read_text(encoding="utf-8")
-          old = '''        expected_object = _EXPECTED_OBJECT_BY_ID.get(object_id)
-          _require(expected_object is not None, "metric batch object roster changed")
-          episode_id = _genuine_integer(
-          '''
-          new = '''        expected_object = _EXPECTED_OBJECT_BY_ID.get(object_id)
-          if expected_object is None:
-              raise ValueError("metric batch object roster changed")
-          episode_id = _genuine_integer(
-          '''
+          old = (
+              '        _require(expected_object is not None, '
+              '"metric batch object roster changed")\n'
+          )
+          new = (
+              "        if expected_object is None:\n"
+              '            raise ValueError("metric batch object roster changed")\n'
+          )
           if text.count(old) != 1:
               raise SystemExit("expected object-metadata guard changed")
           path.write_text(text.replace(old, new), encoding="utf-8")
