@@ -137,7 +137,9 @@ The final arbitration advances a challenger only when:
 7. leave-one-execution-out selection is stable and held-execution
    nonregression passes.
 
-Otherwise the final result is `last_residual`.
+Otherwise the final result is `last_residual`. The arbitration report marks
+this valid negative result as `status="completed_no_selection"`, and the
+workflow completes successfully after publishing the complete evidence.
 
 Measured wall-clock runtime is retained in each prediction manifest, but the
 runtime tie-break is disabled by supplying the same zero value to every

@@ -41,6 +41,7 @@ ADMISSION_MANIFEST_CONTRACT = "bayesian-phystwin-full22-discrepancy-admission-ma
 ARBITRATION_REPORT_CONTRACT = "bayesian-phystwin-full22-discrepancy-metric-arbitration"
 HORIZON_LABELS = ("early", "middle", "late")
 PRIMARY_METRICS = ("chamfer_distance_m", "track_error_m")
+STATISTICAL_UNIT = "physical-object-session"
 LOWER_HEX = frozenset("0123456789abcdef")
 
 
@@ -1523,6 +1524,7 @@ def _metric_arbitration(
         "metric_source_gate_passed": passed,
         "metrics_agree": len(unique) == 1,
         "source_gate_passed": advance,
+        "status": ("selected" if advance else "completed_no_selection"),
         "selected_candidate": final,
         "decision": (
             "advance-metric-agreed-candidate"
@@ -1812,7 +1814,7 @@ def score_tournament(
                 "contract": DISCREPANCY_TOURNAMENT_INPUT_CONTRACT,
                 "schema_version": 1,
                 "protocol_id": (f"{protocol_id}-{tournament_name}"),
-                "statistical_unit": ("physical execution: one released PhysTwin case"),
+                "statistical_unit": STATISTICAL_UNIT,
                 "split": "source-only",
                 "reference_candidate": protocol["selection"]["reference_candidate"],
                 "physical_fallback_candidate": protocol["selection"][

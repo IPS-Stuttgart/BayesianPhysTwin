@@ -232,3 +232,36 @@ def test_prefix_manifest_recomputes_content_identity(
     module._write_json(tmp_path / "prefix_manifest.json", payload)
     with pytest.raises(ValueError, match="identity changed"):
         module._load_prefix_manifest(tmp_path)
+
+
+def test_registered_statistical_unit_is_deployment_valid() -> None:
+    from bayesian_phystwin.discrepancy_candidate_tournament import (
+        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,
+    )
+
+    module = _module()
+    assert module.STATISTICAL_UNIT == "physical-object-session"
+    assert module.STATISTICAL_UNIT in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS
+
+
+def test_metric_arbitration_reports_completion_status() -> None:
+    module = _module()
+    selected = module._metric_arbitration(
+        {
+            "track": _report("dynamic", True),
+            "chamfer": _report("dynamic", True),
+        },
+        reference_candidate="last_residual",
+    )
+    no_selection = module._metric_arbitration(
+        {
+            "track": _report("dynamic", True),
+            "chamfer": _report("structured", True),
+        },
+        reference_candidate="last_residual",
+    )
+
+    assert selected["status"] == "selected"
+    assert no_selection["status"] == "completed_no_selection"
+    assert no_selection["decision"] == "retain-reference-candidate"
+    assert no_selection["claim_authorized"] is False
