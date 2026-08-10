@@ -21,6 +21,7 @@ from .bias_aware_belief import (
     _student_t_weight,
     _subspace_overlap,
 )
+from .bias_aware_input_contract import _strict_boolean_array
 from .spd_system import (
     SPD_SYSTEM_SCHEMA,
     SPD_SYSTEM_VERSION,
@@ -206,9 +207,12 @@ def update_bias_aware_state_v2(
 
     if config is not None and not isinstance(config, BiasAwareStateUpdateConfigV2):
         raise TypeError("config must be a BiasAwareStateUpdateConfigV2")
-    cfg = config or BiasAwareStateUpdateConfigV2()
+    cfg = BiasAwareStateUpdateConfigV2() if config is None else config
     innovation = np.asarray(camera_innovation_m, dtype=np.float64)
-    available = np.asarray(camera_available, dtype=bool)
+    available = _strict_boolean_array(
+        camera_available,
+        name="camera_available",
+    )
     _require(
         innovation.ndim == 3 and innovation.shape[2] == 3,
         "camera innovation must have shape (V, N, 3)",

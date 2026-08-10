@@ -9,6 +9,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- Proper multivariate predictive scoring for registered physical queries, with
+  energy, variogram, exact Gaussian log, and weighted interval scores; matched
+  candidate attribution; exact-fallback-aware decisive-evidence export; and a
+  frozen Bayesian-value decomposition template.
 - A versioned Causal4D provider for identity-bound linear-query covariance
   from strict claim-bearing tree-block Prob4D updates without dense joint
   covariance materialization.

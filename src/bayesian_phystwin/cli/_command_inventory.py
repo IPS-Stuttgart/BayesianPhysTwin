@@ -47,6 +47,7 @@ ARCHIVED_IDS: Final = frozenset(
 DIAGNOSTIC_IDS: Final = frozenset(
     """
     evaluate-phystwin-priors
+    audit-prob4d-covariance-ablation
     audit-phystwin-calibration
     compare-phystwin-additional-controls
     analyze-phystwin-horizon
@@ -61,6 +62,7 @@ DIAGNOSTIC_IDS: Final = frozenset(
     diagnose-phystwin-bias
     diagnose-deform360-raw-pairwise
     diagnose-provider-failures
+    score-probabilistic-predictions
     select-discrepancy-candidate
     audit-phystwin-state-decay
     audit-phystwin-state-modes
@@ -78,6 +80,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "synthetic-benchmark": "run the controlled synthetic benchmark",
     "decisive-evidence": "summarize matched guarded prospective evidence",
     "claim-bundle": "build or validate a content-addressed claim bundle",
+    "audit-prob4d-covariance-ablation": (
+        "verify and compare a controlled five-way Prob4D covariance ablation"
+    ),
     "confirm-phystwin-bayesian-anchor": (
         "evaluate the frozen Bayesian anchor on the official PhysTwin cohort"
     ),
@@ -90,6 +95,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     ),
     "diagnose-provider-failures": (
         "attribute source-only provider and guarded-update rejection causes"
+    ),
+    "score-probabilistic-predictions": (
+        "score matched predictive distributions with proper scoring rules"
     ),
     "select-discrepancy-candidate": (
         "select one matched discrepancy belief on source-only groups"
@@ -108,6 +116,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "synthetic-benchmark": "synthetic-benchmark-v3",
     "decisive-evidence": "bayesian-phystwin-decisive-evidence-v1",
     "claim-bundle": "claim-bundle-v1",
+    "audit-prob4d-covariance-ablation": "prob4d-covariance-ablation-v1",
     "combine-phystwin-profiles": "phystwin-profile-pooling-v1",
     "calibrate-phystwin-discrepancy": "phystwin-discrepancy-calibration-v1",
     "phystwin-refit": "phystwin-refit-v1",
@@ -115,6 +124,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "seal-deform360-calibration": "deform360-official-hub-visuotactile-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
     "diagnose-provider-failures": "provider-failure-decomposition-v1",
+    "score-probabilistic-predictions": "probabilistic-prediction-scoring-v1",
     "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
 }
 

@@ -1,0 +1,405 @@
+{
+  "analysis_profile": "bayesian-value-decomposition-v1",
+  "claim_boundary": "synthetic demonstration only; no scientific claim",
+  "comparison_pairs": [
+    {
+      "candidate_method": "bayesian_full_guarded",
+      "comparison_id": "bayesian-full-vs-bayesian-mean",
+      "reference_method": "bayesian_mean_guarded"
+    },
+    {
+      "candidate_method": "bayesian_mean_guarded",
+      "comparison_id": "bayesian-mean-vs-guarded-last-residual",
+      "reference_method": "last_residual_guarded"
+    },
+    {
+      "candidate_method": "last_residual_guarded",
+      "comparison_id": "guarded-last-residual-vs-last-residual",
+      "reference_method": "last_residual"
+    },
+    {
+      "candidate_method": "last_residual",
+      "comparison_id": "last-residual-vs-physical-fallback",
+      "reference_method": "physical_fallback"
+    }
+  ],
+  "contract": "bayesian-phystwin-probabilistic-score-input-v1",
+  "fallback_method": "physical_fallback",
+  "protocol_id": "bayesian-value-decomposition-demo-v1",
+  "reference_method": "last_residual",
+  "schema_version": 1,
+  "score_configuration": {
+    "energy_beta": 1.0,
+    "gaussian_maximum_condition_number": 100000000.0,
+    "score_names": [
+      "energy_score",
+      "variogram_score",
+      "gaussian_nll_per_dimension",
+      "weighted_interval_score"
+    ],
+    "variogram_order": 0.5,
+    "variogram_pair_weights": [
+      1.0
+    ],
+    "variogram_pairs": [
+      [
+        0,
+        1
+      ]
+    ]
+  },
+  "statistical_unit": "independent-acquisition-session",
+  "units": [
+    {
+      "group_id": "demo-session-001",
+      "horizon": 1,
+      "observation": [
+        0.0,
+        0.0
+      ],
+      "predictions": [
+        {
+          "accepted": true,
+          "gaussian_covariance": [
+            [
+              0.02,
+              0.004
+            ],
+            [
+              0.004,
+              0.018
+            ]
+          ],
+          "gaussian_mean": [
+            0.03,
+            -0.01
+          ],
+          "identifiable_rank": 2,
+          "intervals": [
+            {
+              "lower": [
+                -0.15,
+                -0.19
+              ],
+              "nominal_coverage": 0.5,
+              "upper": [
+                0.21,
+                0.17
+              ]
+            },
+            {
+              "lower": [
+                -0.39,
+                -0.43
+              ],
+              "nominal_coverage": 0.9,
+              "upper": [
+                0.45,
+                0.41
+              ]
+            }
+          ],
+          "median": [
+            0.03,
+            -0.01
+          ],
+          "method": "bayesian_full_guarded",
+          "reliability": 0.94,
+          "risk_score": 0.08,
+          "sample_weights": [
+            0.25,
+            0.5,
+            0.25
+          ],
+          "samples": [
+            [
+              -0.05,
+              0.06
+            ],
+            [
+              0.03,
+              -0.01
+            ],
+            [
+              0.11,
+              -0.08
+            ]
+          ]
+        },
+        {
+          "accepted": true,
+          "gaussian_covariance": [
+            [
+              0.03,
+              0.005
+            ],
+            [
+              0.005,
+              0.025
+            ]
+          ],
+          "gaussian_mean": [
+            0.1,
+            -0.04
+          ],
+          "identifiable_rank": 2,
+          "intervals": [
+            {
+              "lower": [
+                -0.13,
+                -0.27
+              ],
+              "nominal_coverage": 0.5,
+              "upper": [
+                0.33,
+                0.19
+              ]
+            },
+            {
+              "lower": [
+                -0.4,
+                -0.54
+              ],
+              "nominal_coverage": 0.9,
+              "upper": [
+                0.6,
+                0.46
+              ]
+            }
+          ],
+          "median": [
+            0.1,
+            -0.04
+          ],
+          "method": "bayesian_mean_guarded",
+          "reliability": 0.9,
+          "risk_score": 0.12,
+          "sample_weights": [
+            0.25,
+            0.5,
+            0.25
+          ],
+          "samples": [
+            [
+              0.0,
+              0.05
+            ],
+            [
+              0.1,
+              -0.04
+            ],
+            [
+              0.2,
+              -0.13
+            ]
+          ]
+        },
+        {
+          "accepted": true,
+          "gaussian_covariance": [
+            [
+              0.04,
+              0.005
+            ],
+            [
+              0.005,
+              0.03
+            ]
+          ],
+          "gaussian_mean": [
+            0.15,
+            -0.08
+          ],
+          "identifiable_rank": 2,
+          "intervals": [
+            {
+              "lower": [
+                -0.13,
+                -0.36
+              ],
+              "nominal_coverage": 0.5,
+              "upper": [
+                0.43,
+                0.2
+              ]
+            },
+            {
+              "lower": [
+                -0.43,
+                -0.66
+              ],
+              "nominal_coverage": 0.9,
+              "upper": [
+                0.73,
+                0.5
+              ]
+            }
+          ],
+          "median": [
+            0.15,
+            -0.08
+          ],
+          "method": "last_residual",
+          "reliability": 0.8,
+          "risk_score": 0.2,
+          "sample_weights": [
+            0.25,
+            0.5,
+            0.25
+          ],
+          "samples": [
+            [
+              0.03,
+              0.02
+            ],
+            [
+              0.15,
+              -0.08
+            ],
+            [
+              0.27,
+              -0.18
+            ]
+          ]
+        },
+        {
+          "accepted": false,
+          "gaussian_covariance": [
+            [
+              0.04,
+              0.005
+            ],
+            [
+              0.005,
+              0.03
+            ]
+          ],
+          "gaussian_mean": [
+            0.15,
+            -0.08
+          ],
+          "identifiable_rank": 2,
+          "intervals": [
+            {
+              "lower": [
+                -0.13,
+                -0.36
+              ],
+              "nominal_coverage": 0.5,
+              "upper": [
+                0.43,
+                0.2
+              ]
+            },
+            {
+              "lower": [
+                -0.43,
+                -0.66
+              ],
+              "nominal_coverage": 0.9,
+              "upper": [
+                0.73,
+                0.5
+              ]
+            }
+          ],
+          "median": [
+            0.15,
+            -0.08
+          ],
+          "method": "last_residual_guarded",
+          "reliability": 0.8,
+          "risk_score": 0.7,
+          "sample_weights": [
+            0.25,
+            0.5,
+            0.25
+          ],
+          "samples": [
+            [
+              0.03,
+              0.02
+            ],
+            [
+              0.15,
+              -0.08
+            ],
+            [
+              0.27,
+              -0.18
+            ]
+          ]
+        },
+        {
+          "accepted": true,
+          "gaussian_covariance": [
+            [
+              0.09,
+              0.0
+            ],
+            [
+              0.0,
+              0.09
+            ]
+          ],
+          "gaussian_mean": [
+            0.6,
+            -0.3
+          ],
+          "identifiable_rank": 0,
+          "intervals": [
+            {
+              "lower": [
+                0.2,
+                -0.7
+              ],
+              "nominal_coverage": 0.5,
+              "upper": [
+                1.0,
+                0.1
+              ]
+            },
+            {
+              "lower": [
+                -0.2,
+                -1.1
+              ],
+              "nominal_coverage": 0.9,
+              "upper": [
+                1.4,
+                0.5
+              ]
+            }
+          ],
+          "median": [
+            0.6,
+            -0.3
+          ],
+          "method": "physical_fallback",
+          "reliability": 1.0,
+          "risk_score": 0.0,
+          "sample_weights": [
+            0.25,
+            0.5,
+            0.25
+          ],
+          "samples": [
+            [
+              0.4,
+              -0.1
+            ],
+            [
+              0.6,
+              -0.3
+            ],
+            [
+              0.8,
+              -0.5
+            ]
+          ]
+        }
+      ],
+      "unit_id": "demo-session-001"
+    }
+  ]
+}
