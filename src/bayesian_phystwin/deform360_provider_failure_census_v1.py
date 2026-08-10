@@ -107,7 +107,9 @@ def _validate_calibration_ids(value: object, *, index: int) -> None:
         raise ValueError(f"record {index} calibration_artifact_ids must not be empty")
     for name, digest in calibration_ids.items():
         if not name:
-            raise ValueError(f"record {index} calibration artifact names must be nonempty")
+            raise ValueError(
+                f"record {index} calibration artifact names must be nonempty"
+            )
         _lowercase_sha256(
             digest,
             name=f"record {index} calibration artifact {name!r}",
@@ -126,7 +128,9 @@ def _validate_strict_certificate(
     )
     for name in ("passed", "underlying_inference_admissible"):
         if type(certificate.get(name)) is not bool:
-            raise ValueError(f"record {index} certificate field {name!r} must be a bool")
+            raise ValueError(
+                f"record {index} certificate field {name!r} must be a bool"
+            )
     _nonempty_text(
         certificate.get("reason"),
         name=f"record {index} certificate reason",
@@ -280,7 +284,9 @@ def validate_deform360_provider_failure_census_payload(
 
     records = cast(Sequence[Mapping[str, object]], payload["records"])
     adapter_schema = metadata.get("adapter_schema")
-    adapter_metadata_present = bool(set(metadata).intersection(_ADAPTER_METADATA_FIELDS))
+    adapter_metadata_present = bool(
+        set(metadata).intersection(_ADAPTER_METADATA_FIELDS)
+    )
     adapter_metrics_present = _contains_adapter_fields(records)
     if adapter_schema is None:
         if adapter_metadata_present or adapter_metrics_present:
