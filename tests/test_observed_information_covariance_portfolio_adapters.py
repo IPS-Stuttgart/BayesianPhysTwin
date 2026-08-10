@@ -5,10 +5,6 @@ from typing import cast
 import numpy as np
 import pytest
 
-from _posterior_covariance_portfolio_support import (
-    RESULT_ID,
-    semantics,
-)
 from bayesian_phystwin.group_sandwich_covariance import (
     GroupSandwichCovarianceResultV1,
 )
@@ -21,6 +17,32 @@ from bayesian_phystwin.posterior_covariance_portfolio import (
     observed_information_covariance_source,
     working_covariance_source,
 )
+from bayesian_phystwin.posterior_covariance_semantics import (
+    PosteriorCovarianceMethod,
+    PosteriorCovarianceSemanticsV1,
+)
+
+RESULT_ID = "a" * 64
+LIKELIHOOD = "grouped-student-t-generalized-bayes-power-v1"
+
+
+def _semantics(
+    method: PosteriorCovarianceMethod,
+    covariance: np.ndarray,
+) -> PosteriorCovarianceSemanticsV1:
+    return PosteriorCovarianceSemanticsV1(
+        method=method,
+        dimension=len(covariance),
+        likelihood_power_semantics=LIKELIHOOD,
+        prior_included=True,
+        generalized_bayes=True,
+        mixture_curvature_exact=(
+            method == "laplace_observed_information"
+        ),
+        group_score_correction=method == "group_sandwich",
+        calibrated=False,
+        metadata={"fixture": method},
+    )
 
 
 def test_working_and_fallback_adapters_bind_required_semantics() -> None:
@@ -59,7 +81,7 @@ def test_observed_information_adapter_preserves_estimator_identity() -> None:
     object.__setattr__(
         result,
         "covariance_semantics",
-        semantics("laplace_observed_information", np.eye(2)),
+        _semantics("laplace_observed_information", np.eye(2)),
     )
 
     source = observed_information_covariance_source(RESULT_ID, result)
@@ -80,7 +102,7 @@ def test_group_sandwich_adapter_preserves_estimator_identity() -> None:
     object.__setattr__(
         result,
         "covariance_semantics",
-        semantics("group_sandwich", np.eye(2)),
+        _semantics("group_sandwich", np.eye(2)),
     )
 
     source = group_sandwich_covariance_source(RESULT_ID, result)
