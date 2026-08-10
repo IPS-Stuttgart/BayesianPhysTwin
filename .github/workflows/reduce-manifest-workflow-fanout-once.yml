@@ -169,3 +169,5 @@ def test_global_manifest_changes_use_central_validation_only() -> None:
           git commit -m "Limit manifest-triggered workflow fan-out"
           git push origin \
             HEAD:agent/reduce-manifest-workflow-fanout
+
+# Trigger the branch-only cleanup after the workflow file exists.
