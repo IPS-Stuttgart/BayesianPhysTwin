@@ -409,17 +409,13 @@ def test_candidate_binds_exact_prior_fallback_for_rejection() -> None:
     assert candidate.covariance_semantics.generalized_bayes is False
     assert candidate.covariance_semantics.prior_included is True
     assert (
-        candidate.covariance_semantics.metadata["fallback_reason"]
-        == candidate.reason
+        candidate.covariance_semantics.metadata["fallback_reason"] == candidate.reason
     )
     record = candidate.to_record()
     assert record["candidate_id"] == candidate.candidate_id
     semantics_record = record["covariance_semantics"]
     assert isinstance(semantics_record, dict)
-    assert (
-        semantics_record["artifact_id"]
-        == candidate.covariance_semantics.artifact_id
-    )
+    assert semantics_record["artifact_id"] == candidate.covariance_semantics.artifact_id
 
 
 def test_candidate_semantics_change_only_candidate_identities() -> None:
@@ -459,9 +455,7 @@ def test_candidate_rejects_semantics_that_contradict_decision() -> None:
         )
 
     rejected = _rejected_update()
-    working = working_irls_covariance_semantics(
-        rejected.result.posterior_covariance
-    )
+    working = working_irls_covariance_semantics(rejected.result.posterior_covariance)
     with pytest.raises(ValueError, match="contradicts the admission decision"):
         bind_claim_bearing_prob4d_candidate(
             rejected,
@@ -491,9 +485,7 @@ def test_candidate_rejects_wrong_dimension_and_calibration() -> None:
     calibrated = PosteriorCovarianceSemanticsV1(
         method="irls_working",
         dimension=1,
-        likelihood_power_semantics=(
-            "grouped-student-t-generalized-bayes-power-v1"
-        ),
+        likelihood_power_semantics=("grouped-student-t-generalized-bayes-power-v1"),
         calibrated=True,
         calibration_artifact_id="f" * 64,
     )
@@ -518,8 +510,7 @@ def test_exact_prior_fallback_semantics_fail_closed() -> None:
     )
     assert semantics.metadata["fallback_reason"] == "strict-v2-rejected"
     assert (
-        PosteriorCovarianceSemanticsV1.from_mapping(semantics.to_record())
-        == semantics
+        PosteriorCovarianceSemanticsV1.from_mapping(semantics.to_record()) == semantics
     )
 
     with pytest.raises(ValueError, match="contradicts reason"):
@@ -539,9 +530,7 @@ def test_exact_prior_fallback_semantics_fail_closed() -> None:
         PosteriorCovarianceSemanticsV1(
             method="exact_prior_fallback",
             dimension=2,
-            likelihood_power_semantics=(
-                EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS
-            ),
+            likelihood_power_semantics=(EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS),
             generalized_bayes=True,
         )
 
