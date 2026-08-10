@@ -1,0 +1,128 @@
+name: Deform360 fresh object-session source v6 contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-fresh-object-session-source-v6-contracts.yml"
+      - ".github/quality/test-suites.json"
+      - "MANIFEST.in"
+      - "docs/deform360_fresh_object_session_source_v6.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
+      - "tests/test_deform360_fresh_object_session_source_v6.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-fresh-object-session-source-v6-contracts.yml"
+      - ".github/quality/test-suites.json"
+      - "MANIFEST.in"
+      - "docs/deform360_fresh_object_session_source_v6.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
+      - "tests/test_deform360_fresh_object_session_source_v6.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-fresh-object-session-source-v6-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Source v6 contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the target-closed source gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]" "build>=1.2"
+          files=(
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py
+            scripts/science/run_deform360_fresh_object_session_source_v6.py
+            tests/test_deform360_fresh_object_session_source_v6.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_fresh_object_session_source_v6.py \
+            tests/test_deform360_fresh_object_session_v6_protocol.py \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          for relative, id_field in (
+              (
+                  "protocols/locks/"
+                  "deform360_official_hub_fresh_object_session_v6.json",
+                  "policy_id",
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_fresh_object_session_v6_source_covariance.json",
+                  "amendment_id",
+              ),
+          ):
+              path = Path(relative)
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              declared = payload.pop(id_field)
+              canonical = json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+              observed = hashlib.sha256(canonical).hexdigest()
+              if declared != observed:
+                  raise SystemExit(f"{relative} content identity changed")
+          PY
+          rm -rf build dist ./*.egg-info src/*.egg-info
+          python -m build --sdist
+          archive="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          test -n "${archive}"
+          listing="$(tar -tzf "${archive}")"
+          grep -Fq '/docs/deform360_fresh_object_session_source_v6.md' \
+            <<<"${listing}"
+          amendment_path='/protocols/amendments/'
+          amendment_path+='deform360_official_hub_fresh_object_session_'
+          amendment_path+='v6_source_covariance.json'
+          grep -Fq "${amendment_path}" <<<"${listing}"
+          grep -Fq '/scripts/science/run_deform360_fresh_object_session_source_v6.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py' \
+            <<<"${listing}"
+          rm -rf build dist ./*.egg-info src/*.egg-info
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
