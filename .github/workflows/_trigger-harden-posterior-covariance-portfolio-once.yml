@@ -1,0 +1,114 @@
+name: Trigger posterior covariance portfolio hardening once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/_trigger-harden-posterior-covariance-portfolio-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: trigger-harden-posterior-covariance-portfolio-once
+  cancel-in-progress: false
+
+jobs:
+  harden:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref ==
+      'agent/posterior-query-covariance-portfolio-v1-current'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact reviewed head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Extract and execute reviewed patch block
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path(
+              ".github/workflows/"
+              "_harden-posterior-covariance-portfolio-once.yml"
+          )
+          lines = source.read_text(encoding="utf-8").splitlines()
+          marker = "      - name: Apply fail-closed portfolio hardening"
+          start = lines.index(marker)
+          run_index = next(
+              index
+              for index in range(start + 1, len(lines))
+              if lines[index] == "        run: |"
+          )
+          stop = next(
+              index
+              for index in range(run_index + 1, len(lines))
+              if lines[index].startswith("      - name:")
+          )
+          block = []
+          for line in lines[run_index + 1 : stop]:
+              if line.startswith("          "):
+                  block.append(line[10:])
+              else:
+                  block.append(line)
+          script = Path("/tmp/apply-portfolio-hardening.sh")
+          script.write_text("\n".join(block) + "\n", encoding="utf-8")
+          PY
+          bash /tmp/apply-portfolio-hardening.sh
+
+      - name: Install and validate focused changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff format \
+            src/bayesian_phystwin/posterior_covariance_portfolio.py \
+            tests/test_observed_information_covariance_portfolio.py
+          python -m ruff check \
+            src/bayesian_phystwin/posterior_covariance_portfolio.py \
+            tests/test_observed_information_covariance_portfolio.py
+          python -m compileall -q \
+            src/bayesian_phystwin/posterior_covariance_portfolio.py \
+            tests/test_observed_information_covariance_portfolio.py
+          python -m pytest -q \
+            tests/test_observed_information_covariance_portfolio.py \
+            tests/test_observed_information_covariance.py \
+            tests/test_observed_information_covariance_contracts.py
+          git diff --check
+
+      - name: Commit hardened branch and remove temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm \
+            .github/workflows/_harden-posterior-covariance-portfolio-once.yml \
+            .github/workflows/_trigger-harden-posterior-covariance-portfolio-once.yml
+          git add \
+            src/bayesian_phystwin/posterior_covariance_portfolio.py \
+            tests/test_observed_information_covariance_portfolio.py \
+            docs/posterior_covariance_portfolio.md \
+            .github/workflows/_harden-posterior-covariance-portfolio-once.yml \
+            .github/workflows/_trigger-harden-posterior-covariance-portfolio-once.yml
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Harden posterior covariance portfolio integrity"
+          git push origin \
+            HEAD:agent/posterior-query-covariance-portfolio-v1-current
