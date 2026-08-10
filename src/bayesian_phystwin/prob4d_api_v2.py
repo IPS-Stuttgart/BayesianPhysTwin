@@ -70,9 +70,7 @@ def _load_prob4d_api_v2() -> ModuleType:
             "installed Prob4D exposes an incompatible provider API version"
         )
     if factor_api_version != PROB4D_REQUIRED_FACTOR_API_VERSION:
-        raise ImportError(
-            "installed Prob4D exposes an incompatible factor API version"
-        )
+        raise ImportError("installed Prob4D exposes an incompatible factor API version")
     return api
 
 
