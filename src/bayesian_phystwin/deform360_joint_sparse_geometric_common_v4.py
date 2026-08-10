@@ -394,11 +394,12 @@ def _verify_recursive_checksums(root: Path) -> None:
 def _selection_rows(value: Mapping[str, Any]) -> dict[tuple[str, int], str]:
     selection = value.get("selection")
     _require(isinstance(selection, Mapping), "selection root changed")
-    calibration = cast(Mapping[str, Any], selection).get("calibration")
+    raw_calibration = cast(Mapping[str, Any], selection).get("calibration")
     _require(
-        isinstance(calibration, list) and len(calibration) == 10,
+        isinstance(raw_calibration, list) and len(raw_calibration) == 10,
         "development selection changed",
     )
+    calibration = cast(list[object], raw_calibration)
     rows: dict[tuple[str, int], str] = {}
     for index, raw in enumerate(calibration):
         _require(isinstance(raw, Mapping), f"selection row {index} changed")

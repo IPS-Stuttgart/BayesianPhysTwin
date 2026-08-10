@@ -88,7 +88,7 @@ def _load_metric_sparse_frames(
         set(infos) == METRIC_ARRAY_MEMBERS, "metric-prefix NPZ member roster changed"
     )
     start, stop = causal_range
-    expected_frames = np.arange(start, stop, dtype=np.int64)
+    expected_frames: np.ndarray = np.arange(start, stop, dtype=np.int64)
     frames = _load_npy_member(
         path, "frame_indices.npy", maximum_uncompressed_bytes=1024 * 1024
     )
@@ -234,7 +234,7 @@ def _load_prediction_support_windows(
     members = integrity_map.get("members")
     _require(isinstance(members, list), "prediction integrity members are missing")
     descriptors: dict[str, Mapping[str, Any]] = {}
-    for index, raw in enumerate(members):
+    for index, raw in enumerate(cast(list[object], members)):
         _require(isinstance(raw, Mapping), f"prediction member {index} changed")
         descriptor = cast(Mapping[str, Any], raw)
         relative = _safe_relative(descriptor.get("path"), name="prediction member path")
@@ -247,7 +247,7 @@ def _load_prediction_support_windows(
     start, stop = causal_range
     output: list[_SupportWindow] = []
     observed_ids: set[str] = set()
-    for index, raw in enumerate(raw_windows):
+    for index, raw in enumerate(cast(list[object], raw_windows)):
         _require(isinstance(raw, Mapping), f"prediction window {index} changed")
         record = cast(Mapping[str, Any], raw)
         window_id = _literal(record.get("window_id"), name="window_id")
@@ -256,6 +256,7 @@ def _load_prediction_support_windows(
         relative = _safe_relative(record.get("path"), name="prediction window path")
         descriptor = descriptors.get(relative)
         _require(descriptor is not None, "prediction window lacks integrity descriptor")
+        descriptor = cast(Mapping[str, Any], descriptor)
         _require(
             descriptor.get("kind") == "independently_decoded_overlap_window",
             "prediction window kind changed",
@@ -287,7 +288,9 @@ def _load_prediction_support_windows(
         frame_indices = _load_npy_member(
             member_path, "frame_indices.npy", maximum_uncompressed_bytes=1024 * 1024
         )
-        expected_frames = np.arange(window_start, window_stop, dtype=np.int64)
+        expected_frames: np.ndarray = np.arange(
+            window_start, window_stop, dtype=np.int64
+        )
         _require(
             frame_indices.dtype.kind in "iu"
             and np.array_equal(frame_indices, expected_frames),

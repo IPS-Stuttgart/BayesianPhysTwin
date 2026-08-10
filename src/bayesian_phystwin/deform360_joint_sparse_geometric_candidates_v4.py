@@ -18,6 +18,7 @@ from .deform360_joint_sparse_geometric_npz_v4 import (
     _load_camera_center,
     _load_metric_sparse_frames,
     _load_prediction_support_windows,
+    _MetricFrame,
 )
 
 
@@ -103,6 +104,7 @@ def _collect_stream_candidates(
             frame = int(frame_value)
             metric = metric_frames.get(frame)
             _require(metric is not None, "prediction window leaves metric prefix")
+            metric = cast(_MetricFrame, metric)
             supported = window.valid_mask[local_index, metric.rows, metric.columns]
             for row, column, point in zip(
                 metric.rows[supported],

@@ -232,7 +232,7 @@ def _validate_sources(
         "metric plan development cohort changed",
     )
     observed_plan_selection: dict[tuple[str, int], str] = {}
-    for index, raw_case in enumerate(raw_plan_cases):
+    for index, raw_case in enumerate(cast(list[object], raw_plan_cases)):
         _require(
             isinstance(raw_case, Mapping),
             f"metric plan case {index} changed",

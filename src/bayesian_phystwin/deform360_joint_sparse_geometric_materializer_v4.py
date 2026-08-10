@@ -130,7 +130,7 @@ def materialize_manifest(
             "metric plan exclusions changed",
         )
         excluded_by_object: Counter[str] = Counter()
-        for index, raw in enumerate(excluded_rows):
+        for index, raw in enumerate(cast(list[object], excluded_rows)):
             _require(isinstance(raw, Mapping), f"excluded stream {index} changed")
             row = cast(Mapping[str, Any], raw)
             require_exact_fields(
@@ -147,7 +147,7 @@ def materialize_manifest(
         manifest_cases: list[dict[str, Any]] = []
         case_summaries: list[dict[str, Any]] = []
         plan_order: list[tuple[str, int]] = []
-        for case_index, raw_case in enumerate(raw_cases):
+        for case_index, raw_case in enumerate(cast(list[object], raw_cases)):
             _require(
                 isinstance(raw_case, Mapping), f"metric plan case {case_index} changed"
             )
@@ -165,8 +165,8 @@ def materialize_manifest(
                 isinstance(causal, list) and len(causal) == 2, "causal range changed"
             )
             causal_range = (
-                _integer(causal[0], name="causal start"),
-                _integer(causal[1], name="causal stop", minimum=1),
+                _integer(cast(list[object], causal)[0], name="causal start"),
+                _integer(cast(list[object], causal)[1], name="causal stop", minimum=1),
             )
             _require(causal_range[0] < causal_range[1], "causal range is empty")
             raw_streams = case.get("streams")
@@ -194,7 +194,7 @@ def materialize_manifest(
                 "sources/visual-production-result.json": _sha256_file(production_path),
             }
             stream_metadata: list[dict[str, Any]] = []
-            for stream_index, raw_stream in enumerate(raw_streams):
+            for stream_index, raw_stream in enumerate(cast(list[object], raw_streams)):
                 _require(
                     isinstance(raw_stream, Mapping), f"stream {stream_index} changed"
                 )
@@ -255,7 +255,7 @@ def materialize_manifest(
                     "metric_batch_result_id": metric_result["result_id"],
                     "production_result_id": production["result_id"],
                     "prior_excluded_stream_count": excluded_by_object[object_id],
-                    "retained_stream_count": len(raw_streams),
+                    "retained_stream_count": len(cast(list[object], raw_streams)),
                     "dropped_by_camera_window_cap": dropped,
                     "stream_diagnostics": stream_metadata,
                 },
@@ -265,8 +265,8 @@ def materialize_manifest(
             descriptor_path = case_root / "descriptor.json"
             arrays_path = case_root / "arrays.npz"
             _write_json(descriptor_path, batch.identity_record())
-            with arrays_path.open("xb") as stream:
-                np.savez_compressed(stream, **_npz_payload(batch))
+            with arrays_path.open("xb") as archive_stream:
+                np.savez_compressed(archive_stream, **_npz_payload(batch))
             manifest_cases.append(
                 {
                     "object_id": object_id,

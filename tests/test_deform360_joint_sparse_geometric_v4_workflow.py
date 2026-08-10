@@ -25,7 +25,7 @@ def test_launch_is_protected_main_only_and_uses_the_sole_runner() -> None:
 
 def test_launch_passes_only_retained_result_roots_to_the_materializer() -> None:
     text = LAUNCH.read_text(encoding="utf-8")
-    command = text.split(
+    command = text.rsplit(
         "scripts/science/materialize_deform360_joint_sparse_geometric_v4.py",
         maxsplit=1,
     )[1].split("--output-dir", maxsplit=1)[0]

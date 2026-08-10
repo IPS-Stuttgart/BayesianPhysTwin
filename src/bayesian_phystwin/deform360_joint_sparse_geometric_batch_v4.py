@@ -129,15 +129,15 @@ def _build_object_batch(
     rms = max(rms, cast(float, policy["minimum_object_rms_radius_m"]))
     modes = _mode_matrices()
     count = len(ordered)
-    state = np.zeros((count, 3, 5), dtype=np.float64)
-    local_gauge = np.zeros((count, 3, 7), dtype=np.float64)
-    covariance = np.zeros((count, 3, 3), dtype=np.float64)
+    state: np.ndarray = np.zeros((count, 3, 5), dtype=np.float64)
+    local_gauge: np.ndarray = np.zeros((count, 3, 7), dtype=np.float64)
+    covariance: np.ndarray = np.zeros((count, 3, 3), dtype=np.float64)
     cameras = sorted({item.camera_id for item in ordered})
     camera_index = {camera: index + 1 for index, camera in enumerate(cameras)}
     gauge_ids = ("global-similarity-root-v1",) + tuple(
         f"camera-similarity-v1:{camera}" for camera in cameras
     )
-    gauge_indices = np.empty(count, dtype=np.int64)
+    gauge_indices: np.ndarray = np.empty(count, dtype=np.int64)
     factor_ids: list[str] = []
     camera_ids: list[str] = []
     window_ids: list[str] = []
@@ -193,11 +193,11 @@ def _build_object_batch(
         dtype=np.float64,
     )
     gauge_count = len(gauge_ids)
-    parents = np.zeros(gauge_count, dtype=np.int64)
+    parents: np.ndarray = np.zeros(gauge_count, dtype=np.int64)
     parents[0] = -1
-    transitions = np.zeros((gauge_count, 7, 7), dtype=np.float64)
+    transitions: np.ndarray = np.zeros((gauge_count, 7, 7), dtype=np.float64)
     transitions[1:] = np.eye(7)
-    scales = np.zeros((gauge_count, 7, 7), dtype=np.float64)
+    scales: np.ndarray = np.zeros((gauge_count, 7, 7), dtype=np.float64)
     scales[0] = np.eye(7) * cast(float, policy["root_gauge_prior_std_m"])
     scales[1:] = np.eye(7) * cast(float, policy["camera_gauge_innovation_std_m"])
     query = np.eye(5, dtype=np.float64)
@@ -253,7 +253,7 @@ def _build_object_batch(
         }
     )
     shared = np.broadcast_to(np.eye(3), (count, 3, 3)).copy()
-    view = np.zeros((count, 3, 0), dtype=np.float64)
+    view: np.ndarray = np.zeros((count, 3, 0), dtype=np.float64)
     object_metadata = {
         **dict(metadata),
         "materializer_schema": MATERIALIZER_SCHEMA,
