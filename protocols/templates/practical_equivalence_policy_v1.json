@@ -1,0 +1,29 @@
+{
+  "bootstrap": {
+    "confidence": 0.95,
+    "replicates": 10000,
+    "seed": 20260811
+  },
+  "candidate_method": "bayesian_full_guarded",
+  "claim_boundary": "Template only. Replace every placeholder and freeze the complete policy before target outcomes are opened.",
+  "contract": "bayesian-phystwin-practical-equivalence-policy-v1",
+  "information_boundary": {
+    "groups_independent": true,
+    "margins_frozen_before_outcomes": true,
+    "outcomes_used_for_margin_selection": false
+  },
+  "minimum_independent_groups": 10,
+  "protocol_id": "replace-with-frozen-protocol-id",
+  "reference_method": "last_residual",
+  "schema_version": 1,
+  "statistical_unit": "physical-object-session",
+  "targets": [
+    {
+      "margin": 0.0001,
+      "margin_basis": "Replace with a pre-outcome measurement-resolution or application-tolerance justification.",
+      "metric": "track_error_m",
+      "stream": "deployed",
+      "unit": "m"
+    }
+  ]
+}
