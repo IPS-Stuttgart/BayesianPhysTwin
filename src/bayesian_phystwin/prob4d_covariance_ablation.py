@@ -279,7 +279,7 @@ class Prob4DCovarianceAblationV1:
         )
         if payload["schema"] != PROB4D_COVARIANCE_ABLATION_SCHEMA:
             raise ValueError("unsupported schema")
-        if isinstance(payload["schema_version"], bool) or (
+        if type(payload["schema_version"]) is not int or (
             payload["schema_version"] != PROB4D_COVARIANCE_ABLATION_VERSION
         ):
             raise ValueError("schema_version must be the integer 1")
