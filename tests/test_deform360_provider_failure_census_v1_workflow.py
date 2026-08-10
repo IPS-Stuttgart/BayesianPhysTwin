@@ -58,12 +58,6 @@ def test_provider_failure_census_keeps_confirmation_and_targets_closed() -> None
     assert "target_outcomes_used=false" in text
     assert "future_frames_used=false" in text
     assert "replacement_allowed=false" in text
-    assert '"split": "source-only"' in text
-    assert '"confirmation_payloads_opened": False' in text
-    assert '"adaptive_confirmation_payloads_opened": False' in text
-    assert '"target_outcomes_used": False' in text
-    assert '"future_frames_used": False' in text
-    assert '"replacement_allowed": False' in text
     assert 'find "${DEFORM360_OFFICIAL_RAW_ROOT}"' not in text
     assert 'find "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"' not in text
     assert "du -" not in text
@@ -71,13 +65,30 @@ def test_provider_failure_census_keeps_confirmation_and_targets_closed() -> None
     assert "secrets." not in text
 
 
+def test_provider_failure_census_uses_the_strict_validator_and_adapter_contract() -> None:
+    text = _text()
+
+    assert "src/bayesian_phystwin/deform360_provider_failure_census_v1.py" in text
+    assert "src/bayesian_phystwin/provider_failure_evidence_adapters.py" in text
+    assert "tests/test_deform360_provider_failure_census_v1.py" in text
+    assert "tests/test_provider_failure_evidence_adapters.py" in text
+    assert "validate_deform360_provider_failure_census_payload" in text
+    assert "physical-object" in text
+    assert "acquisition-session" in text
+    assert "physical-object-session" in text
+    assert '"adapter_schema": metadata.get("adapter_schema")' in text
+    assert '"adapter_schema_version": metadata.get(' in text
+    assert '"provider_id": report["provider_id"]' in text
+    assert '"statistical_unit": metadata["statistical_unit"]' in text
+
+
 def test_provider_failure_census_publishes_compact_equal_case_evidence() -> None:
     text = _text()
 
     assert "bpt diagnostic run diagnose-provider-failures" in text
     assert ".equal_case_weighting == true" in text
-    assert "metadata.statistical_unit must be explicit" in text
-    assert "dense measurements must not be independent cases" in text
+    assert "Statistical unit:" in text
+    assert "Evidence adapter:" in text
     assert "provider-failure-report.json" in text
     assert "execution-receipt.json" in text
     assert "summary.md" in text
