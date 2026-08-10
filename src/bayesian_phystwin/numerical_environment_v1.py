@@ -62,9 +62,7 @@ _PROFILE_FIELDS = frozenset(
     }
 )
 _PYTHON_FIELDS = frozenset({"implementation", "version", "compiler"})
-_NUMPY_FIELDS = frozenset(
-    {"version", "configuration_text", "configuration_sha256"}
-)
+_NUMPY_FIELDS = frozenset({"version", "configuration_text", "configuration_sha256"})
 _DISTRIBUTION_FIELDS = frozenset({"name", "version"})
 _LOCK_FIELDS = frozenset({"name", "sha256", "size_bytes"})
 _CANONICAL_DISTRIBUTION_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -147,10 +145,7 @@ def _require_text(
 def _require_multiline_text(value: Any, *, name: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(f"{name} must be nonempty text")
-    if any(
-        ord(character) < 32 and character not in "\r\n\t"
-        for character in value
-    ):
+    if any(ord(character) < 32 and character not in "\r\n\t" for character in value):
         raise ValueError(f"{name} contains a control character")
     return value
 
@@ -346,9 +341,7 @@ class NumericalEnvironmentV1:
         if lock is not None and type(lock) is not DependencyLockV1:
             raise ValueError("dependency_lock must be DependencyLockV1 or None")
 
-        configuration = _normalize_numpy_configuration(
-            self.numpy_configuration_text
-        )
+        configuration = _normalize_numpy_configuration(self.numpy_configuration_text)
         object.__setattr__(self, "python_implementation", implementation)
         object.__setattr__(self, "python_version", python_version)
         object.__setattr__(self, "python_compiler", compiler)
@@ -389,9 +382,7 @@ class NumericalEnvironmentV1:
             "installed_distributions": [
                 item.as_dict() for item in self.installed_distributions
             ],
-            "installed_distributions_sha256": (
-                self.installed_distributions_sha256
-            ),
+            "installed_distributions_sha256": (self.installed_distributions_sha256),
             "dependency_lock": (
                 None if self.dependency_lock is None else self.dependency_lock.as_dict()
             ),
@@ -555,9 +546,7 @@ def numerical_environment_from_dict(
         name="NumPy record",
     )
     distributions = tuple(
-        _distribution_from_dict(
-            _require_mapping(item, name="installed distribution")
-        )
+        _distribution_from_dict(_require_mapping(item, name="installed distribution"))
         for item in _require_sequence(
             payload["installed_distributions"],
             name="installed distributions",
@@ -658,9 +647,7 @@ def _strict_json_value(
             result: dict[str, Any] = {}
             for key, item in value.items():
                 if type(key) is not str:
-                    raise ValueError(
-                        f"{name} requires literal string keys at {path}"
-                    )
+                    raise ValueError(f"{name} requires literal string keys at {path}")
                 result[key] = _strict_json_value(
                     item,
                     name=name,
@@ -689,8 +676,7 @@ def _strict_json_value(
         finally:
             active_containers.remove(identity)
     raise ValueError(
-        f"{name} contains a non-JSON value at {path}: "
-        f"{type(value).__name__}"
+        f"{name} contains a non-JSON value at {path}: {type(value).__name__}"
     )
 
 

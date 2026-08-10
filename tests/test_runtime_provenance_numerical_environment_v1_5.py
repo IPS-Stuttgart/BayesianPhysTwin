@@ -20,9 +20,7 @@ from bayesian_phystwin.numerical_environment_v1 import (
 
 
 def _controls() -> dict[str, str | None]:
-    return {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    return {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
 
 
 def _lock(*, digest: str = "a" * 64) -> DependencyLockV1:
@@ -54,7 +52,6 @@ def _profile(
         ),
         dependency_lock=lock,
     )
-
 
 
 class _FakeDistribution:

@@ -16,11 +16,8 @@ from bayesian_phystwin.numerical_environment_v1 import (
 )
 
 
-
 def _controls() -> dict[str, str | None]:
-    return {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    return {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
 
 
 def _lock(*, digest: str = "a" * 64) -> DependencyLockV1:
@@ -54,7 +51,6 @@ def _profile(
     )
 
 
-
 def test_runtime_versions_must_match_distribution_inventory() -> None:
     with pytest.raises(ValueError, match="NumPy runtime version"):
         NumericalEnvironmentV1(
@@ -67,9 +63,7 @@ def test_runtime_versions_must_match_distribution_inventory() -> None:
             logical_cpu_count=1,
             byte_order="little",
             execution_controls=_controls(),
-            installed_distributions=(
-                InstalledDistributionV1("numpy", np.__version__),
-            ),
+            installed_distributions=(InstalledDistributionV1("numpy", np.__version__),),
         )
 
     with pytest.raises(ValueError, match="SciPy runtime version"):
@@ -83,9 +77,7 @@ def test_runtime_versions_must_match_distribution_inventory() -> None:
             logical_cpu_count=1,
             byte_order="little",
             execution_controls=_controls(),
-            installed_distributions=(
-                InstalledDistributionV1("numpy", np.__version__),
-            ),
+            installed_distributions=(InstalledDistributionV1("numpy", np.__version__),),
         )
 
 
