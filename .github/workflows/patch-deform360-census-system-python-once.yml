@@ -1,0 +1,278 @@
+name: Patch Deform360 census system-Python runtime once
+
+on:
+  push:
+    branches:
+      - fix/deform360-source-support-census-system-python-v1
+    paths:
+      - ".github/workflows/patch-deform360-census-system-python-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patch-deform360-census-system-python-once
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact repair branch
+        uses: actions/checkout@v7
+        with:
+          ref: fix/deform360-source-support-census-system-python-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Apply only the reviewed runtime-isolation repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = \
+            "refs/heads/fix/deform360-source-support-census-system-python-v1"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path(
+              ".github/workflows/"
+              "launch-deform360-provider-failure-census-v1-once.yml"
+          )
+          text = workflow.read_text(encoding="utf-8")
+          old_runtime = "\n".join(
+              [
+                  "      - name: Set up Python",
+                  "        uses: actions/setup-python@v6",
+                  "        with:",
+                  '          python-version: "3.12"',
+                  "      - name: Install the exact reviewed implementation",
+                  "        shell: bash",
+                  "        run: |",
+                  "          set -euo pipefail",
+                  "          python -m pip install -e .",
+                  "          python -m pip check",
+                  '          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"',
+                  '          test -z "$(git status --porcelain=v1)"',
+              ]
+          ) + "\n"
+          new_runtime = "\n".join(
+              [
+                  "      - name: Initialize an isolated system-Python runtime",
+                  "        shell: bash",
+                  "        run: |",
+                  "          set -euo pipefail",
+                  '          runtime_root="${RUNNER_TEMP}/deform360-provider-failure-census-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"',
+                  '          runtime_site="${runtime_root}/site"',
+                  '          rm -rf -- "${runtime_root}"',
+                  '          mkdir -p "${runtime_site}"',
+                  "",
+                  '          base_python=""',
+                  "          for candidate in \\",
+                  "            /usr/bin/python3.12 \\",
+                  "            /usr/local/bin/python3.12 \\",
+                  "            /usr/bin/python3 \\",
+                  "            /usr/local/bin/python3",
+                  "          do",
+                  '            if [[ -x "${candidate}" ]]; then',
+                  '              base_python="${candidate}"',
+                  "              break",
+                  "            fi",
+                  "          done",
+                  '          if [[ -z "${base_python}" ]]; then',
+                  '            base_python="$(command -v python3 || true)"',
+                  "          fi",
+                  '          if [[ -z "${base_python}" ]]; then',
+                  '            echo "No system Python is available on the self-hosted runner." >&2',
+                  "            exit 1",
+                  "          fi",
+                  "",
+                  "          {",
+                  '            echo "CENSUS_BASE_PYTHON=${base_python}"',
+                  '            echo "CENSUS_RUNTIME_ROOT=${runtime_root}"',
+                  '            echo "CENSUS_RUNTIME_SITE=${runtime_site}"',
+                  '            echo "PYTHONPATH=${GITHUB_WORKSPACE}/src:${runtime_site}${PYTHONPATH:+:${PYTHONPATH}}"',
+                  '          } >> "${GITHUB_ENV}"',
+                  '          "${base_python}" --version',
+                  '          "${base_python}" -m pip --version',
+                  "      - name: Populate and validate the isolated runtime",
+                  "        shell: bash",
+                  "        run: |",
+                  "          set -euo pipefail",
+                  '          "${CENSUS_BASE_PYTHON}" -m pip install \\',
+                  "            --break-system-packages \\",
+                  "            --no-cache-dir \\",
+                  '            --target "${CENSUS_RUNTIME_SITE}" \\',
+                  '            "numpy>=1.23,<2.3"',
+                  '          "${CENSUS_BASE_PYTHON}" -c \\',
+                  '            "import bayesian_phystwin; import numpy"',
+                  '          "${CENSUS_BASE_PYTHON}" -m bayesian_phystwin.cli.main \\',
+                  "            diagnostic run diagnose-provider-failures --help >/dev/null",
+                  '          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"',
+                  '          test -z "$(git status --porcelain=v1)"',
+              ]
+          ) + "\n"
+          if text.count(old_runtime) != 1:
+              raise SystemExit("self-hosted setup-python block changed")
+          text = text.replace(old_runtime, new_runtime)
+
+          replacements = {
+              "          python scripts/science/materialize_deform360_source_support_failure_evidence_v1.py \\\n": "          \"${CENSUS_BASE_PYTHON}\" scripts/science/materialize_deform360_source_support_failure_evidence_v1.py \\\n",
+              "          python - \"${CENSUS_INPUT}\" <<'PY'\n": "          \"${CENSUS_BASE_PYTHON}\" - \"${CENSUS_INPUT}\" <<'PY'\n",
+              "          bpt diagnostic run diagnose-provider-failures \\\n": "          \"${CENSUS_BASE_PYTHON}\" -m bayesian_phystwin.cli.main \\\n            diagnostic run diagnose-provider-failures \\\n",
+              "          python - \"${report}\" \"${CENSUS_OUTPUT}/execution-receipt.json\" <<'PY'\n": "          \"${CENSUS_BASE_PYTHON}\" - \"${report}\" \"${CENSUS_OUTPUT}/execution-receipt.json\" <<'PY'\n",
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f"runtime invocation changed: {old!r}")
+              text = text.replace(old, new)
+
+          upload = "\n".join(
+              [
+                  "      - name: Upload compact source-only census evidence",
+                  "        uses: actions/upload-artifact@v7",
+                  "        with:",
+                  "          name: ${{ env.CENSUS_ARTIFACT_NAME }}",
+                  "          path: ${{ env.CENSUS_OUTPUT }}",
+                  "          if-no-files-found: error",
+                  "          retention-days: 180",
+                  "",
+                  "  receipt:",
+              ]
+          )
+          upload_with_cleanup = "\n".join(
+              [
+                  "      - name: Upload compact source-only census evidence",
+                  "        uses: actions/upload-artifact@v7",
+                  "        with:",
+                  "          name: ${{ env.CENSUS_ARTIFACT_NAME }}",
+                  "          path: ${{ env.CENSUS_OUTPUT }}",
+                  "          if-no-files-found: error",
+                  "          retention-days: 180",
+                  "      - name: Remove the isolated runtime",
+                  "        if: always()",
+                  "        shell: bash",
+                  "        run: |",
+                  "          set -euo pipefail",
+                  '          if [[ -n "${CENSUS_RUNTIME_ROOT:-}" ]]; then',
+                  '            rm -rf -- "${CENSUS_RUNTIME_ROOT}"',
+                  "          fi",
+                  "",
+                  "  receipt:",
+              ]
+          )
+          if text.count(upload) != 1:
+              raise SystemExit("artifact upload boundary changed")
+          text = text.replace(upload, upload_with_cleanup)
+          old_marker = (
+              "# Reviewed one-shot request: source-support equal-object census "
+              "2026-08-10-v1"
+          )
+          new_marker = (
+              "# Reviewed one-shot request: source-support equal-object census "
+              "2026-08-10-v2-system-python"
+          )
+          if text.count(old_marker) != 1:
+              raise SystemExit("one-shot marker changed")
+          workflow.write_text(text.replace(old_marker, new_marker), encoding="utf-8")
+
+          tests = Path(
+              "tests/test_deform360_source_support_failure_evidence_v1.py"
+          )
+          text = tests.read_text(encoding="utf-8")
+          anchor = (
+              '    document = yaml.load(text, Loader=yaml.BaseLoader)\n\n'
+              '    assert isinstance(document, dict)\n'
+          )
+          inserted = (
+              '    document = yaml.load(text, Loader=yaml.BaseLoader)\n'
+              '    execute_text = text.split("\\n  execute:\\n", 1)[1].split(\n'
+              '        "\\n  receipt:\\n", 1\n'
+              '    )[0]\n'
+              '    guide = Path(\n'
+              '        "docs/deform360_source_support_failure_evidence_v1.md"\n'
+              '    ).read_text(encoding="utf-8")\n\n'
+              '    assert isinstance(document, dict)\n'
+          )
+          if text.count(anchor) != 1:
+              raise SystemExit("workflow-test setup changed")
+          text = text.replace(anchor, inserted)
+          old_cli = (
+              '    assert "bpt diagnostic run diagnose-provider-failures" in text\n'
+          )
+          new_cli = (
+              '    assert "-m bayesian_phystwin.cli.main" in execute_text\n'
+              '    assert "diagnostic run diagnose-provider-failures" in execute_text\n'
+          )
+          if text.count(old_cli) != 1:
+              raise SystemExit("workflow CLI assertion changed")
+          text = text.replace(old_cli, new_cli)
+          test_anchor = '    assert "actions/upload-artifact@v7" in text\n'
+          runtime_assertions = (
+              '    assert "actions/upload-artifact@v7" in text\n'
+              '    assert "actions/setup-python" not in execute_text\n'
+              '    assert "python -m pip install -e ." not in execute_text\n'
+              '    assert "/usr/bin/python3.12" in execute_text\n'
+              '    assert "/usr/bin/python3" in execute_text\n'
+              '    assert "CENSUS_BASE_PYTHON" in execute_text\n'
+              '    assert "--no-cache-dir" in execute_text\n'
+              '    assert \'--target "${CENSUS_RUNTIME_SITE}"\' in execute_text\n'
+              '    assert \'rm -rf -- "${CENSUS_RUNTIME_ROOT}"\' in execute_text\n'
+              '    assert "31387630049" in guide\n'
+              '    assert "open_rich_spinner" in guide\n'
+          )
+          if text.count(test_anchor) != 1:
+              raise SystemExit("workflow upload assertion changed")
+          tests.write_text(
+              text.replace(test_anchor, runtime_assertions), encoding="utf-8"
+          )
+
+          guide = Path("docs/deform360_source_support_failure_evidence_v1.md")
+          text = guide.read_text(encoding="utf-8")
+          boundary = "## Information boundary\n"
+          runtime_section = """### Self-hosted runtime isolation
+
+The first post-merge launcher, workflow run `31387630049`, reached the
+`workstation2` execution beacon and checked out exact revision
+`c88cf195e2dac4a7420c017dec850c3ddfe8890d`. It then failed before binding the
+results-side metric batch because `actions/setup-python` selected a corrupted
+persistent toolcache. Pip stopped during startup with an `open_rich_spinner`
+import error. The failed run opened no source evidence, raw-data tree,
+confirmation payload, target outcome, or future frame and remains an immutable
+operational failure rather than scientific evidence.
+
+The repaired self-hosted job avoids `actions/setup-python` entirely. It selects
+an explicit system Python, creates a fresh target site below `runner.temp`,
+installs the sole runtime dependency with `--no-cache-dir`, runs the reviewed
+repository source through an explicit `PYTHONPATH`, invokes the grouped CLI as a
+Python module, and removes the isolated runtime after publication. Hosted
+pull-request contracts continue to use `actions/setup-python`; only the trusted
+`workstation2` execution is isolated from persistent toolcache state.
+
+"""
+          if text.count(boundary) != 1:
+              raise SystemExit("guide information boundary changed")
+          guide.write_text(
+              text.replace(boundary, runtime_section + boundary),
+              encoding="utf-8",
+          )
+          PY
+
+          changed=$(git diff --name-only)
+          expected=$(printf '%s\n' \
+            .github/workflows/launch-deform360-provider-failure-census-v1-once.yml \
+            docs/deform360_source_support_failure_evidence_v1.md \
+            tests/test_deform360_source_support_failure_evidence_v1.py \
+            | sort)
+          actual=$(printf '%s\n' "${changed}" | sort)
+          test "${actual}" = "${expected}"
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            .github/workflows/launch-deform360-provider-failure-census-v1-once.yml \
+            docs/deform360_source_support_failure_evidence_v1.md \
+            tests/test_deform360_source_support_failure_evidence_v1.py
+          git commit -m "Isolate the Deform360 census runtime from toolcache state"
+          git push origin HEAD:fix/deform360-source-support-census-system-python-v1
