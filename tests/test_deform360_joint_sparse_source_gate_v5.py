@@ -166,7 +166,7 @@ def test_execution_lock_binds_public_data_and_machine_gate() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
 
     assert lock["execution_lock_id"] == (
-        "91c326f253eac24725562eed66991da2c83a137aebdde9ccd7727aa20d091c8f"
+        "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189"
     )
     assert lock["public_measurements"] == {
         "dataset_repository": "brownu/deform360",
@@ -197,6 +197,17 @@ def test_execution_lock_binds_public_data_and_machine_gate() -> None:
     assert lock["physical_baseline"]["generation_rule"] == (
         "automatic-warp-twin-when-admissible-otherwise-exact-persistence-v1"
     )
+    assert lock["physical_baseline"]["process_local_adapter_protocol_id"] == (
+        "deform360-joint-sparse-physical-source-v5"
+    )
+    assert lock["physical_baseline"]["prepared_source_inventory"] == {
+        "file_sha256": (
+            "4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
+        ),
+        "inventory_id": (
+            "6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
+        ),
+    }
     assert lock["source_gate"]["minimum_passing_objects"] == 8
     assert lock["source_gate"]["minimum_passing_objects_per_stratum"] == 4
     assert lock["source_gate"]["primary_candidate_method_id"] == (

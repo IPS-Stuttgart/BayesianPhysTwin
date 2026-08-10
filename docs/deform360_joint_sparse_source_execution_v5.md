@@ -43,6 +43,45 @@ generator components, source evaluator, and source runner by SHA-256. It does no
 modify the cohort or endpoint. It narrows the claim from visuotactile benefit to
 visual Bayesian updating and records that narrowing before source outcomes.
 
+## Physical-source adapter
+
+The numerical physical baseline remains the historical frame-zero-only automatic
+Warp twin with exact persistence fallback. Its original command wrapper was tied
+to an older prospective cohort, however, and therefore could not identify the ten
+objects in this source panel. The v5 execution lock now binds a process-local
+adapter rather than altering those numerical stages. The adapter:
+
+- exposes only the ten development object/episode pairs as calibration cases;
+- binds prepared-source inventory
+  `6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b`;
+- re-hashes every released RGB, timestamp, calibration, and robot file before
+  copying it into the physical-source workspace;
+- patches only protocol/case aliases in the historical stages and rewrites only
+  the automatic-twin subprocess through the same checksum-bound adapter; and
+- installs no outcome loader and has no target or confirmation role.
+
+Materialize each released source episode into a portable workspace first:
+
+```bash
+python scripts/science/materialize_deform360_joint_sparse_physical_source_v5.py \
+  --execution-lock protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json \
+  --prepared-source-inventory /path/to/prepared-source-inventory.json \
+  --processed-root /path/to/calibration-processed/aligned \
+  --object-id OBJECT_ID \
+  --output-root /path/to/physical-source
+```
+
+The four historical stages are then invoked through
+`scripts/remote/run_deform360_joint_sparse_physical_source_v5.py` with stages
+`stage-prefix`, `frame-zero`, `automatic-twin` (internally), and
+`physical-prior`. The `--protocol` argument supplied to every wrapped stage must
+be the same v5 execution-lock file. The wrapper validates a clean checkout and
+the complete source-file digest roster before running. Automatic Warp is
+attempted whenever the original frame-zero point cloud is admissible; exact
+persistence is permitted only through the existing registered fallback paths.
+This adapter is source-independent infrastructure and must exist before any of
+the 100 prediction seals or development suffix outcomes are created.
+
 ## Nested source decision
 
 For each development object, the evidence contains a sealed outer-fold forecast
