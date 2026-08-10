@@ -36,6 +36,7 @@ include protocols/locks/deform360_official_hub_prob4d_camera_eligibility_v2.json
 include protocols/locks/deform360_official_hub_prob4d_sample_admissibility_v3.json
 include protocols/locks/deform360_official_hub_prob4d_source_gate_v1.json
 include protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json
+include scripts/ci/inventory_deform360_v4_results.py
 include scripts/science/admit_deform360_calibration_visual_execution.py
 include scripts/science/bootstrap_deform360_visual_provider_models.py
 include scripts/science/build_deform360_calibration_observability_batch.py
@@ -56,3 +57,4 @@ recursive-include src/bayesian_phystwin/contract_data/observation_belief_v1 *.js
 include docs/structured_tree_sparse_fallback.md
 include docs/observation_belief_io_v2.md
 include docs/tree_block_schur_solver.md
+include docs/causal4d_tree_block_query_provider.md
