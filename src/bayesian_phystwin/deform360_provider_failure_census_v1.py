@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
-from typing import Any, Final, cast
+from typing import Final, cast
 
 from .provider_failure_decomposition import analyze_provider_failure_evidence
 from .provider_failure_evidence_adapters import (
@@ -75,15 +75,6 @@ def _literal_mapping(value: object, *, name: str) -> Mapping[str, object]:
     return cast(Mapping[str, object], value)
 
 
-def _literal_records(value: object) -> tuple[Mapping[str, object], ...]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
-        raise ValueError("records must be a sequence")
-    records: list[Mapping[str, object]] = []
-    for index, record in enumerate(value):
-        records.append(_literal_mapping(record, name=f"record {index}"))
-    return tuple(records)
-
-
 def _lowercase_sha256(value: object, *, name: str) -> str:
     if type(value) is not str or _DIGEST_PATTERN.fullmatch(value) is None:
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
@@ -96,18 +87,14 @@ def _nonempty_text(value: object, *, name: str) -> str:
     return cast(str, value)
 
 
-def _record_metrics(
-    record: Mapping[str, object],
-    *,
-    index: int,
-) -> Mapping[str, object]:
-    return _literal_mapping(record.get("metrics"), name=f"record {index} metrics")
+def _record_metrics(record: Mapping[str, object]) -> Mapping[str, object]:
+    return cast(Mapping[str, object], record["metrics"])
 
 
 def _contains_adapter_fields(records: Sequence[Mapping[str, object]]) -> bool:
     return any(
-        bool(set(_record_metrics(record, index=index)).intersection(_ADAPTER_METRIC_FIELDS))
-        for index, record in enumerate(records)
+        bool(set(_record_metrics(record)).intersection(_ADAPTER_METRIC_FIELDS))
+        for record in records
     )
 
 
@@ -180,10 +167,8 @@ def _validate_adapter_record(
     provider_id: str,
     index: int,
 ) -> None:
-    case_id = _nonempty_text(record.get("case_id"), name=f"record {index} case_id")
-    accepted = record.get("accepted")
-    if type(accepted) is not bool:
-        raise ValueError(f"record {index} accepted must be a bool")
+    case_id = cast(str, record["case_id"])
+    accepted = cast(bool, record["accepted"])
     binding_map = _literal_mapping(binding, name=f"record binding {index}")
     if binding_map.get("case_id") != case_id:
         raise ValueError(f"record binding {index} case_id differs from record order")
@@ -192,7 +177,7 @@ def _validate_adapter_record(
         name=f"record binding {index} update_id",
     )
 
-    metrics = _record_metrics(record, index=index)
+    metrics = _record_metrics(record)
     missing = _ADAPTER_METRIC_FIELDS.difference(metrics)
     if missing:
         raise ValueError(
@@ -241,11 +226,11 @@ def _validate_adapter_record(
     )
     _validate_strict_certificate(
         metrics.get("strict_admission_certificate"),
-        accepted=cast(bool, accepted),
+        accepted=accepted,
         index=index,
     )
 
-    signals = _literal_mapping(record.get("signals"), name=f"record {index} signals")
+    signals = cast(Mapping[str, object], record["signals"])
     if signals.get("technical_valid") is not True:
         raise ValueError(
             f"record {index} adapter evidence must establish technical_valid=true"
@@ -281,10 +266,7 @@ def validate_deform360_provider_failure_census_payload(
     if not isinstance(payload, Mapping):
         raise ValueError("Deform360 provider-failure census input must be a mapping")
     report = analyze_provider_failure_evidence(payload)
-    metadata = _literal_mapping(
-        payload.get("metadata"),
-        name="metadata",
-    )
+    metadata = cast(Mapping[str, object], payload["metadata"])
     for key, expected in _REQUIRED_SOURCE_METADATA.items():
         if metadata.get(key) != expected:
             raise ValueError(f"metadata field {key!r} must equal {expected!r}")
@@ -296,7 +278,7 @@ def validate_deform360_provider_failure_census_payload(
             f"{sorted(ALLOWED_DEFORM360_CENSUS_STATISTICAL_UNITS)}"
         )
 
-    records = _literal_records(payload.get("records"))
+    records = cast(Sequence[Mapping[str, object]], payload["records"])
     adapter_schema = metadata.get("adapter_schema")
     adapter_metadata_present = bool(set(metadata).intersection(_ADAPTER_METADATA_FIELDS))
     adapter_metrics_present = _contains_adapter_fields(records)
@@ -307,9 +289,6 @@ def validate_deform360_provider_failure_census_payload(
             )
     else:
         _validate_adapter_binding(payload, metadata, records)
-
-    if report["record_count"] < 1:
-        raise ValueError("the Deform360 provider-failure census must not be empty")
     return report
 
 
