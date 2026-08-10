@@ -89,7 +89,8 @@ The graph-modal arm evaluates exact per-node 3-D marginal covariances
 directly from its compact modal state. It does not materialize the dense
 cross-node/cross-horizon covariance because the tournament proper score uses
 only those registered marginals. This changes neither the candidate mean nor
-the marginal covariance represented by the graph belief.
+the marginal covariance represented by the graph belief. The stored forecast
+covariance therefore grows linearly with the number of horizons and nodes.
 
 ### 3. Prefix-only admission
 
