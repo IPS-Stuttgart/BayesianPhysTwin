@@ -212,9 +212,7 @@ def test_invalid_basis_and_covariance_budget_fail_closed() -> None:
             last_frame_index=0,
         )
 
-    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(
-        np.zeros((3, 3))
-    )
+    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(np.zeros((3, 3)))
     with pytest.raises(MemoryError, match="budget"):
         belief.forecast([1, 2], maximum_covariance_bytes=1)
 

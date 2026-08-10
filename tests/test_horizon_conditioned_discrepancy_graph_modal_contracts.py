@@ -150,9 +150,7 @@ def test_forecast_rejects_invalid_horizon_contracts(
     horizons: list[object],
     message: str,
 ) -> None:
-    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(
-        np.zeros((2, 3))
-    )
+    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(np.zeros((2, 3)))
     with pytest.raises(ValueError, match=message):
         belief.forecast(horizons)  # type: ignore[arg-type]
 
@@ -172,17 +170,13 @@ def test_forecast_rejects_invalid_node_contracts(
     nodes: list[object],
     message: str,
 ) -> None:
-    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(
-        np.zeros((2, 3))
-    )
+    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(np.zeros((2, 3)))
     with pytest.raises(ValueError, match=message):
         belief.forecast([1], node_indices=nodes)  # type: ignore[arg-type]
 
 
 def test_forecast_rejects_invalid_acceleration_and_budget_types() -> None:
-    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(
-        np.zeros((2, 3))
-    )
+    belief = GraphDynamicDiscrepancyBeliefV1.from_last_residual(np.zeros((2, 3)))
     with pytest.raises(ValueError, match="must have shape"):
         belief.forecast([1, 2], modal_acceleration_mps2=np.zeros((1, 3)))
     invalid = np.zeros((2, 2, 3))
@@ -228,9 +222,10 @@ def test_filter_accepts_all_declared_covariance_shapes_and_group_metadata(
     )
 
     assert belief.accepted_update_count == frame_count
-    assert belief.diagnostics["frame_diagnostics"][0][
-        "correlation_group_ids"
-    ] == ["left", "right"]
+    assert belief.diagnostics["frame_diagnostics"][0]["correlation_group_ids"] == [
+        "left",
+        "right",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -346,9 +341,7 @@ def test_filter_rejects_ill_conditioned_and_implausible_updates() -> None:
         frame_dt_s=1.0,
         config=implausible,
     )
-    assert rejected_plausibility.update_reasons == (
-        "implausible-discrepancy-update",
-    )
+    assert rejected_plausibility.update_reasons == ("implausible-discrepancy-update",)
 
 
 def test_zero_initial_velocity_uncertainty_is_supported_without_jitter() -> None:

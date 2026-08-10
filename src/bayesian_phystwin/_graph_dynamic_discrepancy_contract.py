@@ -115,9 +115,7 @@ class GraphDynamicDiscrepancyBeliefV1:
     process_position_std_m: float
     process_acceleration_std_mps2: float
     last_frame_index: int
-    update_accepted: np.ndarray = field(
-        default_factory=lambda: np.zeros(0, dtype=bool)
-    )
+    update_accepted: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=bool))
     update_reasons: tuple[str, ...] = ()
     diagnostics: Mapping[str, Any] = field(default_factory=dict)
 
@@ -306,9 +304,7 @@ class GraphDynamicDiscrepancyBeliefV1:
         elif raw_variance.shape == (node_count, 3):
             variance = raw_variance.copy()
         else:
-            raise ValueError(
-                "variance_m2 must have shape (node,) or (node, 3)"
-            )
+            raise ValueError("variance_m2 must have shape (node,) or (node, 3)")
         _require(
             np.all(np.isfinite(variance)) and np.all(variance >= 0.0),
             "variance_m2 must be finite and nonnegative",
@@ -319,9 +315,7 @@ class GraphDynamicDiscrepancyBeliefV1:
         state = np.zeros((2, node_count, 3), dtype=np.float64)
         state[0] = mean
         covariance = np.zeros((6 * node_count, 6 * node_count))
-        covariance[: 3 * node_count, : 3 * node_count] = np.diag(
-            variance.reshape(-1)
-        )
+        covariance[: 3 * node_count, : 3 * node_count] = np.diag(variance.reshape(-1))
         return cls(
             graph_basis=basis,
             state_mean=state,

@@ -11,9 +11,7 @@ from bayesian_phystwin.graph_dynamic_discrepancy import (
 
 
 def test_group_cap_changes_power_but_not_outlier_classification() -> None:
-    residual = np.asarray(
-        [[[0.004, 0.0, 0.0], [0.004, 0.0, 0.0], [0.03, 0.0, 0.0]]]
-    )
+    residual = np.asarray([[[0.004, 0.0, 0.0], [0.004, 0.0, 0.0], [0.03, 0.0, 0.0]]])
     valid = np.ones((1, 3), dtype=bool)
     groups = np.asarray([["shared", "shared", "shared"]])
     common = dict(

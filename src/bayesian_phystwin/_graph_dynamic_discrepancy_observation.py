@@ -115,9 +115,7 @@ def _student_t_group_weight(
     weight = (config.degrees_of_freedom + dimension) / (
         covariance_degrees + squared_mahalanobis
     )
-    return float(
-        np.clip(weight, config.minimum_robust_weight, 1.0)
-    )
+    return float(np.clip(weight, config.minimum_robust_weight, 1.0))
 
 
 def _frame_update(
@@ -176,16 +174,11 @@ def _frame_update(
             "deterministic-predicted-belief",
             diagnostics,
         )
-    reduced_designs = {
-        node: design @ prior_root for node, design in designs.items()
-    }
+    reduced_designs = {node: design @ prior_root for node, design in designs.items()}
     centered_targets = {
-        node: residual_m[node] - designs[node] @ prior_mean
-        for node in designs
+        node: residual_m[node] - designs[node] @ prior_mean for node in designs
     }
-    ordered_groups = tuple(
-        dict.fromkeys(group_labels[node] for node in selected)
-    )
+    ordered_groups = tuple(dict.fromkeys(group_labels[node] for node in selected))
     group_nodes = tuple(
         np.asarray(
             [node for node in selected if group_labels[node] == label],
@@ -220,9 +213,7 @@ def _frame_update(
                 @ design
             )
     information_eigenvalues = np.linalg.eigvalsh(_symmetric(base_information))
-    information_scale = float(
-        np.max(information_eigenvalues, initial=0.0)
-    )
+    information_scale = float(np.max(information_eigenvalues, initial=0.0))
     diagnostics["base_information_maximum_eigenvalue"] = information_scale
     if information_scale <= np.finfo(np.float64).eps:
         return (
@@ -264,19 +255,12 @@ def _frame_update(
             for raw_node in nodes:
                 node = int(raw_node)
                 row_weight = (
-                    float(reliability[node])
-                    * group_power[position]
-                    * weights[position]
+                    float(reliability[node]) * group_power[position] * weights[position]
                 )
                 design = reduced_designs[node]
                 precision = precisions[node]
                 normal += row_weight * design.T @ precision @ design
-                right += (
-                    row_weight
-                    * design.T
-                    @ precision
-                    @ centered_targets[node]
-                )
+                right += row_weight * design.T @ precision @ centered_targets[node]
         return _symmetric(normal), right
 
     current = np.zeros(prior_root.shape[1], dtype=np.float64)
@@ -321,9 +305,7 @@ def _frame_update(
         refreshed = robust_weights(candidate)
         refreshed_normal, refreshed_right = system(refreshed)
         solution_delta = float(np.linalg.norm(candidate - current))
-        weight_delta = float(
-            np.max(np.abs(refreshed - weights), initial=0.0)
-        )
+        weight_delta = float(np.max(np.abs(refreshed - weights), initial=0.0))
         stationarity_norm = float(
             np.linalg.norm(refreshed_normal @ candidate - refreshed_right)
         )
@@ -333,8 +315,7 @@ def _frame_update(
         final_normal = refreshed_normal
         if (
             weight_delta <= config.convergence_tolerance
-            and stationarity_norm
-            <= config.convergence_tolerance * stationarity_scale
+            and stationarity_norm <= config.convergence_tolerance * stationarity_scale
         ):
             converged = True
             break
@@ -388,9 +369,7 @@ def _frame_update(
             diagnostics,
         )
     posterior_mean = expanded_state(current)
-    posterior_covariance = _symmetric(
-        prior_root @ reduced_covariance @ prior_root.T
-    )
+    posterior_covariance = _symmetric(prior_root @ reduced_covariance @ prior_root.T)
     rank = graph_basis.shape[1]
     state = _state_array(posterior_mean, rank)
     position_field = graph_basis @ state[0]

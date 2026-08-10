@@ -49,8 +49,7 @@ def forecast_graph_dynamic_discrepancy(
         raw_nodes = np.asarray(node_indices)
         _require(raw_nodes.ndim == 1 and len(raw_nodes), "node_indices is empty")
         _require(
-            np.issubdtype(raw_nodes.dtype, np.integer)
-            and raw_nodes.dtype.kind != "b",
+            np.issubdtype(raw_nodes.dtype, np.integer) and raw_nodes.dtype.kind != "b",
             "node_indices must contain integers",
         )
         nodes = np.asarray(raw_nodes, dtype=np.int64)
@@ -117,9 +116,9 @@ def forecast_graph_dynamic_discrepancy(
     covariances: dict[int, np.ndarray] = {}
     requested = set(map(int, horizons))
     for step in range(1, maximum_horizon + 1):
-        state_mean = transition @ state_mean + control @ acceleration[
-            step - 1
-        ].reshape(-1)
+        state_mean = transition @ state_mean + control @ acceleration[step - 1].reshape(
+            -1
+        )
         state_covariance = _symmetric(
             transition @ state_covariance @ transition.T + process_noise
         )
@@ -146,9 +145,7 @@ def forecast_graph_dynamic_discrepancy(
     node_dimension = 3 * len(nodes)
     for first_position, first_horizon in enumerate(horizons):
         first_step = int(first_horizon)
-        mean[first_position] = (
-            query @ means[first_step]
-        ).reshape(len(nodes), 3)
+        mean[first_position] = (query @ means[first_step]).reshape(len(nodes), 3)
         first_slice = slice(
             first_position * node_dimension,
             (first_position + 1) * node_dimension,
@@ -159,10 +156,7 @@ def forecast_graph_dynamic_discrepancy(
                 second_position * node_dimension,
                 (second_position + 1) * node_dimension,
             )
-            cross_state = (
-                covariances[first_step]
-                @ powers[second_step - first_step].T
-            )
+            cross_state = covariances[first_step] @ powers[second_step - first_step].T
             block = query @ cross_state @ query.T
             covariance[first_slice, second_slice] = block
             covariance[second_slice, first_slice] = block.T
