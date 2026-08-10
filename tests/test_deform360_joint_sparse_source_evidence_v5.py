@@ -71,8 +71,7 @@ def _prediction_methods(outer_id: str, object_id: str) -> dict[str, object]:
         method_id: {
             "artifact_id": _digest(
                 f"{object_id}\0{method_id}"
-                if method_id
-                in {"B0_physical_fallback", "B1_last_causal_residual"}
+                if method_id in {"B0_physical_fallback", "B1_last_causal_residual"}
                 else f"{outer_id}\0{object_id}\0{method_id}"
             ),
             "predicted_loss_mm": loss,
@@ -103,9 +102,7 @@ def _seals(lock: Mapping[str, Any]) -> list[dict[str, Any]]:
                     technical_failure=False,
                     physical_mode="warp_twin",
                     risk_score=float(index[object_id] + 1),
-                    prediction_fit_artifact_id=_digest(
-                        f"fit\0{outer_id}\0{object_id}"
-                    ),
+                    prediction_fit_artifact_id=_digest(f"fit\0{outer_id}\0{object_id}"),
                     prediction_fit_object_ids=fit_ids,
                     methods=_prediction_methods(outer_id, object_id),
                     source_artifacts={
@@ -137,9 +134,7 @@ def _outcomes(
     }
     artifacts_by_seal = {
         str(seal["seal_id"]): {
-            f"scores/{seal['seal_id']}.json": _digest(
-                f"score\0{seal['seal_id']}"
-            )
+            f"scores/{seal['seal_id']}.json": _digest(f"score\0{seal['seal_id']}")
         }
         for seal in records
     }
@@ -220,10 +215,7 @@ def test_prediction_seal_rejects_leakage_invalid_state_and_tampering() -> None:
         "source_artifacts": {"source.json": _digest("source")},
     }
     seal = build_deform360_joint_sparse_source_prediction_seal_v5(**base)
-    assert (
-        validate_deform360_joint_sparse_source_prediction_seal_v5(seal, lock)
-        == seal
-    )
+    assert validate_deform360_joint_sparse_source_prediction_seal_v5(seal, lock) == seal
 
     leaked = dict(base)
     leaked["prediction_fit_object_ids"] = list(object_ids)
@@ -542,15 +534,11 @@ def test_malformed_contracts_fail_closed_across_all_public_layers(
     changed_batch = copy.deepcopy(batch)
     changed_batch["information_boundary"]["development_suffix_opened"] = True
     with pytest.raises(ValueError, match="information boundary"):
-        validate_deform360_joint_sparse_source_prediction_batch_v5(
-            changed_batch, lock
-        )
+        validate_deform360_joint_sparse_source_prediction_batch_v5(changed_batch, lock)
     changed_batch = copy.deepcopy(batch)
     changed_batch["records"] = "not-an-array"
     with pytest.raises(ValueError, match="JSON array"):
-        validate_deform360_joint_sparse_source_prediction_batch_v5(
-            changed_batch, lock
-        )
+        validate_deform360_joint_sparse_source_prediction_batch_v5(changed_batch, lock)
 
     with pytest.raises(ValueError, match="outside the prediction batch"):
         build_deform360_joint_sparse_source_outcome_v5(

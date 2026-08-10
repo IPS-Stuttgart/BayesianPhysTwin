@@ -54,9 +54,7 @@ SOURCE_PREDICTION_BATCH_SEMANTICS: Final = (
 SOURCE_FOLD_PREDICTION_SEAL_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-fold-prediction-seal"
 )
-SOURCE_OUTCOME_SCHEMA: Final = (
-    "bayesian-phystwin.deform360-joint-sparse-source-outcome"
-)
+SOURCE_OUTCOME_SCHEMA: Final = "bayesian-phystwin.deform360-joint-sparse-source-outcome"
 SOURCE_OUTCOME_VERSION: Final = 1
 SOURCE_OUTCOME_SEMANTICS: Final = (
     "development-suffix-score-bound-to-sealed-source-forecast-v1"
@@ -348,9 +346,7 @@ def build_deform360_joint_sparse_source_prediction_seal_v5(
 
     cohort = _cohort(lock)
     execution_lock_id, policy_id, selection_sha256 = _lock_ids(lock)
-    outer_id = _canonical_id(
-        outer_held_out_object_id, name="outer_held_out_object_id"
-    )
+    outer_id = _canonical_id(outer_held_out_object_id, name="outer_held_out_object_id")
     target_id = _canonical_id(object_id, name="object_id")
     if record_role not in {"held_out", "training"}:
         raise ValueError("record_role changed")
@@ -429,18 +425,14 @@ def validate_deform360_joint_sparse_source_prediction_seal_v5(
     rebuilt = build_deform360_joint_sparse_source_prediction_seal_v5(
         lock=lock,
         implementation_revision=cast(str, payload.get("implementation_revision")),
-        outer_held_out_object_id=cast(
-            str, payload.get("outer_held_out_object_id")
-        ),
+        outer_held_out_object_id=cast(str, payload.get("outer_held_out_object_id")),
         record_role=cast(RecordRole, payload.get("record_role")),
         object_id=cast(str, payload.get("object_id")),
         factor_admitted=cast(bool, payload.get("factor_admitted")),
         technical_failure=cast(bool, payload.get("technical_failure")),
         physical_mode=cast(str, payload.get("physical_mode")),
         risk_score=cast(float, payload.get("risk_score")),
-        prediction_fit_artifact_id=cast(
-            str, payload.get("prediction_fit_artifact_id")
-        ),
+        prediction_fit_artifact_id=cast(str, payload.get("prediction_fit_artifact_id")),
         prediction_fit_object_ids=cast(
             Sequence[str], payload.get("prediction_fit_object_ids")
         ),
@@ -599,9 +591,10 @@ def _build_source_outcome_from_validated_batch(
     outcome_methods = _outcome_methods(methods, name="methods")
     predictions = cast(Mapping[str, Mapping[str, Any]], seal["methods"])
     for method_id in RAW_METHOD_IDS:
-        if outcome_methods[method_id]["artifact_id"] != predictions[method_id][
-            "artifact_id"
-        ]:
+        if (
+            outcome_methods[method_id]["artifact_id"]
+            != predictions[method_id]["artifact_id"]
+        ):
             raise ValueError(f"outcome method artifact differs from seal: {method_id}")
     identity: dict[str, Any] = {
         "schema": SOURCE_OUTCOME_SCHEMA,
@@ -702,9 +695,7 @@ def _validate_source_outcome_against_validated_batch(
         batch=prediction_batch,
         prediction_seal_id=cast(str, payload.get("prediction_seal_id")),
         methods=cast(Mapping[str, Any], payload.get("methods")),
-        scoring_artifacts=cast(
-            Mapping[str, str], payload.get("scoring_artifacts")
-        ),
+        scoring_artifacts=cast(Mapping[str, str], payload.get("scoring_artifacts")),
     )
     if plain_json(payload) != rebuilt:
         raise ValueError("source outcome content identity changed")
@@ -829,9 +820,7 @@ def publish_deform360_joint_sparse_source_prediction_batch_v5(
 ) -> dict[str, Any]:
     """Publish one validated prediction batch atomically without replacement."""
 
-    validated = validate_deform360_joint_sparse_source_prediction_batch_v5(
-        batch, lock
-    )
+    validated = validate_deform360_joint_sparse_source_prediction_batch_v5(batch, lock)
     write_atomic_json(validated, output_path, overwrite=False)
     return validated
 
@@ -858,9 +847,7 @@ def load_source_execution_lock_and_artifacts_v5(
 ) -> tuple[Mapping[str, Any], list[Mapping[str, Any]]]:
     """Load a validated execution lock and a nonempty list of strict JSON files."""
 
-    lock = load_deform360_joint_sparse_source_execution_lock_v5(
-        execution_lock_path
-    )
+    lock = load_deform360_joint_sparse_source_execution_lock_v5(execution_lock_path)
     if not artifact_paths:
         raise ValueError(f"{label} paths must not be empty")
     artifacts = [
