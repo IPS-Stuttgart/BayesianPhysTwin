@@ -355,8 +355,7 @@ def _git(repository: Path, *arguments: str) -> str:
         ["git", *arguments],
         cwd=repository,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=True,
     )
     return completed.stdout.strip()
@@ -389,11 +388,7 @@ def test_git_inspector_uses_exact_commit_time_and_ancestry(tmp_path: Path) -> No
 def test_api_parsers_reject_coercion_and_ignore_foreign_prs() -> None:
     with pytest.raises(AuditError, match="protected must be boolean"):
         RemoteBranch.from_api(
-            {
-                "name": "agent/example",
-                "commit": {"sha": _UNMERGED_SHA},
-                "protected": 0,
-            },
+            {"name": "agent/example", "commit": {"sha": _UNMERGED_SHA}, "protected": 0},
             index=0,
         )
 
