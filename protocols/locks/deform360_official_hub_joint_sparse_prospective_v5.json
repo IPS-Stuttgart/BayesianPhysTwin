@@ -86,12 +86,17 @@
     "adaptive_confirmation_payloads_used": false,
     "causal4d_evaluation_before_v5_decision": false,
     "confirmation_payloads_opened_before_protocol_freeze": false,
+    "confirmation_payloads_or_outcomes_used_before_registered_gate_authorization": false,
     "confirmation_side_retuning_allowed": false,
+    "confirmation_target_outcomes_used_for_method_or_threshold_selection": false,
+    "development_future_outcomes_used_for_outer_fold_scoring": true,
+    "development_future_outcomes_used_only_after_fold_prediction_seal": true,
     "development_objects_previously_opened": true,
-    "future_frames_used_for_source_calibration": false,
+    "development_prefix_only_for_candidate_prediction_and_risk_score": true,
+    "human_approval_required": false,
     "human_selection_allowed": false,
-    "replacement_allowed": false,
-    "target_outcomes_used_for_method_or_threshold_selection": false
+    "new_measurements_required": false,
+    "replacement_allowed": false
   },
   "methods": [
     {
@@ -136,9 +141,9 @@
     "camera-identity-permutation",
     "dependence-group-duplication",
     "unguarded-update",
-    "future-frame-use-forbidden"
+    "future-frame-feature-use-forbidden"
   ],
-  "policy_id": "b3fd0ad6f8673b3a383d87b2e0af2f7ff2f29e503553291c9af15d985ab12ac3",
+  "policy_id": "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749",
   "positive_decision": {
     "harmful_update_relative_margin": 0.02,
     "maximum_harmful_accepted_objects": 0,
@@ -159,12 +164,22 @@
     ]
   },
   "prerequisites": {
+    "confirmation_opening_authorization_kind": "content-addressed-machine-gate",
     "minimum_v4_supported_objects": 8,
     "minimum_v4_supported_objects_per_stratum": 4,
     "require_confirmation_opening_authorization": true,
     "require_content_addressed_source_calibration": true,
     "require_source_calibration_pass_before_confirmation": true,
     "require_source_leave_one_object_out_evaluation": true,
+    "required_v4_result": {
+      "development_report_id": "d7548059971ce0b7836240ec7d5dac4fc53776a613fff3fc1f6cf600b87e141c",
+      "manifest_id": "d82c82e9541a97bad816d15bd57d9af2c08749a4ed7a3e495a692d5215b8c056",
+      "materialization_id": "9333d9970ad6ff8f9b3f32e1b2f922ad35649debb81e26b5bedc10f3be2ba7f6",
+      "materializer_policy_id": "08405c7e85a4730b1affb0110f9d50bcb02db26462ce95bda374c8df83ef845b",
+      "receipt_id": "ab2881a9f093a3060cb0cd83b68be687fbea53f1821f4f21267cdcd64066536f",
+      "source_revision": "3b1f8b2abd27c4132056658a1c274d7a45580be1",
+      "workflow_run_id": 31363421947
+    },
     "required_v4_status": "development-design-supported",
     "v4_policy_id": "29b2dc342e9d8ec873194d99199de46119ad1528610b361e6235374d18e520aa",
     "v4_policy_path": "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
@@ -191,18 +206,32 @@
   "source_calibration": {
     "confirmation_adaptation": "forbidden",
     "equal_object_weighting": true,
+    "fold_calibration_objects": 9,
+    "fold_conformal_rank_at_nominal_coverage": 9,
+    "fold_conformal_threshold": "maximum-training-object-score",
+    "fold_prediction_sealed_before_development_suffix_scoring": true,
+    "guard_and_interval_labels": "training-development-objects-only-after-fold-seal",
     "guard_threshold_selection": "source-only-tie-preserving-risk-coverage",
+    "held_out_development_suffix_role": "outer-fold-scoring-only",
     "hyperparameters_selected_from_source_only": true,
     "interval_calibration": "source-only-group-clustered-split-conformal",
     "maximum_object_balanced_coverage": 0.98,
     "minimum_object_balanced_coverage": 0.8,
     "minimum_passing_objects": 8,
     "minimum_passing_objects_per_stratum": 4,
+    "model_input_frame_range_half_open": [
+      0,
+      58
+    ],
     "objects": 10,
     "population_harm_risk_certificate_claimed": false,
     "risk_score_semantics": "lower-is-safer-inclusive-threshold-v1",
     "risk_threshold_tie_policy": "accept-complete-tied-score-blocks",
     "strategy": "nested-leave-one-object-out-cross-fit-then-full-source-refit",
+    "source_outcome_frame_range_half_open": [
+      58,
+      76
+    ],
     "target_nominal_coverage": 0.9,
     "unit": "physical-object",
     "variance_factors": [

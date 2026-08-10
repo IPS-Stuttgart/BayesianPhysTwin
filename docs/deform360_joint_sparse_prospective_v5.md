@@ -6,6 +6,11 @@ Version 5 is the proposed confirmatory experiment after the frozen Deform360
 v1-v3 support negatives and the development-only joint-sparse observability v4
 protocol.
 
+This path uses released real-world Deform360 recordings. It requires no new
+recording, robot execution, physical contact-registration review, or human
+scientific approval. The confirmation-opening authorization below is a
+content-addressed machine gate, not a person selecting favorable cases.
+
 The earlier experiments asked whether every camera stream was independently
 sufficient. That is the wrong unit for a multi-view Bayesian model.
 A camera can be only partially informative while the object-level collection
@@ -60,7 +65,7 @@ payloads remain closed until all of the following exist:
 3. a content-addressed source calibration fit;
 4. leave-one-physical-object-out source evaluation meeting the v5 source gate;
 5. source-frozen guard and interval artifacts; and
-6. the existing claim-bearing confirmation-opening authorization.
+6. the content-addressed machine-issued confirmation-opening authorization.
 
 Source and confirmation must use identical implementation, provider, model,
 factor, guard, endpoint, and analysis revisions. Confirmation-side adaptation is
@@ -108,9 +113,17 @@ failures are retained and deploy exact physical fallback. Nothing is replaced.
 
 The registered action window is `[0, 81)`. The update may use only the causal
 prefix `[0, 58)`. The next 18 frames, `[58, 76)`, are the future evaluation
-interval. Frames `[76, 81)` are an unscored terminal buffer. A source fit,
-deployment guard, or acceptance decision that uses any frame at or after 58 is
-invalid.
+interval. Frames `[76, 81)` are an unscored terminal buffer. Candidate
+predictions, observation factors, risk scores, and per-object acceptance
+decisions may use only `[0, 58)`.
+
+The already-opened development suffix has one narrower role. In each nested
+source fold, the candidate prediction and risk score are sealed first. The
+training objects' `[58, 76)` outcomes may then calibrate the source-only guard
+and interval, and the held-out object's suffix may then score that frozen fold.
+The held-out suffix cannot change its prediction, risk score, threshold, or
+interval. Confirmation suffixes remain closed until the machine gate authorizes
+the one-time confirmation run.
 
 Exactly two endpoint camera views are reserved for every physical object. They
 are selected by ascending SHA-256 rank of
@@ -140,6 +153,12 @@ For each held-out development object, the other nine fit:
 - contact-anchor bias; and
 - the tie-preserving operational guard threshold.
 
+Every fold seals the held-out candidate prediction and risk score before
+opening that object's development suffix. The training nine may use only their
+own already-opened suffix losses to calibrate the guard and interval. The held-
+out suffix is scoring evidence only. This prevents an object's future outcome
+from selecting the rule that is applied to that same object.
+
 Each physical object receives equal weight regardless of camera, frame, point,
 track, or taxel count. The source report must pass on at least eight of ten
 objects and at least four of five objects in each stratum. Only then is one final
@@ -152,7 +171,16 @@ complete tied score blocks; object IDs may not be used to split a tie.
 
 Intervals use source-only grouped split conformal calibration. No confirmation
 prefix, outcome, future frame, or target loss may tune a variance factor, bias
-prior, guard, threshold, or interval.
+prior, guard, threshold, or interval. No development future frame may enter a
+candidate prediction, observation factor, risk feature, or within-object
+acceptance decision.
+
+Each outer fold has nine training objects. At nominal 90% coverage the finite-
+sample split-conformal rank is therefore
+`ceil((9 + 1) * 0.90) = 9`: the threshold is the largest of the nine training-
+object scores. This coarse but exact arithmetic is reported as session/object-
+level marginal calibration, not simultaneous coverage across objects, horizons,
+views, or strata.
 
 ## Compared methods
 

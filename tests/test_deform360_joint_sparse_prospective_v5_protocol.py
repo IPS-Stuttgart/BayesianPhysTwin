@@ -82,6 +82,28 @@ def test_policy_identity_and_frozen_cohort_bindings() -> None:
     assert prerequisites["required_v4_status"] == "development-design-supported"
     assert prerequisites["minimum_v4_supported_objects"] == 8
     assert prerequisites["minimum_v4_supported_objects_per_stratum"] == 4
+    assert prerequisites["confirmation_opening_authorization_kind"] == (
+        "content-addressed-machine-gate"
+    )
+    assert prerequisites["required_v4_result"] == {
+        "development_report_id": (
+            "d7548059971ce0b7836240ec7d5dac4fc53776a613fff3fc1f6cf600b87e141c"
+        ),
+        "manifest_id": (
+            "d82c82e9541a97bad816d15bd57d9af2c08749a4ed7a3e495a692d5215b8c056"
+        ),
+        "materialization_id": (
+            "9333d9970ad6ff8f9b3f32e1b2f922ad35649debb81e26b5bedc10f3be2ba7f6"
+        ),
+        "materializer_policy_id": (
+            "08405c7e85a4730b1affb0110f9d50bcb02db26462ce95bda374c8df83ef845b"
+        ),
+        "receipt_id": (
+            "ab2881a9f093a3060cb0cd83b68be687fbea53f1821f4f21267cdcd64066536f"
+        ),
+        "source_revision": "3b1f8b2abd27c4132056658a1c274d7a45580be1",
+        "workflow_run_id": 31363421947,
+    }
 
 
 def test_partial_factors_are_admitted_at_object_query_level() -> None:
@@ -137,12 +159,17 @@ def test_partial_factors_are_admitted_at_object_query_level() -> None:
         "adaptive_confirmation_payloads_used": False,
         "causal4d_evaluation_before_v5_decision": False,
         "confirmation_payloads_opened_before_protocol_freeze": False,
+        "confirmation_payloads_or_outcomes_used_before_registered_gate_authorization": False,
         "confirmation_side_retuning_allowed": False,
+        "confirmation_target_outcomes_used_for_method_or_threshold_selection": False,
+        "development_future_outcomes_used_for_outer_fold_scoring": True,
+        "development_future_outcomes_used_only_after_fold_prediction_seal": True,
         "development_objects_previously_opened": True,
-        "future_frames_used_for_source_calibration": False,
+        "development_prefix_only_for_candidate_prediction_and_risk_score": True,
+        "human_approval_required": False,
         "human_selection_allowed": False,
+        "new_measurements_required": False,
         "replacement_allowed": False,
-        "target_outcomes_used_for_method_or_threshold_selection": False,
     }
 
 
@@ -227,6 +254,18 @@ def test_stage_order_freezes_source_before_one_time_confirmation() -> None:
     assert calibration["risk_threshold_tie_policy"] == (
         "accept-complete-tied-score-blocks"
     )
+    assert calibration["fold_calibration_objects"] == 9
+    assert calibration["fold_conformal_rank_at_nominal_coverage"] == 9
+    assert calibration["fold_conformal_threshold"] == "maximum-training-object-score"
+    assert calibration["fold_prediction_sealed_before_development_suffix_scoring"]
+    assert calibration["guard_and_interval_labels"] == (
+        "training-development-objects-only-after-fold-seal"
+    )
+    assert calibration["held_out_development_suffix_role"] == (
+        "outer-fold-scoring-only"
+    )
+    assert calibration["model_input_frame_range_half_open"] == [0, 58]
+    assert calibration["source_outcome_frame_range_half_open"] == [58, 76]
     assert calibration["population_harm_risk_certificate_claimed"] is False
     assert implementation["causal4d_primary_evaluation"] is False
     assert (
@@ -263,6 +302,7 @@ def test_contract_workflow_is_hosted_read_only_and_data_closed() -> None:
 
 def test_documentation_and_source_distribution_include_the_design() -> None:
     document = DOCUMENT_PATH.read_text(encoding="utf-8")
+    normalized_document = " ".join(document.split())
     manifest = MANIFEST_PATH.read_text(encoding="utf-8").splitlines()
 
     assert "A camera can be only partially informative" in document
@@ -272,6 +312,8 @@ def test_documentation_and_source_distribution_include_the_design() -> None:
     )
     assert "The physical object is the sole independent statistical unit" in document
     assert "Causal4D is deliberately not part of the primary experiment" in document
+    assert "requires no new recording" in normalized_document
+    assert "or human scientific approval" in normalized_document
     assert "open-twelve-confirmation-payloads-once" not in document
     assert "include docs/deform360_joint_sparse_prospective_v5.md" in manifest
     assert (

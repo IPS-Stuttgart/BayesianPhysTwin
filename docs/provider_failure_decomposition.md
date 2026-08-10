@@ -84,6 +84,62 @@ category. Known BayesianPhysTwin reasons such as `no-observation-support`,
 posteriors, and `implausible-state-update` provide conservative reason-derived
 signals when the corresponding explicit signal is `null`.
 
+## Direct claim-bearing update adapter
+
+Current prospective Prob4D-to-BayesianPhysTwin runs already produce an immutable
+`ClaimBearingProb4DUpdateV1` containing provider, calibration, runtime, admission,
+and complete inference-result identities. The adapter module converts those
+objects directly into the generic diagnostic input contract:
+
+```python
+from bayesian_phystwin.provider_failure_decomposition import (
+    analyze_provider_failure_evidence,
+)
+from bayesian_phystwin.provider_failure_evidence_adapters import (
+    build_provider_failure_payload_from_claim_bearing_updates,
+)
+
+payload = build_provider_failure_payload_from_claim_bearing_updates(
+    [
+        ("object-03/session-02", update_03_02),
+        ("object-04/session-01", update_04_01),
+    ],
+    source_signals_by_case={
+        "object-03/session-02": {
+            "covariance_calibrated": False,
+        }
+    },
+    metadata={"split": "source-only"},
+)
+report = analyze_provider_failure_evidence(payload)
+```
+
+The adapter accepts only a strict `PriorAwareGaugeBeliefResultV2` carried by a
+validated claim-bearing update. It derives only facts established by that
+immutable record:
+
+- technical construction is valid;
+- provider support is failed for recognized support reasons, or passed when the
+  underlying update was admissible;
+- numerical convergence is passed only by a complete strict admission and failed
+  by a recognized strict numerical reason;
+- query identifiability is failed by the registered identifiability reason, or
+  passed when the underlying update was admissible; and
+- the physical guard is failed by the registered implausible-update reason, or
+  passed when the underlying update was admissible.
+
+Gauge/common-mode consistency, covariance calibration, material identity, and
+robust-support sufficiency remain `null` unless an independently owned source or
+calibration record supplies them. Supplied signals may fill unknown fields but
+cannot contradict immutable update evidence. Adapter-owned metric and metadata
+fields cannot be replaced.
+
+Every generated record binds the claim-bearing update ID, admission ID,
+inference-result ID, observation and linearization artifact IDs, provider
+manifest ID, calibration artifact IDs, independently verified runtime source,
+and complete strict-admission certificate. Mixed provider-manifest identities
+and duplicate case IDs are rejected.
+
 ## Command
 
 ```bash

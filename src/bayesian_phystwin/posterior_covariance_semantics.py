@@ -1,10 +1,11 @@
-"""Explicit semantics for posterior covariance reported by Bayesian updates.
+"""Explicit semantics for covariance reported by Bayesian belief updates.
 
 A covariance matrix can be a working IRLS/Gauss--Newton approximation, a local
-observed-information approximation, or a group-score sandwich correction.  The
-numerical array alone does not say which interpretation is valid.  This module
-adds a small content-addressed contract for that distinction without changing
-any frozen solver or covariance bytes.
+observed-information approximation, a group-score sandwich correction, or the
+exact prior covariance retained after a rejected update. The numerical array
+alone does not say which interpretation is valid. This module adds a small
+content-addressed contract for that distinction without changing any frozen
+solver or covariance bytes.
 """
 
 from __future__ import annotations
@@ -28,16 +29,19 @@ POSTERIOR_COVARIANCE_SEMANTICS_SCHEMA = (
     "bayesian_phystwin.posterior_covariance_semantics"
 )
 POSTERIOR_COVARIANCE_SEMANTICS_VERSION = 1
+EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS = "not-applicable-exact-prior-fallback-v1"
 
 PosteriorCovarianceMethod = Literal[
     "irls_working",
     "laplace_observed_information",
     "group_sandwich",
+    "exact_prior_fallback",
 ]
 POSTERIOR_COVARIANCE_METHODS: tuple[PosteriorCovarianceMethod, ...] = (
     "irls_working",
     "laplace_observed_information",
     "group_sandwich",
+    "exact_prior_fallback",
 )
 
 
@@ -49,10 +53,21 @@ def _nonempty_literal_string(value: object, *, name: str) -> str:
 
 def _method(value: object) -> PosteriorCovarianceMethod:
     if type(value) is not str or value not in POSTERIOR_COVARIANCE_METHODS:
-        raise ValueError(
-            "method must be one of " f"{list(POSTERIOR_COVARIANCE_METHODS)}"
-        )
+        raise ValueError(f"method must be one of {list(POSTERIOR_COVARIANCE_METHODS)}")
     return cast(PosteriorCovarianceMethod, value)
+
+
+def _covariance_dimension(covariance: object) -> int:
+    matrix = np.asarray(covariance, dtype=np.float64)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or not len(matrix):
+        raise ValueError("covariance must be a nonempty square matrix")
+    if not np.all(np.isfinite(matrix)):
+        raise ValueError("covariance must be finite")
+    if not np.allclose(matrix, matrix.T, atol=1e-10, rtol=1e-10):
+        raise ValueError("covariance must be symmetric")
+    if np.min(np.linalg.eigvalsh(0.5 * (matrix + matrix.T))) < -1e-9:
+        raise ValueError("covariance must be positive semidefinite")
+    return len(matrix)
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,11 +119,26 @@ class PosteriorCovarianceSemanticsV1:
             "irls_working": (False, False),
             "laplace_observed_information": (True, False),
             "group_sandwich": (False, True),
+            "exact_prior_fallback": (False, False),
         }[method]
         if (mixture_curvature_exact, group_score_correction) != expected:
             raise ValueError(
                 "curvature and group-score flags contradict covariance method"
             )
+
+        if method == "exact_prior_fallback":
+            if likelihood_power_semantics != EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS:
+                raise ValueError(
+                    "exact prior fallback has fixed likelihood-power semantics"
+                )
+            if not prior_included:
+                raise ValueError("exact prior fallback must include the prior")
+            if generalized_bayes:
+                raise ValueError(
+                    "exact prior fallback is not a generalized-Bayes covariance"
+                )
+            if calibrated:
+                raise ValueError("exact prior fallback cannot be marked calibrated")
 
         calibration_id = self.calibration_artifact_id
         if calibrated:
@@ -260,25 +290,14 @@ class PosteriorCovarianceSemanticsV1:
 def working_irls_covariance_semantics(
     covariance: np.ndarray,
     *,
-    likelihood_power_semantics: str = (
-        "grouped-student-t-generalized-bayes-power-v1"
-    ),
+    likelihood_power_semantics: str = ("grouped-student-t-generalized-bayes-power-v1"),
     metadata: Mapping[str, Any] | None = None,
 ) -> PosteriorCovarianceSemanticsV1:
     """Describe the current working IRLS covariance without a calibration claim."""
 
-    matrix = np.asarray(covariance, dtype=np.float64)
-    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or not len(matrix):
-        raise ValueError("covariance must be a nonempty square matrix")
-    if not np.all(np.isfinite(matrix)):
-        raise ValueError("covariance must be finite")
-    if not np.allclose(matrix, matrix.T, atol=1e-10, rtol=1e-10):
-        raise ValueError("covariance must be symmetric")
-    if np.min(np.linalg.eigvalsh(0.5 * (matrix + matrix.T))) < -1e-9:
-        raise ValueError("covariance must be positive semidefinite")
     return PosteriorCovarianceSemanticsV1(
         method="irls_working",
-        dimension=len(matrix),
+        dimension=_covariance_dimension(covariance),
         likelihood_power_semantics=likelihood_power_semantics,
         prior_included=True,
         generalized_bayes=True,
@@ -289,11 +308,40 @@ def working_irls_covariance_semantics(
     )
 
 
+def exact_prior_fallback_covariance_semantics(
+    covariance: np.ndarray,
+    *,
+    reason: str,
+    metadata: Mapping[str, Any] | None = None,
+) -> PosteriorCovarianceSemanticsV1:
+    """Describe the exact prior covariance retained after a rejected update."""
+
+    fallback_reason = _nonempty_literal_string(reason, name="reason")
+    details = dict(metadata or {})
+    recorded_reason = details.get("fallback_reason")
+    if recorded_reason is not None and recorded_reason != fallback_reason:
+        raise ValueError("metadata fallback_reason contradicts reason")
+    details["fallback_reason"] = fallback_reason
+    return PosteriorCovarianceSemanticsV1(
+        method="exact_prior_fallback",
+        dimension=_covariance_dimension(covariance),
+        likelihood_power_semantics=(EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS),
+        prior_included=True,
+        generalized_bayes=False,
+        mixture_curvature_exact=False,
+        group_score_correction=False,
+        calibrated=False,
+        metadata=details,
+    )
+
+
 __all__ = [
+    "EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS",
     "POSTERIOR_COVARIANCE_METHODS",
     "POSTERIOR_COVARIANCE_SEMANTICS_SCHEMA",
     "POSTERIOR_COVARIANCE_SEMANTICS_VERSION",
     "PosteriorCovarianceMethod",
     "PosteriorCovarianceSemanticsV1",
+    "exact_prior_fallback_covariance_semantics",
     "working_irls_covariance_semantics",
 ]
