@@ -265,8 +265,9 @@ def materialize_manifest(
             descriptor_path = case_root / "descriptor.json"
             arrays_path = case_root / "arrays.npz"
             _write_json(descriptor_path, batch.identity_record())
+            payload = cast(dict[str, Any], _npz_payload(batch))
             with arrays_path.open("xb") as archive_stream:
-                np.savez_compressed(archive_stream, **_npz_payload(batch))
+                np.savez_compressed(archive_stream, **payload)
             manifest_cases.append(
                 {
                     "object_id": object_id,

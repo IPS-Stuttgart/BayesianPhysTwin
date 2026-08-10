@@ -254,9 +254,12 @@ def _load_prediction_support_windows(
         _require(window_id not in observed_ids, "prediction window ID repeats")
         observed_ids.add(window_id)
         relative = _safe_relative(record.get("path"), name="prediction window path")
-        descriptor = descriptors.get(relative)
-        _require(descriptor is not None, "prediction window lacks integrity descriptor")
-        descriptor = cast(Mapping[str, Any], descriptor)
+        descriptor_value = descriptors.get(relative)
+        _require(
+            descriptor_value is not None,
+            "prediction window lacks integrity descriptor",
+        )
+        descriptor = cast(Mapping[str, Any], descriptor_value)
         _require(
             descriptor.get("kind") == "independently_decoded_overlap_window",
             "prediction window kind changed",
