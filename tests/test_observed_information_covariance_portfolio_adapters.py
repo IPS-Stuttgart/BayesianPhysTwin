@@ -36,9 +36,7 @@ def _semantics(
         likelihood_power_semantics=LIKELIHOOD,
         prior_included=True,
         generalized_bayes=True,
-        mixture_curvature_exact=(
-            method == "laplace_observed_information"
-        ),
+        mixture_curvature_exact=(method == "laplace_observed_information"),
         group_score_correction=method == "group_sandwich",
         calibrated=False,
         metadata={"fixture": method},
