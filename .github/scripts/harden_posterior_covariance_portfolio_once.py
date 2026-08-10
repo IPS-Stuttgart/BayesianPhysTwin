@@ -73,6 +73,32 @@ def main() -> None:
     )
 
     tests = Path("tests/test_observed_information_covariance_portfolio.py")
+    replace_once(
+        tests,
+        "    tampered_covariance = replace(\n"
+        "        working,\n"
+        "        source_query_covariance_m2=np.eye(2) * 99.0,\n"
+        "    )\n",
+        "    tampered_covariance = replace(\n"
+        "        working,\n"
+        "        source_query_covariance_m2=np.eye(2) * 99.0,\n"
+        "        artifact_id=None,\n"
+        "    )\n",
+        marker="tampered covariance entry identity reset",
+    )
+    replace_once(
+        tests,
+        "    tampered_metadata = replace(\n"
+        "        observed,\n"
+        "        metadata={**observed.metadata, \"query_matrix_sha256\": \"0\" * 64},\n"
+        "    )\n",
+        "    tampered_metadata = replace(\n"
+        "        observed,\n"
+        "        metadata={**observed.metadata, \"query_matrix_sha256\": \"0\" * 64},\n"
+        "        artifact_id=None,\n"
+        "    )\n",
+        marker="tampered metadata entry identity reset",
+    )
     text = tests.read_text(encoding="utf-8")
     marker = "\ndef test_portfolio_hardening_rejects_semantic_and_reason_drift()"
     if marker in text:
