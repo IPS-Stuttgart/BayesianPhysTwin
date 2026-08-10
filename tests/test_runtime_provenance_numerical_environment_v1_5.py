@@ -18,6 +18,7 @@ from bayesian_phystwin.numerical_environment_v1 import (
     numerical_environment_from_dict,
 )
 
+
 def _controls() -> dict[str, str | None]:
     return {
         name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
