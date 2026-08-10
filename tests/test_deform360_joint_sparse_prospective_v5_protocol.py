@@ -266,8 +266,9 @@ def test_documentation_and_source_distribution_include_the_design() -> None:
     manifest = MANIFEST_PATH.read_text(encoding="utf-8").splitlines()
 
     assert "A camera can be only partially informative" in document
-    assert "Every rejected or unsupported candidate returns the unchanged physical" in (
-        document
+    assert (
+        "every rejected or unsupported candidate returns the unchanged physical"
+        in document.lower()
     )
     assert "The physical object is the sole independent statistical unit" in document
     assert "Causal4D is deliberately not part of the primary experiment" in document
