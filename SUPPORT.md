@@ -88,11 +88,20 @@ causal leakage, provenance ambiguity, unsafe artifact loading, or invalid
 scientific claims.
 
 The exact package-root export surface for the `0.4.x` line is retained in
-[`api/root-public-api-v0.4.json`](api/root-public-api-v0.4.json) and checked by
-[`tools/quality/check_public_api.py`](tools/quality/check_public_api.py). This is
-a drift ratchet for historical convenience imports, not a broader support
-promise. New interfaces should normally live in an explicit module or namespace;
-see [`docs/public_api_policy.md`](docs/public_api_policy.md).
+[`api/root-public-api-v0.4.json`](api/root-public-api-v0.4.json). It is a drift
+ratchet for historical convenience imports, not a broader support promise.
+
+The preferred ecosystem integration namespace is `bayesian_phystwin.v1`. Its
+exact ordered export surface is retained in
+[`api/versioned-public-api-v1.json`](api/versioned-public-api-v1.json). Changes
+that remove or reinterpret those exports require a new versioned namespace;
+research-only functionality should remain in explicit modules rather than
+expanding `v1` without demonstrated consumer need.
+
+Both surfaces are checked by
+[`tools/quality/check_public_api.py`](tools/quality/check_public_api.py) and
+shipped in the source distribution. See
+[`docs/public_api_policy.md`](docs/public_api_policy.md) for the complete policy.
 
 ## Reporting problems
 
