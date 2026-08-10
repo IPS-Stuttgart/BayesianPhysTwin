@@ -494,10 +494,12 @@ def evaluate_tree_separator_gaussian_parity(
     log_absolute = abs(
         independent.log_determinant_precision - reference_log_determinant
     )
-    log_scaled = log_absolute / max(
+    minimum_scale = float(np.finfo(np.float64).tiny)
+    log_scale = max(
         atol + rtol * abs(reference_log_determinant),
-        np.finfo(np.float64).tiny,
+        minimum_scale,
     )
+    log_scaled = log_absolute / log_scale
     global_residual, node_residual = system.residual(
         independent.separator_mean,
         independent.node_mean,
@@ -510,10 +512,11 @@ def evaluate_tree_separator_gaussian_parity(
             np.concatenate((system.global_right, system.node_right.reshape(-1)))
         )
     )
-    residual_scaled = residual_norm / max(
+    residual_scale = max(
         atol + rtol * (1.0 + right_norm),
-        np.finfo(np.float64).tiny,
+        minimum_scale,
     )
+    residual_scaled = residual_norm / residual_scale
 
     metrics = {
         "mean_maximum_absolute_error": _maximum_absolute_error(
