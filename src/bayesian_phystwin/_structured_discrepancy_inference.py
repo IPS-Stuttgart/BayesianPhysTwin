@@ -94,12 +94,10 @@ def _log_mixture_and_probability(
 ) -> tuple[np.ndarray, np.ndarray]:
     squared_norm = np.sum(np.square(innovation), axis=1)
     log_nominal = np.log(inlier_prior) - 0.5 * (
-        3.0 * np.log(2.0 * np.pi * nominal_variance)
-        + squared_norm / nominal_variance
+        3.0 * np.log(2.0 * np.pi * nominal_variance) + squared_norm / nominal_variance
     )
     log_outlier = np.log1p(-inlier_prior) - 0.5 * (
-        3.0 * np.log(2.0 * np.pi * outlier_variance)
-        + squared_norm / outlier_variance
+        3.0 * np.log(2.0 * np.pi * outlier_variance) + squared_norm / outlier_variance
     )
     log_mixture = np.logaddexp(log_nominal, log_outlier)
     probability = np.exp(log_nominal - log_mixture)
@@ -144,9 +142,7 @@ def _filter_full_rank_component(
     )
     field_variance = posterior.component_variance_m2[0]
     coefficient_mean = spatial_basis.T @ posterior.component_mean_m[0]
-    coefficient_covariance = (
-        spatial_basis.T @ (field_variance[:, None] * spatial_basis)
-    )
+    coefficient_covariance = spatial_basis.T @ (field_variance[:, None] * spatial_basis)
     local_variance = np.zeros(residual.shape[1], dtype=np.float64)
     cumulative_score = posterior.component_log_evidence[:, 0]
     score = _global_component_score(cumulative_score, posterior.update_count)
@@ -226,20 +222,16 @@ def _filter_structured_component(
         update_count[indices] += 1
 
         nominal_noise = unresolved_variance + observation_variance
-        outlier_noise = (
-            unresolved_variance + observation_variance * outlier_multiplier
-        )
+        outlier_noise = unresolved_variance + observation_variance * outlier_multiplier
         effective_precision = row_reliability * (
-            probability / nominal_noise
-            + (1.0 - probability) / outlier_noise
+            probability / nominal_noise + (1.0 - probability) / outlier_noise
         )
         prior_precision = _inverse_spd(coefficient_covariance)
         posterior_precision = prior_precision + design.T @ (
             effective_precision[:, None] * design
         )
-        information_mean = (
-            prior_precision @ coefficient_mean
-            + design.T @ (effective_precision[:, None] * observation)
+        information_mean = prior_precision @ coefficient_mean + design.T @ (
+            effective_precision[:, None] * observation
         )
         coefficient_mean = _solve_spd(posterior_precision, information_mean)
         coefficient_covariance = _inverse_spd(posterior_precision)
@@ -387,9 +379,7 @@ def predict_structured_discrepancy(
     leverage = np.sum(np.square(posterior.spatial_basis), axis=1)
     complement = np.maximum(1.0 - leverage, 0.0)
     propagated_local = posterior.component_local_variance_m2 + (
-        horizon
-        * posterior.component_process_variance_m2[:, None]
-        * complement[None, :]
+        horizon * posterior.component_process_variance_m2[:, None] * complement[None, :]
     )
     return StructuredDiscrepancyPredictionV1(
         spatial_basis=posterior.spatial_basis,
