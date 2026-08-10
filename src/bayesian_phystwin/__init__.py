@@ -15,8 +15,8 @@ from .bias_aware_belief import (
     fit_source_group_regret_bound,
     fit_source_regret_certificate,
     restrict_state_basis_to_identifiable_subspace,
-    update_bias_aware_state,
 )
+from .bias_aware_input_contract import update_bias_aware_state
 from .calibration import (
     BinaryCalibrationMetrics,
     FiniteGroupCalibrationDesign,
