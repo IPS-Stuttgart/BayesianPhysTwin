@@ -1,0 +1,488 @@
+name: Repair full-22 structured marginal evaluation
+
+on:
+  push:
+    branches: [agent/full22-structured-marginal-optimization-v1]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-full22-structured-marginals-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref ==
+      'refs/heads/agent/full22-structured-marginal-optimization-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact optimization branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-structured-marginal-optimization-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply exact structured-marginal and compact-readout adapters
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          runner = Path(
+              "scripts/science/run_full22_discrepancy_candidate_tournament_v1.py"
+          )
+          text = runner.read_text(encoding="utf-8")
+          start_marker = "def _forecast_structured_endpoint("
+          end_marker = "\ndef _forecast_graph_dynamic_marginals("
+          if text.count(start_marker) != 1 or text.count(end_marker) != 1:
+              raise SystemExit("unexpected structured forecast markers")
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          replacement = '''def _forecast_structured_marginals(
+              spatial_basis: np.ndarray,
+              component_coefficient_mean_m: np.ndarray,
+              component_coefficient_covariance_m2: np.ndarray,
+              component_local_variance_m2: np.ndarray,
+              component_weights: np.ndarray,
+              component_process_variance_m2: np.ndarray,
+              *,
+              count: int,
+          ) -> tuple[np.ndarray, np.ndarray]:
+              """Forecast structured point marginals from the compact posterior."""
+
+              basis = np.asarray(spatial_basis, dtype=np.float64)
+              coefficient_mean = np.asarray(
+                  component_coefficient_mean_m,
+                  dtype=np.float64,
+              )
+              coefficient_covariance = np.asarray(
+                  component_coefficient_covariance_m2,
+                  dtype=np.float64,
+              )
+              local_variance = np.asarray(
+                  component_local_variance_m2,
+                  dtype=np.float64,
+              )
+              weights = np.asarray(component_weights, dtype=np.float64)
+              process_variance = np.asarray(
+                  component_process_variance_m2,
+                  dtype=np.float64,
+              )
+              _require(
+                  basis.ndim == 2 and basis.shape[1] >= 1,
+                  "structured basis must be a nonempty matrix",
+              )
+              track_count, rank = basis.shape
+              _require(
+                  coefficient_mean.ndim == 3
+                  and coefficient_mean.shape[1:] == (rank, 3),
+                  "structured coefficient mean shape changed",
+              )
+              component_count = len(coefficient_mean)
+              _require(
+                  coefficient_covariance.shape
+                  == (component_count, rank, rank)
+                  and local_variance.shape == (component_count, track_count)
+                  and weights.shape == (component_count,)
+                  and process_variance.shape == (component_count,),
+                  "structured posterior arrays differ",
+              )
+              arrays = (
+                  basis,
+                  coefficient_mean,
+                  coefficient_covariance,
+                  local_variance,
+                  weights,
+                  process_variance,
+              )
+              _require(
+                  all(np.all(np.isfinite(array)) for array in arrays),
+                  "structured posterior arrays must be finite",
+              )
+              _require(
+                  count >= 1
+                  and np.all(local_variance >= 0.0)
+                  and np.all(process_variance >= 0.0)
+                  and np.all(weights >= 0.0)
+                  and np.isclose(np.sum(weights), 1.0, atol=1e-12, rtol=1e-12),
+                  "structured posterior weights, variances, or count are invalid",
+              )
+              _require(
+                  np.allclose(
+                      basis.T @ basis,
+                      np.eye(rank),
+                      atol=1e-10,
+                      rtol=1e-10,
+                  )
+                  and np.allclose(
+                      coefficient_covariance,
+                      np.swapaxes(coefficient_covariance, 1, 2),
+                      atol=1e-10,
+                      rtol=1e-10,
+                  ),
+                  "structured basis or covariance contract changed",
+              )
+
+              component_mean = np.einsum(
+                  "nr,krc->knc",
+                  basis,
+                  coefficient_mean,
+              )
+              mean = np.einsum("k,knc->nc", weights, component_mean)
+              represented_variance = np.einsum(
+                  "nr,krs,ns->kn",
+                  basis,
+                  coefficient_covariance,
+                  basis,
+              )
+              leverage = np.sum(np.square(basis), axis=1)
+              complement = np.maximum(1.0 - leverage, 0.0)
+              centered = component_mean - mean[None, :, :]
+              between = centered[:, :, :, None] * centered[:, :, None, :]
+              identity = np.eye(3, dtype=np.float64)
+              means = np.repeat(mean[None], count, axis=0)
+              marginals = np.empty((count, track_count, 3, 3), dtype=np.float64)
+              for index, horizon in enumerate(range(1, count + 1)):
+                  scalar_variance = np.maximum(
+                      represented_variance
+                      + local_variance
+                      + horizon
+                      * process_variance[:, None]
+                      * (leverage[None, :] + complement[None, :]),
+                      0.0,
+                  )
+                  within = scalar_variance[:, :, None, None] * identity
+                  marginal = np.einsum(
+                      "k,knij->nij",
+                      weights,
+                      within + between,
+                  )
+                  marginals[index] = 0.5 * (
+                      marginal + np.swapaxes(marginal, 1, 2)
+                  )
+              return means, marginals
+
+
+          def _forecast_structured_endpoint(
+              residual_m: np.ndarray,
+              valid: np.ndarray,
+              basis: np.ndarray,
+              *,
+              cutoff: int,
+              count: int,
+          ) -> tuple[np.ndarray, np.ndarray, dict[str, object]]:
+              from bayesian_phystwin.structured_discrepancy import (
+                  infer_structured_discrepancy,
+              )
+
+              posterior = infer_structured_discrepancy(
+                  residual_m,
+                  valid,
+                  basis,
+                  end_frame=cutoff,
+              )
+              mean, covariance = _forecast_structured_marginals(
+                  posterior.spatial_basis,
+                  posterior.component_coefficient_mean_m,
+                  posterior.component_coefficient_covariance_m2,
+                  posterior.component_local_variance_m2,
+                  posterior.component_weights,
+                  posterior.component_process_variance_m2,
+                  count=count,
+              )
+              return (
+                  mean,
+                  covariance,
+                  {
+                      "state_dimension": int(
+                          np.asarray(
+                              posterior.component_coefficient_mean_m
+                          ).size
+                          + np.asarray(
+                              posterior.component_local_variance_m2
+                          ).size
+                      ),
+                      "covariance_bytes": int(
+                          np.asarray(
+                              posterior.component_coefficient_covariance_m2
+                          ).nbytes
+                          + np.asarray(
+                              posterior.component_local_variance_m2
+                          ).nbytes
+                      ),
+                      "forecast_covariance_representation": (
+                          "per-track-marginals-from-structured-state"
+                      ),
+                  },
+              )
+
+          '''
+          runner.write_text(
+              text[:start] + replacement + text[end + 1 :],
+              encoding="utf-8",
+          )
+
+          tests = Path("tests/test_full22_discrepancy_candidate_tournament_v1.py")
+          test_text = tests.read_text(encoding="utf-8")
+          test_marker = "def test_structured_marginal_forecast_matches_component_oracle()"
+          if test_marker in test_text:
+              raise SystemExit("structured marginal tests already exist")
+          addition = '''
+
+
+          def test_structured_marginal_forecast_matches_component_oracle() -> None:
+              module = _module()
+              raw_basis = np.asarray(
+                  [
+                      [1.0, 0.0],
+                      [0.4, 0.8],
+                      [0.2, -0.5],
+                      [0.7, 0.1],
+                  ]
+              )
+              basis, _ = np.linalg.qr(raw_basis)
+              coefficient_mean = np.arange(18, dtype=float).reshape(3, 2, 3) / 1000.0
+              roots = np.arange(12, dtype=float).reshape(3, 2, 2) / 10000.0
+              coefficient_covariance = np.stack(
+                  [root @ root.T + np.eye(2) * 1e-6 for root in roots]
+              )
+              local_variance = (
+                  np.arange(12, dtype=float).reshape(3, 4) / 1000000.0
+              )
+              weights = np.asarray([0.2, 0.3, 0.5])
+              process_variance = np.asarray([1e-7, 2e-7, 4e-7])
+
+              means, marginals = module._forecast_structured_marginals(
+                  basis,
+                  coefficient_mean,
+                  coefficient_covariance,
+                  local_variance,
+                  weights,
+                  process_variance,
+                  count=3,
+              )
+
+              component_mean = np.einsum(
+                  "nr,krc->knc",
+                  basis,
+                  coefficient_mean,
+              )
+              expected_mean = np.einsum("k,knc->nc", weights, component_mean)
+              leverage = np.sum(np.square(basis), axis=1)
+              complement = np.maximum(1.0 - leverage, 0.0)
+              centered = component_mean - expected_mean[None, :, :]
+              expected_marginals = []
+              for horizon in range(1, 4):
+                  propagated_covariance = coefficient_covariance + (
+                      horizon
+                      * process_variance[:, None, None]
+                      * np.eye(2)[None, :, :]
+                  )
+                  propagated_local = local_variance + (
+                      horizon
+                      * process_variance[:, None]
+                      * complement[None, :]
+                  )
+                  represented = np.einsum(
+                      "nr,krs,ns->kn",
+                      basis,
+                      propagated_covariance,
+                      basis,
+                  )
+                  scalar_variance = np.maximum(
+                      represented + propagated_local,
+                      0.0,
+                  )
+                  within = (
+                      scalar_variance[:, :, None, None]
+                      * np.eye(3)[None, None, :, :]
+                  )
+                  between = centered[:, :, :, None] * centered[:, :, None, :]
+                  marginal = np.einsum(
+                      "k,knij->nij",
+                      weights,
+                      within + between,
+                  )
+                  expected_marginals.append(
+                      0.5 * (marginal + np.swapaxes(marginal, 1, 2))
+                  )
+
+              np.testing.assert_allclose(
+                  means,
+                  np.repeat(expected_mean[None], 3, axis=0),
+              )
+              np.testing.assert_allclose(
+                  marginals,
+                  np.stack(expected_marginals),
+                  atol=1e-12,
+                  rtol=1e-12,
+              )
+
+
+          def test_structured_candidate_avoids_prediction_object_per_horizon() -> None:
+              import inspect
+
+              module = _module()
+              source = inspect.getsource(module._forecast_structured_endpoint)
+              assert "predict_structured_discrepancy" not in source
+              assert "_forecast_structured_marginals(" in source
+          '''
+          tests.write_text(test_text.rstrip() + addition + "\n", encoding="utf-8")
+
+          workflow = Path(
+              ".github/workflows/full22-discrepancy-candidate-tournament-v1.yml"
+          )
+          workflow_text = workflow.read_text(encoding="utf-8")
+          upload_marker = "      - name: Upload complete tournament evidence\n"
+          if workflow_text.count(upload_marker) != 1:
+              raise SystemExit("unexpected complete-evidence upload marker")
+          compact_step = '''      - name: Upload compact tournament readout
+              if: always()
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+              with:
+                name: >-
+                  bpt-full22-discrepancy-readout-${{ github.run_id }}-${{
+                  github.run_attempt }}
+                path: |
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/scientific-readout.json
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/result/*.json
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/admission/admission_manifest.json
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/predictions/*/prediction_manifest.json
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/prefix/prefix_manifest.json
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/candidate-revisions.txt
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/data-manifest.json
+                  ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/pip-freeze.txt
+                if-no-files-found: ignore
+                retention-days: 30
+
+          '''
+          workflow.write_text(
+              workflow_text.replace(upload_marker, compact_step + upload_marker, 1),
+              encoding="utf-8",
+          )
+
+          docs = Path("docs/full22_discrepancy_candidate_tournament_v1.md")
+          docs_text = docs.read_text(encoding="utf-8")
+          heading = "## Marginal evaluation adapters and compact evidence"
+          if heading in docs_text:
+              raise SystemExit("structured marginal documentation already exists")
+          docs_addition = '''
+
+          ## Marginal evaluation adapters and compact evidence
+
+          The structured and graph-modal candidates are evaluated through their exact
+          registered per-track three-dimensional marginal moments. The orchestration
+          layer derives those marginals directly from each candidate's compact frozen
+          state. It does not construct unused dense cross-track or cross-horizon
+          covariance, and it does not alter predictive means, marginal covariances,
+          candidate revisions, admission decisions, scoring rules, or the locked
+          protocol identity.
+
+          In addition to the complete immutable evidence archive, the workflow uploads
+          a compact readout containing the arbitration reports, sealed manifest
+          identities, candidate manifest summaries, source revisions, data manifest,
+          and environment lock. The compact archive is an inspection aid; the complete
+          archive remains authoritative.
+          '''
+          docs.write_text(
+              docs_text.rstrip() + docs_addition + "\n",
+              encoding="utf-8",
+          )
+
+          Path(
+              ".github/workflows/repair-full22-structured-marginals.yml"
+          ).unlink()
+          PY
+
+      - name: Validate the isolated optimization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff check --fix \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format --check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m pytest -q \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_horizon_conditioned_discrepancy_tournament.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/full22_discrepancy_candidate_tournament_v1.json"
+          )
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          digest = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = (
+              "22746172fb6d207e80a2ebfeb2a00333"
+              "2317f3895317ff12988275acc75e16bd"
+          )
+          if digest != expected:
+              raise SystemExit(
+                  f"protocol digest changed: expected {expected}, got {digest}"
+              )
+          PY
+          python - <<'PY'
+          import yaml
+          from pathlib import Path
+
+          yaml.safe_load(
+              Path(
+                  ".github/workflows/"
+                  "full22-discrepancy-candidate-tournament-v1.yml"
+              ).read_text(encoding="utf-8")
+          )
+          PY
+          git diff --check
+
+      - name: Publish validated optimization and remove repair workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            .github/workflows/full22-discrepancy-candidate-tournament-v1.yml \
+            docs/full22_discrepancy_candidate_tournament_v1.md \
+            .github/workflows/repair-full22-structured-marginals.yml
+          git diff --cached --check
+          git commit -m "Optimize full-22 structured marginal evaluation"
+          git push origin \
+            HEAD:agent/full22-structured-marginal-optimization-v1
