@@ -1,0 +1,128 @@
+name: Repair geometric v4 NumPy and coverage registration once
+
+on:
+  push:
+    branches:
+      - agent/materialize-deform360-joint-sparse-geometric-v4
+    paths:
+      - .github/workflows/_repair-geometric-v4-npy-coverage-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-geometric-v4-npy-coverage-once
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/materialize-deform360-joint-sparse-geometric-v4
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply repair, validate, and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = \
+            "agent/materialize-deform360-joint-sparse-geometric-v4"
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"{path}: expected one replacement target, found {count}"
+                  )
+              target.write_text(text.replace(old, new), encoding="utf-8")
+
+          replace_once(
+              "src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py",
+              '''            version = np.lib.format.read_magic(stream)
+              shape, fortran_order, dtype = np.lib.format._read_array_header(  # type: ignore[attr-defined]
+                  stream, version
+              )
+          ''',
+              '''            version = np.lib.format.read_magic(stream)
+              if version == (1, 0):
+                  shape, fortran_order, dtype = (
+                      np.lib.format.read_array_header_1_0(stream)
+                  )
+              elif version == (2, 0):
+                  shape, fortran_order, dtype = (
+                      np.lib.format.read_array_header_2_0(stream)
+                  )
+              else:
+                  raise ValueError(f"unsupported metric point NPY version: {version}")
+          ''',
+          )
+
+          manifest = ".github/quality/test-suites.json"
+          replace_once(
+              manifest,
+              '''      "tests/test_deform360_joint_sparse_observability_v4_workflow.py"
+              ],
+              "core-contracts": [
+          ''',
+              '''      "tests/test_deform360_joint_sparse_observability_v4_workflow.py",
+                "tests/test_deform360_joint_sparse_geometric_v4.py"
+              ],
+              "core-contracts": [
+          ''',
+          )
+          replace_once(
+              manifest,
+              '''      "tests/test_deform360_joint_sparse_observability_v4_workflow.py"
+              ],
+              "provider-contract": [
+          ''',
+              '''      "tests/test_deform360_joint_sparse_observability_v4_workflow.py",
+                "tests/test_deform360_joint_sparse_geometric_v4.py"
+              ],
+              "provider-contract": [
+          ''',
+          )
+          PY
+
+          python -m pip install -e ".[dev]"
+          python -m ruff format \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
+            tests/test_deform360_joint_sparse_geometric_v4.py \
+            tools/quality/test_suite_manifest.py
+          python -m mypy \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+          python tools/quality/test_suite_manifest.py validate
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4.py \
+            tests/test_test_suite_manifest.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/quality/test-suites.json \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py
+          git commit -m "Use public NumPy headers and register geometric tests"
+          git push origin HEAD:agent/materialize-deform360-joint-sparse-geometric-v4
