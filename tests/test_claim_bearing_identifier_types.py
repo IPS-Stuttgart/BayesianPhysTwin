@@ -188,6 +188,14 @@ def test_gauge_batch_preserves_repeated_literal_group_ids() -> None:
     assert batch.anchor_correlation_group_ids == ("anchor", "anchor")
 
 
+def test_gauge_batch_rejects_non_tuple_correlation_group_ids() -> None:
+    with pytest.raises(TypeError, match="tuple of exact strings"):
+        replace(
+            _gauge_batch(),
+            correlation_group_ids=["window", "window"],  # type: ignore[arg-type]
+        )
+
+
 def test_gauge_batch_rejects_nonliteral_correlation_group_ids() -> None:
     with pytest.raises(TypeError, match="exact string"):
         replace(
