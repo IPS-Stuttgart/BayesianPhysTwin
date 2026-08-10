@@ -1,9 +1,8 @@
 name: Patch geometric v4 pipeline ID once
 
 on:
-  push:
-    branches:
-      - agent/materialize-deform360-joint-sparse-geometric-v4
+  pull_request:
+    branches: [main]
     paths:
       - .github/workflows/_patch-geometric-v4-pipeline-id-once.yml
 
@@ -17,15 +16,15 @@ concurrency:
 jobs:
   patch:
     if: >-
-      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/materialize-deform360-joint-sparse-geometric-v4'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out current feature branch
         uses: actions/checkout@v7
         with:
-          ref: agent/materialize-deform360-joint-sparse-geometric-v4
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           persist-credentials: true
           clean: true
