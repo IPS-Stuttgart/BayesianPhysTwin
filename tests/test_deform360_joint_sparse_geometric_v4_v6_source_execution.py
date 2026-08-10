@@ -26,9 +26,7 @@ AMENDMENT = ROOT / (
     "deform360_official_hub_fresh_object_session_v6_"
     "source_prediction_execution.json"
 )
-WORKFLOW = ROOT / (
-    ".github/workflows/deform360-v6-source-prediction-evidence.yml"
-)
+WORKFLOW = ROOT / (".github/workflows/deform360-v6-source-prediction-evidence.yml")
 RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 AMENDMENT_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 
@@ -241,15 +239,15 @@ def test_plan_materializer_uses_only_frozen_supported_prefixes(
         )
         assert reserved == expected
         assert 2 <= len(row["visual_windows"]) <= 8
-        assert not ({value["camera_id"] for value in row["visual_windows"]} & set(reserved))
+        assert not (
+            {value["camera_id"] for value in row["visual_windows"]} & set(reserved)
+        )
         assert row["contact_prefix"] == {
             "status": "unavailable",
             "path": None,
             "manifest_file_sha256": None,
             "materialization_id": None,
-            "unavailable_reason": (
-                "released-tactile-robot-axis-identity-unavailable"
-            ),
+            "unavailable_reason": ("released-tactile-robot-axis-identity-unavailable"),
         }
         for visual in row["visual_windows"]:
             assert not Path(visual["decoded_uniform"]["path"]).is_absolute()
@@ -299,12 +297,12 @@ def test_workflow_runs_science_only_after_merge_on_workstation2() -> None:
 def test_runner_seals_predictions_without_opening_source_suffix() -> None:
     text = RUNNER.read_text(encoding="utf-8")
 
-    assert "prediction_record_count\") != 100" in text
+    assert 'prediction_record_count") != 100' in text
     assert "source-prediction-evidence-sealed" in text
     assert "source-inputs-incomplete" in text
     assert "source-technical-failure-retained" in text
     assert "run_deform360_joint_sparse_source_predictions_v5.py" in text
     assert "run_deform360_fresh_object_session_source_v6.py" not in text
-    assert "development_suffix_opened\": False" in text
-    assert "v6_target_payloads_opened\": False" in text
-    assert "fresh_target_selection_authorized\": False" in text
+    assert 'development_suffix_opened": False' in text
+    assert 'v6_target_payloads_opened": False' in text
+    assert 'fresh_target_selection_authorized": False' in text
