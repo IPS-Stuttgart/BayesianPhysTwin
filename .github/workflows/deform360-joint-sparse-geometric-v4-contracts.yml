@@ -10,8 +10,7 @@ on:
       - "protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
       - "scripts/science/materialize_deform360_joint_sparse_geometric_v4.py"
       - "src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py"
-      - "tests/test_deform360_joint_sparse_geometric_v4.py"
-      - "tests/test_deform360_joint_sparse_geometric_v4_workflow.py"
+      - "tests/test_deform360_joint_sparse_geometric_v4*.py"
       - "MANIFEST.in"
   workflow_dispatch:
 
@@ -88,6 +87,7 @@ jobs:
             src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
             scripts/science/materialize_deform360_joint_sparse_geometric_v4.py
             tests/test_deform360_joint_sparse_geometric_v4.py
+            tests/test_deform360_joint_sparse_geometric_v4_pipeline.py
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py
           )
           run_check RUFF python -m ruff check "${files[@]}"
@@ -108,6 +108,7 @@ jobs:
           fi
           run_check PYTEST python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4.py \
+            tests/test_deform360_joint_sparse_geometric_v4_pipeline.py \
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
             tests/test_deform360_joint_sparse_observability_v4.py \
             tests/test_deform360_joint_sparse_observability_v4_cli.py \
