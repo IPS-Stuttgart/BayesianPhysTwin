@@ -1,0 +1,214 @@
+name: Apply tree-separator shadow parity
+
+on:
+  push:
+    branches: [agent/tree-separator-shadow-parity-v1]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-tree-separator-shadow-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/tree-separator-shadow-parity-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/tree-separator-shadow-parity-v1
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Apply reviewed payload
+        shell: bash
+        env:
+          PAYLOAD_SHA256: d4ede3d3d5bd248848a61d1789ae74794b7270ad981c553cad79757f14bdcb39
+        run: |
+          set -euo pipefail
+          payload="$RUNNER_TEMP/tree-separator-shadow-parity.tgz"
+          base64 -d > "$payload" <<'PAYLOAD'
+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
+PAYLOAD
+          printf '%s  %s\n' "$PAYLOAD_SHA256" "$payload" | sha256sum --check --strict
+          test ! -e src/bayesian_phystwin/tree_separator_gaussian_parity.py
+          test ! -e tests/test_tree_separator_gaussian_parity.py
+          test ! -e docs/tree_separator_gaussian_parity.md
+          tar -xzf "$payload"
+          rm .github/workflows/apply-tree-separator-shadow-parity.yml
+          python -m compileall -q \
+            src/bayesian_phystwin/tree_separator_gaussian_parity.py \
+            tests/test_tree_separator_gaussian_parity.py
+      - name: Validate focused parity boundary
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m ruff check \
+            src/bayesian_phystwin/tree_separator_gaussian_parity.py \
+            tests/test_tree_separator_gaussian_parity.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/tree_separator_gaussian_parity.py \
+            tests/test_tree_separator_gaussian_parity.py
+          python -m pytest -q \
+            tests/test_tree_separator_gaussian_parity.py \
+            tests/test_structured_point_covariance_tree_separator_gaussian.py \
+            tests/test_structured_point_covariance_tree_block_coverage_edges.py \
+            tests/test_structured_point_covariance_tree_block_operator.py \
+            tests/test_tree_block_sparse_gauge_belief.py \
+            tests/test_structured_point_covariance_causal4d_tree_block_provider.py \
+            tests/test_portable_contracts_tree_block_strict_admission.py
+          git diff --check
+      - name: Publish reviewed change and remove bootstrap
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/tree_separator_gaussian_parity.py \
+            tests/test_tree_separator_gaussian_parity.py \
+            docs/tree_separator_gaussian_parity.md \
+            .github/workflows/apply-tree-separator-shadow-parity.yml
+          git diff --cached --check
+          git commit -m "Add tree-separator shadow parity"
+          git push origin HEAD:agent/tree-separator-shadow-parity-v1
