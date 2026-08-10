@@ -52,9 +52,7 @@ def test_v6_is_content_addressed_and_does_not_rewrite_v5() -> None:
     )
     assert policy["schema_version"] == 6
     assert policy["policy_id"] == _content_id(policy, excluded="policy_id")
-    assert policy["protocol_id"] == (
-        "deform360-official-hub-fresh-object-session-v6"
-    )
+    assert policy["protocol_id"] == ("deform360-official-hub-fresh-object-session-v6")
     assert policy["semantics"] == (
         "prospective-fresh-object-session-source-selected-challenger-v6"
     )
@@ -65,15 +63,14 @@ def test_v6_is_content_addressed_and_does_not_rewrite_v5() -> None:
     assert predecessor["v5_selection_path"] == (
         V5_SELECTION_PATH.relative_to(ROOT).as_posix()
     )
-    assert predecessor["v5_selection_artifact_sha256"] == (
-        selection["selection_artifact_sha256"]
+    assert (
+        predecessor["v5_selection_artifact_sha256"]
+        == (selection["selection_artifact_sha256"])
     )
     assert predecessor[
         "v5_must_have_immutable_terminal_record_before_v6_target_selection"
     ]
-    assert predecessor[
-        "v6_source_selection_completed_before_v5_terminal_outcome_read"
-    ]
+    assert predecessor["v6_source_selection_completed_before_v5_terminal_outcome_read"]
     assert predecessor[
         "v6_target_execution_if_source_passes_independent_of_v5_result_sign"
     ]
@@ -91,13 +88,10 @@ def test_cross_version_reporting_prevents_a_v5_rescue_claim() -> None:
         "cross_version_replication_claim_requires_v5_and_v6_positive": True,
         "v5_and_v6_terminal_records_must_be_reported_together": True,
         (
-            "v6_execution_after_source_authorization_is_not_optional_by_"
-            "v5_result_sign"
+            "v6_execution_after_source_authorization_is_not_optional_by_v5_result_sign"
         ): True,
         "v6_positive_result_does_not_override_or_relabel_v5": True,
-        "v6_standalone_claim_scope": (
-            "the-sixteen-fresh-v6-object-session-units-only"
-        ),
+        "v6_standalone_claim_scope": ("the-sixteen-fresh-v6-object-session-units-only"),
     }
 
 
@@ -161,15 +155,9 @@ def test_guard_covariance_and_interval_calibration_are_source_only() -> None:
 
     assert guard["strategy"] == "nested-source-only-tie-preserving-risk-coverage"
     assert guard["candidate_specific_thresholds_fitted_inside_each_outer_fold"]
-    assert guard[
-        "candidate_prediction_and_risk_score_sealed_before_suffix_scoring"
-    ]
-    assert guard["risk_score_semantics"] == (
-        "lower-is-safer-inclusive-threshold-v1"
-    )
-    assert guard["risk_threshold_tie_policy"] == (
-        "accept-complete-tied-score-blocks"
-    )
+    assert guard["candidate_prediction_and_risk_score_sealed_before_suffix_scoring"]
+    assert guard["risk_score_semantics"] == ("lower-is-safer-inclusive-threshold-v1")
+    assert guard["risk_threshold_tie_policy"] == ("accept-complete-tied-score-blocks")
     assert guard["minimum_accepted_source_units"] == 8
     assert guard["minimum_accepted_source_units_per_stratum"] == 4
     assert guard["confirmation_adaptation"] == "forbidden"
@@ -217,9 +205,7 @@ def test_target_decision_uses_units_and_three_familywise_contrasts() -> None:
     assert evaluation["endpoint_view_reservation"]["views_per_unit"] == 2
     assert evaluation["endpoint_view_reservation"]["metadata_only_selection"] is True
     assert (
-        evaluation["endpoint_view_reservation"][
-            "reserved_views_contribute_likelihood"
-        ]
+        evaluation["endpoint_view_reservation"]["reserved_views_contribute_likelihood"]
         is False
     )
 
@@ -234,17 +220,12 @@ def test_target_decision_uses_units_and_three_familywise_contrasts() -> None:
     assert decision["minimum_relative_improvement_vs_physical_fallback"] == 0.10
     assert decision["minimum_relative_improvement_vs_last_causal_residual"] == 0.05
     assert (
-        decision[
-            "minimum_relative_gaussian_nll_improvement_vs_last_causal_residual"
-        ]
+        decision["minimum_relative_gaussian_nll_improvement_vs_last_causal_residual"]
         == 0.02
     )
     assert decision["minimum_improved_target_units_vs_each_primary_comparator"] == 13
     assert (
-        decision[
-            "minimum_improved_units_per_stratum_vs_each_primary_comparator"
-        ]
-        == 6
+        decision["minimum_improved_units_per_stratum_vs_each_primary_comparator"] == 6
     )
     assert decision["minimum_accepted_target_units"] == 12
     assert decision["minimum_accepted_units_per_stratum"] == 6
@@ -265,9 +246,9 @@ def test_target_decision_uses_units_and_three_familywise_contrasts() -> None:
             "comparator": "B1_last_causal_residual",
         },
     ]
-    assert decision[
-        "require_familywise_bootstrap_upper_bound_below_zero_for"
-    ] == contrasts
+    assert (
+        decision["require_familywise_bootstrap_upper_bound_below_zero_for"] == contrasts
+    )
 
     probability = sum(math.comb(16, count) for count in range(13, 17)) / 2**16
     assert math.isclose(probability, 697 / 65536)
@@ -330,9 +311,7 @@ def test_information_order_stops_before_target_when_source_fails() -> None:
     execution_freeze = stages.index(
         "freeze-exact-v6-execution-revisions-and-machine-authorization"
     )
-    target_opening = stages.index(
-        "open-sixteen-fresh-object-session-payloads-once"
-    )
+    target_opening = stages.index("open-sixteen-fresh-object-session-payloads-once")
     assert execution_freeze < target_opening
     assert stages[-1] == "consider-causal4d-only-after-v6-positive-result"
 
