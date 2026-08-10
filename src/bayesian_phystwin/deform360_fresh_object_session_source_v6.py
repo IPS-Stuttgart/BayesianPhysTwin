@@ -33,12 +33,8 @@ from .discrepancy_candidate_tournament import (
     analyze_discrepancy_candidate_tournament,
 )
 
-POLICY_ID: Final = (
-    "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f"
-)
-AMENDMENT_ID: Final = (
-    "6113d481321f176929ccab0a38a4efacbeeb6620f53d7954d102b0b4fb1879c7"
-)
+POLICY_ID: Final = "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f"
+AMENDMENT_ID: Final = "6113d481321f176929ccab0a38a4efacbeeb6620f53d7954d102b0b4fb1879c7"
 POLICY_SCHEMA: Final = (
     "bayesian-phystwin.deform360-fresh-object-session-prospective-policy"
 )
@@ -454,9 +450,7 @@ def _variant_prediction(
             threshold = (
                 None
                 if threshold_value is None
-                else _finite(
-                    threshold_value, name="guard_threshold", minimum=0.0
-                )
+                else _finite(threshold_value, name="guard_threshold", minimum=0.0)
             )
             expected_acceptance = threshold is not None and risk <= threshold
             if accepted != expected_acceptance:
@@ -730,9 +724,7 @@ def build_deform360_v6_source_outcome(
         "schema_version": SCHEMA_VERSION,
         "policy_id": POLICY_ID,
         "amendment_id": AMENDMENT_ID,
-        "selection_artifact_sha256": prediction_batch[
-            "selection_artifact_sha256"
-        ],
+        "selection_artifact_sha256": prediction_batch["selection_artifact_sha256"],
         "implementation_revision": prediction_batch["implementation_revision"],
         "prediction_batch_id": prediction_batch["prediction_batch_id"],
         "prediction_seal_id": seal_id,
@@ -904,9 +896,7 @@ def assemble_deform360_v6_source_evidence(
     if len(outcomes) != 10:
         raise ValueError("v6 source evidence must contain ten outcomes")
     validated = [
-        validate_deform360_v6_source_outcome(
-            outcome, prediction_batch=prediction_batch
-        )
+        validate_deform360_v6_source_outcome(outcome, prediction_batch=prediction_batch)
         for outcome in outcomes
     ]
     by_seal: dict[str, dict[str, Any]] = {}
@@ -942,9 +932,7 @@ def assemble_deform360_v6_source_evidence(
         "schema_version": SCHEMA_VERSION,
         "policy_id": POLICY_ID,
         "amendment_id": AMENDMENT_ID,
-        "selection_artifact_sha256": prediction_batch[
-            "selection_artifact_sha256"
-        ],
+        "selection_artifact_sha256": prediction_batch["selection_artifact_sha256"],
         "implementation_revision": prediction_batch["implementation_revision"],
         "prediction_batch_id": prediction_batch["prediction_batch_id"],
         "record_count": 10,
@@ -1091,9 +1079,7 @@ def evaluate_deform360_v6_source_gate(
         "held_out_nonregression_per_stratum": all(
             nonregressing_by_stratum[stratum]
             >= int(
-                policy_tournament[
-                    "minimum_nonregressing_held_out_units_per_stratum"
-                ]
+                policy_tournament["minimum_nonregressing_held_out_units_per_stratum"]
             )
             for stratum in ("sheet", "volumetric")
         ),
@@ -1112,9 +1098,7 @@ def evaluate_deform360_v6_source_gate(
         "interval_width_nonregression": width is not None
         and reference_width is not None
         and float(width)
-        <= float(
-            covariance["maximum_mean_full_interval_width_ratio_vs_reference"]
-        )
+        <= float(covariance["maximum_mean_full_interval_width_ratio_vs_reference"])
         * float(reference_width),
     }
     source_gate_passed = all(checks.values())

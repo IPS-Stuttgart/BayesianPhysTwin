@@ -102,15 +102,11 @@ def _variant_prediction(
     return {
         "available": True,
         "accepted": (
-            False
-            if variant_id == v6.B0
-            else True if variant_id == v6.B1 else accepted
+            False if variant_id == v6.B0 else True if variant_id == v6.B1 else accepted
         ),
         "prediction_artifact_id": _digest(f"{object_id}/{variant_id}/prediction"),
         "fit_artifact_id": _digest(f"{object_id}/{variant_id}/fit"),
-        "fit_object_ids": (
-            sorted(set(source_ids) - {object_id}) if challenger else []
-        ),
+        "fit_object_ids": (sorted(set(source_ids) - {object_id}) if challenger else []),
         "guard_artifact_id": _digest(f"{object_id}/{variant_id}/guard"),
         "guard_threshold": 0.2 if challenger else None,
         "covariance_artifact_id": _digest(f"{object_id}/{variant_id}/covariance"),
@@ -254,22 +250,31 @@ def _reidentify(payload: dict[str, Any], id_field: str) -> None:
 def test_positive_source_gate_is_prediction_first_and_target_closed() -> None:
     policy, amendment, selection, seals, batch, outcomes, evidence = _bundle()
 
-    assert v6.build_deform360_v6_source_prediction_batch(
-        list(reversed(seals)),
-        policy=policy,
-        amendment=amendment,
-        selection=selection,
-    ) == batch
-    assert v6.assemble_deform360_v6_source_evidence(
-        prediction_batch=batch,
-        outcomes=list(reversed(outcomes)),
-    ) == evidence
-    assert v6.validate_deform360_v6_source_prediction_batch(
-        batch,
-        policy=policy,
-        amendment=amendment,
-        selection=selection,
-    ) == batch
+    assert (
+        v6.build_deform360_v6_source_prediction_batch(
+            list(reversed(seals)),
+            policy=policy,
+            amendment=amendment,
+            selection=selection,
+        )
+        == batch
+    )
+    assert (
+        v6.assemble_deform360_v6_source_evidence(
+            prediction_batch=batch,
+            outcomes=list(reversed(outcomes)),
+        )
+        == evidence
+    )
+    assert (
+        v6.validate_deform360_v6_source_prediction_batch(
+            batch,
+            policy=policy,
+            amendment=amendment,
+            selection=selection,
+        )
+        == batch
+    )
     assert v6.validate_deform360_v6_source_evidence(evidence) == evidence
 
     result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
@@ -309,9 +314,7 @@ def test_unavailable_covariance_variant_is_retained_as_exact_fallback() -> None:
     policy, _, _, _, _, _, evidence = _bundle(unavailable_variant=v6.VT1_OBSERVED)
     tournament = evidence["tournament_input"]
     rows = [
-        row
-        for row in tournament["records"]
-        if row["candidate_id"] == v6.VT1_OBSERVED
+        row for row in tournament["records"] if row["candidate_id"] == v6.VT1_OBSERVED
     ]
 
     assert len(rows) == 10
@@ -488,9 +491,9 @@ def test_outcome_binding_and_exact_unavailable_fallback_fail_closed() -> None:
         )
 
     changed = copy.deepcopy(outcomes[0])
-    changed["information_boundary"][
-        "source_suffix_opened_after_prediction_batch"
-    ] = False
+    changed["information_boundary"]["source_suffix_opened_after_prediction_batch"] = (
+        False
+    )
     _reidentify(changed, "outcome_id")
     with pytest.raises(ValueError, match="crossed its information boundary"):
         v6.validate_deform360_v6_source_outcome(changed, prediction_batch=batch)
@@ -511,9 +514,7 @@ def test_evidence_roster_and_tournament_identity_fail_closed() -> None:
         )
 
     changed = copy.deepcopy(evidence)
-    changed["tournament_input"]["selection"][
-        "minimum_relative_point_improvement"
-    ] = 0.0
+    changed["tournament_input"]["selection"]["minimum_relative_point_improvement"] = 0.0
     _reidentify(changed, "evidence_id")
     with pytest.raises(ValueError, match="differs from sealed evidence"):
         v6.validate_deform360_v6_source_evidence(changed)
@@ -624,8 +625,9 @@ def test_real_locks_load_and_bind_candidate_specific_covariances() -> None:
 
     assert policy["policy_id"] == v6.POLICY_ID
     assert amendment["amendment_id"] == v6.AMENDMENT_ID
-    assert selection["selection_artifact_sha256"] == (
-        policy["predecessor_boundary"]["v5_selection_artifact_sha256"]
+    assert (
+        selection["selection_artifact_sha256"]
+        == (policy["predecessor_boundary"]["v5_selection_artifact_sha256"])
     )
     assert len(cohort) == 10
     assert v6.VARIANT_COVARIANCE[v6.D1_NATIVE] == "native-model-average"
@@ -891,9 +893,9 @@ def test_real_lock_loaders_fail_closed_on_tampering(tmp_path: Path) -> None:
         )
 
     changed = copy.deepcopy(amendment_payload)
-    changed["candidate_covariance_rosters"][
-        "D1_dynamic_endpoint_model_average_v2"
-    ]["required_methods"] = ["working-irls"]
+    changed["candidate_covariance_rosters"]["D1_dynamic_endpoint_model_average_v2"][
+        "required_methods"
+    ] = ["working-irls"]
     _reidentify(changed, "amendment_id")
     with pytest.raises(ValueError, match="roster changed"):
         v6.load_deform360_fresh_object_session_v6_covariance_amendment(
