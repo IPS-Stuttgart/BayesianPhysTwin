@@ -264,7 +264,7 @@ def test_registered_execution_lock_and_implementation_files_validate() -> None:
 
     verify_implementation_files(execution, ROOT)
     assert execution["execution_protocol_sha256"] == (
-        "f51cb256572b9d2345cbb87d363ae33bcea9f5dc25567238f45fbe7aabcc7c31"
+        "e875495295acc8de4b7da70cdcaff9947838b8e92f1785dbbe32f9fc0c67e78b"
     )
     assert model["model_sha256"] == execution["causal_scale_model_sha256"]
     assert source_result["result_sha256"] == execution["source_result_sha256"]

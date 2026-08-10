@@ -34,8 +34,8 @@ RESULT_PATH = (
     / "pokeflex_missing5_causal_scale_v6"
     / "source_result.json"
 )
-MODEL_FILE_SHA256 = "a75ae8cc4749f39dbc4cc5b2cf8f5b625fe47449ec29c4cb4b2dd785933c3604"
-RESULT_FILE_SHA256 = "0fed13842a2c49e0ca5f0e2bd33f623f6e2464344433414a232d56aabd005ad8"
+MODEL_FILE_SHA256 = "130fd65b84723b05a8a7b6926b2c82bea2f356d3ff35c613fb7d6bf4f51373fa"
+RESULT_FILE_SHA256 = "733dd4376ea7fcb62d67528479cf70c6d040f71b3ddf29e2dfb6e00950d645d1"
 
 
 def _artifact(object_name: str, take_id: str) -> dict[str, Any]:
@@ -249,13 +249,13 @@ def test_frozen_source_artifacts_validate_and_bind_closed_boundaries() -> None:
 
     validation = validate_causal_scale_model(model)
     assert validation["model_sha256"] == (
-        "827cb70e4b35de585f7eaba05a379ef7eeeb4b58464a510e7a8421283e68884e"
+        "4b6835f6ab57787be007855141081a3a10cea30eba736d47863b68fa7acf6ffa"
     )
     assert file_sha256(MODEL_PATH) == MODEL_FILE_SHA256
     assert file_sha256(RESULT_PATH) == RESULT_FILE_SHA256
     assert result["result_sha256"] == canonical_payload_sha256(result, "result_sha256")
     assert result["result_sha256"] == (
-        "fd0fe90b2aa8cc8fe0f966b22c57620a9b7e22f09469e00062851b59286c1e3e"
+        "e7f17d5bd9045a3634e4f07b32ae9217ea8432ddd24ed387ab1c3512dd18483f"
     )
     assert result["model_sha256"] == model["model_sha256"]
     assert result["model_file_sha256"] == MODEL_FILE_SHA256

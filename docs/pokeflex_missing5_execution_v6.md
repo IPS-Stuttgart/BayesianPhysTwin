@@ -8,11 +8,11 @@ For every target take, the V5 stage and prediction must first be produced with
 prefix inputs to compute the five causal scale features and applies the frozen
 source model.
 
-- Execution protocol SHA-256: `f51cb256572b9d2345cbb87d363ae33bcea9f5dc25567238f45fbe7aabcc7c31`
-- Execution protocol file SHA-256: `b184fa79e5267f421d43d9926e3b34af0ebdcbaed742165ab29846ce7063f7e9`
+- Execution protocol SHA-256: `e875495295acc8de4b7da70cdcaff9947838b8e92f1785dbbe32f9fc0c67e78b`
+- Execution protocol file SHA-256: `11cf0cabf40760048f05ffee93a3cdd104b80fe90306d8ce0a3cfe0da4c048a3`
 - Parent V5 execution SHA-256: `1bc0a3486c0b937000772fc74bfcab2ed4a4dd34f2d90d0199440bc043a59f7a`
-- Causal scale model SHA-256: `827cb70e4b35de585f7eaba05a379ef7eeeb4b58464a510e7a8421283e68884e`
-- Source result SHA-256: `fd0fe90b2aa8cc8fe0f966b22c57620a9b7e22f09469e00062851b59286c1e3e`
+- Causal scale model SHA-256: `4b6835f6ab57787be007855141081a3a10cea30eba736d47863b68fa7acf6ffa`
+- Source result SHA-256: `e7f17d5bd9045a3634e4f07b32ae9217ea8432ddd24ed387ab1c3512dd18483f`
 
 No official target outcome was used to choose the model or lock the runner.
 The exact five author-provided archives were unavailable when this protocol

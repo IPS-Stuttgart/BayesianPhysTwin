@@ -88,9 +88,7 @@ def causal_scale_feature(
         [
             target_frame / maximum_frame,
             _positive_log(update.get("rms_update_m", 0.0), "rms update"),
-            _positive_log(
-                update.get("prior_motion_rms_m", 0.0), "prior motion rms"
-            ),
+            _positive_log(update.get("prior_motion_rms_m", 0.0), "prior motion rms"),
             _positive_log(
                 update.get("correction_to_prior_motion_ratio", 0.0),
                 "correction-to-prior ratio",
@@ -173,7 +171,9 @@ def extract_source_frame_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]
     take_id = str(take.get("id", ""))
     object_name = _object_name(take_id)
     expected_takes = SOURCE_TAKES.get(object_name)
-    _require(expected_takes is not None and take_id in expected_takes, "unknown source take")
+    _require(
+        expected_takes is not None and take_id in expected_takes, "unknown source take"
+    )
     maximum_frame = int(take.get("maximum_frame", 0))
     _require(maximum_frame >= 6, "source maximum frame is invalid")
     updates_payload = payload.get("updates")
@@ -209,7 +209,9 @@ def extract_source_frame_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]
         update = updates.get(target_frame)
         _require(update is not None, "source target has no causal update row")
         assert update is not None
-        baseline = _finite_float(target.get(_score_key(baseline_scale)), "baseline score")
+        baseline = _finite_float(
+            target.get(_score_key(baseline_scale)), "baseline score"
+        )
         candidate = _finite_float(
             target.get(_score_key(candidate_scale)), "candidate score"
         )
@@ -344,7 +346,9 @@ def _validate_object_model(
         "model feature transform changed",
     )
     _require(
-        np.all(np.isfinite(center)) and np.all(np.isfinite(scale)) and np.all(scale > 0),
+        np.all(np.isfinite(center))
+        and np.all(np.isfinite(scale))
+        and np.all(scale > 0),
         "model feature transform is invalid",
     )
     radius = _finite_float(object_model.get("support_radius"), "support radius")
@@ -405,9 +409,7 @@ def validate_causal_scale_model(payload: Mapping[str, Any]) -> dict[str, Any]:
     objects = payload.get("objects")
     _require(isinstance(objects, Mapping), "V6 object models are missing")
     assert isinstance(objects, Mapping)
-    _require(
-        set(objects) == set(V6_CANDIDATE_SCALES), "V6 promoted object set changed"
-    )
+    _require(set(objects) == set(V6_CANDIDATE_SCALES), "V6 promoted object set changed")
     for object_model in objects.values():
         _require(isinstance(object_model, Mapping), "V6 object model is invalid")
         assert isinstance(object_model, Mapping)
@@ -479,7 +481,9 @@ def build_causal_scale_model(
         "objects": objects,
         "fallback_effective_scales": dict(V5_EFFECTIVE_SCALES),
         "official_target_takes": dict(OFFICIAL_TARGET_TAKES),
-        "source_artifact_file_sha256s": dict(sorted(source_artifact_file_sha256s.items())),
+        "source_artifact_file_sha256s": dict(
+            sorted(source_artifact_file_sha256s.items())
+        ),
         "parent_bindings": dict(sorted(parent_bindings.items())),
         "source_gate": dict(source_gate),
         "official_target_outcomes_used": False,

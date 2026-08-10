@@ -77,7 +77,9 @@ def _source_payloads(
         path = source_root / f"{take_id}.json"
         _require(path.is_file(), f"missing source artifact: {take_id}")
         digest = file_sha256(path)
-        _require(digest == expected_hashes[take_id], f"source artifact changed: {take_id}")
+        _require(
+            digest == expected_hashes[take_id], f"source artifact changed: {take_id}"
+        )
         payload = _load_json(path)
         _require(payload.get("take", {}).get("id") == take_id, "source take changed")
         payloads.append(payload)
@@ -85,7 +87,9 @@ def _source_payloads(
     return payloads, observed_hashes
 
 
-def _rows_by_object(payloads: Sequence[Mapping[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+def _rows_by_object(
+    payloads: Sequence[Mapping[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
     rows: dict[str, list[dict[str, Any]]] = {
         object_name: [] for object_name in V6_CANDIDATE_SCALES
     }
@@ -103,7 +107,9 @@ def _evaluate_fold(
     config: CausalScalePolicyConfig,
 ) -> dict[str, dict[str, Any]]:
     take_ids = sorted({str(row["take_id"]) for row in object_rows})
-    training_take_ids = [take_id for take_id in take_ids if take_id not in held_take_ids]
+    training_take_ids = [
+        take_id for take_id in take_ids if take_id not in held_take_ids
+    ]
     training = [row for row in object_rows if row["take_id"] in training_take_ids]
     model = fit_object_model(
         training,
@@ -214,9 +220,7 @@ def _sensitivity(
         "regressing_configuration_count": sum(
             row["regression_count"] > 0 for row in summaries
         ),
-        "minimum_relative_gain": min(
-            row["minimum_relative_gain"] for row in summaries
-        ),
+        "minimum_relative_gain": min(row["minimum_relative_gain"] for row in summaries),
         "minimum_mean_relative_gain": min(
             row["mean_relative_gain"] for row in summaries
         ),
@@ -302,9 +306,7 @@ def _permutation_control(
         "zero_regression_count": int(np.sum(regressions == 0)),
         "all_take_win_count": int(np.sum(wins == len(observed))),
         "mean_at_least_observed_count": int(np.sum(means >= observed_mean)),
-        "minimum_at_least_observed_count": int(
-            np.sum(minimums >= observed_minimum)
-        ),
+        "minimum_at_least_observed_count": int(np.sum(minimums >= observed_minimum)),
         "mean_and_minimum_at_least_observed_count": int(np.sum(both)),
     }
 
@@ -333,9 +335,7 @@ def _positive_controls(
                     signal = 0.0
                 value["synthetic_region"] = region
                 value["baseline_CD_UL1_mm"] = 5.0
-                value["candidate_gain_mm"] = signal + float(
-                    rng.normal(0.0, 0.0005)
-                )
+                value["candidate_gain_mm"] = signal + float(rng.normal(0.0, 0.0005))
                 copied.append(value)
             synthetic[object_name] = copied
         loo = _leave_one_out(synthetic, config)
@@ -344,7 +344,9 @@ def _positive_controls(
         for object_rows in synthetic.values():
             take_ids = sorted({str(row["take_id"]) for row in object_rows})
             for held_take_id in take_ids:
-                training_take_ids = [value for value in take_ids if value != held_take_id]
+                training_take_ids = [
+                    value for value in take_ids if value != held_take_id
+                ]
                 model = fit_object_model(
                     [row for row in object_rows if row["take_id"] in training_take_ids],
                     config=config,
@@ -363,9 +365,7 @@ def _positive_controls(
                         decision.admitted and int(row["synthetic_region"]) == -1
                     )
         passed = bool(
-            np.all(gains > 1e-12)
-            and harmful_selected == 0
-            and len(gains) == 12
+            np.all(gains > 1e-12) and harmful_selected == 0 and len(gains) == 12
         )
         controls.append(
             {
@@ -382,9 +382,7 @@ def _positive_controls(
         "harmful_region_admission_count": sum(
             row["harmful_region_admission_count"] for row in controls
         ),
-        "minimum_relative_gain": min(
-            row["minimum_relative_gain"] for row in controls
-        ),
+        "minimum_relative_gain": min(row["minimum_relative_gain"] for row in controls),
         "controls": controls,
     }
 
@@ -486,10 +484,7 @@ def main() -> None:
     bindings = _parent_bindings(
         v5_result_path,
         v5_result,
-        ROOT
-        / "src"
-        / "bayesian_phystwin"
-        / "pokeflex_missing5_causal_scale_v6.py",
+        ROOT / "src" / "bayesian_phystwin" / "pokeflex_missing5_causal_scale_v6.py",
     )
     model = build_causal_scale_model(
         payloads,
