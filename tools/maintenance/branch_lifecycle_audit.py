@@ -383,11 +383,7 @@ class GitHubClient:
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28",
                 "User-Agent": "bayesian-phystwin-branch-lifecycle-audit/1",
-                **(
-                    {"Authorization": f"Bearer {self.token}"}
-                    if self.token
-                    else {}
-                ),
+                **({"Authorization": f"Bearer {self.token}"} if self.token else {}),
             },
         )
         try:
@@ -410,9 +406,7 @@ class GitHubClient:
         result: list[object] = []
         page = 1
         while True:
-            payload = self._get(
-                f"{path}{separator}per_page={per_page}&page={page}"
-            )
+            payload = self._get(f"{path}{separator}per_page={per_page}&page={page}")
             if not isinstance(payload, list):
                 raise AuditError(f"GitHub paginated response is not a list: {path}")
             result.extend(payload)
@@ -533,9 +527,7 @@ class GitInspector:
             return True
         if completed.returncode == 1:
             return False
-        raise AuditError(
-            "git ancestry check failed: " + completed.stderr.strip()
-        )
+        raise AuditError("git ancestry check failed: " + completed.stderr.strip())
 
     def tracked_paths(self) -> frozenset[str]:
         output = subprocess.run(
@@ -595,9 +587,7 @@ def scan_exact_head_references(
                 continue
             selected.add(path)
 
-    found: defaultdict[str, dict[str, set[int]]] = defaultdict(
-        lambda: defaultdict(set)
-    )
+    found: defaultdict[str, dict[str, set[int]]] = defaultdict(lambda: defaultdict(set))
     for path in sorted(selected):
         if path.stat().st_size > max_bytes:
             continue
@@ -854,9 +844,9 @@ def write_inventory(
 
     if json_path.resolve() == markdown_path.resolve():
         raise AuditError("JSON and Markdown outputs must use different paths")
-    json_text = json.dumps(
-        dict(inventory), indent=2, sort_keys=True, allow_nan=False
-    ) + "\n"
+    json_text = (
+        json.dumps(dict(inventory), indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
     _atomic_write_text(json_path, json_text)
     _atomic_write_text(markdown_path, render_markdown(inventory))
 
@@ -974,9 +964,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 {
                     "inventory_id": inventory["inventory_id"],
                     "branch_count": summary["branch_count"],
-                    "deletion_candidate_count": summary[
-                        "deletion_candidate_count"
-                    ],
+                    "deletion_candidate_count": summary["deletion_candidate_count"],
                     "tag_required_count": summary["tag_required_count"],
                     "manual_review_count": summary["manual_review_count"],
                 },
