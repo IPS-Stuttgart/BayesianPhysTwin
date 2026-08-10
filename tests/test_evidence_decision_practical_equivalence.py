@@ -349,12 +349,8 @@ def test_report_is_invariant_to_evidence_row_order() -> None:
 def test_policy_id_uses_normalized_values() -> None:
     integer_margin = _policy(margin=0)
     float_margin = _policy(margin=0.0)
-    first = pe.assess_practical_equivalence(
-        _payload((0.0, 0.0, 0.0)), integer_margin
-    )
-    second = pe.assess_practical_equivalence(
-        _payload((0.0, 0.0, 0.0)), float_margin
-    )
+    first = pe.assess_practical_equivalence(_payload((0.0, 0.0, 0.0)), integer_margin)
+    second = pe.assess_practical_equivalence(_payload((0.0, 0.0, 0.0)), float_margin)
     assert first["policy_id"] == second["policy_id"]
     assert first["report_id"] == second["report_id"]
 
@@ -606,9 +602,7 @@ def test_cli_rejects_changed_published_report_shape(
     )
 
     with pytest.raises(AssertionError, match="summary changed type"):
-        equivalence_cli.main(
-            [str(evidence_path), str(policy_path), str(report_path)]
-        )
+        equivalence_cli.main([str(evidence_path), str(policy_path), str(report_path)])
 
 
 def test_cli_module_entrypoint(
