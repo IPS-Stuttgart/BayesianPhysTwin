@@ -99,8 +99,8 @@ research-only functionality should remain in explicit modules rather than
 expanding `v1` without demonstrated consumer need.
 
 Both surfaces are checked by
-[`tools/quality/check_public_api.py`](tools/quality/check_public_api.py), shipped
-in the source distribution, and bound into release evidence. See
+[`tools/quality/check_public_api.py`](tools/quality/check_public_api.py) and
+shipped in the source distribution. See
 [`docs/public_api_policy.md`](docs/public_api_policy.md) for the complete policy.
 
 ## Reporting problems
