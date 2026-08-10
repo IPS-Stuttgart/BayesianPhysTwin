@@ -1,0 +1,114 @@
+name: Repair full-22 tournament statistical unit
+
+on:
+  push:
+    branches: [agent/full22-discrepancy-tournament-v1]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-full22-statistical-unit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/full22-discrepancy-tournament-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-discrepancy-tournament-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply the registered statistical-unit token
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          script = Path(
+              "scripts/science/run_full22_discrepancy_candidate_tournament_v1.py"
+          )
+          text = script.read_text(encoding="utf-8")
+          constant_marker = 'PRIMARY_METRICS = ("chamfer_distance_m", "track_error_m")\n'
+          constant_replacement = (
+              constant_marker + 'STATISTICAL_UNIT = "physical-object-session"\n'
+          )
+          if text.count(constant_marker) != 1 or "STATISTICAL_UNIT =" in text:
+              raise SystemExit("unexpected statistical-unit constant marker")
+          text = text.replace(constant_marker, constant_replacement, 1)
+          old = (
+              '                "statistical_unit": '
+              '("physical execution: one released PhysTwin case"),'
+          )
+          new = '                "statistical_unit": STATISTICAL_UNIT,'
+          if text.count(old) != 1:
+              raise SystemExit("unexpected tournament statistical-unit marker")
+          script.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          tests = Path("tests/test_full22_discrepancy_candidate_tournament_v1.py")
+          test_text = tests.read_text(encoding="utf-8")
+          addition = '''
+
+
+def test_registered_statistical_unit_is_deployment_valid() -> None:
+    from bayesian_phystwin.discrepancy_candidate_tournament import (
+        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,
+    )
+
+    module = _module()
+    assert module.STATISTICAL_UNIT == "physical-object-session"
+    assert (
+        module.STATISTICAL_UNIT
+        in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS
+    )
+'''
+          marker = "def test_registered_statistical_unit_is_deployment_valid()"
+          if marker in test_text:
+              raise SystemExit("statistical-unit regression test already exists")
+          tests.write_text(test_text.rstrip() + addition + "\n", encoding="utf-8")
+
+          Path(".github/workflows/repair-full22-statistical-unit.yml").unlink()
+          PY
+
+      - name: Validate the contract repair
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format --check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m pytest -q \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_horizon_conditioned_discrepancy_tournament.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py
+          git diff --check
+
+      - name: Publish the repair and remove this workflow
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            .github/workflows/repair-full22-statistical-unit.yml
+          git diff --cached --check
+          git commit -m "Fix full-22 tournament statistical unit"
+          git push origin HEAD:agent/full22-discrepancy-tournament-v1
