@@ -1,0 +1,62 @@
+{
+  "schema": "bayesian-phystwin.bayesian-value-decomposition-protocol",
+  "schema_version": 1,
+  "protocol_id": "bayesian-value-decomposition-v1",
+  "status": "template-not-frozen",
+  "statistical_unit": "complete physical object or independent acquisition session",
+  "fallback_method": "physical_fallback",
+  "principal_reference_method": "last_residual",
+  "required_methods": {
+    "bayesian_full_guarded": "complete recursive Bayesian belief with registered guard and exact fallback",
+    "bayesian_mean_guarded": "Bayesian posterior mean with the frozen deployment-policy family",
+    "last_residual": "unconditionally deployed held last residual",
+    "last_residual_guarded": "raw prediction identical to last_residual with registered guard and exact fallback",
+    "physical_fallback": "unchanged physical predictor"
+  },
+  "required_comparison_pairs": [
+    {
+      "comparison_id": "bayesian-full-vs-bayesian-mean",
+      "candidate_method": "bayesian_full_guarded",
+      "reference_method": "bayesian_mean_guarded"
+    },
+    {
+      "comparison_id": "bayesian-mean-vs-guarded-last-residual",
+      "candidate_method": "bayesian_mean_guarded",
+      "reference_method": "last_residual_guarded"
+    },
+    {
+      "comparison_id": "guarded-last-residual-vs-last-residual",
+      "candidate_method": "last_residual_guarded",
+      "reference_method": "last_residual"
+    },
+    {
+      "comparison_id": "last-residual-vs-physical-fallback",
+      "candidate_method": "last_residual",
+      "reference_method": "physical_fallback"
+    }
+  ],
+  "required_probabilistic_scores": [
+    "energy_score",
+    "variogram_score",
+    "gaussian_nll_per_dimension",
+    "weighted_interval_score"
+  ],
+  "required_invariants": [
+    "development calibration and target groups are disjoint",
+    "last_residual and last_residual_guarded raw predictions are identical",
+    "all arms use the same registered query horizon and statistical units",
+    "all rejected deployable arms use the exact physical fallback",
+    "proper scores are evaluated before target-informed method selection",
+    "frames points views and tracks are not independent statistical groups"
+  ],
+  "required_outputs": [
+    "raw and deployed physical loss",
+    "raw and deployed proper scores",
+    "four registered pairwise attribution contrasts",
+    "acceptance rejection and exact-fallback accounting",
+    "harmful accepted-update frequency",
+    "tail regression risk coverage interval coverage and width",
+    "group-clustered paired uncertainty intervals"
+  ],
+  "claim_authorized": false
+}
