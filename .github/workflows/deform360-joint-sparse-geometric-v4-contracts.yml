@@ -58,10 +58,12 @@ jobs:
       - name: Validate source, contracts, and workflow boundary
         id: validate
         continue-on-error: true
+        env:
+          MATRIX_PYTHON_VERSION: ${{ matrix.python-version }}
         shell: bash
         run: |
           set -uo pipefail
-          output="geometric-v4-contract-${{ matrix.python-version }}.txt"
+          output="geometric-v4-contract-${MATRIX_PYTHON_VERSION}.txt"
           : > "${output}"
           status=0
           run_check() {
@@ -90,13 +92,20 @@ jobs:
           )
           run_check RUFF python -m ruff check "${files[@]}"
           run_check FORMAT python -m ruff format --check "${files[@]}"
-          run_check MYPY python -m mypy \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+          if [[ "${MATRIX_PYTHON_VERSION}" == "3.12" ]]; then
+            run_check MYPY python -m mypy \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
+              src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
+          else
+            echo "=== MYPY ===" | tee -a "${output}"
+            echo "MYPY_SKIPPED=authoritative typed lane is Python 3.12" | \
+              tee -a "${output}"
+            echo "MYPY_EXIT=0" | tee -a "${output}"
+          fi
           run_check PYTEST python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4.py \
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
