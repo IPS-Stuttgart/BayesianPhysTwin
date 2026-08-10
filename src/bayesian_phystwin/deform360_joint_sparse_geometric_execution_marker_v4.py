@@ -19,7 +19,8 @@ EXECUTION_REQUEST_ID: Final = (
 CLAIM_BOUNDARY: Final = (
     "Development-only structural observability on the ten already-opened "
     "source objects. This request opens no adaptive-confirmation or "
-    "confirmation payload, uses no target outcome, authorizes no confirmation, "n    "and establishes no physical-query benefit, deployment safety, Causal4D "
+    "confirmation payload, uses no target outcome, authorizes no confirmation, "
+    "and establishes no physical-query benefit, deployment safety, Causal4D "
     "benefit, or state of the art."
 )
 
