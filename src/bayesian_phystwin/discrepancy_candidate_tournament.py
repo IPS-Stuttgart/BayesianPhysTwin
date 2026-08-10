@@ -17,7 +17,6 @@ from ._discrepancy_tournament_analysis import (
     analyze_discrepancy_candidate_tournament as _analyze_tournament,
 )
 from ._discrepancy_tournament_contracts import (
-    _require,
     DISCREPANCY_TOURNAMENT_CLAIM_BOUNDARY,
     DISCREPANCY_TOURNAMENT_INPUT_CONTRACT,
     DISCREPANCY_TOURNAMENT_REPORT_CONTRACT,
@@ -26,6 +25,9 @@ from ._discrepancy_tournament_contracts import (
     TournamentEvidence,
     TournamentRecord,
     TournamentSelectionConfig,
+    _require,
+)
+from ._discrepancy_tournament_contracts import (
     parse_discrepancy_candidate_tournament as _parse_tournament,
 )
 from .provider_failure_report_io import (
@@ -34,15 +36,13 @@ from .provider_failure_report_io import (
     publish_provider_failure_report,
 )
 
-ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS: Final[frozenset[str]] = (
-    frozenset(
-        {
-            "physical-object",
-            "acquisition-session",
-            "physical-object-session",
-            "physical-object-or-session",
-        }
-    )
+ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS: Final[frozenset[str]] = frozenset(
+    {
+        "physical-object",
+        "acquisition-session",
+        "physical-object-session",
+        "physical-object-or-session",
+    }
 )
 MAXIMUM_DISCREPANCY_TOURNAMENT_BOOTSTRAP_INDEX_CELLS: Final = 10_000_000
 
@@ -51,8 +51,7 @@ def _validate_deployment_semantics(
     evidence: TournamentEvidence,
 ) -> TournamentEvidence:
     _require(
-        evidence.statistical_unit
-        in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,
+        evidence.statistical_unit in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,
         "statistical_unit must identify a physical object or acquisition session",
     )
     groups = {record.group_id for record in evidence.records}
@@ -79,8 +78,7 @@ def _validate_deployment_semantics(
     else:
         _require(intervals_present, "registered interval records are missing")
         _require(
-            evidence.config.maximum_interval_coverage_shortfall
-            <= nominal_coverage,
+            evidence.config.maximum_interval_coverage_shortfall <= nominal_coverage,
             "interval coverage shortfall cannot exceed nominal coverage",
         )
 
