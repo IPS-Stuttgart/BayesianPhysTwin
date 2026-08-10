@@ -13,14 +13,14 @@ from bayesian_phystwin.domain_covariance_calibration import (
 )
 
 
-def test_singleton_and_disabled_grids_are_explicit() -> None:
+def test_singleton_identity_and_disabled_floor_grids_are_explicit() -> None:
     config = DomainCovarianceCalibrationConfigV1(
-        minimum_scale=2.0,
-        maximum_scale=2.0,
+        minimum_scale=1.0,
+        maximum_scale=1.0,
         scale_grid_size=1,
         floor_grid_size=0,
     )
-    assert config.scale_grid() == (2.0,)
+    assert config.scale_grid() == (1.0,)
     assert config.floor_ratio_grid() == (0.0,)
     one_floor = DomainCovarianceCalibrationConfigV1(
         floor_grid_size=1,
