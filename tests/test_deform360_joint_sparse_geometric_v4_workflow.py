@@ -23,6 +23,16 @@ def test_launch_is_protected_main_only_and_uses_the_sole_runner() -> None:
     assert "actions: write" not in text
 
 
+def test_launch_bootstraps_a_pinned_python_runtime_without_runner_uv() -> None:
+    text = LAUNCH.read_text(encoding="utf-8")
+    assert "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97" in text
+    assert 'python-version: "3.12"' in text
+    assert 'python -m venv --copies "${runtime}"' in text
+    assert '"numpy==2.2.6"' in text
+    assert '"${runtime_python}" -m pip check' in text
+    assert "command -v uv" not in text
+
+
 def test_launch_passes_only_retained_result_roots_to_the_materializer() -> None:
     text = LAUNCH.read_text(encoding="utf-8")
     command = text.rsplit(
