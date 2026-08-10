@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the versioned BayesianPhysTwin root export snapshot."""
+"""Validate a versioned BayesianPhysTwin public export snapshot."""
 
 from __future__ import annotations
 
@@ -15,9 +15,15 @@ from typing import Any, Final, cast
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = ROOT / "api/root-public-api-v0.4.json"
 DEFAULT_PYPROJECT = ROOT / "pyproject.toml"
-SCHEMA: Final = "bayesian-phystwin.root-public-api-snapshot"
+ROOT_SCHEMA: Final = "bayesian-phystwin.root-public-api-snapshot"
+VERSIONED_SCHEMA: Final = "bayesian-phystwin.versioned-public-api-snapshot"
 SCHEMA_VERSION: Final = 1
-POLICY: Final = "exact-legacy-root-export-surface"
+ROOT_POLICY: Final = "exact-legacy-root-export-surface"
+VERSIONED_POLICY: Final = "exact-versioned-integration-export-surface"
+_ALLOWED_CONTRACTS: Final = {
+    ROOT_SCHEMA: ROOT_POLICY,
+    VERSIONED_SCHEMA: VERSIONED_POLICY,
+}
 _FIELDS = frozenset(
     {
         "schema",
@@ -34,7 +40,7 @@ _PROJECT_VERSION = re.compile(r"^\s*version\s*=\s*(['\"])([^'\"]+)\1\s*(?:#.*)?$
 
 
 class PublicApiError(ValueError):
-    """Raised when the root public API snapshot or implementation drifts."""
+    """Raised when a public API snapshot or implementation drifts."""
 
 
 def _mapping(value: object, *, name: str) -> Mapping[str, Any]:
@@ -55,21 +61,31 @@ def _literal(value: object, *, name: str) -> str:
     return value
 
 
+def _contract(schema: object, policy: object) -> tuple[str, str]:
+    literal_schema = _literal(schema, name="schema")
+    literal_policy = _literal(policy, name="policy")
+    expected_policy = _ALLOWED_CONTRACTS.get(literal_schema)
+    if expected_policy is None:
+        raise PublicApiError("public API manifest contract changed")
+    if literal_policy != expected_policy:
+        raise PublicApiError("public API policy changed")
+    return literal_schema, literal_policy
+
+
 def load_manifest(path: str | Path = DEFAULT_MANIFEST) -> dict[str, Any]:
-    """Load and strictly validate a root API snapshot."""
+    """Load and strictly validate one public API snapshot."""
 
     source = Path(path)
     try:
         value = json.loads(source.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        raise PublicApiError("cannot read root API manifest") from error
-    manifest = _mapping(value, name="root API manifest")
+        raise PublicApiError("cannot read public API manifest") from error
+    manifest = _mapping(value, name="public API manifest")
     if set(manifest) != _FIELDS:
-        raise PublicApiError("root API manifest fields changed")
-    if manifest["schema"] != SCHEMA or manifest["schema_version"] != SCHEMA_VERSION:
-        raise PublicApiError("root API manifest contract changed")
-    if manifest["policy"] != POLICY:
-        raise PublicApiError("root API policy changed")
+        raise PublicApiError("public API manifest fields changed")
+    if manifest["schema_version"] != SCHEMA_VERSION:
+        raise PublicApiError("public API manifest contract changed")
+    schema, policy = _contract(manifest["schema"], manifest["policy"])
 
     package = _literal(manifest["package"], name="package")
     compatibility_line = _literal(
@@ -80,17 +96,19 @@ def load_manifest(path: str | Path = DEFAULT_MANIFEST) -> dict[str, Any]:
         for index, symbol in enumerate(_sequence(manifest["symbols"], name="symbols"))
     ]
     if not symbols:
-        raise PublicApiError("root API snapshot is empty")
+        raise PublicApiError("public API snapshot is empty")
     if len(symbols) != len(set(symbols)):
-        raise PublicApiError("root API snapshot contains duplicate symbols")
+        raise PublicApiError("public API snapshot contains duplicate symbols")
     if any(not symbol.isidentifier() or symbol.startswith("_") for symbol in symbols):
-        raise PublicApiError("root API snapshot contains an invalid public identifier")
+        raise PublicApiError(
+            "public API snapshot contains an invalid public identifier"
+        )
     return {
-        "schema": SCHEMA,
+        "schema": schema,
         "schema_version": SCHEMA_VERSION,
         "package": package,
         "compatibility_line": compatibility_line,
-        "policy": POLICY,
+        "policy": policy,
         "symbols": symbols,
     }
 
@@ -123,6 +141,12 @@ def project_version(path: str | Path = DEFAULT_PYPROJECT) -> str:
     return _literal(versions[0], name="project version")
 
 
+def _surface(package: str) -> str:
+    if package == "bayesian_phystwin":
+        return "root API"
+    return f"{package} API"
+
+
 def validate_public_api(
     manifest: Mapping[str, Any],
     *,
@@ -131,6 +155,7 @@ def validate_public_api(
 ) -> dict[str, object]:
     """Compare one imported package with its exact compatibility-line snapshot."""
 
+    _, policy = _contract(manifest.get("schema"), manifest.get("policy"))
     package = _literal(manifest.get("package"), name="package")
     compatibility_line = _literal(
         manifest.get("compatibility_line"), name="compatibility line"
@@ -142,7 +167,7 @@ def validate_public_api(
         )
     ]
     if len(expected) != len(set(expected)):
-        raise PublicApiError("root API snapshot contains duplicate symbols")
+        raise PublicApiError("public API snapshot contains duplicate symbols")
 
     imported = module if module is not None else importlib.import_module(package)
     if imported.__name__ != package:
@@ -160,14 +185,15 @@ def validate_public_api(
             "package __all__ references missing attributes: "
             + ", ".join(missing_attributes)
         )
+    surface = _surface(package)
     if actual != expected:
         added = sorted(set(actual) - set(expected))
         removed = sorted(set(expected) - set(actual))
         if added or removed:
             raise PublicApiError(
-                f"root API set changed; added={added!r}, removed={removed!r}"
+                f"{surface} set changed; added={added!r}, removed={removed!r}"
             )
-        raise PublicApiError("root API order changed")
+        raise PublicApiError(f"{surface} order changed")
 
     exact_version = version if version is not None else project_version()
     parts = exact_version.split(".")
@@ -179,7 +205,7 @@ def validate_public_api(
         "package": package,
         "project_version": exact_version,
         "compatibility_line": compatibility_line,
-        "policy": manifest["policy"],
+        "policy": policy,
         "symbol_count": len(actual),
         "status": "matched",
     }
@@ -208,8 +234,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(report, sort_keys=True, separators=(",", ":")))
     else:
         print(
-            "root public API matched: "
-            f"{report['symbol_count']} symbols on {report['compatibility_line']}.x"
+            "public API matched: "
+            f"{report['package']} has {report['symbol_count']} symbols on "
+            f"{report['compatibility_line']}.x"
         )
     return 0
 
