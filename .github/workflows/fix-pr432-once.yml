@@ -1,6 +1,11 @@
 name: Repair and sync PR 432 once
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/fix-pr432-once.yml
   push:
     branches:
       - agent/numerical-environment-profile-v1
@@ -10,8 +15,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: repair-pr432-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      (github.event_name == 'push' ||
+       github.event.pull_request.head.ref == 'agent/numerical-environment-profile-v1')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
