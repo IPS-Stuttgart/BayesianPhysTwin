@@ -29,7 +29,13 @@ The machine-readable design lock is
 The source-independent execution amendment that binds the exact B0 generator and
 the per-fold source decision is
 `protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json`.
-It leaves this design lock, cohort, endpoints, and confirmation rule unchanged.
+Before source outcomes, that amendment also records a public-release metadata
+limitation: released tactile stream names do not identify tactile groups with
+robot axes. The original visuotactile question below remains preserved as design
+history, but it is suspended for this execution. The active primary candidate is
+visual `V1_joint_sparse_visual_guarded`; tactile arms are non-authorizing
+diagnostics and cannot support a tactile-benefit claim. The cohort and endpoints
+remain unchanged.
 
 ## Why this is a genuinely new experiment
 
