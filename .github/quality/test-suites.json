@@ -41,6 +41,7 @@
       "tests/test_deform360_prob4d_source_gate.py",
       "tests/test_deform360_prob4d_visible_source_audit.py",
       "tests/test_deform360_robot_metric_prefix.py",
+      "tests/test_deform360_provider_failure_census_v1.py",
       "tests/test_evidence_use_ledger.py",
       "tests/test_decisive_evidence.py",
       "tests/test_decisive_evidence_bootstrap.py",
@@ -106,9 +107,11 @@
       "tests/test_pokeflex_missing5_completion_v5.py",
       "tests/test_pokeflex_missing5_execution_v5.py",
       "tests/test_pokeflex_missing5_scale.py",
+      "tests/test_pokeflex_missing5_causal_scale_v6.py",
+      "tests/test_pokeflex_missing5_execution_v6.py",
       "tests/test_run_manifest.py",
-      "tests/test_run_manifest_v2.py",
       "tests/test_run_manifest_cli.py",
+      "tests/test_run_manifest_v2.py",
       "tests/test_repository_provenance*.py",
       "tests/test_runtime_provenance*.py",
       "tests/test_phystwin_profile.py",
@@ -124,7 +127,8 @@
       "tests/test_test_suite_manifest.py",
       "tests/test_deform360_joint_sparse_observability_v4.py",
       "tests/test_deform360_joint_sparse_observability_v4_cli.py",
-      "tests/test_deform360_joint_sparse_observability_v4_workflow.py"
+      "tests/test_deform360_joint_sparse_observability_v4_workflow.py",
+      "tests/test_deform360_joint_sparse_geometric_v4*.py"
     ],
     "core-contracts": [
       "tests/test_causal4d_graph_provider_v1.py",
@@ -141,6 +145,7 @@
       "tests/test_deform360_calibration_bundle.py",
       "tests/test_deform360_calibration_execution.py",
       "tests/test_deform360_calibration_execution_boundaries.py",
+      "tests/test_deform360_provider_failure_census_v1.py",
       "tests/test_evidence_use_ledger.py",
       "tests/test_decisive_evidence.py",
       "tests/test_decisive_evidence_bootstrap.py",
@@ -188,7 +193,8 @@
       "tests/test_test_suite_manifest.py",
       "tests/test_deform360_joint_sparse_observability_v4.py",
       "tests/test_deform360_joint_sparse_observability_v4_cli.py",
-      "tests/test_deform360_joint_sparse_observability_v4_workflow.py"
+      "tests/test_deform360_joint_sparse_observability_v4_workflow.py",
+      "tests/test_deform360_joint_sparse_geometric_v4*.py"
     ],
     "provider-contract": [
       "tests/test_causal4d_graph_provider_v1.py",
