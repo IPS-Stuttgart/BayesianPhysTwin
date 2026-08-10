@@ -18,16 +18,12 @@ def _strict_boolean_array(value: object, *, name: str) -> np.ndarray:
     if raw.dtype.kind == "b":
         return np.array(raw, dtype=bool, copy=True, order="C")
     if raw.dtype.kind not in "iuf":
-        raise ValueError(
-            f"{name} must contain booleans or exact 0/1 numeric values"
-        )
+        raise ValueError(f"{name} must contain booleans or exact 0/1 numeric values")
     numeric = np.asarray(raw, dtype=np.float64)
     if not np.all(np.isfinite(numeric)) or not np.all(
         (numeric == 0.0) | (numeric == 1.0)
     ):
-        raise ValueError(
-            f"{name} must contain booleans or exact 0/1 numeric values"
-        )
+        raise ValueError(f"{name} must contain booleans or exact 0/1 numeric values")
     return np.array(numeric, dtype=bool, copy=True, order="C")
 
 
