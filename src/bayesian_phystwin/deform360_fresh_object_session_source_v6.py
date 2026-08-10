@@ -316,8 +316,6 @@ def load_deform360_fresh_object_session_v6_covariance_amendment(
     ):
         raise ValueError("v6 covariance amendment schema changed")
     _content_identity(amendment, "amendment_id", "v6 covariance amendment")
-    if amendment.get("amendment_id") != AMENDMENT_ID:
-        raise ValueError("v6 covariance amendment identity changed")
     base = _mapping(amendment.get("base_policy"), name="base_policy")
     if base.get("policy_id") != policy.get("policy_id"):
         raise ValueError("v6 covariance amendment binds another policy")
@@ -342,6 +340,8 @@ def load_deform360_fresh_object_session_v6_covariance_amendment(
         )
         if observed != roster:
             raise ValueError("v6 candidate covariance roster changed")
+    if amendment.get("amendment_id") != AMENDMENT_ID:
+        raise ValueError("v6 covariance amendment identity changed")
     return amendment
 
 
@@ -908,8 +908,8 @@ def assemble_deform360_v6_source_evidence(
     records: list[dict[str, Any]] = []
     for raw in _sequence(prediction_batch.get("records"), name="records"):
         seal = _mapping(raw, name="prediction seal")
-        outcome = by_seal.get(cast(str, seal.get("seal_id")))
-        if outcome is None:
+        matched_outcome = by_seal.get(cast(str, seal.get("seal_id")))
+        if matched_outcome is None:
             raise ValueError("v6 source evidence omits a sealed prediction")
         records.append(
             {
@@ -918,7 +918,7 @@ def assemble_deform360_v6_source_evidence(
                 "stratum": seal["stratum"],
                 "prediction_seal_id": seal["seal_id"],
                 "prediction": seal["variants"],
-                "outcome": outcome["variants"],
+                "outcome": matched_outcome["variants"],
             }
         )
     ordered = sorted(records, key=lambda row: row["object_id"])
