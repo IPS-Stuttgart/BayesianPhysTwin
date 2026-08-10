@@ -162,9 +162,7 @@ def _validate_strict_certificate(
         raise ValueError(
             f"record {index} certificate passed decision differs from accepted"
         )
-    underlying_admissible = (
-        certificate["underlying_inference_admissible"] is True
-    )
+    underlying_admissible = certificate["underlying_inference_admissible"] is True
     expected_result_reason = (
         certificate["underlying_inference_reason"]
         if certificate_passed or not underlying_admissible
@@ -281,9 +279,7 @@ def _validate_adapter_record(
         metrics.get("strict_result_implementation_id")
         != PRIOR_AWARE_GAUGE_BELIEF_V2_IMPLEMENTATION
     ):
-        raise ValueError(
-            f"record {index} strict result implementation is unsupported"
-        )
+        raise ValueError(f"record {index} strict result implementation is unsupported")
     _validate_strict_certificate(
         metrics.get("strict_admission_certificate"),
         accepted=accepted,
