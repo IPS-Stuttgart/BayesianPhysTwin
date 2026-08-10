@@ -12,12 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results/diagnostics/cloth_sim2real_prob4d_covariance_v1"
 RESULT_ID = "e4fb7b7bd7f7455cf5e97def84db6f82da1360f5d00c344ca0a55c8d37219670"
 REPORT_ID = "bbed9a588ed1f5d2ba076131c2ec9f89bee1f4624b5eaa902ee5fa16a9ca3ff1"
-ARTIFACT_SHA256 = (
-    "04f98659a45f5b6b64d7b9feb865c29085c7be18dd99b1684a7a99a439d18955"
-)
-DATASET_SHA256 = (
-    "268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f"
-)
+ARTIFACT_SHA256 = "04f98659a45f5b6b64d7b9feb865c29085c7be18dd99b1684a7a99a439d18955"
+DATASET_SHA256 = "268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f"
 
 
 def _load(name: str) -> dict[str, Any]:
@@ -70,9 +66,7 @@ def test_receipt_and_provenance_bind_authoritative_workflow_artifact() -> None:
     assert receipt["report_id"] == REPORT_ID
     assert receipt["claim_authorized"] is False
     assert receipt["fresh_confirmation"] is False
-    assert provenance["source_revision"] == (
-        "7019d4e6effa88addba40cf6faeaeabc6d285c02"
-    )
+    assert provenance["source_revision"] == ("7019d4e6effa88addba40cf6faeaeabc6d285c02")
     assert provenance["dataset_sha256"] == DATASET_SHA256
     assert provenance["dataset_size_bytes"] == 3762021195
     assert provenance["result_id"] == RESULT_ID
@@ -101,8 +95,9 @@ def test_real_cloth_result_has_uncertainty_signal_not_a_point_loss_win() -> None
     assert full["quasi_static_secondary"][
         "object_balanced_symmetric_relative_improvement"
     ] == pytest.approx(-0.08133441633042779)
-    assert independent["dynamic_primary"]["candidate_symmetric_l1_chamfer_m"] < (
-        full["dynamic_primary"]["candidate_symmetric_l1_chamfer_m"]
+    assert (
+        independent["dynamic_primary"]["candidate_symmetric_l1_chamfer_m"]
+        < (full["dynamic_primary"]["candidate_symmetric_l1_chamfer_m"])
     )
     assert full["dynamic_primary"]["raw_90_coordinate_coverage"] == max(
         variant["dynamic_primary"]["raw_90_coordinate_coverage"]
@@ -166,6 +161,4 @@ def test_calibration_domain_guard_is_retrospective_and_harm_free() -> None:
     assert full["target"]["accepted_count"] == 3
     assert full["target"]["fallback_count"] == 3
     assert full["target"]["harmful_accepted_count"] == 0
-    assert full["target"]["relative_improvement"] == pytest.approx(
-        0.044756357929444594
-    )
+    assert full["target"]["relative_improvement"] == pytest.approx(0.044756357929444594)
