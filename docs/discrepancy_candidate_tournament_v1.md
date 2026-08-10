@@ -51,6 +51,19 @@ raw fallback values exactly. Candidate-dependent fallback scores, incomplete
 candidate rosters, mixed interval availability, duplicate units, or altered
 horizons fail closed.
 
+Rejected candidates must also reproduce the physical fallback's interval
+coverage and width exactly whenever intervals are registered. Interval
+availability is all-or-none across the complete tournament. A nominal coverage
+gate requires interval records for every candidate and scored unit, while an
+interval-free tournament forbids them. The declared maximum coverage shortfall
+cannot exceed the nominal coverage.
+
+Deployment validation admits only statistical-unit labels that denote physical
+objects, acquisition sessions, or their explicit combination. It also caps the
+product of bootstrap samples and independent groups at ten million index cells,
+so an otherwise valid artifact cannot trigger an unbounded allocation before
+source-gate evaluation.
+
 Candidate metadata binds the exact source revision, configuration digest, and
 prediction-artifact digest in addition to family, state dimension, parameter
 count, measured runtime, and retained covariance bytes. The input also binds one
