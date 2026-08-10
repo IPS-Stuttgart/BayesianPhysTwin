@@ -60,13 +60,14 @@ def predict_dynamic_endpoint_model_average(
 
     if not isinstance(posterior, DynamicEndpointPosteriorV2):
         raise TypeError("posterior must be a DynamicEndpointPosteriorV2")
-    if (
-        isinstance(horizon_steps, (bool, np.bool_))
-        or int(horizon_steps) != horizon_steps
-        or horizon_steps < 0
+    if isinstance(horizon_steps, (bool, np.bool_)) or not isinstance(
+        horizon_steps,
+        (int, np.integer),
     ):
         raise ValueError("horizon_steps must be a nonnegative integer")
     horizon = int(horizon_steps)
+    if horizon < 0:
+        raise ValueError("horizon_steps must be a nonnegative integer")
     component_count = len(posterior.config.components)
     track_count = len(posterior.mean_m)
     component_mean = np.empty((component_count, track_count, 3))

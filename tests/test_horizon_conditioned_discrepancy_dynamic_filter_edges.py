@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pytest
 
@@ -33,6 +35,17 @@ def test_input_and_type_failures() -> None:
             np.zeros((2, 2), dtype=bool),
             end_frame=1,
         )
+    for malformed_validity in (
+        np.ones((2, 1), dtype=np.int64),
+        np.full((2, 1), np.nan),
+        np.full((2, 1), "False"),
+    ):
+        with pytest.raises(ValueError, match="booleans"):
+            infer_dynamic_endpoint_model_average(
+                np.zeros((2, 1, 3)),
+                malformed_validity,
+                end_frame=1,
+            )
     residual = np.zeros((2, 1, 3))
     residual[0, 0, 0] = np.nan
     with pytest.raises(ValueError, match="finite"):
@@ -41,7 +54,7 @@ def test_input_and_type_failures() -> None:
             np.ones((2, 1), dtype=bool),
             end_frame=1,
         )
-    for cutoff in (True, 0, 3, 1.5):
+    for cutoff in (True, 0, 3, 1.0, 1.5):
         with pytest.raises(ValueError):
             infer_dynamic_endpoint_model_average(
                 np.zeros((2, 1, 3)),
@@ -65,12 +78,42 @@ def test_input_and_type_failures() -> None:
             object(),  # type: ignore[arg-type]
             horizon_steps=1,
         )
-    for horizon in (True, -1, 0.5):
+    for horizon in (True, -1, 0.5, 1.0):
         with pytest.raises(ValueError, match="nonnegative integer"):
             predict_dynamic_endpoint_model_average(
                 posterior,
                 horizon_steps=horizon,  # type: ignore[arg-type]
             )
+
+
+def test_numpy_integer_metadata_remains_supported() -> None:
+    posterior = infer_dynamic_endpoint_model_average(
+        np.zeros((1, 1, 3)),
+        np.ones((1, 1), dtype=bool),
+        end_frame=np.int64(1),
+    )
+    prediction = predict_dynamic_endpoint_model_average(
+        posterior,
+        horizon_steps=np.int64(0),
+    )
+    assert posterior.end_frame == 1
+    assert prediction.horizon_steps == 0
+
+
+def test_result_contracts_reject_integral_floats() -> None:
+    posterior = infer_dynamic_endpoint_model_average(
+        np.zeros((1, 1, 3)),
+        np.ones((1, 1), dtype=bool),
+        end_frame=1,
+    )
+    prediction = predict_dynamic_endpoint_model_average(
+        posterior,
+        horizon_steps=0,
+    )
+    with pytest.raises(ValueError, match="positive integer"):
+        replace(posterior, end_frame=1.0)
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        replace(prediction, horizon_steps=0.0)
 
 
 def test_result_arrays_are_defensively_owned_and_read_only() -> None:

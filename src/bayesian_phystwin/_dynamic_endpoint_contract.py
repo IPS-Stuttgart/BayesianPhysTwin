@@ -36,6 +36,18 @@ def _validate_covariance(
         raise ValueError(f"{name} must be positive semidefinite")
 
 
+def _validated_nonnegative_integer(value: object, *, name: str) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(
+        value,
+        (int, np.integer),
+    ):
+        raise ValueError(f"{name} must be a nonnegative integer")
+    result = int(value)
+    if result < 0:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return result
+
+
 @dataclass(frozen=True, slots=True)
 class DynamicEndpointPosteriorV2:
     """Model-averaged endpoint and complete component filter states."""
@@ -54,11 +66,13 @@ class DynamicEndpointPosteriorV2:
     def __post_init__(self) -> None:
         if not isinstance(self.config, DynamicEndpointModelAverageConfigV2):
             raise TypeError("config must be a DynamicEndpointModelAverageConfigV2")
-        if (
-            isinstance(self.end_frame, (bool, np.bool_))
-            or int(self.end_frame) != self.end_frame
-            or self.end_frame < 1
+        if isinstance(self.end_frame, (bool, np.bool_)) or not isinstance(
+            self.end_frame,
+            (int, np.integer),
         ):
+            raise ValueError("end_frame must be a positive integer")
+        end_frame = int(self.end_frame)
+        if end_frame < 1:
             raise ValueError("end_frame must be a positive integer")
         mean = np.asarray(self.mean_m, dtype=np.float64)
         covariance = np.asarray(self.covariance_m2, dtype=np.float64)
@@ -124,7 +138,7 @@ class DynamicEndpointPosteriorV2:
             ("component_state_covariance", state_covariance, np.float64),
         ):
             object.__setattr__(self, name, _readonly(value, dtype=dtype))
-        object.__setattr__(self, "end_frame", int(self.end_frame))
+        object.__setattr__(self, "end_frame", end_frame)
 
     @property
     def updated_mask(self) -> np.ndarray:
@@ -146,12 +160,10 @@ class DynamicEndpointPredictionV2:
     horizon_steps: int
 
     def __post_init__(self) -> None:
-        if (
-            isinstance(self.horizon_steps, (bool, np.bool_))
-            or int(self.horizon_steps) != self.horizon_steps
-            or self.horizon_steps < 0
-        ):
-            raise ValueError("horizon_steps must be a nonnegative integer")
+        horizon_steps = _validated_nonnegative_integer(
+            self.horizon_steps,
+            name="horizon_steps",
+        )
         mean = np.asarray(self.mean_m, dtype=np.float64)
         covariance = np.asarray(self.covariance_m2, dtype=np.float64)
         weights = np.asarray(self.component_weights, dtype=np.float64)
@@ -205,7 +217,7 @@ class DynamicEndpointPredictionV2:
             "component_velocity_mean_m_per_step",
             _readonly(velocity),
         )
-        object.__setattr__(self, "horizon_steps", int(self.horizon_steps))
+        object.__setattr__(self, "horizon_steps", horizon_steps)
 
 
 __all__ = [

@@ -21,16 +21,22 @@ def _validated_inputs(
     end_frame: int,
 ) -> tuple[np.ndarray, np.ndarray, int]:
     residual = np.asarray(residual_m, dtype=np.float64)
-    validity = np.asarray(valid, dtype=bool)
+    raw_validity = np.asarray(valid)
     if residual.ndim != 3 or residual.shape[2:] != (3,) or residual.shape[1] < 1:
         raise ValueError("residual_m must have shape (T, N>=1, 3)")
-    if validity.shape != residual.shape[:2]:
+    if raw_validity.shape != residual.shape[:2]:
         raise ValueError("valid must match the residual frame and track dimensions")
+    if raw_validity.dtype != np.dtype(np.bool_):
+        raise ValueError("valid must contain only booleans")
+    validity = np.asarray(raw_validity, dtype=np.bool_)
     if not np.all(np.isfinite(residual)):
         raise ValueError("residual_m must contain only finite values")
-    frame_stop = int(end_frame)
-    if isinstance(end_frame, (bool, np.bool_)) or frame_stop != end_frame:
+    if isinstance(end_frame, (bool, np.bool_)) or not isinstance(
+        end_frame,
+        (int, np.integer),
+    ):
         raise ValueError("end_frame must be an integer")
+    frame_stop = int(end_frame)
     if not 0 < frame_stop <= len(residual):
         raise ValueError("end_frame must lie inside the residual sequence")
     return residual, validity, frame_stop
