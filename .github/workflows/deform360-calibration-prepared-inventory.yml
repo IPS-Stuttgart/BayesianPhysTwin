@@ -81,7 +81,7 @@ jobs:
           clean: true
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -206,7 +206,7 @@ jobs:
           test -d "${PROCESSED_ROOT}/aligned"
 
       - name: Download authoritative compact source evidence
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.SOURCE_ARTIFACT_NAME }}
           path: ${{ runner.temp }}/deform360-retained-source-evidence
@@ -215,7 +215,7 @@ jobs:
           run-id: ${{ env.SOURCE_RUN_ID }}
 
       - name: Set up isolated Python runtime
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
