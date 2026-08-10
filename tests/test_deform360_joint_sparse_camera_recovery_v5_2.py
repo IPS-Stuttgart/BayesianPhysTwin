@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 import pytest
@@ -37,6 +40,10 @@ AMENDMENT_PATH = (
     ROOT
     / "protocols/locks/deform360_official_hub_joint_sparse_camera_recovery_v5_2.json"
 )
+
+
+def _sha(label: str) -> str:
+    return hashlib.sha256(label.encode("utf-8")).hexdigest()
 
 
 def _support(
@@ -124,6 +131,208 @@ def test_metric_support_summary_counts_independent_spatial_clusters(
     assert support["max_independent_cluster_count"] == 9
     assert support["frames_with_minimum_clusters"] == 1
     assert support["eligible"] is True
+
+
+def test_camera_audit_preflight_and_recovery_plan_cover_success_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
+    input_root = tmp_path / "camera-inputs"
+    input_root.mkdir()
+    source_objects: list[dict[str, Any]] = []
+    object_context: dict[str, dict[str, Any]] = {}
+    for index, cohort_row in enumerate(lock["cohort"]["development_objects"]):
+        object_id = cohort_row["object_id"]
+        all_cameras = tuple(f"camera-{camera}" for camera in range(6))
+        reserved = select_reserved_endpoint_views_v5(object_id, all_cameras, count=2)
+        attempted = tuple(camera for camera in all_cameras if camera not in reserved)[
+            :2
+        ]
+        windows = []
+        for camera in attempted:
+            decoded = input_root / object_id / camera / "decoded.npz"
+            metric = input_root / object_id / camera / "metric.npz"
+            decoded.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(decoded, value=np.asarray([index], dtype=np.int64))
+            np.savez(metric, value=np.asarray([index + 1], dtype=np.int64))
+            windows.append(
+                {
+                    "camera_id": camera,
+                    "decoded_uniform": {
+                        "path": decoded.relative_to(input_root).as_posix(),
+                        "sha256": source_module._sha256_file(decoded),
+                    },
+                    "metric_prefix": {
+                        "path": metric.relative_to(input_root).as_posix(),
+                        "sha256": source_module._sha256_file(metric),
+                    },
+                }
+            )
+        source_objects.append(
+            {
+                "object_id": object_id,
+                "raw_prefix_range_half_open": [0, 58],
+                "visual_windows": windows,
+            }
+        )
+        object_context[object_id] = {
+            "episode_id": cohort_row["episode_id"],
+            "stratum": cohort_row["stratum"],
+            "all_cameras": all_cameras,
+            "reserved": reserved,
+            "attempted": attempted,
+        }
+
+    source_plan = {
+        "plan_id": _sha("base-source-plan"),
+        "implementation_revision": "1" * 40,
+        "objects": source_objects,
+    }
+    monkeypatch.setattr(
+        module,
+        "validate_deform360_joint_sparse_source_prediction_plan_v5",
+        lambda value, *, lock: value,
+    )
+    first_object = source_objects[0]["object_id"]
+    first_camera = source_objects[0]["visual_windows"][0]["camera_id"]
+
+    def prepare_window(**kwargs: Any) -> tuple[tuple[()], SimpleNamespace]:
+        if (
+            kwargs["camera_id"] == first_camera
+            and str(kwargs["decoded_uniform_path"]).find(first_object) >= 0
+        ):
+            raise ValueError("metric gauge lacks eight independent causal clusters")
+        gauge = SimpleNamespace(
+            artifact_id=_sha(f"gauge-{kwargs['camera_id']}"),
+            raw_frame_index=57,
+            independent_cluster_count=12,
+            inlier_independent_cluster_count=10,
+            inlier_rmse_m=0.002,
+        )
+        return (), gauge
+
+    monkeypatch.setattr(
+        module, "prepare_deform360_joint_sparse_visual_window_v5", prepare_window
+    )
+    audit = module.audit_deform360_joint_sparse_source_cameras_v5_2(
+        lock=lock,
+        source_plan=source_plan,
+        input_root=input_root,
+    )
+    assert audit["objects"][0]["passing_camera_ids"] == [
+        source_objects[0]["visual_windows"][1]["camera_id"]
+    ]
+    assert all(len(row["passing_camera_ids"]) == 2 for row in audit["objects"][1:])
+
+    model_set = {
+        "schema": "prob4d.motioncrafter-model-set.v2",
+        "model_type": "determ",
+        "sources": {},
+    }
+    model_set_id = content_id(model_set)
+    monkeypatch.setattr(module, "MOTIONCRAFTER_MODEL_SET_ID", model_set_id)
+    base_objects: list[dict[str, Any]] = []
+    inventory_objects: list[dict[str, Any]] = []
+    for object_id, context in object_context.items():
+        base_objects.append(
+            {
+                "object_id": object_id,
+                "episode_id": context["episode_id"],
+                "stratum": context["stratum"],
+                "raw_prefix_range_half_open": [0, 58],
+                "provider_range_half_open": [16, 58],
+                "all_camera_ids": list(context["all_cameras"]),
+                "reserved_endpoint_camera_ids": list(context["reserved"]),
+            }
+        )
+        inventory_objects.append(
+            {
+                "object_id": object_id,
+                "cameras": [
+                    {
+                        "camera": camera,
+                        "video": {
+                            "path": (
+                                f"{object_id}/episode_0000/{camera}/undistorted.mp4"
+                            ),
+                            "sha256": _sha(f"video-{object_id}-{camera}"),
+                            "byte_count": 100,
+                        },
+                    }
+                    for camera in context["all_cameras"]
+                ],
+            }
+        )
+    inventory = {"inventory_id": _sha("inventory"), "objects": inventory_objects}
+    base_provider_plan = {
+        "manifest_sha256": _sha("base-provider-plan"),
+        "prepared_source_inventory": {
+            "inventory_id": inventory["inventory_id"],
+            "file_sha256": _sha("inventory-file"),
+        },
+        "camera_roster_source": {
+            "manifest_sha256": _sha("camera-roster"),
+            "file_sha256": _sha("camera-roster-file"),
+        },
+        "provider_lock": {"provider_revision": module.PROB4D_REVISION},
+        "motioncrafter": {
+            "revision": module.MOTIONCRAFTER_REVISION,
+            "model_set_id": model_set_id,
+            "model_set_manifest": model_set,
+        },
+        "objects": base_objects,
+    }
+    monkeypatch.setattr(
+        module,
+        "validate_deform360_joint_sparse_motioncrafter_source_plan_v5",
+        lambda value: value["manifest_sha256"],
+    )
+    metric_root = tmp_path / "metric-support"
+    metric_root.mkdir()
+
+    def summarize(path: Path) -> dict[str, object]:
+        return _support(path.name, clusters=12, frames=4, points=1000)
+
+    monkeypatch.setattr(
+        module, "summarize_deform360_metric_camera_support_v5_2", summarize
+    )
+    preflight = module.build_deform360_joint_sparse_camera_recovery_preflight_v5_2(
+        lock=lock,
+        base_provider_plan=base_provider_plan,
+        base_provider_plan_file_sha256=_sha("base-provider-file"),
+        base_camera_audit=audit,
+        base_camera_audit_file_sha256=_sha("base-audit-file"),
+        metric_root=metric_root,
+    )
+    assert preflight["objects"][0]["recovery_required"] is True
+    assert len(preflight["objects"][0]["selected_recovery_camera_ids"]) == 2
+    assert all(not row["recovery_required"] for row in preflight["objects"][1:])
+
+    monkeypatch.setattr(
+        module, "validate_deform360_prepared_source_inventory", lambda value: value
+    )
+    amendment = json.loads(AMENDMENT_PATH.read_text(encoding="utf-8"))
+    recovery_plan = (
+        module.build_deform360_joint_sparse_motioncrafter_recovery_plan_v5_2(
+            lock=lock,
+            execution_lock_file_sha256=_sha("lock-file"),
+            inventory=inventory,
+            base_provider_plan=base_provider_plan,
+            base_provider_plan_file_sha256=_sha("base-provider-file"),
+            recovery_preflight=preflight,
+            recovery_preflight_file_sha256=_sha("preflight-file"),
+            amendment=amendment,
+            amendment_file_sha256=_sha("amendment-file"),
+            implementation_revision="2" * 40,
+            runner_source_sha256=_sha("runner"),
+        )
+    )
+    assert recovery_plan["object_count"] == 1
+    assert recovery_plan["job_count"] == 2
+    assert {job["camera"] for job in recovery_plan["jobs"]} == set(
+        preflight["objects"][0]["selected_recovery_camera_ids"]
+    )
 
 
 def _recovery_provider_plan(*, selected_count: int = 1) -> dict[str, object]:
@@ -861,3 +1070,167 @@ def test_recovery_publisher_seals_explicit_camera_fallbacks(
     gate = evaluate_deform360_joint_sparse_source_gate_v5(evidence, lock)
     assert gate["gate_passed"] is False
     assert gate["confirmation_access_authorized"] is False
+
+
+def test_recovery_publisher_exercises_admitted_visual_and_contact_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
+    objects, audit = _attempted_objects_and_audit()
+    input_root = tmp_path / "inputs"
+    input_root.mkdir()
+    physical_path = input_root / "physical.npz"
+    _physical_archive(physical_path)
+    physical_sha256 = source_module._sha256_file(physical_path)
+    decoded_path = input_root / "decoded.npz"
+    metric_path = input_root / "metric.npz"
+    np.savez(decoded_path, value=np.asarray([1], dtype=np.int64))
+    np.savez(metric_path, value=np.asarray([2], dtype=np.int64))
+    decoded_sha256 = source_module._sha256_file(decoded_path)
+    metric_sha256 = source_module._sha256_file(metric_path)
+    contact_object_id = objects[0]["object_id"]
+    failed_provider_object_id = objects[1]["object_id"]
+    contact_directory = input_root / "contacts" / contact_object_id
+    contact_directory.mkdir(parents=True)
+    contact_manifest = contact_directory / "contact-prefix.json"
+    contact_manifest.write_text("{}\n", encoding="utf-8")
+    materialization_id = _sha("contact-materialization")
+
+    for object_row, audit_row in zip(objects, audit["objects"], strict=True):
+        object_row["physical"] = {
+            "path": "physical.npz",
+            "sha256": physical_sha256,
+            "physical_mode": "warp_twin",
+        }
+        for window in object_row["visual_windows"]:
+            window["decoded_uniform"] = {
+                "path": "decoded.npz",
+                "sha256": decoded_sha256,
+            }
+            window["metric_prefix"] = {
+                "path": "metric.npz",
+                "sha256": metric_sha256,
+            }
+        audit_row["passing_camera_ids"] = list(audit_row["attempted_camera_ids"])
+        audit_row["failed_camera_ids"] = []
+        for result in audit_row["camera_results"]:
+            result.update(
+                {
+                    "status": "passed",
+                    "failure_code": None,
+                    "decoded_uniform_sha256": decoded_sha256,
+                    "metric_prefix_sha256": metric_sha256,
+                    "gauge_artifact_id": _sha(
+                        f"{object_row['object_id']}-{result['camera_id']}"
+                    ),
+                    "raw_frame_index": 57,
+                    "independent_cluster_count": 12,
+                    "inlier_independent_cluster_count": 10,
+                    "inlier_rmse_m": 0.002,
+                }
+            )
+    contact_record = {
+        "status": source_module_v5_2.CONTACT_PREFIX_AVAILABLE,
+        "path": contact_directory.relative_to(input_root).as_posix(),
+        "manifest_file_sha256": source_module._sha256_file(contact_manifest),
+        "materialization_id": materialization_id,
+        "unavailable_reason": None,
+    }
+    monkeypatch.setattr(
+        source_module_v5_2,
+        "validate_deform360_public_contact_prefix",
+        lambda _path: {"materialization_id": materialization_id},
+    )
+    assert (
+        source_module_v5_2._verified_contact_directory(  # noqa: SLF001
+            input_root, contact_record
+        )
+        == contact_directory.resolve()
+    )
+    audit_identity = {key: value for key, value in audit.items() if key != "audit_id"}
+    audit["audit_id"] = content_id(audit_identity)
+    lineage = {
+        "artifact_ids": {
+            name: _sha(f"artifact-{name}")
+            for name in source_module_v5_2.CAMERA_RECOVERY_ARTIFACT_NAMES
+        },
+        "source_artifacts": {
+            name: _sha(f"source-{name}")
+            for name in source_module_v5_2.CAMERA_RECOVERY_ARTIFACT_NAMES
+        },
+        "policy": dict(module.RECOVERY_POLICY),
+        "base_prediction_batch_preserved": True,
+    }
+    lineage["artifact_ids"]["final_camera_audit"] = audit["audit_id"]
+    plan = source_module_v5_2.build_deform360_joint_sparse_source_prediction_plan_v5_2(
+        lock=lock,
+        implementation_revision="8" * 40,
+        attempted_objects=objects,
+        final_camera_audit=audit,
+        camera_recovery=lineage,
+    )
+    assert all(row["camera_admission"]["admitted"] for row in plan["objects"])
+
+    def prepare_visual(**kwargs: Any) -> object:
+        sources = kwargs["source_artifact_ids"]
+        if any(
+            key.startswith(f"visual/{failed_provider_object_id}/") for key in sources
+        ):
+            raise ValueError("synthetic prefix provider failure")
+        return SimpleNamespace(camera_id=kwargs["camera_id"]), SimpleNamespace()
+
+    monkeypatch.setattr(
+        source_module_v5_2,
+        "prepare_deform360_joint_sparse_visual_window_v5",
+        prepare_visual,
+    )
+    monkeypatch.setattr(
+        source_module_v5_2,
+        "estimate_deform360_last_causal_residual_v5",
+        lambda **kwargs: np.zeros(
+            kwargs["physical_prediction_m"].shape[1:], dtype=np.float64
+        ),
+    )
+
+    def materialize(**kwargs: Any) -> SimpleNamespace:
+        problem = source_module._technical_fallback_problem(
+            object_id=kwargs["object_id"],
+            episode_id=kwargs["episode_id"],
+            stratum=kwargs["stratum"],
+            physical_prediction_m=kwargs["physical_prediction_m"],
+            persistence_m=kwargs["persistence_m"],
+            physical_mode=kwargs["physical_mode"],
+            implementation_revision=kwargs["implementation_revision"],
+            source_artifact_ids=kwargs["source_artifact_ids"],
+            failure_stage="test_materialization_proxy",
+            failure=ValueError("deterministic test proxy"),
+        )
+        return SimpleNamespace(problem=problem)
+
+    monkeypatch.setattr(
+        source_module_v5_2,
+        "materialize_deform360_joint_sparse_prediction_v5",
+        materialize,
+    )
+    plan_path = tmp_path / "source-plan-v5-2.json"
+    write_atomic_json(plan, plan_path, overwrite=False)
+    output_root = tmp_path / "predictions-v5-2"
+    first = (
+        source_module_v5_2.publish_deform360_joint_sparse_source_prediction_panel_v5_2(
+            execution_lock_path=LOCK_PATH,
+            source_plan_path=plan_path,
+            input_root=input_root,
+            output_root=output_root,
+        )
+    )
+    second = (
+        source_module_v5_2.publish_deform360_joint_sparse_source_prediction_panel_v5_2(
+            execution_lock_path=LOCK_PATH,
+            source_plan_path=plan_path,
+            input_root=input_root,
+            output_root=output_root,
+        )
+    )
+    assert first == second
+    assert first["prediction_record_count"] == 100
