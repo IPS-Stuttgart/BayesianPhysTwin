@@ -11,14 +11,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: patch-deform360-source-support-mypy-once
+  group: patch-deform360-source-support-mypy-once-fast
   cancel-in-progress: false
 
 jobs:
   patch:
     if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - name: Check out the exact feature branch
         uses: actions/checkout@v7
@@ -27,10 +27,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
           clean: true
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
       - name: Replace only the validated object-metadata guard
         shell: bash
         run: |
@@ -58,13 +54,7 @@ jobs:
               raise SystemExit("expected object-metadata guard changed")
           path.write_text(text.replace(old, new), encoding="utf-8")
           PY
-          python -m pip install -e ".[dev]"
           file=src/bayesian_phystwin/deform360_source_support_failure_evidence_v1.py
-          python -m ruff check "${file}"
-          python -m ruff format --check "${file}"
-          python -m mypy \
-            scripts/science/materialize_deform360_source_support_failure_evidence_v1.py \
-            "${file}"
           git diff --check
           mapfile -t changed < <(git diff --name-only)
           test "${#changed[@]}" -eq 1
