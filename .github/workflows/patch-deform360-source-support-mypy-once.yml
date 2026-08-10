@@ -1,0 +1,76 @@
+name: Patch Deform360 source-support MyPy narrowing once
+
+on:
+  push:
+    branches:
+      - agent/deform360-source-support-failure-census-v1
+    paths:
+      - ".github/workflows/patch-deform360-source-support-mypy-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patch-deform360-source-support-mypy-once
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/deform360-source-support-failure-census-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Replace only the validated object-metadata guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = \
+            "refs/heads/agent/deform360-source-support-failure-census-v1"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "src/bayesian_phystwin/"
+              "deform360_source_support_failure_evidence_v1.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          old = '''        expected_object = _EXPECTED_OBJECT_BY_ID.get(object_id)
+          _require(expected_object is not None, "metric batch object roster changed")
+          episode_id = _genuine_integer(
+          '''
+          new = '''        expected_object = _EXPECTED_OBJECT_BY_ID.get(object_id)
+          if expected_object is None:
+              raise ValueError("metric batch object roster changed")
+          episode_id = _genuine_integer(
+          '''
+          if text.count(old) != 1:
+              raise SystemExit("expected object-metadata guard changed")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          python -m pip install -e ".[dev]"
+          file=src/bayesian_phystwin/deform360_source_support_failure_evidence_v1.py
+          python -m ruff check "${file}"
+          python -m ruff format --check "${file}"
+          python -m mypy \
+            scripts/science/materialize_deform360_source_support_failure_evidence_v1.py \
+            "${file}"
+          git diff --check
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "${file}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${file}"
+          git commit -m "Narrow validated Deform360 object metadata"
+          git push origin HEAD:agent/deform360-source-support-failure-census-v1
