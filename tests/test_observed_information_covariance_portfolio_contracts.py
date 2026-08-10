@@ -8,6 +8,7 @@ import pytest
 from bayesian_phystwin.posterior_covariance_portfolio import (
     PosteriorCovarianceSourceV1,
     build_posterior_query_covariance_portfolio,
+    exact_prior_fallback_covariance_source,
 )
 from bayesian_phystwin.posterior_covariance_semantics import (
     PosteriorCovarianceSemanticsV1,
@@ -27,6 +28,7 @@ from _posterior_covariance_portfolio_support import (
     ("covariance", "message"),
     [
         (np.diag([1.0, -1.0]), "positive semidefinite"),
+        (np.diag([1.0e12, -1.0]), "positive semidefinite"),
         (np.ones((2, 3)), "square matrix"),
         (np.asarray([[1.0, np.nan], [np.nan, 1.0]]), "finite"),
         (np.asarray([[1.0, 0.5], [0.0, 1.0]]), "symmetric"),
@@ -132,6 +134,24 @@ def test_builder_rejects_invalid_query_matrix(invalid: np.ndarray) -> None:
                 "laplace_observed_information": "not-available",
                 "group_sandwich": "not-available",
             },
+        )
+
+
+def test_rejected_portfolio_reason_matches_fallback_semantics() -> None:
+    fallback = exact_prior_fallback_covariance_source(
+        RESULT_ID,
+        np.eye(2),
+        source_artifact_id="f" * 64,
+        reason="no-identifiable-query-state",
+    )
+    with pytest.raises(ValueError, match="reason does not match exact fallback"):
+        build_posterior_query_covariance_portfolio(
+            RESULT_ID,
+            QUERY_ID,
+            np.eye(2),
+            [fallback],
+            inference_admissible=False,
+            reason="different-rejection-reason",
         )
 
 
