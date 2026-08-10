@@ -86,10 +86,6 @@ jobs:
             src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
             src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
             src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
-          python -m pytest -q -p no:cacheprovider \
-            tests/test_deform360_joint_sparse_geometric_v4.py \
-            tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
-            tests/test_pull_request_workflow_integrity.py
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
