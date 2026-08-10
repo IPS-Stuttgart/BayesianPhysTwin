@@ -6,6 +6,12 @@ on:
       - agent/full22-discrepancy-tournament-v1
     paths:
       - ".github/workflows/materialize-full22-tournament-runner.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/materialize-full22-tournament-runner.yml"
+      - ".github/bootstrap/**"
 
 permissions:
   contents: write
@@ -16,6 +22,9 @@ concurrency:
 
 jobs:
   materialize:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Check out exact branch
