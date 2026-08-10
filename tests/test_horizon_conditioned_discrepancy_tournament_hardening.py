@@ -46,9 +46,7 @@ def _record(
         "deployed_point_loss": point_loss if accepted else fallback_point_loss,
         "proper_score": proper_score,
         "fallback_proper_score": fallback_proper_score,
-        "deployed_proper_score": (
-            proper_score if accepted else fallback_proper_score
-        ),
+        "deployed_proper_score": (proper_score if accepted else fallback_proper_score),
         "interval_covered": covered,
         "interval_width": width,
     }
@@ -172,8 +170,7 @@ def test_rejected_candidate_must_retain_fallback_interval() -> None:
     record = next(
         row
         for row in records
-        if row["candidate_id"] == "challenger"
-        and row["group_id"] == "object-0"
+        if row["candidate_id"] == "challenger" and row["group_id"] == "object-0"
     )
     record["accepted"] = False
     record["deployed_point_loss"] = record["fallback_point_loss"]
