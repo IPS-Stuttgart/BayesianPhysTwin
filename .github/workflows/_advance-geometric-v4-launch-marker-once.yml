@@ -1,0 +1,66 @@
+name: Advance geometric v4 launch marker once
+
+on:
+  push:
+    branches:
+      - launch/deform360-joint-sparse-geometric-v4-once-v1
+    paths:
+      - .github/workflows/_advance-geometric-v4-launch-marker-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: advance-geometric-v4-launch-marker-once
+  cancel-in-progress: false
+
+jobs:
+  advance:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/launch/deform360-joint-sparse-geometric-v4-once-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact execution branch
+        uses: actions/checkout@v7
+        with:
+          ref: launch/deform360-joint-sparse-geometric-v4-once-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Advance only the reviewed launcher marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              ".github/workflows/"
+              "launch-deform360-joint-sparse-geometric-v4-once.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          old = (
+              "# One-shot development execution. No raw, adaptive-confirmation, "
+              "or confirmation access.\n"
+          )
+          new = (
+              "# Reviewed execution request v1 after merged implementation "
+              "5439d16bbcd051d4b9908152263c44e3d562000e. No raw, "
+              "adaptive-confirmation, or confirmation access.\n"
+          )
+          if text.count(old) != 1:
+              raise SystemExit("launcher marker changed")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          git rm .github/workflows/_advance-geometric-v4-launch-marker-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/launch-deform360-joint-sparse-geometric-v4-once.yml
+          git commit -m "Request the reviewed Deform360 geometric v4 execution"
+          git push origin HEAD:launch/deform360-joint-sparse-geometric-v4-once-v1
