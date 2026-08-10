@@ -1,10 +1,10 @@
 # Stable Prob4D provider-v2 bridge
 
 New BayesianPhysTwin integrations should resolve claim-bearing Prob4D artifacts
-through the versioned bridge in `bayesian_phystwin.v1`:
+through the dedicated bridge module:
 
 ```python
-from bayesian_phystwin.v1 import (
+from bayesian_phystwin.prob4d_api_v2 import (
     inspect_prob4d_api_v2,
     load_claim_bearing_tree_sparse_prob4d,
 )
@@ -28,6 +28,14 @@ The current canonical navigation repository is `IPS-Stuttgart/Prob4D`.
 Historical content-addressed observations may correctly retain
 `FlorianPfaff/Prob4D`; the bridge validates the producer's transfer-safe project
 descriptor rather than rewriting those frozen bytes.
+
+## Compatibility boundary
+
+The frozen `bayesian_phystwin.v1` API remains unchanged. The provider-v2 bridge
+uses its own module because adding new names to that deliberately small surface
+would silently broaden an existing compatibility contract. A future formal
+BayesianPhysTwin API revision can adopt the bridge explicitly without changing
+version 1.
 
 ## Ownership boundary
 
