@@ -48,7 +48,7 @@ def _load_implementation() -> ModuleType:
         raise RuntimeError(
             "implementation dataset identity differs from the reviewed lock"
         )
-    setattr(module, "DATASET_SHA256", EXPECTED_DATASET_SHA256)
+    module.__dict__["DATASET_SHA256"] = EXPECTED_DATASET_SHA256
     return module
 
 
