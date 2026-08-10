@@ -31,7 +31,9 @@ def forecast_graph_dynamic_discrepancy(
     """Forecast a registered node/horizon query with full joint covariance."""
 
     raw_horizons = np.asarray(horizon_steps)
-    _require(raw_horizons.ndim == 1 and len(raw_horizons), "horizons are empty")
+    _require(
+        raw_horizons.ndim == 1 and len(raw_horizons) > 0, "horizons are empty"
+    )
     _require(
         np.issubdtype(raw_horizons.dtype, np.integer)
         and raw_horizons.dtype.kind != "b",
@@ -43,11 +45,14 @@ def forecast_graph_dynamic_discrepancy(
         np.all(np.diff(horizons) > 0),
         "horizon_steps must be strictly increasing",
     )
+    nodes: np.ndarray
     if node_indices is None:
         nodes = np.arange(self.node_count, dtype=np.int64)
     else:
         raw_nodes = np.asarray(node_indices)
-        _require(raw_nodes.ndim == 1 and len(raw_nodes), "node_indices is empty")
+        _require(
+            raw_nodes.ndim == 1 and len(raw_nodes) > 0, "node_indices is empty"
+        )
         _require(
             np.issubdtype(raw_nodes.dtype, np.integer) and raw_nodes.dtype.kind != "b",
             "node_indices must contain integers",
@@ -81,6 +86,7 @@ def forecast_graph_dynamic_discrepancy(
         process_acceleration_std_mps2=self.process_acceleration_std_mps2,
     )
     maximum_horizon = int(horizons[-1])
+    acceleration: np.ndarray
     if modal_acceleration_mps2 is None:
         acceleration = np.zeros(
             (maximum_horizon, self.rank, 3),
@@ -137,8 +143,10 @@ def forecast_graph_dynamic_discrepancy(
         ),
         axis=1,
     )
-    mean = np.empty((len(horizons), len(nodes), 3), dtype=np.float64)
-    covariance = np.empty(
+    mean: np.ndarray = np.empty(
+        (len(horizons), len(nodes), 3), dtype=np.float64
+    )
+    covariance: np.ndarray = np.empty(
         (query_dimension, query_dimension),
         dtype=np.float64,
     )
