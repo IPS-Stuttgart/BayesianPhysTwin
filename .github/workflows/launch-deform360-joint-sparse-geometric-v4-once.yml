@@ -92,26 +92,36 @@ jobs:
           persist-credentials: false
           clean: true
 
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
       - name: Build an isolated exact-source runtime
         shell: bash
         run: |
           set -euo pipefail
-          uv_bin="$(command -v uv)"
-          test -x "${uv_bin}"
           runtime="${RUNNER_TEMP}/deform360-joint-sparse-geometric-v4-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          export UV_CACHE_DIR="${RUNNER_TEMP}/uv-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          "${uv_bin}" venv --python 3.12 "${runtime}"
-          "${uv_bin}" pip install \
-            --python "${runtime}/bin/python" \
-            --no-cache-dir \
-            -e .
-          "${runtime}/bin/python" - <<'PY'
+          test ! -e "${runtime}"
+          python -m venv --copies "${runtime}"
+          runtime_python="${runtime}/bin/python"
+          "${runtime_python}" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1" \
+            "numpy==2.2.6"
+          "${runtime_python}" -m pip install \
+            --no-deps \
+            --no-build-isolation \
+            .
+          "${runtime_python}" -m pip check
+          "${runtime_python}" - <<'PY'
           import numpy
           import bayesian_phystwin.deform360_joint_sparse_geometric_materializer_v4
           import bayesian_phystwin.deform360_joint_sparse_observability_v4
           print(numpy.__version__)
           PY
-          echo "V4_PYTHON=${runtime}/bin/python" >> "${GITHUB_ENV}"
+          echo "V4_PYTHON=${runtime_python}" >> "${GITHUB_ENV}"
 
       - name: Materialize immutable geometric v4 factors
         shell: bash
