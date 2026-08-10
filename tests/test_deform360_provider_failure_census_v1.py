@@ -66,23 +66,17 @@ def _adapter_payload() -> dict[str, object]:
     metadata = {
         **_source_metadata(),
         "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
-        "adapter_schema_version": (
-            CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
-        ),
+        "adapter_schema_version": (CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION),
         "adapter_claim_boundary": (
             CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
         ),
         "source_contract": "ClaimBearingProb4DUpdateV1",
         "strict_result_contract": "PriorAwareGaugeBeliefResultV2",
-        "record_update_ids": [
-            {"case_id": "object-01", "update_id": UPDATE_ID}
-        ],
+        "record_update_ids": [{"case_id": "object-01", "update_id": UPDATE_ID}],
     }
     metrics = {
         "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
-        "adapter_schema_version": (
-            CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
-        ),
+        "adapter_schema_version": (CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION),
         "adapter_claim_boundary": (
             CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
         ),
@@ -145,9 +139,7 @@ def _metrics(payload: dict[str, object]) -> dict[str, object]:
 def test_generic_source_payload_accepts_only_registered_equal_case_units(
     unit: str,
 ) -> None:
-    report = validate_deform360_provider_failure_census_payload(
-        _generic_payload(unit)
-    )
+    report = validate_deform360_provider_failure_census_payload(_generic_payload(unit))
 
     assert report["record_count"] == 1
     assert report["accepted_count"] == 0
