@@ -27,8 +27,6 @@ from .deform360_joint_sparse_geometric_common_v4 import (
     _sha256_file,
 )
 
-_MAXIMUM_NPY_HEADER_BYTES = 10_000
-
 
 def _zip_members(path: Path) -> dict[str, zipfile.ZipInfo]:
     try:
@@ -80,15 +78,9 @@ def _read_npy_header(
     """Read a bounded NPY header without relying on NumPy private APIs."""
 
     if version == (1, 0):
-        return np.lib.format.read_array_header_1_0(
-            stream,
-            max_header_size=_MAXIMUM_NPY_HEADER_BYTES,
-        )
+        return np.lib.format.read_array_header_1_0(stream)
     if version == (2, 0):
-        return np.lib.format.read_array_header_2_0(
-            stream,
-            max_header_size=_MAXIMUM_NPY_HEADER_BYTES,
-        )
+        return np.lib.format.read_array_header_2_0(stream)
     raise ValueError(f"unsupported metric NPY format version {version!r}")
 
 
