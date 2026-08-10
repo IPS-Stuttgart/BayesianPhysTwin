@@ -6,7 +6,7 @@ on:
       - agent/discrepancy-candidate-tournament-v1
     paths:
       - .github/workflows/_apply-discrepancy-tournament-v1-once.yml
-      - tools/one_shot/apply_discrepancy_tournament_v1.py.part*
+      - tools/one_shot/apply-discrepancy-tournament-v1.py.part*
 
 permissions:
   contents: write
@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat tools/one_shot/apply_discrepancy_tournament_v1.py.part* \
+          cat tools/one_shot/apply-discrepancy-tournament-v1.py.part* \
             > tools/one_shot/apply_discrepancy_tournament_v1.py
           python tools/one_shot/apply_discrepancy_tournament_v1.py
 
@@ -93,7 +93,7 @@ jobs:
           set -euo pipefail
           rm .github/workflows/_apply-discrepancy-tournament-v1-once.yml
           rm tools/one_shot/apply_discrepancy_tournament_v1.py
-          rm tools/one_shot/apply_discrepancy_tournament_v1.py.part*
+          rm tools/one_shot/apply-discrepancy-tournament-v1.py.part*
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
