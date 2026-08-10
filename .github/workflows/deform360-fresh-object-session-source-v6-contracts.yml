@@ -12,6 +12,7 @@ on:
       - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
       - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
       - "tests/test_deform360_fresh_object_session_source_v6.py"
+      - "tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py"
   push:
     branches: [main]
     paths:
@@ -23,6 +24,7 @@ on:
       - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
       - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
       - "tests/test_deform360_fresh_object_session_source_v6.py"
+      - "tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py"
 
 permissions:
   contents: read
@@ -70,6 +72,7 @@ jobs:
             src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py
             scripts/science/run_deform360_fresh_object_session_source_v6.py
             tests/test_deform360_fresh_object_session_source_v6.py
+            tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
