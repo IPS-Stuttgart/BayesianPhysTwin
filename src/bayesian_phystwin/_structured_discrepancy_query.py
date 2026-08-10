@@ -56,18 +56,12 @@ def structured_discrepancy_query_moments(
     covariance = np.zeros((len(query), len(query)), dtype=np.float64)
     for index, weight in enumerate(belief.component_weights):
         within = np.zeros_like(covariance)
-        coefficient_covariance = (
-            belief.component_coefficient_covariance_m2[index]
-        )
+        coefficient_covariance = belief.component_coefficient_covariance_m2[index]
         local_variance = belief.component_local_variance_m2[index]
         for coordinate in range(3):
             coordinate_query = query[:, :, coordinate]
             coefficient_query = coordinate_query @ belief.spatial_basis
-            within += (
-                coefficient_query
-                @ coefficient_covariance
-                @ coefficient_query.T
-            )
+            within += coefficient_query @ coefficient_covariance @ coefficient_query.T
             within += (coordinate_query * local_variance[None, :]) @ (
                 coordinate_query.T
             )
