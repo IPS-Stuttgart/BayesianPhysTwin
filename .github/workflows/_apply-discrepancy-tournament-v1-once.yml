@@ -6,12 +6,14 @@ on:
       - agent/discrepancy-candidate-tournament-v1
     paths:
       - .github/workflows/_apply-discrepancy-tournament-v1-once.yml
+      - tools/one_shot/apply_discrepancy_tournament_v1.py.part00
       - tools/one_shot/apply-discrepancy-tournament-v1.py.part*
   pull_request:
     branches:
       - main
     paths:
       - .github/workflows/_apply-discrepancy-tournament-v1-once.yml
+      - tools/one_shot/apply_discrepancy_tournament_v1.py.part00
       - tools/one_shot/apply-discrepancy-tournament-v1.py.part*
 
 permissions:
@@ -51,7 +53,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat tools/one_shot/apply-discrepancy-tournament-v1.py.part* \
+          cat \
+            tools/one_shot/apply_discrepancy_tournament_v1.py.part00 \
+            tools/one_shot/apply-discrepancy-tournament-v1.py.part01 \
+            tools/one_shot/apply-discrepancy-tournament-v1.py.part02 \
+            tools/one_shot/apply-discrepancy-tournament-v1.py.part03 \
+            tools/one_shot/apply-discrepancy-tournament-v1.py.part04 \
             > tools/one_shot/apply_discrepancy_tournament_v1.py
           python tools/one_shot/apply_discrepancy_tournament_v1.py
 
@@ -102,6 +109,7 @@ jobs:
           set -euo pipefail
           rm .github/workflows/_apply-discrepancy-tournament-v1-once.yml
           rm tools/one_shot/apply_discrepancy_tournament_v1.py
+          rm tools/one_shot/apply_discrepancy_tournament_v1.py.part00
           rm tools/one_shot/apply-discrepancy-tournament-v1.py.part*
           git diff --check
           git config user.name "github-actions[bot]"
