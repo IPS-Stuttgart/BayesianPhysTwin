@@ -24,6 +24,16 @@ DISCREPANCY_TOURNAMENT_CLAIM_BOUNDARY: Final = (
     "deployment safety, or state of the art."
 )
 DEFAULT_MAXIMUM_INPUT_BYTES: Final = 64 * 1024 * 1024
+MAXIMUM_BOOTSTRAP_SAMPLES: Final = 100_000
+MAXIMUM_BOOTSTRAP_DRAW_ELEMENTS: Final = 50_000_000
+MAXIMUM_NUMERICAL_TOLERANCE: Final = 1e-9
+DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS: Final[frozenset[str]] = frozenset(
+    {
+        "physical-object",
+        "independent-acquisition-session",
+        "physical-object-or-independent-acquisition-session",
+    }
+)
 _IDENTIFIER = re.compile(r"[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\Z")
 
 
@@ -63,11 +73,19 @@ def _boolean(value: object, *, name: str) -> bool:
     return value
 
 
-def _integer(value: object, *, name: str, minimum: int = 0) -> int:
+def _integer(
+    value: object,
+    *,
+    name: str,
+    minimum: int = 0,
+    maximum: int | None = None,
+) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise ValueError(f"{name} must be an integer")
     if value < minimum:
         raise ValueError(f"{name} must be at least {minimum}")
+    if maximum is not None and value > maximum:
+        raise ValueError(f"{name} must be at most {maximum}")
     return value
 
 
@@ -344,6 +362,7 @@ def _parse_selection(value: object) -> TournamentSelectionConfig:
             payload["bootstrap_samples"],
             name="selection.bootstrap_samples",
             minimum=100,
+            maximum=MAXIMUM_BOOTSTRAP_SAMPLES,
         ),
         bootstrap_seed=_integer(
             payload["bootstrap_seed"], name="selection.bootstrap_seed"
@@ -366,6 +385,7 @@ def _parse_selection(value: object) -> TournamentSelectionConfig:
             payload["numerical_tolerance"],
             name="selection.numerical_tolerance",
             minimum=0.0,
+            maximum=MAXIMUM_NUMERICAL_TOLERANCE,
         ),
     )
     if config.require_crossfit_stability:
@@ -591,6 +611,17 @@ def parse_discrepancy_candidate_tournament(
             fallback_record.proper_score == fallback_record.fallback_proper_score,
             f"{unit_id} fallback raw proper score changed",
         )
+        for record in unit_records:
+            if record.accepted:
+                continue
+            _require(
+                record.interval_covered == fallback_record.interval_covered,
+                f"{unit_id} rejected interval coverage differs from exact fallback",
+            )
+            _require(
+                record.interval_width == fallback_record.interval_width,
+                f"{unit_id} rejected interval width differs from exact fallback",
+            )
 
     evaluation = _parse_evaluation(payload["evaluation"])
     config = _parse_selection(payload["selection"])
@@ -612,6 +643,13 @@ def parse_discrepancy_candidate_tournament(
         len(groups) >= required_groups,
         "tournament has too few independent groups for the frozen selection rule",
     )
+    bootstrap_draw_elements = (
+        2 * len(candidates) * config.bootstrap_samples * len(groups) * len(groups)
+    )
+    _require(
+        bootstrap_draw_elements <= MAXIMUM_BOOTSTRAP_DRAW_ELEMENTS,
+        "bootstrap work budget exceeded; reduce samples, candidates, or groups",
+    )
 
     interval_presence: dict[str, set[bool]] = {
         candidate_id: set() for candidate_id in known
@@ -631,9 +669,18 @@ def parse_discrepancy_candidate_tournament(
         )
         _require(not missing, f"interval coverage is missing for candidates {missing}")
 
+    statistical_unit = _text(
+        payload["statistical_unit"],
+        name="statistical_unit",
+    )
+    _require(
+        statistical_unit in DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,
+        "statistical_unit must identify physical objects or independent sessions",
+    )
+
     return TournamentEvidence(
         protocol_id=_identifier(payload["protocol_id"], name="protocol_id"),
-        statistical_unit=_text(payload["statistical_unit"], name="statistical_unit"),
+        statistical_unit=statistical_unit,
         reference_candidate=reference,
         physical_fallback_candidate=fallback,
         evaluation=evaluation,

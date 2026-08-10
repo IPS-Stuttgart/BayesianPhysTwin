@@ -19,6 +19,8 @@ from ._discrepancy_tournament_contracts import (
 )
 from .provider_failure_report_io import canonical_json_sha256
 
+_MAXIMUM_BOOTSTRAP_CHUNK_ELEMENTS = 100_000
+
 
 def _records_for(
     evidence: TournamentEvidence,
@@ -53,8 +55,22 @@ def _bootstrap_difference_interval(
 ) -> list[float]:
     differences = candidate - reference
     rng = np.random.default_rng(seed)
-    indices = rng.integers(0, len(differences), size=(samples, len(differences)))
-    estimates = np.mean(differences[indices], axis=1)
+    estimates: np.ndarray = np.empty(samples, dtype=np.float64)
+    chunk_size = max(
+        1,
+        min(
+            samples,
+            _MAXIMUM_BOOTSTRAP_CHUNK_ELEMENTS // len(differences),
+        ),
+    )
+    for start in range(0, samples, chunk_size):
+        stop = min(samples, start + chunk_size)
+        indices = rng.integers(
+            0,
+            len(differences),
+            size=(stop - start, len(differences)),
+        )
+        estimates[start:stop] = np.mean(differences[indices], axis=1)
     return [
         float(np.quantile(estimates, 0.025)),
         float(np.quantile(estimates, 0.975)),

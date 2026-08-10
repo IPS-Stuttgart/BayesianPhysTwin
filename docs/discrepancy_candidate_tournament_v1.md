@@ -29,10 +29,16 @@ The input must declare all of the following:
 - confirmation payloads remain closed; and
 - no candidate or statistical group may be replaced after scoring.
 
-The statistical group must be a physical object or independent acquisition
-session, not a frame, point, track, camera, or taxel. All point losses, proper
-scores, coverage values, and widths are averaged within a group before groups
-receive equal weight.
+The statistical-unit field uses a closed vocabulary: physical object,
+independent acquisition session, or an explicitly mixed object/session roster.
+A frame, point, track, camera, or taxel declaration is rejected. All point
+losses, proper scores, coverage values, and widths are averaged within a group
+before groups receive equal weight.
+
+Bootstrap samples, total candidate/fold resampling draws, and the numerical
+comparison tolerance are resource-bounded by the contract. Bootstrap draws are
+materialized in deterministic chunks, so a valid input cannot request one dense
+samples-by-groups allocation.
 
 ## Matched records
 
@@ -45,9 +51,10 @@ candidate. Records bind:
 - acceptance and deployed values;
 - optional interval coverage and complete interval width.
 
-A rejected candidate must deploy the exact physical-fallback values. The
-registered physical-fallback candidate must itself be rejected and reproduce its
-raw fallback values exactly. Candidate-dependent fallback scores, incomplete
+A rejected candidate must deploy the exact physical-fallback point loss, proper
+score, interval coverage decision, and complete interval width. The registered
+physical-fallback candidate must itself be rejected and reproduce its raw
+fallback values exactly. Candidate-dependent fallback scores, incomplete
 candidate rosters, mixed interval availability, duplicate units, or altered
 horizons fail closed.
 

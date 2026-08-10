@@ -118,7 +118,7 @@ def _payload() -> dict[str, object]:
         "contract": DISCREPANCY_TOURNAMENT_INPUT_CONTRACT,
         "schema_version": 1,
         "protocol_id": "discrepancy-source-v1",
-        "statistical_unit": "physical-object-or-session",
+        "statistical_unit": ("physical-object-or-independent-acquisition-session"),
         "split": "source-only",
         "reference_candidate": "last_residual",
         "physical_fallback_candidate": "physical_fallback",
@@ -218,6 +218,43 @@ def test_exact_fallback_and_matched_roster_fail_closed() -> None:
     assert isinstance(records, list)
     records.pop()
     with pytest.raises(ValueError, match="every registered candidate"):
+        parse_discrepancy_candidate_tournament(payload)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        (
+            "interval_covered",
+            False,
+            "rejected interval coverage differs from exact fallback",
+        ),
+        (
+            "interval_width",
+            1.0,
+            "rejected interval width differs from exact fallback",
+        ),
+    ],
+)
+def test_rejected_candidate_must_retain_exact_fallback_interval(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    payload = _payload()
+    records = payload["records"]
+    assert isinstance(records, list)
+    row = next(
+        record
+        for record in records
+        if record["candidate_id"] == "structured" and record["group_id"] == "group-0"
+    )
+    row["accepted"] = False
+    row["deployed_point_loss"] = row["fallback_point_loss"]
+    row["deployed_proper_score"] = row["fallback_proper_score"]
+    row[field] = value
+
+    with pytest.raises(ValueError, match=message):
         parse_discrepancy_candidate_tournament(payload)
 
 
@@ -348,6 +385,49 @@ def test_nested_contracts_fail_closed(mutate, message: str) -> None:
     payload = _payload()
     mutate(payload)
     with pytest.raises(ValueError, match=message):
+        parse_discrepancy_candidate_tournament(payload)
+
+
+def test_statistical_unit_and_numerical_limits_fail_closed() -> None:
+    payload = _payload()
+    payload["statistical_unit"] = "frame"
+    with pytest.raises(ValueError, match="statistical_unit must identify"):
+        parse_discrepancy_candidate_tournament(payload)
+
+    payload = _payload()
+    selection = payload["selection"]
+    assert isinstance(selection, dict)
+    selection["numerical_tolerance"] = 1e-6
+    with pytest.raises(ValueError, match="at most 1e-09"):
+        parse_discrepancy_candidate_tournament(payload)
+
+    payload = _payload()
+    selection = payload["selection"]
+    assert isinstance(selection, dict)
+    selection["bootstrap_samples"] = 100_001
+    with pytest.raises(ValueError, match="at most 100000"):
+        parse_discrepancy_candidate_tournament(payload)
+
+
+def test_bootstrap_work_budget_fails_closed() -> None:
+    payload = _payload()
+    records = payload["records"]
+    selection = payload["selection"]
+    assert isinstance(records, list)
+    assert isinstance(selection, dict)
+    templates = [
+        deepcopy(record) for record in records if record["group_id"] == "group-0"
+    ]
+    for index in range(6, 10):
+        group = f"group-{index}"
+        for template in templates:
+            record = deepcopy(template)
+            record["group_id"] = group
+            record["unit_id"] = f"{group}-endpoint"
+            records.append(record)
+    selection["bootstrap_samples"] = 100_000
+
+    with pytest.raises(ValueError, match="bootstrap work budget exceeded"):
         parse_discrepancy_candidate_tournament(payload)
 
 
