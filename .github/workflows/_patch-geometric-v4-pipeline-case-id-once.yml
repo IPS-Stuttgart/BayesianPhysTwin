@@ -1,4 +1,4 @@
-name: Patch geometric v4 pipeline case ID once
+name: Retired geometric v4 case-ID patch helper
 
 on:
   push:
@@ -8,104 +8,12 @@ on:
       - .github/workflows/_patch-geometric-v4-pipeline-case-id-once.yml
 
 permissions:
-  contents: write
-
-concurrency:
-  group: patch-geometric-v4-pipeline-case-id-once
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  patch:
-    if: >-
-      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
+  retired:
+    if: ${{ false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
-      - name: Check out current feature branch
-        uses: actions/checkout@v7
-        with:
-          ref: agent/materialize-deform360-joint-sparse-geometric-v4
-          fetch-depth: 0
-          persist-credentials: true
-          clean: true
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Patch, validate, and publish
-        shell: bash
-        run: |
-          set -euo pipefail
-          branch=agent/materialize-deform360-joint-sparse-geometric-v4
-          test "$(git branch --show-current)" = "${branch}"
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("tests/test_deform360_joint_sparse_geometric_v4_pipeline.py")
-          text = path.read_text(encoding="utf-8")
-          old = '                "case_id": _sha(f"case-{index}"),\n'
-          new = '''                "case_id": content_id(
-                    {
-                        "schema": (
-                            "bayesian-phystwin."
-                            "deform360-prob4d-metric-case-id-v1"
-                        ),
-                        "object_id": object_id,
-                        "episode_id": index,
-                    }
-                ),
-'''
-          count = text.count(old)
-          if count == 1:
-              path.write_text(text.replace(old, new), encoding="utf-8")
-          elif count != 0:
-              raise SystemExit(f"unexpected legacy case-ID count: {count}")
-          PY
-
-          python -m pip install -e ".[dev]"
-          files=(
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
-            tests/test_deform360_joint_sparse_geometric_v4_causal_coverage.py
-            tests/test_deform360_joint_sparse_geometric_v4_pipeline.py
-            tests/test_deform360_joint_sparse_geometric_v4_roster.py
-          )
-          python -m ruff format "${files[@]}"
-          python -m ruff check --fix "${files[@]}"
-          python -m ruff check "${files[@]}"
-          python -m ruff format --check "${files[@]}"
-          python -m mypy \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
-          python -m pytest -q -p no:cacheprovider \
-            tests/test_deform360_joint_sparse_geometric_v4.py \
-            tests/test_deform360_joint_sparse_geometric_v4_causal_coverage.py \
-            tests/test_deform360_joint_sparse_geometric_v4_end_to_end.py \
-            tests/test_deform360_joint_sparse_geometric_v4_pipeline.py \
-            tests/test_deform360_joint_sparse_geometric_v4_roster.py \
-            tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
-            tests/test_deform360_joint_sparse_observability_v4.py \
-            tests/test_deform360_joint_sparse_observability_v4_cli.py \
-            tests/test_pull_request_workflow_integrity.py
-          python -m compileall -q \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py \
-            tests/test_deform360_joint_sparse_geometric_v4*.py
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${files[@]}"
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "Adapt restored geometric v4 pipeline fixture"
-          git pull --rebase origin "${branch}"
-          git push origin "HEAD:${branch}"
+      - name: Retired
+        run: echo "This one-time helper is retired and performs no write."
