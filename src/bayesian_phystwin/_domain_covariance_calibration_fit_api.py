@@ -22,6 +22,8 @@ from .calibration_domain_guard import CalibrationDomainGuardConfigV1
 
 def fit_domain_covariance_calibration(
     *,
+    predictor_id: str,
+    predictor_frozen_before_calibration_outcomes: bool,
     calibration_partition_id: str,
     statistical_unit: str,
     residual_definition: str,
@@ -48,6 +50,11 @@ def fit_domain_covariance_calibration(
     )
     if not isinstance(domain_guard_config, CalibrationDomainGuardConfigV1):
         raise TypeError("guard_config must be a CalibrationDomainGuardConfigV1")
+    predictor = sha256_digest(predictor_id, name="predictor_id")
+    predictor_frozen = genuine_boolean(
+        predictor_frozen_before_calibration_outcomes,
+        name="predictor_frozen_before_calibration_outcomes",
+    )
     partition_id = sha256_digest(
         calibration_partition_id,
         name="calibration_partition_id",
@@ -111,6 +118,8 @@ def fit_domain_covariance_calibration(
         raise AssertionError("calibration groups were unexpectedly empty")
     groups = tuple(sorted(prepared, key=lambda item: item.group_id))
     return build_calibration_certificate(
+        predictor_id=predictor,
+        predictor_frozen_before_calibration_outcomes=predictor_frozen,
         partition_id=partition_id,
         statistical_unit=unit,
         residual_definition=residual_name,
