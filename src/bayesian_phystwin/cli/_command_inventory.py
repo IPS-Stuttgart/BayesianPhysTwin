@@ -47,6 +47,7 @@ ARCHIVED_IDS: Final = frozenset(
 DIAGNOSTIC_IDS: Final = frozenset(
     """
     evaluate-phystwin-priors
+    audit-prob4d-covariance-ablation
     audit-phystwin-calibration
     compare-phystwin-additional-controls
     analyze-phystwin-horizon
@@ -77,6 +78,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "synthetic-benchmark": "run the controlled synthetic benchmark",
     "decisive-evidence": "summarize matched guarded prospective evidence",
     "claim-bundle": "build or validate a content-addressed claim bundle",
+    "audit-prob4d-covariance-ablation": (
+        "verify and compare a controlled five-way Prob4D covariance ablation"
+    ),
     "confirm-phystwin-bayesian-anchor": (
         "evaluate the frozen Bayesian anchor on the official PhysTwin cohort"
     ),
@@ -104,6 +108,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "synthetic-benchmark": "synthetic-benchmark-v3",
     "decisive-evidence": "bayesian-phystwin-decisive-evidence-v1",
     "claim-bundle": "claim-bundle-v1",
+    "audit-prob4d-covariance-ablation": "prob4d-covariance-ablation-v1",
     "combine-phystwin-profiles": "phystwin-profile-pooling-v1",
     "calibrate-phystwin-discrepancy": "phystwin-discrepancy-calibration-v1",
     "phystwin-refit": "phystwin-refit-v1",

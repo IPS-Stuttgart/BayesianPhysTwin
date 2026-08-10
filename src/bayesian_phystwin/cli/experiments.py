@@ -33,6 +33,9 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "associate-phystwin-motioncrafter": (
         "bayesian_phystwin.cli.phystwin_motioncrafter_association"
     ),
+    "audit-prob4d-covariance-ablation": (
+        "bayesian_phystwin.cli.prob4d_covariance_ablation"
+    ),
     "audit-phystwin-calibration": "bayesian_phystwin.cli.phystwin_calibration",
     "audit-phystwin-state-decay": "bayesian_phystwin.cli.phystwin_state_decay",
     "audit-phystwin-state-modes": "bayesian_phystwin.cli.phystwin_state_modes",
