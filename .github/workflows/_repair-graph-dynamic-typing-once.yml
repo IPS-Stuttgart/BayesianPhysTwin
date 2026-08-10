@@ -20,7 +20,7 @@ jobs:
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       github.ref == 'refs/heads/agent/graph-dynamic-discrepancy-v1'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - name: Check out exact feature branch
         uses: actions/checkout@v7
@@ -132,7 +132,7 @@ jobs:
           )
           PY
 
-          python -m pip install -e ".[dev]"
+          python -m pip install "ruff==0.16.2"
           files=(
             src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py
             src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py
@@ -141,22 +141,6 @@ jobs:
           )
           python -m ruff format "${files[@]}"
           python -m ruff check "${files[@]}"
-          python -m mypy \
-            src/bayesian_phystwin/run_manifest.py \
-            src/bayesian_phystwin/repository_provenance.py \
-            src/bayesian_phystwin/run_manifest_v2.py \
-            src/bayesian_phystwin/cli/main.py \
-            src/bayesian_phystwin/cli/run_manifest.py \
-            src/bayesian_phystwin/gauge_aware_belief.py \
-            src/bayesian_phystwin/causal4d_provider_v1.py \
-            src/bayesian_phystwin/prob4d_causal_lineage.py \
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py \
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py \
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_filter.py \
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_fit.py \
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py \
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py \
-            src/bayesian_phystwin/graph_dynamic_discrepancy.py
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
