@@ -14,9 +14,7 @@ from bayesian_phystwin.prob4d_covariance_ablation import (
 
 ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = ROOT / "scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py"
-WORKFLOW = ROOT / (
-    ".github/workflows/cloth-sim2real-prob4d-covariance-evidence-v1.yml"
-)
+WORKFLOW = ROOT / (".github/workflows/cloth-sim2real-prob4d-covariance-evidence-v1.yml")
 EXPECTED_SHA256 = "268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f"
 ACTION_REFERENCE = re.compile(r"^\s*uses:\s+([^\s@]+)@([^\s#]+)", re.MULTILINE)
 
