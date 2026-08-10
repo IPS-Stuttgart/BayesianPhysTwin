@@ -69,7 +69,7 @@ jobs:
           persist-credentials: false
           clean: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -142,7 +142,7 @@ jobs:
           persist-credentials: false
           clean: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install the exact reviewed implementation
