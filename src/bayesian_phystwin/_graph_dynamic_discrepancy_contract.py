@@ -47,8 +47,10 @@ class GraphDynamicDiscrepancyForecastV1:
             self.joint_covariance_m2,
             name="joint_covariance_m2",
         )
-        _require(horizons.ndim == 1 and len(horizons), "horizon_steps is empty")
-        _require(nodes.ndim == 1 and len(nodes), "node_indices is empty")
+        _require(
+            horizons.ndim == 1 and len(horizons) > 0, "horizon_steps is empty"
+        )
+        _require(nodes.ndim == 1 and len(nodes) > 0, "node_indices is empty")
         _require(np.all(horizons >= 1), "horizon_steps must be positive")
         _require(
             np.all(np.diff(horizons) > 0),
@@ -255,7 +257,7 @@ class GraphDynamicDiscrepancyBeliefV1:
         )
         node_count = len(residual)
         basis = np.eye(node_count, dtype=np.float64)
-        state = np.zeros((2, node_count, 3), dtype=np.float64)
+        state: np.ndarray = np.zeros((2, node_count, 3), dtype=np.float64)
         state[0] = residual
         covariance = np.zeros((6 * node_count, 6 * node_count))
         return cls(
@@ -312,7 +314,7 @@ class GraphDynamicDiscrepancyBeliefV1:
         process_std = _real(process_std_m, name="process_std_m")
         _require(process_std >= 0.0, "process_std_m must be nonnegative")
         basis = np.eye(node_count, dtype=np.float64)
-        state = np.zeros((2, node_count, 3), dtype=np.float64)
+        state: np.ndarray = np.zeros((2, node_count, 3), dtype=np.float64)
         state[0] = mean
         covariance = np.zeros((6 * node_count, 6 * node_count))
         covariance[: 3 * node_count, : 3 * node_count] = np.diag(variance.reshape(-1))
