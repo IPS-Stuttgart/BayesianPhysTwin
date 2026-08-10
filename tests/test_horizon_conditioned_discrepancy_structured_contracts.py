@@ -169,9 +169,7 @@ def test_inference_input_contracts_fail_closed() -> None:
             residual, valid, basis, end_frame=1.5, config=config
         )
     with pytest.raises(ValueError, match="inside"):
-        infer_structured_discrepancy(
-            residual, valid, basis, end_frame=0, config=config
-        )
+        infer_structured_discrepancy(residual, valid, basis, end_frame=0, config=config)
     with pytest.raises(TypeError, match="config"):
         infer_structured_discrepancy(
             residual,
@@ -388,9 +386,7 @@ def test_query_contracts_fail_closed() -> None:
             cast(StructuredDiscrepancyPosteriorV1, object()), np.eye(6)
         )
     with pytest.raises(TypeError, match="numeric"):
-        structured_discrepancy_query_moments(
-            posterior, np.ones((1, 6), dtype=bool)
-        )
+        structured_discrepancy_query_moments(posterior, np.ones((1, 6), dtype=bool))
     with pytest.raises(ValueError, match="finite and nonempty"):
         structured_discrepancy_query_moments(posterior, np.empty((0, 6)))
     invalid_query = np.zeros((1, 6))
