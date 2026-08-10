@@ -1,0 +1,66 @@
+{
+  "amendment_id": "6113d481321f176929ccab0a38a4efacbeeb6620f53d7954d102b0b4fb1879c7",
+  "base_policy": {
+    "merge_revision": "6aacb981f4434d6bfb482ce0137ed856ba37bad0",
+    "path": "protocols/locks/deform360_official_hub_fresh_object_session_v6.json",
+    "policy_id": "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f"
+  },
+  "baseline_covariance_rosters": {
+    "B0_physical_fallback": [
+      "reference"
+    ],
+    "B1_last_causal_residual": [
+      "reference"
+    ]
+  },
+  "candidate_covariance_rosters": {
+    "D1_dynamic_endpoint_model_average_v2": {
+      "explicit_unavailability_allowed": false,
+      "required_methods": [
+        "native-model-average"
+      ],
+      "selection_order": [
+        "native-model-average"
+      ],
+      "semantics": "native-law-of-total-covariance-from-frozen-component-mixture"
+    },
+    "VT1_joint_sparse_visuotactile_guarded_v5": {
+      "explicit_unavailability_allowed": true,
+      "required_methods": [
+        "working-irls",
+        "observed-information",
+        "group-sandwich"
+      ],
+      "selection_order": [
+        "working-irls",
+        "observed-information",
+        "group-sandwich"
+      ],
+      "semantics": "common-query-raw-posterior-covariance-portfolio"
+    }
+  },
+  "claim_boundary": "This amendment resolves candidate-specific covariance applicability before source scoring. It changes no candidate mean, source unit, target cohort, decision threshold, v5 result, target authorization, or scientific claim.",
+  "information_boundary": {
+    "amendment_frozen_before_v6_source_suffix_scoring": true,
+    "human_selection_used": false,
+    "replacement_allowed": false,
+    "source_outcomes_used": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_used": false,
+    "v5_terminal_outcome_used": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_used": false
+  },
+  "schema": "bayesian-phystwin.deform360-fresh-object-session-source-covariance-amendment",
+  "schema_version": 1,
+  "selection": {
+    "candidate_and_covariance_selected_jointly_inside_each_outer_fold": true,
+    "confirmation_adaptation": "forbidden",
+    "exact_point_and_interval_fallback_for_every_rejection": true,
+    "proper_score_then_point_loss_then_interval_width_then_complexity": true,
+    "raw_covariance_claimed_calibrated": false,
+    "selected_candidate_and_covariance_must_match_at_least_outer_folds": 8,
+    "source_only_variance_scale_and_split_conformal_required": true
+  },
+  "semantics": "candidate-specific-covariance-rosters-before-source-scoring-v1"
+}
