@@ -1,0 +1,65 @@
+name: Refresh PR 340 once
+
+on:
+  push:
+    branches:
+      - dependabot/github_actions/github-actions-b0b5c9f99c
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: dependabot/github_actions/github-actions-b0b5c9f99c
+          fetch-depth: 0
+
+      - name: Merge current main and update all current workflows
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = (Path(".github/workflows"),)
+          setup_count = 0
+          download_count = 0
+          changed = []
+          for root in roots:
+              for path in sorted((*root.glob("*.yml"), *root.glob("*.yaml"))):
+                  if path.name == "refresh-pr340-once.yml":
+                      continue
+                  text = path.read_text(encoding="utf-8")
+                  setup_count += text.count("actions/setup-python@v6")
+                  download_count += text.count("actions/download-artifact@v7")
+                  updated = text.replace(
+                      "actions/setup-python@v6", "actions/setup-python@v7"
+                  ).replace(
+                      "actions/download-artifact@v7", "actions/download-artifact@v8"
+                  )
+                  if updated != text:
+                      path.write_text(updated, encoding="utf-8")
+                      changed.append(path.as_posix())
+
+          if setup_count == 0:
+              raise SystemExit("no setup-python v6 references found")
+          if download_count == 0:
+              raise SystemExit("no download-artifact v7 references found")
+          print(f"updated {setup_count} setup-python references")
+          print(f"updated {download_count} download-artifact references")
+          print("changed workflows:")
+          print("\n".join(changed))
+          PY
+
+          rm .github/workflows/refresh-pr340-once.yml
+          git add -A
+          git commit --amend --no-edit
+          git push origin HEAD:dependabot/github_actions/github-actions-b0b5c9f99c
