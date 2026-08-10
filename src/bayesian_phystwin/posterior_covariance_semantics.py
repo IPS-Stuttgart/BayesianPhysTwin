@@ -29,9 +29,7 @@ POSTERIOR_COVARIANCE_SEMANTICS_SCHEMA = (
     "bayesian_phystwin.posterior_covariance_semantics"
 )
 POSTERIOR_COVARIANCE_SEMANTICS_VERSION = 1
-EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS = (
-    "not-applicable-exact-prior-fallback-v1"
-)
+EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS = "not-applicable-exact-prior-fallback-v1"
 
 PosteriorCovarianceMethod = Literal[
     "irls_working",
@@ -55,9 +53,7 @@ def _nonempty_literal_string(value: object, *, name: str) -> str:
 
 def _method(value: object) -> PosteriorCovarianceMethod:
     if type(value) is not str or value not in POSTERIOR_COVARIANCE_METHODS:
-        raise ValueError(
-            "method must be one of " f"{list(POSTERIOR_COVARIANCE_METHODS)}"
-        )
+        raise ValueError(f"method must be one of {list(POSTERIOR_COVARIANCE_METHODS)}")
     return cast(PosteriorCovarianceMethod, value)
 
 
@@ -131,10 +127,7 @@ class PosteriorCovarianceSemanticsV1:
             )
 
         if method == "exact_prior_fallback":
-            if (
-                likelihood_power_semantics
-                != EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS
-            ):
+            if likelihood_power_semantics != EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS:
                 raise ValueError(
                     "exact prior fallback has fixed likelihood-power semantics"
                 )
@@ -297,9 +290,7 @@ class PosteriorCovarianceSemanticsV1:
 def working_irls_covariance_semantics(
     covariance: np.ndarray,
     *,
-    likelihood_power_semantics: str = (
-        "grouped-student-t-generalized-bayes-power-v1"
-    ),
+    likelihood_power_semantics: str = ("grouped-student-t-generalized-bayes-power-v1"),
     metadata: Mapping[str, Any] | None = None,
 ) -> PosteriorCovarianceSemanticsV1:
     """Describe the current working IRLS covariance without a calibration claim."""
@@ -334,9 +325,7 @@ def exact_prior_fallback_covariance_semantics(
     return PosteriorCovarianceSemanticsV1(
         method="exact_prior_fallback",
         dimension=_covariance_dimension(covariance),
-        likelihood_power_semantics=(
-            EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS
-        ),
+        likelihood_power_semantics=(EXACT_PRIOR_FALLBACK_LIKELIHOOD_SEMANTICS),
         prior_included=True,
         generalized_bayes=False,
         mixture_curvature_exact=False,
