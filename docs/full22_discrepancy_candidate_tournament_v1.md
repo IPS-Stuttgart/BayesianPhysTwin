@@ -204,3 +204,13 @@ future protocol. It does not establish:
 
 A negative result is complete. The opened full-22 cohort must not be retuned
 afterward to rescue a rejected candidate.
+
+## Exact structured marginal evaluation
+
+The structured candidate is scored through its exact registered per-track
+three-dimensional marginal moments. The orchestration layer derives those
+marginals directly from the candidate's compact frozen posterior instead of
+constructing one repeated prediction object per forecast horizon. This
+preserves the predictive means and per-track marginal covariances while
+leaving candidate revisions, admission decisions, scoring rules, fallback
+behavior, the locked protocol identity, and the claim boundary unchanged.
