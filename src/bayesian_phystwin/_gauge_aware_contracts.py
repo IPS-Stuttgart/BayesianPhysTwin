@@ -145,6 +145,25 @@ def _probability_vector(
     return result
 
 
+def _literal_string_identifiers(
+    value: object,
+    count: int,
+    *,
+    name: str,
+) -> tuple[str, ...]:
+    if type(value) is not tuple:
+        raise TypeError(f"{name} must be a tuple of exact strings")
+    identifiers = cast(tuple[object, ...], value)
+    _require(len(identifiers) == count, f"{name} length changed")
+    result: list[str] = []
+    for index, identifier in enumerate(identifiers):
+        if type(identifier) is not str:
+            raise TypeError(f"{name}[{index}] must be an exact string")
+        _require(identifier != "", f"{name}[{index}] must not be empty")
+        result.append(identifier)
+    return tuple(result)
+
+
 COMPOSITE_WEIGHT_MODE_CONSUMER_CAP = "consumer-effective-sample-cap-v1"
 COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL = "provider-final-per-row-v1"
 _COMPOSITE_WEIGHT_MODES = frozenset(
@@ -156,7 +175,9 @@ _COMPOSITE_WEIGHT_MODES = frozenset(
 
 
 def _validated_composite_weight_mode(value: str, name: str) -> str:
-    mode = str(value)
+    if type(value) is not str:
+        raise TypeError(f"{name} must be an exact string")
+    mode = value
     _require(
         mode in _COMPOSITE_WEIGHT_MODES,
         f"{name} must be one of {sorted(_COMPOSITE_WEIGHT_MODES)}",
@@ -298,9 +319,11 @@ class GaugeAwareObservationBatch:
         for index, matrix in enumerate(covariance):
             _positive_definite_whitener(matrix, f"observation covariance {index}")
 
-        groups = tuple(map(str, self.correlation_group_ids))
-        _require(len(groups) == count, "correlation_group_ids length changed")
-        _require(all(groups), "correlation group IDs must not be empty")
+        groups = _literal_string_identifiers(
+            self.correlation_group_ids,
+            count,
+            name="correlation_group_ids",
+        )
         reliability = _probability_vector(
             self.prior_reliability,
             count,
@@ -416,11 +439,11 @@ class GaugeAwareObservationBatch:
             anchor_groups = (
                 tuple(f"anchor-{index}" for index in range(anchor_count))
                 if self.anchor_correlation_group_ids is None
-                else tuple(map(str, self.anchor_correlation_group_ids))
-            )
-            _require(
-                len(anchor_groups) == anchor_count and all(anchor_groups),
-                "anchor_correlation_group_ids must identify every anchor row",
+                else _literal_string_identifiers(
+                    self.anchor_correlation_group_ids,
+                    anchor_count,
+                    name="anchor_correlation_group_ids",
+                )
             )
             anchor_reliability = _probability_vector(
                 self.anchor_prior_reliability,
