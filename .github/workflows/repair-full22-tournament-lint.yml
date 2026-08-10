@@ -1,0 +1,76 @@
+name: Repair full-22 tournament lint
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/repair-full22-tournament-lint.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-full22-tournament-lint
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-discrepancy-tournament-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Apply the reviewed import repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "scripts/science/"
+              "run_full22_discrepancy_candidate_tournament_v1.py"
+          )
+          source = path.read_text(encoding="utf-8")
+          before = source
+          source = source.replace(
+              "from collections.abc import Mapping, Sequence\n",
+              "from collections.abc import Iterator, Mapping, Sequence\n",
+          )
+          source = source.replace(
+              "from typing import Any, Iterator\n",
+              "from typing import Any\n",
+          )
+          if source == before:
+              raise SystemExit("expected import pattern was not found")
+          path.write_text(source, encoding="utf-8")
+          PY
+          python -m pip install "ruff==0.16.2"
+          python -m ruff check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format --check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m py_compile \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py
+
+      - name: Publish the one-line repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "Fix full-22 tournament Iterator import"
+          git push origin HEAD:agent/full22-discrepancy-tournament-v1
