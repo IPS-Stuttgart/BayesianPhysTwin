@@ -22,6 +22,9 @@ from bayesian_phystwin.deform360_calibration_visual_execution_admission import (
     DEFORM360_PREPARED_SOURCE_INVENTORY_STATUS,
     DEFORM360_PREPARED_SOURCE_INVENTORY_VERSION,
 )
+from bayesian_phystwin.deform360_joint_sparse_public_inputs_v5 import (
+    prepare_deform360_joint_sparse_contact_rows_v5,
+)
 from bayesian_phystwin.deform360_public_contact_prefix import (
     TAXELS_PER_GRIPPER,
     build_deform360_tactile_axis_map,
@@ -280,6 +283,106 @@ def test_public_monomanual_prefix_uses_official_interleaving_and_geometry(
     )
     assert str(tmp_path) not in (output / "contact-prefix.json").read_text()
     assert validate_deform360_public_contact_prefix(output) == result
+
+
+def test_joint_sparse_adapter_keeps_contact_reliability_residual_independent(
+    tmp_path: Path,
+) -> None:
+    inventory_path, processed, inventory, _poses, _openings = _inventory(tmp_path)
+    axis_map = _axis_map(
+        tmp_path,
+        inventory,
+        {"brics-odroid_tactilel": 0},
+    )
+    output = tmp_path / "contact-prefix"
+    materialize_deform360_public_contact_prefix(
+        prepared_source_inventory_path=inventory_path,
+        processed_root=processed,
+        tactile_axis_map_path=axis_map,
+        object_id=OBJECT_ID,
+        output_directory=output,
+    )
+    frames = np.load(output / "frame-ids.npy", allow_pickle=False)
+    response = np.load(output / "tactile-response.npy", allow_pickle=False)
+    positions = np.load(
+        output / "taxel-world-positions-m.npy",
+        allow_pickle=False,
+    )
+    physical = np.zeros((76, 6, 3), dtype=np.float64)
+    offsets = np.asarray(
+        [
+            [-0.006, 0.000, 0.000],
+            [-0.002, 0.001, 0.000],
+            [0.002, -0.001, 0.000],
+            [0.006, 0.000, 0.000],
+            [0.000, 0.004, 0.000],
+            [0.000, -0.004, 0.000],
+        ]
+    )
+    for row, frame in enumerate(frames):
+        active = response[row] > 0.0
+        weights = response[row, active] / np.sum(response[row, active])
+        centroid = np.sum(weights[:, None] * positions[row, active], axis=0)
+        physical[int(frame)] = centroid + offsets
+
+    first = prepare_deform360_joint_sparse_contact_rows_v5(
+        contact_prefix_directory=output,
+        object_id=OBJECT_ID,
+        episode_id=0,
+        raw_prefix_range_half_open=(0, 58),
+        physical_prediction_m=physical,
+    )
+    assert first is not None
+    shifted = physical.copy()
+    shifted[:, :, 0] += 0.10
+    second = prepare_deform360_joint_sparse_contact_rows_v5(
+        contact_prefix_directory=output,
+        object_id=OBJECT_ID,
+        episode_id=0,
+        raw_prefix_range_half_open=(0, 58),
+        physical_prediction_m=shifted,
+    )
+    assert second is not None
+
+    np.testing.assert_array_equal(first.prior_reliability, second.prior_reliability)
+    np.testing.assert_array_equal(first.prior_reliability, np.ones(len(frames)))
+    assert np.all(np.linalg.eigvalsh(first.covariance_m2) > 0.0)
+    assert len(set(first.correlation_group_ids)) == 1
+    assert all(group.startswith("deform360-contact:") for group in first.correlation_group_ids)
+    assert "public-contact-prefix/contact-prefix.json" in first.source_artifact_ids
+
+
+def test_joint_sparse_adapter_preserves_exact_support_negative_fallback(
+    tmp_path: Path,
+) -> None:
+    inventory_path, processed, inventory, _poses, _openings = _inventory(
+        tmp_path,
+        active_frames=(),
+    )
+    axis_map = _axis_map(
+        tmp_path,
+        inventory,
+        {"brics-odroid_tactilel": 0},
+    )
+    output = tmp_path / "contact-prefix"
+    materialize_deform360_public_contact_prefix(
+        prepared_source_inventory_path=inventory_path,
+        processed_root=processed,
+        tactile_axis_map_path=axis_map,
+        object_id=OBJECT_ID,
+        output_directory=output,
+    )
+
+    assert (
+        prepare_deform360_joint_sparse_contact_rows_v5(
+            contact_prefix_directory=output,
+            object_id=OBJECT_ID,
+            episode_id=0,
+            raw_prefix_range_half_open=(0, 58),
+            physical_prediction_m=np.zeros((76, 6, 3), dtype=np.float64),
+        )
+        is None
+    )
 
 
 def test_bimanual_map_controls_geometry_without_name_guessing(tmp_path: Path) -> None:
