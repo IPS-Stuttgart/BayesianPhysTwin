@@ -5,6 +5,13 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
+from _posterior_covariance_portfolio_support import (
+    LIKELIHOOD,
+    QUERY_ID,
+    RESULT_ID,
+    one_method_portfolio,
+    source,
+)
 from bayesian_phystwin.posterior_covariance_portfolio import (
     PosteriorCovarianceSourceV1,
     build_posterior_query_covariance_portfolio,
@@ -13,14 +20,6 @@ from bayesian_phystwin.posterior_covariance_portfolio import (
 from bayesian_phystwin.posterior_covariance_semantics import (
     PosteriorCovarianceSemanticsV1,
     working_irls_covariance_semantics,
-)
-
-from _posterior_covariance_portfolio_support import (
-    LIKELIHOOD,
-    QUERY_ID,
-    RESULT_ID,
-    one_method_portfolio,
-    source,
 )
 
 
