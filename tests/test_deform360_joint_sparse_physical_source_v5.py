@@ -5,8 +5,12 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from bayesian_phystwin import deform360_bias_aware_prospective_artifacts as artifacts
+from bayesian_phystwin import (
+    deform360_joint_sparse_physical_source_v5 as physical_source,
+)
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     file_sha256,
@@ -185,6 +189,53 @@ def test_v5_physical_runtime_is_process_local() -> None:
     assert artifacts.PROTOCOL_ID == HISTORICAL_PROTOCOL_ID
 
 
+@pytest.mark.parametrize(
+    ("function", "value", "match"),
+    [
+        (physical_source._mapping, None, "JSON object"),
+        (physical_source._sequence, "not-an-array", "JSON array"),
+        (physical_source._nonempty_string, "", "non-empty string"),
+        (physical_source._sha256, "short", "SHA-256 digest"),
+    ],
+)
+def test_physical_source_json_guards_reject_malformed_values(
+    function: object,
+    value: object,
+    match: str,
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        function(value, name="value")
+
+
+def test_physical_source_execution_preflight_binds_exact_sources() -> None:
+    lock = physical_source.validate_joint_sparse_physical_execution_v5(
+        LOCK,
+        repository=ROOT,
+        require_clean_repository=False,
+    )
+    assert lock["physical_baseline"]["process_local_adapter_protocol_id"] == PROTOCOL_ID
+    assert (
+        Path(physical_source._git_output(ROOT, "rev-parse", "--show-toplevel"))
+        .resolve()
+        .samefile(ROOT)
+    )
+
+
+def test_nonphysical_stage_patch_does_not_install_subprocess_rewriter(
+    tmp_path: Path,
+) -> None:
+    module = SimpleNamespace(PROTOCOL_ID=HISTORICAL_PROTOCOL_ID)
+    physical_source._set(module, "missing", object(), [])
+    patch_joint_sparse_physical_stage_v5(
+        module,
+        stage="frame-zero",
+        repository=ROOT,
+        execution_lock=tmp_path / "lock.json",
+    )
+    assert module.PROTOCOL_ID == PROTOCOL_ID
+    assert not hasattr(module, "_run_logged")
+
+
 def test_physical_prior_patch_rewrites_only_the_automatic_twin(tmp_path: Path) -> None:
     observed: list[list[str]] = []
 
@@ -261,3 +312,14 @@ def test_materializer_rejects_changed_inventory_bytes(tmp_path: Path) -> None:
         assert "inventory file changed" in str(error)
     else:
         raise AssertionError("changed prepared inventory was accepted")
+
+
+def test_materializer_rejects_object_outside_source_lock(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="outside the v5 source lock"):
+        materialize_joint_sparse_physical_source_v5(
+            execution_lock_path=LOCK,
+            prepared_source_inventory_path=tmp_path / "not-opened.json",
+            processed_root=tmp_path / "not-opened",
+            object_id="unregistered-object",
+            output_root=tmp_path / "output",
+        )
