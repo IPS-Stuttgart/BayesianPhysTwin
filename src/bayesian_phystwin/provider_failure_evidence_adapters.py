@@ -45,9 +45,7 @@ _ADAPTER_METADATA_KEYS: Final = frozenset(
     }
 )
 
-SourceSignalsInput: TypeAlias = (
-    ProviderFailureSignalsV1 | Mapping[str, object] | None
-)
+SourceSignalsInput: TypeAlias = ProviderFailureSignalsV1 | Mapping[str, object] | None
 ClaimBearingFailureCase: TypeAlias = tuple[str, ClaimBearingProb4DUpdateV1]
 
 
@@ -112,7 +110,9 @@ def _derived_signals(
         provider_support_complete=(
             False
             if result_signal == "provider_support_complete"
-            else True if underlying_admissible else None
+            else True
+            if underlying_admissible
+            else None
         ),
         numerically_converged=(
             True
@@ -125,12 +125,16 @@ def _derived_signals(
         query_identifiable=(
             False
             if result_signal == "query_identifiable"
-            else True if underlying_admissible else None
+            else True
+            if underlying_admissible
+            else None
         ),
         physical_guard_passed=(
             False
             if result_signal == "physical_guard_passed"
-            else True if underlying_admissible else None
+            else True
+            if underlying_admissible
+            else None
         ),
     )
 
@@ -214,7 +218,7 @@ def provider_failure_evidence_from_claim_bearing_update(
     overlap = set(supplied_metrics).intersection(bound_metrics)
     if overlap:
         raise ValueError(
-            "metrics cannot replace adapter-owned fields: " f"{sorted(overlap)}"
+            f"metrics cannot replace adapter-owned fields: {sorted(overlap)}"
         )
     evidence = ProviderFailureEvidenceV1(
         case_id=case_id,
@@ -301,8 +305,7 @@ def build_provider_failure_payload_from_claim_bearing_updates(
     metadata_overlap = set(supplied_metadata).intersection(_ADAPTER_METADATA_KEYS)
     if metadata_overlap:
         raise ValueError(
-            "metadata cannot replace adapter-owned fields: "
-            f"{sorted(metadata_overlap)}"
+            f"metadata cannot replace adapter-owned fields: {sorted(metadata_overlap)}"
         )
 
     provider_ids = {update.provider_manifest_id for _, update in parsed}
@@ -327,9 +330,7 @@ def build_provider_failure_payload_from_claim_bearing_updates(
         "metadata": {
             **supplied_metadata,
             "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
-            "adapter_schema_version": (
-                CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
-            ),
+            "adapter_schema_version": (CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION),
             "adapter_claim_boundary": (
                 CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
             ),
