@@ -32,9 +32,7 @@ def _semantics(
         likelihood_power_semantics=LIKELIHOOD,
         prior_included=True,
         generalized_bayes=True,
-        mixture_curvature_exact=(
-            method == "laplace_observed_information"
-        ),
+        mixture_curvature_exact=(method == "laplace_observed_information"),
         group_score_correction=method == "group_sandwich",
         calibrated=False,
         metadata={"fixture": method},
@@ -119,12 +117,13 @@ def test_complete_portfolio_orders_and_projects_one_common_query() -> None:
         expected,
     )
     assert working.covariance_estimator_artifact_id is None
-    assert portfolio.entry(
-        "laplace_observed_information"
-    ).covariance_estimator_artifact_id == "d" * 64
-    assert portfolio.entry(
-        "group_sandwich"
-    ).covariance_estimator_artifact_id == "e" * 64
+    assert (
+        portfolio.entry("laplace_observed_information").covariance_estimator_artifact_id
+        == "d" * 64
+    )
+    assert (
+        portfolio.entry("group_sandwich").covariance_estimator_artifact_id == "e" * 64
+    )
     assert not portfolio.query_matrix.flags.writeable
     assert not working.source_query_covariance_m2.flags.writeable
     assert portfolio.to_record()["artifact_id"] == portfolio.artifact_id
@@ -185,9 +184,7 @@ def test_rejected_portfolio_retains_only_exact_prior_fallback() -> None:
     assert portfolio.methods == ("exact_prior_fallback",)
     assert portfolio.reference_method == "exact_prior_fallback"
     np.testing.assert_allclose(
-        portfolio.entry(
-            "exact_prior_fallback"
-        ).source_query_covariance_m2,
+        portfolio.entry("exact_prior_fallback").source_query_covariance_m2,
         np.asarray([[5.0]]),
     )
     with pytest.raises(ValueError, match="only exact fallback"):
