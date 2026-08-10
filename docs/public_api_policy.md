@@ -75,6 +75,5 @@ validates the manifest schema, schema-policy pairing, symbol uniqueness, literal
 module identity, exact `__all__` order, existence of every exported attribute,
 and the project minor-version line.
 
-The complete Python test matrix exercises both snapshots. The release evidence
-builder also requires both manifests to be present in the source distribution
-and binds both source files into the content-addressed release record.
+The complete Python test matrix exercises both snapshots. `MANIFEST.in` also
+requires both manifest files in the source distribution.
