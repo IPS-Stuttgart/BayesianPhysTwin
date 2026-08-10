@@ -40,7 +40,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Merge current main and apply typed metadata access
+      - name: Merge current main and preserve fail-closed metadata access
         shell: bash
         run: |
           set -euo pipefail
@@ -55,11 +55,21 @@ jobs:
 
           path = Path("src/bayesian_phystwin/numerical_environment_v1.py")
           text = path.read_text(encoding="utf-8")
-          old = '        raw_name = distribution.metadata.get("Name")\n'
-          new = '        raw_name = distribution.metadata["Name"]\n'
-          if text.count(old) == 1 and text.count(new) == 0:
-              text = text.replace(old, new, 1)
-          elif text.count(old) != 0 or text.count(new) != 1:
+          old_get = '        raw_name = distribution.metadata.get("Name")\n'
+          old_index = '        raw_name = distribution.metadata["Name"]\n'
+          new = (
+              "        try:\n"
+              '            raw_name = distribution.metadata["Name"]\n'
+              "        except KeyError as error:\n"
+              "            raise ValueError(\n"
+              '                "installed distribution is missing its Name metadata"\n'
+              "            ) from error\n"
+          )
+          if text.count(old_get) == 1 and new not in text:
+              text = text.replace(old_get, new, 1)
+          elif text.count(old_index) == 1 and new not in text:
+              text = text.replace(old_index, new, 1)
+          elif text.count(old_get) != 0 or text.count(old_index) != 0 or text.count(new) != 1:
               raise SystemExit("unexpected installed-distribution metadata access")
           path.write_text(text, encoding="utf-8")
           Path(".github/workflows/fix-pr432-once.yml").unlink()
