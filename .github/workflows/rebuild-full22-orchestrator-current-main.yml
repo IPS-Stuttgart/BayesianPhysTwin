@@ -1,0 +1,142 @@
+name: Rebuild full-22 orchestrator on current main
+
+on:
+  push:
+    branches:
+      - agent/full22-discrepancy-tournament-orchestrator-v1-current
+    paths:
+      - .github/workflows/rebuild-full22-orchestrator-current-main.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild-full22-orchestrator-current-main
+  cancel-in-progress: true
+
+jobs:
+  rebuild:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref ==
+      'refs/heads/agent/full22-discrepancy-tournament-orchestrator-v1-current'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the exact orchestrator branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-discrepancy-tournament-orchestrator-v1-current
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Replay only the repaired tournament surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_revision=43272ab5ec50f408c3d422fc560866c6e77e8a87
+          cp MANIFEST.in "${RUNNER_TEMP}/main-MANIFEST.in"
+          git fetch --no-tags origin "${source_revision}"
+          git cat-file -e "${source_revision}^{commit}"
+          files=(
+            .github/workflows/full22-discrepancy-candidate-tournament-v1.yml
+            MANIFEST.in
+            docs/full22_discrepancy_candidate_tournament_v1.md
+            protocols/full22_discrepancy_candidate_tournament_v1.json
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          )
+          git checkout "${source_revision}" -- "${files[@]}"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          base = Path(os.environ["RUNNER_TEMP"]) / "main-MANIFEST.in"
+          current = Path("MANIFEST.in")
+          expected_suffix = (
+              "include docs/full22_discrepancy_candidate_tournament_v1.md\n"
+              "include protocols/full22_discrepancy_candidate_tournament_v1.json\n"
+              "include scripts/science/run_full22_discrepancy_candidate_tournament_v1.py\n"
+          )
+          expected = base.read_text(encoding="utf-8").rstrip() + "\n" + expected_suffix
+          actual = current.read_text(encoding="utf-8")
+          if actual != expected:
+              raise SystemExit(
+                  "repaired MANIFEST.in is not current main plus the exact full-22 surface"
+              )
+          PY
+          rm .github/workflows/rebuild-full22-orchestrator-current-main.yml
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              ".github/workflows/full22-discrepancy-candidate-tournament-v1.yml",
+              ".github/workflows/rebuild-full22-orchestrator-current-main.yml",
+              "MANIFEST.in",
+              "docs/full22_discrepancy_candidate_tournament_v1.md",
+              "protocols/full22_discrepancy_candidate_tournament_v1.json",
+              "scripts/science/run_full22_discrepancy_candidate_tournament_v1.py",
+              "tests/test_full22_discrepancy_candidate_tournament_v1.py",
+          }
+          output = subprocess.run(
+              ["git", "diff", "--name-only", "HEAD"],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout
+          actual = {line for line in output.splitlines() if line}
+          if actual != expected:
+              raise SystemExit(
+                  f"unexpected rebuild paths: expected {sorted(expected)}, got {sorted(actual)}"
+              )
+          PY
+
+      - name: Validate the rebuilt exact surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff format \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format --check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m pytest -q \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_horizon_conditioned_discrepancy_tournament.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py \
+            tests/test_pull_request_workflow_integrity.py
+          git diff --check
+
+      - name: Publish the clean current-main orchestrator
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- \
+            .github/workflows/rebuild-full22-orchestrator-current-main.yml \
+            .github/workflows/full22-discrepancy-candidate-tournament-v1.yml \
+            MANIFEST.in \
+            docs/full22_discrepancy_candidate_tournament_v1.md \
+            protocols/full22_discrepancy_candidate_tournament_v1.json \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          git diff --cached --check
+          git commit -m "Rebuild full-22 orchestrator on current main"
+          git push origin \
+            HEAD:agent/full22-discrepancy-tournament-orchestrator-v1-current
