@@ -120,6 +120,22 @@ fallback covariance's recorded reason, and cannot list accepted-update
 alternatives. Use
 `exact_prior_fallback_covariance_source(...)` to bind this case explicitly.
 
+## Numerical and lineage admission
+
+Every source and projected covariance must be finite, symmetric, and positive
+semidefinite. The eigenvalue tolerance is derived from matrix dimension,
+machine precision, and covariance scale. It admits only numerical roundoff; it
+does not use a broad relative tolerance that could hide a materially negative
+mode in a high-dynamic-range covariance.
+
+Portfolio validation reconstructs the projected semantics from the complete
+source semantics and the exact query-matrix identity. Matching link metadata is
+therefore insufficient when another interpretation field has changed. For a
+rejected inference result, the top-level portfolio reason must also equal the
+fallback reason recorded by the exact-prior covariance source. These checks keep
+numerical validity, covariance interpretation, and deployment fallback on one
+content-addressed lineage.
+
 ## Calibration boundary
 
 Portfolio members are deliberately raw. Each projected
