@@ -20,6 +20,8 @@ archived reproduction paths in the command registry.
 | `bpt residual replay` | Replay exported residuals through the robust likelihood. | [Guide](residual_replay.md) |
 | `bpt benchmark synthetic` | Run the controlled synthetic benchmark. | [Guide](synthetic_benchmark.md) |
 | `bpt evidence summarize` | Summarize matched guarded prospective evidence. | [Guide](decisive_evidence_protocol.md) |
+| `bpt evidence score` | Convert predictive distributions into proper-score evidence. | [Guide](proper_scoring.md) |
+| `bpt evidence decompose` | Decompose guarded Bayesian value across frozen comparison arms. | [Guide](bayesian_value_decomposition.md) |
 | `bpt evidence bundle` | Build or validate a content-addressed claim bundle. | [Guide](claim_bundle_v1.md) |
 | `bpt run manifest` | Create or validate a content-addressed run manifest. | [Guide](reproducible_runs.md) |
 <!-- bpt-stable-commands:end -->
