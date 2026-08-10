@@ -171,8 +171,7 @@ def test_primary_decision_is_object_level_and_difficult_to_win_by_fallback() -> 
         == 10
     )
     assert (
-        decision["minimum_improved_objects_per_stratum_vs_each_primary_comparator"]
-        == 5
+        decision["minimum_improved_objects_per_stratum_vs_each_primary_comparator"] == 5
     )
     assert decision["maximum_harmful_accepted_objects"] == 0
     assert decision["harmful_update_relative_margin"] == 0.02
