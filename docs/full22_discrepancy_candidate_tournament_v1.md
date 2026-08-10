@@ -156,7 +156,9 @@ score tie.
 ## Reproduction
 
 The GitHub workflow performs the complete information order and checks out
-candidate implementations into separate exact-revision worktrees:
+candidate implementations into separate exact-revision worktrees. The run
+manifest also binds the exact synchronized evaluator revision that produced the
+scored records, independently of the frozen candidate revisions.
 
 ```bash
 python scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
