@@ -486,8 +486,7 @@ class GitInspector:
             ["git", *arguments],
             cwd=self.repository_root,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=30,
             env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
         )
@@ -505,8 +504,7 @@ class GitInspector:
                 ["git", "rev-parse", "--verify", f"{reference}^{{commit}}"],
                 cwd=self.repository_root,
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 timeout=30,
             )
             if completed.returncode == 0:
@@ -543,8 +541,7 @@ class GitInspector:
         output = subprocess.run(
             ["git", "ls-files", "-z"],
             cwd=self.repository_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=30,
             check=True,
         ).stdout
