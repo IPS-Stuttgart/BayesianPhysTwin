@@ -5,6 +5,7 @@ import json
 import numpy as np
 import pytest
 
+import bayesian_phystwin.deform360_joint_sparse_endpoint_v5 as endpoint
 from bayesian_phystwin.deform360_joint_sparse_endpoint_v5 import (
     Deform360JointSparseEndpointConfigV5,
     Deform360ReservedViewGeometryV5,
@@ -71,6 +72,15 @@ def _trajectories() -> dict[str, np.ndarray]:
 def test_endpoint_report_rejects_non_mapping_payload() -> None:
     with pytest.raises(ValueError, match="endpoint report must be a mapping"):
         validate_deform360_joint_sparse_endpoint_report_v5([])  # type: ignore[arg-type]
+
+
+def test_endpoint_internal_json_helpers_fail_closed() -> None:
+    with pytest.raises(ValueError, match="payload must be a mapping"):
+        endpoint._mapping([], name="payload")
+    with pytest.raises(ValueError, match="payload keys must be literal strings"):
+        endpoint._mapping({1: "value"}, name="payload")
+    with pytest.raises(ValueError, match="payload must be a sequence"):
+        endpoint._sequence("not-an-array", name="payload")
 
 
 def test_reserved_view_selection_uses_identities_only() -> None:
