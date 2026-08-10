@@ -74,7 +74,9 @@ The complete command has one `--prediction-seal` argument for each of the 100
 nested records. The batch requires the exact 10-by-10 roster, exact outer and
 inner fit sets, one implementation revision, and fold-invariant B0 and B1
 forecasts. Its information boundary states that no development suffix or
-confirmation outcome has been opened.
+confirmation outcome has been opened. The batch also binds the exact source
+revision that generated every forecast, and the scoring stage cannot replace or
+reinterpret it.
 
 Only after that non-replacing batch exists may the workflow open the ten
 development suffixes and publish one outcome record for each seal. Assembly binds
