@@ -6,11 +6,15 @@ on:
     paths:
       - ".github/workflows/deform360-provider-failure-census-v1.yml"
       - "docs/deform360_provider_failure_census_v1.md"
+      - "src/bayesian_phystwin/deform360_provider_failure_census_v1.py"
       - "src/bayesian_phystwin/provider_failure_decomposition.py"
+      - "src/bayesian_phystwin/provider_failure_evidence_adapters.py"
       - "src/bayesian_phystwin/provider_failure_report_io.py"
       - "src/bayesian_phystwin/cli/provider_failure_decomposition.py"
+      - "tests/test_deform360_provider_failure_census_v1.py"
       - "tests/test_deform360_provider_failure_census_v1_workflow.py"
       - "tests/test_provider_failure_decomposition.py"
+      - "tests/test_provider_failure_evidence_adapters.py"
   workflow_dispatch:
     inputs:
       execute_authorized:
@@ -75,12 +79,17 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev]"
-          python -m ruff check \
+          files=(
+            src/bayesian_phystwin/deform360_provider_failure_census_v1.py
+            tests/test_deform360_provider_failure_census_v1.py
             tests/test_deform360_provider_failure_census_v1_workflow.py
-          python -m ruff format --check \
-            tests/test_deform360_provider_failure_census_v1_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
           python -m pytest -q -p no:cacheprovider \
             tests/test_provider_failure_decomposition.py \
+            tests/test_provider_failure_evidence_adapters.py \
+            tests/test_deform360_provider_failure_census_v1.py \
             tests/test_deform360_provider_failure_census_v1_workflow.py \
             tests/test_pull_request_workflow_integrity.py
           bpt diagnostic run diagnose-provider-failures --help >/dev/null
@@ -218,40 +227,17 @@ jobs:
           python - "${CENSUS_INPUT}" <<'PY'
           import os
           import sys
-          from collections.abc import Mapping
           from pathlib import Path
 
-          from bayesian_phystwin.provider_failure_decomposition import (
-              analyze_provider_failure_evidence,
+          from bayesian_phystwin.deform360_provider_failure_census_v1 import (
+              validate_deform360_provider_failure_census_payload,
           )
           from bayesian_phystwin.provider_failure_report_io import (
               load_provider_failure_input,
           )
 
           payload, artifact = load_provider_failure_input(Path(sys.argv[1]))
-          metadata = payload.get("metadata")
-          if not isinstance(metadata, Mapping):
-              raise SystemExit("metadata must explicitly declare the source boundary")
-          required = {
-              "split": "source-only",
-              "confirmation_payloads_opened": False,
-              "adaptive_confirmation_payloads_opened": False,
-              "target_outcomes_used": False,
-              "future_frames_used": False,
-              "replacement_allowed": False,
-          }
-          for key, expected in required.items():
-              if metadata.get(key) != expected:
-                  raise SystemExit(f"metadata field {key!r} must equal {expected!r}")
-          unit = metadata.get("statistical_unit")
-          if not isinstance(unit, str) or not unit:
-              raise SystemExit("metadata.statistical_unit must be explicit")
-          forbidden_units = {"frame", "point", "row", "taxel", "track", "view"}
-          if unit.strip().lower() in forbidden_units:
-              raise SystemExit("dense measurements must not be independent cases")
-          report = analyze_provider_failure_evidence(payload)
-          if report["record_count"] < 1:
-              raise SystemExit("the provider-failure census must not be empty")
+          validate_deform360_provider_failure_census_payload(payload)
           if artifact["sha256"] != os.environ["CENSUS_INPUT_SHA256"]:
               raise SystemExit("strict loader input digest differs from dispatch")
           if artifact["bytes"] != int(os.environ["CENSUS_INPUT_BYTES"]):
@@ -279,6 +265,9 @@ jobs:
               .input_artifact.sha256 == $input_sha and
               .input_artifact.bytes == $input_bytes and
               .metadata.split == "source-only" and
+              (.metadata.statistical_unit == "physical-object" or
+               .metadata.statistical_unit == "acquisition-session" or
+               .metadata.statistical_unit == "physical-object-session") and
               .metadata.confirmation_payloads_opened == false and
               .metadata.adaptive_confirmation_payloads_opened == false and
               .metadata.target_outcomes_used == false and
@@ -294,6 +283,10 @@ jobs:
               "# Deform360 source-only provider failure census",
               "",
               ("Provider: `" + .provider_id + "`"),
+              ("Statistical unit: `" + .metadata.statistical_unit + "`"),
+              ("Evidence adapter: `" +
+               (.metadata.adapter_schema // "generic-provider-failure-evidence") +
+               "`"),
               ("Independent cases: " + (.record_count | tostring)),
               ("Accepted: " + (.accepted_count | tostring)),
               ("Classified rejections: " +
@@ -321,6 +314,7 @@ jobs:
           report_path = Path(sys.argv[1])
           output_path = Path(sys.argv[2])
           report = json.loads(report_path.read_text(encoding="utf-8"))
+          metadata = report["metadata"]
           receipt = {
               "schema": "bayesian_phystwin.deform360_provider_failure_census_run",
               "schema_version": 1,
@@ -332,6 +326,10 @@ jobs:
               "input_relative_path": os.environ["CENSUS_INPUT_RELATIVE"],
               "input_sha256": os.environ["CENSUS_INPUT_SHA256"],
               "input_bytes": int(os.environ["CENSUS_INPUT_BYTES"]),
+              "provider_id": report["provider_id"],
+              "statistical_unit": metadata["statistical_unit"],
+              "adapter_schema": metadata.get("adapter_schema"),
+              "adapter_schema_version": metadata.get("adapter_schema_version"),
               "report_id": report["report_id"],
               "status_sha256": report["status_sha256"],
               "record_count": report["record_count"],
