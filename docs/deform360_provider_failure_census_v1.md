@@ -56,7 +56,9 @@ The metadata must explicitly contain:
 
 `validate_deform360_provider_failure_census_payload` validates both the generic
 diagnostic contract and this Deform360-specific information boundary before the
-CLI writes a report.
+CLI writes a report. Generic records may omit the optional `metrics` field; that
+is equivalent to an empty metrics mapping and does not opt into adapter-specific
+validation.
 
 ## Building evidence from claim-bearing updates
 
@@ -104,10 +106,21 @@ When adapter metadata is present, the Deform360 validator additionally requires:
   observation, linearization, provider manifest, and calibration artifacts;
 - the provider identity in every record to match the payload provider;
 - an independently verified, nonempty runtime-revision source;
-- a nonempty strict implementation identity;
-- a literal strict-admission certificate whose `passed` decision equals the
-  record's `accepted` decision; and
+- the exact strict-v2 implementation identity;
+- the complete strict-admission certificate field set, schema, numerical
+  invariants, pass invariant, and reason invariant;
+- the record decision and result reason to follow the certificate's selected
+  underlying-versus-strict rejection path;
+- a recomputed admission ID that binds observation, linearization, provider,
+  calibration, runtime, acceptance, and reason;
+- a recomputed update ID that binds that admission ID and the complete inference
+  result ID; and
 - `technical_valid = true` for adapter-generated evidence.
+
+The validator therefore checks content-addressed relationships, not merely that
+identity fields have 64 hexadecimal characters. Changing an artifact identity,
+decision, reason, inference-result identity, or certificate without rebuilding
+the corresponding immutable IDs fails closed.
 
 Partial adapter metadata, missing adapter-owned metrics, reordered case bindings,
 mixed provider identities, and forged or malformed certificates fail closed.
