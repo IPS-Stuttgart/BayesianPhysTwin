@@ -19,6 +19,8 @@ bpt observation validate
 bpt residual replay
 bpt benchmark synthetic
 bpt evidence summarize
+bpt evidence score
+bpt evidence decompose
 bpt evidence bundle
 bpt run manifest
 ```
