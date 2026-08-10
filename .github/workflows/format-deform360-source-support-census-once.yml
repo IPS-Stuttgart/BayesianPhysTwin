@@ -47,18 +47,24 @@ jobs:
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           git diff --check
-          changed="$(git diff --name-only)"
-          if [[ -z "${changed}" ]]; then
+          mapfile -t changed < <(git diff --name-only)
+          if [[ "${#changed[@]}" -eq 0 ]]; then
             echo "No formatting changes remain."
             exit 0
           fi
-          expected=$(printf '%s\n' "${files[@]}" | sort)
-          actual=$(printf '%s\n' "${changed}" | sort)
-          test "${actual}" = "${expected}" || {
-            echo "Formatter touched an unexpected file set:" >&2
-            printf '%s\n' "${changed}" >&2
-            exit 2
-          }
+          for path in "${changed[@]}"; do
+            allowed=false
+            for candidate in "${files[@]}"; do
+              if [[ "${path}" == "${candidate}" ]]; then
+                allowed=true
+                break
+              fi
+            done
+            if [[ "${allowed}" != true ]]; then
+              echo "Formatter touched unexpected file: ${path}" >&2
+              exit 2
+            fi
+          done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- "${files[@]}"
