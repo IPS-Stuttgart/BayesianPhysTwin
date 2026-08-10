@@ -49,9 +49,7 @@ def _nonempty_literal_string(value: object, *, name: str) -> str:
 
 def _method(value: object) -> PosteriorCovarianceMethod:
     if type(value) is not str or value not in POSTERIOR_COVARIANCE_METHODS:
-        raise ValueError(
-            "method must be one of " f"{list(POSTERIOR_COVARIANCE_METHODS)}"
-        )
+        raise ValueError(f"method must be one of {list(POSTERIOR_COVARIANCE_METHODS)}")
     return cast(PosteriorCovarianceMethod, value)
 
 
@@ -260,9 +258,7 @@ class PosteriorCovarianceSemanticsV1:
 def working_irls_covariance_semantics(
     covariance: np.ndarray,
     *,
-    likelihood_power_semantics: str = (
-        "grouped-student-t-generalized-bayes-power-v1"
-    ),
+    likelihood_power_semantics: str = ("grouped-student-t-generalized-bayes-power-v1"),
     metadata: Mapping[str, Any] | None = None,
 ) -> PosteriorCovarianceSemanticsV1:
     """Describe the current working IRLS covariance without a calibration claim."""
