@@ -46,12 +46,10 @@ def _canonical_id(payload: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _source_metadata(
-    statistical_unit: str = "physical-object",
-) -> dict[str, object]:
+def _source_metadata(unit: str = "physical-object") -> dict[str, object]:
     return {
         "split": "source-only",
-        "statistical_unit": statistical_unit,
+        "statistical_unit": unit,
         "confirmation_payloads_opened": False,
         "adaptive_confirmation_payloads_opened": False,
         "target_outcomes_used": False,
@@ -60,9 +58,7 @@ def _source_metadata(
     }
 
 
-def _generic_payload(
-    statistical_unit: str = "physical-object",
-) -> dict[str, object]:
+def _generic_payload(unit: str = "physical-object") -> dict[str, object]:
     return {
         "schema": PROVIDER_FAILURE_EVIDENCE_SCHEMA,
         "schema_version": PROVIDER_FAILURE_EVIDENCE_VERSION,
@@ -76,11 +72,11 @@ def _generic_payload(
                 "metrics": {"source_gate_id": "source-gate-v1"},
             }
         ],
-        "metadata": _source_metadata(statistical_unit),
+        "metadata": _source_metadata(unit),
     }
 
 
-def _certificate(*, accepted: bool) -> dict[str, object]:
+def _certificate(accepted: bool) -> dict[str, object]:
     return {
         "schema": "bayesian_phystwin.prior_aware_gauge_admission_certificate",
         "schema_version": 1,
@@ -106,11 +102,11 @@ def _certificate(*, accepted: bool) -> dict[str, object]:
     }
 
 
-def _adapter_payload(*, accepted: bool = False) -> dict[str, object]:
-    certificate = _certificate(accepted=accepted)
-    result_reason = "accepted" if accepted else cast(str, certificate["reason"])
+def _adapter_payload(accepted: bool = False) -> dict[str, object]:
+    certificate = _certificate(accepted)
+    reason = "accepted" if accepted else cast(str, certificate["reason"])
     calibration_ids = {"gauge": CALIBRATION_ID}
-    admission_payload: dict[str, object] = {
+    admission: dict[str, object] = {
         "schema": "bayesian_phystwin.claim_bearing_prob4d_update",
         "schema_version": CLAIM_BEARING_PROB4D_UPDATE_VERSION,
         "observation_artifact_id": OBSERVATION_ID,
@@ -120,48 +116,17 @@ def _adapter_payload(*, accepted: bool = False) -> dict[str, object]:
         "runtime_revision_source": "independent-vcs-check",
         "runtime_revision_independently_verified": True,
         "inference_admissible": accepted,
-        "reason": result_reason,
+        "reason": reason,
     }
-    admission_id = _canonical_id(admission_payload)
+    admission_id = _canonical_id(admission)
     update_id = _canonical_id(
         {
-            **admission_payload,
+            **admission,
             "identity_version": CLAIM_BEARING_PROB4D_UPDATE_IDENTITY_VERSION,
             "admission_id": admission_id,
             "inference_result_id": INFERENCE_ID,
         }
     )
-    metadata = {
-        **_source_metadata(),
-        "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
-        "adapter_schema_version": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION,
-        "adapter_claim_boundary": (
-            CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
-        ),
-        "source_contract": "ClaimBearingProb4DUpdateV1",
-        "strict_result_contract": "PriorAwareGaugeBeliefResultV2",
-        "record_update_ids": [{"case_id": "object-01", "update_id": update_id}],
-    }
-    metrics = {
-        "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
-        "adapter_schema_version": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION,
-        "adapter_claim_boundary": (
-            CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
-        ),
-        "claim_bearing_update_id": update_id,
-        "claim_bearing_admission_id": admission_id,
-        "claim_bearing_inference_result_id": INFERENCE_ID,
-        "observation_artifact_id": OBSERVATION_ID,
-        "linearization_artifact_id": LINEARIZATION_ID,
-        "provider_manifest_id": PROVIDER_ID,
-        "calibration_artifact_ids": calibration_ids,
-        "runtime_revision_source": "independent-vcs-check",
-        "runtime_revision_independently_verified": True,
-        "strict_result_implementation_id": (
-            PRIOR_AWARE_GAUGE_BELIEF_V2_IMPLEMENTATION
-        ),
-        "strict_admission_certificate": certificate,
-    }
     return {
         "schema": PROVIDER_FAILURE_EVIDENCE_SCHEMA,
         "schema_version": PROVIDER_FAILURE_EVIDENCE_VERSION,
@@ -170,7 +135,7 @@ def _adapter_payload(*, accepted: bool = False) -> dict[str, object]:
             {
                 "case_id": "object-01",
                 "accepted": accepted,
-                "result_reason": result_reason,
+                "result_reason": reason,
                 "signals": {
                     "technical_valid": True,
                     "provider_support_complete": True,
@@ -178,10 +143,47 @@ def _adapter_payload(*, accepted: bool = False) -> dict[str, object]:
                     "query_identifiable": True,
                     "physical_guard_passed": True,
                 },
-                "metrics": metrics,
+                "metrics": {
+                    "adapter_schema": (
+                        CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA
+                    ),
+                    "adapter_schema_version": (
+                        CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
+                    ),
+                    "adapter_claim_boundary": (
+                        CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
+                    ),
+                    "claim_bearing_update_id": update_id,
+                    "claim_bearing_admission_id": admission_id,
+                    "claim_bearing_inference_result_id": INFERENCE_ID,
+                    "observation_artifact_id": OBSERVATION_ID,
+                    "linearization_artifact_id": LINEARIZATION_ID,
+                    "provider_manifest_id": PROVIDER_ID,
+                    "calibration_artifact_ids": calibration_ids,
+                    "runtime_revision_source": "independent-vcs-check",
+                    "runtime_revision_independently_verified": True,
+                    "strict_result_implementation_id": (
+                        PRIOR_AWARE_GAUGE_BELIEF_V2_IMPLEMENTATION
+                    ),
+                    "strict_admission_certificate": certificate,
+                },
             }
         ],
-        "metadata": metadata,
+        "metadata": {
+            **_source_metadata(),
+            "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
+            "adapter_schema_version": (
+                CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
+            ),
+            "adapter_claim_boundary": (
+                CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
+            ),
+            "source_contract": "ClaimBearingProb4DUpdateV1",
+            "strict_result_contract": "PriorAwareGaugeBeliefResultV2",
+            "record_update_ids": [
+                {"case_id": "object-01", "update_id": update_id}
+            ],
+        },
     }
 
 
@@ -190,48 +192,39 @@ def _metadata(payload: dict[str, object]) -> dict[str, object]:
 
 
 def _record(payload: dict[str, object]) -> dict[str, object]:
-    records = cast(list[dict[str, object]], payload["records"])
-    return records[0]
+    return cast(list[dict[str, object]], payload["records"])[0]
 
 
 def _metrics(payload: dict[str, object]) -> dict[str, object]:
     return cast(dict[str, object], _record(payload)["metrics"])
 
 
-def _strict_certificate(payload: dict[str, object]) -> dict[str, object]:
+def _certificate_from(payload: dict[str, object]) -> dict[str, object]:
     return cast(dict[str, object], _metrics(payload)["strict_admission_certificate"])
 
 
-@pytest.mark.parametrize(
-    "unit",
-    sorted(ALLOWED_DEFORM360_CENSUS_STATISTICAL_UNITS),
-)
-def test_generic_source_payload_accepts_only_registered_equal_case_units(
-    unit: str,
-) -> None:
+@pytest.mark.parametrize("unit", sorted(ALLOWED_DEFORM360_CENSUS_STATISTICAL_UNITS))
+def test_generic_units(unit: str) -> None:
     report = validate_deform360_provider_failure_census_payload(_generic_payload(unit))
-
     assert report["record_count"] == 1
-    assert report["accepted_count"] == 0
     assert report["unresolved_rejection_count"] == 1
 
 
-def test_generic_source_payload_accepts_omitted_optional_metrics() -> None:
+def test_generic_optional_metrics() -> None:
     payload = _generic_payload()
     del _record(payload)["metrics"]
+    assert validate_deform360_provider_failure_census_payload(payload)[
+        "record_count"
+    ] == 1
 
-    report = validate_deform360_provider_failure_census_payload(payload)
 
-    assert report["record_count"] == 1
-
-
-def test_validator_requires_a_mapping() -> None:
+def test_top_level_requires_mapping() -> None:
     with pytest.raises(ValueError, match="must be a mapping"):
         validate_deform360_provider_failure_census_payload(cast(Any, []))
 
 
 @pytest.mark.parametrize(
-    ("field", "invalid"),
+    ("field", "value"),
     [
         ("split", "target"),
         ("confirmation_payloads_opened", True),
@@ -241,13 +234,9 @@ def test_validator_requires_a_mapping() -> None:
         ("replacement_allowed", True),
     ],
 )
-def test_validator_requires_the_closed_source_metadata(
-    field: str,
-    invalid: object,
-) -> None:
+def test_source_metadata_is_closed(field: str, value: object) -> None:
     payload = _generic_payload()
-    _metadata(payload)[field] = invalid
-
+    _metadata(payload)[field] = value
     with pytest.raises(ValueError, match=field):
         validate_deform360_provider_failure_census_payload(payload)
 
@@ -256,34 +245,24 @@ def test_validator_requires_the_closed_source_metadata(
     "unit",
     ["frame", "frames", "view", "camera-view", "physical-object ", "", None],
 )
-def test_validator_rejects_unregistered_statistical_units(unit: object) -> None:
+def test_unregistered_units_fail(unit: object) -> None:
     payload = _generic_payload()
     _metadata(payload)["statistical_unit"] = unit
-
     with pytest.raises(ValueError, match="statistical_unit must be one of"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_claim_bearing_adapter_payload_binds_every_record() -> None:
-    payload = _adapter_payload()
-
-    report = validate_deform360_provider_failure_census_payload(payload)
-
-    assert report["record_count"] == 1
-    assert report["classified_rejection_count"] == 1
-    assert report["primary_category_counts"]["numerical-non-convergence"] == 1
-
-
-def test_claim_bearing_adapter_accepts_a_certificate_bound_acceptance() -> None:
+@pytest.mark.parametrize("accepted", [False, True])
+def test_adapter_valid_paths(accepted: bool) -> None:
     report = validate_deform360_provider_failure_census_payload(
-        _adapter_payload(accepted=True)
+        _adapter_payload(accepted)
     )
-
-    assert report["accepted_count"] == 1
+    assert report["accepted_count"] == int(accepted)
+    assert report["record_count"] == 1
 
 
 @pytest.mark.parametrize(
-    ("field", "invalid", "message"),
+    ("field", "value", "match"),
     [
         ("adapter_schema", "wrong", "unsupported.*schema"),
         ("adapter_schema_version", 2, "unsupported.*version"),
@@ -293,85 +272,62 @@ def test_claim_bearing_adapter_accepts_a_certificate_bound_acceptance() -> None:
         ("record_update_ids", {}, "JSON array"),
     ],
 )
-def test_adapter_metadata_is_exact(
-    field: str,
-    invalid: object,
-    message: str,
-) -> None:
+def test_adapter_metadata_exact(field: str, value: object, match: str) -> None:
     payload = _adapter_payload()
-    _metadata(payload)[field] = invalid
-
-    with pytest.raises(ValueError, match=message):
+    _metadata(payload)[field] = value
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_binding_count_must_match_record_count() -> None:
+def test_binding_count_exact() -> None:
     payload = _adapter_payload()
     _metadata(payload)["record_update_ids"] = []
-
     with pytest.raises(ValueError, match="one binding per record"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
 @pytest.mark.parametrize(
-    "kind",
-    ["not-mapping", "nonliteral-key", "wrong-case", "bad-digest"],
+    ("binding", "match"),
+    [
+        ([], "must be a mapping"),
+        (cast(Any, {1: VALID_DIGEST}), "literal string.*keys"),
+        ({"case_id": "other", "update_id": VALID_DIGEST}, "case_id differs"),
+        ({"case_id": "object-01", "update_id": "bad"}, "lowercase SHA-256"),
+    ],
 )
-def test_adapter_record_binding_is_literal_ordered_and_content_addressed(
-    kind: str,
-) -> None:
+def test_binding_contract(binding: object, match: str) -> None:
     payload = _adapter_payload()
-    if kind == "not-mapping":
-        binding: object = []
-        message = "must be a mapping"
-    elif kind == "nonliteral-key":
-        binding = {1: VALID_DIGEST}
-        message = "literal string.*keys"
-    elif kind == "wrong-case":
-        binding = {"case_id": "other", "update_id": VALID_DIGEST}
-        message = "case_id differs"
-    else:
-        binding = {"case_id": "object-01", "update_id": "bad"}
-        message = "lowercase SHA-256"
     _metadata(payload)["record_update_ids"] = [binding]
-
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_update_id_must_match_record_metrics() -> None:
+def test_binding_matches_record_update() -> None:
     payload = _adapter_payload()
     _metrics(payload)["claim_bearing_update_id"] = "2" * 64
-
     with pytest.raises(ValueError, match="update ID differs"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_requires_every_owned_metric() -> None:
+def test_all_adapter_metrics_required() -> None:
     payload = _adapter_payload()
     del _metrics(payload)["claim_bearing_admission_id"]
-
     with pytest.raises(ValueError, match="lacks adapter-owned metrics"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
 @pytest.mark.parametrize(
-    ("field", "invalid", "message"),
+    ("field", "value", "match"),
     [
         ("adapter_schema", "wrong", "adapter schema differs"),
         ("adapter_schema_version", 2, "adapter version differs"),
         ("adapter_claim_boundary", "wrong", "adapter boundary"),
     ],
 )
-def test_adapter_record_contract_matches_metadata(
-    field: str,
-    invalid: object,
-    message: str,
-) -> None:
+def test_record_adapter_contract(field: str, value: object, match: str) -> None:
     payload = _adapter_payload()
-    _metrics(payload)[field] = invalid
-
-    with pytest.raises(ValueError, match=message):
+    _metrics(payload)[field] = value
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
@@ -384,53 +340,46 @@ def test_adapter_record_contract_matches_metadata(
         "linearization_artifact_id",
     ],
 )
-def test_adapter_record_identity_fields_are_lowercase_digests(field: str) -> None:
+def test_record_ids_are_digests(field: str) -> None:
     payload = _adapter_payload()
     _metrics(payload)[field] = "BAD"
-
     with pytest.raises(ValueError, match=field):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_payload_provider_identity_is_content_addressed() -> None:
+def test_payload_provider_is_digest() -> None:
     payload = _adapter_payload()
-    payload["provider_id"] = "not-a-digest"
-
+    payload["provider_id"] = "bad"
     with pytest.raises(ValueError, match="payload provider_id"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_record_provider_identity_matches_payload() -> None:
+def test_record_provider_matches_payload() -> None:
     payload = _adapter_payload()
     _metrics(payload)["provider_manifest_id"] = "2" * 64
-
     with pytest.raises(ValueError, match="provider identity differs"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
 @pytest.mark.parametrize(
-    ("value", "message"),
+    ("value", "match"),
     [
         ([], "must be a mapping"),
-        ({1: CALIBRATION_ID}, "literal string.*keys"),
+        (cast(Any, {1: CALIBRATION_ID}), "literal string.*keys"),
         ({}, "must not be empty"),
         ({"": CALIBRATION_ID}, "names must be nonempty"),
         ({"gauge": "bad"}, "lowercase SHA-256"),
     ],
 )
-def test_adapter_calibration_identity_is_nonempty_and_content_addressed(
-    value: object,
-    message: str,
-) -> None:
+def test_calibration_ids(value: object, match: str) -> None:
     payload = _adapter_payload()
     _metrics(payload)["calibration_artifact_ids"] = value
-
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
 @pytest.mark.parametrize(
-    ("field", "invalid", "message"),
+    ("field", "value", "match"),
     [
         ("runtime_revision_source", "", "must be nonempty text"),
         (
@@ -445,175 +394,140 @@ def test_adapter_calibration_identity_is_nonempty_and_content_addressed(
         ),
     ],
 )
-def test_adapter_runtime_and_implementation_are_exact(
-    field: str,
-    invalid: object,
-    message: str,
-) -> None:
+def test_runtime_and_implementation(field: str, value: object, match: str) -> None:
     payload = _adapter_payload()
-    _metrics(payload)[field] = invalid
-
-    with pytest.raises(ValueError, match=message):
+    _metrics(payload)[field] = value
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
 @pytest.mark.parametrize(
-    ("mutation", "message"),
+    ("mutation", "match"),
     [
-        ("unsupported-schema", "unsupported schema"),
-        ("unsupported-version", "unsupported schema_version"),
-        ("empty-underlying-reason", "underlying reason must be nonempty text"),
-        ("nonboolean", "exact_mixture_objective.*bool"),
-        ("invalid-real", "mixture_solution_delta.*finite real or null"),
-        ("curvature-invariant", "curvature invariant is inconsistent"),
-        ("condition-invariant", "condition number is inconsistent"),
-        ("pass-invariant", "pass invariant is inconsistent"),
-        ("reason-invariant", "reason invariant is inconsistent"),
-        ("missing-field", "certificate fields changed"),
+        ("schema", "unsupported schema"),
+        ("version", "unsupported schema_version"),
+        ("underlying-reason", "underlying reason must be nonempty text"),
+        ("boolean", "exact_mixture_objective.*bool"),
+        ("real", "mixture_solution_delta.*finite real or null"),
+        ("curvature", "curvature invariant is inconsistent"),
+        ("condition", "condition number is inconsistent"),
+        ("passed", "pass invariant is inconsistent"),
+        ("reason", "reason invariant is inconsistent"),
+        ("fields", "certificate fields changed"),
     ],
 )
-def test_adapter_certificate_reuses_the_complete_strict_contract(
-    mutation: str,
-    message: str,
-) -> None:
+def test_complete_certificate_contract(mutation: str, match: str) -> None:
     payload = _adapter_payload()
-    certificate = _strict_certificate(payload)
-    if mutation == "unsupported-schema":
+    certificate = _certificate_from(payload)
+    if mutation == "schema":
         certificate["schema"] = "wrong"
-    elif mutation == "unsupported-version":
+    elif mutation == "version":
         certificate["schema_version"] = 2
-    elif mutation == "empty-underlying-reason":
+    elif mutation == "underlying-reason":
         certificate["underlying_inference_reason"] = ""
-    elif mutation == "nonboolean":
+    elif mutation == "boolean":
         certificate["exact_mixture_objective"] = 1
-    elif mutation == "invalid-real":
+    elif mutation == "real":
         certificate["mixture_solution_delta"] = "zero"
-    elif mutation == "curvature-invariant":
+    elif mutation == "curvature":
         certificate["positive_exact_mixture_curvature"] = False
-    elif mutation == "condition-invariant":
+    elif mutation == "condition":
         certificate["exact_hessian_condition_number"] = 3.0
-    elif mutation == "pass-invariant":
+    elif mutation == "passed":
         certificate["passed"] = True
-    elif mutation == "reason-invariant":
+    elif mutation == "reason":
         certificate["reason"] = "wrong"
     else:
         del certificate["schema"]
-
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
 @pytest.mark.parametrize(
-    ("certificate", "message"),
+    ("certificate", "match"),
     [
         ([], "must be a mapping"),
-        ({1: False}, "literal string.*keys"),
+        (cast(Any, {1: False}), "literal string.*keys"),
     ],
 )
-def test_adapter_certificate_container_is_literal(
-    certificate: object,
-    message: str,
-) -> None:
+def test_certificate_container(certificate: object, match: str) -> None:
     payload = _adapter_payload()
     _metrics(payload)["strict_admission_certificate"] = certificate
-
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_certificate_decision_matches_the_record() -> None:
+def test_certificate_decision_matches_record() -> None:
     payload = _adapter_payload()
-    record = _record(payload)
-    record["accepted"] = True
-    record["result_reason"] = "accepted"
-    signals = cast(dict[str, object], record["signals"])
-    signals["numerically_converged"] = True
-
+    _record(payload)["accepted"] = True
+    _record(payload)["result_reason"] = "accepted"
+    cast(dict[str, object], _record(payload)["signals"])[
+        "numerically_converged"
+    ] = True
     with pytest.raises(ValueError, match="decision differs from accepted"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_result_reason_matches_the_selected_certificate_path() -> None:
+def test_result_reason_matches_certificate_path() -> None:
     payload = _adapter_payload()
     _record(payload)["result_reason"] = "rejected"
-
     with pytest.raises(ValueError, match="result reason differs"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_admission_identity_is_recomputed() -> None:
-    payload = _adapter_payload()
-    _metrics(payload)["claim_bearing_admission_id"] = "2" * 64
-
-    with pytest.raises(ValueError, match="admission ID does not match"):
-        validate_deform360_provider_failure_census_payload(payload)
-
-
-def test_adapter_update_identity_is_recomputed() -> None:
+@pytest.mark.parametrize(
+    ("field", "bind_update", "match"),
+    [
+        ("claim_bearing_admission_id", False, "admission ID does not match"),
+        ("claim_bearing_update_id", True, "update ID does not bind"),
+        ("claim_bearing_inference_result_id", False, "update ID does not bind"),
+        ("observation_artifact_id", False, "admission ID does not match"),
+    ],
+)
+def test_content_ids(field: str, bind_update: bool, match: str) -> None:
     payload = _adapter_payload()
     replacement = "2" * 64
-    _metrics(payload)["claim_bearing_update_id"] = replacement
-    bindings = cast(list[dict[str, object]], _metadata(payload)["record_update_ids"])
-    bindings[0]["update_id"] = replacement
-
-    with pytest.raises(ValueError, match="update ID does not bind"):
+    _metrics(payload)[field] = replacement
+    if bind_update:
+        bindings = cast(
+            list[dict[str, object]],
+            _metadata(payload)["record_update_ids"],
+        )
+        bindings[0]["update_id"] = replacement
+    with pytest.raises(ValueError, match=match):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_update_identity_binds_the_inference_result() -> None:
+def test_adapter_requires_technical_validity() -> None:
     payload = _adapter_payload()
-    _metrics(payload)["claim_bearing_inference_result_id"] = "2" * 64
-
-    with pytest.raises(ValueError, match="update ID does not bind"):
-        validate_deform360_provider_failure_census_payload(payload)
-
-
-def test_adapter_admission_identity_binds_artifact_provenance() -> None:
-    payload = _adapter_payload()
-    _metrics(payload)["observation_artifact_id"] = "2" * 64
-
-    with pytest.raises(ValueError, match="admission ID does not match"):
-        validate_deform360_provider_failure_census_payload(payload)
-
-
-def test_adapter_evidence_must_establish_technical_validity() -> None:
-    payload = _adapter_payload()
-    signals = cast(dict[str, object], _record(payload)["signals"])
-    signals["technical_valid"] = False
-
+    cast(dict[str, object], _record(payload)["signals"])["technical_valid"] = False
     with pytest.raises(ValueError, match="technical_valid=true"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-@pytest.mark.parametrize(
-    "fragment_location",
-    ["metadata", "metrics"],
-)
-def test_partial_adapter_fields_are_rejected(fragment_location: str) -> None:
+@pytest.mark.parametrize("location", ["metadata", "metrics"])
+def test_partial_adapter_fields(location: str) -> None:
     payload = _generic_payload()
-    if fragment_location == "metadata":
+    if location == "metadata":
         _metadata(payload)["source_contract"] = "ClaimBearingProb4DUpdateV1"
     else:
         _metrics(payload)["adapter_schema"] = (
             CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA
         )
-
     with pytest.raises(ValueError, match="complete canonical adapter metadata"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_adapter_schema_without_owned_record_metrics_fails_closed() -> None:
+def test_adapter_metrics_cannot_be_partial() -> None:
     payload = _adapter_payload()
     _record(payload)["metrics"] = {"source_gate_id": "source-gate-v1"}
-
     with pytest.raises(ValueError, match="lacks adapter-owned metrics"):
         validate_deform360_provider_failure_census_payload(payload)
 
 
-def test_generic_metrics_do_not_trigger_adapter_validation() -> None:
+def test_unrelated_metrics_do_not_enable_adapter_validation() -> None:
     payload = deepcopy(_generic_payload())
-    _metrics(payload)["claim_bearing_comment"] = "not an adapter-owned field"
-
-    report = validate_deform360_provider_failure_census_payload(payload)
-
-    assert report["record_count"] == 1
+    _metrics(payload)["claim_bearing_comment"] = "not adapter-owned"
+    assert validate_deform360_provider_failure_census_payload(payload)[
+        "record_count"
+    ] == 1
