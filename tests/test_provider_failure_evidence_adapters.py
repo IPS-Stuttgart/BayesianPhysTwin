@@ -60,9 +60,7 @@ def _batch(provider_id: str = PROVIDER_ID) -> GaugeAwareObservationBatch:
     local_gauge = np.zeros((count, 3, 1), dtype=np.float64)
     return GaugeAwareObservationBatch(
         innovation_m=innovation,
-        observation_covariance_m2=np.repeat(
-            (np.eye(3) * 0.01)[None], count, axis=0
-        ),
+        observation_covariance_m2=np.repeat((np.eye(3) * 0.01)[None], count, axis=0),
         state_jacobian=state,
         gauge_jacobian=local_gauge,
         shared_bias_jacobian=_empty_design(count),
@@ -209,8 +207,9 @@ def test_adapter_derives_accepted_evidence_and_binds_all_identities() -> None:
         update.inference_result_id
     )
     assert evidence.metrics["provider_manifest_id"] == PROVIDER_ID
-    assert evidence.metrics["strict_admission_certificate"] == (
-        update.result.diagnostics["strict_admission_certificate"]
+    assert (
+        evidence.metrics["strict_admission_certificate"]
+        == (update.result.diagnostics["strict_admission_certificate"])
     )
     assert decompose_provider_failure(evidence).primary_category == "accepted"
 
@@ -410,7 +409,9 @@ def test_adapter_defensively_rejects_malformed_strict_result(
 ) -> None:
     update = _accepted_update()
     fake = object.__new__(PriorAwareGaugeBeliefResultV2)
-    object.__setattr__(fake, "diagnostics", {"strict_admission_certificate": certificate})
+    object.__setattr__(
+        fake, "diagnostics", {"strict_admission_certificate": certificate}
+    )
     object.__setattr__(update, "result", fake)
 
     with pytest.raises(ValueError, match=message):
@@ -423,9 +424,7 @@ def test_payload_builder_preserves_order_and_is_directly_analyzable() -> None:
 
     payload = build_provider_failure_payload_from_claim_bearing_updates(
         [("accepted", accepted), ("numerical", numerical)],
-        source_signals_by_case={
-            "numerical": {"covariance_calibrated": False}
-        },
+        source_signals_by_case={"numerical": {"covariance_calibrated": False}},
         metrics_by_case={"numerical": {"session_id": "s02"}},
         metadata={"split": "source-only"},
     )
@@ -437,9 +436,7 @@ def test_payload_builder_preserves_order_and_is_directly_analyzable() -> None:
         "numerical",
     ]
     metadata = cast(dict[str, Any], payload["metadata"])
-    assert metadata["adapter_schema"] == (
-        CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA
-    )
+    assert metadata["adapter_schema"] == (CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA)
     assert metadata["adapter_schema_version"] == (
         CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
     )
