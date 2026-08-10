@@ -78,9 +78,7 @@ def _validate_plan_roster(
             name=f"metric plan case {case_index}",
         )
         object_id = _literal(case.get("object_id"), name="metric plan object_id")
-        episode_id = _integer(
-            case.get("episode_id"), name="metric plan episode_id"
-        )
+        episode_id = _integer(case.get("episode_id"), name="metric plan episode_id")
         identity_key = (object_id, episode_id)
         stratum = _literal(case.get("stratum"), name="metric plan stratum")
         _require(
@@ -173,9 +171,7 @@ def _validate_plan_roster(
         )
         job_id = sha256_digest(row.get("job_id"), name="excluded stream job_id")
         object_id = _literal(row.get("object_id"), name="excluded stream object_id")
-        episode_id = _integer(
-            row.get("episode_id"), name="excluded stream episode_id"
-        )
+        episode_id = _integer(row.get("episode_id"), name="excluded stream episode_id")
         stratum = _literal(row.get("stratum"), name="excluded stream stratum")
         camera_id = _literal(row.get("camera_id"), name="excluded stream camera_id")
         reason = _literal(row.get("reason"), name="excluded stream reason")
