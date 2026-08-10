@@ -141,6 +141,27 @@ def _reidentify(evidence: dict[str, object]) -> dict[str, object]:
     return evidence
 
 
+def _set_nested(
+    payload: dict[str, object], path: tuple[str, ...], value: object
+) -> None:
+    current = payload
+    for key in path[:-1]:
+        nested = current[key]
+        assert isinstance(nested, dict)
+        current = nested
+    current[path[-1]] = value
+
+
+def _write_reidentified_lock(tmp_path: Path, payload: dict[str, object]) -> Path:
+    descriptor = {
+        key: value for key, value in payload.items() if key != "execution_lock_id"
+    }
+    payload["execution_lock_id"] = content_id(descriptor)
+    path = tmp_path / "execution-lock.json"
+    path.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
 def test_execution_lock_binds_public_data_and_machine_gate() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
 
@@ -195,6 +216,64 @@ def test_execution_lock_binds_unchanged_policy_selection_and_code() -> None:
             ).hexdigest()
             == lock["source_gate"][digest_key]
         )
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "match"),
+    [
+        (("schema",), "changed", "schema changed"),
+        (("schema_version",), 2, "version changed"),
+        (("semantics",), "changed", "semantics changed"),
+        (
+            ("public_measurements", "released_real_world_recordings"),
+            False,
+            "released real-world recordings",
+        ),
+        (
+            ("public_measurements", "new_measurements_required"),
+            True,
+            "requires new measurements",
+        ),
+        (
+            ("public_measurements", "human_approval_required"),
+            True,
+            "requires human approval",
+        ),
+        (("public_measurements", "prob4d_role"), "changed", "Prob4D role"),
+        (("prospective_policy", "policy_id"), "0" * 64, "prospective policy"),
+        (("cohort", "selection_sha256"), "1" * 64, "selected cohort"),
+        (("physical_baseline", "generation_rule"), "changed", "physical baseline"),
+        (("source_gate", "minimum_passing_objects"), 7, "decision value"),
+        (
+            ("information_boundary", "confirmation_payloads_opened"),
+            True,
+            "confirmation boundary",
+        ),
+        (("information_boundary", "target_outcomes_used"), True, "target outcomes"),
+    ],
+)
+def test_execution_lock_rejects_changed_scientific_contract(
+    tmp_path: Path,
+    path: tuple[str, ...],
+    value: object,
+    match: str,
+) -> None:
+    payload = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+    _set_nested(payload, path, value)
+    changed = _write_reidentified_lock(tmp_path, payload)
+
+    with pytest.raises(ValueError, match=match):
+        load_deform360_joint_sparse_source_execution_lock_v5(changed)
+
+
+def test_execution_lock_rejects_content_id_mismatch(tmp_path: Path) -> None:
+    payload = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+    payload["claim_boundary"] = "changed without reidentification"
+    path = tmp_path / "execution-lock.json"
+    path.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not match"):
+        load_deform360_joint_sparse_source_execution_lock_v5(path)
 
 
 def test_transferable_source_evidence_passes_without_human_approval() -> None:
@@ -285,6 +364,34 @@ def test_source_evidence_rejects_future_input_and_duplicate_objects() -> None:
     _reidentify(leaky)
     with pytest.raises(ValueError, match="not inner cross-fitted"):
         parse_deform360_joint_sparse_source_evidence_v5(leaky, lock)
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "match", "reidentify"),
+    [
+        (("schema",), "changed", "schema changed", True),
+        (("schema_version",), 2, "version changed", True),
+        (("semantics",), "changed", "semantics changed", True),
+        (("evidence_id",), "0" * 64, "does not match", False),
+        (("execution_lock_id",), "1" * 64, "another execution lock", True),
+        (("prospective_policy_id",), "2" * 64, "prospective policy", True),
+        (("selection_sha256",), "3" * 64, "cohort selection", True),
+    ],
+)
+def test_source_evidence_rejects_changed_identity_contract(
+    path: tuple[str, ...],
+    value: object,
+    match: str,
+    reidentify: bool,
+) -> None:
+    lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
+    evidence = _evidence()
+    _set_nested(evidence, path, value)
+    if reidentify:
+        _reidentify(evidence)
+
+    with pytest.raises(ValueError, match=match):
+        parse_deform360_joint_sparse_source_evidence_v5(evidence, lock)
 
 
 def test_publication_is_atomic_and_refuses_silent_overwrite(tmp_path: Path) -> None:
