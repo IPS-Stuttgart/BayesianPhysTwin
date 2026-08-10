@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-fresh-object-session-v6-contracts.yml"
-      - "MANIFEST.in"
       - "docs/deform360_fresh_object_session_v6.md"
       - "protocols/locks/deform360_official_hub_fresh_object_session_v6.json"
       - "tests/test_deform360_fresh_object_session_v6_protocol.py"
@@ -13,7 +12,6 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-fresh-object-session-v6-contracts.yml"
-      - "MANIFEST.in"
       - "docs/deform360_fresh_object_session_v6.md"
       - "protocols/locks/deform360_official_hub_fresh_object_session_v6.json"
       - "tests/test_deform360_fresh_object_session_v6_protocol.py"
@@ -26,9 +24,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PYTHONHASHSEED: "0"
-  PYTHONUNBUFFERED: "1"
-  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONHASHSEED: 0
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
 
 jobs:
   contracts:
@@ -41,21 +39,54 @@ jobs:
         python-version: ["3.10", "3.12"]
     steps:
       - name: Check out exact proposed source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
 
+      - name: Classify the dormant or complete design surface
+        id: design
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            docs/deform360_fresh_object_session_v6.md
+            protocols/locks/deform360_official_hub_fresh_object_session_v6.json
+            tests/test_deform360_fresh_object_session_v6_protocol.py
+          )
+          present=0
+          missing=()
+          for path in "${required[@]}"; do
+            if [[ -f "${path}" ]]; then
+              present=$((present + 1))
+            else
+              missing+=("${path}")
+            fi
+          done
+          if [[ "${present}" -eq 0 ]]; then
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "The v6 design surface is not on this revision; the contract workflow is dormant." \
+              >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          if [[ "${present}" -ne "${#required[@]}" ]]; then
+            printf 'partial v6 design surface; missing: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+          echo "enabled=true" >> "${GITHUB_OUTPUT}"
+
       - name: Set up Python
-        uses: actions/setup-python@v6
+        if: steps.design.outputs.enabled == 'true'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
 
       - name: Validate the frozen target-closed v6 design
+        if: steps.design.outputs.enabled == 'true'
         shell: bash
         run: |
           set -euo pipefail
