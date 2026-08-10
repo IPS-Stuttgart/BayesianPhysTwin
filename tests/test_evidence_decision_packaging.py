@@ -20,15 +20,12 @@ def _project_metadata() -> dict[str, Any]:
 
 def test_evidence_decision_contract_is_in_wheel_and_sdist() -> None:
     metadata = _project_metadata()
-    package_data = metadata["tool"]["setuptools"]["package-data"][
-        "bayesian_phystwin"
-    ]
+    package_data = metadata["tool"]["setuptools"]["package-data"]["bayesian_phystwin"]
     manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
 
     assert "contract_data/evidence_decision_v1/*.json" in package_data
     assert "include docs/evidence_decision_v1.md" in manifest
     assert (
         "recursive-include "
-        "src/bayesian_phystwin/contract_data/evidence_decision_v1 *.json"
-        in manifest
+        "src/bayesian_phystwin/contract_data/evidence_decision_v1 *.json" in manifest
     )
