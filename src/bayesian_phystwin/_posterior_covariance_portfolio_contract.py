@@ -77,6 +77,19 @@ class PosteriorQueryCovariancePortfolioV1:
             methods=methods,
             unavailable=set(unavailable),
         )
+        if not admitted:
+            fallback = next(
+                source
+                for source in sources
+                if source.method == "exact_prior_fallback"
+            )
+            fallback_reason = fallback.covariance_semantics.metadata.get(
+                "fallback_reason"
+            )
+            if fallback_reason != reason:
+                raise ValueError(
+                    "rejected portfolio reason does not match exact fallback"
+                )
         query_digest = query_matrix_id(query)
         entries = tuple(
             self._entry(
