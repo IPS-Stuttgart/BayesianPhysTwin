@@ -25,28 +25,20 @@ import math
 import os
 import shutil
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import numpy as np
 
-PROTOCOL_CONTRACT = (
-    "bayesian-phystwin-full22-discrepancy-candidate-tournament"
-)
-PREFIX_MANIFEST_CONTRACT = (
-    "bayesian-phystwin-full22-discrepancy-prefix-manifest"
-)
+PROTOCOL_CONTRACT = "bayesian-phystwin-full22-discrepancy-candidate-tournament"
+PREFIX_MANIFEST_CONTRACT = "bayesian-phystwin-full22-discrepancy-prefix-manifest"
 PREDICTION_MANIFEST_CONTRACT = (
     "bayesian-phystwin-full22-discrepancy-prediction-manifest"
 )
-ADMISSION_MANIFEST_CONTRACT = (
-    "bayesian-phystwin-full22-discrepancy-admission-manifest"
-)
-ARBITRATION_REPORT_CONTRACT = (
-    "bayesian-phystwin-full22-discrepancy-metric-arbitration"
-)
+ADMISSION_MANIFEST_CONTRACT = "bayesian-phystwin-full22-discrepancy-admission-manifest"
+ARBITRATION_REPORT_CONTRACT = "bayesian-phystwin-full22-discrepancy-metric-arbitration"
 HORIZON_LABELS = ("early", "middle", "late")
 PRIMARY_METRICS = ("chamfer_distance_m", "track_error_m")
 LOWER_HEX = frozenset("0123456789abcdef")
@@ -152,16 +144,14 @@ def _load_protocol(path: Path) -> tuple[dict[str, Any], str]:
         "unsupported full-22 tournament protocol version",
     )
     _require(
-        payload.get("status")
-        == "retrospective-source-only-non-claim-bearing",
+        payload.get("status") == "retrospective-source-only-non-claim-bearing",
         "protocol must retain the retrospective source-only boundary",
     )
     boundary = payload.get("information_boundary")
     _require(
         isinstance(boundary, dict)
         and boundary.get("prediction_manifests_sealed_before_admission") is True
-        and boundary.get("admission_manifest_sealed_before_future_scoring")
-        is True
+        and boundary.get("admission_manifest_sealed_before_future_scoring") is True
         and boundary.get("confirmation_payload_used") is False
         and boundary.get("target_outcome_used") is False
         and boundary.get("replacement_allowed") is False
@@ -226,8 +216,7 @@ def _load_protocol(path: Path) -> tuple[dict[str, Any], str]:
     point_tournaments = scoring.get("point_tournaments")
     _require(
         isinstance(point_tournaments, list)
-        and tuple(row.get("name") for row in point_tournaments)
-        == ("track", "chamfer"),
+        and tuple(row.get("name") for row in point_tournaments) == ("track", "chamfer"),
         "protocol metric-specific tournament roster changed",
     )
     return payload, _canonical_sha256(payload)
@@ -244,10 +233,7 @@ def _candidate_spec(
 
 
 def _candidate_ids(protocol: Mapping[str, Any]) -> tuple[str, ...]:
-    return tuple(
-        str(raw["candidate_id"])
-        for raw in protocol["candidates"]
-    )
+    return tuple(str(raw["candidate_id"]) for raw in protocol["candidates"])
 
 
 def _configuration_sha256(candidate: Mapping[str, Any]) -> str:
@@ -268,9 +254,7 @@ def _download_trajectory_subset(data_root: Path) -> dict[str, Any]:
 
     records: dict[str, dict[str, object]] = {}
     with ExitStack() as stack:
-        data_archive = stack.enter_context(
-            _archive_factory(DEFAULT_DATA_ARCHIVE)
-        )
+        data_archive = stack.enter_context(_archive_factory(DEFAULT_DATA_ARCHIVE))
         experiments_archive = stack.enter_context(
             _archive_factory(DEFAULT_EXPERIMENTS_ARCHIVE)
         )
@@ -331,8 +315,7 @@ def _last_valid_residual(
         "residual_m must have shape (T, N, 3)",
     )
     _require(
-        validity.dtype.kind == "b"
-        and validity.shape == residual.shape[:2],
+        validity.dtype.kind == "b" and validity.shape == residual.shape[:2],
         "valid must be a matching Boolean matrix",
     )
     _require(
@@ -371,9 +354,7 @@ def _geometry_kernel_basis(
 
     geometry = np.asarray(geometry_m, dtype=np.float64)
     _require(
-        geometry.ndim == 2
-        and geometry.shape[1] == 3
-        and len(geometry) >= rank >= 1,
+        geometry.ndim == 2 and geometry.shape[1] == 3 and len(geometry) >= rank >= 1,
         "geometry_m and rank are incompatible",
     )
     _require(
@@ -387,8 +368,7 @@ def _geometry_kernel_basis(
     scale = max(scale, np.finfo(np.float64).eps)
     kernel = np.exp(-squared / (2.0 * scale**2))
     tie = diagonal_tie_break * (
-        np.arange(1, len(geometry) + 1, dtype=np.float64)
-        / len(geometry)
+        np.arange(1, len(geometry) + 1, dtype=np.float64) / len(geometry)
     )
     kernel = 0.5 * (kernel + kernel.T) + np.diag(tie)
     eigenvalues, eigenvectors = np.linalg.eigh(kernel)
@@ -448,19 +428,13 @@ def _forecast_independent_endpoint(
             horizon_steps=horizon,
         )
         means.append(np.asarray(prediction.mean_m, dtype=np.float64))
-        covariances.append(
-            np.asarray(prediction.covariance_m2, dtype=np.float64)
-        )
+        covariances.append(np.asarray(prediction.covariance_m2, dtype=np.float64))
     return (
         np.stack(means),
         np.stack(covariances),
         {
-            "state_dimension": int(
-                np.asarray(posterior.component_mean_m).size
-            ),
-            "covariance_bytes": int(
-                np.asarray(posterior.component_variance_m2).nbytes
-            ),
+            "state_dimension": int(np.asarray(posterior.component_mean_m).size),
+            "covariance_bytes": int(np.asarray(posterior.component_variance_m2).nbytes),
         },
     )
 
@@ -495,16 +469,12 @@ def _forecast_dynamic_endpoint(
             horizon_steps=horizon,
         )
         means.append(np.asarray(prediction.mean_m, dtype=np.float64))
-        covariances.append(
-            np.asarray(prediction.covariance_m2, dtype=np.float64)
-        )
+        covariances.append(np.asarray(prediction.covariance_m2, dtype=np.float64))
     return (
         np.stack(means),
         np.stack(covariances),
         {
-            "state_dimension": int(
-                np.asarray(posterior.component_state_mean).size
-            ),
+            "state_dimension": int(np.asarray(posterior.component_state_mean).size),
             "covariance_bytes": int(
                 np.asarray(posterior.component_state_covariance).nbytes
             ),
@@ -550,20 +520,12 @@ def _forecast_structured_endpoint(
         np.stack(covariances),
         {
             "state_dimension": int(
-                np.asarray(
-                    posterior.component_coefficient_mean_m
-                ).size
-                + np.asarray(
-                    posterior.component_local_variance_m2
-                ).size
+                np.asarray(posterior.component_coefficient_mean_m).size
+                + np.asarray(posterior.component_local_variance_m2).size
             ),
             "covariance_bytes": int(
-                np.asarray(
-                    posterior.component_coefficient_covariance_m2
-                ).nbytes
-                + np.asarray(
-                    posterior.component_local_variance_m2
-                ).nbytes
+                np.asarray(posterior.component_coefficient_covariance_m2).nbytes
+                + np.asarray(posterior.component_local_variance_m2).nbytes
             ),
         },
     )
@@ -619,12 +581,8 @@ def _forecast_graph_dynamic(
         ),
         {
             "state_dimension": int(np.asarray(belief.state_mean).size),
-            "covariance_bytes": int(
-                np.asarray(belief.state_covariance).nbytes
-            ),
-            "accepted_update_count": int(
-                belief.accepted_update_count
-            ),
+            "covariance_bytes": int(np.asarray(belief.state_covariance).nbytes),
+            "accepted_update_count": int(belief.accepted_update_count),
         },
     )
 
@@ -684,9 +642,7 @@ def _forecast_one_candidate(
     basis = _geometry_kernel_basis(
         geometry_m,
         rank=int(basis_spec["rank"]),
-        diagonal_tie_break=float(
-            basis_spec["diagonal_tie_break"]
-        ),
+        diagonal_tie_break=float(basis_spec["diagonal_tie_break"]),
     )
     if runner == "structured_kernel_rank4_v1":
         return _forecast_structured_endpoint(
@@ -733,13 +689,11 @@ def _safe_forecast_one_candidate(
             "candidate mean shape changed",
         )
         _require(
-            covariance.shape
-            == (count, residual_m.shape[1], 3, 3),
+            covariance.shape == (count, residual_m.shape[1], 3, 3),
             "candidate covariance shape changed",
         )
         _require(
-            np.all(np.isfinite(mean))
-            and np.all(np.isfinite(covariance)),
+            np.all(np.isfinite(mean)) and np.all(np.isfinite(covariance)),
             "candidate forecast is nonfinite",
         )
         return mean, covariance, diagnostics, True
@@ -771,9 +725,7 @@ def _load_prefix_manifest(prefix_dir: Path) -> dict[str, Any]:
     )
     supplied = payload.get("prefix_manifest_id")
     descriptor = {
-        key: value
-        for key, value in payload.items()
-        if key != "prefix_manifest_id"
+        key: value for key, value in payload.items() if key != "prefix_manifest_id"
     }
     _require(
         supplied == _canonical_sha256(descriptor),
@@ -817,9 +769,7 @@ def _load_admission_manifest(
     )
     supplied = payload.get("admission_manifest_id")
     descriptor = {
-        key: value
-        for key, value in payload.items()
-        if key != "admission_manifest_id"
+        key: value for key, value in payload.items() if key != "admission_manifest_id"
     }
     _require(
         supplied == _canonical_sha256(descriptor),
@@ -907,17 +857,14 @@ def prepare_prefix(
                 np.asarray(data["object_visibilities"], dtype=bool),
                 motion_valid,
             )[:train_end]
-            residual = (
-                observed - baseline[:train_end, :original_count]
-            )
+            residual = observed - baseline[:train_end, :original_count]
             lift_indices, lift_weights = _lift_map(
                 baseline[0],
                 original_count,
                 4,
             )
-            num_surface_points = (
-                original_count
-                + int(np.asarray(data["surface_points"]).shape[0])
+            num_surface_points = original_count + int(
+                np.asarray(data["surface_points"]).shape[0]
             )
             path = case_root / f"{case}.npz"
             np.savez_compressed(
@@ -954,9 +901,7 @@ def prepare_prefix(
                     "track_count": original_count,
                     "future_arrays_serialized": False,
                     "source_files_sha256": {
-                        filename: _file_sha256(
-                            case_dir / filename
-                        )
+                        filename: _file_sha256(case_dir / filename)
                         for filename in (
                             "final_data.pkl",
                             "inference.pkl",
@@ -982,9 +927,7 @@ def prepare_prefix(
                 "target_outcome_opened": False,
             },
         }
-        descriptor["prefix_manifest_id"] = _canonical_sha256(
-            descriptor
-        )
+        descriptor["prefix_manifest_id"] = _canonical_sha256(descriptor)
         _write_json(
             temporary / "prefix_manifest.json",
             descriptor,
@@ -1130,23 +1073,15 @@ def predict_candidate(
             "contract": PREDICTION_MANIFEST_CONTRACT,
             "schema_version": 1,
             "protocol_id": protocol_id,
-            "prefix_manifest_id": prefix_manifest[
-                "prefix_manifest_id"
-            ],
+            "prefix_manifest_id": prefix_manifest["prefix_manifest_id"],
             "candidate_id": candidate_id,
             "family": candidate["family"],
             "source_revision": supplied_revision,
-            "configuration_sha256": _configuration_sha256(
-                candidate
-            ),
-            "declared_parameter_count": int(
-                candidate["declared_parameter_count"]
-            ),
+            "configuration_sha256": _configuration_sha256(candidate),
+            "declared_parameter_count": int(candidate["declared_parameter_count"]),
             "case_count": len(case_records),
             "case_records": case_records,
-            "runtime_milliseconds": (
-                elapsed_total / len(case_records)
-            ),
+            "runtime_milliseconds": (elapsed_total / len(case_records)),
             "state_dimension": maximum_state_dimension,
             "covariance_bytes": maximum_covariance_bytes,
             "information_boundary": {
@@ -1158,9 +1093,7 @@ def predict_candidate(
                 "prediction_sealed_before_admission": True,
             },
         }
-        descriptor["prediction_artifact_sha256"] = (
-            _canonical_sha256(descriptor)
-        )
+        descriptor["prediction_artifact_sha256"] = _canonical_sha256(descriptor)
         _write_json(
             temporary / "prediction_manifest.json",
             descriptor,
@@ -1186,8 +1119,7 @@ def _candidate_trajectory(
     original_count = result.shape[1] - len(lift_indices)
     _require(
         tracked.ndim == 3
-        and tracked.shape
-        == (len(result) - start_frame, original_count, 3),
+        and tracked.shape == (len(result) - start_frame, original_count, 3),
         "tracked candidate correction has an invalid shape",
     )
     correction = _lift_residual(
@@ -1229,9 +1161,7 @@ def _metrics_by_frame(
 def _higher_quantile(values: np.ndarray, quantile: float) -> float:
     array = np.asarray(values, dtype=np.float64)
     _require(
-        array.ndim == 1
-        and len(array) > 0
-        and np.all(np.isfinite(array)),
+        array.ndim == 1 and len(array) > 0 and np.all(np.isfinite(array)),
         "regret values must be a finite nonempty vector",
     )
     _require(
@@ -1258,29 +1188,22 @@ def admit_predictions(
         "prefix and protocol identities differ",
     )
     prediction_manifests = {
-        candidate_id: _load_prediction_manifest(
-            predictions_root / candidate_id
-        )
+        candidate_id: _load_prediction_manifest(predictions_root / candidate_id)
         for candidate_id in _candidate_ids(protocol)
     }
     for candidate_id, manifest in prediction_manifests.items():
         _require(
             manifest["candidate_id"] == candidate_id
             and manifest["protocol_id"] == protocol_id
-            and manifest["prefix_manifest_id"]
-            == prefix_manifest["prefix_manifest_id"],
+            and manifest["prefix_manifest_id"] == prefix_manifest["prefix_manifest_id"],
             f"prediction manifest lineage changed: {candidate_id}",
         )
     guard = protocol["guard"]
     maximum_residual_m = float(guard["maximum_residual_m"])
-    regret_quantile = float(
-        guard["within_execution_regret_quantile"]
-    )
+    regret_quantile = float(guard["within_execution_regret_quantile"])
     maximum_regret = float(guard["maximum_allowed_regret_m"])
     minimum_frames = int(guard["minimum_validation_frame_count"])
-    fallback_candidate = str(
-        protocol["selection"]["physical_fallback_candidate"]
-    )
+    fallback_candidate = str(protocol["selection"]["physical_fallback_candidate"])
     decisions: list[dict[str, object]] = []
     with _atomic_output_directory(output_dir, force=force) as temporary:
         for prefix_record in prefix_manifest["cases"]:
@@ -1317,9 +1240,7 @@ def admit_predictions(
                 prefix_case["lift_weights"],
                 dtype=np.float64,
             )
-            num_surface_points = int(
-                prefix_case["num_surface_points"]
-            )
+            num_surface_points = int(prefix_case["num_surface_points"])
             fallback_metrics = _metrics_by_frame(
                 baseline,
                 observed,
@@ -1331,21 +1252,13 @@ def admit_predictions(
             )
             for candidate_id, manifest in prediction_manifests.items():
                 candidate_record = next(
-                    row
-                    for row in manifest["case_records"]
-                    if row["case_id"] == case_id
+                    row for row in manifest["case_records"] if row["case_id"] == case_id
                 )
                 prediction = _load_case_npz(
-                    predictions_root
-                    / candidate_id
-                    / str(candidate_record["path"]),
+                    predictions_root / candidate_id / str(candidate_record["path"]),
                     str(candidate_record["sha256"]),
                 )
-                successful = bool(
-                    np.asarray(
-                        prediction["prediction_success"]
-                    ).item()
-                )
+                successful = bool(np.asarray(prediction["prediction_success"]).item())
                 reasons: list[str] = []
                 if candidate_id == fallback_candidate:
                     accepted = False
@@ -1393,24 +1306,17 @@ def admit_predictions(
                         regret_quantile,
                     )
                     metric_rows[metric] = {
-                        "candidate_mean_m": float(
-                            np.mean(raw_values)
-                        ),
-                        "fallback_mean_m": float(
-                            np.mean(fallback_values)
-                        ),
+                        "candidate_mean_m": float(np.mean(raw_values)),
+                        "fallback_mean_m": float(np.mean(fallback_values)),
                         "regret_quantile_m": quantile_value,
                     }
                     if (
                         candidate_id != fallback_candidate
                         and successful
-                        and quantile_value
-                        > maximum_regret + 1e-12
+                        and quantile_value > maximum_regret + 1e-12
                     ):
                         accepted = False
-                        reasons.append(
-                            f"{metric}-validation-regret"
-                        )
+                        reasons.append(f"{metric}-validation-regret")
                 if accepted:
                     reasons.append("metric-specific-guard-passed")
                 decisions.append(
@@ -1427,16 +1333,10 @@ def admit_predictions(
             "contract": ADMISSION_MANIFEST_CONTRACT,
             "schema_version": 1,
             "protocol_id": protocol_id,
-            "prefix_manifest_id": prefix_manifest[
-                "prefix_manifest_id"
-            ],
+            "prefix_manifest_id": prefix_manifest["prefix_manifest_id"],
             "prediction_artifact_sha256": {
-                candidate_id: manifest[
-                    "prediction_artifact_sha256"
-                ]
-                for candidate_id, manifest in sorted(
-                    prediction_manifests.items()
-                )
+                candidate_id: manifest["prediction_artifact_sha256"]
+                for candidate_id, manifest in sorted(prediction_manifests.items())
             },
             "guard": guard,
             "decision_count": len(decisions),
@@ -1449,9 +1349,7 @@ def admit_predictions(
                 "admission_sealed_before_future_scoring": True,
             },
         }
-        descriptor["admission_manifest_id"] = _canonical_sha256(
-            descriptor
-        )
+        descriptor["admission_manifest_id"] = _canonical_sha256(descriptor)
         _write_json(
             temporary / "admission_manifest.json",
             descriptor,
@@ -1477,28 +1375,18 @@ def _regularized_gaussian_nll(
     identity = np.eye(3, dtype=np.float64)
     result = np.empty(len(error), dtype=np.float64)
     for index in range(len(error)):
-        matrix = 0.5 * (
-            covariance[index] + covariance[index].T
-        )
+        matrix = 0.5 * (covariance[index] + covariance[index].T)
         matrix = matrix + observation_std_m**2 * identity
         eigenvalues, eigenvectors = np.linalg.eigh(matrix)
         eigenvalues = np.maximum(
             eigenvalues,
             eigenvalue_floor_m2,
         )
-        inverse = (
-            eigenvectors
-            @ np.diag(1.0 / eigenvalues)
-            @ eigenvectors.T
-        )
-        mahalanobis = float(
-            error[index] @ inverse @ error[index]
-        )
+        inverse = eigenvectors @ np.diag(1.0 / eigenvalues) @ eigenvectors.T
+        mahalanobis = float(error[index] @ inverse @ error[index])
         log_determinant = float(np.sum(np.log(eigenvalues)))
         result[index] = 0.5 * (
-            3.0 * math.log(2.0 * math.pi)
-            + log_determinant
-            + mahalanobis
+            3.0 * math.log(2.0 * math.pi) + log_determinant + mahalanobis
         )
     return result
 
@@ -1526,8 +1414,7 @@ def _proper_score_by_horizon(
         validity.dtype.kind == "b"
         and validity.shape == residual.shape[:2]
         and mean.shape == residual.shape
-        and covariance.shape
-        == residual.shape[:2] + (3, 3),
+        and covariance.shape == residual.shape[:2] + (3, 3),
         "proper-score future arrays differ",
     )
     output: dict[str, float] = {}
@@ -1569,13 +1456,9 @@ def _point_metrics_by_horizon(
         end_frame=end_frame,
     )
     output: dict[str, dict[str, float]] = {}
-    for label, indices in _horizon_groups(
-        end_frame - start_frame
-    ).items():
+    for label, indices in _horizon_groups(end_frame - start_frame).items():
         output[label] = {
-            metric: float(
-                np.mean(np.asarray(by_frame[metric])[indices])
-            )
+            metric: float(np.mean(np.asarray(by_frame[metric])[indices]))
             for metric in PRIMARY_METRICS
         }
     return output
@@ -1599,9 +1482,9 @@ def _selection_payload(
         "numerical_tolerance",
     )
     result = {key: source[key] for key in keys}
-    result["nominal_interval_coverage"] = protocol[
-        "scoring"
-    ]["nominal_interval_coverage"]
+    result["nominal_interval_coverage"] = protocol["scoring"][
+        "nominal_interval_coverage"
+    ]
     return result
 
 
@@ -1621,12 +1504,10 @@ def _metric_arbitration(
     reference_candidate: str,
 ) -> dict[str, object]:
     selected = {
-        name: str(report["selected_candidate"])
-        for name, report in reports.items()
+        name: str(report["selected_candidate"]) for name, report in reports.items()
     }
     passed = {
-        name: bool(report["source_gate_passed"])
-        for name, report in reports.items()
+        name: bool(report["source_gate_passed"]) for name, report in reports.items()
     }
     unique = set(selected.values())
     advance = (
@@ -1687,51 +1568,34 @@ def score_tournament(
     _require(
         prefix_manifest["protocol_id"] == protocol_id
         and admission["protocol_id"] == protocol_id
-        and admission["prefix_manifest_id"]
-        == prefix_manifest["prefix_manifest_id"],
+        and admission["prefix_manifest_id"] == prefix_manifest["prefix_manifest_id"],
         "score-stage lineage differs from the sealed barriers",
     )
     candidate_ids = _candidate_ids(protocol)
     prediction_manifests = {
-        candidate_id: _load_prediction_manifest(
-            predictions_root / candidate_id
-        )
+        candidate_id: _load_prediction_manifest(predictions_root / candidate_id)
         for candidate_id in candidate_ids
     }
     for candidate_id, manifest in prediction_manifests.items():
         _require(
-            admission["prediction_artifact_sha256"][
-                candidate_id
-            ]
+            admission["prediction_artifact_sha256"][candidate_id]
             == manifest["prediction_artifact_sha256"],
             f"admission did not bind {candidate_id}",
         )
     decisions = {
-        (str(row["case_id"]), str(row["candidate_id"])): bool(
-            row["accepted"]
-        )
+        (str(row["case_id"]), str(row["candidate_id"])): bool(row["accepted"])
         for row in admission["decisions"]
     }
     _require(
-        len(decisions)
-        == len(prefix_manifest["cases"]) * len(candidate_ids),
+        len(decisions) == len(prefix_manifest["cases"]) * len(candidate_ids),
         "admission decision roster is incomplete",
     )
     scoring = protocol["scoring"]
-    observation_std_m = float(
-        scoring["proper_score_observation_std_m"]
-    )
-    eigenvalue_floor_m2 = float(
-        scoring["covariance_eigenvalue_floor_m2"]
-    )
-    maximum_residual_m = float(
-        protocol["guard"]["maximum_residual_m"]
-    )
+    observation_std_m = float(scoring["proper_score_observation_std_m"])
+    eigenvalue_floor_m2 = float(scoring["covariance_eigenvalue_floor_m2"])
+    maximum_residual_m = float(protocol["guard"]["maximum_residual_m"])
     raw_rows: list[dict[str, object]] = []
-    case_ids = tuple(
-        str(row["case_id"])
-        for row in prefix_manifest["cases"]
-    )
+    case_ids = tuple(str(row["case_id"]) for row in prefix_manifest["cases"])
     for case_id in case_ids:
         case_dir = data_root / case_id
         fit_end, train_end, frame_count = _split_for_case(
@@ -1764,17 +1628,14 @@ def score_tournament(
             motion_valid,
         )[:frame_count]
         original_count = observed.shape[1]
-        residual = (
-            observed - baseline[:, :original_count]
-        )
+        residual = observed - baseline[:, :original_count]
         lift_indices, lift_weights = _lift_map(
             baseline[0],
             original_count,
             4,
         )
-        num_surface_points = (
-            original_count
-            + int(np.asarray(data["surface_points"]).shape[0])
+        num_surface_points = original_count + int(
+            np.asarray(data["surface_points"]).shape[0]
         )
         fallback_point = _point_metrics_by_horizon(
             baseline,
@@ -1805,14 +1666,10 @@ def score_tournament(
         for candidate_id in candidate_ids:
             manifest = prediction_manifests[candidate_id]
             record = next(
-                row
-                for row in manifest["case_records"]
-                if row["case_id"] == case_id
+                row for row in manifest["case_records"] if row["case_id"] == case_id
             )
             prediction = _load_case_npz(
-                predictions_root
-                / candidate_id
-                / str(record["path"]),
+                predictions_root / candidate_id / str(record["path"]),
                 str(record["sha256"]),
             )
             _require(
@@ -1865,35 +1722,25 @@ def score_tournament(
                         "point": point[horizon],
                         "fallback_point": fallback_point[horizon],
                         "proper_score": proper[horizon],
-                        "fallback_proper_score": fallback_proper[
-                            horizon
-                        ],
+                        "fallback_proper_score": fallback_proper[horizon],
                     }
                 )
     unit_roster = [
-        f"{case_id}/{horizon}"
-        for case_id in case_ids
-        for horizon in HORIZON_LABELS
+        f"{case_id}/{horizon}" for case_id in case_ids for horizon in HORIZON_LABELS
     ]
     barrier_descriptor = {
         "protocol_id": protocol_id,
-        "prefix_manifest_id": prefix_manifest[
-            "prefix_manifest_id"
-        ],
+        "prefix_manifest_id": prefix_manifest["prefix_manifest_id"],
         "prediction_artifact_sha256": {
             candidate_id: prediction_manifests[candidate_id][
                 "prediction_artifact_sha256"
             ]
             for candidate_id in candidate_ids
         },
-        "admission_manifest_id": admission[
-            "admission_manifest_id"
-        ],
+        "admission_manifest_id": admission["admission_manifest_id"],
         "future_opened_after_barrier": True,
     }
-    prediction_barrier_sha256 = _canonical_sha256(
-        barrier_descriptor
-    )
+    prediction_barrier_sha256 = _canonical_sha256(barrier_descriptor)
     candidates_payload = []
     for candidate_id in candidate_ids:
         candidate = _candidate_spec(protocol, candidate_id)
@@ -1902,25 +1749,13 @@ def score_tournament(
             {
                 "candidate_id": candidate_id,
                 "family": candidate["family"],
-                "state_dimension": int(
-                    manifest["state_dimension"]
-                ),
-                "parameter_count": int(
-                    candidate["declared_parameter_count"]
-                ),
+                "state_dimension": int(manifest["state_dimension"]),
+                "parameter_count": int(candidate["declared_parameter_count"]),
                 "runtime_milliseconds": 0.0,
-                "covariance_bytes": int(
-                    manifest["covariance_bytes"]
-                ),
-                "source_revision": candidate[
-                    "source_revision"
-                ],
-                "configuration_sha256": manifest[
-                    "configuration_sha256"
-                ],
-                "prediction_artifact_sha256": manifest[
-                    "prediction_artifact_sha256"
-                ],
+                "covariance_bytes": int(manifest["covariance_bytes"]),
+                "source_revision": candidate["source_revision"],
+                "configuration_sha256": manifest["configuration_sha256"],
+                "prediction_artifact_sha256": manifest["prediction_artifact_sha256"],
             }
         )
     metric_map = {
@@ -1933,9 +1768,7 @@ def score_tournament(
             temporary / "prediction_barrier.json",
             {
                 **barrier_descriptor,
-                "prediction_barrier_sha256": (
-                    prediction_barrier_sha256
-                ),
+                "prediction_barrier_sha256": (prediction_barrier_sha256),
             },
         )
         _write_json(
@@ -1950,38 +1783,26 @@ def score_tournament(
             records: list[dict[str, object]] = []
             for row in raw_rows:
                 point_loss = float(row["point"][metric])
-                fallback_point_loss = float(
-                    row["fallback_point"][metric]
-                )
+                fallback_point_loss = float(row["fallback_point"][metric])
                 proper_score = float(row["proper_score"])
-                fallback_proper_score = float(
-                    row["fallback_proper_score"]
-                )
+                fallback_proper_score = float(row["fallback_proper_score"])
                 accepted = bool(row["accepted"])
                 records.append(
                     {
                         "candidate_id": row["candidate_id"],
-                        "unit_id": (
-                            f"{row['case_id']}/{row['horizon']}"
-                        ),
+                        "unit_id": (f"{row['case_id']}/{row['horizon']}"),
                         "group_id": row["case_id"],
                         "horizon": row["horizon"],
                         "accepted": accepted,
                         "point_loss": point_loss,
                         "fallback_point_loss": fallback_point_loss,
                         "deployed_point_loss": (
-                            point_loss
-                            if accepted
-                            else fallback_point_loss
+                            point_loss if accepted else fallback_point_loss
                         ),
                         "proper_score": proper_score,
-                        "fallback_proper_score": (
-                            fallback_proper_score
-                        ),
+                        "fallback_proper_score": (fallback_proper_score),
                         "deployed_proper_score": (
-                            proper_score
-                            if accepted
-                            else fallback_proper_score
+                            proper_score if accepted else fallback_proper_score
                         ),
                         "interval_covered": None,
                         "interval_width": None,
@@ -1990,19 +1811,13 @@ def score_tournament(
             payload: dict[str, object] = {
                 "contract": DISCREPANCY_TOURNAMENT_INPUT_CONTRACT,
                 "schema_version": 1,
-                "protocol_id": (
-                    f"{protocol_id}-{tournament_name}"
-                ),
-                "statistical_unit": (
-                    "physical execution: one released PhysTwin case"
-                ),
+                "protocol_id": (f"{protocol_id}-{tournament_name}"),
+                "statistical_unit": ("physical execution: one released PhysTwin case"),
                 "split": "source-only",
-                "reference_candidate": protocol[
-                    "selection"
-                ]["reference_candidate"],
-                "physical_fallback_candidate": protocol[
-                    "selection"
-                ]["physical_fallback_candidate"],
+                "reference_candidate": protocol["selection"]["reference_candidate"],
+                "physical_fallback_candidate": protocol["selection"][
+                    "physical_fallback_candidate"
+                ],
                 "information_boundary": {
                     "candidate_predictions_sealed_before_scoring": True,
                     "candidate_generation_used_scored_targets": False,
@@ -2019,37 +1834,25 @@ def score_tournament(
                             "guard": protocol["guard"],
                         }
                     ),
-                    "scored_unit_roster_sha256": (
-                        _canonical_sha256(unit_roster)
-                    ),
+                    "scored_unit_roster_sha256": (_canonical_sha256(unit_roster)),
                     "physical_fallback_artifact_sha256": (
                         prediction_manifests[
-                            protocol["selection"][
-                                "physical_fallback_candidate"
-                            ]
+                            protocol["selection"]["physical_fallback_candidate"]
                         ]["prediction_artifact_sha256"]
                     ),
-                    "prediction_barrier_sha256": (
-                        prediction_barrier_sha256
-                    ),
+                    "prediction_barrier_sha256": (prediction_barrier_sha256),
                     "point_loss_id": _metric_point_loss_id(
                         protocol,
                         tournament_name,
                     ),
-                    "proper_score_id": scoring[
-                        "proper_score_id"
-                    ],
-                    "interval_semantics_id": scoring[
-                        "interval_semantics_id"
-                    ],
+                    "proper_score_id": scoring["proper_score_id"],
+                    "interval_semantics_id": scoring["interval_semantics_id"],
                 },
                 "selection": _selection_payload(protocol),
                 "candidates": candidates_payload,
                 "records": records,
             }
-            report = analyze_discrepancy_candidate_tournament(
-                payload
-            )
+            report = analyze_discrepancy_candidate_tournament(payload)
             reports[tournament_name] = report
             _write_json(
                 temporary / f"tournament-{tournament_name}-input.json",
@@ -2061,37 +1864,26 @@ def score_tournament(
             )
         arbitration = _metric_arbitration(
             reports,
-            reference_candidate=str(
-                protocol["selection"]["reference_candidate"]
-            ),
+            reference_candidate=str(protocol["selection"]["reference_candidate"]),
         )
         arbitration.update(
             {
                 "protocol_id": protocol_id,
-                "prediction_barrier_sha256": (
-                    prediction_barrier_sha256
-                ),
-                "admission_manifest_id": admission[
-                    "admission_manifest_id"
-                ],
+                "prediction_barrier_sha256": (prediction_barrier_sha256),
+                "admission_manifest_id": admission["admission_manifest_id"],
                 "metric_report_ids": {
-                    name: report["report_id"]
-                    for name, report in reports.items()
+                    name: report["report_id"] for name, report in reports.items()
                 },
                 "claim_boundary": protocol["claim_boundary"],
             }
         )
-        arbitration["report_id"] = _canonical_sha256(
-            arbitration
-        )
+        arbitration["report_id"] = _canonical_sha256(arbitration)
         _write_json(
             temporary / "metric_arbitration_report.json",
             arbitration,
         )
     return json.loads(
-        (
-            output_dir / "metric_arbitration_report.json"
-        ).read_text(encoding="utf-8")
+        (output_dir / "metric_arbitration_report.json").read_text(encoding="utf-8")
     )
 
 

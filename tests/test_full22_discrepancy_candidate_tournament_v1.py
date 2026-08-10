@@ -16,13 +16,9 @@ SCRIPT_PATH = (
     / "run_full22_discrepancy_candidate_tournament_v1.py"
 )
 PROTOCOL_PATH = (
-    REPOSITORY_ROOT
-    / "protocols"
-    / "full22_discrepancy_candidate_tournament_v1.json"
+    REPOSITORY_ROOT / "protocols" / "full22_discrepancy_candidate_tournament_v1.json"
 )
-PROTOCOL_SHA256 = (
-    "22746172fb6d207e80a2ebfeb2a003332317f3895317ff12988275acc75e16bd"
-)
+PROTOCOL_SHA256 = "22746172fb6d207e80a2ebfeb2a003332317f3895317ff12988275acc75e16bd"
 
 
 def _module() -> ModuleType:
@@ -59,8 +55,7 @@ def test_protocol_is_frozen_source_only_and_complete() -> None:
         "graph_dynamic_kernel_rank4_v1",
     )
     revisions = {
-        row["candidate_id"]: row["source_revision"]
-        for row in protocol["candidates"]
+        row["candidate_id"]: row["source_revision"] for row in protocol["candidates"]
     }
     assert revisions["structured_kernel_rank4_v1"] == (
         "265cfe8488fdb40f2c1c72c67385e0e88bab2595"
@@ -68,9 +63,7 @@ def test_protocol_is_frozen_source_only_and_complete() -> None:
     assert revisions["graph_dynamic_kernel_rank4_v1"] == (
         "f49eecdbbbe31fc36b1a64ab6284a9e69d8851b3"
     )
-    assert protocol["selection"]["runtime_tie_break"].startswith(
-        "disabled"
-    )
+    assert protocol["selection"]["runtime_tie_break"].startswith("disabled")
 
 
 def test_geometry_kernel_basis_is_deterministic_and_orthonormal() -> None:
