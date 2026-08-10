@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import numpy as np
+import pytest
 
 from bayesian_phystwin.deform360_joint_sparse_endpoint_v5 import (
     Deform360JointSparseEndpointConfigV5,
@@ -65,6 +66,11 @@ def _trajectories() -> dict[str, np.ndarray]:
     values = {method_id: trajectory.copy() for method_id in RAW_METHOD_IDS}
     values[VT2_VISUOTACTILE_UNGUARDED][:, :, 0] += 0.01
     return values
+
+
+def test_endpoint_report_rejects_non_mapping_payload() -> None:
+    with pytest.raises(ValueError, match="endpoint report must be a mapping"):
+        validate_deform360_joint_sparse_endpoint_report_v5([])  # type: ignore[arg-type]
 
 
 def test_reserved_view_selection_uses_identities_only() -> None:

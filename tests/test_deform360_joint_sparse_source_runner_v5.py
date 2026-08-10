@@ -42,6 +42,16 @@ def _lock():
     return load_deform360_joint_sparse_source_execution_lock_v5(LOCK)
 
 
+def test_source_plan_rejects_non_mapping_payload() -> None:
+    with pytest.raises(
+        ValueError, match="source prediction plan must be a JSON object"
+    ):
+        runner.validate_deform360_joint_sparse_source_prediction_plan_v5(
+            [],
+            lock=_lock(),
+        )
+
+
 def _objects():
     lock = _lock()
     values = []
