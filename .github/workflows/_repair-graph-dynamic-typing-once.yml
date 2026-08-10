@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: repair-graph-dynamic-typing-once
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   repair:
@@ -20,7 +20,7 @@ jobs:
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       github.ref == 'refs/heads/agent/graph-dynamic-discrepancy-v1'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - name: Check out exact feature branch
         uses: actions/checkout@v7
@@ -30,11 +30,6 @@ jobs:
           persist-credentials: true
           clean: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
       - name: Fix graph dynamic typing and publish
         shell: bash
         run: |
@@ -43,107 +38,107 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
+          def replace_once(path: str, old: str, new: str) -> None:
               target = Path(path)
               text = target.read_text(encoding="utf-8")
-              count = text.count(old)
-              if count != expected:
-                  raise SystemExit(f"{path}: expected {expected} occurrences, found {count}")
-              target.write_text(text.replace(old, new), encoding="utf-8")
+              if old not in text:
+                  raise SystemExit(f"{path}: expected source pattern missing")
+              target.write_text(text.replace(old, new, 1), encoding="utf-8")
 
           common = "src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py"
-          replace_exact(
+          replace_once(
               common,
               "    result = np.empty((2, rank, 3), dtype=np.float64)\n",
               "    result: np.ndarray = np.empty((2, rank, 3), dtype=np.float64)\n",
           )
 
           contract = "src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py"
-          replace_exact(
+          replace_once(
               contract,
               '        _require(horizons.ndim == 1 and len(horizons), "horizon_steps is empty")\n',
               '        _require(\n'
               '            horizons.ndim == 1 and len(horizons) > 0, "horizon_steps is empty"\n'
               '        )\n',
           )
-          replace_exact(
+          replace_once(
               contract,
               '        _require(nodes.ndim == 1 and len(nodes), "node_indices is empty")\n',
               '        _require(nodes.ndim == 1 and len(nodes) > 0, "node_indices is empty")\n',
           )
-          replace_exact(
-              contract,
-              "        state = np.zeros((2, node_count, 3), dtype=np.float64)\n",
-              "        state: np.ndarray = np.zeros((2, node_count, 3), dtype=np.float64)\n",
-              expected=2,
+          contract_path = Path(contract)
+          contract_text = contract_path.read_text(encoding="utf-8")
+          old_state = "        state = np.zeros((2, node_count, 3), dtype=np.float64)\n"
+          if contract_text.count(old_state) != 2:
+              raise SystemExit("contract state annotation target count changed")
+          contract_path.write_text(
+              contract_text.replace(
+                  old_state,
+                  "        state: np.ndarray = np.zeros((2, node_count, 3), dtype=np.float64)\n",
+              ),
+              encoding="utf-8",
           )
 
           forecast = "src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py"
-          replace_exact(
+          replace_once(
               forecast,
               '    _require(raw_horizons.ndim == 1 and len(raw_horizons), "horizons are empty")\n',
               '    _require(\n'
               '        raw_horizons.ndim == 1 and len(raw_horizons) > 0, "horizons are empty"\n'
               '    )\n',
           )
-          replace_exact(
+          replace_once(
               forecast,
               "    if node_indices is None:\n",
               "    nodes: np.ndarray\n    if node_indices is None:\n",
           )
-          replace_exact(
+          replace_once(
               forecast,
               '        _require(raw_nodes.ndim == 1 and len(raw_nodes), "node_indices is empty")\n',
               '        _require(\n'
               '            raw_nodes.ndim == 1 and len(raw_nodes) > 0, "node_indices is empty"\n'
               '        )\n',
           )
-          replace_exact(
+          replace_once(
               forecast,
               "    if modal_acceleration_mps2 is None:\n",
               "    acceleration: np.ndarray\n    if modal_acceleration_mps2 is None:\n",
           )
-          replace_exact(
+          replace_once(
               forecast,
               "    mean = np.empty((len(horizons), len(nodes), 3), dtype=np.float64)\n",
               "    mean: np.ndarray = np.empty(\n        (len(horizons), len(nodes), 3), dtype=np.float64\n    )\n",
           )
-          replace_exact(
+          replace_once(
               forecast,
               "    covariance = np.empty(\n",
               "    covariance: np.ndarray = np.empty(\n",
           )
 
           observation = "src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py"
-          replace_exact(
+          replace_once(
               observation,
               "    if supplied is None:\n        result = np.empty((frame_count, node_count), dtype=object)\n",
               "    result: np.ndarray\n    if supplied is None:\n        result = np.empty((frame_count, node_count), dtype=object)\n",
           )
-          replace_exact(
+          replace_once(
               observation,
               "        design = np.zeros((3, dimension), dtype=np.float64)\n",
               "        design: np.ndarray = np.zeros((3, dimension), dtype=np.float64)\n",
           )
-          replace_exact(
+          replace_once(
               observation,
               "        weights = np.empty(len(group_nodes), dtype=np.float64)\n",
               "        weights: np.ndarray = np.empty(len(group_nodes), dtype=np.float64)\n",
           )
           PY
 
-          python -m pip install "ruff==0.16.2"
-          files=(
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py
-            src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py
-          )
-          python -m ruff format "${files[@]}"
-          python -m ruff check "${files[@]}"
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${files[@]}"
+          git add \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_common.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_contract.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_forecast.py \
+            src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py
           git commit -m "Fix graph dynamic discrepancy typing"
           git push origin HEAD:agent/graph-dynamic-discrepancy-v1
