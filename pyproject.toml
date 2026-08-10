@@ -76,6 +76,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 bayesian_phystwin = [
     "py.typed",
+    "contract_data/evidence_decision_v1/*.json",
     "contract_data/observation_belief_v1/*.json",
     "contract_data/observation_belief_v1/vectors/*.json",
 ]
