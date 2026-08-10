@@ -23,15 +23,20 @@ from bayesian_phystwin.pokeflex_missing5_execution_v5 import (
 from bayesian_phystwin.pokeflex_missing5_execution_v6 import (
     IMPLEMENTATION_FILE_PATHS,
     PREDICTION_SEAL_KIND,
+    RESULT_KIND,
     apply_causal_scale_sequence,
     build_execution_protocol,
+    build_prediction_barrier,
     evaluate_result,
     execution_protocol_sha256,
     load_execution_protocol,
     prediction_seal_sha256,
+    result_sha256,
     score_one_prediction,
     validate_execution_protocol,
+    validate_prediction_barrier,
     validate_prediction_seal,
+    validate_result,
     verify_implementation_files,
 )
 
@@ -433,6 +438,133 @@ def test_result_gate_rewards_joint_transfer_and_rejects_object_regression() -> N
     assert passing["prospective_v6_vs_v5_gate_passed"]
     assert failing["prospective_v6_vs_v5_regression_count"] == 1
     assert not failing["prospective_v6_vs_v5_gate_passed"]
+
+
+def test_barrier_and_result_validate_end_to_end(tmp_path: Path) -> None:
+    execution, v5_execution, completion, parent, model, source_result = (
+        _registered_inputs()
+    )
+    helpers = _v5_test_helpers()
+    source_manifest = helpers._source_manifest(parent)
+    parent_archives = []
+    parent_seal_paths = []
+    v6_seal_paths = []
+    for take_id in TARGET_TAKE_IDS:
+        parent_archive, _ = helpers._prediction_seal(
+            tmp_path / "v5",
+            take_id,
+            v5_execution,
+            completion,
+            parent,
+            source_manifest,
+        )
+        parent_archives.append(parent_archive)
+        parent_seal_paths.append(parent_archive.seal_path)
+        v6_seal_paths.append(
+            _v6_prediction_seal(
+                tmp_path / "v6",
+                parent_archive,
+                model,
+                execution,
+                source_manifest,
+            )
+        )
+
+    barrier = build_prediction_barrier(
+        v6_seal_paths,
+        parent_seal_paths,
+        execution,
+        v5_execution,
+        completion,
+        parent,
+        source_manifest,
+        model,
+        source_result,
+    )
+    barrier_validation = validate_prediction_barrier(
+        barrier,
+        execution,
+        source_manifest,
+    )
+    assert barrier_validation["passed"]
+
+    objects = []
+    for seal_path, parent_archive in zip(v6_seal_paths, parent_archives, strict=True):
+        archive = validate_prediction_seal(
+            seal_path,
+            parent_archive.seal_path,
+            execution,
+            v5_execution,
+            completion,
+            parent,
+            source_manifest,
+            model,
+            source_result,
+        )
+        target_meshes: list[dict[str, Any]] = []
+
+        def mesh_loader(
+            frame: int,
+            *,
+            bound_archive: Any = archive,
+            records: list[dict[str, Any]] = target_meshes,
+        ) -> tuple[np.ndarray, np.ndarray]:
+            index = int(np.flatnonzero(bound_archive.target_frames == frame)[0])
+            member = f"{bound_archive.take_id}/meshes/mesh-f{frame:05d}.obj"
+            records.append(
+                {
+                    "target_frame": frame,
+                    "archive_member": member,
+                    "sha256": f"{frame:064x}",
+                    "byte_count": 100 + frame,
+                }
+            )
+            return (
+                bound_archive.parent_v5.baseline_vertices_m[index]
+                + np.asarray([0.005, 0.0, 0.0]),
+                bound_archive.parent_v5.faces,
+            )
+
+        row = score_one_prediction(
+            archive,
+            [6, 7],
+            mesh_loader,
+            execution,
+            v5_execution,
+        )
+        row["target_meshes"] = target_meshes
+        objects.append(row)
+
+    public13 = load_archived_public13_result(PUBLIC13_PATH, parent)
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": RESULT_KIND,
+        "execution_protocol_sha256": execution["execution_protocol_sha256"],
+        "source_manifest_sha256": source_manifest["source_manifest_sha256"],
+        "prediction_barrier_sha256": barrier["prediction_barrier_sha256"],
+        "prediction_barrier_passed": True,
+        "target_mesh_access_before_barrier": False,
+        "target_meshes_opened_after_complete_barrier": True,
+        "future_observation_used_for_prediction": False,
+        "parameter_selection_from_this_cohort": False,
+        "replacement_used": False,
+        "target_adaptation_used": False,
+        "objects": objects,
+        "aggregate": evaluate_result(objects, public13, execution),
+        "held_v8_accessed": False,
+        "result_sha256": "",
+    }
+    result["result_sha256"] = result_sha256(result)
+
+    validation = validate_result(
+        result,
+        public13,
+        execution,
+        barrier,
+        source_manifest,
+    )
+    assert validation["passed"]
+    assert validation["result_sha256"] == result["result_sha256"]
 
 
 def test_execution_resigned_tampering_is_rejected() -> None:
