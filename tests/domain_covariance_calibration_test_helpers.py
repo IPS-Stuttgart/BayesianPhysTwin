@@ -8,6 +8,7 @@ from bayesian_phystwin.domain_covariance_calibration import (
 )
 
 PARTITION_ID = "d" * 64
+PREDICTOR_ID = "c" * 64
 
 
 def _inputs() -> dict[str, object]:
@@ -88,6 +89,8 @@ def _inputs() -> dict[str, object]:
             residuals.append(values)
             covariances.append(np.tile(np.eye(3), (len(values), 1, 1)))
     return {
+        "predictor_id": PREDICTOR_ID,
+        "predictor_frozen_before_calibration_outcomes": True,
         "calibration_partition_id": PARTITION_ID,
         "statistical_unit": "independent-physical-trial",
         "residual_definition": "prediction-minus-observation-m",
@@ -113,6 +116,10 @@ def _certificate_arguments(
     certificate: DomainCovarianceCalibrationCertificateV1,
 ) -> dict[str, object]:
     return {
+        "predictor_id": certificate.predictor_id,
+        "predictor_frozen_before_calibration_outcomes": (
+            certificate.predictor_frozen_before_calibration_outcomes
+        ),
         "calibration_partition_id": certificate.calibration_partition_id,
         "statistical_unit": certificate.statistical_unit,
         "residual_definition": certificate.residual_definition,
@@ -148,6 +155,10 @@ def _guard_for_folds(
         tuple(item.domain_id for item in records) if domain_ids is None else domain_ids
     )
     metadata = {
+        "predictor_id": certificate.predictor_id,
+        "predictor_frozen_before_calibration_outcomes": (
+            certificate.predictor_frozen_before_calibration_outcomes
+        ),
         "covariance_calibration_data_id": certificate.calibration_data_id,
         "covariance_calibration_schema": "bayesian_phystwin.domain_covariance_calibration",
         "covariance_calibration_version": 1,
