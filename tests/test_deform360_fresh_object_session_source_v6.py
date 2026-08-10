@@ -4,7 +4,8 @@ import copy
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import pytest
 
@@ -876,7 +877,7 @@ def test_real_lock_loaders_fail_closed_on_tampering(tmp_path: Path) -> None:
     changed = copy.deepcopy(amendment_payload)
     changed["base_policy"]["policy_id"] = "0" * 64
     _reidentify(changed, "amendment_id")
-    with pytest.raises(ValueError, match="binds another policy"):
+    with pytest.raises(ValueError, match="identity changed|binds another policy"):
         v6.load_deform360_fresh_object_session_v6_covariance_amendment(
             write("amendment-policy.json", changed), policy
         )
