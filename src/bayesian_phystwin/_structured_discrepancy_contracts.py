@@ -61,9 +61,7 @@ class StructuredDiscrepancyConfigV1:
 
     def __post_init__(self) -> None:
         if not isinstance(self.endpoint_config, ModelAveragedEndpointConfigV1):
-            raise TypeError(
-                "endpoint_config must be a ModelAveragedEndpointConfigV1"
-            )
+            raise TypeError("endpoint_config must be a ModelAveragedEndpointConfigV1")
         tolerance = _require_real_scalar(
             self.basis_orthonormal_atol,
             name="basis_orthonormal_atol",
@@ -152,9 +150,7 @@ def _validate_component_state(
     component_count = len(coefficient_mean)
     expected_covariance_shape = (component_count, rank, rank)
     if coefficient_covariance.shape != expected_covariance_shape:
-        raise ValueError(
-            "component_coefficient_covariance_m2 shape changed"
-        )
+        raise ValueError("component_coefficient_covariance_m2 shape changed")
     if local_variance.shape != (component_count, track_count):
         raise ValueError("component_local_variance_m2 shape changed")
     if weights.shape != (component_count,):
@@ -298,15 +294,11 @@ class StructuredDiscrepancyPosteriorV1:
         if not np.allclose(weights, expected_weights, atol=1e-12, rtol=1e-12):
             raise ValueError("component_weights disagree with scores and prior")
         if probability.shape != (component_count, track_count):
-            raise ValueError(
-                "component_final_nominal_probability shape changed"
-            )
+            raise ValueError("component_final_nominal_probability shape changed")
         if not np.all(np.isfinite(probability)) or np.any(
             (probability < 0.0) | (probability > 1.0)
         ):
-            raise ValueError(
-                "component_final_nominal_probability must lie in [0, 1]"
-            )
+            raise ValueError("component_final_nominal_probability must lie in [0, 1]")
         if not np.issubdtype(raw_count.dtype, np.integer):
             raise ValueError("update_count must contain integers")
         update_count = np.asarray(raw_count, dtype=np.int64)
@@ -385,9 +377,7 @@ class StructuredDiscrepancyPredictionV1:
                 raise TypeError(f"{name} must be an integer")
             integer = int(value)
             if integer != value or integer < minimum:
-                raise ValueError(
-                    f"{name} must be an integer of at least {minimum}"
-                )
+                raise ValueError(f"{name} must be an integer of at least {minimum}")
             object.__setattr__(self, name, integer)
         (
             basis,
