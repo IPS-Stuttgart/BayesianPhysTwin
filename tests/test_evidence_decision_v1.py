@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import bayesian_phystwin.evidence_decision_v1 as evidence_decision
 from bayesian_phystwin.evidence_decision_v1 import (
     EVIDENCE_DECISION_SCHEMA,
     EVIDENCE_DECISION_SCHEMA_VERSION,
@@ -204,6 +205,47 @@ def test_builder_fails_closed_for_unbound_or_nonconfirmatory_evidence(
         )
 
 
+def test_internal_json_contract_helpers_fail_closed() -> None:
+    with pytest.raises(ValueError, match="missing"):
+        evidence_decision._require_exact_fields(
+            {"kept": True},
+            expected=frozenset({"kept", "required"}),
+            name="payload",
+        )
+    with pytest.raises(ValueError, match="JSON object"):
+        evidence_decision._require_mapping([], name="payload")
+    with pytest.raises(ValueError, match="literal string keys"):
+        evidence_decision._require_mapping({1: "value"}, name="payload")
+    with pytest.raises(ValueError, match="JSON array"):
+        evidence_decision._require_sequence("not-an-array", name="payload")
+    with pytest.raises(ValueError, match="canonical nonempty text"):
+        evidence_decision._require_text(" padded ", name="payload")
+    with pytest.raises(ValueError, match="lowercase SHA-256"):
+        evidence_decision._require_sha256("A" * 64, name="payload")
+    with pytest.raises(ValueError, match="integer"):
+        evidence_decision._require_integer(True, name="payload")
+    with pytest.raises(ValueError, match="boolean"):
+        evidence_decision._require_boolean(1, name="payload")
+    with pytest.raises(ValueError, match="finite number"):
+        evidence_decision._require_finite_number(True, name="payload")
+    with pytest.raises(ValueError, match="ISO-8601 UTC"):
+        evidence_decision._require_created_utc("not-a-timestamp")
+    with pytest.raises(ValueError, match="ISO-8601 UTC"):
+        evidence_decision._require_created_utc("2026-08-10T12:00:00")
+
+
+def test_repository_mapping_rejects_unsupported_role() -> None:
+    with pytest.raises(ValueError, match="unsupported.*repository role"):
+        evidence_decision._repository_from_mapping(
+            {
+                "repository": "IPS-Stuttgart/BayesianPhysTwin",
+                "revision": "d" * 40,
+                "dirty": False,
+                "role": "unknown",
+            }
+        )
+
+
 def test_loader_rejects_unknown_fields_duplicate_keys_and_digest_drift(
     tmp_path: Path,
 ) -> None:
@@ -238,6 +280,22 @@ def test_loader_rejects_unknown_fields_duplicate_keys_and_digest_drift(
         load_evidence_decision(path)
 
 
+def test_loader_rejects_schema_version_and_status_drift(tmp_path: Path) -> None:
+    decision = _decision()
+    path = tmp_path / "decision.json"
+
+    for field, value, message in (
+        ("schema_name", "other.schema", "unsupported evidence-decision schema"),
+        ("schema_version", 2, "unsupported evidence-decision schema version"),
+        ("status", "unknown", "unsupported evidence decision status"),
+    ):
+        payload = decision.as_dict()
+        payload[field] = value
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(ValueError, match=message):
+            load_evidence_decision(path)
+
+
 def test_decision_fails_closed_for_authorization_and_provenance() -> None:
     with pytest.raises(ValueError, match="passing decision"):
         _decision(status="fail")
@@ -258,6 +316,43 @@ def test_decision_fails_closed_for_authorization_and_provenance() -> None:
             claim_authorized=False,
             limitations=(),
         )
+
+
+def test_decision_rejects_malformed_constructor_inputs() -> None:
+    with pytest.raises(ValueError, match="unsupported evidence decision status"):
+        _decision(status="unknown", claim_authorized=False)
+    with pytest.raises(ValueError, match="unsupported run classification"):
+        _decision(run_classification="unknown", claim_authorized=False)
+    with pytest.raises(ValueError, match="claim_authorized must be boolean"):
+        _decision(claim_authorized=1)
+    with pytest.raises(ValueError, match="evidence_level must be an integer"):
+        _decision(evidence_level=True, claim_authorized=False)
+    with pytest.raises(ValueError, match="RepositoryState"):
+        _decision(repositories=(object(),), claim_authorized=False)
+    with pytest.raises(ValueError, match="exactly one primary"):
+        _decision(
+            repositories=(_decision().repositories[1],),
+            claim_authorized=False,
+        )
+
+    primary = _decision().repositories[0]
+    duplicate_name = RepositoryState(
+        repository=primary.repository,
+        revision="e" * 40,
+        dirty=False,
+        role="observation",
+    )
+    with pytest.raises(ValueError, match="repository names must be unique"):
+        _decision(
+            repositories=(primary, duplicate_name),
+            claim_authorized=False,
+        )
+    with pytest.raises(ValueError, match="limitations must be a sequence"):
+        _decision(limitations="not-a-sequence", claim_authorized=False)
+    with pytest.raises(ValueError, match="limitations must be unique"):
+        _decision(limitations=("same", "same"), claim_authorized=False)
+    with pytest.raises(ValueError, match="metric must be a DecisionMetricV1"):
+        _decision(metric=object(), claim_authorized=False)
 
 
 def test_metric_rejects_nonfinite_values_and_schema_drift() -> None:
