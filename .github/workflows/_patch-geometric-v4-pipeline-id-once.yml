@@ -1,8 +1,9 @@
 name: Patch geometric v4 pipeline ID once
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - agent/materialize-deform360-joint-sparse-geometric-v4
     paths:
       - .github/workflows/_patch-geometric-v4-pipeline-id-once.yml
 
@@ -16,15 +17,15 @@ concurrency:
 jobs:
   patch:
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'agent/materialize-deform360-joint-sparse-geometric-v4'
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out current feature branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: agent/materialize-deform360-joint-sparse-geometric-v4
           fetch-depth: 0
           persist-credentials: true
           clean: true
@@ -36,7 +37,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Patch, validate, and publish
+      - name: Patch, validate, remove helpers, and publish
         shell: bash
         run: |
           set -euo pipefail
@@ -48,17 +49,18 @@ jobs:
           path = Path("tests/test_deform360_joint_sparse_geometric_v4_pipeline.py")
           text = path.read_text(encoding="utf-8")
           old = '                "case_id": _sha(f"case-{index}"),\n'
-          new = '''                "case_id": content_id(
-                    {
-                        "schema": (
-                            "bayesian-phystwin."
-                            "deform360-prob4d-metric-case-id-v1"
-                        ),
-                        "object_id": object_id,
-                        "episode_id": index,
-                    }
-                ),
-'''
+          new = (
+              '                "case_id": content_id(\n'
+              '                    {\n'
+              '                        "schema": (\n'
+              '                            "bayesian-phystwin."\n'
+              '                            "deform360-prob4d-metric-case-id-v1"\n'
+              '                        ),\n'
+              '                        "object_id": object_id,\n'
+              '                        "episode_id": index,\n'
+              '                    }\n'
+              '                ),\n'
+          )
           count = text.count(old)
           if count == 1:
               path.write_text(text.replace(old, new), encoding="utf-8")
@@ -66,6 +68,9 @@ jobs:
               raise SystemExit(f"unexpected legacy case-ID count: {count}")
           PY
 
+          git rm -f -- \
+            .github/workflows/_patch-geometric-v4-pipeline-id-once.yml \
+            .github/workflows/_patch-geometric-v4-pipeline-case-id-once.yml
           python -m pip install -e ".[dev]"
           files=(
             src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py
@@ -94,14 +99,14 @@ jobs:
             tests/test_deform360_joint_sparse_observability_v4.py \
             tests/test_deform360_joint_sparse_observability_v4_cli.py \
             tests/test_pull_request_workflow_integrity.py
+          python -m compileall -q \
+            src/bayesian_phystwin/deform360_joint_sparse_geometric_*.py \
+            tests/test_deform360_joint_sparse_geometric_v4*.py
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add "${files[@]}"
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "Adapt restored geometric v4 pipeline fixture"
+          git commit -m "Finalize geometric v4 pipeline fixture"
           git pull --rebase origin "${branch}"
           git push origin "HEAD:${branch}"
