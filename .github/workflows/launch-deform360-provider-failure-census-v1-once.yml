@@ -1,0 +1,554 @@
+name: Launch reviewed Deform360 provider failure census once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-provider-failure-census-v1-once.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_source_support_failure_evidence_v1.md"
+      - "scripts/science/materialize_deform360_source_support_failure_evidence_v1.py"
+      - "src/bayesian_phystwin/deform360_source_support_failure_evidence_v1.py"
+      - "tests/test_deform360_source_support_failure_evidence_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/launch-deform360-provider-failure-census-v1-once.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: launch-deform360-provider-failure-census-v1-once
+  cancel-in-progress: false
+
+env:
+  AUTHORIZED_RUNNER_NAME: workstation2
+  DEFORM360_STORAGE_ROOT: /mnt/lexar4tb/datasets/deform360
+  DEFORM360_OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  SOURCE_WORKFLOW_RUN_ID: "31297018948"
+  SOURCE_WORKFLOW_RUN_ATTEMPT: "1"
+  SOURCE_REVISION: ded8910becbbffe958dfd18c84ad91069e7087a4
+  SOURCE_ARTIFACT_ID: "9033414269"
+  SOURCE_ARTIFACT_NAME: deform360-prob4d-source-gate-31297018948-1
+  SOURCE_ARTIFACT_SHA256: 7247a2a260509c4c226e7ca437aff09d090abf6d2ca08f471a2143ea7d4bf7de
+  SOURCE_METRIC_BATCH_RELATIVE_PATH: bayesian-phystwin/deform360-prob4d-source-gate-v1/146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89/ded8910becbbffe958dfd18c84ad91069e7087a4/metric-batch/metric-batch-result.json
+  SOURCE_METRIC_BATCH_SHA256: 679550aff53d3b615f63c66ee78318258893867511dd6c33100d1cf10c0f5be6
+  SOURCE_METRIC_BATCH_BYTES: "151278"
+  SOURCE_METRIC_BATCH_RESULT_ID: f246394c84fd643b6ec8961dbcb2101a73c34e46d5eaf43961f28429aeb197eb
+  SOURCE_PRODUCTION_RESULT_ID: 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89
+  SOURCE_ADMISSION_ID: 715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15
+  EXPECTED_BUILDER_POLICY_ID: 556635682e0c1366c1d82aa86b80cc1cfaeef7bdb59833d5e1962df24adba665
+  EXPECTED_EVIDENCE_SHA256: 9d14ae5645e35a41ff3b5c53e75641509d872815c1901aa9369f42583976bc2e
+  EXPECTED_EVIDENCE_CONTENT_SHA256: 17fd5f106e9796e57fee2f2eb9a04305cc073d383b8ce1c73a6429f99f663eaf
+  EXPECTED_MATERIALIZATION_RECEIPT_ID: eca77c31bb2041f14ebaf8fe6610568ecfdbe207e18eb1f66ab46ea96b73d467
+  EXPECTED_REPORT_ID: 59a342e4669c2e4c5f09093043cdd76e1d678499b460f5f4e6574fbe43d53f0e
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts:
+    name: Source-support census contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate the builder and one-shot boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          files=(
+            scripts/science/materialize_deform360_source_support_failure_evidence_v1.py
+            src/bayesian_phystwin/deform360_source_support_failure_evidence_v1.py
+            tests/test_deform360_source_support_failure_evidence_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_source_support_failure_evidence_v1.py \
+            src/bayesian_phystwin/deform360_source_support_failure_evidence_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_provider_failure_decomposition.py \
+            tests/test_deform360_provider_failure_census_v1.py \
+            tests/test_deform360_source_support_failure_evidence_v1.py \
+            tests/test_pull_request_workflow_integrity.py
+          bpt diagnostic run diagnose-provider-failures --help >/dev/null
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  execute:
+    name: Materialize and run equal-object census / workstation2
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    needs: contracts
+    runs-on: self-hosted
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      evidence_sha256: ${{ steps.publish.outputs.evidence_sha256 }}
+      evidence_content_sha256: ${{ steps.publish.outputs.evidence_content_sha256 }}
+      report_id: ${{ steps.publish.outputs.report_id }}
+      receipt_id: ${{ steps.publish.outputs.receipt_id }}
+      artifact_name: ${{ steps.publish.outputs.artifact_name }}
+      geometry_count: ${{ steps.publish.outputs.geometry_count }}
+      unresolved_count: ${{ steps.publish.outputs.unresolved_count }}
+    steps:
+      - name: Publish the closed-information execution beacon
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner_contract=self-hosted-only"
+          echo "authorized_runner_name=${AUTHORIZED_RUNNER_NAME}"
+          echo "source_workflow_run_id=${SOURCE_WORKFLOW_RUN_ID}"
+          echo "source_artifact_id=${SOURCE_ARTIFACT_ID}"
+          echo "source_metric_batch_result_id=${SOURCE_METRIC_BATCH_RESULT_ID}"
+          echo "raw_tree_traversal_allowed=false"
+          echo "source_only=true"
+          echo "confirmation_payloads_opened=false"
+          echo "adaptive_confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "future_frames_used=false"
+          echo "replacement_allowed=false"
+      - name: Check out exact reviewed main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the exact reviewed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e .
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Bind the sole runner and exact results-side source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          test "${{ github.workflow_ref }}" = \
+            "IPS-Stuttgart/BayesianPhysTwin/.github/workflows/launch-deform360-provider-failure-census-v1-once.yml@refs/heads/main"
+          storage="$(realpath -e -- "${DEFORM360_STORAGE_ROOT}")"
+          official="$(realpath -e -- "${DEFORM360_OFFICIAL_RAW_ROOT}")"
+          adaptive="$(realpath -e -- "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}")"
+          results="$(realpath -e -- "${storage}/results")"
+          test "${storage}" = "${DEFORM360_STORAGE_ROOT}"
+          test "${official}" = "${DEFORM360_OFFICIAL_RAW_ROOT}"
+          test "${adaptive}" = "${DEFORM360_ADAPTIVE_CONFIRMATION_RAW_ROOT}"
+          test "${results}" = "${storage}/results"
+          test -d "${official}"
+          test -d "${adaptive}"
+          test -d "${results}"
+
+          expected_source="${results}/${SOURCE_METRIC_BATCH_RELATIVE_PATH}"
+          source="$(realpath -e -- "${expected_source}")"
+          test "${source}" = "${expected_source}"
+          test -f "${source}"
+          test ! -L "${source}"
+          case "${source}" in
+            "${results}/"*) ;;
+            *) echo "metric batch escapes the results tree" >&2; exit 2 ;;
+          esac
+          case "${source}" in
+            "${official}"/*|"${adaptive}"/*)
+              echo "metric batch resolves below a raw-data root" >&2
+              exit 2
+              ;;
+          esac
+          test "$(sha256sum -- "${source}" | awk '{print $1}')" = \
+            "${SOURCE_METRIC_BATCH_SHA256}"
+          test "$(stat -c '%s' -- "${source}")" = "${SOURCE_METRIC_BATCH_BYTES}"
+
+          work="${RUNNER_TEMP}/deform360-provider-failure-census-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          compact="${work}/compact"
+          summary="${work}/materialization-summary.json"
+          test ! -e "${work}"
+          mkdir -p "${compact}"
+          {
+            echo "DEFORM360_RESULTS_ROOT=${results}"
+            echo "CENSUS_WORK_ROOT=${work}"
+            echo "CENSUS_COMPACT_ROOT=${compact}"
+            echo "MATERIALIZATION_SUMMARY=${summary}"
+          } >> "${GITHUB_ENV}"
+      - name: Materialize deterministic equal-object evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/materialize_deform360_source_support_failure_evidence_v1.py \
+            --results-root "${DEFORM360_RESULTS_ROOT}" \
+            --summary-output "${MATERIALIZATION_SUMMARY}" \
+            > "${CENSUS_WORK_ROOT}/materialization-stdout.json"
+          cmp -s \
+            "${MATERIALIZATION_SUMMARY}" \
+            "${CENSUS_WORK_ROOT}/materialization-stdout.json"
+          jq -e \
+            --arg policy "${EXPECTED_BUILDER_POLICY_ID}" \
+            --arg evidence_sha "${EXPECTED_EVIDENCE_SHA256}" \
+            --arg content_sha "${EXPECTED_EVIDENCE_CONTENT_SHA256}" \
+            --arg receipt_id "${EXPECTED_MATERIALIZATION_RECEIPT_ID}" '
+              .schema ==
+                "bayesian_phystwin.deform360_source_support_failure_evidence_materialization" and
+              .schema_version == 1 and
+              .builder_policy_id == $policy and
+              .evidence_sha256 == $evidence_sha and
+              .evidence_content_sha256 == $content_sha and
+              .materialization_receipt_id == $receipt_id and
+              .record_count == 10 and
+              .classified_rejection_count == 6 and
+              .unresolved_rejection_count == 4 and
+              .primary_category_counts["unsupported-provider-geometry"] == 6 and
+              .primary_category_counts["unresolved-rejection"] == 4
+            ' "${MATERIALIZATION_SUMMARY}" >/dev/null
+          evidence_relative="$(jq -r '.evidence_relative_path' "${MATERIALIZATION_SUMMARY}")"
+          evidence="${DEFORM360_RESULTS_ROOT}/${evidence_relative}"
+          evidence="$(realpath -e -- "${evidence}")"
+          test -f "${evidence}"
+          test ! -L "${evidence}"
+          test "$(sha256sum -- "${evidence}" | awk '{print $1}')" = \
+            "${EXPECTED_EVIDENCE_SHA256}"
+          evidence_bytes="$(stat -c '%s' -- "${evidence}")"
+
+          output_parent="${DEFORM360_RESULTS_ROOT}/bayesian-phystwin/deform360-provider-failure-census-v1/source-support-${EXPECTED_EVIDENCE_SHA256}"
+          mkdir -p "${output_parent}"
+          output="${output_parent}/run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${output}"
+          mkdir "${output}"
+          output="$(realpath -e -- "${output}")"
+          case "${output}" in
+            "${DEFORM360_RESULTS_ROOT}/"*) ;;
+            *) echo "census output escapes the results tree" >&2; exit 2 ;;
+          esac
+          {
+            echo "CENSUS_INPUT=${evidence}"
+            echo "CENSUS_INPUT_RELATIVE=${evidence_relative}"
+            echo "CENSUS_INPUT_SHA256=${EXPECTED_EVIDENCE_SHA256}"
+            echo "CENSUS_INPUT_BYTES=${evidence_bytes}"
+            echo "CENSUS_OUTPUT=${output}"
+          } >> "${GITHUB_ENV}"
+      - name: Validate the exact source-only evidence boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "${CENSUS_INPUT}" <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          from bayesian_phystwin.deform360_provider_failure_census_v1 import (
+              validate_deform360_provider_failure_census_payload,
+          )
+          from bayesian_phystwin.provider_failure_report_io import (
+              load_provider_failure_input,
+          )
+
+          payload, artifact = load_provider_failure_input(Path(sys.argv[1]))
+          report = validate_deform360_provider_failure_census_payload(payload)
+          expected = {
+              "record_count": 10,
+              "accepted_count": 0,
+              "classified_rejection_count": 6,
+              "unresolved_rejection_count": 4,
+              "report_id": os.environ["EXPECTED_REPORT_ID"],
+              "input_content_sha256": os.environ[
+                  "EXPECTED_EVIDENCE_CONTENT_SHA256"
+              ],
+          }
+          if {key: report[key] for key in expected} != expected:
+              raise SystemExit("equal-object report preview changed")
+          if report["primary_category_counts"]["unsupported-provider-geometry"] != 6:
+              raise SystemExit("unsupported-provider-geometry count changed")
+          if artifact["sha256"] != os.environ["CENSUS_INPUT_SHA256"]:
+              raise SystemExit("strict loader input digest changed")
+          if artifact["bytes"] != int(os.environ["CENSUS_INPUT_BYTES"]):
+              raise SystemExit("strict loader input size changed")
+          PY
+      - name: Run the authoritative equal-case decomposition
+        shell: bash
+        run: |
+          set -euo pipefail
+          bpt diagnostic run diagnose-provider-failures \
+            "${CENSUS_INPUT}" \
+            "${CENSUS_OUTPUT}/provider-failure-report.json" \
+            | tee "${CENSUS_OUTPUT}/command-summary.json"
+      - name: Build and verify the compact evidence bundle
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="${CENSUS_OUTPUT}/provider-failure-report.json"
+          jq -e \
+            --arg report_id "${EXPECTED_REPORT_ID}" \
+            --arg input_sha "${EXPECTED_EVIDENCE_SHA256}" \
+            --arg content_sha "${EXPECTED_EVIDENCE_CONTENT_SHA256}" '
+              .schema == "bayesian_phystwin.provider_failure_decomposition" and
+              .schema_version == 1 and
+              .report_id == $report_id and
+              .input_content_sha256 == $content_sha and
+              .input_artifact.sha256 == $input_sha and
+              .equal_case_weighting == true and
+              .record_count == 10 and
+              .accepted_count == 0 and
+              .classified_rejection_count == 6 and
+              .unresolved_rejection_count == 4 and
+              .primary_category_counts["unsupported-provider-geometry"] == 6 and
+              .primary_category_counts["unresolved-rejection"] == 4 and
+              .metadata.split == "source-only" and
+              .metadata.statistical_unit == "physical-object" and
+              .metadata.confirmation_payloads_opened == false and
+              .metadata.adaptive_confirmation_payloads_opened == false and
+              .metadata.target_outcomes_used == false and
+              .metadata.future_frames_used == false and
+              .metadata.replacement_allowed == false and
+              .metadata.source_workflow_run_id == 31297018948 and
+              .metadata.source_artifact_id == 9033414269 and
+              .metadata.source_metric_batch_result_id ==
+                "f246394c84fd643b6ec8961dbcb2101a73c34e46d5eaf43961f28429aeb197eb"
+            ' "${report}" >/dev/null
+
+          materialization_directory="$(jq -r '.materialization_directory_relative' "${MATERIALIZATION_SUMMARY}")"
+          cp -- "${CENSUS_INPUT}" "${CENSUS_OUTPUT}/provider-failure-evidence.json"
+          cp -- \
+            "${DEFORM360_RESULTS_ROOT}/${materialization_directory}/materialization-receipt.json" \
+            "${CENSUS_OUTPUT}/materialization-receipt.json"
+          cp -- "${MATERIALIZATION_SUMMARY}" "${CENSUS_OUTPUT}/materialization-summary.json"
+
+          jq -r '
+            [
+              "# Deform360 official-Hub source-support failure census",
+              "",
+              ("Frozen source run: `" +
+               (.metadata.source_workflow_run_id | tostring) + "`"),
+              ("Provider result: `" + .provider_id + "`"),
+              "Statistical unit: `physical-object`",
+              ("Independent objects: " + (.record_count | tostring)),
+              ("Accepted: " + (.accepted_count | tostring)),
+              ("Unsupported-provider-geometry: " +
+               (.primary_category_counts["unsupported-provider-geometry"] |
+                tostring)),
+              ("Unresolved global rejections: " +
+               (.unresolved_rejection_count | tostring)),
+              "",
+              "## Unsupported objects",
+              "",
+              (.records[] |
+               select(.primary_category == "unsupported-provider-geometry") |
+               "- `" + .case_id + "`: " +
+               (.metrics.support_negative_stream_count | tostring) +
+               " retained unsupported stream(s)"),
+              "",
+              "## Complete-support objects retained as unresolved",
+              "",
+              (.records[] |
+               select(.primary_category == "unresolved-rejection") |
+               "- `" + .case_id + "`"),
+              "",
+              "No object was relabelled accepted: the frozen method terminated " +
+              "before object-level downstream admission. This result does not " +
+              "authorize confirmation access or repair the terminal provider."
+            ] | .[]
+          ' "${report}" > "${CENSUS_OUTPUT}/summary.md"
+
+          python - "${report}" "${CENSUS_OUTPUT}/execution-receipt.json" <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          receipt = {
+              "schema": (
+                  "bayesian_phystwin.deform360_source_support_failure_census_run"
+              ),
+              "schema_version": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "revision": os.environ["GITHUB_SHA"],
+              "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "workflow_run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "runner_name": os.environ["RUNNER_NAME"],
+              "source_workflow_run_id": int(
+                  os.environ["SOURCE_WORKFLOW_RUN_ID"]
+              ),
+              "source_workflow_run_attempt": int(
+                  os.environ["SOURCE_WORKFLOW_RUN_ATTEMPT"]
+              ),
+              "source_revision": os.environ["SOURCE_REVISION"],
+              "source_artifact_id": int(os.environ["SOURCE_ARTIFACT_ID"]),
+              "source_artifact_name": os.environ["SOURCE_ARTIFACT_NAME"],
+              "source_artifact_sha256": os.environ["SOURCE_ARTIFACT_SHA256"],
+              "source_metric_batch_result_id": os.environ[
+                  "SOURCE_METRIC_BATCH_RESULT_ID"
+              ],
+              "source_metric_batch_sha256": os.environ[
+                  "SOURCE_METRIC_BATCH_SHA256"
+              ],
+              "evidence_relative_path": os.environ["CENSUS_INPUT_RELATIVE"],
+              "evidence_sha256": os.environ["CENSUS_INPUT_SHA256"],
+              "evidence_bytes": int(os.environ["CENSUS_INPUT_BYTES"]),
+              "evidence_content_sha256": report["input_content_sha256"],
+              "report_id": report["report_id"],
+              "status_sha256": report["status_sha256"],
+              "record_count": report["record_count"],
+              "accepted_count": report["accepted_count"],
+              "classified_rejection_count": report[
+                  "classified_rejection_count"
+              ],
+              "unresolved_rejection_count": report[
+                  "unresolved_rejection_count"
+              ],
+              "primary_category_counts": report["primary_category_counts"],
+              "information_boundary": {
+                  "source_only": True,
+                  "raw_tree_traversal_allowed": False,
+                  "confirmation_payloads_opened": False,
+                  "adaptive_confirmation_payloads_opened": False,
+                  "target_outcomes_used": False,
+                  "future_frames_used": False,
+                  "replacement_allowed": False,
+              },
+          }
+          canonical = json.dumps(
+              receipt,
+              allow_nan=False,
+              separators=(",", ":"),
+              sort_keys=True,
+          ).encode("utf-8")
+          receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+          Path(sys.argv[2]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          (
+            cd "${CENSUS_OUTPUT}"
+            sha256sum \
+              command-summary.json \
+              execution-receipt.json \
+              materialization-receipt.json \
+              materialization-summary.json \
+              provider-failure-evidence.json \
+              provider-failure-report.json \
+              summary.md \
+              > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          artifact_name="deform360-source-support-failure-census-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          receipt_id="$(jq -r '.receipt_id' "${CENSUS_OUTPUT}/execution-receipt.json")"
+          {
+            echo "evidence_sha256=${EXPECTED_EVIDENCE_SHA256}"
+            echo "evidence_content_sha256=${EXPECTED_EVIDENCE_CONTENT_SHA256}"
+            echo "report_id=${EXPECTED_REPORT_ID}"
+            echo "receipt_id=${receipt_id}"
+            echo "artifact_name=${artifact_name}"
+            echo "geometry_count=6"
+            echo "unresolved_count=4"
+          } >> "${GITHUB_OUTPUT}"
+          echo "CENSUS_ARTIFACT_NAME=${artifact_name}" >> "${GITHUB_ENV}"
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+      - name: Upload compact source-only census evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.CENSUS_ARTIFACT_NAME }}
+          path: ${{ env.CENSUS_OUTPUT }}
+          if-no-files-found: error
+          retention-days: 180
+
+  receipt:
+    name: Publish terminal census receipt
+    if: always() && github.event_name == 'push'
+    needs: execute
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Post the source-only result to issue 148
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.execute.result }}
+          EVIDENCE_SHA256: ${{ needs.execute.outputs.evidence_sha256 }}
+          EVIDENCE_CONTENT_SHA256: ${{ needs.execute.outputs.evidence_content_sha256 }}
+          REPORT_ID: ${{ needs.execute.outputs.report_id }}
+          RECEIPT_ID: ${{ needs.execute.outputs.receipt_id }}
+          ARTIFACT_NAME: ${{ needs.execute.outputs.artifact_name }}
+          GEOMETRY_COUNT: ${{ needs.execute.outputs.geometry_count }}
+          UNRESOLVED_COUNT: ${{ needs.execute.outputs.unresolved_count }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [[ "${RESULT}" == "success" ]]; then
+            conclusion="The frozen equal-object census is complete: six objects carry direct unsupported-provider-geometry evidence and four complete-support objects remain unresolved because downstream object-level admission never occurred. No object was relabelled accepted."
+          else
+            conclusion="The one-shot census did not complete successfully; no new scientific result or access authorization is claimed."
+          fi
+          body=$(cat <<EOF
+          ## Deform360 source-support provider failure census: \`${RESULT}\`
+
+          - launcher workflow run: [\`${GITHUB_RUN_ID}\`](${run_url})
+          - launcher attempt: \`${GITHUB_RUN_ATTEMPT}\`
+          - exact reviewed main revision: \`${GITHUB_SHA}\`
+          - frozen source workflow run: \`${SOURCE_WORKFLOW_RUN_ID}\`
+          - frozen source artifact ID: \`${SOURCE_ARTIFACT_ID}\`
+          - metric-batch result ID: \`${SOURCE_METRIC_BATCH_RESULT_ID}\`
+          - evidence SHA-256: \`${EVIDENCE_SHA256:-unavailable}\`
+          - evidence content SHA-256: \`${EVIDENCE_CONTENT_SHA256:-unavailable}\`
+          - report ID: \`${REPORT_ID:-unavailable}\`
+          - execution receipt ID: \`${RECEIPT_ID:-unavailable}\`
+          - artifact: \`${ARTIFACT_NAME:-unavailable}\`
+          - unsupported-provider-geometry objects: \`${GEOMETRY_COUNT:-unavailable}\`
+          - unresolved global rejections: \`${UNRESOLVED_COUNT:-unavailable}\`
+          - statistical unit: \`physical-object\`
+          - confirmation payloads opened: \`false\`
+          - adaptive-confirmation payloads opened: \`false\`
+          - target outcomes used: \`false\`
+          - future frames used: \`false\`
+          - replacement allowed: \`false\`
+
+          ${conclusion}
+
+          This source-only diagnostic does not authorize confirmation, repair the
+          terminal official-Hub provider, or establish physical benefit.
+          EOF
+          )
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/148/comments" \
+            -f body="${body}"
+
+# Reviewed one-shot request: source-support equal-object census 2026-08-10-v1
