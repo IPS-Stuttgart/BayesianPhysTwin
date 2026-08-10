@@ -58,6 +58,34 @@ def test_group_cap_changes_power_but_not_outlier_classification() -> None:
     assert not np.allclose(capped.position_field_m, uncapped.position_field_m)
 
 
+def test_student_t_group_weight_uses_covariance_parameterization() -> None:
+    residual = np.asarray([[[3.0, 0.0, 0.0], [0.0, 0.0, 0.0]]])
+    valid = np.asarray([[True, False]])
+    basis = np.asarray([[0.0], [1.0]])
+    config = GraphDynamicDiscrepancyConfigV1(
+        observation_std_m=1.0,
+        degrees_of_freedom=5.0,
+        process_position_std_m=0.0,
+        process_acceleration_std_mps2=0.0,
+        maximum_node_position_m=1.0,
+        maximum_node_velocity_mps=1.0,
+    )
+
+    belief = fit_graph_dynamic_discrepancy(
+        residual,
+        valid,
+        basis,
+        frame_dt_s=1.0,
+        config=config,
+    )
+
+    diagnostics = belief.diagnostics["frame_diagnostics"][0]
+    # Covariance parameterization: (nu + d) / (nu - 2 + Mahalanobis^2).
+    assert diagnostics["correlation_group_robust_weight"] == [
+        pytest.approx((5.0 + 3.0) / (5.0 - 2.0 + 9.0))
+    ]
+
+
 def test_public_contracts_reject_numeric_strings_and_falsey_config() -> None:
     with pytest.raises(ValueError, match="real numeric"):
         GraphDynamicDiscrepancyBeliefV1.from_last_residual(
