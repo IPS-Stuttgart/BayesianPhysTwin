@@ -26,7 +26,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: full22-discrepancy-tournament-v1-${{ github.ref }}
+  group: >-
+    full22-discrepancy-tournament-v1-${{
+      github.event.pull_request.head.sha || github.sha
+    }}
   cancel-in-progress: true
 
 env:
