@@ -3,27 +3,61 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
+from operator import index as operator_index
 from pathlib import PurePosixPath
+from types import MappingProxyType
 from typing import Any
 
 import numpy as np
 
 
-class FrozenDict(dict):
-    """Dict-compatible recursively immutable JSON mapping."""
+class FrozenDict(Mapping[str, Any]):
+    """Recursively immutable JSON mapping with ordinary mapping semantics.
 
-    __slots__ = ()
+    Inheriting from :class:`dict` cannot provide actual immutability because a
+    caller can bypass Python overrides with ``dict.__setitem__`` or
+    ``dict.update``. Store values behind a read-only mapping facade instead, so
+    no mutable built-in storage exists for those descriptors to modify.
+    """
+
+    __slots__ = ("__data",)
+    __hash__ = None
     _MUTATORS = frozenset({"clear", "pop", "popitem", "setdefault", "update"})
+
+    def __init__(self, values: Mapping[str, Any]) -> None:
+        object.__setattr__(
+            self,
+            "_FrozenDict__data",
+            MappingProxyType(dict(values)),
+        )
 
     def __getattribute__(self, name: str) -> Any:
         if name in type(self)._MUTATORS:
             return self._immutable
         return super().__getattribute__(name)
 
+    def __getitem__(self, key: str) -> Any:
+        return self.__data[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__data)
+
+    def __len__(self) -> int:
+        return len(self.__data)
+
+    def __repr__(self) -> str:
+        return repr(dict(self.__data))
+
     @staticmethod
     def _immutable(*args: object, **kwargs: object) -> None:
         raise TypeError("metadata is immutable")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        self._immutable(name, value)
+
+    def __delattr__(self, name: str) -> None:
+        self._immutable(name)
 
     def __setitem__(self, key: object, value: object) -> None:
         self._immutable(key, value)
@@ -31,9 +65,25 @@ class FrozenDict(dict):
     def __delitem__(self, key: object) -> None:
         self._immutable(key)
 
-    def __ior__(self, other: object) -> FrozenDict:  # type: ignore[misc]
+    def __ior__(self, other: object) -> FrozenDict:
         self._immutable(other)
         return self
+
+    def __or__(self, other: object) -> Any:
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        return dict(self) | dict(other)
+
+    def __ror__(self, other: object) -> Any:
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        return dict(other) | dict(self)
+
+    def copy(self) -> dict[str, Any]:
+        return dict(self)
+
+    def __reduce__(self) -> tuple[Any, tuple[dict[str, Any]]]:
+        return frozen_finite_json_mapping, (plain_json(self),)
 
     def __copy__(self) -> dict[str, Any]:
         return plain_json(self)
@@ -43,18 +93,79 @@ class FrozenDict(dict):
         return plain_json(self)
 
 
-class FrozenList(list):
-    """List-compatible recursively immutable JSON sequence."""
+class FrozenList(tuple):
+    """Recursively immutable JSON sequence with list-compatible semantics."""
 
     __slots__ = ()
+    __hash__ = None
     _MUTATORS = frozenset(
         {"append", "clear", "extend", "insert", "pop", "remove", "reverse", "sort"}
     )
+
+    def __new__(cls, values: Iterable[Any]) -> FrozenList:
+        return tuple.__new__(cls, values)
 
     def __getattribute__(self, name: str) -> Any:
         if name in type(self)._MUTATORS:
             return self._immutable
         return super().__getattribute__(name)
+
+    def __repr__(self) -> str:
+        return repr(list(self))
+
+    def __getitem__(self, key: int | slice) -> Any:
+        value = tuple.__getitem__(self, key)
+        return list(value) if isinstance(key, slice) else value
+
+    def __eq__(self, other: object) -> Any:
+        if isinstance(other, FrozenList):
+            return tuple.__eq__(self, other)
+        return list(self).__eq__(other)
+
+    def __ne__(self, other: object) -> Any:
+        if isinstance(other, FrozenList):
+            return tuple.__ne__(self, other)
+        return list(self).__ne__(other)
+
+    def __lt__(self, other: object) -> Any:
+        if isinstance(other, FrozenList):
+            other = list(other)
+        return list(self).__lt__(other)
+
+    def __le__(self, other: object) -> Any:
+        if isinstance(other, FrozenList):
+            other = list(other)
+        return list(self).__le__(other)
+
+    def __gt__(self, other: object) -> Any:
+        if isinstance(other, FrozenList):
+            other = list(other)
+        return list(self).__gt__(other)
+
+    def __ge__(self, other: object) -> Any:
+        if isinstance(other, FrozenList):
+            other = list(other)
+        return list(self).__ge__(other)
+
+    def __add__(self, other: object) -> Any:
+        if isinstance(other, (list, FrozenList)):
+            return list(self) + list(other)
+        return NotImplemented
+
+    def __radd__(self, other: object) -> Any:
+        if isinstance(other, list):
+            return other + list(self)
+        return NotImplemented
+
+    def __mul__(self, count: object) -> Any:
+        try:
+            repeats = operator_index(count)
+        except TypeError:
+            return NotImplemented
+        return list(self) * repeats
+
+    def __rmul__(self, count: object) -> Any:
+        return self.__mul__(count)
 
     @staticmethod
     def _immutable(*args: object, **kwargs: object) -> None:
@@ -66,13 +177,16 @@ class FrozenList(list):
     def __delitem__(self, key: object) -> None:
         self._immutable(key)
 
-    def __iadd__(self, other: object) -> FrozenList:  # type: ignore[misc]
+    def __iadd__(self, other: object) -> FrozenList:
         self._immutable(other)
         return self
 
     def __imul__(self, other: object) -> FrozenList:
         self._immutable(other)
         return self
+
+    def copy(self) -> list[Any]:
+        return list(self)
 
     def __copy__(self) -> list[Any]:
         return plain_json(self)
