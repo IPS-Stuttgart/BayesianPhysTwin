@@ -1,8 +1,3 @@
-from __future__ import annotations
-
-from importlib import import_module
-
-
 EXPECTED_PUBLIC_API = {
     "ArtifactDigest",
     "CLAIM_BUNDLE_SCHEMA",
@@ -38,7 +33,7 @@ EXPECTED_PUBLIC_API = {
 
 
 def test_versioned_api_is_deliberately_small_and_frozen() -> None:
-    v1 = import_module("bayesian_phystwin.v1")
+    v1 = __import__("bayesian_phystwin.v1", fromlist=["*"])
 
     assert set(v1.__all__) == EXPECTED_PUBLIC_API
     assert len(v1.__all__) == len(set(v1.__all__))
