@@ -1,0 +1,148 @@
+name: Publish domain covariance hardening once
+
+on:
+  push:
+    branches:
+      - agent/domain-covariance-calibration-v1-clean
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply minimal reviewed patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path(
+              "src/bayesian_phystwin/domain_covariance_calibration.py"
+          )
+          text = source.read_text(encoding="utf-8")
+          old = '''    decision = certificate.decision_for_domain(domain)
+          supported = bool(decision is not None and decision.calibration_supported)
+          applied = inference_ok and certificate.deployment_admissible and supported
+          if not inference_ok:
+              reason = "inference-rejected"
+          elif decision is None:
+              reason = "unknown-calibration-domain"
+          elif not certificate.deployment_admissible:
+              reason = "calibration-information-boundary-rejected"
+          elif not decision.calibration_supported:
+              reason = "calibration-domain-rejected"
+          else:
+              reason = "calibration-domain-authorized"
+          raw_digest = _array_digest(normalized)
+          '''
+          new = '''    decision = certificate.decision_for_domain(domain)
+          supported = bool(decision is not None and decision.calibration_supported)
+          identity_transform = bool(
+              decision is not None
+              and decision.selected_covariance_scale == 1.0
+              and decision.selected_isotropic_variance == 0.0
+          )
+          applied = (
+              inference_ok
+              and certificate.deployment_admissible
+              and supported
+              and not identity_transform
+          )
+          if not inference_ok:
+              reason = "inference-rejected"
+          elif decision is None:
+              reason = "unknown-calibration-domain"
+          elif not certificate.deployment_admissible:
+              reason = "calibration-information-boundary-rejected"
+          elif not decision.calibration_supported:
+              reason = "calibration-domain-rejected"
+          elif identity_transform:
+              reason = "calibration-identity-transform-retained"
+          else:
+              reason = "calibration-domain-authorized"
+          raw_digest = _array_digest(
+              np.asarray(raw_covariance, dtype=np.float64)
+          )
+          '''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif "identity_transform = bool(" not in text:
+              raise RuntimeError("application routing patch target changed")
+          text = text.replace(
+              "        output_digest = _array_digest(transformed)\n",
+              "        output_digest = _array_digest(output)\n",
+              1,
+          )
+          source.write_text(text, encoding="utf-8")
+
+          tests = Path(
+              "tests/"
+              "test_source_competence_domain_covariance_calibration_edges.py"
+          )
+          test_text = tests.read_text(encoding="utf-8")
+          marker = (
+              "\ndef test_application_record_rejects_internally_"
+              "inconsistent_states() -> None:\n"
+          )
+          if marker in test_text:
+              test_text = test_text.split(marker, 1)[0]
+              test_text += (
+                  "\n\ndef "
+                  "test_application_record_rejects_conflicting_"
+                  "fallback_identity() -> None:\n"
+                  "    raw = np.asarray([[1.0]])\n"
+                  "    _, fallback = apply_domain_covariance_calibration(\n"
+                  "        raw,\n"
+                  "        _fit(),\n"
+                  "        domain_id=\"missing\",\n"
+                  "        inference_admissible=True,\n"
+                  "    )\n\n"
+                  "    with pytest.raises(\n"
+                  "        ValueError, match=\"logical opposites\"\n"
+                  "    ):\n"
+                  "        replace(fallback, applied=True, artifact_id=None)\n"
+                  "    with pytest.raises(\n"
+                  "        ValueError,\n"
+                  "        match=\"preserve covariance identity\",\n"
+                  "    ):\n"
+                  "        replace(\n"
+                  "            fallback,\n"
+                  "            output_covariance_sha256=\"0\" * 64,\n"
+                  "            artifact_id=None,\n"
+                  "        )\n"
+              )
+          tests.write_text(test_text, encoding="utf-8")
+          PY
+      - name: Format changed implementation and tests
+        run: |
+          python -m pip install ruff
+          ruff format \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          ruff check \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+      - name: Publish patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          if git diff --cached --quiet; then
+            echo "No patch to commit"
+            exit 0
+          fi
+          git commit -m "Fix covariance calibration fallback identities"
+          git push origin HEAD:${GITHUB_REF_NAME}
