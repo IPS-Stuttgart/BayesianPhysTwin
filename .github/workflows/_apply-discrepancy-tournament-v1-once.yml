@@ -1,0 +1,106 @@
+name: Apply discrepancy candidate tournament once
+
+on:
+  push:
+    branches:
+      - agent/discrepancy-candidate-tournament-v1
+    paths:
+      - .github/workflows/_apply-discrepancy-tournament-v1-once.yml
+      - tools/one_shot/apply_discrepancy_tournament_v1.py.part*
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-discrepancy-candidate-tournament-v1-once
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/discrepancy-candidate-tournament-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/discrepancy-candidate-tournament-v1
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Materialize the reviewed change
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tools/one_shot/apply_discrepancy_tournament_v1.py.part* \
+            > tools/one_shot/apply_discrepancy_tournament_v1.py
+          python tools/one_shot/apply_discrepancy_tournament_v1.py
+
+      - name: Install development environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Format and validate changed Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/_discrepancy_tournament_contracts.py
+            src/bayesian_phystwin/_discrepancy_tournament_analysis.py
+            src/bayesian_phystwin/discrepancy_candidate_tournament.py
+            src/bayesian_phystwin/cli/discrepancy_candidate_tournament.py
+            src/bayesian_phystwin/cli/experiments.py
+            src/bayesian_phystwin/cli/_command_inventory.py
+            tests/test_horizon_conditioned_discrepancy_tournament.py
+            tests/test_horizon_conditioned_discrepancy_tournament_cli.py
+            tests/test_command_registry.py
+          )
+          python -m ruff check --fix -- "${files[@]}"
+          python -m ruff format -- "${files[@]}"
+          python -m ruff check -- "${files[@]}"
+          python -m ruff format --check -- "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/_discrepancy_tournament_contracts.py \
+            src/bayesian_phystwin/_discrepancy_tournament_analysis.py \
+            src/bayesian_phystwin/discrepancy_candidate_tournament.py \
+            src/bayesian_phystwin/cli/discrepancy_candidate_tournament.py
+          python -m compileall -q src tests
+          git diff --check
+
+      - name: Run focused contracts
+        run: |
+          python -m pytest -q \
+            tests/test_horizon_conditioned_discrepancy_tournament.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_cli.py \
+            tests/test_command_registry.py \
+            tests/test_cli_main.py
+          bpt diagnostic run select-discrepancy-candidate --help >/dev/null
+
+      - name: Remove one-use bootstrap and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/_apply-discrepancy-tournament-v1-once.yml
+          rm tools/one_shot/apply_discrepancy_tournament_v1.py
+          rm tools/one_shot/apply_discrepancy_tournament_v1.py.part*
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && {
+            echo "expected a materialized change" >&2
+            exit 1
+          }
+          git commit -m "Add source-only discrepancy candidate tournament"
+          git push origin HEAD:agent/discrepancy-candidate-tournament-v1
