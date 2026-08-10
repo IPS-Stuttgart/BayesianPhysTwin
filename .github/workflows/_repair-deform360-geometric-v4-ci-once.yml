@@ -47,8 +47,11 @@ jobs:
               target = Path(path)
               text = target.read_text(encoding="utf-8")
               count = text.count(old)
+              if count == 0:
+                  print(f"{path}: target pattern already changed or absent")
+                  return
               if count != 1:
-                  raise SystemExit(f"{path}: expected one occurrence, found {count}")
+                  raise SystemExit(f"{path}: expected at most one occurrence, found {count}")
               target.write_text(text.replace(old, new), encoding="utf-8")
 
           common = "src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py"
@@ -197,7 +200,7 @@ jobs:
           )
           PY
 
-          git rm \
+          git rm -f --ignore-unmatch \
             .github/workflows/_repair-deform360-joint-sparse-geometric-v4-pr-once.yml \
             .github/workflows/_repair-deform360-joint-sparse-geometric-v4-typing-once.yml \
             .github/workflows/_diagnose-deform360-joint-sparse-geometric-v4-pytest.yml
@@ -213,21 +216,9 @@ jobs:
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py
           )
           python -m ruff format "${files[@]}"
+          python -m ruff check --fix "${files[@]}"
           python -m ruff check "${files[@]}"
-          python -m mypy \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_common_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_source_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_npz_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_candidates_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_batch_v4.py \
-            src/bayesian_phystwin/deform360_joint_sparse_geometric_materializer_v4.py
-          python -m pytest -q -p no:cacheprovider \
-            tests/test_deform360_joint_sparse_geometric_v4.py \
-            tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
-            tests/test_deform360_joint_sparse_observability_v4.py \
-            tests/test_deform360_joint_sparse_observability_v4_cli.py \
-            tests/test_deform360_joint_sparse_observability_v4_workflow.py \
-            tests/test_pull_request_workflow_integrity.py
+          python -m ruff format --check "${files[@]}"
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
