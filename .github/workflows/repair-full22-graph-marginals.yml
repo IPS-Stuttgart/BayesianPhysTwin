@@ -1,0 +1,403 @@
+name: Repair full-22 graph marginal forecasting
+
+on:
+  push:
+    branches:
+      - agent/full22-discrepancy-tournament-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-full22-graph-marginals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/full22-discrepancy-tournament-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-discrepancy-tournament-v1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Replace dense graph query with exact marginals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          script = Path(
+              "scripts/science/run_full22_discrepancy_candidate_tournament_v1.py"
+          )
+          text = script.read_text(encoding="utf-8")
+          start_marker = "\ndef _forecast_graph_dynamic(\n"
+          end_marker = "\ndef _forecast_one_candidate(\n"
+          if text.count(start_marker) != 1 or text.count(end_marker) != 1:
+              raise SystemExit("unexpected graph forecast function markers")
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          replacement = dedent(
+              '''
+              def _forecast_graph_dynamic_marginals(
+                  state_mean: np.ndarray,
+                  state_covariance: np.ndarray,
+                  basis: np.ndarray,
+                  *,
+                  frame_dt_s: float,
+                  velocity_retention: float,
+                  process_position_std_m: float,
+                  process_acceleration_std_mps2: float,
+                  count: int,
+              ) -> tuple[np.ndarray, np.ndarray]:
+                  """Forecast node marginals without materializing dense joint covariance."""
+
+                  state = np.asarray(state_mean, dtype=np.float64)
+                  covariance = np.asarray(state_covariance, dtype=np.float64)
+                  graph_basis = np.asarray(basis, dtype=np.float64)
+                  _require(
+                      state.ndim == 3
+                      and state.shape[0] == 2
+                      and state.shape[2] == 3,
+                      "graph state_mean must have shape (2, rank, 3)",
+                  )
+                  rank = state.shape[1]
+                  state_dimension = 6 * rank
+                  _require(
+                      covariance.shape == (state_dimension, state_dimension),
+                      "graph state_covariance shape changed",
+                  )
+                  _require(
+                      graph_basis.ndim == 2 and graph_basis.shape[1] == rank,
+                      "graph basis and state rank differ",
+                  )
+                  _require(count >= 1, "graph forecast count must be positive")
+                  _require(
+                      frame_dt_s > 0.0
+                      and 0.0 <= velocity_retention <= 1.0
+                      and process_position_std_m >= 0.0
+                      and process_acceleration_std_mps2 >= 0.0,
+                      "graph dynamics configuration is invalid",
+                  )
+
+                  coordinate_count = 3 * rank
+                  identity = np.eye(coordinate_count, dtype=np.float64)
+                  transition = np.block(
+                      [
+                          [identity, frame_dt_s * identity],
+                          [
+                              np.zeros_like(identity),
+                              velocity_retention * identity,
+                          ],
+                      ]
+                  )
+                  acceleration_variance = process_acceleration_std_mps2**2
+                  process_noise = acceleration_variance * np.block(
+                      [
+                          [
+                              0.25 * frame_dt_s**4 * identity,
+                              0.5 * frame_dt_s**3 * identity,
+                          ],
+                          [
+                              0.5 * frame_dt_s**3 * identity,
+                              frame_dt_s**2 * identity,
+                          ],
+                      ]
+                  )
+                  process_noise[:coordinate_count, :coordinate_count] += (
+                      process_position_std_m**2 * identity
+                  )
+                  process_noise = 0.5 * (process_noise + process_noise.T)
+
+                  state_vector = np.concatenate(
+                      (state[0].reshape(-1), state[1].reshape(-1))
+                  )
+                  covariance = 0.5 * (covariance + covariance.T)
+                  position_design = np.kron(
+                      graph_basis,
+                      np.eye(3, dtype=np.float64),
+                  )
+                  design_rows = position_design.reshape(
+                      graph_basis.shape[0],
+                      3,
+                      coordinate_count,
+                  )
+                  means: list[np.ndarray] = []
+                  marginals: list[np.ndarray] = []
+                  for _ in range(count):
+                      state_vector = transition @ state_vector
+                      covariance = transition @ covariance @ transition.T + process_noise
+                      covariance = 0.5 * (covariance + covariance.T)
+                      means.append(
+                          (position_design @ state_vector[:coordinate_count]).reshape(
+                              graph_basis.shape[0],
+                              3,
+                          )
+                      )
+                      position_covariance = covariance[
+                          :coordinate_count,
+                          :coordinate_count,
+                      ]
+                      projected_rows = (
+                          position_design @ position_covariance
+                      ).reshape(
+                          graph_basis.shape[0],
+                          3,
+                          coordinate_count,
+                      )
+                      marginal = np.einsum(
+                          "nik,njk->nij",
+                          projected_rows,
+                          design_rows,
+                          optimize=True,
+                      )
+                      marginals.append(
+                          0.5 * (marginal + np.swapaxes(marginal, 1, 2))
+                      )
+                  return np.stack(means), np.stack(marginals)
+
+
+              def _forecast_graph_dynamic(
+                  residual_m: np.ndarray,
+                  valid: np.ndarray,
+                  basis: np.ndarray,
+                  configuration: Mapping[str, Any],
+                  *,
+                  cutoff: int,
+                  count: int,
+              ) -> tuple[np.ndarray, np.ndarray, dict[str, object]]:
+                  from bayesian_phystwin.graph_dynamic_discrepancy import (
+                      GraphDynamicDiscrepancyConfigV1,
+                      fit_graph_dynamic_discrepancy,
+                  )
+
+                  field_names = (
+                      "initial_position_std_m",
+                      "initial_velocity_std_mps",
+                      "process_position_std_m",
+                      "process_acceleration_std_mps2",
+                      "velocity_retention",
+                      "observation_std_m",
+                      "degrees_of_freedom",
+                      "effective_samples_per_correlation_group",
+                      "minimum_robust_weight",
+                      "maximum_iterations",
+                      "convergence_tolerance",
+                      "maximum_condition_number",
+                      "maximum_node_position_m",
+                      "maximum_node_velocity_mps",
+                  )
+                  config = GraphDynamicDiscrepancyConfigV1(
+                      **{name: configuration[name] for name in field_names}
+                  )
+                  belief = fit_graph_dynamic_discrepancy(
+                      residual_m[:cutoff],
+                      valid[:cutoff],
+                      basis,
+                      frame_dt_s=float(configuration["frame_dt_s"]),
+                      config=config,
+                  )
+                  mean, covariance = _forecast_graph_dynamic_marginals(
+                      belief.state_mean,
+                      belief.state_covariance,
+                      belief.graph_basis,
+                      frame_dt_s=belief.frame_dt_s,
+                      velocity_retention=belief.velocity_retention,
+                      process_position_std_m=belief.process_position_std_m,
+                      process_acceleration_std_mps2=(
+                          belief.process_acceleration_std_mps2
+                      ),
+                      count=count,
+                  )
+                  return (
+                      mean,
+                      covariance,
+                      {
+                          "state_dimension": int(np.asarray(belief.state_mean).size),
+                          "covariance_bytes": int(
+                              np.asarray(belief.state_covariance).nbytes
+                          ),
+                          "accepted_update_count": int(
+                              belief.accepted_update_count
+                          ),
+                          "forecast_covariance_representation": (
+                              "per-node-marginals-from-modal-state"
+                          ),
+                      },
+                  )
+              '''
+          ).strip()
+          script.write_text(
+              text[:start] + "\n" + replacement + "\n" + text[end:],
+              encoding="utf-8",
+          )
+
+          tests = Path("tests/test_full22_discrepancy_candidate_tournament_v1.py")
+          test_text = tests.read_text(encoding="utf-8").rstrip()
+          marker = "def test_graph_marginal_forecast_matches_dense_oracle()"
+          if marker in test_text:
+              raise SystemExit("graph marginal regression test already exists")
+          addition = dedent(
+              '''
+
+
+              def test_graph_marginal_forecast_matches_dense_oracle() -> None:
+                  module = _module()
+                  raw_basis = np.asarray(
+                      [
+                          [1.0, 0.0],
+                          [0.4, 0.8],
+                          [0.2, -0.5],
+                          [0.7, 0.1],
+                      ]
+                  )
+                  basis, _ = np.linalg.qr(raw_basis)
+                  state = np.arange(12, dtype=float).reshape(2, 2, 3) / 1000.0
+                  root = np.arange(144, dtype=float).reshape(12, 12) / 10000.0
+                  covariance = root @ root.T + np.eye(12) * 1e-6
+
+                  means, marginals = module._forecast_graph_dynamic_marginals(
+                      state,
+                      covariance,
+                      basis,
+                      frame_dt_s=0.5,
+                      velocity_retention=0.9,
+                      process_position_std_m=0.001,
+                      process_acceleration_std_mps2=0.002,
+                      count=3,
+                  )
+
+                  coordinate_count = 6
+                  identity = np.eye(coordinate_count)
+                  transition = np.block(
+                      [
+                          [identity, 0.5 * identity],
+                          [np.zeros_like(identity), 0.9 * identity],
+                      ]
+                  )
+                  process_noise = 0.002**2 * np.block(
+                      [
+                          [0.25 * 0.5**4 * identity, 0.5 * 0.5**3 * identity],
+                          [0.5 * 0.5**3 * identity, 0.5**2 * identity],
+                      ]
+                  )
+                  process_noise[:coordinate_count, :coordinate_count] += (
+                      0.001**2 * identity
+                  )
+                  design = np.kron(basis, np.eye(3))
+                  query = np.concatenate((design, np.zeros_like(design)), axis=1)
+                  state_vector = np.concatenate(
+                      (state[0].reshape(-1), state[1].reshape(-1))
+                  )
+                  expected_means = []
+                  expected_marginals = []
+                  for _ in range(3):
+                      state_vector = transition @ state_vector
+                      covariance = transition @ covariance @ transition.T + process_noise
+                      dense = query @ covariance @ query.T
+                      expected_means.append(
+                          (query @ state_vector).reshape(len(basis), 3)
+                      )
+                      expected_marginals.append(
+                          np.stack(
+                              [
+                                  dense[3 * node : 3 * node + 3, 3 * node : 3 * node + 3]
+                                  for node in range(len(basis))
+                              ]
+                          )
+                      )
+
+                  np.testing.assert_allclose(means, np.stack(expected_means))
+                  np.testing.assert_allclose(
+                      marginals,
+                      np.stack(expected_marginals),
+                      atol=1e-12,
+                      rtol=1e-12,
+                  )
+
+
+              def test_graph_candidate_does_not_request_dense_joint_covariance() -> None:
+                  import inspect
+
+                  module = _module()
+                  source = inspect.getsource(module._forecast_graph_dynamic)
+                  assert "belief.forecast(" not in source
+                  assert "_forecast_graph_dynamic_marginals(" in source
+              '''
+          )
+          tests.write_text(test_text + addition + "\n", encoding="utf-8")
+
+          documentation = Path("docs/full22_discrepancy_candidate_tournament_v1.md")
+          doc_text = documentation.read_text(encoding="utf-8")
+          old = (
+              "A candidate failure produces zero raw forecasts and is rejected later. It does\n"
+              "not remove a case or candidate from the matched roster.\n"
+          )
+          new = (
+              old
+              + "\nThe graph-modal arm evaluates exact per-node 3-D marginal covariances\n"
+              + "directly from its compact modal state. It does not materialize the dense\n"
+              + "cross-node/cross-horizon covariance because the tournament proper score uses\n"
+              + "only those registered marginals. This changes neither the candidate mean nor\n"
+              + "the marginal covariance represented by the graph belief.\n"
+          )
+          if "exact per-node 3-D marginal covariances" not in doc_text:
+              if doc_text.count(old) != 1:
+                  raise SystemExit("unexpected graph documentation marker")
+              doc_text = doc_text.replace(old, new, 1)
+          documentation.write_text(doc_text, encoding="utf-8")
+
+          Path(".github/workflows/repair-full22-graph-marginals.yml").unlink()
+          PY
+
+      - name: Validate the graph repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff format \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format --check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m pytest -q \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_horizon_conditioned_discrepancy_tournament.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py \
+            tests/test_pull_request_workflow_integrity.py
+          git diff --check
+
+      - name: Publish the graph repair and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            docs/full22_discrepancy_candidate_tournament_v1.md \
+            .github/workflows/repair-full22-graph-marginals.yml
+          git diff --cached --check
+          git commit -m "Avoid dense graph covariance in full-22 tournament"
+          git push origin HEAD:agent/full22-discrepancy-tournament-v1
