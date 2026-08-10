@@ -89,6 +89,8 @@ jobs:
             tests/test_deform360_joint_sparse_geometric_v4.py
             tests/test_deform360_joint_sparse_geometric_v4_causal_coverage.py
             tests/test_deform360_joint_sparse_geometric_v4_end_to_end.py
+            tests/test_deform360_joint_sparse_geometric_v4_pipeline.py
+            tests/test_deform360_joint_sparse_geometric_v4_roster.py
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py
           )
           run_check RUFF python -m ruff check "${files[@]}"
@@ -111,6 +113,8 @@ jobs:
             tests/test_deform360_joint_sparse_geometric_v4.py \
             tests/test_deform360_joint_sparse_geometric_v4_causal_coverage.py \
             tests/test_deform360_joint_sparse_geometric_v4_end_to_end.py \
+            tests/test_deform360_joint_sparse_geometric_v4_pipeline.py \
+            tests/test_deform360_joint_sparse_geometric_v4_roster.py \
             tests/test_deform360_joint_sparse_geometric_v4_workflow.py \
             tests/test_deform360_joint_sparse_observability_v4.py \
             tests/test_deform360_joint_sparse_observability_v4_cli.py \
