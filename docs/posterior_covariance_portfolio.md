@@ -17,6 +17,10 @@ silently omitted. `bayesian_phystwin.posterior_covariance_portfolio` binds the
 alternatives to one inference result and one registered linear query without
 choosing a winner.
 
+The implementation separates source adapters, common numerical validation, and
+the portfolio contract behind one explicit public facade. This keeps the package
+root unchanged while giving each integrity boundary independent test ownership.
+
 ## Source contracts and adapters
 
 `PosteriorCovarianceSourceV1` binds:
