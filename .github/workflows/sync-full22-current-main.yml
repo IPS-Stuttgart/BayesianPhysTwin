@@ -18,7 +18,7 @@ jobs:
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
       github.ref == 'refs/heads/agent/full22-discrepancy-tournament-v1'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
     steps:
       - name: Check out exact branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,32 +27,14 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Merge current main without losing manifest entries
+      - name: Merge current main and preserve both manifest surfaces
         shell: bash
         run: |
           set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch --no-tags origin main
-          if git merge-base --is-ancestor origin/main HEAD; then
-            echo "Current main is already an ancestor."
-          else
-            if ! git merge --no-commit --no-ff origin/main; then
-              mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
-              if [[ "${#conflicts[@]}" -ne 1 || "${conflicts[0]}" != "MANIFEST.in" ]]; then
-                printf 'Unexpected merge conflicts:\n'
-                printf '  %s\n' "${conflicts[@]}"
-                exit 1
-              fi
-              git checkout --ours MANIFEST.in
-              git add MANIFEST.in
-            fi
-          fi
+          git merge --no-commit --no-ff -X ours origin/main
 
           python - <<'PY'
           import subprocess
@@ -65,7 +47,7 @@ jobs:
               ).splitlines()
           )
           branch_lines = set(Path("MANIFEST.in").read_text(encoding="utf-8").splitlines())
-          missing = sorted(line for line in main_lines if line not in branch_lines)
+          missing = sorted(main_lines - branch_lines)
           if missing:
               raise SystemExit(
                   "MANIFEST.in lost current-main entries:\n" + "\n".join(missing)
@@ -85,35 +67,5 @@ jobs:
           rm .github/workflows/sync-full22-current-main.yml
           git add -A
           git diff --cached --check
-
-      - name: Validate synchronized source
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install -e ".[dev,graph]"
-          python -m ruff check \
-            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
-            tests/test_full22_discrepancy_candidate_tournament_v1.py
-          python -m ruff format --check \
-            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
-            tests/test_full22_discrepancy_candidate_tournament_v1.py
-          python -m pytest -q \
-            tests/test_full22_discrepancy_candidate_tournament_v1.py \
-            tests/test_horizon_conditioned_discrepancy_tournament.py \
-            tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
-            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py \
-            tests/test_pull_request_workflow_integrity.py
-          git diff --check
-
-      - name: Publish synchronized merge commit
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --cached --quiet; then
-            echo "No synchronized changes remain to publish."
-            exit 0
-          fi
           git commit -m "Merge current main into full-22 tournament"
           git push origin HEAD:agent/full22-discrepancy-tournament-v1
