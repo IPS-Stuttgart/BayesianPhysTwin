@@ -33,8 +33,7 @@ from bayesian_phystwin.deform360_joint_sparse_source_runner_v5 import (
 )
 
 AMENDMENT_SCHEMA = (
-    "bayesian-phystwin.deform360-fresh-object-session-v6-"
-    "source-prediction-execution"
+    "bayesian-phystwin.deform360-fresh-object-session-v6-source-prediction-execution"
 )
 AMENDMENT_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 RANKING_DOMAIN = b"v6-source-likelihood-panel-v1"
@@ -66,12 +65,7 @@ def _sequence(value: object, *, name: str) -> Sequence[Any]:
 
 
 def _canonical_id(value: object, *, name: str) -> str:
-    if (
-        type(value) is not str
-        or not value
-        or value.strip() != value
-        or "\x00" in value
-    ):
+    if type(value) is not str or not value or value.strip() != value or "\x00" in value:
         raise ValueError(f"{name} must be a canonical string")
     return value
 
@@ -143,9 +137,7 @@ def _load_amendment(path: Path) -> Mapping[str, Any]:
     )
     _require(amendment.get("schema_version") == 1, "amendment version changed")
     declared = amendment.get("amendment_id")
-    identity = {
-        key: value for key, value in amendment.items() if key != "amendment_id"
-    }
+    identity = {key: value for key, value in amendment.items() if key != "amendment_id"}
     _require(
         declared == content_id(identity) == AMENDMENT_ID,
         "amendment identity changed",
@@ -295,12 +287,9 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     args = _parse_args()
     amendment = _load_amendment(args.execution_amendment)
-    lock = load_deform360_joint_sparse_source_execution_lock_v5(
-        args.execution_lock
-    )
+    lock = load_deform360_joint_sparse_source_execution_lock_v5(args.execution_lock)
     _require(
-        amendment.get("v5_source_execution_lock_id")
-        == lock.get("execution_lock_id"),
+        amendment.get("v5_source_execution_lock_id") == lock.get("execution_lock_id"),
         "amendment uses another v5 source lock",
     )
     cohort = _cohort(lock)
@@ -342,9 +331,7 @@ def main() -> int:
     )
     cases = _sequence(plan.get("cases"), name="metric plan cases")
     exclusions = _sequence(plan.get("excluded_streams"), name="excluded_streams")
-    excluded_by_object: dict[str, set[str]] = {
-        object_id: set() for object_id in cohort
-    }
+    excluded_by_object: dict[str, set[str]] = {object_id: set() for object_id in cohort}
     for raw in exclusions:
         row = _mapping(raw, name="excluded stream")
         object_id = _canonical_id(
@@ -407,9 +394,7 @@ def main() -> int:
             _canonical_id(stream.get("camera_id"), name="camera_id")
             for stream in streams
         }
-        all_cameras = tuple(
-            sorted(included_cameras | excluded_by_object[object_id])
-        )
+        all_cameras = tuple(sorted(included_cameras | excluded_by_object[object_id]))
         reserved = select_reserved_endpoint_views_v5(
             object_id,
             all_cameras,
@@ -418,8 +403,7 @@ def main() -> int:
         eligible = [
             stream
             for stream in streams
-            if _canonical_id(stream.get("camera_id"), name="camera_id")
-            not in reserved
+            if _canonical_id(stream.get("camera_id"), name="camera_id") not in reserved
         ]
         eligible.sort(
             key=lambda stream: _rank_camera(
@@ -493,9 +477,7 @@ def main() -> int:
                     "path": None,
                     "manifest_file_sha256": None,
                     "materialization_id": None,
-                    "unavailable_reason": (
-                        CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON
-                    ),
+                    "unavailable_reason": (CONTACT_AXIS_IDENTITY_UNAVAILABLE_REASON),
                 },
             }
         )
