@@ -61,6 +61,7 @@ DIAGNOSTIC_IDS: Final = frozenset(
     diagnose-phystwin-bias
     diagnose-deform360-raw-pairwise
     diagnose-provider-failures
+    score-probabilistic-predictions
     select-discrepancy-candidate
     audit-phystwin-state-decay
     audit-phystwin-state-modes
@@ -91,6 +92,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "diagnose-provider-failures": (
         "attribute source-only provider and guarded-update rejection causes"
     ),
+    "score-probabilistic-predictions": (
+        "score matched predictive distributions with proper scoring rules"
+    ),
     "select-discrepancy-candidate": (
         "select one matched discrepancy belief on source-only groups"
     ),
@@ -115,6 +119,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "seal-deform360-calibration": "deform360-official-hub-visuotactile-v1",
     "diagnose-phystwin-bias": "phystwin-bias-audit-v1",
     "diagnose-provider-failures": "provider-failure-decomposition-v1",
+    "score-probabilistic-predictions": "probabilistic-prediction-scoring-v1",
     "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
 }
 

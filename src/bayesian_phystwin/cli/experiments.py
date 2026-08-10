@@ -98,6 +98,7 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "diagnose-provider-failures": (
         "bayesian_phystwin.cli.provider_failure_decomposition"
     ),
+    "score-probabilistic-predictions": "bayesian_phystwin.cli.probabilistic_scoring",
     "select-discrepancy-candidate": (
         "bayesian_phystwin.cli.discrepancy_candidate_tournament"
     ),
