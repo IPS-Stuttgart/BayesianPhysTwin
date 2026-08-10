@@ -50,9 +50,7 @@ def test_working_and_fallback_adapters_bind_required_semantics() -> None:
         source_artifact_id="c" * 64,
     )
     assert working.method == "irls_working"
-    assert working.covariance_semantics.metadata["portfolio_source"] == (
-        "working-irls"
-    )
+    assert working.covariance_semantics.metadata["portfolio_source"] == ("working-irls")
     fallback = exact_prior_fallback_covariance_source(
         RESULT_ID,
         np.eye(2),
