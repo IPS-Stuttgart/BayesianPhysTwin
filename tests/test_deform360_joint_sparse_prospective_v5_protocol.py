@@ -10,20 +10,17 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = (
-    ROOT
-    / "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json"
+    ROOT / "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json"
 )
 V4_POLICY_PATH = (
-    ROOT
-    / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
+    ROOT / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
 )
 SELECTION_PATH = (
     ROOT / "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
 )
 DOCUMENT_PATH = ROOT / "docs/deform360_joint_sparse_prospective_v5.md"
 WORKFLOW_PATH = (
-    ROOT
-    / ".github/workflows/deform360-joint-sparse-prospective-v5-contracts.yml"
+    ROOT / ".github/workflows/deform360-joint-sparse-prospective-v5-contracts.yml"
 )
 MANIFEST_PATH = ROOT / "MANIFEST.in"
 
@@ -62,8 +59,9 @@ def test_policy_identity_and_frozen_cohort_bindings() -> None:
     selection_lock = policy["selection_lock"]
     assert selection_lock["path"] == SELECTION_PATH.relative_to(ROOT).as_posix()
     assert selection_lock["selection_sha256"] == selection["selection_sha256"]
-    assert selection_lock["selection_artifact_sha256"] == (
-        selection["selection_artifact_sha256"]
+    assert (
+        selection_lock["selection_artifact_sha256"]
+        == selection["selection_artifact_sha256"]
     )
     assert selection_lock["development_object_count"] == 10
     assert selection_lock["confirmation_object_count"] == 12
@@ -77,9 +75,9 @@ def test_policy_identity_and_frozen_cohort_bindings() -> None:
     }
 
     prerequisites = policy["prerequisites"]
-    assert prerequisites["v4_policy_path"] == V4_POLICY_PATH.relative_to(
-        ROOT
-    ).as_posix()
+    assert (
+        prerequisites["v4_policy_path"] == V4_POLICY_PATH.relative_to(ROOT).as_posix()
+    )
     assert prerequisites["v4_policy_id"] == v4_policy["policy_id"]
     assert prerequisites["required_v4_status"] == "development-design-supported"
     assert prerequisites["minimum_v4_supported_objects"] == 8
@@ -114,9 +112,7 @@ def test_partial_factors_are_admitted_at_object_query_level() -> None:
     assert evaluation["statistical_unit"] == "physical-object"
     assert evaluation["within_object_rows_do_not_increase_sample_size"] is True
     assert evaluation["all_confirmation_objects_in_denominator"] is True
-    assert (
-        evaluation["rejected_or_unsupported_candidate_uses_exact_fallback"] is True
-    )
+    assert evaluation["rejected_or_unsupported_candidate_uses_exact_fallback"] is True
     assert evaluation["registered_action_frame_range_half_open"] == [0, 81]
     assert evaluation["observation_causal_frame_range_half_open"] == [0, 58]
     assert evaluation["future_evaluation_frame_range_half_open"] == [58, 76]
@@ -132,9 +128,10 @@ def test_partial_factors_are_admitted_at_object_query_level() -> None:
     assert endpoint_views["reserved_views_contribute_likelihood"] is False
     assert endpoint_views["same_rule_source_and_confirmation"] is True
     assert endpoint_views["pixel_values_or_outcomes_used_for_selection"] is False
-    assert evaluation["primary_endpoint"][
-        "observation_views_excluded_from_target_views"
-    ] is True
+    assert (
+        evaluation["primary_endpoint"]["observation_views_excluded_from_target_views"]
+        is True
+    )
 
     assert boundary == {
         "adaptive_confirmation_payloads_used": False,
@@ -163,20 +160,20 @@ def test_primary_decision_is_object_level_and_difficult_to_win_by_fallback() -> 
         "VT2_joint_sparse_visuotactile_unguarded": "safety-diagnostic",
         "VT3_joint_sparse_visuotactile_anchor_bias": "bias-diagnostic",
     }
-    assert decision["primary_method_id"] == (
-        "VT1_joint_sparse_visuotactile_guarded"
-    )
+    assert decision["primary_method_id"] == "VT1_joint_sparse_visuotactile_guarded"
     assert decision["minimum_relative_improvement_vs_physical_fallback"] == 0.1
     assert decision["minimum_relative_improvement_vs_last_causal_residual"] == 0.05
     assert decision["minimum_contact_increment_over_visual_only"] == 0.02
     assert decision["minimum_accepted_confirmation_objects"] == 10
     assert decision["minimum_accepted_objects_per_stratum"] == 5
-    assert decision[
-        "minimum_improved_confirmation_objects_vs_each_primary_comparator"
-    ] == 10
-    assert decision[
-        "minimum_improved_objects_per_stratum_vs_each_primary_comparator"
-    ] == 5
+    assert (
+        decision["minimum_improved_confirmation_objects_vs_each_primary_comparator"]
+        == 10
+    )
+    assert (
+        decision["minimum_improved_objects_per_stratum_vs_each_primary_comparator"]
+        == 5
+    )
     assert decision["maximum_harmful_accepted_objects"] == 0
     assert decision["harmful_update_relative_margin"] == 0.02
     assert decision["maximum_stratum_mean_regression"] == 0.02
@@ -237,9 +234,10 @@ def test_stage_order_freezes_source_before_one_time_confirmation() -> None:
         implementation["source_and_confirmation_use_identical_execution_revisions"]
         is True
     )
-    assert implementation[
-        "exact_execution_revisions_frozen_before_source_residual_fit"
-    ] is True
+    assert (
+        implementation["exact_execution_revisions_frozen_before_source_residual_fit"]
+        is True
+    )
 
 
 def test_contract_workflow_is_hosted_read_only_and_data_closed() -> None:
