@@ -30,15 +30,6 @@ from ..observation_belief import (
     load_observation_belief,
     save_observation_belief,
 )
-from ..prob4d_api_v2 import (
-    PROB4D_REQUIRED_API_VERSION,
-    PROB4D_REQUIRED_FACTOR_API_VERSION,
-    PROB4D_REQUIRED_PROJECT_ID,
-    PROB4D_REQUIRED_PROVIDER_API_VERSION,
-    Prob4DApiV2Compatibility,
-    inspect_prob4d_api_v2,
-    load_claim_bearing_tree_sparse_prob4d,
-)
 from ..repository_provenance import RepositoryRole, RepositoryState
 from ..run_manifest import (
     RUN_MANIFEST_SCHEMA,
@@ -68,11 +59,6 @@ __all__ = [
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefV1",
-    "PROB4D_REQUIRED_API_VERSION",
-    "PROB4D_REQUIRED_FACTOR_API_VERSION",
-    "PROB4D_REQUIRED_PROJECT_ID",
-    "PROB4D_REQUIRED_PROVIDER_API_VERSION",
-    "Prob4DApiV2Compatibility",
     "RUN_MANIFEST_SCHEMA",
     "RUN_MANIFEST_V2_VERSION",
     "RUN_MANIFEST_VERSION",
@@ -82,8 +68,6 @@ __all__ = [
     "RunManifestV1",
     "RunManifestV2",
     "build_evidence_decision",
-    "inspect_prob4d_api_v2",
-    "load_claim_bearing_tree_sparse_prob4d",
     "load_claim_bundle",
     "load_evidence_decision",
     "load_observation_belief",
