@@ -369,16 +369,18 @@ class StructuredDiscrepancyPredictionV1:
     def __post_init__(self) -> None:
         if not isinstance(self.config, StructuredDiscrepancyConfigV1):
             raise TypeError("config must be a StructuredDiscrepancyConfigV1")
-        for value, name, minimum in (
+        for raw_value, field_name, minimum in (
             (self.source_end_frame, "source_end_frame", 1),
             (self.horizon_steps, "horizon_steps", 0),
         ):
-            if isinstance(value, (bool, np.bool_)):
-                raise TypeError(f"{name} must be an integer")
-            integer = int(value)
-            if integer != value or integer < minimum:
-                raise ValueError(f"{name} must be an integer of at least {minimum}")
-            object.__setattr__(self, name, integer)
+            if isinstance(raw_value, (bool, np.bool_)):
+                raise TypeError(f"{field_name} must be an integer")
+            integer = int(raw_value)
+            if integer != raw_value or integer < minimum:
+                raise ValueError(
+                    f"{field_name} must be an integer of at least {minimum}"
+                )
+            object.__setattr__(self, field_name, integer)
         (
             basis,
             coefficient_mean,
@@ -419,7 +421,7 @@ class StructuredDiscrepancyPredictionV1:
             local_variance,
             weights,
         )
-        for name, value in (
+        for field_name, array_value in (
             ("spatial_basis", basis),
             ("component_coefficient_mean_m", coefficient_mean),
             ("component_coefficient_covariance_m2", coefficient_covariance),
@@ -430,7 +432,7 @@ class StructuredDiscrepancyPredictionV1:
             ("mean_m", mean),
             ("marginal_covariance_m2", marginal),
         ):
-            object.__setattr__(self, name, _readonly(value))
+            object.__setattr__(self, field_name, _readonly(array_value))
 
 
 StructuredDiscrepancyBeliefV1: TypeAlias = (
