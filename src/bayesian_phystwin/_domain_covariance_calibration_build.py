@@ -37,6 +37,8 @@ from .calibration_domain_guard import (
 
 def build_calibration_certificate(
     *,
+    predictor_id: str,
+    predictor_frozen_before_calibration_outcomes: bool,
     partition_id: str,
     statistical_unit: str,
     residual_definition: str,
@@ -65,6 +67,7 @@ def build_calibration_certificate(
             f"calibration: {undersized}"
         )
     data_id = _calibration_data_id(
+        predictor_id=predictor_id,
         calibration_partition_id=partition_id,
         statistical_unit=statistical_unit,
         residual_definition=residual_definition,
@@ -143,6 +146,10 @@ def build_calibration_certificate(
         calibration_groups_independent=independent,
         config=guard_config,
         metadata={
+            "predictor_id": predictor_id,
+            "predictor_frozen_before_calibration_outcomes": (
+                predictor_frozen_before_calibration_outcomes
+            ),
             "covariance_calibration_data_id": data_id,
             "covariance_calibration_schema": DOMAIN_COVARIANCE_CALIBRATION_SCHEMA,
             "covariance_calibration_version": DOMAIN_COVARIANCE_CALIBRATION_VERSION,
@@ -150,6 +157,10 @@ def build_calibration_certificate(
         },
     )
     return DomainCovarianceCalibrationCertificateV1(
+        predictor_id=predictor_id,
+        predictor_frozen_before_calibration_outcomes=(
+            predictor_frozen_before_calibration_outcomes
+        ),
         calibration_partition_id=partition_id,
         statistical_unit=statistical_unit,
         residual_definition=residual_definition,
