@@ -6,7 +6,9 @@ from bayesian_phystwin.discrepancy_candidate_tournament import (
 )
 
 
-def _candidate(candidate_id: str, family: str, state_dimension: int) -> dict[str, object]:
+def _candidate(
+    candidate_id: str, family: str, state_dimension: int
+) -> dict[str, object]:
     return {
         "candidate_id": candidate_id,
         "family": family,
@@ -41,9 +43,7 @@ def _record(
         "deployed_point_loss": point_loss if accepted else fallback_point_loss,
         "proper_score": proper_score,
         "fallback_proper_score": fallback_proper_score,
-        "deployed_proper_score": (
-            proper_score if accepted else fallback_proper_score
-        ),
+        "deployed_proper_score": (proper_score if accepted else fallback_proper_score),
         "interval_covered": True,
         "interval_width": 2.0,
     }
@@ -147,6 +147,5 @@ def test_crossfit_instability_retains_reference_as_final_candidate() -> None:
     assert report["selected_candidate"] == "last_residual"
     assert report["selected_candidate_summary"]["candidate_id"] == "last_residual"
     assert (
-        report["provisional_selected_candidate_summary"]["candidate_id"]
-        == "structured"
+        report["provisional_selected_candidate_summary"]["candidate_id"] == "structured"
     )
