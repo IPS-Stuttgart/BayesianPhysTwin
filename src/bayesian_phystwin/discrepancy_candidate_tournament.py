@@ -17,6 +17,7 @@ from ._discrepancy_tournament_analysis import (
     analyze_discrepancy_candidate_tournament as _analyze_tournament,
 )
 from ._discrepancy_tournament_contracts import (
+    _require,
     DISCREPANCY_TOURNAMENT_CLAIM_BOUNDARY,
     DISCREPANCY_TOURNAMENT_INPUT_CONTRACT,
     DISCREPANCY_TOURNAMENT_REPORT_CONTRACT,
@@ -25,7 +26,6 @@ from ._discrepancy_tournament_contracts import (
     TournamentEvidence,
     TournamentRecord,
     TournamentSelectionConfig,
-    _require,
     parse_discrepancy_candidate_tournament as _parse_tournament,
 )
 from .provider_failure_report_io import (
