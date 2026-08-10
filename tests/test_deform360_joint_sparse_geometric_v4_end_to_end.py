@@ -10,8 +10,8 @@ from typing import Any
 import numpy as np
 import pytest
 
-from bayesian_phystwin._portable_contracts import content_id
 import bayesian_phystwin.deform360_joint_sparse_geometric_materializer_v4 as materializer
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_joint_sparse_geometric_candidates_v4 import (
     _Candidate,
     _collect_stream_candidates,
@@ -39,8 +39,7 @@ MATERIALIZER_POLICY = (
     / "protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
 )
 V4_POLICY = (
-    ROOT
-    / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
+    ROOT / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
 )
 
 
@@ -159,7 +158,7 @@ def _source_fixture(tmp_path: Path) -> dict[str, Any]:
         for camera_suffix in ("a", "b"):
             camera_id = f"camera-{camera_suffix}"
             job_id = hashlib.sha256(
-                f"job:{object_id}:{episode_id}:{camera_id}".encode("utf-8")
+                f"job:{object_id}:{episode_id}:{camera_id}".encode()
             ).hexdigest()
             prediction = prediction_root / f"{job_id}.json"
             metric_prefix = metric_files / f"{job_id}.npz"
@@ -171,9 +170,7 @@ def _source_fixture(tmp_path: Path) -> dict[str, Any]:
                 {
                     "job_id": job_id,
                     "camera_id": camera_id,
-                    "prediction_manifest": _record(
-                        prediction, root=prediction_root
-                    ),
+                    "prediction_manifest": _record(prediction, root=prediction_root),
                     "metric_prefix": _record(metric_prefix, root=metric_files),
                     "metric_calibration": _record(calibration, root=metric_files),
                 }
@@ -181,7 +178,7 @@ def _source_fixture(tmp_path: Path) -> dict[str, Any]:
         cases.append(
             {
                 "case_id": hashlib.sha256(
-                    f"case:{object_id}:{episode_id}".encode("utf-8")
+                    f"case:{object_id}:{episode_id}".encode()
                 ).hexdigest(),
                 "object_id": object_id,
                 "episode_id": episode_id,
@@ -367,9 +364,7 @@ def _fake_collect_stream_candidates(**arguments: Any):
                 camera_center_world_m=camera_center,
                 spatial_cluster_id=cluster,
                 correlation_group_id=group,
-                support_digest=hashlib.sha256(
-                    f"support:{job_id}".encode()
-                ).hexdigest(),
+                support_digest=hashlib.sha256(f"support:{job_id}".encode()).hexdigest(),
             )
         )
     sources = {
@@ -460,9 +455,7 @@ def test_source_chain_and_atomic_materializer_end_to_end(
     assert printed["case_count"] == 10
 
     with pytest.raises(ValueError, match="output already exists"):
-        materializer.materialize_manifest(
-            **_materialize_arguments(fixture, output)
-        )
+        materializer.materialize_manifest(**_materialize_arguments(fixture, output))
 
     failed_output = tmp_path / "materialized-failure"
     with monkeypatch.context() as context:

@@ -5,7 +5,6 @@ import io
 import json
 import shutil
 import zipfile
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -37,13 +36,11 @@ from bayesian_phystwin.deform360_joint_sparse_observability_v4 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 MATERIALIZER_POLICY = (
-    ROOT
-    / "protocols/locks/"
+    ROOT / "protocols/locks/"
     "deform360_official_hub_joint_sparse_geometric_materializer_v4.json"
 )
 V4_POLICY = (
-    ROOT
-    / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
+    ROOT / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
 )
 
 
@@ -204,9 +201,7 @@ def _source_fixture(
         "selection_file_sha256": _sha256_file(selection_path),
         "visual_provider_spec_file_sha256": _sha256_file(provider_path),
         "metric_prior_policy_file_sha256": _sha256_file(metric_policy_path),
-        "camera_eligibility_policy_file_sha256": _sha256_file(
-            camera_policy_path
-        ),
+        "camera_eligibility_policy_file_sha256": _sha256_file(camera_policy_path),
         "prob4d_revision": base_policy["prob4d_revision"],
         "motioncrafter_revision": base_policy["motioncrafter_revision"],
         "visual_production_result_id": production["result_id"],
@@ -219,13 +214,10 @@ def _source_fixture(
         "schema": "bayesian-phystwin.deform360-prob4d-metric-batch",
         "schema_version": 2,
         "semantics": (
-            "target-free-robot-visible-calibration-streams-"
-            "released-robot-gauge-v2"
+            "target-free-robot-visible-calibration-streams-released-robot-gauge-v2"
         ),
         "plan_file": _record(plan_path, root=metric_root),
-        "implementation_revision": base_policy[
-            "metric_batch_implementation_revision"
-        ],
+        "implementation_revision": base_policy["metric_batch_implementation_revision"],
         "production_result_id": production["result_id"],
         "object_count": 10,
         "admitted_stream_count": 324,
