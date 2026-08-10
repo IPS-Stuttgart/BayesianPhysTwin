@@ -65,7 +65,9 @@ def test_provider_failure_census_keeps_confirmation_and_targets_closed() -> None
     assert "secrets." not in text
 
 
-def test_provider_failure_census_uses_the_strict_validator_and_adapter_contract() -> None:
+def test_provider_failure_census_uses_the_strict_validator_and_adapter_contract() -> (
+    None
+):
     text = _text()
 
     assert "src/bayesian_phystwin/deform360_provider_failure_census_v1.py" in text
