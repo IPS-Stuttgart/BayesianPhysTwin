@@ -154,6 +154,10 @@ class DomainCovarianceCalibrationConfigV1:
             name="minimum_scale",
             minimum=1.0,
         )
+        if minimum_scale != 1.0:
+            raise ValueError(
+                "minimum_scale must equal 1.0 so the identity transform is present"
+            )
         maximum_scale = _bounded_float(
             self.maximum_scale,
             name="maximum_scale",
