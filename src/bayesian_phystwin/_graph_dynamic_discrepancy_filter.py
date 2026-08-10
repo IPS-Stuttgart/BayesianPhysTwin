@@ -210,7 +210,7 @@ def _frame_update(
             effective_dimension = 3.0 * len(nodes)
             covariance_degrees = config.degrees_of_freedom - 2.0
             weight = (
-                covariance_degrees + effective_dimension
+                config.degrees_of_freedom + effective_dimension
             ) / (covariance_degrees + squared_mahalanobis)
             weights[position] = np.clip(
                 weight,
