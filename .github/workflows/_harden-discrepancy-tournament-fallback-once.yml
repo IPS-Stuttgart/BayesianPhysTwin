@@ -46,7 +46,23 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Apply fail-closed hardening
-        run: python tools/one_shot/harden_discrepancy_tournament_v1.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/one_shot/harden_discrepancy_tournament_v1.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "src/bayesian_phystwin/_discrepancy_tournament_analysis.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          old = "    estimates = np.empty(samples, dtype=np.float64)\n"
+          new = "    estimates: np.ndarray = np.empty(samples, dtype=np.float64)\n"
+          if text.count(old) != 1:
+              raise SystemExit("expected one chunked-bootstrap annotation marker")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
 
       - name: Install development environment
         run: |
