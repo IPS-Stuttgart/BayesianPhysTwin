@@ -45,40 +45,184 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Extract and execute reviewed patch block
+      - name: Apply fail-closed portfolio hardening
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
+          def replace_once(
+              path: Path,
+              old: str,
+              new: str,
+              *,
+              marker: str,
+          ) -> None:
+              text = path.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"{path}: {marker} expected once, found {count}"
+                  )
+              path.write_text(text.replace(old, new), encoding="utf-8")
+
           source = Path(
-              ".github/workflows/"
-              "_harden-posterior-covariance-portfolio-once.yml"
+              "src/bayesian_phystwin/posterior_covariance_portfolio.py"
           )
-          lines = source.read_text(encoding="utf-8").splitlines()
-          marker = "      - name: Apply fail-closed portfolio hardening"
-          start = lines.index(marker)
-          run_index = next(
-              index
-              for index in range(start + 1, len(lines))
-              if lines[index] == "        run: |"
+          replace_once(
+              source,
+              "    tolerance = 1e-12 + 1e-10 * scale\n",
+              "    tolerance = (\n"
+              "        max(1, len(covariance))\n"
+              "        * np.finfo(np.float64).eps\n"
+              "        * scale\n"
+              "        * 100.0\n"
+              "    )\n",
+              marker="PSD tolerance",
           )
-          stop = next(
-              index
-              for index in range(run_index + 1, len(lines))
-              if lines[index].startswith("      - name:")
+          replace_once(
+              source,
+              "            semantics = entry.source_covariance_semantics\n"
+              "            semantics_metadata = semantics.metadata\n",
+              "            semantics = entry.source_covariance_semantics\n"
+              "            expected_semantics = _projected_semantics(\n"
+              "                source.covariance_semantics,\n"
+              "                dimension=query_dimension,\n"
+              "                source_id=source_id,\n"
+              "                query_matrix_sha256=query_matrix_sha256,\n"
+              "            )\n"
+              "            if semantics.artifact_id != expected_semantics.artifact_id:\n"
+              "                raise ValueError(\n"
+              "                    \"portfolio projected covariance semantics changed\"\n"
+              "                )\n"
+              "            semantics_metadata = semantics.metadata\n",
+              marker="projected semantics validation",
           )
-          block = []
-          for line in lines[run_index + 1 : stop]:
-              if line.startswith("          "):
-                  block.append(line[10:])
-              else:
-                  block.append(line)
-          script = Path("/tmp/apply-portfolio-hardening.sh")
-          script.write_text("\n".join(block) + "\n", encoding="utf-8")
+          replace_once(
+              source,
+              "            if unavailable:\n"
+              "                raise ValueError("
+              "\"rejected portfolio cannot list alternative methods\")\n",
+              "            if unavailable:\n"
+              "                raise ValueError(\n"
+              "                    \"rejected portfolio cannot list alternative methods\"\n"
+              "                )\n"
+              "            fallback_source = source_by_method[\"exact_prior_fallback\"]\n"
+              "            fallback_reason = (\n"
+              "                fallback_source.covariance_semantics.metadata.get(\n"
+              "                    \"fallback_reason\"\n"
+              "                )\n"
+              "            )\n"
+              "            if fallback_reason != reason:\n"
+              "                raise ValueError(\n"
+              "                    \"rejected portfolio reason does not match exact fallback\"\n"
+              "                )\n",
+              marker="rejected fallback reason validation",
+          )
+
+          tests = Path(
+              "tests/test_observed_information_covariance_portfolio.py"
+          )
+          text = tests.read_text(encoding="utf-8")
+          marker = (
+              "\ndef test_portfolio_hardening_rejects_semantic_and_reason_drift()"
+          )
+          if marker in text:
+              raise SystemExit("hardening tests already present")
+          text += '''
+
+
+def test_portfolio_hardening_rejects_semantic_and_reason_drift() -> None:
+    portfolio = build_posterior_query_covariance_portfolio(
+        RESULT_ID,
+        QUERY_ID,
+        np.eye(2),
+        _accepted_sources(),
+        inference_admissible=True,
+        reason="inference-admissible",
+    )
+    working = portfolio.entry("irls_working")
+    semantics = working.source_covariance_semantics
+    tampered_semantics = PosteriorCovarianceSemanticsV1(
+        method=semantics.method,
+        dimension=semantics.dimension,
+        likelihood_power_semantics="different-generalized-bayes-power-v1",
+        prior_included=semantics.prior_included,
+        generalized_bayes=semantics.generalized_bayes,
+        mixture_curvature_exact=semantics.mixture_curvature_exact,
+        group_score_correction=semantics.group_score_correction,
+        calibrated=False,
+        metadata=semantics.metadata,
+    )
+    tampered_entry = replace(
+        working,
+        source_covariance_semantics=tampered_semantics,
+        artifact_id=None,
+    )
+    entries = tuple(
+        tampered_entry if entry is working else entry
+        for entry in portfolio.entries
+    )
+    with pytest.raises(ValueError, match="projected covariance semantics changed"):
+        replace(portfolio, entries=entries, artifact_id=None)
+
+    fallback = exact_prior_fallback_covariance_source(
+        RESULT_ID,
+        np.eye(2),
+        source_artifact_id="f" * 64,
+        reason="no-identifiable-query-state",
+    )
+    with pytest.raises(ValueError, match="reason does not match exact fallback"):
+        build_posterior_query_covariance_portfolio(
+            RESULT_ID,
+            QUERY_ID,
+            np.eye(2),
+            [fallback],
+            inference_admissible=False,
+            reason="different-rejection-reason",
+        )
+
+
+def test_portfolio_source_rejects_large_scale_material_indefiniteness() -> None:
+    with pytest.raises(ValueError, match="positive semidefinite"):
+        PosteriorCovarianceSourceV1(
+            inference_result_id=RESULT_ID,
+            source_artifact_id="c" * 64,
+            covariance=np.diag([1.0e12, -1.0]),
+            covariance_semantics=_semantics("irls_working", np.eye(2)),
+        )
+'''
+          tests.write_text(text, encoding="utf-8")
+
+          docs = Path("docs/posterior_covariance_portfolio.md")
+          replace_once(
+              docs,
+              "The final portfolio retains the query matrix and every source. "
+              "Construction\ntherefore recomputes each projected covariance and "
+              "independently verifies the\nquery, source, semantics, and estimator "
+              "identities. A manually assembled entry\ncannot substitute a different "
+              "covariance with matching labels.\n",
+              "The final portfolio retains the query matrix and every source. "
+              "Construction\ntherefore recomputes each projected covariance and "
+              "the complete projected\nsemantics, then independently verifies the "
+              "query, source, semantics, and\nestimator identities. A manually "
+              "assembled entry cannot substitute a different\ncovariance or "
+              "interpretation with matching labels.\n",
+              marker="projected semantics documentation",
+          )
+          replace_once(
+              docs,
+              "A rejected inference result has a different contract. It contains "
+              "exactly one\n`exact_prior_fallback` covariance, retains the rejection "
+              "reason, and cannot list\naccepted-update alternatives. Use\n",
+              "A rejected inference result has a different contract. It contains "
+              "exactly one\n`exact_prior_fallback` covariance, requires the portfolio "
+              "reason to match the\nfallback covariance's recorded reason, and cannot "
+              "list accepted-update\nalternatives. Use\n",
+              marker="fallback reason documentation",
+          )
           PY
-          bash /tmp/apply-portfolio-hardening.sh
 
       - name: Install and validate focused changes
         shell: bash
