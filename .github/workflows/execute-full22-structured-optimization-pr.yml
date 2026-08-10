@@ -56,6 +56,16 @@ jobs:
               for step in payload["jobs"]["repair"]["steps"]
               if "run" in step
           }
+          workflow = Path(
+              ".github/workflows/"
+              "full22-discrepancy-candidate-tournament-v1.yml"
+          )
+          documentation = Path(
+              "docs/full22_discrepancy_candidate_tournament_v1.md"
+          )
+          original_workflow = workflow.read_text(encoding="utf-8")
+          original_documentation = documentation.read_text(encoding="utf-8")
+
           subprocess.run(
               [
                   "bash",
@@ -67,44 +77,24 @@ jobs:
               check=True,
           )
 
-          workflow = Path(
-              ".github/workflows/"
-              "full22-discrepancy-candidate-tournament-v1.yml"
-          )
-          workflow_text = workflow.read_text(encoding="utf-8")
-          start_marker = "      - name: Upload compact tournament readout\n"
-          end_marker = "      - name: Upload complete tournament evidence\n"
-          if (
-              workflow_text.count(start_marker) != 1
-              or workflow_text.count(end_marker) != 1
-          ):
-              raise SystemExit("unexpected compact-readout workflow markers")
-          start = workflow_text.index(start_marker)
-          end = workflow_text.index(end_marker, start)
-          compact_step = '''      - name: Upload compact tournament readout
-            if: always()
-            uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-            with:
-              name: >-
-                bpt-full22-discrepancy-readout-${{ github.run_id }}-${{
-                github.run_attempt }}
-              path: |
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/scientific-readout.json
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/result/*.json
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/admission/admission_manifest.json
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/predictions/*/prediction_manifest.json
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/prefix/prefix_manifest.json
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/candidate-revisions.txt
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/data-manifest.json
-                ${{ runner.temp }}/bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}/pip-freeze.txt
-              if-no-files-found: ignore
-              retention-days: 30
+          workflow.write_text(original_workflow, encoding="utf-8")
+          addition = """
 
-          '''
-          workflow.write_text(
-              workflow_text[:start] + compact_step + workflow_text[end:],
+          ## Exact structured marginal evaluation
+
+          The structured candidate is scored through its exact registered per-track
+          three-dimensional marginal moments. The orchestration layer derives those
+          marginals directly from the candidate's compact frozen posterior instead of
+          constructing one repeated prediction object per forecast horizon. This
+          preserves the predictive means and per-track marginal covariances while
+          leaving candidate revisions, admission decisions, scoring rules, fallback
+          behavior, the locked protocol identity, and the claim boundary unchanged.
+          """
+          documentation.write_text(
+              original_documentation.rstrip() + addition + "\n",
               encoding="utf-8",
           )
+
           subprocess.run(
               [
                   "bash",
@@ -129,7 +119,6 @@ jobs:
           git add \
             scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
             tests/test_full22_discrepancy_candidate_tournament_v1.py \
-            .github/workflows/full22-discrepancy-candidate-tournament-v1.yml \
             docs/full22_discrepancy_candidate_tournament_v1.md \
             .github/workflows/repair-full22-structured-marginals.yml \
             .github/full22-structured-marginal-optimization-trigger.txt
