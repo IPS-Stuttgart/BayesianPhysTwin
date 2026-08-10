@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: rebuild-full22-tournament-current-main
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   rebuild:
@@ -56,9 +56,10 @@ jobs:
           )
           git checkout "${source_revision}" -- "${files[@]}"
           python - <<'PY'
+          import os
           from pathlib import Path
 
-          base = Path("${RUNNER_TEMP}/main-MANIFEST.in")
+          base = Path(os.environ["RUNNER_TEMP"]) / "main-MANIFEST.in"
           current = Path("MANIFEST.in")
           expected_suffix = (
               "include docs/full22_discrepancy_candidate_tournament_v1.md\n"
