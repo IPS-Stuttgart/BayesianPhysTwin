@@ -27,6 +27,8 @@ from .deform360_joint_sparse_geometric_common_v4 import (
     _sha256_file,
 )
 
+_MAXIMUM_NPY_HEADER_BYTES = 10_000
+
 
 def _zip_members(path: Path) -> dict[str, zipfile.ZipInfo]:
     try:
@@ -69,6 +71,25 @@ def _read_exact(stream: Any, count: int) -> bytes:
         blocks.append(block)
         remaining -= len(block)
     return b"".join(blocks)
+
+
+def _read_npy_header(
+    stream: Any,
+    version: tuple[int, int],
+) -> tuple[tuple[int, ...], bool, np.dtype[Any]]:
+    """Read a bounded NPY header without relying on NumPy private APIs."""
+
+    if version == (1, 0):
+        return np.lib.format.read_array_header_1_0(
+            stream,
+            max_header_size=_MAXIMUM_NPY_HEADER_BYTES,
+        )
+    if version == (2, 0):
+        return np.lib.format.read_array_header_2_0(
+            stream,
+            max_header_size=_MAXIMUM_NPY_HEADER_BYTES,
+        )
+    raise ValueError(f"unsupported metric NPY format version {version!r}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,9 +135,7 @@ def _load_metric_sparse_frames(
     try:
         with zipfile.ZipFile(path) as archive, archive.open(info) as stream:
             version = np.lib.format.read_magic(stream)
-            shape, fortran_order, dtype = np.lib.format._read_array_header(  # type: ignore[attr-defined]
-                stream, version
-            )
+            shape, fortran_order, dtype = _read_npy_header(stream, version)
             _require(
                 shape == (len(frames), height, width, 3), "metric point shape changed"
             )
