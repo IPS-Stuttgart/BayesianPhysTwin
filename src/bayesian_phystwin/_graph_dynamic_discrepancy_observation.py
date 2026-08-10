@@ -80,6 +80,7 @@ def _frame_group_labels(
     frame_count: int,
     node_count: int,
 ) -> np.ndarray:
+    result: np.ndarray
     if supplied is None:
         result = np.empty((frame_count, node_count), dtype=object)
         for frame in range(frame_count):
@@ -151,7 +152,7 @@ def _frame_update(
     designs: dict[int, np.ndarray] = {}
     precisions: dict[int, np.ndarray] = {}
     for node in selected:
-        design = np.zeros((3, dimension), dtype=np.float64)
+        design: np.ndarray = np.zeros((3, dimension), dtype=np.float64)
         design[:, :position_dimension] = np.kron(
             graph_basis[node : node + 1],
             identity3,
@@ -229,7 +230,7 @@ def _frame_update(
 
     def robust_weights(reduced: np.ndarray) -> np.ndarray:
         current = expanded_state(reduced)
-        weights = np.empty(len(group_nodes), dtype=np.float64)
+        weights: np.ndarray = np.empty(len(group_nodes), dtype=np.float64)
         for position, nodes in enumerate(group_nodes):
             squared_mahalanobis = 0.0
             for raw_node in nodes:
