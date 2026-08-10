@@ -265,3 +265,81 @@ def test_metric_arbitration_reports_completion_status() -> None:
     assert no_selection["status"] == "completed_no_selection"
     assert no_selection["decision"] == "retain-reference-candidate"
     assert no_selection["claim_authorized"] is False
+
+
+def test_graph_marginal_forecast_matches_dense_oracle() -> None:
+    module = _module()
+    raw_basis = np.asarray(
+        [
+            [1.0, 0.0],
+            [0.4, 0.8],
+            [0.2, -0.5],
+            [0.7, 0.1],
+        ]
+    )
+    basis, _ = np.linalg.qr(raw_basis)
+    state = np.arange(12, dtype=float).reshape(2, 2, 3) / 1000.0
+    root = np.arange(144, dtype=float).reshape(12, 12) / 10000.0
+    covariance = root @ root.T + np.eye(12) * 1e-6
+
+    means, marginals = module._forecast_graph_dynamic_marginals(
+        state,
+        covariance,
+        basis,
+        frame_dt_s=0.5,
+        velocity_retention=0.9,
+        process_position_std_m=0.001,
+        process_acceleration_std_mps2=0.002,
+        count=3,
+    )
+
+    coordinate_count = 6
+    identity = np.eye(coordinate_count)
+    transition = np.block(
+        [
+            [identity, 0.5 * identity],
+            [np.zeros_like(identity), 0.9 * identity],
+        ]
+    )
+    process_noise = 0.002**2 * np.block(
+        [
+            [0.25 * 0.5**4 * identity, 0.5 * 0.5**3 * identity],
+            [0.5 * 0.5**3 * identity, 0.5**2 * identity],
+        ]
+    )
+    process_noise[:coordinate_count, :coordinate_count] += 0.001**2 * identity
+    design = np.kron(basis, np.eye(3))
+    query = np.concatenate((design, np.zeros_like(design)), axis=1)
+    state_vector = np.concatenate((state[0].reshape(-1), state[1].reshape(-1)))
+    expected_means = []
+    expected_marginals = []
+    for _ in range(3):
+        state_vector = transition @ state_vector
+        covariance = transition @ covariance @ transition.T + process_noise
+        dense = query @ covariance @ query.T
+        expected_means.append((query @ state_vector).reshape(len(basis), 3))
+        expected_marginals.append(
+            np.stack(
+                [
+                    dense[3 * node : 3 * node + 3, 3 * node : 3 * node + 3]
+                    for node in range(len(basis))
+                ]
+            )
+        )
+
+    np.testing.assert_allclose(means, np.stack(expected_means))
+    np.testing.assert_allclose(
+        marginals,
+        np.stack(expected_marginals),
+        atol=1e-12,
+        rtol=1e-12,
+    )
+
+
+def test_graph_candidate_does_not_request_dense_joint_covariance() -> None:
+    import inspect
+
+    module = _module()
+    source = inspect.getsource(module._forecast_graph_dynamic)
+    assert "belief.forecast(" not in source
+    assert "_forecast_graph_dynamic_marginals(" in source

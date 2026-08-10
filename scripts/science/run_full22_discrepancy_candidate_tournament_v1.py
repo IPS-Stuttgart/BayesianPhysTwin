@@ -532,6 +532,116 @@ def _forecast_structured_endpoint(
     )
 
 
+def _forecast_graph_dynamic_marginals(
+    state_mean: np.ndarray,
+    state_covariance: np.ndarray,
+    basis: np.ndarray,
+    *,
+    frame_dt_s: float,
+    velocity_retention: float,
+    process_position_std_m: float,
+    process_acceleration_std_mps2: float,
+    count: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Forecast node marginals without materializing dense joint covariance."""
+
+    state = np.asarray(state_mean, dtype=np.float64)
+    covariance = np.asarray(state_covariance, dtype=np.float64)
+    graph_basis = np.asarray(basis, dtype=np.float64)
+    _require(
+        state.ndim == 3 and state.shape[0] == 2 and state.shape[2] == 3,
+        "graph state_mean must have shape (2, rank, 3)",
+    )
+    rank = state.shape[1]
+    state_dimension = 6 * rank
+    _require(
+        covariance.shape == (state_dimension, state_dimension),
+        "graph state_covariance shape changed",
+    )
+    _require(
+        graph_basis.ndim == 2 and graph_basis.shape[1] == rank,
+        "graph basis and state rank differ",
+    )
+    _require(count >= 1, "graph forecast count must be positive")
+    _require(
+        frame_dt_s > 0.0
+        and 0.0 <= velocity_retention <= 1.0
+        and process_position_std_m >= 0.0
+        and process_acceleration_std_mps2 >= 0.0,
+        "graph dynamics configuration is invalid",
+    )
+
+    coordinate_count = 3 * rank
+    identity = np.eye(coordinate_count, dtype=np.float64)
+    transition = np.block(
+        [
+            [identity, frame_dt_s * identity],
+            [
+                np.zeros_like(identity),
+                velocity_retention * identity,
+            ],
+        ]
+    )
+    acceleration_variance = process_acceleration_std_mps2**2
+    process_noise = acceleration_variance * np.block(
+        [
+            [
+                0.25 * frame_dt_s**4 * identity,
+                0.5 * frame_dt_s**3 * identity,
+            ],
+            [
+                0.5 * frame_dt_s**3 * identity,
+                frame_dt_s**2 * identity,
+            ],
+        ]
+    )
+    process_noise[:coordinate_count, :coordinate_count] += (
+        process_position_std_m**2 * identity
+    )
+    process_noise = 0.5 * (process_noise + process_noise.T)
+
+    state_vector = np.concatenate((state[0].reshape(-1), state[1].reshape(-1)))
+    covariance = 0.5 * (covariance + covariance.T)
+    position_design = np.kron(
+        graph_basis,
+        np.eye(3, dtype=np.float64),
+    )
+    design_rows = position_design.reshape(
+        graph_basis.shape[0],
+        3,
+        coordinate_count,
+    )
+    means: list[np.ndarray] = []
+    marginals: list[np.ndarray] = []
+    for _ in range(count):
+        state_vector = transition @ state_vector
+        covariance = transition @ covariance @ transition.T + process_noise
+        covariance = 0.5 * (covariance + covariance.T)
+        means.append(
+            (position_design @ state_vector[:coordinate_count]).reshape(
+                graph_basis.shape[0],
+                3,
+            )
+        )
+        position_covariance = covariance[
+            :coordinate_count,
+            :coordinate_count,
+        ]
+        projected_rows = (position_design @ position_covariance).reshape(
+            graph_basis.shape[0],
+            3,
+            coordinate_count,
+        )
+        marginal = np.einsum(
+            "nik,njk->nij",
+            projected_rows,
+            design_rows,
+            optimize=True,
+        )
+        marginals.append(0.5 * (marginal + np.swapaxes(marginal, 1, 2)))
+    return np.stack(means), np.stack(marginals)
+
+
 def _forecast_graph_dynamic(
     residual_m: np.ndarray,
     valid: np.ndarray,
@@ -572,18 +682,26 @@ def _forecast_graph_dynamic(
         frame_dt_s=float(configuration["frame_dt_s"]),
         config=config,
     )
-    horizons = np.arange(1, count + 1, dtype=np.int64)
-    forecast = belief.forecast(horizons)
+    mean, covariance = _forecast_graph_dynamic_marginals(
+        belief.state_mean,
+        belief.state_covariance,
+        belief.graph_basis,
+        frame_dt_s=belief.frame_dt_s,
+        velocity_retention=belief.velocity_retention,
+        process_position_std_m=belief.process_position_std_m,
+        process_acceleration_std_mps2=(belief.process_acceleration_std_mps2),
+        count=count,
+    )
     return (
-        np.asarray(forecast.mean_m, dtype=np.float64),
-        np.asarray(
-            forecast.marginal_covariance_m2,
-            dtype=np.float64,
-        ),
+        mean,
+        covariance,
         {
             "state_dimension": int(np.asarray(belief.state_mean).size),
             "covariance_bytes": int(np.asarray(belief.state_covariance).nbytes),
             "accepted_update_count": int(belief.accepted_update_count),
+            "forecast_covariance_representation": (
+                "per-node-marginals-from-modal-state"
+            ),
         },
     )
 

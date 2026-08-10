@@ -85,6 +85,12 @@ For each case it:
 A candidate failure produces zero raw forecasts and is rejected later. It does
 not remove a case or candidate from the matched roster.
 
+The graph-modal arm evaluates exact per-node 3-D marginal covariances
+directly from its compact modal state. It does not materialize the dense
+cross-node/cross-horizon covariance because the tournament proper score uses
+only those registered marginals. This changes neither the candidate mean nor
+the marginal covariance represented by the graph belief.
+
 ### 3. Prefix-only admission
 
 `admit` reads only the prefix artifact and prediction manifests. It applies the
