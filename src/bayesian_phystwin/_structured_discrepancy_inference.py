@@ -291,8 +291,8 @@ def infer_structured_discrepancy(
         (component_count, track_count),
         dtype=np.float64,
     )
-    scores = np.empty(component_count, dtype=np.float64)
-    process_variance = np.empty(component_count, dtype=np.float64)
+    scores: np.ndarray = np.empty(component_count, dtype=np.float64)
+    process_variance: np.ndarray = np.empty(component_count, dtype=np.float64)
     common_update_count: np.ndarray | None = None
     exact_full_rank = basis.shape[0] == basis.shape[1] and _is_binary_reliability(
         reliability[:frame_stop]
