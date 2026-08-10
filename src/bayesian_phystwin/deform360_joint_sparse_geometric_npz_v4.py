@@ -223,30 +223,35 @@ def _load_prediction_support_windows(
     raw_windows = manifest.get("overlap_windows")
     _require(
         isinstance(raw_windows, list) and bool(raw_windows),
-        "prediction windows are missing",
+        "prediction overlap windows changed",
     )
     integrity = manifest.get("artifact_integrity")
-    _require(isinstance(integrity, Mapping), "prediction integrity record is missing")
-    integrity_map = cast(Mapping[str, Any], integrity)
+    _require(isinstance(integrity, Mapping), "prediction integrity block changed")
+    integrity = cast(Mapping[str, Any], integrity)
     _require(
-        integrity_map.get("schema") == MOTIONCRAFTER_INTEGRITY_SCHEMA,
+        integrity.get("schema") == MOTIONCRAFTER_INTEGRITY_SCHEMA,
         "prediction integrity schema changed",
     )
-    run_spec = integrity_map.get("run_spec")
-    _require(isinstance(run_spec, Mapping), "prediction run spec is missing")
+    run_spec = integrity.get("run_spec")
+    _require(isinstance(run_spec, Mapping), "prediction run specification changed")
     run_spec_sha = sha256_digest(
-        integrity_map.get("run_spec_sha256"), name="run_spec_sha256"
+        integrity.get("run_spec_sha256"), name="prediction run_spec_sha256"
     )
     _require(
         hashlib.sha256(_canonical_bytes(cast(Mapping[str, Any], run_spec))).hexdigest()
         == run_spec_sha,
-        "prediction run-spec digest changed",
+        "prediction run specification SHA-256 changed",
     )
-    members = integrity_map.get("members")
-    _require(isinstance(members, list), "prediction integrity members are missing")
+    raw_members = integrity.get("members")
+    _require(
+        isinstance(raw_members, list) and bool(raw_members),
+        "prediction integrity member roster changed",
+    )
     descriptors: dict[str, Mapping[str, Any]] = {}
-    for index, raw in enumerate(cast(list[object], members)):
-        _require(isinstance(raw, Mapping), f"prediction member {index} changed")
+    for index, raw in enumerate(cast(list[object], raw_members)):
+        _require(
+            isinstance(raw, Mapping), f"prediction integrity member {index} changed"
+        )
         descriptor = cast(Mapping[str, Any], raw)
         relative = _safe_relative(descriptor.get("path"), name="prediction member path")
         _require(relative not in descriptors, "prediction member path repeats")
@@ -343,5 +348,14 @@ def _load_prediction_support_windows(
     output.sort(key=lambda item: (item.start_frame, item.stop_frame, item.window_id))
     _require(
         output[0].start_frame == start, "prediction windows miss causal prefix start"
+    )
+    covered_frames = {
+        int(frame)
+        for window in output
+        for frame in np.asarray(window.frame_indices, dtype=np.int64)
+    }
+    _require(
+        covered_frames == set(range(start, stop)),
+        "prediction windows do not cover the complete causal range",
     )
     return output, run_spec_sha
