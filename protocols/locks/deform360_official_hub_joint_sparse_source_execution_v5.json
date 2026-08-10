@@ -63,7 +63,7 @@
     "selection_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
     "selection_sha256": "b28daf8477e214cb74a4d250ef5eea8f9f1a014aec10487699ac0ce063961222"
   },
-  "execution_lock_id": "91c326f253eac24725562eed66991da2c83a137aebdde9ccd7727aa20d091c8f",
+  "execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
   "information_boundary": {
     "confirmation_payloads_opened": false,
     "development_suffix_allowed_only_after_fold_prediction_seal": true,
@@ -83,13 +83,22 @@
     "minimum_frame_zero_node_count": 128,
     "official_phystwin_real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
     "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "prepared_source_inventory": {
+      "file_sha256": "4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007",
+      "inventory_id": "6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
+    },
+    "process_local_adapter_protocol_id": "deform360-joint-sparse-physical-source-v5",
     "rejected_or_unsupported_deployed_artifact_id": "exact-B0-artifact-id",
     "source_files_sha256": {
+      "scripts/remote/build_deform360_bias_aware_automatic_twin.py": "27db1f8cf3e35e603e33117d01f0f8c35abb304a064a44e88bf41de8e7eac017",
       "scripts/remote/run_deform360_bias_aware_frame_zero.py": "d51410521cd8a894a653d930c2e80257b27099f033fe45951a2d091ec142fdec",
       "scripts/remote/run_deform360_bias_aware_physical_prior.py": "e5d81207e89ccaa170a3711708d8ee5ba6b4b181fb08ab17819a35e8c0a9a4ff",
+      "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py": "061fea23aeb83cbaeada9335417d99795de886c8ee6c6ae1013bddfe79bddb37",
       "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py": "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6",
+      "scripts/science/materialize_deform360_joint_sparse_physical_source_v5.py": "fe09b926d41ba7148b1b15e2b82d678ca6f72b472dfe545324b53ede0e70d4b7",
       "src/bayesian_phystwin/deform360_bias_aware_prospective_physical.py": "9f87a8aec1bd8bd8ae35865b819bae75d2a1d8d97d4950ca90b96ca90fa21226",
-      "src/bayesian_phystwin/deform360_frame_zero_depth_initializer.py": "ff92c1531a4e4bd492408f626dc5515d084d5a9a538123c99d32f087b66cc6d8"
+      "src/bayesian_phystwin/deform360_frame_zero_depth_initializer.py": "ff92c1531a4e4bd492408f626dc5515d084d5a9a538123c99d32f087b66cc6d8",
+      "src/bayesian_phystwin/deform360_joint_sparse_physical_source_v5.py": "fcb0ae57e84c7a3d4fa9515ac5ece1b1a0a1bd2cd50713e5ce33215ff22ad9c0"
     }
   },
   "prospective_policy": {
