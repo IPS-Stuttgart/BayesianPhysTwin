@@ -103,6 +103,8 @@ The package installs exactly one executable: `bpt`.
 | `bpt residual replay` | Replay exported residuals through the robust likelihood. | [Guide](docs/residual_replay.md) |
 | `bpt benchmark synthetic` | Run the controlled synthetic benchmark. | [Guide](docs/synthetic_benchmark.md) |
 | `bpt evidence summarize` | Summarize matched guarded prospective evidence. | [Guide](docs/decisive_evidence_protocol.md) |
+| `bpt evidence score` | Convert predictive distributions into proper-score evidence. | [Guide](docs/proper_scoring.md) |
+| `bpt evidence decompose` | Decompose guarded Bayesian value across frozen comparison arms. | [Guide](docs/bayesian_value_decomposition.md) |
 | `bpt evidence bundle` | Build or validate a content-addressed claim bundle. | [Guide](docs/claim_bundle_v1.md) |
 | `bpt run manifest` | Create or validate a content-addressed run manifest. | [Guide](docs/reproducible_runs.md) |
 <!-- bpt-stable-commands:end -->
