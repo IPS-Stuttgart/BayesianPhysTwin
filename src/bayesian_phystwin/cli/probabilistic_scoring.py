@@ -54,8 +54,13 @@ def _load_input(
     if maximum_bytes < 1:
         raise ValueError("maximum_input_bytes must be positive")
     absolute = path.absolute()
-    if any(candidate.is_symlink() for candidate in (absolute, *absolute.parents)):
-        raise ValueError("probabilistic-score input path must not contain symlinks")
+    for candidate in (absolute, *absolute.parents):
+        try:
+            candidate_metadata = os.stat(candidate, follow_symlinks=False)
+        except OSError as error:
+            raise ValueError("probabilistic-score input path is unreadable") from error
+        if stat.S_ISLNK(candidate_metadata.st_mode):
+            raise ValueError("probabilistic-score input path must not contain symlinks")
     try:
         before = os.lstat(absolute)
     except OSError as error:
