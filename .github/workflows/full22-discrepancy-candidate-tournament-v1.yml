@@ -1,0 +1,397 @@
+name: Full-22 discrepancy candidate tournament v1
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/full22-discrepancy-candidate-tournament-v1.yml"
+      - "protocols/full22_discrepancy_candidate_tournament_v1.json"
+      - "scripts/science/run_full22_discrepancy_candidate_tournament_v1.py"
+      - "tests/test_full22_discrepancy_candidate_tournament_v1.py"
+      - "src/bayesian_phystwin/discrepancy_candidate_tournament.py"
+      - "src/bayesian_phystwin/_discrepancy_tournament_*.py"
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner type
+        required: true
+        default: github-hosted
+        type: choice
+        options:
+          - github-hosted
+          - self-hosted
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full22-discrepancy-tournament-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PROTOCOL: protocols/full22_discrepancy_candidate_tournament_v1.json
+  BASE_CANDIDATE_REVISION: 811ae1df163027e7d84f16d236b459b84b75f2aa
+  STRUCTURED_CANDIDATE_REVISION: 265cfe8488fdb40f2c1c72c67385e0e88bab2595
+  GRAPH_CANDIDATE_REVISION: f49eecdbbbe31fc36b1a64ab6284a9e69d8851b3
+
+jobs:
+  tournament:
+    name: Prediction-first retrospective source tournament
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: >-
+      ${{
+        inputs.runner == 'self-hosted' &&
+        fromJSON('["self-hosted","Linux","X64","nvidia-smi"]') ||
+        'ubuntu-latest'
+      }}
+    timeout-minutes: 360
+    steps:
+      - name: Check out orchestration revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Restore public PhysTwin trajectory subset
+        if: ${{ inputs.runner != 'self-hosted' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/bayesian-phystwin/trajectory-evaluation-v1
+          key: >-
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-${{
+            hashFiles('src/bayesian_phystwin/phystwin_data.py') }}
+          restore-keys: |
+            bpt-trajectory-evaluation-v1-${{ runner.os }}-
+
+      - name: Resolve cache, output, and evaluator revision
+        shell: bash
+        env:
+          CONFIGURED_CACHE: >-
+            ${{ inputs.runner == 'self-hosted' &&
+            vars.PHYSTWIN_EVALUATION_CACHE || '' }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${CONFIGURED_CACHE}" ]]; then
+            data_root="${CONFIGURED_CACHE}/trajectory-evaluation-v1"
+          else
+            data_root="${HOME}/.cache/bayesian-phystwin/trajectory-evaluation-v1"
+          fi
+          output_root="${RUNNER_TEMP}/bpt-full22-discrepancy-"
+          output_root+="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          if [[ -n "${PR_HEAD_SHA}" ]]; then
+            evaluator_revision="${PR_HEAD_SHA}"
+          else
+            evaluator_revision="${GITHUB_SHA}"
+          fi
+          mkdir -p "${data_root}" "${output_root}"
+          echo "DATA_ROOT=${data_root}" >> "${GITHUB_ENV}"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          echo "EVALUATOR_REVISION=${evaluator_revision}" >> "${GITHUB_ENV}"
+
+      - name: Install the locked evaluation environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,data,graph]"
+          python -m pip check
+          python -m pip freeze --all > "${OUTPUT_ROOT}/pip-freeze.txt"
+
+      - name: Validate runner and frozen protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m ruff format --check \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py
+          python -m pytest -q \
+            tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            tests/test_horizon_conditioned_discrepancy_tournament.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_crossfit.py \
+            tests/test_horizon_conditioned_discrepancy_tournament_hardening.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/full22_discrepancy_candidate_tournament_v1.json"
+          )
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          digest = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = (
+              "22746172fb6d207e80a2ebfeb2a00333"
+              "2317f3895317ff12988275acc75e16bd"
+          )
+          if digest != expected:
+              raise SystemExit(
+                  f"protocol digest changed: expected {expected}, got {digest}"
+              )
+          print(f"locked protocol: {digest}")
+          PY
+
+      - name: Materialize exact candidate worktrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          ensure_commit() {
+            local revision="$1"
+            local branch="$2"
+            if ! git cat-file -e "${revision}^{commit}" 2>/dev/null; then
+              git fetch --no-tags origin "${branch}"
+            fi
+            git cat-file -e "${revision}^{commit}"
+          }
+          ensure_commit \
+            "${BASE_CANDIDATE_REVISION}" \
+            main
+          ensure_commit \
+            "${STRUCTURED_CANDIDATE_REVISION}" \
+            agent/structured-discrepancy-field-v1
+          ensure_commit \
+            "${GRAPH_CANDIDATE_REVISION}" \
+            agent/graph-dynamic-discrepancy-v1
+          git worktree add --detach \
+            "${RUNNER_TEMP}/bpt-candidate-base" \
+            "${BASE_CANDIDATE_REVISION}"
+          git worktree add --detach \
+            "${RUNNER_TEMP}/bpt-candidate-structured" \
+            "${STRUCTURED_CANDIDATE_REVISION}"
+          git worktree add --detach \
+            "${RUNNER_TEMP}/bpt-candidate-graph" \
+            "${GRAPH_CANDIDATE_REVISION}"
+          {
+            echo "base=${BASE_CANDIDATE_REVISION}"
+            echo "structured=${STRUCTURED_CANDIDATE_REVISION}"
+            echo "graph=${GRAPH_CANDIDATE_REVISION}"
+          } | tee "${OUTPUT_ROOT}/candidate-revisions.txt"
+
+      - name: Prepare prefix-only full-22 inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            prepare-prefix \
+            "${DATA_ROOT}" \
+            "${OUTPUT_ROOT}/prefix" \
+            --protocol "${PROTOCOL}" \
+            --force \
+            | tee "${OUTPUT_ROOT}/prepare-prefix.json"
+
+      - name: Seal raw candidate forecasts
+        shell: bash
+        run: |
+          set -euo pipefail
+          script="${GITHUB_WORKSPACE}/scripts/science/"
+          script+="run_full22_discrepancy_candidate_tournament_v1.py"
+          predict() {
+            local candidate_id="$1"
+            local revision="$2"
+            local source_root="$3"
+            PYTHONPATH="${source_root}/src" \
+              python "${script}" \
+              predict \
+              "${OUTPUT_ROOT}/prefix" \
+              "${OUTPUT_ROOT}/predictions/${candidate_id}" \
+              --protocol "${GITHUB_WORKSPACE}/${PROTOCOL}" \
+              --candidate "${candidate_id}" \
+              --source-revision "${revision}" \
+              --force \
+              > "${OUTPUT_ROOT}/predict-${candidate_id}.json"
+          }
+          base="${RUNNER_TEMP}/bpt-candidate-base"
+          predict physical_fallback "${BASE_CANDIDATE_REVISION}" "${base}"
+          predict last_residual "${BASE_CANDIDATE_REVISION}" "${base}"
+          predict independent_endpoint_v1 "${BASE_CANDIDATE_REVISION}" "${base}"
+          predict dynamic_endpoint_v2 "${BASE_CANDIDATE_REVISION}" "${base}"
+          predict \
+            structured_kernel_rank4_v1 \
+            "${STRUCTURED_CANDIDATE_REVISION}" \
+            "${RUNNER_TEMP}/bpt-candidate-structured"
+          predict \
+            graph_dynamic_kernel_rank4_v1 \
+            "${GRAPH_CANDIDATE_REVISION}" \
+            "${RUNNER_TEMP}/bpt-candidate-graph"
+
+      - name: Seal prefix-only metric-specific admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${GITHUB_WORKSPACE}/src" \
+            python \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            admit \
+            "${OUTPUT_ROOT}/prefix" \
+            "${OUTPUT_ROOT}/predictions" \
+            "${OUTPUT_ROOT}/admission" \
+            --protocol "${PROTOCOL}" \
+            --force \
+            | tee "${OUTPUT_ROOT}/admission-console.json"
+
+      - name: Open the public future and run both tournaments
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${GITHUB_WORKSPACE}/src" \
+            python \
+            scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
+            score \
+            "${DATA_ROOT}" \
+            "${OUTPUT_ROOT}/prefix" \
+            "${OUTPUT_ROOT}/predictions" \
+            "${OUTPUT_ROOT}/admission" \
+            "${OUTPUT_ROOT}/result" \
+            --protocol "${PROTOCOL}" \
+            --evaluator-revision "${EVALUATOR_REVISION}" \
+            --force \
+            | tee "${OUTPUT_ROOT}/score-console.json"
+          cp "${DATA_ROOT}/trajectory_evaluation_manifest.json" \
+            "${OUTPUT_ROOT}/data-manifest.json"
+
+      - name: Verify exact barriers and summarize the decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["OUTPUT_ROOT"])
+          result = root / "result"
+          arbitration = json.loads(
+              (result / "metric_arbitration_report.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          admission = json.loads(
+              (root / "admission" / "admission_manifest.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if arbitration["claim_authorized"] is not False:
+              raise SystemExit("retrospective tournament authorized a claim")
+          if arbitration["admission_manifest_id"] != admission[
+              "admission_manifest_id"
+          ]:
+              raise SystemExit("future report did not bind the admission seal")
+          summary = {
+              "schema": "bayesian-phystwin-full22-discrepancy-readout",
+              "schema_version": 1,
+              "evaluator_revision": os.environ["EVALUATOR_REVISION"],
+              "selected_candidate": arbitration["selected_candidate"],
+              "decision": arbitration["decision"],
+              "source_gate_passed": arbitration["source_gate_passed"],
+              "metric_selected_candidates": arbitration[
+                  "metric_selected_candidates"
+              ],
+              "metric_source_gate_passed": arbitration[
+                  "metric_source_gate_passed"
+              ],
+              "prediction_barrier_sha256": arbitration[
+                  "prediction_barrier_sha256"
+              ],
+              "admission_manifest_id": arbitration[
+                  "admission_manifest_id"
+              ],
+              "claim_authorized": False,
+              "claim_boundary": arbitration["claim_boundary"],
+          }
+          (root / "scientific-readout.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+          git diff --exit-code
+          git status --porcelain=v1 | tee "${OUTPUT_ROOT}/git-status.txt"
+          test ! -s "${OUTPUT_ROOT}/git-status.txt"
+
+      - name: Publish job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Full-22 discrepancy candidate tournament"
+            echo
+            echo "- Evaluator revision: \`${EVALUATOR_REVISION}\`"
+            echo "- Candidate revisions are frozen in the uploaded evidence."
+            if [[ -f "${OUTPUT_ROOT}/scientific-readout.json" ]]; then
+              python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          readout = json.loads(
+              (Path(os.environ["OUTPUT_ROOT"]) / "scientific-readout.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          print(
+              f"- Decision: `{readout['decision']}`"
+          )
+          print(
+              f"- Final candidate: `{readout['selected_candidate']}`"
+          )
+          print(
+              "- Metric candidates: "
+              + ", ".join(
+                  f"`{name}={candidate}`"
+                  for name, candidate in readout[
+                      "metric_selected_candidates"
+                  ].items()
+              )
+          )
+          print(
+              "- Claim authorized: "
+              f"`{str(readout['claim_authorized']).lower()}`"
+          )
+          print("")
+          print(
+              "This is source-only retrospective selection on an already-open "
+              "cohort, not fresh independent validation."
+          )
+          PY
+            else
+              echo "- The run stopped before a scientific readout was published."
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload complete tournament evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: bpt-full22-discrepancy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: >-
+            ${{ runner.temp }}/bpt-full22-discrepancy-${{
+            github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 30
