@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bayesian_phystwin import v1
+from importlib import import_module
 
 
 EXPECTED_PUBLIC_API = {
@@ -38,6 +38,8 @@ EXPECTED_PUBLIC_API = {
 
 
 def test_versioned_api_is_deliberately_small_and_frozen() -> None:
+    v1 = import_module("bayesian_phystwin.v1")
+
     assert set(v1.__all__) == EXPECTED_PUBLIC_API
     assert len(v1.__all__) == len(set(v1.__all__))
     for name in EXPECTED_PUBLIC_API:
