@@ -507,7 +507,8 @@ def _validate_metric_jobs(
             name=f"metric job {index} object_id",
         )
         expected_object = _EXPECTED_OBJECT_BY_ID.get(object_id)
-        _require(expected_object is not None, "metric batch object roster changed")
+        if expected_object is None:
+            raise ValueError("metric batch object roster changed")
         episode_id = _genuine_integer(
             job.get("episode_id"),
             name=f"metric job {index} episode_id",
