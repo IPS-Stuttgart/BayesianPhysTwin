@@ -36,9 +36,7 @@ _WorkflowLoader.yaml_implicit_resolvers = copy.deepcopy(
 )
 for resolver_key, resolvers in tuple(_WorkflowLoader.yaml_implicit_resolvers.items()):
     retained = [
-        (tag, pattern)
-        for tag, pattern in resolvers
-        if tag != "tag:yaml.org,2002:bool"
+        (tag, pattern) for tag, pattern in resolvers if tag != "tag:yaml.org,2002:bool"
     ]
     if retained:
         _WorkflowLoader.yaml_implicit_resolvers[resolver_key] = retained
@@ -173,9 +171,8 @@ def _permission_violations(
 def _persists_checkout_credentials(workflow: Mapping[str, object]) -> bool:
     for mapping in _iter_mappings(workflow):
         uses = mapping.get("uses")
-        if (
-            not isinstance(uses, str)
-            or not uses.lower().startswith("actions/checkout@")
+        if not isinstance(uses, str) or not uses.lower().startswith(
+            "actions/checkout@"
         ):
             continue
         options = mapping.get("with")
@@ -189,8 +186,7 @@ def _persists_checkout_credentials(workflow: Mapping[str, object]) -> bool:
             if _normalized_scalar(name) == "persist-credentials"
         ]
         if persist_values and (
-            len(persist_values) != 1
-            or _normalized_scalar(persist_values[0]) != "false"
+            len(persist_values) != 1 or _normalized_scalar(persist_values[0]) != "false"
         ):
             return True
     return False
@@ -321,11 +317,7 @@ def test_duplicate_yaml_keys_fail_closed() -> None:
 
 
 def test_non_pull_request_workflows_are_outside_this_policy() -> None:
-    text = (
-        "on: workflow_dispatch\n"
-        "permissions: write-all\n"
-        "steps:\n  - run: git push\n"
-    )
+    text = "on: workflow_dispatch\npermissions: write-all\nsteps:\n  - run: git push\n"
 
     assert _pull_request_workflow_violations("manual.yml", text) == []
 
@@ -342,3 +334,43 @@ def test_pull_request_workflows_are_read_only_and_do_not_rewrite_source() -> Non
         "materializing, committing, or force-pushing replacement source:\n- "
         + "\n- ".join(violations)
     )
+
+
+def test_global_manifest_changes_use_central_validation_only() -> None:
+    specialized = (
+        "deform360-calibration-observability-batch.yml",
+        "deform360-calibration-prepared-inventory.yml",
+        "deform360-calibration-visual-execution-admission.yml",
+        "deform360-calibration-visual-production.yml",
+        "deform360-joint-sparse-geometric-v4-contracts.yml",
+        "deform360-joint-sparse-observability-v4.yml",
+        "deform360-joint-sparse-prospective-v5-contracts.yml",
+        "inventory-deform360-v4-results-once.yml",
+        "launch-deform360-provider-failure-census-v1-once.yml",
+        "recursive-prob4d-stream-self-hosted.yml",
+    )
+
+    def event_paths(relative: str, event: str) -> tuple[str, ...]:
+        workflow = _load_workflow(
+            (_WORKFLOW_ROOT / relative).read_text(encoding="utf-8")
+        )
+        events = workflow.get("on")
+        assert isinstance(events, Mapping)
+        configuration = events.get(event)
+        if configuration is None:
+            return ()
+        assert isinstance(configuration, Mapping)
+        paths = configuration.get("paths")
+        if paths is None:
+            return ()
+        if isinstance(paths, str):
+            return (paths,)
+        assert isinstance(paths, list)
+        return tuple(str(path) for path in paths)
+
+    for relative in specialized:
+        assert "MANIFEST.in" not in event_paths(relative, "pull_request")
+        assert "MANIFEST.in" not in event_paths(relative, "push")
+
+    assert "MANIFEST.in" in event_paths("release-candidate.yml", "pull_request")
+    assert event_paths("tests.yml", "pull_request") == ()

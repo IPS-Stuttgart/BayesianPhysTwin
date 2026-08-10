@@ -456,7 +456,7 @@ def test_one_shot_workflow_is_source_only_and_binds_the_frozen_result() -> None:
     assert "future_frames_used=false" in text
     assert "replacement_allowed=false" in text
     assert "actions/upload-artifact@v7" in text
-    assert "MANIFEST.in" in text
+    assert "MANIFEST.in" not in text
     manifest = MANIFEST.read_text(encoding="utf-8")
     assert "include docs/deform360_source_support_failure_evidence_v1.md" in manifest
     assert (
