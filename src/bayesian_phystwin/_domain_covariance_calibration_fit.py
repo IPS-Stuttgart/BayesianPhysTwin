@@ -242,6 +242,7 @@ def _fit_scale_and_floor(
 
 def _calibration_data_id(
     *,
+    predictor_id: str,
     calibration_partition_id: str,
     statistical_unit: str,
     residual_definition: str,
@@ -263,6 +264,7 @@ def _calibration_data_id(
         {
             "schema": DOMAIN_COVARIANCE_DATA_SCHEMA,
             "schema_version": DOMAIN_COVARIANCE_DATA_VERSION,
+            "predictor_id": predictor_id,
             "calibration_partition_id": calibration_partition_id,
             "statistical_unit": statistical_unit,
             "residual_definition": residual_definition,
