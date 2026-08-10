@@ -172,7 +172,7 @@ def _state_vector(value: np.ndarray) -> np.ndarray:
 
 def _state_array(value: np.ndarray, rank: int) -> np.ndarray:
     position_size = 3 * rank
-    result = np.empty((2, rank, 3), dtype=np.float64)
+    result: np.ndarray = np.empty((2, rank, 3), dtype=np.float64)
     result[0] = value[:position_size].reshape(rank, 3)
     result[1] = value[position_size:].reshape(rank, 3)
     return result
