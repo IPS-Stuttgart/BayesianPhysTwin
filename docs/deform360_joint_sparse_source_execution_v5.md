@@ -55,9 +55,50 @@ full-source refit are also required.
 If any check fails, `confirmation_access_authorized` is false. No confirmation
 payload is opened and the negative source result is complete.
 
-## Command
+## Prediction-sealed evidence assembly
 
-After all ten prediction seals and the source evidence artifact exist:
+The execution publishes two immutable artifacts before invoking the gate. First,
+all ten outer forecasts and all ninety inner cross-fitted forecasts are collected
+into one outcome-free prediction batch:
+
+```bash
+python scripts/science/materialize_deform360_joint_sparse_source_evidence_v5.py \
+  seal-batch \
+  --execution-lock protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json \
+  --prediction-seal /path/to/seal-000.json \
+  --prediction-seal /path/to/seal-001.json \
+  --output /path/to/source-prediction-batch.json
+```
+
+The complete command has one `--prediction-seal` argument for each of the 100
+nested records. The batch requires the exact 10-by-10 roster, exact outer and
+inner fit sets, one implementation revision, and fold-invariant B0 and B1
+forecasts. Its information boundary states that no development suffix or
+confirmation outcome has been opened. The batch also binds the exact source
+revision that generated every forecast, and the scoring stage cannot replace or
+reinterpret it.
+
+Only after that non-replacing batch exists may the workflow open the ten
+development suffixes and publish one outcome record for each seal. Assembly binds
+every loss to the exact method artifact and prediction-batch identity:
+
+```bash
+python scripts/science/materialize_deform360_joint_sparse_source_evidence_v5.py \
+  assemble \
+  --execution-lock protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json \
+  --prediction-batch /path/to/source-prediction-batch.json \
+  --outcome /path/to/outcome-000.json \
+  --outcome /path/to/outcome-001.json \
+  --output /path/to/source-evidence.json
+```
+
+The complete command has 100 `--outcome` arguments. Manual substitution is
+rejected: missing, repeated, foreign-batch, method-artifact, fit-roster, and
+content-identity mismatches fail closed.
+
+## Source-gate command
+
+After the prediction batch and assembled source evidence exist:
 
 ```bash
 python scripts/science/evaluate_deform360_joint_sparse_source_v5.py \
@@ -66,7 +107,7 @@ python scripts/science/evaluate_deform360_joint_sparse_source_v5.py \
   --output /path/to/source-gate-result.json
 ```
 
-The command refuses malformed identities, duplicate or replacement objects,
+The commands refuse malformed identities, duplicate or replacement objects,
 future-observation use, confirmation access, non-finite values, changed locks, and
 silent output replacement.
 
