@@ -343,3 +343,90 @@ def test_graph_candidate_does_not_request_dense_joint_covariance() -> None:
     source = inspect.getsource(module._forecast_graph_dynamic)
     assert "belief.forecast(" not in source
     assert "_forecast_graph_dynamic_marginals(" in source
+
+
+def test_structured_marginal_forecast_matches_component_oracle() -> None:
+    module = _module()
+    raw_basis = np.asarray(
+        [
+            [1.0, 0.0],
+            [0.4, 0.8],
+            [0.2, -0.5],
+            [0.7, 0.1],
+        ]
+    )
+    basis, _ = np.linalg.qr(raw_basis)
+    coefficient_mean = np.arange(18, dtype=float).reshape(3, 2, 3) / 1000.0
+    roots = np.arange(12, dtype=float).reshape(3, 2, 2) / 10000.0
+    coefficient_covariance = np.stack(
+        [root @ root.T + np.eye(2) * 1e-6 for root in roots]
+    )
+    local_variance = np.arange(12, dtype=float).reshape(3, 4) / 1000000.0
+    weights = np.asarray([0.2, 0.3, 0.5])
+    process_variance = np.asarray([1e-7, 2e-7, 4e-7])
+
+    means, marginals = module._forecast_structured_marginals(
+        basis,
+        coefficient_mean,
+        coefficient_covariance,
+        local_variance,
+        weights,
+        process_variance,
+        count=3,
+    )
+
+    component_mean = np.einsum(
+        "nr,krc->knc",
+        basis,
+        coefficient_mean,
+    )
+    expected_mean = np.einsum("k,knc->nc", weights, component_mean)
+    leverage = np.sum(np.square(basis), axis=1)
+    complement = np.maximum(1.0 - leverage, 0.0)
+    centered = component_mean - expected_mean[None, :, :]
+    expected_marginals = []
+    for horizon in range(1, 4):
+        propagated_covariance = coefficient_covariance + (
+            horizon * process_variance[:, None, None] * np.eye(2)[None, :, :]
+        )
+        propagated_local = local_variance + (
+            horizon * process_variance[:, None] * complement[None, :]
+        )
+        represented = np.einsum(
+            "nr,krs,ns->kn",
+            basis,
+            propagated_covariance,
+            basis,
+        )
+        scalar_variance = np.maximum(
+            represented + propagated_local,
+            0.0,
+        )
+        within = scalar_variance[:, :, None, None] * np.eye(3)[None, None, :, :]
+        between = centered[:, :, :, None] * centered[:, :, None, :]
+        marginal = np.einsum(
+            "k,knij->nij",
+            weights,
+            within + between,
+        )
+        expected_marginals.append(0.5 * (marginal + np.swapaxes(marginal, 1, 2)))
+
+    np.testing.assert_allclose(
+        means,
+        np.repeat(expected_mean[None], 3, axis=0),
+    )
+    np.testing.assert_allclose(
+        marginals,
+        np.stack(expected_marginals),
+        atol=1e-12,
+        rtol=1e-12,
+    )
+
+
+def test_structured_candidate_avoids_prediction_object_per_horizon() -> None:
+    import inspect
+
+    module = _module()
+    source = inspect.getsource(module._forecast_structured_endpoint)
+    assert "predict_structured_discrepancy" not in source
+    assert "_forecast_structured_marginals(" in source

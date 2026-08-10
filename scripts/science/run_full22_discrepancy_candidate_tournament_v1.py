@@ -483,6 +483,127 @@ def _forecast_dynamic_endpoint(
     )
 
 
+def _forecast_structured_marginals(
+    spatial_basis: np.ndarray,
+    component_coefficient_mean_m: np.ndarray,
+    component_coefficient_covariance_m2: np.ndarray,
+    component_local_variance_m2: np.ndarray,
+    component_weights: np.ndarray,
+    component_process_variance_m2: np.ndarray,
+    *,
+    count: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Forecast structured point marginals from the compact posterior."""
+
+    basis = np.asarray(spatial_basis, dtype=np.float64)
+    coefficient_mean = np.asarray(
+        component_coefficient_mean_m,
+        dtype=np.float64,
+    )
+    coefficient_covariance = np.asarray(
+        component_coefficient_covariance_m2,
+        dtype=np.float64,
+    )
+    local_variance = np.asarray(
+        component_local_variance_m2,
+        dtype=np.float64,
+    )
+    weights = np.asarray(component_weights, dtype=np.float64)
+    process_variance = np.asarray(
+        component_process_variance_m2,
+        dtype=np.float64,
+    )
+    _require(
+        basis.ndim == 2 and basis.shape[1] >= 1,
+        "structured basis must be a nonempty matrix",
+    )
+    track_count, rank = basis.shape
+    _require(
+        coefficient_mean.ndim == 3 and coefficient_mean.shape[1:] == (rank, 3),
+        "structured coefficient mean shape changed",
+    )
+    component_count = len(coefficient_mean)
+    _require(
+        coefficient_covariance.shape == (component_count, rank, rank)
+        and local_variance.shape == (component_count, track_count)
+        and weights.shape == (component_count,)
+        and process_variance.shape == (component_count,),
+        "structured posterior arrays differ",
+    )
+    arrays = (
+        basis,
+        coefficient_mean,
+        coefficient_covariance,
+        local_variance,
+        weights,
+        process_variance,
+    )
+    _require(
+        all(np.all(np.isfinite(array)) for array in arrays),
+        "structured posterior arrays must be finite",
+    )
+    _require(
+        count >= 1
+        and np.all(local_variance >= 0.0)
+        and np.all(process_variance >= 0.0)
+        and np.all(weights >= 0.0)
+        and np.isclose(np.sum(weights), 1.0, atol=1e-12, rtol=1e-12),
+        "structured posterior weights, variances, or count are invalid",
+    )
+    _require(
+        np.allclose(
+            basis.T @ basis,
+            np.eye(rank),
+            atol=1e-10,
+            rtol=1e-10,
+        )
+        and np.allclose(
+            coefficient_covariance,
+            np.swapaxes(coefficient_covariance, 1, 2),
+            atol=1e-10,
+            rtol=1e-10,
+        ),
+        "structured basis or covariance contract changed",
+    )
+
+    component_mean = np.einsum(
+        "nr,krc->knc",
+        basis,
+        coefficient_mean,
+    )
+    mean = np.einsum("k,knc->nc", weights, component_mean)
+    represented_variance = np.einsum(
+        "nr,krs,ns->kn",
+        basis,
+        coefficient_covariance,
+        basis,
+    )
+    leverage = np.sum(np.square(basis), axis=1)
+    complement = np.maximum(1.0 - leverage, 0.0)
+    centered = component_mean - mean[None, :, :]
+    between = centered[:, :, :, None] * centered[:, :, None, :]
+    identity = np.eye(3, dtype=np.float64)
+    means = np.repeat(mean[None], count, axis=0)
+    marginals = np.empty((count, track_count, 3, 3), dtype=np.float64)
+    for index, horizon in enumerate(range(1, count + 1)):
+        scalar_variance = np.maximum(
+            represented_variance
+            + local_variance
+            + horizon
+            * process_variance[:, None]
+            * (leverage[None, :] + complement[None, :]),
+            0.0,
+        )
+        within = scalar_variance[:, :, None, None] * identity
+        marginal = np.einsum(
+            "k,knij->nij",
+            weights,
+            within + between,
+        )
+        marginals[index] = 0.5 * (marginal + np.swapaxes(marginal, 1, 2))
+    return means, marginals
+
+
 def _forecast_structured_endpoint(
     residual_m: np.ndarray,
     valid: np.ndarray,
@@ -493,7 +614,6 @@ def _forecast_structured_endpoint(
 ) -> tuple[np.ndarray, np.ndarray, dict[str, object]]:
     from bayesian_phystwin.structured_discrepancy import (
         infer_structured_discrepancy,
-        predict_structured_discrepancy,
     )
 
     posterior = infer_structured_discrepancy(
@@ -502,23 +622,18 @@ def _forecast_structured_endpoint(
         basis,
         end_frame=cutoff,
     )
-    means: list[np.ndarray] = []
-    covariances: list[np.ndarray] = []
-    for horizon in range(1, count + 1):
-        prediction = predict_structured_discrepancy(
-            posterior,
-            horizon_steps=horizon,
-        )
-        means.append(np.asarray(prediction.mean_m, dtype=np.float64))
-        covariances.append(
-            np.asarray(
-                prediction.marginal_covariance_m2,
-                dtype=np.float64,
-            )
-        )
+    mean, covariance = _forecast_structured_marginals(
+        posterior.spatial_basis,
+        posterior.component_coefficient_mean_m,
+        posterior.component_coefficient_covariance_m2,
+        posterior.component_local_variance_m2,
+        posterior.component_weights,
+        posterior.component_process_variance_m2,
+        count=count,
+    )
     return (
-        np.stack(means),
-        np.stack(covariances),
+        mean,
+        covariance,
         {
             "state_dimension": int(
                 np.asarray(posterior.component_coefficient_mean_m).size
@@ -527,6 +642,9 @@ def _forecast_structured_endpoint(
             "covariance_bytes": int(
                 np.asarray(posterior.component_coefficient_covariance_m2).nbytes
                 + np.asarray(posterior.component_local_variance_m2).nbytes
+            ),
+            "forecast_covariance_representation": (
+                "per-track-marginals-from-structured-state"
             ),
         },
     )
