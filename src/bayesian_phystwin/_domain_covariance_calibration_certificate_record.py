@@ -27,6 +27,8 @@ from .calibration_domain_guard import CalibrationDomainGuardCertificateV1
 class DomainCovarianceCalibrationCertificateV1:
     """Content-addressed covariance transforms plus cross-fitted domain guard."""
 
+    predictor_id: str
+    predictor_frozen_before_calibration_outcomes: bool
     calibration_partition_id: str
     statistical_unit: str
     residual_definition: str
@@ -43,6 +45,8 @@ class DomainCovarianceCalibrationCertificateV1:
     def __post_init__(self) -> None:
         normalized = normalize_certificate_fields(self)
         names = (
+            "predictor_id",
+            "predictor_frozen_before_calibration_outcomes",
             "calibration_partition_id",
             "statistical_unit",
             "residual_definition",
@@ -68,10 +72,15 @@ class DomainCovarianceCalibrationCertificateV1:
 
     @property
     def deployment_admissible(self) -> bool:
-        return self.guard_certificate.deployment_admissible
+        return (
+            self.predictor_frozen_before_calibration_outcomes
+            and self.guard_certificate.deployment_admissible
+        )
 
     @property
     def supported_domains(self) -> tuple[str, ...]:
+        if not self.deployment_admissible:
+            return ()
         return self.guard_certificate.supported_domains
 
     def transform_for_domain(
@@ -92,6 +101,7 @@ class DomainCovarianceCalibrationCertificateV1:
         return {
             "schema": DOMAIN_COVARIANCE_CALIBRATION_SCHEMA,
             "schema_version": DOMAIN_COVARIANCE_CALIBRATION_VERSION,
+            "predictor_id": self.predictor_id,
             "calibration_partition_id": self.calibration_partition_id,
             "statistical_unit": self.statistical_unit,
             "residual_definition": self.residual_definition,
@@ -102,6 +112,15 @@ class DomainCovarianceCalibrationCertificateV1:
             "transforms": [item.to_record() for item in self.transforms],
             "fold_records": [item.to_record() for item in self.fold_records],
             "guard_certificate": self.guard_certificate.to_record(),
+            "information_boundary": {
+                "predictor_frozen_before_calibration_outcomes": (
+                    self.predictor_frozen_before_calibration_outcomes
+                ),
+                "guard_deployment_admissible": (
+                    self.guard_certificate.deployment_admissible
+                ),
+                "deployment_admissible": self.deployment_admissible,
+            },
             "metadata": plain_json(self.metadata),
         }
 
