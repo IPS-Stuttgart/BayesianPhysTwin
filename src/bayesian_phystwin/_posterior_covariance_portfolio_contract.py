@@ -128,12 +128,9 @@ class PosteriorQueryCovariancePortfolioV1:
             raise ValueError("sources must be a sequence")
         sources = tuple(self.sources)
         if not sources or any(
-            not isinstance(source, PosteriorCovarianceSourceV1)
-            for source in sources
+            not isinstance(source, PosteriorCovarianceSourceV1) for source in sources
         ):
-            raise ValueError(
-                "sources must contain PosteriorCovarianceSourceV1 values"
-            )
+            raise ValueError("sources must contain PosteriorCovarianceSourceV1 values")
         if any(source.inference_result_id != inference_id for source in sources):
             raise ValueError("portfolio source inference_result_id changed")
         dimensions = {source.dimension for source in sources}
@@ -168,9 +165,7 @@ class PosteriorQueryCovariancePortfolioV1:
                 name=f"unavailable_methods[{method}]",
             )
         if methods & set(unavailable):
-            raise ValueError(
-                "a covariance method cannot be present and unavailable"
-            )
+            raise ValueError("a covariance method cannot be present and unavailable")
         ordered = dict(
             sorted(
                 unavailable.items(),
@@ -199,9 +194,7 @@ class PosteriorQueryCovariancePortfolioV1:
                     "accepted portfolio reason must be inference-admissible"
                 )
             if "irls_working" not in methods:
-                raise ValueError(
-                    "accepted portfolio requires irls_working covariance"
-                )
+                raise ValueError("accepted portfolio requires irls_working covariance")
             if "exact_prior_fallback" in methods or (
                 "exact_prior_fallback" in unavailable
             ):
@@ -216,13 +209,9 @@ class PosteriorQueryCovariancePortfolioV1:
         if reason == "inference-admissible":
             raise ValueError("rejected portfolio must retain a rejection reason")
         if methods != {"exact_prior_fallback"}:
-            raise ValueError(
-                "rejected portfolio must contain only exact fallback"
-            )
+            raise ValueError("rejected portfolio must contain only exact fallback")
         if unavailable:
-            raise ValueError(
-                "rejected portfolio cannot list alternative methods"
-            )
+            raise ValueError("rejected portfolio cannot list alternative methods")
         return "exact_prior_fallback"
 
     @staticmethod
