@@ -5,13 +5,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LAUNCHER = (
-    ROOT
-    / "scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py"
-)
-EXPECTED_SHA256 = (
-    "268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f"
-)
+LAUNCHER = ROOT / "scripts/science/run_cloth_sim2real_prob4d_covariance_locked_v1.py"
+EXPECTED_SHA256 = "268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f"
 
 
 def _module():
