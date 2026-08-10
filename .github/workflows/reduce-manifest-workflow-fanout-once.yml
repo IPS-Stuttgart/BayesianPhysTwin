@@ -6,6 +6,10 @@ on:
       - agent/reduce-manifest-workflow-fanout
     paths:
       - .github/workflows/reduce-manifest-workflow-fanout-once.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/reduce-manifest-workflow-fanout-once.yml
 
 permissions:
   contents: write
@@ -18,7 +22,12 @@ jobs:
   apply:
     if: >-
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
-      github.ref == 'refs/heads/agent/reduce-manifest-workflow-fanout'
+      ((github.event_name == 'push' &&
+        github.ref == 'refs/heads/agent/reduce-manifest-workflow-fanout') ||
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.ref ==
+          'agent/reduce-manifest-workflow-fanout'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -169,5 +178,3 @@ def test_global_manifest_changes_use_central_validation_only() -> None:
           git commit -m "Limit manifest-triggered workflow fan-out"
           git push origin \
             HEAD:agent/reduce-manifest-workflow-fanout
-
-# Trigger the branch-only cleanup after the workflow file exists.
