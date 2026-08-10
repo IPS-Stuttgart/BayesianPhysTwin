@@ -52,6 +52,13 @@ def test_source_plan_rejects_non_mapping_payload() -> None:
         )
 
 
+def test_source_runner_json_helpers_fail_closed() -> None:
+    with pytest.raises(ValueError, match="payload must be a JSON object"):
+        runner._mapping([], name="payload")
+    with pytest.raises(ValueError, match="payload must be a JSON array"):
+        runner._sequence("not-an-array", name="payload")
+
+
 def _objects():
     lock = _lock()
     values = []
