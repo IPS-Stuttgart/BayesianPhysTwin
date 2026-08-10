@@ -197,7 +197,12 @@ def test_harmful_accepted_update_rejects_mean_improving_candidate() -> None:
     structured = _summary(report, "structured")
     assert structured["eligible"] is False
     assert "harmful-accepted-updates" in structured["eligibility_failures"]
-    assert report["selected_candidate"] == "dynamic"
+    assert report["provisional_selected_candidate"] == "dynamic"
+    assert report["cross_fitted"]["stable_selection"] is False
+    assert report["source_gate_passed"] is False
+    assert report["decision"] == "retain-reference-candidate"
+    assert report["selected_candidate"] == "last_residual"
+    assert report["selected_candidate_summary"]["candidate_id"] == "last_residual"
 
 
 def test_exact_fallback_and_matched_roster_fail_closed() -> None:
