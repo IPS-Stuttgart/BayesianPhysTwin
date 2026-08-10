@@ -96,9 +96,13 @@ def test_forged_fold_loss_ratio_breaks_guard_binding() -> None:
         )
 
 
-def test_config_rejects_deflation_and_invalid_floor_grid() -> None:
+@pytest.mark.parametrize("minimum_scale", (0.9, 1.1))
+def test_config_requires_the_identity_scale(minimum_scale: float) -> None:
     with pytest.raises(ValueError, match="minimum_scale"):
-        DomainCovarianceCalibrationConfigV1(minimum_scale=0.9)
+        DomainCovarianceCalibrationConfigV1(minimum_scale=minimum_scale)
+
+
+def test_config_rejects_invalid_floor_grid() -> None:
     with pytest.raises(ValueError, match="minimum_positive_floor_ratio"):
         DomainCovarianceCalibrationConfigV1(
             floor_grid_size=2,
