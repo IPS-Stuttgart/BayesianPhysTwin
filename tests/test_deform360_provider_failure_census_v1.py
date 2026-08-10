@@ -144,9 +144,7 @@ def _adapter_payload(accepted: bool = False) -> dict[str, object]:
                     "physical_guard_passed": True,
                 },
                 "metrics": {
-                    "adapter_schema": (
-                        CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA
-                    ),
+                    "adapter_schema": (CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA),
                     "adapter_schema_version": (
                         CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
                     ),
@@ -172,17 +170,13 @@ def _adapter_payload(accepted: bool = False) -> dict[str, object]:
         "metadata": {
             **_source_metadata(),
             "adapter_schema": CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_SCHEMA,
-            "adapter_schema_version": (
-                CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION
-            ),
+            "adapter_schema_version": (CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_VERSION),
             "adapter_claim_boundary": (
                 CLAIM_BEARING_PROVIDER_FAILURE_ADAPTER_CLAIM_BOUNDARY
             ),
             "source_contract": "ClaimBearingProb4DUpdateV1",
             "strict_result_contract": "PriorAwareGaugeBeliefResultV2",
-            "record_update_ids": [
-                {"case_id": "object-01", "update_id": update_id}
-            ],
+            "record_update_ids": [{"case_id": "object-01", "update_id": update_id}],
         },
     }
 
@@ -213,9 +207,9 @@ def test_generic_units(unit: str) -> None:
 def test_generic_optional_metrics() -> None:
     payload = _generic_payload()
     del _record(payload)["metrics"]
-    assert validate_deform360_provider_failure_census_payload(payload)[
-        "record_count"
-    ] == 1
+    assert (
+        validate_deform360_provider_failure_census_payload(payload)["record_count"] == 1
+    )
 
 
 def test_top_level_requires_mapping() -> None:
@@ -461,9 +455,7 @@ def test_certificate_decision_matches_record() -> None:
     payload = _adapter_payload()
     _record(payload)["accepted"] = True
     _record(payload)["result_reason"] = "accepted"
-    cast(dict[str, object], _record(payload)["signals"])[
-        "numerically_converged"
-    ] = True
+    cast(dict[str, object], _record(payload)["signals"])["numerically_converged"] = True
     with pytest.raises(ValueError, match="decision differs from accepted"):
         validate_deform360_provider_failure_census_payload(payload)
 
@@ -528,6 +520,6 @@ def test_adapter_metrics_cannot_be_partial() -> None:
 def test_unrelated_metrics_do_not_enable_adapter_validation() -> None:
     payload = deepcopy(_generic_payload())
     _metrics(payload)["claim_bearing_comment"] = "not adapter-owned"
-    assert validate_deform360_provider_failure_census_payload(payload)[
-        "record_count"
-    ] == 1
+    assert (
+        validate_deform360_provider_failure_census_payload(payload)["record_count"] == 1
+    )
