@@ -221,19 +221,13 @@ def test_query_operator_matches_marginal_blocks_and_dense_psd() -> None:
     expected_dense = np.zeros_like(moments.covariance)
     mean_flat = posterior.mean_m.reshape(-1)
     for component_index, weight in enumerate(posterior.component_weights):
-        space_covariance = (
-            basis
-            @ posterior.component_coefficient_covariance_m2[component_index]
-            @ basis.T
-            + np.diag(
-                posterior.component_local_variance_m2[component_index]
-            )
-        )
+        space_covariance = basis @ posterior.component_coefficient_covariance_m2[
+            component_index
+        ] @ basis.T + np.diag(posterior.component_local_variance_m2[component_index])
         component_flat = posterior.component_mean_m[component_index].reshape(-1)
         centered = component_flat - mean_flat
         expected_dense += weight * (
-            np.kron(space_covariance, np.eye(3))
-            + np.outer(centered, centered)
+            np.kron(space_covariance, np.eye(3)) + np.outer(centered, centered)
         )
     assert np.allclose(moments.covariance, expected_dense)
     for index in range(track_count):
@@ -263,10 +257,7 @@ def test_horizon_prediction_increases_unresolved_and_shared_uncertainty() -> Non
 
     assert np.allclose(now.mean_m, future.mean_m)
     assert np.trace(future_moments.covariance) > np.trace(now_moments.covariance)
-    assert np.all(
-        future.component_local_variance_m2
-        >= now.component_local_variance_m2
-    )
+    assert np.all(future.component_local_variance_m2 >= now.component_local_variance_m2)
 
 
 def test_large_outlier_receives_low_nominal_probability() -> None:
