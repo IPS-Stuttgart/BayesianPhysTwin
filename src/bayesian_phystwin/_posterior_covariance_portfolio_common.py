@@ -78,7 +78,12 @@ def validated_covariance(value: object, *, name: str) -> FloatArray:
     symmetric = 0.5 * (matrix + matrix.T)
     eigenvalues = np.linalg.eigvalsh(symmetric)
     scale = max(1.0, float(np.max(np.abs(eigenvalues))))
-    tolerance = 1e-12 + 1e-10 * scale
+    tolerance = (
+        max(1, len(matrix))
+        * np.finfo(np.float64).eps
+        * scale
+        * 100.0
+    )
     if float(np.min(eigenvalues)) < -tolerance:
         raise ValueError(f"{name} must be positive semidefinite")
     return immutable_array(symmetric, dtype=np.dtype("<f8"))
