@@ -117,8 +117,8 @@ jobs:
           observation = "src/bayesian_phystwin/_graph_dynamic_discrepancy_observation.py"
           replace_exact(
               observation,
-              "    if supplied is None:\n",
-              "    result: np.ndarray\n    if supplied is None:\n",
+              "    if supplied is None:\n        result = np.empty((frame_count, node_count), dtype=object)\n",
+              "    result: np.ndarray\n    if supplied is None:\n        result = np.empty((frame_count, node_count), dtype=object)\n",
           )
           replace_exact(
               observation,
