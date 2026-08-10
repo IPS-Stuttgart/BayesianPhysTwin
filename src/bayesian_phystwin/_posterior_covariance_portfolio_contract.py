@@ -28,9 +28,7 @@ from ._posterior_covariance_portfolio_common import (
     validated_query_matrix,
 )
 from ._posterior_covariance_sources import PosteriorCovarianceSourceV1
-from .posterior_covariance_semantics import (
-    PosteriorCovarianceMethod,
-)
+from .posterior_covariance_semantics import PosteriorCovarianceMethod
 from .posterior_uncertainty import PosteriorQueryUncertaintyV1
 
 
@@ -78,17 +76,12 @@ class PosteriorQueryCovariancePortfolioV1:
             unavailable=set(unavailable),
         )
         if not admitted:
-            fallback = next(
-                source
-                for source in sources
-                if source.method == "exact_prior_fallback"
-            )
-            fallback_reason = fallback.covariance_semantics.metadata.get(
+            fallback_reason = sources[0].covariance_semantics.metadata.get(
                 "fallback_reason"
             )
             if fallback_reason != reason:
                 raise ValueError(
-                    "rejected portfolio reason does not match exact fallback"
+                    "rejected portfolio reason must match fallback covariance reason"
                 )
         query_digest = query_matrix_id(query)
         entries = tuple(
@@ -161,7 +154,7 @@ class PosteriorQueryCovariancePortfolioV1:
     def _validated_unavailable(
         self,
         methods: set[PosteriorCovarianceMethod],
-    ) -> Mapping[str, str]:
+    ) -> Mapping[PosteriorCovarianceMethod, str]:
         if not isinstance(self.unavailable_methods, Mapping):
             raise ValueError("unavailable_methods must be a mapping")
         unavailable: dict[PosteriorCovarianceMethod, str] = {}
@@ -184,9 +177,12 @@ class PosteriorQueryCovariancePortfolioV1:
                 key=lambda item: METHOD_ORDER[item[0]],
             )
         )
-        return frozen_finite_json_mapping(
-            ordered,
-            name="posterior covariance unavailable methods",
+        return cast(
+            Mapping[PosteriorCovarianceMethod, str],
+            frozen_finite_json_mapping(
+                ordered,
+                name="posterior covariance unavailable methods",
+            ),
         )
 
     @staticmethod
@@ -195,7 +191,7 @@ class PosteriorQueryCovariancePortfolioV1:
         admitted: bool,
         reason: str,
         methods: set[PosteriorCovarianceMethod],
-        unavailable: set[str],
+        unavailable: set[PosteriorCovarianceMethod],
     ) -> PosteriorCovarianceMethod:
         if admitted:
             if reason != "inference-admissible":
