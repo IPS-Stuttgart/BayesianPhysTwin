@@ -7,8 +7,6 @@ import numpy as np
 from .bias_aware_belief import (
     BiasAwareStateUpdateConfig,
     BiasAwareStateUpdateResult,
-)
-from .bias_aware_belief import (
     update_bias_aware_state as _update_bias_aware_state_v1,
 )
 
