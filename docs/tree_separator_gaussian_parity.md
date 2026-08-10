@@ -35,10 +35,14 @@ The returned `TreeSeparatorGaussianParityV1` binds the exact normal-system
 array bytes through `normal_system_id` and is content-addressed by `parity_id`.
 It also records the production maximum node and separator condition numbers.
 Scaled comparison metrics and the `passed` flag are validated for internal
-consistency. The production condition-number gate runs first, so the shadow path
-cannot authorize a system rejected by the historical node-elimination gate. The
-adapter also covers the valid zero-separator case by constructing the equivalent
-empty global factor after node elimination; it does not change the historical
+consistency. A changed `normal_system_id` denotes a different parity case even
+when dimensions and scalar diagnostics happen to match, so reports must never be
+reused across systems or IRLS iterations.
+
+The production condition-number gate runs first, so the shadow path cannot
+authorize a system rejected by the historical node-elimination gate. The adapter
+also covers the valid zero-separator case by constructing the equivalent empty
+global factor after node elimination; it does not change the historical
 production API.
 
 This is numerical parity evidence only. It does not establish provider
