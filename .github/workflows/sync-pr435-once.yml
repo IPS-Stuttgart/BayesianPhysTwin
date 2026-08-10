@@ -1,0 +1,31 @@
+name: Sync PR 435 once
+
+on:
+  push:
+    branches:
+      - agent/calibration-domain-guard-v1
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/calibration-domain-guard-v1
+          fetch-depth: 0
+
+      - name: Merge current main and remove this trigger
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+          rm .github/workflows/sync-pr435-once.yml
+          git add -A
+          git commit -m "Sync calibration domain guard with current main"
+          git push origin HEAD:agent/calibration-domain-guard-v1
