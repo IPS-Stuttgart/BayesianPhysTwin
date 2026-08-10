@@ -112,3 +112,5 @@ def test_registered_statistical_unit_is_deployment_valid() -> None:
           git diff --cached --check
           git commit -m "Fix full-22 tournament statistical unit"
           git push origin HEAD:agent/full22-discrepancy-tournament-v1
+
+# Registered on the branch before this triggering push.
