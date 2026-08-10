@@ -1,4 +1,4 @@
-name: Repair full-22 tournament statistical unit
+name: Repair full-22 tournament result contract
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: repair-full22-statistical-unit-${{ github.ref }}
+  group: repair-full22-result-contract-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,8 +34,10 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Apply the registered statistical-unit token
+      - name: Apply the canonical result contract
+        shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
@@ -43,51 +45,126 @@ jobs:
               "scripts/science/run_full22_discrepancy_candidate_tournament_v1.py"
           )
           text = script.read_text(encoding="utf-8")
-          constant_marker = 'PRIMARY_METRICS = ("chamfer_distance_m", "track_error_m")\n'
-          constant_replacement = (
-              constant_marker + 'STATISTICAL_UNIT = "physical-object-session"\n'
+
+          constant_marker = (
+              'PRIMARY_METRICS = ("chamfer_distance_m", "track_error_m")\n'
           )
-          if text.count(constant_marker) != 1 or "STATISTICAL_UNIT =" in text:
-              raise SystemExit("unexpected statistical-unit constant marker")
-          text = text.replace(constant_marker, constant_replacement, 1)
-          old = (
+          constant_line = 'STATISTICAL_UNIT = "physical-object-session"\n'
+          if constant_line not in text:
+              if text.count(constant_marker) != 1:
+                  raise SystemExit("unexpected statistical-unit constant marker")
+              text = text.replace(
+                  constant_marker,
+                  constant_marker + constant_line,
+                  1,
+              )
+
+          old_unit = (
               '                "statistical_unit": '
               '("physical execution: one released PhysTwin case"),'
           )
-          new = '                "statistical_unit": STATISTICAL_UNIT,'
-          if text.count(old) != 1:
-              raise SystemExit("unexpected tournament statistical-unit marker")
-          script.write_text(text.replace(old, new, 1), encoding="utf-8")
+          new_unit = '                "statistical_unit": STATISTICAL_UNIT,'
+          if old_unit in text:
+              if text.count(old_unit) != 1:
+                  raise SystemExit("ambiguous tournament statistical-unit marker")
+              text = text.replace(old_unit, new_unit, 1)
+          elif new_unit not in text:
+              raise SystemExit("tournament statistical-unit field is missing")
+
+          old_status = (
+              '        "source_gate_passed": advance,\n'
+              '        "selected_candidate": final,\n'
+          )
+          new_status = (
+              '        "source_gate_passed": advance,\n'
+              '        "status": (\n'
+              '            "selected" if advance else "completed_no_selection"\n'
+              '        ),\n'
+              '        "selected_candidate": final,\n'
+          )
+          if '"completed_no_selection"' not in text:
+              if text.count(old_status) != 1:
+                  raise SystemExit("unexpected arbitration status marker")
+              text = text.replace(old_status, new_status, 1)
+
+          script.write_text(text, encoding="utf-8")
 
           tests = Path("tests/test_full22_discrepancy_candidate_tournament_v1.py")
-          test_text = tests.read_text(encoding="utf-8")
-          marker = "def test_registered_statistical_unit_is_deployment_valid()"
-          if marker in test_text:
-              raise SystemExit("statistical-unit regression test already exists")
-          test_lines = [
-              "",
-              "",
-              "def test_registered_statistical_unit_is_deployment_valid() -> None:",
-              "    from bayesian_phystwin.discrepancy_candidate_tournament import (",
-              "        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,",
-              "    )",
-              "",
-              "    module = _module()",
-              '    assert module.STATISTICAL_UNIT == "physical-object-session"',
-              "    assert (",
-              "        module.STATISTICAL_UNIT",
-              "        in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS",
-              "    )",
-          ]
-          tests.write_text(
-              test_text.rstrip() + "\n".join(test_lines) + "\n",
-              encoding="utf-8",
+          test_text = tests.read_text(encoding="utf-8").rstrip()
+
+          unit_test_marker = (
+              "def test_registered_statistical_unit_is_deployment_valid()"
           )
+          if unit_test_marker not in test_text:
+              unit_test_lines = [
+                  "",
+                  "",
+                  "def test_registered_statistical_unit_is_deployment_valid() -> None:",
+                  "    from bayesian_phystwin.discrepancy_candidate_tournament import (",
+                  "        ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS,",
+                  "    )",
+                  "",
+                  "    module = _module()",
+                  '    assert module.STATISTICAL_UNIT == "physical-object-session"',
+                  "    assert (",
+                  "        module.STATISTICAL_UNIT",
+                  "        in ALLOWED_DISCREPANCY_TOURNAMENT_STATISTICAL_UNITS",
+                  "    )",
+              ]
+              test_text += "\n".join(unit_test_lines)
+
+          status_test_marker = (
+              "def test_metric_arbitration_reports_completion_status()"
+          )
+          if status_test_marker not in test_text:
+              status_test_lines = [
+                  "",
+                  "",
+                  "def test_metric_arbitration_reports_completion_status() -> None:",
+                  "    module = _module()",
+                  "    selected = module._metric_arbitration(",
+                  "        {",
+                  '            "track": _report("dynamic", True),',
+                  '            "chamfer": _report("dynamic", True),',
+                  "        },",
+                  '        reference_candidate="last_residual",',
+                  "    )",
+                  "    no_selection = module._metric_arbitration(",
+                  "        {",
+                  '            "track": _report("dynamic", True),',
+                  '            "chamfer": _report("structured", True),',
+                  "        },",
+                  '        reference_candidate="last_residual",',
+                  "    )",
+                  "",
+                  '    assert selected["status"] == "selected"',
+                  '    assert no_selection["status"] == "completed_no_selection"',
+                  '    assert no_selection["decision"] == "retain-reference-candidate"',
+                  '    assert no_selection["claim_authorized"] is False',
+              ]
+              test_text += "\n".join(status_test_lines)
+
+          tests.write_text(test_text + "\n", encoding="utf-8")
+
+          documentation = Path("docs/full22_discrepancy_candidate_tournament_v1.md")
+          doc_text = documentation.read_text(encoding="utf-8")
+          old_doc = "Otherwise the final result is `last_residual`.\n"
+          new_doc = (
+              "Otherwise the final result is `last_residual`. The arbitration report marks\n"
+              "this valid negative result as `status=\"completed_no_selection\"`, and the\n"
+              "workflow completes successfully after publishing the complete evidence.\n"
+          )
+          if 'status="completed_no_selection"' not in doc_text:
+              if doc_text.count(old_doc) != 1:
+                  raise SystemExit("unexpected no-selection documentation marker")
+              doc_text = doc_text.replace(old_doc, new_doc, 1)
+          documentation.write_text(doc_text, encoding="utf-8")
 
           Path(".github/workflows/repair-full22-statistical-unit.yml").unlink()
           PY
 
       - name: Validate the contract repair
+        shell: bash
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev,graph]"
@@ -106,6 +183,7 @@ jobs:
           git diff --check
 
       - name: Publish the repair and remove this workflow
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -113,7 +191,8 @@ jobs:
           git add \
             scripts/science/run_full22_discrepancy_candidate_tournament_v1.py \
             tests/test_full22_discrepancy_candidate_tournament_v1.py \
+            docs/full22_discrepancy_candidate_tournament_v1.md \
             .github/workflows/repair-full22-statistical-unit.yml
           git diff --cached --check
-          git commit -m "Fix full-22 tournament statistical unit"
+          git commit -m "Fix full-22 tournament completion semantics"
           git push origin HEAD:agent/full22-discrepancy-tournament-v1
