@@ -46,9 +46,7 @@ SOURCE_RESULT_SCHEMA: Final = (
     "bayesian-phystwin.deform360-joint-sparse-source-gate-result"
 )
 SOURCE_RESULT_VERSION: Final = 1
-SOURCE_RESULT_SEMANTICS: Final = (
-    "nested-loo-public-source-gate-before-confirmation-v1"
-)
+SOURCE_RESULT_SEMANTICS: Final = "nested-loo-public-source-gate-before-confirmation-v1"
 
 PROSPECTIVE_POLICY_ID: Final = (
     "0f2af7bf30576833d3f9e82d3cc4238da007d772325766aa456b374a0a254749"
@@ -219,9 +217,7 @@ def load_deform360_joint_sparse_source_execution_lock_v5(
         raise ValueError("execution lock version changed")
     if lock.get("semantics") != EXECUTION_LOCK_SEMANTICS:
         raise ValueError("execution lock semantics changed")
-    declared = sha256_digest(
-        lock.get("execution_lock_id"), name="execution_lock_id"
-    )
+    declared = sha256_digest(lock.get("execution_lock_id"), name="execution_lock_id")
     identity = {key: value for key, value in lock.items() if key != "execution_lock_id"}
     if declared != content_id(identity):
         raise ValueError("execution_lock_id does not match the lock content")
@@ -279,8 +275,12 @@ def _parse_method(value: object, *, name: str) -> _MethodForecast:
     payload = _mapping(value, name=name)
     require_exact_fields(payload, expected=_METHOD_FIELDS, name=name)
     return _MethodForecast(
-        artifact_id=sha256_digest(payload.get("artifact_id"), name=f"{name}.artifact_id"),
-        loss_mm=_finite_real(payload.get("loss_mm"), name=f"{name}.loss_mm", minimum=0.0),
+        artifact_id=sha256_digest(
+            payload.get("artifact_id"), name=f"{name}.artifact_id"
+        ),
+        loss_mm=_finite_real(
+            payload.get("loss_mm"), name=f"{name}.loss_mm", minimum=0.0
+        ),
         predicted_loss_mm=_finite_real(
             payload.get("predicted_loss_mm"),
             name=f"{name}.predicted_loss_mm",
@@ -436,7 +436,9 @@ def _parse_folds(
         if {record.object_id for record in training} != expected_training:
             raise ValueError("fold does not contain the exact nine training objects")
         if set(held_out.prediction_fit_object_ids) != expected_training:
-            raise ValueError("held-out prediction was not fit on the other nine objects")
+            raise ValueError(
+                "held-out prediction was not fit on the other nine objects"
+            )
         for record in training:
             expected_inner_fit = expected_training - {record.object_id}
             if set(record.prediction_fit_object_ids) != expected_inner_fit:
@@ -496,7 +498,9 @@ def parse_deform360_joint_sparse_source_evidence_v5(
         raise ValueError("source evidence uses another prospective policy")
     if payload.get("selection_sha256") != cohort.get("selection_sha256"):
         raise ValueError("source evidence uses another cohort selection")
-    exact_revision(payload.get("implementation_revision"), name="implementation_revision")
+    exact_revision(
+        payload.get("implementation_revision"), name="implementation_revision"
+    )
     sha256_digest(payload.get("prediction_batch_id"), name="prediction_batch_id")
     boundary = plain_json(
         _mapping(payload.get("information_boundary"), name="information_boundary")
@@ -758,16 +762,14 @@ def evaluate_deform360_joint_sparse_source_gate_v5(
         "aggregate_contact_increment": contact_increment
         >= float(gate["minimum_contact_increment_over_visual_only"]),
         "no_harmful_accepted_update": all(
-            bool(fold["checks"]["accepted_update_not_harmful"])
-            for fold in folds
+            bool(fold["checks"]["accepted_update_not_harmful"]) for fold in folds
         ),
         "maximum_stratum_mean_regression": all(
             value <= float(gate["maximum_stratum_mean_regression"])
             for value in stratum_regression.values()
         ),
         "all_rejections_are_exact_fallback": all(
-            bool(fold["checks"]["rejection_is_exact_fallback"])
-            for fold in folds
+            bool(fold["checks"]["rejection_is_exact_fallback"]) for fold in folds
         ),
         "full_source_refit_available": full_fit is not None,
     }

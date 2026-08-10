@@ -5,9 +5,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / (
-    ".github/workflows/deform360-joint-sparse-source-v5-contracts.yml"
-)
+WORKFLOW = ROOT / (".github/workflows/deform360-joint-sparse-source-v5-contracts.yml")
 DOCUMENT = ROOT / "docs/deform360_joint_sparse_source_execution_v5.md"
 MANIFEST = ROOT / "MANIFEST.in"
 
@@ -25,6 +23,8 @@ def test_source_contract_workflow_is_hosted_and_data_closed() -> None:
     assert "confirmation payload" not in text.lower()
     assert "target outcome" not in text.lower()
     assert "actions/upload-artifact" not in text
+    assert "numpy pyyaml pytest ruff mypy" in text
+    assert "mypy --no-site-packages" in text
 
 
 def test_document_states_public_measurement_and_approval_boundary() -> None:
@@ -46,6 +46,5 @@ def test_source_execution_artifacts_are_in_source_distribution() -> None:
         "deform360_official_hub_joint_sparse_source_execution_v5.json" in lines
     )
     assert (
-        "include scripts/science/evaluate_deform360_joint_sparse_source_v5.py"
-        in lines
+        "include scripts/science/evaluate_deform360_joint_sparse_source_v5.py" in lines
     )

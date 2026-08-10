@@ -18,8 +18,7 @@ from bayesian_phystwin.deform360_joint_sparse_source_gate_v5 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK_PATH = ROOT / (
-    "protocols/locks/"
-    "deform360_official_hub_joint_sparse_source_execution_v5.json"
+    "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
 )
 POLICY_PATH = ROOT / (
     "protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json"
@@ -105,9 +104,7 @@ def _evidence(
             training_records.append(training_record)
         folds.append(
             {
-                "fold_prediction_seal_id": _digest(
-                    f"fold-seal\0{held_out_id}"
-                ),
+                "fold_prediction_seal_id": _digest(f"fold-seal\0{held_out_id}"),
                 "held_out_object_id": held_out_id,
                 "held_out_record": held_out_record,
                 "training_records": training_records,
@@ -148,7 +145,7 @@ def test_execution_lock_binds_public_data_and_machine_gate() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
 
     assert lock["execution_lock_id"] == (
-        "0e459056660dc3fb940f3d1c01ad7439cc0340989952a8f868b25c4d7f756f1f"
+        "30a216f42e46ff92df3ce49f49a635d57b41b5f9019b27d4166127650719aced"
     )
     assert lock["public_measurements"] == {
         "dataset_repository": "brownu/deform360",
@@ -178,23 +175,26 @@ def test_execution_lock_binds_public_data_and_machine_gate() -> None:
 def test_execution_lock_binds_unchanged_policy_selection_and_code() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
 
-    assert hashlib.sha256(POLICY_PATH.read_bytes()).hexdigest() == (
-        lock["prospective_policy"]["file_sha256"]
+    assert (
+        hashlib.sha256(POLICY_PATH.read_bytes()).hexdigest()
+        == (lock["prospective_policy"]["file_sha256"])
     )
-    assert hashlib.sha256(SELECTION_PATH.read_bytes()).hexdigest() == (
-        lock["cohort"]["selection_artifact_file_sha256"]
+    assert (
+        hashlib.sha256(SELECTION_PATH.read_bytes()).hexdigest()
+        == (lock["cohort"]["selection_artifact_file_sha256"])
     )
-    for relative, expected in lock["physical_baseline"][
-        "source_files_sha256"
-    ].items():
+    for relative, expected in lock["physical_baseline"]["source_files_sha256"].items():
         assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
     for path_key, digest_key in (
         ("source_evaluator_path", "source_evaluator_file_sha256"),
         ("source_runner_path", "source_runner_file_sha256"),
     ):
-        assert hashlib.sha256(
-            (ROOT / lock["source_gate"][path_key]).read_bytes()
-        ).hexdigest() == lock["source_gate"][digest_key]
+        assert (
+            hashlib.sha256(
+                (ROOT / lock["source_gate"][path_key]).read_bytes()
+            ).hexdigest()
+            == lock["source_gate"][digest_key]
+        )
 
 
 def test_transferable_source_evidence_passes_without_human_approval() -> None:
@@ -261,9 +261,9 @@ def test_low_risk_harmful_update_fails_source_gate() -> None:
 def test_source_evidence_rejects_future_input_and_duplicate_objects() -> None:
     lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
     future = _evidence()
-    future["information_boundary"][
-        "future_object_observations_used_for_prediction"
-    ] = True
+    future["information_boundary"]["future_object_observations_used_for_prediction"] = (
+        True
+    )
     _reidentify(future)
     with pytest.raises(ValueError, match="information boundary"):
         parse_deform360_joint_sparse_source_evidence_v5(future, lock)
@@ -299,6 +299,4 @@ def test_publication_is_atomic_and_refuses_silent_overwrite(tmp_path: Path) -> N
     )
     assert json.loads(output.read_text(encoding="utf-8")) == first
     with pytest.raises(FileExistsError):
-        publish_deform360_joint_sparse_source_gate_v5(
-            evidence_path, LOCK_PATH, output
-        )
+        publish_deform360_joint_sparse_source_gate_v5(evidence_path, LOCK_PATH, output)
