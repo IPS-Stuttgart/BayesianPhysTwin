@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -47,6 +47,7 @@ METRIC_GAUGE_VERSION: Final = 5
 CONTACT_LOCALIZATION_FLOOR_M: Final = 0.005
 CONTACT_ASSOCIATION_SCALE_M: Final = 0.010
 CONTACT_ASSOCIATION_CANDIDATES: Final = 4
+LAST_CAUSAL_RESIDUAL_MAXIMUM_M: Final = 0.030
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -689,9 +690,128 @@ def prepare_deform360_joint_sparse_contact_rows_v5(
     )
 
 
+def estimate_deform360_last_causal_residual_v5(
+    *,
+    visual_windows: Sequence[Deform360JointSparseVisualWindowRowsV5],
+    physical_prediction_m: object,
+    causal_frame_stop: int,
+    association_candidate_count: int = CONTACT_ASSOCIATION_CANDIDATES,
+    association_scale_m: float = CONTACT_ASSOCIATION_SCALE_M,
+    maximum_residual_m: float = LAST_CAUSAL_RESIDUAL_MAXIMUM_M,
+) -> np.ndarray:
+    """Estimate the registered B1 readout residual from the last causal frame.
+
+    This is a point-estimate reference, not a confidence calculation. Exact
+    duplicate rows therefore leave the result unchanged, and no contributor
+    count or state-relative residual is converted into prior reliability.
+    """
+
+    _require(
+        type(causal_frame_stop) is int and causal_frame_stop >= 1,
+        "causal_frame_stop must be a positive integer",
+    )
+    _require(
+        type(association_candidate_count) is int
+        and association_candidate_count >= 1,
+        "association_candidate_count must be a positive integer",
+    )
+    for name, value in (
+        ("association_scale_m", association_scale_m),
+        ("maximum_residual_m", maximum_residual_m),
+    ):
+        _require(
+            not isinstance(value, (bool, np.bool_))
+            and np.isfinite(value)
+            and value > 0.0,
+            f"{name} must be finite and positive",
+        )
+    windows = tuple(visual_windows)
+    _require(
+        bool(windows)
+        and all(
+            isinstance(window, Deform360JointSparseVisualWindowRowsV5)
+            for window in windows
+        ),
+        "visual_windows must contain validated v5 rows",
+    )
+    _require(
+        all(np.all(window.frame_indices < causal_frame_stop) for window in windows),
+        "last causal residual received a post-cutoff observation",
+    )
+    physical = np.asarray(physical_prediction_m, dtype=np.float64)
+    _require(
+        physical.ndim == 3
+        and physical.shape[0] >= causal_frame_stop
+        and physical.shape[1] >= 1
+        and physical.shape[2] == 3
+        and np.all(np.isfinite(physical)),
+        "physical prediction must have finite shape (T,N,3)",
+    )
+    final_frame = causal_frame_stop - 1
+    selected_points: list[np.ndarray] = []
+    for window in windows:
+        selected = np.flatnonzero(window.frame_indices == final_frame)
+        if len(selected):
+            selected_points.append(np.asarray(window.point_world_m[selected]))
+    _require(
+        bool(selected_points),
+        "last causal residual lacks an observation at the causal boundary",
+    )
+    points = np.concatenate(selected_points, axis=0)
+    reference = physical[final_frame]
+    count = min(association_candidate_count, len(reference))
+    squared = np.sum(np.square(points[:, None] - reference[None]), axis=2)
+    indices = np.argpartition(squared, kth=count - 1, axis=1)[:, :count]
+    selected_squared = np.take_along_axis(squared, indices, axis=1)
+    order = np.argsort(selected_squared, axis=1, kind="mergesort")
+    indices = np.take_along_axis(indices, order, axis=1)
+    selected_squared = np.take_along_axis(selected_squared, order, axis=1)
+    logits = -0.5 * selected_squared / association_scale_m**2
+    logits -= np.max(logits, axis=1, keepdims=True)
+    assignment = np.exp(np.clip(logits, -700.0, 0.0))
+    assignment /= np.sum(assignment, axis=1, keepdims=True)
+    candidate_points = reference[indices]
+    predicted = np.sum(assignment[..., None] * candidate_points, axis=1)
+    row_residual = points - predicted
+
+    numerator = np.zeros_like(reference, dtype=np.float64)
+    denominator: np.ndarray = np.zeros(len(reference), dtype=np.float64)
+    for candidate in range(count):
+        np.add.at(
+            numerator,
+            indices[:, candidate],
+            assignment[:, candidate, None] * row_residual,
+        )
+        np.add.at(denominator, indices[:, candidate], assignment[:, candidate])
+    direct = denominator > 0.0
+    _require(np.any(direct), "last causal residual has no graph assignment")
+    result = np.zeros_like(reference, dtype=np.float64)
+    result[direct] = numerator[direct] / denominator[direct, None]
+    if not np.all(direct):
+        observed_indices = np.flatnonzero(direct)
+        missing_indices = np.flatnonzero(~direct)
+        for start in range(0, len(missing_indices), 512):
+            selected_missing = missing_indices[start : start + 512]
+            distance = np.sum(
+                np.square(
+                    reference[selected_missing, None]
+                    - reference[observed_indices][None]
+                ),
+                axis=2,
+            )
+            nearest = observed_indices[np.argmin(distance, axis=1)]
+            result[selected_missing] = result[nearest]
+    norm = np.linalg.norm(result, axis=1)
+    clipped = norm > maximum_residual_m
+    result[clipped] *= (maximum_residual_m / norm[clipped])[:, None]
+    result.setflags(write=False)
+    return result
+
+
 __all__ = [
     "Deform360JointSparseContactConfigV5",
     "Deform360JointSparseMetricGaugeFitV5",
+    "estimate_deform360_last_causal_residual_v5",
     "prepare_deform360_joint_sparse_contact_rows_v5",
     "prepare_deform360_joint_sparse_visual_window_v5",
 ]

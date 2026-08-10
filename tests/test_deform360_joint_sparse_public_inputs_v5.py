@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,7 @@ from bayesian_phystwin.deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparsePrefixFitV5,
 )
 from bayesian_phystwin.deform360_joint_sparse_public_inputs_v5 import (
+    estimate_deform360_last_causal_residual_v5,
     prepare_deform360_joint_sparse_visual_window_v5,
 )
 
@@ -180,3 +182,43 @@ def test_public_adapter_rejects_metric_prefix_that_omits_a_causal_frame(
 
     with pytest.raises(ValueError, match="complete causal range"):
         _prepare(decoded, metric, fit)
+
+
+def test_last_causal_residual_is_duplicate_invariant_and_capped(
+    tmp_path: Path,
+) -> None:
+    decoded, metric, fit = _fixture(tmp_path)
+    rows, _ = _prepare(decoded, metric, fit)
+    selected = np.flatnonzero(rows.frame_indices == 3)
+    reference = np.asarray(rows.point_world_m[selected[:12]]) - np.asarray(
+        [0.050, 0.0, 0.0]
+    )
+    physical = np.broadcast_to(reference[None], (76, *reference.shape)).copy()
+
+    single = estimate_deform360_last_causal_residual_v5(
+        visual_windows=(rows,),
+        physical_prediction_m=physical,
+        causal_frame_stop=4,
+    )
+    duplicate = estimate_deform360_last_causal_residual_v5(
+        visual_windows=(rows, replace(rows, window_id="duplicate-window")),
+        physical_prediction_m=physical,
+        causal_frame_stop=4,
+    )
+
+    np.testing.assert_allclose(single, duplicate, atol=1e-14, rtol=0.0)
+    assert np.max(np.linalg.norm(single, axis=1)) <= 0.030 + 1e-14
+
+
+def test_last_causal_residual_rejects_post_cutoff_rows(tmp_path: Path) -> None:
+    decoded, metric, fit = _fixture(tmp_path)
+    rows, _ = _prepare(decoded, metric, fit)
+    physical = np.zeros((76, 8, 3), dtype=np.float64)
+    future = replace(rows, frame_indices=rows.frame_indices + 1)
+
+    with pytest.raises(ValueError, match="post-cutoff"):
+        estimate_deform360_last_causal_residual_v5(
+            visual_windows=(future,),
+            physical_prediction_m=physical,
+            causal_frame_stop=4,
+        )
