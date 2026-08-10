@@ -1,0 +1,107 @@
+name: Publish geometric v4 coverage once
+
+on:
+  push:
+    branches:
+      - agent/materialize-deform360-joint-sparse-geometric-v4
+    paths:
+      - .github/workflows/_publish-geometric-v4-coverage-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-geometric-v4-coverage-once
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin' &&
+      github.ref == 'refs/heads/agent/materialize-deform360-joint-sparse-geometric-v4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/materialize-deform360-joint-sparse-geometric-v4
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Publish tested coverage suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = \
+            "agent/materialize-deform360-joint-sparse-geometric-v4"
+          cat > "$RUNNER_TEMP/geometric-test.gz.b64" <<'PAYLOAD'
+          H4sICDJeeWoCA3Rlc3RfZGVmb3JtMzYwX2pvaW50X3NwYXJzZV9nZW9tZXRyaWNfdjRfY292ZXJhZ2UucHkA3Tx/j+O4bv/PpzAMFLAXiTeZmXd9HSAF9rZ7uC1uf2Bne8V7aWA4iTLj28R2LWdmsmm+e0lRkiVZTjJ7U7ToYpFJLJKiSIoiKcmrutwEabraNtuapWmQb6qyboKsKMoma/Ky4BcX8tl9xu/X+Vz9zEv17Q9eFur797xa5Wt2sUK6VdYghiL6GX5SQ7OrGFePb+Hvmn3MNoxX2YJpiLy4UyBvip1mo9huql2Q8aCo1KNq1zDeXBDmPNsxnmdFWt3vePOYF4pIdBHAvyVblfXm6qdR+keZF00KfdacpXes3LCmzhfpIiuW+TIDiunDNfZjPNiUy8FFfKKf0z2Um01ZKOr0Ayi/DPsbYLTOs3X+ndWyC+vRywyhqL5L4vjtNPMnCfJyWy+YpCl/9JNNzmXQkl36QbT9UoOpDejJ7bZCgH/Pi2X52C+Xvv7KOWf1QzbP13mz6/T3LwrpXxHnVqB8MjE+l+t8sfv9Gju++PLp09dgIiZJBBMSJlGaxknNeLl+YFGcADorGj4dzy4+vPn67sv7N7+9//u7L+nnT7+9f/s3wBQEXsu+w6oum3JRrvnrdbn4xl+H9LgdSLla5QuwivR+Oz/TmBKc6SEw+/t12y31JzvvdHtOf64UdTcXF4AepJUQUxQHw38OlvmimfKmHqBPmN2IvmsGzqswZlLyACzjjLUHIOkIHPyH3STrMlvyyCNREH22TBv21ESsWJRLcEeTcNushn8N41jQ0Aw+1jn0JUDR5d0IJQ4CfHATALMgpXB/CMUAsInYRlCp1WTzbZnXkVTx5Gu9ZYOAPeW8Sctv4mfcohi94QcAuuyZUkEUySc6SeV8hH0t7hnoaLtJwcOlnK3ZAj0+gBRNnS0aHjWbKm1HJPj/WBZMir0sGxiZgkHt46NQN8pRKdZ3KGpAMMUlaABiAayxZSgsiACTeV6EA/1TDqrcNtUWe1WINVuU9ZILTND6lknjQWDDIGSf2BYRjUGwJ4TwJhgfQJWIkXGwxMZCBOp5kdW7FIYC8inrnWB6EBTgRSY04jiYEEftdD1JDhUQycEpYnqsSE/J4SRJnq1YWrM1LNcAJkX52hajZFYCUQftRPDhSAvv6RNMZJUXbEnD0IRsGQyCY8yowVJH/hFLQ0YVg873LcNocKA4L/0Wit9nl3/5CeAscYmHlvxjA2cOsQQMb1s0gKfocoiFwAXD9OHgSQj60CcbMbWI6Yj+tPLHX9JcxHdB4wFc1CoHYVbCbeifeuAmddG6U/R7Je/tuKtTq+uTVtfhTA9DQOHAObDLYQlkS+EKA/D+wgUFEAsQj3frch6Fr0AK+YocWs5JG9Ktaqdw++sb0NTtv324DWPT67XKChNcSNoHgotw369ucGIHwHMRBBtqdqRNKViIk4zDmsHzpyg+/EfhIBnjEuPWrYYxtY4544s8l6YZd5xTq9NtzZED5Zh5ZOtVzYjyEeU81R3tLd7Ccv4HuKo0X4IJr+Sv4R5iHPZ0M7pcHow5IuBZlfNyyQhBgDkAsIZlzXaDM47fM9aEqDsBGPxDcIl2MArYmjPwweV6S8GD0cnhwhQb4aE9ZMUdi8YjEshMfNIqxFyrbxcnHHur8H2oW4C5fbiApX5eZ/I3wh4OXatfsyJSHYnJOB6ZzappGinZjUbgtkbxDGGlBEgTjzmYAKUfSZ3lnPHod1xU3tV1CTEKhB+Le1iWC/TRYXyj+T7iv5PkNeOLrGIet/2MPtEoA+Vw/B2bjmo6c52UFTSoFAg841ppYsmW2woiKpEZYQQBTEvVQBff2K5CTm4Uqx/Es8/4jCzDDi4gBrbDCxmC
+          rjBa55b3H49urFjenv+o9ElRweTN6jrbRdMxqE78H8MYl5h6YjPEnz9dx7adL9B4Cx82fp7CrjCm5eljWa+X6cYkYoHhv2nniXg6SkbYkf6cDXrhLgWE/OyHuyRKI/o8Qk9AKGgPnOeRFsYKVgwQhw1hCMf4Oh4/S3U/qrRz8J6jrmkrQ5ITENfS1VJ7ARkd5AzHdBRDZSs/bRkjAPDXk5C+DkeGu4VopW5o4kzGI/N5WanHl+1j8SQFMvmCObaPcjwqSJFoQZbFv2ErzF0eRWCU+D820OZluU4NNE7Dgpj6DlzDJByHwavAlI6qALDNHBI3WsMn4aUJFrueJuEMwrSmbsXkVm70epZijJOq0gNloeRoDDGus818mQUUlL0aALUth/RVrFo3QWT5p0Eghh3HL8XbAqjWWbqAfJDVvUy9+vaY1XccuLGsPyFbHQTDcTKaYRx+RZJ7MfaqmmEmjsuA0iUZIj+D1ymBgl2F12fy5bADbBhxHSyURlcQo/xFUqU1mtJ+mE3IcaSrCbHROA3JDTyUT2wtYvx0E8JqD1IcW2Cb7CnfQMK8yjAVhPAQrFOqigYlsC5pHFmRr8C8nZTXzJdbMVLaGhsr3xE0AkiK6rvEMMKeI2gGlNmdCndgvtZlVeEXmn5g1dBTBmLPMByzVJCoSCCF2JBlG6NsahRYyrnwUT+501uKDNvo6zALzdZ2ok0i4YQuDedh2J4SsRjiRP1qQeUcBYxV/iSBxKMOiCEbgjMetMA6sJ6YkWEb7+s4emK4XbKdCf0ZnBGNXpqtUif4/Mp8rjQzlSuANElKXXkoQtV9uzrcBJeHTqekZdHntdmYrdcRWNAm0XoSga9WFYXxAIBRvGadZhuHfGfNGmGI00hoL1yst1y4MRGIgT8Cb/Wd1SWPruJ4ZuXRjpEtGeBt8iLnDXpq0VVrX7ovjHrFxJyAF+aMgX7w06gtaFBVsyuqXYq5Po9EFegGeSqWwoMKbw85GQfd3wQNBLlsCgvfAEbbzIL/EjEqjA7/iJhVkKGgdb5drRjW+/Iy+Rkfv/8kU2ggDwaVYDU0a2Q264QbhNwajuHTBY/mukvcTeTftgFUB7ZQ5Ytvazb5JYOczLQ4WROkjpI71gi6kRXrY+W82s7BWNN7li2hg5RhZqFifFqXZInw5cJ9n+QMJaEsKF+8irVyJrjojmLpyuVDIGHLWtRxN9ldvoioE+n27iHHGqApw0gKLMyB7ClkESS+kwUKbOSDhCFJaBasmSxIitLa1cBqsDoJch4IzZgQwLLoOhKfwmT1Ix13PS/lpHUZXIdcTz5+/puZCfaO0DTdAQ4FRUyTew6QWb24h2TUqfxCi1iPXDBp6aTEeViU4F1wkzCQ7c/KaRdiWxKmIa/AD3gHA6Rl1AjdtWxI/vNCBqwCwhmCbGyHIZiSG5rJ3/PqF6wh2STAuT2GMe5ZyY5aliwBwCIZyfo0SBocoRRFgVoJiNaPiILKxR45iCgNlUq07ZzGGYNd6zG4tBpU6LMtFuUGVlSw2yXpFZKMS2Nxl7K2Y5KjcYgMl8BKn2j2sh2LpLnT4+kNmOEVxlbTMQa2l/hxBcGt25W3Tig2epbbTcVtOew7+VrIF/dsk2GhS20CDrubgMO6nJfNkObV0Kw5DfooptJf4G6DB8is2HlDC3+tbuQB0Gs2kvJEVy5gU1IODOAk66SBSIU3UezFacMk6uEf3djOLvh5q6G0TWVVQ0WeMwhs+qYf7mZFZrLyUrFaf2AaO95arMsp+89tto4U945t2rsnzsgmWnQ0XdSMlKG/OV9E09AI+lVAwbMH9j1tp2Pk5uVOrHss05+ZEXanNELRWjQWlTD4f2Vm97K2caIsIHH7ygJn5KTSFsxk1Fm7usknZSdGOBelInpNMXSF
+          JDBp7uvy0fCwES5lgSRn5/PneWYTvc8x+yoPkaUzXxI0jq1ATRGh/OuxziqelpCQgo0VdykHp8U2MnR7uTAtL1YlmKdzZicSpWTMmyfjH1OksW77Kwg37iaHZcxivboR3DnLmW3L/XCtyXphDsoQ1CmcYJV9UwUqa9efHol9f7Pq8abYCVG2aUZrHPkqUBHJxDswu0pKQbwzfTtFuosu/ImJeNGrOaUwVf5pAwsIZQxBWOLJ16jV6JUev08c8LcdnZhUwadbORHJsgUlJjYkTrCXyFgN2JTRmuCO+PiB4Er2L32yMKRnTmlLbz0VnJ6pboZTlLHKmqg88RD1z1bKWMVJGTJJ+9DMrPPgxq6T6RKZuQ/jOe0h9/kunKKMB7JtDV2a9iERm4pzgKS5584pgHWGAZVZ7zK51SwOqQA0RHhZ+TJ8T1WXy63aQuyv1CmgLgFzC7IPX8N4+3/Icbk42rsA6SKrCpfQ2BEKShACrktGxj0nycigqI/MwzXg6sNhJpvGOSwA8Ry3Mvc/xGpCewO2xoUNTEnvMwg+R27wKQFajSDUuAdKCx6BLnuAbAEj5FUPpC1DhLw2IQ9GsVVtZP8/3cRH/VD4rkrx+rE9gXW2ZWxLf3j39cv7t+nn3958TG/f/vruw5vBRX8y1YP4+7svt+8/fbQm6SYrmnzBj/QGfX38+v7trTUxYI0AFFtvvslP2+n6yJFpw9OuWc7MWZNzyCJSZY4pVjfOoNaa78zjEOq8VCcez6DlWPms6xrYOr/L5RHN02TtnVbv/LjwbC3jmObXeL4IZEIKVjsvbos15hKFuqizFXgZH3IPgF8J0s8DGN+u5QQ0uOg2WwMg00cU+mZOfrU4CcyzZ8LPb76+/fWHpgJhPncuyP48k0EMSey4daJxdSCvb8F1fdFRwxbu3dlNdw/mGZDe43lG0C7QRcKygUQ9k9pzjcTuTapqjgFh2ofbZ8J/yoKk31cjNTfww2y5yZuGLfWmmwS6Mutvoa78dsDGV12wtGB3dO7NgR4bhaqwYYv7Il/ADMGAGu+KONAjLwPHBiOsidGAoE0cejZogLC3aKBhAxkDa4armrEhCn6+ZkPqnA91T+axT5/YLX12BH+Q0adSjT03Xf+MJ9tt6n0QM0+Y97/h3I6pQbrlh5w99tgTFpjWrGHrXcq3iwVjyxOabaFwB9hPtGtQJuzIawnZej0EKFS77OCU2o/NtoNxutgOM/1JhLCdIZEhp3Zje/RBX5yKf33Rp0o7EET/Oh7MOm63jT6yuslxC7hdkJUM+mFcF6sub8jSrkYcqoaOGz9y+NKOmA5er+wJxPdncHE4HaXvve5cptDfIHrt+gazcXaE206cvwfTAxUvxBKRih1Y4dHEJl8XH5IkQDIunxjPj1466Y7azKpmakC2dYvajzTygZU8q1zPxNJrOVeLrPFcLtPOqt2NPcWdiBtzFllu0ErxsRv7yTnBlFEFlVpb3Gc5GDisjxy9X3qfVdVOpK0vV/vUUsTdb1ARlkqcooyiENsVFYkwDa3gV1U02lYheGps01/drOQ/66+EtTfnsFbXf668PTKFIr+hswynC7cG+VZLovzFUdeNuGAjl4bTB8Gk0ESRis7mz87eC/ByYh8K81eRVazp6dQu7QqxF7hgqBMidtVMGAf8ssq4tHkK4UqkInqxlX88qPeWd3HH+FTwEv9Q10Zm3dtza5JyCvb3Rauz6Mu3QJ8cnH+Jjp2i8BuxiwZAVBtehduCPVV0VQCWDshmmh14YsHY4Vit2JohrY5VHbt9ok7MyFytxUtSfb1QnqCK3MhBagqm1kRL0nSOM+9pNhvedZQWjisycWTNE1gYJ2r1cmzCGrGFsXvnq0c4Pcj1unvUjkoDJrSzNnc2Wz0ozhJrsHbt
+          A8eV0+Cke+fT5sdaNT27uyTT6Wg2NWJKcaDu1IT0ULnsp+K3fA+Na6ChYzeXitUAK+NiDchB+gtY889iudNuLU3zIm/SFE8brgbtBrncq2JPi/UWpixWDxtn6ZMWtEryoto2VNuT7wNIyOlGmlwiIhe8rZTcsyfyt1Fsk5GHFXMReEch/cS99kB9n4cOit6aJ5R2e15XpTso+pg8ocjDkAJFfu+gcDASvKQsjyy23dFv2Z/80cFWIrQOYwK+et4uMcpnqfs3iN57wdnwnPtQaYBC7FYjA09J6PrQ9ii2Crmvo3ZL0tefcKkY9FkbjvKgw8xzDECFZ/bla+nXfFeKfUM+tetE2RhVYPybPrAmea5Vx8/areLhyW0pIX47fcR7VL1bKKtwj+0H8wS2KqpjgziX0EnLlEPvzb+6mRx56IEvD5L7N26jtbnjNj5c9zSYWu6CxEYycnqfrptix2didnf4ju1p6mUEWs5+S0OC74boXLw18ji98XXOqwNoAeTiatuUnD6aAD5Ku5srN91jTYDXbgu1aLQ3ZNz5EYWythPVkSzfOV1dxna8Rif4u86+czIMzFpzdrjZm9QPoV4R7NtP3uXBvvGt68rbYsux3GOUjsO/yu01pzY8PljEpAQSSAhZsexyvvfeiQtp5ECOvvhvzlmH7VZqAjmj70H1XGMIVU7Ug2JdZzgT2LkR24Nhiyw2QjSwUK/o9r7DgVxuPz4vNDhxHlJ/P3Uasp0EvmOYvt1PY7adswVqjFSc2KCTOmLmpPfZeoXHr1DKdHHOdy1TnmkRO4r0rffgpPimAodjG8XaUh2pr0KFLbeNjYl4RP7HNp5BSuPRmbvPAvZlt6A9U04PUc0976SDCDyjgi1epobvgEBneOW7bnbDElZxWDGHMLNaanKmnbsJPjY3wVUA9T9XHqPQQ8gbvwzOqe3plQ8a9fdB50jNXm98i7/gYnVo21qwenSwy3Jm3BfJdx0U9C4cO9IbGK90sUpuvoBQx1k6QZbDt6TtvuoqMR5oN/t/JF0n/s/M1xXwMxN2o49zMnYFboeJx1N2hWNHj/05u4JvA8pzcnfNmSfaNPB7dmonYYaxwrXhj8js2rf6TORrgaw3O9E5W5OnrCk3KDRxQYo6EdeiwKkU2+rlas1GifloGnVWofloJbX7dri2nuoWurpFVeNarx0eWNtx4T9RqHZwr+4bVUZ3N8qhkB2n0Pq1mXvN3/Zw5x83PyoY8y08XanQG6JE5mzdfBZFZ/FuGUxddEwrLibTFb+4U4yW92xbvqxDtBK8PfaJVzemtGjPxI1F87QnfPSd/rSifazPUidTFV7MOgeKbYXLPqPYkb9z22W/UiHQ6z1RPiRkXOLOjVfJezcYP3QuG/kU2dEf6K330jIew6W2P2kZ822+1rvjVKQ4MmnaMl3kJi1aAW08hlf5QaO6xVtuMjVlW5N+eZpV7EBPBsGYvCyr693WKi6n2UCS8FVLKfqXHHTfqYP3jU1IWLc9b96R72YTeb1crGU2374kqgfeelmUFxhZEBebDCxiJU7kS6leU5GMbtbHisFnnBzP1pj67+jdfdw8LX5cnvaxeWE20VmH5b+AvPONurrCd0Vzz5p8YZgo3cCThyzCZ84XnzUbPJJ86YB+6jUveXi/T4Qm+1qIZ4zilFwtluyrW2Vjtyakq6gDJWxFjUVaSEKoCTwevgrj/jhhsc5TSBFAgUuORwJS0OQWA5M/cxeHIrCK77jGeZtV+ObeX/In/DMVDr4TSxDM0o2/scBycC+0GNLsGmBfcVr1kGwr9KbSQcXdYnJ7lsfoaBkenmWVvphe30Np26RCldytFDocDu2SI4bs5ptyas/peeuo+3DYRvyn0M2CsktDxf6y6nmUSv8VhOHQVwp2KRy5
+          hDAcUhIxVJnCEJOI49z0XEnQou0Ug/1i7b1NMBz2VaRdQieuJcDgrk8T0TDeIR2tcncG1oX2EbWzlaE+umeevXPzFkAjvzWE1OUICwSkOrR2FT1Jcl5EeqKIZW9k312l6T3tPUVLb8aTzPpR3YSLcDwsm+hGdZ0cnyitAyCr6yhO4EtMLzrpdSz/Deuqjj7hXAAA
+          PAYLOAD
+          base64 --decode "$RUNNER_TEMP/geometric-test.gz.b64" \
+            | gzip --decompress \
+            > tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          test "$(sha256sum tests/test_deform360_joint_sparse_geometric_v4_coverage.py | cut -d' ' -f1)" = \
+            "39748ea606efe417c2510a9cdfabc76a49b4c32725c3f645050fd419c8e714c7"
+
+          python -m pip install -e ".[dev]"
+          python -m ruff format \
+            tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          python -m ruff check --fix \
+            tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          python -m ruff check \
+            tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4.py \
+            tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          coverage erase
+          coverage run --branch -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4.py \
+            tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          coverage json -o "$RUNNER_TEMP/geometric-coverage.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(
+              Path(os.environ["RUNNER_TEMP"])
+              .joinpath("geometric-coverage.json")
+              .read_text(encoding="utf-8")
+          )
+          modules = [
+              path
+              for path in report["files"]
+              if "src/bayesian_phystwin/deform360_joint_sparse_geometric_" in path
+          ]
+          if len(modules) != 6:
+              raise SystemExit(f"unexpected geometric module roster: {modules}")
+          for path in modules:
+              summary = report["files"][path]["summary"]
+              line_fraction = summary["covered_lines"] / summary["num_statements"]
+              branch_fraction = summary["covered_branches"] / summary["num_branches"]
+              if line_fraction < 0.90 or branch_fraction < 0.80:
+                  raise SystemExit(
+                      f"coverage floor failed for {path}: "
+                      f"lines={line_fraction:.3f}, branches={branch_fraction:.3f}"
+                  )
+          PY
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/test_deform360_joint_sparse_geometric_v4_coverage.py
+          git commit -m "Cover Deform360 geometric v4 source materialization"
+          git push origin HEAD:agent/materialize-deform360-joint-sparse-geometric-v4
