@@ -41,6 +41,7 @@ MATERIALIZER_POLICY = (
 V4_POLICY = (
     ROOT / "protocols/locks/deform360_official_hub_joint_sparse_observability_v4.json"
 )
+SUPPORTED_STREAM_COUNTS = (32, 32, 32, 31, 31, 31, 31, 31, 31, 31)
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -143,7 +144,7 @@ def _source_fixture(tmp_path: Path) -> dict[str, Any]:
 
     rows: list[dict[str, object]] = []
     cases: list[dict[str, object]] = []
-    for index in range(10):
+    for index, supported_count in enumerate(SUPPORTED_STREAM_COUNTS):
         object_id = f"object-{index:02d}"
         episode_id = index
         stratum = "sheet" if index < 5 else "volumetric"
@@ -155,8 +156,8 @@ def _source_fixture(tmp_path: Path) -> dict[str, Any]:
             }
         )
         streams: list[dict[str, object]] = []
-        for camera_suffix in ("a", "b"):
-            camera_id = f"camera-{camera_suffix}"
+        for camera_index in range(supported_count):
+            camera_id = f"camera-{camera_index:03d}"
             job_id = hashlib.sha256(
                 f"job:{object_id}:{episode_id}:{camera_id}".encode()
             ).hexdigest()
@@ -175,11 +176,14 @@ def _source_fixture(tmp_path: Path) -> dict[str, Any]:
                     "metric_calibration": _record(calibration, root=metric_files),
                 }
             )
+        case_identity = {
+            "schema": "bayesian-phystwin.deform360-prob4d-metric-case-id-v1",
+            "object_id": object_id,
+            "episode_id": episode_id,
+        }
         cases.append(
             {
-                "case_id": hashlib.sha256(
-                    f"case:{object_id}:{episode_id}".encode()
-                ).hexdigest(),
+                "case_id": content_id(case_identity),
                 "object_id": object_id,
                 "episode_id": episode_id,
                 "stratum": stratum,
@@ -333,8 +337,9 @@ def _fake_collect_stream_candidates(**arguments: Any):
     episode_id = int(arguments["episode_id"])
     camera_id = str(arguments["camera_id"])
     job_id = str(arguments["job_id"])
+    camera_index = int(camera_id.rsplit("-", 1)[1])
     camera_center = np.asarray(
-        (-0.4 if camera_id.endswith("a") else 0.4, 0.0, -1.0),
+        (-0.4 if camera_index % 2 == 0 else 0.4, 0.0, -1.0),
         dtype=np.float64,
     )
     points = (
