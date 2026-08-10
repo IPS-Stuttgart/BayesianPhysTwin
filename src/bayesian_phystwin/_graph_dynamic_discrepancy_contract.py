@@ -9,10 +9,10 @@ from typing import Any
 import numpy as np
 
 from ._graph_dynamic_discrepancy_common import (
+    _DEFAULT_MAXIMUM_COVARIANCE_BYTES,
     GRAPH_DYNAMIC_DISCREPANCY_BOUNDARY,
     GRAPH_DYNAMIC_DISCREPANCY_SCHEMA,
     GRAPH_DYNAMIC_DISCREPANCY_VERSION,
-    _DEFAULT_MAXIMUM_COVARIANCE_BYTES,
     _integer,
     _json_mapping,
     _readonly,
