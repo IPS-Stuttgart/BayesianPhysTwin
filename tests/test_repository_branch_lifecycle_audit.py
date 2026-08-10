@@ -198,8 +198,7 @@ def test_exact_reference_scan_ignores_untracked_and_non_evidence_files(
     (tmp_path / "docs").mkdir()
     (tmp_path / "src").mkdir()
     (tmp_path / "docs" / "evidence.md").write_text(
-        f"source revision `{_UNMERGED_SHA}`\n"
-        f"duplicate `{_UNMERGED_SHA}`\n",
+        f"source revision `{_UNMERGED_SHA}`\nduplicate `{_UNMERGED_SHA}`\n",
         encoding="utf-8",
     )
     (tmp_path / "docs" / "untracked.md").write_text(
@@ -218,9 +217,7 @@ def test_exact_reference_scan_ignores_untracked_and_non_evidence_files(
     )
 
     assert references == {
-        _UNMERGED_SHA: (
-            ReferenceLocation("docs/evidence.md", (1, 2)),
-        )
+        _UNMERGED_SHA: (ReferenceLocation("docs/evidence.md", (1, 2)),)
     }
 
 
