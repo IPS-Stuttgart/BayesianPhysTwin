@@ -164,3 +164,12 @@ objects, or turn a development pass into a performance claim.
 Pull requests execute only the hosted, read-only contract matrix. The data-bearing
 `workstation2` job is push-only and can start only after reviewed source reaches
 protected `main`.
+
+## Validation boundary
+
+The hosted contract matrix type-checks all six materializer modules, exercises
+the support-only NPZ and source-admission contracts, verifies the workflow's
+retained-result command boundary, and checks source-distribution membership.
+These checks establish implementation and custody integrity only; they do not
+convert the frozen structural covariance model into an empirical calibration or
+performance claim.
