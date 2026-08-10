@@ -22,18 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out exact feature branch
+      - name: Check out current feature branch
         uses: actions/checkout@v7
         with:
           ref: agent/materialize-deform360-joint-sparse-geometric-v4
           fetch-depth: 0
           persist-credentials: true
           clean: true
-
-      - name: Verify exact triggering revision
-        env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -46,6 +41,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          branch=agent/materialize-deform360-joint-sparse-geometric-v4
+          test "$(git branch --show-current)" = "${branch}"
           pipeline=tests/test_deform360_joint_sparse_geometric_v4_pipeline.py
           git show \
             eeb5d26df6f684fbbb29e6246f32a6263a3e9c25:"${pipeline}" \
@@ -107,4 +104,5 @@ jobs:
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add "${files[@]}"
           git commit -m "Restore and harden Deform360 geometric v4 pipeline tests"
-          git push origin HEAD:agent/materialize-deform360-joint-sparse-geometric-v4
+          git pull --rebase origin "${branch}"
+          git push origin "HEAD:${branch}"
