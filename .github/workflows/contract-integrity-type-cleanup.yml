@@ -35,12 +35,12 @@ jobs:
           text = path.read_text(encoding="utf-8")
           replacements = (
               (
-                  "    def __iter__(self) -> Iterator[str]:  # type: ignore[override]\n",
-                  "    def __iter__(self) -> Iterator[str]:\n",
+                  "    def __ior__(self, other: object) -> FrozenDict:  # type: ignore[misc]\n",
+                  "    def __ior__(self, other: object) -> FrozenDict:\n",
               ),
               (
-                  "    def __iter__(self) -> Iterator[Any]:  # type: ignore[override]\n",
-                  "    def __iter__(self) -> Iterator[Any]:\n",
+                  "    def __iadd__(self, other: object) -> FrozenList:  # type: ignore[misc]\n",
+                  "    def __iadd__(self, other: object) -> FrozenList:\n",
               ),
           )
           for old, new in replacements:
