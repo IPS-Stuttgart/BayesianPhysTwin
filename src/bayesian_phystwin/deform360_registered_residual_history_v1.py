@@ -141,8 +141,8 @@ def _boolean_array(value: object, *, name: str, ndim: int) -> np.ndarray:
 def _canonical_horizon_bins(future_count: int) -> np.ndarray:
     if isinstance(future_count, bool) or future_count < 3:
         raise ValueError("registered execution requires at least three future frames")
-    bins = np.empty(future_count, dtype=np.int64)
-    indices = np.arange(future_count, dtype=np.int64)
+    bins: np.ndarray = np.empty(future_count, dtype=np.int64)
+    indices: np.ndarray = np.arange(future_count, dtype=np.int64)
     for label_index, chunk in enumerate(np.array_split(indices, 3)):
         if not len(chunk):
             raise AssertionError("canonical horizon partition contains an empty bin")
@@ -547,8 +547,8 @@ class RegisteredResidualHistoryDecisionV1:
         metadata = frozen_finite_json_mapping(self.metadata, name="metadata")
         object.__setattr__(self, "source_unit_id", source_unit_id)
         object.__setattr__(self, "provenance_id", provenance_id)
-        for name, value in digests.items():
-            object.__setattr__(self, name, value)
+        for digest_name, digest_value in digests.items():
+            object.__setattr__(self, digest_name, digest_value)
         object.__setattr__(
             self,
             "valid_observation_count_by_track",
