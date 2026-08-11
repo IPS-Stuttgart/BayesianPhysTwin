@@ -7,6 +7,7 @@ include api/root-public-api-v0.4.json
 include api/versioned-public-api-v1.json
 include docs/public_api_policy.md
 include docs/releasing.md
+include docs/ecosystem_compatibility_v1.md
 include tools/quality/check_public_api.py
 include tools/release/build_release_evidence.py
 include docs/deform360_calibration_observability_batch.md
@@ -92,6 +93,7 @@ include protocols/templates/practical_equivalence_policy_v1.json
 include examples/bayesian_value_decomposition_score_input.json
 include docs/evidence_decision_v1.md
 recursive-include src/bayesian_phystwin/contract_data/evidence_decision_v1 *.json
+recursive-include src/bayesian_phystwin/contract_data/ecosystem_compatibility_v1 *.json
 include docs/full22_discrepancy_candidate_tournament_v1.md
 include protocols/full22_discrepancy_candidate_tournament_v1.json
 include scripts/science/run_full22_discrepancy_candidate_tournament_v1.py
