@@ -77,7 +77,9 @@ def _file_record(path: Path, *, relative: str) -> dict[str, object]:
     try:
         data = path.read_bytes()
     except OSError as error:
-        raise ReleaseMatrixBindingError(f"cannot read source contract {relative}") from error
+        raise ReleaseMatrixBindingError(
+            f"cannot read source contract {relative}"
+        ) from error
     return {
         "path": relative,
         "sha256": hashlib.sha256(data).hexdigest(),
@@ -89,7 +91,9 @@ def _sdist_path(dist_dir: Path, evidence: Mapping[str, Any]) -> Path:
     try:
         candidates = sorted(dist_dir.glob("*.tar.gz"))
     except OSError as error:
-        raise ReleaseMatrixBindingError("cannot enumerate distribution directory") from error
+        raise ReleaseMatrixBindingError(
+            "cannot enumerate distribution directory"
+        ) from error
     if len(candidates) != 1:
         raise ReleaseMatrixBindingError("expected exactly one source distribution")
     expected = _mapping(
