@@ -1,0 +1,52 @@
+name: Validate PR 546 on workstation2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-pr546-workstation2.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event.pull_request.head.ref == 'diagnostic/validate-pr546-workstation2'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 20
+    env:
+      BASE_SHA: 07fab9fcd3dae6ab0ec05c56ef565ab16d4466a5
+      TARGET_SHA: 1f082d097b332ec34ec0971ac3eabcbd694d5cb5
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out exact PR 546 head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Validate exact changed source without scientific data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git fetch --no-tags --no-recurse-submodules --depth=1 origin "${BASE_SHA}"
+          python3 -m venv "${RUNNER_TEMP}/pr546-validation"
+          source "${RUNNER_TEMP}/pr546-validation/bin/activate"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python scripts/ci/check_changed_python.py \
+            --base "${BASE_SHA}" \
+            --head "${TARGET_SHA}"
+          python -m pytest -q \
+            tests/test_deform360_joint_sparse_geometric_v4_stage_prefix_compatibility.py \
+            tests/test_deform360_joint_sparse_physical_source_v5.py \
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+
+      - name: Remove isolated validation environment
+        if: always()
+        shell: bash
+        run: rm -rf "${RUNNER_TEMP}/pr546-validation"
