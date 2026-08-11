@@ -68,8 +68,10 @@ def test_wrapper_patches_only_the_locked_stage_selector_digest() -> None:
     assert 'choices=("stage-prefix",)' in text
     assert "validate_joint_sparse_physical_execution_v5" in text
     assert "patch_joint_sparse_physical_stage_v5" in text
-    assert 'setattr(module, "GENERIC_SELECTOR_SHA256"' in text
-    assert "CORRECTED_SELECTOR_SHA256" in text
+    assert (
+        "dynamic_module.GENERIC_SELECTOR_SHA256 = CORRECTED_SELECTOR_SHA256" in text
+    )
+    assert 'setattr(module, "GENERIC_SELECTOR_SHA256"' not in text
     assert 'getattr(module, "SAM2_REPOSITORY_REVISION"' in text
     assert "run_deform360_joint_sparse_source_predictions_v5.py" not in text
     assert "run_deform360_fresh_object_session_source_v6.py" not in text
