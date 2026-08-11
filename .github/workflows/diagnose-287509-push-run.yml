@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Report exact push runs and jobs
+      - name: Report exact push runs and self-hosted queue
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -32,6 +32,7 @@ jobs:
           repository = os.environ["GITHUB_REPOSITORY"]
           token = os.environ["GH_TOKEN"]
           target = os.environ["TARGET_SHA"]
+          api = f"https://api.github.com/repos/{repository}/actions"
           headers = {
               "Accept": "application/vnd.github+json",
               "Authorization": f"Bearer {token}",
@@ -44,12 +45,13 @@ jobs:
               with urllib.request.urlopen(request, timeout=30) as response:
                   return json.load(response)
 
+          def jobs(run_id: int):
+              return get(f"{api}/runs/{run_id}/jobs?per_page=100").get("jobs", [])
+
           query = urllib.parse.urlencode(
               {"head_sha": target, "event": "push", "per_page": 100}
           )
-          runs = get(
-              f"https://api.github.com/repos/{repository}/actions/runs?{query}"
-          ).get("workflow_runs", [])
+          runs = get(f"{api}/runs?{query}").get("workflow_runs", [])
           print(f"target_sha={target}")
           print(f"push_run_count={len(runs)}")
           for run in runs:
@@ -60,17 +62,41 @@ jobs:
                   f"status={run.get('status')} conclusion={run.get('conclusion')} "
                   f"attempt={run.get('run_attempt')} url={run.get('html_url')}"
               )
-              jobs = get(
-                  f"https://api.github.com/repos/{repository}/actions/runs/"
-                  f"{run_id}/jobs?per_page=100"
-              ).get("jobs", [])
-              for job in jobs:
+              for job in jobs(run_id):
                   print(
                       "JOB "
                       f"run_id={run_id} id={job.get('id')} name={job.get('name')!r} "
                       f"status={job.get('status')} conclusion={job.get('conclusion')} "
-                      f"runner_name={job.get('runner_name')!r}"
+                      f"runner_name={job.get('runner_name')!r} labels={job.get('labels')!r}"
                   )
           if not runs:
               raise SystemExit(3)
+
+          seen_runs = set()
+          print("SELF_HOSTED_QUEUE_BEGIN")
+          for status in ("in_progress", "queued"):
+              status_query = urllib.parse.urlencode(
+                  {"status": status, "per_page": 30}
+              )
+              active = get(f"{api}/runs?{status_query}").get("workflow_runs", [])
+              for run in active:
+                  run_id = int(run["id"])
+                  if run_id in seen_runs:
+                      continue
+                  seen_runs.add(run_id)
+                  for job in jobs(run_id):
+                      labels = job.get("labels") or []
+                      runner_name = job.get("runner_name") or ""
+                      if "self-hosted" not in labels and runner_name != "workstation2":
+                          continue
+                      print(
+                          "SELF_HOSTED "
+                          f"run_id={run_id} run_name={run.get('name')!r} "
+                          f"head_sha={run.get('head_sha')} event={run.get('event')} "
+                          f"job_id={job.get('id')} job_name={job.get('name')!r} "
+                          f"status={job.get('status')} conclusion={job.get('conclusion')} "
+                          f"runner_name={runner_name!r} labels={labels!r} "
+                          f"url={run.get('html_url')}"
+                      )
+          print("SELF_HOSTED_QUEUE_END")
           PY
