@@ -12,8 +12,7 @@ REPAIR = ROOT / (
 )
 WRAPPER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 ARCHIVED_RUNNER = ROOT / (
-    "scripts/ci/archive/"
-    "run_deform360_v6_source_prediction_evidence_v1.sh"
+    "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v1.sh"
 )
 
 REPAIR_ID = "28cee70eaa0e8561a320f87d4e51d6c2aad365927814dc94864e299fc145be99"
