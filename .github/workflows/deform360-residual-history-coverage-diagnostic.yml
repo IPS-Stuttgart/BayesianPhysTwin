@@ -1,0 +1,108 @@
+name: Deform360 residual-history coverage diagnostic
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deform360-residual-history-coverage-diagnostic.yml"
+      - "src/bayesian_phystwin/*deform360_covariance_residual_history*.py"
+      - "tests/test_deform360_covariance_residual_history*.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-residual-history-coverage-diagnostic-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  contracts-and-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate contracts and changed-module coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev,graph]"
+          python -m pip install "coverage==7.13.3"
+          python -m pip check
+
+          files=(
+            tests/test_deform360_covariance_residual_history_contract_edges_v1.py
+            tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py
+            tests/test_deform360_covariance_residual_history_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m pytest -q -p no:cacheprovider \
+            "${files[@]}" \
+            tests/test_pull_request_workflow_integrity.py
+
+          python -m coverage run --branch --source=bayesian_phystwin \
+            -m pytest -q -p no:cacheprovider "${files[@]}"
+          python -m coverage json -o residual-history-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          document = json.loads(
+              Path("residual-history-coverage.json").read_text(encoding="utf-8")
+          )
+          files = (
+              "src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py",
+              "src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py",
+              "src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py",
+              "src/bayesian_phystwin/deform360_covariance_residual_history_v1.py",
+          )
+          failures: list[str] = []
+          for path in files:
+              data = document["files"][path]
+              summary = data["summary"]
+              statements = int(summary["num_statements"])
+              covered = int(summary["covered_lines"])
+              branches = int(summary["num_branches"])
+              covered_branches = int(summary["covered_branches"])
+              line_pct = 100.0 if statements == 0 else 100.0 * covered / statements
+              branch_pct = 100.0 if branches == 0 else 100.0 * covered_branches / branches
+              print(f"{path}: lines={line_pct:.2f}%, branches={branch_pct:.2f}%")
+              print(f"  missing_lines={data['missing_lines']}")
+              print(f"  missing_branches={data['missing_branches']}")
+              if line_pct < 90.0:
+                  failures.append(f"{path}: line coverage {line_pct:.2f}% < 90.00%")
+              if branch_pct < 80.0:
+                  failures.append(f"{path}: branch coverage {branch_pct:.2f}% < 80.00%")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          PY
