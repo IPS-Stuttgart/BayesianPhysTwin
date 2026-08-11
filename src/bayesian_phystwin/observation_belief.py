@@ -12,6 +12,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from numbers import Real
 from pathlib import Path
 from typing import Any
 
@@ -105,8 +106,14 @@ def _validate_sha256(value: str, *, name: str) -> None:
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
-def _readonly_float(values: object) -> np.ndarray:
-    return immutable_array(values, dtype=np.dtype(np.float64))
+def _readonly_float(values: object, *, name: str) -> np.ndarray:
+    try:
+        raw = np.asarray(values)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError(f"{name} must contain real numeric values") from error
+    if raw.dtype.kind not in "iuf":
+        raise ValueError(f"{name} must contain real numeric values")
+    return immutable_array(raw, dtype=np.dtype(np.float64))
 
 
 def _readonly_integer(values: object, *, name: str) -> np.ndarray:
@@ -125,14 +132,42 @@ def _artifact_id(
 
 
 def _validate_rotation(rotation: np.ndarray) -> np.ndarray:
-    matrix = np.asarray(rotation, dtype=np.float64)
+    try:
+        raw = np.asarray(rotation)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("rotation must contain real numeric values") from error
+    if raw.dtype.kind not in "iuf":
+        raise ValueError("rotation must contain real numeric values")
+    matrix = np.asarray(raw, dtype=np.float64)
     if matrix.shape != (3, 3) or not np.all(np.isfinite(matrix)):
         raise ValueError("rotation must have finite shape (3, 3)")
-    if not np.allclose(matrix.T @ matrix, np.eye(3), atol=1e-9, rtol=1e-9):
+    with np.errstate(over="ignore", invalid="ignore"):
+        gram = matrix.T @ matrix
+    if not np.all(np.isfinite(gram)) or not np.allclose(
+        gram,
+        np.eye(3),
+        atol=1e-9,
+        rtol=1e-9,
+    ):
         raise ValueError("rotation must be orthonormal")
-    if not np.isclose(np.linalg.det(matrix), 1.0, atol=1e-9, rtol=1e-9):
+    determinant = float(np.linalg.det(matrix))
+    if not np.isfinite(determinant) or not np.isclose(
+        determinant,
+        1.0,
+        atol=1e-9,
+        rtol=1e-9,
+    ):
         raise ValueError("rotation must have determinant one")
     return matrix
+
+
+def _finite_positive_real(value: object, *, name: str) -> float:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a real scalar")
+    result = float(value)
+    if not np.isfinite(result) or result <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
+    return result
 
 
 @dataclass(frozen=True)
@@ -215,7 +250,7 @@ class ObservationBeliefV1:
             self.declared_frame_ids,
             name="declared_frame_ids",
         )
-        mean = _readonly_float(self.mean_xyz_m)
+        mean = _readonly_float(self.mean_xyz_m, name="mean_xyz_m")
         frame_ids = _readonly_integer(self.frame_ids, name="frame_ids")
         entity_ids = _readonly_integer(self.entity_ids, name="entity_ids")
         view_indices = _readonly_integer(self.view_indices, name="view_indices")
@@ -228,13 +263,31 @@ class ObservationBeliefV1:
             self.factor_group_ids,
             name="factor_group_ids",
         )
-        prior_reliability = _readonly_float(self.prior_reliability)
-        association_probability = _readonly_float(self.association_probability)
-        local_covariance = _readonly_float(self.local_covariance_m2)
-        factors = _readonly_float(self.low_rank_factor_m)
+        prior_reliability = _readonly_float(
+            self.prior_reliability,
+            name="prior_reliability",
+        )
+        association_probability = _readonly_float(
+            self.association_probability,
+            name="association_probability",
+        )
+        local_covariance = _readonly_float(
+            self.local_covariance_m2,
+            name="local_covariance_m2",
+        )
+        factors = _readonly_float(
+            self.low_rank_factor_m,
+            name="low_rank_factor_m",
+        )
         group_ids = _readonly_integer(self.group_ids, name="group_ids")
-        group_prior = _readonly_float(self.group_prior_nominal_probability)
-        group_weight = _readonly_float(self.group_composite_weight)
+        group_prior = _readonly_float(
+            self.group_prior_nominal_probability,
+            name="group_prior_nominal_probability",
+        )
+        group_weight = _readonly_float(
+            self.group_composite_weight,
+            name="group_composite_weight",
+        )
 
         if (
             declared_frames.ndim != 1
@@ -435,25 +488,51 @@ class ObservationBeliefV1:
         """Return the same belief in another metric Sim(3) frame."""
 
         matrix = _validate_rotation(rotation)
-        translation = np.asarray(translation_m, dtype=np.float64)
+        try:
+            raw_translation = np.asarray(translation_m)
+        except (TypeError, ValueError, OverflowError) as error:
+            raise ValueError(
+                "translation_m must contain real numeric values"
+            ) from error
+        if raw_translation.dtype.kind not in "iuf":
+            raise ValueError("translation_m must contain real numeric values")
+        translation = np.asarray(raw_translation, dtype=np.float64)
         if translation.shape != (3,) or not np.all(np.isfinite(translation)):
             raise ValueError("translation_m must have finite shape (3,)")
-        if not np.isfinite(scale) or scale <= 0.0:
-            raise ValueError("scale must be finite and positive")
-        mean = scale * np.einsum("ij,nj->ni", matrix, self.mean_xyz_m)
-        mean += translation
-        covariance = scale**2 * np.einsum(
-            "ij,njk,lk->nil",
-            matrix,
-            self.local_covariance_m2,
-            matrix,
-        )
-        factors = scale * np.einsum("ij,njr->nir", matrix, self.low_rank_factor_m)
+        scale_value = _finite_positive_real(scale, name="scale")
+        with np.errstate(over="ignore", invalid="ignore"):
+            scale_squared = np.float64(scale_value) * np.float64(scale_value)
+            mean = scale_value * np.einsum(
+                "ij,nj->ni",
+                matrix,
+                self.mean_xyz_m,
+            )
+            mean += translation
+            covariance = scale_squared * np.einsum(
+                "ij,njk,lk->nil",
+                matrix,
+                self.local_covariance_m2,
+                matrix,
+            )
+            factors = scale_value * np.einsum(
+                "ij,njr->nir",
+                matrix,
+                self.low_rank_factor_m,
+            )
+        if (
+            not np.isfinite(scale_squared)
+            or not np.all(np.isfinite(mean))
+            or not np.all(np.isfinite(covariance))
+            or not np.all(np.isfinite(factors))
+        ):
+            raise ValueError(
+                "metric transform is not representable as finite float64 values"
+            )
         metadata = plain_json(self.metadata)
         metadata["metric_transform"] = {
             "rotation": matrix.tolist(),
             "translation_m": translation.tolist(),
-            "scale": float(scale),
+            "scale": scale_value,
             "source_artifact_id": self.artifact_id,
         }
         return replace(

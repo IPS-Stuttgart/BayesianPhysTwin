@@ -460,3 +460,185 @@ def test_sim3_transform_moves_covariance_and_factors() -> None:
         transformed.local_covariance_m2[0], 4.0 * belief.local_covariance_m2[0]
     )
     assert transformed.artifact_id != belief.artifact_id
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "mean_xyz_m",
+        "prior_reliability",
+        "association_probability",
+        "local_covariance_m2",
+        "low_rank_factor_m",
+        "group_prior_nominal_probability",
+        "group_composite_weight",
+    ),
+)
+def test_observation_belief_rejects_complex_numeric_arrays(field: str) -> None:
+    source = _belief()
+    values = np.asarray(getattr(source, field), dtype=np.complex128).copy()
+    values.flat[0] += 1j
+
+    with pytest.raises(ValueError, match=f"{field} must contain real numeric values"):
+        ObservationBeliefV1(
+            **{
+                **source.__dict__,
+                field: values,
+            }
+        )
+
+
+def test_sim3_transform_rejects_complex_inputs_and_nonreal_scale() -> None:
+    belief = _belief()
+
+    with pytest.raises(ValueError, match="rotation must contain real numeric values"):
+        belief.transformed(
+            rotation=np.eye(3, dtype=np.complex128),
+            translation_m=np.zeros(3),
+        )
+    with pytest.raises(
+        ValueError,
+        match="translation_m must contain real numeric values",
+    ):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3, dtype=np.complex128),
+        )
+    with pytest.raises(ValueError, match="scale must be a real scalar"):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=True,
+        )
+    with pytest.raises(ValueError, match="scale must be a real scalar"):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=1.0 + 0.0j,
+        )
+
+
+def test_sim3_transform_overflow_fails_closed() -> None:
+    with pytest.raises(
+        ValueError,
+        match="metric transform is not representable as finite float64 values",
+    ):
+        _belief().transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=1e155,
+        )
+
+
+class _ArrayConversionFailure:
+    def __array__(self, dtype: object = None, copy: object = None) -> np.ndarray:
+        del dtype, copy
+        raise ValueError("intentional array conversion failure")
+
+
+def test_observation_belief_normalizes_float_array_conversion_failures() -> None:
+    with pytest.raises(ValueError, match="mean_xyz_m must contain real numeric values"):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                "mean_xyz_m": _ArrayConversionFailure(),
+            }
+        )
+
+
+def test_sim3_transform_normalizes_array_conversion_failures() -> None:
+    belief = _belief()
+
+    with pytest.raises(ValueError, match="rotation must contain real numeric values"):
+        belief.transformed(
+            rotation=_ArrayConversionFailure(),  # type: ignore[arg-type]
+            translation_m=np.zeros(3),
+        )
+    with pytest.raises(
+        ValueError,
+        match="translation_m must contain real numeric values",
+    ):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=_ArrayConversionFailure(),  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    ("rotation", "message"),
+    (
+        (np.eye(2), "rotation must have finite shape"),
+        (np.full((3, 3), np.inf), "rotation must have finite shape"),
+        (2.0 * np.eye(3), "rotation must be orthonormal"),
+        (1e308 * np.eye(3), "rotation must be orthonormal"),
+        (np.diag([-1.0, 1.0, 1.0]), "rotation must have determinant one"),
+    ),
+)
+def test_sim3_transform_rejects_invalid_rotations(
+    rotation: np.ndarray,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        _belief().transformed(
+            rotation=rotation,
+            translation_m=np.zeros(3),
+        )
+
+
+@pytest.mark.parametrize(
+    "translation",
+    (
+        np.zeros(2),
+        np.full(3, np.nan),
+    ),
+)
+def test_sim3_transform_rejects_invalid_translation_shape_or_values(
+    translation: np.ndarray,
+) -> None:
+    with pytest.raises(ValueError, match="translation_m must have finite shape"):
+        _belief().transformed(
+            rotation=np.eye(3),
+            translation_m=translation,
+        )
+
+
+@pytest.mark.parametrize("scale", (0.0, -1.0, np.inf, np.nan))
+def test_sim3_transform_rejects_nonpositive_or_nonfinite_scale(scale: float) -> None:
+    with pytest.raises(ValueError, match="scale must be finite and positive"):
+        _belief().transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=scale,
+        )
+
+
+@pytest.mark.parametrize("overflow_source", ("mean", "covariance", "factor"))
+def test_sim3_transform_rejects_each_finite_input_overflow_source(
+    overflow_source: str,
+) -> None:
+    source = _belief()
+    changes: dict[str, object] = {}
+    if overflow_source == "mean":
+        changes["mean_xyz_m"] = np.full(source.mean_xyz_m.shape, 1e200)
+    elif overflow_source == "covariance":
+        changes["local_covariance_m2"] = np.repeat(
+            (10.0 * np.eye(3))[None, :, :],
+            source.observation_count,
+            axis=0,
+        )
+    else:
+        changes["low_rank_factor_m"] = np.full(
+            source.low_rank_factor_m.shape,
+            1e155,
+        )
+    belief = ObservationBeliefV1(**{**source.__dict__, **changes})
+
+    with pytest.raises(
+        ValueError,
+        match="metric transform is not representable as finite float64 values",
+    ):
+        belief.transformed(
+            rotation=np.eye(3),
+            translation_m=np.zeros(3),
+            scale=1e154,
+        )
