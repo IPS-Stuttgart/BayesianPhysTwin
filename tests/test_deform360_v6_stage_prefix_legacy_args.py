@@ -21,6 +21,11 @@ STAGE_SELECTOR_REPAIR = (
     "deform360_official_hub_fresh_object_session_v6_"
     "stage_selector_identity_repair.json"
 )
+STAGE_SELECTOR_API_REPAIR = (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_"
+    "selector_api_compatibility.json"
+)
 
 
 def _patch_python(text: str) -> str:
@@ -121,6 +126,7 @@ def _run_shim(
                 tmp_path / "activation.json"
             ),
             "DEFORM360_V6_STAGE_SELECTOR_HELPER_PATH": STAGE_SELECTOR_HELPER,
+            "DEFORM360_V6_STAGE_SELECTOR_API_REPAIR_PATH": (STAGE_SELECTOR_API_REPAIR),
             "DEFORM360_V6_STAGE_SELECTOR_REPAIR_PATH": STAGE_SELECTOR_REPAIR,
             "GITHUB_WORKSPACE": str(tmp_path / "exact-worktree"),
             "PREPARED_INVENTORY_IMPLEMENTATION_REVISION": "a" * 40,
@@ -174,6 +180,8 @@ def test_stage_prefix_routes_exact_strict_arguments_through_selector_helper(
         STAGE_SELECTOR_HELPER,
         "--runtime-repair",
         STAGE_SELECTOR_REPAIR,
+        "--api-repair",
+        STAGE_SELECTOR_API_REPAIR,
         "--activation-marker",
         str(tmp_path / "activation.json"),
         "--execution-repo",
@@ -280,6 +288,7 @@ def test_launcher_preserves_predecessor_blob_and_records_new_repair() -> None:
     )
     assert STAGE_SELECTOR_HELPER in text
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
+    assert '"runtime_stage_selector_api_compatibility_repair"' in text
     assert 'BASE_REVISION="b0f6b46991a20c54260baf58ddf62fbb6dab7813"' in text
     assert 'SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"' in text
     assert "source.count(old) != 1" in text
