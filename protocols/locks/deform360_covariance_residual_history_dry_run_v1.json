@@ -29,7 +29,7 @@
     "provider_scoring_camera_overlap_allowed": false,
     "provider_scoring_reconstruction_artifact_reuse_allowed": false
   },
-  "lock_sha256": "adbcd250eb9a4503c631acce4e683bea4fb1288de8b44317374cc3569f65412a",
+  "lock_sha256": "ba7378f5a01659a79d41135f4fa137a61565825a7c0844aa2c5dd523257abb50",
   "policy": {
     "camera_partition_semantics": "hash-ranked balanced whole-recorder-family split-v1",
     "covariance_requirement": "finite symmetric positive semidefinite for every (H,N) block",
@@ -57,10 +57,12 @@
   "schema": "bayesian-phystwin/deform360-covariance-residual-history-dry-run-lock-v1",
   "schema_version": 1,
   "source_dry_run": {
+    "camera_role_binding": "source manifest declares all/provider/scoring camera rosters; provider and scoring rosters must exactly equal the frozen deterministic whole-recorder split",
     "dry_run_result_scope": "technical adapter admission only",
     "input_shape": "residual history (T,N,3), validity (T,N)",
     "provider_input": "causal prefix from provider cameras only",
     "scoring_input": "separate reconstruction from scoring cameras only",
+    "source_manifest_semantics": "strict exact-field JSON object with a digest-bound non-pickled source archive",
     "statistical_unit": "one complete opened source object/session",
     "target_quarantine_access": "forbidden"
   },
