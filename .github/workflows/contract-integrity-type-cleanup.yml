@@ -1,0 +1,66 @@
+name: Temporary contract-integrity type cleanup
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/contract-integrity-type-cleanup.yml
+      - src/bayesian_phystwin/_canonical_contracts.py
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup-and-remove:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact pull-request branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - name: Remove obsolete suppressions and this workflow
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/_canonical_contracts.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = (
+              (
+                  "    def __iter__(self) -> Iterator[str]:  # type: ignore[override]\n",
+                  "    def __iter__(self) -> Iterator[str]:\n",
+              ),
+              (
+                  "    def __iter__(self) -> Iterator[Any]:  # type: ignore[override]\n",
+                  "    def __iter__(self) -> Iterator[Any]:\n",
+              ),
+          )
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f"expected suppression not found exactly once: {old!r}")
+              text = text.replace(old, new)
+          path.write_text(text, encoding="utf-8")
+          PY
+          python -m pip install "ruff==0.16.2" "mypy==2.3.0"
+          python -m ruff format --check \
+            src/bayesian_phystwin/_canonical_contracts.py
+          python -m mypy \
+            src/bayesian_phystwin/_canonical_contracts.py
+          rm .github/workflows/contract-integrity-type-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            .github/workflows/contract-integrity-type-cleanup.yml
+          git diff --cached --check
+          git commit -m "Remove obsolete frozen-container type suppressions"
+          git push origin "HEAD:${HEAD_BRANCH}"
