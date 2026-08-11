@@ -148,6 +148,30 @@ opened by that run. Isolating execution in the exact detached worktree changes
 no object, camera, model, prediction, fallback, endpoint, threshold, or
 information boundary.
 
+### Frozen stage-prefix CLI compatibility
+
+Protected-main workflow runs `31510971371` and `31511889009` independently
+reached the first `stage-prefix` call after reconstructing the authoritative
+prepared-source inventory and materializing the first released physical source
+object. Both retained the same technical stop before prefix staging: the
+archived runner supplied the historical context options `--repo` and
+`--role calibration`, while the current strict stage-prefix command no longer
+accepts those options.
+
+The compatibility adapter acts only at the v5 physical-source wrapper boundary.
+For `stage-prefix` it requires the historical repository value to resolve to the
+already validated execution checkout and the role to equal `calibration`, then
+removes only those two redundant option-value pairs before invoking the current
+strict command. Missing, duplicated, or changed context fails closed. Other
+stages and every remaining argument are passed unchanged.
+
+This translation changes no prepared source byte, source or target object,
+camera roster, SAM2 model or checkpoint, physical prior, candidate, covariance,
+loss, threshold, endpoint, fallback, replacement rule, or information boundary.
+Its merge is intentionally covered by this documentation path so that the
+protected-main prediction-evidence workflow reruns on the exact repaired
+revision.
+
 ## Next stage
 
 Only `source-prediction-evidence-sealed` permits a new reviewed workflow to open
