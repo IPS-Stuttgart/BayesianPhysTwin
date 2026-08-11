@@ -35,7 +35,7 @@ def _stage_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 def _python_shim(text: str) -> str:
-    start_marker = 'cat > "${PYTHON_SHIM}" <<\'SH\'\n'
+    start_marker = "cat > \"${PYTHON_SHIM}\" <<'SH'\n"
     end_marker = '\nSH\nchmod 700 "${PYTHON_SHIM}"'
     assert text.count(start_marker) == 1
     start = text.index(start_marker) + len(start_marker)
@@ -79,13 +79,19 @@ def test_archived_revision_bindings_are_validated_per_stage() -> None:
     )
 
     assert archived.count(REVISION_ARGUMENT) == 2
-    assert inventory.count(
-        "scripts/science/inventory_deform360_calibration_prepared_source.py"
-    ) == 1
+    assert (
+        inventory.count(
+            "scripts/science/inventory_deform360_calibration_prepared_source.py"
+        )
+        == 1
+    )
     assert inventory.count(REVISION_ARGUMENT) == 1
-    assert source_plan.count(
-        "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
-    ) == 1
+    assert (
+        source_plan.count(
+            "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
+        )
+        == 1
+    )
     assert source_plan.count(REVISION_ARGUMENT) == 1
 
     runner = RUNNER.read_text(encoding="utf-8")
@@ -144,7 +150,9 @@ def test_runtime_shim_rewrites_only_the_inventory_generator_revision(
         "inventory.json",
     ]
 
-    source_plan_target = "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
+    source_plan_target = (
+        "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
+    )
     subprocess.run(
         [
             str(shim),
