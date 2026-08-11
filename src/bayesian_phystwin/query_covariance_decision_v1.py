@@ -327,9 +327,7 @@ def _validated_summary(
         minimum, mean, maximum = defined_directional
         if not minimum <= mean <= maximum:
             raise ValueError("directional shared fractions are not ordered")
-        if shared == 0.0 and not all(
-            _close(item, 0.0) for item in defined_directional
-        ):
+        if shared == 0.0 and not all(_close(item, 0.0) for item in defined_directional):
             raise ValueError(
                 "zero shared covariance requires zero directional fractions"
             )
