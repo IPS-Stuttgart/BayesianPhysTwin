@@ -112,9 +112,7 @@ def apply_claim_bearing_prob4d_stream_update(
         linearization.metadata.get("recursive_nuisance_policy_id")
         != nuisance_policy.policy_id
     ):
-        raise ValueError(
-            "linearization does not bind the recursive nuisance policy"
-        )
+        raise ValueError("linearization does not bind the recursive nuisance policy")
     if claim_update.observation_artifact_id != observation.artifact_id:
         raise ValueError("claim update does not bind the stream observation")
     if claim_update.linearization_artifact_id != linearization.artifact_id:
