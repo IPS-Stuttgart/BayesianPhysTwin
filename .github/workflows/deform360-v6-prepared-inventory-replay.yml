@@ -1,0 +1,167 @@
+name: Deform360 v6 prepared inventory replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-prepared-inventory-replay.yml"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_prepared_inventory_repair.json"
+      - "scripts/ci/deform360_v6_prepared_inventory_repair.py"
+      - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+      - "tests/test_deform360_v6_prepared_inventory_repair.py"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  contracts:
+    name: Prepared inventory replay contracts / Python ${{ matrix.python-version }}
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate repair contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev,graph]"
+          files=(
+            scripts/ci/deform360_v6_prepared_inventory_repair.py
+            tests/test_deform360_v6_prepared_inventory_repair.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy scripts/ci/deform360_v6_prepared_inventory_repair.py
+          bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_v6_prepared_inventory_repair.py \
+            tests/test_deform360_v6_generic_selector_identity_repair.py \
+            tests/test_deform360_v6_physical_upstream_history.py \
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+          python scripts/ci/deform360_v6_prepared_inventory_repair.py \
+            validate-repair
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  authoritative-replay:
+    name: Replay sealed prepared inventory artifact
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Download exact authoritative retained-source admission
+        uses: actions/download-artifact@v8
+        with:
+          name: deform360-calibration-retained-source-admission-31272512658-1
+          path: ${{ runner.temp }}/authoritative-retained-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: "31272512658"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Reconstruct only the exact sealed inventory
+        shell: bash
+        env:
+          AUTHORITATIVE_FILE_SHA256: 4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007
+        run: |
+          set -euo pipefail
+          authoritative="${RUNNER_TEMP}/authoritative-retained-source/prepared-source-inventory.json"
+          candidate="${RUNNER_TEMP}/prepared-source-inventory-candidate.json"
+          test -f "${authoritative}"
+          test ! -L "${authoritative}"
+          test "$(sha256sum "${authoritative}" | awk '{print $1}')" = \
+            "${AUTHORITATIVE_FILE_SHA256}"
+
+          python - "${authoritative}" "${candidate}" "${GITHUB_SHA}" <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          source = Path(sys.argv[1])
+          target = Path(sys.argv[2])
+          runtime_revision = sys.argv[3]
+          payload = json.loads(source.read_text(encoding="utf-8"))
+          payload.pop("inventory_id")
+          payload["implementation_revision"] = runtime_revision
+          canonical = json.dumps(
+              payload,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          payload["inventory_id"] = hashlib.sha256(canonical).hexdigest()
+          target.write_text(
+              json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          test "$(sha256sum "${candidate}" | awk '{print $1}')" != \
+            "${AUTHORITATIVE_FILE_SHA256}"
+          BPT_PYTHON=python \
+            bash scripts/ci/run_deform360_v6_source_prediction_evidence.sh \
+            --restore-prepared-inventory "${candidate}" "${GITHUB_SHA}"
+          test "$(sha256sum "${candidate}" | awk '{print $1}')" = \
+            "${AUTHORITATIVE_FILE_SHA256}"
+          cmp --silent "${candidate}" "${authoritative}"
+
+      - name: Validate ephemeral runner patching
+        shell: bash
+        run: |
+          set -euo pipefail
+          science="${RUNNER_TEMP}/patched-science.sh"
+          selector="${RUNNER_TEMP}/patched-selector.sh"
+          python scripts/ci/deform360_v6_prepared_inventory_repair.py \
+            patch-runners \
+            --science-source \
+              scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh \
+            --selector-source \
+              scripts/ci/archive/run_deform360_v6_source_prediction_evidence_selector_repair_v3.sh \
+            --science-target "${science}" \
+            --selector-target "${selector}"
+          bash -n "${science}"
+          bash -n "${selector}"
+          grep -Fq 'restore-authoritative-prepared-source-inventory' "${science}"
+          grep -Fq 'PATCHED_SCIENCE_RUNNER is required' "${selector}"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"

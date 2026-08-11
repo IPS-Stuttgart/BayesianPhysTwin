@@ -5,31 +5,22 @@ SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence
 SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
 SCIENCE_RUNNER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
 SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
+INVENTORY_HELPER="scripts/ci/deform360_v6_prepared_inventory_repair.py"
+INVENTORY_HELPER_BLOB_SHA="c384f0f5e7d3fbd114a3ecd2917718f971cc1507"
 PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
 PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID="31461017011"
 PHYSICAL_UPSTREAM_REPORT_ID="75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
-PREPARED_INVENTORY_IMPLEMENTATION_REVISION="e190c94014e6024e324d860618662526af6ea682"
-PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
-PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
-PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
 
-# The delegated selector wrapper preserves these reviewed invariants verbatim:
+# The delegated selector wrapper and immutable science runner preserve these
+# reviewed invariants verbatim:
 # REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
-# ARCHIVED_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
 # PREVIOUS_SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
 # CORRECTED_SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
-# text.count(old) != 1
-# patched.count(new) != 1
-# "runtime_identity_repair_id"
-# "runtime_selector_identity"
 # prediction_record_count") != 100
 # source-prediction-evidence-sealed
 # source-inputs-incomplete
 # source-technical-failure-retained
 # run_deform360_joint_sparse_source_predictions_v5.py
-# SAM2_CHECKPOINT_NAME="sam2.1_hiera_small.pt"
-# SAM2_CHECKPOINT_URL="https://dl.fbaipublicfiles.com/segment_anything_2/092824/${SAM2_CHECKPOINT_NAME}"
-# SAM2_SHA256="6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
 # development_suffix_opened": False
 # v6_target_payloads_opened": False
 # fresh_target_selection_authorized": False
@@ -161,6 +152,15 @@ if [[ "${1:-}" == "--materialize-physical-upstream" ]]; then
   exit 0
 fi
 
+if [[ "${1:-}" == "--restore-prepared-inventory" ]]; then
+  test -n "${2:-}"
+  test -n "${3:-}"
+  "${BPT_PYTHON:-python}" "${INVENTORY_HELPER}" restore \
+    --inventory "$2" \
+    --runtime-revision "$3"
+  exit 0
+fi
+
 : "${BPT_PYTHON:?BPT_PYTHON is required}"
 : "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
 
@@ -170,80 +170,23 @@ test "$(git hash-object "${SELECTOR_WRAPPER}")" = "${SELECTOR_WRAPPER_BLOB_SHA}"
 test -f "${SCIENCE_RUNNER}"
 test ! -L "${SCIENCE_RUNNER}"
 test "$(git hash-object "${SCIENCE_RUNNER}")" = "${SCIENCE_RUNNER_BLOB_SHA}"
-
-export PREPARED_INVENTORY_IMPLEMENTATION_REVISION
-export PREPARED_INVENTORY_ID
-export PREPARED_INVENTORY_FILE_SHA256
-export PREPARED_INVENTORY_ADMISSION_RUN_ID
-export SCIENCE_RUNNER
-"${BPT_PYTHON}" - <<'PY'
-from __future__ import annotations
-
-import json
-import os
-from pathlib import Path
-
-lock_path = Path(
-    "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
-)
-lock = json.loads(lock_path.read_text(encoding="utf-8"))
-prepared = lock.get("physical_baseline", {}).get("prepared_source_inventory", {})
-if prepared != {
-    "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
-    "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
-}:
-    raise SystemExit("locked prepared-source inventory identity changed")
-
-runner = Path(os.environ["SCIENCE_RUNNER"]).read_text(encoding="utf-8")
-needle = '--implementation-revision "${BPT_SOURCE_SHA}"'
-if runner.count(needle) != 1:
-    raise SystemExit("archived prepared-inventory implementation binding changed")
-PY
+test -f "${INVENTORY_HELPER}"
+test ! -L "${INVENTORY_HELPER}"
+test "$(git hash-object "${INVENTORY_HELPER}")" = "${INVENTORY_HELPER_BLOB_SHA}"
+"${BPT_PYTHON}" "${INVENTORY_HELPER}" validate-repair >/dev/null
 
 PHYSICAL_UPSTREAM_ROOT="$(
   mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-physical-upstream.XXXXXX"
 )"
-PYTHON_SHIM="$(
-  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-python-shim.XXXXXX"
+PATCHED_SCIENCE_RUNNER="$(
+  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-inventory-runner.XXXXXX.sh"
 )"
-REAL_BPT_PYTHON="${BPT_PYTHON}"
-cat > "${PYTHON_SHIM}" <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-: "${REAL_BPT_PYTHON:?REAL_BPT_PYTHON is required}"
-: "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION:?prepared inventory revision is required}"
-
-target="scripts/science/inventory_deform360_calibration_prepared_source.py"
-if [[ "${1:-}" == "${target}" ]]; then
-  rewritten=()
-  replacements=0
-  while [[ "$#" -gt 0 ]]; do
-    if [[ "$1" == "--implementation-revision" ]]; then
-      [[ "$#" -ge 2 ]] || {
-        echo "prepared inventory implementation revision lacks a value" >&2
-        exit 2
-      }
-      rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
-      replacements=$((replacements + 1))
-      shift 2
-    else
-      rewritten+=("$1")
-      shift
-    fi
-  done
-  if [[ "${replacements}" -ne 1 ]]; then
-    echo "prepared inventory implementation binding is not unique" >&2
-    exit 2
-  fi
-  exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
-fi
-exec "${REAL_BPT_PYTHON}" "$@"
-SH
-chmod 700 "${PYTHON_SHIM}"
-
+PATCHED_SELECTOR_WRAPPER="$(
+  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-selector-wrapper.XXXXXX.sh"
+)"
 cleanup() {
   rm -rf "${PHYSICAL_UPSTREAM_ROOT}"
-  rm -f "${PYTHON_SHIM}"
+  rm -f "${PATCHED_SCIENCE_RUNNER}" "${PATCHED_SELECTOR_WRAPPER}"
 }
 trap cleanup EXIT
 
@@ -251,23 +194,27 @@ materialize_frozen_physical_upstream \
   "${GITHUB_WORKSPACE:-.}" \
   "${PHYSICAL_UPSTREAM_ROOT}"
 echo "materialized frozen physical upstream revision=${PHYSICAL_UPSTREAM_REVISION}"
-echo "bound prepared inventory to authoritative admission revision=${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}"
 
-export PHYSICAL_UPSTREAM_REVISION
-export PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID
-export PHYSICAL_UPSTREAM_REPORT_ID
-export REAL_BPT_PYTHON
+"${BPT_PYTHON}" "${INVENTORY_HELPER}" patch-runners \
+  --science-source "${SCIENCE_RUNNER}" \
+  --selector-source "${SELECTOR_WRAPPER}" \
+  --science-target "${PATCHED_SCIENCE_RUNNER}" \
+  --selector-target "${PATCHED_SELECTOR_WRAPPER}" >/dev/null
 
+export PATCHED_SCIENCE_RUNNER
 set +e
-BPT_PYTHON="${PYTHON_SHIM}" \
-RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" \
-  bash "${SELECTOR_WRAPPER}"
+RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" bash "${PATCHED_SELECTOR_WRAPPER}"
 status=$?
 set -e
 
 receipt="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence/execution-receipt.json"
 if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
+  "${BPT_PYTHON}" "${INVENTORY_HELPER}" augment-receipt \
+    --receipt "${receipt}" >/dev/null
   export RECEIPT_PATH="${receipt}"
+  export PHYSICAL_UPSTREAM_REVISION
+  export PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID
+  export PHYSICAL_UPSTREAM_REPORT_ID
   "${BPT_PYTHON}" - <<'PY'
 from __future__ import annotations
 
@@ -286,17 +233,6 @@ receipt["runtime_physical_upstream"] = {
     "diagnostic_report_id": os.environ["PHYSICAL_UPSTREAM_REPORT_ID"],
     "selection": "unique-complete-history-exact-ten-file-sha256-match",
     "required_file_count": 10,
-}
-receipt["runtime_prepared_inventory_identity"] = {
-    "authoritative_admission_workflow_run_id": int(
-        os.environ["PREPARED_INVENTORY_ADMISSION_RUN_ID"]
-    ),
-    "implementation_revision": os.environ[
-        "PREPARED_INVENTORY_IMPLEMENTATION_REVISION"
-    ],
-    "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
-    "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
-    "selection": "frozen-authoritative-retained-source-admission",
 }
 canonical = json.dumps(
     receipt,
