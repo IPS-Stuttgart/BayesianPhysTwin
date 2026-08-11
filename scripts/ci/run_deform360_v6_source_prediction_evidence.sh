@@ -162,6 +162,7 @@ if [[ "${1:-}" == "--materialize-physical-upstream" ]]; then
 fi
 
 : "${BPT_PYTHON:?BPT_PYTHON is required}"
+: "${BPT_SOURCE_SHA:?BPT_SOURCE_SHA is required}"
 : "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
 
 test -f "${SELECTOR_WRAPPER}"
@@ -246,7 +247,13 @@ exec "${REAL_BPT_PYTHON}" "$@"
 SH
 chmod 700 "${PYTHON_SHIM}"
 
+EXECUTION_REPO_ROOT=""
 cleanup() {
+  if [[ -n "${EXECUTION_REPO_ROOT}" ]]; then
+    git worktree remove --force "${EXECUTION_REPO_ROOT}" >/dev/null 2>&1 \
+      || rm -rf "${EXECUTION_REPO_ROOT}"
+    git worktree prune >/dev/null 2>&1 || true
+  fi
   rm -rf "${PHYSICAL_UPSTREAM_ROOT}"
   rm -f "${PYTHON_SHIM}"
 }
@@ -258,15 +265,29 @@ materialize_frozen_physical_upstream \
 echo "materialized frozen physical upstream revision=${PHYSICAL_UPSTREAM_REVISION}"
 echo "bound prepared inventory to authoritative admission revision=${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}"
 
+EXECUTION_REPO_ROOT="$(
+  mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-execution-repo.XXXXXX"
+)"
+rmdir "${EXECUTION_REPO_ROOT}"
+git worktree add --detach "${EXECUTION_REPO_ROOT}" "${BPT_SOURCE_SHA}"
+test "$(git -C "${EXECUTION_REPO_ROOT}" rev-parse HEAD)" = "${BPT_SOURCE_SHA}"
+test -z "$(git -C "${EXECUTION_REPO_ROOT}" status --porcelain=v1)"
+echo "materialized clean execution worktree revision=${BPT_SOURCE_SHA}"
+
 export PHYSICAL_UPSTREAM_REVISION
 export PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID
 export PHYSICAL_UPSTREAM_REPORT_ID
 export REAL_BPT_PYTHON
 
 set +e
-BPT_PYTHON="${PYTHON_SHIM}" \
-RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" \
-  bash "${SELECTOR_WRAPPER}"
+(
+  cd "${EXECUTION_REPO_ROOT}"
+  GITHUB_WORKSPACE="${EXECUTION_REPO_ROOT}" \
+  PYTHONPATH="${EXECUTION_REPO_ROOT}/src:${PYTHONPATH:-}" \
+  BPT_PYTHON="${PYTHON_SHIM}" \
+  RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" \
+    bash "${SELECTOR_WRAPPER}"
+)
 status=$?
 set -e
 
