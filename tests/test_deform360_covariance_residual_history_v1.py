@@ -59,6 +59,12 @@ def _camera_ids() -> list[str]:
     return result
 
 
+def _camera_partition(
+    policy: ResidualHistoryDryRunPolicyV1,
+):
+    return deterministic_disjoint_camera_partition(_camera_ids(), policy=policy)
+
+
 def _arrays(
     *,
     material_count: int = 18,
@@ -108,6 +114,8 @@ def _run(
     *,
     policy: ResidualHistoryDryRunPolicyV1 | None = None,
 ):
+    selected_policy = _policy() if policy is None else policy
+    partition = _camera_partition(selected_policy)
     return run_source_only_residual_history_dry_run(
         arrays["physical_prefix_m"],
         arrays["provider_observation_prefix_m"],
@@ -119,12 +127,14 @@ def _run(
         material_ids=arrays["material_ids"],
         future_horizon_bins=arrays["future_horizon_bins"],
         camera_ids=_camera_ids(),
+        provider_camera_ids=partition.provider_camera_ids,
+        scoring_camera_ids=partition.scoring_camera_ids,
         provider_reconstruction_artifact_id="a" * 64,
         scoring_reconstruction_artifact_id="b" * 64,
         source_unit_id="opened-source-object-session-001",
         reference_predictor_id="last_residual",
         covariance_donor_id="independent_endpoint_v1",
-        policy=_policy() if policy is None else policy,
+        policy=selected_policy,
     )
 
 
@@ -173,6 +183,7 @@ def test_adapter_preserves_validity_and_never_fills_missing_rows() -> None:
     arrays = _arrays(final_observed_count=10)
     arrays["provider_validity"][1, -1] = True
     arrays["provider_observation_prefix_m"][1, -1] = [0.5, 0.4, 0.3]
+    partition = _camera_partition(_policy())
     adapter = build_residual_history_adapter(
         arrays["physical_prefix_m"],
         arrays["provider_observation_prefix_m"],
@@ -180,6 +191,8 @@ def test_adapter_preserves_validity_and_never_fills_missing_rows() -> None:
         frame_indices=arrays["frame_indices"],
         material_ids=arrays["material_ids"],
         camera_ids=_camera_ids(),
+        provider_camera_ids=partition.provider_camera_ids,
+        scoring_camera_ids=partition.scoring_camera_ids,
         provider_reconstruction_artifact_id="a" * 64,
         scoring_reconstruction_artifact_id="b" * 64,
         source_unit_id="source-unit",
@@ -201,6 +214,7 @@ def test_adapter_preserves_validity_and_never_fills_missing_rows() -> None:
 
 def test_adapter_rejects_nonfinite_valid_observation_and_shared_artifact() -> None:
     arrays = _arrays()
+    partition = _camera_partition(_policy())
     arrays["provider_observation_prefix_m"][-1, 0, 0] = np.nan
     with pytest.raises(ValueError, match="valid provider observations"):
         build_residual_history_adapter(
@@ -210,6 +224,8 @@ def test_adapter_rejects_nonfinite_valid_observation_and_shared_artifact() -> No
             frame_indices=arrays["frame_indices"],
             material_ids=arrays["material_ids"],
             camera_ids=_camera_ids(),
+            provider_camera_ids=partition.provider_camera_ids,
+            scoring_camera_ids=partition.scoring_camera_ids,
             provider_reconstruction_artifact_id="a" * 64,
             scoring_reconstruction_artifact_id="b" * 64,
             source_unit_id="source-unit",
@@ -225,10 +241,38 @@ def test_adapter_rejects_nonfinite_valid_observation_and_shared_artifact() -> No
             frame_indices=arrays["frame_indices"],
             material_ids=arrays["material_ids"],
             camera_ids=_camera_ids(),
+            provider_camera_ids=partition.provider_camera_ids,
+            scoring_camera_ids=partition.scoring_camera_ids,
             provider_reconstruction_artifact_id="a" * 64,
             scoring_reconstruction_artifact_id="a" * 64,
             source_unit_id="source-unit",
             policy=_policy(),
+        )
+
+
+def test_adapter_rejects_declared_camera_rosters_that_do_not_match_partition() -> None:
+    arrays = _arrays()
+    policy = _policy()
+    partition = _camera_partition(policy)
+    wrong_provider = tuple(
+        sorted(
+            (*partition.provider_camera_ids[:-1], partition.scoring_camera_ids[0])
+        )
+    )
+    with pytest.raises(ValueError, match="declared provider cameras"):
+        build_residual_history_adapter(
+            arrays["physical_prefix_m"],
+            arrays["provider_observation_prefix_m"],
+            arrays["provider_validity"],
+            frame_indices=arrays["frame_indices"],
+            material_ids=arrays["material_ids"],
+            camera_ids=_camera_ids(),
+            provider_camera_ids=wrong_provider,
+            scoring_camera_ids=partition.scoring_camera_ids,
+            provider_reconstruction_artifact_id="a" * 64,
+            scoring_reconstruction_artifact_id="b" * 64,
+            source_unit_id="source-unit",
+            policy=policy,
         )
 
 
@@ -359,6 +403,9 @@ def test_cli_dry_run_publishes_no_clobber_source_only_receipt(
     tmp_path: Path,
 ) -> None:
     arrays = _arrays()
+    protocol_partition = _camera_partition(
+        _policy(cameras_per_role=8, families_per_role=4)
+    )
     archive_path = tmp_path / "source.npz"
     np.savez_compressed(archive_path, **arrays)
     manifest = {
@@ -373,6 +420,8 @@ def test_cli_dry_run_publishes_no_clobber_source_only_receipt(
             "sha256": _file_sha256(archive_path),
         },
         "camera_ids": _camera_ids(),
+        "provider_camera_ids": list(protocol_partition.provider_camera_ids),
+        "scoring_camera_ids": list(protocol_partition.scoring_camera_ids),
         "provider_reconstruction_artifact_id": "a" * 64,
         "scoring_reconstruction_artifact_id": "b" * 64,
         "information_boundary": {
