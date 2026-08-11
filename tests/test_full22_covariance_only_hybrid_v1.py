@@ -176,3 +176,139 @@ def test_bootstrap_family_is_deterministic_and_detects_uniform_gain() -> None:
     overall = next(row for row in first if row["aggregation"] == "overall")
     assert overall["familywise_decision"] == "hybrid_better"
     assert overall["hybrid_better_case_count"] == 4
+
+
+def _write_prefix_fixture(tmp_path: Path) -> tuple[Path, Path, str, str]:
+    source_root = tmp_path / "source"
+    data_root = tmp_path / "data"
+    case_id = "case-0"
+    protocol_id = "a" * 64
+    prefix_case = source_root / "prefix" / "cases" / f"{case_id}.npz"
+    prefix_case.parent.mkdir(parents=True)
+    np.savez_compressed(
+        prefix_case,
+        residual_m=np.zeros((5, 2, 3), dtype=np.float64),
+        valid=np.ones((5, 2), dtype=bool),
+        geometry_m=np.zeros((2, 3), dtype=np.float64),
+        baseline_prefix_m=np.zeros((5, 2, 3), dtype=np.float64),
+        observed_prefix_m=np.zeros((5, 2, 3), dtype=np.float64),
+        visible_prefix=np.ones((5, 2), dtype=bool),
+        gt_track_prefix_m=np.zeros((5, 2, 3), dtype=np.float64),
+        lift_indices=np.zeros((0, 4), dtype=np.int64),
+        lift_weights=np.zeros((0, 4), dtype=np.float64),
+        fit_end=np.asarray(2, dtype=np.int64),
+        train_end=np.asarray(5, dtype=np.int64),
+        frame_count=np.asarray(9, dtype=np.int64),
+        original_count=np.asarray(2, dtype=np.int64),
+        num_surface_points=np.asarray(2, dtype=np.int64),
+    )
+    case_root = data_root / case_id
+    case_root.mkdir(parents=True)
+    source_files: dict[str, str] = {}
+    for index, filename in enumerate(MODULE.REQUIRED_SOURCE_FILENAMES):
+        path = case_root / filename
+        path.write_bytes(f"sealed-{index}".encode("ascii"))
+        source_files[filename] = MODULE._file_sha256(path)
+    descriptor: dict[str, object] = {
+        "contract": MODULE.PREFIX_MANIFEST_CONTRACT,
+        "schema_version": 1,
+        "protocol_id": protocol_id,
+        "source_archives": {},
+        "case_count": 1,
+        "cases": [
+            {
+                "case_id": case_id,
+                "path": f"cases/{case_id}.npz",
+                "sha256": MODULE._file_sha256(prefix_case),
+                "fit_end": 2,
+                "train_end": 5,
+                "frame_count": 9,
+                "track_count": 2,
+                "future_arrays_serialized": False,
+                "source_files_sha256": source_files,
+            }
+        ],
+        "information_boundary": {
+            "contains_fit_prefix": True,
+            "contains_guard_validation_prefix": True,
+            "contains_scored_future": False,
+            "candidate_prediction_receives_future": False,
+            "confirmation_payload_opened": False,
+            "target_outcome_opened": False,
+        },
+    }
+    descriptor["prefix_manifest_id"] = MODULE._canonical_sha256(descriptor)
+    MODULE._write_json(source_root / "prefix" / "prefix_manifest.json", descriptor)
+    return source_root, data_root, case_id, protocol_id
+
+
+def test_prefix_manifest_binds_split_case_and_public_source_files(
+    tmp_path: Path,
+) -> None:
+    source_root, data_root, case_id, protocol_id = _write_prefix_fixture(tmp_path)
+
+    manifest, records = MODULE._prefix_records(
+        source_root,
+        expected_protocol_id=protocol_id,
+        expected_case_count=1,
+    )
+    MODULE._verify_public_source_files(data_root, records[case_id])
+
+    assert manifest["prefix_manifest_id"]
+    assert (records[case_id].fit_end, records[case_id].train_end) == (2, 5)
+
+
+def test_prefix_manifest_rejects_identity_tampering(tmp_path: Path) -> None:
+    source_root, _, _, protocol_id = _write_prefix_fixture(tmp_path)
+    path = source_root / "prefix" / "prefix_manifest.json"
+    payload = dict(MODULE._load_json(path))
+    payload["prefix_manifest_id"] = "0" * 64
+    MODULE._write_json(path, payload)
+
+    with pytest.raises(ValueError, match="prefix manifest identity"):
+        MODULE._prefix_records(
+            source_root,
+            expected_protocol_id=protocol_id,
+            expected_case_count=1,
+        )
+
+
+def test_public_source_file_drift_fails_closed(tmp_path: Path) -> None:
+    source_root, data_root, case_id, protocol_id = _write_prefix_fixture(tmp_path)
+    _, records = MODULE._prefix_records(
+        source_root,
+        expected_protocol_id=protocol_id,
+        expected_case_count=1,
+    )
+    (data_root / case_id / "inference.pkl").write_bytes(b"changed")
+
+    with pytest.raises(ValueError, match="public source file differs"):
+        MODULE._verify_public_source_files(data_root, records[case_id])
+
+
+def _sealed_prediction(
+    *,
+    fit_end: int = 2,
+    train_end: int = 5,
+    frame_count: int = 9,
+) -> dict[str, np.ndarray]:
+    validation_count = max(0, train_end - fit_end)
+    future_count = max(0, frame_count - train_end)
+    return {
+        "fit_end": np.asarray(fit_end, dtype=np.int64),
+        "train_end": np.asarray(train_end, dtype=np.int64),
+        "frame_count": np.asarray(frame_count, dtype=np.int64),
+        "validation_mean_m": np.zeros((validation_count, 2, 3)),
+        "validation_covariance_m2": np.zeros((validation_count, 2, 3, 3)),
+        "future_mean_m": np.zeros((future_count, 2, 3)),
+        "future_covariance_m2": np.zeros((future_count, 2, 3, 3)),
+    }
+
+
+def test_sealed_prediction_split_binds_array_lengths() -> None:
+    prediction = _sealed_prediction()
+
+    assert MODULE._sealed_prediction_split(prediction, case_id="case") == (2, 5, 9)
+    prediction["future_mean_m"] = np.zeros((3, 2, 3))
+    with pytest.raises(ValueError, match="length differs"):
+        MODULE._sealed_prediction_split(prediction, case_id="case")

@@ -44,6 +44,34 @@ SCHEMA_VERSION: Final = 1
 REFERENCE: Final = "last_residual"
 EXPECTED_CASE_COUNT: Final = 22
 LOWER_HEX: Final = frozenset("0123456789abcdef")
+PREFIX_MANIFEST_CONTRACT: Final = "bayesian-phystwin-full22-discrepancy-prefix-manifest"
+PREDICTION_MANIFEST_CONTRACT: Final = (
+    "bayesian-phystwin-full22-discrepancy-prediction-manifest"
+)
+REQUIRED_SOURCE_FILENAMES: Final = (
+    "final_data.pkl",
+    "inference.pkl",
+    "gt_track_3d.pkl",
+    "split.json",
+)
+PREFIX_CASE_FIELDS: Final = frozenset(
+    {
+        "residual_m",
+        "valid",
+        "geometry_m",
+        "baseline_prefix_m",
+        "observed_prefix_m",
+        "visible_prefix",
+        "gt_track_prefix_m",
+        "lift_indices",
+        "lift_weights",
+        "fit_end",
+        "train_end",
+        "frame_count",
+        "original_count",
+        "num_surface_points",
+    }
+)
 
 # Backward-compatible private alias used by focused regression tests.
 _effect_matrices = effect_matrices
@@ -54,6 +82,17 @@ class PredictionCaseRecord:
     case_id: str
     path: str
     sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class PrefixCaseRecord:
+    case_id: str
+    path: str
+    sha256: str
+    fit_end: int
+    train_end: int
+    frame_count: int
+    source_files_sha256: tuple[tuple[str, str], ...]
 
 
 def _canonical_bytes(payload: object) -> bytes:
@@ -236,23 +275,165 @@ def _discover_source_root(path: Path) -> Path:
     return matches[0].parents[2].resolve()
 
 
+def _integer_scalar_array(value: object, *, name: str) -> int:
+    array = np.asarray(value)
+    if array.shape != () or array.dtype.kind not in "iu":
+        raise ValueError(f"{name} must be an integer scalar array")
+    return int(array.item())
+
+
+def _load_prefix_case_split(
+    path: Path,
+    expected_sha256: str,
+    *,
+    case_id: str,
+) -> tuple[int, int, int]:
+    if _file_sha256(path) != expected_sha256:
+        raise ValueError(f"prefix case digest changed: {case_id}")
+    with np.load(path, allow_pickle=False) as archive:
+        if set(archive.files) != PREFIX_CASE_FIELDS:
+            raise ValueError(f"prefix case contract changed: {case_id}")
+        fit_end = _integer_scalar_array(archive["fit_end"], name=f"{case_id}.fit_end")
+        train_end = _integer_scalar_array(
+            archive["train_end"], name=f"{case_id}.train_end"
+        )
+        frame_count = _integer_scalar_array(
+            archive["frame_count"], name=f"{case_id}.frame_count"
+        )
+    if not 0 < fit_end < train_end < frame_count:
+        raise ValueError(f"invalid prefix split for {case_id}")
+    return fit_end, train_end, frame_count
+
+
+def _prefix_records(
+    source_root: Path,
+    *,
+    expected_protocol_id: str,
+    expected_case_count: int = EXPECTED_CASE_COUNT,
+) -> tuple[Mapping[str, object], dict[str, PrefixCaseRecord]]:
+    manifest = _load_json(source_root / "prefix" / "prefix_manifest.json")
+    declared_id = _literal_sha(
+        manifest.get("prefix_manifest_id"),
+        name="prefix_manifest_id",
+        length=64,
+    )
+    descriptor = {
+        key: value for key, value in manifest.items() if key != "prefix_manifest_id"
+    }
+    if declared_id != _canonical_sha256(descriptor):
+        raise ValueError("prefix manifest identity changed")
+    if (
+        manifest.get("contract") != PREFIX_MANIFEST_CONTRACT
+        or manifest.get("schema_version") != 1
+        or manifest.get("protocol_id") != expected_protocol_id
+    ):
+        raise ValueError("prefix manifest lineage changed")
+    boundary = _mapping(
+        manifest.get("information_boundary"), name="prefix information boundary"
+    )
+    required_boundary = {
+        "contains_fit_prefix": True,
+        "contains_guard_validation_prefix": True,
+        "contains_scored_future": False,
+        "candidate_prediction_receives_future": False,
+        "confirmation_payload_opened": False,
+        "target_outcome_opened": False,
+    }
+    if any(
+        boundary.get(name) is not value for name, value in required_boundary.items()
+    ):
+        raise ValueError("prefix information boundary changed")
+    records: dict[str, PrefixCaseRecord] = {}
+    for index, raw in enumerate(_sequence(manifest.get("cases"), name="prefix cases")):
+        row = _mapping(raw, name=f"prefix cases[{index}]")
+        case_id = _text(row.get("case_id"), name="case_id")
+        fit_end = _integer(row.get("fit_end"), name="fit_end", minimum=1)
+        train_end = _integer(row.get("train_end"), name="train_end", minimum=1)
+        frame_count = _integer(row.get("frame_count"), name="frame_count", minimum=1)
+        if not fit_end < train_end < frame_count:
+            raise ValueError(f"invalid prefix split for {case_id}")
+        if case_id in records or row.get("future_arrays_serialized") is not False:
+            raise ValueError(f"invalid prefix record for {case_id}")
+        source_files = _mapping(
+            row.get("source_files_sha256"),
+            name=f"{case_id}.source_files_sha256",
+        )
+        if set(source_files) != set(REQUIRED_SOURCE_FILENAMES):
+            raise ValueError(f"source file roster changed for {case_id}")
+        record = PrefixCaseRecord(
+            case_id=case_id,
+            path=_text(row.get("path"), name="path"),
+            sha256=_literal_sha(row.get("sha256"), name="sha256", length=64),
+            fit_end=fit_end,
+            train_end=train_end,
+            frame_count=frame_count,
+            source_files_sha256=tuple(
+                (
+                    filename,
+                    _literal_sha(
+                        source_files.get(filename),
+                        name=f"{case_id}.{filename}.sha256",
+                        length=64,
+                    ),
+                )
+                for filename in REQUIRED_SOURCE_FILENAMES
+            ),
+        )
+        sealed_split = _load_prefix_case_split(
+            source_root / "prefix" / record.path,
+            record.sha256,
+            case_id=case_id,
+        )
+        if sealed_split != (fit_end, train_end, frame_count):
+            raise ValueError(f"prefix manifest and case split differ for {case_id}")
+        records[case_id] = record
+    if (
+        len(records) != expected_case_count
+        or manifest.get("case_count") != expected_case_count
+    ):
+        raise ValueError(f"expected {expected_case_count} prefix cases")
+    return manifest, records
+
+
+def _verify_public_source_files(data_root: Path, record: PrefixCaseRecord) -> None:
+    case_root = data_root / record.case_id
+    for filename, expected_sha256 in record.source_files_sha256:
+        path = case_root / filename
+        if not path.is_file() or _file_sha256(path) != expected_sha256:
+            raise ValueError(
+                f"public source file differs from the seal: {record.case_id}/{filename}"
+            )
+
+
 def _prediction_records(
     source_root: Path,
     candidate_id: str,
     *,
     expected_protocol_id: str,
+    expected_prefix_manifest_id: str,
+    expected_case_count: int = EXPECTED_CASE_COUNT,
 ) -> tuple[Mapping[str, object], dict[str, PredictionCaseRecord]]:
     manifest = _load_json(
         source_root / "predictions" / candidate_id / "prediction_manifest.json"
     )
-    if manifest.get("contract") != (
-        "bayesian-phystwin-full22-discrepancy-prediction-manifest"
-    ):
-        raise ValueError(f"unexpected prediction manifest for {candidate_id}")
+    declared_id = _literal_sha(
+        manifest.get("prediction_artifact_sha256"),
+        name=f"{candidate_id}.prediction_artifact_sha256",
+        length=64,
+    )
+    descriptor = {
+        key: value
+        for key, value in manifest.items()
+        if key != "prediction_artifact_sha256"
+    }
+    if declared_id != _canonical_sha256(descriptor):
+        raise ValueError(f"prediction manifest identity changed for {candidate_id}")
     if (
-        manifest.get("schema_version") != 1
+        manifest.get("contract") != PREDICTION_MANIFEST_CONTRACT
+        or manifest.get("schema_version") != 1
         or manifest.get("candidate_id") != candidate_id
         or manifest.get("protocol_id") != expected_protocol_id
+        or manifest.get("prefix_manifest_id") != expected_prefix_manifest_id
     ):
         raise ValueError(f"prediction lineage changed for {candidate_id}")
     records: dict[str, PredictionCaseRecord] = {}
@@ -269,10 +450,10 @@ def _prediction_records(
             sha256=_literal_sha(row.get("sha256"), name="sha256", length=64),
         )
     if (
-        len(records) != EXPECTED_CASE_COUNT
-        or manifest.get("case_count") != EXPECTED_CASE_COUNT
+        len(records) != expected_case_count
+        or manifest.get("case_count") != expected_case_count
     ):
-        raise ValueError(f"expected {EXPECTED_CASE_COUNT} cases for {candidate_id}")
+        raise ValueError(f"expected {expected_case_count} cases for {candidate_id}")
     return manifest, records
 
 
@@ -294,6 +475,35 @@ def _load_case_npz(path: Path, expected_sha256: str) -> Mapping[str, np.ndarray]
     if set(result) != expected or not bool(result["prediction_success"].item()):
         raise ValueError(f"prediction case contract changed: {path}")
     return result
+
+
+def _sealed_prediction_split(
+    prediction: Mapping[str, np.ndarray],
+    *,
+    case_id: str,
+) -> tuple[int, int, int]:
+    fit_end = _integer_scalar_array(prediction["fit_end"], name=f"{case_id}.fit_end")
+    train_end = _integer_scalar_array(
+        prediction["train_end"], name=f"{case_id}.train_end"
+    )
+    frame_count = _integer_scalar_array(
+        prediction["frame_count"], name=f"{case_id}.frame_count"
+    )
+    if not 0 < fit_end < train_end < frame_count:
+        raise ValueError(f"invalid sealed prediction split for {case_id}")
+    expected_counts = {
+        "validation_mean_m": train_end - fit_end,
+        "validation_covariance_m2": train_end - fit_end,
+        "future_mean_m": frame_count - train_end,
+        "future_covariance_m2": frame_count - train_end,
+    }
+    for name, expected_count in expected_counts.items():
+        array = np.asarray(prediction[name])
+        if array.ndim < 1 or array.shape[0] != expected_count:
+            raise ValueError(
+                f"sealed {name} length differs from the split for {case_id}"
+            )
+    return fit_end, train_end, frame_count
 
 
 def _exact_reference_mean(value: object, *, case_id: str) -> np.ndarray:
@@ -457,6 +667,15 @@ def run_analysis(
         length=64,
     )
     discovered = _discover_source_root(source_root)
+    prefix_manifest, prefix_records = _prefix_records(
+        discovered,
+        expected_protocol_id=source_protocol_id,
+    )
+    prefix_manifest_id = _literal_sha(
+        prefix_manifest.get("prefix_manifest_id"),
+        name="prefix_manifest_id",
+        length=64,
+    )
     manifests: dict[str, Mapping[str, object]] = {}
     records: dict[str, dict[str, PredictionCaseRecord]] = {}
     for candidate_id in (REFERENCE, *DONORS):
@@ -464,10 +683,13 @@ def run_analysis(
             discovered,
             candidate_id,
             expected_protocol_id=source_protocol_id,
+            expected_prefix_manifest_id=prefix_manifest_id,
         )
-    case_ids = tuple(sorted(records[REFERENCE]))
-    if any(tuple(sorted(records[donor])) != case_ids for donor in DONORS):
-        raise ValueError("prediction candidate case rosters differ")
+    case_ids = tuple(sorted(prefix_records))
+    if tuple(sorted(records[REFERENCE])) != case_ids or any(
+        tuple(sorted(records[donor])) != case_ids for donor in DONORS
+    ):
+        raise ValueError("prefix and prediction case rosters differ")
 
     calibration = _mapping(protocol["calibration"], name="calibration")
     scales = tuple(
@@ -501,7 +723,6 @@ def run_analysis(
     coverage_grid: np.ndarray = np.empty(grid_shape, dtype=np.float64)
     width_grid: np.ndarray = np.empty(grid_shape, dtype=np.float64)
 
-    from bayesian_phystwin.phystwin_confirmatory import _split_for_case
     from bayesian_phystwin.phystwin_residual_dynamics import (
         _load_pickle,
         _target_validity,
@@ -513,29 +734,40 @@ def run_analysis(
             discovered / "predictions" / REFERENCE / reference_record.path,
             reference_record.sha256,
         )
-        fit_end, train_end, frame_count = _split_for_case(
-            data_root / case_id,
-            _finite(
-                _mapping(protocol["cohort"], name="cohort")["fit_fraction"],
-                name="fit_fraction",
-            ),
-        )
-        if (
-            int(reference_prediction["fit_end"]) != fit_end
-            or int(reference_prediction["train_end"]) != train_end
-            or int(reference_prediction["frame_count"]) != frame_count
-        ):
-            raise ValueError(f"reference split changed for {case_id}")
+        prefix_record = prefix_records[case_id]
+        _verify_public_source_files(data_root, prefix_record)
+        fit_end = prefix_record.fit_end
+        train_end = prefix_record.train_end
+        frame_count = prefix_record.frame_count
+        if _sealed_prediction_split(
+            reference_prediction,
+            case_id=f"{REFERENCE}/{case_id}",
+        ) != (fit_end, train_end, frame_count):
+            raise ValueError(f"reference and prefix splits differ for {case_id}")
         data = _load_pickle(data_root / case_id / "final_data.pkl")
-        baseline = np.asarray(
+        baseline_all = np.asarray(
             _load_pickle(data_root / case_id / "inference.pkl"),
             dtype=np.float64,
-        )[:frame_count]
-        observed = np.asarray(data["object_points"], dtype=np.float64)[:frame_count]
-        valid = _target_validity(
-            np.asarray(data["object_visibilities"], dtype=bool),
-            np.asarray(data["object_motions_valid"], dtype=bool),
-        )[:frame_count]
+        )
+        observed_all = np.asarray(data["object_points"], dtype=np.float64)
+        visible_all = np.asarray(data["object_visibilities"], dtype=bool)
+        motion_valid_all = np.asarray(data["object_motions_valid"], dtype=bool)
+        if (
+            len(baseline_all) < frame_count
+            or len(observed_all) < frame_count
+            or len(visible_all) < frame_count
+        ):
+            raise ValueError(
+                f"public scoring arrays are shorter than the seal for {case_id}"
+            )
+        baseline = baseline_all[:frame_count]
+        observed = observed_all[:frame_count]
+        if baseline.shape[1] < observed.shape[1]:
+            raise ValueError(f"baseline track roster is shorter for {case_id}")
+        valid_all = _target_validity(visible_all, motion_valid_all)
+        if len(valid_all) < frame_count:
+            raise ValueError(f"public validity is shorter than the seal for {case_id}")
+        valid = valid_all[:frame_count]
         residual_future = (observed - baseline[:, : observed.shape[1]])[train_end:]
         valid_future = valid[train_end:]
         reference_mean = _exact_reference_mean(
@@ -563,12 +795,13 @@ def run_analysis(
                 discovered / "predictions" / donor / donor_record.path,
                 donor_record.sha256,
             )
-            if (
-                int(donor_prediction["fit_end"]) != fit_end
-                or int(donor_prediction["train_end"]) != train_end
-                or int(donor_prediction["frame_count"]) != frame_count
-            ):
-                raise ValueError(f"donor split changed for {donor}/{case_id}")
+            if _sealed_prediction_split(
+                donor_prediction,
+                case_id=f"{donor}/{case_id}",
+            ) != (fit_end, train_end, frame_count):
+                raise ValueError(
+                    f"donor and prefix splits differ for {donor}/{case_id}"
+                )
             covariance = np.asarray(
                 donor_prediction["future_covariance_m2"],
                 dtype=np.float64,
@@ -683,6 +916,8 @@ def run_analysis(
         "protocol_id": protocol["protocol_id"],
         "source": dict(source_metadata),
         "source_root_identity": {
+            "prefix_manifest_id": prefix_manifest_id,
+            "public_source_files_verified": True,
             "prediction_manifest_ids": {
                 candidate_id: manifests[candidate_id]["prediction_artifact_sha256"]
                 for candidate_id in (REFERENCE, *DONORS)

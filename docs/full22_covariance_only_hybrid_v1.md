@@ -69,3 +69,5 @@ The full-source donor and horizon scales may be used only to freeze a separate
 fresh-object protocol. They cannot themselves authorize selection, promotion,
 deployment, or a scientific claim. The existing Deform360 v6 study is not
 modified because its candidate roster and target boundary were frozen earlier.
+
+The evaluator consumes the exact split sealed by the historical prefix manifest. It independently verifies that manifest's content identity, each prefix-case archive, every prediction-manifest binding, and the SHA-256 of all four public source files before opening scoring arrays. It never recomputes the historical split with current helper code.
