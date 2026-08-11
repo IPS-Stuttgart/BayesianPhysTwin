@@ -30,7 +30,6 @@ from bayesian_phystwin.covariance_only_hybrid import (
 from bayesian_phystwin.covariance_only_hybrid_analysis import (
     DONORS,
     HORIZONS,
-    FoldSelection,
     bootstrap_family,
     crossfit_select,
     effect_matrices,
