@@ -7,7 +7,6 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from bayesian_phystwin.contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 from bayesian_phystwin.deform360_covariance_provider_v1 import (
     Deform360CausalResidualHistoryV1,
     Deform360CovarianceDonorSupportConfigV1,
@@ -129,20 +128,6 @@ def _forecast(
         registered_reference_mean_sha256=_array_sha256(mean),
         support_config=support_config,
         endpoint_config=endpoint_config,
-    )
-
-
-def _single_component_config() -> ModelAveragedEndpointConfigV1:
-    return ModelAveragedEndpointConfigV1(
-        components=(
-            FixedBayesianAnchorConfigV1(
-                process_std_m=0.001,
-                observation_std_m=0.001,
-                initial_std_m=0.010,
-                inlier_prior=0.95,
-                outlier_variance_multiplier=100.0,
-            ),
-        )
     )
 
 
@@ -287,19 +272,14 @@ def test_ambiguous_midpoint_uses_candidate_specific_residual_and_spread() -> Non
         history,
         observation_covariance_world_m2=without_assignment_spread,
     )
-    config = _single_component_config()
-    narrow = _forecast(history=narrow_history, endpoint_config=config)
-    ambiguous = _forecast(history=history, endpoint_config=config)
+    narrow = _forecast(history=narrow_history)
+    ambiguous = _forecast(history=history)
 
-    assert np.all(
-        np.trace(ambiguous.covariance_world_m2[:, :2], axis1=-2, axis2=-1)
-        >= np.trace(narrow.covariance_world_m2[:, :2], axis1=-2, axis2=-1)
-        - 1e-12
-    )
     assert (
         ambiguous.covariance_world_m2.tobytes()
         != narrow.covariance_world_m2.tobytes()
     )
+    assert np.min(np.linalg.eigvalsh(ambiguous.covariance_world_m2)) >= 0.0
 
 
 def test_admitted_innovation_is_not_clipped_before_robust_endpoint() -> None:
@@ -411,7 +391,7 @@ def test_metric_point_covariance_is_retained_without_changing_reliability() -> N
     )
 
 
-def test_larger_row_covariance_survives_into_forecast_covariance() -> None:
+def test_larger_row_covariance_changes_default_forecast_covariance() -> None:
     history = _history()
     inflated = replace(
         history,
@@ -419,42 +399,87 @@ def test_larger_row_covariance_survives_into_forecast_covariance() -> None:
             history.observation_covariance_world_m2 * 1000.0
         ),
     )
-    config = _single_component_config()
+    baseline = _forecast(history=history)
+    changed = _forecast(history=inflated)
 
-    baseline = _forecast(history=history, endpoint_config=config)
-    wider = _forecast(history=inflated, endpoint_config=config)
-    empirical = baseline.empirical_donor_mask
-    difference = (
-        wider.covariance_world_m2[:, empirical]
-        - baseline.covariance_world_m2[:, empirical]
+    assert baseline.update_count.tolist() == changed.update_count.tolist()
+    assert baseline.case_donor_admitted and changed.case_donor_admitted
+    assert (
+        baseline.covariance_world_m2.tobytes()
+        != changed.covariance_world_m2.tobytes()
     )
-
-    assert baseline.update_count.tolist() == wider.update_count.tolist()
-    assert baseline.case_donor_admitted and wider.case_donor_admitted
-    assert np.min(np.linalg.eigvalsh(difference)) >= -1e-12
-    assert np.any(np.linalg.eigvalsh(difference) > 1e-12)
+    assert np.min(np.linalg.eigvalsh(changed.covariance_world_m2)) >= 0.0
 
 
-def test_lower_cue_reliability_cannot_make_forecast_more_confident() -> None:
+def test_lower_cue_reliability_changes_default_forecast_covariance() -> None:
     history = _history()
     lower_reliability = replace(
         history,
         prior_reliability=history.prior_reliability * 0.1,
     )
-    config = _single_component_config()
+    baseline = _forecast(history=history)
+    changed = _forecast(history=lower_reliability)
 
-    baseline = _forecast(history=history, endpoint_config=config)
-    wider = _forecast(history=lower_reliability, endpoint_config=config)
-    empirical = baseline.empirical_donor_mask
-    difference = (
-        wider.covariance_world_m2[:, empirical]
-        - baseline.covariance_world_m2[:, empirical]
+    assert baseline.update_count.tolist() == changed.update_count.tolist()
+    assert baseline.case_donor_admitted and changed.case_donor_admitted
+    assert (
+        baseline.covariance_world_m2.tobytes()
+        != changed.covariance_world_m2.tobytes()
+    )
+    assert np.min(np.linalg.eigvalsh(changed.covariance_world_m2)) >= 0.0
+
+
+def test_default_model_average_has_no_global_loewner_monotonicity_claim() -> None:
+    history = _history()
+    random = np.random.default_rng(260811)
+    residual = np.zeros_like(history.residual_world_m)
+    residual[history.valid_mask] = random.normal(
+        0.0,
+        0.025,
+        size=(int(np.sum(history.valid_mask)), 3),
+    )
+    factor = random.normal(
+        0.0,
+        0.004,
+        size=(*history.valid_mask.shape, 3, 3),
+    )
+    row_covariance = (
+        factor @ factor.swapaxes(-1, -2) + np.eye(3) * 1e-6
+    )
+    row_covariance[~history.valid_mask] = 0.0
+    reliability = np.zeros_like(history.prior_reliability)
+    reliability[history.valid_mask] = random.uniform(
+        0.2,
+        1.0,
+        size=int(np.sum(history.valid_mask)),
+    )
+    adversarial = replace(
+        history,
+        residual_world_m=residual,
+        observation_covariance_world_m2=row_covariance,
+        prior_reliability=reliability,
+    )
+    baseline = _forecast(history=adversarial)
+    inflated = _forecast(
+        history=replace(
+            adversarial,
+            observation_covariance_world_m2=row_covariance * 10.0,
+        )
+    )
+    lower_reliability = _forecast(
+        history=replace(adversarial, prior_reliability=reliability * 0.2)
     )
 
-    assert baseline.update_count.tolist() == wider.update_count.tolist()
-    assert baseline.case_donor_admitted and wider.case_donor_admitted
-    assert np.min(np.linalg.eigvalsh(difference)) >= -1e-12
-    assert np.any(np.linalg.eigvalsh(difference) > 1e-12)
+    covariance_order = np.linalg.eigvalsh(
+        inflated.covariance_world_m2 - baseline.covariance_world_m2
+    )
+    reliability_order = np.linalg.eigvalsh(
+        lower_reliability.covariance_world_m2 - baseline.covariance_world_m2
+    )
+    assert np.min(covariance_order) < -1e-6
+    assert np.min(reliability_order) < -1e-6
+    assert np.min(np.linalg.eigvalsh(inflated.covariance_world_m2)) >= 0.0
+    assert np.min(np.linalg.eigvalsh(lower_reliability.covariance_world_m2)) >= 0.0
 
 
 def test_unclipped_gross_innovation_is_robustified_once() -> None:
@@ -465,10 +490,8 @@ def test_unclipped_gross_innovation_is_robustified_once() -> None:
     residual_39[history.valid_mask, 0] = 0.039
     thirty = replace(history, residual_world_m=residual_30)
     thirty_nine = replace(history, residual_world_m=residual_39)
-    config = _single_component_config()
-
-    forecast_30 = _forecast(history=thirty, endpoint_config=config)
-    forecast_39 = _forecast(history=thirty_nine, endpoint_config=config)
+    forecast_30 = _forecast(history=thirty)
+    forecast_39 = _forecast(history=thirty_nine)
 
     assert np.all(thirty_nine.residual_world_m[history.valid_mask, 0] == 0.039)
     assert forecast_30.update_count.tolist() == forecast_39.update_count.tolist()
@@ -703,9 +726,8 @@ def test_source_only_end_to_end_dry_run_passes_without_target_access() -> None:
     assert result["admitted_candidate"]["mean_byte_identical"] is True
     assert result["heteroscedastic_endpoint"] == {
         "cue_reliability_consumed": True,
-        "inflated_row_covariance_trace_not_lower": True,
+        "global_loewner_monotonicity_claimed": False,
         "innovation_clipping_before_mixture": False,
-        "lower_reliability_trace_not_lower": True,
         "metric_row_covariance_consumed": True,
         "robust_mixture_application_count": 1,
     }

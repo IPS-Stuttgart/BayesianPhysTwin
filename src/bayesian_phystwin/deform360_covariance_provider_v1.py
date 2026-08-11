@@ -27,7 +27,9 @@ from ._portable_contracts import (
 from .contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 from .deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseVisualWindowRowsV5,
-    associate_deform360_joint_sparse_geometry_v5,
+)
+from .deform360_joint_sparse_materializer_v5 import (
+    _association as _frozen_v5_geometry_association,
 )
 from .endpoint_model_average import (
     DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
@@ -864,7 +866,7 @@ def estimate_deform360_causal_residual_history_v1(
         )
         reference = physical[local_index]
         indices, assignment, _, association_probability = (
-            associate_deform360_joint_sparse_geometry_v5(
+            _frozen_v5_geometry_association(
                 reference,
                 points,
                 candidate_count=association_candidate_count,

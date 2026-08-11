@@ -296,40 +296,11 @@ def run_source_only_dry_run() -> dict[str, Any]:
                 inflated_row_covariance.covariance_world_m2.tobytes()
                 != candidate.covariance_world_m2.tobytes()
             ),
-            "inflated_row_covariance_trace_not_lower": bool(
-                np.all(
-                    np.trace(
-                        inflated_row_covariance.covariance_world_m2,
-                        axis1=-2,
-                        axis2=-1,
-                    )
-                    >= np.trace(
-                        candidate.covariance_world_m2,
-                        axis1=-2,
-                        axis2=-1,
-                    )
-                    - 1e-12
-                )
-            ),
             "cue_reliability_consumed": bool(
                 lower_cue_reliability.covariance_world_m2.tobytes()
                 != candidate.covariance_world_m2.tobytes()
             ),
-            "lower_reliability_trace_not_lower": bool(
-                np.all(
-                    np.trace(
-                        lower_cue_reliability.covariance_world_m2,
-                        axis1=-2,
-                        axis2=-1,
-                    )
-                    >= np.trace(
-                        candidate.covariance_world_m2,
-                        axis1=-2,
-                        axis2=-1,
-                    )
-                    - 1e-12
-                )
-            ),
+            "global_loewner_monotonicity_claimed": False,
             "innovation_clipping_before_mixture": False,
             "robust_mixture_application_count": 1,
         },
@@ -377,24 +348,14 @@ def run_source_only_dry_run() -> dict[str, Any]:
             != candidate.covariance_world_m2.tobytes()
             and lower_cue_reliability.covariance_world_m2.tobytes()
             != candidate.covariance_world_m2.tobytes()
-            and np.all(
-                np.trace(
-                    inflated_row_covariance.covariance_world_m2,
-                    axis1=-2,
-                    axis2=-1,
-                )
-                >= np.trace(candidate.covariance_world_m2, axis1=-2, axis2=-1)
-                - 1e-12
+            and np.min(
+                np.linalg.eigvalsh(inflated_row_covariance.covariance_world_m2)
             )
-            and np.all(
-                np.trace(
-                    lower_cue_reliability.covariance_world_m2,
-                    axis1=-2,
-                    axis2=-1,
-                )
-                >= np.trace(candidate.covariance_world_m2, axis1=-2, axis2=-1)
-                - 1e-12
+            >= 0.0
+            and np.min(
+                np.linalg.eigvalsh(lower_cue_reliability.covariance_world_m2)
             )
+            >= 0.0
             and not fallback.case_donor_admitted
             and fallback.mean_world_m.tobytes() == mean.tobytes()
             and fallback.covariance_world_m2.tobytes()

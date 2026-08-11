@@ -181,3 +181,18 @@ The v1.2 roster, acquisition artifacts, method mean, covariance donor, scales,
 support thresholds, fallback, and evaluation remain unchanged. The v1.3 lock is
 preserved and superseded prospectively. Details are in
 `docs/deform360_covariance_only_target_v1_4.md`.
+
+## V1.5 conditional-mixture clarification
+
+Independent source-only review rejected v1.4's global confidence-monotonicity
+wording. In a robust model average, changing observation covariance or reliability
+also changes inlier/outlier responsibilities and component evidence; the resulting
+conditional covariance need not be Loewner-monotone even though every reported
+covariance remains PSD.
+
+Protocol v1.5 therefore claims only what the implementation guarantees: metric row
+covariance and cue reliability affect the default scored posterior, assignment
+spread survives downstream, duplicate correlated evidence adds no confidence,
+reliability is residual-independent, innovations are robustified once, and failure
+returns exact fallback. It makes no global covariance-ordering claim. Details are
+in `docs/deform360_covariance_only_target_v1_5.md`.

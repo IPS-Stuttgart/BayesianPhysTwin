@@ -14,7 +14,7 @@
     "opposite_signed": true
   },
   "claim_boundary": "Implementation dry run only; no target, official benchmark, calibration, point-accuracy, or state-of-the-art claim.",
-  "dry_run_sha256": "108e7270d7195884297e53a3677552df0bdc6fde88cddfde9c6f35102c24ca21",
+  "dry_run_sha256": "ef59fa00cf9f607ac5405455911e33aa6fb3087de63c97b53689d3f2a15744ef",
   "failed_support_fallback": {
     "artifact_id": "718942c98bd1d1465206d8fd610bbc2440554ecaea632c753eb2c2776001b143",
     "case_donor_admitted": false,
@@ -37,9 +37,8 @@
   "gate_passed": true,
   "heteroscedastic_endpoint": {
     "cue_reliability_consumed": true,
-    "inflated_row_covariance_trace_not_lower": true,
+    "global_loewner_monotonicity_claimed": false,
     "innovation_clipping_before_mixture": false,
-    "lower_reliability_trace_not_lower": true,
     "metric_row_covariance_consumed": true,
     "robust_mixture_application_count": 1
   },
