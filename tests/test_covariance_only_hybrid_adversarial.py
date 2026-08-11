@@ -257,14 +257,18 @@ def _folds() -> tuple[FoldSelection, ...]:
             selected_donor="independent_endpoint_v1",
             selected_scales=(1.0, 1.0, 1.0),
             donor_scales=donor_scales,
-            donor_training_scores={name: float(index) for index, name in enumerate(DONORS)},
+            donor_training_scores={
+                name: float(index) for index, name in enumerate(DONORS)
+            },
         ),
         FoldSelection(
             held_case_id="case-1",
             selected_donor="dynamic_endpoint_v2",
             selected_scales=(2.0, 2.0, 2.0),
             donor_scales=donor_scales,
-            donor_training_scores={name: float(index) for index, name in enumerate(DONORS)},
+            donor_training_scores={
+                name: float(index) for index, name in enumerate(DONORS)
+            },
         ),
     )
 
