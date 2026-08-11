@@ -25,16 +25,17 @@ layout.
 
 The active wrapper now creates a detached Git worktree at the exact
 `BPT_SOURCE_SHA` and verifies both its revision and empty porcelain status before
-running the immutable selector wrapper and archived science runner. Only the
-child science process receives this clean worktree as `GITHUB_WORKSPACE`.
-Dependency repositories remain at their existing frozen paths and are not copied
-into the validated execution tree.
+running the immutable selector wrapper and archived science runner. The delegated
+run starts inside that exact worktree. Its workspace and Python source root are
+also bound to the same path, so relative lock, script, configuration, and module
+references resolve inside the repository validated by the historical adapter.
 
-The worktree is removed through the existing exit trap. The frozen selector
-wrapper blob, archived science-runner blob, physical-upstream revision,
-prepared-source inventory, source cohort, camera roster, estimator, covariance
-schedule, prediction barrier, and target-closed information boundary are
-unchanged.
+Dependency repositories remain at their existing frozen paths and are not copied
+into the validated execution tree. The worktree is removed through the existing
+exit trap. The frozen selector-wrapper blob, archived science-runner blob,
+physical-upstream revision, prepared-source inventory, source cohort, camera
+roster, estimator, covariance schedule, prediction barrier, and target-closed
+information boundary are unchanged.
 
 ## Information boundary
 
