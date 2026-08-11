@@ -14,6 +14,11 @@ AMENDMENT = ROOT / (
     "deform360_official_hub_fresh_object_session_v6_"
     "frame_zero_cuda_runtime.json"
 )
+NAMESPACE_AMENDMENT = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_"
+    "dispatch_namespace_repair.json"
+)
 WORKFLOW = ROOT / (
     ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
 )
@@ -26,6 +31,9 @@ def _stub(path: Path, route: str) -> None:
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
         f"printf '%s\\n' '{route}' > \"${{ROUTE_LOG}}\"\n"
+        'if [[ -n "${REPAIR_ID_LOG:-}" ]]; then\n'
+        '  printf \'%s\\n\' "${REPAIR_ID-}" > "${REPAIR_ID_LOG}"\n'
+        "fi\n"
         'printf \'%s\\n\' "$@" >> "${ROUTE_LOG}"\n',
         encoding="utf-8",
     )
@@ -35,6 +43,8 @@ def _stub(path: Path, route: str) -> None:
 def _dispatch(
     tmp_path: Path,
     arguments: list[str],
+    *,
+    environment_overrides: dict[str, str] | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     primary = tmp_path / "primary.sh"
@@ -50,6 +60,7 @@ def _dispatch(
         "BPT_FRAME_ZERO_RUNTIME_MARKER": str(marker),
         "ROUTE_LOG": str(route_log),
     }
+    environment.update(environment_overrides or {})
     result = subprocess.run(
         ["bash", str(DISPATCHER), *arguments],
         check=False,
@@ -161,3 +172,66 @@ def test_dispatcher_rejects_ambiguous_physical_stage(tmp_path: Path) -> None:
     assert "stage binding is not unique" in result.stderr
     assert route == []
     assert not marker.exists()
+
+
+def test_dispatcher_preserves_inherited_selector_repair_identity(
+    tmp_path: Path,
+) -> None:
+    repair_id_log = tmp_path / "selector-repair-id.log"
+    selector_repair_id = (
+        "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
+    )
+
+    result, route, marker = _dispatch(
+        tmp_path,
+        ["-c", "print('selector verifier')"],
+        environment_overrides={
+            "REPAIR_ID": selector_repair_id,
+            "REPAIR_ID_LOG": str(repair_id_log),
+        },
+    )
+
+    assert result.returncode == 0
+    assert route == ["primary", "-c", "print('selector verifier')"]
+    assert repair_id_log.read_text(encoding="utf-8").strip() == selector_repair_id
+    assert not marker.exists()
+
+
+def test_dispatch_namespace_repair_is_content_addressed_and_closed() -> None:
+    payload = json.loads(NAMESPACE_AMENDMENT.read_text(encoding="utf-8"))
+    declared = payload.pop("repair_id")
+
+    assert declared == content_id(payload)
+    assert not any(payload["information_boundary"].values())
+    assert payload["failed_execution_evidence"]["physical_manifest_count"] == 0
+    assert payload["failed_execution_evidence"]["source_prediction_seal_count"] == 0
+    assert payload["correction"] == {
+        "corrected_local_name": "FRAME_ZERO_DISPATCH_REPAIR_ID",
+        "inherited_environment_key_preserved": "REPAIR_ID",
+        "previous_local_name": "REPAIR_ID",
+        "value_changed": False,
+    }
+    assert payload["repair_scope"]["dispatcher_namespace_corrected"]
+    assert all(
+        value is False
+        for key, value in payload["repair_scope"].items()
+        if key != "dispatcher_namespace_corrected"
+    )
+
+
+def test_workflow_binds_and_probes_dispatch_namespace_repair() -> None:
+    payload = json.loads(NAMESPACE_AMENDMENT.read_text(encoding="utf-8"))
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    amendment_digest = hashlib.sha256(NAMESPACE_AMENDMENT.read_bytes()).hexdigest()
+    dispatcher_digest = hashlib.sha256(DISPATCHER.read_bytes()).hexdigest()
+
+    assert f"DISPATCH_NAMESPACE_REPAIR_ID: {payload['repair_id']}" in workflow
+    assert f"DISPATCH_NAMESPACE_REPAIR_SHA256: {amendment_digest}" in workflow
+    assert f"DISPATCHER_SHA256: {dispatcher_digest}" in workflow
+    assert str(NAMESPACE_AMENDMENT.relative_to(ROOT)) in workflow
+    assert 'REPAIR_ID="selector-repair-environment-probe-v1"' in workflow
+    assert "runtime_dispatch_namespace_repair" in workflow
+
+    dispatcher = DISPATCHER.read_text(encoding="utf-8")
+    assert 'readonly FRAME_ZERO_DISPATCH_REPAIR_ID="' in dispatcher
+    assert 'readonly REPAIR_ID="' not in dispatcher

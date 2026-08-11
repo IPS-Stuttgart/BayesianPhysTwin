@@ -6,7 +6,9 @@ on:
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
       - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
   push:
@@ -14,7 +16,9 @@ on:
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
       - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
   workflow_dispatch:
@@ -53,6 +57,10 @@ env:
   FRAME_ZERO_RUNTIME_REPAIR_ID: 6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8
   FRAME_ZERO_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json
   FRAME_ZERO_RUNTIME_REPAIR_SHA256: c4e52e4fc86d79c738d98a357a053845a3bc9d7a4d30d60642a37803b121478b
+  DISPATCH_NAMESPACE_REPAIR_ID: 468c1a9073518609695435a564602ca88f871560a0db95429289fd32c0a611bc
+  DISPATCH_NAMESPACE_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json
+  DISPATCH_NAMESPACE_REPAIR_SHA256: d60ec449557d7f0486f22405ef388780278e9340431a60c831660e9d99f150ef
+  DISPATCHER_SHA256: b1573cf49e72f340e4f9f1102ec7bf9c641ea75daf84440250926194f1e94358
   PRIMARY_PYTHON_VERSION: "3.12"
   PRIMARY_TORCH_VERSION: 2.5.1+cu121
   FRAME_ZERO_PYTHON_VERSION: "3.10"
@@ -235,6 +243,10 @@ jobs:
             set -euo pipefail
             test "$(sha256sum "${FRAME_ZERO_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
               = "${FRAME_ZERO_RUNTIME_REPAIR_SHA256}"
+            test "$(sha256sum "${DISPATCH_NAMESPACE_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${DISPATCH_NAMESPACE_REPAIR_SHA256}"
+            test "$(sha256sum scripts/ci/dispatch_deform360_v6_source_python.sh | awk '{print $1}')" \
+              = "${DISPATCHER_SHA256}"
             test "$(sha256sum _deform360_physical/pyproject.toml | awk '{print $1}')" \
               = "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
 
@@ -327,6 +339,7 @@ jobs:
             test ! -L "${dispatcher}"
             test -x "${dispatcher}"
 
+            REPAIR_ID="selector-repair-environment-probe-v1" \
             BPT_PRIMARY_PYTHON="${primary_python}" \
             BPT_FRAME_ZERO_PYTHON="${frame_zero_python}" \
             BPT_FRAME_ZERO_RUNTIME_MARKER="${marker}" \
@@ -335,6 +348,7 @@ jobs:
 
           import bayesian_phystwin
           import deform360
+          import os
           import sam2
           import torch
           import warp
@@ -347,6 +361,8 @@ jobs:
               raise SystemExit("primary SAM2 runtime identity changed")
           if version("virtualenv") != "21.7.4":
               raise SystemExit("primary virtualenv identity changed")
+          if os.environ.get("REPAIR_ID") != "selector-repair-environment-probe-v1":
+              raise SystemExit("dispatcher changed an inherited repair identity")
           print(version("torch"))
           print(version("SAM-2"))
           print(version("bayesian-phystwin"))
@@ -562,6 +578,8 @@ jobs:
                   raise SystemExit("frame-zero runtime activation marker changed")
           if "runtime_frame_zero_precompiled_cuda" in receipt:
               raise SystemExit("frame-zero runtime receipt field already exists")
+          if "runtime_dispatch_namespace_repair" in receipt:
+              raise SystemExit("dispatch namespace receipt field already exists")
           receipt["runtime_frame_zero_precompiled_cuda"] = {
               "activated": activated,
               "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
@@ -584,6 +602,19 @@ jobs:
               "repair_id": os.environ["FRAME_ZERO_RUNTIME_REPAIR_ID"],
               "repair_path": os.environ["FRAME_ZERO_RUNTIME_REPAIR_PATH"],
               "runtime_probe_passed": os.environ.get("RUNTIME_EXIT_CODE") == "0",
+          }
+          receipt["runtime_dispatch_namespace_repair"] = {
+              "activated": os.environ.get("RUNTIME_EXIT_CODE") == "0",
+              "corrected_local_name": "FRAME_ZERO_DISPATCH_REPAIR_ID",
+              "dispatcher_file_sha256": os.environ["DISPATCHER_SHA256"],
+              "inherited_environment_key_preserved": "REPAIR_ID",
+              "previous_local_name": "REPAIR_ID",
+              "repair_file_sha256": os.environ[
+                  "DISPATCH_NAMESPACE_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["DISPATCH_NAMESPACE_REPAIR_ID"],
+              "repair_path": os.environ["DISPATCH_NAMESPACE_REPAIR_PATH"],
+              "value_changed": False,
           }
           canonical = json.dumps(
               receipt,
@@ -663,6 +694,7 @@ jobs:
 
           receipt = json.loads(Path(os.environ["RECEIPT_PATH"]).read_text())
           runtime = receipt["runtime_frame_zero_precompiled_cuda"]
+          namespace = receipt["runtime_dispatch_namespace_repair"]
           body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
 
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
@@ -674,6 +706,7 @@ jobs:
           - sealed source predictions: `{receipt['source_prediction_seal_count']}/100`
           - frame-zero precompiled CUDA runtime activated: `{str(runtime['activated']).lower()}`
           - frame-zero gsplat: `{runtime['gsplat_version']}`
+          - dispatcher namespace repair activated: `{str(namespace['activated']).lower()}`
           - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
           - development suffix opened: `false`
           - v5 confirmation payloads opened: `false`
