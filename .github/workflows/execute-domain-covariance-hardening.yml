@@ -1,0 +1,256 @@
+name: Execute domain covariance hardening
+
+on:
+  pull_request:
+    branches:
+      - agent/domain-covariance-calibration-v1-clean
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  execute:
+    if: >-
+      github.event.pull_request.head.ref ==
+      'agent/execute-domain-covariance-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/domain-covariance-calibration-v1-clean
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Apply reviewed semantic hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path(
+              "src/bayesian_phystwin/domain_covariance_calibration.py"
+          )
+          text = source.read_text(encoding="utf-8")
+
+          old_record = '''        for name in ("raw_covariance_sha256", "output_covariance_sha256"):
+              object.__setattr__(
+                  self,
+                  name,
+                  sha256_digest(getattr(self, name), name=name),
+              )
+          if (
+              self.exact_fallback
+              and self.raw_covariance_sha256 != self.output_covariance_sha256
+          ):
+              raise ValueError("exact fallback must preserve covariance identity")
+          '''
+          new_record = '''        for name in ("raw_covariance_sha256", "output_covariance_sha256"):
+              object.__setattr__(
+                  self,
+                  name,
+                  sha256_digest(getattr(self, name), name=name),
+              )
+          if self.applied:
+              if not (
+                  self.inference_admissible
+                  and self.certificate_deployment_admissible
+                  and self.calibration_supported
+              ):
+                  raise ValueError(
+                      "applied calibration requires all admissibility gates"
+                  )
+              if self.decision_id is None:
+                  raise ValueError(
+                      "applied calibration requires a domain decision"
+                  )
+              if self.reason != "calibration-domain-authorized":
+                  raise ValueError("applied calibration has invalid reason")
+              if (
+                  self.covariance_scale == 1.0
+                  and self.isotropic_variance == 0.0
+              ):
+                  raise ValueError(
+                      "applied calibration must change the transform"
+                  )
+          else:
+              if (
+                  self.covariance_scale != 1.0
+                  or self.isotropic_variance != 0.0
+              ):
+                  raise ValueError("fallback must use raw covariance transform")
+              if self.decision_id is None and self.calibration_supported:
+                  raise ValueError(
+                      "unknown domain cannot be calibration-supported"
+                  )
+              if not self.inference_admissible:
+                  expected_reason = "inference-rejected"
+              elif self.decision_id is None:
+                  expected_reason = "unknown-calibration-domain"
+              elif not self.certificate_deployment_admissible:
+                  expected_reason = "calibration-information-boundary-rejected"
+              elif not self.calibration_supported:
+                  expected_reason = "calibration-domain-rejected"
+              else:
+                  expected_reason = "calibration-identity-transform-retained"
+              if self.reason != expected_reason:
+                  raise ValueError("fallback calibration has invalid reason")
+          if (
+              self.exact_fallback
+              and self.raw_covariance_sha256 != self.output_covariance_sha256
+          ):
+              raise ValueError("exact fallback must preserve covariance identity")
+          '''
+          if old_record in text:
+              text = text.replace(old_record, new_record, 1)
+          elif "applied calibration requires all admissibility gates" not in text:
+              raise RuntimeError("application validation patch target changed")
+
+          old_apply = '''    decision = certificate.decision_for_domain(domain)
+          supported = bool(decision is not None and decision.calibration_supported)
+          applied = inference_ok and certificate.deployment_admissible and supported
+          if not inference_ok:
+              reason = "inference-rejected"
+          elif decision is None:
+              reason = "unknown-calibration-domain"
+          elif not certificate.deployment_admissible:
+              reason = "calibration-information-boundary-rejected"
+          elif not decision.calibration_supported:
+              reason = "calibration-domain-rejected"
+          else:
+              reason = "calibration-domain-authorized"
+          raw_digest = _array_digest(normalized)
+          '''
+          new_apply = '''    decision = certificate.decision_for_domain(domain)
+          supported = bool(decision is not None and decision.calibration_supported)
+          identity_transform = bool(
+              decision is not None
+              and decision.selected_covariance_scale == 1.0
+              and decision.selected_isotropic_variance == 0.0
+          )
+          applied = (
+              inference_ok
+              and certificate.deployment_admissible
+              and supported
+              and not identity_transform
+          )
+          if not inference_ok:
+              reason = "inference-rejected"
+          elif decision is None:
+              reason = "unknown-calibration-domain"
+          elif not certificate.deployment_admissible:
+              reason = "calibration-information-boundary-rejected"
+          elif not decision.calibration_supported:
+              reason = "calibration-domain-rejected"
+          elif identity_transform:
+              reason = "calibration-identity-transform-retained"
+          else:
+              reason = "calibration-domain-authorized"
+          raw_digest = _array_digest(
+              np.asarray(raw_covariance, dtype=np.float64)
+          )
+          '''
+          if old_apply in text:
+              text = text.replace(old_apply, new_apply, 1)
+          elif "identity_transform = bool(" not in text:
+              raise RuntimeError("application routing patch target changed")
+
+          old_output_digest = "        output_digest = _array_digest(transformed)\n"
+          new_output_digest = "        output_digest = _array_digest(output)\n"
+          if old_output_digest in text:
+              text = text.replace(old_output_digest, new_output_digest, 1)
+          elif new_output_digest not in text:
+              raise RuntimeError("output digest patch target changed")
+          source.write_text(text, encoding="utf-8")
+
+          tests = Path(
+              "tests/"
+              "test_source_competence_domain_covariance_calibration_edges.py"
+          )
+          test_text = tests.read_text(encoding="utf-8")
+          old_factories = '''        lambda: replace(applied, reason="wrong", artifact_id=None),
+              lambda: replace(
+          '''
+          new_factories = '''        lambda: replace(applied, reason="wrong", artifact_id=None),
+              lambda: replace(applied, decision_id=None, artifact_id=None),
+              lambda: replace(
+          '''
+          if old_factories in test_text:
+              test_text = test_text.replace(old_factories, new_factories, 1)
+          elif "replace(applied, decision_id=None" not in test_text:
+              raise RuntimeError("application test insertion target changed")
+
+          old_fallback_tail = '''        lambda: replace(fallback, reason="wrong", artifact_id=None),
+          )
+          '''
+          new_fallback_tail = '''        lambda: replace(fallback, reason="wrong", artifact_id=None),
+              lambda: replace(
+                  fallback,
+                  output_covariance_sha256="0" * 64,
+                  artifact_id=None,
+              ),
+          )
+          '''
+          if old_fallback_tail in test_text:
+              test_text = test_text.replace(
+                  old_fallback_tail,
+                  new_fallback_tail,
+                  1,
+              )
+          elif "output_covariance_sha256=\"0\" * 64" not in test_text:
+              raise RuntimeError("fallback digest test insertion target changed")
+          tests.write_text(test_text, encoding="utf-8")
+          PY
+      - name: Install validation dependencies
+        run: python -m pip install -e '.[dev]' coverage
+      - name: Format and lint the exact changed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff format \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          ruff check \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          ruff format --check \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+      - name: Run focused contracts and branch coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          coverage run --branch -m pytest -q \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          coverage report -m \
+            --include=src/bayesian_phystwin/domain_covariance_calibration.py \
+            --fail-under=100
+          git diff --check
+      - name: Publish the validated target-branch patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email \
+            '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/bayesian_phystwin/domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Target branch already contains the validated patch.'
+            exit 0
+          fi
+          git commit -m 'Harden domain covariance calibration'
+          git push origin HEAD:agent/domain-covariance-calibration-v1-clean
