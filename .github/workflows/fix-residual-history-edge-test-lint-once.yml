@@ -1,5 +1,4 @@
-# Retriggered after the workflow became part of the branch history.
-name: Fix residual-history edge-test lint once
+name: Fix residual-history test and coverage gates once
 
 on:
   push:
@@ -38,18 +37,21 @@ jobs:
               "tests/test_deform360_covariance_residual_history_contract_edges_v1.py"
           )
           test_text = test_path.read_text(encoding="utf-8")
-          replacements = {
-              "    assert_outside_target_quarantine,\n": "",
-              '        _integer_vector([], name="indices")\n': (
-                  '        _integer_vector(\n'
-                  '            np.array([], dtype=np.int64), name="indices"\n'
-                  '        )\n'
-              ),
-          }
-          for old, new in replacements.items():
-              if test_text.count(old) != 1:
-                  raise SystemExit(f"expected exactly one occurrence of {old!r}")
-              test_text = test_text.replace(old, new)
+          unused_import = "    assert_outside_target_quarantine,\n"
+          if test_text.count(unused_import) > 1:
+              raise SystemExit("duplicate unused quarantine imports")
+          test_text = test_text.replace(unused_import, "")
+
+          old_empty = '        _integer_vector([], name="indices")\n'
+          new_empty = (
+              '        _integer_vector(\n'
+              '            np.array([], dtype=np.int64), name="indices"\n'
+              '        )\n'
+          )
+          if test_text.count(old_empty) == 1 and new_empty not in test_text:
+              test_text = test_text.replace(old_empty, new_empty)
+          elif test_text.count(old_empty) != 0 or test_text.count(new_empty) != 1:
+              raise SystemExit("unexpected empty integer-vector test state")
           test_path.write_text(test_text, encoding="utf-8")
 
           manifest_path = Path(".github/quality/test-suites.json")
@@ -62,11 +64,15 @@ jobs:
           )
           if manifest_text.count(anchor) != 2:
               raise SystemExit("expected the contact-anchor entry in exactly two suites")
+          present = tuple(addition in manifest_text for addition in additions)
+          if not any(present):
+              first = manifest_text.index(anchor) + len(anchor)
+              manifest_text = manifest_text[:first] + additions + manifest_text[first:]
+          elif not all(present):
+              raise SystemExit("partial residual-history suite registration")
           for addition in additions:
-              if addition in manifest_text:
-                  raise SystemExit(f"suite entry already present: {addition.strip()}")
-          first = manifest_text.index(anchor) + len(anchor)
-          manifest_text = manifest_text[:first] + additions + manifest_text[first:]
+              if manifest_text.count(addition) != 1:
+                  raise SystemExit(f"invalid suite entry count: {addition.strip()}")
           manifest_path.write_text(manifest_text, encoding="utf-8")
           PY
           python -m pip install \
@@ -85,7 +91,7 @@ jobs:
             tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py \
             tests/test_deform360_covariance_residual_history_v1.py
 
-      - name: Publish only the exact gate cleanup and remove this helper
+      - name: Publish exact gate cleanup and remove this helper
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
