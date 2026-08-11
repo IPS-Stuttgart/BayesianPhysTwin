@@ -255,6 +255,7 @@ def main() -> int:
         == "2b90b9f5ceec907a1c18123530e92e794ad901a4",
         "locked stage changed the SAM2 source revision",
     )
+    dynamic_module = cast(Any, module)
     with activate_joint_sparse_physical_runtime_v5():
         patch_joint_sparse_physical_stage_v5(
             module,
@@ -262,11 +263,11 @@ def main() -> int:
             repository=repository,
             execution_lock=execution_lock,
         )
-        setattr(module, "GENERIC_SELECTOR_SHA256", CORRECTED_SELECTOR_SHA256)
+        dynamic_module.GENERIC_SELECTOR_SHA256 = CORRECTED_SELECTOR_SHA256
         previous = sys.argv
         sys.argv = [str(script), *stage_arguments]
         try:
-            return int(module.main())
+            return int(dynamic_module.main())
         finally:
             sys.argv = previous
 
