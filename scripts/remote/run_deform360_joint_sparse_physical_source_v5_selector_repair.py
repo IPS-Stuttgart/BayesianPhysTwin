@@ -111,10 +111,8 @@ def main() -> int:
     root_cause = repair.get("root_cause")
     _require(isinstance(root_cause, dict), "selector repair root cause changed")
     _require(
-        root_cause.get("stage_registered_selector_sha256")
-        == PREVIOUS_SELECTOR_SHA256
-        and root_cause.get("corrected_selector_sha256")
-        == CORRECTED_SELECTOR_SHA256,
+        root_cause.get("stage_registered_selector_sha256") == PREVIOUS_SELECTOR_SHA256
+        and root_cause.get("corrected_selector_sha256") == CORRECTED_SELECTOR_SHA256,
         "selector repair digest binding changed",
     )
 
@@ -123,7 +121,9 @@ def main() -> int:
     selector_path = Path(
         _argument_value(stage_arguments, "--generic-selector-source")
     ).resolve(strict=True)
-    _require(selector_path.is_file() and not selector_path.is_symlink(), "selector missing")
+    _require(
+        selector_path.is_file() and not selector_path.is_symlink(), "selector missing"
+    )
     _require(
         selector_path.stat().st_size == CORRECTED_SELECTOR_BYTE_COUNT
         and file_sha256(selector_path) == CORRECTED_SELECTOR_SHA256,
