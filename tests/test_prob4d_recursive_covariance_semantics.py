@@ -4,6 +4,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from prob4d_factor_stream_contract_cases import (
+    DOMAIN,
+    _Belief,
+    _claim_update,
+    _linearization,
+    _policy,
+    _stream_tree,
+)
 
 from bayesian_phystwin.complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
@@ -16,14 +24,6 @@ from bayesian_phystwin.posterior_covariance_semantics import (
 from bayesian_phystwin.prob4d_factor_stream import (
     apply_claim_bearing_prob4d_stream_update,
     start_claim_bearing_prob4d_stream_run,
-)
-from prob4d_factor_stream_contract_cases import (
-    DOMAIN,
-    _Belief,
-    _claim_update,
-    _linearization,
-    _policy,
-    _stream_tree,
 )
 
 
