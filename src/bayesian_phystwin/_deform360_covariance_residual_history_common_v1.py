@@ -110,16 +110,21 @@ def _readonly_float_array(
     ndim: int,
     finite: bool = True,
 ) -> np.ndarray:
-    array = immutable_array(value, name=name, ndim=ndim)
-    result = np.asarray(array, dtype=np.float64)
+    raw = np.asarray(value)
+    if raw.ndim != ndim:
+        raise ValueError(f"{name} must have {ndim} dimensions")
+    if raw.dtype.kind not in "iuf":
+        raise ValueError(f"{name} must contain real numeric values")
+    result = immutable_array(value, dtype=np.float64)
     if finite and not np.all(np.isfinite(result)):
         raise ValueError(f"{name} must be finite")
-    result.setflags(write=False)
     return result
 
 
 def _integer_vector(value: object, *, name: str) -> np.ndarray:
-    array = immutable_integer_array(value, name=name, ndim=1)
+    array = immutable_integer_array(value, name=name)
+    if array.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
     if array.size == 0:
         raise ValueError(f"{name} must be nonempty")
     return array
@@ -190,11 +195,16 @@ def _validate_covariance(
     return array
 
 
-def assert_outside_target_quarantine(path: Path | str) -> Path:
+def assert_outside_target_quarantine(
+    path: Path | str,
+    *,
+    name: str = "path",
+) -> Path:
+    label = _canonical_string(name, name="name")
     resolved = Path(path).expanduser().resolve(strict=False)
     target = TARGET_QUARANTINE_ROOT.resolve(strict=False)
     if resolved == target or target in resolved.parents:
-        raise ValueError("path is inside the unopened target quarantine")
+        raise ValueError(f"{label} is inside the unopened target quarantine")
     return resolved
 
 
