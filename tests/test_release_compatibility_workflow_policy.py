@@ -46,8 +46,8 @@ def test_release_artifacts_are_built_and_installed_on_every_supported_python() -
     assert "for kind in wheel sdist" in text
     assert "--no-build-isolation" in text
     assert "import bayesian_phystwin.v1 as api" in text
-    assert 'find dist -maxdepth 1 -name \'*.whl\'' in text
-    assert 'find dist -maxdepth 1 -name \'*.tar.gz\'' in text
+    assert "find dist -maxdepth 1 -name '*.whl'" in text
+    assert "find dist -maxdepth 1 -name '*.tar.gz'" in text
 
 
 def test_declared_numpy_floor_is_exact_and_runs_the_core_contracts() -> None:
