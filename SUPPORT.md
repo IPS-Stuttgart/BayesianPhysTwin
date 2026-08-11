@@ -152,6 +152,31 @@ Both surfaces are checked by
 shipped in the source distribution. See
 [`docs/public_api_policy.md`](docs/public_api_policy.md) for the complete policy.
 
+## Scientific release boundary
+
+Runtime support, package compatibility, green CI, valid distributions, and
+content-addressed integration artifacts are engineering evidence. They do not
+promote an empirical result or authorize a deployment claim.
+
+Every release note that cites the full-22 Bayesian-anchor result must follow
+[`docs/phystwin_release_claim_v1.md`](docs/phystwin_release_claim_v1.md) and
+retain all of these companion boundaries:
+
+- the simple last-residual comparator is the principal matched deterministic
+  reference and is marginally better on equal-case track error;
+- the exact-mean covariance-only result changes the frozen Gaussian score while
+  track and Chamfer outputs remain exactly unchanged, remains retrospective
+  development evidence, and carries a `3.10×` interval-width cost;
+- raw posterior covariance remains severely undercalibrated, while conformal
+  coverage is a separate width-bearing result under its stated assumptions; and
+- independent real-provider and independent-object transfer remain unconfirmed.
+
+The canonical machine-readable companion is the paper repository's
+[`evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json`](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json).
+A compatibility-table match, accepted golden-path fixture, or exact fallback
+record must never be described as accuracy, calibration, transfer, safety, or
+state-of-the-art evidence.
+
 ## Reporting problems
 
 Report reproducible defects through the repository issue tracker. Include the
