@@ -12,7 +12,9 @@ def _text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_release_surfaces_retain_matched_comparator_and_raw_covariance_boundary() -> None:
+def test_release_surfaces_retain_matched_comparator_and_raw_covariance_boundary() -> (
+    None
+):
     for path in (README, SUPPORT, CLAIM):
         text = _text(path)
         assert "last_residual" in text or "last-residual" in text
@@ -42,7 +44,9 @@ def test_release_surfaces_bind_covariance_only_effect_and_width_cost() -> None:
     assert "0.910" in readme
 
 
-def test_release_surfaces_keep_terminal_and_registered_deform360_routes_separate() -> None:
+def test_release_surfaces_keep_terminal_and_registered_deform360_routes_separate() -> (
+    None
+):
     for path in (README, SUPPORT, CLAIM):
         text = _text(path)
         assert "313/324" in text
