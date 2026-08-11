@@ -1,6 +1,10 @@
 name: Temporary register covariance-only coverage
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/temporary-register-covariance-coverage.yml"
   push:
     branches:
       - agent/full22-covariance-only-hybrid-v1
@@ -16,6 +20,9 @@ concurrency:
 
 jobs:
   register:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
