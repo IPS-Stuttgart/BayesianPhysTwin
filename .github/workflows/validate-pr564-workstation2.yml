@@ -1,0 +1,70 @@
+name: Validate PR 564 on workstation2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-pr564-workstation2.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event.pull_request.head.ref == 'diagnostic/validate-pr564-workstation2'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 30
+    env:
+      BASE_SHA: dba748cafc1979dd697f99fb8aa70dc1cfaf9b81
+      TARGET_SHA: 4ad1f724e88b69381d2607423b07668ed500acf7
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Check out exact PR 564 head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up isolated Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Validate exact changed source without scientific data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git fetch --no-tags --no-recurse-submodules --depth=1 origin "${BASE_SHA}"
+          python -m venv "${RUNNER_TEMP}/pr564-validation"
+          source "${RUNNER_TEMP}/pr564-validation/bin/activate"
+          python -m pip install -e ".[dev,graph]"
+          python -m pip check
+          files=(
+            scripts/remote/run_deform360_v6_stage_selector_identity_repair.py
+            tests/test_deform360_v6_stage_prefix_legacy_args.py
+            tests/test_deform360_v6_stage_selector_identity_repair.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/remote/run_deform360_v6_stage_selector_identity_repair.py
+          bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
+          python scripts/ci/check_changed_python.py \
+            --base "${BASE_SHA}" \
+            --head "${TARGET_SHA}"
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_v6_stage_prefix_legacy_args.py \
+            tests/test_deform360_v6_stage_selector_identity_repair.py \
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_runtime_bootstrap_receipt.py \
+            tests/test_release_file_manifest.py \
+            tests/test_test_suite_manifest.py
+
+      - name: Remove isolated validation environment
+        if: always()
+        shell: bash
+        run: rm -rf "${RUNNER_TEMP}/pr564-validation"
