@@ -6,7 +6,7 @@ import subprocess
 import sys
 from contextlib import nullcontext
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -19,6 +19,11 @@ AMENDMENT = ROOT / (
     "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_"
     "stage_selector_identity_repair.json"
+)
+API_AMENDMENT = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_"
+    "selector_api_compatibility.json"
 )
 ACTIVE_RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 LOCK = (
@@ -77,6 +82,141 @@ def test_repair_tampering_fails_closed(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="identity repair changed"):
         module.load_stage_selector_identity_repair(changed)
+
+
+def test_api_repair_is_content_addressed_and_target_closed() -> None:
+    payload = json.loads(API_AMENDMENT.read_text(encoding="utf-8"))
+    declared = payload.pop("repair_id")
+
+    assert declared == module.API_REPAIR_ID == content_id(payload)
+    assert (
+        module.load_selector_api_compatibility_repair(API_AMENDMENT)["repair_id"]
+        == module.API_REPAIR_ID
+    )
+    assert payload["predecessor_stage_selector_repair_id"] == module.REPAIR_ID
+    assert payload["correction"] == {
+        "application": "process-local-selector-class-adapter",
+        "consumer_file_sha256": module.STAGE_SCRIPT_SHA256,
+        "consumer_path": f"scripts/remote/{module.STAGE_SCRIPT}",
+        "consumer_required_method": module.SELECTOR_REQUIRED_METHOD,
+        "delegation": "existing-select-initial-mask-with-exact-rgb-reader-override",
+        "producer_class": module.SELECTOR_CLASS_NAME,
+        "producer_existing_method": module.SELECTOR_EXISTING_METHOD,
+        "selector_byte_count": module.SELECTOR_BYTE_COUNT,
+        "selector_file_sha256": module.CORRECTED_SELECTOR_SHA256,
+        "selector_path": module.SELECTOR_RELATIVE_PATH.as_posix(),
+        "selector_repository": "IPS-Stuttgart/Causal4D",
+        "selector_repository_revision": module.CAUSAL4D_REVISION,
+    }
+    assert not any(payload["information_boundary"].values())
+    scope = payload["repair_scope"]
+    assert scope["runtime_api_adapter_only"] is True
+    assert all(
+        value is False
+        for key, value in scope.items()
+        if key != "runtime_api_adapter_only"
+    )
+
+
+def test_api_repair_tampering_fails_closed(tmp_path: Path) -> None:
+    payload = json.loads(API_AMENDMENT.read_text(encoding="utf-8"))
+    payload["correction"]["delegation"] = "changed"
+    changed = tmp_path / "changed-api.json"
+    changed.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="compatibility repair changed"):
+        module.load_selector_api_compatibility_repair(changed)
+
+
+def test_api_adapter_delegates_to_existing_selector_and_restores_reader() -> None:
+    rgb = object()
+    original_reads: list[Path] = []
+
+    class DeformableObjectSam2VideoPredictor:
+        def _first_frame_rgb(self, path: Path) -> object:
+            original_reads.append(path)
+            return object()
+
+        def select_initial_mask(self, path: Path) -> tuple[object, dict[str, str]]:
+            return self._first_frame_rgb(path), {
+                "camera": path.parent.name,
+                "video": path.name,
+            }
+
+    stage = ModuleType("stage")
+    dynamic_stage: Any = stage
+    dynamic_stage._load_selector_class = lambda _source: (
+        DeformableObjectSam2VideoPredictor
+    )
+    module._install_prefix_rgb_selector_adapter(stage)
+
+    selector_class = dynamic_stage._load_selector_class(Path("selector.py"))
+    selector = selector_class()
+    assert "_first_frame_rgb" not in vars(selector)
+    original_reader = selector._first_frame_rgb
+    mask, diagnostic = selector.select_initial_mask_from_rgb(
+        rgb,
+        camera="camera-03",
+        video_name="source-frame-000123",
+    )
+
+    assert mask is rgb
+    assert diagnostic == {
+        "camera": "camera-03",
+        "video": "source-frame-000123",
+    }
+    assert selector._first_frame_rgb == original_reader
+    assert "_first_frame_rgb" not in vars(selector)
+    assert original_reads == []
+
+
+def test_api_adapter_restores_reader_after_selector_failure() -> None:
+    class DeformableObjectSam2VideoPredictor:
+        def _first_frame_rgb(self, _path: Path) -> object:
+            return object()
+
+        def select_initial_mask(self, path: Path) -> tuple[object, object]:
+            self._first_frame_rgb(path)
+            raise ValueError("selection failed")
+
+    stage = ModuleType("stage")
+    dynamic_stage: Any = stage
+    dynamic_stage._load_selector_class = lambda _source: (
+        DeformableObjectSam2VideoPredictor
+    )
+    module._install_prefix_rgb_selector_adapter(stage)
+    selector = dynamic_stage._load_selector_class(Path("selector.py"))()
+    assert "_first_frame_rgb" not in vars(selector)
+    original_reader = selector._first_frame_rgb
+
+    with pytest.raises(ValueError, match="selection failed"):
+        selector.select_initial_mask_from_rgb(
+            object(),
+            camera="camera-03",
+            video_name="source-frame-000123",
+        )
+
+    assert selector._first_frame_rgb == original_reader
+    assert "_first_frame_rgb" not in vars(selector)
+
+
+def test_api_adapter_rejects_a_changed_producer_surface() -> None:
+    class DeformableObjectSam2VideoPredictor:
+        def select_initial_mask_from_rgb(self) -> None:
+            return None
+
+    stage = ModuleType("stage")
+    dynamic_stage: Any = stage
+    dynamic_stage._load_selector_class = lambda _source: (
+        DeformableObjectSam2VideoPredictor
+    )
+    module._install_prefix_rgb_selector_adapter(stage)
+
+    with pytest.raises(ValueError, match="now supplies"):
+        dynamic_stage._load_selector_class(Path("selector.py"))
 
 
 def test_checksum_bound_consumers_remain_exact() -> None:
@@ -146,6 +286,7 @@ def test_main_patches_only_the_loaded_selector_constant(
         lambda: (
             SimpleNamespace(
                 activation_marker=marker,
+                api_repair=API_AMENDMENT,
                 execution_lock=lock,
                 execution_repo=repository,
                 runtime_repair=AMENDMENT,
@@ -160,6 +301,11 @@ def test_main_patches_only_the_loaded_selector_constant(
         lambda *_args, **_kwargs: None,
     )
     monkeypatch.setattr(module, "_load_stage", lambda _path: stage)
+    monkeypatch.setattr(
+        module,
+        "_install_prefix_rgb_selector_adapter",
+        lambda _stage: observed.setdefault("adapted", True),
+    )
     monkeypatch.setattr(
         module,
         "patch_joint_sparse_physical_stage_v5",
@@ -191,6 +337,7 @@ def test_main_patches_only_the_loaded_selector_constant(
 
     assert module.main() == 0
     assert observed == {
+        "adapted": True,
         "argv": [
             str(repository / "scripts" / "remote" / module.STAGE_SCRIPT),
             *stage_arguments,
@@ -200,6 +347,12 @@ def test_main_patches_only_the_loaded_selector_constant(
     }
     assert json.loads(marker.read_text(encoding="utf-8")) == {
         "application": "process-local-loaded-module-constant-only",
+        "api_compatibility": {
+            "application": "process-local-selector-class-adapter",
+            "consumer_required_method": module.SELECTOR_REQUIRED_METHOD,
+            "delegated_method": module.SELECTOR_EXISTING_METHOD,
+            "repair_id": module.API_REPAIR_ID,
+        },
         "consumer_file_sha256": module.STAGE_SCRIPT_SHA256,
         "corrected_expected_sha256": module.CORRECTED_SELECTOR_SHA256,
         "previous_expected_sha256": module.PREVIOUS_SELECTOR_SHA256,
@@ -223,6 +376,7 @@ def test_main_rejects_a_changed_locked_stage_constant(
         lambda: (
             SimpleNamespace(
                 activation_marker=tmp_path / "activation.json",
+                api_repair=API_AMENDMENT,
                 execution_lock=lock,
                 execution_repo=repository,
                 runtime_repair=AMENDMENT,
@@ -270,11 +424,14 @@ def test_active_runner_records_the_process_local_repair() -> None:
     helper = ROOT / "scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"
 
     assert f'STAGE_SELECTOR_REPAIR_ID="{module.REPAIR_ID}"' in text
+    assert f'STAGE_SELECTOR_API_REPAIR_ID="{module.API_REPAIR_ID}"' in text
+    assert str(API_AMENDMENT.relative_to(ROOT)) in text
     assert "run_deform360_v6_stage_selector_identity_repair.py" in text
     assert f'STAGE_SELECTOR_HELPER_SHA256="{_digest(helper)}"' in text
     assert 'BASE_REVISION="dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"' in text
     assert 'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"' in text
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
+    assert '"runtime_stage_selector_api_compatibility_repair"' in text
     subprocess_result = subprocess.run(
         ["bash", "-n", str(ACTIVE_RUNNER)],
         cwd=ROOT,

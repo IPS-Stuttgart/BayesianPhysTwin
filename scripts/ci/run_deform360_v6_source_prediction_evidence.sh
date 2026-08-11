@@ -8,8 +8,11 @@ PATCH_ID="deform360-v6-stage-selector-consumer-identity-v1"
 STAGE_SELECTOR_REPAIR_ID="aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae"
 STAGE_SELECTOR_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_stage_selector_identity_repair.json"
 STAGE_SELECTOR_REPAIR_SHA256="02ef431ee5900c2dfa06e9a5031aeb5ea88659345dbd1829b22ed6c065289134"
+STAGE_SELECTOR_API_REPAIR_ID="5502830e01585cb1bb208d2d49e05d1f5e1d164dd707c5ff291038949dd0917c"
+STAGE_SELECTOR_API_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_selector_api_compatibility.json"
+STAGE_SELECTOR_API_REPAIR_SHA256="dd3fe286282873847edf2a82f0ffba40ec61e30541c7143652a79101f6d0199f"
 STAGE_SELECTOR_HELPER_PATH="scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"
-STAGE_SELECTOR_HELPER_SHA256="ac8a1db996c83cc219e3bb5321b045179769edf6afc4c3460c2e278924a20fe1"
+STAGE_SELECTOR_HELPER_SHA256="63e6549b75e84160a9e1d14baf2ef3e1a608325ae2161e5cefaddcd954907b00"
 STAGE_SELECTOR_CONSUMER_PATH="scripts/remote/stage_deform360_bias_aware_prediction_prefix.py"
 STAGE_SELECTOR_CONSUMER_SHA256="a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6"
 STAGE_SELECTOR_PREVIOUS_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
@@ -17,8 +20,8 @@ STAGE_SELECTOR_CORRECTED_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec8
 
 # Preserve the complete reviewed launcher and its already-validated repairs by
 # exact Git blob identity. The executable path below changes one uniquely
-# matched runtime-shim literal and leaves all checksum-bound scientific files
-# untouched.
+# matched runtime-shim literal, installs one exact process-local API adapter,
+# and leaves all checksum-bound scientific files untouched.
 : <<'BASE_LAUNCHER_INVARIANTS'
 BASE_REVISION="b0f6b46991a20c54260baf58ddf62fbb6dab7813"
 BASE_LAUNCHER_BLOB_SHA="bf670c99351c9c2ed6dd3cdea9aeb106c1ffb4ca"
@@ -87,6 +90,7 @@ test "${repository_root}" = "$(pwd -P)"
 for path in \
   "${LAUNCHER_PATH}" \
   "${STAGE_SELECTOR_REPAIR_PATH}" \
+  "${STAGE_SELECTOR_API_REPAIR_PATH}" \
   "${STAGE_SELECTOR_HELPER_PATH}" \
   "${STAGE_SELECTOR_CONSUMER_PATH}"
 do
@@ -97,6 +101,11 @@ done
 test "$(sha256sum "${STAGE_SELECTOR_REPAIR_PATH}" | awk '{print $1}')" \
   = "${STAGE_SELECTOR_REPAIR_SHA256}" || {
   echo "stage selector repair bytes changed" >&2
+  exit 2
+}
+test "$(sha256sum "${STAGE_SELECTOR_API_REPAIR_PATH}" | awk '{print $1}')" \
+  = "${STAGE_SELECTOR_API_REPAIR_SHA256}" || {
+  echo "stage selector API repair bytes changed" >&2
   exit 2
 }
 test "$(sha256sum "${STAGE_SELECTOR_HELPER_PATH}" | awk '{print $1}')" \
@@ -327,12 +336,15 @@ if [[ "${1:-}" == "${physical_target}" ]]; then
       exit 2
     fi
     : "${DEFORM360_V6_STAGE_SELECTOR_REPAIR_PATH:?stage selector repair path is required}"
+    : "${DEFORM360_V6_STAGE_SELECTOR_API_REPAIR_PATH:?selector API repair path is required}"
     : "${DEFORM360_V6_STAGE_SELECTOR_HELPER_PATH:?stage selector helper path is required}"
     : "${DEFORM360_V6_STAGE_SELECTOR_ACTIVATION_MARKER:?stage selector marker is required}"
     helper=(
       "${DEFORM360_V6_STAGE_SELECTOR_HELPER_PATH}"
       "--runtime-repair"
       "${DEFORM360_V6_STAGE_SELECTOR_REPAIR_PATH}"
+      "--api-repair"
+      "${DEFORM360_V6_STAGE_SELECTOR_API_REPAIR_PATH}"
       "--activation-marker"
       "${DEFORM360_V6_STAGE_SELECTOR_ACTIVATION_MARKER}"
     )
@@ -355,6 +367,7 @@ chmod 700 "${patched_launcher}"
 bash -n "${patched_launcher}"
 set +e
 DEFORM360_V6_STAGE_SELECTOR_REPAIR_PATH="${STAGE_SELECTOR_REPAIR_PATH}" \
+DEFORM360_V6_STAGE_SELECTOR_API_REPAIR_PATH="${STAGE_SELECTOR_API_REPAIR_PATH}" \
 DEFORM360_V6_STAGE_SELECTOR_HELPER_PATH="${STAGE_SELECTOR_HELPER_PATH}" \
 DEFORM360_V6_STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}" \
   bash "${patched_launcher}" "$@"
@@ -370,6 +383,8 @@ if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
   export RECEIPT_PATH="${receipt}"
   export STAGE_SELECTOR_REPAIR_ID STAGE_SELECTOR_REPAIR_PATH
   export STAGE_SELECTOR_REPAIR_SHA256 STAGE_SELECTOR_HELPER_PATH
+  export STAGE_SELECTOR_API_REPAIR_ID STAGE_SELECTOR_API_REPAIR_PATH
+  export STAGE_SELECTOR_API_REPAIR_SHA256
   export STAGE_SELECTOR_HELPER_SHA256 STAGE_SELECTOR_CONSUMER_PATH
   export STAGE_SELECTOR_CONSUMER_SHA256 STAGE_SELECTOR_PREVIOUS_SHA256
   export STAGE_SELECTOR_CORRECTED_SHA256
@@ -392,6 +407,12 @@ if activated:
     marker = json.loads(marker_path.read_text(encoding="utf-8"))
     expected_marker = {
         "application": "process-local-loaded-module-constant-only",
+        "api_compatibility": {
+            "application": "process-local-selector-class-adapter",
+            "consumer_required_method": "select_initial_mask_from_rgb",
+            "delegated_method": "select_initial_mask",
+            "repair_id": os.environ["STAGE_SELECTOR_API_REPAIR_ID"],
+        },
         "consumer_file_sha256": os.environ["STAGE_SELECTOR_CONSUMER_SHA256"],
         "corrected_expected_sha256": os.environ[
             "STAGE_SELECTOR_CORRECTED_SHA256"
@@ -422,6 +443,20 @@ receipt["runtime_stage_selector_consumer_identity_repair"] = {
     "repair_file_sha256": os.environ["STAGE_SELECTOR_REPAIR_SHA256"],
     "repair_id": os.environ["STAGE_SELECTOR_REPAIR_ID"],
     "repair_path": os.environ["STAGE_SELECTOR_REPAIR_PATH"],
+    "selector_file_sha256": os.environ["STAGE_SELECTOR_CORRECTED_SHA256"],
+}
+receipt["runtime_stage_selector_api_compatibility_repair"] = {
+    "activated": activated,
+    "application": "process-local-selector-class-adapter",
+    "consumer_file_sha256": os.environ["STAGE_SELECTOR_CONSUMER_SHA256"],
+    "consumer_path": os.environ["STAGE_SELECTOR_CONSUMER_PATH"],
+    "consumer_required_method": "select_initial_mask_from_rgb",
+    "delegated_method": "select_initial_mask",
+    "helper_file_sha256": os.environ["STAGE_SELECTOR_HELPER_SHA256"],
+    "helper_path": os.environ["STAGE_SELECTOR_HELPER_PATH"],
+    "repair_file_sha256": os.environ["STAGE_SELECTOR_API_REPAIR_SHA256"],
+    "repair_id": os.environ["STAGE_SELECTOR_API_REPAIR_ID"],
+    "repair_path": os.environ["STAGE_SELECTOR_API_REPAIR_PATH"],
     "selector_file_sha256": os.environ["STAGE_SELECTOR_CORRECTED_SHA256"],
 }
 canonical = json.dumps(
