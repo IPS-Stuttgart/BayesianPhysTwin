@@ -146,9 +146,7 @@ def test_inspect_prob4d_provider_v2_contract_reports_missing_corpus(
         (
             {
                 "provider_v2_contract_bundle_manifest": lambda: {
-                    "bundle_name": (
-                        bridge.PROB4D_REQUIRED_PROVIDER_V2_CONTRACT_BUNDLE
-                    ),
+                    "bundle_name": (bridge.PROB4D_REQUIRED_PROVIDER_V2_CONTRACT_BUNDLE),
                     "bundle_sha256": "0" * 64,
                 }
             },
