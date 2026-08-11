@@ -71,6 +71,33 @@ Before opening scoring arrays, it independently verifies all of the following:
 
 It never recomputes the historical split with current helper code.
 
+## Sealed retrospective result
+
+The registered execution completed successfully in workflow run `31461910994`,
+attempt 1, on analyzer revision
+`9ac5344036331a40e9029a1aa5814f601c0eaf15`. Its compact evidence is recorded in
+[`results/science/full22_covariance_only_hybrid_v1/`](../results/science/full22_covariance_only_hybrid_v1/).
+
+The primary cross-fitted selected/scaled covariance arm changed Gaussian NLL by
+`-9.136`, with simultaneous 95% CI `[-13.961, -4.312]`. It was better in `17/22`
+complete object-session units and worse in `5/22`. The simultaneous early,
+middle, and late effects were respectively:
+
+- `-1.539 [-2.874, -0.203]`;
+- `-8.233 [-13.222, -3.243]`; and
+- `-17.638 [-26.324, -8.952]`.
+
+Exact mean identity held in all 22 cases, so track and Chamfer differences are
+exactly zero. Marginal 90% coverage increased from `0.706` to `0.910`, while mean
+full interval width increased from `0.01645 m` to `0.05094 m`, a `3.10×` ratio.
+The result therefore identifies useful uncertainty with a material width cost,
+not an improved point trajectory.
+
+The outer selector chose `independent_endpoint_v1` in `21/22` folds and
+`dynamic_endpoint_v2` in `1/22`. The frozen full-source candidate for one
+separate fresh study is the exact `last_residual` mean, covariance donor
+`independent_endpoint_v1`, and early/middle/late scales `[8.0, 16.0, 16.0]`.
+
 ## Scientific boundary
 
 This experiment is stronger than an in-sample covariance transplant because the
