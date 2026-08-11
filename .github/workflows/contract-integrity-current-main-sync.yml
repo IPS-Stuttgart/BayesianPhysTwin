@@ -1,0 +1,40 @@
+name: Temporary contract-integrity current-main synchronization
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/contract-integrity-current-main-sync.yml
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  merge-current-main-and-remove:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact pull-request branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge current main and remove this workflow
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-ff --no-commit origin/main
+          rm .github/workflows/contract-integrity-current-main-sync.yml
+          git add -A
+          git diff --cached --check
+          git commit -m "Merge current main into contract-integrity branch"
+          git push origin "HEAD:${HEAD_BRANCH}"
