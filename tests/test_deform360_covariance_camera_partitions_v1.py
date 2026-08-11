@@ -37,6 +37,13 @@ _EXACT_PLAN = (
     / "deform360_covariance_only_target_v1"
     / "exact_file_plan_v1.json"
 )
+_PARTITIONS = (
+    _REPOSITORY
+    / "results"
+    / "science"
+    / "deform360_covariance_only_target_v1"
+    / "camera_partitions_v1_5.json"
+)
 
 
 def _canonical_digest(value: dict[str, object]) -> str:
@@ -107,6 +114,27 @@ def test_partition_is_deterministic_and_session_domain_separated() -> None:
         episode_id=first_row["episode_id"] + 1,
     )
     assert changed_episode != first_row["object_session_hash"]
+
+
+def test_committed_partition_artifact_binds_source_and_inputs() -> None:
+    artifact = json.loads(_PARTITIONS.read_text(encoding="utf-8"))
+
+    assert artifact["partition_sha256"] == _canonical_digest(artifact)
+    assert artifact["implementation_file_sha256"] == hashlib.sha256(
+        _SCRIPT.read_bytes()
+    ).hexdigest()
+    assert artifact["protocol_file_sha256"] == hashlib.sha256(
+        _PROTOCOL.read_bytes()
+    ).hexdigest()
+    assert artifact["exact_file_plan_file_sha256"] == hashlib.sha256(
+        _EXACT_PLAN.read_bytes()
+    ).hexdigest()
+    assert artifact["target_count"] == 24
+    assert len(artifact["rows"]) == 24
+    assert artifact["information_boundary"]["payload_path_opened"] is False
+    assert artifact["information_boundary"]["reconstructions_built"] is False
+    assert artifact["information_boundary"]["predictions_run"] is False
+    assert artifact["information_boundary"]["target_outcomes_opened"] is False
 
 
 def test_camera_names_must_be_unique_and_multiview() -> None:
