@@ -9,6 +9,7 @@ on:
       - "protocols/full22_covariance_only_hybrid_v1.json"
       - "scripts/science/run_full22_covariance_only_hybrid_v1.py"
       - "src/bayesian_phystwin/covariance_only_hybrid.py"
+      - "src/bayesian_phystwin/covariance_only_hybrid_analysis.py"
       - "tests/test_covariance_only_hybrid.py"
       - "tests/test_full22_covariance_only_hybrid_v1.py"
   workflow_dispatch:
@@ -80,6 +81,7 @@ jobs:
           files=(
             scripts/science/run_full22_covariance_only_hybrid_v1.py
             src/bayesian_phystwin/covariance_only_hybrid.py
+            src/bayesian_phystwin/covariance_only_hybrid_analysis.py
             tests/test_covariance_only_hybrid.py
             tests/test_full22_covariance_only_hybrid_v1.py
           )
@@ -87,6 +89,7 @@ jobs:
           python -m ruff format --check "${files[@]}"
           python -m mypy \
             src/bayesian_phystwin/covariance_only_hybrid.py \
+            src/bayesian_phystwin/covariance_only_hybrid_analysis.py \
             scripts/science/run_full22_covariance_only_hybrid_v1.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_covariance_only_hybrid.py \
