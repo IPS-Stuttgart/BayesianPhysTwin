@@ -127,17 +127,13 @@ def test_record_rejects_claim_that_point_prediction_changed() -> None:
         (np.zeros((2, 3)), np.zeros((2, 2, 2)), 1.0, "shape"),
         (
             np.zeros((2, 3)),
-            np.asarray(
-                [[[1.0, 2.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]] * 2
-            ),
+            np.asarray([[[1.0, 2.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]] * 2),
             1.0,
             "symmetric",
         ),
         (
             np.zeros((2, 3)),
-            np.asarray(
-                [[[1.0, 2.0, 0.0], [2.0, 1.0, 0.0], [0.0, 0.0, 1.0]]] * 2
-            ),
+            np.asarray([[[1.0, 2.0, 0.0], [2.0, 1.0, 0.0], [0.0, 0.0, 1.0]]] * 2),
             1.0,
             "positive semidefinite",
         ),

@@ -185,7 +185,10 @@ def load_protocol(path: Path) -> Mapping[str, object]:
     if hypothesis.get("point_prediction_change_allowed") is not False:
         raise ValueError("point-prediction changes must remain prohibited")
     calibration = _mapping(protocol.get("calibration"), name="calibration")
-    if tuple(_sequence(calibration.get("horizon_bins"), name="horizon_bins")) != HORIZONS:
+    if (
+        tuple(_sequence(calibration.get("horizon_bins"), name="horizon_bins"))
+        != HORIZONS
+    ):
         raise ValueError("horizon bins changed")
     scales = tuple(
         _finite(value, name=f"covariance_scales[{index}]", positive=True)
@@ -207,7 +210,9 @@ def load_protocol(path: Path) -> Mapping[str, object]:
     confidence = _finite(inference.get("confidence"), name="confidence")
     if not 0.5 < confidence < 1.0:
         raise ValueError("confidence must lie strictly inside (0.5, 1)")
-    boundary = _mapping(protocol.get("information_boundary"), name="information_boundary")
+    boundary = _mapping(
+        protocol.get("information_boundary"), name="information_boundary"
+    )
     for field in (
         "claim_authorized",
         "selection_authorized",
@@ -606,7 +611,9 @@ def run_analysis(
             metadata={
                 "case_id": case_id,
                 "selection": "leave-one-object-out-source-only",
-                "horizon_scales": dict(zip(HORIZONS, fold.selected_scales, strict=True)),
+                "horizon_scales": dict(
+                    zip(HORIZONS, fold.selected_scales, strict=True)
+                ),
             },
         )
         if prediction.mean_m is not reference_mean:
