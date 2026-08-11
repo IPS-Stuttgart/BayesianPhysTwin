@@ -131,9 +131,9 @@ jobs:
   analysis:
     name: Cross-fitted covariance-only scientific analysis
     needs: contracts
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # The registered pull-request result is sealed. Reproduce the expensive
+    # analysis only through an explicit dispatch; PRs still validate contracts.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
