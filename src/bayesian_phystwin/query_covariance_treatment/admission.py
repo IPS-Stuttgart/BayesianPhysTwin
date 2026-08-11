@@ -195,6 +195,10 @@ def decide_covariance_only_treatment(
         query_relevance.artifact_id,
         name="query_relevance.artifact_id",
     )
+    if calibration_application.output_array_sha256 != covariance_id:
+        raise ValueError(
+            "candidate covariance identity differs from calibrated output"
+        )
     if query_relevance.query_id != query_digest:
         raise ValueError("query relevance certificate binds a different query")
     if query_relevance.covariance_artifact_id != covariance_id:
