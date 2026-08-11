@@ -1,5 +1,10 @@
-import numpy as np
+import sys
+from types import ModuleType
 
+import numpy as np
+import pytest
+
+import bayesian_phystwin.phystwin_multiview_tangent_fusion as fusion_module
 from bayesian_phystwin.phystwin_multiview_tangent_fusion import (
     fuse_source_normal_multiview_tangent,
     local_surface_tangent_projectors,
@@ -39,6 +44,24 @@ def test_tangent_projector_recovers_planar_normal() -> None:
     np.testing.assert_allclose(normal_z, 0.0, atol=1e-12)
 
 
+def test_tangent_projector_uses_numpy_fallback_without_scipy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scipy_module = ModuleType("scipy")
+    scipy_module.__path__ = []
+    spatial_module = ModuleType("scipy.spatial")
+    monkeypatch.setitem(sys.modules, "scipy", scipy_module)
+    monkeypatch.setitem(sys.modules, "scipy.spatial", spatial_module)
+
+    indices = fusion_module._nearest_neighbor_indices(
+        _planar_points(),
+        count=3,
+    )
+
+    assert indices.shape == (9, 3)
+    assert np.issubdtype(indices.dtype, np.integer)
+
+
 def test_fusion_accepts_tangent_motion_and_preserves_source_normal() -> None:
     initial = _planar_points()
     source = np.repeat(initial[None], 2, axis=0)
@@ -70,6 +93,36 @@ def test_fusion_accepts_tangent_motion_and_preserves_source_normal() -> None:
     )
     assert np.all(result.valid)
     assert np.all(result.fused_update)
+
+
+def test_fusion_does_not_truncate_fractional_updates_for_integer_source() -> None:
+    initial = _planar_points()
+    source = np.repeat(initial.astype(np.int64)[None], 1, axis=0)
+    multiview = source.astype(float)
+    multiview[:, :, 0] += 0.25
+    valid = np.ones(source.shape[:2], dtype=bool)
+
+    result = fuse_source_normal_multiview_tangent(
+        source,
+        valid,
+        multiview,
+        valid,
+        initial,
+        minimum_multiview_availability_fraction=0.5,
+        neighbor_count=9,
+    )
+
+    assert np.issubdtype(result.points_world_m.dtype, np.floating)
+    np.testing.assert_allclose(
+        result.points_world_m[:, :, 0],
+        source[:, :, 0] + 0.25,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.points_world_m[:, :, 1:],
+        source[:, :, 1:],
+        atol=1e-12,
+    )
 
 
 def test_below_priority_threshold_is_exact_source_fallback() -> None:

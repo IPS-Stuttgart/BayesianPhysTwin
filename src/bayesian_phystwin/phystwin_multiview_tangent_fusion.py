@@ -37,7 +37,7 @@ def _nearest_neighbor_indices(
     except (ImportError, ValueError):
         pass
 
-    indices = np.empty((len(points), count), dtype=int)
+    indices: np.ndarray = np.empty((len(points), count), dtype=int)
     chunk_size = max(1, min(512, 2_000_000 // max(len(points), 1)))
     squared_norm = np.einsum("ij,ij->i", points, points)
     for start in range(0, len(points), chunk_size):
@@ -78,7 +78,7 @@ def local_surface_tangent_projectors(
     if indices.ndim == 1:
         indices = indices[:, None]
 
-    projectors = np.empty((len(points), 3, 3), dtype=float)
+    projectors: np.ndarray = np.empty((len(points), 3, 3), dtype=float)
     identity = np.eye(3, dtype=float)
     for point_index, neighbors in enumerate(indices):
         local = points[np.asarray(neighbors, dtype=int)]
@@ -102,8 +102,8 @@ def fuse_source_normal_multiview_tangent(
 ) -> MultiviewTangentFusion:
     """Fuse tangent updates without changing the source observation support."""
 
-    source = np.asarray(source_points_world_m)
-    multiview = np.asarray(multiview_points_world_m)
+    source = np.asarray(source_points_world_m, dtype=float)
+    multiview = np.asarray(multiview_points_world_m, dtype=float)
     source_mask = np.asarray(source_valid, dtype=bool)
     multiview_mask = np.asarray(multiview_valid, dtype=bool)
     initial = np.asarray(initial_points_world_m, dtype=float)
@@ -131,14 +131,9 @@ def fuse_source_normal_multiview_tangent(
     )
     multiview_availability = np.mean(multiview_mask, axis=0)
     priority_identities = (
-        multiview_availability
-        >= minimum_multiview_availability_fraction
+        multiview_availability >= minimum_multiview_availability_fraction
     )
-    fused_update = (
-        source_mask
-        & multiview_mask
-        & priority_identities[None, :]
-    )
+    fused_update = source_mask & multiview_mask & priority_identities[None, :]
 
     fused = source.copy()
     if np.any(fused_update):
@@ -147,9 +142,7 @@ def fuse_source_normal_multiview_tangent(
             tangent_projectors,
             multiview - source,
         )
-        fused[fused_update] = (
-            source[fused_update] + tangent_delta[fused_update]
-        )
+        fused[fused_update] = source[fused_update] + tangent_delta[fused_update]
 
     return MultiviewTangentFusion(
         points_world_m=fused,
