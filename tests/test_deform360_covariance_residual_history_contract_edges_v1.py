@@ -24,7 +24,6 @@ from bayesian_phystwin._deform360_covariance_residual_history_common_v1 import (
     _readonly_float_array,
     _required_sha256,
     _validate_covariance,
-    assert_outside_target_quarantine,
     camera_hardware_family,
     deterministic_disjoint_camera_partition,
 )
