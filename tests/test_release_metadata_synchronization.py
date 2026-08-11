@@ -102,9 +102,7 @@ def test_repository_synchronization_preserves_bounded_claim_wording(
     assert "`3.10×`" in readme
     assert "not independent calibration" in readme
 
-    claim = (tmp_path / "docs/phystwin_release_claim_v1.md").read_text(
-        encoding="utf-8"
-    )
+    claim = (tmp_path / "docs/phystwin_release_claim_v1.md").read_text(encoding="utf-8")
     assert "## Exact-mean covariance-only mechanism" in claim
     assert "`[-13.961, -4.312]`" in claim
     assert "the exact-mean covariance-only result is retrospective" in claim
