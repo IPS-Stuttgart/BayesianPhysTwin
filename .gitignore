@@ -11,15 +11,6 @@ dist/
 # Local source-generation and agent scratch space
 .agent/
 
-# Exact pinned dependency checkouts used by protected science workflows.
-# Their repositories and revisions are independently fixed by the workflows;
-# ignoring these roots keeps the parent source checkout cleanliness check scoped
-# to BayesianPhysTwin rather than treating nested Git metadata as a modification.
-/_deform360_physical/
-/_official_phystwin/
-/_sam2/
-/_causal4d_discovery/
-
 # Large/local experiment artifacts
 runs/
 outputs/
