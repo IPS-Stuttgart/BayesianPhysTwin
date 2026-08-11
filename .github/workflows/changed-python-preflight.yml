@@ -96,7 +96,11 @@ jobs:
             --head "${{ steps.revisions.outputs.head }}"
 
       - name: Test the fast readiness gates
+        shell: bash
         run: |
-          python -m pytest -q \
-            tests/test_changed_python_preflight.py \
-            tests/test_pr_ready.py
+          set -euo pipefail
+          tests=(tests/test_changed_python_preflight.py)
+          if [[ -f tests/test_pr_ready.py ]]; then
+            tests+=(tests/test_pr_ready.py)
+          fi
+          python -m pytest -q "${tests[@]}"
