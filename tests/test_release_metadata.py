@@ -35,10 +35,20 @@ def test_release_metadata_files_are_present() -> None:
 
 def test_citation_matches_installed_distribution() -> None:
     assert _cff_scalar("version") == version(DISTRIBUTION_NAME)
+    assert _cff_scalar("date-released") == "2026-08-11"
     assert _cff_scalar("license") == "MIT"
     assert _cff_scalar("repository-code") == (
         "https://github.com/IPS-Stuttgart/BayesianPhysTwin"
     )
+
+
+def test_changelog_binds_the_first_consolidated_release_date() -> None:
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    unreleased = changelog.index("## [Unreleased]")
+    released = changelog.index("## [0.4.0] - 2026-08-11")
+
+    assert unreleased < released
+    assert changelog.count("## [0.4.0] - 2026-08-11") == 1
 
 
 def test_distribution_links_use_canonical_organization_repository() -> None:
