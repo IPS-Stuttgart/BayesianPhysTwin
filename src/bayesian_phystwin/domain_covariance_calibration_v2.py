@@ -65,11 +65,26 @@ def _number(
     return result
 
 
-def _array_digest(value: np.ndarray) -> str:
+def _numeric_array_digest(value: np.ndarray) -> str:
+    """Digest canonical float64 numerical content and shape."""
+
     array = np.ascontiguousarray(value, dtype=np.float64)
     digest = hashlib.sha256()
     digest.update(str(array.shape).encode("ascii"))
     digest.update(b"\0float64\0")
+    digest.update(array.tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _exact_array_digest(value: np.ndarray) -> str:
+    """Digest the exact returned array shape, dtype, and bytes."""
+
+    array = np.ascontiguousarray(value)
+    digest = hashlib.sha256()
+    digest.update(str(array.shape).encode("ascii"))
+    digest.update(b"\0")
+    digest.update(array.dtype.str.encode("ascii"))
+    digest.update(b"\0")
     digest.update(array.tobytes(order="C"))
     return digest.hexdigest()
 
@@ -345,15 +360,18 @@ class DomainCovarianceCalibrationApplicationV2:
     """Content-addressed outcome of one version-2 application."""
 
     certificate_id: str
-    semantics_id: str
+    certificate_semantics_id: str
+    application_semantics_id: str
     domain_id: str
     evidence_decision_id: str
     evidence_admissible: bool
     applied: bool
     reason: str
     source_application_id: str | None
-    raw_covariance_sha256: str
-    output_covariance_sha256: str
+    raw_numeric_sha256: str
+    output_numeric_sha256: str
+    raw_array_sha256: str
+    output_array_sha256: str
     exact_fallback: bool
     metadata: Mapping[str, Any] = field(default_factory=dict)
     artifact_id: str | None = None
@@ -361,10 +379,13 @@ class DomainCovarianceCalibrationApplicationV2:
     def __post_init__(self) -> None:
         for name in (
             "certificate_id",
-            "semantics_id",
+            "certificate_semantics_id",
+            "application_semantics_id",
             "evidence_decision_id",
-            "raw_covariance_sha256",
-            "output_covariance_sha256",
+            "raw_numeric_sha256",
+            "output_numeric_sha256",
+            "raw_array_sha256",
+            "output_array_sha256",
         ):
             digest = sha256_digest(getattr(self, name), name=name)
             object.__setattr__(self, name, digest)
@@ -388,7 +409,8 @@ class DomainCovarianceCalibrationApplicationV2:
         if self.applied and self.reason != "calibration-domain-authorized":
             raise ValueError("applied calibration has an invalid reason")
         if self.exact_fallback and (
-            self.raw_covariance_sha256 != self.output_covariance_sha256
+            self.raw_numeric_sha256 != self.output_numeric_sha256
+            or self.raw_array_sha256 != self.output_array_sha256
         ):
             raise ValueError("exact fallback must preserve covariance identity")
         metadata = frozen_finite_json_mapping(
@@ -408,15 +430,18 @@ class DomainCovarianceCalibrationApplicationV2:
             "schema": APPLICATION_V2_SCHEMA,
             "schema_version": APPLICATION_V2_VERSION,
             "certificate_id": self.certificate_id,
-            "semantics_id": self.semantics_id,
+            "certificate_semantics_id": self.certificate_semantics_id,
+            "application_semantics_id": self.application_semantics_id,
             "domain_id": self.domain_id,
             "evidence_decision_id": self.evidence_decision_id,
             "evidence_admissible": self.evidence_admissible,
             "applied": self.applied,
             "reason": self.reason,
             "source_application_id": self.source_application_id,
-            "raw_covariance_sha256": self.raw_covariance_sha256,
-            "output_covariance_sha256": self.output_covariance_sha256,
+            "raw_numeric_sha256": self.raw_numeric_sha256,
+            "output_numeric_sha256": self.output_numeric_sha256,
+            "raw_array_sha256": self.raw_array_sha256,
+            "output_array_sha256": self.output_array_sha256,
             "exact_fallback": self.exact_fallback,
             "metadata": plain_json(self.metadata),
         }
@@ -545,6 +570,7 @@ def apply_domain_covariance_calibration_v2(
     certificate: DomainCovarianceCalibrationCertificateV2,
     *,
     domain_id: str,
+    application_semantics: CovarianceSemanticsV2,
     evidence_decision: EvidenceDecisionV1,
     metadata: Mapping[str, Any] | None = None,
 ) -> tuple[np.ndarray, DomainCovarianceCalibrationApplicationV2]:
@@ -552,14 +578,28 @@ def apply_domain_covariance_calibration_v2(
 
     if not isinstance(certificate, DomainCovarianceCalibrationCertificateV2):
         raise TypeError("certificate must be a version-2 certificate")
+    if not isinstance(application_semantics, CovarianceSemanticsV2):
+        raise TypeError("application_semantics must be CovarianceSemanticsV2")
     if not isinstance(evidence_decision, EvidenceDecisionV1):
         raise TypeError("evidence_decision must be EvidenceDecisionV1")
     domain = _text(domain_id, name="domain_id")
     dimension = _covariance_dimension(raw_covariance)
-    raw_digest = _array_digest(raw_covariance)
+    validation_output, _ = apply_domain_covariance_calibration(
+        raw_covariance,
+        certificate.source_certificate,
+        domain_id=domain,
+        inference_admissible=False,
+    )
+    assert validation_output is raw_covariance
+    raw_numeric_digest = _numeric_array_digest(raw_covariance)
+    raw_array_digest = _exact_array_digest(raw_covariance)
     evidence_ok = _evidence_admissible(evidence_decision, certificate)
+    semantics_ok = bool(
+        application_semantics.semantics_id == certificate.semantics.semantics_id
+        and dimension == application_semantics.covariance_dimension
+    )
     source_record: DomainCovarianceCalibrationApplicationV1 | None = None
-    if dimension != certificate.semantics.covariance_dimension:
+    if not semantics_ok:
         output, reason = raw_covariance, "covariance-semantics-mismatch"
     elif not evidence_ok:
         output, reason = raw_covariance, "evidence-decision-rejected"
@@ -582,11 +622,13 @@ def apply_domain_covariance_calibration_v2(
             },
         )
         reason = source_record.reason
-    output_digest = _array_digest(output)
+    output_numeric_digest = _numeric_array_digest(output)
+    output_array_digest = _exact_array_digest(output)
     applied = bool(source_record is not None and source_record.applied)
     record = DomainCovarianceCalibrationApplicationV2(
         certificate_id=str(certificate.artifact_id),
-        semantics_id=certificate.semantics.semantics_id,
+        certificate_semantics_id=certificate.semantics.semantics_id,
+        application_semantics_id=application_semantics.semantics_id,
         domain_id=domain,
         evidence_decision_id=evidence_decision.decision_id,
         evidence_admissible=evidence_ok,
@@ -595,8 +637,10 @@ def apply_domain_covariance_calibration_v2(
         source_application_id=(
             None if source_record is None else source_record.artifact_id
         ),
-        raw_covariance_sha256=raw_digest,
-        output_covariance_sha256=output_digest,
+        raw_numeric_sha256=raw_numeric_digest,
+        output_numeric_sha256=output_numeric_digest,
+        raw_array_sha256=raw_array_digest,
+        output_array_sha256=output_array_digest,
         exact_fallback=not applied,
         metadata={} if metadata is None else metadata,
     )
