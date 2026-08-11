@@ -333,3 +333,72 @@ def test_descriptor_is_detached_from_mutable_metadata() -> None:
     metadata["nested"]["values"].append(4)
 
     assert covariance.descriptor() == descriptor
+
+
+def test_unrepresentable_shared_marginal_variance_fails_closed() -> None:
+    factors = {"gauge": np.full((2, 3, 1), 1e200, dtype=np.float64)}
+
+    with pytest.raises(
+        ValueError,
+        match="structured covariance marginal variances overflowed",
+    ):
+        _covariance(shared_factors_m=factors)
+
+
+def test_finite_covariance_components_cannot_overflow_when_combined() -> None:
+    local = np.repeat((1e308 * np.eye(3))[None, :, :], 2, axis=0)
+    factors = {"gauge": np.full((2, 3, 1), 1e154, dtype=np.float64)}
+
+    with pytest.raises(
+        ValueError,
+        match="structured covariance marginal variances overflowed",
+    ):
+        _covariance(
+            local_covariance_m2=local,
+            shared_factors_m=factors,
+        )
+
+
+def test_large_finite_local_covariance_avoids_symmetrization_overflow() -> None:
+    block = np.diag(np.asarray([1e308, 5e307, 2e307], dtype=np.float64))
+    local = np.repeat(block[None, :, :], 2, axis=0)
+
+    covariance = _covariance(
+        local_covariance_m2=local,
+        shared_factors_m={},
+    )
+
+    dense = covariance.dense_covariance_m2()
+    assert np.all(np.isfinite(dense))
+    np.testing.assert_array_equal(dense[:3, :3], block)
+    np.testing.assert_array_equal(dense[3:, 3:], block)
+
+
+def test_query_projection_overflow_fails_closed() -> None:
+    jacobian = np.full((1, 2, 3), 1e200, dtype=np.float64)
+
+    with pytest.raises(ValueError, match="projected local covariance overflowed"):
+        _covariance().project_query_covariance(jacobian)
+
+
+def test_local_covariance_normalizes_eigendecomposition_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _raise(_: np.ndarray) -> np.ndarray:
+        raise np.linalg.LinAlgError("intentional failure")
+
+    monkeypatch.setattr(structured.np.linalg, "eigvalsh", _raise)
+    with pytest.raises(ValueError, match="eigenvalues could not be evaluated"):
+        _covariance()
+
+
+def test_local_covariance_rejects_nonfinite_eigendecomposition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        structured.np.linalg,
+        "eigvalsh",
+        lambda value: np.full(value.shape[:-1], np.inf),
+    )
+    with pytest.raises(ValueError, match="eigenvalues must be finite"):
+        _covariance()

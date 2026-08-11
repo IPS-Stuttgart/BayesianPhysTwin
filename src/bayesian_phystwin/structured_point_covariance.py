@@ -102,6 +102,23 @@ def _array_record(value: np.ndarray) -> dict[str, object]:
     }
 
 
+def _finite_float64_result(value: np.ndarray, *, name: str) -> np.ndarray:
+    if not np.all(np.isfinite(value)):
+        raise ValueError(f"{name} overflowed finite float64 representation")
+    return value
+
+
+def _finite_symmetric(value: np.ndarray, *, name: str) -> np.ndarray:
+    transpose = np.swapaxes(value, -1, -2)
+    with np.errstate(over="ignore", invalid="ignore"):
+        symmetric = 0.5 * (value + transpose)
+    if np.all(np.isfinite(symmetric)):
+        return symmetric
+    with np.errstate(over="ignore", invalid="ignore"):
+        symmetric = 0.5 * value + 0.5 * transpose
+    return _finite_float64_result(symmetric, name=name)
+
+
 def _validated_local_covariance(value: object, *, point_count: int) -> np.ndarray:
     local = _real_float64_array(value, name="local_covariance_m2")
     if local.shape != (point_count, 3, 3):
@@ -113,10 +130,28 @@ def _validated_local_covariance(value: object, *, point_count: int) -> np.ndarra
         rtol=_SYMMETRY_RELATIVE_TOLERANCE,
     ):
         raise ValueError("local_covariance_m2 must be symmetric")
-    symmetric = 0.5 * (local + np.swapaxes(local, 1, 2))
-    eigenvalues = np.linalg.eigvalsh(symmetric)
-    scale = np.maximum(np.max(np.abs(eigenvalues), axis=1), 1.0)
-    tolerance = _PSD_ABSOLUTE_TOLERANCE + _PSD_RELATIVE_TOLERANCE * scale
+    symmetric = _finite_symmetric(
+        local,
+        name="local_covariance_m2 symmetrization",
+    )
+    normalization = np.maximum(
+        np.max(np.abs(symmetric), axis=(1, 2)),
+        1.0,
+    )
+    scaled = symmetric / normalization[:, None, None]
+    try:
+        eigenvalues = np.linalg.eigvalsh(scaled)
+    except np.linalg.LinAlgError as error:
+        raise ValueError(
+            "local_covariance_m2 eigenvalues could not be evaluated"
+        ) from error
+    if not np.all(np.isfinite(eigenvalues)):
+        raise ValueError("local_covariance_m2 eigenvalues must be finite")
+    maximum_eigenvalue = np.max(np.abs(eigenvalues), axis=1)
+    tolerance = (
+        _PSD_ABSOLUTE_TOLERANCE / normalization
+        + _PSD_RELATIVE_TOLERANCE * np.maximum(maximum_eigenvalue, 1.0 / normalization)
+    )
     if np.any(eigenvalues[:, 0] < -tolerance):
         raise ValueError("local_covariance_m2 must be positive semidefinite")
     return symmetric
@@ -146,6 +181,29 @@ def _validated_factors(
             )
         factors[component] = _immutable_float64(factor)
     return MappingProxyType({name: factors[name] for name in sorted(factors)})
+
+
+def _validate_representable_marginal_variances(
+    local_covariance_m2: np.ndarray,
+    shared_factors_m: Mapping[str, np.ndarray],
+) -> None:
+    diagonal = np.diagonal(
+        local_covariance_m2,
+        axis1=1,
+        axis2=2,
+    ).copy()
+    with np.errstate(over="ignore", invalid="ignore"):
+        for factor in shared_factors_m.values():
+            diagonal += np.einsum(
+                "nir,nir->ni",
+                factor,
+                factor,
+                optimize=True,
+            )
+    _finite_float64_result(
+        diagonal,
+        name="structured covariance marginal variances",
+    )
 
 
 def _validated_query_jacobian(
@@ -235,6 +293,10 @@ class StructuredPointCovarianceV1:
         shared_factors = _validated_factors(
             self.shared_factors_m,
             point_count=len(point_ids),
+        )
+        _validate_representable_marginal_variances(
+            local_covariance,
+            shared_factors,
         )
         metadata = frozen_finite_json_mapping(
             self.metadata,
@@ -328,8 +390,15 @@ class StructuredPointCovarianceV1:
         """Return per-point marginal blocks including every shared component."""
 
         marginal = np.array(self.local_covariance_m2, copy=True)
-        for factor in self.shared_factors_m.values():
-            marginal += np.einsum("nir,njr->nij", factor, factor, optimize=True)
+        with np.errstate(over="ignore", invalid="ignore"):
+            for factor in self.shared_factors_m.values():
+                marginal += np.einsum(
+                    "nir,njr->nij",
+                    factor,
+                    factor,
+                    optimize=True,
+                )
+        _finite_float64_result(marginal, name="marginal covariance")
         return _immutable_float64(marginal)
 
     def cross_covariance_m2(
@@ -349,8 +418,10 @@ class StructuredPointCovarianceV1:
         covariance: np.ndarray = np.zeros((3, 3), dtype=np.float64)
         if first_index == second_index:
             covariance += self.local_covariance_m2[first_index]
-        for factor in self.shared_factors_m.values():
-            covariance += factor[first_index] @ factor[second_index].T
+        with np.errstate(over="ignore", invalid="ignore"):
+            for factor in self.shared_factors_m.values():
+                covariance += factor[first_index] @ factor[second_index].T
+        _finite_float64_result(covariance, name="cross covariance")
         return _immutable_float64(covariance)
 
     def dense_covariance_m2(self, *, maximum_dimension: int = 4096) -> np.ndarray:
@@ -372,10 +443,11 @@ class StructuredPointCovarianceV1:
         for index, block in enumerate(self.local_covariance_m2):
             start = 3 * index
             dense[start : start + 3, start : start + 3] = block
-        for factor in self.shared_factors_m.values():
-            flat_factor = factor.reshape((self.state_dimension, factor.shape[2]))
-            dense += flat_factor @ flat_factor.T
-        dense = 0.5 * (dense + dense.T)
+        with np.errstate(over="ignore", invalid="ignore"):
+            for factor in self.shared_factors_m.values():
+                flat_factor = factor.reshape((self.state_dimension, factor.shape[2]))
+                dense += flat_factor @ flat_factor.T
+        dense = _finite_symmetric(dense, name="dense covariance")
         return _immutable_float64(dense)
 
     def project_query_covariance(
@@ -388,30 +460,42 @@ class StructuredPointCovarianceV1:
             query_jacobian,
             point_count=self.point_count,
         )
-        local = np.einsum(
-            "qni,nij,rnj->qr",
-            jacobian,
-            self.local_covariance_m2,
-            jacobian,
-            optimize=True,
-        )
-        local = 0.5 * (local + local.T)
+        with np.errstate(over="ignore", invalid="ignore"):
+            local = np.einsum(
+                "qni,nij,rnj->qr",
+                jacobian,
+                self.local_covariance_m2,
+                jacobian,
+                optimize=True,
+            )
+        local = _finite_symmetric(local, name="projected local covariance")
         projected_factors: dict[str, np.ndarray] = {}
         component_covariances: dict[str, np.ndarray] = {}
         total = np.array(local, copy=True)
         for name, factor in self.shared_factors_m.items():
-            projected = np.einsum(
-                "qni,nir->qr",
-                jacobian,
-                factor,
-                optimize=True,
+            with np.errstate(over="ignore", invalid="ignore"):
+                projected = np.einsum(
+                    "qni,nir->qr",
+                    jacobian,
+                    factor,
+                    optimize=True,
+                )
+            _finite_float64_result(
+                projected,
+                name=f"projected {name} factor",
             )
-            component = projected @ projected.T
-            component = 0.5 * (component + component.T)
+            with np.errstate(over="ignore", invalid="ignore"):
+                component = projected @ projected.T
+            component = _finite_symmetric(
+                component,
+                name=f"projected {name} covariance",
+            )
             projected_factors[name] = _immutable_float64(projected)
             component_covariances[name] = _immutable_float64(component)
-            total += component
-        total = 0.5 * (total + total.T)
+            with np.errstate(over="ignore", invalid="ignore"):
+                total += component
+            _finite_float64_result(total, name="projected total covariance")
+        total = _finite_symmetric(total, name="projected total covariance")
         return ProjectedStructuredPointCovarianceV1(
             local_covariance_m2=_immutable_float64(local),
             shared_component_factors_m=MappingProxyType(projected_factors),
