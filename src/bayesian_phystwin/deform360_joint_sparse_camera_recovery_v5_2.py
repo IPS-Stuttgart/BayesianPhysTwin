@@ -730,7 +730,7 @@ def _validate_metric_support(value: object) -> dict[str, Any]:
     genuine_integer(
         support.get("total_projected_point_count"),
         name="total_projected_point_count",
-        minimum=1,
+        minimum=0,
     )
     eligible = support.get("eligible")
     _require(type(eligible) is bool, "eligible must be Boolean")

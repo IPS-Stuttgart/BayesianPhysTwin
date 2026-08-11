@@ -69,7 +69,11 @@ def _camera(camera_id: str = CAMERA_ID) -> dict[str, Any]:
     }
 
 
-def _write_sources(root: Path) -> dict[str, dict[str, Any]]:
+def _write_sources(
+    root: Path,
+    *,
+    camera_to_world: np.ndarray | None = None,
+) -> dict[str, dict[str, Any]]:
     episode = root / OBJECT_ID / "episode_0000"
     robot_path = episode / "robot" / "robot.npz"
     robot_path.parent.mkdir(parents=True)
@@ -94,7 +98,12 @@ def _write_sources(root: Path) -> dict[str, dict[str, Any]]:
         dtype=np.float64,
     )
     np.save(intrinsics_path, {CAMERA_ID: intrinsics}, allow_pickle=True)
-    np.save(extrinsics_path, {CAMERA_ID: np.eye(4)}, allow_pickle=True)
+    extrinsics = (
+        np.eye(4, dtype=np.float64)
+        if camera_to_world is None
+        else np.asarray(camera_to_world, dtype=np.float64)
+    )
+    np.save(extrinsics_path, {CAMERA_ID: extrinsics}, allow_pickle=True)
     return {
         "robot": _record(robot_path, root=root),
         "undistorted_intrinsics": _record(intrinsics_path, root=root),
@@ -102,10 +111,17 @@ def _write_sources(root: Path) -> dict[str, dict[str, Any]]:
     }
 
 
-def _fixture(tmp_path: Path) -> tuple[Path, Path]:
+def _fixture(
+    tmp_path: Path,
+    *,
+    camera_to_world: np.ndarray | None = None,
+) -> tuple[Path, Path]:
     processed = tmp_path / "processed"
     processed.mkdir()
-    episode_files = _write_sources(processed)
+    episode_files = _write_sources(
+        processed,
+        camera_to_world=camera_to_world,
+    )
     objects = []
     for index in range(10):
         object_id = f"object-{index:02d}"
@@ -208,6 +224,33 @@ def test_robot_metric_prefix_matches_motioncrafter_cover_crop(tmp_path: Path) ->
     assert calibration["cover_resize"]["scale"] == 0.5
     assert calibration["cover_resize"]["crop_top"] == 0
     assert calibration["cover_resize"]["crop_left"] == 0
+
+
+def test_robot_metric_prefix_materializes_zero_support_camera(tmp_path: Path) -> None:
+    camera_to_world = np.diag([-1.0, 1.0, -1.0, 1.0])
+    inventory, processed = _fixture(
+        tmp_path,
+        camera_to_world=camera_to_world,
+    )
+    output = tmp_path / "metric-prefix"
+
+    result = materialize_deform360_robot_metric_prefix(
+        prepared_source_inventory_path=inventory,
+        processed_root=processed,
+        object_id=OBJECT_ID,
+        camera_id=CAMERA_ID,
+        expected_processing_revision=PROCESSING_REVISION,
+        target_height=160,
+        target_width=320,
+        output_directory=output,
+    )
+
+    assert result["projected_point_count"] == 0
+    assert result["per_frame_projected_point_count"] == [0] * 58
+    with np.load(output / METRIC_PREFIX_FILENAME, allow_pickle=False) as stored:
+        assert not np.any(stored["valid_mask"])
+        assert np.all(stored["points_world_m"] == 0.0)
+    assert validate_deform360_robot_metric_prefix(output) == result
 
 
 def test_robot_metric_prefix_rejects_processing_revision_drift(
