@@ -124,10 +124,10 @@ PUBLIC_ENDPOINT_PROCESSING_CONTRACT: Final = {
         "torch_cuda_version": "12.1",
         "gsplat_version": "1.4.0",
         "gsplat_extension_sha256": (
-            "43fcb77c585119775a445a13e34027b0e98768b3150d7bc634e96a0ce4cfe181"
+            "152153a9cde346203f32a9792f2e2345450324cbc7652668e76574e8f3a490f0"
         ),
         "gsplat_build_ninja_sha256": (
-            "7ab8a60cd28ecf3a05e10bcd701cf4a0f846e2d9849e4bc565edaee7933d153e"
+            "a51f8d2b746d7e4a41846e196c01333a537c4c6342ae9e7ee58a22b881f0b5e4"
         ),
         "gsplat_backend_probe": "CameraModelType.PINHOLE",
         "torch_cuda_arch_list": "8.9",
