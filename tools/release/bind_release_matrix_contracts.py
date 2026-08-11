@@ -107,9 +107,7 @@ def _sdist_path(dist_dir: Path, evidence: Mapping[str, Any]) -> Path:
         "sha256": hashlib.sha256(data).hexdigest(),
         "size_bytes": len(data),
     }
-    if actual != {
-        key: expected.get(key) for key in ("path", "sha256", "size_bytes")
-    }:
+    if actual != {key: expected.get(key) for key in ("path", "sha256", "size_bytes")}:
         raise ReleaseMatrixBindingError(
             "source distribution does not match base release evidence"
         )
