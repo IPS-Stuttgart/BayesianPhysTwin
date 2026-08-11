@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Report exact push runs and self-hosted queue
+      - name: Report exact push runs, queue, and runner state
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -26,6 +26,7 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import urllib.error
           import urllib.parse
           import urllib.request
 
@@ -75,9 +76,7 @@ jobs:
           seen_runs = set()
           print("SELF_HOSTED_QUEUE_BEGIN")
           for status in ("in_progress", "queued"):
-              status_query = urllib.parse.urlencode(
-                  {"status": status, "per_page": 30}
-              )
+              status_query = urllib.parse.urlencode({"status": status, "per_page": 30})
               active = get(f"{api}/runs?{status_query}").get("workflow_runs", [])
               for run in active:
                   run_id = int(run["id"])
@@ -99,6 +98,22 @@ jobs:
                           f"url={run.get('html_url')}"
                       )
           print("SELF_HOSTED_QUEUE_END")
+
+          print("RUNNER_STATE_BEGIN")
+          try:
+              runner_payload = get(f"{api}/runners?per_page=100")
+          except urllib.error.HTTPError as exc:
+              print(f"RUNNER_STATE_UNAVAILABLE http_status={exc.code}")
+          else:
+              print(f"runner_count={runner_payload.get('total_count')}")
+              for runner in runner_payload.get("runners", []):
+                  labels = [label.get("name") for label in runner.get("labels", [])]
+                  print(
+                      "RUNNER "
+                      f"name={runner.get('name')!r} status={runner.get('status')!r} "
+                      f"busy={runner.get('busy')!r} labels={labels!r}"
+                  )
+          print("RUNNER_STATE_END")
           PY
 
-# Read-only refresh: inspect runner backlog without touching repository or data.
+# Read-only refresh: inspect runner availability without touching repository or data.
