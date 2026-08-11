@@ -102,8 +102,8 @@ def fuse_source_normal_multiview_tangent(
 ) -> MultiviewTangentFusion:
     """Fuse tangent updates without changing the source observation support."""
 
-    source = np.asarray(source_points_world_m)
-    multiview = np.asarray(multiview_points_world_m)
+    source = np.asarray(source_points_world_m, dtype=float)
+    multiview = np.asarray(multiview_points_world_m, dtype=float)
     source_mask = np.asarray(source_valid, dtype=bool)
     multiview_mask = np.asarray(multiview_valid, dtype=bool)
     initial = np.asarray(initial_points_world_m, dtype=float)
