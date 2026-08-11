@@ -143,9 +143,11 @@ artifact. The contract supports the following method labels:
 
 - `irls_working`: current working solver covariance;
 - `laplace_observed_information`: reserved for a separately implemented exact
-  local mixture-curvature calculation; and
+  local mixture-curvature calculation;
 - `group_sandwich`: reserved for a separately implemented independent-group
-  score correction.
+  score correction; and
+- `exact_prior_fallback`: exact prior covariance retained after a numerically
+  rejected strict update.
 
 The method label is checked against its curvature and group-score flags. A
 calibrated label additionally requires an independent calibration-artifact ID.
