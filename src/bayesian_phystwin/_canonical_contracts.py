@@ -116,7 +116,7 @@ class FrozenDict(dict):
     def __delitem__(self, key: object) -> None:
         self._immutable(key)
 
-    def __ior__(self, other: object) -> FrozenDict:  # type: ignore[misc]
+    def __ior__(self, other: object) -> FrozenDict:
         self._immutable(other)
         return self
 
@@ -261,7 +261,7 @@ class FrozenList(list):
     def __delitem__(self, key: object) -> None:
         self._immutable(key)
 
-    def __iadd__(self, other: object) -> FrozenList:  # type: ignore[misc]
+    def __iadd__(self, other: object) -> FrozenList:
         self._immutable(other)
         return self
 
