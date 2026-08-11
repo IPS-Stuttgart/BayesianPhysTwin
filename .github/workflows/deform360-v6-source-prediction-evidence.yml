@@ -7,26 +7,32 @@ on:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
       - "docs/deform360_v6_processing_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_runtime_dependency_scope_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
       - "tests/test_deform360_v6_processing_runtime_repair.py"
+      - "tests/test_deform360_v6_runtime_dependency_scope_repair.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
       - "docs/deform360_v6_processing_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_runtime_dependency_scope_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
       - "tests/test_deform360_v6_processing_runtime_repair.py"
+      - "tests/test_deform360_v6_runtime_dependency_scope_repair.py"
 
 permissions:
   contents: read
@@ -57,6 +63,13 @@ env:
   DEFORM360_PROCESSING_REPAIR_ID: 15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f
   DEFORM360_PROCESSING_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json
   DEFORM360_PROCESSING_REPAIR_SHA256: b60a18821b0e260519ffda2289b20cb247b1a36c91eac9a528d953111e7b520c
+  RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID: 1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460
+  RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json
+  RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256: 86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31
+  EXPECTED_PIP_CHECK_CONFLICT: "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
+  NUMPY_VERSION: "1.26.4"
+  PYRECEST_VERSION: "2.4.3"
+  NUSCENES_DEVKIT_VERSION: "1.2.0"
   NERFSTUDIO_VERSION: "1.1.5"
   GSPLAT_VERSION: "1.4.0"
   OFFICIAL_PHYSTWIN_REVISION: 2b6630528141b9cba5a7677c8b88b2129b4a8390
@@ -103,6 +116,7 @@ jobs:
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
             tests/test_deform360_v6_processing_runtime_repair.py
+            tests/test_deform360_v6_runtime_dependency_scope_repair.py
             tests/test_deform360_v6_runtime_bootstrap_receipt.py
           )
           python -m ruff check "${files[@]}"
@@ -113,6 +127,7 @@ jobs:
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
             tests/test_deform360_v6_processing_runtime_repair.py \
+            tests/test_deform360_v6_runtime_dependency_scope_repair.py \
             tests/test_deform360_v6_runtime_bootstrap_receipt.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
@@ -280,6 +295,8 @@ jobs:
             test ! -e "${runtime}"
             test "$(sha256sum "${DEFORM360_PROCESSING_REPAIR_PATH}" | awk '{print $1}')" \
               = "${DEFORM360_PROCESSING_REPAIR_SHA256}"
+            test "$(sha256sum "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256}"
             python -m venv --copies --system-site-packages "${runtime}"
             runtime_python="${runtime}/bin/python"
             "${runtime_python}" -m pip install \
@@ -307,7 +324,14 @@ jobs:
               "trimesh>=4.0" \
               "warp-lang>=1.6" \
               "yourdfpy>=0.0.56"
-            "${runtime_python}" -m pip check
+            set +e
+            pip_check_output="$("${runtime_python}" -m pip check 2>&1)"
+            pip_check_status=$?
+            set -e
+            printf '%s\n' "${pip_check_output}"
+            test "${pip_check_status}" -eq 1
+            test "$(printf '%s\n' "${pip_check_output}" | wc -l)" -eq 1
+            test "${pip_check_output}" = "${EXPECTED_PIP_CHECK_CONFLICT}"
             "${runtime_python}" - <<'PY'
           from importlib.metadata import version
 
@@ -324,6 +348,12 @@ jobs:
               raise SystemExit("CUDA is unavailable")
           if version("virtualenv") != "21.7.4":
               raise SystemExit("virtualenv runtime identity changed")
+          if version("numpy") != "1.26.4":
+              raise SystemExit("NumPy runtime identity changed")
+          if version("pyrecest") != "2.4.3":
+              raise SystemExit("inherited PyRecEst runtime identity changed")
+          if version("nuscenes-devkit") != "1.2.0":
+              raise SystemExit("nuscenes-devkit runtime identity changed")
           if version("nerfstudio") != "1.1.5":
               raise SystemExit("nerfstudio runtime identity changed")
           if version("gsplat") != "1.4.0":
@@ -335,6 +365,9 @@ jobs:
           print(torch.__version__)
           print(warp.__version__)
           print(version("virtualenv"))
+          print(version("numpy"))
+          print(version("pyrecest"))
+          print(version("nuscenes-devkit"))
           print(version("nerfstudio"))
           print(version("gsplat"))
           print(version("bayesian-phystwin"))
@@ -533,6 +566,33 @@ jobs:
                   "repair_file_sha256": os.environ[
                       "DEFORM360_PROCESSING_REPAIR_SHA256"
                   ],
+              },
+              "runtime_dependency_scope_repair": {
+                  "activated": False,
+                  "exact_allowlisted_pip_check_line": os.environ[
+                      "EXPECTED_PIP_CHECK_CONFLICT"
+                  ],
+                  "full_pip_check_expected_exit_code": 1,
+                  "full_pip_check_expected_line_count": 1,
+                  "inherited_pyrecest_distribution_version": os.environ[
+                      "PYRECEST_VERSION"
+                  ],
+                  "nuscenes_devkit_version": os.environ[
+                      "NUSCENES_DEVKIT_VERSION"
+                  ],
+                  "other_dependency_conflicts_allowed": False,
+                  "pyrecest_extra_installed": False,
+                  "pyrecest_runtime_used": False,
+                  "repair_file_sha256": os.environ[
+                      "RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256"
+                  ],
+                  "repair_id": os.environ[
+                      "RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID"
+                  ],
+                  "repair_path": os.environ[
+                      "RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH"
+                  ],
+                  "runtime_numpy_version": os.environ["NUMPY_VERSION"],
               },
           }
           canonical = json.dumps(

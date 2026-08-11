@@ -24,6 +24,13 @@ DEFORM360_PROCESSING_PYPROJECT_SHA256="0ccfe6a386c184613191ccdaa8f2912bc3c148a7d
 DEFORM360_PHYSICAL_REVISION="0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
 NERFSTUDIO_VERSION="1.1.5"
 GSPLAT_VERSION="1.4.0"
+RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID="1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460"
+RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
+RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256="86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31"
+EXPECTED_PIP_CHECK_CONFLICT="pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
+NUMPY_VERSION="1.26.4"
+PYRECEST_VERSION="2.4.3"
+NUSCENES_DEVKIT_VERSION="1.2.0"
 
 # Preserve the complete reviewed launcher and its already-validated repairs by
 # exact Git blob identity. The executable path below changes one uniquely
@@ -99,6 +106,7 @@ for path in \
   "${STAGE_SELECTOR_REPAIR_PATH}" \
   "${STAGE_SELECTOR_API_REPAIR_PATH}" \
   "${PROCESSING_RUNTIME_REPAIR_PATH}" \
+  "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" \
   "${STAGE_SELECTOR_HELPER_PATH}" \
   "${STAGE_SELECTOR_CONSUMER_PATH}"
 do
@@ -119,6 +127,11 @@ test "$(sha256sum "${STAGE_SELECTOR_API_REPAIR_PATH}" | awk '{print $1}')" \
 test "$(sha256sum "${PROCESSING_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
   = "${PROCESSING_RUNTIME_REPAIR_SHA256}" || {
   echo "Deform360 processing runtime repair bytes changed" >&2
+  exit 2
+}
+test "$(sha256sum "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" | awk '{print $1}')" \
+  = "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256}" || {
+  echo "Deform360 runtime dependency-scope repair bytes changed" >&2
   exit 2
 }
 test "$(sha256sum "${STAGE_SELECTOR_HELPER_PATH}" | awk '{print $1}')" \
@@ -405,6 +418,11 @@ if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
   export PROCESSING_RUNTIME_REPAIR_SHA256
   export DEFORM360_PROCESSING_PYPROJECT_SHA256 DEFORM360_PHYSICAL_REVISION
   export NERFSTUDIO_VERSION GSPLAT_VERSION
+  export RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID
+  export RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH
+  export RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256
+  export EXPECTED_PIP_CHECK_CONFLICT NUMPY_VERSION PYRECEST_VERSION
+  export NUSCENES_DEVKIT_VERSION
   export STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}"
   receipt_python="${BPT_PYTHON}"
   "${receipt_python}" - <<'PY'
@@ -490,6 +508,27 @@ receipt["runtime_deform360_processing_dependencies"] = {
     "repair_file_sha256": os.environ["PROCESSING_RUNTIME_REPAIR_SHA256"],
     "repair_id": os.environ["PROCESSING_RUNTIME_REPAIR_ID"],
     "repair_path": os.environ["PROCESSING_RUNTIME_REPAIR_PATH"],
+}
+receipt["runtime_dependency_scope_repair"] = {
+    "activated": True,
+    "exact_allowlisted_pip_check_line": os.environ[
+        "EXPECTED_PIP_CHECK_CONFLICT"
+    ],
+    "full_pip_check_expected_exit_code": 1,
+    "full_pip_check_expected_line_count": 1,
+    "inherited_pyrecest_distribution_version": os.environ[
+        "PYRECEST_VERSION"
+    ],
+    "nuscenes_devkit_version": os.environ["NUSCENES_DEVKIT_VERSION"],
+    "other_dependency_conflicts_allowed": False,
+    "pyrecest_extra_installed": False,
+    "pyrecest_runtime_used": False,
+    "repair_file_sha256": os.environ[
+        "RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256"
+    ],
+    "repair_id": os.environ["RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID"],
+    "repair_path": os.environ["RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH"],
+    "runtime_numpy_version": os.environ["NUMPY_VERSION"],
 }
 canonical = json.dumps(
     receipt,

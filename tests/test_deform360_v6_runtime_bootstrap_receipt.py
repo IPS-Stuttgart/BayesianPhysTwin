@@ -29,6 +29,22 @@ PROCESSING_ENV = {
     ),
     "GSPLAT_VERSION": "1.4.0",
     "NERFSTUDIO_VERSION": "1.1.5",
+    "EXPECTED_PIP_CHECK_CONFLICT": (
+        "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
+    ),
+    "NUMPY_VERSION": "1.26.4",
+    "NUSCENES_DEVKIT_VERSION": "1.2.0",
+    "PYRECEST_VERSION": "2.4.3",
+    "RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID": (
+        "1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460"
+    ),
+    "RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH": (
+        "protocols/amendments/"
+        "deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
+    ),
+    "RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256": (
+        "86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31"
+    ),
 }
 
 
@@ -126,6 +142,9 @@ def test_gpu_runtime_dependency_is_exact_and_gates_science() -> None:
     assert '-e "./_deform360_physical[processing]"' in str(runtime["run"])
     assert 'version("nerfstudio") != "1.1.5"' in str(runtime["run"])
     assert 'version("gsplat") != "1.4.0"' in str(runtime["run"])
+    assert 'version("numpy") != "1.26.4"' in str(runtime["run"])
+    assert 'version("pyrecest") != "2.4.3"' in str(runtime["run"])
+    assert 'version("nuscenes-devkit") != "1.2.0"' in str(runtime["run"])
     assert "from nerfstudio.configs import method_configs" in str(runtime["run"])
     assert "from nerfstudio.scripts import exporter" in str(runtime["run"])
     assert "DEFORM360_PROCESSING_PYPROJECT_SHA256" in str(runtime["run"])
@@ -156,6 +175,12 @@ def test_bootstrap_failure_receipt_is_bounded_and_target_closed(
     assert (
         receipt["runtime_deform360_processing_dependencies"]["install_target"]
         == "_deform360_physical[processing]"
+    )
+    assert receipt["runtime_dependency_scope_repair"]["activated"] is False
+    assert receipt["runtime_dependency_scope_repair"]["pyrecest_runtime_used"] is False
+    assert (
+        receipt["runtime_dependency_scope_repair"]["other_dependency_conflicts_allowed"]
+        is False
     )
     assert not any(receipt["information_boundary"].values())
     assert len(receipt["receipt_id"]) == 64
