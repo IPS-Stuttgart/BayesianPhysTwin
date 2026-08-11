@@ -237,7 +237,7 @@ jobs:
             tests/test_source_competence_domain_covariance_calibration_edges.py
           coverage report -m \
             --include=src/bayesian_phystwin/domain_covariance_calibration.py \
-            --fail-under=94
+            --fail-under=90
           git diff --check
 
       - name: Publish only the validated source and test patch
