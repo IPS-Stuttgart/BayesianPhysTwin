@@ -12,29 +12,45 @@ history with shape `(T, N, 3)` and an explicit Boolean validity mask with shape
 `(T, N)`. Invalid entries are stored as zero only; temporal, spatial,
 nearest-neighbour, camera, and material-identity filling is forbidden.
 
-The covariance-only reference mean is:
+The caller must provide the already registered `last_residual` future-mean array
+as a C-contiguous `float64` object. The contract independently reconstructs the
+causal last-valid residual for each material identity and requires byte-exact
+agreement with that supplied mean. It never substitutes a newly synthesized
+mean for the registered object. On acceptance, the covariance-only result and
+its hybrid record retain the exact caller-owned mean object by identity.
 
-1. the caller-owned physical future;
-2. plus each material identity's last **valid causal** residual in the opened
-   prefix; and
-3. unchanged across future horizons.
+Each material identity requires the frozen minimum of two valid causal prefix
+observations. One unsupported material rejects the whole source unit and returns
+the exact caller-owned physical mean and covariance objects. There is no
+partial-material deployment or unsupported-material zero correction.
 
-A material that is absent in the final prefix frame therefore retains its most
-recent earlier valid residual. A material with no valid prefix support receives
-zero residual correction.
+The covariance donor is hard-bound to `independent_endpoint_v1` and the
+reference predictor to `last_residual`. The early/middle/late scale schedule is
+hard-bound to `[8, 16, 16]`; these values are not caller-selectable.
 
-The covariance donor remains separate from the mean and is scaled by the frozen
-early/middle/late factors `[8, 16, 16]`. Provider and scoring cameras are split
-by complete physical recorder family. Support or covariance rejection returns
-the exact caller-owned physical future mean and covariance objects.
+## Camera and reconstruction provenance
+
+Camera names are not heuristically parsed into recorder identities. A
+content-addressed source-inventory map explicitly binds every camera to one
+physical recorder family. The deterministic provider/scoring split assigns
+complete recorder families, exhausts the frozen map, and rejects any family that
+crosses roles.
+
+Provider and scoring reconstructions use separate content-addressed manifests.
+Each manifest binds its role, camera set, source inventory, implementation
+revision, configuration, input source artifacts, reconstruction artifact, and
+parent reconstruction lineage. The contract rejects shared input bytes and any
+overlap between provider and scoring reconstruction lineages.
 
 ## Evidence boundary
 
 Passing the contract tests establishes deterministic construction, explicit
-missingness, exact-last-valid mean semantics, covariance-only composition, and
-exact fallback. It is implementation evidence only. It does not establish
-fresh-object calibration, target accuracy, provider competence, physical-query
-benefit, intervention benefit, deployment safety, or state of the art.
+missingness, provenance-separated reconstruction, exact registered-mean
+verification and identity, hard-bound donor/scales, per-material admission, and
+exact whole-case fallback. It is implementation evidence only. It does not
+establish fresh-object calibration, target accuracy, provider competence,
+physical-query benefit, intervention benefit, deployment safety, or state of
+the art.
 
 The registered fresh study remains governed by issue `#461`, including its
 separate source-first information order and sealed target cohort. This module
