@@ -21,6 +21,7 @@ from ._portable_contracts import (
     canonical_sorted_strings,
     content_id,
     nonempty_string,
+    sha256_digest,
     source_artifact_mapping,
 )
 from .deform360_joint_sparse_materializer_v5 import (
@@ -41,6 +42,7 @@ HORIZON_COVARIANCE_MULTIPLIER_V1: Final = {
     "middle": 16.0,
     "late": 16.0,
 }
+CAMERA_PARTITION_NAMESPACE_V1: Final = "deform360-covariance-camera-partition-v1"
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -271,6 +273,35 @@ class Deform360ObservationSplitV1:
                 "shared_reconstruction_artifact": False,
             }
         )
+
+
+def plan_deform360_camera_partition_v1(
+    *,
+    camera_ids: Sequence[str],
+    object_session_hash: str,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Partition names only into deterministic disjoint provider/scoring views."""
+
+    cameras = canonical_sorted_strings(camera_ids, name="camera_ids")
+    _require(len(cameras) >= 4, "camera partition requires at least four cameras")
+    session_hash = sha256_digest(object_session_hash, name="object_session_hash")
+    ranked = sorted(
+        cameras,
+        key=lambda camera: hashlib.sha256(
+            (
+                f"{CAMERA_PARTITION_NAMESPACE_V1}\0{session_hash}\0{camera}"
+            ).encode()
+        ).digest(),
+    )
+    provider = tuple(sorted(ranked[::2]))
+    scoring = tuple(sorted(ranked[1::2]))
+    _require(
+        len(provider) >= 2
+        and len(scoring) >= 2
+        and set(provider).isdisjoint(scoring),
+        "camera partition did not produce two disjoint multiview panels",
+    )
+    return provider, scoring
 
 
 @dataclass(frozen=True, slots=True)
@@ -627,4 +658,5 @@ __all__ = [
     "Deform360ObservationSplitV1",
     "build_deform360_covariance_only_forecast_v1",
     "estimate_deform360_causal_residual_history_v1",
+    "plan_deform360_camera_partition_v1",
 ]

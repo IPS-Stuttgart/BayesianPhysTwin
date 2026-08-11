@@ -1,6 +1,6 @@
 {
   "admitted_candidate": {
-    "artifact_id": "b26e6ea00faaab6c2cdbb4335db3292eed5d7168528493438c27d086690464ce",
+    "artifact_id": "091a9f4ccf2217b8b8b4860879d9663611dd49d97d900eb01cddc78f55249c22",
     "case_donor_admitted": true,
     "empirical_identity_count": 4,
     "mean_byte_identical": true,
@@ -8,9 +8,9 @@
     "prior_only_identity_count": 0
   },
   "claim_boundary": "Implementation dry run only; no target, official benchmark, calibration, point-accuracy, or state-of-the-art claim.",
-  "dry_run_sha256": "f6d2d9f85cfd6d6ad6746faf774cc3658acf1447beff123bb732aca28d3803d7",
+  "dry_run_sha256": "8619d028f8efdd627170e324739c952d57c36d1a9f2b34ae0755875516f83d6e",
   "failed_support_fallback": {
-    "artifact_id": "869e827c6683a7b651a798a11b4c9020233af295f01cd867e092539b5d8c19c3",
+    "artifact_id": "5bcbbfb77a71edab53febb1da06ae75af578aa48176954e3bbaaedd695e4bed5",
     "case_donor_admitted": false,
     "covariance_byte_identical": true,
     "empirical_identity_count": 0,
@@ -19,7 +19,7 @@
   },
   "gate_passed": true,
   "history": {
-    "artifact_id": "05e43de4cfd73e99b933635bc637d42c76cd046e9df27e28099582fd4ff971b5",
+    "artifact_id": "d7e7befb431f660154ae78577c22e2c15e318d82d71f606d93247ae56345907f",
     "coordinate_frame": "deform360_world",
     "covariance_units": "m^2",
     "missing_entries_are_zero": true,
@@ -41,16 +41,16 @@
     ]
   },
   "observation_split": {
-    "artifact_id": "c195c838f802358d977f05cbedeab193bc17330053f6a40773bbfc33b5d57b11",
+    "artifact_id": "31b9da8fcb7417b977d11ed108e45958d7d92bbdb425ffbc24aecf04f4e3a364",
     "camera_sets_disjoint": true,
     "provider_camera_ids": [
-      "provider-a",
-      "provider-b"
+      "camera-b",
+      "camera-c"
     ],
     "reconstruction_artifacts_distinct": true,
     "scoring_camera_ids": [
-      "scoring-a",
-      "scoring-b"
+      "camera-a",
+      "camera-d"
     ]
   },
   "schema": "bayesian-phystwin/deform360-covariance-provider-dry-run-v1",

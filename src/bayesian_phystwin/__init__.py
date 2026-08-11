@@ -61,6 +61,7 @@ from .deform360_contact_anchor import (
     save_deform360_contact_anchor,
 )
 from .deform360_covariance_provider_v1 import (
+    CAMERA_PARTITION_NAMESPACE_V1,
     DEFORM360_COVARIANCE_PROVIDER_SCHEMA,
     DEFORM360_COVARIANCE_PROVIDER_VERSION,
     HORIZON_COVARIANCE_MULTIPLIER_V1,
@@ -70,6 +71,7 @@ from .deform360_covariance_provider_v1 import (
     Deform360ObservationSplitV1,
     build_deform360_covariance_only_forecast_v1,
     estimate_deform360_causal_residual_history_v1,
+    plan_deform360_camera_partition_v1,
 )
 from .deform360_public_contact_prefix import (
     DEFORM360_CONTACT_PATIENCE_FRAMES,
@@ -250,6 +252,7 @@ from .synthetic_benchmark import (
 )
 
 __all__ = [
+    "CAMERA_PARTITION_NAMESPACE_V1",
     "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
     "CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS",
     "COVARIANCE_MARGINAL_SCORE_SEMANTICS",
@@ -413,6 +416,7 @@ __all__ = [
     "minimum_groups_for_finite_conformal",
     "measurement_variance",
     "plan_finite_group_calibration",
+    "plan_deform360_camera_partition_v1",
     "predict_model_averaged_endpoint",
     "reliability_weighted_loss",
     "replay_residual_csv",

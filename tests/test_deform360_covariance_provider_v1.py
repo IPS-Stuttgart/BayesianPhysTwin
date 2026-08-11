@@ -11,6 +11,7 @@ from bayesian_phystwin.deform360_covariance_provider_v1 import (
     Deform360ObservationSplitV1,
     build_deform360_covariance_only_forecast_v1,
     estimate_deform360_causal_residual_history_v1,
+    plan_deform360_camera_partition_v1,
 )
 from bayesian_phystwin.deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseVisualWindowRowsV5,
@@ -235,6 +236,27 @@ def test_observation_split_rejects_shared_views_or_reconstruction() -> None:
         replace(
             split,
             scoring_reconstruction_artifact_id="provider-reconstruction",
+        )
+
+
+def test_camera_partition_is_names_only_deterministic_and_disjoint() -> None:
+    cameras = ("camera-d", "camera-a", "camera-c", "camera-b", "camera-e")
+    first = plan_deform360_camera_partition_v1(
+        camera_ids=cameras,
+        object_session_hash="3" * 64,
+    )
+    second = plan_deform360_camera_partition_v1(
+        camera_ids=tuple(reversed(cameras)),
+        object_session_hash="3" * 64,
+    )
+
+    assert first == second
+    assert set(first[0]).isdisjoint(first[1])
+    assert set(first[0]) | set(first[1]) == set(cameras)
+    with pytest.raises(ValueError, match="at least four"):
+        plan_deform360_camera_partition_v1(
+            camera_ids=("camera-a", "camera-b", "camera-c"),
+            object_session_hash="3" * 64,
         )
 
 

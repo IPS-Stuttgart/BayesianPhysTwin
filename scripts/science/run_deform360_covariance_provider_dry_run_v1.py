@@ -16,6 +16,7 @@ from bayesian_phystwin.deform360_covariance_provider_v1 import (
     Deform360ObservationSplitV1,
     build_deform360_covariance_only_forecast_v1,
     estimate_deform360_causal_residual_history_v1,
+    plan_deform360_camera_partition_v1,
 )
 from bayesian_phystwin.deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseVisualWindowRowsV5,
@@ -89,16 +90,20 @@ def run_source_only_dry_run() -> dict[str, Any]:
             )
         ]
     )
+    provider_cameras, scoring_cameras = plan_deform360_camera_partition_v1(
+        camera_ids=("camera-a", "camera-b", "camera-c", "camera-d"),
+        object_session_hash="3" * 64,
+    )
     history = estimate_deform360_causal_residual_history_v1(
         visual_windows=(
             _window(
-                "provider-a",
+                provider_cameras[0],
                 camera_a_frames,
                 camera_a_identities,
                 camera_a_points,
             ),
             _window(
-                "provider-b",
+                provider_cameras[1],
                 camera_b_frames,
                 camera_b_identities,
                 camera_b_points,
@@ -111,8 +116,8 @@ def run_source_only_dry_run() -> dict[str, Any]:
         association_candidate_count=1,
     )
     split = Deform360ObservationSplitV1(
-        provider_camera_ids=("provider-a", "provider-b"),
-        scoring_camera_ids=("scoring-a", "scoring-b"),
+        provider_camera_ids=provider_cameras,
+        scoring_camera_ids=scoring_cameras,
         provider_reconstruction_artifact_id="synthetic-provider-reconstruction",
         scoring_reconstruction_artifact_id="synthetic-scoring-reconstruction",
     )
