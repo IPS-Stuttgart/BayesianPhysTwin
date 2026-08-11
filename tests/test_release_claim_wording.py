@@ -9,7 +9,9 @@ CLAIM = ROOT / "docs" / "phystwin_release_claim_v1.md"
 
 
 def _text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    """Normalize Markdown wrapping without changing scientific wording."""
+
+    return " ".join(path.read_text(encoding="utf-8").split())
 
 
 def test_release_surfaces_retain_matched_comparator_and_raw_covariance_boundary() -> (
@@ -18,7 +20,7 @@ def test_release_surfaces_retain_matched_comparator_and_raw_covariance_boundary(
     for path in (README, SUPPORT, CLAIM):
         text = _text(path)
         assert "last_residual" in text or "last-residual" in text
-        assert "raw posterior covariance" in text
+        assert "raw posterior covariance" in text.casefold()
         assert "independent" in text
 
     claim = _text(CLAIM)
