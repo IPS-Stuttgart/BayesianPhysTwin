@@ -7,7 +7,6 @@ import argparse
 import hashlib
 import importlib.util
 import json
-import os
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -29,7 +28,7 @@ REPAIR_ID = "aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae"
 EXECUTION_AMENDMENT_ID = (
     "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 )
-PREDECESSOR_SELECTOR_REPAIR_ID = (
+PREDECESSOR_REPAIR_ID = (
     "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
 )
 CAUSAL4D_REVISION = "50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
@@ -40,7 +39,7 @@ PREVIOUS_SELECTOR_SHA256 = (
 CORRECTED_SELECTOR_SHA256 = (
     "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
 )
-CORRECTED_SELECTOR_BYTE_COUNT = 17_310
+SELECTOR_BYTE_COUNT = 17_310
 PHYSICAL_WRAPPER_SHA256 = (
     "061fea23aeb83cbaeada9335417d99795de886c8ee6c6ae1013bddfe79bddb37"
 )
@@ -91,8 +90,7 @@ def _argument_value(arguments: list[str], option: str) -> str:
 def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
     """Validate the exact target-closed stage-consumer identity repair."""
 
-    repair_path = Path(path).resolve(strict=True)
-    payload = json.loads(repair_path.read_text(encoding="utf-8"))
+    payload = json.loads(Path(path).resolve(strict=True).read_text(encoding="utf-8"))
     repair = _mapping(payload, name="stage selector identity repair")
     identity = {key: value for key, value in repair.items() if key != "repair_id"}
     _require(
@@ -102,37 +100,29 @@ def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         "stage selector identity repair changed",
     )
     _require(
-        repair.get("superseded_execution_amendment_id") == EXECUTION_AMENDMENT_ID,
-        "stage selector repair uses another execution amendment",
+        repair.get("superseded_execution_amendment_id") == EXECUTION_AMENDMENT_ID
+        and repair.get("predecessor_selector_repair_id") == PREDECESSOR_REPAIR_ID,
+        "stage selector repair lineage changed",
     )
+    correction = _mapping(repair.get("correction"), name="selector correction")
     _require(
-        repair.get("predecessor_selector_repair_id")
-        == PREDECESSOR_SELECTOR_REPAIR_ID,
-        "stage selector repair changed its predecessor",
-    )
-    correction = _mapping(repair.get("correction"), name="stage selector correction")
-    _require(
-        correction.get("consumer_path") == f"scripts/remote/{STAGE_SCRIPT}"
-        and correction.get("consumer_file_sha256") == STAGE_SCRIPT_SHA256
-        and correction.get("consumer_field") == "GENERIC_SELECTOR_SHA256"
-        and correction.get("previous_expected_sha256")
-        == PREVIOUS_SELECTOR_SHA256
-        and correction.get("corrected_expected_sha256")
-        == CORRECTED_SELECTOR_SHA256
-        and correction.get("selector_repository") == "IPS-Stuttgart/Causal4D"
-        and correction.get("selector_repository_revision") == CAUSAL4D_REVISION
-        and correction.get("selector_path") == SELECTOR_RELATIVE_PATH.as_posix()
-        and correction.get("selector_byte_count") == CORRECTED_SELECTOR_BYTE_COUNT
-        and correction.get("selector_semantics")
-        == "deform360-object-sam2-generic-selector"
-        and correction.get("application")
-        == "process-local-loaded-module-constant-only",
+        correction
+        == {
+            "application": "process-local-loaded-module-constant-only",
+            "consumer_field": "GENERIC_SELECTOR_SHA256",
+            "consumer_file_sha256": STAGE_SCRIPT_SHA256,
+            "consumer_path": f"scripts/remote/{STAGE_SCRIPT}",
+            "corrected_expected_sha256": CORRECTED_SELECTOR_SHA256,
+            "previous_expected_sha256": PREVIOUS_SELECTOR_SHA256,
+            "selector_byte_count": SELECTOR_BYTE_COUNT,
+            "selector_path": SELECTOR_RELATIVE_PATH.as_posix(),
+            "selector_repository": "IPS-Stuttgart/Causal4D",
+            "selector_repository_revision": CAUSAL4D_REVISION,
+            "selector_semantics": "deform360-object-sam2-generic-selector",
+        },
         "stage selector correction changed",
     )
-    failed = _mapping(
-        repair.get("failed_execution_evidence"),
-        name="stage selector failed execution",
-    )
+    failed = _mapping(repair.get("failed_execution_evidence"), name="failure")
     _require(
         failed.get("workflow_run_id") == 31513816637
         and failed.get("workflow_run_attempt") == 1
@@ -151,33 +141,28 @@ def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         and failed.get("error_message") == "selector changed",
         "stage selector failure evidence changed",
     )
-    scope = _mapping(repair.get("repair_scope"), name="stage selector repair scope")
-    _require(scope.get("runtime_expected_identity_only") is True, "repair widened")
-    for field in (
-        "selector_bytes_changed",
-        "selector_repository_revision_changed",
-        "selector_algorithm_changed",
-        "model_family_changed",
-        "model_size_changed",
-        "source_cohort_changed",
-        "camera_panel_changed",
-        "candidate_roster_changed",
-        "loss_or_gate_changed",
-        "replacement_allowed",
-        "claim_authorized",
-    ):
-        _require(scope.get(field) is False, f"repair widened {field}")
-    boundary = _mapping(
-        repair.get("information_boundary"),
-        name="stage selector information boundary",
-    )
+    expected_scope = {
+        "camera_panel_changed": False,
+        "candidate_roster_changed": False,
+        "claim_authorized": False,
+        "loss_or_gate_changed": False,
+        "model_family_changed": False,
+        "model_size_changed": False,
+        "replacement_allowed": False,
+        "runtime_expected_identity_only": True,
+        "selector_algorithm_changed": False,
+        "selector_bytes_changed": False,
+        "selector_repository_revision_changed": False,
+        "source_cohort_changed": False,
+    }
+    _require(repair.get("repair_scope") == expected_scope, "repair scope changed")
+    boundary = _mapping(repair.get("information_boundary"), name="boundary")
     _require(
         boundary and all(value is False for value in boundary.values()),
-        "boundary changed",
+        "information boundary changed",
     )
     authorization = _mapping(
-        repair.get("execution_authorization"),
-        name="stage selector execution authorization",
+        repair.get("execution_authorization"), name="authorization"
     )
     _require(
         authorization.get("event") == "push-to-protected-main-after-reviewed-merge"
@@ -190,7 +175,7 @@ def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         is True
         and authorization.get("fresh_target_selection_authorized") is False
         and authorization.get("fresh_target_payload_access_authorized") is False,
-        "stage selector execution authorization changed",
+        "execution authorization changed",
     )
     return repair
 
@@ -208,12 +193,12 @@ def _load_stage(path: Path) -> ModuleType:
 
 def _write_activation_marker(path: Path) -> None:
     marker = {
-        "repair_id": REPAIR_ID,
-        "consumer_file_sha256": STAGE_SCRIPT_SHA256,
-        "previous_expected_sha256": PREVIOUS_SELECTOR_SHA256,
-        "corrected_expected_sha256": CORRECTED_SELECTOR_SHA256,
-        "selector_file_sha256": CORRECTED_SELECTOR_SHA256,
         "application": "process-local-loaded-module-constant-only",
+        "consumer_file_sha256": STAGE_SCRIPT_SHA256,
+        "corrected_expected_sha256": CORRECTED_SELECTOR_SHA256,
+        "previous_expected_sha256": PREVIOUS_SELECTOR_SHA256,
+        "repair_id": REPAIR_ID,
+        "selector_file_sha256": CORRECTED_SELECTOR_SHA256,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -274,7 +259,7 @@ def main() -> int:
         "selector repository identity changed",
     )
     _require(
-        selector.stat().st_size == CORRECTED_SELECTOR_BYTE_COUNT
+        selector.stat().st_size == SELECTOR_BYTE_COUNT
         and _file_sha256(selector) == CORRECTED_SELECTOR_SHA256,
         "selector source bytes changed",
     )
