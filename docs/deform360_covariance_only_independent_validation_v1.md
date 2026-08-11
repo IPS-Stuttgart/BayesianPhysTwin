@@ -66,6 +66,30 @@ The target prefix is frames `[0, 58)`, the scored future is `[58, 76)`, and
 `[76, 81)` remains an unscored buffer. The twelve future payloads may then be
 opened exactly once.
 
+## Cross-repository authority binding
+
+The software protocol and the paper preregistration have distinct, explicit
+roles. The content-addressed binding is stored at
+`protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json`.
+
+- BayesianPhysTwin protocol
+  `0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc`
+  owns prediction custody, runtime identity, source receipts, target barriers,
+  and technical execution.
+- The merged BayesianPhysTwin-Paper protocol
+  `fa16c105e6d535d1e229ccf086fd69d05b2be74592b5c4e3f6c5289b8915fee3`
+  at revision `7951467b1a24ac428a2ffc81dd0ce8bd0d622ae5` owns statistical
+  analysis and paper-facing claim wording.
+- Both protocols must validate before target execution, and both must bind the
+  same final evidence before result promotion.
+- Any disagreement fails closed and forbids target opening. Neither the binding
+  nor either protocol alone authorizes target execution or a scientific claim.
+
+This separation prevents a software-side bootstrap or contrast definition from
+silently weakening the already merged paper analysis. The paper protocol is the
+analysis authority; the software protocol remains the custody and execution
+authority.
+
 ## Arms
 
 The complete report retains four arms:
@@ -92,10 +116,12 @@ The primary effect is:
 frozen covariance hybrid minus zero-covariance last_residual
 ```
 
-Lower is better. The primary claim is authorized only when the upper endpoint of
-a two-sided 95% paired object-session bootstrap interval is below zero. The
-bootstrap uses 100,000 replicates and seed `20260812`. Frames, tracks, vertices,
-coordinates, or cameras never increase the independent sample size.
+Lower is better. The paper protocol owns the confirmatory simultaneous analysis,
+including its physical-fallback context contrast, exact sign-flip procedure, and
+negative wording. The software protocol retains the matching candidate-versus-
+`last_residual` custody contrast and may not weaken the paper-side decision.
+The bootstrap uses 100,000 replicates and seed `20260812`. Frames, tracks,
+vertices, coordinates, or cameras never increase the independent sample size.
 
 Point noninferiority is not estimated: point predictions must be content
 identical by construction, so track and Chamfer differences are exactly zero.
@@ -122,12 +148,11 @@ primary result.
 
 ## Claim boundary
 
-A positive result supports only the following statement:
-
-> On the twelve locked, object-disjoint Deform360 confirmation sessions, the
-> frozen Bayesian endpoint covariance improves object-session-level
-> probabilistic forecasts over zero-covariance `last_residual`, while point
-> predictions remain exactly unchanged.
+A positive result supports only the statement authorized by the merged paper
+preregistration. At minimum, it must say that the frozen covariance was attached
+to the exact same `last_residual` mean and that point predictions remained
+unchanged. Any broader physical-fallback statement requires the paper protocol's
+second simultaneous contrast to pass.
 
 The protocol does not identify a latent physical-state correction, authorize
 deployment, establish performance outside the locked cohort, demonstrate a
