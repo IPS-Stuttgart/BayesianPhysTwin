@@ -29,9 +29,7 @@ AMENDMENT = ROOT / (
 WORKFLOW = ROOT / (".github/workflows/deform360-v6-source-prediction-evidence.yml")
 RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 AMENDMENT_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
-V5_SOURCE_LOCK_ID = (
-    "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189"
-)
+V5_SOURCE_LOCK_ID = "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189"
 
 
 def _digest(path: Path) -> str:
