@@ -9,6 +9,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- A content-addressed `PhysicalQueryV1` freeze for target-blind physical
+  queries, exact fallback, required marginal and complete-joint-gauge
+  covariance treatments, proper-score decision margins, independent-group
+  resampling, and exact package, repository, provider, and evidence bindings.
 - Proper multivariate predictive scoring for registered physical queries, with
   energy, variogram, exact Gaussian log, and weighted interval scores; matched
   candidate attribution; exact-fallback-aware decisive-evidence export; and a
