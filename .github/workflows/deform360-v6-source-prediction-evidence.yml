@@ -6,21 +6,27 @@ on:
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
+      - "docs/deform360_v6_processing_runtime_repair_2026-08-12.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
+      - "tests/test_deform360_v6_processing_runtime_repair.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
+      - "docs/deform360_v6_processing_runtime_repair_2026-08-12.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
+      - "tests/test_deform360_v6_processing_runtime_repair.py"
 
 permissions:
   contents: read
@@ -47,6 +53,12 @@ env:
   SOURCE_RUN_ID: "31236564360"
   SOURCE_ARTIFACT_NAME: deform360-official-calibration-source-31236564360-1
   DEFORM360_PHYSICAL_REVISION: 0fe36f0b7a7a917ba62b5f8cee707299a9a4a317
+  DEFORM360_PROCESSING_PYPROJECT_SHA256: 0ccfe6a386c184613191ccdaa8f2912bc3c148a7dda9c9f126959301d250232e
+  DEFORM360_PROCESSING_REPAIR_ID: 15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f
+  DEFORM360_PROCESSING_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json
+  DEFORM360_PROCESSING_REPAIR_SHA256: b60a18821b0e260519ffda2289b20cb247b1a36c91eac9a528d953111e7b520c
+  NERFSTUDIO_VERSION: "1.1.5"
+  GSPLAT_VERSION: "1.4.0"
   OFFICIAL_PHYSTWIN_REVISION: 2b6630528141b9cba5a7677c8b88b2129b4a8390
   SAM2_REVISION: 2b90b9f5ceec907a1c18123530e92e794ad901a4
   CAUSAL4D_DISCOVERY_REVISION: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
@@ -90,6 +102,7 @@ jobs:
           files=(
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+            tests/test_deform360_v6_processing_runtime_repair.py
             tests/test_deform360_v6_runtime_bootstrap_receipt.py
           )
           python -m ruff check "${files[@]}"
@@ -99,6 +112,7 @@ jobs:
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_processing_runtime_repair.py \
             tests/test_deform360_v6_runtime_bootstrap_receipt.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
@@ -264,6 +278,8 @@ jobs:
             set -euo pipefail
             runtime="${RUNNER_TEMP}/deform360-v6-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             test ! -e "${runtime}"
+            test "$(sha256sum "${DEFORM360_PROCESSING_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${DEFORM360_PROCESSING_REPAIR_SHA256}"
             python -m venv --copies --system-site-packages "${runtime}"
             runtime_python="${runtime}/bin/python"
             "${runtime_python}" -m pip install \
@@ -271,7 +287,9 @@ jobs:
               "setuptools==80.9.0" \
               "wheel==0.45.1"
             "${runtime_python}" -m pip install -e ".[graph,vision]"
-            "${runtime_python}" -m pip install -e ./_deform360_physical
+            test "$(sha256sum _deform360_physical/pyproject.toml | awk '{print $1}')" \
+              = "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
+            "${runtime_python}" -m pip install -e "./_deform360_physical[processing]"
             SAM2_BUILD_CUDA=0 \
               "${runtime_python}" -m pip install -e ./_sam2
             "${runtime_python}" -m pip install \
@@ -295,6 +313,9 @@ jobs:
 
           import bayesian_phystwin
           import deform360
+          import gsplat
+          from nerfstudio.configs import method_configs
+          from nerfstudio.scripts import exporter
           import sam2
           import torch
           import warp
@@ -303,9 +324,19 @@ jobs:
               raise SystemExit("CUDA is unavailable")
           if version("virtualenv") != "21.7.4":
               raise SystemExit("virtualenv runtime identity changed")
+          if version("nerfstudio") != "1.1.5":
+              raise SystemExit("nerfstudio runtime identity changed")
+          if version("gsplat") != "1.4.0":
+              raise SystemExit("gsplat runtime identity changed")
+          if "splatfacto" not in method_configs.method_configs:
+              raise SystemExit("nerfstudio splatfacto method is unavailable")
+          if not hasattr(exporter, "ExportGaussianSplat"):
+              raise SystemExit("nerfstudio Gaussian exporter is unavailable")
           print(torch.__version__)
           print(warp.__version__)
           print(version("virtualenv"))
+          print(version("nerfstudio"))
+          print(version("gsplat"))
           print(version("bayesian-phystwin"))
           print(version("deform360"))
           print(bayesian_phystwin.__file__)
@@ -486,6 +517,23 @@ jobs:
               "claim_authorized": False,
               "fresh_target_selection_authorized": False,
               "fresh_target_payload_access_authorized": False,
+              "runtime_deform360_processing_dependencies": {
+                  "activated": False,
+                  "deform360_pyproject_sha256": os.environ[
+                      "DEFORM360_PROCESSING_PYPROJECT_SHA256"
+                  ],
+                  "deform360_repository_revision": os.environ[
+                      "DEFORM360_PHYSICAL_REVISION"
+                  ],
+                  "gsplat_version": os.environ["GSPLAT_VERSION"],
+                  "install_target": "_deform360_physical[processing]",
+                  "nerfstudio_version": os.environ["NERFSTUDIO_VERSION"],
+                  "repair_id": os.environ["DEFORM360_PROCESSING_REPAIR_ID"],
+                  "repair_path": os.environ["DEFORM360_PROCESSING_REPAIR_PATH"],
+                  "repair_file_sha256": os.environ[
+                      "DEFORM360_PROCESSING_REPAIR_SHA256"
+                  ],
+              },
           }
           canonical = json.dumps(
               receipt,
