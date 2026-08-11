@@ -29,8 +29,10 @@ Domain and group identifiers remain genuine canonical Python strings at this
 boundary; array libraries must not silently substitute scalar string types.
 Calibration and certification partition identities must also be distinct, and
 every domain certificate must name the same threshold-selection group roster.
-Validation establishes that common roster before checking all cross-pool
-overlaps.
+Each underlying harm certificate already rejects overlap between that roster
+and its own certification groups. The composite then rejects calibration versus
+threshold-selection reuse, calibration versus certification reuse, and
+certification-group reuse across domains.
 
 The composite record owns only the cross-domain policy statement. Each
 underlying finite-group certificate retains its existing independent artifact
