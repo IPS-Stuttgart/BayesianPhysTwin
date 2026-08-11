@@ -163,9 +163,7 @@ def test_partial_thread_pinning_still_binds_logical_cpu_count() -> None:
 
 def test_missing_cpu_count_requires_fully_pinned_thread_counts() -> None:
     with pytest.raises(ValueError, match="requires logical CPU count"):
-        numerical_compatibility_descriptor_v1(
-            _profile(cpu_count=None, lock=_lock())
-        )
+        numerical_compatibility_descriptor_v1(_profile(cpu_count=None, lock=_lock()))
 
     descriptor = numerical_compatibility_descriptor_v1(
         _profile(
