@@ -12,7 +12,6 @@ import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
-from typing import Any
 
 from bayesian_phystwin.deform360_bias_aware_prospective_physical import (
     UPSTREAM_FILE_SHA256,
@@ -23,30 +22,48 @@ SCHEMA_VERSION = 1
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
-def _git(
+def _git_text(
     repository: Path,
     *arguments: str,
     check: bool = True,
-    text: bool = True,
-) -> subprocess.CompletedProcess[str] | subprocess.CompletedProcess[bytes]:
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", *arguments],
         cwd=repository,
         check=check,
         capture_output=True,
-        text=text,
+        text=True,
     )
 
 
-def _canonical_path(value: object) -> str:
+def _git_bytes(
+    repository: Path,
+    *arguments: str,
+    check: bool = True,
+) -> subprocess.CompletedProcess[bytes]:
+    return subprocess.run(
+        ["git", *arguments],
+        cwd=repository,
+        check=check,
+        capture_output=True,
+        text=False,
+    )
+
+
+def _canonical_text(value: object, *, name: str) -> str:
     if type(value) is not str or not value or value.strip() != value:
-        raise ValueError("source-bundle paths must be nonempty canonical strings")
-    pure = PurePosixPath(value)
-    if pure.is_absolute() or any(part in {"", ".", ".."} for part in pure.parts):
-        raise ValueError(f"source-bundle path is not repository relative: {value}")
-    if pure.as_posix() != value or "\\" in value or ":" in value:
-        raise ValueError(f"source-bundle path is not canonical POSIX: {value}")
+        raise ValueError(f"{name} must be a nonempty canonical string")
     return value
+
+
+def _canonical_path(value: object) -> str:
+    text = _canonical_text(value, name="source-bundle path")
+    pure = PurePosixPath(text)
+    if pure.is_absolute() or any(part in {"", ".", ".."} for part in pure.parts):
+        raise ValueError(f"source-bundle path is not repository relative: {text}")
+    if pure.as_posix() != text or "\\" in text or ":" in text:
+        raise ValueError(f"source-bundle path is not canonical POSIX: {text}")
+    return text
 
 
 def _canonical_sha256(value: object) -> str:
@@ -62,7 +79,10 @@ def load_requirements(path: Path | None) -> dict[str, str]:
         raw: object = UPSTREAM_FILE_SHA256
     else:
         loaded = json.loads(path.read_text(encoding="utf-8"))
-        raw = loaded.get("files") if isinstance(loaded, dict) and "files" in loaded else loaded
+        if isinstance(loaded, dict) and "files" in loaded:
+            raw = loaded["files"]
+        else:
+            raw = loaded
     if not isinstance(raw, Mapping) or not raw:
         raise ValueError("source-bundle requirements must be a nonempty JSON object")
     requirements: dict[str, str] = {}
@@ -73,13 +93,12 @@ def load_requirements(path: Path | None) -> dict[str, str]:
 
 
 def _blob(repository: Path, revision: str, relative_path: str) -> bytes | None:
-    completed = _git(
+    completed = _git_bytes(
         repository,
         "cat-file",
         "blob",
         f"{revision}:{relative_path}",
         check=False,
-        text=False,
     )
     if completed.returncode != 0:
         return None
@@ -91,10 +110,9 @@ def _lines(
     *arguments: str,
     check: bool = True,
 ) -> tuple[str, ...]:
-    completed = _git(repository, *arguments, check=check)
+    completed = _git_text(repository, *arguments, check=check)
     if completed.returncode != 0:
         return ()
-    assert isinstance(completed.stdout, str)
     return tuple(line for line in completed.stdout.splitlines() if line)
 
 
@@ -145,20 +163,26 @@ def _report_id(payload: Mapping[str, object]) -> str:
 def locate_frozen_source_bundle(
     repository: Path,
     requirements: Mapping[str, str],
+    *,
+    repository_id: str = "local-git-repository",
 ) -> dict[str, object]:
     """Search every fetched ref for a commit matching all required bytes."""
 
     root = repository.resolve()
-    if not (root / ".git").exists():
+    inside = _lines(root, "rev-parse", "--is-inside-work-tree", check=False)
+    if inside != ("true",):
         raise ValueError("repository_root must be a Git working tree")
     shallow = _lines(root, "rev-parse", "--is-shallow-repository")
     if shallow != ("false",):
         raise ValueError("complete Git history is required")
+    stable_repository_id = _canonical_text(repository_id, name="repository_id")
     normalized = {
         _canonical_path(path): _canonical_sha256(digest)
         for path, digest in requirements.items()
     }
     normalized = dict(sorted(normalized.items()))
+    if not normalized:
+        raise ValueError("source-bundle requirements must not be empty")
     anchor = (
         "scripts/remote/run_deform360_official_phystwin_smoke.py"
         if "scripts/remote/run_deform360_official_phystwin_smoke.py" in normalized
@@ -198,7 +222,7 @@ def locate_frozen_source_bundle(
     payload: dict[str, object] = {
         "schema": SCHEMA,
         "schema_version": SCHEMA_VERSION,
-        "repository": str(root),
+        "repository_id": stable_repository_id,
         "complete_history_searched": True,
         "required_file_sha256": normalized,
         "anchor_path": anchor,
@@ -245,6 +269,10 @@ def write_report(path: Path, report: Mapping[str, object]) -> None:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository-root", type=Path, default=Path.cwd())
+    parser.add_argument(
+        "--repository-id",
+        default="IPS-Stuttgart/BayesianPhysTwin",
+    )
     parser.add_argument("--requirements-json", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--require-match", action="store_true")
@@ -254,7 +282,11 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     requirements = load_requirements(args.requirements_json)
-    report = locate_frozen_source_bundle(args.repository_root, requirements)
+    report = locate_frozen_source_bundle(
+        args.repository_root,
+        requirements,
+        repository_id=args.repository_id,
+    )
     write_report(args.output, report)
     print(
         json.dumps(
