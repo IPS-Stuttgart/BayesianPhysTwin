@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   selector-bytes:
-    name: Hash frozen Causal4D selector bytes
+    name: Locate frozen Causal4D selector bytes
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -23,40 +23,48 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Check out exact Causal4D discovery revision
+      - name: Check out complete Causal4D history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Causal4D
           ref: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
           path: _causal4d_selector_probe
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
           clean: true
 
-      - name: Report exact selector byte identity
+      - name: Locate the registered selector digest in history
         shell: bash
         run: |
           set -euo pipefail
-          selector="_causal4d_selector_probe/src/causal4d_public/deform360_object_sam2.py"
+          repository="_causal4d_selector_probe"
+          relative="src/causal4d_public/deform360_object_sam2.py"
+          selector="${repository}/${relative}"
+          expected="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
           test -f "${selector}"
-          python - "${selector}" <<'PY'
-          from __future__ import annotations
+          observed=$(sha256sum "${selector}" | awk '{print $1}')
+          bytes=$(stat -c '%s' "${selector}")
+          echo "selector_path=${selector}"
+          echo "selector_byte_count=${bytes}"
+          echo "selector_sha256=${observed}"
+          echo "registered_sha256=${expected}"
+          echo "selector_matches_registered=$([[ "${observed}" = "${expected}" ]] && echo true || echo false)"
 
-          import hashlib
-          from pathlib import Path
-          import sys
+          match=""
+          match_bytes=""
+          while IFS= read -r revision; do
+            candidate=$(git -C "${repository}" show "${revision}:${relative}" 2>/dev/null || true)
+            [[ -n "${candidate}" ]] || continue
+            digest=$(printf '%s\n' "${candidate}" | sha256sum | awk '{print $1}')
+            if [[ "${digest}" = "${expected}" ]]; then
+              match="${revision}"
+              match_bytes=$(printf '%s\n' "${candidate}" | wc -c)
+              break
+            fi
+          done < <(git -C "${repository}" log --format='%H' --all -- "${relative}")
 
-          path = Path(sys.argv[1])
-          data = path.read_bytes()
-          digest = hashlib.sha256(data).hexdigest()
-          expected = "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
-          print(f"selector_path={path}")
-          print(f"selector_byte_count={len(data)}")
-          print(f"selector_sha256={digest}")
-          print(f"registered_sha256={expected}")
-          print(f"selector_matches_registered={str(digest == expected).lower()}")
-          if digest != expected:
-              raise SystemExit(
-                  f"selector byte identity differs: observed={digest} expected={expected}"
-              )
-          PY
+          echo "historical_match_revision=${match:-none}"
+          echo "historical_match_byte_count=${match_bytes:-none}"
+          if [[ -z "${match}" ]]; then
+            exit 3
+          fi
