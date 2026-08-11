@@ -124,9 +124,7 @@ def _comparison(
 def test_localizes_uncertainty_gain_without_point_gain() -> None:
     report = _analyze(_payload())
     summary = report["summary"]
-    assert summary["primary_conclusion"] == (
-        "retrospective-uncertainty-score-signal"
-    )
+    assert summary["primary_conclusion"] == ("retrospective-uncertainty-score-signal")
     assert summary["familywise_supported_raw_nll_candidates"] == [
         "structured_kernel_rank4_v1"
     ]
