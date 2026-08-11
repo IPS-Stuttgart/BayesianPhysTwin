@@ -70,9 +70,7 @@ def _component_revisions() -> dict[str, str]:
 
 def _component_wheels() -> dict[str, str]:
     return {
-        "bayesian_phystwin": _wheel_digest(
-            "BAYESIAN_PHYSTWIN_WHEEL_SHA256"
-        ),
+        "bayesian_phystwin": _wheel_digest("BAYESIAN_PHYSTWIN_WHEEL_SHA256"),
         "prob4d": _wheel_digest("PROB4D_WHEEL_SHA256"),
         "causal4d": _wheel_digest("CAUSAL4D_WHEEL_SHA256"),
     }
@@ -80,9 +78,7 @@ def _component_wheels() -> dict[str, str]:
 
 def _component_versions() -> dict[str, str]:
     return {
-        "bayesian_phystwin": importlib_metadata.version(
-            "bayesian-phystwin"
-        ),
+        "bayesian_phystwin": importlib_metadata.version("bayesian-phystwin"),
         "prob4d": importlib_metadata.version("prob4d"),
         "causal4d": importlib_metadata.version("causal4d"),
     }
@@ -95,9 +91,7 @@ def _copy_manifest_artifacts(
     output.mkdir(parents=True, exist_ok=True)
     unexpected = sorted(path.name for path in output.iterdir())
     if unexpected:
-        raise FileExistsError(
-            f"golden-path evidence output is not empty: {unexpected}"
-        )
+        raise FileExistsError(f"golden-path evidence output is not empty: {unexpected}")
     for source in paths:
         shutil.copy2(source, output / source.name)
 
