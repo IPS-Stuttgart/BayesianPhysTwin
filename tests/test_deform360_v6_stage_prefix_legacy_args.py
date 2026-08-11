@@ -13,6 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 PHYSICAL_TARGET = "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
 INVENTORY_TARGET = "scripts/science/inventory_deform360_calibration_prepared_source.py"
+STAGE_SELECTOR_HELPER = (
+    "scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"
+)
+STAGE_SELECTOR_REPAIR = (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_"
+    "stage_selector_identity_repair.json"
+)
 
 
 def _patch_python(text: str) -> str:
@@ -63,7 +71,7 @@ def _materialize_shim(tmp_path: Path) -> Path:
         {
             "BASE_LAUNCHER": str(base),
             "PATCHED_LAUNCHER": str(output),
-            "PATCH_ID_VALUE": "fixture-stage-prefix-repair",
+            "PATCH_ID_VALUE": "fixture-stage-selector-repair",
         }
     )
     subprocess.run(
@@ -109,6 +117,11 @@ def _run_shim(
     environment.update(
         {
             "CAPTURE_PATH": str(capture),
+            "DEFORM360_V6_STAGE_SELECTOR_ACTIVATION_MARKER": str(
+                tmp_path / "activation.json"
+            ),
+            "DEFORM360_V6_STAGE_SELECTOR_HELPER_PATH": STAGE_SELECTOR_HELPER,
+            "DEFORM360_V6_STAGE_SELECTOR_REPAIR_PATH": STAGE_SELECTOR_REPAIR,
             "GITHUB_WORKSPACE": str(tmp_path / "exact-worktree"),
             "PREPARED_INVENTORY_IMPLEMENTATION_REVISION": "a" * 40,
             "REAL_BPT_PYTHON": str(_fake_python(tmp_path)),
@@ -147,7 +160,7 @@ def _stage_prefix_arguments(worktree: str) -> list[str]:
     ]
 
 
-def test_stage_prefix_repair_removes_only_obsolete_exact_bindings(
+def test_stage_prefix_routes_exact_strict_arguments_through_selector_helper(
     tmp_path: Path,
 ) -> None:
     shim = _materialize_shim(tmp_path)
@@ -158,7 +171,11 @@ def test_stage_prefix_repair_removes_only_obsolete_exact_bindings(
 
     assert completed.returncode == 0
     assert captured == [
-        PHYSICAL_TARGET,
+        STAGE_SELECTOR_HELPER,
+        "--runtime-repair",
+        STAGE_SELECTOR_REPAIR,
+        "--activation-marker",
+        str(tmp_path / "activation.json"),
         "--execution-repo",
         worktree,
         "--execution-lock",
@@ -251,12 +268,19 @@ def test_inventory_revision_rewrite_is_preserved(tmp_path: Path) -> None:
     ]
 
 
-def test_launcher_keeps_archived_science_blob_immutable() -> None:
+def test_launcher_preserves_predecessor_blob_and_records_new_repair() -> None:
     text = LAUNCHER.read_text(encoding="utf-8")
 
+    assert 'BASE_REVISION="dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"' in text
+    assert 'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"' in text
+    assert 'PATCH_ID="deform360-v6-stage-selector-consumer-identity-v1"' in text
+    assert (
+        'STAGE_SELECTOR_REPAIR_ID="'
+        'aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae"' in text
+    )
+    assert STAGE_SELECTOR_HELPER in text
+    assert '"runtime_stage_selector_consumer_identity_repair"' in text
     assert 'BASE_REVISION="b0f6b46991a20c54260baf58ddf62fbb6dab7813"' in text
-    assert 'BASE_LAUNCHER_BLOB_SHA="bf670c99351c9c2ed6dd3cdea9aeb106c1ffb4ca"' in text
     assert 'SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"' in text
-    assert 'PATCH_ID="deform360-v6-stage-prefix-obsolete-arguments-v1"' in text
     assert "source.count(old) != 1" in text
     assert "patched.count(new) != 1" in text
