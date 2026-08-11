@@ -33,7 +33,7 @@ from .covariance_only_hybrid import compose_covariance_only_hybrid
 def _last_valid_residual(adapter: ResidualHistoryAdapterV1) -> np.ndarray:
     """Return each material's last valid causal residual without filling history."""
 
-    result = np.zeros((adapter.material_count, 3), dtype=np.float64)
+    result: np.ndarray = np.zeros((adapter.material_count, 3), dtype=np.float64)
     for material_index in range(adapter.material_count):
         support = np.flatnonzero(adapter.observed_validity[:, material_index])
         if len(support):
