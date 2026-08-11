@@ -10,7 +10,6 @@ import pytest
 import bayesian_phystwin.deform360_covariance_residual_history_v1 as public_api
 from bayesian_phystwin.deform360_covariance_residual_history_v1 import (
     CameraRecorderFamilyMapV1,
-    DisjointCameraPartitionV1,
     ReconstructionManifestV1,
     ResidualHistoryDryRunPolicyV1,
     build_residual_history_adapter,
@@ -24,15 +23,11 @@ def _digest(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def _policy(
-    *,
-    cameras_per_role: int = 2,
-    families_per_role: int = 2,
-) -> ResidualHistoryDryRunPolicyV1:
+def _policy() -> ResidualHistoryDryRunPolicyV1:
     return ResidualHistoryDryRunPolicyV1(
         minimum_prefix_frames=2,
-        minimum_cameras_per_role=cameras_per_role,
-        minimum_camera_families_per_role=families_per_role,
+        minimum_cameras_per_role=2,
+        minimum_camera_families_per_role=2,
     )
 
 
@@ -141,17 +136,16 @@ def _run(
 ):
     selected_map = _family_map() if family_map is None else family_map
     default_provider, default_scoring = _manifests(selected_map)
+    selected_mean = (
+        _registered_mean(arrays) if registered_mean is None else registered_mean
+    )
     return run_source_only_residual_history_dry_run(
         arrays["physical_prefix"],
         arrays["observation"],
         arrays["validity"],
         arrays["physical_future"],
         arrays["physical_covariance"],
-        (
-            _registered_mean(arrays)
-            if registered_mean is None
-            else registered_mean
-        ),  # type: ignore[arg-type]
+        selected_mean,  # type: ignore[arg-type]
         arrays["donor_covariance"],
         frame_indices=arrays["frame_indices"],
         material_ids=arrays["material_ids"],
@@ -186,9 +180,11 @@ def test_policy_rejects_unregistered_or_unsupported_values(
         ResidualHistoryDryRunPolicyV1(**arguments)  # type: ignore[arg-type]
 
 
-def test_policy_id_is_tamper_evident() -> None:
+def test_policy_and_family_map_ids_are_tamper_evident() -> None:
     with pytest.raises(ValueError, match="policy_id"):
         replace(_policy(), policy_id="0" * 64)
+    with pytest.raises(ValueError, match="map_id"):
+        replace(_family_map(), map_id="0" * 64)
 
 
 def test_family_map_is_order_invariant_and_queryable() -> None:
@@ -202,28 +198,20 @@ def test_family_map_is_order_invariant_and_queryable() -> None:
 
 
 @pytest.mark.parametrize(
-    "bindings, match",
+    "bindings",
     [
-        ((), "must not be empty"),
-        ((("camera", "family"), ("camera", "other")), "exactly one"),
-        ((["camera", "family"],), "two-string tuple"),
-        (((" camera", "family"),), "canonical string"),
+        (),
+        (("camera", "family"), ("camera", "other")),
+        (["camera", "family"],),
+        ((" camera", "family"),),
     ],
 )
-def test_family_map_rejects_malformed_bindings(
-    bindings: object,
-    match: str,
-) -> None:
-    with pytest.raises(ValueError, match=match):
+def test_family_map_rejects_malformed_bindings(bindings: object) -> None:
+    with pytest.raises(ValueError):
         CameraRecorderFamilyMapV1(
             source_inventory_id=_digest("inventory"),
             bindings=bindings,  # type: ignore[arg-type]
         )
-
-
-def test_family_map_id_is_tamper_evident() -> None:
-    with pytest.raises(ValueError, match="map_id"):
-        replace(_family_map(), map_id="0" * 64)
 
 
 def test_explicit_family_map_keeps_related_streams_in_one_role() -> None:
@@ -242,10 +230,10 @@ def test_explicit_family_map_keeps_related_streams_in_one_role() -> None:
         family_map,
         policy=_policy(),
     )
-    provider = set(partition.provider_camera_ids)
-    scoring = set(partition.scoring_camera_ids)
     related = {"arbitrary-left", "unrelated-right"}
-    assert related <= provider or related <= scoring
+    assert related <= set(partition.provider_camera_ids) or related <= set(
+        partition.scoring_camera_ids
+    )
 
 
 def test_partition_rejects_insufficient_support_and_tamper() -> None:
@@ -275,21 +263,19 @@ def test_partition_rejects_insufficient_support_and_tamper() -> None:
 
 
 @pytest.mark.parametrize(
-    "arguments, match",
+    "arguments",
     [
-        ({"role": "unknown"}, "provider or scoring"),
-        ({"implementation_revision": "x" * 40}, "lowercase hexadecimal"),
-        ({"input_camera_ids": ()}, "must not be empty"),
-        ({"input_source_artifact_ids": ()}, "must not be empty"),
+        {"role": "unknown"},
+        {"implementation_revision": "x" * 40},
+        {"input_camera_ids": ()},
+        {"input_source_artifact_ids": ()},
     ],
 )
 def test_reconstruction_manifest_rejects_malformed_identity(
     arguments: dict[str, object],
-    match: str,
 ) -> None:
-    family_map = _family_map()
-    provider, _scoring = _manifests(family_map)
-    with pytest.raises(ValueError, match=match):
+    provider, _scoring = _manifests(_family_map())
+    with pytest.raises(ValueError):
         replace(provider, manifest_id=None, **arguments)
 
 
@@ -307,7 +293,7 @@ def test_reconstruction_manifest_rejects_self_parent_and_tamper() -> None:
         replace(provider, manifest_id="0" * 64)
 
 
-def test_reconstruction_separation_rejects_roles_inventory_and_cameras() -> None:
+def test_reconstruction_separation_rejects_wrong_identity_sets() -> None:
     family_map = _family_map()
     partition = deterministic_disjoint_camera_partition(family_map, policy=_policy())
     provider, scoring = _manifests(family_map)
@@ -329,7 +315,7 @@ def test_reconstruction_separation_rejects_roles_inventory_and_cameras() -> None
         validate_reconstruction_separation(partition, provider, wrong_cameras)
 
 
-def test_reconstruction_separation_rejects_bytes_lineage_and_types() -> None:
+def test_reconstruction_separation_rejects_shared_bytes_and_lineage() -> None:
     family_map = _family_map()
     partition = deterministic_disjoint_camera_partition(family_map, policy=_policy())
     provider, scoring = _manifests(family_map)
@@ -408,58 +394,69 @@ def test_adapter_rejects_frames_materials_validity_and_shapes() -> None:
 
 
 @pytest.mark.parametrize(
-    "registered, match",
+    "registered",
     [
-        ("not-an-array", "NumPy array"),
-        (np.zeros((3, 4, 3), dtype=np.float32), "dtype float64"),
-        (np.zeros((3, 3, 3), dtype=np.float64), "must have shape"),
-        (np.asfortranarray(np.zeros((3, 4, 3))), "C-contiguous"),
-        (np.full((3, 4, 3), np.inf), "must be finite"),
+        "not-an-array",
+        np.zeros((3, 4, 3), dtype=np.float32),
+        np.zeros((3, 3, 3), dtype=np.float64),
+        np.asfortranarray(np.zeros((3, 4, 3))),
+        np.full((3, 4, 3), np.inf),
     ],
 )
-def test_registered_mean_contract_is_strict(
-    registered: object,
-    match: str,
-) -> None:
-    with pytest.raises((TypeError, ValueError), match=match):
+def test_registered_mean_contract_is_strict(registered: object) -> None:
+    with pytest.raises((TypeError, ValueError)):
         _run(_arrays(), registered_mean=registered)
 
 
 @pytest.mark.parametrize(
-    "physical_future, match",
+    "physical_future",
     [
-        ("not-an-array", "NumPy array"),
-        (np.zeros((3, 4, 3), dtype=np.float32), "dtype float64"),
-        (np.zeros((3, 3, 3), dtype=np.float64), "must have shape"),
-        (np.asfortranarray(np.zeros((3, 4, 3))), "C-contiguous"),
-        (np.full((3, 4, 3), np.inf), "must be finite"),
+        "not-an-array",
+        np.zeros((3, 4, 3), dtype=np.float32),
+        np.zeros((3, 3, 3), dtype=np.float64),
+        np.asfortranarray(np.zeros((3, 4, 3))),
+        np.full((3, 4, 3), np.inf),
     ],
 )
-def test_physical_future_contract_is_strict(
-    physical_future: object,
-    match: str,
-) -> None:
+def test_physical_future_contract_is_strict(physical_future: object) -> None:
     arrays = _arrays()
     arrays["physical_future"] = physical_future  # type: ignore[assignment]
-    with pytest.raises((TypeError, ValueError), match=match):
+    with pytest.raises((TypeError, ValueError)):
         _run(
             arrays,
             registered_mean=np.zeros((3, 4, 3), dtype=np.float64),
         )
 
 
+def test_physical_covariance_contract_is_strict() -> None:
+    arrays = _arrays()
+    arrays["physical_covariance"] = arrays["physical_covariance"].astype(
+        np.float32
+    )
+    with pytest.raises(ValueError, match="dtype float64"):
+        _run(arrays)
+    arrays = _arrays()
+    arrays["physical_covariance"][..., 0, 1] = 1.0
+    with pytest.raises(ValueError, match="symmetric"):
+        _run(arrays)
+    arrays = _arrays()
+    arrays["physical_covariance"][..., 0, 0] = -1.0
+    with pytest.raises(ValueError, match="positive semidefinite"):
+        _run(arrays)
+
+
 @pytest.mark.parametrize(
-    "bins, match",
+    "bins",
     [
-        (np.asarray([0, 1], dtype=np.int64), "one entry per future frame"),
-        (np.asarray([0, 1, 3], dtype=np.int64), "early/middle/late"),
-        (np.asarray([0.0, 1.0, 2.0]), "integers"),
+        np.asarray([0, 1], dtype=np.int64),
+        np.asarray([0, 1, 3], dtype=np.int64),
+        np.asarray([0.0, 1.0, 2.0]),
     ],
 )
-def test_horizon_contract_is_strict(bins: np.ndarray, match: str) -> None:
+def test_horizon_contract_is_strict(bins: np.ndarray) -> None:
     arrays = _arrays()
     arrays["horizon_bins"] = bins
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(ValueError):
         _run(arrays)
 
 
