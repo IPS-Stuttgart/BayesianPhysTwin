@@ -5,10 +5,10 @@ set -euo pipefail
 : "${BPT_FRAME_ZERO_PYTHON:?BPT_FRAME_ZERO_PYTHON is required}"
 : "${BPT_FRAME_ZERO_RUNTIME_MARKER:?BPT_FRAME_ZERO_RUNTIME_MARKER is required}"
 
-readonly REPAIR_ID="6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8"
+readonly FRAME_ZERO_DISPATCH_REPAIR_ID="6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8"
 readonly PHYSICAL_TARGET="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
 readonly FRAME_ZERO_STAGE="frame-zero"
-readonly EXPECTED_MARKER="{\"repair_id\":\"${REPAIR_ID}\",\"stage\":\"${FRAME_ZERO_STAGE}\"}"
+readonly EXPECTED_MARKER="{\"repair_id\":\"${FRAME_ZERO_DISPATCH_REPAIR_ID}\",\"stage\":\"${FRAME_ZERO_STAGE}\"}"
 
 mark_frame_zero_runtime() {
   local marker="${BPT_FRAME_ZERO_RUNTIME_MARKER}"
