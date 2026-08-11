@@ -1,0 +1,128 @@
+name: Rebase Deform360 version probe once
+
+on:
+  push:
+    branches:
+      - fix/deform360-v6-runtime-version-metadata
+
+permissions:
+  contents: write
+
+jobs:
+  rebase:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Restore current policy and apply the runtime repair
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- \
+            .github/workflows/deform360-v6-source-prediction-evidence.yml
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          contract_anchor = '''          if observed != declared or observed != expected:
+              raise SystemExit("v6 source prediction amendment changed")
+          PY
+          '''
+          contract_replacement = '''          if observed != declared or observed != expected:
+              raise SystemExit("v6 source prediction amendment changed")
+
+          workflow = Path(
+              ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+          ).read_text(encoding="utf-8")
+          undefined_attribute = "bayesian_phystwin." + "__version__"
+          if undefined_attribute in workflow:
+              raise SystemExit("runtime probe uses an undefined package attribute")
+          if 'version("bayesian-phystwin")' not in workflow:
+              raise SystemExit("runtime probe is not bound to installed metadata")
+          PY
+          '''
+          if contract_anchor not in text:
+              raise SystemExit("v6 amendment contract anchor missing")
+          text = text.replace(contract_anchor, contract_replacement, 1)
+
+          runtime_anchor = '''          "${runtime_python}" - <<'PY'
+          import torch
+          import warp
+          import bayesian_phystwin
+          import deform360
+          import sam2
+
+          if not torch.cuda.is_available():
+              raise SystemExit("CUDA is unavailable")
+          print(torch.__version__)
+          print(warp.__version__)
+          print(bayesian_phystwin.__version__)
+          print(deform360.__version__)
+          print(sam2.__file__)
+          PY
+          '''
+          runtime_replacement = '''          "${runtime_python}" - <<'PY'
+          from importlib.metadata import version
+
+          import bayesian_phystwin
+          import deform360
+          import sam2
+          import torch
+          import warp
+
+          if not torch.cuda.is_available():
+              raise SystemExit("CUDA is unavailable")
+          print(torch.__version__)
+          print(warp.__version__)
+          print(version("bayesian-phystwin"))
+          print(version("deform360"))
+          print(bayesian_phystwin.__file__)
+          print(deform360.__file__)
+          print(sam2.__file__)
+          PY
+          '''
+          if runtime_anchor not in text:
+              raise SystemExit("isolated runtime probe anchor missing")
+          text = text.replace(runtime_anchor, runtime_replacement, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Verify the merged workflow
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check PyYAML pytest
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          path = Path(
+              ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          yaml.safe_load(text)
+          assert "bayesian_phystwin.__version__" not in text
+          assert 'version("bayesian-phystwin")' in text
+          assert 'version("deform360")' in text
+          assert "paths:" in text
+          PY
+          python -m pytest -q \
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_fresh_object_session_v6_protocol.py
+          git diff --check
+
+      - name: Publish the rebased branch
+        run: |
+          set -euo pipefail
+          rm .github/workflows/rebase-deform360-version-probe-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Rebase runtime metadata probe on current workflow policy'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
