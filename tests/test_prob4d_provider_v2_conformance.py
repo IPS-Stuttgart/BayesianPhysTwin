@@ -52,16 +52,12 @@ def _contract_module(**changes: object) -> SimpleNamespace:
         },
         "provider_v2_contract_schema": lambda: {"valid_vectors": ["minimal"]},
         "provider_v2_contract_vector": lambda name="minimal": vector,
-        "materialize_provider_v2_contract_vector": (
-            lambda supplied: materialization
-        ),
+        "materialize_provider_v2_contract_vector": (lambda supplied: materialization),
         "validate_provider_v2_contract_materialization": (
             lambda supplied, produced: None
         ),
         "provider_v2_contract_stack_semantic_sha256": (
-            lambda supplied: (
-                bridge.PROB4D_REQUIRED_PROVIDER_V2_STACK_SEMANTIC_SHA256
-            )
+            lambda supplied: bridge.PROB4D_REQUIRED_PROVIDER_V2_STACK_SEMANTIC_SHA256
         ),
         "invalid_provider_v2_contract_vectors": (
             lambda: tuple(object() for _ in range(10))
@@ -114,12 +110,8 @@ def test_inspect_prob4d_provider_v2_contract_validates_portable_identity(
     assert result.minimal_stack_semantic_sha256 == (
         bridge.PROB4D_REQUIRED_PROVIDER_V2_STACK_SEMANTIC_SHA256
     )
-    assert result.numerical_atol == (
-        bridge.PROB4D_REQUIRED_PROVIDER_V2_NUMERICAL_ATOL
-    )
-    assert result.numerical_rtol == (
-        bridge.PROB4D_REQUIRED_PROVIDER_V2_NUMERICAL_RTOL
-    )
+    assert result.numerical_atol == (bridge.PROB4D_REQUIRED_PROVIDER_V2_NUMERICAL_ATOL)
+    assert result.numerical_rtol == (bridge.PROB4D_REQUIRED_PROVIDER_V2_NUMERICAL_RTOL)
 
 
 def test_inspect_prob4d_provider_v2_contract_reports_missing_corpus(
@@ -142,9 +134,7 @@ def test_inspect_prob4d_provider_v2_contract_reports_missing_corpus(
         (
             {
                 "provider_v2_contract_bundle_manifest": lambda: {
-                    "bundle_name": (
-                        bridge.PROB4D_REQUIRED_PROVIDER_V2_CONTRACT_BUNDLE
-                    ),
+                    "bundle_name": (bridge.PROB4D_REQUIRED_PROVIDER_V2_CONTRACT_BUNDLE),
                     "bundle_sha256": "0" * 64,
                 }
             },
@@ -159,11 +149,7 @@ def test_inspect_prob4d_provider_v2_contract_reports_missing_corpus(
             "valid-vector roster changed",
         ),
         (
-            {
-                "provider_v2_contract_stack_semantic_sha256": (
-                    lambda supplied: "0" * 64
-                )
-            },
+            {"provider_v2_contract_stack_semantic_sha256": (lambda supplied: "0" * 64)},
             "stack semantic identity changed",
         ),
         (
