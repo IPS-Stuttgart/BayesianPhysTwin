@@ -37,7 +37,7 @@ def _nearest_neighbor_indices(
     except (ImportError, ValueError):
         pass
 
-    indices = np.empty((len(points), count), dtype=int)
+    indices: np.ndarray = np.empty((len(points), count), dtype=int)
     chunk_size = max(1, min(512, 2_000_000 // max(len(points), 1)))
     squared_norm = np.einsum("ij,ij->i", points, points)
     for start in range(0, len(points), chunk_size):
@@ -78,7 +78,7 @@ def local_surface_tangent_projectors(
     if indices.ndim == 1:
         indices = indices[:, None]
 
-    projectors = np.empty((len(points), 3, 3), dtype=float)
+    projectors: np.ndarray = np.empty((len(points), 3, 3), dtype=float)
     identity = np.eye(3, dtype=float)
     for point_index, neighbors in enumerate(indices):
         local = points[np.asarray(neighbors, dtype=int)]
