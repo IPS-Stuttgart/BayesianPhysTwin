@@ -37,6 +37,7 @@ CALIBRATION_V2_SCHEMA = "bayesian_phystwin.domain_covariance_calibration_v2"
 CALIBRATION_V2_VERSION = 2
 APPLICATION_V2_SCHEMA = "bayesian_phystwin.domain_covariance_calibration_application_v2"
 APPLICATION_V2_VERSION = 2
+EVIDENCE_CERTIFICATE_ID_METADATA_KEY = "domain_covariance_calibration_v2_certificate_id"
 
 
 def _text(value: object, *, name: str) -> str:
@@ -557,6 +558,11 @@ def _evidence_admissible(
         return False
     if decision.protocol_id != certificate.admission_protocol_id:
         return False
+    if (
+        decision.metadata.get(EVIDENCE_CERTIFICATE_ID_METADATA_KEY)
+        != certificate.artifact_id
+    ):
+        return False
     if decision.evidence_level < certificate.policy.minimum_evidence_level:
         return False
     return not (
@@ -652,6 +658,7 @@ __all__ = [
     "APPLICATION_V2_VERSION",
     "CALIBRATION_V2_SCHEMA",
     "CALIBRATION_V2_VERSION",
+    "EVIDENCE_CERTIFICATE_ID_METADATA_KEY",
     "CovarianceSemanticsV2",
     "DomainCovarianceCalibrationApplicationV2",
     "DomainCovarianceCalibrationCertificateV2",

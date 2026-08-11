@@ -12,6 +12,7 @@ from bayesian_phystwin.domain_covariance_calibration import (
     DomainCovarianceCalibrationConfigV1,
 )
 from bayesian_phystwin.domain_covariance_calibration_v2 import (
+    EVIDENCE_CERTIFICATE_ID_METADATA_KEY,
     CovarianceSemanticsV2,
     DomainCovarianceCalibrationCertificateV2,
     DomainCovarianceCalibrationPolicyV2,
@@ -108,6 +109,7 @@ def _evidence_decision(
     claim_authorized: bool = False,
     evidence_level: int = 3,
     run_classification: str = "confirmatory",
+    certificate_id: str | None = None,
 ) -> EvidenceDecisionV1:
     return EvidenceDecisionV1(
         claim_id=claim_id,
@@ -134,6 +136,11 @@ def _evidence_decision(
                 dirty=False,
                 role="primary",
             ),
+        ),
+        metadata=(
+            {}
+            if certificate_id is None
+            else {EVIDENCE_CERTIFICATE_ID_METADATA_KEY: certificate_id}
         ),
         created_utc="2026-08-11T00:00:00+00:00",
     )
@@ -169,7 +176,9 @@ def _apply(
             else application_semantics
         ),
         evidence_decision=(
-            _evidence_decision() if evidence_decision is None else evidence_decision
+            _evidence_decision(certificate_id=str(certificate.artifact_id))
+            if evidence_decision is None
+            else evidence_decision
         ),
     )
 
@@ -255,30 +264,79 @@ def test_invalid_covariance_is_rejected_before_fallback_routing() -> None:
         _apply(
             np.asarray([[-1.0]]),
             certificate,
-            evidence_decision=_evidence_decision(status="fail"),
+            evidence_decision=_evidence_decision(
+                status="fail",
+                certificate_id=str(certificate.artifact_id),
+            ),
         )
 
 
 @pytest.mark.parametrize(
-    "decision",
+    "decision_overrides",
     [
-        _evidence_decision(status="fail"),
-        _evidence_decision(run_classification="diagnostic"),
-        _evidence_decision(claim_id="other-claim"),
-        _evidence_decision(protocol_id="other-protocol"),
-        _evidence_decision(evidence_level=1),
+        {"status": "fail"},
+        {"run_classification": "diagnostic"},
+        {"claim_id": "other-claim"},
+        {"protocol_id": "other-protocol"},
+        {"evidence_level": 1},
     ],
 )
 def test_unmatched_evidence_decision_forces_exact_fallback(
-    decision: EvidenceDecisionV1,
+    decision_overrides: dict[str, object],
 ) -> None:
+    certificate = _fit()
     raw = np.asarray([[1.0]])
+    decision = _evidence_decision(
+        certificate_id=str(certificate.artifact_id),
+        **decision_overrides,  # type: ignore[arg-type]
+    )
 
-    output, record = _apply(raw, _fit(), evidence_decision=decision)
+    output, record = _apply(raw, certificate, evidence_decision=decision)
 
     assert output is raw
     assert not record.evidence_admissible
     assert record.reason == "evidence-decision-rejected"
+
+
+def test_missing_certificate_binding_forces_exact_fallback() -> None:
+    certificate = _fit()
+    raw = np.asarray([[1.0]])
+
+    output, record = _apply(
+        raw,
+        certificate,
+        evidence_decision=_evidence_decision(),
+    )
+
+    assert output is raw
+    assert not record.evidence_admissible
+    assert record.reason == "evidence-decision-rejected"
+
+
+def test_passing_decision_cannot_be_replayed_across_certificates() -> None:
+    first = _fit()
+    second = _fit(dynamic_residuals=(3.0,) * 6)
+    assert first.artifact_id != second.artifact_id
+    decision = _evidence_decision(certificate_id=str(first.artifact_id))
+    first_raw = np.asarray([[1.0]])
+    second_raw = np.asarray([[1.0]])
+
+    first_output, first_record = _apply(
+        first_raw,
+        first,
+        evidence_decision=decision,
+    )
+    second_output, second_record = _apply(
+        second_raw,
+        second,
+        evidence_decision=decision,
+    )
+
+    assert first_output is not first_raw
+    assert first_record.applied
+    assert second_output is second_raw
+    assert not second_record.evidence_admissible
+    assert second_record.reason == "evidence-decision-rejected"
 
 
 def test_policy_can_require_claim_authorization() -> None:
@@ -290,7 +348,10 @@ def test_policy_can_require_claim_authorization() -> None:
     output, record = _apply(
         raw,
         certificate,
-        evidence_decision=_evidence_decision(claim_authorized=False),
+        evidence_decision=_evidence_decision(
+            claim_authorized=False,
+            certificate_id=str(certificate.artifact_id),
+        ),
     )
 
     assert output is raw
@@ -342,18 +403,17 @@ def test_group_win_fraction_is_a_separate_authorization_gate() -> None:
 
 def test_unknown_domain_and_nonprospective_fit_both_fail_closed() -> None:
     raw = np.asarray([[1.0]])
-    evidence = _evidence_decision()
+    unknown_certificate = _fit()
+    boundary_certificate = _fit(predictor_frozen=False)
 
     unknown_output, unknown_record = _apply(
         raw,
-        _fit(),
+        unknown_certificate,
         domain_id="unseen",
-        evidence_decision=evidence,
     )
     boundary_output, boundary_record = _apply(
         raw,
-        _fit(predictor_frozen=False),
-        evidence_decision=evidence,
+        boundary_certificate,
     )
 
     assert unknown_output is raw
@@ -409,7 +469,7 @@ def test_content_identity_rejects_certificate_and_application_tampering() -> Non
 
 def test_apply_rejects_malformed_types_before_admission() -> None:
     certificate = _fit()
-    decision = _evidence_decision()
+    decision = _evidence_decision(certificate_id=str(certificate.artifact_id))
 
     with pytest.raises(TypeError, match="numpy.ndarray"):
         apply_domain_covariance_calibration_v2(  # type: ignore[arg-type]

@@ -41,19 +41,33 @@ operational mean 3-D NEES is `1355.05`, nominal-90% ellipsoid coverage is
 `38.31%`, and the archived conformal bounds carry median case-mean upper-bound
 widths of approximately `38.87/42.68 mm` for CD/track.
 
+A separate retrospective covariance-only intervention keeps the exact
+`last_residual` mean in all `22/22` physical object/session units. Its
+cross-fitted covariance changes Gaussian NLL by `-9.136` with simultaneous 95%
+interval `[-13.961, -4.312]` and improves `17/22` units, while track and Chamfer
+differences remain exactly zero. Marginal 90% coverage changes from `70.6%` to
+`91.0%`, but mean full interval width changes from `16.45 mm` to `50.94 mm`
+(`3.10×`). This is retrospective mechanism evidence that freezes one candidate
+for a fresh study; it is not independent calibration or deployment
+authorization.
+
 The [release-facing claim contract](docs/phystwin_release_claim_v1.md) keeps the
-point result, matched comparator, raw calibration failure, conformal
-risk–coverage–width result, and independent-validation boundary together. The
+point result, matched comparator, exact-mean covariance-only result, raw
+calibration failure, conformal risk–coverage–width result, and
+independent-validation boundary together. The
+[paper-side compact release synthesis](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json)
+is the machine-readable counterpart. The
 [full-22 evidence report](docs/phystwin_sota_22_v1.md) remains the frozen source
 for the cohort, intervals, render metrics, provenance, and permitted
 within-contract claim.
 
-Independent real-provider transfer is not yet established. A retrospective
-19-interaction MotionCrafter test was negative, and the subsequent official-Hub
-Deform360 route stopped at its frozen source-support prerequisite: `313/324`
-streams were supported, `11` support negatives were retained, and `0` technical
-failures occurred. Source covariance was not fitted, the leave-one-object-out
-gate was not evaluated, and twelve confirmation objects remained closed.
+Independent real-provider and independent-object transfer remain unconfirmed.
+A retrospective 19-interaction MotionCrafter test was negative, and the
+subsequent official-Hub Deform360 route stopped at its frozen source-support
+prerequisite: `313/324` streams were supported, `11` support negatives were
+retained, and `0` technical failures occurred. Source covariance was not fitted,
+the leave-one-object-out gate was not evaluated, and twelve confirmation objects
+remained closed.
 
 ## Architecture
 
@@ -190,8 +204,8 @@ state-update and exact-fallback boundaries.
 ## Documentation map
 
 - [PhysTwin release-facing claim contract](docs/phystwin_release_claim_v1.md):
-  mandatory point-result, comparator, calibration, conformal-width, and
-  independent-validation wording for software releases.
+  mandatory point-result, comparator, covariance-only, calibration,
+  conformal-width, and independent-validation wording for software releases.
 - [Command-line interface](docs/command_line.md): grouped routes, lifecycle
   registry, and contribution policy.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
