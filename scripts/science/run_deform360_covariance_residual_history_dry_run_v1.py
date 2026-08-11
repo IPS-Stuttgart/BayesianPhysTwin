@@ -222,11 +222,7 @@ def load_locked_policy(
         _require(boundary.get(key) is False, f"information boundary changed: {key}")
     policy = _mapping(protocol.get("policy"), name="policy")
     scales = policy.get("covariance_scales")
-    if (
-        not isinstance(scales, list)
-        or type(scales) is not list
-        or len(scales) != 3
-    ):
+    if not isinstance(scales, list) or type(scales) is not list or len(scales) != 3:
         raise ValueError(
             "covariance scales must contain early, middle, and late values"
         )
