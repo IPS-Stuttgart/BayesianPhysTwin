@@ -35,9 +35,7 @@ from .evidence_decision_v1 import EvidenceDecisionV1
 
 CALIBRATION_V2_SCHEMA = "bayesian_phystwin.domain_covariance_calibration_v2"
 CALIBRATION_V2_VERSION = 2
-APPLICATION_V2_SCHEMA = (
-    "bayesian_phystwin.domain_covariance_calibration_application_v2"
-)
+APPLICATION_V2_SCHEMA = "bayesian_phystwin.domain_covariance_calibration_application_v2"
 APPLICATION_V2_VERSION = 2
 
 
@@ -185,9 +183,7 @@ class DomainCovarianceCalibrationPolicyV2:
             "allow_covariance_shrinkage": self.allow_covariance_shrinkage,
             "minimum_group_count": self.minimum_group_count,
             "minimum_group_win_fraction": self.minimum_group_win_fraction,
-            "minimum_mean_loo_nll_improvement": (
-                self.minimum_mean_loo_nll_improvement
-            ),
+            "minimum_mean_loo_nll_improvement": (self.minimum_mean_loo_nll_improvement),
             "maximum_single_group_loo_nll_regression": (
                 self.maximum_single_group_loo_nll_regression
             ),
@@ -227,13 +223,11 @@ def _reasons(
         reasons.append("mean-loo-nll-improvement-below-practical-margin")
     if (
         decision.worst_loo_nll_regression
-        > policy.maximum_single_group_loo_nll_regression
-        + policy.numerical_tolerance
+        > policy.maximum_single_group_loo_nll_regression + policy.numerical_tolerance
     ):
         reasons.append("single-group-loo-nll-regression-exceeds-policy")
     if (
-        _win_fraction(decision, policy.numerical_tolerance)
-        + policy.numerical_tolerance
+        _win_fraction(decision, policy.numerical_tolerance) + policy.numerical_tolerance
         < policy.minimum_group_win_fraction
     ):
         reasons.append("group-win-fraction-below-threshold")
@@ -301,9 +295,7 @@ class DomainCovarianceCalibrationCertificateV2:
         return _reasons(decision, self.source_certificate, self.policy)
 
     def domain_supported(self, domain_id: str) -> bool:
-        return self.reasons_for_domain(domain_id) == (
-            "authorization-criteria-passed",
-        )
+        return self.reasons_for_domain(domain_id) == ("authorization-criteria-passed",)
 
     @property
     def supported_domains(self) -> tuple[str, ...]:
@@ -440,9 +432,7 @@ def _default_source_config(
         covariance_scales=(1.0, 2.0, 4.0, 8.0, 16.0),
         isotropic_variances=(0.0, 1e-8, 1e-6, 1e-4),
         minimum_group_count=policy.minimum_group_count,
-        minimum_mean_loo_nll_improvement=(
-            policy.minimum_mean_loo_nll_improvement
-        ),
+        minimum_mean_loo_nll_improvement=(policy.minimum_mean_loo_nll_improvement),
         maximum_single_group_loo_nll_regression=(
             policy.maximum_single_group_loo_nll_regression
         ),
@@ -495,9 +485,7 @@ def fit_domain_covariance_calibration_v2(
         horizon_semantics=horizon_semantics,
     )
     config = (
-        _default_source_config(settings)
-        if source_config is None
-        else source_config
+        _default_source_config(settings) if source_config is None else source_config
     )
     source = fit_domain_covariance_calibration(
         predictor_id=predictor_id,
