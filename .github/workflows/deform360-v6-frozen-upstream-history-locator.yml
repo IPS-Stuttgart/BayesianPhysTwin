@@ -67,6 +67,7 @@ jobs:
           mkdir -p outputs/deform360-v6-frozen-upstream-history
           python scripts/ci/locate_frozen_source_bundle.py \
             --repository-root . \
+            --repository-id IPS-Stuttgart/BayesianPhysTwin \
             --output \
               outputs/deform360-v6-frozen-upstream-history/report.json
           python - <<'PY'
@@ -97,7 +98,7 @@ jobs:
           PY
 
       - name: Upload content-addressed diagnostic
-        if: always()
+        if: ${{ always() && hashFiles('outputs/deform360-v6-frozen-upstream-history/report.json') != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: deform360-v6-frozen-upstream-history-${{ github.run_id }}
