@@ -9,6 +9,13 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- Content-addressed accepted and rejected three-repository golden-path decision
+  artifacts that bind exact baseline and candidate arrays, installed-wheel stack
+  identities, guard outcomes, and byte-identical exact-fallback routing.
+- Read-only exact-head release compatibility evidence that builds and installs
+  both wheel and source distribution on Python 3.10, 3.12, and 3.14, validates
+  the declared NumPy `1.23.0` floor, and retains `NumericalEnvironmentV1` bound
+  to the exact dependency resolver input.
 - Proper multivariate predictive scoring for registered physical queries, with
   energy, variogram, exact Gaussian log, and weighted interval scores; matched
   candidate attribution; exact-fallback-aware decisive-evidence export; and a
@@ -93,6 +100,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Release-facing README, support policy, claim contract, and changelog wording
+  now keep the last-residual comparator, exact-mean covariance-only retrospective
+  result and `3.10×` interval-width cost, raw-covariance failure, conformal
+  coverage-width boundary, and unconfirmed independent transfer synchronized
+  with the canonical paper-side compact evidence.
 - Content-addressed observation beliefs, physical linearizations, gauge-aware
   batches, posterior results, and selection records now store arrays in
   immutable bytes-backed NumPy views. Callers can no longer re-enable write
