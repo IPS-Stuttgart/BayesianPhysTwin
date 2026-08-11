@@ -6,7 +6,7 @@ import hashlib
 import math
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
@@ -36,7 +36,9 @@ RESIDUAL_HISTORY_DECISION_SCHEMA: Final = (
 RESIDUAL_HISTORY_RECEIPT_SCHEMA: Final = (
     "bayesian-phystwin.deform360-covariance-residual-history-receipt-v1"
 )
-CAMERA_PARTITION_NAMESPACE: Final = "deform360-camera-hardware-family-v1"
+CAMERA_PARTITION_NAMESPACE: Final = (
+    "deform360-provider-scoring-camera-family-v1"
+)
 HORIZON_LABELS: Final = ("early", "middle", "late")
 RESIDUAL_STORAGE_SEMANTICS: Final = (
     "provider-observation-minus-physical-baseline-m; invalid rows stored as zero only"
@@ -51,9 +53,26 @@ CLAIM_BOUNDARY: Final = (
     "source-only adapter contract; no fresh-target payload, prediction, or outcome"
 )
 TARGET_QUARANTINE_ROOT: Final = Path(
-    "/home/github-runner/.cache/datasets/deform360/target-24-object-v1"
+    "/mnt/lexar4tb/datasets/deform360/unopened-candidate-target/"
+    "covariance-only-v1/payload"
 )
 _HEX_64 = re.compile(r"^[0-9a-f]{64}$")
+_ORIENTATION_SUFFIXES = frozenset(
+    {
+        "left",
+        "right",
+        "front",
+        "back",
+        "rear",
+        "top",
+        "bottom",
+        "upper",
+        "lower",
+    }
+)
+_CHANNEL_WORDS = frozenset({"cam", "camera", "view", "stream", "sensor"})
+_CHANNEL_TOKEN = re.compile(r"^(?:cam|camera|view|stream|sensor)\d+$")
+_DIGITS = re.compile(r"^\d+$")
 
 
 def _canonical_string(value: object, *, name: str) -> str:
@@ -106,7 +125,12 @@ def _integer_vector(value: object, *, name: str) -> np.ndarray:
     return array
 
 
-def _boolean_array(value: object, *, name: str, shape: tuple[int, ...]) -> np.ndarray:
+def _boolean_array(
+    value: object,
+    *,
+    name: str,
+    shape: tuple[int, ...],
+) -> np.ndarray:
     array = np.asarray(value)
     if array.dtype != np.dtype(bool) or array.shape != shape:
         raise ValueError(f"{name} must be a Boolean array with shape {shape}")
@@ -120,7 +144,9 @@ def _array_sha256(value: np.ndarray) -> str:
     descriptor = {
         "dtype": array.dtype.str,
         "shape": list(array.shape),
-        "payload_sha256": hashlib.sha256(array.tobytes(order="C")).hexdigest(),
+        "payload_sha256": hashlib.sha256(
+            array.tobytes(order="C")
+        ).hexdigest(),
     }
     return hashlib.sha256(canonical_json_bytes(descriptor)).hexdigest()
 
@@ -142,7 +168,11 @@ def _validate_covariance(
             raise ValueError(f"{name} must be C-contiguous")
         array = value
     else:
-        array = _readonly_float_array(value, name=name, ndim=len(expected_shape))
+        array = _readonly_float_array(
+            value,
+            name=name,
+            ndim=len(expected_shape),
+        )
     if array.shape != expected_shape:
         raise ValueError(f"{name} must have shape {expected_shape}")
     if not np.all(np.isfinite(array)):
@@ -160,34 +190,44 @@ def _validate_covariance(
     return array
 
 
-def assert_outside_target_quarantine(path: Path) -> Path:
-    resolved = path.expanduser().resolve(strict=False)
+def assert_outside_target_quarantine(path: Path | str) -> Path:
+    resolved = Path(path).expanduser().resolve(strict=False)
     target = TARGET_QUARANTINE_ROOT.resolve(strict=False)
     if resolved == target or target in resolved.parents:
-        raise ValueError("source-only dry-run output must stay outside target quarantine")
+        raise ValueError("path is inside the unopened target quarantine")
     return resolved
 
 
 def camera_hardware_family(camera_id: str) -> str:
+    """Return the physical recorder identity while removing channel suffixes."""
+
     camera = _canonical_string(camera_id, name="camera_id")
     normalized = re.sub(r"[^a-z0-9]+", "-", camera.lower()).strip("-")
     tokens = [token for token in normalized.split("-") if token]
     if not tokens:
         raise ValueError("camera_id has no canonical hardware family")
-    while tokens and tokens[-1] in {
-        "left",
-        "right",
-        "front",
-        "back",
-        "rear",
-        "top",
-        "bottom",
-        "upper",
-        "lower",
-    }:
-        tokens.pop()
-    while tokens and re.fullmatch(r"(?:cam|camera|view|stream|sensor)?\d+", tokens[-1]):
-        tokens.pop()
+
+    while tokens:
+        tail = tokens[-1]
+        if tail in _ORIENTATION_SUFFIXES:
+            tokens.pop()
+            continue
+        if _CHANNEL_TOKEN.fullmatch(tail) is not None:
+            tokens.pop()
+            continue
+        if (
+            _DIGITS.fullmatch(tail) is not None
+            and len(tokens) >= 2
+            and tokens[-2] in _CHANNEL_WORDS
+        ):
+            tokens.pop()
+            tokens.pop()
+            continue
+        if tail in _CHANNEL_WORDS:
+            tokens.pop()
+            continue
+        break
+
     if not tokens:
         raise ValueError("camera_id has no stable recorder-family prefix")
     return "-".join(tokens)
@@ -200,8 +240,8 @@ class ResidualHistoryDryRunPolicyV1:
     minimum_prefix_frames: int = 3
     minimum_final_observed_count: int = 3
     minimum_final_observed_fraction: float = 0.75
-    minimum_camera_count_per_role: int = 8
-    minimum_camera_family_count_per_role: int = 4
+    minimum_cameras_per_role: int = 8
+    minimum_camera_families_per_role: int = 4
     covariance_scales: tuple[float, float, float] = (8.0, 16.0, 16.0)
     policy_id: str | None = None
 
@@ -209,8 +249,8 @@ class ResidualHistoryDryRunPolicyV1:
         integer_fields = (
             "minimum_prefix_frames",
             "minimum_final_observed_count",
-            "minimum_camera_count_per_role",
-            "minimum_camera_family_count_per_role",
+            "minimum_cameras_per_role",
+            "minimum_camera_families_per_role",
         )
         for name in integer_fields:
             value = genuine_integer(getattr(self, name), name=name, minimum=1)
@@ -240,6 +280,18 @@ class ResidualHistoryDryRunPolicyV1:
         ) != expected:
             raise ValueError("policy_id does not match the policy descriptor")
 
+    @property
+    def minimum_camera_count_per_role(self) -> int:
+        """Compatibility alias for the original implementation spelling."""
+
+        return self.minimum_cameras_per_role
+
+    @property
+    def minimum_camera_family_count_per_role(self) -> int:
+        """Compatibility alias for the original implementation spelling."""
+
+        return self.minimum_camera_families_per_role
+
     def descriptor(self) -> dict[str, Any]:
         return {
             "schema": RESIDUAL_HISTORY_POLICY_SCHEMA,
@@ -247,9 +299,9 @@ class ResidualHistoryDryRunPolicyV1:
             "minimum_prefix_frames": self.minimum_prefix_frames,
             "minimum_final_observed_count": self.minimum_final_observed_count,
             "minimum_final_observed_fraction": self.minimum_final_observed_fraction,
-            "minimum_camera_count_per_role": self.minimum_camera_count_per_role,
-            "minimum_camera_family_count_per_role": (
-                self.minimum_camera_family_count_per_role
+            "minimum_cameras_per_role": self.minimum_cameras_per_role,
+            "minimum_camera_families_per_role": (
+                self.minimum_camera_families_per_role
             ),
             "covariance_scales": list(self.covariance_scales),
             "horizon_labels": list(HORIZON_LABELS),
@@ -266,8 +318,8 @@ class DisjointCameraPartitionV1:
 
     provider_camera_ids: tuple[str, ...]
     scoring_camera_ids: tuple[str, ...]
-    provider_camera_families: tuple[str, ...]
-    scoring_camera_families: tuple[str, ...]
+    provider_family_ids: tuple[str, ...]
+    scoring_family_ids: tuple[str, ...]
     namespace: str = CAMERA_PARTITION_NAMESPACE
     partition_id: str | None = None
 
@@ -287,14 +339,14 @@ class DisjointCameraPartitionV1:
         )
         provider_families = tuple(
             sorted(
-                _canonical_string(value, name="provider_camera_families")
-                for value in self.provider_camera_families
+                _canonical_string(value, name="provider_family_ids")
+                for value in self.provider_family_ids
             )
         )
         scoring_families = tuple(
             sorted(
-                _canonical_string(value, name="scoring_camera_families")
-                for value in self.scoring_camera_families
+                _canonical_string(value, name="scoring_family_ids")
+                for value in self.scoring_family_ids
             )
         )
         if (
@@ -317,14 +369,14 @@ class DisjointCameraPartitionV1:
             sorted({camera_hardware_family(value) for value in scoring_ids})
         )
         if provider_families != expected_provider_families:
-            raise ValueError("provider camera families do not bind provider camera IDs")
+            raise ValueError("provider families do not bind provider camera IDs")
         if scoring_families != expected_scoring_families:
-            raise ValueError("scoring camera families do not bind scoring camera IDs")
+            raise ValueError("scoring families do not bind scoring camera IDs")
         object.__setattr__(self, "namespace", namespace)
         object.__setattr__(self, "provider_camera_ids", provider_ids)
         object.__setattr__(self, "scoring_camera_ids", scoring_ids)
-        object.__setattr__(self, "provider_camera_families", provider_families)
-        object.__setattr__(self, "scoring_camera_families", scoring_families)
+        object.__setattr__(self, "provider_family_ids", provider_families)
+        object.__setattr__(self, "scoring_family_ids", scoring_families)
         expected = content_id(self.descriptor())
         if self.partition_id is None:
             object.__setattr__(self, "partition_id", expected)
@@ -335,6 +387,18 @@ class DisjointCameraPartitionV1:
         ) != expected:
             raise ValueError("partition_id does not match the camera partition")
 
+    @property
+    def provider_camera_families(self) -> tuple[str, ...]:
+        """Compatibility alias for the original implementation spelling."""
+
+        return self.provider_family_ids
+
+    @property
+    def scoring_camera_families(self) -> tuple[str, ...]:
+        """Compatibility alias for the original implementation spelling."""
+
+        return self.scoring_family_ids
+
     def descriptor(self) -> dict[str, Any]:
         return {
             "schema": DISJOINT_CAMERA_PARTITION_SCHEMA,
@@ -342,9 +406,25 @@ class DisjointCameraPartitionV1:
             "namespace": self.namespace,
             "provider_camera_ids": list(self.provider_camera_ids),
             "scoring_camera_ids": list(self.scoring_camera_ids),
-            "provider_camera_families": list(self.provider_camera_families),
-            "scoring_camera_families": list(self.scoring_camera_families),
+            "provider_family_ids": list(self.provider_family_ids),
+            "scoring_family_ids": list(self.scoring_family_ids),
         }
+
+
+def _ranked_camera_families(
+    family_to_ids: dict[str, list[str]],
+) -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            family_to_ids,
+            key=lambda family: (
+                hashlib.sha256(
+                    f"{CAMERA_PARTITION_NAMESPACE}:{family}".encode("utf-8")
+                ).hexdigest(),
+                family,
+            ),
+        )
+    )
 
 
 def deterministic_disjoint_camera_partition(
@@ -352,50 +432,74 @@ def deterministic_disjoint_camera_partition(
     *,
     policy: ResidualHistoryDryRunPolicyV1,
 ) -> DisjointCameraPartitionV1:
-    """Assign complete recorder families to deterministic provider/scoring roles."""
+    """Assign complete recorder families to deterministic balanced roles."""
 
     if not isinstance(policy, ResidualHistoryDryRunPolicyV1):
         raise TypeError("policy must be ResidualHistoryDryRunPolicyV1")
-    ids = tuple(sorted(_canonical_string(value, name="camera_ids") for value in camera_ids))
+    ids = tuple(
+        sorted(
+            _canonical_string(value, name="camera_ids")
+            for value in camera_ids
+        )
+    )
     if ids != tuple(sorted(set(ids))):
         raise ValueError("camera_ids must be unique")
     family_to_ids: dict[str, list[str]] = {}
     for camera_id in ids:
-        family_to_ids.setdefault(camera_hardware_family(camera_id), []).append(camera_id)
-    families = tuple(sorted(family_to_ids))
-    provider_families = tuple(
-        family
-        for family in families
-        if int(
-            hashlib.sha256(
-                f"{CAMERA_PARTITION_NAMESPACE}:{family}".encode("utf-8")
-            ).hexdigest(),
-            16,
+        family = camera_hardware_family(camera_id)
+        family_to_ids.setdefault(family, []).append(camera_id)
+
+    provider_families: list[str] = []
+    scoring_families: list[str] = []
+    provider_count = 0
+    scoring_count = 0
+    for family in _ranked_camera_families(family_to_ids):
+        camera_count = len(family_to_ids[family])
+        provider_state = (
+            provider_count,
+            len(provider_families),
+            0,
         )
-        % 2
-        == 0
-    )
-    scoring_families = tuple(
-        family for family in families if family not in provider_families
-    )
+        scoring_state = (
+            scoring_count,
+            len(scoring_families),
+            1,
+        )
+        if provider_state <= scoring_state:
+            provider_families.append(family)
+            provider_count += camera_count
+        else:
+            scoring_families.append(family)
+            scoring_count += camera_count
+
     provider_ids = tuple(
-        sorted(camera for family in provider_families for camera in family_to_ids[family])
+        sorted(
+            camera
+            for family in provider_families
+            for camera in family_to_ids[family]
+        )
     )
     scoring_ids = tuple(
-        sorted(camera for family in scoring_families for camera in family_to_ids[family])
+        sorted(
+            camera
+            for family in scoring_families
+            for camera in family_to_ids[family]
+        )
     )
     if (
-        len(provider_ids) < policy.minimum_camera_count_per_role
-        or len(scoring_ids) < policy.minimum_camera_count_per_role
-        or len(provider_families) < policy.minimum_camera_family_count_per_role
-        or len(scoring_families) < policy.minimum_camera_family_count_per_role
+        len(provider_ids) < policy.minimum_cameras_per_role
+        or len(scoring_ids) < policy.minimum_cameras_per_role
+        or len(provider_families) < policy.minimum_camera_families_per_role
+        or len(scoring_families) < policy.minimum_camera_families_per_role
     ):
-        raise ValueError("camera roster lacks source-only disjoint-role support")
+        raise ValueError(
+            "camera roster does not meet minimum camera support per role"
+        )
     return DisjointCameraPartitionV1(
         provider_camera_ids=provider_ids,
         scoring_camera_ids=scoring_ids,
-        provider_camera_families=provider_families,
-        scoring_camera_families=scoring_families,
+        provider_family_ids=tuple(sorted(provider_families)),
+        scoring_family_ids=tuple(sorted(scoring_families)),
     )
 
 
