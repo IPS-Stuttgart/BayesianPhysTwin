@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY = (
     ROOT / "results" / "science" / "full22_covariance_only_hybrid_v1" / "summary.json"
