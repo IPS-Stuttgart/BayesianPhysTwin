@@ -25,9 +25,7 @@ def test_compact_evidence_binds_exact_execution_and_source() -> None:
         "bayesian-phystwin-full22-covariance-only-hybrid-compact-evidence-v1"
     )
     assert payload["status"] == "completed"
-    assert payload["analysis_status"] == (
-        "retrospective-cross-fitted-development-only"
-    )
+    assert payload["analysis_status"] == ("retrospective-cross-fitted-development-only")
     assert payload["report_id"] == (
         "5fc777163fd6173c9669b497309d883e2780a5ebe23da5dbe4cdaf682ad8806a"
     )
@@ -76,9 +74,7 @@ def test_compact_evidence_preserves_result_and_fresh_candidate() -> None:
     assert primary["arm"] == "crossfit_selected_scaled_covariance"
     assert primary["better_worse_tie_cases"] == [17, 5, 0]
     assert primary["familywise_decision"] == "hybrid_better"
-    assert primary["mean_gaussian_nll_difference"] == pytest.approx(
-        -9.136379254487014
-    )
+    assert primary["mean_gaussian_nll_difference"] == pytest.approx(-9.136379254487014)
     assert primary["simultaneous_95_ci"] == pytest.approx(
         [-13.96117966524658, -4.31157884372745]
     )
@@ -97,12 +93,8 @@ def test_compact_evidence_preserves_result_and_fresh_candidate() -> None:
 
     coverage = payload["coverage_and_width"]
     assert isinstance(coverage, dict)
-    assert coverage["reference_marginal_coverage"] == pytest.approx(
-        0.7057813694762896
-    )
-    assert coverage["hybrid_marginal_coverage"] == pytest.approx(
-        0.9097997892386086
-    )
+    assert coverage["reference_marginal_coverage"] == pytest.approx(0.7057813694762896)
+    assert coverage["hybrid_marginal_coverage"] == pytest.approx(0.9097997892386086)
     assert coverage["hybrid_to_reference_width_ratio"] == pytest.approx(
         3.0971912419525798
     )
