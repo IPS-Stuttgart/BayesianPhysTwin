@@ -111,9 +111,13 @@ def certify_query_covariance_relevance(
 
     scale = max(float(np.max(np.abs(reference_query))), 1.0)
     regularized = 0.5 * (reference_query + reference_query.T)
-    regularized += policy.covariance_jitter * scale * np.eye(
-        query_dimension,
-        dtype=np.float64,
+    regularized += (
+        policy.covariance_jitter
+        * scale
+        * np.eye(
+            query_dimension,
+            dtype=np.float64,
+        )
     )
     try:
         cholesky = np.linalg.cholesky(regularized)

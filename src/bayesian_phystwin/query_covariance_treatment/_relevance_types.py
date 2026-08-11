@@ -82,9 +82,7 @@ class QueryCovarianceRelevancePolicyV1:
             "minimum_effective_rank": self.minimum_effective_rank,
             "maximum_null_mode_fraction": self.maximum_null_mode_fraction,
             "rank_relative_tolerance": self.rank_relative_tolerance,
-            "mode_response_relative_tolerance": (
-                self.mode_response_relative_tolerance
-            ),
+            "mode_response_relative_tolerance": (self.mode_response_relative_tolerance),
             "covariance_jitter": self.covariance_jitter,
             "numerical_tolerance": self.numerical_tolerance,
         }
@@ -249,9 +247,7 @@ class QueryCovarianceRelevanceCertificateV1:
             shared_trace_fraction=self.shared_trace_fraction,
             effective_query_rank=self.effective_query_rank,
             null_mode_fraction=self.null_mode_fraction,
-            maximum_generalized_eigenvalue=(
-                self.maximum_generalized_eigenvalue
-            ),
+            maximum_generalized_eigenvalue=(self.maximum_generalized_eigenvalue),
             policy=self.policy,
             frozen_before_target_outcomes=self.frozen_before_target_outcomes,
             target_outcomes_used_for_selection=(
@@ -273,9 +269,7 @@ class QueryCovarianceRelevanceCertificateV1:
             shared_trace_fraction=self.shared_trace_fraction,
             effective_query_rank=self.effective_query_rank,
             null_mode_fraction=self.null_mode_fraction,
-            maximum_generalized_eigenvalue=(
-                self.maximum_generalized_eigenvalue
-            ),
+            maximum_generalized_eigenvalue=(self.maximum_generalized_eigenvalue),
             policy=self.policy,
         )
         if self.shared_covariance_material != expected_material:
@@ -321,15 +315,11 @@ class QueryCovarianceRelevanceCertificateV1:
             "local_covariance_sha256": self.local_covariance_sha256,
             "shared_factor_sha256": self.shared_factor_sha256,
             "query_jacobian_sha256": self.query_jacobian_sha256,
-            "query_noise_covariance_sha256": (
-                self.query_noise_covariance_sha256
-            ),
+            "query_noise_covariance_sha256": (self.query_noise_covariance_sha256),
             "shared_trace_fraction": self.shared_trace_fraction,
             "effective_query_rank": self.effective_query_rank,
             "null_mode_fraction": self.null_mode_fraction,
-            "maximum_generalized_eigenvalue": (
-                self.maximum_generalized_eigenvalue
-            ),
+            "maximum_generalized_eigenvalue": (self.maximum_generalized_eigenvalue),
             "shared_covariance_material": self.shared_covariance_material,
             "reasons": list(self.reasons),
             "policy": self.policy.descriptor(),

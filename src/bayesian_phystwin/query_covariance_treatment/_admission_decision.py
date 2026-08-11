@@ -208,17 +208,13 @@ class CovarianceOnlyTreatmentDecisionV1:
             "calibration_partition_id": self.calibration_partition_id,
             "statistical_unit": self.statistical_unit,
             "hybrid_record_id": self.hybrid_record_id,
-            "candidate_covariance_artifact_id": (
-                self.candidate_covariance_artifact_id
-            ),
+            "candidate_covariance_artifact_id": (self.candidate_covariance_artifact_id),
             "calibration_application_id": self.calibration_application_id,
             "calibration_certificate_id": self.calibration_certificate_id,
             "harm_risk_certificate_id": self.harm_risk_certificate_id,
             "query_relevance_certificate_id": self.query_relevance_certificate_id,
             "evaluation_decision_id": self.evaluation_decision_id,
-            "candidate_inference_admissible": (
-                self.candidate_inference_admissible
-            ),
+            "candidate_inference_admissible": (self.candidate_inference_admissible),
             "calibration_input_identity_verified": (
                 self.calibration_input_identity_verified
             ),
@@ -226,9 +222,7 @@ class CovarianceOnlyTreatmentDecisionV1:
             "harm_risk_certified": self.harm_risk_certified,
             "query_evidence_admissible": self.query_evidence_admissible,
             "query_mode_supported": self.query_mode_supported,
-            "evaluation_evidence_admissible": (
-                self.evaluation_evidence_admissible
-            ),
+            "evaluation_evidence_admissible": (self.evaluation_evidence_admissible),
             "proper_score_supported": self.proper_score_supported,
             "proper_score_observed_value": self.proper_score_observed_value,
             "proper_score_threshold_value": self.proper_score_threshold_value,

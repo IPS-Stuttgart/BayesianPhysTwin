@@ -55,8 +55,7 @@ def _evaluation_metrics(
     expected_metadata: Mapping[str, object],
 ) -> tuple[bool, bool, float, float, float | None]:
     bindings_match = all(
-        decision.metadata.get(key) == value
-        for key, value in expected_metadata.items()
+        decision.metadata.get(key) == value for key, value in expected_metadata.items()
     )
     evidence_admissible = bool(
         decision.status == "pass"
@@ -64,10 +63,7 @@ def _evaluation_metrics(
         and decision.claim_id == policy.evaluation_claim_id
         and decision.protocol_id == policy.evaluation_protocol_id
         and decision.evidence_level >= policy.minimum_evidence_level
-        and (
-            not policy.require_claim_authorized_decision
-            or decision.claim_authorized
-        )
+        and (not policy.require_claim_authorized_decision or decision.claim_authorized)
         and bindings_match
     )
     metric = decision.metric
@@ -152,9 +148,7 @@ def decide_covariance_only_treatment(
             "harm_risk_certificate must be GuardHarmRiskArtifactCertificateV1"
         )
     if not isinstance(query_relevance, QueryCovarianceRelevanceCertificateV1):
-        raise TypeError(
-            "query_relevance must be QueryCovarianceRelevanceCertificateV1"
-        )
+        raise TypeError("query_relevance must be QueryCovarianceRelevanceCertificateV1")
     if not isinstance(evaluation_decision, EvidenceDecisionV1):
         raise TypeError("evaluation_decision must be EvidenceDecisionV1")
     if not isinstance(policy, CovarianceOnlyTreatmentPolicyV1):
@@ -196,9 +190,7 @@ def decide_covariance_only_treatment(
         name="query_relevance.artifact_id",
     )
     if calibration_application.output_array_sha256 != covariance_id:
-        raise ValueError(
-            "candidate covariance identity differs from calibrated output"
-        )
+        raise ValueError("candidate covariance identity differs from calibrated output")
     if query_relevance.query_id != query_digest:
         raise ValueError("query relevance certificate binds a different query")
     if query_relevance.covariance_artifact_id != covariance_id:

@@ -106,9 +106,7 @@ def _relevance(
         local_covariance=0.1 * np.eye(2, dtype=np.float64),
         shared_factor=factor,
         query_jacobian=jacobian,
-        query_noise_covariance=(
-            0.01 * np.eye(jacobian.shape[0], dtype=np.float64)
-        ),
+        query_noise_covariance=(0.01 * np.eye(jacobian.shape[0], dtype=np.float64)),
         policy=policy,
         frozen_before_target_outcomes=True,
         target_outcomes_used_for_selection=target_outcomes_used,
@@ -130,9 +128,7 @@ def _calibration_application(hybrid, *, matching_input: bool = True):
         raw_numeric_sha256="b" * 64,
         output_numeric_sha256="c" * 64,
         raw_array_sha256=(
-            hybrid.record.output_covariance_sha256
-            if matching_input
-            else "d" * 64
+            hybrid.record.output_covariance_sha256 if matching_input else "d" * 64
         ),
         output_array_sha256="e" * 64,
         exact_fallback=False,
@@ -203,9 +199,7 @@ def _evaluation_decision(
         ),
         EVALUATION_CALIBRATION_APPLICATION_ID_METADATA_KEY: calibration.artifact_id,
         EVALUATION_HARM_RISK_CERTIFICATE_ID_METADATA_KEY: harm.artifact_id,
-        EVALUATION_QUERY_RELEVANCE_CERTIFICATE_ID_METADATA_KEY: (
-            relevance.artifact_id
-        ),
+        EVALUATION_QUERY_RELEVANCE_CERTIFICATE_ID_METADATA_KEY: (relevance.artifact_id),
         EVALUATION_QUERY_ID_METADATA_KEY: QUERY_ID,
         EVALUATION_CALIBRATION_PARTITION_ID_METADATA_KEY: PARTITION_ID,
         EVALUATION_STATISTICAL_UNIT_METADATA_KEY: STATISTICAL_UNIT,

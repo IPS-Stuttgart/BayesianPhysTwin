@@ -10,18 +10,12 @@ import numpy as np
 
 from .._portable_contracts import sha256_digest
 
-EVALUATION_BASELINE_BELIEF_ID_METADATA_KEY: Final = (
-    "covariance_only_baseline_belief_id"
-)
+EVALUATION_BASELINE_BELIEF_ID_METADATA_KEY: Final = "covariance_only_baseline_belief_id"
 EVALUATION_CANDIDATE_BELIEF_ID_METADATA_KEY: Final = (
     "covariance_only_candidate_belief_id"
 )
-EVALUATION_COMMON_DOMAIN_ID_METADATA_KEY: Final = (
-    "covariance_only_common_domain_id"
-)
-EVALUATION_HYBRID_RECORD_ID_METADATA_KEY: Final = (
-    "covariance_only_hybrid_record_id"
-)
+EVALUATION_COMMON_DOMAIN_ID_METADATA_KEY: Final = "covariance_only_common_domain_id"
+EVALUATION_HYBRID_RECORD_ID_METADATA_KEY: Final = "covariance_only_hybrid_record_id"
 EVALUATION_CANDIDATE_COVARIANCE_ID_METADATA_KEY: Final = (
     "candidate_covariance_artifact_id"
 )
@@ -35,16 +29,10 @@ EVALUATION_QUERY_RELEVANCE_CERTIFICATE_ID_METADATA_KEY: Final = (
     "query_covariance_relevance_certificate_id"
 )
 EVALUATION_QUERY_ID_METADATA_KEY: Final = "registered_query_id"
-EVALUATION_CALIBRATION_PARTITION_ID_METADATA_KEY: Final = (
-    "calibration_partition_id"
-)
+EVALUATION_CALIBRATION_PARTITION_ID_METADATA_KEY: Final = "calibration_partition_id"
 EVALUATION_STATISTICAL_UNIT_METADATA_KEY: Final = "statistical_unit"
-EVALUATION_MEAN_IDENTITY_VERIFIED_METADATA_KEY: Final = (
-    "exact_mean_identity_verified"
-)
-EVALUATION_SIMULTANEOUS_COVERAGE_METADATA_KEY: Final = (
-    "simultaneous_query_coverage"
-)
+EVALUATION_MEAN_IDENTITY_VERIFIED_METADATA_KEY: Final = "exact_mean_identity_verified"
+EVALUATION_SIMULTANEOUS_COVERAGE_METADATA_KEY: Final = "simultaneous_query_coverage"
 EVALUATION_MEAN_FULL_WIDTH_RATIO_METADATA_KEY: Final = "mean_full_width_ratio"
 
 COVARIANCE_MODES: Final = frozenset({"marginal", "explicit-joint"})
