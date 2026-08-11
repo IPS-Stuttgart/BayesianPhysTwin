@@ -8,6 +8,7 @@ include api/versioned-public-api-v1.json
 include docs/public_api_policy.md
 include docs/releasing.md
 include docs/ecosystem_compatibility_v1.md
+include docs/physical_query_v1.md
 include tools/quality/check_public_api.py
 include tools/release/build_release_evidence.py
 include docs/deform360_calibration_observability_batch.md
@@ -38,6 +39,7 @@ include docs/deform360_v6_source_prediction_evidence.md
 include docs/deform360_joint_sparse_source_execution_v5.md
 include docs/deform360_joint_sparse_geometric_materializer_v4.md
 include docs/deform360_source_support_failure_evidence_v1.md
+include docs/deform360_covariance_only_independent_validation_v1.md
 include protocols/amendments/deform360_official_hub_visuotactile_v1_visual_provider_lock.json
 include protocols/amendments/deform360_official_hub_visuotactile_v1_calibration_separation.json
 include protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json
@@ -55,6 +57,8 @@ include protocols/locks/deform360_official_hub_joint_sparse_prospective_v5.json
 include protocols/locks/deform360_official_hub_fresh_object_session_v6.json
 include protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
 include protocols/locks/deform360_official_hub_joint_sparse_geometric_materializer_v4.json
+include protocols/locks/deform360_covariance_only_independent_validation_v1.json
+include protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json
 include scripts/ci/inventory_deform360_v4_results.py
 include scripts/ci/run_deform360_v6_source_prediction_evidence.sh
 include scripts/remote/run_deform360_v6_stage_selector_identity_repair.py
