@@ -24,7 +24,7 @@ def _step(name: str) -> dict[str, Any]:
 
 def _fallback_python() -> str:
     run = str(_step("Ensure bounded execution receipt exists")["run"])
-    marker = '"${BPT_PYTHON:-python}" - <<\'PY\'\n'
+    marker = "\"${BPT_PYTHON:-python}\" - <<'PY'\n"
     assert run.count(marker) == 1
     remainder = run.split(marker, 1)[1]
     body, delimiter = remainder.rsplit("\nPY", 1)
