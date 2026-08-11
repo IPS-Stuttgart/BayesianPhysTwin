@@ -28,6 +28,9 @@ AMENDMENT = ROOT / (
 )
 WORKFLOW = ROOT / (".github/workflows/deform360-v6-source-prediction-evidence.yml")
 RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+RUNNER_IMPL = ROOT / (
+    "scripts/ci/run_deform360_v6_source_prediction_evidence_locked.sh"
+)
 AMENDMENT_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 V5_SOURCE_LOCK_ID = "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189"
 
@@ -295,8 +298,28 @@ def test_workflow_runs_science_only_after_merge_on_workstation2() -> None:
     assert "git push" not in text
 
 
-def test_runner_seals_predictions_without_opening_source_suffix() -> None:
+def test_runner_wrapper_materializes_only_checksum_frozen_selector_history() -> None:
     text = RUNNER.read_text(encoding="utf-8")
+
+    assert (
+        'SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387'
+        'feed74c51a38b86e89800d0aa578b1df"' in text
+    )
+    assert 'SELECTOR_RELATIVE_PATH="src/causal4d_public/' in text
+    assert "deform360_object_sam2.py" in text
+    assert "rev-parse --is-shallow-repository" in text
+    assert "--unshallow origin" in text
+    assert "'+refs/heads/*:refs/remotes/origin/*'" in text
+    assert "--all --format='%H'" in text
+    assert '"${commit}:${SELECTOR_RELATIVE_PATH}"' in text
+    assert 'git -C "${repository}" archive' in text
+    assert "src/causal4d_public" in text
+    assert "retaining bounded runner failure" in text
+    assert 'exec bash "${RUNNER_IMPL}" "$@"' in text
+
+
+def test_runner_seals_predictions_without_opening_source_suffix() -> None:
+    text = RUNNER_IMPL.read_text(encoding="utf-8")
 
     assert 'prediction_record_count") != 100' in text
     assert "source-prediction-evidence-sealed" in text
