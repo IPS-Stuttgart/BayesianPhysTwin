@@ -77,18 +77,19 @@ def _sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value)).hexdigest()
 
 
+def _thread_count_is_pinned(value: str | None) -> bool:
+    return value is not None and _POSITIVE_INTEGER.fullmatch(value) is not None
+
+
 def _thread_counts_fully_pinned(profile: NumericalEnvironmentV1) -> bool:
     controls = profile.execution_controls
     count_controls_are_positive_integers = all(
-        isinstance(controls[name], str)
-        and _POSITIVE_INTEGER.fullmatch(controls[name]) is not None
-        for name in _THREAD_COUNT_CONTROLS
+        _thread_count_is_pinned(controls[name]) for name in _THREAD_COUNT_CONTROLS
     )
     omp_dynamic = controls["OMP_DYNAMIC"]
-    dynamic_teams_disabled = (
-        isinstance(omp_dynamic, str)
-        and omp_dynamic.lower() in _FALSE_CONTROL_VALUES
-    )
+    dynamic_teams_disabled = isinstance(
+        omp_dynamic, str
+    ) and omp_dynamic.lower() in _FALSE_CONTROL_VALUES
     return count_controls_are_positive_integers and dynamic_teams_disabled
 
 
