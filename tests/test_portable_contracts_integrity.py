@@ -56,6 +56,9 @@ def test_frozen_mapping_base_mutation_fails_closed() -> None:
         lambda: metadata.values(),
         lambda: metadata.get("value"),
         lambda: metadata.copy(),
+        lambda: dict(metadata),
+        lambda: metadata | {"other": 3},
+        lambda: {"other": 3} | metadata,
         lambda: repr(metadata),
         lambda: metadata == {},
         lambda: metadata != {},
@@ -96,6 +99,16 @@ def test_frozen_nested_sequence_base_mutation_fails_closed() -> None:
         lambda: reversed(items),
         lambda: items[0],
         lambda: items.copy(),
+        lambda: items.count(1),
+        lambda: items.index(1),
+        lambda: items + [3],
+        lambda: [0] + items,
+        lambda: items * 2,
+        lambda: 2 * items,
+        lambda: items < [2],
+        lambda: items <= [2],
+        lambda: items > [0],
+        lambda: items >= [0],
         lambda: repr(items),
         lambda: items == [],
         lambda: items != [],
@@ -169,11 +182,38 @@ def test_frozen_metadata_preserves_dict_list_and_json_compatibility() -> None:
     assert list(metadata.values())[1] == 2
     assert dict(metadata.items()) == expected
     assert metadata.copy() == expected
+    assert metadata | {"extra": 3} == {**expected, "extra": 3}
+    assert {"extra": 3} | metadata == {"extra": 3, **expected}
     assert len(items) == 2
     assert 1 in items
     assert list(reversed(items)) == list(reversed(expected["nested"]["items"]))
     assert items[:] == expected["nested"]["items"]
     assert items.copy() == expected["nested"]["items"]
+    assert items.count(1) == 1
+    assert items.index(1) == 0
+    assert items.index(1, 0, 1) == 0
+    assert items + [3] == [1, {"accepted": True}, 3]
+    assert [0] + items == [0, 1, {"accepted": True}]
+    assert items * 2 == expected["nested"]["items"] * 2
+    assert 2 * items == expected["nested"]["items"] * 2
+    assert items < [2]
+    assert items <= expected["nested"]["items"]
+    assert items > [0]
+    assert items >= expected["nested"]["items"]
+    with pytest.raises(TypeError):
+        _ = metadata | []
+    with pytest.raises(TypeError):
+        _ = [] | metadata
+    with pytest.raises(TypeError):
+        _ = items + (3,)
+    with pytest.raises(TypeError):
+        _ = (0,) + items
+    with pytest.raises(TypeError):
+        _ = items * 1.5
+    with pytest.raises(TypeError):
+        _ = 1.5 * items
+    with pytest.raises(TypeError):
+        _ = items < (2,)
     assert json.loads(json.dumps(metadata)) == expected
     assert json.loads(json.dumps(plain_json(metadata))) == expected
 

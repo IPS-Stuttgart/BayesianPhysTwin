@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 from pathlib import PurePosixPath
-from typing import Any
+from typing import Any, SupportsIndex
 
 import numpy as np
 
@@ -83,14 +83,32 @@ class FrozenDict(dict):
     def copy(self) -> dict[str, Any]:
         return self._snapshot_dict()
 
+    @staticmethod
+    def _validated_operand(value: object) -> object:
+        if isinstance(value, FrozenDict):
+            return value._snapshot_dict()
+        return value
+
+    def __or__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, dict):
+            return NotImplemented
+        return dict.__or__(self._snapshot_dict(), validated)
+
+    def __ror__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, dict):
+            return NotImplemented
+        return dict.__ror__(self._snapshot_dict(), validated)
+
     def __repr__(self) -> str:
         return repr(self._snapshot_dict())
 
     def __eq__(self, other: object) -> bool:
-        return self._snapshot_dict() == other
+        return self._snapshot_dict() == self._validated_operand(other)
 
     def __ne__(self, other: object) -> bool:
-        return self._snapshot_dict() != other
+        return self._snapshot_dict() != self._validated_operand(other)
 
     def __setitem__(self, key: object, value: object) -> None:
         self._immutable(key, value)
@@ -170,14 +188,72 @@ class FrozenList(list):
     def copy(self) -> list[Any]:
         return list(self._snapshot_tuple())
 
+    @staticmethod
+    def _validated_operand(value: object) -> object:
+        if isinstance(value, FrozenList):
+            return list(value._snapshot_tuple())
+        return value
+
+    def count(self, value: object) -> int:
+        return list(self._snapshot_tuple()).count(value)
+
+    def index(self, value: object, *bounds: SupportsIndex) -> int:
+        return list(self._snapshot_tuple()).index(value, *bounds)
+
+    def __add__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, list):
+            return NotImplemented
+        return list.__add__(list(self._snapshot_tuple()), validated)
+
+    def __radd__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, list):
+            return NotImplemented
+        return list.__add__(validated, list(self._snapshot_tuple()))
+
+    def __mul__(self, other: object) -> Any:
+        if not isinstance(other, SupportsIndex):
+            return NotImplemented
+        return list.__mul__(list(self._snapshot_tuple()), other)
+
+    def __rmul__(self, other: object) -> Any:
+        if not isinstance(other, SupportsIndex):
+            return NotImplemented
+        return list.__rmul__(list(self._snapshot_tuple()), other)
+
+    def __lt__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, list):
+            return NotImplemented
+        return list.__lt__(list(self._snapshot_tuple()), validated)
+
+    def __le__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, list):
+            return NotImplemented
+        return list.__le__(list(self._snapshot_tuple()), validated)
+
+    def __gt__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, list):
+            return NotImplemented
+        return list.__gt__(list(self._snapshot_tuple()), validated)
+
+    def __ge__(self, other: object) -> Any:
+        validated = self._validated_operand(other)
+        if not isinstance(validated, list):
+            return NotImplemented
+        return list.__ge__(list(self._snapshot_tuple()), validated)
+
     def __repr__(self) -> str:
         return repr(list(self._snapshot_tuple()))
 
     def __eq__(self, other: object) -> bool:
-        return list(self._snapshot_tuple()) == other
+        return list(self._snapshot_tuple()) == self._validated_operand(other)
 
     def __ne__(self, other: object) -> bool:
-        return list(self._snapshot_tuple()) != other
+        return list(self._snapshot_tuple()) != self._validated_operand(other)
 
     def __setitem__(self, key: object, value: object) -> None:
         self._immutable(key, value)
