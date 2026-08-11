@@ -7,6 +7,9 @@ import subprocess
 from pathlib import Path
 
 from bayesian_phystwin._portable_contracts import content_id
+from bayesian_phystwin.deform360_frame_zero_initializer import (
+    FrameZeroInitializerConfig,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 AMENDMENT = ROOT / (
@@ -19,11 +22,23 @@ NAMESPACE_AMENDMENT = ROOT / (
     "deform360_official_hub_fresh_object_session_v6_"
     "dispatch_namespace_repair.json"
 )
+FALLBACK_CONFIG_AMENDMENT = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_"
+    "fallback_config_routing_repair.json"
+)
 WORKFLOW = ROOT / (
     ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
 )
 DISPATCHER = ROOT / "scripts/ci/dispatch_deform360_v6_source_python.sh"
 PHYSICAL_TARGET = "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+FALLBACK_CONFIG_FLAG = "--persistence-fallback-source-config"
+PREVIOUS_FALLBACK_CONFIG = (
+    "configs/sota/deform360_reconstruction_failure_persistence_fallback_v1.json"
+)
+CORRECTED_FALLBACK_CONFIG = (
+    "configs/sota/deform360_frame_zero_initializer_source_v1.json"
+)
 
 
 def _stub(path: Path, route: str) -> None:
@@ -45,12 +60,13 @@ def _dispatch(
     arguments: list[str],
     *,
     environment_overrides: dict[str, str] | None = None,
-) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
+) -> tuple[subprocess.CompletedProcess[str], list[str], Path, Path]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     primary = tmp_path / "primary.sh"
     frame_zero = tmp_path / "frame-zero.sh"
     route_log = tmp_path / "route.log"
     marker = tmp_path / "frame-zero-runtime.json"
+    fallback_config_marker = tmp_path / "frame-zero-fallback-config-repair.json"
     _stub(primary, "primary")
     _stub(frame_zero, "frame-zero")
     environment = {
@@ -58,6 +74,7 @@ def _dispatch(
         "BPT_PRIMARY_PYTHON": str(primary),
         "BPT_FRAME_ZERO_PYTHON": str(frame_zero),
         "BPT_FRAME_ZERO_RUNTIME_MARKER": str(marker),
+        "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER": str(fallback_config_marker),
         "ROUTE_LOG": str(route_log),
     }
     environment.update(environment_overrides or {})
@@ -71,7 +88,7 @@ def _dispatch(
     routed = (
         route_log.read_text(encoding="utf-8").splitlines() if route_log.exists() else []
     )
-    return result, routed, marker
+    return result, routed, marker, fallback_config_marker
 
 
 def test_frame_zero_cuda_runtime_repair_is_content_addressed_and_closed() -> None:
@@ -124,17 +141,26 @@ def test_workflow_binds_exact_precompiled_cuda_runtime() -> None:
 def test_dispatcher_routes_only_frame_zero_to_precompiled_runtime(
     tmp_path: Path,
 ) -> None:
-    primary, primary_route, primary_marker = _dispatch(
+    primary, primary_route, primary_marker, primary_config_marker = _dispatch(
         tmp_path / "primary",
         ["-c", "print('primary')"],
     )
     assert primary.returncode == 0
     assert primary_route == ["primary", "-c", "print('primary')"]
     assert not primary_marker.exists()
+    assert not primary_config_marker.exists()
 
-    frame, frame_route, frame_marker = _dispatch(
+    frame, frame_route, frame_marker, frame_config_marker = _dispatch(
         tmp_path / "frame",
-        [PHYSICAL_TARGET, "--stage", "frame-zero", "--protocol", "lock.json"],
+        [
+            PHYSICAL_TARGET,
+            "--stage",
+            "frame-zero",
+            "--protocol",
+            "lock.json",
+            FALLBACK_CONFIG_FLAG,
+            PREVIOUS_FALLBACK_CONFIG,
+        ],
     )
     assert frame.returncode == 0
     assert frame_route[0] == "frame-zero"
@@ -144,6 +170,8 @@ def test_dispatcher_routes_only_frame_zero_to_precompiled_runtime(
         "frame-zero",
         "--protocol",
         "lock.json",
+        FALLBACK_CONFIG_FLAG,
+        CORRECTED_FALLBACK_CONFIG,
     ]
     marker = json.loads(frame_marker.read_text(encoding="utf-8"))
     assert marker == {
@@ -152,18 +180,28 @@ def test_dispatcher_routes_only_frame_zero_to_precompiled_runtime(
         ),
         "stage": "frame-zero",
     }
+    config_marker = json.loads(frame_config_marker.read_text(encoding="utf-8"))
+    assert config_marker == {
+        "corrected_config": CORRECTED_FALLBACK_CONFIG,
+        "previous_config": PREVIOUS_FALLBACK_CONFIG,
+        "repair_id": (
+            "df4fd52c65acc25c70c4cde650dd021f704e799dceda3323f3aa28af6fd99e0e"
+        ),
+        "stage": "frame-zero",
+    }
 
-    physical_prior, route, marker = _dispatch(
+    physical_prior, route, marker, config_marker = _dispatch(
         tmp_path / "physical-prior",
         [PHYSICAL_TARGET, "--stage", "physical-prior"],
     )
     assert physical_prior.returncode == 0
     assert route == ["primary", PHYSICAL_TARGET, "--stage", "physical-prior"]
     assert not marker.exists()
+    assert not config_marker.exists()
 
 
 def test_dispatcher_rejects_ambiguous_physical_stage(tmp_path: Path) -> None:
-    result, route, marker = _dispatch(
+    result, route, marker, config_marker = _dispatch(
         tmp_path,
         [PHYSICAL_TARGET, "--stage", "frame-zero", "--stage", "physical-prior"],
     )
@@ -172,6 +210,7 @@ def test_dispatcher_rejects_ambiguous_physical_stage(tmp_path: Path) -> None:
     assert "stage binding is not unique" in result.stderr
     assert route == []
     assert not marker.exists()
+    assert not config_marker.exists()
 
 
 def test_dispatcher_preserves_inherited_selector_repair_identity(
@@ -182,7 +221,7 @@ def test_dispatcher_preserves_inherited_selector_repair_identity(
         "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
     )
 
-    result, route, marker = _dispatch(
+    result, route, marker, config_marker = _dispatch(
         tmp_path,
         ["-c", "print('selector verifier')"],
         environment_overrides={
@@ -195,6 +234,35 @@ def test_dispatcher_preserves_inherited_selector_repair_identity(
     assert route == ["primary", "-c", "print('selector verifier')"]
     assert repair_id_log.read_text(encoding="utf-8").strip() == selector_repair_id
     assert not marker.exists()
+    assert not config_marker.exists()
+
+
+def test_dispatcher_rejects_missing_or_changed_fallback_config(tmp_path: Path) -> None:
+    missing, route, marker, config_marker = _dispatch(
+        tmp_path / "missing",
+        [PHYSICAL_TARGET, "--stage", "frame-zero"],
+    )
+    assert missing.returncode == 2
+    assert "fallback config binding is not unique" in missing.stderr
+    assert route == []
+    assert not marker.exists()
+    assert not config_marker.exists()
+
+    changed, route, marker, config_marker = _dispatch(
+        tmp_path / "changed",
+        [
+            PHYSICAL_TARGET,
+            "--stage",
+            "frame-zero",
+            FALLBACK_CONFIG_FLAG,
+            CORRECTED_FALLBACK_CONFIG,
+        ],
+    )
+    assert changed.returncode == 2
+    assert "no longer matches the retained failure" in changed.stderr
+    assert route == []
+    assert not marker.exists()
+    assert not config_marker.exists()
 
 
 def test_dispatch_namespace_repair_is_content_addressed_and_closed() -> None:
@@ -235,3 +303,81 @@ def test_workflow_binds_and_probes_dispatch_namespace_repair() -> None:
     dispatcher = DISPATCHER.read_text(encoding="utf-8")
     assert 'readonly FRAME_ZERO_DISPATCH_REPAIR_ID="' in dispatcher
     assert 'readonly REPAIR_ID="' not in dispatcher
+
+
+def test_fallback_config_routing_repair_is_content_addressed_and_closed() -> None:
+    payload = json.loads(FALLBACK_CONFIG_AMENDMENT.read_text(encoding="utf-8"))
+    declared = payload.pop("repair_id")
+
+    assert declared == content_id(payload)
+    assert not any(payload["information_boundary"].values())
+    assert payload["failed_execution_evidence"]["physical_manifest_count"] == 0
+    assert payload["failed_execution_evidence"]["source_prediction_seal_count"] == 0
+    assert payload["repair_scope"]["fallback_config_argument_routed"]
+    assert all(
+        value is False
+        for key, value in payload["repair_scope"].items()
+        if key != "fallback_config_argument_routed"
+    )
+
+    correction = payload["correction"]
+    previous = ROOT / correction["previous_config"]["path"]
+    corrected = ROOT / correction["corrected_config"]["path"]
+    assert (
+        hashlib.sha256(previous.read_bytes()).hexdigest()
+        == (correction["previous_config"]["file_sha256"])
+    )
+    assert (
+        hashlib.sha256(corrected.read_bytes()).hexdigest()
+        == (correction["corrected_config"]["file_sha256"])
+    )
+
+    previous_payload = json.loads(previous.read_text(encoding="utf-8"))
+    corrected_payload = json.loads(corrected.read_text(encoding="utf-8"))
+    for config_payload, expected in (
+        (previous_payload, correction["previous_config"]),
+        (corrected_payload, correction["corrected_config"]),
+    ):
+        canonical = json.dumps(
+            config_payload["config"],
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        canonical_digest = hashlib.sha256(canonical).hexdigest()
+        assert canonical_digest == config_payload["config_sha256"]
+        assert canonical_digest == expected["canonical_config_sha256"]
+        assert (
+            isinstance(config_payload["config"].get("method"), dict)
+            is expected["method_config_present"]
+        )
+
+    method = corrected_payload["config"]["method"]
+    fields = FrameZeroInitializerConfig.__dataclass_fields__
+    initializer = FrameZeroInitializerConfig(**{name: method[name] for name in fields})
+    assert initializer.minimum_original_point_count == 128
+    assert initializer.minimum_fallback_point_count == 128
+
+
+def test_workflow_binds_and_receipts_fallback_config_routing_repair() -> None:
+    payload = json.loads(FALLBACK_CONFIG_AMENDMENT.read_text(encoding="utf-8"))
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    amendment_digest = hashlib.sha256(
+        FALLBACK_CONFIG_AMENDMENT.read_bytes()
+    ).hexdigest()
+    dispatcher_digest = hashlib.sha256(DISPATCHER.read_bytes()).hexdigest()
+
+    assert f"FALLBACK_CONFIG_ROUTE_REPAIR_ID: {payload['repair_id']}" in workflow
+    assert f"FALLBACK_CONFIG_ROUTE_REPAIR_SHA256: {amendment_digest}" in workflow
+    assert f"DISPATCHER_SHA256: {dispatcher_digest}" in workflow
+    assert str(FALLBACK_CONFIG_AMENDMENT.relative_to(ROOT)) in workflow
+    assert "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER" in workflow
+    assert "runtime_fallback_config_routing_repair" in workflow
+
+    dispatcher = DISPATCHER.read_text(encoding="utf-8")
+    correction = payload["correction"]
+    assert payload["repair_id"] in dispatcher
+    assert correction["previous_config"]["path"] in dispatcher
+    assert correction["corrected_config"]["path"] in dispatcher
+    assert correction["previous_config"]["file_sha256"] in dispatcher
+    assert correction["corrected_config"]["file_sha256"] in dispatcher
