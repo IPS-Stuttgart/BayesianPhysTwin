@@ -37,7 +37,7 @@ jobs:
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.head_ref == 'agent/query-covariance-treatment-v1'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     steps:
       - name: Check out exact branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
