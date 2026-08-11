@@ -15,8 +15,8 @@ jobs:
     runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 30
     env:
-      BASE_SHA: dba748cafc1979dd697f99fb8aa70dc1cfaf9b81
-      TARGET_SHA: 4ad1f724e88b69381d2607423b07668ed500acf7
+      BASE_SHA: a5d6ab2cce37e0032311cd3abc76cbb1ace4eb97
+      TARGET_SHA: bf6d76d42a9683afbf547782c41eb4c1f6c6a3c4
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONUNBUFFERED: "1"
     steps:
@@ -39,6 +39,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           git fetch --no-tags --no-recurse-submodules --depth=1 origin "${BASE_SHA}"
+          sha256sum scripts/remote/run_deform360_v6_stage_selector_identity_repair.py
           python -m venv "${RUNNER_TEMP}/pr564-validation"
           source "${RUNNER_TEMP}/pr564-validation/bin/activate"
           python -m pip install -e ".[dev,graph]"
