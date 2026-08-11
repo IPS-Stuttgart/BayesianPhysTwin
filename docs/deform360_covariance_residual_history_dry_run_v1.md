@@ -40,6 +40,10 @@ that only opened source data were used. The declared role rosters must exactly m
 the deterministic whole-recorder partition; distinct artifact IDs alone are not
 accepted as proof of camera separation.
 
+The manifest is an exact-field finite-JSON contract. A relative archive path is
+resolved only against the manifest directory before the target-quarantine check,
+so execution does not depend on the process working directory.
+
 ## Missingness and material identities
 
 The adapter stores a residual only where `provider_validity` is true:
