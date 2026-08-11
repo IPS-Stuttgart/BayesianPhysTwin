@@ -21,6 +21,14 @@ _MODULE = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = _MODULE
 _SPEC.loader.exec_module(_MODULE)
 
+_REPOSITORY = Path(__file__).resolve().parents[1]
+_PROTOCOL_V1_3 = (
+    _REPOSITORY
+    / "protocols"
+    / "locks"
+    / "deform360_covariance_only_target_v1_3.json"
+)
+
 build_selection = _MODULE.build_selection
 load_protocol = _MODULE.load_protocol
 select_candidate_panel = _MODULE.select_candidate_panel
@@ -367,3 +375,50 @@ def test_protocol_tampering_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="protocol digest changed"):
         load_protocol(protocol_path, repository=repository)
+
+
+def test_v1_3_freezes_source_provider_and_custom_marginal_evaluation() -> None:
+    protocol = json.loads(_PROTOCOL_V1_3.read_text())
+    supplied = protocol["protocol_sha256"]
+    canonical = dict(protocol)
+    canonical.pop("protocol_sha256")
+
+    assert supplied == _canonical(canonical)
+    assert protocol["claim_boundary"]["official_deform360_benchmark_parity_claimed"] is False
+    assert protocol["evaluation"]["official_endpoints"] == {
+        "official_Chamfer_identity_check": (
+            "unavailable-no-official-processed-annotation-in-locked-plan"
+        ),
+        "official_track_error_identity_check": (
+            "unavailable-no-official-processed-annotation-in-locked-plan"
+        ),
+    }
+    assert "joint_energy_score" in protocol["evaluation"][
+        "removed_unavailable_or_undefined_endpoints"
+    ]
+    assert protocol["method"]["support_gate"] == {
+        "case_minimum_empirical_identity_fraction": 0.5,
+        "case_minimum_observed_prefix_frames": 2,
+        "identity_minimum_valid_updates": 2,
+        "prior_only_covariance_is_empirical_evidence": False,
+        "zero_update_identity_policy": (
+            "explicit-prior-only-label-and-exact-fallback-covariance"
+        ),
+    }
+    assert protocol["observation_partition"][
+        "provider_and_scoring_camera_sets_disjoint"
+    ] is True
+    assert protocol["observation_partition"][
+        "provider_and_scoring_reconstruction_artifacts_distinct"
+    ] is True
+    for record_key in (
+        "implementation_file",
+        "source_dry_run_file",
+        "source_dry_run_script",
+        "test_file",
+    ):
+        record = protocol["implementation"]["provider"]
+        path = _REPOSITORY / record[record_key]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == record[
+            f"{record_key}_sha256"
+        ]

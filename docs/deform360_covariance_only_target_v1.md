@@ -146,3 +146,23 @@ The eventual outcome must use cameras and processing artifacts disjoint from the
 prefix residual provider. In particular, donor and target may not share one
 reconstruction artifact; otherwise a common-mode camera error could calibrate
 against itself.
+
+## V1.3 provider and custom-evaluation lock
+
+Protocol v1.3 freezes the executable causal residual-history adapter and the
+custom evaluation before any target decode. It leaves the v1.2 roster, method
+mean, covariance donor, scales, fallback, and no-replacement rule unchanged.
+
+The adapter preserves a complete `(T,N,3)` causal history and `(T,N)` validity;
+missing rows are never nearest-filled as observations. Identities need two valid
+updates, and a case needs two observed frames plus 50% empirically supported
+identities. Prior-only covariance is not accepted as evidence. Unsupported
+identities and failed cases use exact fallback.
+
+Because official processed annotations are absent, the official track/Chamfer
+checks are marked unavailable. Registered scores are per-identity 3D marginal
+NLL, NEES, coverage, and interval volume, aggregated within session and then
+equally across sessions. Provider and scoring cameras use a deterministic
+names-only hash partition and distinct reconstruction artifacts. The source-only
+synthetic gate passed without target access; details are in
+`docs/deform360_covariance_only_target_v1_3.md`.
