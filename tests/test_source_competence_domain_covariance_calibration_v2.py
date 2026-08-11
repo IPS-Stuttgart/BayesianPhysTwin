@@ -327,9 +327,7 @@ def test_identity_transform_is_retained_as_exact_fallback() -> None:
     "factory",
     [
         lambda: CovarianceSemanticsV2(0, "world", "m2", "position", "fixed"),
-        lambda: DomainCovarianceCalibrationPolicyV2(
-            minimum_group_win_fraction=1.1
-        ),
+        lambda: DomainCovarianceCalibrationPolicyV2(minimum_group_win_fraction=1.1),
         lambda: DomainCovarianceCalibrationPolicyV2(minimum_evidence_level=4),
         lambda: DomainCovarianceCalibrationPolicyV2(
             allow_covariance_shrinkage="false"  # type: ignore[arg-type]
