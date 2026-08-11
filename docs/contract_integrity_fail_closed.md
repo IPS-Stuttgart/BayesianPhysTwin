@@ -41,6 +41,9 @@ The guarded read surface includes:
 - `plain_json`, direct and nested `json.dumps`, and downstream
   content-addressed identity construction.
 
+The guarded overrides conform to the repository's typed container contracts
+without local MyPy suppressions.
+
 Unsupported operations retain normal built-in behavior. For example, union
 with a non-dictionary or concatenation with a non-list still raises
 `TypeError`. Untampered containers remain compatible with ordinary `dict`,
