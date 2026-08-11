@@ -267,7 +267,9 @@ def build_lane_receipt(
     )
     artifact = _file_record(artifact_path)
     if artifact != expected_artifact:
-        raise ReleaseMatrixEvidenceError("artifact digest does not match release evidence")
+        raise ReleaseMatrixEvidenceError(
+            "artifact digest does not match release evidence"
+        )
 
     resolver = _file_record(resolver_input_path)
     if resolver["path"] != Path(lane.resolver_input).name:
@@ -280,7 +282,10 @@ def build_lane_receipt(
         "size_bytes": resolver["size_bytes"],
     }:
         raise ReleaseMatrixEvidenceError("profile does not bind exact resolver input")
-    if profile.python_version != python_version or profile.numpy_version != numpy_version:
+    if (
+        profile.python_version != python_version
+        or profile.numpy_version != numpy_version
+    ):
         raise ReleaseMatrixEvidenceError("profile runtime versions changed")
     versions = _versions(profile)
     if versions.get("numpy") != numpy_version:
@@ -390,7 +395,9 @@ def build_matrix_evidence(
         )
         resolver_copies = list(receipts_dir.rglob(f"resolver-input-{lane_name}.txt"))
         if len(profiles) != 1 or len(resolver_copies) != 1:
-            raise ReleaseMatrixEvidenceError(f"lane {lane_name} evidence roster changed")
+            raise ReleaseMatrixEvidenceError(
+                f"lane {lane_name} evidence roster changed"
+            )
         copied = _file_record(resolver_copies[0])
         if (
             copied["sha256"] != expected_lock["sha256"]
@@ -422,7 +429,10 @@ def build_matrix_evidence(
         numpy_record = _mapping(receipt.get("numpy"), name="NumPy record")
         if python_record.get("requested") != lane.python_version:
             raise ReleaseMatrixEvidenceError(f"lane {lane_name} Python changed")
-        if numpy_record != {"expected": lane.numpy_version, "actual": lane.numpy_version}:
+        if numpy_record != {
+            "expected": lane.numpy_version,
+            "actual": lane.numpy_version,
+        }:
             raise ReleaseMatrixEvidenceError(f"lane {lane_name} NumPy changed")
         summaries[lane_name] = {
             "receipt_id": receipt["receipt_id"],
@@ -521,7 +531,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json(args.output, payload)
         if args.command == "aggregate" and args.summary is not None:
             write_matrix_summary(args.summary, payload)
-    except (ReleaseMatrixEvidenceError, importlib.metadata.PackageNotFoundError) as error:
+    except (
+        ReleaseMatrixEvidenceError,
+        importlib.metadata.PackageNotFoundError,
+    ) as error:
         raise SystemExit(str(error)) from error
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
