@@ -131,14 +131,9 @@ def fuse_source_normal_multiview_tangent(
     )
     multiview_availability = np.mean(multiview_mask, axis=0)
     priority_identities = (
-        multiview_availability
-        >= minimum_multiview_availability_fraction
+        multiview_availability >= minimum_multiview_availability_fraction
     )
-    fused_update = (
-        source_mask
-        & multiview_mask
-        & priority_identities[None, :]
-    )
+    fused_update = source_mask & multiview_mask & priority_identities[None, :]
 
     fused = source.copy()
     if np.any(fused_update):
@@ -147,9 +142,7 @@ def fuse_source_normal_multiview_tangent(
             tangent_projectors,
             multiview - source,
         )
-        fused[fused_update] = (
-            source[fused_update] + tangent_delta[fused_update]
-        )
+        fused[fused_update] = source[fused_update] + tangent_delta[fused_update]
 
     return MultiviewTangentFusion(
         points_world_m=fused,
