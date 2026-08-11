@@ -153,7 +153,7 @@ def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
     _require(repair.get("repair_scope") == expected_scope, "repair scope changed")
     boundary = _mapping(repair.get("information_boundary"), name="boundary")
     _require(
-        boundary and all(value is False for value in boundary.values()),
+        bool(boundary) and all(value is False for value in boundary.values()),
         "information boundary changed",
     )
     authorization = _mapping(
