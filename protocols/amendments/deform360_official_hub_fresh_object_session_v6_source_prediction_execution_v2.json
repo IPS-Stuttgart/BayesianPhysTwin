@@ -1,0 +1,110 @@
+{
+  "amendment_id": "2c91f6ac7e195d147a45bf8d923bc7c2af128c16748e0cb9de3a4021d7d3c641",
+  "correction": {
+    "diagnostic_workflow_run_id": 31458765885,
+    "frozen_selector_source_verified": true,
+    "previous_generic_selector_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+    "reason": "previous-selector-digest-did-not-match-frozen-causal4d-revision"
+  },
+  "execution": {
+    "claim_authorized": false,
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true,
+    "v5_nested_prediction_record_count": 100,
+    "v6_source_prediction_unit_count": 10
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "human_approval_required": false,
+    "new_measurements_required": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "physical_baseline": {
+    "frame_zero_object_observation_only": true,
+    "future_object_observation_allowed": false,
+    "known_robot_action_allowed": true,
+    "method_id": "B0_physical_fallback",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "official_real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+    "rule": "automatic-warp-twin-when-admissible-otherwise-exact-persistence-v1"
+  },
+  "runtime_sources": {
+    "automatic_twin_upstream_file_set_id": "b7fb97367f95a845ba41f99f3d757afc9160291a189f666da26301f9fdca04dd",
+    "bayesian_phystwin_revision_frozen_at_execution_merge": true,
+    "causal4d_selector_repository": "IPS-Stuttgart/Causal4D",
+    "causal4d_selector_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
+    "deform360_physical_repository": "lhy0807/deform360",
+    "deform360_physical_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "deform360_processing_repository": "lhy0807/deform360",
+    "deform360_processing_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+    "generic_selector_source_byte_count": 17310,
+    "generic_selector_source_git_blob": "12db2b94fb72e9dbc0e57190341463dc837dfb60",
+    "generic_selector_source_path": "src/causal4d_public/deform360_object_sam2.py",
+    "generic_selector_source_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "official_phystwin_repository": "Jianghanxiao/PhysTwin",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "sam2_checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "sam2_repository": "facebookresearch/sam2",
+    "sam2_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4"
+  },
+  "schema": "bayesian-phystwin.deform360-fresh-object-session-v6-source-prediction-execution",
+  "schema_version": 1,
+  "semantics": "protected-main-real-source-prediction-evidence-before-source-suffix-v2",
+  "source_cohort": {
+    "object_count": 10,
+    "replacement_allowed": false,
+    "source_units": "the-ten-v5-development-object-session-units-only",
+    "statistical_unit": "physical-object-session",
+    "stratum_counts": {
+      "sheet": 5,
+      "volumetric": 5
+    }
+  },
+  "supersedes_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "terminal_states": [
+    "source-prediction-evidence-sealed",
+    "source-inputs-incomplete",
+    "source-technical-failure-retained",
+    "invalid"
+  ],
+  "upstream_evidence": {
+    "supported_objects": 10,
+    "technical_failures": 0,
+    "v4_artifact_id": 9053374591,
+    "v4_development_report_id": "d7548059971ce0b7836240ec7d5dac4fc53776a613fff3fc1f6cf600b87e141c",
+    "v4_materialization_id": "9333d9970ad6ff8f9b3f32e1b2f922ad35649debb81e26b5bedc10f3be2ba7f6",
+    "v4_status": "development-design-supported",
+    "v4_workflow_run_id": 31363421947
+  },
+  "v5_source_execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
+  "v6_policy_id": "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f",
+  "v6_source_covariance_amendment_id": "6113d481321f176929ccab0a38a4efacbeeb6620f53d7954d102b0b4fb1879c7",
+  "visual_likelihood_panel": {
+    "camera_pixels_used_for_selection": false,
+    "eligible_streams": "streams-in-the-validated-v4-metric-prefix-plan-only",
+    "future_frames_used_for_selection": false,
+    "human_selection_allowed": false,
+    "maximum_cameras_per_object": 8,
+    "minimum_cameras_per_object": 2,
+    "prediction_residuals_used_for_selection": false,
+    "provider_point_values_used_for_selection": false,
+    "ranking": "ascending-sha256(object_id\\0camera_id\\0v6-source-likelihood-panel-v1)",
+    "replacement_allowed": false,
+    "reserved_endpoint_views_excluded": true,
+    "target_outcomes_used_for_selection": false
+  }
+}
