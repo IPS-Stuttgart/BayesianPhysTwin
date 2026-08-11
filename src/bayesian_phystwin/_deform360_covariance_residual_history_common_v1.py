@@ -419,7 +419,7 @@ def _ranked_camera_families(
             family_to_ids,
             key=lambda family: (
                 hashlib.sha256(
-                    f"{CAMERA_PARTITION_NAMESPACE}:{family}".encode("utf-8")
+                    f"{CAMERA_PARTITION_NAMESPACE}:{family}".encode()
                 ).hexdigest(),
                 family,
             ),
