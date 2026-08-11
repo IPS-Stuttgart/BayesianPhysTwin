@@ -13,6 +13,7 @@ from bayesian_phystwin.domain_covariance_calibration import (
 )
 from bayesian_phystwin.domain_covariance_calibration_v2 import (
     CovarianceSemanticsV2,
+    DomainCovarianceCalibrationCertificateV2,
     DomainCovarianceCalibrationPolicyV2,
     apply_domain_covariance_calibration_v2,
     fit_domain_covariance_calibration_v2,
@@ -150,16 +151,36 @@ def _permissive_policy(**overrides: object) -> DomainCovarianceCalibrationPolicy
     return DomainCovarianceCalibrationPolicyV2(**values)  # type: ignore[arg-type]
 
 
+def _apply(
+    raw: np.ndarray,
+    certificate: DomainCovarianceCalibrationCertificateV2,
+    *,
+    domain_id: str = "dynamic",
+    evidence_decision: EvidenceDecisionV1 | None = None,
+    application_semantics: CovarianceSemanticsV2 | None = None,
+):
+    return apply_domain_covariance_calibration_v2(
+        raw,
+        certificate,
+        domain_id=domain_id,
+        application_semantics=(
+            certificate.semantics
+            if application_semantics is None
+            else application_semantics
+        ),
+        evidence_decision=(
+            _evidence_decision()
+            if evidence_decision is None
+            else evidence_decision
+        ),
+    )
+
+
 def test_default_policy_is_conservative_and_applies_bound_decision() -> None:
     certificate = _fit()
     raw = np.asarray([[1.0]])
 
-    output, record = apply_domain_covariance_calibration_v2(
-        raw,
-        certificate,
-        domain_id="dynamic",
-        evidence_decision=_evidence_decision(),
-    )
+    output, record = _apply(raw, certificate)
 
     assert min(certificate.source_certificate.config.covariance_scales) == 1.0
     assert certificate.supported_domains == ("dynamic",)
@@ -174,19 +195,70 @@ def test_default_policy_is_conservative_and_applies_bound_decision() -> None:
 
 def test_covariance_semantics_mismatch_returns_exact_input_object() -> None:
     certificate = _fit()
-    raw = np.eye(2)
+    raw = np.asarray([[1.0]], dtype=np.float32)
+    mismatched = CovarianceSemanticsV2(
+        covariance_dimension=1,
+        coordinate_frame="camera-zero",
+        physical_unit="m2",
+        query_type="endpoint-position",
+        horizon_semantics="fixed-endpoint-frame",
+    )
 
-    output, record = apply_domain_covariance_calibration_v2(
+    output, record = _apply(
         raw,
         certificate,
-        domain_id="dynamic",
-        evidence_decision=_evidence_decision(),
+        application_semantics=mismatched,
     )
 
     assert output is raw
     assert record.exact_fallback
     assert record.reason == "covariance-semantics-mismatch"
-    assert record.raw_covariance_sha256 == record.output_covariance_sha256
+    assert record.certificate_semantics_id != record.application_semantics_id
+    assert record.raw_numeric_sha256 == record.output_numeric_sha256
+    assert record.raw_array_sha256 == record.output_array_sha256
+
+
+def test_covariance_dimension_must_match_declared_application_semantics() -> None:
+    certificate = _fit()
+    raw = np.eye(2)
+    mismatched = CovarianceSemanticsV2(
+        covariance_dimension=2,
+        coordinate_frame="phystwin-world",
+        physical_unit="m2",
+        query_type="endpoint-position",
+        horizon_semantics="fixed-endpoint-frame",
+    )
+
+    output, record = _apply(
+        raw,
+        certificate,
+        application_semantics=mismatched,
+    )
+
+    assert output is raw
+    assert record.reason == "covariance-semantics-mismatch"
+
+
+def test_application_binds_exact_dtype_and_returned_array_bytes() -> None:
+    certificate = _fit()
+    raw = np.asarray([[1.0]], dtype=np.float32)
+
+    output, record = _apply(raw, certificate)
+
+    assert output.dtype == np.float64
+    assert record.applied
+    assert record.raw_array_sha256 != record.output_array_sha256
+    assert record.raw_numeric_sha256 != record.output_numeric_sha256
+
+
+def test_invalid_covariance_is_rejected_before_fallback_routing() -> None:
+    certificate = _fit()
+    with pytest.raises(ValueError, match="positive semidefinite"):
+        _apply(
+            np.asarray([[-1.0]]),
+            certificate,
+            evidence_decision=_evidence_decision(status="fail"),
+        )
 
 
 @pytest.mark.parametrize(
@@ -204,12 +276,7 @@ def test_unmatched_evidence_decision_forces_exact_fallback(
 ) -> None:
     raw = np.asarray([[1.0]])
 
-    output, record = apply_domain_covariance_calibration_v2(
-        raw,
-        _fit(),
-        domain_id="dynamic",
-        evidence_decision=decision,
-    )
+    output, record = _apply(raw, _fit(), evidence_decision=decision)
 
     assert output is raw
     assert not record.evidence_admissible
@@ -222,10 +289,9 @@ def test_policy_can_require_claim_authorization() -> None:
     )
     raw = np.asarray([[1.0]])
 
-    output, record = apply_domain_covariance_calibration_v2(
+    output, record = _apply(
         raw,
         certificate,
-        domain_id="dynamic",
         evidence_decision=_evidence_decision(claim_authorized=False),
     )
 
@@ -280,16 +346,15 @@ def test_unknown_domain_and_nonprospective_fit_both_fail_closed() -> None:
     raw = np.asarray([[1.0]])
     evidence = _evidence_decision()
 
-    unknown_output, unknown_record = apply_domain_covariance_calibration_v2(
+    unknown_output, unknown_record = _apply(
         raw,
         _fit(),
         domain_id="unseen",
         evidence_decision=evidence,
     )
-    boundary_output, boundary_record = apply_domain_covariance_calibration_v2(
+    boundary_output, boundary_record = _apply(
         raw,
         _fit(predictor_frozen=False),
-        domain_id="dynamic",
         evidence_decision=evidence,
     )
 
@@ -311,12 +376,7 @@ def test_identity_transform_is_retained_as_exact_fallback() -> None:
     )
     raw = np.asarray([[1.0]])
 
-    output, record = apply_domain_covariance_calibration_v2(
-        raw,
-        certificate,
-        domain_id="dynamic",
-        evidence_decision=_evidence_decision(),
-    )
+    output, record = _apply(raw, certificate)
 
     assert output is raw
     assert record.exact_fallback
@@ -341,12 +401,7 @@ def test_v2_contracts_reject_ambiguous_configuration(factory) -> None:
 
 def test_content_identity_rejects_certificate_and_application_tampering() -> None:
     certificate = _fit()
-    _, application = apply_domain_covariance_calibration_v2(
-        np.asarray([[1.0]]),
-        certificate,
-        domain_id="dynamic",
-        evidence_decision=_evidence_decision(),
-    )
+    _, application = _apply(np.asarray([[1.0]]), certificate)
 
     with pytest.raises(ValueError, match="artifact_id"):
         replace(certificate, artifact_id="0" * 64)
@@ -363,6 +418,7 @@ def test_apply_rejects_malformed_types_before_admission() -> None:
             [[1.0]],
             certificate,
             domain_id="dynamic",
+            application_semantics=certificate.semantics,
             evidence_decision=decision,
         )
     with pytest.raises(TypeError, match="EvidenceDecisionV1"):
@@ -370,5 +426,14 @@ def test_apply_rejects_malformed_types_before_admission() -> None:
             np.asarray([[1.0]]),
             certificate,
             domain_id="dynamic",
+            application_semantics=certificate.semantics,
             evidence_decision=True,  # type: ignore[arg-type]
+        )
+    with pytest.raises(TypeError, match="application_semantics"):
+        apply_domain_covariance_calibration_v2(
+            np.asarray([[1.0]]),
+            certificate,
+            domain_id="dynamic",
+            application_semantics="world",  # type: ignore[arg-type]
+            evidence_decision=decision,
         )
