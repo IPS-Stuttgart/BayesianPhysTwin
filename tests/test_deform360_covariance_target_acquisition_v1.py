@@ -62,9 +62,7 @@ def _raw_entries(object_id: str) -> tuple[SimpleNamespace, ...]:
 
 class _FakeApi:
     def repo_info(self, **kwargs: object) -> SimpleNamespace:
-        return SimpleNamespace(
-            sha="f804696d7a133908c7497ffdab43819d879b5cbc"
-        )
+        return SimpleNamespace(sha="f804696d7a133908c7497ffdab43819d879b5cbc")
 
     def list_repo_tree(self, **kwargs: object) -> tuple[SimpleNamespace, ...]:
         path = str(kwargs["path_in_repo"])

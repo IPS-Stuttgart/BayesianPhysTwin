@@ -100,9 +100,7 @@ def load_protocol(path: Path, *, repository: Path) -> tuple[dict[str, Any], set[
         },
         "protocol is not locked before target payload access",
     )
-    expected = _require_sha256(
-        protocol.get("protocol_sha256"), name="protocol_sha256"
-    )
+    expected = _require_sha256(protocol.get("protocol_sha256"), name="protocol_sha256")
     _require(expected == _protocol_digest(protocol), "protocol digest changed")
     boundary = protocol.get("information_boundary")
     _require(isinstance(boundary, Mapping), "information boundary is missing")
@@ -348,7 +346,9 @@ def _episode_options(
     nonprehensile_policy: str,
 ) -> dict[tuple[str, str, str], dict[str, Any]]:
     sequences = metadata.get("sequences")
-    _require(isinstance(sequences, Mapping) and sequences, f"{object_id} has no sequences")
+    _require(
+        isinstance(sequences, Mapping) and sequences, f"{object_id} has no sequences"
+    )
     by_cell: dict[tuple[str, str, str], dict[str, Any]] = {}
     for raw_id, raw in sequences.items():
         _require(
@@ -391,9 +391,10 @@ def _episode_options(
             "nonprehensile_metadata_valid": nonprehensile_valid,
         }
         previous = by_cell.get(cell)
-        if previous is None or (
-            record["episode_rank"], record["episode_id"]
-        ) < (previous["episode_rank"], previous["episode_id"]):
+        if previous is None or (record["episode_rank"], record["episode_id"]) < (
+            previous["episode_rank"],
+            previous["episode_id"],
+        ):
             by_cell[cell] = record
     return by_cell
 

@@ -198,9 +198,7 @@ def test_exclusion_hash_removes_object_before_metadata_panel(tmp_path: Path) -> 
 def test_malformed_metadata_stops_without_replacement(tmp_path: Path) -> None:
     repository, protocol_path, snapshot = _fixture(tmp_path)
     object_id = snapshot["raw_objects"][0]
-    snapshot["metadata_by_object"][object_id]["sequences"]["0"]["bimanual"] = (
-        "yess"
-    )
+    snapshot["metadata_by_object"][object_id]["sequences"]["0"]["bimanual"] = "yess"
 
     with pytest.raises(ValueError, match="bimanual is malformed"):
         build_selection(
@@ -264,8 +262,7 @@ def test_schema_amendment_records_nonselective_field_without_filtering(
     assert len(result["target_roster"]) == 24
     assert all(row["nonprehensile"] is None for row in result["target_roster"])
     assert all(
-        row["nonprehensile_metadata_valid"] is False
-        for row in result["target_roster"]
+        row["nonprehensile_metadata_valid"] is False for row in result["target_roster"]
     )
 
 

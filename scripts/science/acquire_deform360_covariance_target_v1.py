@@ -70,10 +70,10 @@ def _load_context(
     )
     source_record = lock.get("source_protocol")
     require(isinstance(source_record, Mapping), "source-protocol binding is missing")
-    source_path = (
-        repository / str(source_record.get("artifact_path", ""))
-    ).resolve()
-    require(source_path.is_relative_to(repository), "source protocol escaped repository")
+    source_path = (repository / str(source_record.get("artifact_path", ""))).resolve()
+    require(
+        source_path.is_relative_to(repository), "source protocol escaped repository"
+    )
     require(
         file_sha256(source_path) == source_record.get("file_sha256"),
         "source protocol bytes changed",
@@ -296,9 +296,7 @@ def build_file_plan(
         "file plan repeated a physical object",
     )
     all_paths = [
-        str(record["path"])
-        for row in rows
-        for record in row["selected_files"]
+        str(record["path"]) for row in rows for record in row["selected_files"]
     ]
     require(len(all_paths) == len(set(all_paths)), "file plan repeats a path")
     payload: dict[str, Any] = {
@@ -316,15 +314,12 @@ def build_file_plan(
         "objects": rows,
         "summary": {
             "locked_target_count": len(rows),
-            "ordinary_raw_plan_count": sum(
-                row["status"] == "planned" for row in rows
-            ),
+            "ordinary_raw_plan_count": sum(row["status"] == "planned" for row in rows),
             "retained_raw_plan_failure_count": sum(
                 row["status"] != "planned" for row in rows
             ),
             "exact_processed_annotation_count": sum(
-                row["official_processed_annotation_status"]
-                == "exact_episode_available"
+                row["official_processed_annotation_status"] == "exact_episode_available"
                 for row in rows
             ),
             "selected_file_count": len(all_paths),
@@ -411,9 +406,7 @@ def download_file_plan(
         selection_path=selection_path,
         plan_path=plan_path,
     )
-    records = [
-        record for row in plan["objects"] for record in row["selected_files"]
-    ]
+    records = [record for row in plan["objects"] for record in row["selected_files"]]
     planned_paths = {str(record["path"]) for record in records}
     require(len(planned_paths) == len(records), "download plan repeats a path")
     root = data_root.resolve()
@@ -551,7 +544,9 @@ def main() -> int:
         max_workers=args.workers,
         hub_download=hf_hub_download,
     )
-    print(json.dumps({"download_sha256": result["download_sha256"], **result["summary"]}))
+    print(
+        json.dumps({"download_sha256": result["download_sha256"], **result["summary"]})
+    )
     return 0
 
 
