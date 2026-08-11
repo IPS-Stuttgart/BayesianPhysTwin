@@ -1,0 +1,423 @@
+name: Apply v6 selector identity successor
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-v6-selector-identity-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: >-
+      github.event.pull_request.head.ref == 'fix/v6-selector-identity-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/v6-selector-identity-v2
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply explicit selector binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          OLD_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+          NEW_ID = "2c91f6ac7e195d147a45bf8d923bc7c2af128c16748e0cb9de3a4021d7d3c641"
+          OLD_NAME = (
+              "deform360_official_hub_fresh_object_session_v6_"
+              "source_prediction_execution.json"
+          )
+          NEW_NAME = (
+              "deform360_official_hub_fresh_object_session_v6_"
+              "source_prediction_execution_v2.json"
+          )
+          SELECTOR_SHA = (
+              "c10391578c73dde47fbce160312559a7"
+              "e638007e9053ec89373fe575cc64d7e5"
+          )
+          SELECTOR_BLOB = "12db2b94fb72e9dbc0e57190341463dc837dfb60"
+          SELECTOR_REVISION = "50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
+          SELECTOR_PATH = "src/causal4d_public/deform360_object_sam2.py"
+
+          def replace_once(text: str, old: str, new: str, *, label: str) -> str:
+              if text.count(old) != 1:
+                  raise SystemExit(f"{label} patch target changed: {text.count(old)}")
+              return text.replace(old, new, 1)
+
+          runner_path = Path(
+              "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+          )
+          runner = runner_path.read_text(encoding="utf-8")
+          requirements_anchor = (
+              ': "${SAM2_REPO:?SAM2_REPO is required}"\n'
+              ': "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"\n'
+          )
+          requirements = (
+              ': "${SAM2_REPO:?SAM2_REPO is required}"\n'
+              ': "${CAUSAL4D_GENERIC_SELECTOR_REPO:?'
+              'CAUSAL4D_GENERIC_SELECTOR_REPO is required}"\n'
+              ': "${CAUSAL4D_GENERIC_SELECTOR_SOURCE:?'
+              'CAUSAL4D_GENERIC_SELECTOR_SOURCE is required}"\n'
+              ': "${CAUSAL4D_DISCOVERY_REVISION:?'
+              'CAUSAL4D_DISCOVERY_REVISION is required}"\n'
+              ': "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"\n'
+          )
+          runner = replace_once(
+              runner,
+              requirements_anchor,
+              requirements,
+              label="runner environment",
+          )
+          runner = runner.replace(OLD_ID, NEW_ID)
+          runner = runner.replace(OLD_NAME, NEW_NAME)
+          selector_constant = (
+              'SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387'
+              'feed74c51a38b86e89800d0aa578b1df"\n'
+          )
+          selector_constants = (
+              f'SELECTOR_RELATIVE_PATH="{SELECTOR_PATH}"\n'
+              f'SELECTOR_GIT_BLOB="{SELECTOR_BLOB}"\n'
+              f'SELECTOR_SHA256="{SELECTOR_SHA}"\n'
+              'SELECTOR_BYTE_COUNT="17310"\n'
+          )
+          runner = replace_once(
+              runner,
+              selector_constant,
+              selector_constants,
+              label="selector constants",
+          )
+          old_block = '''set_stage "locate-frozen-generic-selector"
+          GENERIC_SELECTOR_SOURCE=""
+          while IFS= read -r candidate; do
+            [[ -f "${candidate}" && ! -L "${candidate}" ]] || continue
+            if [[ "$(sha256_file "${candidate}")" = "${SELECTOR_SHA256}" ]]; then
+              GENERIC_SELECTOR_SOURCE="${candidate}"
+              break
+            fi
+          done < <(
+            find \
+              "${RUNNER_WORKSPACE:-/home/github-runner}" \
+              /home/github-runner \
+              -type f -path '*/src/causal4d_public/deform360_object_sam2.py' \
+              2>/dev/null | sort -u
+          )
+          test -n "${GENERIC_SELECTOR_SOURCE}" \
+            || fail_incomplete "frozen generic SAM2 selector source is unavailable"
+          GENERIC_SELECTOR_ROOT="$(dirname "$(dirname "${GENERIC_SELECTOR_SOURCE}")")"
+          '''.replace("          ", "")
+          new_block = '''set_stage "locate-frozen-generic-selector"
+          [[ -d "${CAUSAL4D_GENERIC_SELECTOR_REPO}" \
+            && ! -L "${CAUSAL4D_GENERIC_SELECTOR_REPO}" ]] \
+            || fail_incomplete "frozen Causal4D selector repository is unavailable"
+          [[ -f "${CAUSAL4D_GENERIC_SELECTOR_SOURCE}" \
+            && ! -L "${CAUSAL4D_GENERIC_SELECTOR_SOURCE}" ]] \
+            || fail_incomplete "frozen generic SAM2 selector source is unavailable"
+          GENERIC_SELECTOR_REPO="$(realpath -e "${CAUSAL4D_GENERIC_SELECTOR_REPO}")"
+          GENERIC_SELECTOR_SOURCE="$(realpath -e "${CAUSAL4D_GENERIC_SELECTOR_SOURCE}")"
+          EXPECTED_SELECTOR_SOURCE="$(
+            realpath -e "${GENERIC_SELECTOR_REPO}/${SELECTOR_RELATIVE_PATH}"
+          )"
+          [[ "${GENERIC_SELECTOR_SOURCE}" == "${EXPECTED_SELECTOR_SOURCE}" ]] \
+            || fail_invalid "generic selector path changed"
+          [[ "$(git -C "${GENERIC_SELECTOR_REPO}" rev-parse HEAD)" \
+            == "${CAUSAL4D_DISCOVERY_REVISION}" ]] \
+            || fail_invalid "generic selector repository revision changed"
+          [[ "$(git -C "${GENERIC_SELECTOR_REPO}" \
+            rev-parse "HEAD:${SELECTOR_RELATIVE_PATH}")" == "${SELECTOR_GIT_BLOB}" ]] \
+            || fail_invalid "generic selector Git blob changed"
+          [[ "$(sha256_file "${GENERIC_SELECTOR_SOURCE}")" == "${SELECTOR_SHA256}" ]] \
+            || fail_invalid "generic selector SHA-256 changed"
+          [[ "$(wc -c < "${GENERIC_SELECTOR_SOURCE}" | tr -d ' ')" \
+            == "${SELECTOR_BYTE_COUNT}" ]] \
+            || fail_invalid "generic selector byte count changed"
+          GENERIC_SELECTOR_ROOT="${GENERIC_SELECTOR_REPO}/src"
+          '''.replace("          ", "")
+          runner = replace_once(
+              runner,
+              old_block,
+              new_block,
+              label="selector discovery",
+          )
+          runner_path.write_text(runner, encoding="utf-8")
+
+          materializer_path = Path(
+              "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
+          )
+          materializer = materializer_path.read_text(encoding="utf-8")
+          materializer = materializer.replace(OLD_ID, NEW_ID)
+          boundary_anchor = '''    _require(
+              boundary.get("development_suffix_opened") is False
+              and boundary.get("v6_target_payloads_opened") is False
+              and boundary.get("v6_target_outcomes_used") is False,
+              "amendment crosses its information boundary",
+          )
+          return amendment
+          '''.replace("          ", "")
+          boundary_replacement = '''    _require(
+              boundary.get("development_suffix_opened") is False
+              and boundary.get("v6_target_payloads_opened") is False
+              and boundary.get("v6_target_outcomes_used") is False,
+              "amendment crosses its information boundary",
+          )
+          _require(
+              amendment.get("semantics")
+              == "protected-main-real-source-prediction-evidence-before-source-suffix-v2",
+              "amendment semantics changed",
+          )
+          _require(
+              amendment.get("supersedes_amendment_id")
+              == "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+              "amendment predecessor changed",
+          )
+          runtime = _mapping(amendment.get("runtime_sources"), name="runtime_sources")
+          _require(
+              runtime.get("causal4d_selector_repository")
+              == "IPS-Stuttgart/Causal4D"
+              and runtime.get("causal4d_selector_revision")
+              == "50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
+              and runtime.get("generic_selector_source_path")
+              == "src/causal4d_public/deform360_object_sam2.py"
+              and runtime.get("generic_selector_source_git_blob")
+              == "12db2b94fb72e9dbc0e57190341463dc837dfb60"
+              and runtime.get("generic_selector_source_sha256")
+              == "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
+              and runtime.get("generic_selector_source_byte_count") == 17310,
+              "frozen generic selector identity changed",
+          )
+          return amendment
+          '''.replace("          ", "")
+          materializer = replace_once(
+              materializer,
+              boundary_anchor,
+              boundary_replacement,
+              label="materializer selector lock",
+          )
+          materializer_path.write_text(materializer, encoding="utf-8")
+
+          workflow_path = Path(
+              ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+          )
+          workflow = workflow_path.read_text(encoding="utf-8")
+          workflow = workflow.replace(OLD_ID, NEW_ID)
+          workflow = workflow.replace(OLD_NAME, NEW_NAME)
+          workflow_env_anchor = (
+              "          SAM2_REPO: ${{ github.workspace }}/_sam2\n"
+              "          EVIDENCE_ROOT: ${{ runner.temp }}\n"
+          )
+          workflow_env = (
+              "          SAM2_REPO: ${{ github.workspace }}/_sam2\n"
+              "          CAUSAL4D_GENERIC_SELECTOR_REPO: "
+              "${{ github.workspace }}/_causal4d_discovery\n"
+              "          CAUSAL4D_GENERIC_SELECTOR_SOURCE: "
+              "${{ github.workspace }}/_causal4d_discovery/"
+              f"{SELECTOR_PATH}\n"
+              "          EVIDENCE_ROOT: ${{ runner.temp }}\n"
+          )
+          workflow = replace_once(
+              workflow,
+              workflow_env_anchor,
+              workflow_env,
+              label="workflow selector environment",
+          )
+          workflow_path.write_text(workflow, encoding="utf-8")
+
+          test_path = Path(
+              "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+          )
+          tests = test_path.read_text(encoding="utf-8")
+          tests = tests.replace(OLD_NAME, NEW_NAME)
+          tests = tests.replace(OLD_ID, NEW_ID)
+          constants_anchor = f'AMENDMENT_ID = "{NEW_ID}"\n'
+          constants_replacement = constants_anchor + (
+              'LEGACY_AMENDMENT = ROOT / (\n'
+              '    "protocols/amendments/"\n'
+              '    "deform360_official_hub_fresh_object_session_v6_"\n'
+              '    "source_prediction_execution.json"\n'
+              ')\n'
+              f'LEGACY_AMENDMENT_ID = "{OLD_ID}"\n'
+          )
+          tests = replace_once(
+              tests,
+              constants_anchor,
+              constants_replacement,
+              label="test legacy constants",
+          )
+          amendment_test_anchor = (
+              "def test_execution_amendment_is_content_addressed_and_target_closed() -> None:\n"
+              "    amendment = json.loads(AMENDMENT.read_text(encoding=\"utf-8\"))\n"
+          )
+          amendment_test_replacement = (
+              "def test_execution_amendment_is_content_addressed_and_target_closed() -> None:\n"
+              "    legacy = json.loads(LEGACY_AMENDMENT.read_text(encoding=\"utf-8\"))\n"
+              "    legacy_declared = legacy.pop(\"amendment_id\")\n"
+              "    assert legacy_declared == LEGACY_AMENDMENT_ID == content_id(legacy)\n\n"
+              "    amendment = json.loads(AMENDMENT.read_text(encoding=\"utf-8\"))\n"
+          )
+          tests = replace_once(
+              tests,
+              amendment_test_anchor,
+              amendment_test_replacement,
+              label="legacy amendment test",
+          )
+          cohort_anchor = (
+              '    assert amendment["source_cohort"]["replacement_allowed"] is False\n'
+          )
+          cohort_replacement = cohort_anchor + (
+              '    assert amendment["supersedes_amendment_id"] == LEGACY_AMENDMENT_ID\n'
+              '    runtime = amendment["runtime_sources"]\n'
+              f'    assert runtime["causal4d_selector_revision"] == "{SELECTOR_REVISION}"\n'
+              f'    assert runtime["generic_selector_source_path"] == "{SELECTOR_PATH}"\n'
+              f'    assert runtime["generic_selector_source_git_blob"] == "{SELECTOR_BLOB}"\n'
+              f'    assert runtime["generic_selector_source_sha256"] == "{SELECTOR_SHA}"\n'
+              '    assert runtime["generic_selector_source_byte_count"] == 17310\n'
+          )
+          tests = replace_once(
+              tests,
+              cohort_anchor,
+              cohort_replacement,
+              label="selector amendment assertions",
+          )
+          runner_assert_anchor = (
+              '    assert "sam2.1_hiera_large.pt" not in text\n'
+          )
+          runner_assertions = runner_assert_anchor + (
+              f'    assert \'SELECTOR_SHA256="{SELECTOR_SHA}"\' in text\n'
+              f'    assert \'SELECTOR_GIT_BLOB="{SELECTOR_BLOB}"\' in text\n'
+              '    assert \'SELECTOR_BYTE_COUNT="17310"\' in text\n'
+              '    assert "CAUSAL4D_GENERIC_SELECTOR_SOURCE is required" in text\n'
+              '    assert "generic selector repository revision changed" in text\n'
+              '    assert "*/src/causal4d_public/deform360_object_sam2.py" not in text\n'
+          )
+          tests = replace_once(
+              tests,
+              runner_assert_anchor,
+              runner_assertions,
+              label="runner identity assertions",
+          )
+          workflow_assert_anchor = (
+              '    assert "git push" not in text\n'
+          )
+          workflow_assertions = workflow_assert_anchor + (
+              '    assert "CAUSAL4D_GENERIC_SELECTOR_REPO" in text\n'
+              '    assert "CAUSAL4D_GENERIC_SELECTOR_SOURCE" in text\n'
+          )
+          tests = replace_once(
+              tests,
+              workflow_assert_anchor,
+              workflow_assertions,
+              label="workflow selector assertions",
+          )
+          test_path.write_text(tests, encoding="utf-8")
+
+          manifest_path = Path("MANIFEST.in")
+          manifest = manifest_path.read_text(encoding="utf-8")
+          manifest_line = f"include protocols/amendments/{NEW_NAME}\n"
+          if manifest_line not in manifest:
+              old_line = f"include protocols/amendments/{OLD_NAME}\n"
+              if old_line not in manifest:
+                  raise SystemExit("legacy amendment manifest entry changed")
+              manifest = manifest.replace(old_line, old_line + manifest_line, 1)
+          manifest_path.write_text(manifest, encoding="utf-8")
+
+          docs_path = Path("docs/deform360_v6_source_prediction_evidence.md")
+          docs = docs_path.read_text(encoding="utf-8")
+          docs = docs.replace(OLD_NAME, NEW_NAME)
+          docs = docs.replace(OLD_ID, NEW_ID)
+          purpose_anchor = f"`{NEW_ID}`.\n"
+          correction = f'''`{NEW_ID}`.
+
+          This successor preserves the original failed amendment `{OLD_ID}` and its
+          bounded receipts. Diagnostic workflow `31458765885` checked out Causal4D
+          revision `{SELECTOR_REVISION}` and measured the generic selector at the exact
+          path `{SELECTOR_PATH}` as Git blob `{SELECTOR_BLOB}`, SHA-256
+          `{SELECTOR_SHA}`, and 17,310 bytes. The protected runner now consumes that
+          explicit checkout path and verifies revision, path, blob, digest, and byte
+          count; it no longer searches the runner filesystem for a matching filename.
+          No development suffix, confirmation payload, or v6 target data was opened
+          during diagnosis or correction.
+          '''.replace("          ", "")
+          docs = replace_once(
+              docs,
+              purpose_anchor,
+              correction,
+              label="documentation correction",
+          )
+          docs_path.write_text(docs, encoding="utf-8")
+          PY
+
+      - name: Validate the final review surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]" "build>=1.2"
+          files=(
+            scripts/science/materialize_deform360_v6_source_plan_inputs.py
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_v6_source_plan_inputs.py
+          bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_workflow_manifest_trigger_policy.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/amendments/"
+              "deform360_official_hub_fresh_object_session_v6_"
+              "source_prediction_execution_v2.json"
+          )
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          declared = payload.pop("amendment_id")
+          observed = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = "2c91f6ac7e195d147a45bf8d923bc7c2af128c16748e0cb9de3a4021d7d3c641"
+          if declared != observed or observed != expected:
+              raise SystemExit("successor amendment identity changed")
+          PY
+          rm .github/workflows/apply-v6-selector-identity-v2.yml
+          git diff --check
+
+      - name: Publish the validated ordinary patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          test ! -e .github/workflows/apply-v6-selector-identity-v2.yml
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m "Bind v6 source runner to the frozen selector bytes"
+          git push origin HEAD:fix/v6-selector-identity-v2
