@@ -1,0 +1,200 @@
+name: Apply Deform360 covariance residual adapter v1
+
+on:
+  push:
+    branches: [deform360-covariance-only-target-v1]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-deform360-covariance-residual-adapter-v1
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/deform360-covariance-only-target-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: deform360-covariance-only-target-v1
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Verify and apply the bounded patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          payload=.github/patches/deform360-covariance-residual-adapter-v1.tar.xz
+          test -f "${payload}"
+          tar -tJf "${payload}" > "${RUNNER_TEMP}/members.txt"
+          export MEMBERS_FILE="${RUNNER_TEMP}/members.txt"
+          python - <<'PY'
+          import os
+          from pathlib import Path, PurePosixPath
+
+          expected = {
+              ".github/workflows/deform360-covariance-residual-adapter-dry-run-v1.yml",
+              "MANIFEST.in",
+              "docs/deform360_covariance_residual_adapter_dry_run_v1.md",
+              "protocols/locks/deform360_covariance_only_residual_adapter_dry_run_v1.json",
+              "results/science/deform360_covariance_only_target_v1/residual_adapter_dry_run_v1.json",
+              "scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py",
+              "src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py",
+              "tests/test_deform360_covariance_residual_adapter_v1.py",
+          }
+          members = Path(os.environ["MEMBERS_FILE"]).read_text().splitlines()
+          if set(members) != expected or len(members) != len(expected):
+              raise SystemExit(f"unexpected patch members: {members}")
+          for value in members:
+              path = PurePosixPath(value)
+              if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+                  raise SystemExit(f"unsafe patch member: {value}")
+          PY
+          tar -xJf "${payload}" -C .
+          rm -- "${payload}" .github/workflows/apply-deform360-covariance-residual-adapter-v1.yml
+
+      - name: Bind the gate into the target-study documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          target = Path("docs/deform360_covariance_only_target_v1.md")
+          text = target.read_text(encoding="utf-8")
+          marker = "## Source-only residual-history adapter gate"
+          section = """
+
+          ## Source-only residual-history adapter gate
+
+          The target remains quarantined. Before any target decode, the separate
+          source-only dry-run lock
+          `deform360_covariance_only_residual_adapter_dry_run_v1.json` requires
+          causal `(T,N,3)` residuals with an unchanged `(T,N)` validity mask,
+          minimum observed support, byte-identical `last_residual` means, PSD
+          `independent_endpoint_v1` covariance, exact physical fallback, and
+          disjoint provider/scoring cameras and reconstruction artifacts. The
+          deterministic software gate opens no target bytes and does not authorize
+          target prediction or scoring. See
+          `docs/deform360_covariance_residual_adapter_dry_run_v1.md`.
+          """
+          if marker not in text:
+              target.write_text(text.rstrip() + section + "\n", encoding="utf-8")
+
+          changelog = Path("CHANGELOG.md")
+          change = changelog.read_text(encoding="utf-8")
+          bullet = (
+              "- A source-only Deform360 residual-history adapter gate that "
+              "preserves validity, enforces minimum support and disjoint "
+              "provider/scoring cameras, retains the exact `last_residual` mean, "
+              "and returns byte-identical physical fallback objects on rejection.\n"
+          )
+          if bullet not in change:
+              anchor = "### Added\n\n"
+              if anchor not in change:
+                  raise SystemExit("CHANGELOG Added section is missing")
+              change = change.replace(anchor, anchor + bullet, 1)
+              changelog.write_text(change, encoding="utf-8")
+          PY
+
+      - name: Install and validate the exact implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py
+            src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py
+            tests/test_deform360_covariance_residual_adapter_v1.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py \
+            scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py
+          tests=(
+            tests/test_covariance_only_hybrid.py
+            tests/test_covariance_only_hybrid_adversarial.py
+            tests/test_deform360_covariance_residual_adapter_v1.py
+            tests/test_pull_request_workflow_integrity.py
+          )
+          if [[ -f tests/test_pr_ready.py ]]; then
+            tests+=(tests/test_pr_ready.py)
+          fi
+          python -m pytest -q -p no:cacheprovider "${tests[@]}"
+
+      - name: Reproduce the checked-in no-target dry-run receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="${RUNNER_TEMP}/residual-adapter-dry-run.json"
+          python \
+            scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py \
+            "${output}" \
+            --protocol \
+            protocols/locks/deform360_covariance_only_residual_adapter_dry_run_v1.json
+          cmp --silent \
+            "${output}" \
+            results/science/deform360_covariance_only_target_v1/residual_adapter_dry_run_v1.json
+          jq -e '
+            .status == "passed" and
+            .information_boundary.target_payload_opened == false and
+            .information_boundary.target_outcomes_opened == false and
+            .information_boundary.target_cache_path_accessed == false and
+            .information_boundary.claim_authorized == false
+          ' "${output}" >/dev/null
+
+      - name: Commit only the validated gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          actual="$(git status --short | awk '{print $2}' | LC_ALL=C sort)"
+          expected="$(printf '%s\n' \
+            .github/patches/deform360-covariance-residual-adapter-v1.tar.xz \
+            .github/workflows/apply-deform360-covariance-residual-adapter-v1.yml \
+            .github/workflows/deform360-covariance-residual-adapter-dry-run-v1.yml \
+            CHANGELOG.md \
+            MANIFEST.in \
+            docs/deform360_covariance_only_target_v1.md \
+            docs/deform360_covariance_residual_adapter_dry_run_v1.md \
+            protocols/locks/deform360_covariance_only_residual_adapter_dry_run_v1.json \
+            results/science/deform360_covariance_only_target_v1/residual_adapter_dry_run_v1.json \
+            scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py \
+            src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py \
+            tests/test_deform360_covariance_residual_adapter_v1.py \
+            | LC_ALL=C sort)"
+          test "${actual}" = "${expected}"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A -- \
+            .github/patches/deform360-covariance-residual-adapter-v1.tar.xz \
+            .github/workflows/apply-deform360-covariance-residual-adapter-v1.yml \
+            .github/workflows/deform360-covariance-residual-adapter-dry-run-v1.yml \
+            CHANGELOG.md \
+            MANIFEST.in \
+            docs/deform360_covariance_only_target_v1.md \
+            docs/deform360_covariance_residual_adapter_dry_run_v1.md \
+            protocols/locks/deform360_covariance_only_residual_adapter_dry_run_v1.json \
+            results/science/deform360_covariance_only_target_v1/residual_adapter_dry_run_v1.json \
+            scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py \
+            src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py \
+            tests/test_deform360_covariance_residual_adapter_v1.py
+          git commit -m "Add source-only covariance residual adapter gate"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" push \
+            origin HEAD:refs/heads/deform360-covariance-only-target-v1
