@@ -1,0 +1,89 @@
+{
+  "amendment_id": "2056084bd44845446f78600ca42edd8fb23b4003431c87d53ff8d73a5dc275c0",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "frozen_source": {
+    "commit_subject": "Lock rest-preserving reusable twin state",
+    "containing_tags": [],
+    "refs_pointing_at": [],
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "required_file_sha256": {
+      "configs/causal4d_public/deform360_dense_reusable_panel_v1.json": "8a90705dd38c6c90b042ed8f450e2bc7e3cffc54b965765b004d0385999d40ea",
+      "configs/causal4d_public/deform360_independent_source_split_v1.json": "c150b2c8ea3947fe2ffe359c5da45d321b5086cd67141c2da9f912aac154ff4a",
+      "scripts/remote/run_deform360_official_phystwin_smoke.py": "e7bf6a6c06e074ac3cdefe259c1cf5eecf8cd905dae1b710a81107ab166ca535",
+      "src/bayesian_phystwin/phystwin_graph.py": "f6f1ef8d3a1fb95fc069a550ae7db12d6b32efe80582f479efb411452062b6fb",
+      "src/causal4d_public/deform360_action_support.py": "132283722400ac102ec84e9b7d21974edcdac0ff750168d70860cd89c8446783",
+      "src/causal4d_public/deform360_contact_conditioned_action.py": "1d4e2bbd4389d8d7055d0803f3feda3ea540d45123e0aa3f646bccf2cfa6c57e",
+      "src/causal4d_public/deform360_dense_reusable_panel.py": "0861831b9ab3cf6d64833efe533073f4f444f2315c04057377f243efffd8b17e",
+      "src/causal4d_public/deform360_dense_source.py": "6c9ffa0043302079acf303f23af9e9ebb895f0aa8cf03930effe8936a879bb29",
+      "src/causal4d_public/deform360_partial_graph_state.py": "81536d81ce4cfd0e61074d2f4096b3160624b6afa2e1dda1d0dab16c113192a3",
+      "src/causal4d_public/deform360_reusable_graph.py": "97b93e32c5009f5783b2f36be7e03d4acda33f0608c9694797e8e5c72d3dd8a5"
+    },
+    "revision": "9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
+  },
+  "history_locator": {
+    "anchor_match_count": 3,
+    "artifact_id": 9089783219,
+    "artifact_sha256": "23ffe0cd1c24aecfed815c56c50f9ae4a09f5699b9d925f86e76de6268e62b39",
+    "candidate_commit_count": 12,
+    "complete_history_searched": true,
+    "exact_match_count": 1,
+    "locator_source_revision": "73701a2c9ebb04717080d7be35e8709aef24351c",
+    "report_id": "75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087",
+    "schema": "bayesian-phystwin.frozen-source-history-locator",
+    "workflow_run_id": 31461017011
+  },
+  "information_boundary": {
+    "dataset_opened_by_repair": false,
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "source_residual_opened_by_repair": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "materialization": {
+    "all_required_files_must_match_sha256": true,
+    "archived_runner_blob_may_be_modified": false,
+    "main_checkout_files_may_be_modified": false,
+    "method": "detached-temporary-git-worktree",
+    "runtime_discovery_root_extension_only": true,
+    "source_revision_must_match_exactly": true,
+    "symlinked_required_files_allowed": false,
+    "temporary_worktree_removed_after_execution": true
+  },
+  "parent_execution": {
+    "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+    "physical_manifest_count": 0,
+    "protected_artifact_id": 9089464088,
+    "protected_execution_receipt_id": "6232968ec10c630b62e6933783b278bc4aba2362bb29c1eec6d2be47a001c0e0",
+    "protected_source_revision": "cac2c85fe514732a61f1821d8229307d99c358e9",
+    "protected_workflow_run_id": 31460025917,
+    "selector_runtime_repair_id": "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90",
+    "source_prediction_seal_count": 0,
+    "terminal_stage": "locate-frozen-physical-upstream",
+    "terminal_status": "source-inputs-incomplete"
+  },
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "historical_source_materialization_only": true,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "physical_method_changed": false,
+    "replacement_allowed": false,
+    "source_cohort_changed": false,
+    "source_file_bytes_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-frozen-upstream-materialization",
+  "schema_version": 1,
+  "scientific_boundary": "This amendment restores only the exact frozen source bytes already named by the v5/v6 execution contract. It does not modify a method, evaluate a source suffix, select a target, authorize a claim, or establish provider competence."
+}
