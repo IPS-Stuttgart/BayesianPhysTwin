@@ -1,0 +1,175 @@
+{
+  "claim_boundary": {
+    "bayesian_point_mean_improvement_claimed": false,
+    "causal4d_claim_modified": false,
+    "paper_claim_requires_independent_target_gate": true,
+    "prob4d_claim_modified": false,
+    "state_of_the_art_claim_authorized_before_scoring": false
+  },
+  "dataset": {
+    "processed_prefix": "processed",
+    "raw_prefix": "raw",
+    "repository": "brownu/deform360",
+    "revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+  },
+  "evaluation": {
+    "common_observation_noise_std_m": 0.005,
+    "coverage_level": 0.9,
+    "horizon_reports": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "independent_unit": "physical-object-session",
+    "mean_identity_check": "candidate and last_residual point predictions must be byte-identical before scoring",
+    "primary_endpoint": "equal-object mean Gaussian negative log score difference, candidate minus last_residual",
+    "resampling": {
+      "bootstrap_replicates": 100000,
+      "cluster": "physical-object-session",
+      "interval": 0.95,
+      "seed": 260811
+    },
+    "secondary_endpoints": [
+      "coverage",
+      "interval_width",
+      "NEES",
+      "energy_score",
+      "official_track_error_identity_check",
+      "official_Chamfer_identity_check"
+    ],
+    "success_gate": {
+      "candidate_coverage_interval": [
+        0.8,
+        0.98
+      ],
+      "mean_predictions_byte_identical": true,
+      "overall_primary_95_percent_upper_bound_below_zero": true,
+      "target_roster_complete_failure_accounting": true
+    }
+  },
+  "exclusion": {
+    "artifact_path": "protocols/locks/deform360_covariance_only_target_v1_exclusion.json",
+    "canonical_sha256": "859613611950801a6d462ddd426849eb0007b1c7406447cb00468c257a2bb476",
+    "file_sha256": "f9db0fa72305b68f6d4c6e85c4a6b4a22fb77bb01a4e2b13792c5954bb228b06",
+    "hash_namespace": "deform360-fresh-object-exclusion-v1",
+    "object_hash_count": 216
+  },
+  "failure_accounting": {
+    "categories": [
+      "ordinary_success",
+      "retained_provider_or_backend_failure",
+      "retained_missing_official_annotation",
+      "retained_malformed_metadata",
+      "unsealable_integrity_failure"
+    ],
+    "failed_or_difficult_targets_are_never_replaced": true,
+    "locked_denominator": 24
+  },
+  "implementation_revision": "ddbb582e53ec273b3e7057eabe41a9dc61b629cb",
+  "information_boundary": {
+    "allowed_before_target_roster_lock": [
+      "official object directory names",
+      "selected candidate metadata.json bytes",
+      "repository filenames, sizes, blob identifiers, and LFS digests",
+      "hash-only prior exclusion artifacts"
+    ],
+    "camera_media_decoded": false,
+    "geometry_or_track_annotations_opened": false,
+    "metadata_fields_allowed": [
+      "sequences.<episode>.action",
+      "sequences.<episode>.bimanual",
+      "sequences.<episode>.nonprehensile"
+    ],
+    "robot_or_tactile_arrays_opened": false,
+    "target_outcomes_opened": false
+  },
+  "method": {
+    "candidate_id": "last_residual_mean_independent_endpoint_covariance_v1",
+    "covariance": {
+      "donor": "independent_endpoint_v1",
+      "donor_configuration": "ModelAveragedEndpointConfigV1 default",
+      "horizon_covariance_multipliers": {
+        "early": 8.0,
+        "late": 16.0,
+        "middle": 16.0
+      },
+      "operation": "Sigma_candidate(h) = multiplier(h) * Sigma_independent_endpoint_v1(h)",
+      "scale_interpretation": "multipliers apply to covariance, not standard deviation"
+    },
+    "fallback": {
+      "causal_residual_available": "exact last_residual prediction",
+      "causal_residual_unavailable": "unchanged physical fallback",
+      "fallback_must_be_byte_identical": true
+    },
+    "mean": {
+      "candidate": "last_residual",
+      "definition": "last valid causal-prefix residual held constant over the untouched future",
+      "future_observations_used": false
+    },
+    "selection_or_tuning_on_target": false
+  },
+  "protocol_id": "deform360-covariance-only-target-v1",
+  "protocol_sha256": "e8a10108bccf0ba9f0b67cfbc78bcc0218a2e86b8a9ac1c3657e8d24a9ce5057",
+  "schema": "bayesian-phystwin/deform360-covariance-only-target-protocol-v1",
+  "schema_version": 1,
+  "selection": {
+    "action_families": {
+      "elevation": [
+        "lift",
+        "wave"
+      ],
+      "planar_or_contact": [
+        "drag",
+        "flip",
+        "move",
+        "press",
+        "push",
+        "roll",
+        "rotate",
+        "turn"
+      ],
+      "shape_change": [
+        "bend",
+        "curl",
+        "curve",
+        "distort",
+        "fold",
+        "squeeze",
+        "stretch"
+      ]
+    },
+    "candidate_objects_per_stratum": 16,
+    "episode_rank": "SHA256(seed + NUL + object_id + NUL + episode_id)",
+    "exact_factorial_cells": {
+      "bimanual": [
+        "no",
+        "yes"
+      ],
+      "object_stratum": [
+        "sheet",
+        "volumetric"
+      ],
+      "sessions_per_cell": 2,
+      "three_way_cell_count": 12
+    },
+    "metadata_invalid_candidate_policy": "terminate before target payload; do not replace",
+    "object_rank": "SHA256(seed + NUL + object_stratum + NUL + object_id)",
+    "object_stratum_rule": "object_id ending in '-cloth' is sheet; every other official object ID is volumetric",
+    "one_session_per_physical_object": true,
+    "replacement_after_roster_lock": false,
+    "roster_size": 24,
+    "seed": "deform360-covariance-only-target-v1",
+    "selection_solver": "deterministic constrained-cell-first bipartite matching with object-rank and episode-rank tie breaks",
+    "target_metadata_candidate_count": 32
+  },
+  "stage_order": [
+    "commit method, exclusion, selection code, tests, and this protocol before target metadata access",
+    "open metadata.json only for the fixed 32-object candidate panel",
+    "freeze and commit the exact 24-session roster without replacement",
+    "record names-only raw and released-annotation availability without replacement",
+    "download exact locked payload bytes into a quarantined target root",
+    "seal all predictions before opening target suffix scores",
+    "score all 24 locked sessions including retained technical failures"
+  ],
+  "status": "locked-before-target-metadata-access"
+}

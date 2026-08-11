@@ -1,0 +1,161 @@
+name: Deform360 covariance residual-history dry run v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/quality/test-suites.json"
+      - ".github/workflows/deform360-covariance-residual-history-dry-run-v1.yml"
+      - "docs/deform360_covariance_only_target_v1.md"
+      - "docs/deform360_covariance_only_target_v1_result.md"
+      - "docs/deform360_covariance_residual_history_dry_run_v1.md"
+      - "protocols/locks/deform360_covariance_residual_history_dry_run_v1.json"
+      - "scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py"
+      - "src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py"
+      - "src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py"
+      - "src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py"
+      - "src/bayesian_phystwin/deform360_covariance_residual_history_v1.py"
+      - "tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py"
+      - "tests/test_deform360_covariance_residual_history_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    deform360-covariance-residual-history-v1-${{
+      github.event.pull_request.head.sha || github.sha
+    }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PROTOCOL: >-
+    protocols/locks/deform360_covariance_residual_history_dry_run_v1.json
+  LOCK_SHA256: ba7378f5a01659a79d41135f4fa137a61565825a7c0844aa2c5dd523257abb50
+
+jobs:
+  contracts:
+    name: Source-only adapter / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install exact development environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+
+      - name: Validate format, lint, and types
+        if: matrix.python-version == '3.12'
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py
+            src/bayesian_phystwin/deform360_covariance_residual_history_v1.py
+            tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py
+            tests/test_deform360_covariance_residual_history_v1.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py \
+            src/bayesian_phystwin/deform360_covariance_residual_history_v1.py \
+            scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py
+
+      - name: Run source-only contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py
+            tests/test_deform360_covariance_residual_history_v1.py
+            tests/test_test_suite_manifest.py
+            tests/test_pull_request_workflow_integrity.py
+          )
+          if [[ -f tests/test_pr_ready.py ]]; then
+            tests+=(tests/test_pr_ready.py)
+          fi
+          python -m pytest -q -p no:cacheprovider "${tests[@]}"
+
+      - name: Verify the prospective lock digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["PROTOCOL"])
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          declared = payload.pop("lock_sha256")
+          observed = hashlib.sha256(
+              json.dumps(
+                  payload,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+          ).hexdigest()
+          expected = os.environ["LOCK_SHA256"]
+          if declared != observed or observed != expected:
+              raise SystemExit(
+                  f"residual-history lock changed: {observed} != {expected}"
+              )
+          boundary = payload["information_boundary"]
+          closed = (
+              "fresh_target_media_decoded",
+              "fresh_target_arrays_opened",
+              "fresh_target_predictions_opened",
+              "fresh_target_outcomes_opened",
+          )
+          if any(boundary[name] is not False for name in closed):
+              raise SystemExit("fresh-target information boundary changed")
+          PY
+
+      - name: Verify a clean checkout remains unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"

@@ -1,0 +1,74 @@
+{
+  "claim_boundary": {
+    "causal4d_claim_modified": false,
+    "covariance_claim_requires_locked_target_scoring": true,
+    "point_accuracy_claimed": false,
+    "prob4d_claim_modified": false,
+    "state_of_the_art_claim_authorized": false
+  },
+  "dataset": {
+    "processed_prefix": "processed",
+    "raw_prefix": "raw",
+    "repository": "brownu/deform360",
+    "revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+  },
+  "download": {
+    "audio_included": false,
+    "data_root": "/mnt/lexar4tb/datasets/deform360/unopened-candidate-target/covariance-only-v1/payload",
+    "exact_plan_must_be_committed_before_download": true,
+    "files_are_rehashed_after_download": true,
+    "lfs_sha256_is_verified_when_declared": true,
+    "maximum_workers": 2,
+    "replacement_allowed": false
+  },
+  "failure_accounting": {
+    "locked_denominator": 24,
+    "missing_exact_streams_are_retained": true,
+    "missing_official_processed_annotations_are_retained": true,
+    "unsupported_sessions_are_never_replaced": true
+  },
+  "information_boundary": {
+    "format_audit_before_lock": "one already-locked target object, names and blob metadata only",
+    "full_roster_repository_support_audited": false,
+    "geometry_or_tracks_opened": false,
+    "media_decoded": false,
+    "payload_bytes_opened": false,
+    "sensor_arrays_opened": false,
+    "target_outcomes_opened": false
+  },
+  "lock_sha256": "3654cdb960b225e1751885fa16f386e2fca3544509c3700e28a2f9f3a9617262",
+  "planning": {
+    "camera_policy": "all released camera streams; episode-indexed sorted paired MP4 and timestamp TXT",
+    "metadata_policy": "exact object metadata.json bound by roster SHA-256",
+    "minimum_camera_streams_for_ordinary_support": 8,
+    "processed_annotation_policy": "all files under exact processed/object/episode_N prefix when released; absence retained",
+    "raw_calibration_policy": "all files under exact object calibration_refined directory",
+    "raw_plan_failure_policy": "retain row with no unsafe partial payload plan; never replace target",
+    "tactile_audio_policy": "exclude WAV audio",
+    "tactile_baseline_policy": "nearest filename timestamp under the frozen calibration-source v1 bounds",
+    "tactile_policy": "all released tactile streams; episode-indexed sorted paired NPY and timestamp TXT plus selected baseline"
+  },
+  "protocol_id": "deform360-covariance-only-target-acquisition-v1",
+  "schema": "bayesian-phystwin/deform360-covariance-target-acquisition-lock-v1",
+  "schema_version": 1,
+  "selection": {
+    "artifact_path": "results/science/deform360_covariance_only_target_v1/target_roster_v1_2.json",
+    "file_sha256": "0882c2f0b482e3663842ad14f0d02226755b3c7d04f0511a412dd59456e986c0",
+    "roster_sha256": "f9106b3dd6e0cec089623e07fed3506755fb334952c7761846d0854dfba45783",
+    "selection_sha256": "d5745e513674a65ea51dd786caa1b51ef8a501d2e2ff3f27680e8f9366c37d77"
+  },
+  "source_protocol": {
+    "artifact_path": "protocols/locks/deform360_covariance_only_target_v1_2.json",
+    "file_sha256": "077216dbbda2931d6c5c7f2794760810bbbc3e68b8d63f955faa19625500b088",
+    "protocol_id": "deform360-covariance-only-target-v1.2",
+    "protocol_sha256": "c01bc6d8df77ec7959cbde8c9f109e014a542346c4b3d42db995d5ab9ee68033"
+  },
+  "stage_order": [
+    "audit names and blob metadata for all 24 frozen sessions",
+    "commit the exact file plan and all retained support dispositions",
+    "download only exact planned bytes into the quarantined root",
+    "rehash every downloaded file and verify declared LFS digests",
+    "make the cache read-only without decoding or scoring"
+  ],
+  "status": "locked-before-full-support-audit-and-payload-download"
+}
