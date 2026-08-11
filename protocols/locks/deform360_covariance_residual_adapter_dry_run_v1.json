@@ -1,0 +1,88 @@
+{
+  "claim_boundary": "This dry run validates only the source-side adapter contract and exact fallback. It does not open or score the fresh-object target, establish provider competence on Deform360, authorize a paper claim, or modify Causal4D or Prob4D claims.",
+  "dry_run_fixture": {
+    "case_count": 4,
+    "future_frame_count": 12,
+    "horizon_labels": [
+      "early",
+      "early",
+      "early",
+      "early",
+      "middle",
+      "middle",
+      "middle",
+      "middle",
+      "late",
+      "late",
+      "late",
+      "late"
+    ],
+    "prefix_frame_count": 8,
+    "required_cases": [
+      "ordinary_success_with_missingness",
+      "masked_value_invariance",
+      "provider_failure_exact_fallback",
+      "insufficient_support_exact_physical_fallback"
+    ],
+    "seed": 260811,
+    "track_count": 5
+  },
+  "identity_gate": {
+    "coordinate_frame_identity_required": true,
+    "covariance_unit": "m2",
+    "material_identity_required": true,
+    "provider_and_scoring_artifact_sets_disjoint": true,
+    "provider_and_scoring_camera_sets_disjoint": true,
+    "residual_history_shape": "(T,N,3)",
+    "residual_unit": "m",
+    "strictly_increasing_horizon_steps_required": true,
+    "validity_shape": "(T,N)"
+  },
+  "information_boundary": {
+    "camera_media_decoded": false,
+    "claim_authorized": false,
+    "predictions_run_on_target": false,
+    "sensor_arrays_loaded_from_target": false,
+    "source_only": true,
+    "target_outcomes_opened": false,
+    "target_payload_opened": false,
+    "target_quarantine_path_referenced_by_workflow": false
+  },
+  "method": {
+    "candidate_id": "last_residual_mean_independent_endpoint_covariance_v1",
+    "covariance_donor": "independent_endpoint_v1",
+    "donor_configuration": "ModelAveragedEndpointConfigV1 default",
+    "horizon_covariance_multipliers": {
+      "early": 8.0,
+      "late": 16.0,
+      "middle": 16.0
+    },
+    "invalid_residual_transport": "masked entries are canonicalized to zero and remain invalid; no nearest fill or temporal imputation",
+    "minimum_valid_observations_per_track": 3,
+    "provider_failure_fallback": "exact last_residual mean where supported, exact unchanged physical mean where unsupported, and zero donor covariance",
+    "scale_interpretation": "multipliers apply to covariance, not standard deviation",
+    "unsupported_track_fallback": "exact unchanged physical future with zero donor covariance"
+  },
+  "parent_protocol": {
+    "path": "protocols/locks/deform360_covariance_only_target_v1_2.json",
+    "protocol_id": "deform360-covariance-only-target-v1.2",
+    "protocol_sha256": "c01bc6d8df77ec7959cbde8c9f109e014a542346c4b3d42db995d5ab9ee68033"
+  },
+  "protocol_id": "deform360-covariance-residual-adapter-dry-run-v1",
+  "protocol_sha256": "12fa5e4896f285cbbffb0825e7695fa483e292716c1d25502ad96968308f6255",
+  "schema": "bayesian-phystwin/deform360-covariance-residual-adapter-dry-run-v1",
+  "schema_version": 1,
+  "status": "source-only-contract-dry-run",
+  "success_gate": {
+    "artifact_sets_are_disjoint": true,
+    "camera_sets_are_disjoint": true,
+    "candidate_mean_is_reference_object": true,
+    "horizon_scales_are_exact": true,
+    "masked_values_do_not_change_output": true,
+    "minimum_support_enforced": true,
+    "output_covariance_is_psd": true,
+    "provider_failure_is_exact_zero_covariance_fallback": true,
+    "unsupported_tracks_are_byte_identical_to_physical_fallback": true,
+    "validity_hash_preserved": true
+  }
+}
