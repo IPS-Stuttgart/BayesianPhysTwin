@@ -22,11 +22,11 @@ sys.modules[_SPEC.name] = _MODULE
 _SPEC.loader.exec_module(_MODULE)
 
 _REPOSITORY = Path(__file__).resolve().parents[1]
-_PROTOCOL_V1_3 = (
+_PROTOCOL_V1_4 = (
     _REPOSITORY
     / "protocols"
     / "locks"
-    / "deform360_covariance_only_target_v1_3.json"
+    / "deform360_covariance_only_target_v1_4.json"
 )
 
 build_selection = _MODULE.build_selection
@@ -377,13 +377,25 @@ def test_protocol_tampering_is_rejected(tmp_path: Path) -> None:
         load_protocol(protocol_path, repository=repository)
 
 
-def test_v1_3_freezes_source_provider_and_custom_marginal_evaluation() -> None:
-    protocol = json.loads(_PROTOCOL_V1_3.read_text())
+def test_v1_4_freezes_corrected_source_provider_and_custom_evaluation() -> None:
+    protocol = json.loads(_PROTOCOL_V1_4.read_text())
     supplied = protocol["protocol_sha256"]
     canonical = dict(protocol)
     canonical.pop("protocol_sha256")
 
     assert supplied == _canonical(canonical)
+    assert protocol["amendment"]["parent_protocol_id"] == (
+        "deform360-covariance-only-target-v1.3"
+    )
+    parent_path = (
+        _REPOSITORY
+        / "protocols"
+        / "locks"
+        / "deform360_covariance_only_target_v1_3.json"
+    )
+    assert hashlib.sha256(parent_path.read_bytes()).hexdigest() == protocol[
+        "amendment"
+    ]["parent_protocol_file_sha256"]
     assert protocol["claim_boundary"]["official_deform360_benchmark_parity_claimed"] is False
     assert protocol["evaluation"]["official_endpoints"] == {
         "official_Chamfer_identity_check": (
@@ -411,7 +423,22 @@ def test_v1_3_freezes_source_provider_and_custom_marginal_evaluation() -> None:
     assert protocol["observation_partition"][
         "provider_and_scoring_reconstruction_artifacts_distinct"
     ] is True
+    causal = protocol["method"]["causal_residual_history"]
+    assert causal["maximum_association_distance_m"] == 0.040
+    assert causal["minimum_effective_candidate_support"] == 0.05
+    assert causal["innovation_clipping_before_robust_likelihood"] is False
+    assert causal["robust_innovation_processing_count"] == 1
+    assert "independent of state innovation" in causal["prior_reliability"]
+    assert causal["metric_row_covariance_used_by_endpoint_filter"] is True
+    assert causal["prior_reliability_used_by_endpoint_filter"] is True
+    assert causal["prior_reliability_application_count"] == 1
+    assert causal["full_3x3_covariance_preserved_through_horizon"] is True
+    assert "R_eff=" in causal["endpoint_likelihood"]
+    assert protocol["method"]["mean"][
+        "registered_reference_digest_supplied_by_caller"
+    ] is True
     for record_key in (
+        "association_implementation_file",
         "implementation_file",
         "source_dry_run_file",
         "source_dry_run_script",
