@@ -1,0 +1,94 @@
+name: Validate PR 525 full exact head
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-pr525-full-suite.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-pr525-full-exact-head
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.head_ref == 'agent/validate-pr525-exact-head'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: dcb89d89b3099d5ab7d559ecef4893a4ace08d63
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Run full Python 3.12 suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "dcb89d89b3099d5ab7d559ecef4893a4ace08d63"
+          test "$(git rev-parse HEAD^)" = "52c8e0e897b0c1e28b4d25b9ac9a1a6984d71689"
+          rm -rf "$RUNNER_TEMP/pr525-full-py312"
+          python -m venv "$RUNNER_TEMP/pr525-full-py312"
+          python="$RUNNER_TEMP/pr525-full-py312/bin/python"
+          "$python" -m pip install --upgrade pip
+          "$python" -m pip install -e ".[dev,graph,vision]"
+          "$python" -m pip check
+          "$python" tools/quality/changed_python_quality.py \
+            --base 52c8e0e897b0c1e28b4d25b9ac9a1a6984d71689 \
+            --head dcb89d89b3099d5ab7d559ecef4893a4ace08d63
+          "$python" -m pytest --tb=short
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+
+      - name: Run Python 3.10 core and replay contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/pr525-core-py310"
+          python -m venv "$RUNNER_TEMP/pr525-core-py310"
+          python="$RUNNER_TEMP/pr525-core-py310/bin/python"
+          "$python" -m pip install --upgrade pip
+          "$python" -m pip install -e ".[dev]"
+          "$python" tools/quality/test_suite_manifest.py list core-contracts \
+            > "$RUNNER_TEMP/pr525-core-py310.txt"
+          mapfile -t core_tests < "$RUNNER_TEMP/pr525-core-py310.txt"
+          "$python" -m pytest -q \
+            "${core_tests[@]}" \
+            tests/test_source_competence_domain_covariance_calibration_v2.py \
+            tests/test_source_competence_domain_covariance_calibration_v2_adversarial.py
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Run Python 3.14 core and replay contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/pr525-core-py314"
+          python -m venv "$RUNNER_TEMP/pr525-core-py314"
+          python="$RUNNER_TEMP/pr525-core-py314/bin/python"
+          "$python" -m pip install --upgrade pip
+          "$python" -m pip install -e ".[dev]"
+          "$python" tools/quality/test_suite_manifest.py list core-contracts \
+            > "$RUNNER_TEMP/pr525-core-py314.txt"
+          mapfile -t core_tests < "$RUNNER_TEMP/pr525-core-py314.txt"
+          "$python" -m pytest -q \
+            "${core_tests[@]}" \
+            tests/test_source_competence_domain_covariance_calibration_v2.py \
+            tests/test_source_competence_domain_covariance_calibration_v2_adversarial.py
