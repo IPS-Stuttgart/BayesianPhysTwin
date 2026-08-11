@@ -38,9 +38,7 @@ def _selection(*, accepted: bool) -> GaugeAwareSelection:
         regret_guard_present=True,
         regret_guard_accepted=accepted,
         reason=(
-            "candidate-accepted"
-            if accepted
-            else "regret-guard-exact-baseline-fallback"
+            "candidate-accepted" if accepted else "regret-guard-exact-baseline-fallback"
         ),
         selected_value=candidate if accepted else baseline,
     )
@@ -80,18 +78,10 @@ def _bundle() -> GoldenPathEvidenceBundleV1:
 
 
 def test_array_identity_binds_dtype_shape_and_exact_bytes() -> None:
-    positive_zero = ArrayByteIdentityV1.from_array(
-        np.asarray([0.0], dtype=np.float32)
-    )
-    negative_zero = ArrayByteIdentityV1.from_array(
-        np.asarray([-0.0], dtype=np.float32)
-    )
-    wider = ArrayByteIdentityV1.from_array(
-        np.asarray([0.0], dtype=np.float64)
-    )
-    reshaped = ArrayByteIdentityV1.from_array(
-        np.asarray([[0.0]], dtype=np.float32)
-    )
+    positive_zero = ArrayByteIdentityV1.from_array(np.asarray([0.0], dtype=np.float32))
+    negative_zero = ArrayByteIdentityV1.from_array(np.asarray([-0.0], dtype=np.float32))
+    wider = ArrayByteIdentityV1.from_array(np.asarray([0.0], dtype=np.float64))
+    reshaped = ArrayByteIdentityV1.from_array(np.asarray([[0.0]], dtype=np.float32))
 
     assert positive_zero.array_id != negative_zero.array_id
     assert positive_zero.array_id != wider.array_id
