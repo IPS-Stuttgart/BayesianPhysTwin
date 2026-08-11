@@ -1083,6 +1083,7 @@ def build_deform360_joint_sparse_motioncrafter_recovery_plan_v5_2(
     inventory: Mapping[str, Any],
     base_provider_plan: Mapping[str, Any],
     base_provider_plan_file_sha256: str,
+    base_camera_audit: Mapping[str, Any],
     recovery_preflight: Mapping[str, Any],
     recovery_preflight_file_sha256: str,
     amendment: Mapping[str, Any],
@@ -1101,20 +1102,11 @@ def build_deform360_joint_sparse_motioncrafter_recovery_plan_v5_2(
         == lock.get("execution_lock_id"),
         "amendment uses a different execution lock",
     )
-    # The preflight has already content-bound its camera audit. Revalidate its
-    # own identity here; the full audit is required when the preflight is built.
-    preflight = _mapping(recovery_preflight, name="camera recovery preflight")
-    require_exact_fields(
-        preflight, expected=_PREFLIGHT_FIELDS, name="camera recovery preflight"
-    )
-    _content_addressed(preflight, identity="preflight_id")
-    _require(
-        preflight.get("execution_lock_id") == lock.get("execution_lock_id")
-        and preflight.get("base_provider_plan_id")
-        == base_provider_plan.get("manifest_sha256")
-        and preflight.get("policy") == RECOVERY_POLICY
-        and preflight.get("information_boundary") == AUDIT_INFORMATION_BOUNDARY,
-        "camera recovery preflight binding changed",
+    preflight = validate_deform360_joint_sparse_camera_recovery_preflight_v5_2(
+        recovery_preflight,
+        lock=lock,
+        base_provider_plan=base_provider_plan,
+        base_camera_audit=base_camera_audit,
     )
     normalized_inventory = validate_deform360_prepared_source_inventory(inventory)
     _require(
@@ -1632,8 +1624,13 @@ def merge_deform360_joint_sparse_motioncrafter_recovery_runs_v5_2(
 
 
 def _relative_file_record(path: Path, *, input_root: Path, name: str) -> dict[str, str]:
+    _require(
+        path.is_file()
+        and not path.is_symlink()
+        and not any(parent.is_symlink() for parent in path.parents),
+        f"{name} is invalid",
+    )
     resolved = path.resolve(strict=True)
-    _require(resolved.is_file() and not resolved.is_symlink(), f"{name} is invalid")
     try:
         relative = resolved.relative_to(input_root)
     except ValueError as error:
