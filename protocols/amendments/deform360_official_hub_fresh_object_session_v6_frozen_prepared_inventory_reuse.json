@@ -1,0 +1,68 @@
+{
+  "amendment_id": "1d4087e22d7c7cd3fcec09c6f392427c90c0eaa5adbb8d12e35b89e215dd5ed9",
+  "claim_authorized": false,
+  "frozen_inventory": {
+    "artifact_digest": "sha256:d0041af0ba0cfe6e5c5bd4008c47adb3ed4cf0cf0f6754eff67a238e746c7a86",
+    "artifact_id": 9026043628,
+    "artifact_name": "deform360-calibration-retained-source-admission-31272512658-1",
+    "file_name": "prepared-source-inventory.json",
+    "file_sha256": "4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007",
+    "implementation_revision": "e190c94014e6024e324d860618662526af6ea682",
+    "inventory_id": "6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b",
+    "object_count": 10,
+    "source_revision": "e190c94014e6024e324d860618662526af6ea682",
+    "workflow_run_id": 31272512658
+  },
+  "information_boundary": {
+    "calibration_payloads_newly_opened": false,
+    "development_suffix_opened": false,
+    "replacement_allowed": false,
+    "source_residual_opened": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "parent_execution": {
+    "artifact_digest": "sha256:edbfe17c5c85c4e9f7375026fd15593132ee748456a60a5c97b2ea87776a3304",
+    "artifact_id": 9090402942,
+    "execution_receipt_id": "a62ead70994b330d3eecf8d35afe6baa1275c428f4c90c4e18157aac55f3733f",
+    "physical_manifest_count": 0,
+    "regenerated_inventory": {
+      "file_sha256": "7714c5d4b0aaed32358f21d133a84ab038d2f98eb1c48639d43df736ae801acf",
+      "implementation_revision": "d8e19b5b572fda3e1373302a1052c297f19eeea3",
+      "inventory_id": "3972737207fd684e5e31cd507c4b3a0e9e2d0ed1b9d5cd427774f019b2b704cc"
+    },
+    "source_prediction_seal_count": 0,
+    "source_revision": "d8e19b5b572fda3e1373302a1052c297f19eeea3",
+    "terminal_stage": "physical-source:026-sock-cloth-ep0007",
+    "terminal_status": "source-technical-failure-retained",
+    "workflow_run_id": 31462653379
+  },
+  "runtime_reuse": {
+    "exact_file_sha256_required": true,
+    "exact_inventory_id_required": true,
+    "frozen_lock_modified": false,
+    "inventory_builder_source_modified": false,
+    "method": "exact-artifact-download-and-python-command-shim",
+    "output_path_only_rebinding": true,
+    "scientific_runner_blob_modified": false,
+    "selector_repair_wrapper_blob_modified": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-frozen-prepared-inventory-reuse",
+  "schema_version": 1,
+  "scientific_boundary": "This repair reuses the exact previously sealed prepared-source inventory bytes required by the frozen v5/v6 lock. It changes no cohort, payload, method, threshold, provider, fallback, target boundary, or claim.",
+  "semantic_comparison": {
+    "all_information_boundary_fields_identical": true,
+    "all_object_records_identical": true,
+    "all_selection_and_provider_locks_identical": true,
+    "all_source_artifact_hashes_identical": true,
+    "cohort_or_payload_change_detected": false,
+    "differing_paths": [
+      "implementation_revision",
+      "inventory_id"
+    ],
+    "method": "canonical-json-recursive-diff"
+  }
+}
