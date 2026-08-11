@@ -25,6 +25,9 @@ A `DomainGuardHarmRiskCertificateV1` binds:
   groups; and
 - a family confidence level covering the complete supported-domain roster.
 
+Domain and group identifiers remain genuine canonical Python strings at this
+boundary; array libraries must not silently substitute scalar string types.
+
 The composite record owns only the cross-domain policy statement. Each
 underlying finite-group certificate retains its existing independent artifact
 identity and can still be audited under the original harm-risk contract.
