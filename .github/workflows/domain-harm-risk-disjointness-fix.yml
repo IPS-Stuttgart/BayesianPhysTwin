@@ -1,0 +1,162 @@
+name: Temporary domain harm-risk disjointness repair
+
+on:
+  push:
+    branches:
+      - agent/domain-harm-risk-certificate-v1
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-remove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/domain-harm-risk-certificate-v1
+          persist-credentials: true
+      - name: Enforce all declared evidence boundaries and remove this workflow
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          module = Path("src/bayesian_phystwin/guard_harm_risk_domains.py")
+          text = module.read_text(encoding="utf-8")
+          replacements = [
+              (
+                  '''            if certificate.metric != guard.metric:
+                      raise ValueError("domain harm certificate metric changed")
+                  if not math.isclose(
+                  ''',
+                  '''            if certificate.metric != guard.metric:
+                      raise ValueError("domain harm certificate metric changed")
+                  if (
+                      certificate.certification_partition_id
+                      == guard.calibration_partition_id
+                  ):
+                      raise ValueError(
+                          "calibration and certification partitions must be distinct"
+                      )
+                  if not math.isclose(
+                  ''',
+              ),
+              (
+                  '''                    "threshold_source_artifact_id",
+                      "certification_partition_id",
+                      "statistical_unit",
+                  ''',
+                  '''                    "threshold_source_artifact_id",
+                      "certification_partition_id",
+                      "threshold_selection_group_ids",
+                      "statistical_unit",
+                  ''',
+              ),
+              (
+                  '''        threshold_overlap = threshold_selection_groups & certification_groups
+                  if threshold_overlap:
+                  ''',
+                  '''        calibration_threshold_overlap = (
+                      calibration_groups & threshold_selection_groups
+                  )
+                  if calibration_threshold_overlap:
+                      raise ValueError(
+                          "calibration and threshold-selection groups must be globally "
+                          f"disjoint: {sorted(calibration_threshold_overlap)}"
+                      )
+                  threshold_overlap = threshold_selection_groups & certification_groups
+                  if threshold_overlap:
+                  ''',
+              ),
+          ]
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f"module replacement not found exactly once: {old!r}")
+              text = text.replace(old, new)
+          module.write_text(text, encoding="utf-8")
+
+          tests = Path("tests/test_guard_harm_risk_domains.py")
+          text = tests.read_text(encoding="utf-8")
+          old = '''    with pytest.raises(ValueError, match="calibration and certification"):
+              DomainGuardHarmRiskCertificateV1(
+                  domain_guard_certificate=certificate.domain_guard_certificate,
+                  domain_certificates=certificates,
+                  family_confidence_level=0.95,
+              )
+          '''
+          new = '''    with pytest.raises(ValueError, match="calibration and certification"):
+              DomainGuardHarmRiskCertificateV1(
+                  domain_guard_certificate=certificate.domain_guard_certificate,
+                  domain_certificates=certificates,
+                  family_confidence_level=0.95,
+              )
+
+              certificates = dict(certificate.domain_certificates)
+              for domain in certificate.supported_domains:
+                  certificates[domain] = _recertify(
+                      certificate.domain_guard_certificate,
+                      domain,
+                      certificates[domain],
+                      threshold_selection_group_ids=("calibration-dynamic-0",),
+                  )
+              with pytest.raises(ValueError, match="calibration and threshold-selection"):
+                  DomainGuardHarmRiskCertificateV1(
+                      domain_guard_certificate=certificate.domain_guard_certificate,
+                      domain_certificates=certificates,
+                      family_confidence_level=0.95,
+                  )
+
+              certificates = dict(certificate.domain_certificates)
+              for domain in certificate.supported_domains:
+                  certificates[domain] = _recertify(
+                      certificate.domain_guard_certificate,
+                      domain,
+                      certificates[domain],
+                      certification_partition_id=CALIBRATION_PARTITION_ID,
+                  )
+              with pytest.raises(ValueError, match="partitions must be distinct"):
+                  DomainGuardHarmRiskCertificateV1(
+                      domain_guard_certificate=certificate.domain_guard_certificate,
+                      domain_certificates=certificates,
+                      family_confidence_level=0.95,
+                  )
+          '''
+          if text.count(old) != 1:
+              raise SystemExit("group-leakage test insertion point was not found exactly once")
+          text = text.replace(old, new)
+          old = '''        ("certification_partition_id", "f" * 64, "certification_partition"),
+              ("threshold", 0.4, "threshold"),
+          '''
+          new = '''        ("certification_partition_id", "f" * 64, "certification_partition"),
+              (
+                  "threshold_selection_group_ids",
+                  ("threshold-selection-2",),
+                  "threshold_selection_group_ids",
+              ),
+              ("threshold", 0.4, "threshold"),
+          '''
+          if text.count(old) != 1:
+              raise SystemExit("shared-policy parameter insertion point was not found exactly once")
+          tests.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          python -m pip install "ruff==0.16.2"
+          python -m ruff format \
+            src/bayesian_phystwin/guard_harm_risk_domains.py \
+            tests/test_guard_harm_risk_domains.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/guard_harm_risk_domains.py \
+            tests/test_guard_harm_risk_domains.py
+          rm .github/workflows/domain-harm-risk-disjointness-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/guard_harm_risk_domains.py \
+            tests/test_guard_harm_risk_domains.py \
+            .github/workflows/domain-harm-risk-disjointness-fix.yml
+          git diff --cached --check
+          git commit -m "Enforce complete domain harm-risk evidence separation"
+          git push origin HEAD:agent/domain-harm-risk-certificate-v1
