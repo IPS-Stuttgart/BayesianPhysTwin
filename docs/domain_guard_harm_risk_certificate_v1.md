@@ -27,7 +27,8 @@ A `DomainGuardHarmRiskCertificateV1` binds:
 
 Domain and group identifiers remain genuine canonical Python strings at this
 boundary; array libraries must not silently substitute scalar string types.
-Calibration and certification partition identities must also be distinct.
+Calibration and certification partition identities must also be distinct, and
+every domain certificate must name the same threshold-selection group roster.
 
 The composite record owns only the cross-domain policy statement. Each
 underlying finite-group certificate retains its existing independent artifact
