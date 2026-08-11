@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 
@@ -11,7 +10,10 @@ def test_source_execution_uses_clean_exact_revision_worktree() -> None:
     text = RUNNER.read_text(encoding="utf-8")
 
     assert ': "${BPT_SOURCE_SHA:?BPT_SOURCE_SHA is required}"' in text
-    assert 'git worktree add --detach "${EXECUTION_REPO_ROOT}" "${BPT_SOURCE_SHA}"' in text
+    assert (
+        'git worktree add --detach "${EXECUTION_REPO_ROOT}" "${BPT_SOURCE_SHA}"'
+        in text
+    )
     assert (
         'test "$(git -C "${EXECUTION_REPO_ROOT}" rev-parse HEAD)" = '
         '"${BPT_SOURCE_SHA}"'
