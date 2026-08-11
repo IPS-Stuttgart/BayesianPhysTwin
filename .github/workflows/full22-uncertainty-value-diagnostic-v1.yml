@@ -1,0 +1,181 @@
+name: Full-22 Bayesian uncertainty-value diagnostic v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/full22-uncertainty-value-diagnostic-v1.yml"
+      - "scripts/science/analyze_full22_uncertainty_value_v1.py"
+      - "tests/test_full22_uncertainty_value_v1.py"
+      - "docs/full22_uncertainty_value_diagnostic_v1.md"
+      - "results/science/full22_uncertainty_value_v1/**"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: >-
+    full22-uncertainty-value-v1-${{
+    github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  SOURCE_RUN_ID: "31410594302"
+  SOURCE_RUN_ATTEMPT: "1"
+  SOURCE_HEAD_SHA: c5d22a369f87a7ce2e10fcad532bcc5cc5207ff9
+  SOURCE_ARTIFACT_ID: "9074451004"
+  SOURCE_ARTIFACT_NAME: bpt-full22-discrepancy-31410594302-1
+  SOURCE_ARTIFACT_DIGEST: >-
+    sha256:22984bd34992ef7693c7577045c7496f8de2990641c3d2592ce230b9fbc97220
+  SOURCE_ARTIFACT_BYTES: "1893605659"
+  SOURCE_WORKFLOW_NAME: Full-22 discrepancy candidate tournament v1
+  SOURCE_WORKFLOW_PATH: >-
+    .github/workflows/full22-discrepancy-candidate-tournament-v1.yml
+  PROTOCOL: protocols/full22_discrepancy_candidate_tournament_v1.json
+
+jobs:
+  analyze:
+    name: Paired object-level uncertainty-value analysis
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact analyzer revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install and validate the scientific analyzer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            scripts/science/analyze_full22_uncertainty_value_v1.py \
+            tests/test_full22_uncertainty_value_v1.py
+          python -m ruff format --check \
+            scripts/science/analyze_full22_uncertainty_value_v1.py \
+            tests/test_full22_uncertainty_value_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_full22_uncertainty_value_v1.py
+
+      - name: Verify the exact sealed source run and artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"${run}")" = "${SOURCE_WORKFLOW_NAME}"
+          test "$(jq -r '.path' <<<"${run}")" = "${SOURCE_WORKFLOW_PATH}"
+          test "$(jq -r '.event' <<<"${run}")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"${run}")" = "${SOURCE_HEAD_SHA}"
+          test "$(jq -r '.status' <<<"${run}")" = "completed"
+          test "$(jq -r '.conclusion' <<<"${run}")" = "success"
+          test "$(jq -r '.run_attempt' <<<"${run}")" = \
+            "${SOURCE_RUN_ATTEMPT}"
+          test "$(jq -r '.repository.full_name' <<<"${run}")" = \
+            "${GITHUB_REPOSITORY}"
+
+          artifacts="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100")"
+          test "$(jq --arg name "${SOURCE_ARTIFACT_NAME}" \
+            '[.artifacts[] | select(.name == $name)] | length' \
+            <<<"${artifacts}")" = "1"
+          artifact="$(jq --arg name "${SOURCE_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name)' <<<"${artifacts}")"
+          test "$(jq -r '.id' <<<"${artifact}")" = "${SOURCE_ARTIFACT_ID}"
+          test "$(jq -r '.digest' <<<"${artifact}")" = \
+            "${SOURCE_ARTIFACT_DIGEST}"
+          test "$(jq -r '.size_in_bytes' <<<"${artifact}")" = \
+            "${SOURCE_ARTIFACT_BYTES}"
+          test "$(jq -r '.expired' <<<"${artifact}")" = "false"
+          test "$(jq -r '.workflow_run.id' <<<"${artifact}")" = \
+            "${SOURCE_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${artifact}")" = \
+            "${SOURCE_HEAD_SHA}"
+
+      - name: Download the exact sealed full-22 evidence
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/full22-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Locate the compact scored-future table
+        env:
+          SOURCE_ROOT: ${{ runner.temp }}/full22-source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t matches < <(
+            find "${SOURCE_ROOT}" -type f \
+              -path '*/result/raw_scored_rows.json' -print
+          )
+          test "${#matches[@]}" -eq 1
+          echo "RAW_SCORED_ROWS=${matches[0]}" >> "${GITHUB_ENV}"
+          output_root="${RUNNER_TEMP}/full22-uncertainty-value-v1"
+          echo "OUTPUT_ROOT=${output_root}" >> "${GITHUB_ENV}"
+          analyzer_revision="${{ github.event.pull_request.head.sha || github.sha }}"
+          echo "ANALYZER_REVISION=${analyzer_revision}" >> "${GITHUB_ENV}"
+          du -h "${matches[0]}"
+
+      - name: Run the paired scientific analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/science/analyze_full22_uncertainty_value_v1.py \
+            "${RAW_SCORED_ROWS}" \
+            "${PROTOCOL}" \
+            "${OUTPUT_ROOT}" \
+            --bootstrap-replicates 100000 \
+            --bootstrap-seed 20260811 \
+            --bootstrap-confidence 0.95 \
+            --source-run-id "${SOURCE_RUN_ID}" \
+            --source-run-attempt "${SOURCE_RUN_ATTEMPT}" \
+            --source-head-sha "${SOURCE_HEAD_SHA}" \
+            --source-artifact-id "${SOURCE_ARTIFACT_ID}" \
+            --source-artifact-name "${SOURCE_ARTIFACT_NAME}" \
+            --source-artifact-digest "${SOURCE_ARTIFACT_DIGEST}" \
+            --analyzer-revision "${ANALYZER_REVISION}"
+          report="${OUTPUT_ROOT}/full22_uncertainty_value_report.json"
+          test "$(jq -r '.claim_authorized' "${report}")" = "false"
+          test "$(jq -r '.promotion_authorized' "${report}")" = "false"
+          test "$(jq -r '.source.artifact_id' "${report}")" = \
+            "${SOURCE_ARTIFACT_ID}"
+          test "$(jq -r '.source.artifact_digest' "${report}")" = \
+            "${SOURCE_ARTIFACT_DIGEST}"
+          test "$(jq -r '.independent_case_count' "${report}")" = "22"
+          cat "${OUTPUT_ROOT}/full22_uncertainty_value_summary.md" \
+            >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload the compact scientific result
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: >-
+            full22-uncertainty-value-v1-${{ github.run_id }}-${{
+            github.run_attempt }}
+          path: ${{ runner.temp }}/full22-uncertainty-value-v1
+          if-no-files-found: error
+          retention-days: 180
