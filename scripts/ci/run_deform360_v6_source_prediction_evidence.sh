@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_selector_repair_v3.sh"
-SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
+SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_inventory_repair_v4.sh"
+SELECTOR_WRAPPER_BLOB_SHA="f1350647fbddbfed8475e0291a22b57217e15384"
 SCIENCE_RUNNER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
 SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
 PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
 PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID="31461017011"
 PHYSICAL_UPSTREAM_REPORT_ID="75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
 
-# The delegated selector wrapper preserves these reviewed invariants verbatim:
+# The delegated wrappers preserve these reviewed invariants verbatim:
 # REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
+# PREPARED_INVENTORY_REVISION="e190c94014e6024e324d860618662526af6ea682"
+# PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
+# PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
 # ARCHIVED_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
 # PREVIOUS_SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
 # CORRECTED_SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"

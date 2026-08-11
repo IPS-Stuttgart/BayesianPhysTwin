@@ -1,0 +1,55 @@
+{
+  "claim_boundary": "Technical replay of the already locked prepared-source inventory identity only. This repair authorizes no source result, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "authoritative_artifact_id": 9026043628,
+    "authoritative_artifact_sha256": "d0041af0ba0cfe6e5c5bd4008c47adb3ed4cf0cf0f6754eff67a238e746c7a86",
+    "authoritative_workflow_run_id": 31272512658,
+    "corrected_revision": "e190c94014e6024e324d860618662526af6ea682",
+    "expected_file_sha256": "4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007",
+    "expected_inventory_id": "6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b",
+    "field": "prepared_source_inventory.implementation_revision",
+    "previous_runtime_value": "current-protected-main-source-revision"
+  },
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_id": 9090402942,
+    "artifact_sha256": "edbfe17c5c85c4e9f7375026fd15593132ee748456a60a5c97b2ea87776a3304",
+    "execution_receipt_id": "a62ead70994b330d3eecf8d35afe6baa1275c428f4c90c4e18157aac55f3733f",
+    "observed_file_sha256": "7714c5d4b0aaed32358f21d133a84ab038d2f98eb1c48639d43df736ae801acf",
+    "observed_inventory_id": "3972737207fd684e5e31cd507c4b3a0e9e2d0ed1b9d5cd427774f019b2b704cc",
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "terminal_stage": "physical-source:026-sock-cloth-ep0007",
+    "workflow_run_id": 31462653379
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "bd9b1b9e37529c7a7e555ff8ec7e62521bece77fe8554b33047b1d33a2de7fa4",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "inventory_payload_changed": false,
+    "loss_or_gate_changed": false,
+    "model_or_checkpoint_changed": false,
+    "prepared_source_bytes_changed": false,
+    "replacement_allowed": false,
+    "runtime_identity_replay_only": true,
+    "source_cohort_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-runtime-inventory-identity-repair",
+  "schema_version": 1,
+  "superseded_execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+}
