@@ -1,0 +1,58 @@
+name: Apply covariance replay import ordering
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-covariance-replay-import-ordering
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/fix-covariance-evidence-replay-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Canonicalize imports and publish with an exact lease
+        env:
+          BRANCH: agent/fix-covariance-evidence-replay-v2
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${SOURCE_REVISION}"
+
+          python -m pip install --disable-pip-version-check "ruff==0.16.2"
+          files=(
+            src/bayesian_phystwin/domain_covariance_calibration_v2.py
+            tests/test_source_competence_domain_covariance_calibration_v2.py
+            tests/test_source_competence_domain_covariance_calibration_v2_adversarial.py
+          )
+          python -m ruff check --fix "${files[@]}"
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          rm .github/workflows/fix-pr521-imports.yml
+          git diff --check
+
+          git config user.name github-actions[bot]
+          git config user.email \
+            41898282+github-actions[bot]@users.noreply.github.com
+          git add "${files[@]}" .github/workflows/fix-pr521-imports.yml
+          git commit -m "Organize covariance replay test imports"
+
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" push \
+            --force-with-lease="refs/heads/${BRANCH}:${SOURCE_REVISION}" \
+            origin "HEAD:refs/heads/${BRANCH}"
