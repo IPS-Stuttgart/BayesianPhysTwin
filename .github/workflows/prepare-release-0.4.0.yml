@@ -1,11 +1,13 @@
 name: Prepare BayesianPhysTwin 0.4.0 release metadata
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/release-0.4.0
-    paths:
-      - .github/workflows/prepare-release-0.4.0.yml
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
@@ -18,16 +20,20 @@ env:
   RELEASE_BRANCH: agent/release-0.4.0
   RELEASE_DATE: "2026-08-11"
   RELEASE_VERSION: "0.4.0"
+  SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
 
 jobs:
   synchronize:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/release-0.4.0'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Check out the exact triggering revision
+      - name: Check out the exact pull-request head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.SOURCE_REVISION }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -40,9 +46,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${SOURCE_REVISION}"
           remote_head=$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)
-          test "${remote_head}" = "${GITHUB_SHA}"
+          test "${remote_head}" = "${SOURCE_REVISION}"
 
       - name: Install exact formatting and test tools
         run: |
@@ -128,7 +134,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Prepare BayesianPhysTwin 0.4.0 release metadata"
           remote_head=$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)
-          test "${remote_head}" = "${GITHUB_SHA}"
+          test "${remote_head}" = "${SOURCE_REVISION}"
           git remote set-url origin \
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "HEAD:refs/heads/${RELEASE_BRANCH}"
@@ -140,7 +146,7 @@ jobs:
             echo
             echo "- Version: \`${RELEASE_VERSION}\`"
             echo "- Release date: \`${RELEASE_DATE}\`"
-            echo "- Source revision: \`${GITHUB_SHA}\`"
+            echo "- Source revision: \`${SOURCE_REVISION}\`"
             echo "- Tag created: \`false\`"
             echo "- Distribution published: \`false\`"
             echo "- Scientific claim promoted: \`false\`"
