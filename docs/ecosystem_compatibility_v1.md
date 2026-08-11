@@ -122,6 +122,14 @@ noncanonical package ranges, reordered or duplicate provider rows, unsupported
 schema-version lists, coerced Boolean flags, and any weakening of the evidence
 boundary.
 
+## Continuous compatibility ownership
+
+The contract test `tests/test_ecosystem_compatibility_v1.py` belongs permanently
+to the centralized `stable-core-coverage`, `core-contracts`, and
+`provider-contract` suites. This makes table, package-range, provider-module,
+schema-version, packaging, installed-resource, immutability, and evidence-boundary
+drift fail in every relevant repository gate rather than only in the full suite.
+
 ## Evidence boundary
 
 A matching table row establishes only contract-level interoperability:
