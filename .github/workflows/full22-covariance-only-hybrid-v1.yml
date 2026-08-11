@@ -7,10 +7,13 @@ on:
       - ".github/workflows/full22-covariance-only-hybrid-v1.yml"
       - "docs/full22_covariance_only_hybrid_v1.md"
       - "protocols/full22_covariance_only_hybrid_v1.json"
+      - "results/science/full22_covariance_only_hybrid_v1/**"
       - "scripts/science/run_full22_covariance_only_hybrid_v1.py"
       - "src/bayesian_phystwin/covariance_only_hybrid.py"
       - "src/bayesian_phystwin/covariance_only_hybrid_analysis.py"
       - "tests/test_covariance_only_hybrid.py"
+      - "tests/test_covariance_only_hybrid_adversarial.py"
+      - "tests/test_full22_covariance_only_hybrid_evidence_v1.py"
       - "tests/test_full22_covariance_only_hybrid_v1.py"
   workflow_dispatch:
 
@@ -83,6 +86,8 @@ jobs:
             src/bayesian_phystwin/covariance_only_hybrid.py
             src/bayesian_phystwin/covariance_only_hybrid_analysis.py
             tests/test_covariance_only_hybrid.py
+            tests/test_covariance_only_hybrid_adversarial.py
+            tests/test_full22_covariance_only_hybrid_evidence_v1.py
             tests/test_full22_covariance_only_hybrid_v1.py
           )
           python -m ruff check "${files[@]}"
@@ -93,6 +98,8 @@ jobs:
             scripts/science/run_full22_covariance_only_hybrid_v1.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_covariance_only_hybrid.py \
+            tests/test_covariance_only_hybrid_adversarial.py \
+            tests/test_full22_covariance_only_hybrid_evidence_v1.py \
             tests/test_full22_covariance_only_hybrid_v1.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
