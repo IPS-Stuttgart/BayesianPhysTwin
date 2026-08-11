@@ -1,4 +1,4 @@
-"""Admission records and exact fallback for the source-only dry run."""
+"""Admission records and exact fallback for the source-only contract."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ import numpy as np
 from ._canonical_contracts import (
     frozen_finite_json_mapping,
     genuine_integer,
-    literal_lower_hex,
     plain_json,
 )
 from ._deform360_covariance_residual_history_adapter_v1 import (
@@ -22,12 +21,13 @@ from ._deform360_covariance_residual_history_common_v1 import (
     FALLBACK_SEMANTICS,
     HORIZON_LABELS,
     REFERENCE_MEAN_SEMANTICS,
+    REGISTERED_COVARIANCE_DONOR_ID,
+    REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_MATERIAL,
+    REGISTERED_REFERENCE_PREDICTOR_ID,
     RESIDUAL_HISTORY_DECISION_SCHEMA,
     SCHEMA_VERSION,
-    ResidualHistoryDryRunPolicyV1,
     _array_sha256,
     _canonical_string,
-    _finite_real,
     _integer_vector,
     _required_sha256,
 )
@@ -35,25 +35,42 @@ from ._portable_contracts import content_id
 from .covariance_only_hybrid import CovarianceOnlyHybridPredictionV1
 
 
+def _count_tuple(value: object, *, name: str) -> tuple[int, ...]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} must be a nonempty integer sequence")
+    result = tuple(
+        genuine_integer(item, name=f"{name}[{index}]", minimum=0)
+        for index, item in enumerate(value)
+    )
+    if not result:
+        raise ValueError(f"{name} must be nonempty")
+    return result
+
+
 @dataclass(frozen=True, slots=True)
 class ResidualHistoryDryRunDecisionV1:
-    """Content-addressed admission or exact-fallback decision."""
+    """Content-addressed admission or exact whole-case fallback decision."""
 
     source_unit_id: str
     adapter_id: str
     policy_id: str
+    family_map_id: str
     partition_id: str
+    provider_reconstruction_manifest_id: str
+    scoring_reconstruction_manifest_id: str
+    registered_mean_sha256: str
     accepted: bool
     fallback_reasons: tuple[str, ...]
-    final_observed_count: int
-    final_observed_fraction: float
+    valid_observation_count_by_material: tuple[int, ...]
+    supported_material_count: int
+    unsupported_material_count: int
     future_horizon_bins_sha256: str
     physical_future_mean_sha256: str
     physical_fallback_covariance_sha256: str
     deployed_mean_sha256: str
     deployed_covariance_sha256: str
     hybrid_artifact_id: str | None
-    hybrid_reference_mean_identity_preserved: bool
+    hybrid_registered_mean_identity_preserved: bool
     exact_physical_fallback_mean_identity_preserved: bool
     exact_physical_fallback_covariance_identity_preserved: bool
     metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -61,13 +78,24 @@ class ResidualHistoryDryRunDecisionV1:
 
     def __post_init__(self) -> None:
         source_unit_id = _canonical_string(self.source_unit_id, name="source_unit_id")
-        adapter_id = literal_lower_hex(self.adapter_id, name="adapter_id", lengths={64})
-        policy_id = literal_lower_hex(self.policy_id, name="policy_id", lengths={64})
-        partition_id = literal_lower_hex(
-            self.partition_id,
-            name="partition_id",
-            lengths={64},
+        digest_fields = (
+            "adapter_id",
+            "policy_id",
+            "family_map_id",
+            "partition_id",
+            "provider_reconstruction_manifest_id",
+            "scoring_reconstruction_manifest_id",
+            "registered_mean_sha256",
+            "future_horizon_bins_sha256",
+            "physical_future_mean_sha256",
+            "physical_fallback_covariance_sha256",
+            "deployed_mean_sha256",
+            "deployed_covariance_sha256",
         )
+        digests = {
+            name: _required_sha256(getattr(self, name), name=name)
+            for name in digest_fields
+        }
         if type(self.accepted) is not bool:
             raise ValueError("accepted must be a Boolean")
         if type(self.fallback_reasons) is not tuple:
@@ -78,52 +106,45 @@ class ResidualHistoryDryRunDecisionV1:
         )
         if reasons != tuple(sorted(set(reasons))):
             raise ValueError("fallback_reasons must be sorted and unique")
-        final_count = genuine_integer(
-            self.final_observed_count,
-            name="final_observed_count",
+        counts = _count_tuple(
+            self.valid_observation_count_by_material,
+            name="valid_observation_count_by_material",
+        )
+        supported = genuine_integer(
+            self.supported_material_count,
+            name="supported_material_count",
             minimum=0,
         )
-        fraction = _finite_real(
-            self.final_observed_fraction,
-            name="final_observed_fraction",
-            minimum=0.0,
+        unsupported = genuine_integer(
+            self.unsupported_material_count,
+            name="unsupported_material_count",
+            minimum=0,
         )
-        if fraction > 1.0:
-            raise ValueError("final_observed_fraction must not exceed one")
-        digests = {}
-        for name in (
-            "future_horizon_bins_sha256",
-            "physical_future_mean_sha256",
-            "physical_fallback_covariance_sha256",
-            "deployed_mean_sha256",
-            "deployed_covariance_sha256",
-        ):
-            digests[name] = literal_lower_hex(
-                getattr(self, name),
-                name=name,
-                lengths={64},
-            )
+        if supported + unsupported != len(counts):
+            raise ValueError("material support counts do not exhaust the material roster")
+        expected_supported = sum(
+            count >= REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_MATERIAL
+            for count in counts
+        )
+        if supported != expected_supported:
+            raise ValueError("supported_material_count differs from the causal support")
         hybrid_id = self.hybrid_artifact_id
         if hybrid_id is not None:
-            hybrid_id = literal_lower_hex(
-                hybrid_id,
-                name="hybrid_artifact_id",
-                lengths={64},
-            )
+            hybrid_id = _required_sha256(hybrid_id, name="hybrid_artifact_id")
         identity_fields = (
-            "hybrid_reference_mean_identity_preserved",
+            "hybrid_registered_mean_identity_preserved",
             "exact_physical_fallback_mean_identity_preserved",
             "exact_physical_fallback_covariance_identity_preserved",
         )
         if any(type(getattr(self, name)) is not bool for name in identity_fields):
             raise ValueError("identity-preservation fields must be Booleans")
         if self.accepted:
-            if reasons or hybrid_id is None:
-                raise ValueError("accepted decisions require one hybrid and no fallback")
-            if not self.hybrid_reference_mean_identity_preserved:
+            if reasons or hybrid_id is None or unsupported != 0:
                 raise ValueError(
-                    "accepted hybrid must preserve its reference mean identity"
+                    "accepted decisions require full support, one hybrid, and no fallback"
                 )
+            if not self.hybrid_registered_mean_identity_preserved:
+                raise ValueError("accepted hybrid must preserve the registered mean object")
             if (
                 self.exact_physical_fallback_mean_identity_preserved
                 or self.exact_physical_fallback_covariance_identity_preserved
@@ -132,8 +153,8 @@ class ResidualHistoryDryRunDecisionV1:
         else:
             if not reasons or hybrid_id is not None:
                 raise ValueError("fallback decisions require reasons and no hybrid")
-            if self.hybrid_reference_mean_identity_preserved:
-                raise ValueError("fallback decision has no hybrid reference")
+            if self.hybrid_registered_mean_identity_preserved:
+                raise ValueError("fallback decision has no hybrid registered mean")
             if not (
                 self.exact_physical_fallback_mean_identity_preserved
                 and self.exact_physical_fallback_covariance_identity_preserved
@@ -143,28 +164,19 @@ class ResidualHistoryDryRunDecisionV1:
                 )
         metadata = frozen_finite_json_mapping(self.metadata, name="metadata")
         object.__setattr__(self, "source_unit_id", source_unit_id)
-        object.__setattr__(self, "adapter_id", adapter_id)
-        object.__setattr__(self, "policy_id", policy_id)
-        object.__setattr__(self, "partition_id", partition_id)
-        object.__setattr__(self, "fallback_reasons", reasons)
-        object.__setattr__(self, "final_observed_count", final_count)
-        object.__setattr__(self, "final_observed_fraction", fraction)
         for name, value in digests.items():
             object.__setattr__(self, name, value)
+        object.__setattr__(self, "fallback_reasons", reasons)
+        object.__setattr__(self, "valid_observation_count_by_material", counts)
+        object.__setattr__(self, "supported_material_count", supported)
+        object.__setattr__(self, "unsupported_material_count", unsupported)
         object.__setattr__(self, "hybrid_artifact_id", hybrid_id)
         object.__setattr__(self, "metadata", metadata)
         expected = content_id(self.descriptor())
         if self.decision_id is None:
             object.__setattr__(self, "decision_id", expected)
-        elif (
-            literal_lower_hex(
-                self.decision_id,
-                name="decision_id",
-                lengths={64},
-            )
-            != expected
-        ):
-            raise ValueError("decision_id does not match the dry-run decision")
+        elif _required_sha256(self.decision_id, name="decision_id") != expected:
+            raise ValueError("decision_id does not match the source-only decision")
 
     def descriptor(self) -> dict[str, Any]:
         return {
@@ -173,11 +185,22 @@ class ResidualHistoryDryRunDecisionV1:
             "source_unit_id": self.source_unit_id,
             "adapter_id": self.adapter_id,
             "policy_id": self.policy_id,
+            "family_map_id": self.family_map_id,
             "partition_id": self.partition_id,
+            "provider_reconstruction_manifest_id": (
+                self.provider_reconstruction_manifest_id
+            ),
+            "scoring_reconstruction_manifest_id": (
+                self.scoring_reconstruction_manifest_id
+            ),
+            "registered_mean_sha256": self.registered_mean_sha256,
             "accepted": self.accepted,
             "fallback_reasons": list(self.fallback_reasons),
-            "final_observed_count": self.final_observed_count,
-            "final_observed_fraction": self.final_observed_fraction,
+            "valid_observation_count_by_material": list(
+                self.valid_observation_count_by_material
+            ),
+            "supported_material_count": self.supported_material_count,
+            "unsupported_material_count": self.unsupported_material_count,
             "future_horizon_bins_sha256": self.future_horizon_bins_sha256,
             "physical_future_mean_sha256": self.physical_future_mean_sha256,
             "physical_fallback_covariance_sha256": (
@@ -186,8 +209,8 @@ class ResidualHistoryDryRunDecisionV1:
             "deployed_mean_sha256": self.deployed_mean_sha256,
             "deployed_covariance_sha256": self.deployed_covariance_sha256,
             "hybrid_artifact_id": self.hybrid_artifact_id,
-            "hybrid_reference_mean_identity_preserved": (
-                self.hybrid_reference_mean_identity_preserved
+            "hybrid_registered_mean_identity_preserved": (
+                self.hybrid_registered_mean_identity_preserved
             ),
             "exact_physical_fallback_mean_identity_preserved": (
                 self.exact_physical_fallback_mean_identity_preserved
@@ -195,6 +218,8 @@ class ResidualHistoryDryRunDecisionV1:
             "exact_physical_fallback_covariance_identity_preserved": (
                 self.exact_physical_fallback_covariance_identity_preserved
             ),
+            "reference_predictor_id": REGISTERED_REFERENCE_PREDICTOR_ID,
+            "covariance_donor_id": REGISTERED_COVARIANCE_DONOR_ID,
             "reference_mean_semantics": REFERENCE_MEAN_SEMANTICS,
             "fallback_semantics": FALLBACK_SEMANTICS,
             "metadata": plain_json(self.metadata),
@@ -204,7 +229,7 @@ class ResidualHistoryDryRunDecisionV1:
 
 @dataclass(frozen=True, slots=True)
 class ResidualHistoryDryRunResultV1:
-    """One source-only dry-run result and its runtime identity proofs."""
+    """One source-only result and its runtime object-identity proofs."""
 
     mean_m: np.ndarray
     covariance_m2: np.ndarray
@@ -231,6 +256,28 @@ def _physical_future_mean(value: object, *, material_count: int) -> np.ndarray:
     return value
 
 
+def _registered_last_residual_mean(
+    value: object,
+    *,
+    expected_shape: tuple[int, ...],
+) -> np.ndarray:
+    if not isinstance(value, np.ndarray):
+        raise TypeError(
+            "registered_last_residual_mean_m must be a NumPy array to preserve identity"
+        )
+    if value.dtype != np.dtype(np.float64):
+        raise ValueError("registered_last_residual_mean_m must have dtype float64")
+    if value.shape != expected_shape:
+        raise ValueError(
+            f"registered_last_residual_mean_m must have shape {expected_shape}"
+        )
+    if not value.flags.c_contiguous:
+        raise ValueError("registered_last_residual_mean_m must be C-contiguous")
+    if not np.all(np.isfinite(value)):
+        raise ValueError("registered_last_residual_mean_m must be finite")
+    return value
+
+
 def _horizon_bins(value: object, *, future_count: int) -> np.ndarray:
     bins = _integer_vector(value, name="future_horizon_bins")
     if bins.shape != (future_count,):
@@ -246,34 +293,48 @@ def _fallback_result(
     *,
     physical_future: np.ndarray,
     physical_covariance: np.ndarray,
+    registered_mean: np.ndarray,
     adapter: ResidualHistoryAdapterV1,
-    policy: ResidualHistoryDryRunPolicyV1,
     horizon_bins: np.ndarray,
     reasons: Sequence[str],
     metadata: Mapping[str, Any] | None,
 ) -> ResidualHistoryDryRunResultV1:
     canonical_reasons = tuple(sorted(set(reasons)))
-    adapter_id = _required_sha256(adapter.adapter_id, name="adapter_id")
-    partition_id = _required_sha256(
-        adapter.partition.partition_id,
-        name="partition_id",
-    )
     decision = ResidualHistoryDryRunDecisionV1(
         source_unit_id=adapter.source_unit_id,
-        adapter_id=adapter_id,
-        policy_id=_required_sha256(policy.policy_id, name="policy_id"),
-        partition_id=partition_id,
+        adapter_id=_required_sha256(adapter.adapter_id, name="adapter_id"),
+        policy_id=_required_sha256(adapter.policy.policy_id, name="policy_id"),
+        family_map_id=_required_sha256(
+            adapter.partition.family_map.map_id,
+            name="family_map_id",
+        ),
+        partition_id=_required_sha256(
+            adapter.partition.partition_id,
+            name="partition_id",
+        ),
+        provider_reconstruction_manifest_id=_required_sha256(
+            adapter.provider_reconstruction_manifest.manifest_id,
+            name="provider_reconstruction_manifest_id",
+        ),
+        scoring_reconstruction_manifest_id=_required_sha256(
+            adapter.scoring_reconstruction_manifest.manifest_id,
+            name="scoring_reconstruction_manifest_id",
+        ),
+        registered_mean_sha256=_array_sha256(registered_mean),
         accepted=False,
         fallback_reasons=canonical_reasons,
-        final_observed_count=adapter.final_observed_count,
-        final_observed_fraction=adapter.final_observed_fraction,
+        valid_observation_count_by_material=(
+            adapter.valid_observation_count_by_material
+        ),
+        supported_material_count=adapter.supported_material_count,
+        unsupported_material_count=adapter.unsupported_material_count,
         future_horizon_bins_sha256=_array_sha256(horizon_bins),
         physical_future_mean_sha256=_array_sha256(physical_future),
         physical_fallback_covariance_sha256=_array_sha256(physical_covariance),
         deployed_mean_sha256=_array_sha256(physical_future),
         deployed_covariance_sha256=_array_sha256(physical_covariance),
         hybrid_artifact_id=None,
-        hybrid_reference_mean_identity_preserved=False,
+        hybrid_registered_mean_identity_preserved=False,
         exact_physical_fallback_mean_identity_preserved=True,
         exact_physical_fallback_covariance_identity_preserved=True,
         metadata={} if metadata is None else metadata,
