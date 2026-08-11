@@ -341,13 +341,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             recovery_metric_root=arguments.recovery_metric_root,
             implementation_revision=arguments.implementation_revision,
         )
+        objects = result.get("objects")
+        if isinstance(objects, (str, bytes)) or not isinstance(objects, Sequence):
+            raise ValueError("combined camera audit objects must be a JSON array")
         save_deform360_joint_sparse_camera_recovery_artifact_v5_2(
             arguments.output, result
         )
         _print_result(
             {
                 "plan_id": result["plan_id"],
-                "object_count": result["object_count"],
+                "object_count": len(objects),
             }
         )
         return 0

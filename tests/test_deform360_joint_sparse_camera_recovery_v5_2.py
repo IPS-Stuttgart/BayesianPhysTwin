@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -762,6 +763,84 @@ def test_recovery_cli_has_no_manual_attempted_camera_payload() -> None:
     assert "--attempted-objects" not in source
     assert 'subparsers.add_parser("build-recovery-lineage")' in recovery
     assert 'subparsers.add_parser("merge-provider-runs")' in recovery
+
+
+def test_combined_audit_cli_derives_source_plan_object_count(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    script = (
+        ROOT
+        / "scripts/science/materialize_deform360_joint_sparse_camera_recovery_v5_2.py"
+    )
+    specification = importlib.util.spec_from_file_location(
+        "camera_recovery_v5_2_cli_object_count_test", script
+    )
+    assert specification is not None and specification.loader is not None
+    cli = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(cli)
+
+    artifacts = {
+        name: tmp_path / f"{name}.json"
+        for name in (
+            "execution-lock",
+            "base-source-plan",
+            "base-camera-audit",
+            "recovery-provider-plan",
+            "recovery-provider-run",
+        )
+    }
+    for path in artifacts.values():
+        path.write_text("{}\n", encoding="utf-8")
+    result = {"plan_id": "a" * 64, "objects": [{}, {}]}
+    monkeypatch.setattr(
+        cli, "load_deform360_joint_sparse_source_execution_lock_v5", lambda _: {}
+    )
+    monkeypatch.setattr(cli, "load_strict_json_object", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        cli,
+        "build_deform360_joint_sparse_combined_camera_audit_plan_v5_2",
+        lambda **_kwargs: result,
+    )
+    monkeypatch.setattr(
+        cli,
+        "save_deform360_joint_sparse_camera_recovery_artifact_v5_2",
+        lambda *_args, **_kwargs: None,
+    )
+
+    assert (
+        cli.main(
+            [
+                "build-combined-audit-plan",
+                "--execution-lock",
+                str(artifacts["execution-lock"]),
+                "--base-source-plan",
+                str(artifacts["base-source-plan"]),
+                "--base-camera-audit",
+                str(artifacts["base-camera-audit"]),
+                "--recovery-provider-plan",
+                str(artifacts["recovery-provider-plan"]),
+                "--recovery-provider-run",
+                str(artifacts["recovery-provider-run"]),
+                "--input-root",
+                str(tmp_path),
+                "--recovery-decoded-root",
+                str(tmp_path),
+                "--recovery-metric-root",
+                str(tmp_path),
+                "--implementation-revision",
+                "b" * 40,
+                "--output",
+                str(tmp_path / "combined.json"),
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out) == {
+        "object_count": 2,
+        "plan_id": "a" * 64,
+    }
 
 
 def _attempted_objects_and_audit() -> tuple[list[dict[str, object]], dict[str, object]]:
