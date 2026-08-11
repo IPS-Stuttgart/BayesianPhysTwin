@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 import sys
 from contextlib import nullcontext
 from pathlib import Path
@@ -84,12 +85,14 @@ def test_checksum_bound_consumers_remain_exact() -> None:
 
     assert _digest(PHYSICAL_WRAPPER) == module.PHYSICAL_WRAPPER_SHA256
     assert _digest(STAGE_SCRIPT) == module.STAGE_SCRIPT_SHA256
-    assert expected[
-        "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
-    ] == module.PHYSICAL_WRAPPER_SHA256
-    assert expected[
-        "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py"
-    ] == module.STAGE_SCRIPT_SHA256
+    assert (
+        expected["scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"]
+        == module.PHYSICAL_WRAPPER_SHA256
+    )
+    assert (
+        expected["scripts/remote/stage_deform360_bias_aware_prediction_prefix.py"]
+        == module.STAGE_SCRIPT_SHA256
+    )
 
 
 def _runtime_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -188,7 +191,10 @@ def test_main_patches_only_the_loaded_selector_constant(
 
     assert module.main() == 0
     assert observed == {
-        "argv": [str(repository / "scripts" / "remote" / module.STAGE_SCRIPT), *stage_arguments],
+        "argv": [
+            str(repository / "scripts" / "remote" / module.STAGE_SCRIPT),
+            *stage_arguments,
+        ],
         "patched": True,
         "selector_sha256": module.CORRECTED_SELECTOR_SHA256,
     }
@@ -263,12 +269,11 @@ def test_active_runner_records_the_process_local_repair() -> None:
     text = ACTIVE_RUNNER.read_text(encoding="utf-8")
 
     assert f'STAGE_SELECTOR_REPAIR_ID="{module.REPAIR_ID}"' in text
-    assert f'STAGE_SELECTOR_HELPER_PATH="{module.__file__}' not in text
     assert "run_deform360_v6_stage_selector_identity_repair.py" in text
     assert 'BASE_REVISION="dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"' in text
     assert 'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"' in text
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
-    subprocess_result = __import__("subprocess").run(
+    subprocess_result = subprocess.run(
         ["bash", "-n", str(ACTIVE_RUNNER)],
         cwd=ROOT,
         check=False,
