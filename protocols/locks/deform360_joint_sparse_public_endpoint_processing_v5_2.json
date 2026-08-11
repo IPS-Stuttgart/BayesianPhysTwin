@@ -1,0 +1,109 @@
+{
+  "dataset_repository": "brownu/deform360",
+  "dataset_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+  "execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
+  "information_boundary": {
+    "confirmation_payloads_opened": false,
+    "development_suffix_opened": true,
+    "held_v8_artifacts_accessed": false,
+    "human_approval_required": false,
+    "human_selection_allowed": false,
+    "new_measurements_required": false,
+    "released_real_world_recordings_only": true,
+    "source_predictions_sealed_before_endpoint_processing": true,
+    "target_outcomes_used": false
+  },
+  "lock_id": "dbe2df10d4bb6fdc589f0f7bd984112e3f92e5ef8566e5ef1dfd6c7dd762e048",
+  "prediction_batch_id": "c62d475cc298dafe1d9c0ec30a242faffe36f5ab3ee5fc3d4b578918dbea1aa8",
+  "processing": {
+    "camera_policy": {
+      "base_camera_panel": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-006_cam0",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-010_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-015_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-021_cam1",
+        "brics-odroid-024_cam1",
+        "brics-odroid-027_cam0"
+      ],
+      "camera_substitution_allowed": false,
+      "minimum_successful_camera_count": 8,
+      "reserved_endpoint_camera_count": 2,
+      "reserved_endpoint_cameras_must_succeed": true,
+      "support_camera_order": "lexical-order-of-successful-fixed-panel-union-reserved"
+    },
+    "depth": {
+      "expected_depth": true,
+      "frame_count": 81,
+      "gripper_urdf_mask_applied": true,
+      "object_mask_applied": true,
+      "preview_video": false,
+      "storage_dtype": "uint16",
+      "storage_unit": "millimetre"
+    },
+    "failure_policy": {
+      "implicit_replacement": false,
+      "retry_after_inspecting_endpoint_geometry": false,
+      "technical_failure_is_terminal": true
+    },
+    "masking": {
+      "manual_prompting_or_mask_selection": false,
+      "method": "object-agnostic-automatic-sam2-candidate-on-local-frame-zero",
+      "propagation_frame_count": 81,
+      "sam2_checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+      "sam2_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+      "selector_base_source_sha256": "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184",
+      "selector_object_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+    },
+    "reconstruction": {
+      "cube_half_extent_m": 0.5,
+      "deform360_revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
+      "depth_stage_sha256": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+      "first_frame_iterations": 500,
+      "minimum_visual_hull_points": 512,
+      "reconstruct_stage_sha256": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+      "reuse_previous_geometry": false,
+      "urdf_render_stage_sha256": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467",
+      "voxel_resolution": 120,
+      "warm_start_iterations": 250
+    },
+    "runtime": {
+      "gsplat_backend_probe": "CameraModelType.PINHOLE",
+      "gsplat_build_ninja_sha256": "7ab8a60cd28ecf3a05e10bcd701cf4a0f846e2d9849e4bc565edaee7933d153e",
+      "gsplat_extension_sha256": "43fcb77c585119775a445a13e34027b0e98768b3150d7bc634e96a0ce4cfe181",
+      "gsplat_version": "1.4.0",
+      "python_major_minor": "3.10",
+      "torch_cuda_arch_list": "8.9",
+      "torch_cuda_version": "12.1",
+      "torch_version": "2.4.0+cu121"
+    },
+    "windowing": {
+      "local_endpoint_range_half_open": [
+        58,
+        76
+      ],
+      "local_prefix_range_half_open": [
+        0,
+        58
+      ],
+      "local_unscored_tail_range_half_open": [
+        76,
+        81
+      ],
+      "raw_frame_count": 81,
+      "raw_start": "source-plan-raw-prefix-start",
+      "timestamps_and_robot_state_sliced_to_same_raw_range": true,
+      "video_materialization": "exact-ffmpeg-libx264-crf12-30hz"
+    }
+  },
+  "schema": "bayesian-phystwin.deform360-joint-sparse-public-endpoint-processing-lock",
+  "schema_version": 1,
+  "semantics": "sealed-public-rgb-endpoint-geometry-processing-v1",
+  "source_prediction_plan_id": "b3835574d9ab47f20f1d529bbb2dca4987af02959b02307074ad2cd8082372f2",
+  "source_prediction_receipt_id": "f7c6b10222f8c8d9089c5c9ee1f1cde58ae54dd57b29f7dbbd7ce2bfddd959d7"
+}
