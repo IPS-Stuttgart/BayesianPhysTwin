@@ -1,0 +1,52 @@
+name: Diagnose frozen Causal4D selector byte identity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-causal4d-selector-byte-identity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  selector-identity:
+    name: Frozen selector byte identity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out frozen Causal4D source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
+          path: causal4d
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Report exact selector identity
+        shell: bash
+        env:
+          EXPECTED_SHA256: 79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df
+        run: |
+          set -euo pipefail
+          relative=src/causal4d_public/deform360_object_sam2.py
+          source="${GITHUB_WORKSPACE}/causal4d/${relative}"
+          test -f "${source}"
+          revision=$(git -C causal4d rev-parse HEAD)
+          blob=$(git -C causal4d rev-parse "HEAD:${relative}")
+          observed=$(sha256sum "${source}" | awk '{print $1}')
+          bytes=$(wc -c < "${source}" | tr -d ' ')
+          if [[ "${observed}" == "${EXPECTED_SHA256}" ]]; then
+            matches_expected=true
+          else
+            matches_expected=false
+          fi
+          printf '%s\n' \
+            "selector_revision=${revision}" \
+            "selector_git_blob=${blob}" \
+            "selector_sha256=${observed}" \
+            "selector_bytes=${bytes}" \
+            "expected_sha256=${EXPECTED_SHA256}" \
+            "matches_expected=${matches_expected}"
