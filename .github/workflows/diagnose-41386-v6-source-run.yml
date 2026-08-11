@@ -28,12 +28,17 @@ jobs:
 
           import io
           import os
+          import urllib.error
           import urllib.request
           import zipfile
 
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
           repository = os.environ["GITHUB_REPOSITORY"]
           job_id = os.environ["JOB_ID"]
-          request = urllib.request.Request(
+          api_request = urllib.request.Request(
               f"https://api.github.com/repos/{repository}/actions/jobs/{job_id}/logs",
               headers={
                   "Accept": "application/vnd.github+json",
@@ -42,7 +47,22 @@ jobs:
                   "X-GitHub-Api-Version": "2022-11-28",
               },
           )
-          with urllib.request.urlopen(request, timeout=60) as response:
+          opener = urllib.request.build_opener(NoRedirect())
+          try:
+              opener.open(api_request, timeout=30)
+          except urllib.error.HTTPError as error:
+              if error.code not in {301, 302, 303, 307, 308}:
+                  raise
+              location = error.headers.get("Location")
+          else:
+              raise SystemExit("job log endpoint did not return a signed redirect")
+          if not location:
+              raise SystemExit("job log redirect omitted its signed location")
+          signed_request = urllib.request.Request(
+              location,
+              headers={"User-Agent": "BayesianPhysTwin-bounded-log-diagnostic"},
+          )
+          with urllib.request.urlopen(signed_request, timeout=60) as response:
               payload = response.read()
 
           streams: list[tuple[str, str]] = []
