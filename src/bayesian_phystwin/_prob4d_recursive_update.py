@@ -147,7 +147,20 @@ def apply_claim_bearing_prob4d_stream_update(
         covariance_semantics=semantics,
     )
     semantics = typed_candidate.covariance_semantics
-    covariance_policy_id = working_semantics.policy_id
+    if run.steps:
+        covariance_policy_id = cast(str, run.covariance_policy_id)
+    elif claim_update.inference_admissible:
+        covariance_policy_id = cast(str, semantics.policy_id)
+    else:
+        # A rejected strict solve has no accepted-update covariance policy to
+        # contribute. Lock the canonical working-IRLS policy so a later valid
+        # stream member can recover without relabelling this fallback result.
+        covariance_policy_id = cast(str, working_semantics.policy_id)
+    if (
+        claim_update.inference_admissible
+        and semantics.policy_id != covariance_policy_id
+    ):
+        raise ValueError("covariance interpretation policy differs from the run lock")
 
     selected, selection = select_complete_belief(
         baseline,
@@ -213,12 +226,10 @@ def apply_claim_bearing_prob4d_stream_update(
         provider_id = run.provider_manifest_id
         calibration_ids = run.calibration_artifact_ids
         runtime_source = run.runtime_revision_source
-        run_covariance_policy_id = run.covariance_policy_id
     else:
         provider_id = claim_update.provider_manifest_id
         calibration_ids = claim_update.calibration_artifact_ids
         runtime_source = claim_update.runtime_revision_source
-        run_covariance_policy_id = covariance_policy_id
     updated_run = replace(
         run,
         steps=(*run.steps, step),
@@ -226,7 +237,7 @@ def apply_claim_bearing_prob4d_stream_update(
         calibration_artifact_ids=calibration_ids,
         runtime_revision_source=runtime_source,
         runtime_revision_independently_verified=True,
-        covariance_policy_id=run_covariance_policy_id,
+        covariance_policy_id=covariance_policy_id,
         run_id=None,
     )
     return selected, updated_run, step
