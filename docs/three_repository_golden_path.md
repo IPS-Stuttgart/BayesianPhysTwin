@@ -70,7 +70,10 @@ The test then verifies:
    package versions, the observation, `TwinBelief`, physical posterior, provider
    manifest, information boundary, protocol, split, baseline, method freeze, and
    claim ID. Promotion fails closed for dirty, incomplete, or tampered evidence.
-7. Both independent consumers reject future-dependent lineage, future-payload
+7. An accepted candidate-selection artifact and a rejected exact-baseline
+   fallback artifact bind the same manifest, repositories, wheels, packages,
+   observation, twin, posterior, provider, baseline bytes, and candidate bytes.
+8. Both independent consumers reject future-dependent lineage, future-payload
    access, stream-version disagreement, fixed-lag covariance falsely labelled as
    strict v2, changed metric-anchor source digests, missing calibration
    provenance, omitted anchor covariance, per-window gauge factors, duplicated
@@ -79,6 +82,47 @@ The test then verifies:
 
 Validators remain implemented in their owning repositories. The integration
 test shares only immutable artifacts and expected accept/reject decisions.
+
+## Accepted and Exact-Fallback Evidence Bundle
+
+Every successful installed-wheel job materializes and validates this exact file
+roster before upload:
+
+```text
+accepted-selection.json
+rejected-selection.json
+golden-path-bundle.json
+run-manifest-v2.json
+exact-prob4d-observation.npz
+profile-bound.npz
+lineage-bound-twin-belief.npz
+lineage-bound-physical-posterior.npz
+```
+
+`ArrayByteIdentityV1` content-addresses an array's canonical dtype, shape, byte
+count, and exact payload bytes. This distinguishes, for example, positive from
+negative zero, float32 from float64, and `(d,)` from `(1, d)` even when numerical
+values otherwise compare equal.
+
+The accepted record must satisfy all inference and regret gates and must select
+the exact candidate-byte identity. The rejected record must not accept the
+candidate, must select the exact baseline-byte identity, and must set
+`exact_fallback_identity` to that baseline content ID. The bundle rejects any
+disagreement between the two records over run manifest, evidence fingerprint,
+repository revisions, wheel hashes, package versions, observation, twin,
+posterior, provider manifest, baseline, or candidate.
+
+The job reloads the copied manifest and every manifest-bound NPZ from the upload
+directory, re-runs promotability admission there, reloads the three JSON decision
+records, and verifies pair-to-bundle equality. Only then does the pinned artifact
+uploader retain the directory for 90 days. The workflow summary records the
+bundle, accepted, rejected, fallback, and run-manifest content IDs.
+
+These records establish routing and exact-fallback behavior under the deterministic
+integration fixture. The accepted record is not evidence that the candidate is
+more accurate, calibrated, transferable, or physically beneficial. The rejected
+record is not a negative scientific result. Both remain compatibility evidence
+unless a separately registered study binds real outcomes and statistical units.
 
 ## Transfer-Safe Repository Identity
 
@@ -138,10 +182,22 @@ bash BayesianPhysTwin/scripts/run_three_repository_golden_path.sh \
   Causal4D
 ```
 
+To retain the decision bundle and all manifest-bound artifacts outside the
+temporary build directory, provide an empty or nonexistent output directory:
+
+```bash
+THREE_REPOSITORY_EVIDENCE_OUTPUT=/tmp/bpt-golden-path-evidence \
+  bash BayesianPhysTwin/scripts/run_three_repository_golden_path.sh \
+    BayesianPhysTwin \
+    Prob4D \
+    Causal4D
+```
+
 The script requires a normal Linux or macOS Python installation with `venv`,
 `pip`, `git`, `tar`, and network access for build/runtime dependencies. It
 removes all temporary source snapshots, wheels, and virtual environments on
-exit.
+exit. An explicitly requested evidence output is external to those temporary
+paths and is preserved.
 
 ## GitHub Actions Public-Repository Policy
 
