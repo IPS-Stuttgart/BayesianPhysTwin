@@ -198,6 +198,9 @@ state-update and exact-fallback boundaries.
   negative results, experimental command families, and placement policy.
 - [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
   risk–coverage, exact fallback, tail regressions, and calibration summaries.
+- [Covariance-only value certificate](docs/covariance_only_value_certificate.md):
+  exact-mean finite-group admission by proper score, interval width, and
+  harmful-group probability without authorizing a point update.
 - [Prospective belief updates](docs/prospective_belief_updates_v1.md):
   evidence-weighted endpoint uncertainty, strict Prob4D update composition,
   gap-aware reliability, and their empirical claim boundaries.
