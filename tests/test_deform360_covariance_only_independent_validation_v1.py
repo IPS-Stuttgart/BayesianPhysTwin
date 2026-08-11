@@ -9,26 +9,21 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_PATH = (
-    ROOT
-    / "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
+    ROOT / "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
 )
 SELECTION_PATH = (
-    ROOT
-    / "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
+    ROOT / "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
 )
-SUMMARY_PATH = (
-    ROOT / "results/science/full22_covariance_only_hybrid_v1/summary.json"
-)
+SUMMARY_PATH = ROOT / "results/science/full22_covariance_only_hybrid_v1/summary.json"
 COMPOSITION_PATH = ROOT / "src/bayesian_phystwin/covariance_only_hybrid.py"
 ANALYSIS_PATH = ROOT / "src/bayesian_phystwin/covariance_only_hybrid_analysis.py"
-DOCUMENT_PATH = (
-    ROOT / "docs/deform360_covariance_only_independent_validation_v1.md"
-)
+DOCUMENT_PATH = ROOT / "docs/deform360_covariance_only_independent_validation_v1.md"
 WORKFLOW_PATH = (
-    ROOT
-    / ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
+    ROOT / ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
 )
-EXPECTED_PROTOCOL_ID = "58dfe75b82270cf7bb7e33ebaee8c51b13baabc6ac317e412e25c60cbbd2b79d"
+EXPECTED_PROTOCOL_ID = (
+    "58dfe75b82270cf7bb7e33ebaee8c51b13baabc6ac317e412e25c60cbbd2b79d"
+)
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -110,9 +105,7 @@ def test_frozen_candidate_matches_the_sealed_development_result() -> None:
     frozen = summary["full_source_fit_for_separate_fresh_study"]
     assert frozen == {
         "covariance_donor": candidate["covariance_donor_id"],
-        "early_middle_late_scales": (
-            candidate["early_middle_late_covariance_scales"]
-        ),
+        "early_middle_late_scales": (candidate["early_middle_late_covariance_scales"]),
         "mean_predictor": candidate["reference_mean"],
     }
     assert summary["mean_identity"]["exact_identity_case_count"] == 22
@@ -126,12 +119,13 @@ def test_frozen_candidate_matches_the_sealed_development_result() -> None:
 def test_exact_source_files_and_development_evidence_are_bound() -> None:
     identity = _load(PROTOCOL_PATH)["implementation_identity"]
 
-    assert _git_blob_sha1(COMPOSITION_PATH) == (
-        identity["covariance_composition_git_blob_sha1"]
+    assert (
+        _git_blob_sha1(COMPOSITION_PATH)
+        == (identity["covariance_composition_git_blob_sha1"])
     )
     assert _git_blob_sha1(ANALYSIS_PATH) == identity["analysis_git_blob_sha1"]
-    assert _git_blob_sha1(SUMMARY_PATH) == (
-        identity["development_summary_git_blob_sha1"]
+    assert (
+        _git_blob_sha1(SUMMARY_PATH) == (identity["development_summary_git_blob_sha1"])
     )
     assert identity["exact_distribution_identity_required_before_target_opening"]
     assert identity["runtime_and_source_artifacts_content_addressed"]
@@ -157,10 +151,14 @@ def test_cohorts_are_exact_disjoint_complete_object_sessions() -> None:
     assert len(confirmation_ids) == 12
     assert calibration_ids.isdisjoint(confirmation_ids)
     assert {row["stratum"] for row in confirmation} == {"sheet", "volumetric"}
-    assert {
-        stratum: sum(row["stratum"] == stratum for row in confirmation)
-        for stratum in ("sheet", "volumetric")
-    } == cohort["target_stratum_counts"] == {"sheet": 6, "volumetric": 6}
+    assert (
+        {
+            stratum: sum(row["stratum"] == stratum for row in confirmation)
+            for stratum in ("sheet", "volumetric")
+        }
+        == cohort["target_stratum_counts"]
+        == {"sheet": 6, "volumetric": 6}
+    )
 
     assert cohort["statistical_unit"] == "complete-physical-object-session"
     assert cohort["source_and_target_disjoint_by_object_identity"] is True
