@@ -1,0 +1,79 @@
+{
+  "candidate": {
+    "covariance_donor_id": "independent_endpoint_v1",
+    "observation_noise_std_m": 0.005,
+    "point_accuracy_claimed": false,
+    "reference_mean": "final-prefix residual applied only to the same material identities observed at the final prefix frame",
+    "reference_predictor_id": "last_residual"
+  },
+  "claim_boundary": {
+    "deployment_or_state_of_the_art": false,
+    "fresh_object_covariance_calibration": false,
+    "official_deform360_benchmark_parity": false,
+    "point_accuracy": false,
+    "prob4d_or_causal4d_benefit": false
+  },
+  "completion_rule": {
+    "fail": "retain exact physical fallback and do not decode or predict the fresh target",
+    "pass": "all adapter, support, camera, covariance, horizon, identity, and exact-fallback tests pass on opened source units",
+    "retuning_on_fresh_target": false
+  },
+  "information_boundary": {
+    "fresh_target_arrays_opened": false,
+    "fresh_target_media_decoded": false,
+    "fresh_target_outcomes_opened": false,
+    "fresh_target_payload_bytes_already_downloaded_but_quarantined": true,
+    "fresh_target_predictions_opened": false,
+    "fresh_target_repository_names_already_opened": true,
+    "opened_source_prefix_allowed": true,
+    "provider_scoring_camera_overlap_allowed": false,
+    "provider_scoring_reconstruction_artifact_reuse_allowed": false
+  },
+  "lock_sha256": "adbcd250eb9a4503c631acce4e683bea4fb1288de8b44317374cc3569f65412a",
+  "policy": {
+    "camera_partition_semantics": "hash-ranked balanced whole-recorder-family split-v1",
+    "covariance_requirement": "finite symmetric positive semidefinite for every (H,N) block",
+    "covariance_scales": [
+      8.0,
+      16.0,
+      16.0
+    ],
+    "covariance_unit": "metre_squared",
+    "fallback": "exact caller-owned physical future mean and covariance objects",
+    "horizon_labels": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "metric_unit": "metre",
+    "minimum_camera_families_per_role": 4,
+    "minimum_cameras_per_role": 8,
+    "minimum_final_observed_count": 9,
+    "minimum_final_observed_fraction": 0.5,
+    "minimum_prefix_frames": 2,
+    "missingness_semantics": "zero storage outside exact validity mask; no temporal, nearest, spatial, or identity fill"
+  },
+  "protocol_id": "deform360-covariance-residual-history-dry-run-v1",
+  "schema": "bayesian-phystwin/deform360-covariance-residual-history-dry-run-lock-v1",
+  "schema_version": 1,
+  "source_dry_run": {
+    "dry_run_result_scope": "technical adapter admission only",
+    "input_shape": "residual history (T,N,3), validity (T,N)",
+    "provider_input": "causal prefix from provider cameras only",
+    "scoring_input": "separate reconstruction from scoring cameras only",
+    "statistical_unit": "one complete opened source object/session",
+    "target_quarantine_access": "forbidden"
+  },
+  "status": "locked-before-source-dry-run-and-target-decode",
+  "target_binding": {
+    "branch": "deform360-covariance-only-target-v1",
+    "download_manifest_sha256": "41bfb0feb246ac235e6364cfb46304dd8b2679801d73532a1e78281f243d59af",
+    "exact_file_plan_sha256": "d5bab5a05cf49ba6cc7bd31ffe57d2abc15040dd3f2de163d5f5034800b3ee51",
+    "independent_verification_sha256": "3f58caf2e5cff977b34ddce6f42c86438696ce9f36f637238597f4ca86c15997",
+    "locked_target_count": 24,
+    "official_processed_annotation_status": "absent-for-all-locked-targets",
+    "quarantine_root": "/mnt/lexar4tb/datasets/deform360/unopened-candidate-target/covariance-only-v1/payload",
+    "selection_sha256": "d5745e513674a65ea51dd786caa1b51ef8a501d2e2ff3f27680e8f9366c37d77",
+    "target_roster_sha256": "f9106b3dd6e0cec089623e07fed3506755fb334952c7761846d0854dfba45783"
+  }
+}
