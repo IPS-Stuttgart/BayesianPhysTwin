@@ -87,7 +87,7 @@ def _finite_real(
 ) -> float:
     if type(value) not in {int, float} or type(value) is bool:
         raise ValueError(f"{name} must be a finite real number")
-    result = float(value)
+    result = float(np.asarray(value).item())
     if not math.isfinite(result):
         raise ValueError(f"{name} must be finite")
     if minimum is not None and result < minimum:
