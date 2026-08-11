@@ -217,6 +217,10 @@ def test_sealed_split_rejects_array_length_drift() -> None:
               raise SystemExit("sealed split tests already exist")
           test_path.write_text(tests + addition, encoding="utf-8")
           PY
+          rm -f \
+            .github/workflows/temporary-fix-covariance-mypy.yml \
+            .github/workflows/temporary-fix-covariance-only-typing.yml \
+            .github/workflows/temporary-fix-covariance-sealed-split.yml
           files=(
             scripts/science/run_full22_covariance_only_hybrid_v1.py
             src/bayesian_phystwin/covariance_only_hybrid.py
@@ -234,10 +238,6 @@ def test_sealed_split_rejects_array_length_drift() -> None:
             tests/test_covariance_only_hybrid.py \
             tests/test_full22_covariance_only_hybrid_v1.py \
             tests/test_pull_request_workflow_integrity.py
-          rm -f \
-            .github/workflows/temporary-fix-covariance-mypy.yml \
-            .github/workflows/temporary-fix-covariance-only-typing.yml \
-            .github/workflows/temporary-fix-covariance-sealed-split.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
