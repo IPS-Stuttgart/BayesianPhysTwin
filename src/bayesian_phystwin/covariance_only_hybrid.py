@@ -174,7 +174,9 @@ class CovarianceOnlyHybridRecordV1:
             positive=True,
         )
         if maximum < minimum:
-            raise ValueError("maximum_covariance_scale must not be smaller than minimum")
+            raise ValueError(
+                "maximum_covariance_scale must not be smaller than minimum"
+            )
         object.__setattr__(
             self,
             "reference_predictor_id",
