@@ -152,9 +152,7 @@ def _recertify(
         else target_harm_probability
     )
     per_domain_confidence = (
-        certificate.confidence_level
-        if confidence_level is None
-        else confidence_level
+        certificate.confidence_level if confidence_level is None else confidence_level
     )
     policy_id = domain_harm_risk_policy_id(
         domain_guard_certificate_id=str(guard.artifact_id),
@@ -320,9 +318,9 @@ def test_unsupported_and_unknown_domains_force_exact_fallback() -> None:
         risk_scores=np.asarray(evidence["risk_scores"])[dynamic],
         candidate_losses=np.asarray(evidence["candidate_losses"])[dynamic],
         fallback_losses=np.asarray(evidence["fallback_losses"])[dynamic],
-        fallback_identity_verified=np.asarray(
-            evidence["fallback_identity_verified"]
-        )[dynamic],
+        fallback_identity_verified=np.asarray(evidence["fallback_identity_verified"])[
+            dynamic
+        ],
         threshold=0.5,
         harm_margin=0.0,
         target_harm_probability=0.8,
@@ -357,9 +355,7 @@ def test_unsupported_and_unknown_domains_force_exact_fallback() -> None:
     assert unsupported_record.metadata["routing_reason"] == (
         "calibration-domain-rejected"
     )
-    assert unknown_record.metadata["routing_reason"] == (
-        "unknown-calibration-domain"
-    )
+    assert unknown_record.metadata["routing_reason"] == ("unknown-calibration-domain")
 
 
 def test_inference_and_information_boundaries_override_certification() -> None:
@@ -376,15 +372,13 @@ def test_inference_and_information_boundaries_override_certification() -> None:
         common_domain_id=COMMON_DOMAIN_ID,
         inference_admissible=False,
     )
-    retrospective_selected, retrospective_record = (
-        select_domain_guard_harm_risk_belief(
-            baseline,
-            candidate,
-            retrospective,
-            domain_id="dynamic",
-            common_domain_id=COMMON_DOMAIN_ID,
-            inference_admissible=True,
-        )
+    retrospective_selected, retrospective_record = select_domain_guard_harm_risk_belief(
+        baseline,
+        candidate,
+        retrospective,
+        domain_id="dynamic",
+        common_domain_id=COMMON_DOMAIN_ID,
+        inference_admissible=True,
     )
 
     assert inference_selected is baseline
@@ -413,9 +407,7 @@ def test_policy_identity_binds_domain_and_threshold_source() -> None:
         "supported_domain_count": 2,
     }
     first = domain_harm_risk_policy_id(**arguments)
-    second = domain_harm_risk_policy_id(
-        **{**arguments, "domain_id": "oscillatory"}
-    )
+    second = domain_harm_risk_policy_id(**{**arguments, "domain_id": "oscillatory"})
     third = domain_harm_risk_policy_id(
         **{**arguments, "threshold_source_artifact_id": "f" * 64}
     )
@@ -623,9 +615,7 @@ def test_builder_rejects_no_supported_domain_and_unverified_fallback() -> None:
 
     evidence = _evidence()
     risk_scores = np.asarray(evidence["risk_scores"]).copy()
-    fallback_verified = np.asarray(
-        evidence["fallback_identity_verified"]
-    ).copy()
+    fallback_verified = np.asarray(evidence["fallback_identity_verified"]).copy()
     risk_scores[0] = 1.0
     fallback_verified[0] = False
     with pytest.raises(ValueError, match="exact fallback"):

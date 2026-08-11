@@ -38,9 +38,7 @@ from .guard_harm_risk import (
     certify_guard_harm_risk,
 )
 
-DOMAIN_GUARD_HARM_RISK_SCHEMA = (
-    "bayesian_phystwin.domain_guard_harm_risk_certificate"
-)
+DOMAIN_GUARD_HARM_RISK_SCHEMA = "bayesian_phystwin.domain_guard_harm_risk_certificate"
 DOMAIN_GUARD_HARM_RISK_VERSION = 1
 DOMAIN_HARM_RISK_POLICY_SCHEMA = "bayesian_phystwin.domain_harm_risk_policy"
 DOMAIN_HARM_RISK_POLICY_VERSION = 1
@@ -198,8 +196,7 @@ class DomainGuardHarmRiskCertificateV1:
         guard = self.domain_guard_certificate
         if not isinstance(guard, CalibrationDomainGuardCertificateV1):
             raise TypeError(
-                "domain_guard_certificate must be a "
-                "CalibrationDomainGuardCertificateV1"
+                "domain_guard_certificate must be a CalibrationDomainGuardCertificateV1"
             )
         if guard.artifact_id is None:
             raise ValueError("domain guard certificate must have an artifact identity")
@@ -240,9 +237,7 @@ class DomainGuardHarmRiskCertificateV1:
         )
 
         calibration_groups = {
-            group_id
-            for decision in guard.decisions
-            for group_id in decision.group_ids
+            group_id for decision in guard.decisions for group_id in decision.group_ids
         }
         certification_groups: set[str] = set()
         threshold_selection_groups: set[str] = set()
@@ -271,9 +266,7 @@ class DomainGuardHarmRiskCertificateV1:
                 domain_guard_certificate_id=str(guard.artifact_id),
                 domain_decision_id=str(decision.artifact_id),
                 domain_id=domain,
-                threshold_source_artifact_id=(
-                    certificate.threshold_source_artifact_id
-                ),
+                threshold_source_artifact_id=(certificate.threshold_source_artifact_id),
                 statistical_unit=certificate.statistical_unit,
                 metric=certificate.metric,
                 threshold=certificate.threshold,
@@ -312,9 +305,7 @@ class DomainGuardHarmRiskCertificateV1:
                     f"{sorted(overlap)}"
                 )
             certification_groups.update(certificate.group_ids)
-            threshold_selection_groups.update(
-                certificate.threshold_selection_group_ids
-            )
+            threshold_selection_groups.update(certificate.threshold_selection_group_ids)
 
         calibration_overlap = calibration_groups & certification_groups
         if calibration_overlap:
@@ -403,13 +394,9 @@ class DomainGuardHarmRiskCertificateV1:
             "supported_domains": list(self.supported_domains),
             "certified_domains": list(self.certified_domains),
             "failed_domains": list(self.failed_domains),
-            "all_supported_domains_certified": (
-                self.all_supported_domains_certified
-            ),
+            "all_supported_domains_certified": (self.all_supported_domains_certified),
             "deployment_admissible": self.deployment_admissible,
-            "domain_guard_certificate": (
-                self.domain_guard_certificate.to_record()
-            ),
+            "domain_guard_certificate": (self.domain_guard_certificate.to_record()),
             "domain_certificates": [
                 {
                     "domain_id": domain,
