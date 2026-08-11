@@ -33,6 +33,31 @@ SOURCE_SCHEMA = (
 RESULT_SCHEMA = (
     "bayesian-phystwin/deform360-covariance-residual-history-dry-run-result-v1"
 )
+
+SOURCE_MANIFEST_FIELDS = frozenset(
+    {
+        "schema",
+        "schema_version",
+        "source_unit_id",
+        "archive",
+        "camera_ids",
+        "provider_camera_ids",
+        "scoring_camera_ids",
+        "provider_reconstruction_artifact_id",
+        "scoring_reconstruction_artifact_id",
+        "information_boundary",
+    }
+)
+SOURCE_ARCHIVE_FIELDS = frozenset({"path", "sha256"})
+SOURCE_BOUNDARY_FIELDS = frozenset(
+    {
+        "opened_source_only",
+        "fresh_target_payload_opened",
+        "fresh_target_prediction_opened",
+        "fresh_target_outcome_opened",
+    }
+)
+
 EXPECTED_ARRAYS = frozenset(
     {
         "physical_prefix_m",
@@ -88,6 +113,20 @@ def _mapping(value: object, *, name: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} must be a JSON object")
     return value
+
+
+def _exact_fields(
+    value: Mapping[str, Any],
+    *,
+    expected: frozenset[str],
+    name: str,
+) -> None:
+    missing = sorted(expected - set(value))
+    extra = sorted(set(value) - expected)
+    if missing or extra:
+        raise ValueError(
+            f"{name} fields changed: missing={missing}, extra={extra}"
+        )
 
 
 def _canonical_sha256(value: Mapping[str, Any], *, digest_key: str) -> str:
@@ -212,10 +251,20 @@ def load_source_manifest(path: Path) -> dict[str, Any]:
 
     manifest_path = assert_outside_target_quarantine(path, name="source manifest")
     manifest = _load_json(manifest_path, name="source manifest")
+    _exact_fields(
+        manifest,
+        expected=SOURCE_MANIFEST_FIELDS,
+        name="source manifest",
+    )
     _require(manifest.get("schema") == SOURCE_SCHEMA, "source manifest schema changed")
     _require(manifest.get("schema_version") == 1, "source manifest version changed")
     boundary = _mapping(
         manifest.get("information_boundary"),
+        name="source information boundary",
+    )
+    _exact_fields(
+        boundary,
+        expected=SOURCE_BOUNDARY_FIELDS,
         name="source information boundary",
     )
     _require(
@@ -240,14 +289,30 @@ def load_source_manifest(path: Path) -> dict[str, Any]:
         provider_id != scoring_id,
         "provider/scoring reconstruction artifact reused",
     )
-    cameras = manifest.get("camera_ids")
-    _require(
-        isinstance(cameras, list) and all(type(value) is str for value in cameras),
-        "source camera roster is missing",
-    )
+    for field_name in (
+        "camera_ids",
+        "provider_camera_ids",
+        "scoring_camera_ids",
+    ):
+        cameras = manifest.get(field_name)
+        _require(
+            isinstance(cameras, list)
+            and all(type(value) is str for value in cameras),
+            f"source {field_name} roster is missing",
+        )
     archive = _mapping(manifest.get("archive"), name="source archive")
+    _exact_fields(
+        archive,
+        expected=SOURCE_ARCHIVE_FIELDS,
+        name="source archive",
+    )
+    archive_value = archive.get("path")
+    _require(type(archive_value) is str and bool(archive_value), "archive path missing")
+    candidate = Path(archive_value)
+    if not candidate.is_absolute():
+        candidate = manifest_path.parent / candidate
     archive_path = assert_outside_target_quarantine(
-        str(archive.get("path", "")),
+        candidate,
         name="source archive",
     )
     _require(archive_path.is_file(), "source archive does not exist")
@@ -304,6 +369,8 @@ def run_dry_run(
         material_ids=arrays["material_ids"],
         future_horizon_bins=arrays["future_horizon_bins"],
         camera_ids=manifest["camera_ids"],
+        provider_camera_ids=manifest["provider_camera_ids"],
+        scoring_camera_ids=manifest["scoring_camera_ids"],
         provider_reconstruction_artifact_id=manifest[
             "provider_reconstruction_artifact_id"
         ],
