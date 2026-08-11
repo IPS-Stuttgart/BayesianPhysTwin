@@ -29,6 +29,9 @@ AMENDMENT = ROOT / (
 WORKFLOW = ROOT / (".github/workflows/deform360-v6-source-prediction-evidence.yml")
 RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 AMENDMENT_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+V5_SOURCE_LOCK_ID = (
+    "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189"
+)
 
 
 def _digest(path: Path) -> str:
@@ -148,7 +151,7 @@ def _fixture_roots(tmp_path: Path) -> tuple[Path, Path, Path, Path, dict[str, An
     }
     _write_json(metric_root / "metric-prefix-plan.json", plan)
     lock = {
-        "execution_lock_id": "2" * 64,
+        "execution_lock_id": V5_SOURCE_LOCK_ID,
         "cohort": {"development_objects": _cohort()},
     }
     return results, metric_root, prediction_root, physical_root, lock
