@@ -252,3 +252,192 @@ def test_bundle_serialization_is_plain_finite_json() -> None:
         cast(Mapping[str, Any], payload["accepted"])["metadata"],
         Mapping,
     )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    (
+        ({"dtype": "not-a-dtype"}, "dtype is invalid"),
+        ({"dtype": "float32"}, "canonical finite real storage"),
+        ({"shape": cast(Any, "1")}, "integer tuple"),
+        ({"shape": (-1,)}, "nonnegative integer"),
+        ({"nbytes": 8}, "does not match"),
+    ),
+)
+def test_array_identity_constructor_rejects_noncanonical_descriptors(
+    kwargs: Mapping[str, Any],
+    message: str,
+) -> None:
+    arguments: dict[str, Any] = {
+        "dtype": "<f4",
+        "shape": (1,),
+        "nbytes": 4,
+        "payload_sha256": "0" * 64,
+    }
+    arguments.update(kwargs)
+
+    with pytest.raises(ValueError, match=message):
+        ArrayByteIdentityV1(**arguments)
+
+
+def test_array_identity_mapping_rejects_non_array_shape() -> None:
+    payload = ArrayByteIdentityV1.from_array(np.asarray([1.0])).as_dict()
+    payload["shape"] = "not-an-array"
+
+    with pytest.raises(ValueError, match="JSON array"):
+        ArrayByteIdentityV1.from_mapping(payload)
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    (
+        ({"decision": cast(Any, "unknown")}, "unsupported golden-path decision"),
+        ({"case_id": " noncanonical"}, "canonical text"),
+        (
+            {"baseline_identity": cast(Any, np.asarray([0.0]))},
+            "ArrayByteIdentityV1",
+        ),
+        (
+            {"candidate_identity": _artifact(accepted=True).baseline_identity},
+            "distinct",
+        ),
+        ({"inference_admissible": False}, "every admission gate"),
+        ({"reason": "wrong-accepted-reason"}, "reason changed"),
+        (
+            {"selected_identity": _artifact(accepted=True).baseline_identity},
+            "exact candidate bytes",
+        ),
+        ({"exact_fallback_identity": "0" * 64}, "cannot claim an exact fallback"),
+    ),
+)
+def test_accepted_selection_rejects_inconsistent_contracts(
+    changes: Mapping[str, Any],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        replace(_artifact(accepted=True), **changes)
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    (
+        ({"candidate_accepted": True}, "cannot accept"),
+        ({"reason": "regret-guard-rejected"}, "declare exact baseline fallback"),
+        (
+            {"selected_identity": _artifact(accepted=False).candidate_identity},
+            "changed the baseline bytes",
+        ),
+    ),
+)
+def test_rejected_selection_rejects_inconsistent_contracts(
+    changes: Mapping[str, Any],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        replace(_artifact(accepted=False), **changes)
+
+
+def test_selection_rejects_incomplete_component_roster() -> None:
+    with pytest.raises(ValueError, match="complete component roster"):
+        replace(
+            _artifact(accepted=True),
+            repository_revisions={"bayesian_phystwin": "1" * 40},
+        )
+
+
+def test_selection_mapping_rejects_non_object_and_non_string_keys() -> None:
+    with pytest.raises(ValueError, match="JSON object"):
+        GoldenPathSelectionArtifactV1.from_mapping(cast(Any, []))
+
+    with pytest.raises(ValueError, match="literal string keys"):
+        GoldenPathSelectionArtifactV1.from_mapping(cast(Any, {1: "invalid"}))
+
+
+def test_selection_mapping_rejects_wrong_schema() -> None:
+    payload = copy.deepcopy(_artifact(accepted=True).as_dict())
+    payload["schema_name"] = "wrong.schema"
+
+    with pytest.raises(ValueError, match="selection schema"):
+        GoldenPathSelectionArtifactV1.from_mapping(payload)
+
+
+def test_bundle_rejects_invalid_entries_and_tampered_fallback() -> None:
+    bundle = _bundle()
+    with pytest.raises(ValueError, match="invalid types"):
+        GoldenPathEvidenceBundleV1(
+            accepted=cast(Any, object()),
+            rejected=bundle.rejected,
+        )
+
+    tampered_rejected = _artifact(accepted=False)
+    object.__setattr__(tampered_rejected, "exact_fallback_identity", "9" * 64)
+    with pytest.raises(ValueError, match="exact fallback identity"):
+        GoldenPathEvidenceBundleV1(
+            accepted=bundle.accepted,
+            rejected=tampered_rejected,
+        )
+
+
+def test_bundle_rejects_equal_artifact_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        GoldenPathSelectionArtifactV1,
+        "artifact_id",
+        property(lambda self: "0" * 64),
+    )
+
+    with pytest.raises(ValueError, match="artifact IDs must differ"):
+        _bundle()
+
+
+def test_bundle_mapping_rejects_wrong_schema_and_id() -> None:
+    payload = copy.deepcopy(_bundle().as_dict())
+    payload["schema_name"] = "wrong.schema"
+    with pytest.raises(ValueError, match="bundle schema"):
+        GoldenPathEvidenceBundleV1.from_mapping(payload)
+
+    payload = copy.deepcopy(_bundle().as_dict())
+    payload["bundle_id"] = "9" * 64
+    with pytest.raises(ValueError, match="bundle ID"):
+        GoldenPathEvidenceBundleV1.from_mapping(payload)
+
+
+def test_build_and_write_reject_wrong_contract_types(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="GaugeAwareSelection"):
+        build_golden_path_selection_artifact_v1(
+            selection=cast(Any, object()),
+            baseline=np.asarray([0.0]),
+            candidate=np.asarray([1.0]),
+            case_id="case",
+            protocol_id="protocol",
+            observation_artifact_id="a" * 64,
+            twin_belief_id="b" * 64,
+            physical_posterior_id="c" * 64,
+            provider_manifest_id="d" * 64,
+            run_manifest_id="e" * 64,
+            evidence_fingerprint="f" * 64,
+            repository_revisions=_components("1" * 40),
+            wheel_sha256=_components("2" * 64),
+            package_versions=_components("0.4.0"),
+        )
+
+    with pytest.raises(ValueError, match="GoldenPathEvidenceBundleV1"):
+        write_golden_path_evidence_bundle_v1(
+            tmp_path,
+            cast(Any, object()),
+        )
+
+
+def test_loader_rejects_valid_pair_that_differs_from_bundle(tmp_path: Path) -> None:
+    bundle = _bundle()
+    write_golden_path_evidence_bundle_v1(tmp_path, bundle)
+    altered = replace(
+        bundle.accepted,
+        metadata={"selection_stage": "different-valid-record"},
+    )
+    (tmp_path / "accepted-selection.json").write_text(
+        json.dumps(altered.as_dict(), allow_nan=False, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="pair does not match"):
+        load_golden_path_evidence_bundle_v1(tmp_path)
