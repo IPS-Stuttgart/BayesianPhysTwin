@@ -1,0 +1,266 @@
+name: Temporary frozen-container reader hardening
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/contract-integrity-reader-hardening.yml
+      - src/bayesian_phystwin/_canonical_contracts.py
+      - tests/test_portable_contracts_integrity.py
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  harden-and-remove:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact pull-request branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - name: Guard inherited readers and remove this workflow
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          module = Path("src/bayesian_phystwin/_canonical_contracts.py")
+          text = module.read_text(encoding="utf-8")
+
+          marker = '''    def copy(self) -> dict[str, Any]:
+              return self._snapshot_dict()
+
+              def __repr__(self) -> str:
+          '''
+          replacement = '''    def copy(self) -> dict[str, Any]:
+              return self._snapshot_dict()
+
+              @staticmethod
+              def _validated_operand(value: object) -> object:
+                  if isinstance(value, FrozenDict):
+                      return value._snapshot_dict()
+                  return value
+
+              def __or__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, dict):
+                      return NotImplemented
+                  return dict.__or__(self._snapshot_dict(), validated)
+
+              def __ror__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, dict):
+                      return NotImplemented
+                  return dict.__ror__(self._snapshot_dict(), validated)
+
+              def __repr__(self) -> str:
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit("FrozenDict insertion marker was not found exactly once")
+          text = text.replace(marker, replacement)
+          text = text.replace(
+              "        return self._snapshot_dict() == other\n",
+              "        return self._snapshot_dict() == self._validated_operand(other)\n",
+              1,
+          )
+          text = text.replace(
+              "        return self._snapshot_dict() != other\n",
+              "        return self._snapshot_dict() != self._validated_operand(other)\n",
+              1,
+          )
+
+          marker = '''    def copy(self) -> list[Any]:
+              return list(self._snapshot_tuple())
+
+              def __repr__(self) -> str:
+          '''
+          replacement = '''    def copy(self) -> list[Any]:
+              return list(self._snapshot_tuple())
+
+              @staticmethod
+              def _validated_operand(value: object) -> object:
+                  if isinstance(value, FrozenList):
+                      return list(value._snapshot_tuple())
+                  return value
+
+              def count(self, value: object) -> int:
+                  return list(self._snapshot_tuple()).count(value)
+
+              def index(self, value: object, *bounds: int) -> int:
+                  return list(self._snapshot_tuple()).index(value, *bounds)
+
+              def __add__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__add__(list(self._snapshot_tuple()), validated)
+
+              def __radd__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__add__(validated, list(self._snapshot_tuple()))
+
+              def __mul__(self, other: object) -> Any:
+                  try:
+                      return list.__mul__(list(self._snapshot_tuple()), other)
+                  except TypeError:
+                      return NotImplemented
+
+              def __rmul__(self, other: object) -> Any:
+                  try:
+                      return list.__rmul__(list(self._snapshot_tuple()), other)
+                  except TypeError:
+                      return NotImplemented
+
+              def __lt__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__lt__(list(self._snapshot_tuple()), validated)
+
+              def __le__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__le__(list(self._snapshot_tuple()), validated)
+
+              def __gt__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__gt__(list(self._snapshot_tuple()), validated)
+
+              def __ge__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__ge__(list(self._snapshot_tuple()), validated)
+
+              def __repr__(self) -> str:
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit("FrozenList insertion marker was not found exactly once")
+          text = text.replace(marker, replacement)
+          text = text.replace(
+              "        return list(self._snapshot_tuple()) == other\n",
+              "        return list(self._snapshot_tuple()) == self._validated_operand(other)\n",
+              1,
+          )
+          text = text.replace(
+              "        return list(self._snapshot_tuple()) != other\n",
+              "        return list(self._snapshot_tuple()) != self._validated_operand(other)\n",
+              1,
+          )
+          module.write_text(text, encoding="utf-8")
+
+          tests = Path("tests/test_portable_contracts_integrity.py")
+          text = tests.read_text(encoding="utf-8")
+          marker = '''        lambda: metadata.copy(),
+              lambda: repr(metadata),
+          '''
+          replacement = '''        lambda: metadata.copy(),
+              lambda: dict(metadata),
+              lambda: metadata | {"other": 3},
+              lambda: {"other": 3} | metadata,
+              lambda: repr(metadata),
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit("mapping tamper marker was not found exactly once")
+          text = text.replace(marker, replacement)
+
+          marker = '''        lambda: items.copy(),
+              lambda: repr(items),
+              lambda: items == [],
+          '''
+          replacement = '''        lambda: items.copy(),
+              lambda: items.count(1),
+              lambda: items.index(1),
+              lambda: items + [3],
+              lambda: [0] + items,
+              lambda: items * 2,
+              lambda: 2 * items,
+              lambda: items < [2],
+              lambda: items <= [2],
+              lambda: items > [0],
+              lambda: items >= [0],
+              lambda: repr(items),
+              lambda: items == [],
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit("sequence tamper marker was not found exactly once")
+          text = text.replace(marker, replacement)
+
+          marker = '''    assert metadata.copy() == expected
+              assert len(items) == 2
+          '''
+          replacement = '''    assert metadata.copy() == expected
+              assert metadata | {"extra": 3} == {**expected, "extra": 3}
+              assert {"extra": 3} | metadata == {"extra": 3, **expected}
+              assert len(items) == 2
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit("mapping compatibility marker was not found exactly once")
+          text = text.replace(marker, replacement)
+
+          marker = '''    assert items.copy() == expected["nested"]["items"]
+              assert json.loads(json.dumps(metadata)) == expected
+          '''
+          replacement = '''    assert items.copy() == expected["nested"]["items"]
+              assert items.count(1) == 1
+              assert items.index(1) == 0
+              assert items.index(1, 0, 1) == 0
+              assert items + [3] == [1, {"accepted": True}, 3]
+              assert [0] + items == [0, 1, {"accepted": True}]
+              assert items * 2 == expected["nested"]["items"] * 2
+              assert 2 * items == expected["nested"]["items"] * 2
+              assert items < [2]
+              assert items <= expected["nested"]["items"]
+              assert items > [0]
+              assert items >= expected["nested"]["items"]
+              with pytest.raises(TypeError):
+                  _ = metadata | []
+              with pytest.raises(TypeError):
+                  _ = [] | metadata
+              with pytest.raises(TypeError):
+                  _ = items + (3,)
+              with pytest.raises(TypeError):
+                  _ = (0,) + items
+              with pytest.raises(TypeError):
+                  _ = items * 1.5
+              with pytest.raises(TypeError):
+                  _ = 1.5 * items
+              with pytest.raises(TypeError):
+                  _ = items < (2,)
+              assert json.loads(json.dumps(metadata)) == expected
+          '''
+          if text.count(marker) != 1:
+              raise SystemExit("sequence compatibility marker was not found exactly once")
+          tests.write_text(text.replace(marker, replacement), encoding="utf-8")
+          PY
+          python -m pip install "ruff==0.16.2"
+          python -m ruff format \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            tests/test_portable_contracts_integrity.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            tests/test_portable_contracts_integrity.py
+          rm .github/workflows/contract-integrity-reader-hardening.yml
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            tests/test_portable_contracts_integrity.py \
+            .github/workflows/contract-integrity-reader-hardening.yml
+          git diff --cached --check
+          git commit -m "Guard inherited frozen-container read operations"
+          git push origin "HEAD:${HEAD_BRANCH}"
