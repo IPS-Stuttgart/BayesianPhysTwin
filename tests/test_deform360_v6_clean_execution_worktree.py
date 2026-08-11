@@ -3,7 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+GITIGNORE = ROOT / ".gitignore"
 RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+DEPENDENCY_CHECKOUTS = {
+    "_deform360_physical",
+    "_official_phystwin",
+    "_sam2",
+    "_causal4d_discovery",
+}
 
 
 def test_source_execution_uses_clean_exact_revision_worktree() -> None:
@@ -27,6 +34,19 @@ def test_source_execution_uses_clean_exact_revision_worktree() -> None:
     assert text.index('cd "${EXECUTION_REPO_ROOT}"') < text.index(
         'bash "${SELECTOR_WRAPPER}"'
     )
+
+
+def test_dependency_checkouts_remain_visible_to_parent_status() -> None:
+    ignored = {
+        line.strip()
+        for line in GITIGNORE.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+
+    exact_roots = {f"/{path}/" for path in DEPENDENCY_CHECKOUTS}
+    assert exact_roots.isdisjoint(ignored)
+    assert "/_*/" not in ignored
+    assert "_*" not in ignored
 
 
 def test_clean_worktree_repair_does_not_modify_frozen_science_runner() -> None:
