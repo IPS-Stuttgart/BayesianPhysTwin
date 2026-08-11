@@ -16,7 +16,7 @@ INVENTORY_TARGET = "scripts/science/inventory_deform360_calibration_prepared_sou
 
 
 def _patch_python(text: str) -> str:
-    marker = '"${BPT_PYTHON}" - <<\'PY\'\n'
+    marker = "\"${BPT_PYTHON}\" - <<'PY'\n"
     assert text.count(marker) == 1
     remainder = text.split(marker, 1)[1]
     body, tail = remainder.split("\nPY\n\nchmod 700", 1)
@@ -29,7 +29,9 @@ def _literal(patch: str, name: str) -> str:
     for statement in tree.body:
         if not isinstance(statement, ast.Assign):
             continue
-        if len(statement.targets) != 1 or not isinstance(statement.targets[0], ast.Name):
+        if len(statement.targets) != 1 or not isinstance(
+            statement.targets[0], ast.Name
+        ):
             continue
         if statement.targets[0].id == name:
             value = ast.literal_eval(statement.value)
@@ -119,7 +121,9 @@ def _run_shim(
         env=environment,
         text=True,
     )
-    captured = json.loads(capture.read_text(encoding="utf-8")) if capture.exists() else None
+    captured = (
+        json.loads(capture.read_text(encoding="utf-8")) if capture.exists() else None
+    )
     return completed, captured
 
 
