@@ -1,0 +1,245 @@
+name: Temporary fix covariance-only sealed split
+
+on:
+  push:
+    branches:
+      - agent/full22-covariance-only-hybrid-v1
+    paths:
+      - ".github/workflows/temporary-fix-covariance-sealed-split.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-fix-covariance-sealed-split
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/full22-covariance-only-hybrid-v1
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Bind evaluation to the historical sealed split
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, *, name: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{name}: expected one match, found {count}")
+              return text.replace(old, new, 1)
+
+          runner_path = Path(
+              "scripts/science/run_full22_covariance_only_hybrid_v1.py"
+          )
+          runner = runner_path.read_text(encoding="utf-8")
+          marker = "\n\ndef _exact_reference_mean(value: object, *, case_id: str) -> np.ndarray:\n"
+          helper = '''
+
+
+def _sealed_split(
+    prediction: Mapping[str, np.ndarray],
+    *,
+    case_id: str,
+) -> tuple[int, int, int]:
+    """Read and validate the exact split stored in a sealed forecast case."""
+
+    values: dict[str, int] = {}
+    for name in ("fit_end", "train_end", "frame_count"):
+        array = np.asarray(prediction[name])
+        if array.shape != () or array.dtype.kind not in "iu":
+            raise ValueError(f"sealed {name} is not an integer scalar for {case_id}")
+        values[name] = int(array.item())
+    fit_end = values["fit_end"]
+    train_end = values["train_end"]
+    frame_count = values["frame_count"]
+    if not 0 < fit_end < train_end < frame_count:
+        raise ValueError(f"invalid sealed split for {case_id}")
+    expected_counts = {
+        "validation_mean_m": train_end - fit_end,
+        "validation_covariance_m2": train_end - fit_end,
+        "future_mean_m": frame_count - train_end,
+        "future_covariance_m2": frame_count - train_end,
+    }
+    for name, expected_count in expected_counts.items():
+        array = np.asarray(prediction[name])
+        if array.ndim < 1 or array.shape[0] != expected_count:
+            raise ValueError(
+                f"sealed {name} length differs from the split for {case_id}"
+            )
+    return fit_end, train_end, frame_count
+'''
+          runner = replace_once(
+              runner,
+              marker,
+              helper + marker,
+              name="sealed split helper insertion",
+          )
+          runner = replace_once(
+              runner,
+              "    from bayesian_phystwin.phystwin_confirmatory import _split_for_case\n",
+              "",
+              name="current split helper import",
+          )
+          runner = replace_once(
+              runner,
+              '''        fit_end, train_end, frame_count = _split_for_case(
+            data_root / case_id,
+            _finite(
+                _mapping(protocol["cohort"], name="cohort")["fit_fraction"],
+                name="fit_fraction",
+            ),
+        )
+        if (
+            int(reference_prediction["fit_end"]) != fit_end
+            or int(reference_prediction["train_end"]) != train_end
+            or int(reference_prediction["frame_count"]) != frame_count
+        ):
+            raise ValueError(f"reference split changed for {case_id}")
+        data = _load_pickle(data_root / case_id / "final_data.pkl")
+        baseline = np.asarray(
+            _load_pickle(data_root / case_id / "inference.pkl"),
+            dtype=np.float64,
+        )[:frame_count]
+        observed = np.asarray(data["object_points"], dtype=np.float64)[:frame_count]
+        valid = _target_validity(
+            np.asarray(data["object_visibilities"], dtype=bool),
+            np.asarray(data["object_motions_valid"], dtype=bool),
+        )[:frame_count]
+''',
+              '''        fit_end, train_end, frame_count = _sealed_split(
+            reference_prediction,
+            case_id=case_id,
+        )
+        data = _load_pickle(data_root / case_id / "final_data.pkl")
+        baseline_all = np.asarray(
+            _load_pickle(data_root / case_id / "inference.pkl"),
+            dtype=np.float64,
+        )
+        observed_all = np.asarray(data["object_points"], dtype=np.float64)
+        visible_all = np.asarray(data["object_visibilities"], dtype=bool)
+        motion_valid_all = np.asarray(data["object_motions_valid"], dtype=bool)
+        if (
+            len(baseline_all) < frame_count
+            or len(observed_all) < frame_count
+            or len(visible_all) < frame_count
+        ):
+            raise ValueError(f"public scoring arrays are shorter than the seal for {case_id}")
+        baseline = baseline_all[:frame_count]
+        observed = observed_all[:frame_count]
+        valid_all = _target_validity(visible_all, motion_valid_all)
+        if len(valid_all) < frame_count:
+            raise ValueError(f"public validity is shorter than the seal for {case_id}")
+        valid = valid_all[:frame_count]
+''',
+              name="sealed reference split use",
+          )
+          runner = replace_once(
+              runner,
+              '''            if (
+                int(donor_prediction["fit_end"]) != fit_end
+                or int(donor_prediction["train_end"]) != train_end
+                or int(donor_prediction["frame_count"]) != frame_count
+            ):
+                raise ValueError(f"donor split changed for {donor}/{case_id}")
+''',
+              '''            if _sealed_split(
+                donor_prediction,
+                case_id=f"{donor}/{case_id}",
+            ) != (fit_end, train_end, frame_count):
+                raise ValueError(f"donor split changed for {donor}/{case_id}")
+''',
+              name="sealed donor split agreement",
+          )
+          runner_path.write_text(runner, encoding="utf-8")
+
+          test_path = Path("tests/test_full22_covariance_only_hybrid_v1.py")
+          tests = test_path.read_text(encoding="utf-8")
+          addition = '''
+
+
+def _sealed_prediction(
+    *,
+    fit_end: int = 2,
+    train_end: int = 5,
+    frame_count: int = 9,
+) -> dict[str, np.ndarray]:
+    validation_count = max(0, train_end - fit_end)
+    future_count = max(0, frame_count - train_end)
+    return {
+        "fit_end": np.asarray(fit_end, dtype=np.int64),
+        "train_end": np.asarray(train_end, dtype=np.int64),
+        "frame_count": np.asarray(frame_count, dtype=np.int64),
+        "validation_mean_m": np.zeros((validation_count, 2, 3)),
+        "validation_covariance_m2": np.zeros((validation_count, 2, 3, 3)),
+        "future_mean_m": np.zeros((future_count, 2, 3)),
+        "future_covariance_m2": np.zeros((future_count, 2, 3, 3)),
+    }
+
+
+def test_sealed_split_uses_artifact_scalars_and_array_lengths() -> None:
+    prediction = _sealed_prediction()
+
+    assert MODULE._sealed_split(prediction, case_id="case") == (2, 5, 9)
+
+
+def test_sealed_split_rejects_invalid_bounds() -> None:
+    with pytest.raises(ValueError, match="invalid sealed split"):
+        MODULE._sealed_split(
+            _sealed_prediction(fit_end=5, train_end=5),
+            case_id="case",
+        )
+
+
+def test_sealed_split_rejects_array_length_drift() -> None:
+    prediction = _sealed_prediction()
+    prediction["future_mean_m"] = np.zeros((3, 2, 3))
+
+    with pytest.raises(ValueError, match="length differs"):
+        MODULE._sealed_split(prediction, case_id="case")
+'''
+          if "def test_sealed_split_uses_artifact_scalars" in tests:
+              raise SystemExit("sealed split tests already exist")
+          test_path.write_text(tests + addition, encoding="utf-8")
+          PY
+          files=(
+            scripts/science/run_full22_covariance_only_hybrid_v1.py
+            src/bayesian_phystwin/covariance_only_hybrid.py
+            src/bayesian_phystwin/covariance_only_hybrid_analysis.py
+            tests/test_covariance_only_hybrid.py
+            tests/test_full22_covariance_only_hybrid_v1.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/covariance_only_hybrid.py \
+            src/bayesian_phystwin/covariance_only_hybrid_analysis.py \
+            scripts/science/run_full22_covariance_only_hybrid_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_covariance_only_hybrid.py \
+            tests/test_full22_covariance_only_hybrid_v1.py \
+            tests/test_pull_request_workflow_integrity.py
+          rm -f \
+            .github/workflows/temporary-fix-covariance-mypy.yml \
+            .github/workflows/temporary-fix-covariance-only-typing.yml \
+            .github/workflows/temporary-fix-covariance-sealed-split.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Bind covariance analysis to the sealed split"
+          git push origin HEAD:agent/full22-covariance-only-hybrid-v1
