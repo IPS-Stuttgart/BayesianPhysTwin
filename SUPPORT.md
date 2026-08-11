@@ -1,9 +1,9 @@
 # Support and compatibility policy
 
 This document defines the supported Python runtime and the compatibility
-contract between Bayesian PhysTwin and Causal4D. Reproducible experiments have
-stricter requirements than ordinary development installations and must continue
-to record exact repository revisions and artifact digests.
+contract between Bayesian PhysTwin, Prob4D, and Causal4D. Reproducible
+experiments have stricter requirements than ordinary development installations
+and must continue to record exact repository revisions and artifact digests.
 
 ## Python support
 
@@ -22,14 +22,43 @@ change. Adding a newly released Python minor version is not complete until the
 core contracts, full test suite, wheel build, source-distribution build, and
 installed-artifact smoke tests pass for it.
 
+## Ecosystem compatibility table
+
+The normative current development ranges and exact provider/schema boundaries
+for BayesianPhysTwin, Prob4D, and Causal4D are published in
+[`docs/ecosystem_compatibility_v1.md`](docs/ecosystem_compatibility_v1.md) and
+the installed machine-readable resource
+`bayesian_phystwin/contract_data/ecosystem_compatibility_v1/table.json`.
+
+The current package lines are:
+
+- `bayesian-phystwin>=0.4,<0.5`;
+- `prob4d>=0.4,<0.5`; and
+- `causal4d>=0.5,<0.6`.
+
+These ranges express development interoperability only. They are not experiment
+locks and do not establish accuracy, calibrated uncertainty, provider
+competence, physical-query benefit, intervention benefit, or state of the art.
+Claim-bearing runs must bind exact repository revisions, dependency resolver
+input, provider attestations, and artifact digests.
+
+The resource is validated by
+`bayesian_phystwin.ecosystem_compatibility_v1`, which rejects unknown fields,
+ambiguous JSON, noncanonical version ranges, provider/schema drift, coerced
+Boolean flags, and any weakening of the exact-evidence boundary.
+
 ## Causal4D provider compatibility
 
-`bayesian_phystwin.causal4d_provider_v1` is the supported integration surface
-for Causal4D.
+`bayesian_phystwin.causal4d_provider_v1` remains the frozen scientific
+compatibility facade for historical consumers. Current Causal4D integration is
+defined by its versioned public-module registry, which also admits the
+production request-complete replay surface
+`bayesian_phystwin.causal4d_provider_v2` and the explicitly lifecycle-labelled
+artifact, belief, graph, public-diagnostic, and tree-block modules recorded in
+the ecosystem compatibility table.
 
-- Bayesian PhysTwin `0.4.x` provides provider API/schema version 1.
-- Upgradeable Causal4D development environments may depend on
-  `bayesian-phystwin>=0.4,<0.5`.
+- Bayesian PhysTwin `0.4.x` provides versioned provider APIs 1 and 2.
+- Causal4D `0.5.x` may depend on `bayesian-phystwin>=0.4,<0.5`.
 - Backward-compatible operations and capabilities may be added within the
   `0.4.x` line.
 - Removing an operation, changing required semantics, units, shapes, failure
@@ -39,8 +68,10 @@ for Causal4D.
   artifact hashes. The development version range never replaces experiment
   locks.
 
-The normative provider details are maintained in
-[`docs/causal4d_provider_v1.md`](docs/causal4d_provider_v1.md).
+The normative provider-v1 details are maintained in
+[`docs/causal4d_provider_v1.md`](docs/causal4d_provider_v1.md). Provider
+manifests and matching local Causal4D contracts remain authoritative for
+module-specific capability admission.
 
 The fixed endpoint surface
 `bayesian_phystwin.causal4d_belief_provider_v1` remains the compatibility
@@ -49,6 +80,24 @@ boundary for frozen discrepancy-endpoint consumers. The additive
 and horizon-dependent model-based covariance. Adopting provider v2 is an
 explicit consumer decision; it does not change provider v1 and does not imply
 that the raw covariance is prospectively calibrated.
+
+## Prob4D provider compatibility
+
+Historical and exploratory observations may use the frozen
+`prob4d.provider_v1` interface. Claim-bearing admission uses
+`prob4d.provider_v2`, provider API version 2, together with a complete
+provider-attestation schema version 1, causal-stream schema version 2, and the
+artifact schema versions listed in the ecosystem compatibility table.
+
+BayesianPhysTwin independently validates provider-v2 manifests, calibration
+identities, covariance semantics, and runtime revision evidence without
+importing Prob4D. A package-range match or successful observation parse does not
+by itself authorize a physical update or a scientific claim.
+
+The Prob4D provider manifests retain the historical source-repository identity
+`FlorianPfaff/Prob4D` for content-addressed compatibility, while the maintained
+repository is `IPS-Stuttgart/Prob4D`. This historical identity must not be
+silently rewritten inside frozen manifests.
 
 ## Command-line compatibility
 
@@ -75,17 +124,17 @@ documentation update.
 
 ## Public and experimental interfaces
 
-Versioned artifact schemas, the Causal4D provider module, and commands exercised
-by installed-artifact CI are supported interfaces. Underscore-prefixed modules,
-research scripts, unregistered experiment entry points, and undocumented
-implementation details are internal and may change without compatibility
-promises.
+Versioned artifact schemas, the Causal4D provider modules, the Prob4D
+claim-bearing validation boundary, and commands exercised by installed-artifact
+CI are supported interfaces. Underscore-prefixed modules, research scripts,
+unregistered experiment entry points, and undocumented implementation details
+are internal and may change without compatibility promises.
 
 Because the project is pre-1.0, broader APIs may still evolve. Where practical,
 a supported interface is deprecated for at least one compatibility line before
-removal. Immediate fail-closed changes remain permitted when required to correct
-causal leakage, provenance ambiguity, unsafe artifact loading, or invalid
-scientific claims.
+removal. Immediate fail-closed changes remain permitted when required to
+correct causal leakage, provenance ambiguity, unsafe artifact loading, or
+invalid scientific claims.
 
 The exact package-root export surface for the `0.4.x` line is retained in
 [`api/root-public-api-v0.4.json`](api/root-public-api-v0.4.json). It is a drift
