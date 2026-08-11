@@ -730,3 +730,60 @@ def test_certificate_lookup_validates_domain_identifier() -> None:
     assert certificate.certificate_for_domain("unknown") is None
     with pytest.raises(ValueError, match="canonical string"):
         certificate.certificate_for_domain(" bad")
+
+
+def test_composite_rejects_all_cross_pool_reuse() -> None:
+    certificate = _certificate()
+    certificates = dict(certificate.domain_certificates)
+    for domain in certificate.supported_domains:
+        certificates[domain] = _recertify(
+            certificate.domain_guard_certificate,
+            domain,
+            certificates[domain],
+            threshold_selection_group_ids=("calibration-dynamic-0",),
+        )
+    with pytest.raises(
+        ValueError,
+        match="calibration and threshold-selection",
+    ):
+        DomainGuardHarmRiskCertificateV1(
+            domain_guard_certificate=(certificate.domain_guard_certificate),
+            domain_certificates=certificates,
+            family_confidence_level=0.95,
+        )
+
+    certificates = dict(certificate.domain_certificates)
+    for domain in certificate.supported_domains:
+        certificates[domain] = _recertify(
+            certificate.domain_guard_certificate,
+            domain,
+            certificates[domain],
+            certification_partition_id=CALIBRATION_PARTITION_ID,
+        )
+    with pytest.raises(ValueError, match="partitions must be distinct"):
+        DomainGuardHarmRiskCertificateV1(
+            domain_guard_certificate=(certificate.domain_guard_certificate),
+            domain_certificates=certificates,
+            family_confidence_level=0.95,
+        )
+
+
+def test_composite_rejects_threshold_selection_roster_drift() -> None:
+    certificate = _certificate()
+    certificates = dict(certificate.domain_certificates)
+    certificates["oscillatory"] = _recertify(
+        certificate.domain_guard_certificate,
+        "oscillatory",
+        certificates["oscillatory"],
+        threshold_selection_group_ids=("threshold-selection-2",),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="threshold_selection_group_ids",
+    ):
+        DomainGuardHarmRiskCertificateV1(
+            domain_guard_certificate=(certificate.domain_guard_certificate),
+            domain_certificates=certificates,
+            family_confidence_level=0.95,
+        )

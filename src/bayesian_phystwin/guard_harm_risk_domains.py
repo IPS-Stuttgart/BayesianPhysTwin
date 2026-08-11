@@ -252,6 +252,10 @@ class DomainGuardHarmRiskCertificateV1:
                 raise ValueError("domain harm certificate statistical unit changed")
             if certificate.metric != guard.metric:
                 raise ValueError("domain harm certificate metric changed")
+            if certificate.certification_partition_id == guard.calibration_partition_id:
+                raise ValueError(
+                    "calibration and certification partitions must be distinct"
+                )
             if not math.isclose(
                 certificate.confidence_level,
                 required_confidence,
@@ -286,6 +290,7 @@ class DomainGuardHarmRiskCertificateV1:
                 shared_fields = (
                     "threshold_source_artifact_id",
                     "certification_partition_id",
+                    "threshold_selection_group_ids",
                     "statistical_unit",
                     "metric",
                     "threshold",
@@ -312,6 +317,12 @@ class DomainGuardHarmRiskCertificateV1:
             raise ValueError(
                 "calibration and certification groups must be disjoint: "
                 f"{sorted(calibration_overlap)}"
+            )
+        calibration_threshold_overlap = calibration_groups & threshold_selection_groups
+        if calibration_threshold_overlap:
+            raise ValueError(
+                "calibration and threshold-selection groups must be globally "
+                f"disjoint: {sorted(calibration_threshold_overlap)}"
             )
         threshold_overlap = threshold_selection_groups & certification_groups
         if threshold_overlap:
