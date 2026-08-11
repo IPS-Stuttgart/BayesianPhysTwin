@@ -113,3 +113,5 @@ def test_compact_evidence_remains_nonclaim_bearing() -> None:
     assert "`independent_endpoint_v1` in `21/22` folds" in markdown
     assert "track and Chamfer effects\nare exactly zero" in markdown
     assert "`claim_authorized=false`" in markdown
+
+# Temporary CI synchronization marker; removed in the next commit.
