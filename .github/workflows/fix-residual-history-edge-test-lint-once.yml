@@ -16,7 +16,7 @@ concurrency:
 jobs:
   patch-and-verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out exact branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,14 +26,7 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Apply and validate exact lint cleanup
+      - name: Apply and validate exact gate cleanup
         shell: bash
         run: |
           set -euo pipefail
@@ -41,14 +34,40 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path(
+          test_path = Path(
               "tests/test_deform360_covariance_residual_history_contract_edges_v1.py"
           )
-          text = path.read_text(encoding="utf-8")
-          old = "    assert_outside_target_quarantine,\n"
-          if text.count(old) != 1:
-              raise SystemExit("expected exactly one unused quarantine import")
-          path.write_text(text.replace(old, ""), encoding="utf-8")
+          test_text = test_path.read_text(encoding="utf-8")
+          replacements = {
+              "    assert_outside_target_quarantine,\n": "",
+              '        _integer_vector([], name="indices")\n': (
+                  '        _integer_vector(\n'
+                  '            np.array([], dtype=np.int64), name="indices"\n'
+                  '        )\n'
+              ),
+          }
+          for old, new in replacements.items():
+              if test_text.count(old) != 1:
+                  raise SystemExit(f"expected exactly one occurrence of {old!r}")
+              test_text = test_text.replace(old, new)
+          test_path.write_text(test_text, encoding="utf-8")
+
+          manifest_path = Path(".github/quality/test-suites.json")
+          manifest_text = manifest_path.read_text(encoding="utf-8")
+          anchor = '      "tests/test_deform360_contact_anchor.py",\n'
+          additions = (
+              '      "tests/test_deform360_covariance_residual_history_contract_edges_v1.py",\n'
+              '      "tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py",\n'
+              '      "tests/test_deform360_covariance_residual_history_v1.py",\n'
+          )
+          if manifest_text.count(anchor) != 2:
+              raise SystemExit("expected the contact-anchor entry in exactly two suites")
+          for addition in additions:
+              if addition in manifest_text:
+                  raise SystemExit(f"suite entry already present: {addition.strip()}")
+          first = manifest_text.index(anchor) + len(anchor)
+          manifest_text = manifest_text[:first] + additions + manifest_text[first:]
+          manifest_path.write_text(manifest_text, encoding="utf-8")
           PY
           python -m pip install \
             "pip==25.2" \
@@ -60,24 +79,30 @@ jobs:
             tests/test_deform360_covariance_residual_history_contract_edges_v1.py
           python -m ruff format --check \
             tests/test_deform360_covariance_residual_history_contract_edges_v1.py
+          python tools/quality/test_suite_manifest.py validate --json
+          python -m pytest -q \
+            tests/test_deform360_covariance_residual_history_contract_edges_v1.py \
+            tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py \
+            tests/test_deform360_covariance_residual_history_v1.py
 
-      - name: Publish only the lint cleanup and remove this helper
+      - name: Publish only the exact gate cleanup and remove this helper
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           helper=.github/workflows/fix-residual-history-edge-test-lint-once.yml
+          manifest=.github/quality/test-suites.json
           test_file=tests/test_deform360_covariance_residual_history_contract_edges_v1.py
           rm -- "${helper}"
           git diff --check
           actual="$(git status --short | awk '{print $2}' | LC_ALL=C sort)"
-          expected="$(printf '%s\n' "${helper}" "${test_file}" | LC_ALL=C sort)"
+          expected="$(printf '%s\n' "${helper}" "${manifest}" "${test_file}" | LC_ALL=C sort)"
           test "${actual}" = "${expected}"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A -- "${helper}" "${test_file}"
-          git commit -m "Fix residual-history edge-test lint"
+          git add -A -- "${helper}" "${manifest}" "${test_file}"
+          git commit -m "Fix residual-history test and coverage gates"
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" push \
             origin HEAD:refs/heads/agent/deform360-covariance-residual-history-dry-run-v1
