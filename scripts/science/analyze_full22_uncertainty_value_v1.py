@@ -276,9 +276,7 @@ def parse_inputs(
         _parse_row(value, index=index)
         for index, value in enumerate(_sequence(root["rows"], name="rows"))
     )
-    expected_row_count = (
-        EXPECTED_CASE_COUNT * len(EXPECTED_CANDIDATES) * len(HORIZONS)
-    )
+    expected_row_count = EXPECTED_CASE_COUNT * len(EXPECTED_CANDIDATES) * len(HORIZONS)
     if len(rows) != expected_row_count:
         raise ValueError(
             f"expected {expected_row_count} sealed rows, received {len(rows)}"
@@ -426,9 +424,7 @@ def _bootstrap_family(
             "sign_test_pvalue": _sign_test_pvalue(values),
             "familywise_critical_value": critical,
         }
-    overall_keys = [
-        (candidate_id, "overall") for candidate_id in COMPARISON_CANDIDATES
-    ]
+    overall_keys = [(candidate_id, "overall") for candidate_id in COMPARISON_CANDIDATES]
     overall_pvalues = [result[key]["sign_test_pvalue"] for key in overall_keys]
     for key, adjusted in zip(overall_keys, _holm_adjust(overall_pvalues), strict=True):
         result[key]["holm_adjusted_overall_sign_pvalue"] = adjusted
@@ -531,14 +527,12 @@ def analyze_uncertainty_value(
     supported = [
         candidate_id
         for candidate_id in COMPARISON_CANDIDATES
-        if overall_raw_nll[candidate_id]["familywise_decision"]
-        == "candidate_better"
+        if overall_raw_nll[candidate_id]["familywise_decision"] == "candidate_better"
     ]
     regressed = [
         candidate_id
         for candidate_id in COMPARISON_CANDIDATES
-        if overall_raw_nll[candidate_id]["familywise_decision"]
-        == "candidate_worse"
+        if overall_raw_nll[candidate_id]["familywise_decision"] == "candidate_worse"
     ]
     if supported:
         conclusion = "retrospective-uncertainty-score-signal"
@@ -561,9 +555,7 @@ def analyze_uncertainty_value(
         "proper_score": {
             "proper_score_id": scoring["proper_score_id"],
             "observation_std_m": scoring["proper_score_observation_std_m"],
-            "covariance_eigenvalue_floor_m2": scoring[
-                "covariance_eigenvalue_floor_m2"
-            ],
+            "covariance_eigenvalue_floor_m2": scoring["covariance_eigenvalue_floor_m2"],
         },
         "bootstrap": {
             "replicates": bootstrap_replicates,
@@ -648,8 +640,7 @@ def _write_markdown(path: Path, report: Mapping[str, object]) -> None:
         and _mapping(row, name="comparison row")["aggregation"] == "overall"
     ]
     by_key = {
-        (str(row["candidate_id"]), str(row["endpoint"])): row
-        for row in comparisons
+        (str(row["candidate_id"]), str(row["endpoint"])): row for row in comparisons
     }
     lines = [
         "# Full-22 Bayesian uncertainty-value diagnostic",
@@ -723,9 +714,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.source_head_sha, name="source_head_sha", length=40
         ),
         "artifact_id": _text(args.source_artifact_id, name="source_artifact_id"),
-        "artifact_name": _text(
-            args.source_artifact_name, name="source_artifact_name"
-        ),
+        "artifact_name": _text(args.source_artifact_name, name="source_artifact_name"),
         "artifact_digest": (
             "sha256:"
             + _literal_sha(
