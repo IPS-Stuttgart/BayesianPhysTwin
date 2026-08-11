@@ -1,0 +1,84 @@
+name: Execute domain covariance typing fix
+
+on:
+  pull_request:
+    branches:
+      - agent/domain-covariance-calibration-v1-final
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  execute:
+    if: >-
+      github.event.pull_request.head.ref ==
+      'agent/execute-domain-covariance-mypy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/domain-covariance-calibration-v1-final
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Narrow validated tuple fields
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              'src/bayesian_phystwin/domain_covariance_calibration.py'
+          )
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              '    transform_scores: Sequence[Sequence[object]]\n':
+                  '    transform_scores: Sequence[TransformScore]\n',
+              '    leave_one_group_out: Sequence[Sequence[object]]\n':
+                  '    leave_one_group_out: Sequence[HeldGroupScore]\n',
+          }
+          for old, new in replacements.items():
+              if old in text:
+                  text = text.replace(old, new, 1)
+              elif new not in text:
+                  raise SystemExit(f'typing target changed: {old.strip()}')
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Install validation dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Validate exact typing repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff format --check \
+            src/bayesian_phystwin/domain_covariance_calibration.py
+          ruff check \
+            src/bayesian_phystwin/domain_covariance_calibration.py
+          python -m mypy \
+            src/bayesian_phystwin/domain_covariance_calibration.py
+          python -m pytest -q \
+            tests/test_source_competence_domain_covariance_calibration.py \
+            tests/test_source_competence_domain_covariance_calibration_edges.py
+          git diff --check
+      - name: Publish only the validated typing fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email \
+            '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/bayesian_phystwin/domain_covariance_calibration.py
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Target branch already contains the typing fix.'
+            exit 0
+          fi
+          git commit -m 'Narrow domain covariance score tuple types'
+          git push origin HEAD:agent/domain-covariance-calibration-v1-final
