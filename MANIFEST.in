@@ -7,9 +7,15 @@ include api/root-public-api-v0.4.json
 include api/versioned-public-api-v1.json
 include docs/public_api_policy.md
 include docs/releasing.md
+include docs/numerical_environment_v1.md
+include requirements/release-build.txt
+include requirements/release-runtime-py310-floor.txt
+include requirements/release-runtime-py312.txt
+include requirements/release-runtime-py314.txt
 include docs/ecosystem_compatibility_v1.md
 include tools/quality/check_public_api.py
 include tools/release/build_release_evidence.py
+include tools/release/build_release_matrix_evidence.py
 include docs/deform360_calibration_observability_batch.md
 include docs/deform360_calibration_factor_materializer.md
 include docs/deform360_public_contact_prefix.md
