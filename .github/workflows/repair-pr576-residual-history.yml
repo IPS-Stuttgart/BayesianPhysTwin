@@ -1,0 +1,77 @@
+name: Repair PR 576 residual history path
+
+on:
+  push:
+    branches:
+      - agent/registered-residual-history-single-path-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-pr576-residual-history
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/registered-residual-history-single-path-v1
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Repair and validate the focused files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              'src/bayesian_phystwin/deform360_registered_residual_history_v1.py'
+          )
+          text = path.read_text(encoding='utf-8')
+          old = 'from collections.abc import Mapping, Sequence\n'
+          new = 'from collections.abc import Mapping\n'
+          if text.count(old) != 1:
+              raise SystemExit('residual-history import changed')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+          git mv \
+            tests/test_deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          python -m pip install 'ruff==0.16.0'
+          python -m ruff format \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          rm .github/workflows/repair-pr576-residual-history.yml
+          git diff --check
+
+      - name: Commit the repaired product diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py \
+            tests/test_deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py \
+            .github/workflows/repair-pr576-residual-history.yml
+          git commit -m 'Repair residual-history lint and stable-core coverage'
+          git push origin HEAD:agent/registered-residual-history-single-path-v1
