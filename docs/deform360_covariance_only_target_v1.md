@@ -103,3 +103,21 @@ At roster lock, no target media, sensor array, geometry, track annotation,
 prediction, or outcome had been opened. The next permitted operation is an
 exact-file availability plan and quarantined byte download for these 24 sessions;
 no target may be replaced.
+
+## Frozen exact-file plan
+
+The full roster names-only audit retained all 24 sessions. Twenty satisfy the
+ordinary raw support contract. Four remain in the denominator as technical
+support failures: three have ambiguous nearest tactile baselines in all four
+tactile streams, and one has tactile baselines that do not form one cross-sensor
+capture. Camera availability is strong in every row (37--41 streams), so the
+failure classification is specifically tactile-association provenance rather
+than missing RGB support.
+
+No selected object has exact official processed annotations at the pinned
+Deform360 revision. The sealed plan contains 2,154 exact raw files totaling
+2,464,053,620 declared bytes, with plan SHA-256
+`d5bab5a05cf49ba6cc7bd31ffe57d2abc15040dd3f2de163d5f5034800b3ee51`.
+It is stored at
+`results/science/deform360_covariance_only_target_v1/exact_file_plan_v1.json`.
+No payload byte was opened while building the plan.

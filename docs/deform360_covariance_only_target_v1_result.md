@@ -49,3 +49,16 @@ payload download. At this boundary, no camera media, robot or tactile array,
 geometry, track annotation, prediction, or outcome had been opened. All 24
 sessions now remain in the denominator regardless of downstream availability or
 technical failure.
+
+The subsequent names-and-blob audit produced an exact 2,154-file plan totaling
+2,464,053,620 declared bytes. Twenty sessions have ordinary raw support. Four
+are retained technical failures caused only by frozen tactile-baseline
+association gates: three have non-unique nearest baselines across all tactile
+streams, and one violates the cross-sensor baseline-span bound. Every target has
+37--41 camera streams. No target has exact official processed annotations at the
+pinned dataset revision.
+
+The plan is committed before payload download with canonical digest
+`d5bab5a05cf49ba6cc7bd31ffe57d2abc15040dd3f2de163d5f5034800b3ee51`.
+Its construction opened repository names and blob metadata only; no media,
+array, annotation, prediction, or outcome was read, and no target was replaced.
