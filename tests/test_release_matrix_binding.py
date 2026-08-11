@@ -17,7 +17,10 @@ TOOL_PATH = ROOT / "tools/release/bind_release_matrix_contracts.py"
 
 
 def _tool() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("bind_release_matrix_contracts", TOOL_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "bind_release_matrix_contracts",
+        TOOL_PATH,
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
