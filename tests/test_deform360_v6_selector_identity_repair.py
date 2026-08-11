@@ -68,9 +68,7 @@ def test_wrapper_patches_only_the_locked_stage_selector_digest() -> None:
     assert 'choices=("stage-prefix",)' in text
     assert "validate_joint_sparse_physical_execution_v5" in text
     assert "patch_joint_sparse_physical_stage_v5" in text
-    assert (
-        "dynamic_module.GENERIC_SELECTOR_SHA256 = CORRECTED_SELECTOR_SHA256" in text
-    )
+    assert "dynamic_module.GENERIC_SELECTOR_SHA256 = CORRECTED_SELECTOR_SHA256" in text
     assert 'setattr(module, "GENERIC_SELECTOR_SHA256"' not in text
     assert 'getattr(module, "SAM2_REPOSITORY_REVISION"' in text
     assert "run_deform360_joint_sparse_source_predictions_v5.py" not in text
@@ -89,8 +87,7 @@ def test_runner_uses_the_explicit_repaired_selector_path() -> None:
         '638007e9053ec89373fe575cc64d7e5"' in text
     )
     assert (
-        'GENERIC_SELECTOR_REPOSITORY="${GITHUB_WORKSPACE}/_causal4d_discovery"'
-        in text
+        'GENERIC_SELECTOR_REPOSITORY="${GITHUB_WORKSPACE}/_causal4d_discovery"' in text
     )
     assert (
         'GENERIC_SELECTOR_SOURCE="${GENERIC_SELECTOR_REPOSITORY}/src/'
@@ -99,7 +96,4 @@ def test_runner_uses_the_explicit_repaired_selector_path() -> None:
     assert "run_deform360_v6_selector_identity_repair.py" in text
     assert '--runtime-repair "${SELECTOR_REPAIR_PATH}"' in text
     assert '--selector-repository "${GENERIC_SELECTOR_REPOSITORY}"' in text
-    assert (
-        "-type f -path '*/src/causal4d_public/deform360_object_sam2.py'"
-        not in text
-    )
+    assert "-type f -path '*/src/causal4d_public/deform360_object_sam2.py'" not in text
