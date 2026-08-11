@@ -144,8 +144,14 @@ def test_selection_records_recursively_freeze_metadata_and_mappings() -> None:
     metadata: dict[str, object] = {"nested": {"values": [1, 2]}}
     artifact = build_golden_path_selection_artifact_v1(
         selection=_selection(accepted=True),
-        baseline=np.asarray([0.0], dtype=np.float32),
-        candidate=np.asarray([1.0], dtype=np.float32),
+        baseline=np.asarray(
+            [[0.0, -0.0], [1.0, 2.0]],
+            dtype=np.float32,
+        ),
+        candidate=np.asarray(
+            [[0.2, 0.1], [1.1, 2.2]],
+            dtype=np.float32,
+        ),
         case_id="case",
         protocol_id="protocol",
         observation_artifact_id="a" * 64,
