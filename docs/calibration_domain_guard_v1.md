@@ -112,6 +112,15 @@ study remains diagnostic rather than prospective evidence.
 This module prevents such a retrospective certificate from routing the candidate.
 A fresh calibration-frozen cohort is still required for a claim-bearing result.
 
+## Covariance-calibration companion
+
+`bayesian_phystwin.domain_covariance_calibration` uses this certificate as the
+point-loss support layer for conservative scale-plus-floor covariance
+calibration. It fits transforms only on the same independent calibration groups,
+requires leave-one-group-out Gaussian-score support, and returns the exact raw
+covariance object for unsupported or nonprospective domains. See
+[calibration-frozen domain covariance calibration v1](domain_covariance_calibration_v1.md).
+
 ## Scientific boundary
 
 Domain authorization is not evidence of general uncertainty calibration,
