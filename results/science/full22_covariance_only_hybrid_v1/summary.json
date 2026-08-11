@@ -1,0 +1,115 @@
+{
+  "analysis_status": "retrospective-cross-fitted-development-only",
+  "claim_authorized": false,
+  "contract": "bayesian-phystwin-full22-covariance-only-hybrid-compact-evidence-v1",
+  "difference_semantics": "covariance treatment minus zero-covariance last_residual; lower Gaussian NLL is better",
+  "independent_case_count": 22,
+  "primary_conclusion": "crossfitted-covariance-only-nll-gain",
+  "promotion_authorized": false,
+  "protocol": {
+    "file": "protocols/full22_covariance_only_hybrid_v1.json",
+    "protocol_id": "91c15957c8a71c579429c4245ccb2570f22ac6480dd5aebc9ddd73d1edb66b02",
+    "sealed_artifact_protocol_sha256": "8dceec3d6004b7d7695dd2c4f99272162ee42ed9b0e7dcdc943a62465826e554"
+  },
+  "report_id": "5fc777163fd6173c9669b497309d883e2780a5ebe23da5dbe4cdaf682ad8806a",
+  "result_workflow": {
+    "analyzer_revision": "9ac5344036331a40e9029a1aa5814f601c0eaf15",
+    "artifact_digest": "sha256:945dd5ed5db9b4119d81cf15d6d6c6da304b9421ab5938e71ad65390bbca1676",
+    "artifact_id": 9090224528,
+    "artifact_name": "full22-covariance-only-hybrid-v1-31461910994-1",
+    "artifact_size_bytes": 10229,
+    "result_json_sha256": "31ed0828b0c024a508467904c56c040f4e38374c4688a06167f2e584b13111a0",
+    "run_attempt": 1,
+    "run_id": 31461910994
+  },
+  "schema_version": 1,
+  "selection_authorized": false,
+  "source": {
+    "artifact_digest": "sha256:22984bd34992ef7693c7577045c7496f8de2990641c3d2592ce230b9fbc97220",
+    "artifact_id": 9074451004,
+    "artifact_name": "bpt-full22-discrepancy-31410594302-1",
+    "head_sha": "c5d22a369f87a7ce2e10fcad532bcc5cc5207ff9",
+    "prefix_manifest_id": "1195884a383b2f2f690a4ea7a0fce9bb82a1dc755d276f85450174fcd9bdc25c",
+    "public_source_files_verified": true,
+    "run_attempt": 1,
+    "run_id": 31410594302,
+    "source_tournament_protocol_id": "22746172fb6d207e80a2ebfeb2a003332317f3895317ff12988275acc75e16bd"
+  },
+  "statistical_design": {
+    "case_weighting": "equal",
+    "confidence": 0.95,
+    "outer_fold": "leave-one-physical-object-session-out",
+    "replicates": 100000,
+    "resampling_unit": "physical-object-session",
+    "simultaneous_family": "overall, early, middle, and late effects for the primary arm",
+    "simultaneous_interval_method": "case-clustered max-t bootstrap"
+  },
+  "statistical_unit": "physical-object-session",
+  "status": "completed",
+  "mean_identity": {
+    "exact_identity_case_count": 22,
+    "reference_predictor": "last_residual",
+    "track_error_difference_m": 0.0,
+    "chamfer_distance_difference_m": 0.0
+  },
+  "primary_effect": {
+    "arm": "crossfit_selected_scaled_covariance",
+    "better_worse_tie_cases": [17, 5, 0],
+    "familywise_decision": "hybrid_better",
+    "mean_gaussian_nll_difference": -9.136379254487014,
+    "simultaneous_95_ci": [-13.96117966524658, -4.31157884372745]
+  },
+  "primary_effect_by_horizon": {
+    "early": {
+      "familywise_decision": "hybrid_better",
+      "mean_gaussian_nll_difference": -1.5385513516076827,
+      "simultaneous_95_ci": [-2.8740662627319207, -0.2030364404834446]
+    },
+    "middle": {
+      "familywise_decision": "hybrid_better",
+      "mean_gaussian_nll_difference": -8.232530061026374,
+      "simultaneous_95_ci": [-13.221948686656953, -3.243111435395795]
+    },
+    "late": {
+      "familywise_decision": "hybrid_better",
+      "mean_gaussian_nll_difference": -17.638056350826982,
+      "simultaneous_95_ci": [-26.323920894845024, -8.95219180680894]
+    }
+  },
+  "diagnostic_overall_effects": {
+    "dynamic_endpoint_v2_crossfit_scaled": {
+      "mean_gaussian_nll_difference": -8.993923868184744,
+      "simultaneous_95_ci": [-14.41469313172559, -3.573154604643897]
+    },
+    "dynamic_raw_covariance": {
+      "mean_gaussian_nll_difference": -7.801276091730102,
+      "simultaneous_95_ci": [-12.912800608801646, -2.6897515746585587]
+    },
+    "independent_endpoint_v1_crossfit_scaled": {
+      "mean_gaussian_nll_difference": -10.413863223026093,
+      "simultaneous_95_ci": [-16.18557164734005, -4.642154798712135]
+    },
+    "independent_raw_covariance": {
+      "mean_gaussian_nll_difference": -6.14345421169196,
+      "simultaneous_95_ci": [-9.83026711839148, -2.4566413049924405]
+    }
+  },
+  "coverage_and_width": {
+    "hybrid_marginal_coverage": 0.9097997892386086,
+    "hybrid_mean_full_width_m": 0.05094426247688038,
+    "hybrid_to_reference_width_ratio": 3.0971912419525798,
+    "nominal_marginal_coverage": 0.9,
+    "reference_marginal_coverage": 0.7057813694762896,
+    "reference_mean_full_width_m": 0.01644853626951473
+  },
+  "crossfit_selection": {
+    "dynamic_endpoint_v2_fold_count": 1,
+    "independent_endpoint_v1_fold_count": 21
+  },
+  "full_source_fit_for_separate_fresh_study": {
+    "covariance_donor": "independent_endpoint_v1",
+    "early_middle_late_scales": [8.0, 16.0, 16.0],
+    "mean_predictor": "last_residual"
+  },
+  "scientific_boundary": "Already-open full-22 cohort with leave-one-object-session-out development selection. The result may freeze one candidate for a separate fresh study, but it authorizes no current claim, promotion, deployment, target retuning, or Deform360 candidate-roster change."
+}
