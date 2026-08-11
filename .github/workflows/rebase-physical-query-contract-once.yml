@@ -1,0 +1,102 @@
+name: Rebase PhysicalQueryV1 contract once
+
+on:
+  push:
+    branches:
+      - agent/physical-query-contract-v1-rebased
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebase-physical-query-contract-once
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the current main-based branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/physical-query-contract-v1-rebased
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Copy the reviewed contract and merge current release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin agent/physical-query-contract-v1
+          git checkout origin/agent/physical-query-contract-v1 -- \
+            api/versioned-public-api-v1.json \
+            docs/physical_query_v1.md \
+            src/bayesian_phystwin/physical_query_v1.py \
+            src/bayesian_phystwin/v1/__init__.py \
+            tests/test_physical_query_v1.py \
+            tests/test_public_api_manifest.py
+
+          python - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("MANIFEST.in")
+          text = manifest.read_text(encoding="utf-8")
+          line = "include docs/physical_query_v1.md\n"
+          if line not in text:
+              marker = "include docs/ecosystem_compatibility_v1.md\n"
+              if text.count(marker) != 1:
+                  raise SystemExit("MANIFEST integration marker changed")
+              text = text.replace(marker, marker + line)
+              manifest.write_text(text, encoding="utf-8")
+
+          changelog = Path("CHANGELOG.md")
+          text = changelog.read_text(encoding="utf-8")
+          bullet = (
+              "- A content-addressed `PhysicalQueryV1` freeze for target-blind "
+              "physical\n  queries, exact fallback, required marginal and "
+              "complete-joint-gauge\n  covariance treatments, proper-score "
+              "decision margins, independent-group\n  resampling, and exact "
+              "package, repository, provider, and evidence bindings.\n"
+          )
+          if "`PhysicalQueryV1`" not in text:
+              marker = "### Added\n\n"
+              if text.count(marker) != 1:
+                  raise SystemExit("CHANGELOG Added marker changed")
+              text = text.replace(marker, marker + bullet, 1)
+              changelog.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Validate the rebased contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e '.[dev]'
+          python -m ruff format \
+            src/bayesian_phystwin/physical_query_v1.py \
+            src/bayesian_phystwin/v1/__init__.py \
+            tests/test_physical_query_v1.py \
+            tests/test_public_api_manifest.py
+          python -m ruff check \
+            src/bayesian_phystwin/physical_query_v1.py \
+            src/bayesian_phystwin/v1/__init__.py \
+            tests/test_physical_query_v1.py \
+            tests/test_public_api_manifest.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_physical_query_v1.py \
+            tests/test_versioned_api_v1.py \
+            tests/test_public_api_manifest.py
+          python tools/quality/check_public_api.py
+          git diff --check
+
+      - name: Commit the clean rebased implementation and remove this helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/rebase-physical-query-contract-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add target-blind PhysicalQueryV1 on current main'
+          git push origin HEAD:agent/physical-query-contract-v1-rebased
