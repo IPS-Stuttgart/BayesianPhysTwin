@@ -36,38 +36,6 @@ def _argument_value(arguments: list[str], option: str) -> str:
     return arguments[index + 1]
 
 
-def _remove_option(arguments: list[str], option: str) -> tuple[str, list[str]]:
-    value = _argument_value(arguments, option)
-    index = arguments.index(option)
-    return value, [*arguments[:index], *arguments[index + 2 :]]
-
-
-def _normalize_stage_arguments(
-    stage: str,
-    arguments: list[str],
-    *,
-    repository: Path,
-) -> list[str]:
-    """Translate the frozen stage-prefix call to its current strict CLI.
-
-    The archived source runner carries two legacy context options. Their values
-    are independently bound by the outer execution wrapper and the v5 source
-    lock, so accept and remove them only when both exact legacy values match.
-    """
-
-    normalized = list(arguments)
-    if stage != "stage-prefix":
-        return normalized
-    legacy_repository, normalized = _remove_option(normalized, "--repo")
-    _require(
-        Path(legacy_repository).resolve() == repository,
-        "legacy stage-prefix repository changed",
-    )
-    legacy_role, normalized = _remove_option(normalized, "--role")
-    _require(legacy_role == "calibration", "legacy stage-prefix role changed")
-    return normalized
-
-
 def _load_stage(path: Path, stage: str) -> ModuleType:
     name = f"_deform360_joint_sparse_physical_v5_{stage.replace('-', '_')}"
     spec = importlib.util.spec_from_file_location(name, path)
@@ -93,11 +61,6 @@ def main() -> int:
     execution_lock = args.execution_lock.resolve()
     validate_joint_sparse_physical_execution_v5(
         execution_lock,
-        repository=repository,
-    )
-    stage_arguments = _normalize_stage_arguments(
-        args.stage,
-        stage_arguments,
         repository=repository,
     )
     protocol_path = Path(_argument_value(stage_arguments, "--protocol")).resolve()
