@@ -169,9 +169,7 @@ def _apply(
             else application_semantics
         ),
         evidence_decision=(
-            _evidence_decision()
-            if evidence_decision is None
-            else evidence_decision
+            _evidence_decision() if evidence_decision is None else evidence_decision
         ),
     )
 
