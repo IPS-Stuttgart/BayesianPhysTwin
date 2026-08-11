@@ -35,8 +35,7 @@ def _git_text(
         if check:
             detail = completed.stderr.strip() or completed.stdout.strip()
             raise ValueError(
-                f"git {' '.join(arguments)} failed"
-                + (f": {detail}" if detail else "")
+                f"git {' '.join(arguments)} failed" + (f": {detail}" if detail else "")
             )
         return None
     return completed.stdout.strip()
