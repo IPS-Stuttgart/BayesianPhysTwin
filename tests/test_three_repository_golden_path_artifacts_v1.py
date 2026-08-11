@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
@@ -36,8 +37,10 @@ def _selection(*, accepted: bool) -> GaugeAwareSelection:
         inference_admissible=True,
         regret_guard_present=True,
         regret_guard_accepted=accepted,
-        reason="candidate-accepted" if accepted else (
-            "regret-guard-exact-baseline-fallback"
+        reason=(
+            "candidate-accepted"
+            if accepted
+            else "regret-guard-exact-baseline-fallback"
         ),
         selected_value=candidate if accepted else baseline,
     )
@@ -195,6 +198,11 @@ def test_tampered_selection_artifact_fails_closed() -> None:
         GoldenPathSelectionArtifactV1.from_mapping(payload)
 
     payload = copy.deepcopy(artifact.as_dict())
+    payload["schema_version"] = True
+    with pytest.raises(ValueError, match="selection version"):
+        GoldenPathSelectionArtifactV1.from_mapping(payload)
+
+    payload = copy.deepcopy(artifact.as_dict())
     payload["unexpected"] = True
     with pytest.raises(ValueError, match="fields changed"):
         GoldenPathSelectionArtifactV1.from_mapping(payload)
@@ -202,11 +210,9 @@ def test_tampered_selection_artifact_fails_closed() -> None:
 
 def test_bundle_rejects_context_drift_and_pair_substitution() -> None:
     bundle = _bundle()
-    drifted_rejected = GoldenPathSelectionArtifactV1(
-        **{
-            **bundle.rejected.__dict__,
-            "run_manifest_id": "9" * 64,
-        }
+    drifted_rejected = replace(
+        bundle.rejected,
+        run_manifest_id="9" * 64,
     )
     with pytest.raises(ValueError, match="run_manifest_id"):
         GoldenPathEvidenceBundleV1(
@@ -217,6 +223,11 @@ def test_bundle_rejects_context_drift_and_pair_substitution() -> None:
     payload = copy.deepcopy(bundle.as_dict())
     payload["rejected"] = copy.deepcopy(payload["accepted"])
     with pytest.raises(ValueError):
+        GoldenPathEvidenceBundleV1.from_mapping(payload)
+
+    payload = copy.deepcopy(bundle.as_dict())
+    payload["schema_version"] = True
+    with pytest.raises(ValueError, match="bundle version"):
         GoldenPathEvidenceBundleV1.from_mapping(payload)
 
 
