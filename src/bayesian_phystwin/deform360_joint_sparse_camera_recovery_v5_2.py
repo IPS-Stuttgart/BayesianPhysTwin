@@ -1456,6 +1456,21 @@ def _provider_jobs(
     )
 
 
+def _expected_provider_member_count(
+    plan: Mapping[str, Any], job: Mapping[str, Any]
+) -> int:
+    configuration = _mapping(
+        plan["run_configuration"], name="provider run configuration"
+    )
+    products = _sequence(configuration["products"], name="provider products")
+    overlap_product = configuration["provider_consumed_product"]
+    _require(
+        products.count(overlap_product) == 1,
+        "provider overlap product roster changed",
+    )
+    return len(products) - 1 + len(job["windows"])
+
+
 def validate_deform360_joint_sparse_motioncrafter_recovery_run_v5_2(
     value: object,
     *,
@@ -1534,7 +1549,7 @@ def validate_deform360_joint_sparse_motioncrafter_recovery_run_v5_2(
             and genuine_integer(
                 verification.get("member_count"), name="member count", minimum=1
             )
-            == len(job["windows"]),
+            == _expected_provider_member_count(normalized_plan, job),
             "provider verification changed",
         )
         sha256_digest(verification.get("run_spec_sha256"), name="run spec sha256")

@@ -456,7 +456,9 @@ def _provider_shard_report(
                     "hashes_verified": True,
                     "integrity_bound": True,
                     "manifest_path": manifest,
-                    "member_count": len(job["windows"]),
+                    "member_count": len(job["windows"])
+                    + len(plan["run_configuration"]["products"])
+                    - 1,
                     "run_spec_sha256": "b" * 64,
                 },
             }
@@ -526,6 +528,28 @@ def test_recovery_provider_shards_merge_in_frozen_job_order(
     assert [row["job_id"] for row in merged["completed_jobs"]] == [
         job["job_id"] for job in plan["jobs"]
     ]
+
+
+def test_recovery_provider_rejects_window_only_member_count(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _recovery_provider_plan(selected_count=1)
+    monkeypatch.setattr(
+        module, "MOTIONCRAFTER_MODEL_SET_ID", plan["motioncrafter"]["model_set_id"]
+    )
+    report = _provider_shard_report(plan, shard_index=0, shard_count=1)
+    report["completed_jobs"][0]["verification"]["member_count"] = len(
+        plan["jobs"][0]["windows"]
+    )
+    descriptor = dict(report)
+    descriptor.pop("run_sha256")
+    report["run_sha256"] = content_id(descriptor)
+
+    with pytest.raises(ValueError, match="provider verification changed"):
+        module.validate_deform360_joint_sparse_motioncrafter_recovery_run_v5_2(
+            report,
+            plan=plan,
+        )
 
 
 def test_recovery_provider_merge_rejects_incomplete_shard_roster(
