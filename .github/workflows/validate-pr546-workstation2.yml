@@ -28,19 +28,20 @@ jobs:
           persist-credentials: false
           clean: true
 
+      - name: Set up isolated Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
       - name: Validate exact changed source without scientific data access
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           git fetch --no-tags --no-recurse-submodules --depth=1 origin "${BASE_SHA}"
-          command -v uv
-          test -x /opt/pyvenv/bin/python
-          uv venv --seed \
-            --python /opt/pyvenv/bin/python \
-            "${RUNNER_TEMP}/pr546-validation"
+          python -m venv "${RUNNER_TEMP}/pr546-validation"
           source "${RUNNER_TEMP}/pr546-validation/bin/activate"
-          uv pip install --python python -e ".[dev]"
+          python -m pip install -e ".[dev]"
           python -m pip check
           python scripts/ci/check_changed_python.py \
             --base "${BASE_SHA}" \
