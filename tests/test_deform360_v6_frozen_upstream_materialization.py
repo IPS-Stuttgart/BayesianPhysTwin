@@ -20,14 +20,10 @@ SELECTOR_RUNNER = ROOT / (
     "scripts/ci/archive/"
     "run_deform360_v6_source_prediction_evidence_selector_repair_v1.sh"
 )
-MATERIALIZATION_ID = (
-    "2056084bd44845446f78600ca42edd8fb23b4003431c87d53ff8d73a5dc275c0"
-)
+MATERIALIZATION_ID = "2056084bd44845446f78600ca42edd8fb23b4003431c87d53ff8d73a5dc275c0"
 FROZEN_REVISION = "9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
 SELECTOR_RUNNER_BLOB_SHA = "5958db6362917e6bc355b194abdac4736e39a5a4"
-LOCATOR_REPORT_ID = (
-    "75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
-)
+LOCATOR_REPORT_ID = "75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
 
 
 def _git_blob_sha(path: Path) -> str:
@@ -77,9 +73,7 @@ def test_materialization_amendment_is_content_addressed_and_target_closed() -> N
     assert source["revision"] == FROZEN_REVISION
     assert source["refs_pointing_at"] == []
     assert source["containing_tags"] == []
-    assert source["required_file_sha256"] == dict(
-        sorted(UPSTREAM_FILE_SHA256.items())
-    )
+    assert source["required_file_sha256"] == dict(sorted(UPSTREAM_FILE_SHA256.items()))
 
     assert payload["materialization"] == {
         "all_required_files_must_match_sha256": True,
@@ -110,7 +104,10 @@ def test_active_runner_wraps_exact_selector_runner_without_mutating_it() -> None
     selector = SELECTOR_RUNNER.read_text(encoding="utf-8")
 
     assert _git_blob_sha(SELECTOR_RUNNER) == SELECTOR_RUNNER_BLOB_SHA
-    assert 'SELECTOR_RUNNER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"' in active
+    assert (
+        'SELECTOR_RUNNER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"'
+        in active
+    )
     assert f'MATERIALIZATION_ID="{MATERIALIZATION_ID}"' in active
     assert f'FROZEN_UPSTREAM_REVISION="{FROZEN_REVISION}"' in active
     assert f'LOCATOR_REPORT_ID="{LOCATOR_REPORT_ID}"' in active
@@ -134,7 +131,7 @@ def test_materialization_receipt_preserves_exact_hash_roster() -> None:
     text = ACTIVE_RUNNER.read_text(encoding="utf-8")
 
     assert "UPSTREAM_FILE_SHA256" in text
-    assert 'if required != dict(sorted(UPSTREAM_FILE_SHA256.items())):' in text
+    assert "if required != dict(sorted(UPSTREAM_FILE_SHA256.items())):" in text
     assert "frozen upstream file is missing or symlinked" in text
     assert "frozen upstream file escapes worktree" in text
     assert "frozen upstream file identity changed" in text
