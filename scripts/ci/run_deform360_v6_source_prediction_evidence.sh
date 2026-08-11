@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_selector_repair_v3.sh"
-SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
+SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_selector_repair_v4.sh"
+SELECTOR_WRAPPER_BLOB_SHA="e67587a1db09c5360688eef4feb86350f7676172"
 SCIENCE_RUNNER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
 SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
 PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
