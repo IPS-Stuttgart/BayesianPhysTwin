@@ -1,0 +1,111 @@
+{
+  "adapter": {
+    "coordinate_frame": "deform360-world",
+    "covariance_donor_id": "independent_endpoint_v1",
+    "covariance_unit": "m2",
+    "endpoint_configuration": "ModelAveragedEndpointConfigV1 default",
+    "horizon_covariance_multipliers": {
+      "early": 8.0,
+      "late": 16.0,
+      "middle": 16.0
+    },
+    "implementation_schema": "bayesian-phystwin.deform360-covariance-residual-adapter-v1",
+    "invalid_residual_entries_must_be_exact_zero": true,
+    "mean_identity": "caller-owned registered last-residual mean object",
+    "nearest_fill_allowed": false,
+    "reference_predictor_id": "last_residual",
+    "residual_history_shape": "(T,N,3)",
+    "residual_unit": "m",
+    "unsupported_material_policy": "exact physical mean and covariance for that material",
+    "validity_shape": "(T,N)"
+  },
+  "camera_separation": {
+    "minimum_provider_camera_count": 2,
+    "minimum_scoring_camera_count": 2,
+    "provider_and_scoring_artifact_ids_must_be_disjoint": true,
+    "provider_and_scoring_camera_ids_must_be_disjoint": true,
+    "provider_and_scoring_reconstruction_artifacts_must_differ": true,
+    "shared_reconstruction_failure_action": "exact physical fallback"
+  },
+  "claim_boundary": "Software and source-interface evidence only. Passing cannot authorize target decode, target prediction, target scoring, official Deform360 benchmark parity, or a scientific claim.",
+  "fallback_cases": [
+    "provider_unavailable",
+    "insufficient_observed_residual_support",
+    "provider_scoring_camera_overlap",
+    "shared_reconstruction_artifact"
+  ],
+  "information_boundary": {
+    "claim_authorized": false,
+    "next_gate_after_pass": "separate reviewed source-only empirical adapter execution using already-open source objects",
+    "quarantined_target_root_may_not_be_accessed": true,
+    "source_only": true,
+    "synthetic_arrays_only_for_this_dry_run": true,
+    "target_arrays_loaded": false,
+    "target_decode_authorized_after_pass": false,
+    "target_media_decoded": false,
+    "target_outcomes_opened": false,
+    "target_payload_opened": false,
+    "target_predictions_run": false,
+    "target_scores_computed": false
+  },
+  "parent_target": {
+    "branch": "deform360-covariance-only-target-v1",
+    "download_manifest_sha256": "41bfb0feb246ac235e6364cfb46304dd8b2679801d73532a1e78281f243d59af",
+    "exact_file_plan_sha256": "d5bab5a05cf49ba6cc7bd31ffe57d2abc15040dd3f2de163d5f5034800b3ee51",
+    "independent_verification_sha256": "3f58caf2e5cff977b34ddce6f42c86438696ce9f36f637238597f4ca86c15997",
+    "locked_session_count": 24,
+    "official_processed_annotation_count": 0,
+    "retained_tactile_association_failures": 4,
+    "synchronized_revision_before_gate": "829fb4aaf227e3228f6e39ac09d4f76b4f9d716b",
+    "target_protocol_id": "deform360-covariance-only-target-v1.2",
+    "target_protocol_sha256": "c01bc6d8df77ec7959cbde8c9f109e014a542346c4b3d42db995d5ab9ee68033",
+    "target_roster_sha256": "f9106b3dd6e0cec089623e07fed3506755fb334952c7761846d0854dfba45783"
+  },
+  "pass_criteria": {
+    "accepted_covariance_is_symmetric_psd": true,
+    "accepted_mean_object_identity_preserved": true,
+    "all_registered_fallbacks_preserve_mean_and_covariance_objects": true,
+    "nearest_fill_used": false,
+    "provider_and_scoring_artifacts_disjoint_on_accepted_path": true,
+    "provider_and_scoring_cameras_disjoint_on_accepted_path": true,
+    "target_access_authorized": false,
+    "validity_support_is_unchanged": true
+  },
+  "protocol_sha256": "33e58fd993b89042bf7a5549384725d375ed3885776577412ed73f0767e10706",
+  "schema": "bayesian-phystwin.deform360-covariance-residual-adapter-dry-run-v1",
+  "schema_version": 1,
+  "status": "source-only-software-dry-run-locked",
+  "support_gate": {
+    "failure_action": "exact whole-case physical fallback",
+    "minimum_observations_per_material": 2,
+    "minimum_supported_material_fraction": 1.0,
+    "missing_prefix_frames_remain_missing": true,
+    "support_count_uses_only_declared_validity": true
+  },
+  "synthetic_fixture": {
+    "contains_target_bytes": false,
+    "contains_validity_holes": true,
+    "deterministic": true,
+    "future_frame_count": 6,
+    "history_frame_count": 5,
+    "horizon_labels": [
+      "early",
+      "early",
+      "middle",
+      "middle",
+      "late",
+      "late"
+    ],
+    "material_count": 5,
+    "provider_camera_ids": [
+      "camera-00",
+      "camera-02",
+      "camera-04"
+    ],
+    "scoring_camera_ids": [
+      "camera-01",
+      "camera-03",
+      "camera-05"
+    ]
+  }
+}
