@@ -25,7 +25,7 @@ def _digest(value: str) -> str:
 
 def _policy() -> ResidualHistoryDryRunPolicyV1:
     return ResidualHistoryDryRunPolicyV1(
-        minimum_prefix_frames=2,
+        minimum_prefix_frames=3,
         minimum_cameras_per_role=2,
         minimum_camera_families_per_role=2,
     )
@@ -103,12 +103,9 @@ def _arrays() -> dict[str, np.ndarray]:
         "validity": validity,
         "physical_future": np.zeros((3, 4, 3), dtype=np.float64),
         "physical_covariance": np.zeros((3, 4, 3, 3), dtype=np.float64),
-        "donor_covariance": np.broadcast_to(
-            0.001 * np.eye(3),
-            (3, 4, 3, 3),
-        ).copy(),
-        "frame_indices": np.asarray([0, 7, 14], dtype=np.int64),
+        "frame_indices": np.asarray([12, 13, 14], dtype=np.int64),
         "material_ids": np.asarray([10, 11, 12, 13], dtype=np.int64),
+        "future_frame_indices": np.asarray([15, 16, 17], dtype=np.int64),
         "horizon_bins": np.asarray([0, 1, 2], dtype=np.int64),
     }
 
@@ -146,9 +143,9 @@ def _run(
         arrays["physical_future"],
         arrays["physical_covariance"],
         selected_mean,  # type: ignore[arg-type]
-        arrays["donor_covariance"],
         frame_indices=arrays["frame_indices"],
         material_ids=arrays["material_ids"],
+        future_frame_indices=arrays["future_frame_indices"],
         future_horizon_bins=arrays["horizon_bins"],
         camera_recorder_family_map=selected_map,
         provider_reconstruction_manifest=(
@@ -376,7 +373,7 @@ def test_hidden_invalid_observations_do_not_change_adapter_identity() -> None:
 
 def test_adapter_rejects_frames_materials_validity_and_shapes() -> None:
     arrays = _arrays()
-    arrays["frame_indices"] = np.asarray([0, 14, 7], dtype=np.int64)
+    arrays["frame_indices"] = np.asarray([12, 14, 13], dtype=np.int64)
     with pytest.raises(ValueError, match="strictly increasing"):
         _run(arrays)
     arrays = _arrays()
@@ -446,6 +443,42 @@ def test_physical_covariance_contract_is_strict() -> None:
 
 
 @pytest.mark.parametrize(
+    "causal, future",
+    [
+        (
+            np.asarray([12, 14, 15], dtype=np.int64),
+            np.asarray([16, 17, 18], dtype=np.int64),
+        ),
+        (
+            np.asarray([12, 13, 14], dtype=np.int64),
+            np.asarray([15, 16], dtype=np.int64),
+        ),
+        (
+            np.asarray([12, 13, 14], dtype=np.int64),
+            np.asarray([15, 15, 17], dtype=np.int64),
+        ),
+        (
+            np.asarray([12, 13, 14], dtype=np.int64),
+            np.asarray([14, 15, 16], dtype=np.int64),
+        ),
+        (
+            np.asarray([12, 13, 14], dtype=np.int64),
+            np.asarray([15.0, 16.0, 17.0]),
+        ),
+    ],
+)
+def test_future_frame_contract_is_strict(
+    causal: np.ndarray,
+    future: np.ndarray,
+) -> None:
+    arrays = _arrays()
+    arrays["frame_indices"] = causal
+    arrays["future_frame_indices"] = future
+    with pytest.raises(ValueError):
+        _run(arrays)
+
+
+@pytest.mark.parametrize(
     "bins",
     [
         np.asarray([0, 1], dtype=np.int64),
@@ -466,10 +499,11 @@ def test_artifact_and_decision_ids_are_tamper_evident() -> None:
         replace(result.adapter, adapter_id="0" * 64)
     with pytest.raises(ValueError, match="decision_id"):
         replace(result.decision, decision_id="0" * 64)
-    with pytest.raises(ValueError, match="supported_material_count"):
+    duplicate = result.decision.endpoint_prediction_ids[0]
+    with pytest.raises(ValueError, match="must be unique"):
         replace(
             result.decision,
-            supported_material_count=3,
+            endpoint_prediction_ids=(duplicate, duplicate, duplicate),
             decision_id=None,
         )
 
@@ -479,6 +513,8 @@ def test_public_api_is_registered_and_target_agnostic() -> None:
         run_source_only_residual_history_dry_run
     ).parameters
     assert "registered_last_residual_mean_m" in parameters
+    assert "future_frame_indices" in parameters
+    assert "donor_covariance_m2" not in parameters
     assert "reference_predictor_id" not in parameters
     assert "covariance_donor_id" not in parameters
     assert not hasattr(public_api, "TARGET_QUARANTINE_ROOT")
