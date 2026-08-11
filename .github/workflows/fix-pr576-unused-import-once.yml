@@ -1,0 +1,60 @@
+name: Fix PR 576 unused import once
+
+on:
+  push:
+    branches:
+      - agent/registered-residual-history-single-path-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-pr576-unused-import-once
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/registered-residual-history-single-path-v1
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+
+      - name: Remove exact unused import and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "tests/test_portable_contracts_deform360_registered_residual_history_v1_validation.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          needle = "    RegisteredResidualHistoryDecisionV1,\n"
+          if text.count(needle) != 1:
+              raise SystemExit("expected unused import was not found exactly once")
+          path.write_text(text.replace(needle, ""), encoding="utf-8")
+          PY
+          rm .github/workflows/fix-pr576-unused-import-once.yml
+          python -m ruff check \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1_validation.py
+          git diff --check
+
+      - name: Commit exact repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1_validation.py \
+            .github/workflows/fix-pr576-unused-import-once.yml
+          git commit -m 'Remove unused residual-history decision import'
+          git push origin HEAD:agent/registered-residual-history-single-path-v1
