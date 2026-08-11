@@ -150,8 +150,7 @@ def _validated_local_covariance(value: object, *, point_count: int) -> np.ndarra
     maximum_eigenvalue = np.max(np.abs(eigenvalues), axis=1)
     tolerance = (
         _PSD_ABSOLUTE_TOLERANCE / normalization
-        + _PSD_RELATIVE_TOLERANCE
-        * np.maximum(maximum_eigenvalue, 1.0 / normalization)
+        + _PSD_RELATIVE_TOLERANCE * np.maximum(maximum_eigenvalue, 1.0 / normalization)
     )
     if np.any(eigenvalues[:, 0] < -tolerance):
         raise ValueError("local_covariance_m2 must be positive semidefinite")
@@ -446,9 +445,7 @@ class StructuredPointCovarianceV1:
             dense[start : start + 3, start : start + 3] = block
         with np.errstate(over="ignore", invalid="ignore"):
             for factor in self.shared_factors_m.values():
-                flat_factor = factor.reshape(
-                    (self.state_dimension, factor.shape[2])
-                )
+                flat_factor = factor.reshape((self.state_dimension, factor.shape[2]))
                 dense += flat_factor @ flat_factor.T
         dense = _finite_symmetric(dense, name="dense covariance")
         return _immutable_float64(dense)
