@@ -31,8 +31,10 @@ def test_three_repository_workflow_pins_external_actions() -> None:
 
     assert "actions/checkout@v" not in text
     assert "actions/setup-python@v" not in text
+    assert "actions/upload-artifact@v" not in text
     assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in text
     assert "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97" in text
+    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in text
 
 
 def test_three_repository_workflow_requires_public_prob4d_execution() -> None:
@@ -60,3 +62,26 @@ def test_three_repository_workflow_tracks_prospective_belief_surfaces() -> None:
     )
     for path in required_paths:
         assert f'- "{path}"' in text
+
+
+def test_three_repository_workflow_materializes_exact_decision_evidence() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    required_paths = (
+        "integration_tests/**",
+        "tests/test_three_repository_golden_path_artifacts_v1.py",
+        "src/bayesian_phystwin/three_repository_golden_path_artifacts_v1.py",
+        "docs/three_repository_golden_path.md",
+    )
+    for path in required_paths:
+        assert f'- "{path}"' in text
+
+    assert "THREE_REPOSITORY_EVIDENCE_OUTPUT" in text
+    assert "accepted-selection.json" in text
+    assert "rejected-selection.json" in text
+    assert "golden-path-bundle.json" in text
+    assert "run-manifest-v2.json" in text
+    assert "exact_fallback_identity" in text
+    assert "retention-days: 90" in text
+    assert "if-no-files-found: error" in text
+    assert "claim, transfer, or physical-benefit" in text
