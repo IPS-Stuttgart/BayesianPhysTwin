@@ -253,9 +253,9 @@ def _duplicate_note(payload: dict[str, Any]) -> None:
 
 
 def _weaken_evidence_boundary(payload: dict[str, Any]) -> None:
-    payload["evidence_boundary"][
-        "exact_revisions_required_for_claim_bearing_runs"
-    ] = False
+    payload["evidence_boundary"]["exact_revisions_required_for_claim_bearing_runs"] = (
+        False
+    )
 
 
 _MUTATIONS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
@@ -317,9 +317,7 @@ def test_installed_table_is_content_addressed_and_immutable() -> None:
 def test_resource_and_documentation_are_declared_for_wheel_and_sdist() -> None:
     with (ROOT / "pyproject.toml").open("rb") as handle:
         metadata = tomllib.load(handle)
-    package_data = metadata["tool"]["setuptools"]["package-data"][
-        "bayesian_phystwin"
-    ]
+    package_data = metadata["tool"]["setuptools"]["package-data"]["bayesian_phystwin"]
     manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
 
     assert "contract_data/ecosystem_compatibility_v1/*.json" in package_data
@@ -373,27 +371,17 @@ def test_causal4d_registry_and_core_schemas_are_exact() -> None:
         Mapping[str, Sequence[int]],
         interface["required_artifact_schema_versions"],
     )
-    assert schemas["GraphBelief"] == [
-        CAUSAL4D_V1_ARTIFACT_SCHEMAS["GraphBelief"]
-    ]
-    assert schemas["TwinBelief"] == [
-        CAUSAL4D_V1_ARTIFACT_SCHEMAS["TwinBelief"]
-    ]
-    assert schemas["ReplayRequest"] == [
-        CAUSAL4D_V2_ARTIFACT_SCHEMAS["ReplayRequest"]
-    ]
+    assert schemas["GraphBelief"] == [CAUSAL4D_V1_ARTIFACT_SCHEMAS["GraphBelief"]]
+    assert schemas["TwinBelief"] == [CAUSAL4D_V1_ARTIFACT_SCHEMAS["TwinBelief"]]
+    assert schemas["ReplayRequest"] == [CAUSAL4D_V2_ARTIFACT_SCHEMAS["ReplayRequest"]]
     assert schemas["ReplayTrajectory"] == [
         CAUSAL4D_V2_ARTIFACT_SCHEMAS["ReplayTrajectory"]
     ]
     assert schemas["FixedBayesianAnchorConfig"] == [
-        CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS[
-            "FixedBayesianAnchorConfig"
-        ]
+        CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS["FixedBayesianAnchorConfig"]
     ]
     assert schemas["RobustEndpointPosterior"] == [
-        CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS[
-            "RobustEndpointPosterior"
-        ]
+        CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS["RobustEndpointPosterior"]
     ]
     assert interface["supports_claim_bearing_admission"] is True
     assert interface["exact_revisions_required_for_evidence"] is True
@@ -401,12 +389,8 @@ def test_causal4d_registry_and_core_schemas_are_exact() -> None:
 
 def test_prob4d_provider_rows_separate_historical_and_claim_bearing_use() -> None:
     table = _table()
-    provider_v1 = table.interface(
-        "prob4d-provider-v1-to-bayesian-phystwin"
-    )
-    provider_v2 = table.interface(
-        "prob4d-provider-v2-to-bayesian-phystwin"
-    )
+    provider_v1 = table.interface("prob4d-provider-v1-to-bayesian-phystwin")
+    provider_v2 = table.interface("prob4d-provider-v2-to-bayesian-phystwin")
 
     v1_modules = cast(Sequence[Mapping[str, Any]], provider_v1["provider_modules"])
     assert [(item["module"], item["api_version"]) for item in v1_modules] == [
@@ -422,9 +406,7 @@ def test_prob4d_provider_rows_separate_historical_and_claim_bearing_use() -> Non
         Mapping[str, Sequence[int]],
         provider_v2["required_artifact_schema_versions"],
     )
-    assert v2_schemas["ProviderAttestation"] == [
-        PROB4D_PROVIDER_ATTESTATION_VERSION
-    ]
+    assert v2_schemas["ProviderAttestation"] == [PROB4D_PROVIDER_ATTESTATION_VERSION]
     assert v2_schemas["ObservationBeliefV1"] == [1]
     assert v2_schemas["Prob4DCausalObservationStream"] == [2]
     assert v2_schemas["ObservationFactorBundle"] == [4]

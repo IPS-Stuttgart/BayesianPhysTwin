@@ -21,13 +21,9 @@ from ._canonical_contracts import (
 )
 from ._portable_contracts import content_id, repository_name, require_exact_fields
 
-ECOSYSTEM_COMPATIBILITY_SCHEMA = (
-    "bayesian_phystwin.ecosystem_compatibility_table"
-)
+ECOSYSTEM_COMPATIBILITY_SCHEMA = "bayesian_phystwin.ecosystem_compatibility_table"
 ECOSYSTEM_COMPATIBILITY_SCHEMA_VERSION = 1
-ECOSYSTEM_COMPATIBILITY_RESOURCE = (
-    "contract_data/ecosystem_compatibility_v1/table.json"
-)
+ECOSYSTEM_COMPATIBILITY_RESOURCE = "contract_data/ecosystem_compatibility_v1/table.json"
 
 _COMPONENT_ORDER = ("bayesian_phystwin", "prob4d", "causal4d")
 _EXPECTED_DISTRIBUTIONS = {
@@ -89,9 +85,7 @@ _INTERFACE_FIELDS = frozenset(
         "notes",
     }
 )
-_PROVIDER_MODULE_FIELDS = frozenset(
-    {"module", "api_version", "role", "lifecycle"}
-)
+_PROVIDER_MODULE_FIELDS = frozenset({"module", "api_version", "role", "lifecycle"})
 _EVIDENCE_BOUNDARY_FIELDS = frozenset(
     {
         "development_ranges_are_evidence_locks",
@@ -172,7 +166,9 @@ def _strict_json_object(text: str) -> Mapping[str, Any]:
             parse_constant=_reject_nonfinite_constant,
         )
     except json.JSONDecodeError as error:
-        raise ValueError("ecosystem compatibility resource is malformed JSON") from error
+        raise ValueError(
+            "ecosystem compatibility resource is malformed JSON"
+        ) from error
     return _mapping(value, name="ecosystem compatibility table")
 
 
@@ -323,8 +319,7 @@ def _validated_schema_versions(
         normalized[canonical_name] = _positive_versions(
             versions,
             name=(
-                f"{interface_id}.required_artifact_schema_versions"
-                f"[{canonical_name!r}]"
+                f"{interface_id}.required_artifact_schema_versions[{canonical_name!r}]"
             ),
         )
     return dict(sorted(normalized.items()))
@@ -340,18 +335,14 @@ def _validated_interface(value: object) -> dict[str, object]:
         expected_length=2,
     )
     if any(participant not in _COMPONENT_ORDER for participant in participants):
-        raise ValueError(
-            f"{interface_id}.participants contains an unknown component"
-        )
+        raise ValueError(f"{interface_id}.participants contains an unknown component")
 
     raw_ranges = _mapping(
         payload["distribution_ranges"],
         name=f"{interface_id}.distribution_ranges",
     )
     if set(raw_ranges) != set(participants):
-        raise ValueError(
-            f"{interface_id}.distribution_ranges must match participants"
-        )
+        raise ValueError(f"{interface_id}.distribution_ranges must match participants")
     ranges = {
         participant: _version_specifier(
             raw_ranges[participant],
@@ -371,9 +362,7 @@ def _validated_interface(value: object) -> dict[str, object]:
         raise ValueError(f"{interface_id}.provider_modules must not be empty")
     module_names = [cast(str, item["module"]) for item in modules]
     if module_names != sorted(set(module_names)):
-        raise ValueError(
-            f"{interface_id}.provider_modules must be sorted and unique"
-        )
+        raise ValueError(f"{interface_id}.provider_modules must be sorted and unique")
 
     lifecycle = _canonical_text(
         payload["lifecycle"],
@@ -465,9 +454,7 @@ def _validated_table(value: Mapping[str, Any]) -> dict[str, object]:
         "status": _validated_status(value["status"]),
         "components": components,
         "interfaces": interfaces,
-        "evidence_boundary": _validated_evidence_boundary(
-            value["evidence_boundary"]
-        ),
+        "evidence_boundary": _validated_evidence_boundary(value["evidence_boundary"]),
     }
 
 
@@ -549,7 +536,9 @@ def load_ecosystem_compatibility_table_v1() -> EcosystemCompatibilityTableV1:
     try:
         text = resource.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
-        raise ValueError("cannot read installed ecosystem compatibility table") from error
+        raise ValueError(
+            "cannot read installed ecosystem compatibility table"
+        ) from error
     return validate_ecosystem_compatibility_table_v1(_strict_json_object(text))
 
 
