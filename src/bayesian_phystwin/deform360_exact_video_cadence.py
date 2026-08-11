@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
-from typing import Literal
 
 import cv2
+
 
 FROZEN_AUTHORIZED_FUTURE_STAGE_SHA256 = (
     "2ed2ffb0cd6ceeb2f08a485d578a7257701e92d94c1f4d8e9063843aacff778c"
@@ -50,18 +50,10 @@ def trim_video_exact_30hz(
     destination: Path,
     start: int,
     count: int,
-    *,
-    output_sync_mode: Literal["modern-fps-mode", "legacy-vsync"] = ("modern-fps-mode"),
 ) -> None:
     """Encode an exact inclusive source-frame selection at an explicit cadence."""
     if start < 0 or count < 1:
         raise ValueError("video frame range is invalid")
-    if output_sync_mode == "modern-fps-mode":
-        sync_arguments = ["-fps_mode", "cfr"]
-    elif output_sync_mode == "legacy-vsync":
-        sync_arguments = ["-vsync", "cfr"]
-    else:
-        raise ValueError("unsupported output sync mode")
     subprocess.run(
         [
             str(ffmpeg),
@@ -89,7 +81,8 @@ def trim_video_exact_30hz(
             "yuv420p",
             "-r",
             str(FRAME_RATE_HZ),
-            *sync_arguments,
+            "-fps_mode",
+            "cfr",
             str(destination),
         ],
         check=True,
@@ -124,11 +117,10 @@ def decoded_prefix_sha256(ffmpeg: Path, path: Path, frame_count: int) -> str:
         stdout=subprocess.PIPE,
         stdin=subprocess.DEVNULL,
     )
-    stdout = process.stdout
-    if stdout is None:
+    if process.stdout is None:
         raise RuntimeError("FFmpeg output pipe is unavailable")
     digest = hashlib.sha256()
-    for chunk in iter(lambda: stdout.read(1024 * 1024), b""):
+    for chunk in iter(lambda: process.stdout.read(1024 * 1024), b""):
         digest.update(chunk)
     return_code = process.wait()
     if return_code != 0:

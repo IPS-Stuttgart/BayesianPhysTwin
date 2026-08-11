@@ -13,6 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PROCESSING_LOCK_PATH = ROOT / (
     "protocols/locks/deform360_joint_sparse_public_endpoint_processing_v5_2.json"
 )
+PROCESSING_RUNNER_PATH = ROOT / (
+    "scripts/remote/process_deform360_joint_sparse_public_endpoint_v5_2.py"
+)
 
 
 def _episode(tmp_path: Path, *, camera: str = "camera-0") -> Path:
@@ -142,6 +145,13 @@ def test_processing_lock_binds_public_sealed_panel_without_human_approval() -> N
     assert validated["processing"]["windowing"]["video_materialization"] == (
         "exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"
     )
+
+
+def test_processing_runner_uses_only_the_locked_legacy_sync_option() -> None:
+    source = PROCESSING_RUNNER_PATH.read_text(encoding="utf-8")
+
+    assert '"-vsync"' in source
+    assert '"-fps_mode"' not in source
 
 
 def test_materializes_complete_public_endpoint_manifest(

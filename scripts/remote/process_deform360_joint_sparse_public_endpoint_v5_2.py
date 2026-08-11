@@ -23,7 +23,6 @@ from bayesian_phystwin._portable_contracts import (
 )
 from bayesian_phystwin.deform360_exact_video_cadence import (
     decoded_frame_count,
-    trim_video_exact_30hz,
 )
 from bayesian_phystwin.deform360_joint_sparse_endpoint_v5 import (
     select_reserved_endpoint_views_v5,
@@ -48,6 +47,7 @@ from bayesian_phystwin.deform360_joint_sparse_source_runner_v5_2 import (
 )
 
 RAW_FRAME_COUNT = 81
+FRAME_RATE_HZ = 30
 MINIMUM_SUCCESSFUL_CAMERAS = 8
 MANIFEST_FILENAME = "joint_sparse_public_endpoint_processing_v5_2.json"
 FAILURE_DIRNAME = "terminal-failures"
@@ -290,6 +290,57 @@ def _frame_count(video: Path) -> int:
         capture.release()
 
 
+def _trim_video_exact_30hz_legacy_vsync(
+    ffmpeg: Path,
+    source: Path,
+    destination: Path,
+    start: int,
+    count: int,
+) -> None:
+    if start < 0 or count < 1:
+        raise ValueError("video frame range is invalid")
+    subprocess.run(
+        [
+            str(ffmpeg),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(source),
+            "-vf",
+            (
+                f"select='between(n,{start},{start + count - 1})',"
+                f"setpts=N/({FRAME_RATE_HZ}*TB)"
+            ),
+            "-frames:v",
+            str(count),
+            "-an",
+            "-c:v",
+            "libx264",
+            "-crf",
+            "12",
+            "-preset",
+            "fast",
+            "-pix_fmt",
+            "yuv420p",
+            "-r",
+            str(FRAME_RATE_HZ),
+            "-vsync",
+            "cfr",
+            str(destination),
+        ],
+        check=True,
+        stdin=subprocess.DEVNULL,
+    )
+    actual = decoded_frame_count(destination)
+    if actual != count:
+        raise ValueError(
+            f"exact video trim produced {actual} rather than {count} frames: "
+            f"{destination}"
+        )
+
+
 def _trim_timestamps(
     source: Path, destination: Path, *, start: int, count: int
 ) -> None:
@@ -446,13 +497,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_camera = episode / camera
         output_camera.mkdir()
         output_video = output_camera / "undistorted.mp4"
-        trim_video_exact_30hz(
+        _trim_video_exact_30hz_legacy_vsync(
             ffmpeg,
             source_camera / "undistorted.mp4",
             output_video,
             raw_start,
             RAW_FRAME_COUNT,
-            output_sync_mode="legacy-vsync",
         )
         _require(decoded_frame_count(output_video) == RAW_FRAME_COUNT, "trim changed")
         _trim_timestamps(
