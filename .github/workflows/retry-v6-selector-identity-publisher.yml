@@ -1,0 +1,82 @@
+name: Retry v6 selector identity publisher
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/retry-v6-selector-identity-publisher.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  repair-publisher:
+    if: >-
+      github.event.pull_request.head.ref == 'fix/v6-selector-identity-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact repair branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/v6-selector-identity-v2
+          fetch-depth: 0
+          persist-credentials: true
+          clean: true
+
+      - name: Replace brittle selector matcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              ".github/workflows/apply-v6-selector-identity-v2.yml"
+          )
+          text = path.read_text(encoding="utf-8")
+          old = """          runner = replace_once(
+              runner,
+              old_block,
+              new_block,
+              label="selector discovery",
+          )
+          """
+          new = """          selector_start = runner.index(
+              'set_stage "locate-frozen-generic-selector"\\n'
+          )
+          selector_end = runner.index(
+              'set_stage "locate-frozen-physical-upstream"\\n',
+              selector_start,
+          )
+          runner = (
+              runner[:selector_start]
+              + new_block
+              + "\\n"
+              + runner[selector_end:]
+          )
+          """
+          if text.count(old) != 1:
+              raise SystemExit(
+                  f"selector publisher matcher changed: {text.count(old)}"
+              )
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+          rm .github/workflows/retry-v6-selector-identity-publisher.yml
+          git diff --check
+          grep -Fq 'selector_start = runner.index(' \
+            .github/workflows/apply-v6-selector-identity-v2.yml
+          test ! -e .github/workflows/retry-v6-selector-identity-publisher.yml
+
+      - name: Publish corrected temporary publisher
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m "Use stage boundaries for selector repair"
+          git push origin HEAD:fix/v6-selector-identity-v2
