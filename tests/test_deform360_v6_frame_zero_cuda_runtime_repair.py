@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 from bayesian_phystwin._portable_contracts import content_id
 
