@@ -51,9 +51,7 @@ def trim_video_exact_30hz(
     start: int,
     count: int,
     *,
-    output_sync_mode: Literal["modern-fps-mode", "legacy-vsync"] = (
-        "modern-fps-mode"
-    ),
+    output_sync_mode: Literal["modern-fps-mode", "legacy-vsync"] = ("modern-fps-mode"),
 ) -> None:
     """Encode an exact inclusive source-frame selection at an explicit cadence."""
     if start < 0 or count < 1:

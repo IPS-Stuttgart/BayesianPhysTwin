@@ -258,8 +258,7 @@ def _validate_dependencies(
     )
     _require(
         _sha256_file(ffmpeg) == runtime["ffmpeg_sha256"]
-        and _ffmpeg_version_first_line(ffmpeg)
-        == runtime["ffmpeg_version_first_line"],
+        and _ffmpeg_version_first_line(ffmpeg) == runtime["ffmpeg_version_first_line"],
         "FFmpeg runtime changed",
     )
     _require(_C is not None, "gsplat CUDA backend is unavailable")

@@ -65,9 +65,7 @@ PUBLIC_ENDPOINT_PROCESSING_CONTRACT: Final = {
         "local_prefix_range_half_open": [0, 58],
         "local_endpoint_range_half_open": [58, 76],
         "local_unscored_tail_range_half_open": [76, 81],
-        "video_materialization": (
-            "exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"
-        ),
+        "video_materialization": ("exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"),
         "timestamps_and_robot_state_sliced_to_same_raw_range": True,
     },
     "camera_policy": {
