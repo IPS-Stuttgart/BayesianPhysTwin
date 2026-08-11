@@ -390,9 +390,7 @@ def build_matrix_evidence(
         }
         if receipt.get("dependency_lock") != expected_lock:
             raise ReleaseMatrixEvidenceError(f"lane {lane_name} lock changed")
-        profiles = list(
-            receipts_dir.rglob(f"numerical-environment-{lane_name}.json")
-        )
+        profiles = list(receipts_dir.rglob(f"numerical-environment-{lane_name}.json"))
         resolver_copies = list(receipts_dir.rglob(f"resolver-input-{lane_name}.txt"))
         if len(profiles) != 1 or len(resolver_copies) != 1:
             raise ReleaseMatrixEvidenceError(
@@ -437,9 +435,7 @@ def build_matrix_evidence(
         summaries[lane_name] = {
             "receipt_id": receipt["receipt_id"],
             "artifact_kind": lane.artifact_kind,
-            "artifact_sha256": _mapping(receipt["artifact"], name="artifact")[
-                "sha256"
-            ],
+            "artifact_sha256": _mapping(receipt["artifact"], name="artifact")["sha256"],
             "python_version": python_record["actual"],
             "numpy_version": lane.numpy_version,
             "resolver_input": lane.resolver_input,
