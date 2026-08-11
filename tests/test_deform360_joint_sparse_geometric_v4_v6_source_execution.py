@@ -248,7 +248,9 @@ def test_plan_materializer_uses_only_frozen_supported_prefixes(
             "path": None,
             "manifest_file_sha256": None,
             "materialization_id": None,
-            "unavailable_reason": ("released-tactile-robot-axis-identity-unavailable"),
+            "unavailable_reason": (
+                "released-tactile-robot-axis-identity-unavailable"
+            ),
         }
         for visual in row["visual_windows"]:
             assert not Path(visual["decoded_uniform"]["path"]).is_absolute()
@@ -303,6 +305,17 @@ def test_runner_seals_predictions_without_opening_source_suffix() -> None:
     assert "source-inputs-incomplete" in text
     assert "source-technical-failure-retained" in text
     assert "run_deform360_joint_sparse_source_predictions_v5.py" in text
+    assert 'SAM2_CHECKPOINT_NAME="sam2.1_hiera_small.pt"' in text
+    assert (
+        'SAM2_CHECKPOINT_URL="https://dl.fbaipublicfiles.com/'
+        'segment_anything_2/092824/${SAM2_CHECKPOINT_NAME}"' in text
+    )
+    assert (
+        'SAM2_SHA256="6d1aa6f30de5c92224f8172114de081d'
+        '104bbd23dd9dc5c58996f0cad5dc4d38"' in text
+    )
+    assert "sam2_hiera_large.pt" not in text
+    assert "sam2.1_hiera_large.pt" not in text
     assert "run_deform360_fresh_object_session_source_v6.py" not in text
     assert 'development_suffix_opened": False' in text
     assert 'v6_target_payloads_opened": False' in text

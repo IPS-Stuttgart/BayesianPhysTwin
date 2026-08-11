@@ -21,6 +21,8 @@ STAGE0_PROTOCOL="protocols/deform360_official_hub_visuotactile_v1.json"
 SELECTION_LOCK="protocols/locks/deform360_official_hub_visuotactile_v1_selection.json"
 VISUAL_PROVIDER_LOCK="protocols/locks/deform360_official_hub_visuotactile_v1_visual_provider/visual-provider-lock.json"
 FALLBACK_CONFIG="configs/sota/deform360_reconstruction_failure_persistence_fallback_v1.json"
+SAM2_CHECKPOINT_NAME="sam2.1_hiera_small.pt"
+SAM2_CHECKPOINT_URL="https://dl.fbaipublicfiles.com/segment_anything_2/092824/${SAM2_CHECKPOINT_NAME}"
 SAM2_SHA256="6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
 SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
 OFFICIAL_CONFIG_SHA256="a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48"
@@ -267,7 +269,7 @@ set_stage "materialize-prepared-source-inventory"
   > "${LOG_ROOT}/prepared-source-inventory.log" 2>&1
 
 set_stage "locate-frozen-sam2-checkpoint"
-SAM2_CHECKPOINT="${RUN_ROOT}/sam2_hiera_large.pt"
+SAM2_CHECKPOINT="${RUN_ROOT}/${SAM2_CHECKPOINT_NAME}"
 if [[ ! -f "${SAM2_CHECKPOINT}" ]]; then
   found_checkpoint=""
   while IFS= read -r candidate; do
@@ -282,7 +284,7 @@ if [[ ! -f "${SAM2_CHECKPOINT}" ]]; then
       /home/github-runner \
       /mnt/lexar4tb \
       -type f \
-      \( -name 'sam2_hiera_large.pt' -o -name 'sam2.1_hiera_large.pt' \) \
+      -name "${SAM2_CHECKPOINT_NAME}" \
       2>/dev/null | sort -u
   )
   if [[ -n "${found_checkpoint}" ]]; then
@@ -290,7 +292,7 @@ if [[ ! -f "${SAM2_CHECKPOINT}" ]]; then
   else
     curl --fail --location --retry 3 \
       --output "${SAM2_CHECKPOINT}.part" \
-      "https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt" \
+      "${SAM2_CHECKPOINT_URL}" \
       || fail_incomplete "frozen SAM2 checkpoint is unavailable"
     mv "${SAM2_CHECKPOINT}.part" "${SAM2_CHECKPOINT}"
   fi
