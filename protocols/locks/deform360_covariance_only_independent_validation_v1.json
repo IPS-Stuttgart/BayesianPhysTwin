@@ -1,0 +1,222 @@
+{
+  "arms": [
+    {
+      "method_id": "B0_physical_fallback",
+      "role": "contextual-point-baseline-and-physical-fallback"
+    },
+    {
+      "method_id": "B1_last_residual",
+      "role": "deterministic-primary-reference"
+    },
+    {
+      "method_id": "B2_last_residual_prefix_route",
+      "role": "routing-and-exact-fallback-control"
+    },
+    {
+      "method_id": "C1_last_residual_plus_frozen_bayesian_covariance",
+      "role": "confirmatory-primary-candidate"
+    }
+  ],
+  "claim_boundary": "A positive result may support only that the frozen Bayesian endpoint covariance improves object-session-level probabilistic forecasts over zero-covariance last_residual on the twelve locked, object-disjoint Deform360 confirmation sessions while point predictions remain exactly unchanged. It does not establish latent physical-state identification, deployment safety, performance outside the locked cohort, Causal4D intervention benefit, benchmark parity, or state of the art.",
+  "claim_decision": {
+    "calibration_sharpness_claim_requires_coverage_and_width_qualification": true,
+    "deployment_authorized": false,
+    "horizon_wide_claim_requires_all_horizon_upper_bounds_below_zero": true,
+    "negative_or_inconclusive_result_is_complete": true,
+    "physical_state_identification_claimed": false,
+    "primary_covariance_value_claim_requires_primary_positive_rule": true,
+    "robustness_claim_requires_all_noise_sensitivity_upper_bounds_below_zero": true,
+    "state_of_the_art_claimed": false,
+    "target_side_rescue_or_retuning_allowed": false
+  },
+  "cohort": {
+    "dataset": "public-Deform360-official-Hub-existing-data",
+    "development_object_session_count": 10,
+    "failed_or_unsupported_units_retained_in_denominator": true,
+    "new_robot_acquisition_required": false,
+    "one_episode_per_object": true,
+    "replacement_allowed": false,
+    "selection_git_blob_sha1": "9c1cc1167339a45e3659a9ed6096c1af16f6f62d",
+    "selection_path": "protocols/locks/deform360_official_hub_visuotactile_v1_selection.json",
+    "source_and_target_disjoint_by_object_identity": true,
+    "statistical_unit": "complete-physical-object-session",
+    "target_informed_exclusion_allowed": false,
+    "target_object_session_count": 12,
+    "target_stratum_counts": {
+      "sheet": 6,
+      "volumetric": 6
+    }
+  },
+  "development_evidence": {
+    "analysis_status": "retrospective-cross-fitted-development-only",
+    "artifact_digest": "sha256:945dd5ed5db9b4119d81cf15d6d6c6da304b9421ab5938e71ad65390bbca1676",
+    "artifact_id": 9090224528,
+    "artifact_name": "full22-covariance-only-hybrid-v1-31461910994-1",
+    "claim_authorized": false,
+    "development_case_count": 22,
+    "development_effect_mean_gaussian_nll": -9.136379254487014,
+    "development_effect_simultaneous_95_ci": [
+      -13.96117966524658,
+      -4.31157884372745
+    ],
+    "implementation_merge_revision": "247bc8b85ec425f4272ba867e3a7c878a7e05d56",
+    "promotion_authorized": false,
+    "protocol_id": "91c15957c8a71c579429c4245ccb2570f22ac6480dd5aebc9ddd73d1edb66b02",
+    "report_id": "5fc777163fd6173c9669b497309d883e2780a5ebe23da5dbe4cdaf682ad8806a",
+    "result_json_sha256": "31ed0828b0c024a508467904c56c040f4e38374c4688a06167f2e584b13111a0",
+    "selection_authorized": false
+  },
+  "frozen_candidate": {
+    "covariance_donor_id": "independent_endpoint_v1",
+    "covariance_eigenvalue_floor_m2": 1e-12,
+    "donor_substitution_allowed": false,
+    "early_middle_late_covariance_scales": [
+      8.0,
+      16.0,
+      16.0
+    ],
+    "horizon_bins": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "marginal_coverage_z": 1.6448536269514722,
+    "mean_identity_requirement": "same-caller-owned-float64-c-contiguous-array-object",
+    "nominal_marginal_coverage": 0.9,
+    "observation_std_m": 0.005,
+    "point_prediction_change_allowed": false,
+    "reference_mean": "last_residual",
+    "reference_predictor_id": "last_residual",
+    "target_horizon_redefinition_allowed": false,
+    "target_observation_noise_selection_allowed": false,
+    "target_scale_retuning_allowed": false,
+    "unsupported_or_rejected_behavior": "exact-last_residual-reference-and-fallback"
+  },
+  "implementation_identity": {
+    "analysis_git_blob_sha1": "13468789f82940e15989f3ed71ecae36c435de58",
+    "analysis_path": "src/bayesian_phystwin/covariance_only_hybrid_analysis.py",
+    "covariance_composition_git_blob_sha1": "9f2ab2152950d74c3c8238d459187571b311adec",
+    "covariance_composition_path": "src/bayesian_phystwin/covariance_only_hybrid.py",
+    "development_summary_git_blob_sha1": "aa056fdca721666510d8031e0c9072c7ca899427",
+    "development_summary_path": "results/science/full22_covariance_only_hybrid_v1/summary.json",
+    "exact_distribution_identity_required_before_target_opening": true,
+    "runtime_and_source_artifacts_content_addressed": true
+  },
+  "inference": {
+    "bootstrap_contract": "paired-physical-object-session-bootstrap-v1",
+    "bootstrap_replicates": 100000,
+    "bootstrap_seed": 20260812,
+    "confidence": 0.95,
+    "exact_paired_sign_test_reported": true,
+    "missing_unit_imputation": "exact-zero-effect-fallback-tie",
+    "resampling_unit": "physical-object-session",
+    "within_unit_rows_do_not_increase_sample_size": true
+  },
+  "information_boundary": {
+    "causal4d_intervention_claim_authorized": false,
+    "claim_authorized_before_target_result": false,
+    "confirmation_side_retuning_allowed": false,
+    "development_outcomes_already_open": true,
+    "promotion_authorized_before_target_result": false,
+    "replacement_allowed": false,
+    "target_outcomes_used": false,
+    "target_payloads_opened": false,
+    "target_roster_selected_before_covariance_only_candidate": true
+  },
+  "predeclared_secondary_analyses": {
+    "calibration_and_sharpness": {
+      "calibration_qualification_interval": [
+        0.8,
+        0.98
+      ],
+      "marginal_coverage_levels": [
+        0.5,
+        0.9,
+        0.95
+      ],
+      "maximum_width_ratio_for_calibration_sharpness_qualification": 4.0,
+      "primary_nominal_coverage": 0.9,
+      "raw_covariance_declared_calibrated_without_target_result": false,
+      "report_full_interval_width_m": true,
+      "report_width_ratio_vs_reference": true
+    },
+    "heterogeneity": {
+      "action_family_restriction_allowed": false,
+      "claim_role": "qualification-not-primary-selection",
+      "minimum_better_or_tied_units_overall": 8,
+      "minimum_better_or_tied_units_per_stratum": 4,
+      "report_all_unit_effects": true,
+      "report_worst_unit_effect": true,
+      "strata": [
+        "sheet",
+        "volumetric"
+      ]
+    },
+    "horizon_family": {
+      "aggregations": [
+        "early",
+        "middle",
+        "late"
+      ],
+      "interval": "max-t-simultaneous-95-percent-object-session-bootstrap",
+      "selection_role": "none"
+    },
+    "observation_noise_sensitivity": {
+      "interval": "max-t-simultaneous-95-percent-object-session-bootstrap",
+      "observation_std_m": [
+        0.0025,
+        0.005,
+        0.01
+      ],
+      "primary_value": 0.005,
+      "selection_role": "none"
+    },
+    "point_endpoints": {
+      "byte_or_content_identity_required": true,
+      "chamfer_distance_difference_m": 0.0,
+      "track_error_difference_m": 0.0
+    }
+  },
+  "prediction_barrier": {
+    "all_target_predictions_sealed_before_any_target_future_opening": true,
+    "complete_target_prefix_prediction_count_required": 12,
+    "future_frames_used_for_prediction": false,
+    "human_selection_allowed": false,
+    "source_candidate_or_scale_retuning_allowed": false,
+    "source_physical_manifest_count_required": 10,
+    "source_prediction_seal_count_required": 100,
+    "source_readiness_receipt_required": true,
+    "target_future_frame_range_half_open": [
+      58,
+      76
+    ],
+    "target_outcomes_used_for_prediction_or_admission": false,
+    "target_payload_opening_count": 1,
+    "target_prefix_frame_range_half_open": [
+      0,
+      58
+    ],
+    "target_unscored_buffer_frame_range_half_open": [
+      76,
+      81
+    ]
+  },
+  "primary_hypothesis": {
+    "across_unit_aggregation": "equal-physical-object-session-mean",
+    "candidate": "C1_last_residual_plus_frozen_bayesian_covariance",
+    "comparator": "B1_last_residual",
+    "confirmatory_contrast_count": 1,
+    "difference": "candidate-minus-comparator",
+    "direction": "lower-is-better",
+    "endpoint": "gaussian-negative-log-predictive-density-common-5mm",
+    "point_noninferiority": "exact-identity-by-construction",
+    "positive_rule": "two-sided-95-percent-object-clustered-bootstrap-upper-bound-below-zero",
+    "within_unit_aggregation": "equal-mean-over-early-middle-late-object-session-horizon-scores"
+  },
+  "protocol_id": "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc",
+  "protocol_name": "deform360-covariance-only-independent-validation-v1",
+  "schema": "bayesian-phystwin.deform360-covariance-only-independent-validation",
+  "schema_version": 1,
+  "scientific_question": "Does frozen Bayesian endpoint covariance improve probabilistic forecasts on object-disjoint Deform360 sessions when the last_residual mean is preserved exactly?",
+  "status": "target-closed-preregistered"
+}

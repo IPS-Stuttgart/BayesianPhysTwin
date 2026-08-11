@@ -1,0 +1,114 @@
+name: Deform360 covariance-only independent validation v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
+      - "docs/deform360_covariance_only_independent_validation_v1.md"
+      - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
+      - "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+      - "tests/test_deform360_covariance_only_independent_validation_v1.py"
+      - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-covariance-only-independent-validation-v1.yml"
+      - "docs/deform360_covariance_only_independent_validation_v1.md"
+      - "protocols/locks/deform360_covariance_only_independent_validation_v1.json"
+      - "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json"
+      - "tests/test_deform360_covariance_only_independent_validation_v1.py"
+      - "tests/test_deform360_covariance_only_crossrepo_binding_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    deform360-covariance-only-independent-validation-v1-${{
+      github.event.pull_request.head.sha || github.sha
+    }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+  PROTOCOL: >-
+    protocols/locks/deform360_covariance_only_independent_validation_v1.json
+  PROTOCOL_ID: 0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc
+  CROSSREPO_BINDING: >-
+    protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json
+  CROSSREPO_BINDING_ID: 531123205959a3d3d0549d9256b6ec222dca636198bc1e93f1b468d1a77c8f33
+
+jobs:
+  contracts:
+    name: Target-closed independent-validation contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the frozen target-closed protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_only_crossrepo_binding_v1.py
+          python -m ruff format --check \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_only_crossrepo_binding_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_covariance_only_independent_validation_v1.py \
+            tests/test_deform360_covariance_only_crossrepo_binding_v1.py \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def verify(path_name: str, identity_field: str, expected_name: str) -> None:
+              path = Path(os.environ[path_name])
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              declared = payload.pop(identity_field)
+              observed = hashlib.sha256(
+                  json.dumps(
+                      payload,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                      allow_nan=False,
+                  ).encode("utf-8")
+              ).hexdigest()
+              expected = os.environ[expected_name]
+              if declared != expected or observed != expected:
+                  raise SystemExit(
+                      f"{path.name} changed: declared={declared} "
+                      f"observed={observed} expected={expected}"
+                  )
+
+          verify("PROTOCOL", "protocol_id", "PROTOCOL_ID")
+          verify("CROSSREPO_BINDING", "binding_id", "CROSSREPO_BINDING_ID")
+          PY
+          git diff --check
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
