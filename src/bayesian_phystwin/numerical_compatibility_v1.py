@@ -1,6 +1,6 @@
 """Derived numerical-compatibility identities for exact runtime profiles.
 
-``NumericalEnvironmentV1.profile_id`` remains the exact replay identity.  This
+``NumericalEnvironmentV1.profile_id`` remains the exact replay identity. This
 module derives a narrower identity for deciding whether two validated profiles
 share the solver-relevant state declared by this contract version.
 """
@@ -23,6 +23,16 @@ NUMERICAL_COMPATIBILITY_RECORD_SCHEMA = (
 NUMERICAL_COMPATIBILITY_RECORD_VERSION = 1
 
 _VERSION_PREFIX = re.compile(r"^([0-9]+)\.([0-9]+)(?:\.|$)")
+_POSITIVE_INTEGER = re.compile(r"^[1-9][0-9]*$")
+_FALSE_CONTROL_VALUES = frozenset({"0", "false", "no", "off"})
+_THREAD_COUNT_CONTROLS = (
+    "BLIS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+)
 _RECORD_FIELDS = frozenset(
     {
         "schema_name",
@@ -67,6 +77,37 @@ def _sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value)).hexdigest()
 
 
+def _thread_counts_fully_pinned(profile: NumericalEnvironmentV1) -> bool:
+    controls = profile.execution_controls
+    count_controls_are_positive_integers = all(
+        isinstance(controls[name], str)
+        and _POSITIVE_INTEGER.fullmatch(controls[name]) is not None
+        for name in _THREAD_COUNT_CONTROLS
+    )
+    omp_dynamic = controls["OMP_DYNAMIC"]
+    dynamic_teams_disabled = (
+        isinstance(omp_dynamic, str)
+        and omp_dynamic.lower() in _FALSE_CONTROL_VALUES
+    )
+    return count_controls_are_positive_integers and dynamic_teams_disabled
+
+
+def _implicit_parallelism_descriptor(
+    profile: NumericalEnvironmentV1,
+) -> dict[str, object]:
+    fully_pinned = _thread_counts_fully_pinned(profile)
+    cpu_count = None if fully_pinned else profile.logical_cpu_count
+    if not fully_pinned and cpu_count is None:
+        raise ValueError(
+            "numerical compatibility requires logical CPU count unless all "
+            "registered thread counts are fully pinned"
+        )
+    return {
+        "thread_counts_fully_pinned": fully_pinned,
+        "logical_cpu_count": cpu_count,
+    }
+
+
 def numerical_compatibility_descriptor_v1(
     profile: NumericalEnvironmentV1,
     *,
@@ -74,11 +115,12 @@ def numerical_compatibility_descriptor_v1(
 ) -> dict[str, object]:
     """Return the solver-relevant compatibility descriptor for ``profile``.
 
-    The exact installed-distribution inventory, Python patch/compiler details,
-    and logical CPU count remain bound by ``profile.profile_id`` but are
-    intentionally excluded here.  The dependency lock is required by default
-    so claim-bearing comparisons cannot silently rely on an unbound resolver
-    result.
+    The exact installed-distribution inventory and Python patch/compiler details
+    remain bound by ``profile.profile_id`` but are intentionally excluded here.
+    Logical CPU count is excluded only when every registered CPU thread count is
+    an explicit positive integer and OpenMP dynamic teams are explicitly off.
+    The dependency lock is required by default so claim-bearing comparisons
+    cannot silently rely on an unbound resolver result.
     """
 
     exact = _require_profile(profile)
@@ -112,6 +154,7 @@ def numerical_compatibility_descriptor_v1(
             name: exact.execution_controls[name]
             for name in sorted(exact.execution_controls)
         },
+        "implicit_parallelism": _implicit_parallelism_descriptor(exact),
         "dependency_lock": lock_descriptor,
     }
 
