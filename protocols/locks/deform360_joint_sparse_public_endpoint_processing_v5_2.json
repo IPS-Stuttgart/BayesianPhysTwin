@@ -13,7 +13,7 @@
     "source_predictions_sealed_before_endpoint_processing": true,
     "target_outcomes_used": false
   },
-  "lock_id": "d6b0207451581e7601be62dccd51d005aaea93879e6e20f397b1c92ecdbe0032",
+  "lock_id": "1ec041288fd9f5564442600d475de28e9c0638a8f702ece8bb477f067b3d1d4f",
   "prediction_batch_id": "c62d475cc298dafe1d9c0ec30a242faffe36f5ab3ee5fc3d4b578918dbea1aa8",
   "processing": {
     "camera_policy": {
@@ -73,6 +73,8 @@
       "warm_start_iterations": 250
     },
     "runtime": {
+      "ffmpeg_sha256": "36d94a605d612e4090d1b8aec889d0c0801c6eafb1593c90f5c0dfd2e2966a45",
+      "ffmpeg_version_first_line": "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers",
       "gsplat_backend_probe": "CameraModelType.PINHOLE",
       "gsplat_build_ninja_sha256": "a51f8d2b746d7e4a41846e196c01333a537c4c6342ae9e7ee58a22b881f0b5e4",
       "gsplat_extension_sha256": "152153a9cde346203f32a9792f2e2345450324cbc7652668e76574e8f3a490f0",
@@ -98,7 +100,7 @@
       "raw_frame_count": 81,
       "raw_start": "source-plan-raw-prefix-start",
       "timestamps_and_robot_state_sliced_to_same_raw_range": true,
-      "video_materialization": "exact-ffmpeg-libx264-crf12-30hz"
+      "video_materialization": "exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"
     }
   },
   "schema": "bayesian-phystwin.deform360-joint-sparse-public-endpoint-processing-lock",

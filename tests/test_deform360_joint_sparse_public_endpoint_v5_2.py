@@ -135,6 +135,13 @@ def test_processing_lock_binds_public_sealed_panel_without_human_approval() -> N
     assert validated == processing_lock
     assert validated["information_boundary"]["human_approval_required"] is False
     assert validated["information_boundary"]["new_measurements_required"] is False
+    runtime = validated["processing"]["runtime"]
+    assert runtime["ffmpeg_sha256"] == (
+        "36d94a605d612e4090d1b8aec889d0c0801c6eafb1593c90f5c0dfd2e2966a45"
+    )
+    assert validated["processing"]["windowing"]["video_materialization"] == (
+        "exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"
+    )
 
 
 def test_materializes_complete_public_endpoint_manifest(

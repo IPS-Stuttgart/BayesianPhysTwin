@@ -87,6 +87,17 @@ def _clean_revision(repository: Path) -> str:
     return revision
 
 
+def _ffmpeg_version_first_line(ffmpeg: Path) -> str:
+    output = subprocess.run(
+        [str(ffmpeg), "-version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    _require(bool(output), "FFmpeg version probe is empty")
+    return output[0]
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -178,6 +189,7 @@ def _validate_dependencies(
     sam2_repository: Path,
     checkpoint: Path,
     deform360_repository: Path,
+    ffmpeg: Path,
 ) -> tuple[dict[str, Path], dict[str, str]]:
     processing = cast(Mapping[str, Any], processing_lock["processing"])
     masking = cast(Mapping[str, Any], processing["masking"])
@@ -244,6 +256,12 @@ def _validate_dependencies(
         os.environ.get("TORCH_CUDA_ARCH_LIST") == runtime["torch_cuda_arch_list"],
         "TORCH_CUDA_ARCH_LIST changed",
     )
+    _require(
+        _sha256_file(ffmpeg) == runtime["ffmpeg_sha256"]
+        and _ffmpeg_version_first_line(ffmpeg)
+        == runtime["ffmpeg_version_first_line"],
+        "FFmpeg runtime changed",
+    )
     _require(_C is not None, "gsplat CUDA backend is unavailable")
     extension = Path(_C.__file__).resolve()
     build_ninja = extension.parent / "build.ninja"
@@ -257,6 +275,7 @@ def _validate_dependencies(
         **{name: _sha256_file(path) for name, path in selector_sources.items()},
         **{name: _sha256_file(path) for name, path in deform_sources.items()},
         "sam2_checkpoint": _sha256_file(checkpoint),
+        "ffmpeg": _sha256_file(ffmpeg),
         "gsplat_extension": _sha256_file(extension),
         "gsplat_build_ninja": _sha256_file(build_ninja),
     }
@@ -368,12 +387,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     sam2_repository = _ordinary_root(args.sam2_repository)
     checkpoint = args.sam2_checkpoint.resolve(strict=True)
     deform360_repository = _ordinary_root(args.deform360_repository)
+    ffmpeg = args.ffmpeg.resolve(strict=True)
     _, dependency_hashes = _validate_dependencies(
         processing_lock=processing_lock,
         selector_root=selector_root,
         sam2_repository=sam2_repository,
         checkpoint=checkpoint,
         deform360_repository=deform360_repository,
+        ffmpeg=ffmpeg,
     )
     preflight = {
         "object_id": args.object_id,
@@ -421,7 +442,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         episode / "extrinsics.npy",
         cameras=candidates,
     )
-    ffmpeg = args.ffmpeg.resolve(strict=True)
     for camera in candidates:
         source_camera = source_episode / camera
         output_camera = episode / camera
@@ -433,6 +453,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_video,
             raw_start,
             RAW_FRAME_COUNT,
+            output_sync_mode="legacy-vsync",
         )
         _require(decoded_frame_count(output_video) == RAW_FRAME_COUNT, "trim changed")
         _trim_timestamps(

@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
+from typing import Literal
 
 import pytest
 
+import bayesian_phystwin.deform360_exact_video_cadence as cadence
 from bayesian_phystwin.deform360_exact_video_cadence import (
     FROZEN_AUTHORIZED_FUTURE_STAGE_SHA256,
     append_tail_to_prefix_exact_30hz,
-    decoded_prefix_sha256,
     decoded_frame_count,
+    decoded_prefix_sha256,
     frozen_authorized_future_stage_path,
     sha256,
     trim_video_exact_30hz,
@@ -50,7 +52,11 @@ def test_frozen_authorized_future_stage_hash_is_unchanged() -> None:
     )
 
 
-def test_exact_tail_trim_materializes_all_23_frames(tmp_path: Path) -> None:
+@pytest.mark.parametrize("output_sync_mode", ["modern-fps-mode", "legacy-vsync"])
+def test_exact_tail_trim_materializes_all_23_frames(
+    tmp_path: Path,
+    output_sync_mode: Literal["modern-fps-mode", "legacy-vsync"],
+) -> None:
     executable = os.environ.get("DEFORM360_TEST_FFMPEG") or shutil.which("ffmpeg")
     if executable is None:
         pytest.skip("FFmpeg is unavailable")
@@ -59,9 +65,42 @@ def test_exact_tail_trim_materializes_all_23_frames(tmp_path: Path) -> None:
     tail = tmp_path / "tail.mp4"
     _write_test_video(source, 100, ffmpeg)
 
-    trim_video_exact_30hz(ffmpeg, source, tail, start=58, count=23)
+    trim_video_exact_30hz(
+        ffmpeg,
+        source,
+        tail,
+        start=58,
+        count=23,
+        output_sync_mode=output_sync_mode,
+    )
 
     assert decoded_frame_count(tail) == 23
+
+
+def test_legacy_sync_mode_uses_vsync_without_modern_fps_mode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    commands: list[list[str]] = []
+
+    def run(arguments: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        commands.append(arguments)
+        return subprocess.CompletedProcess(arguments, 0)
+
+    monkeypatch.setattr(cadence.subprocess, "run", run)
+    monkeypatch.setattr(cadence, "decoded_frame_count", lambda _: 1)
+
+    trim_video_exact_30hz(
+        Path("ffmpeg"),
+        tmp_path / "source.mp4",
+        tmp_path / "tail.mp4",
+        start=0,
+        count=1,
+        output_sync_mode="legacy-vsync",
+    )
+
+    assert len(commands) == 1
+    assert "-vsync" in commands[0]
+    assert "-fps_mode" not in commands[0]
 
 
 def test_exact_append_preserves_prefix_and_materializes_81_frames(
