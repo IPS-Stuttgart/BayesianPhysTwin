@@ -45,6 +45,10 @@ one `IPS-Stuttgart/BayesianPhysTwin` primary and exactly one
 `IPS-Stuttgart/Prob4D` observation provider. Package bindings must include at
 least `bayesian-phystwin` and `prob4d`.
 
+A valid `query_id` is a prerequisite for a target execution, not an execution or
+claim authorization. The separately registered prediction, target-access,
+scoring, and evidence-decision records remain mandatory.
+
 ## Example
 
 ```python
