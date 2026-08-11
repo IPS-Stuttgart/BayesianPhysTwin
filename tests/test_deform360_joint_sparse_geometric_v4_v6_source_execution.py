@@ -248,9 +248,7 @@ def test_plan_materializer_uses_only_frozen_supported_prefixes(
             "path": None,
             "manifest_file_sha256": None,
             "materialization_id": None,
-            "unavailable_reason": (
-                "released-tactile-robot-axis-identity-unavailable"
-            ),
+            "unavailable_reason": ("released-tactile-robot-axis-identity-unavailable"),
         }
         for visual in row["visual_windows"]:
             assert not Path(visual["decoded_uniform"]["path"]).is_absolute()
