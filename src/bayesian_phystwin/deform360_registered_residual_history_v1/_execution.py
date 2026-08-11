@@ -318,9 +318,7 @@ def run_registered_residual_history_v1(
     steps = _future_horizon_steps(len(physical_future))
     schedule = _scale_schedule(bins=bins, track_count=physical_future.shape[1])
     reasons: list[str] = []
-    if any(
-        count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK for count in counts
-    ):
+    if any(count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK for count in counts):
         reasons.append("insufficient-per-track-support")
     if registered_mean.tobytes(order="C") != reconstructed_mean.tobytes(order="C"):
         reasons.append("registered-mean-mismatch")

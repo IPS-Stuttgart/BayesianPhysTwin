@@ -139,12 +139,8 @@ class ResidualHistorySourceProvenanceV1:
             "source_inventory_id": self.source_inventory_id,
             "provider_reconstruction_id": self.provider_reconstruction_id,
             "scoring_reconstruction_id": self.scoring_reconstruction_id,
-            "provider_implementation_revision": (
-                self.provider_implementation_revision
-            ),
-            "scoring_implementation_revision": (
-                self.scoring_implementation_revision
-            ),
+            "provider_implementation_revision": (self.provider_implementation_revision),
+            "scoring_implementation_revision": (self.scoring_implementation_revision),
             "provider_configuration_id": self.provider_configuration_id,
             "scoring_configuration_id": self.scoring_configuration_id,
             "provider_camera_family_ids": list(self.provider_camera_family_ids),

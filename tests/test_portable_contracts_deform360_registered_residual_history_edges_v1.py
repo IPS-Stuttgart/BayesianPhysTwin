@@ -7,13 +7,10 @@ import numpy as np
 import pytest
 
 import bayesian_phystwin.deform360_registered_residual_history_v1 as subject
+from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_registered_residual_history_v1 import (
     _common as common,
 )
-from bayesian_phystwin.deform360_registered_residual_history_v1 import (
-    _execution as execution,
-)
-from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.endpoint_model_average import (
     DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
     infer_model_averaged_endpoint,
@@ -71,9 +68,7 @@ def _arrays(*, future_count: int = 6) -> dict[str, np.ndarray]:
         dtype=np.float64,
     )
     physical_future = np.zeros((future_count, 4, 3), dtype=np.float64)
-    physical_future[..., 2] = (
-        np.arange(future_count, dtype=np.float64)[:, None] * 0.001
-    )
+    physical_future[..., 2] = np.arange(future_count, dtype=np.float64)[:, None] * 0.001
     reference_covariance = np.zeros(
         physical_future.shape + (3,),
         dtype=np.float64,
@@ -115,11 +110,7 @@ def _run(
         arrays["observation"],
         arrays["validity"],
         arrays["physical_future"],
-        (
-            arrays["registered_mean"]
-            if registered_mean is None
-            else registered_mean
-        ),
+        (arrays["registered_mean"] if registered_mean is None else registered_mean),
         arrays["reference_covariance"],
         source_unit_id=source_unit_id,
         provenance=_provenance() if provenance is None else provenance,
@@ -149,7 +140,6 @@ def _donor_covariance(arrays: dict[str, np.ndarray]) -> np.ndarray:
         ],
         axis=0,
     )
-
 
 
 def test_result_constructor_rejects_mismatches() -> None:
@@ -298,9 +288,10 @@ def test_metadata_and_claim_boundary_are_immutable() -> None:
     with pytest.raises(TypeError, match="immutable"):
         result.decision.metadata["protocol"] = "changed"  # type: ignore[index]
     assert result.decision.descriptor()["claim_boundary"] == subject.CLAIM_BOUNDARY
-    assert "target" not in inspect.signature(
-        subject.run_registered_residual_history_v1
-    ).parameters
+    assert (
+        "target"
+        not in inspect.signature(subject.run_registered_residual_history_v1).parameters
+    )
 
 
 def test_config_descriptor_is_content_addressed() -> None:

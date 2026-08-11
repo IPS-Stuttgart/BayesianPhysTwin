@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -13,7 +12,6 @@ from bayesian_phystwin.deform360_registered_residual_history_v1 import (
 from bayesian_phystwin.deform360_registered_residual_history_v1 import (
     _execution as execution,
 )
-from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.endpoint_model_average import (
     DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
     infer_model_averaged_endpoint,
@@ -71,9 +69,7 @@ def _arrays(*, future_count: int = 6) -> dict[str, np.ndarray]:
         dtype=np.float64,
     )
     physical_future = np.zeros((future_count, 4, 3), dtype=np.float64)
-    physical_future[..., 2] = (
-        np.arange(future_count, dtype=np.float64)[:, None] * 0.001
-    )
+    physical_future[..., 2] = np.arange(future_count, dtype=np.float64)[:, None] * 0.001
     reference_covariance = np.zeros(
         physical_future.shape + (3,),
         dtype=np.float64,
@@ -115,11 +111,7 @@ def _run(
         arrays["observation"],
         arrays["validity"],
         arrays["physical_future"],
-        (
-            arrays["registered_mean"]
-            if registered_mean is None
-            else registered_mean
-        ),
+        (arrays["registered_mean"] if registered_mean is None else registered_mean),
         arrays["reference_covariance"],
         source_unit_id=source_unit_id,
         provenance=_provenance() if provenance is None else provenance,
@@ -158,9 +150,10 @@ def test_registered_execution_reproduces_donor_and_preserves_mean() -> None:
     bins = np.empty(len(registered), dtype=np.int64)
     for label, chunk in enumerate(np.array_split(np.arange(len(bins)), 3)):
         bins[chunk] = label
-    expected = _donor_covariance(arrays) * np.asarray(
-        subject.REGISTERED_COVARIANCE_SCALES
-    )[bins, None, None, None]
+    expected = (
+        _donor_covariance(arrays)
+        * np.asarray(subject.REGISTERED_COVARIANCE_SCALES)[bins, None, None, None]
+    )
 
     assert result.accepted
     assert result.mean_m is registered
@@ -207,8 +200,7 @@ def test_execution_is_deterministic_and_changed_source_changes_ids() -> None:
     assert first.decision.endpoint_posterior_id == second.decision.endpoint_posterior_id
     assert changed.decision.decision_id != first.decision.decision_id
     assert (
-        changed.decision.endpoint_posterior_id
-        != first.decision.endpoint_posterior_id
+        changed.decision.endpoint_posterior_id != first.decision.endpoint_posterior_id
     )
 
 
@@ -234,9 +226,7 @@ def test_support_and_mean_mismatch_return_exact_reference_objects() -> None:
     assert not mismatch_result.accepted
     assert mismatch_result.mean_m is mismatch
     assert mismatch_result.covariance_m2 is arrays["reference_covariance"]
-    assert mismatch_result.decision.fallback_reasons == (
-        "registered-mean-mismatch",
-    )
+    assert mismatch_result.decision.fallback_reasons == ("registered-mean-mismatch",)
 
 
 def test_support_and_mean_mismatch_can_be_reported_together() -> None:
@@ -266,9 +256,7 @@ def test_inference_failure_returns_exact_fallback_without_donor(
     assert not result.accepted
     assert result.mean_m is arrays["registered_mean"]
     assert result.covariance_m2 is arrays["reference_covariance"]
-    assert result.decision.fallback_reasons == (
-        "covariance-contract-rejection",
-    )
+    assert result.decision.fallback_reasons == ("covariance-contract-rejection",)
     assert result.decision.endpoint_posterior_id is None
     assert result.decision.endpoint_prediction_ids == ()
     assert result.decision.donor_covariance_sha256 is None
@@ -336,8 +324,6 @@ def test_identity_bearing_inputs_reject_implicit_copies() -> None:
             registered_mean=np.asfortranarray(arrays["registered_mean"]),
         )
     arrays = _arrays()
-    arrays["reference_covariance"] = np.asfortranarray(
-        arrays["reference_covariance"]
-    )
+    arrays["reference_covariance"] = np.asfortranarray(arrays["reference_covariance"])
     with pytest.raises(ValueError, match="C-contiguous"):
         _run(arrays)

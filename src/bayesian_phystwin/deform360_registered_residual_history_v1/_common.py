@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping
 from typing import Any, Final
 
 import numpy as np
@@ -95,8 +94,7 @@ def _digest_tuple(
     if type(value) is not tuple:
         raise ValueError(f"{name} must be a canonical tuple")
     result = tuple(
-        _sha256(item, name=f"{name}[{index}]")
-        for index, item in enumerate(value)
+        _sha256(item, name=f"{name}[{index}]") for index, item in enumerate(value)
     )
     if not result and not allow_empty:
         raise ValueError(f"{name} must be nonempty")
@@ -189,15 +187,11 @@ def _endpoint_config_descriptor(
                 "observation_std_m": component.observation_std_m,
                 "initial_std_m": component.initial_std_m,
                 "inlier_prior": component.inlier_prior,
-                "outlier_variance_multiplier": (
-                    component.outlier_variance_multiplier
-                ),
+                "outlier_variance_multiplier": (component.outlier_variance_multiplier),
             }
             for component in config.components
         ],
-        "component_prior_probability": list(
-            config.component_prior_probability or ()
-        ),
+        "component_prior_probability": list(config.component_prior_probability or ()),
     }
 
 
@@ -234,9 +228,7 @@ def _endpoint_posterior_descriptor(
             posterior.component_log_evidence
         ),
         "component_mean_sha256": _array_sha256(posterior.component_mean_m),
-        "component_variance_sha256": _array_sha256(
-            posterior.component_variance_m2
-        ),
+        "component_variance_sha256": _array_sha256(posterior.component_variance_m2),
         "component_process_variance_sha256": _array_sha256(
             posterior.component_process_variance_m2
         ),

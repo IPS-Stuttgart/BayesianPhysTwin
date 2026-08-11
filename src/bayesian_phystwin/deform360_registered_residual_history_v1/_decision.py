@@ -14,6 +14,7 @@ from ..contracts.fixed_anchor import FIXED_BAYESIAN_ANCHOR_CONTRACT_VERSION
 from ..covariance_only_hybrid import CovarianceOnlyHybridPredictionV1
 from ..endpoint_model_average import MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION
 from ._common import (
+    _ALLOWED_FALLBACK_REASONS,
     CLAIM_BOUNDARY,
     REGISTERED_COVARIANCE_DONOR_ID,
     REGISTERED_COVARIANCE_SCALES,
@@ -21,7 +22,6 @@ from ._common import (
     REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK,
     REGISTERED_REFERENCE_PREDICTOR_ID,
     REGISTERED_SCHEMA_VERSION,
-    _ALLOWED_FALLBACK_REASONS,
     _array_sha256,
     _canonical_horizon_bins,
     _canonical_string,
@@ -207,8 +207,7 @@ class RegisteredResidualHistoryDecisionV1:
         if not set(reasons) <= _ALLOWED_FALLBACK_REASONS:
             raise ValueError("fallback_reasons contain an unsupported reason")
         insufficient = any(
-            count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK
-            for count in counts
+            count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK for count in counts
         )
         if ("insufficient-per-track-support" in reasons) != insufficient:
             raise ValueError("support fallback reason differs from source support")
@@ -254,8 +253,7 @@ class RegisteredResidualHistoryDecisionV1:
         if not self.registered_mean_identity_preserved:
             raise ValueError("registered mean identity must always be preserved")
         insufficient = any(
-            count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK
-            for count in counts
+            count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK for count in counts
         )
         mean_mismatch = (
             digests["registered_mean_sha256"]
@@ -275,9 +273,10 @@ class RegisteredResidualHistoryDecisionV1:
             raise ValueError("fallback decision must not retain a covariance hybrid")
         if not self.reference_covariance_identity_preserved:
             raise ValueError("fallback must preserve reference covariance identity")
-        if digests["output_covariance_sha256"] != digests[
-            "reference_covariance_sha256"
-        ]:
+        if (
+            digests["output_covariance_sha256"]
+            != digests["reference_covariance_sha256"]
+        ):
             raise ValueError("fallback covariance differs from the reference")
         covariance_rejection = reasons == ("covariance-contract-rejection",)
         if covariance_rejection:

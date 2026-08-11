@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from dataclasses import replace
 
 import numpy as np
@@ -13,7 +12,6 @@ from bayesian_phystwin.deform360_registered_residual_history_v1 import (
 from bayesian_phystwin.deform360_registered_residual_history_v1 import (
     _execution as execution,
 )
-from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.endpoint_model_average import (
     DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
     infer_model_averaged_endpoint,
@@ -71,9 +69,7 @@ def _arrays(*, future_count: int = 6) -> dict[str, np.ndarray]:
         dtype=np.float64,
     )
     physical_future = np.zeros((future_count, 4, 3), dtype=np.float64)
-    physical_future[..., 2] = (
-        np.arange(future_count, dtype=np.float64)[:, None] * 0.001
-    )
+    physical_future[..., 2] = np.arange(future_count, dtype=np.float64)[:, None] * 0.001
     reference_covariance = np.zeros(
         physical_future.shape + (3,),
         dtype=np.float64,
@@ -115,11 +111,7 @@ def _run(
         arrays["observation"],
         arrays["validity"],
         arrays["physical_future"],
-        (
-            arrays["registered_mean"]
-            if registered_mean is None
-            else registered_mean
-        ),
+        (arrays["registered_mean"] if registered_mean is None else registered_mean),
         arrays["reference_covariance"],
         source_unit_id=source_unit_id,
         provenance=_provenance() if provenance is None else provenance,
@@ -149,7 +141,6 @@ def _donor_covariance(arrays: dict[str, np.ndarray]) -> np.ndarray:
         ],
         axis=0,
     )
-
 
 
 @pytest.mark.parametrize(
@@ -332,9 +323,9 @@ def test_covariance_rejection_rejects_partial_lineage() -> None:
     arrays = _arrays()
     original = execution.compose_covariance_only_hybrid
     try:
-        execution.compose_covariance_only_hybrid = lambda *a, **k: (_ for _ in ()).throw(
-            ValueError("reject")
-        )
+        execution.compose_covariance_only_hybrid = lambda *a, **k: (
+            _ for _ in ()
+        ).throw(ValueError("reject"))
         decision = _run(arrays).decision
     finally:
         execution.compose_covariance_only_hybrid = original
