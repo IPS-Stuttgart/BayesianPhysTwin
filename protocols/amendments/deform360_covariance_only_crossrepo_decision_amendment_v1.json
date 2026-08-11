@@ -1,0 +1,73 @@
+{
+  "schema": "bayesian-phystwin.deform360-covariance-only-crossrepo-decision-amendment",
+  "schema_version": 1,
+  "status": "target-closed",
+  "locked_date": "2026-08-12",
+  "parent_code_protocol": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "merge_revision": "d337c5209c639430abe801a9688cc2788faa2aaf",
+    "path": "protocols/locks/deform360_covariance_only_independent_validation_v1.json",
+    "protocol_id": "0f13d7a1f1610588ca9e7119f94814c99940fb31050419de16fa9cae06f683cc"
+  },
+  "parent_crossrepo_binding": {
+    "path": "protocols/locks/deform360_covariance_only_crossrepo_preregistration_binding_v1.json",
+    "binding_id": "531123205959a3d3d0549d9256b6ec222dca636198bc1e93f1b468d1a77c8f33"
+  },
+  "paper_analysis_authority": {
+    "repository": "FlorianPfaff/BayesianPhysTwin-Paper",
+    "parent_protocol_merge_revision": "7951467b1a24ac428a2ffc81dd0ce8bd0d622ae5",
+    "parent_protocol_path": "preregistrations/deform360_covariance_only_confirmation_v1.json",
+    "parent_protocol_id": "fa16c105e6d535d1e229ccf086fd69d05b2be74592b5c4e3f6c5289b8915fee3",
+    "decision_amendment_merge_revision": "4e448ce7628b3826658fdffd8590cb680c500a88",
+    "decision_amendment_path": "preregistrations/deform360_covariance_only_confirmation_v1_decision_amendment.json",
+    "decision_amendment_id": "c78868d0397988d4ca4f438ba93ef0b02c6d07d031251dda9d8058eef4403bcc"
+  },
+  "precedence": {
+    "prediction_custody_authority": "parent_code_protocol",
+    "statistical_analysis_authority": "paper-parent-protocol-plus-decision-amendment",
+    "claim_wording_authority": "paper-parent-protocol-plus-decision-amendment",
+    "conflict_rule": "fail-closed-no-target-opening",
+    "target_execution_requires_all_bindings": true,
+    "target_result_promotion_requires_all_bindings": true
+  },
+  "corrected_software_semantics": {
+    "parent_missing_unit_imputation_superseded": true,
+    "missing_or_unscorable_primary_target_outcome_imputation_allowed": false,
+    "missing_or_unscorable_primary_target_outcome_consequence": "confirmatory-analysis-incomplete-and-claim-ineligible",
+    "candidate_dependent_row_or_unit_deletion_allowed": false,
+    "unit_replacement_allowed": false,
+    "observed_target_exact_fallback_zero_effect_allowed": true,
+    "observed_target_exact_fallback_zero_effect_requires": [
+      "primary-target-outcome-present-and-scorable",
+      "candidate-and-b1-use-the-same-registered-fallback-distribution-byte-for-byte"
+    ],
+    "mechanism_confirmation_requires": [
+      "studentized-max-t-simultaneous-upper-bound-candidate-minus-b1-overall-below-zero",
+      "holm-adjusted-exact-2^12-sign-flip-pvalue-candidate-minus-b1-below-0.05",
+      "exact-point-identity-all-twelve-target-units",
+      "zero-candidate-minus-b1-track-and-chamfer-differences",
+      "sheet-mean-candidate-minus-b1-nll-nonpositive",
+      "volumetric-mean-candidate-minus-b1-nll-nonpositive",
+      "exact-registered-fallback-all-unsupported-observed-target-units",
+      "complete-ordered-twelve-unit-primary-score-table",
+      "complete-audit-artifacts"
+    ],
+    "physical_fallback_improvement_additionally_requires": [
+      "studentized-max-t-simultaneous-upper-bound-candidate-minus-b0-overall-below-zero",
+      "holm-adjusted-exact-2^12-sign-flip-pvalue-candidate-minus-b0-below-0.05"
+    ],
+    "incomplete_analysis_is_not_negative_or_equivalence_evidence": true,
+    "negative_or_inconclusive_complete_only_for_complete_ordered_target_cohort": true,
+    "target_retuning_allowed": false
+  },
+  "information_boundary": {
+    "development_suffix_opened_by_amendment": false,
+    "confirmation_payload_opened_by_amendment": false,
+    "confirmation_prediction_opened_by_amendment": false,
+    "confirmation_outcome_opened_by_amendment": false,
+    "target_execution_authorized_by_amendment_alone": false,
+    "claim_authorized_by_amendment_alone": false,
+    "deployment_authorized": false
+  },
+  "amendment_id": "efacabe4ceb6e1d3c4cd523e0959bdf16f8ff4253f9800e8de11574734623802"
+}
