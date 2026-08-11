@@ -6,7 +6,7 @@ import math
 import re
 from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import sleep as _sleep
 from typing import Any, Final, cast
 
@@ -19,6 +19,7 @@ from .contracts import (
     file_sha256,
     load_json,
     load_units,
+    repository_relative_path,
     require,
     write_json,
 )
@@ -105,9 +106,16 @@ def _retryable_download_error(error: BaseException) -> bool:
 
 
 def _record_path(record: Mapping[str, Any]) -> str:
-    raw = record.get("path")
-    require(isinstance(raw, str), "download path is malformed")
-    return cast(str, raw)
+    return repository_relative_path(record.get("path"))
+
+
+def _require_no_symlink_components(*, root: Path, relative: str) -> Path:
+    candidate = root.joinpath(*PurePosixPath(relative).parts)
+    current = root
+    for part in candidate.relative_to(root).parts:
+        current /= part
+        require(not current.is_symlink(), f"download path contains symlink: {relative}")
+    return candidate
 
 
 def _validated_download(
@@ -117,7 +125,8 @@ def _validated_download(
     destination: Path,
 ) -> dict[str, Any]:
     relative = _record_path(record)
-    expected = (root / relative).resolve()
+    candidate = _require_no_symlink_components(root=root, relative=relative)
+    expected = candidate.resolve()
     require(expected.is_relative_to(root), f"download path escaped root: {relative}")
     require(destination.resolve() == expected, f"download path changed: {relative}")
     require(
@@ -148,8 +157,7 @@ def _completed_download(
     root: Path,
 ) -> dict[str, Any] | None:
     relative = _record_path(record)
-    candidate = root / relative
-    require(not candidate.is_symlink(), f"download is a symlink: {relative}")
+    candidate = _require_no_symlink_components(root=root, relative=relative)
     if not candidate.exists():
         return None
     return _validated_download(

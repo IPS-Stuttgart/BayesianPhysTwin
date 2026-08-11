@@ -26,6 +26,7 @@ from .contracts import (
     load_json,
     load_protocol,
     load_units,
+    repository_relative_path,
     require,
     summary_gate,
     validate_provider_lock,
@@ -140,11 +141,15 @@ def repository_files(
     *,
     prefix: str,
 ) -> tuple[RepositoryFile, ...]:
+    require(prefix.endswith("/"), "repository prefix must end with a slash")
+    canonical_prefix = repository_relative_path(prefix[:-1]) + "/"
+    require(prefix == canonical_prefix, "repository prefix is not canonical")
     files: list[RepositoryFile] = []
     for entry in entries:
         path = getattr(entry, "path", None)
         if not isinstance(path, str) or not path.startswith(prefix):
             continue
+        path = repository_relative_path(path)
         entry_type = getattr(entry, "type", None)
         blob_id = getattr(entry, "blob_id", None)
         if entry_type not in {None, "file"} and blob_id is None:
