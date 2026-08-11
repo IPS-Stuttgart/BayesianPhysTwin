@@ -1,0 +1,64 @@
+{
+  "correction": {
+    "checkpoint_family": "SAM 2",
+    "checkpoint_filename": "sam2_hiera_large.pt",
+    "checkpoint_model": "sam2_hiera_large",
+    "corrected_byte_count": 897952466,
+    "corrected_sha256": "7442e4e9b732a508f80e141e7c2913437a3610ee0c77381a66658c3a445df87b",
+    "field": "runtime_sources.sam2_checkpoint_sha256",
+    "official_download_url": "https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt",
+    "previous_identity": "sam2.1_hiera_small.pt",
+    "previous_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "repository": "facebookresearch/sam2",
+    "repository_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4"
+  },
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:6acf80b8f1c33d29014ba799eb9331e3ce75bfcc77b6c338e7d9b78eb08e37e9",
+    "artifact_id": 9088273849,
+    "artifact_name": "deform360-v6-source-prediction-evidence-31456530482-1",
+    "error": "SAM2 checkpoint identity changed",
+    "execution_receipt_id": "3159b09724a0e9082bbf0020c38f0c5ec25c8ce3cc08d92f1eb9fa3418c9316d",
+    "physical_manifest_count": 0,
+    "prepared_source_object_count": 10,
+    "prepared_source_stream_count": 324,
+    "source_prediction_seal_count": 0,
+    "source_revision": "6111dd42e04b7a050cf7e9e903065d03c79aa2f2",
+    "status": "invalid",
+    "terminal_stage": "locate-frozen-sam2-checkpoint",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31456530482
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "28cee70eaa0e8561a320f87d4e51d6c2aad365927814dc94864e299fc145be99",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "replacement_allowed": false,
+    "repository_revision_changed": false,
+    "runtime_byte_identity_only": true,
+    "source_cohort_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-runtime-identity-repair",
+  "schema_version": 1,
+  "semantics": "pre-source-prediction-sam2-checkpoint-identity-repair-v1",
+  "superseded_execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+}
