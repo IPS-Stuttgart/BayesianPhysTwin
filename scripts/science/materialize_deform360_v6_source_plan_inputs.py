@@ -358,12 +358,14 @@ def main() -> int:
         amendment.get("visual_likelihood_panel"),
         name="visual_likelihood_panel",
     )
-    maximum = panel.get("maximum_cameras_per_object")
-    minimum = panel.get("minimum_cameras_per_object")
+    maximum_value = panel.get("maximum_cameras_per_object")
+    minimum_value = panel.get("minimum_cameras_per_object")
     _require(
-        type(maximum) is int and type(minimum) is int,
+        type(maximum_value) is int and type(minimum_value) is int,
         "camera-panel counts changed",
     )
+    maximum = cast(int, maximum_value)
+    minimum = cast(int, minimum_value)
     _require(2 <= minimum <= maximum, "camera-panel counts are invalid")
     metric_files_root = _ordinary_root(
         metric_root / "metrics",
