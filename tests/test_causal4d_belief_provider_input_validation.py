@@ -8,6 +8,12 @@ from bayesian_phystwin.causal4d_belief_provider_v1 import (
 )
 
 
+class _RejectArrayCoercion:
+    def __array__(self, dtype=None, copy=None):
+        del dtype, copy
+        raise TypeError("array coercion rejected")
+
+
 def _provider_inputs() -> tuple[np.ndarray, np.ndarray]:
     residual = np.zeros((3, 2, 3), dtype=np.float64)
     residual[:, 0, 0] = (0.001, 0.002, 0.003)
@@ -36,6 +42,17 @@ def test_fixed_anchor_provider_rejects_complex_residual_without_lossy_cast() -> 
         )
 
 
+def test_fixed_anchor_provider_normalizes_residual_coercion_errors() -> None:
+    _, valid = _provider_inputs()
+
+    with pytest.raises(ValueError, match="residual_m must contain real numeric values"):
+        infer_fixed_bayesian_anchor_endpoint(
+            _RejectArrayCoercion(),
+            valid,
+            end_frame=1,
+        )
+
+
 @pytest.mark.parametrize(
     "invalid_validity",
     (
@@ -59,6 +76,46 @@ def test_fixed_anchor_provider_rejects_nonbinary_validity(
             residual,
             invalid_validity,
             end_frame=len(residual),
+        )
+
+
+def test_fixed_anchor_provider_normalizes_validity_coercion_errors() -> None:
+    residual, _ = _provider_inputs()
+
+    with pytest.raises(
+        ValueError,
+        match="valid must contain booleans or exact 0/1 values",
+    ):
+        infer_fixed_bayesian_anchor_endpoint(
+            residual,
+            _RejectArrayCoercion(),
+            end_frame=len(residual),
+        )
+
+
+def test_fixed_anchor_provider_rejects_mismatched_validity_shape() -> None:
+    residual, _ = _provider_inputs()
+
+    with pytest.raises(
+        ValueError,
+        match="valid must match the residual frame and track dimensions",
+    ):
+        infer_fixed_bayesian_anchor_endpoint(
+            residual,
+            np.ones((3, 1), dtype=bool),
+            end_frame=len(residual),
+        )
+
+
+@pytest.mark.parametrize("end_frame", (True, np.bool_(True), 1.0))
+def test_fixed_anchor_provider_rejects_noninteger_cutoff(end_frame: object) -> None:
+    residual, valid = _provider_inputs()
+
+    with pytest.raises(ValueError, match="end_frame must be an integer"):
+        infer_fixed_bayesian_anchor_endpoint(
+            residual,
+            valid,
+            end_frame=end_frame,  # type: ignore[arg-type]
         )
 
 
