@@ -12,6 +12,7 @@ PREPARED_INVENTORY_IMPLEMENTATION_REVISION="e190c94014e6024e324d860618662526af6e
 PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
 PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
 PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
+STAGE_PREFIX_COMPATIBILITY_MODE="frozen-stage-prefix-redundant-context-removal-v1"
 
 # The delegated selector wrapper preserves these reviewed invariants verbatim:
 # REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
@@ -204,6 +205,14 @@ inventory_pattern = re.compile(
 )
 if len(inventory_pattern.findall(runner)) != 1:
     raise SystemExit("archived prepared-inventory command binding changed")
+stage_prefix_pattern = re.compile(
+    r"scripts/remote/run_deform360_joint_sparse_physical_source_v5\.py"
+    r"[\s\S]*?--stage stage-prefix"
+    r"[\s\S]*?--repo \"\$\{GITHUB_WORKSPACE\}\""
+    r"[\s\S]*?--role calibration"
+)
+if len(stage_prefix_pattern.findall(runner)) != 1:
+    raise SystemExit("archived stage-prefix legacy context changed")
 PY
 
 PHYSICAL_UPSTREAM_ROOT="$(
@@ -212,12 +221,19 @@ PHYSICAL_UPSTREAM_ROOT="$(
 PYTHON_SHIM="$(
   mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-python-shim.XXXXXX"
 )"
+STAGE_PREFIX_COMPATIBILITY_MARKER="$(
+  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-stage-prefix-compatibility.XXXXXX"
+)"
+rm -f "${STAGE_PREFIX_COMPATIBILITY_MARKER}"
 REAL_BPT_PYTHON="${BPT_PYTHON}"
+export STAGE_PREFIX_COMPATIBILITY_MODE STAGE_PREFIX_COMPATIBILITY_MARKER
 cat > "${PYTHON_SHIM}" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 : "${REAL_BPT_PYTHON:?REAL_BPT_PYTHON is required}"
 : "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION:?prepared inventory revision is required}"
+: "${STAGE_PREFIX_COMPATIBILITY_MODE:?stage-prefix compatibility mode is required}"
+: "${STAGE_PREFIX_COMPATIBILITY_MARKER:?stage-prefix compatibility marker is required}"
 
 target="scripts/science/inventory_deform360_calibration_prepared_source.py"
 if [[ "${1:-}" == "${target}" ]]; then
@@ -243,6 +259,108 @@ if [[ "${1:-}" == "${target}" ]]; then
   fi
   exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
 fi
+
+physical_target="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+if [[ "${1:-}" == "${physical_target}" ]]; then
+  original=("$@")
+  script="$1"
+  shift
+  arguments=("$@")
+  stage_count=0
+  stage_value=""
+  execution_repo_count=0
+  execution_repo=""
+  legacy_repo_count=0
+  legacy_repo=""
+  legacy_role_count=0
+  legacy_role=""
+  for ((index = 0; index < ${#arguments[@]}; index++)); do
+    option="${arguments[index]}"
+    case "${option}" in
+      --stage|--execution-repo|--repo|--role)
+        if ((index + 1 >= ${#arguments[@]})); then
+          echo "${option} lacks a value" >&2
+          exit 2
+        fi
+        value="${arguments[index + 1]}"
+        case "${option}" in
+          --stage)
+            stage_count=$((stage_count + 1))
+            stage_value="${value}"
+            ;;
+          --execution-repo)
+            execution_repo_count=$((execution_repo_count + 1))
+            execution_repo="${value}"
+            ;;
+          --repo)
+            legacy_repo_count=$((legacy_repo_count + 1))
+            legacy_repo="${value}"
+            ;;
+          --role)
+            legacy_role_count=$((legacy_role_count + 1))
+            legacy_role="${value}"
+            ;;
+        esac
+        index=$((index + 1))
+        ;;
+    esac
+  done
+  [[ "${stage_count}" -eq 1 ]] || {
+    echo "physical-source stage binding is not unique" >&2
+    exit 2
+  }
+  if [[ "${stage_value}" == "stage-prefix" ]]; then
+    [[ "${execution_repo_count}" -eq 1 ]] || {
+      echo "stage-prefix execution repository binding is not unique" >&2
+      exit 2
+    }
+    [[ "${legacy_repo_count}" -eq 1 ]] || {
+      echo "legacy stage-prefix repository binding is not unique" >&2
+      exit 2
+    }
+    [[ "${legacy_role_count}" -eq 1 ]] || {
+      echo "legacy stage-prefix role binding is not unique" >&2
+      exit 2
+    }
+    execution_repo_resolved="$(realpath -e -- "${execution_repo}")" || {
+      echo "stage-prefix execution repository is unavailable" >&2
+      exit 2
+    }
+    legacy_repo_resolved="$(realpath -e -- "${legacy_repo}")" || {
+      echo "legacy stage-prefix repository is unavailable" >&2
+      exit 2
+    }
+    [[ "${legacy_repo_resolved}" == "${execution_repo_resolved}" ]] || {
+      echo "legacy stage-prefix repository changed" >&2
+      exit 2
+    }
+    [[ "${legacy_role}" == "calibration" ]] || {
+      echo "legacy stage-prefix role changed" >&2
+      exit 2
+    }
+    rewritten=("${script}")
+    set -- "${arguments[@]}"
+    while [[ "$#" -gt 0 ]]; do
+      case "$1" in
+        --repo|--role)
+          [[ "$#" -ge 2 ]] || {
+            echo "$1 lacks a value" >&2
+            exit 2
+          }
+          shift 2
+          ;;
+        *)
+          rewritten+=("$1")
+          shift
+          ;;
+      esac
+    done
+    printf '%s\n' "${STAGE_PREFIX_COMPATIBILITY_MODE}" \
+      > "${STAGE_PREFIX_COMPATIBILITY_MARKER}"
+    exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
+  fi
+  exec "${REAL_BPT_PYTHON}" "${original[@]}"
+fi
 exec "${REAL_BPT_PYTHON}" "$@"
 SH
 chmod 700 "${PYTHON_SHIM}"
@@ -256,6 +374,7 @@ cleanup() {
   fi
   rm -rf "${PHYSICAL_UPSTREAM_ROOT}"
   rm -f "${PYTHON_SHIM}"
+  rm -f "${STAGE_PREFIX_COMPATIBILITY_MARKER}"
 }
 trap cleanup EXIT
 
@@ -323,6 +442,22 @@ receipt["runtime_prepared_inventory_identity"] = {
     "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
     "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
     "selection": "frozen-authoritative-retained-source-admission",
+}
+marker = Path(os.environ["STAGE_PREFIX_COMPATIBILITY_MARKER"])
+activated = marker.is_file()
+if activated:
+    observed_mode = marker.read_text(encoding="utf-8").strip()
+    if observed_mode != os.environ["STAGE_PREFIX_COMPATIBILITY_MODE"]:
+        raise SystemExit("stage-prefix compatibility marker changed")
+receipt["runtime_stage_prefix_cli_compatibility"] = {
+    "activated": activated,
+    "mode": os.environ["STAGE_PREFIX_COMPATIBILITY_MODE"],
+    "other_stages_unchanged": True,
+    "repository_check": "resolved-legacy-repo-equals-execution-repo",
+    "required_legacy_role": "calibration",
+    "target_script": (
+        "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+    ),
 }
 canonical = json.dumps(
     receipt,
