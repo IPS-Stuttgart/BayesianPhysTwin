@@ -34,9 +34,13 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
           git fetch --no-tags --no-recurse-submodules --depth=1 origin "${BASE_SHA}"
-          python3 -m venv "${RUNNER_TEMP}/pr546-validation"
+          command -v uv
+          test -x /opt/pyvenv/bin/python
+          uv venv --seed \
+            --python /opt/pyvenv/bin/python \
+            "${RUNNER_TEMP}/pr546-validation"
           source "${RUNNER_TEMP}/pr546-validation/bin/activate"
-          python -m pip install -e ".[dev]"
+          uv pip install --python python -e ".[dev]"
           python -m pip check
           python scripts/ci/check_changed_python.py \
             --base "${BASE_SHA}" \
