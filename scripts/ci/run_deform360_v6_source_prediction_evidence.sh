@@ -8,6 +8,10 @@ SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
 PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
 PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID="31461017011"
 PHYSICAL_UPSTREAM_REPORT_ID="75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
+PREPARED_INVENTORY_IMPLEMENTATION_REVISION="e190c94014e6024e324d860618662526af6ea682"
+PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
+PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
+PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
 
 # The delegated selector wrapper preserves these reviewed invariants verbatim:
 # REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
@@ -167,11 +171,79 @@ test -f "${SCIENCE_RUNNER}"
 test ! -L "${SCIENCE_RUNNER}"
 test "$(git hash-object "${SCIENCE_RUNNER}")" = "${SCIENCE_RUNNER_BLOB_SHA}"
 
+export PREPARED_INVENTORY_IMPLEMENTATION_REVISION
+export PREPARED_INVENTORY_ID
+export PREPARED_INVENTORY_FILE_SHA256
+export PREPARED_INVENTORY_ADMISSION_RUN_ID
+export SCIENCE_RUNNER
+"${BPT_PYTHON}" - <<'PY'
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+lock_path = Path(
+    "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+)
+lock = json.loads(lock_path.read_text(encoding="utf-8"))
+prepared = lock.get("physical_baseline", {}).get("prepared_source_inventory", {})
+if prepared != {
+    "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
+    "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
+}:
+    raise SystemExit("locked prepared-source inventory identity changed")
+
+runner = Path(os.environ["SCIENCE_RUNNER"]).read_text(encoding="utf-8")
+needle = '--implementation-revision "${BPT_SOURCE_SHA}"'
+if runner.count(needle) != 1:
+    raise SystemExit("archived prepared-inventory implementation binding changed")
+PY
+
 PHYSICAL_UPSTREAM_ROOT="$(
   mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-physical-upstream.XXXXXX"
 )"
+PYTHON_SHIM="$(
+  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-python-shim.XXXXXX"
+)"
+REAL_BPT_PYTHON="${BPT_PYTHON}"
+cat > "${PYTHON_SHIM}" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+: "${REAL_BPT_PYTHON:?REAL_BPT_PYTHON is required}"
+: "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION:?prepared inventory revision is required}"
+
+target="scripts/science/inventory_deform360_calibration_prepared_source.py"
+if [[ "${1:-}" == "${target}" ]]; then
+  rewritten=()
+  replacements=0
+  while [[ "$#" -gt 0 ]]; do
+    if [[ "$1" == "--implementation-revision" ]]; then
+      [[ "$#" -ge 2 ]] || {
+        echo "prepared inventory implementation revision lacks a value" >&2
+        exit 2
+      }
+      rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
+      replacements=$((replacements + 1))
+      shift 2
+    else
+      rewritten+=("$1")
+      shift
+    fi
+  done
+  if [[ "${replacements}" -ne 1 ]]; then
+    echo "prepared inventory implementation binding is not unique" >&2
+    exit 2
+  fi
+  exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
+fi
+exec "${REAL_BPT_PYTHON}" "$@"
+SH
+chmod 700 "${PYTHON_SHIM}"
+
 cleanup() {
   rm -rf "${PHYSICAL_UPSTREAM_ROOT}"
+  rm -f "${PYTHON_SHIM}"
 }
 trap cleanup EXIT
 
@@ -179,13 +251,17 @@ materialize_frozen_physical_upstream \
   "${GITHUB_WORKSPACE:-.}" \
   "${PHYSICAL_UPSTREAM_ROOT}"
 echo "materialized frozen physical upstream revision=${PHYSICAL_UPSTREAM_REVISION}"
+echo "bound prepared inventory to authoritative admission revision=${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}"
 
 export PHYSICAL_UPSTREAM_REVISION
 export PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID
 export PHYSICAL_UPSTREAM_REPORT_ID
+export REAL_BPT_PYTHON
 
 set +e
-RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" bash "${SELECTOR_WRAPPER}"
+BPT_PYTHON="${PYTHON_SHIM}" \
+RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" \
+  bash "${SELECTOR_WRAPPER}"
 status=$?
 set -e
 
@@ -210,6 +286,17 @@ receipt["runtime_physical_upstream"] = {
     "diagnostic_report_id": os.environ["PHYSICAL_UPSTREAM_REPORT_ID"],
     "selection": "unique-complete-history-exact-ten-file-sha256-match",
     "required_file_count": 10,
+}
+receipt["runtime_prepared_inventory_identity"] = {
+    "authoritative_admission_workflow_run_id": int(
+        os.environ["PREPARED_INVENTORY_ADMISSION_RUN_ID"]
+    ),
+    "implementation_revision": os.environ[
+        "PREPARED_INVENTORY_IMPLEMENTATION_REVISION"
+    ],
+    "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
+    "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
+    "selection": "frozen-authoritative-retained-source-admission",
 }
 canonical = json.dumps(
     receipt,
