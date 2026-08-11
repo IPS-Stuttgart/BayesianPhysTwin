@@ -1,0 +1,413 @@
+name: Deform360 v6 source prediction evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_v6_source_prediction_evidence.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+      - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
+      - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+      - "MANIFEST.in"
+      - "docs/deform360_v6_source_prediction_evidence.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+      - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
+      - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-v6-source-prediction-evidence-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed
+  VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  METRIC_BATCH_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-visible-source-gate-v2/146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89/136f72b996e9c76b0bab3ab5db5d0fe7172e0307/metric-batch
+  OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  SOURCE_RUN_ID: "31236564360"
+  SOURCE_ARTIFACT_NAME: deform360-official-calibration-source-31236564360-1
+  DEFORM360_PHYSICAL_REVISION: 0fe36f0b7a7a917ba62b5f8cee707299a9a4a317
+  OFFICIAL_PHYSTWIN_REVISION: 2b6630528141b9cba5a7677c8b88b2129b4a8390
+  SAM2_REVISION: 2b90b9f5ceec907a1c18123530e92e794ad901a4
+  CAUSAL4D_DISCOVERY_REVISION: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
+  AMENDMENT_ID: f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f
+  ISSUE_NUMBER: "148"
+
+jobs:
+  contracts:
+    name: Source prediction contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate target-closed source execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev,graph]"
+          files=(
+            scripts/science/materialize_deform360_v6_source_plan_inputs.py
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_v6_source_plan_inputs.py
+          bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_pull_request_workflow_integrity.py
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/amendments/"
+              "deform360_official_hub_fresh_object_session_v6_"
+              "source_prediction_execution.json"
+          )
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          declared = payload.pop("amendment_id")
+          canonical = json.dumps(
+              payload,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          observed = hashlib.sha256(canonical).hexdigest()
+          expected = (
+              "f8ed525480a6a96265af3cd58e62a96b"
+              "f1ed748294d0af02aa6386763b993b7f"
+          )
+          if observed != declared or observed != expected:
+              raise SystemExit("v6 source prediction amendment changed")
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  evidence:
+    name: Seal 100 real source predictions / workstation2
+    needs: contracts
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 720
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Admit the sole runner and target-closed roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          nvidia-smi
+          test -d "${RESULTS_ROOT}"
+          test -d "${PROCESSED_ROOT}/aligned"
+          test -d "${VISUAL_PRODUCTION_ROOT}"
+          test -d "${METRIC_BATCH_ROOT}"
+          for admitted in \
+            "${RESULTS_ROOT}" \
+            "${PROCESSED_ROOT}" \
+            "${VISUAL_PRODUCTION_ROOT}" \
+            "${METRIC_BATCH_ROOT}"; do
+            case "${admitted}/" in
+              "${OFFICIAL_RAW_ROOT}/"*|"${ADAPTIVE_CONFIRMATION_RAW_ROOT}/"*)
+                echo "an admitted path overlaps a forbidden raw root" >&2
+                exit 1
+                ;;
+            esac
+          done
+          echo "development_suffix_opened=false"
+          echo "v5_confirmation_payloads_opened=false"
+          echo "v6_target_payloads_opened=false"
+          echo "v6_target_outcomes_used=false"
+          echo "replacement_allowed=false"
+
+      - name: Check out exact protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen Deform360 physical source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.DEFORM360_PHYSICAL_REVISION }}
+          path: _deform360_physical
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen official PhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Jianghanxiao/PhysTwin
+          ref: ${{ env.OFFICIAL_PHYSTWIN_REVISION }}
+          path: _official_phystwin
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen SAM2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: facebookresearch/sam2
+          ref: ${{ env.SAM2_REVISION }}
+          path: _sam2
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out Causal4D source for exact-file discovery
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_DISCOVERY_REVISION }}
+          path: _causal4d_discovery
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Download authoritative calibration source artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-v6-source-artifact
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build isolated GPU source runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="${RUNNER_TEMP}/deform360-v6-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "${runtime}"
+          python -m venv --copies --system-site-packages "${runtime}"
+          runtime_python="${runtime}/bin/python"
+          "${runtime_python}" -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          "${runtime_python}" -m pip install -e ".[graph,vision]"
+          "${runtime_python}" -m pip install -e ./_deform360_physical
+          SAM2_BUILD_CUDA=0 \
+            "${runtime_python}" -m pip install -e ./_sam2
+          "${runtime_python}" -m pip install \
+            "fpsample>=0.3" \
+            "h5py>=3.8" \
+            "hydra-core>=1.3.2" \
+            "imageio>=2.34" \
+            "iopath>=0.1.10" \
+            "networkx>=3.0" \
+            "pillow>=9.4" \
+            "plyfile>=1.0" \
+            "scipy>=1.10" \
+            "tqdm>=4.66" \
+            "trimesh>=4.0" \
+            "warp-lang>=1.6" \
+            "yourdfpy>=0.0.56"
+          "${runtime_python}" -m pip check
+          "${runtime_python}" - <<'PY'
+          import torch
+          import warp
+          import bayesian_phystwin
+          import deform360
+          import sam2
+
+          if not torch.cuda.is_available():
+              raise SystemExit("CUDA is unavailable")
+          print(torch.__version__)
+          print(warp.__version__)
+          print(bayesian_phystwin.__version__)
+          print(deform360.__version__)
+          print(sam2.__file__)
+          PY
+          echo "BPT_PYTHON=${runtime_python}" >> "${GITHUB_ENV}"
+
+      - name: Generate real prefix-only source prediction evidence
+        id: execute
+        shell: bash
+        env:
+          BPT_SOURCE_SHA: ${{ github.sha }}
+          SOURCE_ARTIFACT_DIR: ${{ runner.temp }}/deform360-v6-source-artifact
+          DEFORM360_PHYSICAL_REPO: ${{ github.workspace }}/_deform360_physical
+          OFFICIAL_PHYSTWIN_REPO: ${{ github.workspace }}/_official_phystwin
+          SAM2_REPO: ${{ github.workspace }}/_sam2
+          EVIDENCE_ROOT: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          set +e
+          bash scripts/ci/run_deform360_v6_source_prediction_evidence.sh
+          status=$?
+          set -e
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Retain bounded runner diagnostics
+        if: always()
+        shell: bash
+        env:
+          BPT_SOURCE_SHA: ${{ github.sha }}
+          EVIDENCE_ROOT: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          run_root="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
+          compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+          mkdir -p "${compact}/logs"
+          if [[ -d "${run_root}/logs" ]]; then
+            while IFS= read -r log; do
+              target="${compact}/logs/$(basename "${log}")"
+              tail -c 32000 "${log}" > "${target}"
+            done < <(find "${run_root}/logs" -type f -name '*.log' | sort)
+          fi
+          if [[ -f "${compact}/SHA256SUMS" ]]; then
+            rm "${compact}/SHA256SUMS"
+          fi
+          (
+            cd "${compact}"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Upload compact source prediction evidence
+        if: always()
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: deform360-v6-source-prediction-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deform360-v6-source-prediction-evidence
+          if-no-files-found: error
+          retention-days: 180
+
+      - name: Publish bounded source receipt to issue 148
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          receipt = json.loads(Path(os.environ["RECEIPT_PATH"]).read_text())
+          body = f"""## Deform360 v6 source prediction evidence: `{receipt['status']}`
+
+          - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
+          - exact protected-main revision: `{receipt['source_revision']}`
+          - execution amendment ID: `{receipt['amendment_id']}`
+          - receipt ID: `{receipt['receipt_id']}`
+          - terminal stage: `{receipt['terminal_stage']}`
+          - exit code: `{receipt['exit_code']}`
+          - physical manifests: `{receipt['physical_manifest_count']}/10`
+          - sealed source predictions: `{receipt['source_prediction_seal_count']}/100`
+          - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
+          - development suffix opened: `false`
+          - v5 confirmation payloads opened: `false`
+          - v6 fresh target selected: `false`
+          - v6 target payloads opened: `false`
+          - v6 target outcomes used: `false`
+          - replacement allowed: `false`
+
+          This run produces prediction-first source evidence only. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          """
+          request = urllib.request.Request(
+              (
+                  "https://api.github.com/repos/"
+                  f"{os.environ['GITHUB_REPOSITORY']}/issues/"
+                  f"{os.environ['ISSUE_NUMBER']}/comments"
+              ),
+              data=json.dumps({"body": body}).encode("utf-8"),
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 201:
+                  raise SystemExit(f"unexpected issue API status: {response.status}")
+          PY
+
+      - name: Enforce terminal source status
+        if: always()
+        env:
+          RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(python -c 'import json,os; print(json.load(open(os.environ["RECEIPT_PATH"]))["status"])')
+          case "${status}" in
+            source-prediction-evidence-sealed)
+              exit 0
+              ;;
+            source-inputs-incomplete)
+              exit 3
+              ;;
+            *)
+              exit 1
+              ;;
+          esac
