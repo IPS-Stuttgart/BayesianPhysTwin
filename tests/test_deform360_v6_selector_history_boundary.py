@@ -1,14 +1,9 @@
-from __future__ import annotations
-
-from pathlib import Path
-
-
-ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
-
-
 def test_selector_history_recovery_is_anchored_to_discovery_revision() -> None:
-    text = RUNNER.read_text(encoding="utf-8")
+    with open(
+        "scripts/ci/run_deform360_v6_source_prediction_evidence.sh",
+        encoding="utf-8",
+    ) as handle:
+        text = handle.read()
     executable = "\n".join(
         line for line in text.splitlines() if not line.lstrip().startswith("#")
     )
