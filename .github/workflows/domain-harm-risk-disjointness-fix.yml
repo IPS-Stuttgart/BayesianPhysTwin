@@ -1,24 +1,32 @@
 name: Temporary domain harm-risk disjointness repair
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/domain-harm-risk-certificate-v1
+      - main
+    paths:
+      - .github/workflows/domain-harm-risk-disjointness-fix.yml
+      - src/bayesian_phystwin/guard_harm_risk_domains.py
+      - tests/test_guard_harm_risk_domains.py
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   repair-and-remove:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Check out exact branch head
+      - name: Check out exact pull-request branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: agent/domain-harm-risk-certificate-v1
+          ref: ${{ github.head_ref }}
           persist-credentials: true
       - name: Enforce all declared evidence boundaries and remove this workflow
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -159,4 +167,4 @@ jobs:
             .github/workflows/domain-harm-risk-disjointness-fix.yml
           git diff --cached --check
           git commit -m "Enforce complete domain harm-risk evidence separation"
-          git push origin HEAD:agent/domain-harm-risk-certificate-v1
+          git push origin "HEAD:${HEAD_BRANCH}"
