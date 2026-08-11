@@ -307,19 +307,26 @@ def test_current_domain_harm_failure_forces_exact_fallback() -> None:
 def test_unsupported_and_unknown_domains_force_exact_fallback() -> None:
     guard = _domain_guard(supported_domains=("dynamic",))
     evidence = _evidence()
-    dynamic = np.asarray(evidence["domain_ids"]) == "dynamic"
+    evidence_group_ids = evidence["group_ids"]
+    evidence_domain_ids = evidence["domain_ids"]
+    assert isinstance(evidence_group_ids, tuple)
+    assert isinstance(evidence_domain_ids, tuple)
+    selected_indices = tuple(
+        index for index, domain in enumerate(evidence_domain_ids) if domain == "dynamic"
+    )
+    indices = np.asarray(selected_indices, dtype=np.int64)
     certificate = certify_domain_guard_harm_risk(
         domain_guard_certificate=guard,
         threshold_source_artifact_id=THRESHOLD_SOURCE_ID,
         certification_partition_id=CERTIFICATION_PARTITION_ID,
         threshold_selection_group_ids=("threshold-selection-1",),
-        group_ids=tuple(np.asarray(evidence["group_ids"])[dynamic]),
-        domain_ids=tuple(np.asarray(evidence["domain_ids"])[dynamic]),
-        risk_scores=np.asarray(evidence["risk_scores"])[dynamic],
-        candidate_losses=np.asarray(evidence["candidate_losses"])[dynamic],
-        fallback_losses=np.asarray(evidence["fallback_losses"])[dynamic],
+        group_ids=tuple(evidence_group_ids[index] for index in selected_indices),
+        domain_ids=tuple(evidence_domain_ids[index] for index in selected_indices),
+        risk_scores=np.asarray(evidence["risk_scores"])[indices],
+        candidate_losses=np.asarray(evidence["candidate_losses"])[indices],
+        fallback_losses=np.asarray(evidence["fallback_losses"])[indices],
         fallback_identity_verified=np.asarray(evidence["fallback_identity_verified"])[
-            dynamic
+            indices
         ],
         threshold=0.5,
         harm_margin=0.0,
