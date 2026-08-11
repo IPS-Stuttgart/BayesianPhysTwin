@@ -276,8 +276,7 @@ def test_launcher_preserves_predecessor_blob_and_records_new_repair() -> None:
     assert 'PATCH_ID="deform360-v6-stage-selector-consumer-identity-v1"' in text
     assert (
         'STAGE_SELECTOR_REPAIR_ID="'
-        'aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae"'
-        in text
+        'aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae"' in text
     )
     assert STAGE_SELECTOR_HELPER in text
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
