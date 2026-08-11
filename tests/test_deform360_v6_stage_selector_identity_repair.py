@@ -267,9 +267,11 @@ def test_main_rejects_a_changed_locked_stage_constant(
 
 def test_active_runner_records_the_process_local_repair() -> None:
     text = ACTIVE_RUNNER.read_text(encoding="utf-8")
+    helper = ROOT / "scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"
 
     assert f'STAGE_SELECTOR_REPAIR_ID="{module.REPAIR_ID}"' in text
     assert "run_deform360_v6_stage_selector_identity_repair.py" in text
+    assert f'STAGE_SELECTOR_HELPER_SHA256="{_digest(helper)}"' in text
     assert 'BASE_REVISION="dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"' in text
     assert 'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"' in text
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
