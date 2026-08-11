@@ -222,10 +222,14 @@ def load_locked_policy(
         _require(boundary.get(key) is False, f"information boundary changed: {key}")
     policy = _mapping(protocol.get("policy"), name="policy")
     scales = policy.get("covariance_scales")
-    _require(
-        isinstance(scales, list) and len(scales) == 3,
-        "covariance scales must contain early, middle, and late values",
-    )
+    if (
+        not isinstance(scales, list)
+        or type(scales) is not list
+        or len(scales) != 3
+    ):
+        raise ValueError(
+            "covariance scales must contain early, middle, and late values"
+        )
     return protocol, ResidualHistoryDryRunPolicyV1(
         minimum_prefix_frames=policy["minimum_prefix_frames"],
         minimum_final_observed_count=policy["minimum_final_observed_count"],
@@ -296,7 +300,12 @@ def load_source_manifest(path: Path) -> dict[str, Any]:
         name="source archive",
     )
     archive_value = archive.get("path")
-    _require(type(archive_value) is str and bool(archive_value), "archive path missing")
+    if (
+        not isinstance(archive_value, str)
+        or type(archive_value) is not str
+        or not archive_value
+    ):
+        raise ValueError("archive path missing")
     candidate = Path(archive_value)
     if not candidate.is_absolute():
         candidate = manifest_path.parent / candidate
