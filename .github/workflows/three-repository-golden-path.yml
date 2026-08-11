@@ -10,6 +10,7 @@ on:
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
       - "tests/test_three_repository_workflow.py"
+      - "tests/test_three_repository_golden_path_artifacts_v1.py"
       - "tests/test_endpoint_model_average.py"
       - "tests/test_prospective_prob4d_update.py"
       - "docs/three_repository_golden_path.md"
@@ -40,6 +41,7 @@ on:
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
       - "src/bayesian_phystwin/run_manifest_v2.py"
+      - "src/bayesian_phystwin/three_repository_golden_path_artifacts_v1.py"
   push:
     branches: [main]
     paths:
@@ -50,6 +52,7 @@ on:
       - "tests/test_prob4d_joint_contract_fixture.py"
       - "tests/test_prob4d_causal_lineage.py"
       - "tests/test_three_repository_workflow.py"
+      - "tests/test_three_repository_golden_path_artifacts_v1.py"
       - "tests/test_endpoint_model_average.py"
       - "tests/test_prospective_prob4d_update.py"
       - "docs/three_repository_golden_path.md"
@@ -80,6 +83,7 @@ on:
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
       - "src/bayesian_phystwin/run_manifest_v2.py"
+      - "src/bayesian_phystwin/three_repository_golden_path_artifacts_v1.py"
   repository_dispatch:
     types:
       - prob4d-compatibility
@@ -214,11 +218,111 @@ jobs:
             causal4d/pyproject.toml
 
       - name: Build, install, and execute the isolated golden path
+        env:
+          THREE_REPOSITORY_EVIDENCE_OUTPUT: >-
+            ${{ runner.temp }}/three-repository-golden-path-evidence
         run: |
           bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
             bayesian-phystwin \
             prob4d \
             causal4d
+
+      - name: Validate and summarize the generated evidence bundle
+        env:
+          EVIDENCE_ROOT: >-
+            ${{ runner.temp }}/three-repository-golden-path-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${RUNNER_TEMP}/three-repository-venv/bin/python" -I - <<'PY'
+          import os
+          from pathlib import Path
+
+          from bayesian_phystwin.evidence_policy import (
+              require_promotable_run_manifest,
+          )
+          from bayesian_phystwin.run_manifest_v2 import load_run_manifest_v2
+          from bayesian_phystwin.three_repository_golden_path_artifacts_v1 import (
+              load_golden_path_evidence_bundle_v1,
+          )
+
+          root = Path(os.environ["EVIDENCE_ROOT"]).resolve()
+          expected = {
+              "accepted-selection.json",
+              "exact-prob4d-observation.npz",
+              "golden-path-bundle.json",
+              "lineage-bound-physical-posterior.npz",
+              "lineage-bound-twin-belief.npz",
+              "profile-bound.npz",
+              "rejected-selection.json",
+              "run-manifest-v2.json",
+          }
+          actual = {path.name for path in root.iterdir() if path.is_file()}
+          if actual != expected:
+              raise SystemExit(
+                  f"golden-path evidence roster changed: "
+                  f"missing={sorted(expected - actual)}, "
+                  f"extra={sorted(actual - expected)}"
+              )
+
+          manifest = load_run_manifest_v2(root / "run-manifest-v2.json")
+          admission = require_promotable_run_manifest(manifest, root=root)
+          bundle = load_golden_path_evidence_bundle_v1(root)
+          if bundle.accepted.run_manifest_id != manifest.manifest_id:
+              raise SystemExit("accepted artifact changed run-manifest binding")
+          if bundle.rejected.run_manifest_id != manifest.manifest_id:
+              raise SystemExit("rejected artifact changed run-manifest binding")
+          if bundle.accepted.selected_identity != bundle.accepted.candidate_identity:
+              raise SystemExit("accepted artifact does not select candidate bytes")
+          if bundle.rejected.selected_identity != bundle.rejected.baseline_identity:
+              raise SystemExit("rejected artifact does not select baseline bytes")
+          if bundle.rejected.exact_fallback_identity != (
+              bundle.rejected.baseline_identity.array_id
+          ):
+              raise SystemExit("rejected artifact changed exact fallback identity")
+
+          with open(
+              os.environ["GITHUB_STEP_SUMMARY"],
+              "a",
+              encoding="utf-8",
+          ) as summary:
+              summary.write("### Golden-path decision artifacts\n\n")
+              summary.write(f"- Bundle ID: `{bundle.bundle_id}`\n")
+              summary.write(
+                  f"- Accepted artifact: `{bundle.accepted.artifact_id}`\n"
+              )
+              summary.write(
+                  f"- Rejected artifact: `{bundle.rejected.artifact_id}`\n"
+              )
+              summary.write(
+                  "- Exact fallback identity: "
+                  f"`{bundle.rejected.exact_fallback_identity}`\n"
+              )
+              summary.write(f"- Run manifest: `{manifest.manifest_id}`\n")
+              summary.write(
+                  f"- Evidence admission: `{admission['status']}`\n\n"
+              )
+              summary.write(
+                  "The accepted record demonstrates the admitted candidate "
+                  "routing contract. The rejected record demonstrates exact "
+                  "baseline-byte fallback. Neither record is an accuracy, "
+                  "calibration, transfer, or physical-benefit claim.\n"
+              )
+          PY
+          sha256sum \
+            "${EVIDENCE_ROOT}/accepted-selection.json" \
+            "${EVIDENCE_ROOT}/rejected-selection.json" \
+            "${EVIDENCE_ROOT}/golden-path-bundle.json" \
+            "${EVIDENCE_ROOT}/run-manifest-v2.json"
+
+      - name: Upload the content-addressed golden-path evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: three-repository-golden-path-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/three-repository-golden-path-evidence
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 6
 
       - name: Record tested repository refs
         run: |
