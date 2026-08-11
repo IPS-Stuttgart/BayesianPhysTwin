@@ -78,7 +78,9 @@ fresh_target_selection_authorized": False
 BASE_LAUNCHER_INVARIANTS
 
 : "${BPT_PYTHON:?BPT_PYTHON is required}"
-: "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
+if [[ "${1:-}" != "--materialize-physical-upstream" ]]; then
+  : "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
+fi
 
 repository_root="$(git rev-parse --show-toplevel)"
 test "${repository_root}" = "$(pwd -P)"
@@ -358,6 +360,10 @@ DEFORM360_V6_STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}" \
   bash "${patched_launcher}" "$@"
 status=$?
 set -e
+
+if [[ "${1:-}" == "--materialize-physical-upstream" ]]; then
+  exit "${status}"
+fi
 
 receipt="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence/execution-receipt.json"
 if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
