@@ -72,6 +72,36 @@ def test_fusion_accepts_tangent_motion_and_preserves_source_normal() -> None:
     assert np.all(result.fused_update)
 
 
+def test_fusion_does_not_truncate_fractional_updates_for_integer_source() -> None:
+    initial = _planar_points()
+    source = np.repeat(initial.astype(np.int64)[None], 1, axis=0)
+    multiview = source.astype(float)
+    multiview[:, :, 0] += 0.25
+    valid = np.ones(source.shape[:2], dtype=bool)
+
+    result = fuse_source_normal_multiview_tangent(
+        source,
+        valid,
+        multiview,
+        valid,
+        initial,
+        minimum_multiview_availability_fraction=0.5,
+        neighbor_count=9,
+    )
+
+    assert np.issubdtype(result.points_world_m.dtype, np.floating)
+    np.testing.assert_allclose(
+        result.points_world_m[:, :, 0],
+        source[:, :, 0] + 0.25,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.points_world_m[:, :, 1:],
+        source[:, :, 1:],
+        atol=1e-12,
+    )
+
+
 def test_below_priority_threshold_is_exact_source_fallback() -> None:
     initial = _planar_points()
     source = np.repeat(initial[None], 3, axis=0)
