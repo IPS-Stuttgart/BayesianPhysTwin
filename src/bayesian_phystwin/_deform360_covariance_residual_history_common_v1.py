@@ -42,7 +42,7 @@ RESIDUAL_STORAGE_SEMANTICS: Final = (
     "provider-observation-minus-physical-baseline-m; invalid rows stored as zero only"
 )
 REFERENCE_MEAN_SEMANTICS: Final = (
-    "physical-future-plus-final-causal-same-material-residual"
+    "physical-future-plus-last-valid-causal-residual-per-material-identity"
 )
 FALLBACK_SEMANTICS: Final = (
     "exact-caller-owned-physical-future-mean-and-covariance-objects"
