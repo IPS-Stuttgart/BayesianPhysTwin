@@ -273,9 +273,7 @@ def test_leave_one_group_out_regression_rejects_outlier_domain() -> None:
     assert decision.selected_covariance_scale == 4.0
     assert decision.worst_loo_nll_regression > 0.0
     assert not decision.calibration_supported
-    assert (
-        "single-group-loo-nll-regression-exceeds-limit" in decision.reasons
-    )
+    assert "single-group-loo-nll-regression-exceeds-limit" in decision.reasons
 
 
 def test_calibration_is_permutation_invariant() -> None:

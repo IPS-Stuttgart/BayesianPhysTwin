@@ -49,20 +49,12 @@ def _fit(
 ):
     event_ids = tuple(f"event-{index}" for index in range(len(group_ids)))
     residual_values = (
-        np.full((len(group_ids), 1), 2.0)
-        if residuals is None
-        else residuals
+        np.full((len(group_ids), 1), 2.0) if residuals is None else residuals
     )
     covariance_values = (
-        np.ones((len(group_ids), 1, 1))
-        if covariances is None
-        else covariances
+        np.ones((len(group_ids), 1, 1)) if covariances is None else covariances
     )
-    guard = (
-        _guard(group_ids, domain_ids)
-        if domain_guard is None
-        else domain_guard
-    )
+    guard = _guard(group_ids, domain_ids) if domain_guard is None else domain_guard
     settings = (
         DomainCovarianceCalibrationConfigV1(
             covariance_scales=(1.0, 4.0),
@@ -276,6 +268,7 @@ def test_application_record_rejects_internally_inconsistent_states() -> None:
     invalid_factories = (
         lambda: replace(applied, inference_admissible=False, artifact_id=None),
         lambda: replace(applied, reason="wrong", artifact_id=None),
+        lambda: replace(applied, decision_id=None, artifact_id=None),
         lambda: replace(
             applied,
             covariance_scale=1.0,
@@ -285,6 +278,11 @@ def test_application_record_rejects_internally_inconsistent_states() -> None:
         lambda: replace(fallback, covariance_scale=2.0, artifact_id=None),
         lambda: replace(fallback, calibration_supported=True, artifact_id=None),
         lambda: replace(fallback, reason="wrong", artifact_id=None),
+        lambda: replace(
+            fallback,
+            output_covariance_sha256="0" * 64,
+            artifact_id=None,
+        ),
     )
 
     for factory in invalid_factories:

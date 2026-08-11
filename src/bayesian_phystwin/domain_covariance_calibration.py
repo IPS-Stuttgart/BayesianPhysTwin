@@ -19,9 +19,7 @@ from ._canonical_contracts import (
 from ._portable_contracts import content_id, sha256_digest
 from .calibration_domain_guard import CalibrationDomainGuardCertificateV1
 
-DOMAIN_COVARIANCE_CALIBRATION_SCHEMA = (
-    "bayesian_phystwin.domain_covariance_calibration"
-)
+DOMAIN_COVARIANCE_CALIBRATION_SCHEMA = "bayesian_phystwin.domain_covariance_calibration"
 DOMAIN_COVARIANCE_CALIBRATION_VERSION = 1
 DOMAIN_COVARIANCE_DECISION_SCHEMA = (
     "bayesian_phystwin.domain_covariance_calibration_decision"
@@ -31,9 +29,7 @@ DOMAIN_COVARIANCE_APPLICATION_SCHEMA = (
     "bayesian_phystwin.domain_covariance_calibration_application"
 )
 DOMAIN_COVARIANCE_APPLICATION_VERSION = 1
-DOMAIN_COVARIANCE_DATA_SCHEMA = (
-    "bayesian_phystwin.domain_covariance_calibration_data"
-)
+DOMAIN_COVARIANCE_DATA_SCHEMA = "bayesian_phystwin.domain_covariance_calibration_data"
 DOMAIN_COVARIANCE_DATA_VERSION = 1
 
 
@@ -296,9 +292,7 @@ class DomainCovarianceCalibrationConfigV1:
             "covariance_scales": list(self.covariance_scales),
             "isotropic_variances": list(self.isotropic_variances),
             "minimum_group_count": self.minimum_group_count,
-            "minimum_mean_loo_nll_improvement": (
-                self.minimum_mean_loo_nll_improvement
-            ),
+            "minimum_mean_loo_nll_improvement": (self.minimum_mean_loo_nll_improvement),
             "maximum_single_group_loo_nll_regression": (
                 self.maximum_single_group_loo_nll_regression
             ),
@@ -435,10 +429,14 @@ class DomainCovarianceCalibrationDecisionV1:
         )
         object.__setattr__(self, "reasons", reasons)
         expected = content_id(self.descriptor())
-        if self.artifact_id is not None and sha256_digest(
-            self.artifact_id,
-            name="artifact_id",
-        ) != expected:
+        if (
+            self.artifact_id is not None
+            and sha256_digest(
+                self.artifact_id,
+                name="artifact_id",
+            )
+            != expected
+        ):
             raise ValueError("artifact_id does not match calibration decision")
         object.__setattr__(self, "artifact_id", expected)
 
@@ -467,9 +465,7 @@ class DomainCovarianceCalibrationDecisionV1:
             "selected_covariance_scale": self.selected_covariance_scale,
             "selected_isotropic_variance": self.selected_isotropic_variance,
             "raw_equal_group_mean_nll": self.raw_equal_group_mean_nll,
-            "calibrated_equal_group_mean_nll": (
-                self.calibrated_equal_group_mean_nll
-            ),
+            "calibrated_equal_group_mean_nll": (self.calibrated_equal_group_mean_nll),
             "leave_one_group_out": [
                 {
                     "held_group_id": row[0],
@@ -534,8 +530,7 @@ class DomainCovarianceCalibrationCertificateV1:
             if len(decision.group_ids) < self.config.minimum_group_count:
                 reasons.append("insufficient-calibration-groups")
             if (
-                decision.mean_loo_nll_improvement
-                + self.config.numerical_tolerance
+                decision.mean_loo_nll_improvement + self.config.numerical_tolerance
                 < self.config.minimum_mean_loo_nll_improvement
             ):
                 reasons.append("mean-loo-nll-improvement-below-threshold")
@@ -595,10 +590,14 @@ class DomainCovarianceCalibrationCertificateV1:
             ),
         )
         expected = content_id(self.descriptor())
-        if self.artifact_id is not None and sha256_digest(
-            self.artifact_id,
-            name="artifact_id",
-        ) != expected:
+        if (
+            self.artifact_id is not None
+            and sha256_digest(
+                self.artifact_id,
+                name="artifact_id",
+            )
+            != expected
+        ):
             raise ValueError("artifact_id does not match calibration certificate")
         object.__setattr__(self, "artifact_id", expected)
 
@@ -656,9 +655,7 @@ class DomainCovarianceCalibrationCertificateV1:
                 "application_outcomes_used_for_calibration_selection": (
                     self.application_outcomes_used_for_calibration_selection
                 ),
-                "calibration_groups_independent": (
-                    self.calibration_groups_independent
-                ),
+                "calibration_groups_independent": (self.calibration_groups_independent),
                 "deployment_admissible": self.deployment_admissible,
             },
             "metadata": plain_json(self.metadata),
@@ -744,6 +741,36 @@ class DomainCovarianceCalibrationApplicationV1:
                 name,
                 sha256_digest(getattr(self, name), name=name),
             )
+        if self.applied:
+            if not (
+                self.inference_admissible
+                and self.certificate_deployment_admissible
+                and self.calibration_supported
+            ):
+                raise ValueError("applied calibration requires all admissibility gates")
+            if self.decision_id is None:
+                raise ValueError("applied calibration requires a domain decision")
+            if self.reason != "calibration-domain-authorized":
+                raise ValueError("applied calibration has invalid reason")
+            if self.covariance_scale == 1.0 and self.isotropic_variance == 0.0:
+                raise ValueError("applied calibration must change the transform")
+        else:
+            if self.covariance_scale != 1.0 or self.isotropic_variance != 0.0:
+                raise ValueError("fallback must use raw covariance transform")
+            if self.decision_id is None and self.calibration_supported:
+                raise ValueError("unknown domain cannot be calibration-supported")
+            if not self.inference_admissible:
+                expected_reason = "inference-rejected"
+            elif self.decision_id is None:
+                expected_reason = "unknown-calibration-domain"
+            elif not self.certificate_deployment_admissible:
+                expected_reason = "calibration-information-boundary-rejected"
+            elif not self.calibration_supported:
+                expected_reason = "calibration-domain-rejected"
+            else:
+                expected_reason = "calibration-identity-transform-retained"
+            if self.reason != expected_reason:
+                raise ValueError("fallback calibration has invalid reason")
         if (
             self.exact_fallback
             and self.raw_covariance_sha256 != self.output_covariance_sha256
@@ -758,10 +785,14 @@ class DomainCovarianceCalibrationApplicationV1:
             ),
         )
         expected = content_id(self.descriptor())
-        if self.artifact_id is not None and sha256_digest(
-            self.artifact_id,
-            name="artifact_id",
-        ) != expected:
+        if (
+            self.artifact_id is not None
+            and sha256_digest(
+                self.artifact_id,
+                name="artifact_id",
+            )
+            != expected
+        ):
             raise ValueError("artifact_id does not match calibration application")
         object.__setattr__(self, "artifact_id", expected)
 
@@ -931,9 +962,7 @@ def fit_domain_covariance_calibration(
         domain_residuals = residual_array[mask]
         domain_covariances = covariance_array[mask]
         domain_groups = tuple(
-            group
-            for group, selected in zip(groups, mask, strict=True)
-            if selected
+            group for group, selected in zip(groups, mask, strict=True) if selected
         )
         unique_groups = tuple(sorted(set(domain_groups)))
         selected, scores = _select(
@@ -1009,9 +1038,7 @@ def fit_domain_covariance_calibration(
         guard_supported = bool(
             guard_decision is not None and guard_decision.calibration_supported
         )
-        mean_improvement = float(
-            np.mean([row[3] - row[4] for row in held_rows])
-        )
+        mean_improvement = float(np.mean([row[3] - row[4] for row in held_rows]))
         worst_regression = max(0.0, max(row[4] - row[3] for row in held_rows))
         reasons: list[str] = []
         if not guard_supported:
@@ -1100,7 +1127,17 @@ def apply_domain_covariance_calibration(
     )
     decision = certificate.decision_for_domain(domain)
     supported = bool(decision is not None and decision.calibration_supported)
-    applied = inference_ok and certificate.deployment_admissible and supported
+    identity_transform = bool(
+        decision is not None
+        and decision.selected_covariance_scale == 1.0
+        and decision.selected_isotropic_variance == 0.0
+    )
+    applied = (
+        inference_ok
+        and certificate.deployment_admissible
+        and supported
+        and not identity_transform
+    )
     if not inference_ok:
         reason = "inference-rejected"
     elif decision is None:
@@ -1109,9 +1146,11 @@ def apply_domain_covariance_calibration(
         reason = "calibration-information-boundary-rejected"
     elif not decision.calibration_supported:
         reason = "calibration-domain-rejected"
+    elif identity_transform:
+        reason = "calibration-identity-transform-retained"
     else:
         reason = "calibration-domain-authorized"
-    raw_digest = _array_digest(normalized)
+    raw_digest = _array_digest(np.asarray(raw_covariance, dtype=np.float64))
     if applied:
         assert decision is not None
         transformed = _transform(
@@ -1124,7 +1163,7 @@ def apply_domain_covariance_calibration(
             tolerance=certificate.config.covariance_psd_tolerance,
         )
         output = _immutable(transformed[0] if single else transformed)
-        output_digest = _array_digest(transformed)
+        output_digest = _array_digest(output)
         scale = decision.selected_covariance_scale
         floor = decision.selected_isotropic_variance
     else:
