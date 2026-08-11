@@ -14,8 +14,9 @@ from pathlib import Path
 from typing import Any
 
 from bayesian_phystwin._portable_contracts import content_id, write_atomic_json
-from bayesian_phystwin.deform360_joint_sparse_motioncrafter_source_v5 import (
-    load_deform360_joint_sparse_motioncrafter_source_plan_v5,
+from bayesian_phystwin.deform360_joint_sparse_camera_recovery_v5_2 import (
+    RECOVERY_PROVIDER_SCHEMA,
+    load_deform360_joint_sparse_motioncrafter_execution_plan_v5_2,
 )
 
 
@@ -175,6 +176,13 @@ def _isolated_worker_command(
     ]
     if resume:
         command.append("--resume")
+    for option, path in (
+        ("--base-provider-plan", args.base_provider_plan),
+        ("--camera-recovery-preflight", args.camera_recovery_preflight),
+        ("--camera-recovery-amendment", args.camera_recovery_amendment),
+    ):
+        if path is not None:
+            command.extend((option, str(path.resolve())))
     return command
 
 
@@ -291,6 +299,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-execution-lock", type=Path, required=True)
     parser.add_argument("--prepared-source-inventory", type=Path, required=True)
     parser.add_argument("--camera-roster-manifest", type=Path, required=True)
+    parser.add_argument("--base-provider-plan", type=Path)
+    parser.add_argument("--camera-recovery-preflight", type=Path)
+    parser.add_argument("--camera-recovery-amendment", type=Path)
     parser.add_argument("--processed-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--prob4d-root", type=Path, required=True)
@@ -314,7 +325,7 @@ def main() -> int:
     ):
         raise ValueError("worker mode cannot be combined with smoke or sharding")
 
-    plan = load_deform360_joint_sparse_motioncrafter_source_plan_v5(args.plan)
+    plan = load_deform360_joint_sparse_motioncrafter_execution_plan_v5_2(args.plan)
     implementation = plan["implementation"]
     runner_source = Path(__file__).resolve()
     if _sha256(runner_source) != implementation["runner_source_sha256"]:
@@ -334,6 +345,31 @@ def main() -> int:
         plan["camera_roster_source"],
         name="camera-roster manifest",
     )
+    recovery_paths = (
+        args.base_provider_plan,
+        args.camera_recovery_preflight,
+        args.camera_recovery_amendment,
+    )
+    if plan["schema"] == RECOVERY_PROVIDER_SCHEMA:
+        if any(path is None for path in recovery_paths):
+            raise ValueError("recovery plan requires all recovery provenance paths")
+        _require_bound_file(
+            args.base_provider_plan.resolve(),
+            plan["base_provider_plan"],
+            name="base provider plan",
+        )
+        _require_bound_file(
+            args.camera_recovery_preflight.resolve(),
+            plan["camera_recovery_preflight"],
+            name="camera recovery preflight",
+        )
+        _require_bound_file(
+            args.camera_recovery_amendment.resolve(),
+            plan["camera_recovery_amendment"],
+            name="camera recovery amendment",
+        )
+    elif any(path is not None for path in recovery_paths):
+        raise ValueError("base provider plan cannot accept recovery provenance paths")
     _require_clean_revision(
         args.repository_root.resolve(),
         str(implementation["revision"]),

@@ -1,0 +1,49 @@
+{
+  "amendment_id": "75c2ddaca061318ba4cd979066bbe1fca3858e123f8b2f658198204e1c02d9d4",
+  "base_execution_lock": {
+    "execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
+    "file_sha256": "429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a"
+  },
+  "claim_boundary": "Source-prefix camera admission and provider execution only. The recovery uses public Deform360 recordings and establishes no prediction benefit, calibration, confirmation, safety, Causal4D, or state-of-the-art claim.",
+  "information_boundary": {
+    "confirmation_payloads_opened": false,
+    "development_suffix_opened": false,
+    "future_object_observations_used": false,
+    "human_approval_used": false,
+    "new_measurements_collected": false,
+    "physical_state_innovation_used": false,
+    "public_source_prefix_payloads_opened": true,
+    "target_outcomes_used": false
+  },
+  "policy": {
+    "base_prediction_batch_mutation_allowed": false,
+    "camera_failure_scope": "per-camera-never-object-wide-v1",
+    "camera_replacement_allowed": false,
+    "candidate_set": "all-released-nonreserved-cameras-not-already-attempted",
+    "insufficient_support_action": "exact-B0-physical-fallback",
+    "maximum_additional_cameras": 4,
+    "metric_cluster_size_pixels": 32,
+    "metric_gauge_threshold_relaxation_allowed": false,
+    "minimum_independent_clusters": 8,
+    "minimum_passing_camera_count": 2,
+    "post_provider_rule": "retain-all-and-only-independently-passing-cameras",
+    "ranking": [
+      "maximum-independent-cluster-count-descending",
+      "qualifying-causal-frame-count-descending",
+      "total-projected-point-count-descending",
+      "camera-id-ascending"
+    ],
+    "recovery_trigger": "fewer-than-two-passing-base-cameras"
+  },
+  "schema": "bayesian-phystwin.deform360-joint-sparse-camera-recovery-amendment",
+  "schema_version": 1,
+  "semantics": "additive-outcome-blind-camera-failure-granularity-repair-v1",
+  "status": "locked-before-recovery-metric-preflight",
+  "trigger_artifacts": {
+    "base-provider-plan.json": "135491e9df44bd74ae3492ac8b43f224ed3a8b2c583985e08cb291469fb52699",
+    "base-provider-run-report.json": "c1b6ab3564012d7bfd1b676dd76e7591e0758bec7828deca593b6277896ca833",
+    "base-source-prediction-batch.json": "c2b395203fd2002bfb813180ca8b667eca25515ebec1c1e7fada037dd30207cc",
+    "base-source-prediction-plan.json": "7f62f8babac8faa452d14e89ac136400e229988cfbe4599ae9d638134ab44551",
+    "base-source-prediction-receipt.json": "188886079c2e08d7d3c2d2554352e4a6b959b5ac0b95e94733ef1867278e6d08"
+  }
+}

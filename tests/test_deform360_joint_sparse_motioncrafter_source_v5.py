@@ -269,5 +269,8 @@ def test_remote_runner_exposes_source_custody_arguments() -> None:
     assert "--source-execution-lock" in source
     assert "--prepared-source-inventory" in source
     assert "--camera-roster-manifest" in source
+    assert "--base-provider-plan" in source
+    assert "--camera-recovery-preflight" in source
+    assert "--camera-recovery-amendment" in source
     assert "--shard-index" in source
     assert "development_suffix_opened" in source
