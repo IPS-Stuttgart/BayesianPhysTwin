@@ -6,6 +6,10 @@ sample-and-hold component and adds damped local-trend components whose forecast
 mean and covariance both depend on the requested horizon.
 """
 
+from __future__ import annotations
+
+import numpy as np
+
 from ._dynamic_endpoint_components import (
     DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2,
     DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONTRACT_VERSION,
@@ -21,8 +25,34 @@ from ._dynamic_endpoint_contract import (
     DynamicEndpointPosteriorV2,
     DynamicEndpointPredictionV2,
 )
-from ._dynamic_endpoint_filter import infer_dynamic_endpoint_model_average
+from ._dynamic_endpoint_filter import (
+    infer_dynamic_endpoint_model_average as _infer_dynamic_endpoint_model_average,
+)
 from ._dynamic_endpoint_prediction import predict_dynamic_endpoint_model_average
+
+
+def infer_dynamic_endpoint_model_average(
+    residual_m: np.ndarray,
+    valid: np.ndarray,
+    *,
+    end_frame: int,
+    config: DynamicEndpointModelAverageConfigV2 | None = None,
+) -> DynamicEndpointPosteriorV2:
+    """Infer a dynamic endpoint after rejecting lossy residual coercions."""
+
+    try:
+        raw_residual = np.asarray(residual_m)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("residual_m must contain real numeric values") from error
+    if raw_residual.dtype.kind not in "iuf":
+        raise ValueError("residual_m must contain real numeric values")
+    return _infer_dynamic_endpoint_model_average(
+        np.asarray(raw_residual, dtype=np.float64),
+        valid,
+        end_frame=end_frame,
+        config=config,
+    )
+
 
 __all__ = [
     "DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2",
