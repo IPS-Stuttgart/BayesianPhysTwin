@@ -1,0 +1,237 @@
+{
+  "amendment": {
+    "method_mean_changed": false,
+    "method_scales_changed": false,
+    "parent_protocol_file_sha256": "f4a731f13edb2112f5bb7d61d750624f7f3e43873649b9548d845e66813b9761",
+    "parent_protocol_id": "deform360-covariance-only-target-v1.4",
+    "parent_protocol_independent_source_gate_passed": false,
+    "parent_protocol_sha256": "f6d25d18ac39fd2b6b22a0cd9c510c168a6ba5d735ddd8b9cae327dac16cb8da",
+    "parent_protocol_target_decode_authorized": false,
+    "reason": "record the failed independent v1.4 source gate, remove its unsupported global covariance-monotonicity claim, freeze a production-default counterexample, restore the older v5 materializer byte-for-byte, and retain the validated heteroscedastic likelihood contracts",
+    "sealed_acquisition_artifacts_rewritten": false,
+    "selection_changed": false,
+    "support_thresholds_changed": false,
+    "target_camera_media_decoded_before_amendment": false,
+    "target_endpoints_or_outcomes_opened_before_amendment": false,
+    "target_geometry_or_sensor_arrays_loaded_before_amendment": false
+  },
+  "claim_boundary": {
+    "bayesian_point_mean_improvement_claimed": false,
+    "causal4d_claim_modified": false,
+    "custom_fresh_object_calibration_study_only": true,
+    "official_deform360_benchmark_parity_claimed": false,
+    "paper_claim_requires_complete_24_session_accounting": true,
+    "prob4d_claim_modified": false,
+    "state_of_the_art_claim_authorized_before_scoring": false
+  },
+  "dataset": {
+    "processed_prefix": "processed",
+    "raw_prefix": "raw",
+    "repository": "brownu/deform360",
+    "revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+  },
+  "evaluation": {
+    "aggregation": {
+      "event": "one material identity at one untouched future frame",
+      "first_stage": "equal-weight mean over valid 3D marginal events within each physical-object-session",
+      "independent_unit": "physical-object-session",
+      "second_stage": "equal-weight mean over the 24 locked physical-object-sessions",
+      "uncertainty": "100000-replicate physical-object-session bootstrap with seed 260811"
+    },
+    "common_observation_noise_std_m": 0.005,
+    "estimands": {
+      "gaussian_nll": "for each 3D identity-frame event, 0.5*(3*log(2*pi)+logdet(Sigma_total)+(y-mu)^T Sigma_total^-1 (y-mu)); Sigma_total=Sigma_predictive+(0.005 m)^2 I",
+      "marginal_3d_nees": "for each 3D identity-frame event, (y-mu)^T Sigma_total^-1 (y-mu), with calibrated expectation 3",
+      "marginal_90_percent_ellipsoid_coverage": "event indicator that marginal_3d_nees is at most chi2_3(0.90)",
+      "marginal_interval_width": "per-event volume of the 90 percent 3D Gaussian ellipsoid computed from Sigma_total"
+    },
+    "horizon_reports": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "mean_identity_check": "compare candidate and registered last_residual point arrays directly for equal dtype, shape, C-order bytes, and SHA-256 before any score",
+    "official_endpoints": {
+      "official_Chamfer_identity_check": "unavailable-no-official-processed-annotation-in-locked-plan",
+      "official_track_error_identity_check": "unavailable-no-official-processed-annotation-in-locked-plan"
+    },
+    "primary_endpoint": "equal-object-session mean 3D marginal Gaussian NLL difference, covariance-only candidate minus last_residual",
+    "registered_secondary_endpoints": [
+      "marginal_90_percent_ellipsoid_coverage",
+      "marginal_interval_width",
+      "marginal_3d_nees",
+      "horizon_resolved_marginal_gaussian_nll"
+    ],
+    "removed_unavailable_or_undefined_endpoints": [
+      "official_track_error_identity_check",
+      "official_Chamfer_identity_check",
+      "joint_energy_score"
+    ],
+    "success_gate": {
+      "candidate_coverage_interval": [
+        0.8,
+        0.98
+      ],
+      "complete_failure_accounting": true,
+      "mean_predictions_byte_identical": true,
+      "overall_primary_95_percent_upper_bound_below_zero": true,
+      "provider_support_gate_frozen_before_decode": true,
+      "target_roster_denominator": 24
+    }
+  },
+  "implementation": {
+    "download_path_hardening": {
+      "already_sealed_acquisition_rewritten": false,
+      "contracts_file_sha256": "2ed333f1426e44fb83cfb73dec6f8c37ca18fc4931f2f20fb4146ff66e2cd7ae",
+      "download_file_sha256": "bb0f5ae5c5cf032af0e803e7f894f63a77884ac5d9d732da47a20ee4435897d7",
+      "local_cherry_pick_commit": "d27a0e69",
+      "planning_file_sha256": "6c9f880f5ee2fcf714babc5ca3f96fd8a05d71473563752789999c7766169641",
+      "upstream_commit": "a22fe0ff39757f50cf62a1a66a11ca740df9e390"
+    },
+    "provider": {
+      "association_implementation_file": "src/bayesian_phystwin/deform360_joint_sparse_materializer_v5.py",
+      "association_implementation_file_sha256": "10b40e1bcf3505e59c95d2e95ce1bc56cb66fec24b4fecfb5eb3346bc6852dab",
+      "implementation_file": "src/bayesian_phystwin/deform360_covariance_provider_v1.py",
+      "implementation_file_sha256": "8465bd245a9e7e037632e21644d016fa864edc713df327b4d1d26c940973595c",
+      "implementation_revision": "f5d59e2e73425d5da02d5d5b26576ab7a4bb22f7",
+      "predecode_blocker_regressions": {
+        "ambiguous_midpoint": "0/10 mm candidate midpoint yields +5/-5 mm innovations and assignment covariance that survives into the forecast",
+        "conditional_covariance_semantics": "the production-default robust model average consumes metric row covariance and cue reliability, returns PSD covariances, and intentionally makes no global Loewner-monotonicity claim",
+        "distant_rows": "17 m rows yield zero valid support, zero updates, and exact fallback",
+        "downstream_uncertainty": "1000x row covariance and 10x lower cue reliability both alter the production-default forecast; a deterministic counterexample prevents interpreting this as a global covariance-ordering guarantee"
+      },
+      "source_dry_run_file": "results/science/deform360_covariance_only_target_v1/provider_source_dry_run_v1.json",
+      "source_dry_run_file_sha256": "bd8a430b74af5ef87359829c27acf35b8b5f9904fbebcd1bd8e6d891502fc8fe",
+      "source_dry_run_gate_passed": true,
+      "source_dry_run_script": "scripts/science/run_deform360_covariance_provider_dry_run_v1.py",
+      "source_dry_run_script_sha256": "4d6555ebd7619bc5a948e28bb05c3e8d5ca9827805dfcac6c04bf7e9ebc98b47",
+      "source_dry_run_sha256": "ef59fa00cf9f607ac5405455911e33aa6fb3087de63c97b53689d3f2a15744ef",
+      "test_file": "tests/test_deform360_covariance_provider_v1.py",
+      "test_file_sha256": "39dcb15ddcd3397c9bb29fc7e0fc2442c49f4642faa771058d4c9dbe01995b48"
+    }
+  },
+  "information_boundary": {
+    "camera_media_decoded": false,
+    "geometry_or_track_annotations_opened": false,
+    "names_and_blob_metadata_opened": true,
+    "payload_bytes_downloaded_and_rehashed_without_decode": true,
+    "provider_dry_run_inputs": "synthetic-source-only",
+    "robot_or_tactile_arrays_opened": false,
+    "target_outcomes_opened": false
+  },
+  "method": {
+    "candidate_id": "last_residual_mean_independent_endpoint_covariance_v1",
+    "causal_residual_history": {
+      "association": "candidate geometry supplies deterministic soft association; no state residual is converted into prior perception reliability",
+      "association_candidate_count": 4,
+      "association_entropy_strength": 0.5,
+      "association_scale_m": 0.01,
+      "association_semantics": "geometry supplies assignment probability and admission only; association probability is not prior perception reliability",
+      "conditional_innovation": "for candidate identity j, p(j|y)*(y-x_j)",
+      "coordinate_frame": "deform360_world",
+      "duplicate_window_key_policy": "reject repeated (camera_id,window_id)",
+      "endpoint_likelihood": "provider-specific full-covariance robust model average: for component k, R_eff=(R_tn+sigma_obs,k^2 I)/prior_reliability; the outlier component applies its registered variance multiplier; no pre-mixture innovation clipping",
+      "frame_contract": "one row for every permitted causal prefix frame in exact increasing order",
+      "full_3x3_covariance_preserved_through_horizon": true,
+      "identity_contract": "one fixed material-identity ordering shared by physical prefix, residual history, candidate mean, covariance, and score",
+      "innovation_clipping_before_robust_likelihood": false,
+      "global_loewner_monotonicity_claimed": false,
+      "maximum_association_distance_m": 0.04,
+      "metric_row_covariance_used_by_endpoint_filter": true,
+      "minimum_effective_candidate_support": 0.05,
+      "missingness": "invalid identity-frame entries remain valid_mask=false with zero storage and are never nearest-filled as observations",
+      "position_units": "m",
+      "prior_reliability": "source confidence, mask distance, overlap disagreement, and 1/sqrt(contributor_count); independent of state innovation and consumed once",
+      "prior_reliability_application_count": 1,
+      "prior_reliability_used_by_endpoint_filter": true,
+      "posterior_covariance_semantics": "each reported covariance is PSD; changing row covariance or reliability may change robust responsibilities and component evidence, so separately conditioned posteriors need not be Loewner-ordered",
+      "posterior_covariance_psd_required": true,
+      "residual_shape": "(T,N,3)",
+      "robust_innovation_processing_count": 1,
+      "row_covariance": "source point covariance in m^2 plus assignment-mixture spread plus 4e-6 m^2 isotropic floor; consumed by the heteroscedastic endpoint likelihood",
+      "stable_endpoint_api_changed_for_other_callers": false,
+      "validity_shape": "(T,N)",
+      "window_order": "canonical camera, minimum-frame, window ordering"
+    },
+    "covariance": {
+      "donor": "independent_endpoint_v1",
+      "donor_configuration": "ModelAveragedEndpointConfigV1 default",
+      "horizon_covariance_multipliers": {
+        "early": 8.0,
+        "late": 16.0,
+        "middle": 16.0
+      },
+      "operation": "Sigma_candidate(h,n)=multiplier(h)*Sigma_independent_endpoint_v1(h,n) only for empirically admitted identities; otherwise exact fallback covariance",
+      "scale_interpretation": "multipliers apply to covariance, not standard deviation",
+      "units": "m^2"
+    },
+    "fallback": {
+      "case_support_failure": "exact fallback mean and covariance bytes",
+      "identity_below_update_count": "exact fallback covariance for that identity",
+      "mean": "registered last_residual mean, or unchanged physical mean when the causal residual itself is unavailable",
+      "must_be_byte_identical": true
+    },
+    "mean": {
+      "candidate": "last_residual",
+      "future_observations_used": false,
+      "provider_posterior_mean_used": false,
+      "reference_array_bytes_preserved": true,
+      "registered_reference_digest_recomputed_from_candidate_input": false,
+      "registered_reference_digest_supplied_by_caller": true
+    },
+    "support_gate": {
+      "case_minimum_empirical_identity_fraction": 0.5,
+      "case_minimum_observed_prefix_frames": 2,
+      "identity_minimum_valid_updates": 2,
+      "prior_only_covariance_is_empirical_evidence": false,
+      "zero_update_identity_policy": "explicit-prior-only-label-and-exact-fallback-covariance"
+    },
+    "target_selection_or_tuning": false
+  },
+  "observation_partition": {
+    "camera_partition_algorithm": "sort camera IDs by SHA256(namespace+NUL+object_session_hash+NUL+camera_id); even ranks are provider and odd ranks are scoring",
+    "camera_partition_namespace": "deform360-covariance-camera-partition-v1",
+    "camera_partition_uses_names_only": true,
+    "forecast_binds_split_and_scoring_reconstruction_digest": true,
+    "history_binds_split_artifact_and_provider_panel": true,
+    "minimum_camera_count": 4,
+    "minimum_cameras_per_panel": 2,
+    "provider_and_scoring_camera_sets_disjoint": true,
+    "provider_and_scoring_reconstruction_artifacts_distinct": true,
+    "reconstruction_artifact_id_format": "lowercase-sha256",
+    "shared_pixel_depth_or_reconstruction_artifacts": false,
+    "split_changes_after_decode": false
+  },
+  "protocol_id": "deform360-covariance-only-target-v1.5",
+  "protocol_sha256": "495bbe0b5917e1559fb11dca71ff1b2bb8228a4a97efeb8ca4f7192130f9e537",
+  "schema": "bayesian-phystwin/deform360-covariance-only-target-protocol-v1",
+  "schema_version": 1,
+  "selection_and_acquisition": {
+    "download_manifest_file_sha256": "032a3f26793b28b6e0623be761f3c993fccebe58bbb08f5b25f9682bbde23521",
+    "download_sha256": "41bfb0feb246ac235e6364cfb46304dd8b2679801d73532a1e78281f243d59af",
+    "exact_file_plan_file_sha256": "0ab39ed21e3de9a55d19f31ce5c7b5b2a6b6e8d57c2272c614559445ccb42623",
+    "exact_file_plan_sha256": "d5bab5a05cf49ba6cc7bd31ffe57d2abc15040dd3f2de163d5f5034800b3ee51",
+    "official_processed_annotation_count": 0,
+    "quarantine_file_sha256": "2ede8da061948fa9cc63b9e9c5290442e34f35403c46a9abaf7d0bd995ce7274",
+    "quarantine_sha256": "e0c215a8bdb7ee88d9e73d084af282b937a9f1d9036cac8652fa564b5c09109c",
+    "roster_sha256": "f9106b3dd6e0cec089623e07fed3506755fb334952c7761846d0854dfba45783",
+    "selection_file_sha256": "0882c2f0b482e3663842ad14f0d02226755b3c7d04f0511a412dd59456e986c0",
+    "selection_sha256": "d5745e513674a65ea51dd786caa1b51ef8a501d2e2ff3f27680e8f9366c37d77",
+    "target_count": 24,
+    "target_replacement_allowed": false,
+    "verification_file_sha256": "a9fbdae6dce957cf9bcbc53f580fb0b6218d9e06c1666b0ed60676245758dd47",
+    "verification_sha256": "3f58caf2e5cff977b34ddce6f42c86438696ce9f36f637238597f4ca86c15997"
+  },
+  "stage_order": [
+    "preserve the v1.2 selection, exact file plan, download, verification, and quarantine artifacts without rewriting them",
+    "preserve the superseded v1.4 protocol and its failed independent source-only gate",
+    "pass and commit the corrected conditional-covariance source-only provider dry run",
+    "commit this v1.5 amendment before any target decode",
+    "obtain independent source-only contract review of v1.5",
+    "materialize deterministic names-only provider/scoring camera partitions for all 24 locked sessions",
+    "build provider and scoring reconstructions independently from their disjoint camera panels",
+    "seal all candidate and fallback forecasts before opening any custom scoring reconstruction",
+    "score the complete 24-session denominator with retained technical failures"
+  ],
+  "status": "conditional-covariance-semantics-corrected-before-target-decode"
+}

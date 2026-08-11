@@ -28,6 +28,12 @@ _PROTOCOL_V1_4 = (
     / "locks"
     / "deform360_covariance_only_target_v1_4.json"
 )
+_PROTOCOL_V1_5 = (
+    _REPOSITORY
+    / "protocols"
+    / "locks"
+    / "deform360_covariance_only_target_v1_5.json"
+)
 
 build_selection = _MODULE.build_selection
 load_protocol = _MODULE.load_protocol
@@ -437,6 +443,52 @@ def test_v1_4_freezes_corrected_source_provider_and_custom_evaluation() -> None:
     assert protocol["method"]["mean"][
         "registered_reference_digest_supplied_by_caller"
     ] is True
+    record = protocol["implementation"]["provider"]
+    assert record["implementation_revision"] == (
+        "15d1f53720a6f9f0baa3fcb2baca05c280ab63c4"
+    )
+    assert record["implementation_file_sha256"] == (
+        "3e929bb235c6e2583c19b938151fc3ad0d483f3235a666e1f6aaeea3ef88cae4"
+    )
+
+
+def test_v1_5_freezes_conditional_covariance_semantics() -> None:
+    protocol = json.loads(_PROTOCOL_V1_5.read_text())
+    supplied = protocol["protocol_sha256"]
+    canonical = dict(protocol)
+    canonical.pop("protocol_sha256")
+
+    assert supplied == _canonical(canonical)
+    amendment = protocol["amendment"]
+    assert amendment["parent_protocol_id"] == (
+        "deform360-covariance-only-target-v1.4"
+    )
+    assert amendment["parent_protocol_independent_source_gate_passed"] is False
+    assert amendment["parent_protocol_target_decode_authorized"] is False
+    assert hashlib.sha256(_PROTOCOL_V1_4.read_bytes()).hexdigest() == amendment[
+        "parent_protocol_file_sha256"
+    ]
+    assert amendment["parent_protocol_sha256"] == json.loads(
+        _PROTOCOL_V1_4.read_text()
+    )["protocol_sha256"]
+
+    causal = protocol["method"]["causal_residual_history"]
+    assert causal["global_loewner_monotonicity_claimed"] is False
+    assert causal["posterior_covariance_psd_required"] is True
+    assert "need not be Loewner-ordered" in causal[
+        "posterior_covariance_semantics"
+    ]
+    assert causal["metric_row_covariance_used_by_endpoint_filter"] is True
+    assert causal["prior_reliability_used_by_endpoint_filter"] is True
+    assert causal["robust_innovation_processing_count"] == 1
+
+    record = protocol["implementation"]["provider"]
+    assert record["implementation_revision"] == (
+        "f5d59e2e73425d5da02d5d5b26576ab7a4bb22f7"
+    )
+    assert "cannot make" not in record["predecode_blocker_regressions"][
+        "downstream_uncertainty"
+    ]
     for record_key in (
         "association_implementation_file",
         "implementation_file",
@@ -444,8 +496,17 @@ def test_v1_4_freezes_corrected_source_provider_and_custom_evaluation() -> None:
         "source_dry_run_script",
         "test_file",
     ):
-        record = protocol["implementation"]["provider"]
         path = _REPOSITORY / record[record_key]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == record[
             f"{record_key}_sha256"
         ]
+
+    dry_run = json.loads((_REPOSITORY / record["source_dry_run_file"]).read_text())
+    assert dry_run["dry_run_sha256"] == record["source_dry_run_sha256"]
+    assert dry_run["gate_passed"] is True
+    assert dry_run["heteroscedastic_endpoint"][
+        "global_loewner_monotonicity_claimed"
+    ] is False
+    assert dry_run["target_roster_read"] is False
+    assert dry_run["target_payload_read"] is False
+    assert dry_run["target_outcome_read"] is False
