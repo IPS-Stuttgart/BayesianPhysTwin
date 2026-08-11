@@ -1,10 +1,10 @@
 """Source-only residual-history contract for registered Deform360 studies.
 
-The public experimental module combines a deterministic whole-recorder camera
-partition, a no-fill ``(T, N, 3)`` residual-history adapter with explicit
-``(T, N)`` validity, and a covariance-only candidate that returns exact physical
-fallback objects whenever support or covariance admission fails. It contains no
-target roster and grants no target-access or claim authorization.
+The public module binds explicit camera-recorder provenance, disjoint
+reconstruction manifests, a no-fill ``(T, N, 3)`` residual history with exact
+``(T, N)`` validity, the caller-owned registered ``last_residual`` mean, and
+exact physical fallback. It contains no target roster, target path, target
+workflow, or claim authorization.
 """
 
 from ._deform360_covariance_residual_history_adapter_v1 import (
@@ -17,11 +17,17 @@ from ._deform360_covariance_residual_history_common_v1 import (
     FALLBACK_SEMANTICS,
     HORIZON_LABELS,
     REFERENCE_MEAN_SEMANTICS,
+    REGISTERED_COVARIANCE_DONOR_ID,
+    REGISTERED_COVARIANCE_SCALES,
+    REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_MATERIAL,
+    REGISTERED_REFERENCE_PREDICTOR_ID,
     RESIDUAL_STORAGE_SEMANTICS,
+    CameraRecorderFamilyMapV1,
     DisjointCameraPartitionV1,
+    ReconstructionManifestV1,
     ResidualHistoryDryRunPolicyV1,
-    camera_hardware_family,
     deterministic_disjoint_camera_partition,
+    validate_reconstruction_separation,
 )
 from ._deform360_covariance_residual_history_decision_v1 import (
     ResidualHistoryDryRunDecisionV1,
@@ -34,17 +40,23 @@ from ._deform360_covariance_residual_history_last_valid_v1 import (
 __all__ = [
     "CAMERA_PARTITION_NAMESPACE",
     "CLAIM_BOUNDARY",
+    "CameraRecorderFamilyMapV1",
     "DisjointCameraPartitionV1",
     "FALLBACK_SEMANTICS",
     "HORIZON_LABELS",
     "REFERENCE_MEAN_SEMANTICS",
+    "REGISTERED_COVARIANCE_DONOR_ID",
+    "REGISTERED_COVARIANCE_SCALES",
+    "REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_MATERIAL",
+    "REGISTERED_REFERENCE_PREDICTOR_ID",
     "RESIDUAL_STORAGE_SEMANTICS",
+    "ReconstructionManifestV1",
     "ResidualHistoryAdapterV1",
     "ResidualHistoryDryRunDecisionV1",
     "ResidualHistoryDryRunPolicyV1",
     "ResidualHistoryDryRunResultV1",
     "build_residual_history_adapter",
-    "camera_hardware_family",
     "deterministic_disjoint_camera_partition",
     "run_source_only_residual_history_dry_run",
+    "validate_reconstruction_separation",
 ]
