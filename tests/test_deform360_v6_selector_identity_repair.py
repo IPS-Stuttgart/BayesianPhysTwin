@@ -71,8 +71,8 @@ def test_wrapper_patches_only_the_locked_stage_selector_digest() -> None:
     assert 'setattr(module, "GENERIC_SELECTOR_SHA256"' in text
     assert "CORRECTED_SELECTOR_SHA256" in text
     assert 'getattr(module, "SAM2_REPOSITORY_REVISION"' in text
-    assert "source_prediction" not in text
-    assert "target_outcome" not in text
+    assert "run_deform360_joint_sparse_source_predictions_v5.py" not in text
+    assert "run_deform360_fresh_object_session_source_v6.py" not in text
 
 
 def test_runner_uses_the_explicit_repaired_selector_path() -> None:
@@ -97,4 +97,7 @@ def test_runner_uses_the_explicit_repaired_selector_path() -> None:
     assert "run_deform360_v6_selector_identity_repair.py" in text
     assert '--runtime-repair "${SELECTOR_REPAIR_PATH}"' in text
     assert '--selector-repository "${GENERIC_SELECTOR_REPOSITORY}"' in text
-    assert "find \\\n      \"${RUNNER_WORKSPACE:-/home/github-runner}\"" not in text
+    assert (
+        "-type f -path '*/src/causal4d_public/deform360_object_sam2.py'"
+        not in text
+    )
