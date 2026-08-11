@@ -49,6 +49,15 @@ QueryCovarianceTreatmentDecisionV1
   the corresponding frozen query settings; and
 - the query uses the supported trace-fraction diagnostic and selection rule.
 
+The summary validator additionally rejects algebraically impossible records,
+including active and total-rank disagreement, shared rank above total rank,
+nonzero effective rank with zero trace, positive shared trace with zero shared
+rank, or nonzero coordinate, directional, or Frobenius shared fractions when
+the shared covariance is zero. Decision deserialization independently recomputes
+the threshold-selected treatment, match flag, reasons, and authorization flag;
+a content-addressed record cannot claim a treatment inconsistent with its own
+recorded relevance and threshold.
+
 These are lineage and policy mismatches, not ordinary provider rejections, so no
 decision artifact is created when they fail.
 
