@@ -99,9 +99,7 @@ def _query(**overrides: object) -> PhysicalQueryV1:
             MARGINAL_GAUGE_COVARIANCE,
             COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE,
         ),
-        "principal_covariance_treatment": (
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
+        "principal_covariance_treatment": (COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
         "primary_proper_score": GAUSSIAN_NLL_PER_DIMENSION,
         "decision_margins": _margins(),
         "shared_covariance_diagnostic": (

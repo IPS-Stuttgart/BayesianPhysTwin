@@ -34,9 +34,7 @@ PHYSICAL_QUERY_CLAIM_BOUNDARY: Final = (
 )
 
 MARGINAL_GAUGE_COVARIANCE: Final = "marginal-gauge"
-COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE: Final = (
-    "complete-explicit-joint-gauge"
-)
+COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE: Final = "complete-explicit-joint-gauge"
 _REQUIRED_COVARIANCE_TREATMENTS: Final = frozenset(
     {
         MARGINAL_GAUGE_COVARIANCE,
@@ -50,9 +48,7 @@ _ALLOWED_BOOTSTRAP_METHODS: Final = frozenset(
         "exact-group-permutation",
     }
 )
-_REQUIRED_PACKAGE_BINDINGS: Final = frozenset(
-    {"bayesian-phystwin", "prob4d"}
-)
+_REQUIRED_PACKAGE_BINDINGS: Final = frozenset({"bayesian-phystwin", "prob4d"})
 _PRIMARY_REPOSITORY: Final = "IPS-Stuttgart/BayesianPhysTwin"
 _OBSERVATION_REPOSITORY: Final = "IPS-Stuttgart/Prob4D"
 _PACKAGE_NAME = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
@@ -89,9 +85,7 @@ _BOOTSTRAP_FIELDS: Final = frozenset(
         "stratification_keys",
     }
 )
-_REPOSITORY_FIELDS: Final = frozenset(
-    {"repository", "revision", "dirty", "role"}
-)
+_REPOSITORY_FIELDS: Final = frozenset({"repository", "revision", "dirty", "role"})
 _QUERY_FIELDS: Final = frozenset(
     {
         "query_id",
@@ -197,15 +191,11 @@ def _unique_text_tuple(
 def _horizon_tuple(value: object) -> tuple[float, ...]:
     sequence = _sequence(value, name="horizon_values")
     horizons = tuple(
-        _finite_number(item, name="horizon value", minimum=0.0)
-        for item in sequence
+        _finite_number(item, name="horizon value", minimum=0.0) for item in sequence
     )
     if not horizons:
         raise ValueError("horizon_values must not be empty")
-    if any(
-        right <= left
-        for left, right in zip(horizons, horizons[1:], strict=False)
-    ):
+    if any(right <= left for left, right in zip(horizons, horizons[1:], strict=False)):
         raise ValueError("horizon_values must be strictly increasing")
     return horizons
 
@@ -275,9 +265,7 @@ def _repository_from_mapping(value: object) -> RepositoryState:
 def _normalized_repositories(value: object) -> tuple[RepositoryState, ...]:
     sequence = _sequence(value, name="repositories")
     repositories = tuple(
-        item
-        if isinstance(item, RepositoryState)
-        else _repository_from_mapping(item)
+        item if isinstance(item, RepositoryState) else _repository_from_mapping(item)
         for item in sequence
     )
     if not repositories:
@@ -298,8 +286,7 @@ def _normalized_repositories(value: object) -> tuple[RepositoryState, ...]:
     observation = [
         item
         for item in repositories
-        if item.role == "observation"
-        and item.repository == _OBSERVATION_REPOSITORY
+        if item.role == "observation" and item.repository == _OBSERVATION_REPOSITORY
     ]
     if len(observation) != 1:
         raise ValueError(
@@ -395,14 +382,10 @@ class PhysicalQueryDecisionMarginsV1:
     def descriptor(self) -> dict[str, object]:
         return {
             "practical_equivalence_score": self.practical_equivalence_score,
-            "maximum_harmful_score_increase": (
-                self.maximum_harmful_score_increase
-            ),
+            "maximum_harmful_score_increase": (self.maximum_harmful_score_increase),
             "minimum_accepted_coverage": self.minimum_accepted_coverage,
             "maximum_mean_width": self.maximum_mean_width,
-            "maximum_worst_group_score_regret": (
-                self.maximum_worst_group_score_regret
-            ),
+            "maximum_worst_group_score_regret": (self.maximum_worst_group_score_regret),
             "minimum_shared_covariance_relevance": (
                 self.minimum_shared_covariance_relevance
             ),
@@ -422,14 +405,10 @@ class PhysicalQueryDecisionMarginsV1:
         )
         return cls(
             practical_equivalence_score=source["practical_equivalence_score"],
-            maximum_harmful_score_increase=source[
-                "maximum_harmful_score_increase"
-            ],
+            maximum_harmful_score_increase=source["maximum_harmful_score_increase"],
             minimum_accepted_coverage=source["minimum_accepted_coverage"],
             maximum_mean_width=source["maximum_mean_width"],
-            maximum_worst_group_score_regret=source[
-                "maximum_worst_group_score_regret"
-            ],
+            maximum_worst_group_score_regret=source["maximum_worst_group_score_regret"],
             minimum_shared_covariance_relevance=source[
                 "minimum_shared_covariance_relevance"
             ],
@@ -510,9 +489,7 @@ class PhysicalQueryBootstrapV1:
             name="bootstrap",
         )
         return cls(
-            independent_group_definition=source[
-                "independent_group_definition"
-            ],
+            independent_group_definition=source["independent_group_definition"],
             method=source["method"],
             resamples=source["resamples"],
             seed=source["seed"],
@@ -579,9 +556,7 @@ class PhysicalQueryV1:
             allow_empty=False,
             sort=True,
         )
-        missing_treatments = sorted(
-            _REQUIRED_COVARIANCE_TREATMENTS - set(treatments)
-        )
+        missing_treatments = sorted(_REQUIRED_COVARIANCE_TREATMENTS - set(treatments))
         if missing_treatments:
             raise ValueError(
                 "covariance_treatments is missing required variants: "
@@ -727,9 +702,7 @@ class PhysicalQueryV1:
             "baseline_physical_belief_id": self.baseline_physical_belief_id,
             "exact_fallback_id": self.exact_fallback_id,
             "covariance_treatments": list(self.covariance_treatments),
-            "principal_covariance_treatment": (
-                self.principal_covariance_treatment
-            ),
+            "principal_covariance_treatment": (self.principal_covariance_treatment),
             "primary_proper_score": self.primary_proper_score,
             "decision_margins": self.decision_margins.descriptor(),
             "shared_covariance_diagnostic": self.shared_covariance_diagnostic,
@@ -784,9 +757,7 @@ class PhysicalQueryV1:
             horizon_values=_horizon_tuple(source["horizon_values"]),
             horizon_unit=source["horizon_unit"],
             jacobian_provider_id=source["jacobian_provider_id"],
-            baseline_physical_belief_id=source[
-                "baseline_physical_belief_id"
-            ],
+            baseline_physical_belief_id=source["baseline_physical_belief_id"],
             exact_fallback_id=source["exact_fallback_id"],
             covariance_treatments=_unique_text_tuple(
                 source["covariance_treatments"],
@@ -794,19 +765,13 @@ class PhysicalQueryV1:
                 allow_empty=False,
                 sort=True,
             ),
-            principal_covariance_treatment=source[
-                "principal_covariance_treatment"
-            ],
+            principal_covariance_treatment=source["principal_covariance_treatment"],
             primary_proper_score=source["primary_proper_score"],
             decision_margins=PhysicalQueryDecisionMarginsV1.from_mapping(
                 source["decision_margins"]
             ),
-            shared_covariance_diagnostic=source[
-                "shared_covariance_diagnostic"
-            ],
-            computational_selection_rule=source[
-                "computational_selection_rule"
-            ],
+            shared_covariance_diagnostic=source["shared_covariance_diagnostic"],
+            computational_selection_rule=source["computational_selection_rule"],
             bootstrap=PhysicalQueryBootstrapV1.from_mapping(source["bootstrap"]),
             package_artifact_ids=cast(
                 Mapping[str, str],
