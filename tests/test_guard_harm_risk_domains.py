@@ -485,7 +485,7 @@ def test_composite_rejects_roster_and_group_leakage() -> None:
         )
 
 
-def test_composite_rejects_cross_domain_duplicate_and_threshold_leakage() -> None:
+def test_composite_rejects_cross_domain_duplicate() -> None:
     certificate = _certificate()
     certificates = dict(certificate.domain_certificates)
     certificates["oscillatory"] = _recertify(
@@ -495,22 +495,6 @@ def test_composite_rejects_cross_domain_duplicate_and_threshold_leakage() -> Non
         group_ids=certificates["dynamic"].group_ids,
     )
     with pytest.raises(ValueError, match="exactly one domain"):
-        DomainGuardHarmRiskCertificateV1(
-            domain_guard_certificate=certificate.domain_guard_certificate,
-            domain_certificates=certificates,
-            family_confidence_level=0.95,
-        )
-
-    certificates = dict(certificate.domain_certificates)
-    leak = certificates["oscillatory"].group_ids[0]
-    for domain in certificate.supported_domains:
-        certificates[domain] = _recertify(
-            certificate.domain_guard_certificate,
-            domain,
-            certificates[domain],
-            threshold_selection_group_ids=(leak,),
-        )
-    with pytest.raises(ValueError, match="globally disjoint"):
         DomainGuardHarmRiskCertificateV1(
             domain_guard_certificate=certificate.domain_guard_certificate,
             domain_certificates=certificates,

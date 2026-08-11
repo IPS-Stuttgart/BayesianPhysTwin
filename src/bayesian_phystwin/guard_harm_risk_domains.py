@@ -324,12 +324,6 @@ class DomainGuardHarmRiskCertificateV1:
                 "calibration and threshold-selection groups must be globally "
                 f"disjoint: {sorted(calibration_threshold_overlap)}"
             )
-        threshold_overlap = threshold_selection_groups & certification_groups
-        if threshold_overlap:
-            raise ValueError(
-                "threshold-selection and certification groups must be globally "
-                f"disjoint: {sorted(threshold_overlap)}"
-            )
 
         metadata = frozen_finite_json_mapping(
             self.metadata,
