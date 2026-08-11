@@ -105,8 +105,7 @@ def test_active_runner_wraps_exact_selector_runner_without_mutating_it() -> None
 
     assert _git_blob_sha(SELECTOR_RUNNER) == SELECTOR_RUNNER_BLOB_SHA
     assert (
-        'SELECTOR_RUNNER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"'
-        in active
+        'SELECTOR_RUNNER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"' in active
     )
     assert f'MATERIALIZATION_ID="{MATERIALIZATION_ID}"' in active
     assert f'FROZEN_UPSTREAM_REVISION="{FROZEN_REVISION}"' in active
