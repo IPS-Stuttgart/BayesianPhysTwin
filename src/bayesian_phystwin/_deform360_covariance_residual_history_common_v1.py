@@ -7,7 +7,6 @@ import math
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Final
 
 import numpy as np
@@ -49,10 +48,6 @@ FALLBACK_SEMANTICS: Final = (
 )
 CLAIM_BOUNDARY: Final = (
     "source-only adapter contract; no fresh-target payload, prediction, or outcome"
-)
-TARGET_QUARANTINE_ROOT: Final = Path(
-    "/mnt/lexar4tb/datasets/deform360/unopened-candidate-target/"
-    "covariance-only-v1/payload"
 )
 _HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 _ORIENTATION_SUFFIXES = frozenset(
@@ -189,19 +184,6 @@ def _validate_covariance(
     if minimum_eigenvalue < -numerical_tolerance:
         raise ValueError(f"{name} must be positive semidefinite")
     return array
-
-
-def assert_outside_target_quarantine(
-    path: Path | str,
-    *,
-    name: str = "path",
-) -> Path:
-    label = _canonical_string(name, name="name")
-    resolved = Path(path).expanduser().resolve(strict=False)
-    target = TARGET_QUARANTINE_ROOT.resolve(strict=False)
-    if resolved == target or target in resolved.parents:
-        raise ValueError(f"{label} is inside the unopened target quarantine")
-    return resolved
 
 
 def camera_hardware_family(camera_id: str) -> str:
@@ -513,8 +495,6 @@ __all__ = [
     "REFERENCE_MEAN_SEMANTICS",
     "RESIDUAL_STORAGE_SEMANTICS",
     "ResidualHistoryDryRunPolicyV1",
-    "TARGET_QUARANTINE_ROOT",
-    "assert_outside_target_quarantine",
     "camera_hardware_family",
     "deterministic_disjoint_camera_partition",
 ]
