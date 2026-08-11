@@ -254,3 +254,81 @@ def test_recursive_update_rejects_fallback_reason_drift(
             guard_accepted=False,
             covariance_semantics=fallback,
         )
+
+
+def test_first_admissible_custom_working_policy_remains_the_run_lock(
+    tmp_path: Path,
+) -> None:
+    stream, observations, _ = _stream_tree(tmp_path)
+    baseline = _Belief("a" * 64)
+    policy = _policy()
+    run = start_claim_bearing_prob4d_stream_run(
+        stream,
+        baseline,
+        nuisance_policy=policy,
+    )
+    semantics = working_irls_covariance_semantics(
+        [[0.2]],
+        likelihood_power_semantics="custom-generalized-bayes-power-v1",
+    )
+
+    _, updated_run, step, _ = _apply_update(
+        stream,
+        observations[0],
+        run=run,
+        baseline=baseline,
+        candidate=_Belief("b" * 64),
+        policy=policy,
+        inference_admissible=True,
+        guard_accepted=True,
+        covariance_semantics=semantics,
+    )
+
+    assert step.covariance_semantics_id == semantics.artifact_id
+    assert step.covariance_policy_id == semantics.policy_id
+    assert updated_run.covariance_policy_id == semantics.policy_id
+
+
+def test_later_admissible_update_rejects_covariance_policy_drift(
+    tmp_path: Path,
+) -> None:
+    stream, observations, _ = _stream_tree(tmp_path, two_updates=True)
+    baseline = _Belief("a" * 64)
+    policy = _policy()
+    run = start_claim_bearing_prob4d_stream_run(
+        stream,
+        baseline,
+        nuisance_policy=policy,
+    )
+    first_semantics = working_irls_covariance_semantics(
+        [[0.2]],
+        likelihood_power_semantics="custom-generalized-bayes-power-v1",
+    )
+    selected, run, _, _ = _apply_update(
+        stream,
+        observations[0],
+        run=run,
+        baseline=baseline,
+        candidate=_Belief("b" * 64),
+        policy=policy,
+        inference_admissible=True,
+        guard_accepted=True,
+        covariance_semantics=first_semantics,
+    )
+    changed_semantics = working_irls_covariance_semantics(
+        [[0.2]],
+        likelihood_power_semantics="different-generalized-bayes-power-v1",
+    )
+
+    with pytest.raises(ValueError, match="differs from the run lock"):
+        _apply_update(
+            stream,
+            observations[1],
+            run=run,
+            baseline=selected,
+            candidate=_Belief("f" * 64),
+            policy=policy,
+            inference_admissible=True,
+            guard_accepted=True,
+            covariance_semantics=changed_semantics,
+        )
