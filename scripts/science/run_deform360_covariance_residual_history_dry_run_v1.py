@@ -24,12 +24,8 @@ from bayesian_phystwin.deform360_covariance_residual_history_v1 import (
     run_source_only_residual_history_dry_run,
 )
 
-LOCK_SCHEMA = (
-    "bayesian-phystwin/deform360-covariance-residual-history-dry-run-lock-v1"
-)
-SOURCE_SCHEMA = (
-    "bayesian-phystwin/deform360-covariance-residual-history-source-v1"
-)
+LOCK_SCHEMA = "bayesian-phystwin/deform360-covariance-residual-history-dry-run-lock-v1"
+SOURCE_SCHEMA = "bayesian-phystwin/deform360-covariance-residual-history-source-v1"
 RESULT_SCHEMA = (
     "bayesian-phystwin/deform360-covariance-residual-history-dry-run-result-v1"
 )
@@ -124,9 +120,7 @@ def _exact_fields(
     missing = sorted(expected - set(value))
     extra = sorted(set(value) - expected)
     if missing or extra:
-        raise ValueError(
-            f"{name} fields changed: missing={missing}, extra={extra}"
-        )
+        raise ValueError(f"{name} fields changed: missing={missing}, extra={extra}")
 
 
 def _canonical_sha256(value: Mapping[str, Any], *, digest_key: str) -> str:
@@ -235,13 +229,9 @@ def load_locked_policy(
     return protocol, ResidualHistoryDryRunPolicyV1(
         minimum_prefix_frames=policy["minimum_prefix_frames"],
         minimum_final_observed_count=policy["minimum_final_observed_count"],
-        minimum_final_observed_fraction=policy[
-            "minimum_final_observed_fraction"
-        ],
+        minimum_final_observed_fraction=policy["minimum_final_observed_fraction"],
         minimum_cameras_per_role=policy["minimum_cameras_per_role"],
-        minimum_camera_families_per_role=policy[
-            "minimum_camera_families_per_role"
-        ],
+        minimum_camera_families_per_role=policy["minimum_camera_families_per_role"],
         covariance_scales=tuple(scales),
     )
 
@@ -296,8 +286,7 @@ def load_source_manifest(path: Path) -> dict[str, Any]:
     ):
         cameras = manifest.get(field_name)
         _require(
-            isinstance(cameras, list)
-            and all(type(value) is str for value in cameras),
+            isinstance(cameras, list) and all(type(value) is str for value in cameras),
             f"source {field_name} roster is missing",
         )
     archive = _mapping(manifest.get("archive"), name="source archive")
@@ -472,8 +461,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--protocol",
         type=Path,
         default=Path(
-            "protocols/locks/"
-            "deform360_covariance_residual_history_dry_run_v1.json"
+            "protocols/locks/deform360_covariance_residual_history_dry_run_v1.json"
         ),
     )
     parser.add_argument("--implementation-revision", required=True)

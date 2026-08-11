@@ -138,11 +138,14 @@ class ResidualHistoryAdapterV1:
         expected = content_id(self.descriptor())
         if self.adapter_id is None:
             object.__setattr__(self, "adapter_id", expected)
-        elif literal_lower_hex(
-            self.adapter_id,
-            name="adapter_id",
-            lengths={64},
-        ) != expected:
+        elif (
+            literal_lower_hex(
+                self.adapter_id,
+                name="adapter_id",
+                lengths={64},
+            )
+            != expected
+        ):
             raise ValueError("adapter_id does not match the residual history")
 
     def descriptor(self) -> dict[str, Any]:
@@ -233,13 +236,9 @@ def build_residual_history_adapter(
     declared_provider = tuple(sorted(provider_camera_ids))
     declared_scoring = tuple(sorted(scoring_camera_ids))
     if declared_provider != partition.provider_camera_ids:
-        raise ValueError(
-            "declared provider cameras differ from the frozen partition"
-        )
+        raise ValueError("declared provider cameras differ from the frozen partition")
     if declared_scoring != partition.scoring_camera_ids:
-        raise ValueError(
-            "declared scoring cameras differ from the frozen partition"
-        )
+        raise ValueError("declared scoring cameras differ from the frozen partition")
     return ResidualHistoryAdapterV1(
         source_unit_id=source_unit_id,
         frame_indices=frames,

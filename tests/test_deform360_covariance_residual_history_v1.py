@@ -81,9 +81,7 @@ def _arrays(
     validity[0, :] = True
     validity[1, ::2] = True
     validity[-1, :final_observed_count] = True
-    observation[validity] = physical_prefix[validity] + np.array(
-        [0.01, -0.02, 0.03]
-    )
+    observation[validity] = physical_prefix[validity] + np.array([0.01, -0.02, 0.03])
     physical_future = np.zeros(
         (future_count, material_count, 3),
         dtype=np.float64,
@@ -156,15 +154,11 @@ def test_camera_partition_is_order_invariant_exhaustive_and_family_disjoint() ->
     )
 
     assert forward.partition_id == reverse.partition_id
-    assert set(forward.provider_camera_ids).isdisjoint(
-        forward.scoring_camera_ids
+    assert set(forward.provider_camera_ids).isdisjoint(forward.scoring_camera_ids)
+    assert set(forward.provider_camera_ids) | set(forward.scoring_camera_ids) == set(
+        _camera_ids()
     )
-    assert set(forward.provider_camera_ids) | set(
-        forward.scoring_camera_ids
-    ) == set(_camera_ids())
-    assert set(forward.provider_family_ids).isdisjoint(
-        forward.scoring_family_ids
-    )
+    assert set(forward.provider_family_ids).isdisjoint(forward.scoring_family_ids)
     for family in ("brics-odroid-007", "brics-odroid-008"):
         provider = family in forward.provider_family_ids
         scoring = family in forward.scoring_family_ids
@@ -255,9 +249,7 @@ def test_adapter_rejects_declared_camera_rosters_that_do_not_match_partition() -
     policy = _policy()
     partition = _camera_partition(policy)
     wrong_provider = tuple(
-        sorted(
-            (*partition.provider_camera_ids[:-1], partition.scoring_camera_ids[0])
-        )
+        sorted((*partition.provider_camera_ids[:-1], partition.scoring_camera_ids[0]))
     )
     with pytest.raises(ValueError, match="declared provider cameras"):
         build_residual_history_adapter(
@@ -329,9 +321,7 @@ def test_low_final_fraction_returns_exact_fallback_even_when_count_passes() -> N
     )
 
     assert not result.accepted
-    assert result.decision.fallback_reasons == (
-        "minimum-final-observed-fraction",
-    )
+    assert result.decision.fallback_reasons == ("minimum-final-observed-fraction",)
     assert result.mean_m is arrays["physical_future_m"]
     assert result.covariance_m2 is arrays["physical_fallback_covariance_m2"]
 
@@ -343,9 +333,7 @@ def test_covariance_rejection_returns_exact_fallback() -> None:
     result = _run(arrays)
 
     assert not result.accepted
-    assert result.decision.fallback_reasons == (
-        "covariance-contract-rejection",
-    )
+    assert result.decision.fallback_reasons == ("covariance-contract-rejection",)
     assert result.mean_m is arrays["physical_future_m"]
     assert result.covariance_m2 is arrays["physical_fallback_covariance_m2"]
 
@@ -409,10 +397,7 @@ def test_cli_dry_run_publishes_no_clobber_source_only_receipt(
     archive_path = tmp_path / "source.npz"
     np.savez_compressed(archive_path, **arrays)
     manifest = {
-        "schema": (
-            "bayesian-phystwin/"
-            "deform360-covariance-residual-history-source-v1"
-        ),
+        "schema": ("bayesian-phystwin/deform360-covariance-residual-history-source-v1"),
         "schema_version": 1,
         "source_unit_id": "opened-source-object-session-001",
         "archive": {

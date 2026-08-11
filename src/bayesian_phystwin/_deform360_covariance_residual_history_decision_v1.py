@@ -163,11 +163,14 @@ class ResidualHistoryDryRunDecisionV1:
         expected = content_id(self.descriptor())
         if self.decision_id is None:
             object.__setattr__(self, "decision_id", expected)
-        elif literal_lower_hex(
-            self.decision_id,
-            name="decision_id",
-            lengths={64},
-        ) != expected:
+        elif (
+            literal_lower_hex(
+                self.decision_id,
+                name="decision_id",
+                lengths={64},
+            )
+            != expected
+        ):
             raise ValueError("decision_id does not match the dry-run decision")
 
     def descriptor(self) -> dict[str, Any]:

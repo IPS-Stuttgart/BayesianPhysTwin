@@ -36,9 +36,7 @@ RESIDUAL_HISTORY_DECISION_SCHEMA: Final = (
 RESIDUAL_HISTORY_RECEIPT_SCHEMA: Final = (
     "bayesian-phystwin.deform360-covariance-residual-history-receipt-v1"
 )
-CAMERA_PARTITION_NAMESPACE: Final = (
-    "deform360-provider-scoring-camera-family-v1"
-)
+CAMERA_PARTITION_NAMESPACE: Final = "deform360-provider-scoring-camera-family-v1"
 HORIZON_LABELS: Final = ("early", "middle", "late")
 RESIDUAL_STORAGE_SEMANTICS: Final = (
     "provider-observation-minus-physical-baseline-m; invalid rows stored as zero only"
@@ -149,9 +147,7 @@ def _array_sha256(value: np.ndarray) -> str:
     descriptor = {
         "dtype": array.dtype.str,
         "shape": list(array.shape),
-        "payload_sha256": hashlib.sha256(
-            array.tobytes(order="C")
-        ).hexdigest(),
+        "payload_sha256": hashlib.sha256(array.tobytes(order="C")).hexdigest(),
     }
     return hashlib.sha256(canonical_json_bytes(descriptor)).hexdigest()
 
@@ -283,11 +279,14 @@ class ResidualHistoryDryRunPolicyV1:
         expected = content_id(self.descriptor())
         if self.policy_id is None:
             object.__setattr__(self, "policy_id", expected)
-        elif literal_lower_hex(
-            self.policy_id,
-            name="policy_id",
-            lengths={64},
-        ) != expected:
+        elif (
+            literal_lower_hex(
+                self.policy_id,
+                name="policy_id",
+                lengths={64},
+            )
+            != expected
+        ):
             raise ValueError("policy_id does not match the policy descriptor")
 
     @property
@@ -310,9 +309,7 @@ class ResidualHistoryDryRunPolicyV1:
             "minimum_final_observed_count": self.minimum_final_observed_count,
             "minimum_final_observed_fraction": self.minimum_final_observed_fraction,
             "minimum_cameras_per_role": self.minimum_cameras_per_role,
-            "minimum_camera_families_per_role": (
-                self.minimum_camera_families_per_role
-            ),
+            "minimum_camera_families_per_role": (self.minimum_camera_families_per_role),
             "covariance_scales": list(self.covariance_scales),
             "horizon_labels": list(HORIZON_LABELS),
             "residual_storage_semantics": RESIDUAL_STORAGE_SEMANTICS,
@@ -390,11 +387,14 @@ class DisjointCameraPartitionV1:
         expected = content_id(self.descriptor())
         if self.partition_id is None:
             object.__setattr__(self, "partition_id", expected)
-        elif literal_lower_hex(
-            self.partition_id,
-            name="partition_id",
-            lengths={64},
-        ) != expected:
+        elif (
+            literal_lower_hex(
+                self.partition_id,
+                name="partition_id",
+                lengths={64},
+            )
+            != expected
+        ):
             raise ValueError("partition_id does not match the camera partition")
 
     @property
@@ -447,10 +447,7 @@ def deterministic_disjoint_camera_partition(
     if not isinstance(policy, ResidualHistoryDryRunPolicyV1):
         raise TypeError("policy must be ResidualHistoryDryRunPolicyV1")
     ids = tuple(
-        sorted(
-            _canonical_string(value, name="camera_ids")
-            for value in camera_ids
-        )
+        sorted(_canonical_string(value, name="camera_ids") for value in camera_ids)
     )
     if ids != tuple(sorted(set(ids))):
         raise ValueError("camera_ids must be unique")
@@ -484,16 +481,12 @@ def deterministic_disjoint_camera_partition(
 
     provider_ids = tuple(
         sorted(
-            camera
-            for family in provider_families
-            for camera in family_to_ids[family]
+            camera for family in provider_families for camera in family_to_ids[family]
         )
     )
     scoring_ids = tuple(
         sorted(
-            camera
-            for family in scoring_families
-            for camera in family_to_ids[family]
+            camera for family in scoring_families for camera in family_to_ids[family]
         )
     )
     if (
@@ -502,9 +495,7 @@ def deterministic_disjoint_camera_partition(
         or len(provider_families) < policy.minimum_camera_families_per_role
         or len(scoring_families) < policy.minimum_camera_families_per_role
     ):
-        raise ValueError(
-            "camera roster does not meet minimum camera support per role"
-        )
+        raise ValueError("camera roster does not meet minimum camera support per role")
     return DisjointCameraPartitionV1(
         provider_camera_ids=provider_ids,
         scoring_camera_ids=scoring_ids,

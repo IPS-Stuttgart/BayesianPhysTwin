@@ -100,12 +100,8 @@ def _roster_binding_sha256() -> str:
 
 
 def test_real_deform360_camera_suffix_keeps_physical_recorder_serial() -> None:
-    assert camera_hardware_family("brics-odroid-001_cam0") == (
-        "brics-odroid-001"
-    )
-    assert camera_hardware_family("brics-odroid-001_cam1") == (
-        "brics-odroid-001"
-    )
+    assert camera_hardware_family("brics-odroid-001_cam0") == ("brics-odroid-001")
+    assert camera_hardware_family("brics-odroid-001_cam1") == ("brics-odroid-001")
     assert camera_hardware_family("brics-odroid-001-camera-3-left") == (
         "brics-odroid-001"
     )
@@ -133,9 +129,7 @@ def test_verified_026_source_roster_meets_the_locked_disjoint_role_gate() -> Non
     assert partition.scoring_family_ids == EXPECTED_SCORING_FAMILIES
     assert len(partition.provider_camera_ids) == 18
     assert len(partition.scoring_camera_ids) == 17
-    assert set(partition.provider_camera_ids).isdisjoint(
-        partition.scoring_camera_ids
-    )
+    assert set(partition.provider_camera_ids).isdisjoint(partition.scoring_camera_ids)
     assert set(partition.provider_camera_ids) | set(
         partition.scoring_camera_ids
     ) == set(SOURCE_CAMERA_IDS)
