@@ -21,11 +21,14 @@ covariance transform can be used in a claim-bearing run:
    supplement rather than replace the version-1 calibration-domain guard.
 4. **Content-addressed admission.** Application accepts both an explicit
    `CovarianceSemanticsV2` descriptor and an `EvidenceDecisionV1` bound to the
-   registered claim and protocol. The complete semantics descriptor must match
-   the certificate, and a naked Boolean cannot authorize the version-2 path. The
-   decision must be passing, confirmatory, and meet the frozen evidence-level
-   policy. A deployment policy may additionally require
-   `claim_authorized=true`.
+   registered claim, protocol, and exact version-2 certificate. The decision's
+   metadata must contain the certificate artifact ID under
+   `domain_covariance_calibration_v2_certificate_id`; a decision for another
+   certificate cannot be replayed even when claim and protocol IDs match. The
+   complete semantics descriptor must also match the certificate, and a naked
+   Boolean cannot authorize the version-2 path. The decision must be passing,
+   confirmatory, and meet the frozen evidence-level policy. A deployment policy
+   may additionally require `claim_authorized=true`.
 
 ## Fitting
 
@@ -65,9 +68,27 @@ version-2 rejection reasons.
 
 ## Application
 
+The admission decision must be built after the certificate exists and bind that
+exact artifact in its content-addressed metadata. The implementation does not
+infer certificate identity from a matching claim ID, protocol ID, or status:
+
 ```python
 from bayesian_phystwin.domain_covariance_calibration_v2 import (
+    EVIDENCE_CERTIFICATE_ID_METADATA_KEY,
     apply_domain_covariance_calibration_v2,
+)
+
+admission_decision = build_evidence_decision(
+    manifest=manifest,
+    evidence_summary_path=evidence_summary_path,
+    claim_id=certificate.admission_claim_id,
+    status="pass",
+    claim_authorized=False,
+    evidence_level=3,
+    metric=decision_metric,
+    metadata={
+        EVIDENCE_CERTIFICATE_ID_METADATA_KEY: certificate.artifact_id,
+    },
 )
 
 covariance, application = apply_domain_covariance_calibration_v2(
@@ -81,13 +102,14 @@ covariance, application = apply_domain_covariance_calibration_v2(
 
 Application returns the exact input NumPy object when any boundary fails,
 including unknown domain, semantic mismatch, nonprospective source certificate,
-policy rejection, unmatched evidence decision, or an identity transform. An
-accepted nonidentity transform returns a new immutable float64 array. The
-application record binds the version-2 certificate, both the certified and
-application-declared semantics, the evidence decision, the underlying version-1
-application, canonical float64 numerical digests, and exact shape/dtype/byte
-digests of the actual input and returned arrays. Invalid, nonsymmetric, or
-indefinite covariance matrices are rejected before fallback routing.
+policy rejection, missing or mismatched certificate binding, unmatched evidence
+decision, or an identity transform. An accepted nonidentity transform returns a
+new immutable float64 array. The application record binds the version-2
+certificate, both the certified and application-declared semantics, the evidence
+decision, the underlying version-1 application, canonical float64 numerical
+digests, and exact shape/dtype/byte digests of the actual input and returned
+arrays. Invalid, nonsymmetric, or indefinite covariance matrices are rejected
+before fallback routing.
 
 ## Scientific boundary
 

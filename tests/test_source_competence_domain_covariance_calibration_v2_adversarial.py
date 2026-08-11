@@ -10,6 +10,7 @@ from bayesian_phystwin.domain_covariance_calibration import (
     DomainCovarianceCalibrationConfigV1,
 )
 from bayesian_phystwin.domain_covariance_calibration_v2 import (
+    EVIDENCE_CERTIFICATE_ID_METADATA_KEY,
     CovarianceSemanticsV2,
     DomainCovarianceCalibrationApplicationV2,
     DomainCovarianceCalibrationCertificateV2,
@@ -99,6 +100,7 @@ def _decision(
     *,
     status: str = "pass",
     claim_authorized: bool | None = None,
+    certificate_id: str | None = None,
 ) -> EvidenceDecisionV1:
     authorized = status == "pass" if claim_authorized is None else claim_authorized
     return EvidenceDecisionV1(
@@ -127,6 +129,11 @@ def _decision(
                 role="primary",
             ),
         ),
+        metadata=(
+            {}
+            if certificate_id is None
+            else {EVIDENCE_CERTIFICATE_ID_METADATA_KEY: certificate_id}
+        ),
         created_utc="2026-08-11T00:00:00+00:00",
     )
 
@@ -142,7 +149,11 @@ def _apply(
         certificate,
         domain_id="dynamic",
         application_semantics=certificate.semantics,
-        evidence_decision=_decision() if decision is None else decision,
+        evidence_decision=(
+            _decision(certificate_id=str(certificate.artifact_id))
+            if decision is None
+            else decision
+        ),
         metadata={"test": "adversarial"},
     )
 
@@ -252,7 +263,13 @@ def test_policy_rejects_group_count_and_actual_worst_group_harm() -> None:
 def test_application_record_rejects_inconsistent_states() -> None:
     certificate = _fit()
     _, applied = _apply(certificate)
-    _, rejected = _apply(certificate, decision=_decision(status="fail"))
+    _, rejected = _apply(
+        certificate,
+        decision=_decision(
+            status="fail",
+            certificate_id=str(certificate.artifact_id),
+        ),
+    )
 
     with pytest.raises(ValueError, match="logical opposites"):
         replace(applied, exact_fallback=True, artifact_id=None)
@@ -327,13 +344,14 @@ def test_fit_and_apply_reject_ambiguous_inputs() -> None:
         )  # type: ignore[arg-type]
 
     certificate = _fit()
+    decision = _decision(certificate_id=str(certificate.artifact_id))
     with pytest.raises(TypeError, match="version-2 certificate"):
         apply_domain_covariance_calibration_v2(  # type: ignore[arg-type]
             np.asarray([[1.0]]),
             True,
             domain_id="dynamic",
             application_semantics=certificate.semantics,
-            evidence_decision=_decision(),
+            evidence_decision=decision,
         )
     with pytest.raises(ValueError, match="domain_id"):
         apply_domain_covariance_calibration_v2(
@@ -341,7 +359,7 @@ def test_fit_and_apply_reject_ambiguous_inputs() -> None:
             certificate,
             domain_id=" dynamic",
             application_semantics=certificate.semantics,
-            evidence_decision=_decision(),
+            evidence_decision=decision,
         )
 
 
@@ -356,6 +374,12 @@ def test_claim_authorization_policy_accepts_authorized_decision() -> None:
         )
     )
 
-    _, record = _apply(certificate, decision=_decision(claim_authorized=True))
+    _, record = _apply(
+        certificate,
+        decision=_decision(
+            claim_authorized=True,
+            certificate_id=str(certificate.artifact_id),
+        ),
+    )
 
     assert record.evidence_admissible
