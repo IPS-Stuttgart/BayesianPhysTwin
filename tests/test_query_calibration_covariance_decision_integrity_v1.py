@@ -32,12 +32,8 @@ def _decision(**overrides: object) -> QueryCovarianceTreatmentDecisionV1:
         "exact_fallback_id": _sha256("fallback"),
         "shared_covariance_relevance": 0.2,
         "relevance_threshold": 0.05,
-        "selected_covariance_treatment": (
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
-        "principal_covariance_treatment": (
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
+        "selected_covariance_treatment": (COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
+        "principal_covariance_treatment": (COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
         "principal_treatment_matches": True,
         "value_certificate_certified": True,
         "authorized": True,

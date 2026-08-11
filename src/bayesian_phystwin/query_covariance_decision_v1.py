@@ -224,9 +224,7 @@ def _validated_summary(
     if shared_rank > min(query_dimension, shared_columns):
         raise ValueError("Prob4D shared rank exceeds declared dimensions")
     if active_dimension != total_rank:
-        raise ValueError(
-            "active_query_dimension must equal total_effective_rank"
-        )
+        raise ValueError("active_query_dimension must equal total_effective_rank")
     if shared_rank > total_rank:
         raise ValueError("Prob4D shared rank exceeds total effective rank")
 
@@ -332,9 +330,7 @@ def _validated_summary(
             raise ValueError(
                 "zero shared covariance requires zero directional fractions"
             )
-        if conditional == 0.0 and not all(
-            _close(item, 1.0) for item in directional
-        ):
+        if conditional == 0.0 and not all(_close(item, 1.0) for item in directional):
             raise ValueError(
                 "all-shared covariance requires unit directional fractions"
             )
