@@ -31,13 +31,26 @@ jobs:
           persist-credentials: false
           clean: true
 
-      - name: Verify and extract the bounded payload
+      - name: Reconstruct and extract the bounded payload
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
-          payload=.github/patches/deform360-covariance-residual-adapter-v1.tar.xz
-          test -f "${payload}"
+          parts=(
+            .github/patches/deform360-covariance-residual-adapter-v1.part0.b64
+            .github/patches/deform360-covariance-residual-adapter-v1.part1.b64
+            .github/patches/deform360-covariance-residual-adapter-v1.part2.b64
+            .github/patches/deform360-covariance-residual-adapter-v1.part3.b64
+          )
+          for part in "${parts[@]}"; do
+            test -f "${part}"
+          done
+          payload="${RUNNER_TEMP}/deform360-covariance-residual-adapter-v1.tar.xz"
+          cat "${parts[@]}" | tr -d '\r\n' | base64 --decode > "${payload}"
+          echo \
+            "f6b2238401fac3c599d205d9c4b0301b5358b758b37aa2c6d755c6d34fc2d35  ${payload}" \
+            | sha256sum --check --strict
+          xz --test "${payload}"
           tar -tJf "${payload}" > "${RUNNER_TEMP}/members.txt"
           export MEMBERS_FILE="${RUNNER_TEMP}/members.txt"
           python - <<'PY'
@@ -66,7 +79,7 @@ jobs:
           PY
           tar -xJf "${payload}" -C .
           rm -- \
-            "${payload}" \
+            "${parts[@]}" \
             .github/workflows/apply-deform360-covariance-residual-adapter-v1.yml
 
       - name: Install and validate the exact implementation
@@ -131,15 +144,23 @@ jobs:
           python - <<'PY'
           import subprocess
 
-          allowed = {
-              ".github/patches/deform360-covariance-residual-adapter-v1.tar.xz",
+          required = {
+              ".github/patches/deform360-covariance-residual-adapter-v1.part0.b64",
+              ".github/patches/deform360-covariance-residual-adapter-v1.part1.b64",
+              ".github/patches/deform360-covariance-residual-adapter-v1.part2.b64",
+              ".github/patches/deform360-covariance-residual-adapter-v1.part3.b64",
               ".github/workflows/apply-deform360-covariance-residual-adapter-v1.yml",
               "MANIFEST.in",
               "scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py",
               "src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py",
               "tests/test_deform360_covariance_residual_adapter_v1.py",
           }
-          required = set(allowed)
+          allowed = required | {
+              ".github/workflows/deform360-covariance-residual-adapter-dry-run-v1.yml",
+              "docs/deform360_covariance_residual_adapter_dry_run_v1.md",
+              "protocols/locks/deform360_covariance_only_residual_adapter_dry_run_v1.json",
+              "results/science/deform360_covariance_only_target_v1/residual_adapter_dry_run_v1.json",
+          }
           output = subprocess.check_output(
               ["git", "status", "--porcelain=v1"], text=True
           )
@@ -161,9 +182,16 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A -- \
-            .github/patches/deform360-covariance-residual-adapter-v1.tar.xz \
+            .github/patches/deform360-covariance-residual-adapter-v1.part0.b64 \
+            .github/patches/deform360-covariance-residual-adapter-v1.part1.b64 \
+            .github/patches/deform360-covariance-residual-adapter-v1.part2.b64 \
+            .github/patches/deform360-covariance-residual-adapter-v1.part3.b64 \
             .github/workflows/apply-deform360-covariance-residual-adapter-v1.yml \
+            .github/workflows/deform360-covariance-residual-adapter-dry-run-v1.yml \
             MANIFEST.in \
+            docs/deform360_covariance_residual_adapter_dry_run_v1.md \
+            protocols/locks/deform360_covariance_only_residual_adapter_dry_run_v1.json \
+            results/science/deform360_covariance_only_target_v1/residual_adapter_dry_run_v1.json \
             scripts/science/run_deform360_covariance_residual_adapter_dry_run_v1.py \
             src/bayesian_phystwin/deform360_covariance_residual_adapter_v1.py \
             tests/test_deform360_covariance_residual_adapter_v1.py
