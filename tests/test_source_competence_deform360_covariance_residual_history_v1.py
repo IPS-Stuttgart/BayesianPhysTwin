@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
+from test_deform360_covariance_residual_history_real_camera_roster_v1 import *  # noqa: F403
+from test_deform360_covariance_residual_history_v1 import *  # noqa: F403
+
 from scripts.science.run_deform360_covariance_residual_history_dry_run_v1 import (
     load_locked_policy,
 )
-from test_deform360_covariance_residual_history_real_camera_roster_v1 import *  # noqa: F403
-from test_deform360_covariance_residual_history_v1 import *  # noqa: F403
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
