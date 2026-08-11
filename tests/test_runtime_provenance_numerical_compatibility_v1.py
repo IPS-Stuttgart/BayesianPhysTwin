@@ -91,7 +91,7 @@ def test_exact_runtime_drift_can_preserve_compatibility_identity() -> None:
 
 
 @pytest.mark.parametrize(
-    ("field", "changed"),
+    ("case", "changed"),
     (
         ("python-minor", {"python_version": "3.13.0"}),
         ("numpy", {"numpy_version": "2.3.0"}),
@@ -103,12 +103,14 @@ def test_exact_runtime_drift_can_preserve_compatibility_identity() -> None:
     ),
 )
 def test_solver_relevant_drift_changes_compatibility_identity(
-    field: str,
+    case: str,
     changed: dict[str, object],
 ) -> None:
-    del field
+    assert case
     baseline = _profile(lock=_lock())
-    candidate = _profile(lock=_lock(), **changed)  # type: ignore[arg-type]
+    candidate_arguments: dict[str, object] = {"lock": _lock()}
+    candidate_arguments.update(changed)
+    candidate = _profile(**candidate_arguments)  # type: ignore[arg-type]
 
     assert numerical_compatibility_id_v1(candidate) != (
         numerical_compatibility_id_v1(baseline)
