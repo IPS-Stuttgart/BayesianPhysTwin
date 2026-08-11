@@ -45,9 +45,7 @@ def _eigen_projection(
     selected_covariance = covariance[validity]
     if len(selected_error) < 1:
         raise ValueError("horizon has no valid scoring events")
-    symmetric = 0.5 * (
-        selected_covariance + np.swapaxes(selected_covariance, -1, -2)
-    )
+    symmetric = 0.5 * (selected_covariance + np.swapaxes(selected_covariance, -1, -2))
     eigenvalues, eigenvectors = np.linalg.eigh(symmetric)
     if float(np.min(eigenvalues, initial=0.0)) < -1e-10:
         raise ValueError("donor covariance is not positive semidefinite")
@@ -84,8 +82,7 @@ def score_scale_grid(
         values = 0.5 * (
             3.0 * LOG_2PI
             + np.sum(
-                np.log(total_eigenvalues)
-                + projected_square / total_eigenvalues,
+                np.log(total_eigenvalues) + projected_square / total_eigenvalues,
                 axis=1,
             )
         )
@@ -155,7 +152,9 @@ def crossfit_select(
     if nll_grid.shape != expected_shape or not np.all(np.isfinite(nll_grid)):
         raise ValueError(f"nll_grid must be finite with shape {expected_shape}")
 
-    def fit(training: np.ndarray) -> tuple[
+    def fit(
+        training: np.ndarray,
+    ) -> tuple[
         str,
         dict[str, tuple[float, ...]],
         dict[str, float],
