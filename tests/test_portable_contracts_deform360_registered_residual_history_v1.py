@@ -63,9 +63,7 @@ def _arrays(*, future_count: int = 6) -> dict[str, np.ndarray]:
         dtype=np.float64,
     )
     physical_future = np.zeros((future_count, 4, 3), dtype=np.float64)
-    physical_future[..., 2] = (
-        np.arange(future_count, dtype=np.float64)[:, None] * 0.001
-    )
+    physical_future[..., 2] = np.arange(future_count, dtype=np.float64)[:, None] * 0.001
     reference_covariance = np.zeros(
         physical_future.shape + (3,),
         dtype=np.float64,
@@ -166,9 +164,9 @@ def test_registered_execution_reproduces_frozen_donor_and_preserves_mean() -> No
     bins = np.empty(len(registered_mean), dtype=np.int64)
     for label, chunk in enumerate(np.array_split(np.arange(len(bins)), 3)):
         bins[chunk] = label
-    expected = unscaled * np.asarray(REGISTERED_COVARIANCE_SCALES)[
-        bins, None, None, None
-    ]
+    expected = (
+        unscaled * np.asarray(REGISTERED_COVARIANCE_SCALES)[bins, None, None, None]
+    )
 
     assert result.accepted
     assert result.mean_m is registered_mean
@@ -205,8 +203,7 @@ def test_execution_is_deterministic_and_source_changes_change_identity() -> None
     )
     assert first.decision.decision_id == second.decision.decision_id
     assert (
-        changed.decision.endpoint_posterior_id
-        != first.decision.endpoint_posterior_id
+        changed.decision.endpoint_posterior_id != first.decision.endpoint_posterior_id
     )
     assert changed.decision.decision_id != first.decision.decision_id
 
@@ -225,9 +222,7 @@ def test_insufficient_support_returns_exact_registered_reference_objects() -> No
     assert result.mean_m is registered_mean
     assert result.covariance_m2 is reference_covariance
     assert result.hybrid is None
-    assert result.decision.fallback_reasons == (
-        "insufficient-per-track-support",
-    )
+    assert result.decision.fallback_reasons == ("insufficient-per-track-support",)
     assert result.decision.endpoint_config_id is None
     assert result.decision.endpoint_prediction_ids == ()
 
@@ -267,9 +262,7 @@ def test_identity_bearing_inputs_reject_implicit_copies() -> None:
         )
 
     arrays = _arrays()
-    arrays["reference_covariance"] = np.asfortranarray(
-        arrays["reference_covariance"]
-    )
+    arrays["reference_covariance"] = np.asfortranarray(arrays["reference_covariance"])
     with pytest.raises(ValueError, match="C-contiguous"):
         _run(arrays)
 
@@ -313,6 +306,6 @@ def test_frozen_metadata_and_claim_boundary_are_retained() -> None:
         result.decision.metadata["protocol"] = "changed"
     descriptor = result.decision.descriptor()
     assert descriptor["claim_boundary"]
-    assert "target" not in inspect.signature(
-        run_registered_residual_history_v1
-    ).parameters
+    assert (
+        "target" not in inspect.signature(run_registered_residual_history_v1).parameters
+    )

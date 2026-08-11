@@ -87,8 +87,7 @@ def _digest_tuple(value: object, *, name: str) -> tuple[str, ...]:
     if type(value) is not tuple:
         raise ValueError(f"{name} must be a canonical tuple")
     result = tuple(
-        _sha256(item, name=f"{name}[{index}]")
-        for index, item in enumerate(value)
+        _sha256(item, name=f"{name}[{index}]") for index, item in enumerate(value)
     )
     if not result:
         raise ValueError(f"{name} must be nonempty")
@@ -176,15 +175,11 @@ def _endpoint_config_descriptor(
                 "observation_std_m": component.observation_std_m,
                 "initial_std_m": component.initial_std_m,
                 "inlier_prior": component.inlier_prior,
-                "outlier_variance_multiplier": (
-                    component.outlier_variance_multiplier
-                ),
+                "outlier_variance_multiplier": (component.outlier_variance_multiplier),
             }
             for component in config.components
         ],
-        "component_prior_probability": list(
-            config.component_prior_probability or ()
-        ),
+        "component_prior_probability": list(config.component_prior_probability or ()),
     }
 
 
@@ -213,9 +208,7 @@ def _endpoint_posterior_descriptor(
             posterior.component_log_evidence
         ),
         "component_mean_sha256": _array_sha256(posterior.component_mean_m),
-        "component_variance_sha256": _array_sha256(
-            posterior.component_variance_m2
-        ),
+        "component_variance_sha256": _array_sha256(posterior.component_variance_m2),
         "component_process_variance_sha256": _array_sha256(
             posterior.component_process_variance_m2
         ),
@@ -361,12 +354,8 @@ class ResidualHistorySourceProvenanceV1:
             "source_inventory_id": self.source_inventory_id,
             "provider_reconstruction_id": self.provider_reconstruction_id,
             "scoring_reconstruction_id": self.scoring_reconstruction_id,
-            "provider_implementation_revision": (
-                self.provider_implementation_revision
-            ),
-            "scoring_implementation_revision": (
-                self.scoring_implementation_revision
-            ),
+            "provider_implementation_revision": (self.provider_implementation_revision),
+            "scoring_implementation_revision": (self.scoring_implementation_revision),
             "provider_configuration_id": self.provider_configuration_id,
             "scoring_configuration_id": self.scoring_configuration_id,
             "provider_camera_family_ids": list(self.provider_camera_family_ids),
@@ -535,15 +524,18 @@ class RegisteredResidualHistoryDecisionV1:
         else:
             if not reasons:
                 raise ValueError("fallback decisions require at least one reason")
-            if any(
-                value is not None
-                for value in (
-                    endpoint_config_id,
-                    endpoint_posterior_id,
-                    donor_covariance_sha256,
-                    hybrid_artifact_id,
+            if (
+                any(
+                    value is not None
+                    for value in (
+                        endpoint_config_id,
+                        endpoint_posterior_id,
+                        donor_covariance_sha256,
+                        hybrid_artifact_id,
+                    )
                 )
-            ) or prediction_ids:
+                or prediction_ids
+            ):
                 raise ValueError("fallback decision must not retain donor execution")
             if not self.reference_covariance_identity_preserved:
                 raise ValueError("fallback must preserve reference covariance identity")
@@ -881,9 +873,7 @@ def run_registered_residual_history_v1(
     bins = _canonical_horizon_bins(len(physical_future))
     schedule = _scale_schedule(bins=bins, track_count=physical_future.shape[1])
     reasons: list[str] = []
-    if any(
-        count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK for count in counts
-    ):
+    if any(count < REGISTERED_MINIMUM_VALID_OBSERVATIONS_PER_TRACK for count in counts):
         reasons.append("insufficient-per-track-support")
     if _array_sha256(registered_mean) != _array_sha256(reconstructed_mean):
         reasons.append("registered-mean-mismatch")
