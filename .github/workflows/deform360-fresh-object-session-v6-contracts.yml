@@ -5,15 +5,29 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-fresh-object-session-v6-contracts.yml"
+      - "docs/deform360_fresh_object_session_source_v6.md"
       - "docs/deform360_fresh_object_session_v6.md"
+      - "docs/deform360_v6_prediction_bridge.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "protocols/locks/deform360_official_hub_fresh_object_session_v6.json"
+      - "scripts/science/run_deform360_fresh_object_session_v6_prediction_bridge.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_v6_prediction_bridge.py"
+      - "tests/test_deform360_fresh_object_session_v6_prediction_bridge.py"
       - "tests/test_deform360_fresh_object_session_v6_protocol.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/deform360-fresh-object-session-v6-contracts.yml"
+      - "docs/deform360_fresh_object_session_source_v6.md"
       - "docs/deform360_fresh_object_session_v6.md"
+      - "docs/deform360_v6_prediction_bridge.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "protocols/locks/deform360_official_hub_fresh_object_session_v6.json"
+      - "scripts/science/run_deform360_fresh_object_session_v6_prediction_bridge.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_v6_prediction_bridge.py"
+      - "tests/test_deform360_fresh_object_session_v6_prediction_bridge.py"
       - "tests/test_deform360_fresh_object_session_v6_protocol.py"
 
 permissions:
@@ -85,18 +99,25 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Validate the frozen target-closed v6 design
+      - name: Validate the frozen target-closed v6 design and bridge
         if: steps.design.outputs.enabled == 'true'
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev]"
           files=(
+            scripts/science/run_deform360_fresh_object_session_v6_prediction_bridge.py
+            src/bayesian_phystwin/deform360_fresh_object_session_v6_prediction_bridge.py
+            tests/test_deform360_fresh_object_session_v6_prediction_bridge.py
             tests/test_deform360_fresh_object_session_v6_protocol.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
+          python -m mypy --no-site-packages \
+            src/bayesian_phystwin/deform360_fresh_object_session_v6_prediction_bridge.py \
+            scripts/science/run_deform360_fresh_object_session_v6_prediction_bridge.py
           python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_fresh_object_session_v6_prediction_bridge.py \
             tests/test_deform360_fresh_object_session_v6_protocol.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
