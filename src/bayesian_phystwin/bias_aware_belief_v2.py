@@ -439,6 +439,9 @@ def update_bias_aware_state_v2(
     solution = np.zeros((dimension, 3), dtype=np.float64)
     camera_robust: np.ndarray = np.ones(len(camera_rows), dtype=np.float64)
     anchor_robust: np.ndarray = np.ones(len(anchor_target), dtype=np.float64)
+    fixed_point_converged = False
+    solution_delta = float("inf")
+    robust_weight_delta = float("inf")
 
     def posterior_system() -> tuple[np.ndarray, np.ndarray]:
         camera_precision_weight = (
@@ -517,6 +520,7 @@ def update_bias_aware_state_v2(
             solution_delta <= cfg.convergence_tolerance
             and robust_weight_delta <= cfg.convergence_tolerance
         ):
+            fixed_point_converged = True
             break
 
     normal, right = posterior_system()
@@ -546,6 +550,9 @@ def update_bias_aware_state_v2(
     diagnostics.update(
         {
             "iterations": iteration + 1,
+            "irls_fixed_point_converged": fixed_point_converged,
+            "irls_solution_delta": solution_delta,
+            "irls_robust_weight_delta": robust_weight_delta,
             "condition_number": final_system.condition_number,
             "final_spd_system": final_system.diagnostics(),
             "final_solve_relative_residual": final_solve_residual,
@@ -559,6 +566,16 @@ def update_bias_aware_state_v2(
             "maximum_state_update_m": maximum_update,
         }
     )
+    if not fixed_point_converged:
+        return _fallback_result_v2(
+            state_count,
+            shared_bias_count,
+            view_count,
+            reliability,
+            "irls-fixed-point-not-converged",
+            diagnostics,
+            anchor_count=len(anchor_target),
+        )
     if not np.all(np.isfinite(solution)) or maximum_update > cfg.maximum_state_update_m:
         return _fallback_result_v2(
             state_count,
