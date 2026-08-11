@@ -1,0 +1,356 @@
+name: Apply contract-integrity reader hardening
+
+on:
+  push:
+    branches:
+      - agent/fix-contract-integrity
+    paths:
+      - .github/workflows/contract-integrity-reader-hardening.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-contract-integrity-reader-hardening
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the pull-request branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/fix-contract-integrity
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply and verify reader hardening
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              if text.count(old) != 1:
+                  raise SystemExit(f"{label} marker was not found exactly once")
+              return text.replace(old, new, 1)
+
+          module = Path("src/bayesian_phystwin/_canonical_contracts.py")
+          text = module.read_text(encoding="utf-8")
+
+          old = '''    def copy(self) -> dict[str, Any]:
+              return self._snapshot_dict()
+
+              def __repr__(self) -> str:
+                  return repr(self._snapshot_dict())
+
+              def __eq__(self, other: object) -> bool:
+                  return self._snapshot_dict() == other
+
+              def __ne__(self, other: object) -> bool:
+                  return self._snapshot_dict() != other
+          '''
+          new = '''    def copy(self) -> dict[str, Any]:
+              return self._snapshot_dict()
+
+              @staticmethod
+              def _validated_operand(value: object) -> object:
+                  if isinstance(value, FrozenDict):
+                      return value._snapshot_dict()
+                  return value
+
+              def __or__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, dict):
+                      return NotImplemented
+                  return dict.__or__(self._snapshot_dict(), validated)
+
+              def __ror__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, dict):
+                      return NotImplemented
+                  return dict.__ror__(self._snapshot_dict(), validated)
+
+              def __repr__(self) -> str:
+                  return repr(self._snapshot_dict())
+
+              def __eq__(self, other: object) -> bool:
+                  return self._snapshot_dict() == self._validated_operand(other)
+
+              def __ne__(self, other: object) -> bool:
+                  return self._snapshot_dict() != self._validated_operand(other)
+          '''
+          text = replace_once(text, old, new, "FrozenDict reader")
+
+          old = '''    def copy(self) -> list[Any]:
+              return list(self._snapshot_tuple())
+
+              def __repr__(self) -> str:
+                  return repr(list(self._snapshot_tuple()))
+
+              def __eq__(self, other: object) -> bool:
+                  return list(self._snapshot_tuple()) == other
+
+              def __ne__(self, other: object) -> bool:
+                  return list(self._snapshot_tuple()) != other
+          '''
+          new = '''    def copy(self) -> list[Any]:
+              return list(self._snapshot_tuple())
+
+              @staticmethod
+              def _validated_operand(value: object) -> object:
+                  if isinstance(value, FrozenList):
+                      return list(value._snapshot_tuple())
+                  return value
+
+              def count(self, value: object) -> int:
+                  return list(self._snapshot_tuple()).count(value)
+
+              def index(self, value: object, *bounds: int) -> int:
+                  return list(self._snapshot_tuple()).index(value, *bounds)
+
+              def __add__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__add__(list(self._snapshot_tuple()), validated)
+
+              def __radd__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__add__(validated, list(self._snapshot_tuple()))
+
+              def __mul__(self, other: object) -> Any:
+                  try:
+                      return list.__mul__(list(self._snapshot_tuple()), other)
+                  except TypeError:
+                      return NotImplemented
+
+              def __rmul__(self, other: object) -> Any:
+                  try:
+                      return list.__rmul__(list(self._snapshot_tuple()), other)
+                  except TypeError:
+                      return NotImplemented
+
+              def __lt__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__lt__(list(self._snapshot_tuple()), validated)
+
+              def __le__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__le__(list(self._snapshot_tuple()), validated)
+
+              def __gt__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__gt__(list(self._snapshot_tuple()), validated)
+
+              def __ge__(self, other: object) -> Any:
+                  validated = self._validated_operand(other)
+                  if not isinstance(validated, list):
+                      return NotImplemented
+                  return list.__ge__(list(self._snapshot_tuple()), validated)
+
+              def __repr__(self) -> str:
+                  return repr(list(self._snapshot_tuple()))
+
+              def __eq__(self, other: object) -> bool:
+                  return list(self._snapshot_tuple()) == self._validated_operand(other)
+
+              def __ne__(self, other: object) -> bool:
+                  return list(self._snapshot_tuple()) != self._validated_operand(other)
+          '''
+          module.write_text(
+              replace_once(text, old, new, "FrozenList reader"),
+              encoding="utf-8",
+          )
+
+          tests = Path("tests/test_portable_contracts_integrity.py")
+          text = tests.read_text(encoding="utf-8")
+          text = replace_once(
+              text,
+              '''        lambda: metadata.copy(),
+                  lambda: repr(metadata),
+              ''',
+              '''        lambda: metadata.copy(),
+                  lambda: dict(metadata),
+                  lambda: metadata | {"other": 3},
+                  lambda: {"other": 3} | metadata,
+                  lambda: repr(metadata),
+              ''',
+              "mapping tamper operations",
+          )
+          text = replace_once(
+              text,
+              '''        lambda: items.copy(),
+                  lambda: repr(items),
+              ''',
+              '''        lambda: items.copy(),
+                  lambda: items.count(1),
+                  lambda: items.index(1),
+                  lambda: items + [3],
+                  lambda: [0] + items,
+                  lambda: items * 2,
+                  lambda: 2 * items,
+                  lambda: items < [2],
+                  lambda: items <= [2],
+                  lambda: items > [0],
+                  lambda: items >= [0],
+                  lambda: repr(items),
+              ''',
+              "sequence tamper operations",
+          )
+
+          binary_test = '''def test_frozen_binary_operations_validate_frozen_operands() -> None:
+              left = _metadata()
+              right = _metadata()
+              expected = plain_json(left)
+
+              assert left == right
+              assert not left != right
+              assert left | right == expected
+              assert right | left == expected
+
+              left_items = left["nested"]["items"]
+              right_items = right["nested"]["items"]
+              expected_items = expected["nested"]["items"]
+              assert left_items == right_items
+              assert not left_items != right_items
+              assert left_items + right_items == expected_items * 2
+              assert left_items <= right_items
+              assert left_items >= right_items
+
+              dict.__setitem__(right, "tampered", True)
+              for operation in (
+                  lambda: left == right,
+                  lambda: left != right,
+                  lambda: left | right,
+                  lambda: right | left,
+              ):
+                  with pytest.raises(RuntimeError, match="backing storage was mutated"):
+                      operation()
+
+              other_items = _metadata()["nested"]["items"]
+              list.append(other_items, "tampered")
+              for operation in (
+                  lambda: left_items == other_items,
+                  lambda: left_items != other_items,
+                  lambda: left_items + other_items,
+                  lambda: left_items < other_items,
+                  lambda: left_items <= other_items,
+                  lambda: left_items > other_items,
+                  lambda: left_items >= other_items,
+              ):
+                  with pytest.raises(RuntimeError, match="backing storage was mutated"):
+                      operation()
+
+
+          '''
+          text = replace_once(
+              text,
+              "def test_frozen_metadata_rejects_normal_nested_mutation() -> None:\n",
+              binary_test
+              + "def test_frozen_metadata_rejects_normal_nested_mutation() -> None:\n",
+              "binary-operation test insertion",
+          )
+          text = replace_once(
+              text,
+              '''    assert metadata.copy() == expected
+                  assert len(items) == 2
+              ''',
+              '''    assert metadata.copy() == expected
+                  assert metadata | {"extra": 3} == {**expected, "extra": 3}
+                  assert {"extra": 3} | metadata == {"extra": 3, **expected}
+                  assert len(items) == 2
+              ''',
+              "mapping compatibility assertions",
+          )
+          text = replace_once(
+              text,
+              '''    assert items.copy() == expected["nested"]["items"]
+                  assert json.loads(json.dumps(metadata)) == expected
+              ''',
+              '''    assert items.copy() == expected["nested"]["items"]
+                  assert items.count(1) == 1
+                  assert items.index(1) == 0
+                  assert items.index(1, 0, 1) == 0
+                  assert items + [3] == [1, {"accepted": True}, 3]
+                  assert [0] + items == [0, 1, {"accepted": True}]
+                  assert items * 2 == expected["nested"]["items"] * 2
+                  assert 2 * items == expected["nested"]["items"] * 2
+                  assert items < [2]
+                  assert items <= expected["nested"]["items"]
+                  assert items > [0]
+                  assert items >= expected["nested"]["items"]
+                  with pytest.raises(TypeError):
+                      _ = metadata | []
+                  with pytest.raises(TypeError):
+                      _ = [] | metadata
+                  with pytest.raises(TypeError):
+                      _ = items + (3,)
+                  with pytest.raises(TypeError):
+                      _ = (0,) + items
+                  with pytest.raises(TypeError):
+                      _ = items * 1.5
+                  with pytest.raises(TypeError):
+                      _ = 1.5 * items
+                  with pytest.raises(TypeError):
+                      _ = items < (2,)
+                  with pytest.raises(TypeError):
+                      _ = items <= (2,)
+                  with pytest.raises(TypeError):
+                      _ = items > (0,)
+                  with pytest.raises(TypeError):
+                      _ = items >= (0,)
+                  assert json.loads(json.dumps(metadata)) == expected
+              ''',
+              "sequence compatibility assertions",
+          )
+          tests.write_text(text, encoding="utf-8")
+          PY
+
+          python -m pip install -e ".[dev]"
+          python -m ruff format \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            tests/test_portable_contracts_integrity.py
+          python -m ruff check \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/physical_linearization.py \
+            tests/test_portable_contracts_integrity.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/physical_linearization.py \
+            tests/test_portable_contracts_integrity.py
+          python -m mypy \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            src/bayesian_phystwin/physical_linearization.py
+          python -m pytest -q tests/test_portable_contracts_integrity.py
+
+      - name: Commit verified source changes
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/_canonical_contracts.py \
+            tests/test_portable_contracts_integrity.py
+          git diff --cached --check
+          git commit -m "Guard inherited frozen-container read operations"
+          git push origin HEAD:agent/fix-contract-integrity
