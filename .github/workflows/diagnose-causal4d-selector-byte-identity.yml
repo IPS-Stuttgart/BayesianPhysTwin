@@ -15,20 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check out frozen Causal4D source
+      - name: Check out frozen Causal4D source and ancestry
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: IPS-Stuttgart/Causal4D
           ref: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
           path: causal4d
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
           clean: true
 
-      - name: Report exact selector identity
+      - name: Report current and anchored historical selector identities
         shell: bash
         env:
           EXPECTED_SHA256: 79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df
+          DISCOVERY_REVISION: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
         run: |
           set -euo pipefail
           relative=src/causal4d_public/deform360_object_sam2.py
@@ -38,15 +39,44 @@ jobs:
           blob=$(git -C causal4d rev-parse "HEAD:${relative}")
           observed=$(sha256sum "${source}" | awk '{print $1}')
           bytes=$(wc -c < "${source}" | tr -d ' ')
-          if [[ "${observed}" == "${EXPECTED_SHA256}" ]]; then
-            matches_expected=true
+
+          match_revision=""
+          match_blob=""
+          match_bytes=""
+          candidate="${RUNNER_TEMP}/frozen-selector-candidate.py"
+          while IFS= read -r commit; do
+            [[ -n "${commit}" ]] || continue
+            if git -C causal4d show "${commit}:${relative}" \
+              > "${candidate}" 2>/dev/null \
+              && [[ "$(sha256sum "${candidate}" | awk '{print $1}')" \
+                == "${EXPECTED_SHA256}" ]]; then
+              match_revision="${commit}"
+              match_blob=$(git -C causal4d rev-parse "${commit}:${relative}")
+              match_bytes=$(wc -c < "${candidate}" | tr -d ' ')
+              break
+            fi
+          done < <(
+            git -C causal4d log \
+              --format='%H' "${DISCOVERY_REVISION}" -- "${relative}"
+          )
+          rm -f "${candidate}"
+
+          if [[ -n "${match_revision}" ]]; then
+            historical_match_found=true
+            git -C causal4d merge-base --is-ancestor \
+              "${match_revision}" "${DISCOVERY_REVISION}"
           else
-            matches_expected=false
+            historical_match_found=false
           fi
+
           printf '%s\n' \
             "selector_revision=${revision}" \
             "selector_git_blob=${blob}" \
             "selector_sha256=${observed}" \
             "selector_bytes=${bytes}" \
             "expected_sha256=${EXPECTED_SHA256}" \
-            "matches_expected=${matches_expected}"
+            "current_matches_expected=$([[ "${observed}" == "${EXPECTED_SHA256}" ]] && echo true || echo false)" \
+            "historical_match_found=${historical_match_found}" \
+            "historical_selector_revision=${match_revision}" \
+            "historical_selector_git_blob=${match_blob}" \
+            "historical_selector_bytes=${match_bytes}"
