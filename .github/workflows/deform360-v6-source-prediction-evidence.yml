@@ -124,6 +124,14 @@ jobs:
           )
           if observed != declared or observed != expected:
               raise SystemExit("v6 source prediction amendment changed")
+
+          workflow = Path(
+              ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+          ).read_text(encoding="utf-8")
+          if "bayesian_phystwin.__version__" in workflow:
+              raise SystemExit("runtime probe uses an undefined package attribute")
+          if 'version("bayesian-phystwin")' not in workflow:
+              raise SystemExit("runtime probe is not bound to installed metadata")
           PY
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -264,18 +272,22 @@ jobs:
             "yourdfpy>=0.0.56"
           "${runtime_python}" -m pip check
           "${runtime_python}" - <<'PY'
-          import torch
-          import warp
+          from importlib.metadata import version
+
           import bayesian_phystwin
           import deform360
           import sam2
+          import torch
+          import warp
 
           if not torch.cuda.is_available():
               raise SystemExit("CUDA is unavailable")
           print(torch.__version__)
           print(warp.__version__)
-          print(bayesian_phystwin.__version__)
-          print(deform360.__version__)
+          print(version("bayesian-phystwin"))
+          print(version("deform360"))
+          print(bayesian_phystwin.__file__)
+          print(deform360.__file__)
           print(sam2.__file__)
           PY
           echo "BPT_PYTHON=${runtime_python}" >> "${GITHUB_ENV}"
