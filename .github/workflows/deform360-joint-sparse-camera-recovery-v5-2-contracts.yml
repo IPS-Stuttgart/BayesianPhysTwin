@@ -1,0 +1,109 @@
+name: Deform360 joint-sparse camera recovery v5.2 contracts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-joint-sparse-camera-recovery-v5-2-contracts.yml"
+      - "docs/deform360_joint_sparse_camera_recovery_v5_2.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_camera_recovery_v5_2.json"
+      - "scripts/remote/run_deform360_joint_sparse_motioncrafter_source_v5.py"
+      - "scripts/science/materialize_deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "scripts/science/materialize_deform360_joint_sparse_source_endpoint_plan_v5_2.py"
+      - "scripts/science/materialize_deform360_joint_sparse_source_plan_v5_2.py"
+      - "scripts/science/run_deform360_joint_sparse_source_predictions_v5_2.py"
+      - "scripts/science/score_deform360_joint_sparse_source_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_scoring_v5_2.py"
+      - "tests/test_deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "tests/test_deform360_joint_sparse_motioncrafter_source_v5.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-joint-sparse-camera-recovery-v5-2-contracts.yml"
+      - "docs/deform360_joint_sparse_camera_recovery_v5_2.md"
+      - "protocols/locks/deform360_official_hub_joint_sparse_camera_recovery_v5_2.json"
+      - "scripts/remote/run_deform360_joint_sparse_motioncrafter_source_v5.py"
+      - "scripts/science/materialize_deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "scripts/science/materialize_deform360_joint_sparse_source_endpoint_plan_v5_2.py"
+      - "scripts/science/materialize_deform360_joint_sparse_source_plan_v5_2.py"
+      - "scripts/science/run_deform360_joint_sparse_source_predictions_v5_2.py"
+      - "scripts/science/score_deform360_joint_sparse_source_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_scoring_v5_2.py"
+      - "tests/test_deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "tests/test_deform360_joint_sparse_motioncrafter_source_v5.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-joint-sparse-camera-recovery-v5-2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  contracts:
+    name: Camera recovery v5.2 / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate camera-recovery contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph,vision]"
+          files=(
+            scripts/remote/run_deform360_joint_sparse_motioncrafter_source_v5.py
+            scripts/science/materialize_deform360_joint_sparse_camera_recovery_v5_2.py
+            scripts/science/materialize_deform360_joint_sparse_source_endpoint_plan_v5_2.py
+            scripts/science/materialize_deform360_joint_sparse_source_plan_v5_2.py
+            scripts/science/run_deform360_joint_sparse_source_predictions_v5_2.py
+            scripts/science/score_deform360_joint_sparse_source_v5_2.py
+            src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py
+            src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py
+            src/bayesian_phystwin/deform360_joint_sparse_source_scoring_v5_2.py
+            tests/test_deform360_joint_sparse_camera_recovery_v5_2.py
+            tests/test_deform360_joint_sparse_motioncrafter_source_v5.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_joint_sparse_camera_recovery_v5_2.py \
+            scripts/science/materialize_deform360_joint_sparse_source_endpoint_plan_v5_2.py \
+            scripts/science/materialize_deform360_joint_sparse_source_plan_v5_2.py \
+            scripts/science/run_deform360_joint_sparse_source_predictions_v5_2.py \
+            scripts/science/score_deform360_joint_sparse_source_v5_2.py \
+            src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py \
+            src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py \
+            src/bayesian_phystwin/deform360_joint_sparse_source_scoring_v5_2.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_camera_recovery_v5_2.py \
+            tests/test_deform360_joint_sparse_motioncrafter_source_v5.py
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"

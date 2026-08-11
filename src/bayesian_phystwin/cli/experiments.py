@@ -27,6 +27,7 @@ _EXPERIMENT_MODULES: Final[dict[str, str]] = {
     "analyze-phystwin-spatial-modes": (
         "bayesian_phystwin.cli.phystwin_spatial_mode_analysis"
     ),
+    "assess-practical-equivalence": ("bayesian_phystwin.cli.practical_equivalence"),
     "assimilate-phystwin-motioncrafter": (
         "bayesian_phystwin.cli.phystwin_motioncrafter_assimilation"
     ),

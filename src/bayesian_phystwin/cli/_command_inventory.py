@@ -54,6 +54,7 @@ DIAGNOSTIC_IDS: Final = frozenset(
     analyze-phystwin-controller-sensitivity
     infer-phystwin-controller-bias
     analyze-phystwin-spatial-modes
+    assess-practical-equivalence
     compare-phystwin-graph-anchors
     compare-phystwin-residual-scales
     evaluate-phystwin-perception-cues
@@ -80,6 +81,9 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
     "synthetic-benchmark": "run the controlled synthetic benchmark",
     "decisive-evidence": "summarize matched guarded prospective evidence",
     "claim-bundle": "build or validate a content-addressed claim bundle",
+    "assess-practical-equivalence": (
+        "assess paired practical equivalence with frozen margins"
+    ),
     "audit-prob4d-covariance-ablation": (
         "verify and compare a controlled five-way Prob4D covariance ablation"
     ),
@@ -116,6 +120,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "synthetic-benchmark": "synthetic-benchmark-v3",
     "decisive-evidence": "bayesian-phystwin-decisive-evidence-v1",
     "claim-bundle": "claim-bundle-v1",
+    "assess-practical-equivalence": "practical-equivalence-v1",
     "audit-prob4d-covariance-ablation": "prob4d-covariance-ablation-v1",
     "combine-phystwin-profiles": "phystwin-profile-pooling-v1",
     "calibrate-phystwin-discrepancy": "phystwin-discrepancy-calibration-v1",
