@@ -34,8 +34,11 @@ One complete opened source unit supplies a non-pickled NPZ archive with exactly:
   middle, and late horizons.
 
 The companion source manifest binds the archive SHA-256, source-unit identity,
-complete released camera roster, distinct provider and scoring reconstruction
-artifact identities, and the statement that only opened source data were used.
+complete released camera roster, the exact provider and scoring camera rosters,
+distinct provider and scoring reconstruction artifact identities, and the statement
+that only opened source data were used. The declared role rosters must exactly match
+the deterministic whole-recorder partition; distinct artifact IDs alone are not
+accepted as proof of camera separation.
 
 ## Missingness and material identities
 
