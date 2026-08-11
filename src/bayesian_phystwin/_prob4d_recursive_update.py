@@ -32,9 +32,13 @@ from .physical_linearization import PhysicalLinearizationV1
 from .posterior_covariance_semantics import (
     POSTERIOR_COVARIANCE_SEMANTICS_VERSION,
     PosteriorCovarianceSemanticsV1,
+    exact_prior_fallback_covariance_semantics,
     working_irls_covariance_semantics,
 )
-from .prospective_prob4d_update import ClaimBearingProb4DUpdateV1
+from .prospective_prob4d_update import (
+    ClaimBearingProb4DUpdateV1,
+    bind_claim_bearing_prob4d_candidate,
+)
 
 
 def start_claim_bearing_prob4d_stream_run(
@@ -108,9 +112,7 @@ def apply_claim_bearing_prob4d_stream_update(
         linearization.metadata.get("recursive_nuisance_policy_id")
         != nuisance_policy.policy_id
     ):
-        raise ValueError(
-            "linearization does not bind the recursive nuisance policy"
-        )
+        raise ValueError("linearization does not bind the recursive nuisance policy")
     if claim_update.observation_artifact_id != observation.artifact_id:
         raise ValueError("claim update does not bind the stream observation")
     if claim_update.linearization_artifact_id != linearization.artifact_id:
@@ -122,21 +124,43 @@ def apply_claim_bearing_prob4d_stream_update(
     if decision.inference_admissible != claim_update.inference_admissible:
         raise ValueError("guard and claim update disagree on inference admissibility")
 
+    covariance_metadata = {
+        "source": "ClaimBearingProb4DUpdateV1.result.posterior_covariance",
+        "claim_update_id": claim_update.update_id,
+    }
+    working_semantics = working_irls_covariance_semantics(
+        claim_update.result.posterior_covariance,
+        metadata=covariance_metadata,
+    )
     semantics = covariance_semantics
     if semantics is None:
-        semantics = working_irls_covariance_semantics(
-            claim_update.result.posterior_covariance,
-            metadata={
-                "source": "ClaimBearingProb4DUpdateV1.result.posterior_covariance",
-                "claim_update_id": claim_update.update_id,
-            },
-        )
-    elif not isinstance(semantics, PosteriorCovarianceSemanticsV1):
-        raise TypeError(
-            "covariance_semantics must be a PosteriorCovarianceSemanticsV1"
-        )
-    if semantics.dimension != len(claim_update.result.posterior_covariance):
-        raise ValueError("covariance semantics dimension differs from result")
+        if claim_update.inference_admissible:
+            semantics = working_semantics
+        else:
+            semantics = exact_prior_fallback_covariance_semantics(
+                claim_update.result.posterior_covariance,
+                reason=claim_update.result.reason,
+                metadata=covariance_metadata,
+            )
+    typed_candidate = bind_claim_bearing_prob4d_candidate(
+        claim_update,
+        covariance_semantics=semantics,
+    )
+    semantics = typed_candidate.covariance_semantics
+    if run.steps:
+        covariance_policy_id = cast(str, run.covariance_policy_id)
+    elif claim_update.inference_admissible:
+        covariance_policy_id = cast(str, semantics.policy_id)
+    else:
+        # A rejected strict solve has no accepted-update covariance policy to
+        # contribute. Lock the canonical working-IRLS policy so a later valid
+        # stream member can recover without relabelling this fallback result.
+        covariance_policy_id = cast(str, working_semantics.policy_id)
+    if (
+        claim_update.inference_admissible
+        and semantics.policy_id != covariance_policy_id
+    ):
+        raise ValueError("covariance interpretation policy differs from the run lock")
 
     selected, selection = select_complete_belief(
         baseline,
@@ -183,7 +207,7 @@ def apply_claim_bearing_prob4d_stream_update(
             claim_update.runtime_revision_independently_verified
         ),
         covariance_semantics_id=cast(str, semantics.artifact_id),
-        covariance_policy_id=semantics.policy_id,
+        covariance_policy_id=covariance_policy_id,
         recursive_nuisance_policy_id=cast(
             str,
             nuisance_policy.policy_id,
@@ -202,12 +226,10 @@ def apply_claim_bearing_prob4d_stream_update(
         provider_id = run.provider_manifest_id
         calibration_ids = run.calibration_artifact_ids
         runtime_source = run.runtime_revision_source
-        covariance_policy_id = run.covariance_policy_id
     else:
         provider_id = claim_update.provider_manifest_id
         calibration_ids = claim_update.calibration_artifact_ids
         runtime_source = claim_update.runtime_revision_source
-        covariance_policy_id = semantics.policy_id
     updated_run = replace(
         run,
         steps=(*run.steps, step),

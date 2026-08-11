@@ -8,6 +8,8 @@ import pytest
 
 from scripts.ci.pr_ready import Revisions, command_plan, resolve_revisions
 
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+
 
 def _git(repository: Path, *arguments: str) -> str:
     completed = subprocess.run(
@@ -104,3 +106,14 @@ def test_command_plan_matches_fast_ci_boundaries() -> None:
         "tests/test_changed_python_preflight.py",
         "tests/test_pr_ready.py",
     )
+
+
+def test_workflow_keeps_preexisting_pull_request_heads_compatible() -> None:
+    workflow = (
+        _REPOSITORY_ROOT / ".github/workflows/changed-python-preflight.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "tests=(tests/test_changed_python_preflight.py)" in workflow
+    assert "if [[ -f tests/test_pr_ready.py ]]; then" in workflow
+    assert "tests+=(tests/test_pr_ready.py)" in workflow
+    assert 'python -m pytest -q "${tests[@]}"' in workflow
