@@ -11,11 +11,16 @@ on:
       - "CITATION.cff"
       - "SUPPORT.md"
       - "api/**"
+      - "docs/numerical_environment_v1.md"
       - "docs/public_api_policy.md"
       - "docs/releasing.md"
       - "pyproject.toml"
+      - "requirements/release-*.txt"
+      - "src/bayesian_phystwin/numerical_environment_v1.py"
       - "tests/test_release_candidate_evidence.py"
       - "tests/test_release_candidate_workflow_policy.py"
+      - "tests/test_release_matrix_binding.py"
+      - "tests/test_release_matrix_evidence.py"
       - "tests/test_release_metadata.py"
       - "tools/quality/check_public_api.py"
       - "tools/release/**"
@@ -55,15 +60,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install the pinned release toolchain
+      - name: Install the exact release build resolver input
         run: |
-          python -m pip install --upgrade "pip==26.1.2"
-          python -m pip install \
-            "build==1.5.0" \
-            "pip-audit==2.10.1" \
-            "setuptools==83.0.0" \
-            "twine==6.2.0" \
-            "wheel==0.47.0"
+          python -m pip install --upgrade \
+            --requirement requirements/release-build.txt
+          python -m pip check
 
       - name: Bind deterministic build time to the candidate revision
         shell: bash
@@ -136,8 +137,13 @@ jobs:
             --sbom release-sbom.cdx.json \
             --build-environment build-environment.json \
             --source-revision "${SOURCE_REVISION}" \
-            --output release-evidence.json \
+            --output release-evidence-base.json \
             "${tag_arguments[@]}"
+          python tools/release/bind_release_matrix_contracts.py \
+            release-evidence-base.json \
+            --dist-dir dist \
+            --project-root . \
+            --output release-evidence.json
 
       - name: Summarize release evidence
         run: |
@@ -162,8 +168,239 @@ jobs:
           path: |
             build-environment.json
             dist/
+            release-evidence-base.json
             release-evidence.json
             release-sbom.cdx.json
             release-summary.md
+          if-no-files-found: error
+          retention-days: 30
+
+  artifact-matrix:
+    name: Artifact matrix / ${{ matrix.lane }}
+    needs: evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: py310-wheel-floor
+            python_version: "3.10"
+            artifact_kind: wheel
+            numpy_version: "1.23.5"
+            resolver_input: requirements/release-runtime-py310-floor.txt
+          - lane: py310-sdist-floor
+            python_version: "3.10"
+            artifact_kind: sdist
+            numpy_version: "1.23.5"
+            resolver_input: requirements/release-runtime-py310-floor.txt
+          - lane: py312-wheel
+            python_version: "3.12"
+            artifact_kind: wheel
+            numpy_version: "2.2.6"
+            resolver_input: requirements/release-runtime-py312.txt
+          - lane: py312-sdist
+            python_version: "3.12"
+            artifact_kind: sdist
+            numpy_version: "2.2.6"
+            resolver_input: requirements/release-runtime-py312.txt
+          - lane: py314-wheel
+            python_version: "3.14"
+            artifact_kind: wheel
+            numpy_version: "2.5.2"
+            resolver_input: requirements/release-runtime-py314.txt
+          - lane: py314-sdist
+            python_version: "3.14"
+            artifact_kind: sdist
+            numpy_version: "2.5.2"
+            resolver_input: requirements/release-runtime-py314.txt
+    env:
+      ARTIFACT_KIND: ${{ matrix.artifact_kind }}
+      EXPECTED_NUMPY_VERSION: ${{ matrix.numpy_version }}
+      LANE: ${{ matrix.lane }}
+      RESOLVER_INPUT: ${{ matrix.resolver_input }}
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_REVISION }}
+          persist-credentials: false
+
+      - name: Download exact candidate artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-candidate-${{ env.SOURCE_REVISION }}
+          path: candidate
+          digest-mismatch: error
+
+      - name: Set up Python ${{ matrix.python_version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install the exact resolver input and candidate artifact
+        shell: bash
+        run: |
+          environment_root="${RUNNER_TEMP}/bpt-release-${LANE}"
+          python -m venv "${environment_root}"
+          python_bin="${environment_root}/bin/python"
+          echo "RELEASE_PYTHON=${python_bin}" >> "${GITHUB_ENV}"
+
+          "${python_bin}" -m pip install --upgrade \
+            --requirement "${RESOLVER_INPUT}"
+
+          if [[ "${ARTIFACT_KIND}" == "wheel" ]]; then
+            mapfile -t artifacts < <(
+              find candidate/dist -maxdepth 1 -type f -name '*.whl' -print
+            )
+          else
+            mapfile -t artifacts < <(
+              find candidate/dist -maxdepth 1 -type f -name '*.tar.gz' -print
+            )
+          fi
+          test "${#artifacts[@]}" -eq 1
+          artifact="${artifacts[0]}"
+          echo "RELEASE_ARTIFACT=${artifact}" >> "${GITHUB_ENV}"
+
+          if [[ "${ARTIFACT_KIND}" == "wheel" ]]; then
+            "${python_bin}" -m pip install --no-deps "${artifact}"
+          else
+            "${python_bin}" -m pip install \
+              --no-build-isolation \
+              --no-deps \
+              "${artifact}"
+          fi
+          "${python_bin}" -m pip check
+
+      - name: Exercise the installed stable surface
+        shell: bash
+        run: |
+          bin=$(dirname "${RELEASE_PYTHON}")
+          "${RELEASE_PYTHON}" -I - <<'PY'
+          import importlib.metadata
+          import platform
+
+          import bayesian_phystwin.v1
+          import numpy
+
+          print(
+              {
+                  "bayesian_phystwin": importlib.metadata.version(
+                      "bayesian-phystwin"
+                  ),
+                  "numpy": numpy.__version__,
+                  "python": platform.python_version(),
+              }
+          )
+          PY
+          actual_numpy=$(
+            "${RELEASE_PYTHON}" -c \
+              'import importlib.metadata; print(importlib.metadata.version("numpy"))'
+          )
+          test "${actual_numpy}" = "${EXPECTED_NUMPY_VERSION}"
+          "${bin}/bpt" --help >/dev/null
+          "${bin}/bpt" provider manifest --help >/dev/null
+          "${bin}/bpt" observation validate --help >/dev/null
+          "${bin}/bpt" run manifest --help >/dev/null
+          "${bin}/bpt" commands list --json >/dev/null
+
+      - name: Capture exact numerical environment and lane receipt
+        shell: bash
+        run: |
+          output_dir="release-validation/${LANE}"
+          mkdir -p "${output_dir}"
+          profile="${output_dir}/numerical-environment-${LANE}.json"
+          receipt="${output_dir}/validation-receipt-${LANE}.json"
+          resolver_copy="${output_dir}/resolver-input-${LANE}.txt"
+
+          "${RELEASE_PYTHON}" \
+            -m bayesian_phystwin.numerical_environment_v1 \
+            capture "${profile}" \
+            --dependency-lock "${RESOLVER_INPUT}" \
+            --dependency-lock-name "$(basename "${RESOLVER_INPUT}")"
+          "${RELEASE_PYTHON}" \
+            -m bayesian_phystwin.numerical_environment_v1 \
+            validate "${profile}" \
+            --require-dependency-lock
+
+          "${RELEASE_PYTHON}" \
+            tools/release/build_release_matrix_evidence.py \
+            lane \
+            --lane "${LANE}" \
+            --release-evidence candidate/release-evidence.json \
+            --artifact "${RELEASE_ARTIFACT}" \
+            --runtime-fragment "${profile}" \
+            --resolver-input "${RESOLVER_INPUT}" \
+            --source-revision "${SOURCE_REVISION}" \
+            --output "${receipt}"
+          cp "${RESOLVER_INPUT}" "${resolver_copy}"
+
+      - name: Upload exact lane evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-validation-${{ matrix.lane }}-${{ env.SOURCE_REVISION }}
+          path: release-validation/${{ matrix.lane }}/
+          if-no-files-found: error
+          retention-days: 30
+
+  matrix-evidence:
+    name: Aggregate release artifact matrix
+    needs: [evidence, artifact-matrix]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_REVISION }}
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the exact aggregate-tool resolver input
+        run: |
+          python -m pip install --upgrade \
+            --requirement requirements/release-runtime-py312.txt
+          python -m pip check
+
+      - name: Download exact candidate evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-candidate-${{ env.SOURCE_REVISION }}
+          path: candidate
+          digest-mismatch: error
+
+      - name: Download all six validation receipts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: release-validation-*-${{ env.SOURCE_REVISION }}
+          path: release-validation
+          merge-multiple: true
+          digest-mismatch: error
+
+      - name: Validate and aggregate the exact six-lane roster
+        run: |
+          PYTHONPATH=src python \
+            tools/release/build_release_matrix_evidence.py \
+            aggregate \
+            --release-evidence candidate/release-evidence.json \
+            --receipts-dir release-validation \
+            --project-root . \
+            --output release-matrix-evidence.json \
+            --summary release-matrix-summary.md
+          cat release-matrix-summary.md >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload aggregate release matrix evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-matrix-${{ env.SOURCE_REVISION }}
+          path: |
+            candidate/release-evidence.json
+            release-matrix-evidence.json
+            release-matrix-summary.md
+            release-validation/
           if-no-files-found: error
           retention-days: 30
