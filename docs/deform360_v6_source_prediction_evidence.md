@@ -31,6 +31,36 @@ The bound v4 evidence is:
 - supported objects `10/10`; and
 - technical failures `0`.
 
+## Selector byte-identity repair
+
+Protected-main run `31458096956` stopped before opening any source suffix at
+`locate-frozen-generic-selector`. Its bounded receipt contained zero physical
+manifests and zero source prediction seals. The registered selector digest did
+not match the exact selector file at the already pinned Causal4D revision, and a
+hosted full-history scan found no committed version of that path carrying the
+registered digest.
+
+The target-closed repair is frozen at
+`protocols/amendments/deform360_official_hub_fresh_object_session_v6_selector_identity_repair.json`
+with repair ID
+`41f3580de5ca7e09bcd4c2623569c293e29ed796634c60c84ededdbd945af042`.
+It binds:
+
+- repository `IPS-Stuttgart/Causal4D`;
+- revision `50e3682a5dbf976b20cc9115b6e7a975d0144ea5`;
+- path `src/causal4d_public/deform360_object_sam2.py`;
+- byte count `17,310`; and
+- SHA-256
+  `c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5`.
+
+The unchanged v5 stage remains checksum-bound. A separate reviewed v6 wrapper
+validates the complete v5 source lock, the clean Causal4D checkout, the exact
+selector bytes, the SAM 2.1 small source revision, and the repair identity. It
+then changes only the stale selector digest in process memory before invoking
+the locked stage. It does not change the selector algorithm, model family,
+model size, source cohort, camera policy, candidate roster, loss, gate, or
+information boundary.
+
 ## Evidence generated
 
 The protected workflow reconstructs the frozen physical fallback and the v5
