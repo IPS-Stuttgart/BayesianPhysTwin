@@ -87,7 +87,7 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")"
           test "$(jq -r '.name' <<<"${run}")" = "${SOURCE_WORKFLOW_NAME}"
           test "$(jq -r '.path' <<<"${run}")" = "${SOURCE_WORKFLOW_PATH}"
-          test "$(jq -r '.event' <<<"${run}")" = "workflow_dispatch"
+          test "$(jq -r '.event' <<<"${run}")" = "pull_request"
           test "$(jq -r '.head_sha' <<<"${run}")" = "${SOURCE_HEAD_SHA}"
           test "$(jq -r '.status' <<<"${run}")" = "completed"
           test "$(jq -r '.conclusion' <<<"${run}")" = "success"
