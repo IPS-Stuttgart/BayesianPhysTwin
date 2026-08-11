@@ -40,7 +40,9 @@ Consequently, a long sequence cannot dominate a short physical object or
 session merely by contributing more frames or query endpoints. Event records are
 sorted by their identifiers before content addressing, so input order does not
 change the calibration identity. Validated transform and held-group rows are
-normalized to typed tuple records before arithmetic or serialization.
+normalized to typed tuple records before arithmetic or serialization. Public
+inputs remain JSON-friendly sequences; the typed aliases describe only the
+post-validation normalized state.
 
 The scoring-only eigenvalue floor is separate from the selected isotropic
 variance. It makes Gaussian scoring finite for positive-semidefinite raw
