@@ -1,0 +1,73 @@
+{
+  "artifact_kind": "Deform360JointSparsePublicEndpointV522Result",
+  "campaign_status": "terminal_technical_failure",
+  "confirmation_access_authorized": false,
+  "counts": {
+    "attempted_objects": 2,
+    "endpoint_geometry_successes": 0,
+    "registered_objects": 10,
+    "terminal_technical_failures": 2,
+    "unattempted_after_terminal_stop": 8
+  },
+  "decision": {
+    "implicit_replacement": false,
+    "reason": "The first object on each fixed GPU shard had an incomplete SAM2 mask on one preregistered reserved endpoint camera.",
+    "retry_after_inspecting_endpoint_geometry": false,
+    "source_gate_evaluated": false,
+    "source_gate_evidence_complete": false,
+    "technical_failure_is_terminal": true
+  },
+  "execution": {
+    "code_revision": "ddbb582e53ec273b3e7057eabe41a9dc61b629cb",
+    "execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
+    "ffmpeg_sha256": "36d94a605d612e4090d1b8aec889d0c0801c6eafb1593c90f5c0dfd2e2966a45",
+    "prediction_batch_id": "c62d475cc298dafe1d9c0ec30a242faffe36f5ab3ee5fc3d4b578918dbea1aa8",
+    "processing_lock_id": "1ec041288fd9f5564442600d475de28e9c0638a8f702ece8bb477f067b3d1d4f",
+    "source_prediction_plan_id": "b3835574d9ab47f20f1d529bbb2dca4987af02959b02307074ad2cd8082372f2",
+    "source_prediction_receipt_id": "f7c6b10222f8c8d9089c5c9ee1f1cde58ae54dd57b29f7dbbd7ce2bfddd959d7"
+  },
+  "failures": [
+    {
+      "all_camera_successes": 12,
+      "all_camera_technical_failures": 2,
+      "candidate_camera_count": 14,
+      "carrier_bytes": 18205,
+      "carrier_path": "terminal-failures/026-sock-cloth.json",
+      "carrier_sha256": "5881b60c97a99d7bb4bbd5c52900f2be1d31b062496a80d22f6fa5ca293dc19c",
+      "object_id": "026-sock-cloth",
+      "reserved_camera_successes": 1,
+      "reserved_camera_technical_failures": 1
+    },
+    {
+      "all_camera_successes": 9,
+      "all_camera_technical_failures": 4,
+      "candidate_camera_count": 13,
+      "carrier_bytes": 14945,
+      "carrier_path": "terminal-failures/031-cotton-cloth.json",
+      "carrier_sha256": "8ce0f9935fb55f1007266222b0d3203cb881d7d25f1bb5b0998c635475ac7ca0",
+      "object_id": "031-cotton-cloth",
+      "reserved_camera_successes": 1,
+      "reserved_camera_technical_failures": 1
+    }
+  ],
+  "information_boundary": {
+    "confirmation_payloads_opened": false,
+    "development_suffix_opened": true,
+    "endpoint_geometry_created": false,
+    "held_v8_artifacts_accessed": false,
+    "human_approval_required": false,
+    "human_selection_allowed": false,
+    "new_measurements_required": false,
+    "released_real_world_recordings_only": true,
+    "source_predictions_sealed_before_endpoint_processing": true,
+    "target_outcomes_used": false
+  },
+  "schema_version": 1,
+  "source_artifact_sha256s": {
+    "execution_lock": "429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a",
+    "processing_lock": "9500be65daba1451434366d8c431bf34fb839a86fac94477a065c6368bbbba50",
+    "source_prediction_batch": "1d36fba9be72c44cc49b1146e660944e5139ee2e3ea17f92afabf485cee18aae",
+    "source_prediction_plan": "c5b29c527383e282264762347fce6aca22d73b5a879e09f77216963ac39057b1",
+    "source_prediction_receipt": "98a72c6a593e2644873c67541c227955bd42f4717ad33b1177a2ee4286e3ed62"
+  }
+}
