@@ -17,6 +17,13 @@ STAGE_SELECTOR_CONSUMER_PATH="scripts/remote/stage_deform360_bias_aware_predicti
 STAGE_SELECTOR_CONSUMER_SHA256="a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6"
 STAGE_SELECTOR_PREVIOUS_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
 STAGE_SELECTOR_CORRECTED_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
+PROCESSING_RUNTIME_REPAIR_ID="15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f"
+PROCESSING_RUNTIME_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
+PROCESSING_RUNTIME_REPAIR_SHA256="b60a18821b0e260519ffda2289b20cb247b1a36c91eac9a528d953111e7b520c"
+DEFORM360_PROCESSING_PYPROJECT_SHA256="0ccfe6a386c184613191ccdaa8f2912bc3c148a7dda9c9f126959301d250232e"
+DEFORM360_PHYSICAL_REVISION="0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+NERFSTUDIO_VERSION="1.1.5"
+GSPLAT_VERSION="1.4.0"
 
 # Preserve the complete reviewed launcher and its already-validated repairs by
 # exact Git blob identity. The executable path below changes one uniquely
@@ -91,6 +98,7 @@ for path in \
   "${LAUNCHER_PATH}" \
   "${STAGE_SELECTOR_REPAIR_PATH}" \
   "${STAGE_SELECTOR_API_REPAIR_PATH}" \
+  "${PROCESSING_RUNTIME_REPAIR_PATH}" \
   "${STAGE_SELECTOR_HELPER_PATH}" \
   "${STAGE_SELECTOR_CONSUMER_PATH}"
 do
@@ -106,6 +114,11 @@ test "$(sha256sum "${STAGE_SELECTOR_REPAIR_PATH}" | awk '{print $1}')" \
 test "$(sha256sum "${STAGE_SELECTOR_API_REPAIR_PATH}" | awk '{print $1}')" \
   = "${STAGE_SELECTOR_API_REPAIR_SHA256}" || {
   echo "stage selector API repair bytes changed" >&2
+  exit 2
+}
+test "$(sha256sum "${PROCESSING_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
+  = "${PROCESSING_RUNTIME_REPAIR_SHA256}" || {
+  echo "Deform360 processing runtime repair bytes changed" >&2
   exit 2
 }
 test "$(sha256sum "${STAGE_SELECTOR_HELPER_PATH}" | awk '{print $1}')" \
@@ -388,6 +401,10 @@ if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
   export STAGE_SELECTOR_HELPER_SHA256 STAGE_SELECTOR_CONSUMER_PATH
   export STAGE_SELECTOR_CONSUMER_SHA256 STAGE_SELECTOR_PREVIOUS_SHA256
   export STAGE_SELECTOR_CORRECTED_SHA256
+  export PROCESSING_RUNTIME_REPAIR_ID PROCESSING_RUNTIME_REPAIR_PATH
+  export PROCESSING_RUNTIME_REPAIR_SHA256
+  export DEFORM360_PROCESSING_PYPROJECT_SHA256 DEFORM360_PHYSICAL_REVISION
+  export NERFSTUDIO_VERSION GSPLAT_VERSION
   export STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}"
   receipt_python="${BPT_PYTHON}"
   "${receipt_python}" - <<'PY'
@@ -458,6 +475,21 @@ receipt["runtime_stage_selector_api_compatibility_repair"] = {
     "repair_id": os.environ["STAGE_SELECTOR_API_REPAIR_ID"],
     "repair_path": os.environ["STAGE_SELECTOR_API_REPAIR_PATH"],
     "selector_file_sha256": os.environ["STAGE_SELECTOR_CORRECTED_SHA256"],
+}
+receipt["runtime_deform360_processing_dependencies"] = {
+    "activated": True,
+    "deform360_pyproject_sha256": os.environ[
+        "DEFORM360_PROCESSING_PYPROJECT_SHA256"
+    ],
+    "deform360_repository_revision": os.environ[
+        "DEFORM360_PHYSICAL_REVISION"
+    ],
+    "gsplat_version": os.environ["GSPLAT_VERSION"],
+    "install_target": "_deform360_physical[processing]",
+    "nerfstudio_version": os.environ["NERFSTUDIO_VERSION"],
+    "repair_file_sha256": os.environ["PROCESSING_RUNTIME_REPAIR_SHA256"],
+    "repair_id": os.environ["PROCESSING_RUNTIME_REPAIR_ID"],
+    "repair_path": os.environ["PROCESSING_RUNTIME_REPAIR_PATH"],
 }
 canonical = json.dumps(
     receipt,

@@ -12,6 +12,24 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/deform360-v6-source-prediction-evidence.yml"
+PROCESSING_ENV = {
+    "DEFORM360_PHYSICAL_REVISION": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "DEFORM360_PROCESSING_PYPROJECT_SHA256": (
+        "0ccfe6a386c184613191ccdaa8f2912bc3c148a7dda9c9f126959301d250232e"
+    ),
+    "DEFORM360_PROCESSING_REPAIR_ID": (
+        "15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f"
+    ),
+    "DEFORM360_PROCESSING_REPAIR_PATH": (
+        "protocols/amendments/"
+        "deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
+    ),
+    "DEFORM360_PROCESSING_REPAIR_SHA256": (
+        "b60a18821b0e260519ffda2289b20cb247b1a36c91eac9a528d953111e7b520c"
+    ),
+    "GSPLAT_VERSION": "1.4.0",
+    "NERFSTUDIO_VERSION": "1.1.5",
+}
 
 
 def _steps() -> list[dict[str, Any]]:
@@ -45,6 +63,7 @@ def _run_fallback_shell(
     environment = os.environ.copy()
     environment.update(
         {
+            **PROCESSING_ENV,
             "BPT_PYTHON": sys.executable,
             "BPT_SOURCE_SHA": "a004edbf5389714d033488ddc9fd54e131ec5b98",
             "EVIDENCE_ROOT": str(evidence_root),
@@ -79,6 +98,7 @@ def _run_fallback(
     )
     output = tmp_path / "execution-receipt.json"
     environment = {
+        **PROCESSING_ENV,
         "BPT_SOURCE_SHA": "a004edbf5389714d033488ddc9fd54e131ec5b98",
         "GITHUB_RUN_ID": "31497776180",
         "GITHUB_RUN_ATTEMPT": "1",
@@ -103,6 +123,12 @@ def test_gpu_runtime_dependency_is_exact_and_gates_science() -> None:
     assert runtime["id"] == "runtime"
     assert workflow.count('"virtualenv==21.7.4"') == 1
     assert 'version("virtualenv") != "21.7.4"' in str(runtime["run"])
+    assert '-e "./_deform360_physical[processing]"' in str(runtime["run"])
+    assert 'version("nerfstudio") != "1.1.5"' in str(runtime["run"])
+    assert 'version("gsplat") != "1.4.0"' in str(runtime["run"])
+    assert "from nerfstudio.configs import method_configs" in str(runtime["run"])
+    assert "from nerfstudio.scripts import exporter" in str(runtime["run"])
+    assert "DEFORM360_PROCESSING_PYPROJECT_SHA256" in str(runtime["run"])
     assert execute["if"] == "steps.runtime.outputs.exit_code == '0'"
 
 
@@ -126,6 +152,11 @@ def test_bootstrap_failure_receipt_is_bounded_and_target_closed(
     assert receipt["claim_authorized"] is False
     assert receipt["fresh_target_selection_authorized"] is False
     assert receipt["fresh_target_payload_access_authorized"] is False
+    assert receipt["runtime_deform360_processing_dependencies"]["activated"] is False
+    assert (
+        receipt["runtime_deform360_processing_dependencies"]["install_target"]
+        == "_deform360_physical[processing]"
+    )
     assert not any(receipt["information_boundary"].values())
     assert len(receipt["receipt_id"]) == 64
 

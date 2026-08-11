@@ -432,6 +432,7 @@ def test_active_runner_records_the_process_local_repair() -> None:
     assert 'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"' in text
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
     assert '"runtime_stage_selector_api_compatibility_repair"' in text
+    assert '"runtime_deform360_processing_dependencies"' in text
     subprocess_result = subprocess.run(
         ["bash", "-n", str(ACTIVE_RUNNER)],
         cwd=ROOT,
