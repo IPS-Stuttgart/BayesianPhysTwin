@@ -92,6 +92,19 @@ posterior, every consecutive-horizon prediction, the unscaled donor covariance,
 the canonical scale schedule, output covariance, and covariance-composition
 artifact.
 
+## Static typing and review boundary
+
+The module is part of the repository's changed-source MyPy ratchet. Generated
+NumPy horizon arrays carry explicit `np.ndarray` annotations, and digest-field
+iteration uses names distinct from integer support-count variables. These are
+static narrowings only; they do not change array values, ordering, content
+identities, admission, or fallback behavior.
+
+The permanent change contains only the implementation, focused contract tests,
+this documentation, and its source-distribution manifest entry. It contains no
+write-enabled workflow, target execution helper, or second residual-history
+route.
+
 ## Boundary
 
 Passing the focused tests establishes deterministic construction, explicit
