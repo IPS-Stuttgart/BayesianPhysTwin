@@ -24,9 +24,20 @@ observations. One unsupported material rejects the whole source unit and returns
 the exact caller-owned physical mean and covariance objects. There is no
 partial-material deployment or unsupported-material zero correction.
 
-The covariance donor is hard-bound to `independent_endpoint_v1` and the
-reference predictor to `last_residual`. The early/middle/late scale schedule is
-hard-bound to `[8, 16, 16]`; these values are not caller-selectable.
+The reference predictor is hard-bound to `last_residual`. The covariance donor
+is not accepted as a caller-supplied array: the contract internally runs
+`infer_model_averaged_endpoint` with the exact
+`DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1` on the canonical no-fill residual
+history and validity, then invokes `predict_model_averaged_endpoint` at every
+registered future-frame offset. Causal frame indices must be contiguous; future
+frame indices must be strictly increasing and lie after the causal prefix.
+
+The result binds the endpoint-model contract version, complete frozen-config
+identity, posterior identity, future frame and horizon-step identities, every
+prediction identity, and the digest of the unscaled reproduced donor covariance.
+The early/middle/late scale schedule is hard-bound to `[8, 16, 16]`; these values
+are not caller-selectable. Thus an arbitrary PSD covariance cannot be relabelled
+as `independent_endpoint_v1`.
 
 ## Camera and reconstruction provenance
 
@@ -58,11 +69,11 @@ contract and grants no authorization token.
 
 Passing the contract tests establishes deterministic construction, explicit
 missingness, provenance-separated reconstruction, exact registered-mean
-verification and identity, hard-bound donor/scales, per-material admission, and
-exact whole-case fallback. It is implementation evidence only. It does not
-establish fresh-object calibration, target accuracy, provider competence,
-physical-query benefit, intervention benefit, deployment safety, or state of
-the art.
+verification and identity, internally reproduced donor provenance, per-material
+admission, and exact whole-case fallback. It is implementation evidence only.
+It does not establish fresh-object calibration, target accuracy, provider
+competence, physical-query benefit, intervention benefit, deployment safety, or
+state of the art.
 
 The registered fresh study remains governed by issue `#461`, including its
 separate source-first information order and sealed target cohort. This module
