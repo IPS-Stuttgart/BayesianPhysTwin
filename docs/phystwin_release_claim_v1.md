@@ -10,7 +10,9 @@ metric.
 The canonical paper-side synthesis is maintained in
 [BayesianPhysTwin-Paper](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/bpt_release_claim_synthesis_2026-08-10.md).
 The owning point-result source remains the
-[full-22 evidence report](phystwin_sota_22_v1.md).
+[full-22 evidence report](phystwin_sota_22_v1.md), and the owning retrospective
+covariance source is the
+[full-22 covariance-only report](full22_covariance_only_hybrid_v1.md).
 
 ## Authorized primary claim
 
@@ -30,8 +32,8 @@ Relative to released PhysTwin, the Bayesian anchor improves Chamfer distance by
 matched deterministic comparator: it is approximately `0.005 mm` worse in
 Chamfer distance and approximately `0.049 mm` better in track error.
 
-A release must therefore not describe Bayesian anchoring as the unique
-best deterministic predictor. The differentiating contribution is a bounded,
+A release must therefore not describe Bayesian anchoring as the unique best
+deterministic predictor. The differentiating contribution is a bounded,
 uncertainty-bearing readout/model-discrepancy belief with recursive, robust, and
 guarded update interfaces.
 
@@ -59,11 +61,45 @@ Release notes and API documentation must keep three layers separate:
 The software release does not authorize a general claim of calibrated Bayesian
 posterior uncertainty.
 
+## Retrospective covariance-only mechanism result
+
+A registered full-22 analysis asked whether a Bayesian covariance improves the
+predictive distribution while preserving the exact caller-owned
+`last_residual` mean. Its cross-fitted selected/scaled arm reported:
+
+| Diagnostic | Result |
+| --- | ---: |
+| Overall Gaussian-NLL difference | `-9.136` |
+| Simultaneous 95% CI | `[-13.961, -4.312]` |
+| Object-session wins | `17/22` |
+| Exact point-mean identity | `22/22` |
+| Marginal 90% coverage | `0.706 -> 0.910` |
+| Mean full interval width | `0.01645 m -> 0.05094 m` |
+| Width ratio | `3.10×` |
+
+The point trajectory, Chamfer distance, and track error were unchanged by
+construction. The result identifies useful retrospective uncertainty with a
+material width cost. It is not evidence that raw covariance is calibrated, that
+point prediction improved, or that the candidate transfers to unseen objects.
+
+The only candidate frozen for a separate fresh study is:
+
+- exact caller-owned `last_residual` mean;
+- covariance donor `independent_endpoint_v1`;
+- early/middle/late scales `[8.0, 16.0, 16.0]`;
+- common observation standard deviation `0.005 m`;
+- covariance eigenvalue floor `1e-12 m²`; and
+- exact registered comparator/physical fallback on rejection or unsupported
+  evidence.
+
+No donor, scale, endpoint, observation-noise, action-family, denominator, or
+fallback change is permitted after fresh target access.
+
 ## Independent-validation boundary
 
 The controlled Prob4D-to-BayesianPhysTwin mechanism is positive on its synthetic
-calibration/target split, but the current real-provider evidence is negative at
-two distinct boundaries.
+calibration/target split, but independent real-provider transfer is not yet
+established.
 
 ### Retrospective MotionCrafter transfer
 
@@ -78,11 +114,11 @@ Across 19 already-open interactions:
 
 Those interactions may not be reused to tune a replacement confirmation method.
 
-### Official-Hub Deform360 route
+### Terminal complete-stream official-Hub provider version
 
-The frozen official-Hub route completed ten-object source preparation and all
-`324/324` admitted visual-production jobs. The next complete-stream robot/camera
-support gate retained `11` support-negative streams:
+The earlier frozen official-Hub route completed ten-object source preparation
+and all `324/324` admitted visual-production jobs. Its next complete-stream
+robot/camera support gate retained `11` support-negative streams:
 
 - supported streams: `313/324`;
 - technical failures: `0`;
@@ -90,13 +126,35 @@ support gate retained `11` support-negative streams:
 - leave-one-object-out source gate: not run; and
 - twelve-object confirmation access: not authorized.
 
-The method version is terminal at that source-support boundary. This is not a
+That provider version is terminal at its source-support boundary. This is not a
 fitted-covariance failure and does not establish independent-object transfer.
 Deleting cameras, fitting only the supported streams, changing the fixed prefix,
-or opening confirmation would violate the frozen information order.
+or opening its confirmation panel would violate the frozen information order.
 
 The exact paper-side evidence is in the
 [Deform360 source-support result](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform360_prob4d_source_support_negative_2026-08-09.md).
+
+### Separate registered Deform360 v6 confirmation route
+
+A separate existing-data route freezes the exact ten opened development/source
+object-sessions and twelve disjoint confirmation object-sessions from the
+content-addressed selection artifact. It does not reinterpret or rescue the
+terminal complete-stream provider version above.
+
+The v6 route requires, in order:
+
+1. exactly 100 sealed prefix-only source prediction records;
+2. a target-blind source decision under the frozen candidate and source panel;
+3. authorization, only after a source-positive decision, for one preregistered
+   evaluation over all twelve confirmation object-sessions; and
+4. a target prediction barrier before scoring.
+
+The paper-side Gaussian-NLL analysis, simultaneous contrasts, 100,000
+case-bootstrap procedure, exact `2^12` sign-flip enumeration, point-parity rule,
+stratum non-regression checks, worst-object reporting, and positive/negative
+wording were preregistered before target access. The twelve confirmation
+object-sessions remain closed. A source-negative result is complete evidence and
+keeps them closed; no target result may revise the candidate or analysis.
 
 ## Software versus scientific evidence
 
@@ -106,8 +164,8 @@ contracts. Such changes are engineering evidence only unless a registered run
 binds the exact revision and fresh outcomes.
 
 In particular, green CI, exact fallback tests, bounded I/O, stricter solver
-convergence checks, or a new provider adapter do not by themselves change the
-release claim above.
+convergence checks, a source-only residual-history adapter, or a new provider
+adapter do not by themselves change the release claim above.
 
 ## Required release wording
 
@@ -116,8 +174,11 @@ Every release note that cites the full-22 improvement should also state:
 - last residual is the principal matched comparator and is marginally better on
   equal-case track error;
 - raw posterior covariance is severely undercalibrated;
+- the retrospective covariance-only result preserves exact point predictions
+  and improves proper score only with a `3.10×` mean-width cost;
 - conformal results are width-bearing and assumption-specific; and
-- independent real-provider and independent-object transfer remain unconfirmed.
+- independent real-provider and independent-object transfer remain unconfirmed,
+  with the registered twelve-object confirmation panel still closed.
 
 The current evidence does not authorize claims of a unique deterministic winner,
 calibrated raw posterior covariance, dynamically identified simulator-state
