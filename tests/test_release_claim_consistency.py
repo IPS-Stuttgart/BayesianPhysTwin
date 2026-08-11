@@ -13,7 +13,7 @@ PAPER_COMPACT_EVIDENCE = (
 
 
 def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    return " ".join(path.read_text(encoding="utf-8").split())
 
 
 def test_readme_retains_the_complete_bounded_release_summary() -> None:
@@ -27,7 +27,7 @@ def test_readme_retains_the_complete_bounded_release_summary() -> None:
         "`22/22`",
         "`3.10×`",
         "retrospective mechanism evidence",
-        "independent real-provider and independent-object transfer remain unconfirmed",
+        "Independent real-provider and independent-object transfer remain unconfirmed",
         PAPER_COMPACT_EVIDENCE,
     ):
         assert phrase in text
