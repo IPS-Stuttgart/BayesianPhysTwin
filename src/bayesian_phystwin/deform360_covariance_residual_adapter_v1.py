@@ -491,7 +491,7 @@ def adapt_deform360_covariance_residual_history_v1(
             provider_status = "fallback-provider-failure"
             provider_error_type = type(error).__name__
             provider_error_sha256 = hashlib.sha256(
-                f"{provider_error_type}:{error}".encode("utf-8")
+                f"{provider_error_type}:{error}".encode()
             ).hexdigest()
             covariance = _readonly(
                 np.zeros(expected_covariance_shape, dtype=np.float64),
