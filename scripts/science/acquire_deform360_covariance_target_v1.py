@@ -154,6 +154,7 @@ def _list_tree(
     revision: str,
     path: str,
     allow_absent: bool,
+    recursive: bool = True,
 ) -> tuple[object, ...]:
     try:
         return tuple(
@@ -162,8 +163,8 @@ def _list_tree(
                 repo_type="dataset",
                 revision=revision,
                 path_in_repo=path,
-                recursive=True,
-                expand=True,
+                recursive=recursive,
+                expand=False,
             )
         )
     except Exception as error:
@@ -202,6 +203,19 @@ def build_file_plan(
         getattr(info, "sha", None) == dataset["revision"],
         "official dataset revision changed",
     )
+    processed_root_entries = _list_tree(
+        api,
+        repository=str(dataset["repository"]),
+        revision=str(dataset["revision"]),
+        path=str(dataset["processed_prefix"]),
+        allow_absent=True,
+        recursive=False,
+    )
+    processed_object_paths = {
+        str(entry.path)
+        for entry in processed_root_entries
+        if isinstance(getattr(entry, "path", None), str)
+    }
     rows: list[dict[str, Any]] = []
     for target in selection["target_roster"]:
         object_id = str(target["object_id"])
@@ -239,13 +253,16 @@ def build_file_plan(
             }
 
         processed_prefix = f"processed/{object_id}/episode_{episode_id}/"
-        processed_entries = _list_tree(
-            api,
-            repository=str(dataset["repository"]),
-            revision=str(dataset["revision"]),
-            path=processed_prefix.rstrip("/"),
-            allow_absent=True,
-        )
+        if f"processed/{object_id}" in processed_object_paths:
+            processed_entries = _list_tree(
+                api,
+                repository=str(dataset["repository"]),
+                revision=str(dataset["revision"]),
+                path=processed_prefix.rstrip("/"),
+                allow_absent=True,
+            )
+        else:
+            processed_entries = ()
         processed_records = _records_or_empty(
             processed_entries,
             prefix=processed_prefix,
