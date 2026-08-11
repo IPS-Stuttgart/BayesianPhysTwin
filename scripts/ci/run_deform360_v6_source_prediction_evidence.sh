@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${BPT_PYTHON:?BPT_PYTHON is required}"
-: "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
+SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_selector_repair_v3.sh"
+SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
+SCIENCE_RUNNER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
+SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
+PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
+PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID="31461017011"
+PHYSICAL_UPSTREAM_REPORT_ID="75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
 
-ARCHIVED_RUNNER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
-REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_generic_selector_identity_repair.json"
-REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
-ARCHIVED_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
-PREVIOUS_SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
-CORRECTED_SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
-
-# Reviewed archived-runner invariants intentionally remain visible here so the
-# existing source-execution contract continues to guard the active entrypoint:
+# The delegated selector wrapper preserves these reviewed invariants verbatim:
+# REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
+# ARCHIVED_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
+# PREVIOUS_SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+# CORRECTED_SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
+# text.count(old) != 1
+# patched.count(new) != 1
+# "runtime_identity_repair_id"
+# "runtime_selector_identity"
 # prediction_record_count") != 100
 # source-prediction-evidence-sealed
 # source-inputs-incomplete
@@ -25,152 +30,162 @@ CORRECTED_SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe
 # v6_target_payloads_opened": False
 # fresh_target_selection_authorized": False
 
-test -f "${ARCHIVED_RUNNER}"
-test ! -L "${ARCHIVED_RUNNER}"
-test "$(git hash-object "${ARCHIVED_RUNNER}")" = "${ARCHIVED_RUNNER_BLOB_SHA}"
-test -f "${REPAIR_PATH}"
-test ! -L "${REPAIR_PATH}"
+materialize_frozen_physical_upstream() {
+  local repository="$1"
+  local output_root="$2"
+  local python_bin="${BPT_PYTHON:-python}"
 
-export REPAIR_PATH REPAIR_ID
-export PREVIOUS_SELECTOR_SHA256 CORRECTED_SELECTOR_SHA256
-"${BPT_PYTHON}" - <<'PY'
+  REPOSITORY_ROOT="${repository}" \
+  OUTPUT_ROOT="${output_root}" \
+  SCIENCE_RUNNER_PATH="${SCIENCE_RUNNER}" \
+  PHYSICAL_UPSTREAM_REVISION_VALUE="${PHYSICAL_UPSTREAM_REVISION}" \
+  "${python_bin}" - <<'PY'
 from __future__ import annotations
 
+import ast
 import hashlib
-import json
 import os
 from pathlib import Path
+import subprocess
 
-path = Path(os.environ["REPAIR_PATH"])
-payload = json.loads(path.read_text(encoding="utf-8"))
-declared = payload.pop("repair_id")
-canonical = json.dumps(
-    payload,
-    sort_keys=True,
-    separators=(",", ":"),
-    allow_nan=False,
-).encode("utf-8")
-observed = hashlib.sha256(canonical).hexdigest()
-expected = os.environ["REPAIR_ID"]
-if declared != observed or observed != expected:
-    raise SystemExit("v6 selector runtime repair identity changed")
-if payload.get("schema") != (
-    "bayesian-phystwin.deform360-v6-source-runtime-identity-repair"
-):
-    raise SystemExit("v6 selector runtime repair schema changed")
-if payload.get("schema_version") != 1:
-    raise SystemExit("v6 selector runtime repair version changed")
-if payload.get("superseded_execution_amendment_id") != (
-    "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
-):
-    raise SystemExit("v6 selector runtime repair changed execution amendment")
+repository = Path(os.environ["REPOSITORY_ROOT"]).resolve()
+output_root = Path(os.environ["OUTPUT_ROOT"]).resolve()
+science_runner = Path(os.environ["SCIENCE_RUNNER_PATH"]).resolve()
+revision = os.environ["PHYSICAL_UPSTREAM_REVISION_VALUE"]
 
-correction = payload.get("correction", {})
-expected_correction = {
-    "field": "runtime_sources.generic_selector_source_sha256",
-    "repository": "IPS-Stuttgart/Causal4D",
-    "repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
-    "path": "src/causal4d_public/deform360_object_sam2.py",
-    "selector_semantics": "deform360-object-sam2-generic-selector",
-    "previous_sha256": os.environ["PREVIOUS_SELECTOR_SHA256"],
-    "corrected_sha256": os.environ["CORRECTED_SELECTOR_SHA256"],
-    "corrected_byte_count": 17310,
+if not (repository / ".git").exists():
+    raise SystemExit("BayesianPhysTwin git repository is unavailable")
+commit_object = f"{revision}^{{commit}}"
+available = subprocess.run(
+    ["git", "-C", str(repository), "cat-file", "-e", commit_object],
+    check=False,
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+if available.returncode != 0:
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "fetch",
+            "--no-tags",
+            "--no-recurse-submodules",
+            "--depth=1",
+            "origin",
+            revision,
+        ],
+        check=True,
+    )
+subprocess.run(
+    ["git", "-C", str(repository), "cat-file", "-e", commit_object],
+    check=True,
+)
+
+source = science_runner.read_text(encoding="utf-8")
+stage = source.index('set_stage "locate-frozen-physical-upstream"')
+start = source.index("required = {", stage) + len("required = ")
+end = source.index("\nroot = Path(", start)
+required = ast.literal_eval(source[start:end])
+expected_paths = {
+    "scripts/remote/run_deform360_official_phystwin_smoke.py",
+    "src/causal4d_public/deform360_reusable_graph.py",
+    "src/causal4d_public/deform360_partial_graph_state.py",
+    "src/causal4d_public/deform360_dense_reusable_panel.py",
+    "src/causal4d_public/deform360_action_support.py",
+    "src/causal4d_public/deform360_contact_conditioned_action.py",
+    "src/causal4d_public/deform360_dense_source.py",
+    "src/bayesian_phystwin/phystwin_graph.py",
+    "configs/causal4d_public/deform360_dense_reusable_panel_v1.json",
+    "configs/causal4d_public/deform360_independent_source_split_v1.json",
 }
-if correction != expected_correction:
-    raise SystemExit("v6 selector runtime repair correction changed")
+if set(required) != expected_paths or len(required) != 10:
+    raise SystemExit("frozen physical-upstream roster changed")
 
-failed = payload.get("failed_execution_evidence", {})
-if failed.get("workflow_run_id") != 31458096956:
-    raise SystemExit("v6 selector runtime repair lost the failed run")
-if failed.get("artifact_id") != 9088797337:
-    raise SystemExit("v6 selector runtime repair lost the failed artifact")
-if failed.get("execution_receipt_id") != (
-    "cfcfeab74ee9cc88002e398afa2655ccc1a56752787fe6b44a961061fb7cd040"
-):
-    raise SystemExit("v6 selector runtime repair lost the failed receipt")
-if failed.get("physical_manifest_count") != 0:
-    raise SystemExit("v6 selector repair was declared after physical prediction")
-if failed.get("source_prediction_seal_count") != 0:
-    raise SystemExit("v6 selector repair was declared after source prediction")
+for relative, expected in sorted(required.items()):
+    content = subprocess.check_output(
+        ["git", "-C", str(repository), "show", f"{revision}:{relative}"],
+        stderr=subprocess.DEVNULL,
+    )
+    if hashlib.sha256(content).hexdigest() != expected:
+        raise SystemExit(f"pinned physical-upstream byte identity changed: {relative}")
 
-probe = payload.get("diagnostic_probe", {})
-if probe.get("workflow_run_id") != 31458663573:
-    raise SystemExit("v6 selector runtime repair lost the history probe")
-if probe.get("complete_history_searched") is not True:
-    raise SystemExit("v6 selector runtime repair lacks complete-history evidence")
-if probe.get("historical_match_found") is not False:
-    raise SystemExit("v6 selector runtime repair falsely claims a historical match")
-if probe.get("observed_sha256") != os.environ["CORRECTED_SELECTOR_SHA256"]:
-    raise SystemExit("v6 selector runtime repair probe identity changed")
-if probe.get("observed_byte_count") != 17310:
-    raise SystemExit("v6 selector runtime repair probe byte count changed")
+if output_root.exists() and any(output_root.iterdir()):
+    raise SystemExit("physical-upstream output root is not empty")
+output_root.mkdir(parents=True, exist_ok=True)
+archive = subprocess.Popen(
+    [
+        "git",
+        "-C",
+        str(repository),
+        "archive",
+        revision,
+        "--",
+        "configs/causal4d_public",
+        "scripts/remote",
+        "src/bayesian_phystwin",
+        "src/causal4d_public",
+    ],
+    stdout=subprocess.PIPE,
+)
+if archive.stdout is None:
+    raise SystemExit("cannot open historical archive stream")
+extract = subprocess.run(
+    ["tar", "-xf", "-", "-C", str(output_root)],
+    stdin=archive.stdout,
+    check=False,
+)
+archive.stdout.close()
+archive_status = archive.wait()
+if archive_status != 0 or extract.returncode != 0:
+    raise SystemExit("cannot materialize frozen physical-upstream tree")
 
-scope = payload.get("repair_scope", {})
-if scope.get("runtime_byte_identity_only") is not True:
-    raise SystemExit("v6 selector runtime repair is not byte-identity-only")
-for field in (
-    "model_family_changed",
-    "model_size_changed",
-    "repository_revision_changed",
-    "selector_semantics_changed",
-    "source_cohort_changed",
-    "camera_panel_changed",
-    "candidate_roster_changed",
-    "loss_or_gate_changed",
-    "replacement_allowed",
-    "claim_authorized",
-):
-    if scope.get(field) is not False:
-        raise SystemExit(f"v6 selector runtime repair widened {field}")
-
-boundary = payload.get("information_boundary", {})
-if not boundary or any(value is not False for value in boundary.values()):
-    raise SystemExit("v6 selector runtime repair crossed the information boundary")
-
-authorization = payload.get("execution_authorization", {})
-if authorization.get("event") != "push-to-protected-main-after-reviewed-merge":
-    raise SystemExit("v6 selector runtime repair execution event changed")
-if authorization.get("runner_name") != "workstation2":
-    raise SystemExit("v6 selector runtime repair runner changed")
-if authorization.get("source_prediction_batch_required_before_suffix_access") is not True:
-    raise SystemExit("v6 selector runtime repair weakened the prediction barrier")
-if authorization.get("fresh_target_selection_authorized") is not False:
-    raise SystemExit("v6 selector runtime repair authorized target selection")
-if authorization.get("fresh_target_payload_access_authorized") is not False:
-    raise SystemExit("v6 selector runtime repair authorized target access")
+for relative, expected in sorted(required.items()):
+    path = output_root / relative
+    if not path.is_file() or path.is_symlink():
+        raise SystemExit(f"materialized frozen source is invalid: {relative}")
+    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+        raise SystemExit(f"materialized frozen source changed: {relative}")
 PY
+}
 
-PATCHED_RUNNER_PATH="$(
-  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-source-runner.XXXXXX.sh"
+if [[ "${1:-}" == "--materialize-physical-upstream" ]]; then
+  test -n "${2:-}"
+  test -n "${3:-}"
+  materialize_frozen_physical_upstream "$2" "$3"
+  printf '%s\n' "${PHYSICAL_UPSTREAM_REVISION}"
+  exit 0
+fi
+
+: "${BPT_PYTHON:?BPT_PYTHON is required}"
+: "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
+
+test -f "${SELECTOR_WRAPPER}"
+test ! -L "${SELECTOR_WRAPPER}"
+test "$(git hash-object "${SELECTOR_WRAPPER}")" = "${SELECTOR_WRAPPER_BLOB_SHA}"
+test -f "${SCIENCE_RUNNER}"
+test ! -L "${SCIENCE_RUNNER}"
+test "$(git hash-object "${SCIENCE_RUNNER}")" = "${SCIENCE_RUNNER_BLOB_SHA}"
+
+PHYSICAL_UPSTREAM_ROOT="$(
+  mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-physical-upstream.XXXXXX"
 )"
 cleanup() {
-  rm -f "${PATCHED_RUNNER_PATH}"
+  rm -rf "${PHYSICAL_UPSTREAM_ROOT}"
 }
 trap cleanup EXIT
 
-export ARCHIVED_RUNNER PATCHED_RUNNER_PATH
-"${BPT_PYTHON}" - <<'PY'
-from __future__ import annotations
+materialize_frozen_physical_upstream \
+  "${GITHUB_WORKSPACE:-.}" \
+  "${PHYSICAL_UPSTREAM_ROOT}"
+echo "materialized frozen physical upstream revision=${PHYSICAL_UPSTREAM_REVISION}"
 
-import os
-from pathlib import Path
-
-source = Path(os.environ["ARCHIVED_RUNNER"])
-target = Path(os.environ["PATCHED_RUNNER_PATH"])
-text = source.read_text(encoding="utf-8")
-old = f'SELECTOR_SHA256="{os.environ["PREVIOUS_SELECTOR_SHA256"]}"'
-new = f'SELECTOR_SHA256="{os.environ["CORRECTED_SELECTOR_SHA256"]}"'
-if text.count(old) != 1:
-    raise SystemExit("archived v6 runner selector identity occurrence changed")
-patched = text.replace(old, new)
-if patched.count(new) != 1:
-    raise SystemExit("temporary v6 runner selector identity was not unique")
-target.write_text(patched, encoding="utf-8")
-target.chmod(0o700)
-PY
+export PHYSICAL_UPSTREAM_REVISION
+export PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID
+export PHYSICAL_UPSTREAM_REPORT_ID
 
 set +e
-bash "${PATCHED_RUNNER_PATH}"
+RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" bash "${SELECTOR_WRAPPER}"
 status=$?
 set -e
 
@@ -188,14 +203,13 @@ from pathlib import Path
 path = Path(os.environ["RECEIPT_PATH"])
 receipt = json.loads(path.read_text(encoding="utf-8"))
 receipt.pop("receipt_id", None)
-receipt["runtime_identity_repair_id"] = os.environ["REPAIR_ID"]
-receipt["runtime_identity_repair_path"] = os.environ["REPAIR_PATH"]
-receipt["runtime_selector_identity"] = {
-    "repository": "IPS-Stuttgart/Causal4D",
-    "repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
-    "path": "src/causal4d_public/deform360_object_sam2.py",
-    "sha256": os.environ["CORRECTED_SELECTOR_SHA256"],
-    "byte_count": 17310,
+receipt["runtime_physical_upstream"] = {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "repository_revision": os.environ["PHYSICAL_UPSTREAM_REVISION"],
+    "diagnostic_workflow_run_id": int(os.environ["PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID"]),
+    "diagnostic_report_id": os.environ["PHYSICAL_UPSTREAM_REPORT_ID"],
+    "selection": "unique-complete-history-exact-ten-file-sha256-match",
+    "required_file_count": 10,
 }
 canonical = json.dumps(
     receipt,
@@ -212,6 +226,7 @@ PY
   compact="$(dirname "${receipt}")"
   (
     cd "${compact}"
+    rm -f SHA256SUMS
     find . -type f ! -name SHA256SUMS -print0 \
       | sort -z \
       | xargs -0 sha256sum > SHA256SUMS
