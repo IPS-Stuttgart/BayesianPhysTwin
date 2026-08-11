@@ -1,0 +1,62 @@
+{
+  "correction": {
+    "adapter": "outer-execution-python-shim",
+    "archived_runner_git_blob_sha": "42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1",
+    "archived_runner_path": "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh",
+    "expected_repository_value": "GITHUB_WORKSPACE",
+    "removed_arguments": [
+      "--repo",
+      "--role"
+    ],
+    "required_role_value": "calibration",
+    "stage": "stage-prefix",
+    "stage_script_path": "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py",
+    "stage_script_sha256": "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6"
+  },
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:7e4bd7ba33db2985a2b8e768c1a489487d89b86f736276ed1d25d6cf9b3c73a1",
+    "artifact_id": 9109136220,
+    "artifact_name": "deform360-v6-source-prediction-evidence-31510971371-1",
+    "execution_receipt_id": "ea3856ed0084efd5e13357df877bc1e3bc0a64257c043a35490fda65054660b5",
+    "exit_code": 2,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "b0f6b46991a20c54260baf58ddf62fbb6dab7813",
+    "status": "source-technical-failure-retained",
+    "terminal_stage": "first-source-stage-prefix",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31510971371
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "88441357317afa7280513e67fe081dc3fafcd463e5cd3a0e2d32520a50db31ae",
+  "repair_scope": {
+    "argument_adapter_only": true,
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "replacement_allowed": false,
+    "source_cohort_changed": false,
+    "stage_implementation_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-runtime-prefix-cli-repair",
+  "schema_version": 1,
+  "superseded_execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+}

@@ -6,21 +6,27 @@ on:
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
+      - "docs/deform360_v6_prefix_cli_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_prefix_cli_repair.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
+      - "tests/test_deform360_v6_prefix_cli_repair.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
+      - "docs/deform360_v6_prefix_cli_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_prefix_cli_repair.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
+      - "tests/test_deform360_v6_prefix_cli_repair.py"
 
 permissions:
   contents: read
@@ -90,6 +96,7 @@ jobs:
           files=(
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+            tests/test_deform360_v6_prefix_cli_repair.py
             tests/test_deform360_v6_runtime_bootstrap_receipt.py
           )
           python -m ruff check "${files[@]}"
@@ -99,6 +106,7 @@ jobs:
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_prefix_cli_repair.py \
             tests/test_deform360_v6_runtime_bootstrap_receipt.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'

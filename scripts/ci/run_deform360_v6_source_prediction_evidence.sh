@@ -12,6 +12,8 @@ PREPARED_INVENTORY_IMPLEMENTATION_REVISION="e190c94014e6024e324d860618662526af6e
 PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
 PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
 PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
+PREFIX_CLI_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_prefix_cli_repair.json"
+PREFIX_CLI_REPAIR_ID="88441357317afa7280513e67fe081dc3fafcd463e5cd3a0e2d32520a50db31ae"
 
 # The delegated selector wrapper preserves these reviewed invariants verbatim:
 # REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
@@ -33,6 +35,10 @@ PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
 # development_suffix_opened": False
 # v6_target_payloads_opened": False
 # fresh_target_selection_authorized": False
+# prefix_cli_repair_id
+# argument_adapter_only
+# physical_manifest_count": 0
+# source_prediction_seal_count": 0
 
 materialize_frozen_physical_upstream() {
   local repository="$1"
@@ -176,10 +182,12 @@ export PREPARED_INVENTORY_IMPLEMENTATION_REVISION
 export PREPARED_INVENTORY_ID
 export PREPARED_INVENTORY_FILE_SHA256
 export PREPARED_INVENTORY_ADMISSION_RUN_ID
+export PREFIX_CLI_REPAIR_PATH PREFIX_CLI_REPAIR_ID
 export SCIENCE_RUNNER
 "${BPT_PYTHON}" - <<'PY'
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -204,6 +212,102 @@ inventory_pattern = re.compile(
 )
 if len(inventory_pattern.findall(runner)) != 1:
     raise SystemExit("archived prepared-inventory command binding changed")
+
+repair_path = Path(os.environ["PREFIX_CLI_REPAIR_PATH"])
+repair = json.loads(repair_path.read_text(encoding="utf-8"))
+declared = repair.pop("repair_id")
+canonical = json.dumps(
+    repair,
+    sort_keys=True,
+    separators=(",", ":"),
+    allow_nan=False,
+).encode("utf-8")
+observed = hashlib.sha256(canonical).hexdigest()
+if declared != observed or observed != os.environ["PREFIX_CLI_REPAIR_ID"]:
+    raise SystemExit("v6 prefix CLI repair identity changed")
+if repair.get("schema") != (
+    "bayesian-phystwin.deform360-v6-source-runtime-prefix-cli-repair"
+):
+    raise SystemExit("v6 prefix CLI repair schema changed")
+if repair.get("schema_version") != 1:
+    raise SystemExit("v6 prefix CLI repair version changed")
+if repair.get("superseded_execution_amendment_id") != (
+    "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+):
+    raise SystemExit("v6 prefix CLI repair changed execution amendment")
+
+correction = repair.get("correction", {})
+if correction != {
+    "adapter": "outer-execution-python-shim",
+    "archived_runner_git_blob_sha": (
+        "42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
+    ),
+    "archived_runner_path": (
+        "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
+    ),
+    "expected_repository_value": "GITHUB_WORKSPACE",
+    "removed_arguments": ["--repo", "--role"],
+    "required_role_value": "calibration",
+    "stage": "stage-prefix",
+    "stage_script_path": (
+        "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py"
+    ),
+    "stage_script_sha256": (
+        "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6"
+    ),
+}:
+    raise SystemExit("v6 prefix CLI repair correction changed")
+
+failed = repair.get("failed_execution_evidence", {})
+expected_failed = {
+    "artifact_digest": (
+        "sha256:7e4bd7ba33db2985a2b8e768c1a489487d89b86f736276ed1d25d6cf9b3c73a1"
+    ),
+    "artifact_id": 9109136220,
+    "artifact_name": "deform360-v6-source-prediction-evidence-31510971371-1",
+    "execution_receipt_id": (
+        "ea3856ed0084efd5e13357df877bc1e3bc0a64257c043a35490fda65054660b5"
+    ),
+    "exit_code": 2,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "b0f6b46991a20c54260baf58ddf62fbb6dab7813",
+    "status": "source-technical-failure-retained",
+    "terminal_stage": "first-source-stage-prefix",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31510971371,
+}
+if failed != expected_failed:
+    raise SystemExit("v6 prefix CLI repair lost failed execution evidence")
+
+scope = repair.get("repair_scope", {})
+if scope.get("argument_adapter_only") is not True:
+    raise SystemExit("v6 prefix CLI repair is not argument-adapter-only")
+for field in (
+    "camera_panel_changed",
+    "candidate_roster_changed",
+    "claim_authorized",
+    "loss_or_gate_changed",
+    "model_family_changed",
+    "model_size_changed",
+    "replacement_allowed",
+    "source_cohort_changed",
+    "stage_implementation_changed",
+):
+    if scope.get(field) is not False:
+        raise SystemExit(f"v6 prefix CLI repair widened {field}")
+boundary = repair.get("information_boundary", {})
+if not boundary or any(value is not False for value in boundary.values()):
+    raise SystemExit("v6 prefix CLI repair crossed the information boundary")
+authorization = repair.get("execution_authorization", {})
+if authorization != {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": False,
+    "fresh_target_selection_authorized": False,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": True,
+}:
+    raise SystemExit("v6 prefix CLI repair authorization changed")
 PY
 
 PHYSICAL_UPSTREAM_ROOT="$(
@@ -242,6 +346,69 @@ if [[ "${1:-}" == "${target}" ]]; then
     exit 2
   fi
   exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
+fi
+
+physical_wrapper="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+if [[ "${1:-}" == "${physical_wrapper}" ]]; then
+  arguments=("$@")
+  stage=""
+  stage_count=0
+  for ((index = 0; index < ${#arguments[@]}; index++)); do
+    if [[ "${arguments[index]}" == "--stage" ]]; then
+      [[ $((index + 1)) -lt ${#arguments[@]} ]] || {
+        echo "physical wrapper stage lacks a value" >&2
+        exit 2
+      }
+      stage="${arguments[index + 1]}"
+      stage_count=$((stage_count + 1))
+    fi
+  done
+  if [[ "${stage_count}" -ne 1 ]]; then
+    echo "physical wrapper stage binding is not unique" >&2
+    exit 2
+  fi
+  if [[ "${stage}" == "stage-prefix" ]]; then
+    : "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required for prefix CLI repair}"
+    rewritten=()
+    repo_removals=0
+    role_removals=0
+    for ((index = 0; index < ${#arguments[@]}; index++)); do
+      case "${arguments[index]}" in
+        --repo)
+          [[ $((index + 1)) -lt ${#arguments[@]} ]] || {
+            echo "stage-prefix --repo lacks a value" >&2
+            exit 2
+          }
+          [[ "${arguments[index + 1]}" == "${GITHUB_WORKSPACE}" ]] || {
+            echo "stage-prefix --repo does not match the execution repository" >&2
+            exit 2
+          }
+          repo_removals=$((repo_removals + 1))
+          index=$((index + 1))
+          ;;
+        --role)
+          [[ $((index + 1)) -lt ${#arguments[@]} ]] || {
+            echo "stage-prefix --role lacks a value" >&2
+            exit 2
+          }
+          [[ "${arguments[index + 1]}" == "calibration" ]] || {
+            echo "stage-prefix --role changed" >&2
+            exit 2
+          }
+          role_removals=$((role_removals + 1))
+          index=$((index + 1))
+          ;;
+        *)
+          rewritten+=("${arguments[index]}")
+          ;;
+      esac
+    done
+    if [[ "${repo_removals}" -ne 1 || "${role_removals}" -ne 1 ]]; then
+      echo "stage-prefix compatibility arguments are not unique" >&2
+      exit 2
+    fi
+    exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
+  fi
 fi
 exec "${REAL_BPT_PYTHON}" "$@"
 SH
@@ -323,6 +490,13 @@ receipt["runtime_prepared_inventory_identity"] = {
     "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
     "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
     "selection": "frozen-authoritative-retained-source-admission",
+}
+receipt["runtime_prefix_cli_repair_id"] = os.environ["PREFIX_CLI_REPAIR_ID"]
+receipt["runtime_prefix_cli_repair_path"] = os.environ["PREFIX_CLI_REPAIR_PATH"]
+receipt["runtime_prefix_cli_repair"] = {
+    "adapter": "outer-execution-python-shim",
+    "removed_arguments": ["--repo", "--role"],
+    "stage": "stage-prefix",
 }
 canonical = json.dumps(
     receipt,
