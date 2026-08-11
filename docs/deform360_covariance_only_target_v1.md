@@ -121,3 +121,28 @@ Deform360 revision. The sealed plan contains 2,154 exact raw files totaling
 It is stored at
 `results/science/deform360_covariance_only_target_v1/exact_file_plan_v1.json`.
 No payload byte was opened while building the plan.
+
+## Quarantined download
+
+All 2,154 planned files were downloaded and independently rehashed, totaling
+2,464,053,620 bytes. Every declared LFS digest also matched. The download
+manifest SHA-256 is
+`41bfb0feb246ac235e6364cfb46304dd8b2679801d73532a1e78281f243d59af`;
+the independent verification SHA-256 is
+`3f58caf2e5cff977b34ddce6f42c86438696ce9f36f637238597f4ca86c15997`.
+The payload tree is read-only under the registered quarantine root. Downloading
+and hashing did not decode media, load arrays, run predictions, or open outcomes.
+
+Because none of the 24 objects has official processed annotations, this cohort
+is a custom fresh-object calibration test, not an official Deform360 benchmark
+parity claim. Before any decode or prediction, a separate source-only provider
+gate must prove: metres/metres-squared units; coordinate-frame, material-identity,
+and horizon alignment; a causal residual history of shape `(T,N,3)` with `(T,N)`
+validity; PSD covariance; byte-identical `last_residual` means; and exact fallback
+on provider failure. Missing prefix frames remain missing rather than being
+nearest-filled.
+
+The eventual outcome must use cameras and processing artifacts disjoint from the
+prefix residual provider. In particular, donor and target may not share one
+reconstruction artifact; otherwise a common-mode camera error could calibrate
+against itself.

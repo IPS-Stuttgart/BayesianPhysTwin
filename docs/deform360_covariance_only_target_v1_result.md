@@ -62,3 +62,21 @@ The plan is committed before payload download with canonical digest
 `d5bab5a05cf49ba6cc7bd31ffe57d2abc15040dd3f2de163d5f5034800b3ee51`.
 Its construction opened repository names and blob metadata only; no media,
 array, annotation, prediction, or outcome was read, and no target was replaced.
+
+The exact download then completed without integrity failure: 2,154 files and
+2,464,053,620 bytes. A second full pass rehashed every file and every declared
+LFS object successfully. The canonical download digest is
+`41bfb0feb246ac235e6364cfb46304dd8b2679801d73532a1e78281f243d59af`,
+and the independent verification digest is
+`3f58caf2e5cff977b34ddce6f42c86438696ce9f36f637238597f4ca86c15997`.
+The cache is read-only. No media, sensor array, geometry, track, prediction, or
+outcome was opened during acquisition.
+
+This is not yet an executable or paper-positive covariance result. With no
+official processed annotations for the selected objects, the permissible claim
+is a custom fresh-object calibration test rather than official Deform360
+benchmark parity. Before processing, an opened-source dry run must bind the
+causal `(T,N,3)` residual-history adapter and `(T,N)` missingness, metric units,
+frames, identities, horizons, PSD covariance, exact mean identity, and exact
+fallback. Provider inputs and scored outcomes must also use disjoint cameras and
+no shared reconstruction artifact.
