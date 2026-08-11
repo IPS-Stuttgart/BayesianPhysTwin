@@ -15,6 +15,8 @@ set -euo pipefail
 
 AMENDMENT_ID="f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 AMENDMENT_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+SELECTOR_REPAIR_ID="41f3580de5ca7e09bcd4c2623569c293e29ed796634c60c84ededdbd945af042"
+SELECTOR_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_selector_identity_repair.json"
 LOCK_PATH="protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
 SOURCE_PROTOCOL="protocols/deform360_official_hub_calibration_source_v1.json"
 STAGE0_PROTOCOL="protocols/deform360_official_hub_visuotactile_v1.json"
@@ -24,7 +26,9 @@ FALLBACK_CONFIG="configs/sota/deform360_reconstruction_failure_persistence_fallb
 SAM2_CHECKPOINT_NAME="sam2.1_hiera_small.pt"
 SAM2_CHECKPOINT_URL="https://dl.fbaipublicfiles.com/segment_anything_2/092824/${SAM2_CHECKPOINT_NAME}"
 SAM2_SHA256="6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
-SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
+SELECTOR_BYTE_COUNT="17310"
+CAUSAL4D_SELECTOR_REVISION="50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
 OFFICIAL_CONFIG_SHA256="a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48"
 
 RUN_ROOT="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
@@ -133,6 +137,9 @@ receipt = {
     "amendment_id": (
         "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
     ),
+    "selector_identity_repair_id": (
+        "41f3580de5ca7e09bcd4c2623569c293e29ed796634c60c84ededdbd945af042"
+    ),
     "source_revision": os.environ["BPT_SOURCE_SHA"],
     "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
     "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
@@ -212,8 +219,17 @@ set_stage "validate-reviewed-source"
 test "${RUNNER_NAME}" = "workstation2" || fail_invalid "wrong runner"
 test "$(git rev-parse HEAD)" = "${BPT_SOURCE_SHA}" \
   || fail_invalid "checked-out revision changed"
-test -z "$(git status --porcelain=v1 --untracked-files=no)" \
-  || fail_invalid "tracked repository files changed before source access"
+for checkout in \
+  _deform360_physical \
+  _official_phystwin \
+  _sam2 \
+  _causal4d_discovery
+do
+  grep -qxF "/${checkout}/" .git/info/exclude \
+    || printf '/%s/\n' "${checkout}" >> .git/info/exclude
+done
+test -z "$(git status --porcelain=v1)" \
+  || fail_invalid "repository is dirty before source access"
 test -d "${RESULTS_ROOT}" || fail_incomplete "results root is missing"
 test -d "${PROCESSED_ROOT}/aligned" \
   || fail_incomplete "processed source root is missing"
@@ -224,13 +240,20 @@ test -d "${METRIC_BATCH_ROOT}" \
 test -d "${SOURCE_ARTIFACT_DIR}" \
   || fail_incomplete "calibration source artifact is missing"
 test -f "${AMENDMENT_PATH}" || fail_invalid "execution amendment is missing"
+test -f "${SELECTOR_REPAIR_PATH}" \
+  || fail_invalid "selector identity repair is missing"
 test -f "${LOCK_PATH}" || fail_invalid "v5 source lock is missing"
 
 set_stage "verify-execution-amendment"
-"${BPT_PYTHON}" - <<'PY'
+"${BPT_PYTHON}" - "${SELECTOR_REPAIR_PATH}" <<'PY'
 import hashlib
 import json
+import sys
 from pathlib import Path
+
+from scripts.remote.run_deform360_v6_selector_identity_repair import (
+    load_selector_identity_repair,
+)
 
 path = Path(
     "protocols/amendments/"
@@ -249,6 +272,11 @@ observed = hashlib.sha256(canonical).hexdigest()
 expected = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 if observed != declared or observed != expected:
     raise SystemExit("source prediction execution amendment changed")
+repair = load_selector_identity_repair(sys.argv[1])
+if repair["repair_id"] != (
+    "41f3580de5ca7e09bcd4c2623569c293e29ed796634c60c84ededdbd945af042"
+):
+    raise SystemExit("selector identity repair changed")
 PY
 
 set_stage "materialize-prepared-source-inventory"
@@ -301,23 +329,23 @@ test "$(sha256_file "${SAM2_CHECKPOINT}")" = "${SAM2_SHA256}" \
   || fail_invalid "SAM2 checkpoint identity changed"
 
 set_stage "locate-frozen-generic-selector"
-GENERIC_SELECTOR_SOURCE=""
-while IFS= read -r candidate; do
-  [[ -f "${candidate}" && ! -L "${candidate}" ]] || continue
-  if [[ "$(sha256_file "${candidate}")" = "${SELECTOR_SHA256}" ]]; then
-    GENERIC_SELECTOR_SOURCE="${candidate}"
-    break
-  fi
-done < <(
-  find \
-    "${RUNNER_WORKSPACE:-/home/github-runner}" \
-    /home/github-runner \
-    -type f -path '*/src/causal4d_public/deform360_object_sam2.py' \
-    2>/dev/null | sort -u
-)
-test -n "${GENERIC_SELECTOR_SOURCE}" \
+GENERIC_SELECTOR_REPOSITORY="${GITHUB_WORKSPACE}/_causal4d_discovery"
+GENERIC_SELECTOR_SOURCE="${GENERIC_SELECTOR_REPOSITORY}/src/causal4d_public/deform360_object_sam2.py"
+test -d "${GENERIC_SELECTOR_REPOSITORY}" \
+  || fail_incomplete "frozen Causal4D selector repository is unavailable"
+test "$(git -C "${GENERIC_SELECTOR_REPOSITORY}" rev-parse HEAD)" \
+  = "${CAUSAL4D_SELECTOR_REVISION}" \
+  || fail_invalid "Causal4D selector revision changed"
+test -z "$(git -C "${GENERIC_SELECTOR_REPOSITORY}" status --porcelain)" \
+  || fail_invalid "Causal4D selector repository is dirty"
+test -f "${GENERIC_SELECTOR_SOURCE}" \
+  && test ! -L "${GENERIC_SELECTOR_SOURCE}" \
   || fail_incomplete "frozen generic SAM2 selector source is unavailable"
-GENERIC_SELECTOR_ROOT="$(dirname "$(dirname "${GENERIC_SELECTOR_SOURCE}")")"
+test "$(stat -c '%s' "${GENERIC_SELECTOR_SOURCE}")" = "${SELECTOR_BYTE_COUNT}" \
+  || fail_invalid "generic SAM2 selector byte count changed"
+test "$(sha256_file "${GENERIC_SELECTOR_SOURCE}")" = "${SELECTOR_SHA256}" \
+  || fail_invalid "generic SAM2 selector identity changed"
+GENERIC_SELECTOR_ROOT="${GENERIC_SELECTOR_REPOSITORY}/src"
 
 set_stage "locate-frozen-physical-upstream"
 UPSTREAM_ROOT=""
@@ -428,9 +456,11 @@ while IFS=$'\t' read -r object_id episode_id stratum; do
 
   set_stage "stage-prefix:${case_id}"
   "${BPT_PYTHON}" \
-    scripts/remote/run_deform360_joint_sparse_physical_source_v5.py \
+    scripts/remote/run_deform360_v6_selector_identity_repair.py \
     --execution-repo "${GITHUB_WORKSPACE}" \
     --execution-lock "${LOCK_PATH}" \
+    --runtime-repair "${SELECTOR_REPAIR_PATH}" \
+    --selector-repository "${GENERIC_SELECTOR_REPOSITORY}" \
     --stage stage-prefix \
     --repo "${GITHUB_WORKSPACE}" \
     --protocol "${LOCK_PATH}" \
