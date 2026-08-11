@@ -47,6 +47,38 @@ The resource is validated by
 ambiguous JSON, noncanonical version ranges, provider/schema drift, coerced
 Boolean flags, and any weakening of the exact-evidence boundary.
 
+## Scientific claim compatibility
+
+Software compatibility and scientific claim compatibility are separate. A
+`0.4.x` release that cites the full-22 result must preserve all of the following
+boundaries together:
+
+- `last_residual` is the principal matched deterministic comparator and is
+  marginally better on equal-case track error;
+- raw posterior covariance is severely undercalibrated;
+- the retrospective covariance-only analysis preserves exact point predictions
+  and changes Gaussian NLL by `-9.136` with simultaneous 95% CI
+  `[-13.961, -4.312]`, but increases mean full interval width from `0.01645 m`
+  to `0.05094 m` (`3.10×`);
+- conformal results are assumption-specific and must be reported with width;
+- the terminal complete-stream official-Hub provider version remains a
+  `313/324` support result with `11` retained support negatives, no covariance
+  fit, and no confirmation access; and
+- the separate registered v6 route still requires 100 sealed source prediction
+  records and a source-positive authorization before its twelve disjoint
+  confirmation object-sessions may be opened.
+
+A package installation, compatible provider manifest, green CI run, or successful
+source-only adapter test does not establish unseen-object transfer. The
+registered v6 candidate remains exact caller-owned `last_residual` mean identity
+with `independent_endpoint_v1` covariance, horizon scales `[8, 16, 16]`, and
+exact registered comparator/physical fallback on rejection. No target-side
+retuning, replacement, denominator change, donor substitution, endpoint change,
+or action-family restriction is supported.
+
+The mandatory release wording is maintained in
+[`docs/phystwin_release_claim_v1.md`](docs/phystwin_release_claim_v1.md).
+
 ## Causal4D provider compatibility
 
 `bayesian_phystwin.causal4d_provider_v1` remains the frozen scientific
