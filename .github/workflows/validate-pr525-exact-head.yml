@@ -1,0 +1,55 @@
+name: Validate PR 525 exact head
+
+on:
+  push:
+    branches: [agent/validate-pr525-exact-head]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-pr525-exact-head
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 930789467dd817560b535a16f582ce0f4573eca8
+          fetch-depth: 2
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install validation environment
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m pre_commit validate-config .pre-commit-config.yaml
+
+      - name: Validate exact revision and changed-source gates
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "930789467dd817560b535a16f582ce0f4573eca8"
+          test "$(git rev-parse HEAD^)" = "99f974bf003c959f96d7fb6781e734435c69b4b8"
+          python scripts/ci/check_changed_python.py \
+            --base 99f974bf003c959f96d7fb6781e734435c69b4b8 \
+            --head 930789467dd817560b535a16f582ce0f4573eca8
+
+      - name: Run focused regression suites
+        run: |
+          python -m pytest -q \
+            tests/test_source_competence_domain_covariance_calibration_v2.py \
+            tests/test_source_competence_domain_covariance_calibration_v2_adversarial.py \
+            tests/test_changed_python_preflight.py \
+            tests/test_pr_ready.py
