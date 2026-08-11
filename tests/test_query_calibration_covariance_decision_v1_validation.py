@@ -123,6 +123,10 @@ def _set_values(**updates: object) -> Callable[[dict[str, object]], None]:
         (_set_values(total_trace=2.0), "traces are inconsistent"),
         (
             _set_values(
+                shared_rank_column_count=0,
+                total_effective_rank=0,
+                shared_effective_rank=0,
+                active_query_dimension=0,
                 conditional_trace=0.0,
                 shared_trace=0.0,
                 total_trace=0.0,
@@ -139,7 +143,18 @@ def _set_values(**updates: object) -> Callable[[dict[str, object]], None]:
             "length must equal query_dimension",
         ),
         (
-            _set_values(active_query_dimension=0),
+            _set_values(
+                shared_rank_column_count=0,
+                total_effective_rank=0,
+                shared_effective_rank=0,
+                active_query_dimension=0,
+                conditional_trace=0.0,
+                shared_trace=0.0,
+                total_trace=0.0,
+                shared_trace_fraction=None,
+                shared_frobenius_fraction=None,
+                coordinate_shared_fractions=[None, None],
+            ),
             "directional fractions require an active query",
         ),
         (
