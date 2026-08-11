@@ -19,10 +19,28 @@ from bayesian_phystwin.numerical_environment_v1 import (
     NumericalEnvironmentV1,
 )
 
+_THREAD_COUNT_CONTROLS = (
+    "BLIS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+)
 
-def _controls(*, omp_threads: str | None = None) -> dict[str, str | None]:
+
+def _controls(
+    *,
+    omp_threads: str | None = None,
+    fully_pinned: bool = False,
+) -> dict[str, str | None]:
     controls = {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
-    controls["OMP_NUM_THREADS"] = omp_threads
+    if fully_pinned:
+        for name in _THREAD_COUNT_CONTROLS:
+            controls[name] = "1"
+        controls["OMP_DYNAMIC"] = "FALSE"
+    if omp_threads is not None:
+        controls["OMP_NUM_THREADS"] = omp_threads
     return controls
 
 
@@ -41,7 +59,7 @@ def _profile(
     numpy_version: str = "2.2.0",
     numpy_configuration: str = "Build Dependencies:\n  blas: openblas\n",
     scipy_version: str | None = None,
-    cpu_count: int = 8,
+    cpu_count: int | None = 8,
     byte_order: str = "little",
     controls: dict[str, str | None] | None = None,
     lock: DependencyLockV1 | None = None,
@@ -74,11 +92,13 @@ def _profile(
 
 
 def test_exact_runtime_drift_can_preserve_compatibility_identity() -> None:
-    baseline = _profile(lock=_lock())
+    pinned = _controls(fully_pinned=True)
+    baseline = _profile(controls=pinned, lock=_lock())
     changed = _profile(
         python_version="3.12.9",
         python_compiler="Clang 19",
         cpu_count=64,
+        controls=pinned,
         unrelated_distribution=True,
         lock=_lock(),
     )
@@ -118,6 +138,49 @@ def test_solver_relevant_drift_changes_compatibility_identity(
     assert not numerically_compatible_v1(baseline, candidate)
 
 
+def test_unpinned_parallelism_binds_logical_cpu_count() -> None:
+    baseline = _profile(cpu_count=8, lock=_lock())
+    changed = _profile(cpu_count=64, lock=_lock())
+
+    assert numerical_compatibility_id_v1(baseline) != (
+        numerical_compatibility_id_v1(changed)
+    )
+    descriptor = numerical_compatibility_descriptor_v1(baseline)
+    parallelism = cast(dict[str, Any], descriptor["implicit_parallelism"])
+    assert parallelism == {
+        "thread_counts_fully_pinned": False,
+        "logical_cpu_count": 8,
+    }
+
+
+def test_partial_thread_pinning_still_binds_logical_cpu_count() -> None:
+    controls = _controls(omp_threads="2")
+    baseline = _profile(cpu_count=8, controls=controls, lock=_lock())
+    changed = _profile(cpu_count=64, controls=controls, lock=_lock())
+
+    assert not numerically_compatible_v1(baseline, changed)
+
+
+def test_missing_cpu_count_requires_fully_pinned_thread_counts() -> None:
+    with pytest.raises(ValueError, match="requires logical CPU count"):
+        numerical_compatibility_descriptor_v1(
+            _profile(cpu_count=None, lock=_lock())
+        )
+
+    descriptor = numerical_compatibility_descriptor_v1(
+        _profile(
+            cpu_count=None,
+            controls=_controls(fully_pinned=True),
+            lock=_lock(),
+        )
+    )
+    parallelism = cast(dict[str, Any], descriptor["implicit_parallelism"])
+    assert parallelism == {
+        "thread_counts_fully_pinned": True,
+        "logical_cpu_count": None,
+    }
+
+
 def test_lock_is_required_by_default_but_optional_for_diagnostics() -> None:
     profile = _profile()
 
@@ -140,11 +203,12 @@ def test_lock_is_required_by_default_but_optional_for_diagnostics() -> None:
     )
 
 
-def test_compatibility_descriptor_excludes_exact_only_state() -> None:
+def test_compatibility_descriptor_excludes_exact_only_state_when_pinned() -> None:
     descriptor = numerical_compatibility_descriptor_v1(
         _profile(
             python_compiler="different compiler",
             cpu_count=128,
+            controls=_controls(fully_pinned=True),
             unrelated_distribution=True,
             lock=_lock(),
         )
@@ -153,8 +217,11 @@ def test_compatibility_descriptor_excludes_exact_only_state() -> None:
     assert "logical_cpu_count" not in descriptor
     assert "installed_distributions" not in descriptor
     python_record = cast(dict[str, Any], descriptor["python"])
+    parallelism = cast(dict[str, Any], descriptor["implicit_parallelism"])
     assert "compiler" not in python_record
     assert python_record["major_minor"] == "3.12"
+    assert parallelism["thread_counts_fully_pinned"] is True
+    assert parallelism["logical_cpu_count"] is None
 
 
 def test_record_binds_compatibility_to_the_exact_source_profile() -> None:
@@ -171,7 +238,8 @@ def test_record_binds_compatibility_to_the_exact_source_profile() -> None:
 
 
 def test_record_tampering_and_wrong_source_profile_fail_closed() -> None:
-    profile = _profile(lock=_lock())
+    pinned = _controls(fully_pinned=True)
+    profile = _profile(controls=pinned, lock=_lock())
     record = numerical_compatibility_record_v1(profile)
     tampered = json.loads(json.dumps(record))
     tampered["numerical_compatibility_id"] = "f" * 64
@@ -182,6 +250,7 @@ def test_record_tampering_and_wrong_source_profile_fail_closed() -> None:
     compatible_but_not_exact = _profile(
         python_version="3.12.8",
         cpu_count=32,
+        controls=pinned,
         unrelated_distribution=True,
         lock=_lock(),
     )
