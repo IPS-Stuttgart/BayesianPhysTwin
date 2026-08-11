@@ -9,8 +9,8 @@ import re
 import subprocess
 from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
+from pathlib import Path, PurePosixPath
+from typing import Any, cast
 
 from bayesian_phystwin.deform360_calibration_execution import (
     load_deform360_stage0_selection,
@@ -66,6 +66,27 @@ class RepositoryFile:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def repository_relative_path(value: object) -> str:
+    """Return one canonical, portable repository-relative file path."""
+
+    require(isinstance(value, str) and bool(value), "repository path is malformed")
+    path = cast(str, value)
+    pure = PurePosixPath(path)
+    require(not pure.is_absolute(), f"repository path is absolute: {path}")
+    require("\\" not in path, f"repository path uses a backslash: {path}")
+    require("\0" not in path, f"repository path contains NUL: {path}")
+    require(bool(pure.parts), f"repository path is empty: {path}")
+    require(
+        all(part not in {"", ".", ".."} for part in pure.parts),
+        f"repository path contains traversal: {path}",
+    )
+    require(
+        path == pure.as_posix(),
+        f"repository path is not canonical: {path}",
+    )
+    return path
 
 
 def _strict_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:

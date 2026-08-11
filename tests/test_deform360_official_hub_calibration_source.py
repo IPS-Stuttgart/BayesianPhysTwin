@@ -164,6 +164,23 @@ def test_selected_episode_file_plan_uses_exact_sorted_recording() -> None:
     assert len(row["tactile_streams"]) == 2
 
 
+@pytest.mark.parametrize(
+    "path",
+    (
+        "raw/201-example/../other/metadata.json",
+        "raw/201-example//metadata.json",
+        "raw/201-example/./metadata.json",
+        "raw/201-example/camera\\frame.bin",
+    ),
+)
+def test_repository_file_plan_rejects_noncanonical_paths(path: str) -> None:
+    with pytest.raises(ValueError, match="repository path"):
+        repository_files(
+            [_entry(path)],
+            prefix="raw/201-example/",
+        )
+
+
 def test_multiple_tactile_baselines_use_unique_nearest_timestamp() -> None:
     unit = CalibrationUnit(
         object_id="201-example",
@@ -404,6 +421,65 @@ def test_download_one_rejects_byte_drift(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="LFS digest changed"):
         download_one(record=record, root=tmp_path, hub_download=download)
+
+
+@pytest.mark.parametrize(
+    "path",
+    (
+        "../outside.bin",
+        "/absolute.bin",
+        "raw/object/../other/frame.bin",
+        "raw/object//frame.bin",
+        "raw/object/camera\\frame.bin",
+    ),
+)
+def test_download_one_rejects_noncanonical_paths_before_network(
+    tmp_path: Path,
+    path: str,
+) -> None:
+    calls = 0
+
+    def download(**_kwargs: object) -> str:
+        nonlocal calls
+        calls += 1
+        raise AssertionError("invalid paths must fail before network access")
+
+    with pytest.raises(ValueError, match="repository path"):
+        download_one(
+            record={"path": path},
+            root=tmp_path,
+            hub_download=download,
+        )
+
+    assert calls == 0
+
+
+def test_download_one_rejects_symlinked_parent_before_network(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "root"
+    target = root / "other-object"
+    target.mkdir(parents=True)
+    (root / "raw").mkdir()
+    (root / "raw" / "selected-object").symlink_to(
+        target,
+        target_is_directory=True,
+    )
+    calls = 0
+
+    def download(**_kwargs: object) -> str:
+        nonlocal calls
+        calls += 1
+        raise AssertionError("symlinked paths must fail before network access")
+
+    with pytest.raises(ValueError, match="contains symlink"):
+        download_one(
+            record={"path": "raw/selected-object/frame.bin"},
+            root=root,
+            hub_download=download,
+        )
+
+    assert calls == 0
 
 
 def test_gate_uses_independent_object_and_stratum_counts() -> None:
