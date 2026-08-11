@@ -2,11 +2,10 @@ name: Deform360 covariance residual-history dry run v1
 
 on:
   pull_request:
-    branches: [deform360-covariance-only-target-v1]
+    branches: [main]
     paths:
       - ".github/quality/test-suites.json"
       - ".github/workflows/deform360-covariance-residual-history-dry-run-v1.yml"
-      - "MANIFEST.in"
       - "docs/deform360_covariance_only_target_v1.md"
       - "docs/deform360_covariance_only_target_v1_result.md"
       - "docs/deform360_covariance_residual_history_dry_run_v1.md"
