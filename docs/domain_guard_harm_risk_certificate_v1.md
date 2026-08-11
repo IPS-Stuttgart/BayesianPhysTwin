@@ -25,6 +25,10 @@ A `DomainGuardHarmRiskCertificateV1` binds:
   groups; and
 - a family confidence level covering the complete supported-domain roster.
 
+The composite record owns only the cross-domain policy statement. Each
+underlying finite-group certificate retains its existing independent artifact
+identity and can still be audited under the original harm-risk contract.
+
 The per-domain confidence level uses Bonferroni control:
 
 ```text
