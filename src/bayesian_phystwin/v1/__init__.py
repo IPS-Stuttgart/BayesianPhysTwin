@@ -30,6 +30,16 @@ from ..observation_belief import (
     load_observation_belief,
     save_observation_belief,
 )
+from ..physical_query_v1 import (
+    PHYSICAL_QUERY_CLAIM_BOUNDARY,
+    PHYSICAL_QUERY_SCHEMA,
+    PHYSICAL_QUERY_VERSION,
+    PhysicalQueryBootstrapV1,
+    PhysicalQueryDecisionMarginsV1,
+    PhysicalQueryV1,
+    load_physical_query,
+    write_physical_query,
+)
 from ..repository_provenance import RepositoryRole, RepositoryState
 from ..run_manifest import (
     RUN_MANIFEST_SCHEMA,
@@ -59,6 +69,12 @@ __all__ = [
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefV1",
+    "PHYSICAL_QUERY_CLAIM_BOUNDARY",
+    "PHYSICAL_QUERY_SCHEMA",
+    "PHYSICAL_QUERY_VERSION",
+    "PhysicalQueryBootstrapV1",
+    "PhysicalQueryDecisionMarginsV1",
+    "PhysicalQueryV1",
     "RUN_MANIFEST_SCHEMA",
     "RUN_MANIFEST_V2_VERSION",
     "RUN_MANIFEST_VERSION",
@@ -71,9 +87,11 @@ __all__ = [
     "load_claim_bundle",
     "load_evidence_decision",
     "load_observation_belief",
+    "load_physical_query",
     "load_run_manifest",
     "save_observation_belief",
     "write_claim_bundle",
     "write_evidence_decision",
+    "write_physical_query",
     "write_run_manifest",
 ]

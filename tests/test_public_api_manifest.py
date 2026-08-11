@@ -57,7 +57,7 @@ def test_versioned_integration_api_matches_snapshot() -> None:
         "project_version": "0.4.0",
         "compatibility_line": "0.4",
         "policy": "exact-versioned-integration-export-surface",
-        "symbol_count": 30,
+        "symbol_count": 38,
         "status": "matched",
     }
 
