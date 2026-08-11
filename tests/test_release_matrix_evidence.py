@@ -101,9 +101,7 @@ def _profile(
     numpy_version: str,
 ) -> NumericalEnvironmentV1:
     resolver_bytes = resolver.read_bytes()
-    controls = {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    controls = {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
     distributions = tuple(
         sorted(
             (
@@ -354,8 +352,7 @@ def test_matrix_rejects_missing_or_tampered_receipt(tmp_path: Path) -> None:
     tampered["numpy"]["actual"] = "0.0.0"
     tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
     with pytest.raises(
-        tool.ReleaseMatrixEvidenceError,
-        match="ID does not match payload",
+        tool.ReleaseMatrixEvidenceError, match="ID does not match payload"
     ):
         tool.build_matrix_evidence(
             release_evidence_path=evidence_path,
