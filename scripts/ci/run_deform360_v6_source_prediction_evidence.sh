@@ -196,8 +196,41 @@ if prepared != {
 
 runner = Path(os.environ["SCIENCE_RUNNER"]).read_text(encoding="utf-8")
 needle = '--implementation-revision "${BPT_SOURCE_SHA}"'
-if runner.count(needle) != 1:
+inventory_start_marker = 'set_stage "materialize-prepared-source-inventory"\n'
+inventory_end_marker = 'set_stage "locate-frozen-sam2-checkpoint"\n'
+source_plan_start_marker = 'set_stage "materialize-source-plan"\n'
+source_plan_end_marker = 'set_stage "generate-nested-source-predictions"\n'
+for marker in (
+    inventory_start_marker,
+    inventory_end_marker,
+    source_plan_start_marker,
+    source_plan_end_marker,
+):
+    if runner.count(marker) != 1:
+        raise SystemExit("archived source revision stage boundary changed")
+
+inventory_start = runner.index(inventory_start_marker)
+inventory_end = runner.index(inventory_end_marker, inventory_start)
+source_plan_start = runner.index(source_plan_start_marker)
+source_plan_end = runner.index(source_plan_end_marker, source_plan_start)
+inventory_block = runner[inventory_start:inventory_end]
+source_plan_block = runner[source_plan_start:source_plan_end]
+if runner.count(needle) != 2:
+    raise SystemExit("archived source revision binding roster changed")
+if (
+    inventory_block.count(
+        "scripts/science/inventory_deform360_calibration_prepared_source.py"
+    )
+    != 1
+    or inventory_block.count(needle) != 1
+):
     raise SystemExit("archived prepared-inventory implementation binding changed")
+if (
+    source_plan_block.count("scripts/science/materialize_deform360_v6_source_plan_inputs.py")
+    != 1
+    or source_plan_block.count(needle) != 1
+):
+    raise SystemExit("archived source-plan implementation binding changed")
 PY
 
 PHYSICAL_UPSTREAM_ROOT="$(
