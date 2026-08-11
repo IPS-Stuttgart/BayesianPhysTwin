@@ -1,0 +1,191 @@
+name: Fix Deform360 residual-history mypy once
+
+on:
+  push:
+    branches:
+      - agent/deform360-covariance-residual-history-dry-run-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-deform360-residual-history-mypy-once
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  patch-and-verify:
+    if: github.ref == 'refs/heads/agent/deform360-covariance-residual-history-dry-run-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-covariance-residual-history-dry-run-v1
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply the exact typing patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python - <<'PY'
+          from pathlib import Path
+
+
+          def replace_exact(path: str, old: str, new: str, *, count: int = 1) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              observed = text.count(old)
+              if observed != count:
+                  raise SystemExit(
+                      f"{path}: expected {count} occurrences, observed {observed}"
+                  )
+              target.write_text(text.replace(old, new), encoding="utf-8")
+
+
+          replace_exact(
+              "src/bayesian_phystwin/"
+              "_deform360_covariance_residual_history_common_v1.py",
+              "    result = float(value)\n",
+              "    result = float(np.asarray(value).item())\n",
+          )
+          replace_exact(
+              "src/bayesian_phystwin/"
+              "_deform360_covariance_residual_history_adapter_v1.py",
+              "        policy_id=policy.policy_id,\n",
+              "        policy_id=_required_sha256(policy.policy_id, name=\"policy_id\"),\n",
+          )
+          replace_exact(
+              "src/bayesian_phystwin/"
+              "_deform360_covariance_residual_history_decision_v1.py",
+              "        policy_id=policy.policy_id,\n",
+              "        policy_id=_required_sha256(policy.policy_id, name=\"policy_id\"),\n",
+              count=2,
+          )
+
+          runner = (
+              "scripts/science/"
+              "run_deform360_covariance_residual_history_dry_run_v1.py"
+          )
+          old_scales = "\n".join(
+              [
+                  '    scales = policy.get("covariance_scales")',
+                  "    _require(",
+                  "        isinstance(scales, list) and len(scales) == 3,",
+                  '        "covariance scales must contain early, middle, and late values",',
+                  "    )",
+              ]
+          ) + "\n"
+          new_scales = "\n".join(
+              [
+                  '    scales = policy.get("covariance_scales")',
+                  "    if type(scales) is not list or len(scales) != 3:",
+                  "        raise ValueError(",
+                  '            "covariance scales must contain early, middle, and late values"',
+                  "        )",
+              ]
+          ) + "\n"
+          replace_exact(runner, old_scales, new_scales)
+
+          old_archive = "\n".join(
+              [
+                  '    archive_value = archive.get("path")',
+                  '    _require(type(archive_value) is str and bool(archive_value), "archive path missing")',
+                  "    candidate = Path(archive_value)",
+              ]
+          ) + "\n"
+          new_archive = "\n".join(
+              [
+                  '    archive_value = archive.get("path")',
+                  "    if type(archive_value) is not str or not archive_value:",
+                  '        raise ValueError("archive path missing")',
+                  "    candidate = Path(archive_value)",
+              ]
+          ) + "\n"
+          replace_exact(runner, old_archive, new_archive)
+          PY
+
+      - name: Validate lint, format, types, and contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          files=(
+            scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py
+            src/bayesian_phystwin/deform360_covariance_residual_history_v1.py
+            tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py
+            tests/test_deform360_covariance_residual_history_v1.py
+          )
+          python -m ruff format "${files[@]}"
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py \
+            src/bayesian_phystwin/deform360_covariance_residual_history_v1.py \
+            scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py \
+            tests/test_deform360_covariance_residual_history_v1.py \
+            tests/test_test_suite_manifest.py \
+            tests/test_pull_request_workflow_integrity.py
+
+      - name: Commit only the validated patch and remove this helper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          helper=.github/workflows/fix-deform360-residual-history-mypy-once.yml
+          rm -- "${helper}"
+          git diff --check
+          actual="$(git status --short | awk '{print $2}' | LC_ALL=C sort)"
+          expected="$(printf '%s\n' \
+            "${helper}" \
+            scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py \
+            | LC_ALL=C sort)"
+          test "${actual}" = "${expected}"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A -- \
+            "${helper}" \
+            scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py
+          git commit -m "Fix residual-history type narrowing"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" push \
+            origin HEAD:refs/heads/agent/deform360-covariance-residual-history-dry-run-v1
