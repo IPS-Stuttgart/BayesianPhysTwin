@@ -91,7 +91,7 @@ def test_three_repository_workflow_materializes_exact_decision_evidence() -> Non
 def test_three_repository_workflow_validates_after_venv_cleanup() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
-    assert '${RUNNER_TEMP}/three-repository-venv/bin/python' not in text
+    assert "${RUNNER_TEMP}/three-repository-venv/bin/python" not in text
     assert "typed validation completed inside the isolated" in text
     assert "import json" in text
     assert "manifest artifact digest changed" in text
