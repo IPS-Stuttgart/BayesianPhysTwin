@@ -1,5 +1,10 @@
-import numpy as np
+import sys
+from types import ModuleType
 
+import numpy as np
+import pytest
+
+import bayesian_phystwin.phystwin_multiview_tangent_fusion as fusion_module
 from bayesian_phystwin.phystwin_multiview_tangent_fusion import (
     fuse_source_normal_multiview_tangent,
     local_surface_tangent_projectors,
@@ -37,6 +42,24 @@ def test_tangent_projector_recovers_planar_normal() -> None:
         atol=1e-12,
     )
     np.testing.assert_allclose(normal_z, 0.0, atol=1e-12)
+
+
+def test_tangent_projector_uses_numpy_fallback_without_scipy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scipy_module = ModuleType("scipy")
+    scipy_module.__path__ = []
+    spatial_module = ModuleType("scipy.spatial")
+    monkeypatch.setitem(sys.modules, "scipy", scipy_module)
+    monkeypatch.setitem(sys.modules, "scipy.spatial", spatial_module)
+
+    indices = fusion_module._nearest_neighbor_indices(
+        _planar_points(),
+        count=3,
+    )
+
+    assert indices.shape == (9, 3)
+    assert np.issubdtype(indices.dtype, np.integer)
 
 
 def test_fusion_accepts_tangent_motion_and_preserves_source_normal() -> None:
