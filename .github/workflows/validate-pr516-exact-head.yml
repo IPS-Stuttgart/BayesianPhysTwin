@@ -1,0 +1,111 @@
+name: Validate PR 516 exact head
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-pr516-exact-head.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-pr516-exact-head-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONHASHSEED: 0
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+  TARGET_SHA: 86ea5a677dcbbdc0c04240dc2d81ff4c04de566c
+
+jobs:
+  exact-head:
+    name: PR 516 exact-head contracts and coverage
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 35
+    steps:
+      - name: Check out the exact PR head under test
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Validate exact revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TARGET_SHA}"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Install an isolated development environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          VENV="${RUNNER_TEMP}/bayesian-phystwin-pr516-${GITHUB_RUN_ID}"
+          rm -rf "${VENV}"
+          python3 -m venv "${VENV}"
+          "${VENV}/bin/python" -m pip install --upgrade pip
+          "${VENV}/bin/python" -m pip install -e ".[dev]"
+          echo "VENV=${VENV}" >> "${GITHUB_ENV}"
+          "${VENV}/bin/python" --version
+          "${VENV}/bin/python" -c "import numpy; print('NumPy', numpy.__version__)"
+
+      - name: Run formatting, typing, contracts, and focused branch coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            scripts/science/run_deform360_fresh_object_session_v6_prediction_bridge.py
+            src/bayesian_phystwin/deform360_fresh_object_session_v6_prediction_bridge.py
+            tests/test_deform360_fresh_object_session_v6_prediction_bridge.py
+            tests/test_deform360_fresh_object_session_v6_protocol.py
+          )
+          "${VENV}/bin/python" -m ruff check "${files[@]}"
+          "${VENV}/bin/python" -m ruff format --check "${files[@]}"
+          "${VENV}/bin/python" -m mypy --no-site-packages \
+            src/bayesian_phystwin/deform360_fresh_object_session_v6_prediction_bridge.py \
+            scripts/science/run_deform360_fresh_object_session_v6_prediction_bridge.py
+          "${VENV}/bin/python" -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_fresh_object_session_v6_prediction_bridge.py \
+            tests/test_deform360_fresh_object_session_v6_protocol.py \
+            tests/test_pull_request_workflow_integrity.py \
+            tests/test_test_suite_manifest.py
+          "${VENV}/bin/python" -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_fresh_object_session_v6_prediction_bridge.py \
+            --cov=bayesian_phystwin.deform360_fresh_object_session_v6_prediction_bridge \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-fail-under=95
+
+      - name: Verify the content-addressed v6 policy and clean worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "protocols/locks/"
+              "deform360_official_hub_fresh_object_session_v6.json"
+          )
+          policy = json.loads(path.read_text(encoding="utf-8"))
+          declared = policy.pop("policy_id")
+          canonical = json.dumps(
+              policy,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          observed = hashlib.sha256(canonical).hexdigest()
+          if observed != declared:
+              raise SystemExit("fresh object-session v6 policy identity changed")
+          PY
+          rm -rf "${VENV}"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
