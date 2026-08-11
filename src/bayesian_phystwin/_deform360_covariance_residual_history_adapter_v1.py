@@ -250,7 +250,7 @@ def build_residual_history_adapter(
         scoring_reconstruction_artifact_id=scoring_reconstruction_artifact_id,
         baseline_prefix_sha256=_array_sha256(baseline),
         observation_prefix_sha256=_array_sha256(observation),
-        policy_id=policy.policy_id,
+        policy_id=_required_sha256(policy.policy_id, name="policy_id"),
         metadata={} if metadata is None else metadata,
     )
 
