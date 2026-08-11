@@ -27,10 +27,23 @@ GSPLAT_VERSION="1.4.0"
 RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID="1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460"
 RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
 RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256="86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31"
+PRECOMPILED_GSPLAT_REPAIR_ID="a98f3ef7bb8d0f314abc2c6e5aa74624ce4820325eb1fd479586bf40094558d3"
+PRECOMPILED_GSPLAT_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_precompiled_gsplat_runtime.json"
+PRECOMPILED_GSPLAT_REPAIR_SHA256="00d638a7c8dfe8f33320e942c183f73bcdaf0037f5e41255cae13d63de4b42f3"
+CUDA_RUNTIME_LOCK_PATH="requirements/locks/deform360-v6-gsplat-pt24cu121-py310.txt"
+CUDA_RUNTIME_LOCK_SHA256="2878efd3b13aed196df63a1dff45e0d3abe24ee2ed2d379ceb32c97ce2a49b61"
 EXPECTED_PIP_CHECK_CONFLICT="pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
 NUMPY_VERSION="1.26.4"
 PYRECEST_VERSION="2.4.3"
 NUSCENES_DEVKIT_VERSION="1.2.0"
+GSPLAT_DISTRIBUTION_VERSION="1.4.0+pt24cu121"
+GSPLAT_WHEEL_URL="https://github.com/nerfstudio-project/gsplat/releases/download/v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl"
+GSPLAT_WHEEL_SHA256="2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff"
+GSPLAT_WHEEL_BYTE_COUNT="14805290"
+GSPLAT_EXTENSION_SHA256="e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b"
+TORCH_VERSION="2.4.0+cu121"
+TORCH_CUDA_VERSION="12.1"
+TORCHVISION_VERSION="0.19.0+cu121"
 
 # Preserve the complete reviewed launcher and its already-validated repairs by
 # exact Git blob identity. The executable path below changes one uniquely
@@ -107,6 +120,8 @@ for path in \
   "${STAGE_SELECTOR_API_REPAIR_PATH}" \
   "${PROCESSING_RUNTIME_REPAIR_PATH}" \
   "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" \
+  "${PRECOMPILED_GSPLAT_REPAIR_PATH}" \
+  "${CUDA_RUNTIME_LOCK_PATH}" \
   "${STAGE_SELECTOR_HELPER_PATH}" \
   "${STAGE_SELECTOR_CONSUMER_PATH}"
 do
@@ -132,6 +147,16 @@ test "$(sha256sum "${PROCESSING_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
 test "$(sha256sum "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" | awk '{print $1}')" \
   = "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256}" || {
   echo "Deform360 runtime dependency-scope repair bytes changed" >&2
+  exit 2
+}
+test "$(sha256sum "${PRECOMPILED_GSPLAT_REPAIR_PATH}" | awk '{print $1}')" \
+  = "${PRECOMPILED_GSPLAT_REPAIR_SHA256}" || {
+  echo "Deform360 precompiled gsplat repair bytes changed" >&2
+  exit 2
+}
+test "$(sha256sum "${CUDA_RUNTIME_LOCK_PATH}" | awk '{print $1}')" \
+  = "${CUDA_RUNTIME_LOCK_SHA256}" || {
+  echo "Deform360 CUDA runtime lock bytes changed" >&2
   exit 2
 }
 test "$(sha256sum "${STAGE_SELECTOR_HELPER_PATH}" | awk '{print $1}')" \
@@ -510,17 +535,18 @@ receipt["runtime_deform360_processing_dependencies"] = {
     "repair_path": os.environ["PROCESSING_RUNTIME_REPAIR_PATH"],
 }
 receipt["runtime_dependency_scope_repair"] = {
-    "activated": True,
-    "exact_allowlisted_pip_check_line": os.environ[
+    "activated": False,
+    "full_pip_check_expected_exit_code": 0,
+    "full_pip_check_expected_output": "No broken requirements found.",
+    "inherited_pyrecest_distribution_present": False,
+    "other_dependency_conflicts_allowed": False,
+    "previous_exact_allowlisted_pip_check_line": os.environ[
         "EXPECTED_PIP_CHECK_CONFLICT"
     ],
-    "full_pip_check_expected_exit_code": 1,
-    "full_pip_check_expected_line_count": 1,
-    "inherited_pyrecest_distribution_version": os.environ[
+    "previous_inherited_pyrecest_distribution_version": os.environ[
         "PYRECEST_VERSION"
     ],
     "nuscenes_devkit_version": os.environ["NUSCENES_DEVKIT_VERSION"],
-    "other_dependency_conflicts_allowed": False,
     "pyrecest_extra_installed": False,
     "pyrecest_runtime_used": False,
     "repair_file_sha256": os.environ[
@@ -529,6 +555,34 @@ receipt["runtime_dependency_scope_repair"] = {
     "repair_id": os.environ["RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID"],
     "repair_path": os.environ["RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH"],
     "runtime_numpy_version": os.environ["NUMPY_VERSION"],
+    "superseded": True,
+    "superseded_by_repair_id": os.environ["PRECOMPILED_GSPLAT_REPAIR_ID"],
+}
+receipt["runtime_precompiled_gsplat_repair"] = {
+    "activated": True,
+    "backend_probe": (
+        "CameraModelType.PINHOLE plus synthetic forward-backward rasterization"
+    ),
+    "gsplat_base_version": os.environ["GSPLAT_VERSION"],
+    "gsplat_distribution_version": os.environ[
+        "GSPLAT_DISTRIBUTION_VERSION"
+    ],
+    "gsplat_extension_sha256": os.environ["GSPLAT_EXTENSION_SHA256"],
+    "gsplat_wheel_byte_count": int(os.environ["GSPLAT_WHEEL_BYTE_COUNT"]),
+    "gsplat_wheel_sha256": os.environ["GSPLAT_WHEEL_SHA256"],
+    "gsplat_wheel_url": os.environ["GSPLAT_WHEEL_URL"],
+    "jit_compilation_used": False,
+    "nvcc_required": False,
+    "python_major_minor": "3.10",
+    "repair_file_sha256": os.environ["PRECOMPILED_GSPLAT_REPAIR_SHA256"],
+    "repair_id": os.environ["PRECOMPILED_GSPLAT_REPAIR_ID"],
+    "repair_path": os.environ["PRECOMPILED_GSPLAT_REPAIR_PATH"],
+    "runtime_lock_path": os.environ["CUDA_RUNTIME_LOCK_PATH"],
+    "runtime_lock_sha256": os.environ["CUDA_RUNTIME_LOCK_SHA256"],
+    "system_site_packages": False,
+    "torch_cuda_version": os.environ["TORCH_CUDA_VERSION"],
+    "torch_version": os.environ["TORCH_VERSION"],
+    "torchvision_version": os.environ["TORCHVISION_VERSION"],
 }
 canonical = json.dumps(
     receipt,

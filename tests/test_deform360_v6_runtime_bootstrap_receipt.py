@@ -45,6 +45,38 @@ PROCESSING_ENV = {
     "RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256": (
         "86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31"
     ),
+    "PRECOMPILED_GSPLAT_REPAIR_ID": (
+        "a98f3ef7bb8d0f314abc2c6e5aa74624ce4820325eb1fd479586bf40094558d3"
+    ),
+    "PRECOMPILED_GSPLAT_REPAIR_PATH": (
+        "protocols/amendments/"
+        "deform360_official_hub_fresh_object_session_v6_"
+        "precompiled_gsplat_runtime.json"
+    ),
+    "PRECOMPILED_GSPLAT_REPAIR_SHA256": (
+        "00d638a7c8dfe8f33320e942c183f73bcdaf0037f5e41255cae13d63de4b42f3"
+    ),
+    "CUDA_RUNTIME_LOCK_PATH": (
+        "requirements/locks/deform360-v6-gsplat-pt24cu121-py310.txt"
+    ),
+    "CUDA_RUNTIME_LOCK_SHA256": (
+        "2878efd3b13aed196df63a1dff45e0d3abe24ee2ed2d379ceb32c97ce2a49b61"
+    ),
+    "GSPLAT_DISTRIBUTION_VERSION": "1.4.0+pt24cu121",
+    "GSPLAT_EXTENSION_SHA256": (
+        "e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b"
+    ),
+    "GSPLAT_WHEEL_BYTE_COUNT": "14805290",
+    "GSPLAT_WHEEL_SHA256": (
+        "2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff"
+    ),
+    "GSPLAT_WHEEL_URL": (
+        "https://github.com/nerfstudio-project/gsplat/releases/download/"
+        "v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl"
+    ),
+    "TORCH_CUDA_VERSION": "12.1",
+    "TORCH_VERSION": "2.4.0+cu121",
+    "TORCHVISION_VERSION": "0.19.0+cu121",
 }
 
 
@@ -139,12 +171,19 @@ def test_gpu_runtime_dependency_is_exact_and_gates_science() -> None:
     assert runtime["id"] == "runtime"
     assert workflow.count('"virtualenv==21.7.4"') == 1
     assert 'version("virtualenv") != "21.7.4"' in str(runtime["run"])
+    assert 'python -m venv --copies "${runtime}"' in str(runtime["run"])
+    assert "--system-site-packages" not in str(runtime["run"])
     assert '-e "./_deform360_physical[processing]"' in str(runtime["run"])
     assert 'version("nerfstudio") != "1.1.5"' in str(runtime["run"])
-    assert 'version("gsplat") != "1.4.0"' in str(runtime["run"])
+    assert 'version("gsplat") != "1.4.0+pt24cu121"' in str(runtime["run"])
     assert 'version("numpy") != "1.26.4"' in str(runtime["run"])
-    assert 'version("pyrecest") != "2.4.3"' in str(runtime["run"])
+    assert 'version("pyrecest")' in str(runtime["run"])
+    assert "PyRecEst entered the isolated source runtime" in str(runtime["run"])
     assert 'version("nuscenes-devkit") != "1.2.0"' in str(runtime["run"])
+    assert 'torch.__version__ != "2.4.0+cu121"' in str(runtime["run"])
+    assert 'torchvision.__version__ != "0.19.0+cu121"' in str(runtime["run"])
+    assert "from gsplat.cuda._backend import _C" in str(runtime["run"])
+    assert "(render.sum() + alpha.sum()).backward()" in str(runtime["run"])
     assert "from nerfstudio.configs import method_configs" in str(runtime["run"])
     assert "from nerfstudio.scripts import exporter" in str(runtime["run"])
     assert "DEFORM360_PROCESSING_PYPROJECT_SHA256" in str(runtime["run"])
@@ -177,10 +216,16 @@ def test_bootstrap_failure_receipt_is_bounded_and_target_closed(
         == "_deform360_physical[processing]"
     )
     assert receipt["runtime_dependency_scope_repair"]["activated"] is False
+    assert receipt["runtime_dependency_scope_repair"]["superseded"] is True
     assert receipt["runtime_dependency_scope_repair"]["pyrecest_runtime_used"] is False
     assert (
         receipt["runtime_dependency_scope_repair"]["other_dependency_conflicts_allowed"]
         is False
+    )
+    assert receipt["runtime_precompiled_gsplat_repair"]["activated"] is False
+    assert receipt["runtime_precompiled_gsplat_repair"]["nvcc_required"] is False
+    assert (
+        receipt["runtime_precompiled_gsplat_repair"]["torch_version"] == "2.4.0+cu121"
     )
     assert not any(receipt["information_boundary"].values())
     assert len(receipt["receipt_id"]) == 64

@@ -1,0 +1,82 @@
+{
+  "claim_boundary": "Technical replacement of the failed JIT-only gsplat path with the official precompiled wheel for the already-frozen Python, Torch, and CUDA tuple. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "backend_probe": "CameraModelType.PINHOLE plus synthetic forward-backward rasterization",
+    "gsplat_base_version": "1.4.0",
+    "gsplat_distribution_version": "1.4.0+pt24cu121",
+    "gsplat_extension_sha256": "e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b",
+    "gsplat_wheel_byte_count": 14805290,
+    "gsplat_wheel_sha256": "2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff",
+    "gsplat_wheel_url": "https://github.com/nerfstudio-project/gsplat/releases/download/v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl",
+    "jit_compilation_used": false,
+    "nvcc_required": false,
+    "python_major_minor": "3.10",
+    "runtime_lock_path": "requirements/locks/deform360-v6-gsplat-pt24cu121-py310.txt",
+    "runtime_lock_sha256": "2878efd3b13aed196df63a1dff45e0d3abe24ee2ed2d379ceb32c97ce2a49b61",
+    "system_site_packages": false,
+    "torch_cuda_version": "12.1",
+    "torch_version": "2.4.0+cu121",
+    "torchvision_version": "0.19.0+cu121"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:bb14ce5365ba3dcd46c17d52ea0c2ba36d71ec678176ef761bfe65a526e49917",
+    "artifact_id": 9117335082,
+    "error_message": "AttributeError: 'NoneType' object has no attribute 'CameraModelType' after gsplat reported that no CUDA toolkit was found",
+    "error_type": "AttributeError",
+    "execution_receipt_id": "e8b1d22443251e2a5f14a8538c0f73f591ea10c1d625e0b6326fbb885a63a190",
+    "execution_receipt_sha256": "2f95a7c23b8ff6e8f81b7811d5a5e7fc2c10b13f51f3fea0f2db48450c59cc81",
+    "exit_code": 1,
+    "frame_zero_log_sha256": "cdc806e94590bcc5a53329a9bfbf4a22d01239d73bd8c067f594fc0ea62935f5",
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "98e20353fa80caa8a58e1885c487f3bfbfb02b93",
+    "terminal_stage": "frame-zero:first-source-case",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31532027045
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_processing_runtime_repair_id": "15a02312f15c7acaeb756f432f4d1b5015697ca17d8966726bcd82e33c6b795f",
+  "predecessor_runtime_dependency_scope_repair_id": "1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460",
+  "repair_id": "a98f3ef7bb8d0f314abc2c6e5aa74624ce4820325eb1fd479586bf40094558d3",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "dependency_scope_repair_superseded": true,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "precompiled_gsplat_runtime_installed": true,
+    "prob4d_role_changed": false,
+    "replacement_allowed": false,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false,
+    "system_site_packages_removed": true
+  },
+  "schema": "bayesian-phystwin.deform360-v6-precompiled-gsplat-runtime-repair",
+  "schema_version": 1
+}
