@@ -137,9 +137,7 @@ def run_source_only_residual_history_dry_run(
                     adapter.partition.partition_id,
                     name="partition_id",
                 ),
-                "future_horizon_labels": [
-                    HORIZON_LABELS[int(value)] for value in bins
-                ],
+                "future_horizon_labels": [HORIZON_LABELS[int(value)] for value in bins],
             },
         )
     except (TypeError, ValueError) as error:
