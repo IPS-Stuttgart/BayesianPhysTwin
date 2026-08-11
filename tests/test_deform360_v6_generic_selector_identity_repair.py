@@ -12,8 +12,7 @@ REPAIR = ROOT / (
 )
 WRAPPER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 ARCHIVED_RUNNER = ROOT / (
-    "scripts/ci/archive/"
-    "run_deform360_v6_source_prediction_evidence_v2.sh"
+    "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
 )
 
 REPAIR_ID = "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
@@ -60,9 +59,7 @@ def test_selector_repair_is_content_addressed_and_target_closed() -> None:
         "path": "src/causal4d_public/deform360_object_sam2.py",
         "previous_sha256": PREVIOUS_SHA256,
         "repository": "IPS-Stuttgart/Causal4D",
-        "repository_revision": (
-            "50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
-        ),
+        "repository_revision": ("50e3682a5dbf976b20cc9115b6e7a975d0144ea5"),
         "selector_semantics": "deform360-object-sam2-generic-selector",
     }
 
@@ -70,8 +67,7 @@ def test_selector_repair_is_content_addressed_and_target_closed() -> None:
     assert failed["workflow_run_id"] == 31_458_096_956
     assert failed["artifact_id"] == 9_088_797_337
     assert failed["artifact_digest"] == (
-        "sha256:"
-        "4438365b1664020f5398dfc1b6bdcd749b7499c8c1168ef62ca0fa49cb95d63a"
+        "sha256:4438365b1664020f5398dfc1b6bdcd749b7499c8c1168ef62ca0fa49cb95d63a"
     )
     assert failed["execution_receipt_id"] == (
         "cfcfeab74ee9cc88002e398afa2655ccc1a56752787fe6b44a961061fb7cd040"
