@@ -433,6 +433,7 @@ def test_active_runner_records_the_process_local_repair() -> None:
     assert '"runtime_stage_selector_consumer_identity_repair"' in text
     assert '"runtime_stage_selector_api_compatibility_repair"' in text
     assert '"runtime_deform360_processing_dependencies"' in text
+    assert '"runtime_dependency_scope_repair"' in text
     subprocess_result = subprocess.run(
         ["bash", "-n", str(ACTIVE_RUNNER)],
         cwd=ROOT,
