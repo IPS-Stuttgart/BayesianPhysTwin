@@ -1,0 +1,147 @@
+name: Prepare BayesianPhysTwin 0.4.0 release metadata
+
+on:
+  push:
+    branches:
+      - agent/release-0.4.0
+    paths:
+      - .github/workflows/prepare-release-0.4.0.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prepare-bayesian-phystwin-0.4.0
+  cancel-in-progress: false
+
+env:
+  RELEASE_BRANCH: agent/release-0.4.0
+  RELEASE_DATE: "2026-08-11"
+  RELEASE_VERSION: "0.4.0"
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact triggering revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify the branch has not moved
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          remote_head=$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)
+          test "${remote_head}" = "${GITHUB_SHA}"
+
+      - name: Install exact formatting and test tools
+        run: |
+          python -m pip install --upgrade "pip==26.1.2"
+          python -m pip install "pytest==8.4.2" "ruff==0.16.2"
+
+      - name: Format and run the synchronizer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff format \
+            tools/release/synchronize_release_metadata.py \
+            tests/test_release_metadata_synchronization.py
+          python -m ruff check \
+            tools/release/synchronize_release_metadata.py \
+            tests/test_release_metadata_synchronization.py
+          python tools/release/synchronize_release_metadata.py \
+            --version "${RELEASE_VERSION}" \
+            --date "${RELEASE_DATE}"
+          python tools/release/synchronize_release_metadata.py \
+            --version "${RELEASE_VERSION}" \
+            --date "${RELEASE_DATE}" \
+            --check
+          python -m pytest -q \
+            tests/test_release_metadata_synchronization.py \
+            tests/test_release_metadata.py
+
+      - name: Validate the exact release-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          required = {
+              "CHANGELOG.md",
+              "CITATION.cff",
+              "README.md",
+              "SUPPORT.md",
+              "docs/phystwin_release_claim_v1.md",
+          }
+          optional = {
+              "tools/release/synchronize_release_metadata.py",
+              "tests/test_release_metadata_synchronization.py",
+          }
+          changed = set(
+              subprocess.check_output(
+                  ["git", "diff", "--name-only"],
+                  text=True,
+              ).splitlines()
+          )
+          if not required.issubset(changed):
+              raise SystemExit(
+                  f"release synchronizer omitted files: {sorted(required - changed)}"
+              )
+          unexpected = changed - required - optional
+          if unexpected:
+              raise SystemExit(
+                  f"release synchronizer changed unexpected files: {sorted(unexpected)}"
+              )
+          PY
+          git diff --check
+
+      - name: Remove the one-shot workflow and publish the reviewed diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/prepare-release-0.4.0.yml
+          git add \
+            CHANGELOG.md \
+            CITATION.cff \
+            README.md \
+            SUPPORT.md \
+            docs/phystwin_release_claim_v1.md \
+            tools/release/synchronize_release_metadata.py \
+            tests/test_release_metadata_synchronization.py \
+            .github/workflows/prepare-release-0.4.0.yml
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Prepare BayesianPhysTwin 0.4.0 release metadata"
+          remote_head=$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | cut -f1)
+          test "${remote_head}" = "${GITHUB_SHA}"
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:refs/heads/${RELEASE_BRANCH}"
+
+      - name: Summarize the non-publishing boundary
+        run: |
+          {
+            echo "### BayesianPhysTwin 0.4.0 release metadata"
+            echo
+            echo "- Version: \`${RELEASE_VERSION}\`"
+            echo "- Release date: \`${RELEASE_DATE}\`"
+            echo "- Source revision: \`${GITHUB_SHA}\`"
+            echo "- Tag created: \`false\`"
+            echo "- Distribution published: \`false\`"
+            echo "- Scientific claim promoted: \`false\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
