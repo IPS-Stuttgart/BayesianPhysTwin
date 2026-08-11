@@ -48,6 +48,12 @@ The correction changes neither the candidate roster nor any ranking, cluster,
 camera-count, fallback, or outcome boundary. Positive-support v1 artifacts
 remain valid and behavior-compatible.
 
+The production integrity verifier counts every declared provider product: one
+member for each baseline product and one member for each independently decoded
+overlap window. The recovery merge derives its expected member count from that
+frozen product roster. It does not mistake the two baseline archives for
+unexpected evidence or validate only the overlap-window subset.
+
 ## Executable custody sequence
 
 The registered commands are separated at the suffix boundary:
