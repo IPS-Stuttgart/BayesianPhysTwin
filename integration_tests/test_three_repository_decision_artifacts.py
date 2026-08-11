@@ -9,6 +9,7 @@ from importlib import metadata as importlib_metadata
 from pathlib import Path
 
 import numpy as np
+from causal4d.contracts import PhysicalPosterior
 from causal4d.observation_lineage import load_observation_lineage
 from prob4d.provider_v1 import save_observation_belief_export
 from test_three_repository_evidence import (
@@ -42,9 +43,11 @@ class _RegretGuardDecision:
     reason: str
 
 
-def _distinct_physical_arrays(posterior: object) -> tuple[np.ndarray, np.ndarray]:
+def _distinct_physical_arrays(
+    posterior: PhysicalPosterior,
+) -> tuple[np.ndarray, np.ndarray]:
     trajectories = np.asarray(
-        posterior.readout_trajectories_m,  # type: ignore[attr-defined]
+        posterior.readout_trajectories_m,
         dtype=np.float32,
     )
     if trajectories.ndim < 2 or len(trajectories) < 2:
