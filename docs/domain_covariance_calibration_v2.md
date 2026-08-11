@@ -4,7 +4,7 @@
 experimental version-1 scale-plus-floor fitter. Version 1 and its existing
 content identities remain unchanged.
 
-The version-2 layer addresses four boundaries required before a fitted
+The version-2 layer addresses four boundaries that are required before a fitted
 covariance transform can be used in a claim-bearing run:
 
 1. **Conservative default.** The default transform grid contains only scales
@@ -12,17 +12,19 @@ covariance transform can be used in a claim-bearing run:
    grid containing covariance shrinkage is rejected unless the frozen policy
    explicitly allows it.
 2. **Physical semantics.** The certificate binds covariance dimension,
-   coordinate frame, physical unit, query type, and horizon semantics. An input
-   with a different matrix dimension returns the exact caller-owned covariance
-   object.
+   coordinate frame, physical unit, query type, and horizon semantics.
+   Application requires an independently supplied descriptor matching all five
+   fields. Any mismatch returns the exact caller-owned covariance object.
 3. **Finite-group support.** Version 2 independently requires a minimum number
    of groups, a practical mean leave-one-group-out Gaussian-NLL improvement, a
    minimum held-group win fraction, and a worst-group harm limit. These checks
    supplement rather than replace the version-1 calibration-domain guard.
-4. **Content-addressed admission.** Application accepts an `EvidenceDecisionV1`
-   bound to the registered claim and protocol. A naked Boolean cannot authorize
-   the version-2 path. The decision must be passing, confirmatory, and meet the
-   frozen evidence-level policy. A deployment policy may additionally require
+4. **Content-addressed admission.** Application accepts both an explicit
+   `CovarianceSemanticsV2` descriptor and an `EvidenceDecisionV1` bound to the
+   registered claim and protocol. The complete semantics descriptor must match
+   the certificate, and a naked Boolean cannot authorize the version-2 path. The
+   decision must be passing, confirmatory, and meet the frozen evidence-level
+   policy. A deployment policy may additionally require
    `claim_authorized=true`.
 
 ## Fitting
@@ -72,6 +74,7 @@ covariance, application = apply_domain_covariance_calibration_v2(
     raw_covariance,
     certificate,
     domain_id="dynamic",
+    application_semantics=application_semantics,
     evidence_decision=admission_decision,
 )
 ```
@@ -80,9 +83,11 @@ Application returns the exact input NumPy object when any boundary fails,
 including unknown domain, semantic mismatch, nonprospective source certificate,
 policy rejection, unmatched evidence decision, or an identity transform. An
 accepted nonidentity transform returns a new immutable float64 array. The
-application record binds the version-2 certificate, semantics, evidence
-decision, underlying version-1 application, and the digests of the actual input
-and returned arrays.
+application record binds the version-2 certificate, both the certified and
+application-declared semantics, the evidence decision, the underlying version-1
+application, canonical float64 numerical digests, and exact shape/dtype/byte
+digests of the actual input and returned arrays. Invalid, nonsymmetric, or
+indefinite covariance matrices are rejected before fallback routing.
 
 ## Scientific boundary
 
