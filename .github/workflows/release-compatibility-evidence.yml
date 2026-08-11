@@ -198,7 +198,7 @@ jobs:
               stream.write(f"- Source: `{os.environ['SOURCE_REVISION']}`\n")
               stream.write(f"- Profile ID: `{profile['profile_id']}`\n")
               stream.write(f"- Resolver input SHA-256: `{lock_digest}`\n")
-              stream.write(f"- NumPy: `{profile['numpy_version']}`\n")
+              stream.write(f"- NumPy: `{profile['numpy']['version']}`\n")
           PY
           sha256sum \
             requirements/release-build-py312.txt \
