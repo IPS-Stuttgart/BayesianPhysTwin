@@ -10,6 +10,7 @@ on:
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+      - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
   push:
     branches: [main]
     paths:
@@ -19,6 +20,7 @@ on:
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+      - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
 
 permissions:
   contents: read
@@ -88,6 +90,7 @@ jobs:
           files=(
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+            tests/test_deform360_v6_runtime_bootstrap_receipt.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
@@ -96,6 +99,7 @@ jobs:
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_runtime_bootstrap_receipt.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
@@ -337,6 +341,7 @@ jobs:
           exit 0
 
       - name: Ensure bounded execution receipt exists
+        id: receipt
         if: always()
         shell: bash
         env:
@@ -348,15 +353,52 @@ jobs:
         run: |
           set -euo pipefail
           compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+          logs="${compact}/logs"
           receipt="${compact}/execution-receipt.json"
-          if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
+          if [[ -L "${compact}" || ( -e "${compact}" && ! -d "${compact}" ) ]]; then
+            echo "refusing non-directory or symlinked compact evidence path" >&2
+            exit 1
+          fi
+          mkdir -p "${compact}"
+          if [[ -L "${compact}" || ! -d "${compact}" ]]; then
+            echo "compact evidence path failed real-directory validation" >&2
+            exit 1
+          fi
+          if [[ -L "${receipt}" ]]; then
+            echo "refusing symlinked execution receipt" >&2
+            exit 1
+          fi
+          receipt_exists=false
+          if [[ -f "${receipt}" ]]; then
+            receipt_exists=true
+          elif [[ -e "${receipt}" ]]; then
+            echo "refusing non-file execution receipt path" >&2
+            exit 1
+          fi
+          if [[ -L "${logs}" || ( -e "${logs}" && ! -d "${logs}" ) ]]; then
+            echo "refusing non-directory or symlinked compact log path" >&2
+            exit 1
+          fi
+          mkdir -p "${logs}"
+          if [[ -L "${logs}" || ! -d "${logs}" ]]; then
+            echo "compact log path failed real-directory validation" >&2
+            exit 1
+          fi
+          if [[ "${receipt_exists}" = true ]]; then
             exit 0
           fi
-          test ! -e "${receipt}"
-          mkdir -p "${compact}/logs"
           if [[ -f "${RUNTIME_LOG}" && ! -L "${RUNTIME_LOG}" ]]; then
+            retained_runtime_log="${logs}/runtime-bootstrap.log"
+            if [[ -L "${retained_runtime_log}" || -e "${retained_runtime_log}" ]]; then
+              echo "refusing pre-existing retained runtime log" >&2
+              exit 1
+            fi
             tail -c 32000 "${RUNTIME_LOG}" \
-              > "${compact}/logs/runtime-bootstrap.log"
+              > "${retained_runtime_log}"
+          fi
+          if [[ -L "${receipt}" || -e "${receipt}" ]]; then
+            echo "execution receipt path changed before write" >&2
+            exit 1
           fi
           export RECEIPT_PATH="${receipt}"
           "${BPT_PYTHON:-python}" - <<'PY'
@@ -452,15 +494,19 @@ jobs:
               allow_nan=False,
           ).encode("utf-8")
           receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
-          Path(os.environ["RECEIPT_PATH"]).write_text(
-              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False)
-              + "\n",
-              encoding="utf-8",
+          payload = (
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n"
           )
+          flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+          flags |= getattr(os, "O_NOFOLLOW", 0)
+          descriptor = os.open(os.environ["RECEIPT_PATH"], flags, 0o600)
+          with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+              stream.write(payload)
           PY
 
       - name: Retain bounded runner diagnostics
-        if: always()
+        id: diagnostics
+        if: always() && steps.receipt.outcome == 'success'
         shell: bash
         env:
           BPT_SOURCE_SHA: ${{ github.sha }}
@@ -469,12 +515,28 @@ jobs:
           set -euo pipefail
           run_root="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
           compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
-          mkdir -p "${compact}/logs"
+          logs="${compact}/logs"
+          if [[ -L "${compact}" || ! -d "${compact}" ]]; then
+            echo "compact evidence path is not a real directory" >&2
+            exit 1
+          fi
+          if [[ -L "${logs}" || ! -d "${logs}" ]]; then
+            echo "compact log path is not a real directory" >&2
+            exit 1
+          fi
           if [[ -d "${run_root}/logs" ]]; then
             while IFS= read -r log; do
-              target="${compact}/logs/$(basename "${log}")"
+              target="${logs}/$(basename "${log}")"
+              if [[ -L "${target}" || ( -e "${target}" && ! -f "${target}" ) ]]; then
+                echo "refusing unsafe retained diagnostic target" >&2
+                exit 1
+              fi
               tail -c 32000 "${log}" > "${target}"
             done < <(find "${run_root}/logs" -type f -name '*.log' | sort)
+          fi
+          if find "${compact}" -type l -print -quit | grep -q .; then
+            echo "compact evidence contains a symlink" >&2
+            exit 1
           fi
           if [[ -f "${compact}/SHA256SUMS" ]]; then
             rm "${compact}/SHA256SUMS"
@@ -488,7 +550,10 @@ jobs:
           )
 
       - name: Upload compact source prediction evidence
-        if: always()
+        if: >-
+          always() &&
+          steps.receipt.outcome == 'success' &&
+          steps.diagnostics.outcome == 'success'
         id: upload
         uses: actions/upload-artifact@v7
         with:
@@ -498,7 +563,11 @@ jobs:
           retention-days: 180
 
       - name: Publish bounded source receipt to issue 148
-        if: always()
+        if: >-
+          always() &&
+          steps.receipt.outcome == 'success' &&
+          steps.diagnostics.outcome == 'success' &&
+          steps.upload.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
@@ -506,6 +575,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test ! -L "${RECEIPT_PATH}"
           python - <<'PY'
           import json
           import os
@@ -553,12 +624,17 @@ jobs:
           PY
 
       - name: Enforce terminal source status
-        if: always()
+        if: >-
+          always() &&
+          steps.receipt.outcome == 'success' &&
+          steps.diagnostics.outcome == 'success'
         env:
           RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
         shell: bash
         run: |
           set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test ! -L "${RECEIPT_PATH}"
           status=$(python -c 'import json,os; print(json.load(open(os.environ["RECEIPT_PATH"]))["status"])')
           case "${status}" in
             source-prediction-evidence-sealed)

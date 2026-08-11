@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +33,36 @@ def _fallback_python() -> str:
     body, delimiter = remainder.rsplit("\nPY", 1)
     assert not delimiter.strip()
     return body + "\n"
+
+
+def _run_fallback_shell(
+    tmp_path: Path,
+    *,
+    evidence_root: Path,
+) -> subprocess.CompletedProcess[str]:
+    runtime_log = tmp_path / "runtime.log"
+    runtime_log.write_text("runtime bootstrap failed\n", encoding="utf-8")
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "BPT_PYTHON": sys.executable,
+            "BPT_SOURCE_SHA": "a004edbf5389714d033488ddc9fd54e131ec5b98",
+            "EVIDENCE_ROOT": str(evidence_root),
+            "EXECUTE_EXIT_CODE": "",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "GITHUB_RUN_ID": "31497776180",
+            "RUNNER_NAME": "workstation2",
+            "RUNTIME_EXIT_CODE": "1",
+            "RUNTIME_LOG": str(runtime_log),
+        }
+    )
+    return subprocess.run(
+        ["bash", "-c", str(_step("Ensure bounded execution receipt exists")["run"])],
+        check=False,
+        capture_output=True,
+        env=environment,
+        text=True,
+    )
 
 
 def _run_fallback(
@@ -115,3 +148,59 @@ def test_missing_success_receipt_is_retained_as_technical_failure(
     )
     assert receipt["exit_code"] == 1
     assert receipt["error"] == "source execution completed without a bounded receipt"
+
+
+def test_fallback_rejects_dangling_receipt_symlink(
+    tmp_path: Path,
+) -> None:
+    evidence_root = tmp_path / "evidence"
+    compact = evidence_root / "deform360-v6-source-prediction-evidence"
+    compact.mkdir(parents=True)
+    escaped = tmp_path / "escaped-receipt.json"
+    receipt = compact / "execution-receipt.json"
+    receipt.symlink_to(escaped)
+
+    result = _run_fallback_shell(tmp_path, evidence_root=evidence_root)
+
+    assert result.returncode != 0
+    assert "refusing symlinked execution receipt" in result.stderr
+    assert receipt.is_symlink()
+    assert not escaped.exists()
+
+
+def test_existing_receipt_fast_path_still_validates_log_directory(
+    tmp_path: Path,
+) -> None:
+    evidence_root = tmp_path / "evidence"
+    compact = evidence_root / "deform360-v6-source-prediction-evidence"
+    compact.mkdir(parents=True)
+    receipt = compact / "execution-receipt.json"
+    receipt.write_text('{"status":"sealed"}\n', encoding="utf-8")
+
+    result = _run_fallback_shell(tmp_path, evidence_root=evidence_root)
+
+    assert result.returncode == 0
+    assert receipt.read_text(encoding="utf-8") == '{"status":"sealed"}\n'
+    assert (compact / "logs").is_dir()
+
+
+@pytest.mark.parametrize("symlink_name", ["compact", "logs"])
+def test_fallback_rejects_symlinked_evidence_directories(
+    tmp_path: Path,
+    symlink_name: str,
+) -> None:
+    evidence_root = tmp_path / "evidence"
+    evidence_root.mkdir()
+    compact = evidence_root / "deform360-v6-source-prediction-evidence"
+    escaped = tmp_path / f"escaped-{symlink_name}"
+    escaped.mkdir()
+    if symlink_name == "compact":
+        compact.symlink_to(escaped, target_is_directory=True)
+    else:
+        compact.mkdir()
+        (compact / "logs").symlink_to(escaped, target_is_directory=True)
+
+    result = _run_fallback_shell(tmp_path, evidence_root=evidence_root)
+
+    assert result.returncode != 0
+    assert not any(escaped.iterdir())
