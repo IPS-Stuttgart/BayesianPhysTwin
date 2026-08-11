@@ -84,4 +84,4 @@ def test_three_repository_workflow_materializes_exact_decision_evidence() -> Non
     assert "exact_fallback_identity" in text
     assert "retention-days: 90" in text
     assert "if-no-files-found: error" in text
-    assert "claim, transfer, or physical-benefit" in text
+    assert "accuracy, calibration, transfer, or physical-benefit claim" in text
