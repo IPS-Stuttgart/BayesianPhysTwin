@@ -11,7 +11,10 @@ import pytest
 import scripts.remote.run_deform360_joint_sparse_physical_source_v5_selector_repair as repair
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCK = ROOT / "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+LOCK = (
+    ROOT
+    / "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+)
 
 
 def _arguments(selector: Path) -> list[str]:
@@ -68,11 +71,15 @@ def test_selector_digest_is_repaired_only_after_original_validation(
 
     module.main = stage_main
     monkeypatch.setattr(repair, "validate_joint_sparse_physical_execution_v5", validate)
-    monkeypatch.setattr(repair, "_git_blob_sha1", lambda *args: repair.STAGE_GIT_BLOB_SHA1)
+    monkeypatch.setattr(
+        repair, "_git_blob_sha1", lambda *args: repair.STAGE_GIT_BLOB_SHA1
+    )
     monkeypatch.setattr(repair, "_load_stage", load_stage)
     monkeypatch.setattr(repair, "patch_joint_sparse_physical_stage_v5", patch_stage)
     monkeypatch.setattr(repair, "activate_joint_sparse_physical_runtime_v5", active)
-    monkeypatch.setattr(repair, "file_sha256", lambda path: repair.CORRECTED_SELECTOR_SHA256)
+    monkeypatch.setattr(
+        repair, "file_sha256", lambda path: repair.CORRECTED_SELECTOR_SHA256
+    )
     monkeypatch.setattr(sys, "argv", _arguments(selector))
 
     assert repair.main() == 0
@@ -91,7 +98,9 @@ def test_selector_repair_fails_closed_when_historical_stage_identity_changes(
         lambda *args, **kwargs: None,
     )
     monkeypatch.setattr(repair, "_git_blob_sha1", lambda *args: "0" * 40)
-    monkeypatch.setattr(repair, "file_sha256", lambda path: repair.CORRECTED_SELECTOR_SHA256)
+    monkeypatch.setattr(
+        repair, "file_sha256", lambda path: repair.CORRECTED_SELECTOR_SHA256
+    )
     monkeypatch.setattr(sys, "argv", _arguments(selector))
 
     with pytest.raises(ValueError, match="checksum-bound prefix stage changed"):
