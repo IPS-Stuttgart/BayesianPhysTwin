@@ -187,6 +187,8 @@ def build_residual_history_adapter(
     frame_indices: object,
     material_ids: object,
     camera_ids: Sequence[str],
+    provider_camera_ids: Sequence[str],
+    scoring_camera_ids: Sequence[str],
     provider_reconstruction_artifact_id: str,
     scoring_reconstruction_artifact_id: str,
     source_unit_id: str,
@@ -228,6 +230,16 @@ def build_residual_history_adapter(
     residual = np.zeros_like(baseline)
     residual[validity] = observation[validity] - baseline[validity]
     partition = deterministic_disjoint_camera_partition(camera_ids, policy=policy)
+    declared_provider = tuple(sorted(provider_camera_ids))
+    declared_scoring = tuple(sorted(scoring_camera_ids))
+    if declared_provider != partition.provider_camera_ids:
+        raise ValueError(
+            "declared provider cameras differ from the frozen partition"
+        )
+    if declared_scoring != partition.scoring_camera_ids:
+        raise ValueError(
+            "declared scoring cameras differ from the frozen partition"
+        )
     return ResidualHistoryAdapterV1(
         source_unit_id=source_unit_id,
         frame_indices=frames,
