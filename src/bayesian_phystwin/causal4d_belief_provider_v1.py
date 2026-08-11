@@ -54,9 +54,7 @@ def _validated_boolean_mask(
     try:
         raw = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as error:
-        raise ValueError(
-            "valid must contain booleans or exact 0/1 values"
-        ) from error
+        raise ValueError("valid must contain booleans or exact 0/1 values") from error
     if raw.shape != expected_shape:
         raise ValueError("valid must match the residual frame and track dimensions")
     if raw.dtype.kind == "b":
@@ -66,9 +64,7 @@ def _validated_boolean_mask(
     try:
         numeric = np.asarray(raw, dtype=np.float64)
     except (TypeError, ValueError, OverflowError) as error:
-        raise ValueError(
-            "valid must contain booleans or exact 0/1 values"
-        ) from error
+        raise ValueError("valid must contain booleans or exact 0/1 values") from error
     if not np.all(np.isfinite(numeric)) or not np.all(
         (numeric == 0.0) | (numeric == 1.0)
     ):
