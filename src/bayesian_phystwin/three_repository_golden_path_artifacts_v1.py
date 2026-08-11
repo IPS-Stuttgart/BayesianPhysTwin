@@ -146,7 +146,7 @@ class ArrayByteIdentityV1:
     def __post_init__(self) -> None:
         dtype_text = _canonical_text(self.dtype, name="array dtype")
         try:
-            dtype = np.dtype(dtype_text)
+            dtype: np.dtype[Any] = np.dtype(dtype_text)
         except TypeError as error:
             raise ValueError("array dtype is invalid") from error
         if dtype.str != dtype_text or dtype.kind not in "biuf":
