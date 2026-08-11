@@ -87,7 +87,9 @@ def _thread_counts_fully_pinned(profile: NumericalEnvironmentV1) -> bool:
         _thread_count_is_pinned(controls[name]) for name in _THREAD_COUNT_CONTROLS
     )
     omp_dynamic = controls["OMP_DYNAMIC"]
-    dynamic_teams_disabled = isinstance(omp_dynamic, str) and omp_dynamic.lower() in _FALSE_CONTROL_VALUES
+    dynamic_teams_disabled = (
+        isinstance(omp_dynamic, str) and omp_dynamic.lower() in _FALSE_CONTROL_VALUES
+    )
     return count_controls_are_positive_integers and dynamic_teams_disabled
 
 
