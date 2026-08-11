@@ -255,7 +255,7 @@ def test_array_helpers_reject_shape_dtype_and_finiteness_errors() -> None:
     with pytest.raises(ValueError, match="one-dimensional"):
         _integer_vector([[1]], name="indices")
     with pytest.raises(ValueError, match="nonempty"):
-        _integer_vector([], name="indices")
+        _integer_vector(np.array([], dtype=np.int64), name="indices")
     np.testing.assert_array_equal(_integer_vector([1, 2], name="indices"), [1, 2])
 
     with pytest.raises(ValueError, match="Boolean array"):
