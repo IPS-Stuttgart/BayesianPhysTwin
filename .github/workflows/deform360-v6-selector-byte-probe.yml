@@ -1,0 +1,62 @@
+name: Deform360 v6 selector byte probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-selector-byte-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  selector-bytes:
+    name: Hash frozen Causal4D selector bytes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out diagnostic branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out exact Causal4D discovery revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
+          path: _causal4d_selector_probe
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Report exact selector byte identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          selector="_causal4d_selector_probe/src/causal4d_public/deform360_object_sam2.py"
+          test -f "${selector}"
+          python - "${selector}" <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          from pathlib import Path
+          import sys
+
+          path = Path(sys.argv[1])
+          data = path.read_bytes()
+          digest = hashlib.sha256(data).hexdigest()
+          expected = "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+          print(f"selector_path={path}")
+          print(f"selector_byte_count={len(data)}")
+          print(f"selector_sha256={digest}")
+          print(f"registered_sha256={expected}")
+          print(f"selector_matches_registered={str(digest == expected).lower()}")
+          if digest != expected:
+              raise SystemExit(
+                  f"selector byte identity differs: observed={digest} expected={expected}"
+              )
+          PY
