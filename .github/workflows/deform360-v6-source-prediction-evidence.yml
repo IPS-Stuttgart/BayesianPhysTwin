@@ -128,7 +128,8 @@ jobs:
           workflow = Path(
               ".github/workflows/deform360-v6-source-prediction-evidence.yml"
           ).read_text(encoding="utf-8")
-          if "bayesian_phystwin.__version__" in workflow:
+          undefined_attribute = "bayesian_phystwin." + "__version__"
+          if undefined_attribute in workflow:
               raise SystemExit("runtime probe uses an undefined package attribute")
           if 'version("bayesian-phystwin")' not in workflow:
               raise SystemExit("runtime probe is not bound to installed metadata")
