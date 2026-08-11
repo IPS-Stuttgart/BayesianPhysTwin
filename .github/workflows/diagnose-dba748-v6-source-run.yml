@@ -13,7 +13,7 @@ permissions:
 jobs:
   diagnose:
     if: github.event.pull_request.head.ref == 'diagnostic/track-dba748-v6-source-run'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
     timeout-minutes: 5
     steps:
       - name: Report exact protected-main push runs
@@ -59,7 +59,7 @@ jobs:
                   "RUN "
                   f"id={run_id} name={run.get('name')!r} "
                   f"status={run.get('status')} conclusion={run.get('conclusion')} "
-                  f"attempt={run.get('run_attempt')} url={run.get('html_url')}"
+                  f"attempt={run.get('run_attempt')} url={run.get('html_url)}"
               )
               for job in jobs(run_id):
                   print(
