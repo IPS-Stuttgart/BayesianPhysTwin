@@ -18,8 +18,7 @@ TOOL_PATH = ROOT / "tools/release/bind_release_matrix_contracts.py"
 
 def _tool() -> ModuleType:
     spec = importlib.util.spec_from_file_location(
-        "bind_release_matrix_contracts",
-        TOOL_PATH,
+        "bind_release_matrix_contracts", TOOL_PATH
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -125,9 +124,11 @@ def test_rejects_source_distribution_member_drift(tmp_path: Path) -> None:
     sdist = next(dist.glob("*.tar.gz"))
     with tarfile.open(sdist, mode="w:gz") as archive:
         for relative in tool.CONTRACTS.values():
-            data = b"drifted\n" if relative.endswith("release-build.txt") else (
-                root / relative
-            ).read_bytes()
+            data = (
+                b"drifted\n"
+                if relative.endswith("release-build.txt")
+                else (root / relative).read_bytes()
+            )
             _add_bytes(archive, f"bayesian_phystwin-0.4.0/{relative}", data)
     sdist_bytes = sdist.read_bytes()
     payload = json.loads(evidence_path.read_text())
