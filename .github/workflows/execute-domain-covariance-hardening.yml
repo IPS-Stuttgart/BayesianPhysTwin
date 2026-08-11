@@ -1,9 +1,9 @@
-name: Execute domain covariance provenance tightening
+name: Execute final domain covariance provenance tightening
 
 on:
   pull_request:
     branches:
-      - agent/domain-covariance-calibration-v1-clean
+      - agent/domain-covariance-calibration-v1-final
     types: [opened, reopened, synchronize]
 
 permissions:
@@ -20,7 +20,7 @@ jobs:
       - name: Check out the exact target branch
         uses: actions/checkout@v7
         with:
-          ref: agent/domain-covariance-calibration-v1-clean
+          ref: agent/domain-covariance-calibration-v1-final
           fetch-depth: 0
           persist-credentials: true
 
@@ -31,38 +31,47 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Bind covariance identities to dtype and retain public input flexibility
+      - name: Bind application identities to caller dtype and shape
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
 
           source = Path(
               "src/bayesian_phystwin/domain_covariance_calibration.py"
           )
           text = source.read_text(encoding="utf-8")
-          old_digest = '''def _array_digest(value: np.ndarray) -> str:
-              array = np.ascontiguousarray(value, dtype=np.float64)
-              digest = hashlib.sha256()
-              digest.update(str(array.shape).encode("ascii"))
-              digest.update(b"\\0float64\\0")
-              digest.update(array.tobytes(order="C"))
-              return digest.hexdigest()
-          '''.replace("          ", "")
-          new_digest = '''def _array_digest(value: np.ndarray) -> str:
-              array = np.asarray(value)
-              if array.dtype.kind not in "iuf":
-                  raise ValueError("covariance digest requires real numeric values")
-              canonical = np.ascontiguousarray(array)
-              digest = hashlib.sha256()
-              digest.update(str(canonical.shape).encode("ascii"))
-              digest.update(b"\\0")
-              digest.update(canonical.dtype.str.encode("ascii"))
-              digest.update(b"\\0")
-              digest.update(canonical.tobytes(order="C"))
-              return digest.hexdigest()
-          '''.replace("          ", "")
+          old_digest = dedent(
+              """\
+              def _array_digest(value: np.ndarray) -> str:
+                  array = np.ascontiguousarray(value, dtype=np.float64)
+                  digest = hashlib.sha256()
+                  digest.update(str(array.shape).encode("ascii"))
+                  digest.update(b"\\0float64\\0")
+                  digest.update(array.tobytes(order="C"))
+                  return digest.hexdigest()
+              """
+          )
+          new_digest = dedent(
+              """\
+              def _array_digest(value: np.ndarray) -> str:
+                  array = np.asarray(value)
+                  if array.dtype.kind not in "iuf":
+                      raise ValueError(
+                          "covariance digest requires real numeric values"
+                      )
+                  canonical = np.ascontiguousarray(array)
+                  digest = hashlib.sha256()
+                  digest.update(str(canonical.shape).encode("ascii"))
+                  digest.update(b"\\0")
+                  digest.update(canonical.dtype.str.encode("ascii"))
+                  digest.update(b"\\0")
+                  digest.update(canonical.tobytes(order="C"))
+                  return digest.hexdigest()
+              """
+          )
           if text.count(old_digest) != 1:
               raise SystemExit("covariance digest patch target changed")
           text = text.replace(old_digest, new_digest, 1)
@@ -74,10 +83,13 @@ jobs:
               "    leave_one_group_out: Sequence[HeldGroupScore]\n": (
                   "    leave_one_group_out: Sequence[Sequence[object]]\n"
               ),
+              "    raw_digest = _array_digest(\n"
+              "        np.asarray(raw_covariance, dtype=np.float64)\n"
+              "    )\n": "    raw_digest = _array_digest(raw_covariance)\n",
           }
           for old, new in replacements.items():
               if text.count(old) != 1:
-                  raise SystemExit(f"public typing patch target changed: {old!r}")
+                  raise SystemExit(f"provenance patch target changed: {old!r}")
               text = text.replace(old, new, 1)
           source.write_text(text, encoding="utf-8")
 
@@ -87,54 +99,90 @@ jobs:
           )
           test_text = tests.read_text(encoding="utf-8")
           marker = "\ndef test_identity_transform_retains_exact_raw_object() -> None:\n"
-          addition = '''
-          def test_application_digests_distinguish_input_dtype() -> None:
-              certificate = _fit(residuals=np.ones((4, 1)))
-              raw32 = np.asarray([[1.0]], dtype=np.float32)
-              raw64 = np.asarray([[1.0]], dtype=np.float64)
+          addition = dedent(
+              """\
 
-              output32, record32 = apply_domain_covariance_calibration(
-                  raw32,
-                  certificate,
-                  domain_id="dynamic",
-                  inference_admissible=True,
-              )
-              output64, record64 = apply_domain_covariance_calibration(
-                  raw64,
-                  certificate,
-                  domain_id="dynamic",
-                  inference_admissible=True,
-              )
+              def test_application_digests_distinguish_input_dtype() -> None:
+                  certificate = _fit(residuals=np.ones((4, 1)))
+                  raw32 = np.asarray([[1.0]], dtype=np.float32)
+                  raw64 = np.asarray([[1.0]], dtype=np.float64)
 
-              assert output32 is raw32
-              assert output64 is raw64
-              assert record32.raw_covariance_sha256 != record64.raw_covariance_sha256
-              assert record32.artifact_id != record64.artifact_id
+                  output32, record32 = apply_domain_covariance_calibration(
+                      raw32,
+                      certificate,
+                      domain_id="dynamic",
+                      inference_admissible=True,
+                  )
+                  output64, record64 = apply_domain_covariance_calibration(
+                      raw64,
+                      certificate,
+                      domain_id="dynamic",
+                      inference_admissible=True,
+                  )
 
-          '''.replace("          ", "")
+                  assert output32 is raw32
+                  assert output64 is raw64
+                  assert (
+                      record32.raw_covariance_sha256
+                      != record64.raw_covariance_sha256
+                  )
+                  assert record32.artifact_id != record64.artifact_id
+
+              """
+          )
           if addition not in test_text:
               if test_text.count(marker) != 1:
                   raise SystemExit("dtype test insertion point changed")
-              test_text = test_text.replace(marker, "\n" + addition + marker.lstrip(), 1)
+              test_text = test_text.replace(
+                  marker,
+                  addition + marker.lstrip(),
+                  1,
+              )
           tests.write_text(test_text, encoding="utf-8")
 
           docs = Path("docs/domain_covariance_calibration_v1.md")
           doc_text = docs.read_text(encoding="utf-8")
-          old_doc = (
-              "Successful nonidentity application returns a new immutable float64 array and a\n"
-              "content-addressed record binding the selected transform and the actual input and\n"
-              "output shapes and digests. Application records validate their internal gate,\n"
+          old_rows = (
+              "sorted by their identifiers before content addressing, so input order does not\n"
+              "change the calibration identity.\n\n"
           )
-          new_doc = (
+          new_rows = old_rows + (
+              "Validated transform and held-group rows are normalized to typed tuple records\n"
+              "before arithmetic or serialization. Public inputs remain JSON-friendly\n"
+              "sequences; static narrowing begins only after runtime validation.\n\n"
+          )
+          if doc_text.count(old_rows) != 1:
+              raise SystemExit("normalized-row documentation target changed")
+          doc_text = doc_text.replace(old_rows, new_rows, 1)
+
+          old_fallback = (
+              "Unknown domains, unsupported domains, rejected inference, nonprospective\n"
+              "certificates, and nonadmissible domain guards return the exact caller-owned raw\n"
+              "NumPy array object. No copy, zero correction, or reconstructed covariance is\n"
+              "substituted. Successful application returns a new immutable float64 array and a\n"
+              "content-addressed record binding the selected transform and normalized input and\n"
+              "output digests.\n"
+          )
+          new_fallback = (
+              "Unknown domains, unsupported domains, rejected inference, nonprospective\n"
+              "certificates, and nonadmissible domain guards return the exact caller-owned raw\n"
+              "NumPy array object. An admitted domain whose selected transform is exactly the\n"
+              "mandatory raw transform is handled identically and records\n"
+              "`calibration-identity-transform-retained`. No copy, zero correction, or\n"
+              "reconstructed covariance is substituted.\n\n"
               "Successful nonidentity application returns a new immutable float64 array and a\n"
               "content-addressed record binding the selected transform and the actual input and\n"
               "output shapes, dtypes, and canonical C-order values. Numerically equal arrays\n"
-              "with different dtypes therefore retain distinct application identities. Records\n"
-              "validate their internal gate,\n"
+              "with different dtypes therefore retain distinct application identities.\n"
+              "Application records validate their gate, decision, transform, reason, and\n"
+              "exact-fallback consistency before an artifact identifier is accepted.\n"
           )
-          if doc_text.count(old_doc) != 1:
+          if doc_text.count(old_fallback) != 1:
               raise SystemExit("application identity documentation target changed")
-          docs.write_text(doc_text.replace(old_doc, new_doc, 1), encoding="utf-8")
+          docs.write_text(
+              doc_text.replace(old_fallback, new_fallback, 1),
+              encoding="utf-8",
+          )
           PY
 
       - name: Validate formatting, typing, contracts, and coverage
@@ -173,4 +221,4 @@ jobs:
           git diff --cached --check
           test -n "$(git diff --cached --name-only)"
           git commit -m "Bind covariance application identities to dtype"
-          git push origin HEAD:agent/domain-covariance-calibration-v1-clean
+          git push origin HEAD:agent/domain-covariance-calibration-v1-final
