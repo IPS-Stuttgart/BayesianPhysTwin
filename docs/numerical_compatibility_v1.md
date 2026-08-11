@@ -8,9 +8,10 @@ package inventory, Python patch/compiler details, logical CPU count, NumPy build
 execution controls, and optional dependency lock.
 
 Exact replay and numerical comparability are different questions. An unrelated
-installed package, a different logical CPU count, or a Python patch/compiler
-change can alter the exact profile even when the registered numerical solver
-state is unchanged. `bayesian_phystwin.numerical_compatibility_v1` derives a
+installed package or a Python patch/compiler change can alter the exact profile
+even when the registered numerical solver state is unchanged. A different
+logical CPU count is harmless only when numerical thread counts are explicitly
+and completely pinned. `bayesian_phystwin.numerical_compatibility_v1` derives a
 second, narrower content identity without weakening the exact profile.
 
 ## Compatibility descriptor
@@ -21,17 +22,53 @@ Version 1 binds:
 - NumPy version and normalized NumPy build-configuration digest;
 - optional SciPy version;
 - byte order;
-- the complete registered numerical execution-control mapping; and
+- the complete registered numerical execution-control mapping;
+- an implicit-parallelism record; and
 - the dependency-lock digest and byte size.
 
 It deliberately excludes:
 
-- Python patch version and compiler string;
-- logical CPU count; and
+- Python patch version and compiler string; and
 - the complete installed-distribution inventory.
 
-Those fields remain available and content-addressed through the exact
-`NumericalEnvironmentV1.profile_id`.
+Logical CPU count is excluded only when all registered CPU thread-count controls
+are explicit positive integers and `OMP_DYNAMIC` explicitly disables dynamic
+teams. Otherwise the logical CPU count is part of the compatibility descriptor.
+Those exact fields remain available and content-addressed through the
+`NumericalEnvironmentV1.profile_id` in every case.
+
+## Implicit-parallelism boundary
+
+An unset thread-count variable is not equivalent to a fixed thread count. BLAS,
+OpenMP, and expression runtimes may derive their worker count from available
+logical CPUs, which can change reduction order and floating-point results.
+Therefore the descriptor contains:
+
+```text
+implicit_parallelism:
+  thread_counts_fully_pinned: bool
+  logical_cpu_count: int | null
+```
+
+The following registered controls must all contain positive integer values before
+CPU count can be omitted:
+
+- `BLIS_NUM_THREADS`;
+- `MKL_NUM_THREADS`;
+- `NUMEXPR_NUM_THREADS`;
+- `OMP_NUM_THREADS`;
+- `OPENBLAS_NUM_THREADS`; and
+- `VECLIB_MAXIMUM_THREADS`.
+
+In addition, `OMP_DYNAMIC` must be explicitly one of `0`, `false`, `no`, or
+`off`, compared case-insensitively. Partial pinning does not suppress CPU-count
+binding. When the controls are not fully pinned and the exact profile lacks a
+logical CPU count, compatibility derivation fails closed.
+
+This rule is intentionally conservative. A protocol may impose a smaller,
+backend-specific control set through a future compatibility-contract version,
+but version 1 does not infer the active threading backend from free-form build
+text.
 
 ## Dependency-lock boundary
 
