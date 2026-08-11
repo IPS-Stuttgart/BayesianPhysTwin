@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m pip install --break-system-packages --user -e ".[dev]"
+          python3 -m pip install --break-system-packages --user -e ".[dev]" "pytest-cov>=5"
           python3 --version
           python3 -c "import numpy; print('NumPy', numpy.__version__)"
 
