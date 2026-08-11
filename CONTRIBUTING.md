@@ -79,6 +79,18 @@ python -m compileall -q src tests
 python -m pip check
 ```
 
+For the fast pull-request gate, use the repository command that runs the changed
+Python preflight, the mature-interface quality ratchet, whitespace validation,
+and the focused CI tests against the merge base with `origin/main`:
+
+```bash
+python scripts/ci/pr_ready.py
+```
+
+Pass `--base <revision>` to reproduce a different exact comparison. The command
+fails closed when the requested head is not the checked-out `HEAD`, so it cannot
+silently validate files from another tree.
+
 Install `.[dev,graph]` or `.[dev,graph,vision]` only when the affected path
 requires those optional dependencies. Heavy GPU, private-data, or physical-data
 execution belongs in the registered self-hosted workflow, not in an unreviewed
