@@ -1,0 +1,194 @@
+name: Finalize regime covariance publication
+
+on:
+  push:
+    branches:
+      - agent/regime-covariance-transfer-materialized
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/regime-covariance-transfer-materialized
+          fetch-depth: 0
+      - name: Assemble reviewed payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          root = Path.cwd()
+          payload_root = Path('/tmp/bpt-payload')
+          payload_root.mkdir(parents=True, exist_ok=True)
+
+          large = {
+              'src/bayesian_phystwin/regime_covariance_calibration.py':
+                  root / '.bootstrap-regime-covariance/regime',
+              'tests/test_source_competence_regime_covariance_calibration.py':
+                  root / '.bootstrap-regime-covariance/regime_test',
+          }
+          for path, parts_dir in large.items():
+              source = root / path
+              if source.is_file():
+                  data = source.read_bytes()
+              else:
+                  encoded = ''.join(
+                      part.read_text(encoding='utf-8')
+                      for part in sorted(parts_dir.glob('*.part'))
+                  )
+                  if not encoded:
+                      raise SystemExit(f'missing transfer payload for {path}')
+                  data = base64.b64decode(encoded, validate=True)
+              target = payload_root / path
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(data)
+
+          repository = os.environ['GH_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          headers = {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': f'Bearer {token}',
+              'X-GitHub-Api-Version': '2022-11-28',
+          }
+
+          def api_json(url: str) -> dict:
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request) as response:
+                  return json.load(response)
+
+          tree_sha = '20e23cb2b376beb35056cd593bcbeb73ca82de33'
+          tree = api_json(
+              f'https://api.github.com/repos/{repository}/git/trees/{tree_sha}?recursive=1'
+          )
+          entries = {entry['path']: entry for entry in tree['tree']}
+          staged_paths = (
+              'CHANGELOG.md',
+              'MANIFEST.in',
+              'docs/posterior_uncertainty.md',
+              'docs/recursive_prob4d_benchmark.md',
+              'docs/recursive_prob4d_factor_stream.md',
+              'docs/regime_covariance_calibration.md',
+              'src/bayesian_phystwin/cli/_command_inventory.py',
+              'src/bayesian_phystwin/cli/experiments.py',
+              'src/bayesian_phystwin/cli/recursive_prob4d_benchmark.py',
+              'src/bayesian_phystwin/recursive_prob4d_benchmark.py',
+              'tests/test_command_registry.py',
+          )
+          for path in staged_paths:
+              entry = entries.get(path)
+              if entry is None or entry.get('type') != 'blob':
+                  raise SystemExit(f'missing staged blob {path} in tree {tree_sha}')
+              blob = api_json(
+                  f"https://api.github.com/repos/{repository}/git/blobs/{entry['sha']}"
+              )
+              if blob.get('encoding') != 'base64':
+                  raise SystemExit(f'unexpected blob encoding for {path}')
+              target = payload_root / path
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(base64.b64decode(blob['content'], validate=True))
+
+          recursive_test_sha = 'e50ed72921b2439b69aec87f6a5c0d390f60f36a'
+          blob = api_json(
+              f'https://api.github.com/repos/{repository}/git/blobs/{recursive_test_sha}'
+          )
+          if blob.get('encoding') != 'base64':
+              raise SystemExit('unexpected recursive benchmark test blob encoding')
+          recursive_test = (
+              payload_root / 'tests/test_source_competence_recursive_prob4d_benchmark.py'
+          )
+          recursive_test.parent.mkdir(parents=True, exist_ok=True)
+          recursive_test.write_bytes(base64.b64decode(blob['content'], validate=True))
+          PY
+      - name: Rebase payload onto latest main and verify scope
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          integration_base=acbec2e080fe4a4a343879cbbe876cff2a0d5d73
+          intended=(
+            CHANGELOG.md
+            MANIFEST.in
+            docs/posterior_uncertainty.md
+            docs/recursive_prob4d_benchmark.md
+            docs/recursive_prob4d_factor_stream.md
+            docs/regime_covariance_calibration.md
+            src/bayesian_phystwin/cli/_command_inventory.py
+            src/bayesian_phystwin/cli/experiments.py
+            src/bayesian_phystwin/cli/recursive_prob4d_benchmark.py
+            src/bayesian_phystwin/recursive_prob4d_benchmark.py
+            src/bayesian_phystwin/regime_covariance_calibration.py
+            tests/test_command_registry.py
+            tests/test_source_competence_recursive_prob4d_benchmark.py
+            tests/test_source_competence_regime_covariance_calibration.py
+          )
+          if ! git diff --quiet "$integration_base"..origin/main -- "${intended[@]}"; then
+            echo 'main changed one of the reviewed integration paths; refusing to overwrite it'
+            git diff --name-only "$integration_base"..origin/main -- "${intended[@]}"
+            exit 42
+          fi
+          git checkout --detach origin/main
+          for path in "${intended[@]}"; do
+            mkdir -p "$(dirname "$path")"
+            cp "/tmp/bpt-payload/$path" "$path"
+          done
+          git add -- "${intended[@]}"
+          python - <<'PY'
+          import subprocess
+
+          intended = sorted(
+              '''CHANGELOG.md
+          MANIFEST.in
+          docs/posterior_uncertainty.md
+          docs/recursive_prob4d_benchmark.md
+          docs/recursive_prob4d_factor_stream.md
+          docs/regime_covariance_calibration.md
+          src/bayesian_phystwin/cli/_command_inventory.py
+          src/bayesian_phystwin/cli/experiments.py
+          src/bayesian_phystwin/cli/recursive_prob4d_benchmark.py
+          src/bayesian_phystwin/recursive_prob4d_benchmark.py
+          src/bayesian_phystwin/regime_covariance_calibration.py
+          tests/test_command_registry.py
+          tests/test_source_competence_recursive_prob4d_benchmark.py
+          tests/test_source_competence_regime_covariance_calibration.py'''.splitlines()
+          )
+          actual = sorted(
+              subprocess.check_output(
+                  ['git', 'diff', '--cached', '--name-only'], text=True
+              ).splitlines()
+          )
+          if actual != intended:
+              raise SystemExit(
+                  f'final scope mismatch\nexpected={intended!r}\nactual={actual!r}'
+              )
+          PY
+          python -m py_compile \
+            src/bayesian_phystwin/cli/_command_inventory.py \
+            src/bayesian_phystwin/cli/experiments.py \
+            src/bayesian_phystwin/cli/recursive_prob4d_benchmark.py \
+            src/bayesian_phystwin/recursive_prob4d_benchmark.py \
+            src/bayesian_phystwin/regime_covariance_calibration.py \
+            tests/test_command_registry.py \
+            tests/test_source_competence_recursive_prob4d_benchmark.py \
+            tests/test_source_competence_regime_covariance_calibration.py
+          git diff --cached --check
+      - name: Publish one clean commit
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          tree=$(git write-tree)
+          parent=$(git rev-parse origin/main)
+          commit=$(printf '%s\n' 'Add regime covariance calibration and recursive Prob4D benchmark' | git commit-tree "$tree" -p "$parent")
+          git push --force origin "$commit:refs/heads/agent/regime-covariance-recursive-prob4d"
+          git push origin --delete agent/regime-covariance-transfer-materialized || true
