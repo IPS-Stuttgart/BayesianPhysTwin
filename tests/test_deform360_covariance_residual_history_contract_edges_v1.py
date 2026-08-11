@@ -668,9 +668,7 @@ def test_covariance_rejection_preserves_metadata_and_invalid_ids_fall_back() -> 
         "covariance-contract-rejection",
     )
     invalid_donor = _run(covariance_donor_id="")
-    assert invalid_donor.decision.fallback_reasons == (
-        "covariance-contract-rejection",
-    )
+    assert invalid_donor.decision.fallback_reasons == ("covariance-contract-rejection",)
 
 
 def test_support_fallback_and_admission_preserve_supplied_metadata() -> None:
