@@ -21,9 +21,7 @@ from bayesian_phystwin.numerical_environment_v1 import (
 
 
 def _controls(*, omp_threads: str | None = None) -> dict[str, str | None]:
-    controls = {
-        name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES
-    }
+    controls = {name: None for name in numerical_environment._EXECUTION_CONTROL_NAMES}
     controls["OMP_NUM_THREADS"] = omp_threads
     return controls
 
@@ -129,12 +127,15 @@ def test_lock_is_required_by_default_but_optional_for_diagnostics() -> None:
         require_dependency_lock=False,
     )
     assert descriptor["dependency_lock"] is None
-    assert len(
-        numerical_compatibility_id_v1(
-            profile,
-            require_dependency_lock=False,
+    assert (
+        len(
+            numerical_compatibility_id_v1(
+                profile,
+                require_dependency_lock=False,
+            )
         )
-    ) == 64
+        == 64
+    )
 
 
 def test_compatibility_descriptor_excludes_exact_only_state() -> None:
