@@ -7,6 +7,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-11
+
 ### Added
 
 - Content-addressed accepted and rejected three-repository golden-path decision
