@@ -395,9 +395,15 @@ def _comparison_markdown(report: Mapping[str, object]) -> str:
         lines.append(
             "| `{}` | {:.3f} | [{:.3f}, {:.3f}] | {} |".format(
                 row["arm"],
-                float(row["mean_nll_difference"]),
-                float(row["simultaneous_interval_lower"]),
-                float(row["simultaneous_interval_upper"]),
+                _finite(row["mean_nll_difference"], name="mean_nll_difference"),
+                _finite(
+                    row["simultaneous_interval_lower"],
+                    name="simultaneous_interval_lower",
+                ),
+                _finite(
+                    row["simultaneous_interval_upper"],
+                    name="simultaneous_interval_upper",
+                ),
                 row["familywise_decision"],
             )
         )
@@ -414,8 +420,14 @@ def _comparison_markdown(report: Mapping[str, object]) -> str:
             f"- Cross-fitted conclusion: `{summary['primary_conclusion']}`.",
             f"- Exact-mean cases: `{summary['exact_mean_identity_case_count']}`.",
             "- Marginal coverage: reference {:.3f}, hybrid {:.3f}.".format(
-                float(coverage["reference_marginal_coverage"]),
-                float(coverage["hybrid_marginal_coverage"]),
+                _finite(
+                    coverage["reference_marginal_coverage"],
+                    name="reference_marginal_coverage",
+                ),
+                _finite(
+                    coverage["hybrid_marginal_coverage"],
+                    name="hybrid_marginal_coverage",
+                ),
             ),
             "",
             "## Boundary",
@@ -458,7 +470,12 @@ def run_analysis(
         raise ValueError("prediction candidate case rosters differ")
 
     calibration = _mapping(protocol["calibration"], name="calibration")
-    scales = tuple(float(value) for value in calibration["covariance_scales"])
+    scales = tuple(
+        _finite(value, name=f"covariance_scales[{index}]", positive=True)
+        for index, value in enumerate(
+            _sequence(calibration["covariance_scales"], name="covariance_scales")
+        )
+    )
     scoring = _mapping(protocol["scoring"], name="scoring")
     observation_std_m = _finite(
         scoring["observation_std_m"],
@@ -476,13 +493,13 @@ def run_analysis(
         positive=True,
     )
     shape = (len(case_ids), len(HORIZONS))
-    reference_nll = np.empty(shape, dtype=np.float64)
-    reference_coverage = np.empty(shape, dtype=np.float64)
-    reference_width = np.empty(shape, dtype=np.float64)
+    reference_nll: np.ndarray = np.empty(shape, dtype=np.float64)
+    reference_coverage: np.ndarray = np.empty(shape, dtype=np.float64)
+    reference_width: np.ndarray = np.empty(shape, dtype=np.float64)
     grid_shape = (len(case_ids), len(DONORS), len(HORIZONS), len(scales))
-    nll_grid = np.empty(grid_shape, dtype=np.float64)
-    coverage_grid = np.empty(grid_shape, dtype=np.float64)
-    width_grid = np.empty(grid_shape, dtype=np.float64)
+    nll_grid: np.ndarray = np.empty(grid_shape, dtype=np.float64)
+    coverage_grid: np.ndarray = np.empty(grid_shape, dtype=np.float64)
+    width_grid: np.ndarray = np.empty(grid_shape, dtype=np.float64)
 
     from bayesian_phystwin.phystwin_confirmatory import _split_for_case
     from bayesian_phystwin.phystwin_residual_dynamics import (
@@ -498,7 +515,10 @@ def run_analysis(
         )
         fit_end, train_end, frame_count = _split_for_case(
             data_root / case_id,
-            float(_mapping(protocol["cohort"], name="cohort")["fit_fraction"]),
+            _finite(
+                _mapping(protocol["cohort"], name="cohort")["fit_fraction"],
+                name="fit_fraction",
+            ),
         )
         if (
             int(reference_prediction["fit_end"]) != fit_end
@@ -625,17 +645,25 @@ def run_analysis(
     primary_rows = bootstrap_family(
         {primary_arm: effects[primary_arm]},
         arm_order=(primary_arm,),
-        replicates=int(inference["bootstrap_replicates"]),
-        seed=int(inference["bootstrap_seed"]),
-        confidence=float(inference["confidence"]),
+        replicates=_integer(
+            inference["bootstrap_replicates"],
+            name="bootstrap_replicates",
+            minimum=1000,
+        ),
+        seed=_integer(inference["bootstrap_seed"], name="bootstrap_seed"),
+        confidence=_finite(inference["confidence"], name="confidence"),
     )
     diagnostic_order = tuple(arm for arm in effects if arm != primary_arm)
     diagnostic_rows = bootstrap_family(
         effects,
         arm_order=diagnostic_order,
-        replicates=int(inference["bootstrap_replicates"]),
-        seed=int(inference["bootstrap_seed"]) + 1000,
-        confidence=float(inference["confidence"]),
+        replicates=_integer(
+            inference["bootstrap_replicates"],
+            name="bootstrap_replicates",
+            minimum=1000,
+        ),
+        seed=_integer(inference["bootstrap_seed"], name="bootstrap_seed") + 1000,
+        confidence=_finite(inference["confidence"], name="confidence"),
     )
     primary_overall = next(
         row for row in primary_rows if row["aggregation"] == "overall"

@@ -67,9 +67,9 @@ def score_scale_grid(
 
     observation_variance = observation_std_m**2
     eigenvalues, projected_square = _eigen_projection(error_m, covariance_m2, valid)
-    output_nll = np.empty(len(scales), dtype=np.float64)
-    output_coverage = np.empty(len(scales), dtype=np.float64)
-    output_width = np.empty(len(scales), dtype=np.float64)
+    output_nll: np.ndarray = np.empty(len(scales), dtype=np.float64)
+    output_coverage: np.ndarray = np.empty(len(scales), dtype=np.float64)
+    output_width: np.ndarray = np.empty(len(scales), dtype=np.float64)
     validity = np.asarray(valid)
     error = np.asarray(error_m, dtype=np.float64)[validity]
     covariance = np.asarray(covariance_m2, dtype=np.float64)[validity]
@@ -192,7 +192,7 @@ def crossfit_select(
 
     folds: list[FoldSelection] = []
     for held_index, held_case_id in enumerate(cases):
-        training = np.ones(len(cases), dtype=bool)
+        training: np.ndarray = np.ones(len(cases), dtype=bool)
         training[held_index] = False
         donor, donor_scales, donor_scores = fit(training)
         folds.append(
@@ -266,7 +266,7 @@ def metric_for_fold(
     """Read one donor/scale metric for every outer held case."""
 
     scale_index = {float(scale): index for index, scale in enumerate(scales)}
-    output = np.empty((len(folds), len(HORIZONS)), dtype=np.float64)
+    output: np.ndarray = np.empty((len(folds), len(HORIZONS)), dtype=np.float64)
     for case_index, fold in enumerate(folds):
         donor_index = DONORS.index(fold.selected_donor)
         for horizon_index, scale in enumerate(fold.selected_scales):
