@@ -54,6 +54,15 @@ overlap window. The recovery merge derives its expected member count from that
 frozen product roster. It does not mistake the two baseline archives for
 unexpected evidence or validate only the overlap-window subset.
 
+### Source-independent v5.2.2 lineage correction
+
+Recovery provider plans now revalidate the complete frozen preflight against
+the bound base camera audit instead of trusting only a self-consistent content
+hash. The final lineage step also verifies the base audit, preflight/provider
+roster, combined camera roster, preserved base windows, and final audit as one
+semantic chain. Recovery archive records reject symbolic links before path
+resolution so an in-root alias cannot bypass the ordinary-file custody rule.
+
 ## Executable custody sequence
 
 The registered commands are separated at the suffix boundary:

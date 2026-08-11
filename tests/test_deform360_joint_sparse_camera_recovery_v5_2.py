@@ -322,6 +322,7 @@ def test_camera_audit_preflight_and_recovery_plan_cover_success_path(
             inventory=inventory,
             base_provider_plan=base_provider_plan,
             base_provider_plan_file_sha256=_sha("base-provider-file"),
+            base_camera_audit=audit,
             recovery_preflight=preflight,
             recovery_preflight_file_sha256=_sha("preflight-file"),
             amendment=amendment,
@@ -335,6 +336,64 @@ def test_camera_audit_preflight_and_recovery_plan_cover_success_path(
     assert {job["camera"] for job in recovery_plan["jobs"]} == set(
         preflight["objects"][0]["selected_recovery_camera_ids"]
     )
+
+    changed_ranking = copy.deepcopy(preflight)
+    changed_ranking["objects"][0]["selected_recovery_camera_ids"].reverse()
+    changed_descriptor = dict(changed_ranking)
+    changed_descriptor.pop("preflight_id")
+    changed_ranking["preflight_id"] = content_id(changed_descriptor)
+    with pytest.raises(ValueError, match="camera-recovery ranking changed"):
+        module.build_deform360_joint_sparse_motioncrafter_recovery_plan_v5_2(
+            lock=lock,
+            execution_lock_file_sha256=_sha("lock-file"),
+            inventory=inventory,
+            base_provider_plan=base_provider_plan,
+            base_provider_plan_file_sha256=_sha("base-provider-file"),
+            base_camera_audit=audit,
+            recovery_preflight=changed_ranking,
+            recovery_preflight_file_sha256=_sha("preflight-file"),
+            amendment=amendment,
+            amendment_file_sha256=_sha("amendment-file"),
+            implementation_revision="2" * 40,
+            runner_source_sha256=_sha("runner"),
+        )
+
+    changed_audit = copy.deepcopy(preflight)
+    changed_audit["objects"][0]["base_passing_camera_ids"] = []
+    changed_descriptor = dict(changed_audit)
+    changed_descriptor.pop("preflight_id")
+    changed_audit["preflight_id"] = content_id(changed_descriptor)
+    with pytest.raises(ValueError, match="changed the base camera audit"):
+        module.build_deform360_joint_sparse_motioncrafter_recovery_plan_v5_2(
+            lock=lock,
+            execution_lock_file_sha256=_sha("lock-file"),
+            inventory=inventory,
+            base_provider_plan=base_provider_plan,
+            base_provider_plan_file_sha256=_sha("base-provider-file"),
+            base_camera_audit=audit,
+            recovery_preflight=changed_audit,
+            recovery_preflight_file_sha256=_sha("preflight-file"),
+            amendment=amendment,
+            amendment_file_sha256=_sha("amendment-file"),
+            implementation_revision="2" * 40,
+            runner_source_sha256=_sha("runner"),
+        )
+
+
+def test_relative_file_record_rejects_symlink(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    target = root / "target.npz"
+    target.write_bytes(b"trusted")
+    link = root / "linked.npz"
+    link.symlink_to(target.name)
+
+    with pytest.raises(ValueError, match="invalid"):
+        module._relative_file_record(
+            link,
+            input_root=root.resolve(strict=True),
+            name="decoded uniform",
+        )
 
 
 def _recovery_provider_plan(*, selected_count: int = 1) -> dict[str, object]:
@@ -841,6 +900,148 @@ def test_combined_audit_cli_derives_source_plan_object_count(
         "object_count": 2,
         "plan_id": "a" * 64,
     }
+
+
+def test_recovery_lineage_rejects_semantically_rehashed_artifacts() -> None:
+    script = (
+        ROOT
+        / "scripts/science/materialize_deform360_joint_sparse_camera_recovery_v5_2.py"
+    )
+    specification = importlib.util.spec_from_file_location(
+        "camera_recovery_v5_2_lineage_test", script
+    )
+    assert specification is not None and specification.loader is not None
+    cli = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(cli)
+
+    def window(camera_id: str, marker: str) -> dict[str, object]:
+        return {
+            "camera_id": camera_id,
+            "decoded_uniform": {
+                "path": f"decoded/{camera_id}.npz",
+                "sha256": marker * 64,
+            },
+            "metric_prefix": {
+                "path": f"metric/{camera_id}.npz",
+                "sha256": marker.upper() * 64,
+            },
+        }
+
+    def audit_result(camera_id: str, marker: str) -> dict[str, object]:
+        return {
+            "camera_id": camera_id,
+            "decoded_uniform_sha256": marker * 64,
+            "metric_prefix_sha256": marker.upper() * 64,
+        }
+
+    common = {
+        "object_id": "object-a",
+        "episode_id": 0,
+        "stratum": "rope",
+        "raw_prefix_range_half_open": [0, 58],
+        "all_camera_ids": [
+            "camera-a",
+            "camera-b",
+            "camera-c",
+            "camera-d",
+        ],
+        "reserved_endpoint_camera_ids": ["camera-c", "camera-d"],
+    }
+    base_source = {
+        "plan_id": "1" * 64,
+        "objects": [{**common, "visual_windows": [window("camera-a", "a")]}],
+    }
+    base_provider = {"objects": [{**common, "provider_range_half_open": [16, 58]}]}
+    base_audit = {
+        "base_source_plan_id": base_source["plan_id"],
+        "objects": [
+            {
+                "object_id": "object-a",
+                "attempted_camera_ids": ["camera-a"],
+                "camera_results": [audit_result("camera-a", "a")],
+            }
+        ],
+    }
+    preflight = {
+        "objects": [
+            {
+                "object_id": "object-a",
+                "base_attempted_camera_ids": ["camera-a"],
+                "base_passing_camera_ids": [],
+                "selected_recovery_camera_ids": ["camera-b"],
+            }
+        ]
+    }
+    provider = {
+        "objects": [
+            {
+                **common,
+                "provider_range_half_open": [16, 58],
+                "base_attempted_camera_ids": ["camera-a"],
+                "base_passing_camera_ids": [],
+                "selected_recovery_camera_ids": ["camera-b"],
+            }
+        ]
+    }
+    combined = {
+        "plan_id": "2" * 64,
+        "objects": [
+            {
+                **common,
+                "visual_windows": [
+                    window("camera-a", "a"),
+                    window("camera-b", "b"),
+                ],
+            }
+        ],
+    }
+    final_audit = {
+        "base_source_plan_id": combined["plan_id"],
+        "objects": [
+            {
+                "object_id": "object-a",
+                "attempted_camera_ids": ["camera-a", "camera-b"],
+                "camera_results": [
+                    audit_result("camera-a", "a"),
+                    audit_result("camera-b", "b"),
+                ],
+            }
+        ],
+    }
+
+    arguments = {
+        "base_source_plan": base_source,
+        "base_provider_plan": base_provider,
+        "base_camera_audit": base_audit,
+        "recovery_preflight": preflight,
+        "recovery_provider_plan": provider,
+        "combined_camera_audit_plan": combined,
+        "final_camera_audit": final_audit,
+    }
+    cli._validate_recovery_lineage_semantics(**arguments)
+
+    changed_provider = copy.deepcopy(provider)
+    changed_provider["objects"][0]["selected_recovery_camera_ids"] = ["camera-a"]
+    with pytest.raises(ValueError, match="differs from the preflight"):
+        cli._validate_recovery_lineage_semantics(
+            **{**arguments, "recovery_provider_plan": changed_provider}
+        )
+
+    changed_combined = copy.deepcopy(combined)
+    changed_combined["objects"][0]["visual_windows"].append(window("camera-c", "c"))
+    with pytest.raises(ValueError, match="camera roster changed"):
+        cli._validate_recovery_lineage_semantics(
+            **{**arguments, "combined_camera_audit_plan": changed_combined}
+        )
+
+    changed_final_audit = copy.deepcopy(final_audit)
+    changed_final_audit["objects"][0]["camera_results"][1]["decoded_uniform_sha256"] = (
+        "f" * 64
+    )
+    with pytest.raises(ValueError, match="source-plan archives"):
+        cli._validate_recovery_lineage_semantics(
+            **{**arguments, "final_camera_audit": changed_final_audit}
+        )
 
 
 def _attempted_objects_and_audit() -> tuple[list[dict[str, object]], dict[str, object]]:

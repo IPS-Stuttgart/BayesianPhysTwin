@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from bayesian_phystwin._portable_contracts import load_strict_json_object
@@ -130,6 +130,247 @@ def _load(path: Path, *, label: str) -> dict[str, object]:
     return load_strict_json_object(path.resolve(strict=True), label=label)
 
 
+def _object_rows(
+    value: Mapping[str, object], *, name: str
+) -> dict[str, Mapping[str, object]]:
+    raw_rows = value.get("objects")
+    if isinstance(raw_rows, (str, bytes)) or not isinstance(raw_rows, Sequence):
+        raise ValueError(f"{name} objects must be a JSON array")
+    rows: dict[str, Mapping[str, object]] = {}
+    for raw_row in raw_rows:
+        if not isinstance(raw_row, Mapping):
+            raise ValueError(f"{name} object must be a JSON object")
+        object_id = raw_row.get("object_id")
+        if not isinstance(object_id, str) or not object_id:
+            raise ValueError(f"{name} object_id must be a nonempty string")
+        if object_id in rows:
+            raise ValueError(f"{name} repeats object {object_id}")
+        rows[object_id] = raw_row
+    return rows
+
+
+def _string_ids(value: object, *, name: str) -> tuple[str, ...]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} must be a JSON array")
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item:
+            raise ValueError(f"{name} entries must be nonempty strings")
+        result.append(item)
+    return tuple(result)
+
+
+def _visual_windows(
+    row: Mapping[str, object], *, name: str
+) -> dict[str, Mapping[str, object]]:
+    raw_windows = row.get("visual_windows")
+    if isinstance(raw_windows, (str, bytes)) or not isinstance(raw_windows, Sequence):
+        raise ValueError(f"{name} visual_windows must be a JSON array")
+    windows: dict[str, Mapping[str, object]] = {}
+    for raw_window in raw_windows:
+        if not isinstance(raw_window, Mapping):
+            raise ValueError(f"{name} visual window must be a JSON object")
+        camera_id = raw_window.get("camera_id")
+        if not isinstance(camera_id, str) or not camera_id:
+            raise ValueError(f"{name} camera_id must be a nonempty string")
+        if camera_id in windows:
+            raise ValueError(f"{name} repeats camera {camera_id}")
+        windows[camera_id] = raw_window
+    return windows
+
+
+def _camera_results(
+    row: Mapping[str, object], *, name: str
+) -> dict[str, Mapping[str, object]]:
+    raw_results = row.get("camera_results")
+    if isinstance(raw_results, (str, bytes)) or not isinstance(raw_results, Sequence):
+        raise ValueError(f"{name} camera_results must be a JSON array")
+    results: dict[str, Mapping[str, object]] = {}
+    for raw_result in raw_results:
+        if not isinstance(raw_result, Mapping):
+            raise ValueError(f"{name} camera result must be a JSON object")
+        camera_id = raw_result.get("camera_id")
+        if not isinstance(camera_id, str) or not camera_id:
+            raise ValueError(f"{name} camera_id must be a nonempty string")
+        if camera_id in results:
+            raise ValueError(f"{name} repeats camera result {camera_id}")
+        results[camera_id] = raw_result
+    return results
+
+
+def _archive_sha(value: object, *, name: str) -> str:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{name} must be a JSON object")
+    digest = value.get("sha256")
+    if not isinstance(digest, str):
+        raise ValueError(f"{name}.sha256 must be a string")
+    return digest
+
+
+def _validate_camera_audit_plan_binding(
+    *,
+    source_plan: Mapping[str, object],
+    camera_audit: Mapping[str, object],
+    name: str,
+) -> None:
+    if camera_audit.get("base_source_plan_id") != source_plan.get("plan_id"):
+        raise ValueError(f"{name} does not bind its source plan")
+    source_objects = _object_rows(source_plan, name=f"{name} source plan")
+    audit_objects = _object_rows(camera_audit, name=name)
+    if set(audit_objects) != set(source_objects):
+        raise ValueError(f"{name} object roster differs from its source plan")
+    for object_id, source_row in source_objects.items():
+        windows = _visual_windows(source_row, name=f"{name} source object {object_id}")
+        audit_row = audit_objects[object_id]
+        attempted = _string_ids(
+            audit_row.get("attempted_camera_ids"),
+            name=f"{name} attempted cameras",
+        )
+        if attempted != tuple(sorted(windows)):
+            raise ValueError(f"{name} does not bind the source-plan cameras")
+        results = _camera_results(audit_row, name=f"{name} object {object_id}")
+        if set(results) != set(windows):
+            raise ValueError(f"{name} result roster differs from its source plan")
+        for camera_id, window in windows.items():
+            result = results[camera_id]
+            if result.get("decoded_uniform_sha256") != _archive_sha(
+                window.get("decoded_uniform"),
+                name=f"{name} decoded uniform",
+            ) or result.get("metric_prefix_sha256") != _archive_sha(
+                window.get("metric_prefix"),
+                name=f"{name} metric prefix",
+            ):
+                raise ValueError(f"{name} does not bind the source-plan archives")
+
+
+def _validate_provider_preflight_binding(
+    *,
+    base_provider_plan: Mapping[str, object],
+    recovery_preflight: Mapping[str, object],
+    recovery_provider_plan: Mapping[str, object],
+) -> None:
+    base_objects = _object_rows(base_provider_plan, name="base provider plan")
+    preflight_objects = _object_rows(recovery_preflight, name="recovery preflight")
+    provider_objects = _object_rows(
+        recovery_provider_plan, name="recovery provider plan"
+    )
+    if set(preflight_objects) != set(base_objects):
+        raise ValueError("recovery preflight object roster changed")
+    expected_provider_objects = {
+        object_id
+        for object_id, row in preflight_objects.items()
+        if _string_ids(
+            row.get("selected_recovery_camera_ids"),
+            name="selected recovery cameras",
+        )
+    }
+    if set(provider_objects) != expected_provider_objects:
+        raise ValueError("recovery provider object roster differs from the preflight")
+    common_fields = (
+        "episode_id",
+        "stratum",
+        "raw_prefix_range_half_open",
+        "provider_range_half_open",
+        "all_camera_ids",
+        "reserved_endpoint_camera_ids",
+    )
+    preflight_fields = (
+        "base_attempted_camera_ids",
+        "base_passing_camera_ids",
+        "selected_recovery_camera_ids",
+    )
+    for object_id, provider_row in provider_objects.items():
+        base_row = base_objects[object_id]
+        preflight_row = preflight_objects[object_id]
+        if any(
+            provider_row.get(field) != base_row.get(field) for field in common_fields
+        ):
+            raise ValueError("recovery provider changed a frozen base-provider object")
+        if any(
+            provider_row.get(field) != preflight_row.get(field)
+            for field in preflight_fields
+        ):
+            raise ValueError(
+                "recovery provider camera roster differs from the preflight"
+            )
+
+
+def _validate_combined_plan_binding(
+    *,
+    base_source_plan: Mapping[str, object],
+    recovery_provider_plan: Mapping[str, object],
+    combined_plan: Mapping[str, object],
+) -> None:
+    base_objects = _object_rows(base_source_plan, name="base source plan")
+    combined_objects = _object_rows(combined_plan, name="combined camera audit plan")
+    provider_objects = _object_rows(
+        recovery_provider_plan, name="recovery provider plan"
+    )
+    if set(combined_objects) != set(base_objects):
+        raise ValueError("combined camera audit plan object roster changed")
+    selected = {
+        object_id: _string_ids(
+            row.get("selected_recovery_camera_ids"),
+            name="selected recovery cameras",
+        )
+        for object_id, row in provider_objects.items()
+    }
+    for object_id, base_row in base_objects.items():
+        combined_row = combined_objects[object_id]
+        base_static = {
+            key: value for key, value in base_row.items() if key != "visual_windows"
+        }
+        combined_static = {
+            key: value for key, value in combined_row.items() if key != "visual_windows"
+        }
+        if combined_static != base_static:
+            raise ValueError("combined camera audit plan changed a base source object")
+        base_windows = _visual_windows(base_row, name=f"base source object {object_id}")
+        combined_windows = _visual_windows(
+            combined_row, name=f"combined source object {object_id}"
+        )
+        expected_cameras = set(base_windows) | set(selected.get(object_id, ()))
+        if set(combined_windows) != expected_cameras:
+            raise ValueError("combined camera audit plan camera roster changed")
+        if any(
+            combined_windows[camera_id] != window
+            for camera_id, window in base_windows.items()
+        ):
+            raise ValueError("combined camera audit plan changed a base visual window")
+
+
+def _validate_recovery_lineage_semantics(
+    *,
+    base_source_plan: Mapping[str, object],
+    base_provider_plan: Mapping[str, object],
+    base_camera_audit: Mapping[str, object],
+    recovery_preflight: Mapping[str, object],
+    recovery_provider_plan: Mapping[str, object],
+    combined_camera_audit_plan: Mapping[str, object],
+    final_camera_audit: Mapping[str, object],
+) -> None:
+    _validate_camera_audit_plan_binding(
+        source_plan=base_source_plan,
+        camera_audit=base_camera_audit,
+        name="base camera audit",
+    )
+    _validate_provider_preflight_binding(
+        base_provider_plan=base_provider_plan,
+        recovery_preflight=recovery_preflight,
+        recovery_provider_plan=recovery_provider_plan,
+    )
+    _validate_combined_plan_binding(
+        base_source_plan=base_source_plan,
+        recovery_provider_plan=recovery_provider_plan,
+        combined_plan=combined_camera_audit_plan,
+    )
+    _validate_camera_audit_plan_binding(
+        source_plan=combined_camera_audit_plan,
+        camera_audit=final_camera_audit,
+        name="final camera audit",
+    )
+
+
 def _build_recovery_lineage(
     arguments: argparse.Namespace,
     *,
@@ -207,6 +448,15 @@ def _build_recovery_lineage(
     )
     if final_audit["base_source_plan_id"] != combined["plan_id"]:
         raise ValueError("final camera audit does not bind the combined audit plan")
+    _validate_recovery_lineage_semantics(
+        base_source_plan=base_source_plan,
+        base_provider_plan=base_provider,
+        base_camera_audit=base_audit,
+        recovery_preflight=preflight,
+        recovery_provider_plan=provider,
+        combined_camera_audit_plan=combined,
+        final_camera_audit=final_audit,
+    )
 
     paths = {
         "amendment": amendment_path,
@@ -417,6 +667,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         inventory=inventory,
         base_provider_plan=base_plan,
         base_provider_plan_file_sha256=_sha256(base_plan_path),
+        base_camera_audit=audit,
         recovery_preflight=preflight,
         recovery_preflight_file_sha256=_sha256(preflight_path),
         amendment=amendment,
