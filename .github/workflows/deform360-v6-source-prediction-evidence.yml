@@ -7,18 +7,24 @@ on:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_selector_identity_repair.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+      - "scripts/remote/run_deform360_v6_selector_identity_repair.py"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+      - "tests/test_deform360_v6_selector_identity_repair.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/deform360-v6-source-prediction-evidence.yml"
       - "docs/deform360_v6_source_prediction_evidence.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_selector_identity_repair.json"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+      - "scripts/remote/run_deform360_v6_selector_identity_repair.py"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+      - "tests/test_deform360_v6_selector_identity_repair.py"
 
 permissions:
   contents: read
@@ -86,16 +92,20 @@ jobs:
             "wheel==0.45.1"
           python -m pip install -e ".[dev,graph]"
           files=(
+            scripts/remote/run_deform360_v6_selector_identity_repair.py
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+            tests/test_deform360_v6_selector_identity_repair.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m mypy \
+            scripts/remote/run_deform360_v6_selector_identity_repair.py \
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_selector_identity_repair.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
@@ -369,6 +379,7 @@ jobs:
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
           - exact protected-main revision: `{receipt['source_revision']}`
           - execution amendment ID: `{receipt['amendment_id']}`
+          - selector identity repair ID: `{receipt['selector_identity_repair_id']}`
           - receipt ID: `{receipt['receipt_id']}`
           - terminal stage: `{receipt['terminal_stage']}`
           - exit code: `{receipt['exit_code']}`
