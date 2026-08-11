@@ -1,0 +1,63 @@
+name: Format independent-validation PR 550 once
+
+on:
+  push:
+    branches:
+      - agent/deform360-covariance-only-independent-validation-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-independent-validation-550-once
+  cancel-in-progress: true
+
+jobs:
+  format-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-covariance-only-independent-validation-v1
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Apply exact Ruff formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python -m pip install "ruff==0.16.2"
+          target=tests/test_deform360_covariance_only_independent_validation_v1.py
+          python -m ruff format "${target}"
+          python -m ruff check "${target}"
+          python -m ruff format --check "${target}"
+          git diff --check
+
+      - name: Publish formatting and remove this helper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          helper=.github/workflows/format-independent-validation-550-once.yml
+          target=tests/test_deform360_covariance_only_independent_validation_v1.py
+          rm -- "${helper}"
+          actual="$(git status --short | awk '{print $2}' | LC_ALL=C sort)"
+          expected="$(printf '%s\n' "${helper}" "${target}" | LC_ALL=C sort)"
+          test "${actual}" = "${expected}"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A -- "${helper}" "${target}"
+          git commit -m "Format independent-validation contracts"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" push \
+            origin HEAD:refs/heads/agent/deform360-covariance-only-independent-validation-v1
