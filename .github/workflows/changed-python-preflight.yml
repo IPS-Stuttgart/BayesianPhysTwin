@@ -35,8 +35,8 @@ jobs:
       - name: Check out exact reviewed revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
+          ref: ${{ inputs.head_revision || github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
           persist-credentials: false
           clean: true
 
@@ -68,11 +68,22 @@ jobs:
           if [[ -z "${head}" ]]; then
             head="$(git rev-parse HEAD)"
           fi
+          if [[ -n "${base}" && "${base}" =~ ^0+$ ]]; then
+            base=""
+          fi
+          if [[ -n "${base}" ]] && ! git cat-file -e "${base}^{commit}"; then
+            git fetch --no-tags --no-recurse-submodules --depth=1 origin "${base}"
+          fi
           if [[ -z "${base}" ]]; then
             base="$(git rev-parse HEAD^)"
           fi
-          git cat-file -e "${base}^{commit}"
-          git cat-file -e "${head}^{commit}"
+          base="$(git rev-parse --verify "${base}^{commit}")"
+          head="$(git rev-parse --verify "${head}^{commit}")"
+          checkout_head="$(git rev-parse HEAD)"
+          if [[ "${checkout_head}" != "${head}" ]]; then
+            echo "checked-out HEAD ${checkout_head} does not match ${head}" >&2
+            exit 1
+          fi
           {
             echo "base=${base}"
             echo "head=${head}"
@@ -84,5 +95,8 @@ jobs:
             --base "${{ steps.revisions.outputs.base }}" \
             --head "${{ steps.revisions.outputs.head }}"
 
-      - name: Test the preflight itself
-        run: python -m pytest -q tests/test_changed_python_preflight.py
+      - name: Test the fast readiness gates
+        run: |
+          python -m pytest -q \
+            tests/test_changed_python_preflight.py \
+            tests/test_pr_ready.py
