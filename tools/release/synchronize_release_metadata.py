@@ -19,9 +19,7 @@ _CHANGELOG_VERSION_PATTERN = re.compile(
     re.MULTILINE,
 )
 
-_README_MARKER = (
-    "widths of approximately `38.87/42.68 mm` for CD/track.\n\n"
-)
+_README_MARKER = "widths of approximately `38.87/42.68 mm` for CD/track.\n\n"
 _README_BLOCK = (
     "A retrospective exact-mean covariance-only analysis leaves the "
     "`last_residual`\n"
@@ -186,7 +184,11 @@ def synchronize_citation(text: str, specification: ReleaseSpecification) -> str:
 
 
 def synchronize_readme(text: str, _specification: ReleaseSpecification) -> str:
-    if "A retrospective exact-mean covariance-only analysis" in text:
+    identities = (
+        "A retrospective exact-mean covariance-only analysis",
+        "A separate retrospective covariance-only intervention",
+    )
+    if any(identity in text for identity in identities):
         return text
     return _replace_once(
         text,
@@ -200,6 +202,8 @@ def synchronize_claim_contract(
     text: str,
     _specification: ReleaseSpecification,
 ) -> str:
+    if "## Exact-mean covariance-only retrospective evidence" in text:
+        return text
     updated = _insert_block_once(
         text,
         identity="## Exact-mean covariance-only mechanism",
@@ -208,9 +212,7 @@ def synchronize_claim_contract(
         name="release claim uncertainty section",
     )
     if _REQUIRED_RELEASE_BULLET not in updated:
-        bullet_marker = (
-            "- raw posterior covariance is severely undercalibrated;\n"
-        )
+        bullet_marker = "- raw posterior covariance is severely undercalibrated;\n"
         updated = _replace_once(
             updated,
             bullet_marker,
@@ -221,6 +223,8 @@ def synchronize_claim_contract(
 
 
 def synchronize_support(text: str, _specification: ReleaseSpecification) -> str:
+    if "## Scientific release boundary" in text:
+        return text
     return _insert_block_once(
         text,
         identity="## Release evidence and scientific wording",
@@ -266,7 +270,9 @@ def synchronize_repository(
     *,
     check: bool,
 ) -> tuple[Path, ...]:
-    changed = tuple(update for update in planned_updates(root, specification) if update.changed)
+    changed = tuple(
+        update for update in planned_updates(root, specification) if update.changed
+    )
     if check and changed:
         rendered = ", ".join(str(update.path.relative_to(root)) for update in changed)
         raise RuntimeError(f"release metadata is not synchronized: {rendered}")
