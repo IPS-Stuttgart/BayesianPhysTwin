@@ -149,8 +149,13 @@ artifact. The contract supports the following method labels:
 
 The method label is checked against its curvature and group-score flags. A
 calibrated label additionally requires an independent calibration-artifact ID.
-The default recursive path creates an uncalibrated `irls_working` record and
-locks its dimension-independent policy ID across all updates.
+For an admissible update, the recursive path binds the supplied working
+semantics (or creates an uncalibrated `irls_working` record by default) and locks
+its dimension-independent policy ID. A numerically rejected update instead
+records `exact_prior_fallback` semantics tied to the solver rejection reason.
+When a run begins with such a rejection, it reserves the canonical working-IRLS
+policy so a later admissible default member can recover without relabeling the
+fallback result. Any later admissible covariance-policy drift fails closed.
 
 ## Persistent nuisance boundary
 
