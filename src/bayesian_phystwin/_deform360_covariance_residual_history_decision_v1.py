@@ -268,7 +268,7 @@ def _fallback_result(
     decision = ResidualHistoryDryRunDecisionV1(
         source_unit_id=adapter.source_unit_id,
         adapter_id=adapter_id,
-        policy_id=policy.policy_id,
+        policy_id=_required_sha256(policy.policy_id, name="policy_id"),
         partition_id=partition_id,
         accepted=False,
         fallback_reasons=canonical_reasons,
@@ -433,7 +433,7 @@ def run_source_only_residual_history_dry_run(
     decision = ResidualHistoryDryRunDecisionV1(
         source_unit_id=adapter.source_unit_id,
         adapter_id=adapter_id,
-        policy_id=policy.policy_id,
+        policy_id=_required_sha256(policy.policy_id, name="policy_id"),
         partition_id=partition_id,
         accepted=True,
         fallback_reasons=(),
