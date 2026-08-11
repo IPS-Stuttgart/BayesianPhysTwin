@@ -107,10 +107,17 @@ loss, or application-outcome argument.
 
 Unknown domains, unsupported domains, rejected inference, nonprospective
 certificates, and nonadmissible domain guards return the exact caller-owned raw
-NumPy array object. No copy, zero correction, or reconstructed covariance is
-substituted. Successful application returns a new immutable float64 array and a
-content-addressed record binding the selected transform and normalized input and
-output digests.
+NumPy array object. An admitted domain whose selected transform is exactly the
+mandatory raw transform is handled identically: it retains the caller-owned
+object and records `calibration-identity-transform-retained` rather than claiming
+that a calibration was applied. No copy, zero correction, or reconstructed
+covariance is substituted.
+
+Successful nonidentity application returns a new immutable float64 array and a
+content-addressed record binding the selected transform and the actual input and
+output shapes and digests. Application records validate their internal gate,
+decision, transform, reason, and exact-fallback consistency before an artifact
+identifier can be accepted.
 
 ## Example
 
