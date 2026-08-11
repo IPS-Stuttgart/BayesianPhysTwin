@@ -49,6 +49,7 @@ source-inputs-incomplete
 source-technical-failure-retained
 run_deform360_joint_sparse_source_predictions_v5.py
 SAM2_CHECKPOINT_NAME="sam2.1_hiera_small.pt"
+SAM2_CHECKPOINT_URL="https://dl.fbaipublicfiles.com/segment_anything_2/092824/${SAM2_CHECKPOINT_NAME}"
 SAM2_SHA256="6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
 development_suffix_opened": False
 v6_target_payloads_opened": False
