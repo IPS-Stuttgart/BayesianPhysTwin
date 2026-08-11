@@ -181,6 +181,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 lock_path = Path(
@@ -195,9 +196,13 @@ if prepared != {
     raise SystemExit("locked prepared-source inventory identity changed")
 
 runner = Path(os.environ["SCIENCE_RUNNER"]).read_text(encoding="utf-8")
-needle = '--implementation-revision "${BPT_SOURCE_SHA}"'
-if runner.count(needle) != 1:
-    raise SystemExit("archived prepared-inventory implementation binding changed")
+inventory_pattern = re.compile(
+    r"scripts/science/inventory_deform360_calibration_prepared_source\.py"
+    r"[\s\S]*?--implementation-revision \"\$\{BPT_SOURCE_SHA\}\""
+    r"[\s\S]*?--output \"\$\{RUN_ROOT\}/prepared-source-inventory\.json\""
+)
+if len(inventory_pattern.findall(runner)) != 1:
+    raise SystemExit("archived prepared-inventory command binding changed")
 PY
 
 PHYSICAL_UPSTREAM_ROOT="$(
