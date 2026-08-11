@@ -27,6 +27,8 @@ from ._deform360_covariance_residual_history_common_v1 import (
 from ._deform360_covariance_residual_history_decision_v1 import (
     ResidualHistoryDryRunDecisionV1,
     ResidualHistoryDryRunResultV1,
+)
+from ._deform360_covariance_residual_history_last_valid_v1 import (
     run_source_only_residual_history_dry_run,
 )
 
