@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Report exact push runs, queue, and runner state
+      - name: Report exact push runs and paginated self-hosted queue
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -26,7 +26,6 @@ jobs:
           python - <<'PY'
           import json
           import os
-          import urllib.error
           import urllib.parse
           import urllib.request
 
@@ -73,47 +72,63 @@ jobs:
           if not runs:
               raise SystemExit(3)
 
-          seen_runs = set()
-          print("SELF_HOSTED_QUEUE_BEGIN")
+          found = []
+          active_runs = 0
           for status in ("in_progress", "queued"):
-              status_query = urllib.parse.urlencode({"status": status, "per_page": 30})
-              active = get(f"{api}/runs?{status_query}").get("workflow_runs", [])
-              for run in active:
-                  run_id = int(run["id"])
-                  if run_id in seen_runs:
-                      continue
-                  seen_runs.add(run_id)
-                  for job in jobs(run_id):
-                      labels = job.get("labels") or []
-                      runner_name = job.get("runner_name") or ""
-                      if "self-hosted" not in labels and runner_name != "workstation2":
-                          continue
-                      print(
-                          "SELF_HOSTED "
-                          f"run_id={run_id} run_name={run.get('name')!r} "
-                          f"head_sha={run.get('head_sha')} event={run.get('event')} "
-                          f"job_id={job.get('id')} job_name={job.get('name')!r} "
-                          f"status={job.get('status')} conclusion={job.get('conclusion')} "
-                          f"runner_name={runner_name!r} labels={labels!r} "
-                          f"url={run.get('html_url')}"
-                      )
-          print("SELF_HOSTED_QUEUE_END")
-
-          print("RUNNER_STATE_BEGIN")
-          try:
-              runner_payload = get(f"{api}/runners?per_page=100")
-          except urllib.error.HTTPError as exc:
-              print(f"RUNNER_STATE_UNAVAILABLE http_status={exc.code}")
-          else:
-              print(f"runner_count={runner_payload.get('total_count')}")
-              for runner in runner_payload.get("runners", []):
-                  labels = [label.get("name") for label in runner.get("labels", [])]
-                  print(
-                      "RUNNER "
-                      f"name={runner.get('name')!r} status={runner.get('status')!r} "
-                      f"busy={runner.get('busy')!r} labels={labels!r}"
+              for page in range(1, 11):
+                  status_query = urllib.parse.urlencode(
+                      {"status": status, "per_page": 100, "page": page}
                   )
-          print("RUNNER_STATE_END")
+                  active = get(f"{api}/runs?{status_query}").get("workflow_runs", [])
+                  if not active:
+                      break
+                  active_runs += len(active)
+                  for run in active:
+                      run_id = int(run["id"])
+                      for job in jobs(run_id):
+                          labels = job.get("labels") or []
+                          runner_name = job.get("runner_name") or ""
+                          if "self-hosted" not in labels and runner_name != "workstation2":
+                              continue
+                          item = (
+                              status,
+                              run_id,
+                              run.get("name"),
+                              run.get("head_sha"),
+                              run.get("event"),
+                              job.get("id"),
+                              job.get("name"),
+                              job.get("status"),
+                              runner_name,
+                              tuple(labels),
+                              run.get("html_url"),
+                          )
+                          if item not in found:
+                              found.append(item)
+          print(f"active_runs_scanned={active_runs}")
+          print(f"self_hosted_jobs_found={len(found)}")
+          for item in found:
+              (
+                  requested_status,
+                  run_id,
+                  run_name,
+                  head_sha,
+                  event,
+                  job_id,
+                  job_name,
+                  job_status,
+                  runner_name,
+                  labels,
+                  url,
+              ) = item
+              print(
+                  "SELF_HOSTED "
+                  f"requested_status={requested_status} run_id={run_id} "
+                  f"run_name={run_name!r} head_sha={head_sha} event={event} "
+                  f"job_id={job_id} job_name={job_name!r} "
+                  f"job_status={job_status} runner_name={runner_name!r} "
+                  f"labels={list(labels)!r} url={url}"
+              )
           PY
 
-# Read-only refresh: inspect runner availability without touching repository or data.
+# Read-only refresh: scan all active-run pages without touching repository or data.
