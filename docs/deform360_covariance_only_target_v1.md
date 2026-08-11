@@ -159,12 +159,6 @@ updates, and a case needs two observed frames plus 50% empirically supported
 identities. Prior-only covariance is not accepted as evidence. Unsupported
 identities and failed cases use exact fallback.
 
-Before target decode, a source-only amendment also froze admissible geometry
-association, candidate-specific innovations, assignment-mixture covariance,
-residual-independent cue reliability, canonical unique windows, and explicit
-observation-split/reference-mean digest binding. Distant rows cannot manufacture
-support, and the robust endpoint mixture sees each admitted innovation once.
-
 Because official processed annotations are absent, the official track/Chamfer
 checks are marked unavailable. Registered scores are per-identity 3D marginal
 NLL, NEES, coverage, and interval volume, aggregated within session and then
@@ -172,3 +166,18 @@ equally across sessions. Provider and scoring cameras use a deterministic
 names-only hash partition and distinct reconstruction artifacts. The source-only
 synthetic gate passed without target access; details are in
 `docs/deform360_covariance_only_target_v1_3.md`.
+
+## V1.4 pre-decode provider correction
+
+Independent source-only review reproduced two blockers in the v1.3 provider
+before any target decode. Protocol v1.4 fixes admissible geometry association,
+candidate-specific innovations, assignment-mixture covariance,
+residual-independent cue reliability, canonical unique windows, and explicit
+observation-split/reference-mean digest binding. Distant rows cannot manufacture
+support. A provider-specific heteroscedastic robust endpoint update consumes the
+metric covariance and cue reliability once while preserving the registered mean.
+
+The v1.2 roster, acquisition artifacts, method mean, covariance donor, scales,
+support thresholds, fallback, and evaluation remain unchanged. The v1.3 lock is
+preserved and superseded prospectively. Details are in
+`docs/deform360_covariance_only_target_v1_4.md`.

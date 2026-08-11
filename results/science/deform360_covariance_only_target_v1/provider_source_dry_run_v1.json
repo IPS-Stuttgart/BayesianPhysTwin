@@ -1,10 +1,10 @@
 {
   "admitted_candidate": {
-    "artifact_id": "fd67318117825164bf3afa41290ce779884aca3c8727ea71e406e2e5f8ca276a",
+    "artifact_id": "ce781a236839956b3c208f179c819f1efd3e904ef9fc43b7a17245f4f63143cd",
     "case_donor_admitted": true,
     "empirical_identity_count": 4,
     "mean_byte_identical": true,
-    "minimum_covariance_eigenvalue_m2": 5.306705920041748e-06,
+    "minimum_covariance_eigenvalue_m2": 5.222624995230406e-05,
     "prior_only_identity_count": 0
   },
   "candidate_specific_midpoint": {
@@ -14,9 +14,9 @@
     "opposite_signed": true
   },
   "claim_boundary": "Implementation dry run only; no target, official benchmark, calibration, point-accuracy, or state-of-the-art claim.",
-  "dry_run_sha256": "0a5de03cb4a510f3b9b8d5c6b105836f3322de5ea230e62d9faa862ec9e00b0f",
+  "dry_run_sha256": "108e7270d7195884297e53a3677552df0bdc6fde88cddfde9c6f35102c24ca21",
   "failed_support_fallback": {
-    "artifact_id": "c8b8f6d0919e0af985b6c54d9eff20f18ac3bf37f6620041bb71d49cff2055c3",
+    "artifact_id": "718942c98bd1d1465206d8fd610bbc2440554ecaea632c753eb2c2776001b143",
     "case_donor_admitted": false,
     "covariance_byte_identical": true,
     "empirical_identity_count": 0,
@@ -35,8 +35,16 @@
     "valid_entry_count": 0
   },
   "gate_passed": true,
+  "heteroscedastic_endpoint": {
+    "cue_reliability_consumed": true,
+    "inflated_row_covariance_trace_not_lower": true,
+    "innovation_clipping_before_mixture": false,
+    "lower_reliability_trace_not_lower": true,
+    "metric_row_covariance_consumed": true,
+    "robust_mixture_application_count": 1
+  },
   "history": {
-    "artifact_id": "76dce4cf9ba73c94b4d2a3e211ee970210de18054541af76525734c0d1cb0334",
+    "artifact_id": "13aa00e5396a54d3bdb954f050a8b03abc36bf0ce0c8a8fad0d5eb719f25f884",
     "coordinate_frame": "deform360_world",
     "covariance_units": "m^2",
     "missing_entries_are_zero": true,

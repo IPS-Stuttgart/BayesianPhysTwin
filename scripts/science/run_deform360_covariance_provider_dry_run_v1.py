@@ -145,6 +145,32 @@ def run_source_only_dry_run() -> dict[str, Any]:
         observation_split=split,
         registered_reference_mean_sha256=_array_sha256(mean),
     )
+    inflated_row_covariance = build_deform360_covariance_only_forecast_v1(
+        reference_mean_world_m=mean,
+        fallback_covariance_world_m2=fallback_covariance,
+        future_frame_indices=np.arange(4, 8),
+        horizon_labels=("early", "middle", "middle", "late"),
+        history=replace(
+            history,
+            observation_covariance_world_m2=(
+                history.observation_covariance_world_m2 * 1000.0
+            ),
+        ),
+        observation_split=split,
+        registered_reference_mean_sha256=_array_sha256(mean),
+    )
+    lower_cue_reliability = build_deform360_covariance_only_forecast_v1(
+        reference_mean_world_m=mean,
+        fallback_covariance_world_m2=fallback_covariance,
+        future_frame_indices=np.arange(4, 8),
+        horizon_labels=("early", "middle", "middle", "late"),
+        history=replace(
+            history,
+            prior_reliability=history.prior_reliability * 0.1,
+        ),
+        observation_split=split,
+        registered_reference_mean_sha256=_array_sha256(mean),
+    )
     unsupported = replace(
         history,
         residual_world_m=np.zeros_like(history.residual_world_m),
@@ -265,6 +291,48 @@ def run_source_only_dry_run() -> dict[str, Any]:
                 np.min(np.linalg.eigvalsh(candidate.covariance_world_m2))
             ),
         },
+        "heteroscedastic_endpoint": {
+            "metric_row_covariance_consumed": bool(
+                inflated_row_covariance.covariance_world_m2.tobytes()
+                != candidate.covariance_world_m2.tobytes()
+            ),
+            "inflated_row_covariance_trace_not_lower": bool(
+                np.all(
+                    np.trace(
+                        inflated_row_covariance.covariance_world_m2,
+                        axis1=-2,
+                        axis2=-1,
+                    )
+                    >= np.trace(
+                        candidate.covariance_world_m2,
+                        axis1=-2,
+                        axis2=-1,
+                    )
+                    - 1e-12
+                )
+            ),
+            "cue_reliability_consumed": bool(
+                lower_cue_reliability.covariance_world_m2.tobytes()
+                != candidate.covariance_world_m2.tobytes()
+            ),
+            "lower_reliability_trace_not_lower": bool(
+                np.all(
+                    np.trace(
+                        lower_cue_reliability.covariance_world_m2,
+                        axis1=-2,
+                        axis2=-1,
+                    )
+                    >= np.trace(
+                        candidate.covariance_world_m2,
+                        axis1=-2,
+                        axis2=-1,
+                    )
+                    - 1e-12
+                )
+            ),
+            "innovation_clipping_before_mixture": False,
+            "robust_mixture_application_count": 1,
+        },
         "failed_support_fallback": {
             "artifact_id": fallback.artifact_id,
             "case_donor_admitted": fallback.case_donor_admitted,
@@ -305,6 +373,28 @@ def run_source_only_dry_run() -> dict[str, Any]:
             candidate.case_donor_admitted
             and candidate.mean_world_m.tobytes() == mean.tobytes()
             and np.min(np.linalg.eigvalsh(candidate.covariance_world_m2)) >= 0.0
+            and inflated_row_covariance.covariance_world_m2.tobytes()
+            != candidate.covariance_world_m2.tobytes()
+            and lower_cue_reliability.covariance_world_m2.tobytes()
+            != candidate.covariance_world_m2.tobytes()
+            and np.all(
+                np.trace(
+                    inflated_row_covariance.covariance_world_m2,
+                    axis1=-2,
+                    axis2=-1,
+                )
+                >= np.trace(candidate.covariance_world_m2, axis1=-2, axis2=-1)
+                - 1e-12
+            )
+            and np.all(
+                np.trace(
+                    lower_cue_reliability.covariance_world_m2,
+                    axis1=-2,
+                    axis2=-1,
+                )
+                >= np.trace(candidate.covariance_world_m2, axis1=-2, axis2=-1)
+                - 1e-12
+            )
             and not fallback.case_donor_admitted
             and fallback.mean_world_m.tobytes() == mean.tobytes()
             and fallback.covariance_world_m2.tobytes()

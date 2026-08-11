@@ -7,6 +7,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
+from bayesian_phystwin.contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 from bayesian_phystwin.deform360_covariance_provider_v1 import (
     Deform360CausalResidualHistoryV1,
     Deform360CovarianceDonorSupportConfigV1,
@@ -18,6 +19,7 @@ from bayesian_phystwin.deform360_covariance_provider_v1 import (
 from bayesian_phystwin.deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseVisualWindowRowsV5,
 )
+from bayesian_phystwin.endpoint_model_average import ModelAveragedEndpointConfigV1
 from scripts.science.run_deform360_covariance_provider_dry_run_v1 import (
     run_source_only_dry_run,
 )
@@ -114,6 +116,7 @@ def _forecast(
     *,
     history: Deform360CausalResidualHistoryV1,
     support_config: Deform360CovarianceDonorSupportConfigV1 | None = None,
+    endpoint_config: ModelAveragedEndpointConfigV1 | None = None,
 ):
     mean, fallback, future, labels = _forecast_inputs()
     return build_deform360_covariance_only_forecast_v1(
@@ -125,6 +128,21 @@ def _forecast(
         observation_split=_split(),
         registered_reference_mean_sha256=_array_sha256(mean),
         support_config=support_config,
+        endpoint_config=endpoint_config,
+    )
+
+
+def _single_component_config() -> ModelAveragedEndpointConfigV1:
+    return ModelAveragedEndpointConfigV1(
+        components=(
+            FixedBayesianAnchorConfigV1(
+                process_std_m=0.001,
+                observation_std_m=0.001,
+                initial_std_m=0.010,
+                inlier_prior=0.95,
+                outlier_variance_multiplier=100.0,
+            ),
+        )
     )
 
 
@@ -261,6 +279,27 @@ def test_ambiguous_midpoint_uses_candidate_specific_residual_and_spread() -> Non
     np.testing.assert_allclose(history.residual_world_m[:, 0, 0], 0.005)
     np.testing.assert_allclose(history.residual_world_m[:, 1, 0], -0.005)
     assert np.all(history.observation_covariance_world_m2[:, :2, 0, 0] > 25e-6)
+    without_assignment_spread = np.zeros_like(
+        history.observation_covariance_world_m2
+    )
+    without_assignment_spread[history.valid_mask] = np.eye(3) * 5e-6
+    narrow_history = replace(
+        history,
+        observation_covariance_world_m2=without_assignment_spread,
+    )
+    config = _single_component_config()
+    narrow = _forecast(history=narrow_history, endpoint_config=config)
+    ambiguous = _forecast(history=history, endpoint_config=config)
+
+    assert np.all(
+        np.trace(ambiguous.covariance_world_m2[:, :2], axis1=-2, axis2=-1)
+        >= np.trace(narrow.covariance_world_m2[:, :2], axis1=-2, axis2=-1)
+        - 1e-12
+    )
+    assert (
+        ambiguous.covariance_world_m2.tobytes()
+        != narrow.covariance_world_m2.tobytes()
+    )
 
 
 def test_admitted_innovation_is_not_clipped_before_robust_endpoint() -> None:
@@ -370,6 +409,75 @@ def test_metric_point_covariance_is_retained_without_changing_reliability() -> N
     assert high.prior_reliability[0, 0] == pytest.approx(
         low.prior_reliability[0, 0]
     )
+
+
+def test_larger_row_covariance_survives_into_forecast_covariance() -> None:
+    history = _history()
+    inflated = replace(
+        history,
+        observation_covariance_world_m2=(
+            history.observation_covariance_world_m2 * 1000.0
+        ),
+    )
+    config = _single_component_config()
+
+    baseline = _forecast(history=history, endpoint_config=config)
+    wider = _forecast(history=inflated, endpoint_config=config)
+    empirical = baseline.empirical_donor_mask
+    difference = (
+        wider.covariance_world_m2[:, empirical]
+        - baseline.covariance_world_m2[:, empirical]
+    )
+
+    assert baseline.update_count.tolist() == wider.update_count.tolist()
+    assert baseline.case_donor_admitted and wider.case_donor_admitted
+    assert np.min(np.linalg.eigvalsh(difference)) >= -1e-12
+    assert np.any(np.linalg.eigvalsh(difference) > 1e-12)
+
+
+def test_lower_cue_reliability_cannot_make_forecast_more_confident() -> None:
+    history = _history()
+    lower_reliability = replace(
+        history,
+        prior_reliability=history.prior_reliability * 0.1,
+    )
+    config = _single_component_config()
+
+    baseline = _forecast(history=history, endpoint_config=config)
+    wider = _forecast(history=lower_reliability, endpoint_config=config)
+    empirical = baseline.empirical_donor_mask
+    difference = (
+        wider.covariance_world_m2[:, empirical]
+        - baseline.covariance_world_m2[:, empirical]
+    )
+
+    assert baseline.update_count.tolist() == wider.update_count.tolist()
+    assert baseline.case_donor_admitted and wider.case_donor_admitted
+    assert np.min(np.linalg.eigvalsh(difference)) >= -1e-12
+    assert np.any(np.linalg.eigvalsh(difference) > 1e-12)
+
+
+def test_unclipped_gross_innovation_is_robustified_once() -> None:
+    history = _history()
+    residual_30 = np.array(history.residual_world_m, copy=True)
+    residual_39 = np.array(history.residual_world_m, copy=True)
+    residual_30[history.valid_mask, 0] = 0.030
+    residual_39[history.valid_mask, 0] = 0.039
+    thirty = replace(history, residual_world_m=residual_30)
+    thirty_nine = replace(history, residual_world_m=residual_39)
+    config = _single_component_config()
+
+    forecast_30 = _forecast(history=thirty, endpoint_config=config)
+    forecast_39 = _forecast(history=thirty_nine, endpoint_config=config)
+
+    assert np.all(thirty_nine.residual_world_m[history.valid_mask, 0] == 0.039)
+    assert forecast_30.update_count.tolist() == forecast_39.update_count.tolist()
+    assert forecast_30.case_donor_admitted and forecast_39.case_donor_admitted
+    assert (
+        forecast_30.covariance_world_m2.tobytes()
+        != forecast_39.covariance_world_m2.tobytes()
+    )
+    assert np.min(np.linalg.eigvalsh(forecast_39.covariance_world_m2)) >= 0.0
 
 
 def test_covariance_donor_keeps_mean_bytes_and_falls_back_per_identity() -> None:
@@ -593,6 +701,14 @@ def test_source_only_end_to_end_dry_run_passes_without_target_access() -> None:
     assert result["history"]["missing_entries_are_zero"] is True
     assert result["observation_split"]["camera_sets_disjoint"] is True
     assert result["admitted_candidate"]["mean_byte_identical"] is True
+    assert result["heteroscedastic_endpoint"] == {
+        "cue_reliability_consumed": True,
+        "inflated_row_covariance_trace_not_lower": True,
+        "innovation_clipping_before_mixture": False,
+        "lower_reliability_trace_not_lower": True,
+        "metric_row_covariance_consumed": True,
+        "robust_mixture_application_count": 1,
+    }
     assert result["failed_support_fallback"]["covariance_byte_identical"] is True
     assert result["far_point_rejection"] == {
         "case_donor_admitted": False,

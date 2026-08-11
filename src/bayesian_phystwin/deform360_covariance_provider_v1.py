@@ -24,14 +24,14 @@ from ._portable_contracts import (
     sha256_digest,
     source_artifact_mapping,
 )
+from .contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 from .deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseVisualWindowRowsV5,
     associate_deform360_joint_sparse_geometry_v5,
 )
 from .endpoint_model_average import (
+    DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
     ModelAveragedEndpointConfigV1,
-    infer_model_averaged_endpoint,
-    predict_model_averaged_endpoint,
 )
 
 DEFORM360_COVARIANCE_PROVIDER_VERSION: Final = 1
@@ -246,15 +246,16 @@ class Deform360CausalResidualHistoryV1:
                 "covariance_units": self.covariance_units,
                 "missing_frame_policy": "explicit-invalid-zero-never-nearest-filled",
                 "endpoint_noise_policy": (
-                    "source-frozen-model-average-noise-grid-supersedes-row-covariance;"
-                    "row-covariance-retained-for-audit;"
-                    "cue-only-reliability-controls-admission"
+                    "source-frozen-model-average-noise-grid-plus-metric-row-covariance;"
+                    "cue-only-reliability-scales-row-covariance-once"
                 ),
                 "state_residual_used_for_prior_reliability": False,
                 "association_probability_used_for_prior_reliability": False,
                 "association_probability_used_for_assignment_and_admission": True,
-                "row_covariance_used_by_endpoint_filter": False,
-                "prior_reliability_used_by_endpoint_filter": False,
+                "row_covariance_used_by_endpoint_filter": True,
+                "prior_reliability_used_by_endpoint_filter": True,
+                "prior_reliability_application_count": 1,
+                "innovation_robustification_count": 1,
             }
         )
 
@@ -503,6 +504,230 @@ class Deform360CovarianceOnlyForecastV1:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class _HeteroscedasticEndpointPosteriorV1:
+    mean_m: np.ndarray
+    component_mean_m: np.ndarray
+    component_covariance_m2: np.ndarray
+    component_weights: np.ndarray
+    component_process_variance_m2: np.ndarray
+    update_count: np.ndarray
+
+
+def _project_psd(value: np.ndarray) -> np.ndarray:
+    symmetric = 0.5 * (value + value.swapaxes(-1, -2))
+    eigenvalue, eigenvector = np.linalg.eigh(symmetric)
+    clipped = np.maximum(eigenvalue, 0.0)
+    return np.einsum(
+        "...ik,...k,...jk->...ij",
+        eigenvector,
+        clipped,
+        eigenvector,
+        optimize=True,
+    )
+
+
+def _gaussian_log_density(
+    innovation: np.ndarray,
+    covariance: np.ndarray,
+) -> np.ndarray:
+    sign, log_determinant = np.linalg.slogdet(covariance)
+    _require(np.all(sign > 0.0), "endpoint innovation covariance is not positive")
+    solved = np.linalg.solve(covariance, innovation[..., None])[..., 0]
+    mahalanobis = np.einsum("ni,ni->n", innovation, solved, optimize=True)
+    return -0.5 * (
+        3.0 * np.log(2.0 * np.pi) + log_determinant + mahalanobis
+    )
+
+
+def _kalman_update(
+    mean: np.ndarray,
+    predicted_covariance: np.ndarray,
+    innovation: np.ndarray,
+    observation_covariance: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    innovation_covariance = predicted_covariance + observation_covariance
+    gain = np.linalg.solve(
+        innovation_covariance,
+        predicted_covariance,
+    ).swapaxes(-1, -2)
+    updated_mean = mean + np.einsum(
+        "nij,nj->ni",
+        gain,
+        innovation,
+        optimize=True,
+    )
+    identity_minus_gain = np.eye(3)[None] - gain
+    updated_covariance = (
+        identity_minus_gain
+        @ predicted_covariance
+        @ identity_minus_gain.swapaxes(-1, -2)
+        + gain @ observation_covariance @ gain.swapaxes(-1, -2)
+    )
+    return updated_mean, _project_psd(updated_covariance)
+
+
+def _filter_heteroscedastic_component(
+    residual_m: np.ndarray,
+    valid: np.ndarray,
+    observation_covariance_m2: np.ndarray,
+    prior_reliability: np.ndarray,
+    *,
+    component: FixedBayesianAnchorConfigV1,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    track_count = residual_m.shape[1]
+    identity = np.eye(3, dtype=np.float64)
+    process_variance = float(component.process_std_m) ** 2
+    observation_variance = float(component.observation_std_m) ** 2
+    initial_variance = float(component.initial_std_m) ** 2
+    mean = np.zeros((track_count, 3), dtype=np.float64)
+    covariance = np.broadcast_to(
+        initial_variance * identity,
+        (track_count, 3, 3),
+    ).copy()
+    update_count = np.zeros(track_count, dtype=np.int64)
+    log_evidence = np.zeros(track_count, dtype=np.float64)
+    log_inlier_prior = np.log(float(component.inlier_prior))
+    log_outlier_prior = np.log1p(-float(component.inlier_prior))
+    outlier_multiplier = float(component.outlier_variance_multiplier)
+    for frame in range(len(residual_m)):
+        predicted_covariance = covariance + process_variance * identity[None]
+        covariance = predicted_covariance
+        mask = valid[frame] & (prior_reliability[frame] > 0.0)
+        if not np.any(mask):
+            continue
+        reliability = prior_reliability[frame, mask]
+        row_covariance = (
+            observation_covariance_m2[frame, mask]
+            + observation_variance * identity[None]
+        ) / reliability[:, None, None]
+        predicted = predicted_covariance[mask]
+        innovation = residual_m[frame, mask] - mean[mask]
+        inlier_innovation_covariance = predicted + row_covariance
+        outlier_row_covariance = outlier_multiplier * row_covariance
+        outlier_innovation_covariance = predicted + outlier_row_covariance
+        log_inlier = log_inlier_prior + _gaussian_log_density(
+            innovation,
+            inlier_innovation_covariance,
+        )
+        log_outlier = log_outlier_prior + _gaussian_log_density(
+            innovation,
+            outlier_innovation_covariance,
+        )
+        log_mixture = np.logaddexp(log_inlier, log_outlier)
+        inlier_probability = np.exp(log_inlier - log_mixture)
+        inlier_mean, inlier_covariance = _kalman_update(
+            mean[mask],
+            predicted,
+            innovation,
+            row_covariance,
+        )
+        outlier_mean, outlier_covariance = _kalman_update(
+            mean[mask],
+            predicted,
+            innovation,
+            outlier_row_covariance,
+        )
+        updated_mean = (
+            inlier_probability[:, None] * inlier_mean
+            + (1.0 - inlier_probability)[:, None] * outlier_mean
+        )
+        inlier_offset = inlier_mean - updated_mean
+        outlier_offset = outlier_mean - updated_mean
+        updated_covariance = (
+            inlier_probability[:, None, None]
+            * (
+                inlier_covariance
+                + inlier_offset[..., :, None] * inlier_offset[..., None, :]
+            )
+            + (1.0 - inlier_probability)[:, None, None]
+            * (
+                outlier_covariance
+                + outlier_offset[..., :, None] * outlier_offset[..., None, :]
+            )
+        )
+        mean[mask] = updated_mean
+        covariance[mask] = _project_psd(updated_covariance)
+        update_count[mask] += 1
+        log_evidence[mask] += log_mixture
+    return mean, covariance, update_count, log_evidence
+
+
+def _infer_heteroscedastic_endpoint(
+    history: Deform360CausalResidualHistoryV1,
+    *,
+    config: ModelAveragedEndpointConfigV1 | None,
+) -> _HeteroscedasticEndpointPosteriorV1:
+    settings = (
+        DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1 if config is None else config
+    )
+    if not isinstance(settings, ModelAveragedEndpointConfigV1):
+        raise TypeError("config must be a ModelAveragedEndpointConfigV1")
+    component_count = len(settings.components)
+    track_count = len(history.material_identity_ids)
+    component_mean = np.empty((component_count, track_count, 3))
+    component_covariance = np.empty((component_count, track_count, 3, 3))
+    component_evidence = np.empty((track_count, component_count))
+    component_process_variance = np.empty(component_count)
+    common_update_count: np.ndarray | None = None
+    for index, component in enumerate(settings.components):
+        (
+            component_mean[index],
+            component_covariance[index],
+            update_count,
+            component_evidence[:, index],
+        ) = _filter_heteroscedastic_component(
+            history.residual_world_m,
+            history.valid_mask,
+            history.observation_covariance_world_m2,
+            history.prior_reliability,
+            component=component,
+        )
+        component_process_variance[index] = component.process_std_m**2
+        if common_update_count is None:
+            common_update_count = update_count
+        elif not np.array_equal(common_update_count, update_count):
+            raise AssertionError("endpoint components used different observations")
+    assert common_update_count is not None
+    log_prior = np.log(
+        np.asarray(settings.component_prior_probability, dtype=np.float64)
+    )
+    unnormalized = component_evidence + log_prior[None]
+    normalizer = np.logaddexp.reduce(unnormalized, axis=1)
+    weights = np.exp(unnormalized - normalizer[:, None])
+    mean = np.einsum("nk,knc->nc", weights, component_mean, optimize=True)
+    return _HeteroscedasticEndpointPosteriorV1(
+        mean_m=mean,
+        component_mean_m=component_mean,
+        component_covariance_m2=component_covariance,
+        component_weights=weights,
+        component_process_variance_m2=component_process_variance,
+        update_count=common_update_count,
+    )
+
+
+def _predict_heteroscedastic_covariance(
+    posterior: _HeteroscedasticEndpointPosteriorV1,
+    *,
+    horizon_steps: int,
+) -> np.ndarray:
+    component_covariance = (
+        posterior.component_covariance_m2
+        + horizon_steps
+        * posterior.component_process_variance_m2[:, None, None, None]
+        * np.eye(3)[None, None]
+    )
+    centered = posterior.component_mean_m - posterior.mean_m[None]
+    outer = centered[..., :, None] * centered[..., None, :]
+    covariance = np.einsum(
+        "nk,knij->nij",
+        posterior.component_weights,
+        component_covariance + outer,
+        optimize=True,
+    )
+    return _project_psd(covariance)
+
+
 def estimate_deform360_causal_residual_history_v1(
     *,
     visual_windows: Sequence[Deform360JointSparseVisualWindowRowsV5],
@@ -685,10 +910,15 @@ def estimate_deform360_causal_residual_history_v1(
             0.0,
             1.0,
         )
-        contribution = (
-            assignment
-            * association_probability[:, None]
-            * cue_reliability[:, None]
+        association_contribution = (
+            assignment * association_probability[:, None]
+        )
+        effective_support = association_contribution * cue_reliability[:, None]
+        candidate_admitted = effective_support >= minimum_effective_row_support
+        contribution = np.where(
+            candidate_admitted,
+            association_contribution,
+            0.0,
         )
         candidate_residual = points[:, None, :] - candidate_points
         candidate_second_moment = (
@@ -702,7 +932,7 @@ def estimate_deform360_causal_residual_history_v1(
             (len(reference), 3, 3),
             dtype=np.float64,
         )
-        maximum_association_support: np.ndarray = np.zeros(
+        maximum_effective_support: np.ndarray = np.zeros(
             len(reference),
             dtype=np.float64,
         )
@@ -729,22 +959,22 @@ def estimate_deform360_causal_residual_history_v1(
                 * candidate_second_moment[:, candidate],
             )
             np.maximum.at(
-                maximum_association_support,
+                maximum_effective_support,
                 indices[:, candidate],
-                contribution[:, candidate],
+                effective_support[:, candidate],
             )
             np.maximum.at(
                 maximum_prior_reliability,
                 indices[:, candidate],
                 np.where(
-                    contribution[:, candidate] >= minimum_effective_row_support,
+                    candidate_admitted[:, candidate],
                     cue_reliability,
                     0.0,
                 ),
             )
         admitted = (
             (denominator > 0.0)
-            & (maximum_association_support >= minimum_effective_row_support)
+            & (maximum_effective_support >= minimum_effective_row_support)
         )
         residual[local_index, admitted] = (
             numerator[admitted] / denominator[admitted, None]
@@ -864,10 +1094,8 @@ def build_deform360_covariance_only_forecast_v1(
         and all(label in HORIZON_COVARIANCE_MULTIPLIER_V1 for label in labels),
         "horizon labels must be registered early/middle/late values",
     )
-    posterior = infer_model_averaged_endpoint(
-        history.residual_world_m,
-        history.valid_mask,
-        end_frame=len(history.frame_indices),
+    posterior = _infer_heteroscedastic_endpoint(
+        history,
         config=endpoint_config,
     )
     empirical = posterior.update_count >= support.minimum_updates_per_identity
@@ -882,13 +1110,13 @@ def build_deform360_covariance_only_forecast_v1(
     if admitted:
         prefix_last = history.prefix_range_half_open[1] - 1
         for index, (frame, label) in enumerate(zip(future, labels, strict=True)):
-            prediction = predict_model_averaged_endpoint(
+            prediction_covariance = _predict_heteroscedastic_covariance(
                 posterior,
                 horizon_steps=int(frame) - prefix_last,
             )
             covariance[index, empirical] = (
                 HORIZON_COVARIANCE_MULTIPLIER_V1[label]
-                * prediction.covariance_m2[empirical]
+                * prediction_covariance[empirical]
             )
     else:
         empirical = np.zeros_like(empirical)
