@@ -23,7 +23,7 @@ jobs:
           TARGET_SHA: dba748cafc1979dd697f99fb8aa70dc1cfaf9b81
         run: |
           set -euo pipefail
-          python - <<'PY'
+          python3 - <<'PY'
           import json
           import os
           import urllib.parse
