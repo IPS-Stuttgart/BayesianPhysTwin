@@ -125,27 +125,28 @@ Large arrays remain in the protected results tree. The compact artifact contains
 sufficient identities to verify the prediction-first custody chain without
 publishing camera, robot, tactile, or dense prediction payloads.
 
-### Parent worktree and pinned dependency checkouts
+### Clean exact execution worktree
 
 The protected job checks out four exact external repositories under fixed root
-names in the GitHub workspace: Deform360, official PhysTwin, SAM2, and the
-Causal4D discovery source. Those nested repositories are independently pinned by
-workflow revision and are not BayesianPhysTwin source modifications. Their exact
-root names are therefore ignored by the parent repository only for Git status
-purposes.
+names in the primary GitHub workspace: Deform360, official PhysTwin, SAM2, and
+the Causal4D discovery source. Those paths remain visible to parent-repository
+Git status and are not hidden by `.gitignore`.
 
-This exception is deliberately narrow. The physical-source validator still:
-
-- requires the BayesianPhysTwin repository to have no tracked modification;
-- verifies every registered physical-source file against its frozen SHA-256;
-- verifies that the execution lock is a tracked file; and
-- leaves every other untracked path visible to the clean-repository check.
+Before invoking the immutable selector wrapper and archived science runner, the
+active wrapper creates a detached Git worktree at the exact `BPT_SOURCE_SHA`. It
+verifies the detached revision and an empty full porcelain status, changes the
+child process working directory into that tree, and binds both
+`GITHUB_WORKSPACE` and the leading Python source root to the same path. The
+historical physical-source validator therefore sees a completely clean, exact
+BayesianPhysTwin repository, while every frozen dependency checkout remains at
+its separately pinned location.
 
 The retained failure from workflow run `31465387504` stopped at the first
-`stage-prefix` invocation because these already-pinned nested checkouts were
-reported as parent-repository dirt. No source suffix or confirmation payload was
-opened by that run. Correcting the parent status scope changes no object, camera,
-model, prediction, fallback, endpoint, threshold, or information boundary.
+`stage-prefix` invocation because the primary workspace contained the four
+nested dependency repositories. No source suffix or confirmation payload was
+opened by that run. Isolating execution in the exact detached worktree changes
+no object, camera, model, prediction, fallback, endpoint, threshold, or
+information boundary.
 
 ## Next stage
 
