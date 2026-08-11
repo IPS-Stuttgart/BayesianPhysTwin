@@ -159,6 +159,17 @@ def test_model_average_rejects_complex_residual_without_lossy_cast() -> None:
         )
 
 
+def test_model_average_normalizes_residual_coercion_errors() -> None:
+    _, valid = _provider_inputs()
+
+    with pytest.raises(ValueError, match="residual_m must contain real numeric values"):
+        infer_model_averaged_endpoint(
+            _RejectArrayCoercion(),
+            valid,
+            end_frame=1,
+        )
+
+
 @pytest.mark.parametrize(
     "invalid_validity",
     (
@@ -178,6 +189,20 @@ def test_model_average_rejects_nonbinary_validity(
         infer_model_averaged_endpoint(
             residual,
             invalid_validity,
+            end_frame=len(residual),
+        )
+
+
+def test_model_average_normalizes_validity_coercion_errors() -> None:
+    residual, _ = _provider_inputs()
+
+    with pytest.raises(
+        ValueError,
+        match="valid must contain booleans or exact 0/1 values",
+    ):
+        infer_model_averaged_endpoint(
+            residual,
+            _RejectArrayCoercion(),
             end_frame=len(residual),
         )
 
