@@ -15,9 +15,7 @@ from typing import Any
 
 from .numerical_environment_v1 import NumericalEnvironmentV1
 
-NUMERICAL_COMPATIBILITY_SCHEMA = (
-    "bayesian_phystwin.numerical_compatibility_profile"
-)
+NUMERICAL_COMPATIBILITY_SCHEMA = "bayesian_phystwin.numerical_compatibility_profile"
 NUMERICAL_COMPATIBILITY_SCHEMA_VERSION = 1
 NUMERICAL_COMPATIBILITY_RECORD_SCHEMA = (
     "bayesian_phystwin.numerical_compatibility_record"
