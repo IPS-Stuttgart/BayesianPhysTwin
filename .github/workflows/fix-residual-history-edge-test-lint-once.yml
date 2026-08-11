@@ -1,0 +1,82 @@
+name: Fix residual-history edge-test lint once
+
+on:
+  push:
+    branches:
+      - agent/deform360-covariance-residual-history-dry-run-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-residual-history-edge-test-lint-once
+  cancel-in-progress: true
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/deform360-covariance-residual-history-dry-run-v1
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply and validate exact lint cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "tests/test_deform360_covariance_residual_history_contract_edges_v1.py"
+          )
+          text = path.read_text(encoding="utf-8")
+          old = "    assert_outside_target_quarantine,\n"
+          if text.count(old) != 1:
+              raise SystemExit("expected exactly one unused quarantine import")
+          path.write_text(text.replace(old, ""), encoding="utf-8")
+          PY
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev]"
+          python -m pip check
+          python -m ruff check \
+            tests/test_deform360_covariance_residual_history_contract_edges_v1.py
+          python -m ruff format --check \
+            tests/test_deform360_covariance_residual_history_contract_edges_v1.py
+
+      - name: Publish only the lint cleanup and remove this helper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          helper=.github/workflows/fix-residual-history-edge-test-lint-once.yml
+          test_file=tests/test_deform360_covariance_residual_history_contract_edges_v1.py
+          rm -- "${helper}"
+          git diff --check
+          actual="$(git status --short | awk '{print $2}' | LC_ALL=C sort)"
+          expected="$(printf '%s\n' "${helper}" "${test_file}" | LC_ALL=C sort)"
+          test "${actual}" = "${expected}"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A -- "${helper}" "${test_file}"
+          git commit -m "Fix residual-history edge-test lint"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" push \
+            origin HEAD:refs/heads/agent/deform360-covariance-residual-history-dry-run-v1
