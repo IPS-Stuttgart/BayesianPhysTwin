@@ -1,0 +1,152 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+
+import numpy as np
+import pytest
+
+from bayesian_phystwin.calibration_domain_guard import (
+    CalibrationDomainGuardCertificateV1,
+    fit_calibration_domain_guard,
+)
+from bayesian_phystwin.guard_harm_risk import certify_guard_harm_risk
+from bayesian_phystwin.guard_harm_risk_domains import (
+    MULTIPLICITY_METHOD,
+    DomainGuardHarmRiskCertificateV1,
+    certify_domain_guard_harm_risk,
+    domain_harm_risk_policy_id,
+    select_domain_guard_harm_risk_belief,
+)
+
+CALIBRATION_PARTITION_ID = "a" * 64
+CERTIFICATION_PARTITION_ID = "b" * 64
+THRESHOLD_SOURCE_ID = "c" * 64
+COMMON_DOMAIN_ID = "d" * 64
+
+
+@dataclass(frozen=True)
+class _Belief:
+    artifact_id: str
+
+
+def _domain_guard(
+    *,
+    supported_domains: tuple[str, ...] = ("dynamic", "oscillatory"),
+    frozen_before: bool = True,
+    application_used: bool = False,
+    independent: bool = True,
+) -> CalibrationDomainGuardCertificateV1:
+    all_domains = ("dynamic", "oscillatory")
+    group_ids: list[str] = []
+    domain_ids: list[str] = []
+    candidate_losses: list[float] = []
+    fallback_losses: list[float] = []
+    for domain in all_domains:
+        supported = domain in supported_domains
+        for index in range(3):
+            group_ids.append(f"calibration-{domain}-{index}")
+            domain_ids.append(domain)
+            fallback_losses.append(1.0)
+            candidate_losses.append(0.8 if supported else 1.2)
+    return fit_calibration_domain_guard(
+        calibration_partition_id=CALIBRATION_PARTITION_ID,
+        statistical_unit="independent-physical-session",
+        metric="endpoint-rmse-m",
+        group_ids=tuple(group_ids),
+        domain_ids=tuple(domain_ids),
+        candidate_losses=np.asarray(candidate_losses),
+        fallback_losses=np.asarray(fallback_losses),
+        guard_frozen_before_application_outcomes=frozen_before,
+        application_outcomes_used_for_guard_selection=application_used,
+        calibration_groups_independent=independent,
+    )
+
+
+def _evidence(
+    *,
+    harmful_domain: str | None = None,
+    permutation: np.ndarray | None = None,
+) -> dict[str, object]:
+    group_ids: list[str] = []
+    domain_ids: list[str] = []
+    candidate_losses: list[float] = []
+    for domain in ("dynamic", "oscillatory"):
+        for index in range(5):
+            group_ids.append(f"certification-{domain}-{index}")
+            domain_ids.append(domain)
+            harmful = harmful_domain == domain and index == 0
+            candidate_losses.append(1.2 if harmful else 0.9)
+    count = len(group_ids)
+    order = np.arange(count) if permutation is None else permutation
+    return {
+        "group_ids": tuple(group_ids[int(index)] for index in order),
+        "domain_ids": tuple(domain_ids[int(index)] for index in order),
+        "risk_scores": np.zeros(count, dtype=np.float64)[order],
+        "candidate_losses": np.asarray(candidate_losses, dtype=np.float64)[order],
+        "fallback_losses": np.ones(count, dtype=np.float64)[order],
+        "fallback_identity_verified": np.ones(count, dtype=np.bool_)[order],
+    }
+
+
+def _certificate(
+    *,
+    guard: CalibrationDomainGuardCertificateV1 | None = None,
+    harmful_domain: str | None = None,
+    metadata: dict[str, object] | None = None,
+    permutation: np.ndarray | None = None,
+) -> DomainGuardHarmRiskCertificateV1:
+    selected_guard = _domain_guard() if guard is None else guard
+    evidence = _evidence(
+        harmful_domain=harmful_domain,
+        permutation=permutation,
+    )
+    return certify_domain_guard_harm_risk(
+        domain_guard_certificate=selected_guard,
+        threshold_source_artifact_id=THRESHOLD_SOURCE_ID,
+        certification_partition_id=CERTIFICATION_PARTITION_ID,
+        threshold_selection_group_ids=("threshold-selection-1",),
+        threshold=0.5,
+        harm_margin=0.0,
+        target_harm_probability=0.6,
+        family_confidence_level=0.95,
+        minimum_accepted_group_count=5,
+        threshold_frozen_before_certification_outcomes=True,
+        certification_outcomes_used_for_threshold_selection=False,
+        certification_groups_independent=True,
+        metadata={} if metadata is None else metadata,
+        **evidence,
+    )
+
+
+def _recertify(
+    guard: CalibrationDomainGuardCertificateV1,
+    domain: str,
+    certificate: object,
+    *,
+    family_confidence_level: float = 0.95,
+    confidence_level: float | None = None,
+    group_ids: tuple[str, ...] | None = None,
+    threshold_selection_group_ids: tuple[str, ...] | None = None,
+    threshold_source_artifact_id: str | None = None,
+    certification_partition_id: str | None = None,
+    threshold: float | None = None,
+    harm_margin: float | None = None,
+    target_harm_probability: float | None = None,
+    minimum_accepted_group_count: int | None = None,
+):
+    from bayesian_phystwin.guard_harm_risk import GuardHarmRiskCertificateV1
+
+    assert isinstance(certificate, GuardHarmRiskCertificateV1)
+    decision = guard.decision_for_domain(domain)
+    assert decision is not None
+    source_id = (
+        certificate.threshold_source_artifact_id
+        if threshold_source_artifact_id is None
+        else threshold_source_artifact_id
+    )
+    threshold_value = certificate.threshold if threshold is None else threshold
+    margin = certificate.harm_margin if harm_margin is None else harm_margin
+    target = (
+        certificate.target_harm_probability
+        if target_harm_probability is None
+       
