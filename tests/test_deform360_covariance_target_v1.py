@@ -269,6 +269,96 @@ def test_schema_amendment_records_nonselective_field_without_filtering(
     )
 
 
+def test_vocabulary_amendment_maps_all_audited_action_tokens(
+    tmp_path: Path,
+) -> None:
+    repository, protocol_path, snapshot = _fixture(tmp_path)
+    protocol = json.loads(protocol_path.read_text())
+    protocol["status"] = (
+        "metadata-vocabulary-amended-before-target-roster-and-payload-access"
+    )
+    protocol["selection"]["nonprehensile_selection_policy"] = (
+        "record-only-never-used-for-selection"
+    )
+    protocol["selection"]["metadata_invalid_candidate_policy"] = (
+        "malformed action or bimanual terminates; nonprehensile is record-only"
+    )
+    protocol["selection"]["action_families"] = {
+        "elevation": ["lift", "wave"],
+        "planar_or_contact": [
+            "drag",
+            "flip",
+            "move",
+            "press",
+            "pull",
+            "push",
+            "roll",
+            "rotate",
+            "turn",
+        ],
+        "shape_change": [
+            "bend",
+            "close",
+            "curl",
+            "curve",
+            "distort",
+            "fold",
+            "open",
+            "squeeze",
+            "stretch",
+        ],
+    }
+    protocol["amendment"] = {
+        "candidate_panel_reused_without_replacement": True,
+        "target_roster_created_before_amendment": False,
+        "target_payload_opened_before_amendment": False,
+        "target_outcomes_opened_before_amendment": False,
+        "only_selection_change": (
+            "add pull to planar_or_contact and open/close to shape_change; "
+            "no other selection or method change"
+        ),
+    }
+    protocol.pop("protocol_sha256")
+    protocol["protocol_sha256"] = _canonical(protocol)
+    _write(protocol_path, protocol)
+    rows = [
+        ("lift corner", "no"),
+        ("wave", "yes"),
+        ("pull short side", "no"),
+        ("drag", "yes"),
+        ("open", "no"),
+        ("close", "yes"),
+    ]
+    for metadata in snapshot["metadata_by_object"].values():
+        metadata["sequences"] = {
+            str(index): {
+                "action": action,
+                "bimanual": bimanual,
+                "nonprehensile": None,
+            }
+            for index, (action, bimanual) in enumerate(rows)
+        }
+
+    result, _ = build_selection(
+        snapshot,
+        repository=repository,
+        protocol_path=protocol_path,
+        implementation_revision="c" * 40,
+    )
+
+    assert len(result["target_roster"]) == 24
+    assert {row["action_family"] for row in result["target_roster"]} == {
+        "elevation",
+        "planar_or_contact",
+        "shape_change",
+    }
+    assert {row["action"].split()[0] for row in result["target_roster"]} >= {
+        "pull",
+        "open",
+        "close",
+    }
+
+
 def test_protocol_tampering_is_rejected(tmp_path: Path) -> None:
     repository, protocol_path, _ = _fixture(tmp_path)
     protocol = json.loads(protocol_path.read_text())

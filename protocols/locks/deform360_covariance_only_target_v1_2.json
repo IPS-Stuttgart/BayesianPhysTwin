@@ -1,0 +1,201 @@
+{
+  "amendment": {
+    "candidate_panel_reused_without_replacement": true,
+    "metadata_candidate_count": 32,
+    "metadata_domain_audit_file_sha256": "c1550ffe923c61223b5b3f3181997e610fcf8a1f646739597a8f7cffc0783c62",
+    "metadata_domain_audit_sha256": "a460629ab019496dea751fb6cb64c0f5c7ecff90495481cad0d28ff05f43a028",
+    "metadata_gate_failure_file_sha256": "8b90b7ef3534909b7e9d1bb7ba3f46c2282f908d8e54979cda795c6792eba694",
+    "metadata_gate_failure_result_sha256": "36bc4a01808170e887a1754942be9ff5f5c63de3f2c9c6ff0e45197f8f00e01c",
+    "metadata_scope_exclusion_file_sha256": "658a867d12e596aaf8514ee7084e170f71f9a24015d72d884aab3788a05ec53e",
+    "metadata_scope_exclusion_sha256": "975f5dd079941fb41976311cea1b4e5fc2a04a4f4439c98e8454fee031b866e0",
+    "only_selection_change": "add pull to planar_or_contact and open/close to shape_change; no other selection or method change",
+    "parent_protocol_file_sha256": "3c0984d8d7d073fcfb8be92796aae7e1d080c602ee4881e6a5ca741d6e522f05",
+    "parent_protocol_id": "deform360-covariance-only-target-v1.1",
+    "parent_protocol_sha256": "bf17698b74d85a5d7bdb46eaa057e59e7e2118bc67531a40ad9b5d50353d3800",
+    "rationale": "a complete metadata-domain audit of the unchanged 32-object panel found exactly three released action tokens absent from the registered coarse vocabulary: pull, open, and close",
+    "target_outcomes_opened_before_amendment": false,
+    "target_payload_opened_before_amendment": false,
+    "target_roster_created_before_amendment": false
+  },
+  "claim_boundary": {
+    "bayesian_point_mean_improvement_claimed": false,
+    "causal4d_claim_modified": false,
+    "paper_claim_requires_independent_target_gate": true,
+    "prob4d_claim_modified": false,
+    "state_of_the_art_claim_authorized_before_scoring": false
+  },
+  "dataset": {
+    "processed_prefix": "processed",
+    "raw_prefix": "raw",
+    "repository": "brownu/deform360",
+    "revision": "f804696d7a133908c7497ffdab43819d879b5cbc"
+  },
+  "evaluation": {
+    "common_observation_noise_std_m": 0.005,
+    "coverage_level": 0.9,
+    "horizon_reports": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "independent_unit": "physical-object-session",
+    "mean_identity_check": "candidate and last_residual point predictions must be byte-identical before scoring",
+    "primary_endpoint": "equal-object mean Gaussian negative log score difference, candidate minus last_residual",
+    "resampling": {
+      "bootstrap_replicates": 100000,
+      "cluster": "physical-object-session",
+      "interval": 0.95,
+      "seed": 260811
+    },
+    "secondary_endpoints": [
+      "coverage",
+      "interval_width",
+      "NEES",
+      "energy_score",
+      "official_track_error_identity_check",
+      "official_Chamfer_identity_check"
+    ],
+    "success_gate": {
+      "candidate_coverage_interval": [
+        0.8,
+        0.98
+      ],
+      "mean_predictions_byte_identical": true,
+      "overall_primary_95_percent_upper_bound_below_zero": true,
+      "target_roster_complete_failure_accounting": true
+    }
+  },
+  "exclusion": {
+    "artifact_path": "protocols/locks/deform360_covariance_only_target_v1_exclusion.json",
+    "canonical_sha256": "859613611950801a6d462ddd426849eb0007b1c7406447cb00468c257a2bb476",
+    "file_sha256": "f9db0fa72305b68f6d4c6e85c4a6b4a22fb77bb01a4e2b13792c5954bb228b06",
+    "hash_namespace": "deform360-fresh-object-exclusion-v1",
+    "object_hash_count": 216
+  },
+  "failure_accounting": {
+    "categories": [
+      "ordinary_success",
+      "retained_provider_or_backend_failure",
+      "retained_missing_official_annotation",
+      "retained_malformed_metadata",
+      "unsealable_integrity_failure"
+    ],
+    "failed_or_difficult_targets_are_never_replaced": true,
+    "locked_denominator": 24
+  },
+  "implementation_revision": "ddbb582e53ec273b3e7057eabe41a9dc61b629cb",
+  "information_boundary": {
+    "allowed_before_target_roster_lock": [
+      "official object directory names",
+      "selected candidate metadata.json bytes",
+      "repository filenames, sizes, blob identifiers, and LFS digests",
+      "hash-only prior exclusion artifacts"
+    ],
+    "camera_media_decoded": false,
+    "geometry_or_track_annotations_opened": false,
+    "metadata_candidate_panel_opened": true,
+    "metadata_fields_allowed": [
+      "sequences.<episode>.action",
+      "sequences.<episode>.bimanual",
+      "sequences.<episode>.nonprehensile"
+    ],
+    "robot_or_tactile_arrays_opened": false,
+    "target_outcomes_opened": false,
+    "target_payload_opened": false,
+    "target_roster_created": false
+  },
+  "method": {
+    "candidate_id": "last_residual_mean_independent_endpoint_covariance_v1",
+    "covariance": {
+      "donor": "independent_endpoint_v1",
+      "donor_configuration": "ModelAveragedEndpointConfigV1 default",
+      "horizon_covariance_multipliers": {
+        "early": 8.0,
+        "late": 16.0,
+        "middle": 16.0
+      },
+      "operation": "Sigma_candidate(h) = multiplier(h) * Sigma_independent_endpoint_v1(h)",
+      "scale_interpretation": "multipliers apply to covariance, not standard deviation"
+    },
+    "fallback": {
+      "causal_residual_available": "exact last_residual prediction",
+      "causal_residual_unavailable": "unchanged physical fallback",
+      "fallback_must_be_byte_identical": true
+    },
+    "mean": {
+      "candidate": "last_residual",
+      "definition": "last valid causal-prefix residual held constant over the untouched future",
+      "future_observations_used": false
+    },
+    "selection_or_tuning_on_target": false
+  },
+  "protocol_id": "deform360-covariance-only-target-v1.2",
+  "protocol_sha256": "c01bc6d8df77ec7959cbde8c9f109e014a542346c4b3d42db995d5ab9ee68033",
+  "schema": "bayesian-phystwin/deform360-covariance-only-target-protocol-v1",
+  "schema_version": 1,
+  "selection": {
+    "action_families": {
+      "elevation": [
+        "lift",
+        "wave"
+      ],
+      "planar_or_contact": [
+        "drag",
+        "flip",
+        "move",
+        "press",
+        "pull",
+        "push",
+        "roll",
+        "rotate",
+        "turn"
+      ],
+      "shape_change": [
+        "bend",
+        "close",
+        "curl",
+        "curve",
+        "distort",
+        "fold",
+        "open",
+        "squeeze",
+        "stretch"
+      ]
+    },
+    "candidate_objects_per_stratum": 16,
+    "episode_rank": "SHA256(seed + NUL + object_id + NUL + episode_id)",
+    "exact_factorial_cells": {
+      "bimanual": [
+        "no",
+        "yes"
+      ],
+      "object_stratum": [
+        "sheet",
+        "volumetric"
+      ],
+      "sessions_per_cell": 2,
+      "three_way_cell_count": 12
+    },
+    "metadata_invalid_candidate_policy": "malformed action or bimanual terminates; nonprehensile is record-only",
+    "nonprehensile_selection_policy": "record-only-never-used-for-selection",
+    "object_rank": "SHA256(seed + NUL + object_stratum + NUL + object_id)",
+    "object_stratum_rule": "object_id ending in '-cloth' is sheet; every other official object ID is volumetric",
+    "one_session_per_physical_object": true,
+    "replacement_after_roster_lock": false,
+    "roster_size": 24,
+    "seed": "deform360-covariance-only-target-v1",
+    "selection_solver": "deterministic constrained-cell-first bipartite matching with object-rank and episode-rank tie breaks",
+    "target_metadata_candidate_count": 32
+  },
+  "stage_order": [
+    "preserve the terminated v1 and v1.1 metadata-gate results without replacement",
+    "commit this vocabulary-only amendment and implementation before target-roster creation",
+    "reuse the identical 32-object v1/v1.1 candidate panel and metadata bytes",
+    "freeze and commit the exact 24-session roster without replacement",
+    "record names-only raw and released-annotation availability without replacement",
+    "download exact locked payload bytes into a quarantined target root",
+    "seal all predictions before opening target suffix scores",
+    "score all 24 locked sessions including retained technical failures"
+  ],
+  "status": "metadata-vocabulary-amended-before-target-roster-and-payload-access"
+}

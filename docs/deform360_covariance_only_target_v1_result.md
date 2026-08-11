@@ -19,3 +19,20 @@ and changes only treatment of the nonselective field: malformed
 `nonprehensile` values are recorded as invalid but cannot affect the target
 assignment. Strict `action` and `bimanual` validation, the factorial quotas, the
 covariance-only method, and every no-replacement rule remain unchanged.
+
+The v1.1 retry also terminated before roster creation and payload access. Its
+strict action-family parser encountered `pull short side`, while `pull` was not
+in the preregistered coarse vocabulary. The failure is bound by
+`metadata_gate_failure_v1_1.json`.
+
+Rather than amend one token at a time, the project then performed one complete
+metadata-domain audit over the already-open fixed panel: 32 metadata files and
+320 episode records. The audit found exactly three unregistered first tokens:
+`pull`, `open`, and `close`; bimanual metadata was clean, and the only malformed
+values were the already-declared record-only `nonprehensile` entries. No media,
+sensor arrays, geometry, tracks, predictions, or outcomes were opened.
+
+The separately frozen v1.2 protocol adds those three tokens to their coarse
+families and changes nothing else. This is the final metadata-vocabulary
+amendment: any subsequent roster infeasibility or metadata failure terminates the
+prospective target selection without replacement.

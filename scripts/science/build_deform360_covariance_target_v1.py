@@ -96,6 +96,7 @@ def load_protocol(path: Path, *, repository: Path) -> tuple[dict[str, Any], set[
         in {
             "locked-before-target-metadata-access",
             "schema-amended-before-target-roster-and-payload-access",
+            "metadata-vocabulary-amended-before-target-roster-and-payload-access",
         },
         "protocol is not locked before target payload access",
     )
@@ -147,7 +148,7 @@ def load_protocol(path: Path, *, repository: Path) -> tuple[dict[str, Any], set[
             nonprehensile_policy == "strict-yes-no-or-terminate",
             "v1 metadata policy changed",
         )
-    else:
+    elif status == "schema-amended-before-target-roster-and-payload-access":
         amendment = protocol.get("amendment")
         _require(isinstance(amendment, Mapping), "schema amendment is missing")
         _require(
@@ -170,6 +171,71 @@ def load_protocol(path: Path, *, repository: Path) -> tuple[dict[str, Any], set[
         _require(
             nonprehensile_policy == "record-only-never-used-for-selection",
             "schema amendment policy changed",
+        )
+    else:
+        amendment = protocol.get("amendment")
+        _require(
+            isinstance(amendment, Mapping),
+            "metadata-vocabulary amendment is missing",
+        )
+        _require(
+            amendment.get("candidate_panel_reused_without_replacement") is True,
+            "metadata-vocabulary amendment replaced the candidate panel",
+        )
+        _require(
+            amendment.get("target_roster_created_before_amendment") is False,
+            "metadata-vocabulary amendment followed target-roster creation",
+        )
+        _require(
+            amendment.get("target_payload_opened_before_amendment") is False,
+            "metadata-vocabulary amendment followed target payload access",
+        )
+        _require(
+            amendment.get("target_outcomes_opened_before_amendment") is False,
+            "metadata-vocabulary amendment followed target outcome access",
+        )
+        _require(
+            amendment.get("only_selection_change")
+            == (
+                "add pull to planar_or_contact and open/close to shape_change; "
+                "no other selection or method change"
+            ),
+            "metadata-vocabulary amendment changed an unregistered field",
+        )
+        _require(
+            nonprehensile_policy == "record-only-never-used-for-selection",
+            "metadata-vocabulary amendment changed nonprehensile policy",
+        )
+        families = selection.get("action_families")
+        _require(
+            isinstance(families, Mapping)
+            and set(families) == {"elevation", "planar_or_contact", "shape_change"}
+            and set(families.get("elevation", ())) == {"lift", "wave"}
+            and set(families.get("planar_or_contact", ()))
+            == {
+                "drag",
+                "flip",
+                "move",
+                "press",
+                "pull",
+                "push",
+                "roll",
+                "rotate",
+                "turn",
+            }
+            and set(families.get("shape_change", ()))
+            == {
+                "bend",
+                "close",
+                "curl",
+                "curve",
+                "distort",
+                "fold",
+                "open",
+                "squeeze",
+                "stretch",
+            },
+            "metadata-vocabulary amendment does not match the audited tokens",
         )
     exclusion_record = protocol.get("exclusion")
     _require(isinstance(exclusion_record, Mapping), "exclusion record is missing")

@@ -58,7 +58,7 @@ This protocol cannot support a point-accuracy, physical-state, Causal4D, Prob4D,
 or state-of-the-art claim. A paper claim requires the independently locked target
 gate to pass with complete 24-session failure accounting.
 
-## Metadata-gate result and v1.1 amendment
+## Metadata-gate results and v1.2 amendment
 
 The fixed 32-object v1 candidate panel was opened at the metadata-only boundary.
 Strict validation then stopped because one released episode has malformed
@@ -73,3 +73,18 @@ change: `nonprehensile` is recorded with a validity flag but cannot affect
 eligibility or assignment. `action` and `bimanual`, the two metadata fields that
 actually define the factorial cells, remain strict. The amendment was frozen
 before roster creation or target payload access.
+
+The unchanged v1.1 panel then stopped a second time because the released action
+`pull short side` begins with `pull`, which was absent from the coarse action
+registry. Still before roster creation or payload access, one complete domain
+audit was run over the 320 already-open episode records. It found 17 distinct
+first tokens, clean `yes`/`no` bimanual values, three malformed record-only
+`nonprehensile` values, and no structural metadata errors. The only action tokens
+missing from the registry were `pull`, `open`, and `close`.
+
+Protocol v1.2 therefore makes one finite vocabulary-only amendment: `pull` joins
+the planar/contact family, while `open` and `close` join the shape-change family.
+The identical 32-object panel, metadata bytes, seed, quotas, solver, method,
+fallback, covariance scales, endpoints, and gates are retained. This amendment
+was committed before creating a target roster and before opening any target
+payload or outcome.
