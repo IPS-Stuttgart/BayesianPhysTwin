@@ -353,7 +353,10 @@ def test_matrix_rejects_missing_or_tampered_receipt(tmp_path: Path) -> None:
     tampered = json.loads(tampered_path.read_text(encoding="utf-8"))
     tampered["numpy"]["actual"] = "0.0.0"
     tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
-    with pytest.raises(tool.ReleaseMatrixEvidenceError, match="ID does not match payload"):
+    with pytest.raises(
+        tool.ReleaseMatrixEvidenceError,
+        match="ID does not match payload",
+    ):
         tool.build_matrix_evidence(
             release_evidence_path=evidence_path,
             receipts_dir=receipts,
