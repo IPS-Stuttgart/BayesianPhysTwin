@@ -15,13 +15,10 @@ AMENDMENT = ROOT / (
     "frame_zero_cuda_runtime.json"
 )
 WORKFLOW = ROOT / (
-    ".github/workflows/"
-    "deform360-v6-source-prediction-evidence-dual-runtime.yml"
+    ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
 )
 DISPATCHER = ROOT / "scripts/ci/dispatch_deform360_v6_source_python.sh"
-PHYSICAL_TARGET = (
-    "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
-)
+PHYSICAL_TARGET = "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
 
 
 def _stub(path: Path, route: str) -> None:
@@ -29,7 +26,7 @@ def _stub(path: Path, route: str) -> None:
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
         f"printf '%s\\n' '{route}' > \"${{ROUTE_LOG}}\"\n"
-        "printf '%s\\n' \"$@\" >> \"${ROUTE_LOG}\"\n",
+        'printf \'%s\\n\' "$@" >> "${ROUTE_LOG}"\n',
         encoding="utf-8",
     )
     path.chmod(0o700)
@@ -61,9 +58,7 @@ def _dispatch(
         env=environment,
     )
     routed = (
-        route_log.read_text(encoding="utf-8").splitlines()
-        if route_log.exists()
-        else []
+        route_log.read_text(encoding="utf-8").splitlines() if route_log.exists() else []
     )
     return result, routed, marker
 
@@ -107,7 +102,7 @@ def test_workflow_binds_exact_precompiled_cuda_runtime() -> None:
     assert "nvcc" not in workflow
     assert "cuda-toolkit" not in workflow
     assert "BPT_PYTHON=${dispatcher}" in workflow
-    assert "--system-site-packages \"${frame_zero_runtime}\"" not in workflow
+    assert '--system-site-packages "${frame_zero_runtime}"' not in workflow
     frame_zero_venv = (
         '"${FRAME_ZERO_BOOTSTRAP_PYTHON}" -m venv \\\n'
         '              --copies "${frame_zero_runtime}"'
