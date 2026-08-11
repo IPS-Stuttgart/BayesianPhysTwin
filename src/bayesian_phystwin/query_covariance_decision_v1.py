@@ -101,6 +101,12 @@ _DECISION_FIELDS: Final = frozenset(
         "metadata",
     }
 )
+_REGISTERED_TREATMENTS: Final = frozenset(
+    {
+        MARGINAL_GAUGE_COVARIANCE,
+        COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE,
+    }
+)
 
 
 def _mapping(value: object, *, name: str) -> Mapping[str, Any]:
@@ -140,6 +146,24 @@ def _close(left: float, right: float, *, scale: float = 1.0) -> bool:
     return math.isclose(left, right, abs_tol=1e-12 * scale, rel_tol=1e-10)
 
 
+def _all_close(
+    values: Sequence[float | None],
+    expected: float,
+) -> bool:
+    return all(value is None or _close(value, expected) for value in values)
+
+
+def _selected_treatment(
+    relevance: float | None,
+    threshold: float,
+) -> str | None:
+    if relevance is None:
+        return None
+    if relevance < threshold:
+        return MARGINAL_GAUGE_COVARIANCE
+    return COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
+
+
 def _validated_summary(
     value: object,
     *,
@@ -162,6 +186,7 @@ def _validated_summary(
         raise ValueError("Prob4D query covariance version changed")
     if summary["claim_boundary"] != PROB4D_QUERY_COVARIANCE_CLAIM_BOUNDARY:
         raise ValueError("Prob4D query covariance claim boundary changed")
+
     genuine_integer(
         summary["observation_count"],
         name="observation_count",
@@ -198,6 +223,12 @@ def _validated_summary(
         raise ValueError("Prob4D query rank exceeds query_dimension")
     if shared_rank > min(query_dimension, shared_columns):
         raise ValueError("Prob4D shared rank exceeds declared dimensions")
+    if active_dimension != total_rank:
+        raise ValueError(
+            "active_query_dimension must equal total_effective_rank"
+        )
+    if shared_rank > total_rank:
+        raise ValueError("Prob4D shared rank exceeds total effective rank")
 
     conditional = _finite_real(
         summary["conditional_trace"],
@@ -217,34 +248,69 @@ def _validated_summary(
     scale = max(conditional, shared, total, 1.0)
     if not _close(conditional + shared, total, scale=scale):
         raise ValueError("Prob4D query covariance traces are inconsistent")
+    if total == 0.0 and total_rank != 0:
+        raise ValueError("zero total trace requires zero total effective rank")
+    if total > 0.0 and total_rank == 0:
+        raise ValueError("positive total trace requires positive total effective rank")
+    if shared == 0.0 and shared_rank != 0:
+        raise ValueError("zero shared trace requires zero shared effective rank")
+    if shared > 0.0 and shared_rank == 0:
+        raise ValueError(
+            "positive shared trace requires positive shared effective rank"
+        )
+    if shared_columns == 0 and shared != 0.0:
+        raise ValueError("zero shared-factor columns require zero shared trace")
+
     relevance = _optional_fraction(
         summary["shared_trace_fraction"],
         name="shared_trace_fraction",
     )
-    expected_relevance = None if total <= 0.0 else shared / total
+    expected_relevance = None if total == 0.0 else shared / total
     if expected_relevance is None:
         if relevance is not None:
             raise ValueError("shared_trace_fraction must be null for zero trace")
     elif relevance is None or not _close(relevance, expected_relevance):
         raise ValueError("shared_trace_fraction disagrees with query traces")
-    _optional_fraction(
+
+    frobenius = _optional_fraction(
         summary["shared_frobenius_fraction"],
         name="shared_frobenius_fraction",
     )
+    if total == 0.0:
+        if frobenius is not None:
+            raise ValueError("zero total trace requires null Frobenius fraction")
+    elif frobenius is None:
+        raise ValueError("positive total trace requires a Frobenius fraction")
+    elif shared == 0.0 and not _close(frobenius, 0.0):
+        raise ValueError("zero shared covariance requires zero Frobenius fraction")
+    elif conditional == 0.0 and not _close(frobenius, 1.0):
+        raise ValueError("all-shared covariance requires unit Frobenius fraction")
 
-    coordinates = summary["coordinate_shared_fractions"]
-    if isinstance(coordinates, (str, bytes)) or not isinstance(
-        coordinates,
+    coordinates_raw = summary["coordinate_shared_fractions"]
+    if isinstance(coordinates_raw, (str, bytes)) or not isinstance(
+        coordinates_raw,
         Sequence,
     ):
         raise ValueError("coordinate_shared_fractions must be a JSON array")
-    if len(coordinates) != query_dimension:
+    if len(coordinates_raw) != query_dimension:
         raise ValueError("coordinate fractions length must equal query_dimension")
-    for index, coordinate in enumerate(coordinates):
+    coordinates = tuple(
         _optional_fraction(
             coordinate,
             name=f"coordinate_shared_fractions[{index}]",
         )
+        for index, coordinate in enumerate(coordinates_raw)
+    )
+    defined_coordinate_count = sum(value is not None for value in coordinates)
+    if total == 0.0 and defined_coordinate_count != 0:
+        raise ValueError("zero total trace requires null coordinate fractions")
+    if total > 0.0 and defined_coordinate_count < total_rank:
+        raise ValueError("coordinate fractions are inconsistent with total rank")
+    if shared == 0.0 and not _all_close(coordinates, 0.0):
+        raise ValueError("zero shared covariance requires zero coordinate fractions")
+    if conditional == 0.0 and not _all_close(coordinates, 1.0):
+        raise ValueError("all-shared covariance requires unit coordinate fractions")
+
     directional = tuple(
         _optional_fraction(summary[name], name=name)
         for name in (
@@ -253,14 +319,26 @@ def _validated_summary(
             "maximum_directional_shared_fraction",
         )
     )
-    if active_dimension == 0 and any(item is not None for item in directional):
-        raise ValueError("directional fractions require an active query")
-    if active_dimension > 0:
+    if active_dimension == 0:
+        if any(item is not None for item in directional):
+            raise ValueError("directional fractions require an active query")
+    else:
         if any(item is None for item in directional):
             raise ValueError("active queries require directional fractions")
         minimum, mean, maximum = cast(tuple[float, float, float], directional)
         if not minimum <= mean <= maximum:
             raise ValueError("directional shared fractions are not ordered")
+        if shared == 0.0 and not all(_close(item, 0.0) for item in directional):
+            raise ValueError(
+                "zero shared covariance requires zero directional fractions"
+            )
+        if conditional == 0.0 and not all(
+            _close(item, 1.0) for item in directional
+        ):
+            raise ValueError(
+                "all-shared covariance requires unit directional fractions"
+            )
+
     tolerance = _finite_real(
         summary["relative_rank_tolerance"],
         name="relative_rank_tolerance",
@@ -323,14 +401,17 @@ class QueryCovarianceTreatmentDecisionV1:
             maximum=1.0,
         )
         selected = self.selected_covariance_treatment
-        registered = {
-            MARGINAL_GAUGE_COVARIANCE,
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE,
-        }
-        if selected is not None and selected not in registered:
+        if selected is not None and selected not in _REGISTERED_TREATMENTS:
             raise ValueError("selected covariance treatment is not registered")
-        if self.principal_covariance_treatment not in registered:
+        principal = self.principal_covariance_treatment
+        if principal not in _REGISTERED_TREATMENTS:
             raise ValueError("principal covariance treatment is not registered")
+        expected_selected = _selected_treatment(relevance, threshold)
+        if selected != expected_selected:
+            raise ValueError(
+                "selected covariance treatment contradicts relevance threshold"
+            )
+
         matches = genuine_boolean(
             self.principal_treatment_matches,
             name="principal_treatment_matches",
@@ -340,9 +421,7 @@ class QueryCovarianceTreatmentDecisionV1:
             name="value_certificate_certified",
         )
         authorized = genuine_boolean(self.authorized, name="authorized")
-        expected_matches = (
-            selected is not None and selected == self.principal_covariance_treatment
-        )
+        expected_matches = selected is not None and selected == principal
         if matches != expected_matches:
             raise ValueError("principal_treatment_matches contradicts treatments")
 
@@ -351,16 +430,16 @@ class QueryCovarianceTreatmentDecisionV1:
             raise ValueError("reasons must not contain duplicates")
         if any(type(reason) is not str or not reason for reason in reasons):
             raise ValueError("reasons must contain nonempty strings")
-        expected: list[str] = []
+        expected_reasons: list[str] = []
         if relevance is None:
-            expected.append("shared-covariance-relevance-undefined")
+            expected_reasons.append("shared-covariance-relevance-undefined")
         if not matches:
-            expected.append("principal-covariance-treatment-mismatch")
+            expected_reasons.append("principal-covariance-treatment-mismatch")
         if not certified:
-            expected.append("covariance-value-certificate-rejected")
-        if not expected:
-            expected.append("covariance-treatment-authorized")
-        if reasons != tuple(sorted(expected)):
+            expected_reasons.append("covariance-value-certificate-rejected")
+        if not expected_reasons:
+            expected_reasons.append("covariance-treatment-authorized")
+        if reasons != tuple(sorted(expected_reasons)):
             raise ValueError("reasons do not match covariance treatment gates")
         expected_authorized = reasons == ("covariance-treatment-authorized",)
         if authorized != expected_authorized:
@@ -368,6 +447,7 @@ class QueryCovarianceTreatmentDecisionV1:
 
         object.__setattr__(self, "shared_covariance_relevance", relevance)
         object.__setattr__(self, "relevance_threshold", threshold)
+        object.__setattr__(self, "principal_covariance_treatment", principal)
         object.__setattr__(self, "principal_treatment_matches", matches)
         object.__setattr__(self, "value_certificate_certified", certified)
         object.__setattr__(self, "authorized", authorized)
@@ -513,6 +593,7 @@ def compose_query_covariance_treatment(
         raise ValueError("value certificate statistical unit differs from query")
     if value_certificate.score_metric != physical_query.primary_proper_score:
         raise ValueError("value certificate proper score differs from query")
+
     margins = physical_query.decision_margins
     alignments = (
         (
@@ -545,12 +626,10 @@ def compose_query_covariance_treatment(
         raise ValueError("PhysicalQueryV1 uses an unsupported selection rule")
 
     relevance = cast(float | None, summary["shared_trace_fraction"])
-    if relevance is None:
-        selected = None
-    elif relevance < margins.minimum_shared_covariance_relevance:
-        selected = MARGINAL_GAUGE_COVARIANCE
-    else:
-        selected = COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
+    selected = _selected_treatment(
+        relevance,
+        margins.minimum_shared_covariance_relevance,
+    )
     matches = bool(
         selected is not None
         and selected == physical_query.principal_covariance_treatment
