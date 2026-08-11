@@ -59,7 +59,7 @@ jobs:
                   "RUN "
                   f"id={run_id} name={run.get('name')!r} "
                   f"status={run.get('status')} conclusion={run.get('conclusion')} "
-                  f"attempt={run.get('run_attempt')} url={run.get('html_url)}"
+                  f"attempt={run.get('run_attempt')} url={run.get('html_url')}"
               )
               for job in jobs(run_id):
                   print(
