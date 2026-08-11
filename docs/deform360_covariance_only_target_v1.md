@@ -88,3 +88,18 @@ The identical 32-object panel, metadata bytes, seed, quotas, solver, method,
 fallback, covariance scales, endpoints, and gates are retained. This amendment
 was committed before creating a target roster and before opening any target
 payload or outcome.
+
+## Frozen target roster
+
+The v1.2 metadata-only gate succeeded on the unchanged candidate panel. The
+frozen roster contains 24 unique physical objects and exactly two sessions in
+each of the 12 registered object-stratum, bimanual, and action-family cells. Its
+roster SHA-256 is
+`f9106b3dd6e0cec089623e07fed3506755fb334952c7761846d0854dfba45783`.
+
+The roster and full metadata-only selection are bound by
+`results/science/deform360_covariance_only_target_v1/target_roster_v1_2.json`.
+At roster lock, no target media, sensor array, geometry, track annotation,
+prediction, or outcome had been opened. The next permitted operation is an
+exact-file availability plan and quarantined byte download for these 24 sessions;
+no target may be replaced.

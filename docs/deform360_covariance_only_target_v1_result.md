@@ -36,3 +36,16 @@ The separately frozen v1.2 protocol adds those three tokens to their coarse
 families and changes nothing else. This is the final metadata-vocabulary
 amendment: any subsequent roster infeasibility or metadata failure terminates the
 prospective target selection without replacement.
+
+The v1.2 metadata-only selection then succeeded. Independent verification found
+24 unique objects, 12 factorial cells, and exactly two sessions per cell. The
+roster digest is
+`f9106b3dd6e0cec089623e07fed3506755fb334952c7761846d0854dfba45783`,
+and the complete selection digest is
+`d5745e513674a65ea51dd786caa1b51ef8a501d2e2ff3f27680e8f9366c37d77`.
+
+The selected roster was frozen before repository support inspection or target
+payload download. At this boundary, no camera media, robot or tactile array,
+geometry, track annotation, prediction, or outcome had been opened. All 24
+sessions now remain in the denominator regardless of downstream availability or
+technical failure.
