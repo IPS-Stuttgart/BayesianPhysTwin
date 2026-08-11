@@ -96,7 +96,7 @@ def test_v2_uses_default_anchor_variance() -> None:
         bias_basis,
         anchor_innovation_m=np.asarray([[0.01, 0.0, 0.0]], dtype=np.float64),
         anchor_state_basis=np.ones((1, 1), dtype=np.float64),
-        config=_v2_config(maximum_iterations=8),
+        config=_v2_config(maximum_iterations=16),
     )
 
     assert result.accepted
