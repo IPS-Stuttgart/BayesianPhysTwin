@@ -1,0 +1,678 @@
+name: Raise PR 576 residual-history contract coverage once
+
+on:
+  push:
+    branches:
+      - agent/registered-residual-history-single-path-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: raise-pr576-contract-coverage-once
+  cancel-in-progress: false
+
+jobs:
+  coverage:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact pull-request branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/registered-residual-history-single-path-v1
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Add focused fail-closed coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object src/bayesian_phystwin/deform360_registered_residual_history_v1.py)" = \
+            05ce415c9a6f1b6f853621955cd7185a0acdc651
+          test "$(git hash-object tests/test_portable_contracts_deform360_registered_residual_history_v1.py)" = \
+            4f4ce81e1212dfb439e622f6b5f6f40996e21088
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path(
+              "src/bayesian_phystwin/deform360_registered_residual_history_v1.py"
+          )
+          text = source.read_text(encoding="utf-8")
+          dead_horizon_guard = '''    for label_index, chunk in enumerate(np.array_split(indices, 3)):
+              if not len(chunk):
+                  raise AssertionError("canonical horizon partition contains an empty bin")
+              bins[chunk] = label_index
+          '''
+          direct_horizon_assignment = '''    for label_index, chunk in enumerate(np.array_split(indices, 3)):
+              bins[chunk] = label_index
+          '''
+          if text.count(dead_horizon_guard) != 1:
+              raise SystemExit("canonical horizon guard changed")
+          text = text.replace(dead_horizon_guard, direct_horizon_assignment)
+          redundant_admission = '''            if insufficient or mean_mismatch:
+                  raise ValueError("accepted decision violates registered admission")
+          '''
+          if text.count(redundant_admission) != 1:
+              raise SystemExit("redundant accepted-admission guard changed")
+          text = text.replace(redundant_admission, "")
+          source.write_text(text, encoding="utf-8")
+
+          test = Path(
+              "tests/test_portable_contracts_deform360_registered_residual_history_v1.py"
+          )
+          text = test.read_text(encoding="utf-8")
+          old_imports = '''import inspect
+          from dataclasses import replace
+
+          import numpy as np
+          import pytest
+
+          from bayesian_phystwin.deform360_registered_residual_history_v1 import (
+          '''
+          new_imports = '''import inspect
+          from collections.abc import Callable
+          from dataclasses import replace
+          from types import SimpleNamespace
+
+          import numpy as np
+          import pytest
+
+          import bayesian_phystwin.deform360_registered_residual_history_v1 as residual_module
+          from bayesian_phystwin.deform360_registered_residual_history_v1 import (
+          '''
+          if text.count(old_imports) != 1:
+              raise SystemExit("test import block changed")
+          text = text.replace(old_imports, new_imports)
+          public_anchor = '''    REGISTERED_REFERENCE_PREDICTOR_ID,
+              RegisteredResidualHistoryPredictionV1,
+          '''
+          public_replacement = '''    REGISTERED_REFERENCE_PREDICTOR_ID,
+              RegisteredResidualHistoryDecisionV1,
+              RegisteredResidualHistoryPredictionV1,
+          '''
+          if text.count(public_anchor) != 1:
+              raise SystemExit("decision import anchor changed")
+          text = text.replace(public_anchor, public_replacement)
+          marker = "\n\ndef test_private_scalar_and_tuple_helpers_fail_closed() -> None:\n"
+          if marker in text:
+              raise SystemExit("focused coverage tests already present")
+          text += r'''
+
+
+def _validate_arrays(
+    arrays: dict[str, np.ndarray],
+    **overrides: object,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    return residual_module._validate_execution_arrays(
+        overrides.get("physical_prefix_m", arrays["physical_prefix"]),
+        overrides.get("provider_observation_prefix_m", arrays["observation"]),
+        overrides.get("observed_validity", arrays["validity"]),
+        overrides.get("physical_future_m", arrays["physical_future"]),
+        overrides.get("registered_last_residual_mean_m", arrays["registered_mean"]),
+        overrides.get("reference_covariance_m2", arrays["reference_covariance"]),
+    )
+
+
+def test_private_scalar_and_tuple_helpers_fail_closed() -> None:
+    for value in (None, "", " padded "):
+        with pytest.raises(ValueError, match="nonempty canonical string"):
+            residual_module._canonical_string(value, name="value")
+    with pytest.raises(ValueError, match="single canonical line"):
+        residual_module._canonical_string("two\nlines", name="value")
+
+    cases: tuple[tuple[Callable[..., object], object, str], ...] = (
+        (residual_module._canonical_string_tuple, ["a"], "canonical tuple"),
+        (residual_module._canonical_string_tuple, (), "nonempty"),
+        (residual_module._canonical_string_tuple, ("b", "a"), "sorted and unique"),
+        (residual_module._canonical_string_tuple, ("a", "a"), "sorted and unique"),
+        (residual_module._digest_tuple, ["a" * 64], "canonical tuple"),
+        (residual_module._digest_tuple, (), "nonempty"),
+        (
+            residual_module._digest_tuple,
+            ("b" * 64, "a" * 64),
+            "sorted and unique",
+        ),
+        (
+            residual_module._digest_tuple,
+            ("a" * 64, "a" * 64),
+            "sorted and unique",
+        ),
+    )
+    for helper, value, match in cases:
+        with pytest.raises(ValueError, match=match):
+            helper(value, name="value")
+
+
+def test_private_array_validators_fail_closed() -> None:
+    with pytest.raises(TypeError, match="must be a NumPy array$"):
+        residual_module._float64_array([], name="value", ndim=1)
+    with pytest.raises(TypeError, match="preserve identity"):
+        residual_module._float64_array(
+            [],
+            name="value",
+            ndim=1,
+            preserve_identity=True,
+        )
+    with pytest.raises(ValueError, match="dtype float64"):
+        residual_module._float64_array(
+            np.zeros(2, dtype=np.float32),
+            name="value",
+            ndim=1,
+        )
+    with pytest.raises(ValueError, match="3 dimensions"):
+        residual_module._float64_array(
+            np.zeros((2, 2), dtype=np.float64),
+            name="value",
+            ndim=3,
+        )
+    with pytest.raises(ValueError, match="C-contiguous"):
+        residual_module._float64_array(
+            np.zeros((2, 3, 4), dtype=np.float64).transpose(1, 0, 2),
+            name="value",
+            ndim=3,
+        )
+
+    with pytest.raises(TypeError, match="NumPy array"):
+        residual_module._boolean_array([], name="value", ndim=2)
+    with pytest.raises(ValueError, match="Boolean dtype"):
+        residual_module._boolean_array(
+            np.zeros((2, 2), dtype=np.int64),
+            name="value",
+            ndim=2,
+        )
+    with pytest.raises(ValueError, match="2 dimensions"):
+        residual_module._boolean_array(
+            np.zeros(2, dtype=bool),
+            name="value",
+            ndim=2,
+        )
+    with pytest.raises(ValueError, match="C-contiguous"):
+        residual_module._boolean_array(
+            np.zeros((2, 3), dtype=bool).T,
+            name="value",
+            ndim=2,
+        )
+
+
+def test_private_horizon_and_config_guards_fail_closed() -> None:
+    for value in (True, 2):
+        with pytest.raises(ValueError, match="at least three future frames"):
+            residual_module._canonical_horizon_bins(value)
+    with pytest.raises(TypeError, match="ModelAveragedEndpointConfigV1"):
+        residual_module._endpoint_config_descriptor(object())
+
+
+def test_provenance_tuple_and_reconstruction_guards_fail_closed() -> None:
+    provenance = _provenance()
+    cases: tuple[tuple[dict[str, object], str], ...] = (
+        (
+            {"scoring_reconstruction_id": provenance.provider_reconstruction_id},
+            "reconstructions must differ",
+        ),
+        ({"provider_camera_family_ids": ["family"]}, "canonical tuple"),
+        ({"provider_camera_family_ids": ()}, "nonempty"),
+        (
+            {"provider_camera_family_ids": ("recorder-family-02", "recorder-family-00")},
+            "sorted and unique",
+        ),
+        ({"provider_input_artifact_ids": ["1" * 64]}, "canonical tuple"),
+        ({"provider_input_artifact_ids": ()}, "nonempty"),
+        (
+            {"provider_input_artifact_ids": ("3" * 64, "1" * 64)},
+            "sorted and unique",
+        ),
+    )
+    for changes, match in cases:
+        with pytest.raises(ValueError, match=match):
+            replace(provenance, **changes, provenance_id=None)
+
+
+def test_decision_scalar_roster_and_reason_guards_fail_closed() -> None:
+    decision = _run(_arrays()).decision
+    cases: tuple[tuple[dict[str, object], str], ...] = (
+        (
+            {"valid_observation_count_by_track": [2, 2, 2, 2]},
+            "canonical tuple",
+        ),
+        (
+            {"valid_observation_count_by_track": (True, 2, 2, 2)},
+            "must be an integer",
+        ),
+        (
+            {"valid_observation_count_by_track": (-1, 2, 2, 2)},
+            "nonnegative",
+        ),
+        ({"valid_observation_count_by_track": ()}, "nonempty"),
+        ({"future_horizon_count": True}, "must be an integer"),
+        ({"future_horizon_bins": [0, 0, 1, 1, 2, 2]}, "canonical tuple"),
+        ({"accepted": 1}, "accepted must be a Boolean"),
+        ({"fallback_reasons": []}, "canonical tuple"),
+        (
+            {
+                "fallback_reasons": (
+                    "registered-mean-mismatch",
+                    "insufficient-per-track-support",
+                )
+            },
+            "sorted and unique",
+        ),
+        (
+            {
+                "fallback_reasons": (
+                    "insufficient-per-track-support",
+                    "insufficient-per-track-support",
+                )
+            },
+            "sorted and unique",
+        ),
+        ({"fallback_reasons": ("unsupported",)}, "unsupported reason"),
+        (
+            {"valid_observation_count_by_track": (1, 2, 2, 2)},
+            "support fallback reason differs",
+        ),
+        (
+            {"reconstructed_reference_mean_sha256": "0" * 64},
+            "mean mismatch fallback reason differs",
+        ),
+        ({"endpoint_config_id": "bad"}, "endpoint_config_id"),
+        ({"endpoint_prediction_ids": ["a" * 64]}, "canonical tuple"),
+        (
+            {
+                "endpoint_prediction_ids": (
+                    decision.endpoint_prediction_ids[0],
+                )
+                * decision.future_horizon_count
+            },
+            "must be unique",
+        ),
+        (
+            {"registered_mean_identity_preserved": 1},
+            "identity-preservation fields",
+        ),
+        (
+            {"registered_mean_identity_preserved": False},
+            "registered mean identity",
+        ),
+    )
+    for changes, match in cases:
+        with pytest.raises((TypeError, ValueError), match=match):
+            replace(decision, **changes, decision_id=None)
+
+
+def test_accepted_and_fallback_decision_invariants_fail_closed() -> None:
+    accepted = _run(_arrays()).decision
+    with pytest.raises(ValueError, match="cannot contain fallback reasons"):
+        replace(
+            accepted,
+            valid_observation_count_by_track=(1, 2, 2, 2),
+            fallback_reasons=("insufficient-per-track-support",),
+            decision_id=None,
+        )
+    with pytest.raises(ValueError, match="lacks endpoint donor lineage"):
+        replace(accepted, endpoint_config_id=None, decision_id=None)
+    with pytest.raises(ValueError, match="did not deploy reference covariance"):
+        replace(
+            accepted,
+            reference_covariance_identity_preserved=True,
+            decision_id=None,
+        )
+
+    unsupported_arrays = _arrays()
+    unsupported_arrays["validity"][2, 3] = False
+    unsupported_arrays["observation"][2, 3] = np.nan
+    unsupported_arrays["registered_mean"] = _registered_mean(unsupported_arrays)
+    fallback = _run(unsupported_arrays).decision
+    with pytest.raises(ValueError, match="require at least one reason"):
+        replace(
+            accepted,
+            accepted=False,
+            fallback_reasons=(),
+            endpoint_config_id=None,
+            endpoint_posterior_id=None,
+            endpoint_prediction_ids=(),
+            donor_covariance_sha256=None,
+            hybrid_artifact_id=None,
+            output_covariance_sha256=accepted.reference_covariance_sha256,
+            reference_covariance_identity_preserved=True,
+            decision_id=None,
+        )
+    with pytest.raises(ValueError, match="must not retain donor execution"):
+        replace(fallback, endpoint_config_id="a" * 64, decision_id=None)
+    with pytest.raises(ValueError, match="preserve reference covariance identity"):
+        replace(
+            fallback,
+            reference_covariance_identity_preserved=False,
+            decision_id=None,
+        )
+    with pytest.raises(ValueError, match="differs from the reference"):
+        replace(fallback, output_covariance_sha256="f" * 64, decision_id=None)
+
+
+def test_prediction_wrapper_guards_fail_closed() -> None:
+    accepted = _run(_arrays())
+    assert accepted.hybrid is not None
+    with pytest.raises(TypeError, match="provenance must be"):
+        RegisteredResidualHistoryPredictionV1(
+            mean_m=accepted.mean_m,
+            covariance_m2=accepted.covariance_m2,
+            provenance=object(),
+            decision=accepted.decision,
+            hybrid=accepted.hybrid,
+        )
+    with pytest.raises(TypeError, match="decision must be"):
+        RegisteredResidualHistoryPredictionV1(
+            mean_m=accepted.mean_m,
+            covariance_m2=accepted.covariance_m2,
+            provenance=accepted.provenance,
+            decision=object(),
+            hybrid=accepted.hybrid,
+        )
+    other_provenance = replace(
+        accepted.provenance,
+        source_inventory_id="f" * 64,
+        provenance_id=None,
+    )
+    with pytest.raises(ValueError, match="source provenance differ"):
+        RegisteredResidualHistoryPredictionV1(
+            mean_m=accepted.mean_m,
+            covariance_m2=accepted.covariance_m2,
+            provenance=other_provenance,
+            decision=accepted.decision,
+            hybrid=accepted.hybrid,
+        )
+    with pytest.raises(ValueError, match="mean shape"):
+        replace(accepted, mean_m=accepted.mean_m[:-1])
+    with pytest.raises(ValueError, match="covariance shape"):
+        replace(accepted, covariance_m2=accepted.covariance_m2[:-1])
+    changed_mean = np.array(accepted.mean_m, copy=True)
+    changed_mean[0, 0, 0] += 1e-9
+    with pytest.raises(ValueError, match="mean content"):
+        replace(accepted, mean_m=changed_mean)
+    changed_covariance = np.array(accepted.covariance_m2, copy=True)
+    changed_covariance[0, 0, 0, 0] += 1e-9
+    with pytest.raises(ValueError, match="covariance content"):
+        replace(accepted, covariance_m2=changed_covariance)
+    with pytest.raises(ValueError, match="missing the covariance hybrid"):
+        replace(accepted, hybrid=None)
+    other = _run(_arrays())
+    assert other.hybrid is not None
+    with pytest.raises(ValueError, match="retain hybrid objects"):
+        replace(accepted, hybrid=other.hybrid)
+
+    unsupported_arrays = _arrays()
+    unsupported_arrays["validity"][2, 3] = False
+    unsupported_arrays["observation"][2, 3] = np.nan
+    unsupported_arrays["registered_mean"] = _registered_mean(unsupported_arrays)
+    fallback = _run(unsupported_arrays)
+    with pytest.raises(ValueError, match="must not retain a covariance hybrid"):
+        replace(fallback, hybrid=accepted.hybrid)
+
+
+def test_execution_array_types_shapes_and_finiteness_fail_closed() -> None:
+    arrays = _arrays()
+    with pytest.raises(TypeError, match="physical_prefix_m must be a NumPy array"):
+        _validate_arrays(arrays, physical_prefix_m=[])
+    with pytest.raises(ValueError, match="prefix arrays"):
+        _validate_arrays(
+            arrays,
+            physical_prefix_m=arrays["physical_prefix"][:-1],
+        )
+    with pytest.raises(ValueError, match="prefix arrays"):
+        _validate_arrays(
+            arrays,
+            observed_validity=arrays["validity"][:-1],
+        )
+    with pytest.raises(ValueError, match="prefix arrays"):
+        _validate_arrays(
+            arrays,
+            physical_prefix_m=np.zeros((3, 4, 2), dtype=np.float64),
+            provider_observation_prefix_m=np.zeros((3, 4, 2), dtype=np.float64),
+        )
+    with pytest.raises(ValueError, match="prefix arrays"):
+        _validate_arrays(
+            arrays,
+            physical_prefix_m=np.zeros((0, 4, 3), dtype=np.float64),
+            provider_observation_prefix_m=np.zeros((0, 4, 3), dtype=np.float64),
+            observed_validity=np.zeros((0, 4), dtype=bool),
+        )
+    with pytest.raises(ValueError, match="physical_future_m"):
+        _validate_arrays(
+            arrays,
+            physical_future_m=arrays["physical_future"][:2],
+            registered_last_residual_mean_m=arrays["registered_mean"][:2],
+            reference_covariance_m2=arrays["reference_covariance"][:2],
+        )
+    with pytest.raises(ValueError, match="track rosters differ"):
+        _validate_arrays(
+            arrays,
+            physical_future_m=arrays["physical_future"][:, :3],
+            registered_last_residual_mean_m=arrays["registered_mean"][:, :3],
+            reference_covariance_m2=arrays["reference_covariance"][:, :3],
+        )
+    with pytest.raises(ValueError, match="registered_last_residual_mean_m shape"):
+        _validate_arrays(
+            arrays,
+            registered_last_residual_mean_m=arrays["registered_mean"][:, :3],
+        )
+    with pytest.raises(ValueError, match="reference_covariance_m2 shape"):
+        _validate_arrays(
+            arrays,
+            reference_covariance_m2=arrays["reference_covariance"][:, :3],
+        )
+
+    for field, match in (
+        ("physical_prefix", "physical_prefix_m must be finite"),
+        ("physical_future", "physical_future_m must be finite"),
+        ("registered_mean", "registered_last_residual_mean_m must be finite"),
+        ("reference_covariance", "reference_covariance_m2 must be finite"),
+    ):
+        changed = np.array(arrays[field], copy=True)
+        changed.flat[0] = np.nan
+        keyword = {
+            "physical_prefix": "physical_prefix_m",
+            "physical_future": "physical_future_m",
+            "registered_mean": "registered_last_residual_mean_m",
+            "reference_covariance": "reference_covariance_m2",
+        }[field]
+        with pytest.raises(ValueError, match=match):
+            _validate_arrays(arrays, **{keyword: changed})
+
+    observation = np.array(arrays["observation"], copy=True)
+    observation[0, 0] = np.nan
+    with pytest.raises(ValueError, match="valid provider observations"):
+        _validate_arrays(arrays, provider_observation_prefix_m=observation)
+
+    all_valid = np.ones_like(arrays["validity"])
+    finite_observation = np.array(arrays["physical_prefix"], copy=True) + 0.01
+    validated = _validate_arrays(
+        arrays,
+        provider_observation_prefix_m=finite_observation,
+        observed_validity=all_valid,
+    )
+    assert validated[2] is all_valid
+
+
+def test_reconstructed_mean_handles_a_track_without_support() -> None:
+    residual = np.zeros((2, 2, 3), dtype=np.float64)
+    residual[:, 0, 0] = (0.1, 0.2)
+    validity = np.asarray([[True, False], [True, False]], dtype=bool)
+    mean = residual_module._reconstructed_reference_mean(
+        np.zeros((3, 2, 3), dtype=np.float64),
+        residual,
+        validity,
+    )
+    np.testing.assert_array_equal(mean[:, 0, 0], np.full(3, 0.2))
+    np.testing.assert_array_equal(mean[:, 1], np.zeros((3, 3)))
+
+
+def test_fallback_object_identity_assertions_are_live(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arrays = _arrays()
+    arrays["validity"][2, 3] = False
+    arrays["observation"][2, 3] = np.nan
+    arrays["registered_mean"] = _registered_mean(arrays)
+
+    def copied_mean(**kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            mean_m=np.array(kwargs["mean_m"], copy=True),
+            covariance_m2=kwargs["covariance_m2"],
+        )
+
+    monkeypatch.setattr(
+        residual_module,
+        "RegisteredResidualHistoryPredictionV1",
+        copied_mean,
+    )
+    with pytest.raises(AssertionError, match="copied the registered mean"):
+        _run(arrays)
+
+    def copied_covariance(**kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            mean_m=kwargs["mean_m"],
+            covariance_m2=np.array(kwargs["covariance_m2"], copy=True),
+        )
+
+    monkeypatch.setattr(
+        residual_module,
+        "RegisteredResidualHistoryPredictionV1",
+        copied_covariance,
+    )
+    with pytest.raises(AssertionError, match="copied the reference covariance"):
+        _run(arrays)
+
+
+def test_runtime_top_level_and_internal_assertions_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arrays = _arrays()
+    with pytest.raises(ValueError, match="source_unit_id"):
+        run_registered_residual_history_v1(
+            arrays["physical_prefix"],
+            arrays["observation"],
+            arrays["validity"],
+            arrays["physical_future"],
+            arrays["registered_mean"],
+            arrays["reference_covariance"],
+            source_unit_id="",
+            provenance=_provenance(),
+        )
+    with pytest.raises(TypeError, match="provenance must be"):
+        run_registered_residual_history_v1(
+            arrays["physical_prefix"],
+            arrays["observation"],
+            arrays["validity"],
+            arrays["physical_future"],
+            arrays["registered_mean"],
+            arrays["reference_covariance"],
+            source_unit_id="opened-source-object-session-001",
+            provenance=object(),
+        )
+
+    original_infer = residual_module.infer_model_averaged_endpoint
+
+    def changed_update_count(*args: object, **kwargs: object) -> object:
+        posterior = original_infer(*args, **kwargs)
+        object.__setattr__(
+            posterior,
+            "update_count",
+            posterior.update_count + np.ones_like(posterior.update_count),
+        )
+        return posterior
+
+    monkeypatch.setattr(
+        residual_module,
+        "infer_model_averaged_endpoint",
+        changed_update_count,
+    )
+    with pytest.raises(AssertionError, match="different causal observations"):
+        _run(arrays)
+    monkeypatch.setattr(
+        residual_module,
+        "infer_model_averaged_endpoint",
+        original_infer,
+    )
+
+    original_compose = residual_module.compose_covariance_only_hybrid
+
+    def copied_hybrid_mean(*args: object, **kwargs: object) -> SimpleNamespace:
+        hybrid = original_compose(*args, **kwargs)
+        return SimpleNamespace(
+            mean_m=np.array(hybrid.mean_m, copy=True),
+            covariance_m2=hybrid.covariance_m2,
+            record=hybrid.record,
+        )
+
+    monkeypatch.setattr(
+        residual_module,
+        "compose_covariance_only_hybrid",
+        copied_hybrid_mean,
+    )
+    with pytest.raises(AssertionError, match="copied the reference mean"):
+        _run(arrays)
+
+
+def test_combined_fallback_reasons_are_sorted_and_metadata_is_retained() -> None:
+    arrays = _arrays()
+    arrays["validity"][2, 3] = False
+    arrays["observation"][2, 3] = np.nan
+    arrays["registered_mean"] = _registered_mean(arrays)
+    arrays["registered_mean"][0, 0, 0] += 0.001
+    result = _run(arrays, metadata={"negative_evidence": True})
+    assert result.decision.fallback_reasons == (
+        "insufficient-per-track-support",
+        "registered-mean-mismatch",
+    )
+    assert result.decision.metadata["negative_evidence"] is True
+'''
+          test.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Validate focused behavior and coverage floors
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e '.[dev]'
+          python -m ruff format \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          python -m mypy \
+            src/bayesian_phystwin/deform360_registered_residual_history_v1.py
+          python -m coverage erase
+          python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
+            tests/test_portable_contracts_deform360_registered_residual_history_v1.py
+          python -m coverage json -o /tmp/pr576-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("/tmp/pr576-coverage.json").read_text())
+          suffix = "deform360_registered_residual_history_v1.py"
+          matches = [value for key, value in report["files"].items() if key.endswith(suffix)]
+          if len(matches) != 1:
+              raise SystemExit(f"expected one module coverage record, found {len(matches)}")
+          summary = matches[0]["summary"]
+          line_rate = 100.0 * summary["covered_lines"] / summary["num_statements"]
+          branch_rate = 100.0 * summary["covered_branches"] / summary["num_branches"]
+          print(f"module line coverage: {line_rate:.2f}%")
+          print(f"module branch coverage: {branch_rate:.2f}%")
+          if line_rate < 90.0 or branch_rate < 80.0:
+              raise SystemExit("focused module coverage remains below repository floors")
+          PY
+          git diff --check
+
+      - name: Commit permanent tests and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/raise-pr576-contract-coverage-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Cover registered residual-history admission boundaries'
+          git push origin HEAD:agent/registered-residual-history-single-path-v1
