@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, Protocol, cast
 
 import numpy as np
 
@@ -76,15 +77,25 @@ _BUNDLE_FIELDS = frozenset(
 )
 
 
+class _NamedTextValidator(Protocol):
+    def __call__(self, value: object, *, name: str) -> str: ...
+
+
 def _literal_boolean(value: object, *, name: str) -> bool:
     if type(value) is not bool:
         raise ValueError(f"{name} must be a literal boolean")
     return cast(bool, value)
 
 
-def _positive_integer(value: object, *, name: str) -> int:
+def _nonnegative_integer(value: object, *, name: str) -> int:
     if type(value) is not int or value < 0:
         raise ValueError(f"{name} must be a nonnegative integer")
+    return cast(int, value)
+
+
+def _schema_version(value: object, *, expected: int, name: str) -> int:
+    if type(value) is not int or value != expected:
+        raise ValueError(f"unsupported {name}")
     return cast(int, value)
 
 
@@ -102,27 +113,30 @@ def _sequence(value: object, *, name: str) -> Sequence[Any]:
     return cast(Sequence[Any], value)
 
 
+def _canonical_text(value: object, *, name: str) -> str:
+    text = nonempty_string(value, name=name)
+    if text != text.strip() or any(ord(character) < 32 for character in text):
+        raise ValueError(f"{name} must be canonical text")
+    return text
+
+
 def _component_mapping(
     value: Mapping[str, str],
     *,
     name: str,
-    validator: Any,
-) -> Mapping[str, Any]:
+    validator: _NamedTextValidator,
+) -> Mapping[str, str]:
     payload = _mapping(value, name=name)
-    if tuple(sorted(payload)) != tuple(sorted(_COMPONENT_KEYS)):
+    if set(payload) != set(_COMPONENT_KEYS):
         raise ValueError(f"{name} must contain the complete component roster")
     normalized = {
         key: validator(payload[key], name=f"{name}.{key}")
         for key in _COMPONENT_KEYS
     }
-    return frozen_finite_json_mapping(normalized, name=name)
-
-
-def _package_version(value: object, *, name: str) -> str:
-    version = nonempty_string(value, name=name)
-    if version != version.strip() or any(ord(character) < 32 for character in version):
-        raise ValueError(f"{name} must be canonical text")
-    return version
+    return cast(
+        Mapping[str, str],
+        frozen_finite_json_mapping(normalized, name=name),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +149,7 @@ class ArrayByteIdentityV1:
     payload_sha256: str
 
     def __post_init__(self) -> None:
-        dtype_text = nonempty_string(self.dtype, name="array dtype")
+        dtype_text = _canonical_text(self.dtype, name="array dtype")
         try:
             dtype = np.dtype(dtype_text)
         except TypeError as error:
@@ -145,14 +159,13 @@ class ArrayByteIdentityV1:
         if isinstance(self.shape, (str, bytes)):
             raise ValueError("array shape must be an integer tuple")
         shape = tuple(
-            _positive_integer(value, name=f"array shape[{index}]")
+            _nonnegative_integer(value, name=f"array shape[{index}]")
             for index, value in enumerate(self.shape)
         )
         if not shape or any(dimension == 0 for dimension in shape):
             raise ValueError("array shape must be nonempty and strictly positive")
-        nbytes = _positive_integer(self.nbytes, name="array nbytes")
-        expected_nbytes = math.prod(shape) * dtype.itemsize
-        if nbytes != expected_nbytes:
+        nbytes = _nonnegative_integer(self.nbytes, name="array nbytes")
+        if nbytes != math.prod(shape) * dtype.itemsize:
             raise ValueError("array nbytes does not match dtype and shape")
         object.__setattr__(self, "dtype", dtype_text)
         object.__setattr__(self, "shape", shape)
@@ -169,8 +182,6 @@ class ArrayByteIdentityV1:
         if array.dtype.kind not in "biuf" or not np.all(np.isfinite(array)):
             raise ValueError("golden-path arrays must contain finite real values")
         canonical = np.ascontiguousarray(array)
-        import hashlib
-
         return cls(
             dtype=canonical.dtype.str,
             shape=canonical.shape,
@@ -204,15 +215,15 @@ class ArrayByteIdentityV1:
             name="array identity",
         )
         shape = tuple(
-            _positive_integer(item, name=f"array shape[{index}]")
+            _nonnegative_integer(item, name=f"array shape[{index}]")
             for index, item in enumerate(
                 _sequence(payload["shape"], name="array shape")
             )
         )
         identity = cls(
-            dtype=nonempty_string(payload["dtype"], name="array dtype"),
+            dtype=_canonical_text(payload["dtype"], name="array dtype"),
             shape=shape,
-            nbytes=_positive_integer(payload["nbytes"], name="array nbytes"),
+            nbytes=_nonnegative_integer(payload["nbytes"], name="array nbytes"),
             payload_sha256=sha256_digest(
                 payload["payload_sha256"],
                 name="array payload SHA-256",
@@ -252,11 +263,9 @@ class GoldenPathSelectionArtifactV1:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        case_id = nonempty_string(self.case_id, name="case_id")
-        protocol_id = nonempty_string(self.protocol_id, name="protocol_id")
-        reason = nonempty_string(self.reason, name="reason")
-        if any(value != value.strip() for value in (case_id, protocol_id, reason)):
-            raise ValueError("golden-path identifiers and reason must be canonical")
+        case_id = _canonical_text(self.case_id, name="case_id")
+        protocol_id = _canonical_text(self.protocol_id, name="protocol_id")
+        reason = _canonical_text(self.reason, name="reason")
         decision = self.decision
         if type(decision) is not str or decision not in {"accepted", "rejected"}:
             raise ValueError("unsupported golden-path decision")
@@ -280,8 +289,8 @@ class GoldenPathSelectionArtifactV1:
         candidate = self.candidate_identity
         selected = self.selected_identity
         if any(
-            type(value) is not ArrayByteIdentityV1
-            for value in (baseline, candidate, selected)
+            type(item) is not ArrayByteIdentityV1
+            for item in (baseline, candidate, selected)
         ):
             raise ValueError("selection identities must be ArrayByteIdentityV1")
         if baseline.array_id == candidate.array_id:
@@ -309,10 +318,7 @@ class GoldenPathSelectionArtifactV1:
                 raise ValueError("rejected decision must declare exact baseline fallback")
             if selected.array_id != baseline.array_id:
                 raise ValueError("rejected decision changed the baseline bytes")
-            fallback = sha256_digest(
-                fallback,
-                name="exact_fallback_identity",
-            )
+            fallback = sha256_digest(fallback, name="exact_fallback_identity")
             if fallback != baseline.array_id:
                 raise ValueError("exact fallback identity must equal the baseline ID")
 
@@ -361,7 +367,7 @@ class GoldenPathSelectionArtifactV1:
             _component_mapping(
                 self.package_versions,
                 name="package_versions",
-                validator=_package_version,
+                validator=_canonical_text,
             ),
         )
         object.__setattr__(self, "exact_fallback_identity", fallback)
@@ -419,19 +425,19 @@ class GoldenPathSelectionArtifactV1:
         )
         if payload["schema_name"] != GOLDEN_PATH_SELECTION_SCHEMA:
             raise ValueError("unsupported golden-path selection schema")
-        if (
-            payload["schema_version"]
-            != GOLDEN_PATH_SELECTION_SCHEMA_VERSION
-        ):
-            raise ValueError("unsupported golden-path selection version")
+        _schema_version(
+            payload["schema_version"],
+            expected=GOLDEN_PATH_SELECTION_SCHEMA_VERSION,
+            name="golden-path selection version",
+        )
         artifact = cls(
-            case_id=nonempty_string(payload["case_id"], name="case_id"),
-            protocol_id=nonempty_string(
+            case_id=_canonical_text(payload["case_id"], name="case_id"),
+            protocol_id=_canonical_text(
                 payload["protocol_id"],
                 name="protocol_id",
             ),
             decision=cast(GoldenPathDecision, payload["decision"]),
-            reason=nonempty_string(payload["reason"], name="reason"),
+            reason=_canonical_text(payload["reason"], name="reason"),
             inference_admissible=_literal_boolean(
                 payload["inference_admissible"],
                 name="inference_admissible",
@@ -536,7 +542,7 @@ class GoldenPathEvidenceBundleV1:
             raise ValueError("golden-path bundle entries have invalid types")
         if accepted.decision != "accepted" or rejected.decision != "rejected":
             raise ValueError("golden-path bundle requires accepted and rejected entries")
-        shared_fields = (
+        for name in (
             "case_id",
             "protocol_id",
             "observation_artifact_id",
@@ -550,8 +556,7 @@ class GoldenPathEvidenceBundleV1:
             "package_versions",
             "baseline_identity",
             "candidate_identity",
-        )
-        for name in shared_fields:
+        ):
             if getattr(accepted, name) != getattr(rejected, name):
                 raise ValueError(f"bundle entries disagree on {name}")
         if rejected.exact_fallback_identity != rejected.baseline_identity.array_id:
@@ -587,8 +592,11 @@ class GoldenPathEvidenceBundleV1:
         )
         if payload["schema_name"] != GOLDEN_PATH_BUNDLE_SCHEMA:
             raise ValueError("unsupported golden-path bundle schema")
-        if payload["schema_version"] != GOLDEN_PATH_BUNDLE_SCHEMA_VERSION:
-            raise ValueError("unsupported golden-path bundle version")
+        _schema_version(
+            payload["schema_version"],
+            expected=GOLDEN_PATH_BUNDLE_SCHEMA_VERSION,
+            name="golden-path bundle version",
+        )
         bundle = cls(
             accepted=GoldenPathSelectionArtifactV1.from_mapping(
                 _mapping(payload["accepted"], name="accepted artifact")
@@ -661,7 +669,7 @@ def write_golden_path_evidence_bundle_v1(
     bundle: GoldenPathEvidenceBundleV1,
     *,
     overwrite: bool = False,
-) -> Mapping[str, Path]:
+) -> Mapping[str, str]:
     """Write the accepted, rejected, and bundle JSON records atomically."""
 
     if type(bundle) is not GoldenPathEvidenceBundleV1:
@@ -684,9 +692,12 @@ def write_golden_path_evidence_bundle_v1(
         overwrite=overwrite,
     )
     write_atomic_json(bundle.as_dict(), paths["bundle"], overwrite=overwrite)
-    return frozen_finite_json_mapping(
-        {name: path.as_posix() for name, path in paths.items()},
-        name="golden-path output paths",
+    return cast(
+        Mapping[str, str],
+        frozen_finite_json_mapping(
+            {name: path.as_posix() for name, path in paths.items()},
+            name="golden-path output paths",
+        ),
     )
 
 
