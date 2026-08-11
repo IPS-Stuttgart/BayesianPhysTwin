@@ -65,7 +65,7 @@ PUBLIC_ENDPOINT_PROCESSING_CONTRACT: Final = {
         "local_prefix_range_half_open": [0, 58],
         "local_endpoint_range_half_open": [58, 76],
         "local_unscored_tail_range_half_open": [76, 81],
-        "video_materialization": "exact-ffmpeg-libx264-crf12-30hz",
+        "video_materialization": ("exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"),
         "timestamps_and_robot_state_sliced_to_same_raw_range": True,
     },
     "camera_policy": {
@@ -119,6 +119,13 @@ PUBLIC_ENDPOINT_PROCESSING_CONTRACT: Final = {
         "preview_video": False,
     },
     "runtime": {
+        "ffmpeg_sha256": (
+            "36d94a605d612e4090d1b8aec889d0c0801c6eafb1593c90f5c0dfd2e2966a45"
+        ),
+        "ffmpeg_version_first_line": (
+            "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 "
+            "the FFmpeg developers"
+        ),
         "python_major_minor": "3.10",
         "torch_version": "2.4.0+cu121",
         "torch_cuda_version": "12.1",

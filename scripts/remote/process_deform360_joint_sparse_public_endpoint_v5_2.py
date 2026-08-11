@@ -23,7 +23,6 @@ from bayesian_phystwin._portable_contracts import (
 )
 from bayesian_phystwin.deform360_exact_video_cadence import (
     decoded_frame_count,
-    trim_video_exact_30hz,
 )
 from bayesian_phystwin.deform360_joint_sparse_endpoint_v5 import (
     select_reserved_endpoint_views_v5,
@@ -48,6 +47,7 @@ from bayesian_phystwin.deform360_joint_sparse_source_runner_v5_2 import (
 )
 
 RAW_FRAME_COUNT = 81
+FRAME_RATE_HZ = 30
 MINIMUM_SUCCESSFUL_CAMERAS = 8
 MANIFEST_FILENAME = "joint_sparse_public_endpoint_processing_v5_2.json"
 FAILURE_DIRNAME = "terminal-failures"
@@ -85,6 +85,17 @@ def _clean_revision(repository: Path) -> str:
     ).stdout
     _require(not status.strip(), f"repository is dirty: {repository}")
     return revision
+
+
+def _ffmpeg_version_first_line(ffmpeg: Path) -> str:
+    output = subprocess.run(
+        [str(ffmpeg), "-version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    _require(bool(output), "FFmpeg version probe is empty")
+    return output[0]
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -178,6 +189,7 @@ def _validate_dependencies(
     sam2_repository: Path,
     checkpoint: Path,
     deform360_repository: Path,
+    ffmpeg: Path,
 ) -> tuple[dict[str, Path], dict[str, str]]:
     processing = cast(Mapping[str, Any], processing_lock["processing"])
     masking = cast(Mapping[str, Any], processing["masking"])
@@ -244,6 +256,11 @@ def _validate_dependencies(
         os.environ.get("TORCH_CUDA_ARCH_LIST") == runtime["torch_cuda_arch_list"],
         "TORCH_CUDA_ARCH_LIST changed",
     )
+    _require(
+        _sha256_file(ffmpeg) == runtime["ffmpeg_sha256"]
+        and _ffmpeg_version_first_line(ffmpeg) == runtime["ffmpeg_version_first_line"],
+        "FFmpeg runtime changed",
+    )
     _require(_C is not None, "gsplat CUDA backend is unavailable")
     extension = Path(_C.__file__).resolve()
     build_ninja = extension.parent / "build.ninja"
@@ -257,6 +274,7 @@ def _validate_dependencies(
         **{name: _sha256_file(path) for name, path in selector_sources.items()},
         **{name: _sha256_file(path) for name, path in deform_sources.items()},
         "sam2_checkpoint": _sha256_file(checkpoint),
+        "ffmpeg": _sha256_file(ffmpeg),
         "gsplat_extension": _sha256_file(extension),
         "gsplat_build_ninja": _sha256_file(build_ninja),
     }
@@ -270,6 +288,57 @@ def _frame_count(video: Path) -> int:
         return int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     finally:
         capture.release()
+
+
+def _trim_video_exact_30hz_legacy_vsync(
+    ffmpeg: Path,
+    source: Path,
+    destination: Path,
+    start: int,
+    count: int,
+) -> None:
+    if start < 0 or count < 1:
+        raise ValueError("video frame range is invalid")
+    subprocess.run(
+        [
+            str(ffmpeg),
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(source),
+            "-vf",
+            (
+                f"select='between(n,{start},{start + count - 1})',"
+                f"setpts=N/({FRAME_RATE_HZ}*TB)"
+            ),
+            "-frames:v",
+            str(count),
+            "-an",
+            "-c:v",
+            "libx264",
+            "-crf",
+            "12",
+            "-preset",
+            "fast",
+            "-pix_fmt",
+            "yuv420p",
+            "-r",
+            str(FRAME_RATE_HZ),
+            "-vsync",
+            "cfr",
+            str(destination),
+        ],
+        check=True,
+        stdin=subprocess.DEVNULL,
+    )
+    actual = decoded_frame_count(destination)
+    if actual != count:
+        raise ValueError(
+            f"exact video trim produced {actual} rather than {count} frames: "
+            f"{destination}"
+        )
 
 
 def _trim_timestamps(
@@ -368,12 +437,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     sam2_repository = _ordinary_root(args.sam2_repository)
     checkpoint = args.sam2_checkpoint.resolve(strict=True)
     deform360_repository = _ordinary_root(args.deform360_repository)
+    ffmpeg = args.ffmpeg.resolve(strict=True)
     _, dependency_hashes = _validate_dependencies(
         processing_lock=processing_lock,
         selector_root=selector_root,
         sam2_repository=sam2_repository,
         checkpoint=checkpoint,
         deform360_repository=deform360_repository,
+        ffmpeg=ffmpeg,
     )
     preflight = {
         "object_id": args.object_id,
@@ -421,13 +492,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         episode / "extrinsics.npy",
         cameras=candidates,
     )
-    ffmpeg = args.ffmpeg.resolve(strict=True)
     for camera in candidates:
         source_camera = source_episode / camera
         output_camera = episode / camera
         output_camera.mkdir()
         output_video = output_camera / "undistorted.mp4"
-        trim_video_exact_30hz(
+        _trim_video_exact_30hz_legacy_vsync(
             ffmpeg,
             source_camera / "undistorted.mp4",
             output_video,
