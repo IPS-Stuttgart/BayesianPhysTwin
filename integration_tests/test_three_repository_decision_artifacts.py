@@ -44,7 +44,7 @@ class _RegretGuardDecision:
 
 def _distinct_physical_arrays(posterior: object) -> tuple[np.ndarray, np.ndarray]:
     trajectories = np.asarray(
-        getattr(posterior, "readout_trajectories_m"),
+        posterior.readout_trajectories_m,  # type: ignore[attr-defined]
         dtype=np.float32,
     )
     if trajectories.ndim < 2 or len(trajectories) < 2:
