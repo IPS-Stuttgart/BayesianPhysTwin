@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -27,11 +28,31 @@ from ._deform360_covariance_residual_history_decision_v1 import (
     ResidualHistoryDryRunDecisionV1,
     ResidualHistoryDryRunResultV1,
     _fallback_result,
+    _future_frame_contract,
     _horizon_bins,
     _physical_future_mean,
     _registered_last_residual_mean,
 )
+from ._portable_contracts import content_id
+from .contracts.fixed_anchor import FIXED_BAYESIAN_ANCHOR_CONTRACT_VERSION
 from .covariance_only_hybrid import compose_covariance_only_hybrid
+from .endpoint_model_average import (
+    DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
+    MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+    ModelAveragedEndpointConfigV1,
+    ModelAveragedEndpointPosteriorV1,
+    ModelAveragedEndpointPredictionV1,
+    infer_model_averaged_endpoint,
+    predict_model_averaged_endpoint,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class _EndpointDonorArtifacts:
+    covariance_m2: np.ndarray
+    config_id: str
+    posterior_id: str
+    prediction_ids: tuple[str, ...]
 
 
 def _last_valid_residual(adapter: ResidualHistoryAdapterV1) -> np.ndarray:
@@ -61,6 +82,147 @@ def _verify_registered_mean(
         )
 
 
+def _endpoint_config_descriptor(
+    config: ModelAveragedEndpointConfigV1,
+) -> dict[str, Any]:
+    return {
+        "schema": "bayesian-phystwin.endpoint-model-average-config-identity-v1",
+        "schema_version": 1,
+        "endpoint_contract_version": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+        "fixed_anchor_contract_version": FIXED_BAYESIAN_ANCHOR_CONTRACT_VERSION,
+        "components": [
+            {
+                "process_std_m": component.process_std_m,
+                "observation_std_m": component.observation_std_m,
+                "initial_std_m": component.initial_std_m,
+                "inlier_prior": component.inlier_prior,
+                "outlier_variance_multiplier": (
+                    component.outlier_variance_multiplier
+                ),
+            }
+            for component in config.components
+        ],
+        "component_prior_probability": list(
+            config.component_prior_probability or ()
+        ),
+    }
+
+
+def _posterior_id(
+    posterior: ModelAveragedEndpointPosteriorV1,
+    *,
+    config_id: str,
+) -> str:
+    return content_id(
+        {
+            "schema": "bayesian-phystwin.endpoint-model-average-posterior-identity-v1",
+            "schema_version": 1,
+            "endpoint_contract_version": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+            "config_id": config_id,
+            "end_frame": posterior.end_frame,
+            "mean_sha256": _array_sha256(posterior.mean_m),
+            "covariance_sha256": _array_sha256(posterior.covariance_m2),
+            "final_nominal_probability_sha256": _array_sha256(
+                posterior.final_nominal_probability
+            ),
+            "update_count_sha256": _array_sha256(posterior.update_count),
+            "component_weights_sha256": _array_sha256(
+                posterior.component_weights
+            ),
+            "component_log_evidence_sha256": _array_sha256(
+                posterior.component_log_evidence
+            ),
+            "component_mean_sha256": _array_sha256(
+                posterior.component_mean_m
+            ),
+            "component_variance_sha256": _array_sha256(
+                posterior.component_variance_m2
+            ),
+            "component_process_variance_sha256": _array_sha256(
+                posterior.component_process_variance_m2
+            ),
+        }
+    )
+
+
+def _prediction_id(
+    prediction: ModelAveragedEndpointPredictionV1,
+    *,
+    config_id: str,
+    posterior_id: str,
+    future_frame_index: int,
+) -> str:
+    return content_id(
+        {
+            "schema": "bayesian-phystwin.endpoint-model-average-prediction-identity-v1",
+            "schema_version": 1,
+            "endpoint_contract_version": MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+            "config_id": config_id,
+            "posterior_id": posterior_id,
+            "future_frame_index": int(future_frame_index),
+            "horizon_steps": prediction.horizon_steps,
+            "mean_sha256": _array_sha256(prediction.mean_m),
+            "covariance_sha256": _array_sha256(prediction.covariance_m2),
+            "component_weights_sha256": _array_sha256(
+                prediction.component_weights
+            ),
+        }
+    )
+
+
+def _reproduce_endpoint_donor(
+    adapter: ResidualHistoryAdapterV1,
+    *,
+    future_frame_indices: np.ndarray,
+    future_horizon_steps: np.ndarray,
+) -> _EndpointDonorArtifacts:
+    config = DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1
+    config_id = content_id(_endpoint_config_descriptor(config))
+    posterior = infer_model_averaged_endpoint(
+        adapter.residual_history_m,
+        adapter.observed_validity,
+        end_frame=adapter.prefix_frame_count,
+        config=config,
+    )
+    expected_count = np.asarray(
+        adapter.valid_observation_count_by_material,
+        dtype=np.int64,
+    )
+    if not np.array_equal(posterior.update_count, expected_count):
+        raise AssertionError("endpoint posterior used a different validity history")
+    posterior_id = _posterior_id(posterior, config_id=config_id)
+    predictions = tuple(
+        predict_model_averaged_endpoint(
+            posterior,
+            horizon_steps=int(step),
+        )
+        for step in future_horizon_steps
+    )
+    covariance = np.stack(
+        [prediction.covariance_m2 for prediction in predictions]
+    )
+    covariance.setflags(write=False)
+    prediction_ids = tuple(
+        _prediction_id(
+            prediction,
+            config_id=config_id,
+            posterior_id=posterior_id,
+            future_frame_index=int(frame),
+        )
+        for frame, prediction in zip(
+            future_frame_indices,
+            predictions,
+            strict=True,
+        )
+    )
+    return _EndpointDonorArtifacts(
+        covariance_m2=covariance,
+        config_id=config_id,
+        posterior_id=posterior_id,
+        prediction_ids=prediction_ids,
+    )
+
+
 def run_source_only_residual_history_dry_run(
     physical_prefix_m: object,
     provider_observation_prefix_m: object,
@@ -68,10 +230,10 @@ def run_source_only_residual_history_dry_run(
     physical_future_m: np.ndarray,
     physical_fallback_covariance_m2: np.ndarray,
     registered_last_residual_mean_m: np.ndarray,
-    donor_covariance_m2: object,
     *,
     frame_indices: object,
     material_ids: object,
+    future_frame_indices: object,
     future_horizon_bins: object,
     camera_recorder_family_map: CameraRecorderFamilyMapV1,
     provider_reconstruction_manifest: ReconstructionManifestV1,
@@ -80,7 +242,7 @@ def run_source_only_residual_history_dry_run(
     policy: ResidualHistoryDryRunPolicyV1,
     metadata: Mapping[str, Any] | None = None,
 ) -> ResidualHistoryDryRunResultV1:
-    """Use the exact registered comparator mean or return exact physical fallback."""
+    """Reproduce the registered donor or return exact physical fallback."""
 
     adapter = build_residual_history_adapter(
         physical_prefix_m,
@@ -116,6 +278,16 @@ def run_source_only_residual_history_dry_run(
         adapter=adapter,
     )
     bins = _horizon_bins(future_horizon_bins, future_count=future_shape[0])
+    future_frames, horizon_steps = _future_frame_contract(
+        future_frame_indices,
+        causal_frame_indices=adapter.frame_indices,
+        future_count=future_shape[0],
+    )
+    donor = _reproduce_endpoint_donor(
+        adapter,
+        future_frame_indices=future_frames,
+        future_horizon_steps=horizon_steps,
+    )
     if adapter.unsupported_material_count:
         return _fallback_result(
             physical_future=physical_future,
@@ -123,6 +295,12 @@ def run_source_only_residual_history_dry_run(
             registered_mean=registered_mean,
             adapter=adapter,
             horizon_bins=bins,
+            future_frame_indices=future_frames,
+            future_horizon_steps=horizon_steps,
+            endpoint_config_id=donor.config_id,
+            endpoint_posterior_id=donor.posterior_id,
+            endpoint_prediction_ids=donor.prediction_ids,
+            unscaled_donor_covariance=donor.covariance_m2,
             reasons=("insufficient-per-material-support",),
             metadata=metadata,
         )
@@ -131,7 +309,7 @@ def run_source_only_residual_history_dry_run(
     try:
         hybrid = compose_covariance_only_hybrid(
             registered_mean,
-            donor_covariance_m2,
+            donor.covariance_m2,
             reference_predictor_id=REGISTERED_REFERENCE_PREDICTOR_ID,
             covariance_donor_id=REGISTERED_COVARIANCE_DONOR_ID,
             covariance_scale=scales[:, None],
@@ -161,7 +339,20 @@ def run_source_only_residual_history_dry_run(
                     adapter.scoring_reconstruction_manifest.manifest_id,
                     name="scoring_reconstruction_manifest_id",
                 ),
-                "future_horizon_labels": [HORIZON_LABELS[int(value)] for value in bins],
+                "endpoint_contract_version": (
+                    MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION
+                ),
+                "endpoint_config_id": donor.config_id,
+                "endpoint_posterior_id": donor.posterior_id,
+                "endpoint_prediction_ids": list(donor.prediction_ids),
+                "future_frame_indices": future_frames.tolist(),
+                "future_horizon_steps": horizon_steps.tolist(),
+                "future_horizon_labels": [
+                    HORIZON_LABELS[int(value)] for value in bins
+                ],
+                "unscaled_donor_covariance_sha256": _array_sha256(
+                    donor.covariance_m2
+                ),
             },
         )
     except (TypeError, ValueError) as error:
@@ -177,6 +368,12 @@ def run_source_only_residual_history_dry_run(
             registered_mean=registered_mean,
             adapter=adapter,
             horizon_bins=bins,
+            future_frame_indices=future_frames,
+            future_horizon_steps=horizon_steps,
+            endpoint_config_id=donor.config_id,
+            endpoint_posterior_id=donor.posterior_id,
+            endpoint_prediction_ids=donor.prediction_ids,
+            unscaled_donor_covariance=donor.covariance_m2,
             reasons=("covariance-contract-rejection",),
             metadata=fallback_metadata,
         )
@@ -204,6 +401,15 @@ def run_source_only_residual_history_dry_run(
             name="scoring_reconstruction_manifest_id",
         ),
         registered_mean_sha256=_array_sha256(registered_mean),
+        endpoint_contract_version=MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+        endpoint_config_id=donor.config_id,
+        endpoint_posterior_id=donor.posterior_id,
+        endpoint_prediction_ids=donor.prediction_ids,
+        future_frame_indices_sha256=_array_sha256(future_frames),
+        future_horizon_steps_sha256=_array_sha256(horizon_steps),
+        unscaled_donor_covariance_sha256=_array_sha256(
+            donor.covariance_m2
+        ),
         accepted=True,
         fallback_reasons=(),
         valid_observation_count_by_material=(
