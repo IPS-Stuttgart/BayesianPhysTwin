@@ -21,9 +21,7 @@ from bayesian_phystwin.deform360_joint_sparse_physical_source_v5 import (
     validate_joint_sparse_physical_execution_v5,
 )
 
-REPAIR_SCHEMA = (
-    "bayesian-phystwin.deform360-v6-stage-selector-consumer-identity-repair"
-)
+REPAIR_SCHEMA = "bayesian-phystwin.deform360-v6-stage-selector-consumer-identity-repair"
 REPAIR_ID = "aea2506a8c648fcbaad460ae6eb0311801466015268271c5492bac9a6e1d2bae"
 EXECUTION_AMENDMENT_ID = (
     "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
@@ -44,9 +42,7 @@ PHYSICAL_WRAPPER_SHA256 = (
     "061fea23aeb83cbaeada9335417d99795de886c8ee6c6ae1013bddfe79bddb37"
 )
 STAGE_SCRIPT = "stage_deform360_bias_aware_prediction_prefix.py"
-STAGE_SCRIPT_SHA256 = (
-    "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6"
-)
+STAGE_SCRIPT_SHA256 = "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6"
 SAM2_REVISION = "2b90b9f5ceec907a1c18123530e92e794ad901a4"
 
 
@@ -126,8 +122,7 @@ def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
     _require(
         failed.get("workflow_run_id") == 31513816637
         and failed.get("workflow_run_attempt") == 1
-        and failed.get("source_revision")
-        == "dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"
+        and failed.get("source_revision") == "dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"
         and failed.get("artifact_id") == 9110649986
         and failed.get("artifact_sha256")
         == "6db988a14351b9fa8744c5e42b42f6d87f06f1cdaf3ff0607e773d3748bdc4b1"
@@ -169,9 +164,7 @@ def load_stage_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         and authorization.get("runner_name") == "workstation2"
         and authorization.get("runner_labels")
         == ["self-hosted", "Linux", "X64", "nvidia-smi"]
-        and authorization.get(
-            "source_prediction_batch_required_before_suffix_access"
-        )
+        and authorization.get("source_prediction_batch_required_before_suffix_access")
         is True
         and authorization.get("fresh_target_selection_authorized") is False
         and authorization.get("fresh_target_payload_access_authorized") is False,
@@ -253,8 +246,7 @@ def main() -> int:
     )
     _require(
         (selector_repository / ".git").exists()
-        and _git_output(selector_repository, "rev-parse", "HEAD")
-        == CAUSAL4D_REVISION
+        and _git_output(selector_repository, "rev-parse", "HEAD") == CAUSAL4D_REVISION
         and not _git_output(selector_repository, "status", "--porcelain"),
         "selector repository identity changed",
     )
@@ -268,8 +260,7 @@ def main() -> int:
     _require(_file_sha256(script) == STAGE_SCRIPT_SHA256, "stage script changed")
     module = _load_stage(script)
     _require(
-        getattr(module, "GENERIC_SELECTOR_SHA256", None)
-        == PREVIOUS_SELECTOR_SHA256,
+        getattr(module, "GENERIC_SELECTOR_SHA256", None) == PREVIOUS_SELECTOR_SHA256,
         "locked stage no longer carries the superseded selector digest",
     )
     _require(
