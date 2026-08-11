@@ -341,12 +341,12 @@ class DomainCovarianceCalibrationDecisionV1:
 
     domain_id: str
     group_ids: Sequence[str]
-    transform_scores: Sequence[Sequence[object]]
+    transform_scores: Sequence[TransformScore]
     selected_covariance_scale: float
     selected_isotropic_variance: float
     raw_equal_group_mean_nll: float
     calibrated_equal_group_mean_nll: float
-    leave_one_group_out: Sequence[Sequence[object]]
+    leave_one_group_out: Sequence[HeldGroupScore]
     guard_supported: bool
     calibration_supported: bool
     reasons: Sequence[str]
