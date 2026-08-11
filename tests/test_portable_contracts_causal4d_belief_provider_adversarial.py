@@ -211,7 +211,13 @@ def test_model_average_rejects_noninteger_cutoff() -> None:
         )
 
 
-@pytest.mark.parametrize("residual", (np.ones((2, 1, 3), dtype=np.complex128), _RejectArrayCoercion()))
+@pytest.mark.parametrize(
+    "residual",
+    (
+        np.ones((2, 1, 3), dtype=np.complex128),
+        _RejectArrayCoercion(),
+    ),
+)
 def test_dynamic_model_average_rejects_lossy_or_failed_residual_coercion(
     residual: object,
 ) -> None:
