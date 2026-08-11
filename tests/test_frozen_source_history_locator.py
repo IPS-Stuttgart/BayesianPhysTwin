@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -65,8 +65,11 @@ def test_locator_finds_exact_historical_snapshot_and_tag(tmp_path: Path) -> None
             "first.txt": _sha256(first),
             "nested/second.txt": _sha256(second),
         },
+        repository_id="test/history-locator",
     )
 
+    assert report["repository_id"] == "test/history-locator"
+    assert "repository" not in report
     assert report["complete_history_searched"] is True
     assert report["candidate_commit_count"] == 2
     assert report["anchor_match_count"] == 2
@@ -93,6 +96,28 @@ def test_locator_reports_no_match_without_guessing(tmp_path: Path) -> None:
     assert report["anchor_match_count"] == 0
     assert report["exact_match_count"] == 0
     assert report["exact_matches"] == []
+
+
+def test_report_identity_is_stable_for_same_repository_state(tmp_path: Path) -> None:
+    repository = _repository(tmp_path)
+    content = b"frozen\n"
+    (repository / "source.py").write_bytes(content)
+    _commit(repository, "add source")
+    requirements = {"source.py": _sha256(content)}
+
+    first = locate_frozen_source_bundle(
+        repository,
+        requirements,
+        repository_id="test/stable-repository",
+    )
+    second = locate_frozen_source_bundle(
+        repository,
+        requirements,
+        repository_id="test/stable-repository",
+    )
+
+    assert first == second
+    assert first["report_id"] == second["report_id"]
 
 
 def test_requirements_loader_accepts_wrapped_mapping_and_sorts(tmp_path: Path) -> None:
@@ -136,6 +161,23 @@ def test_requirements_loader_rejects_ambiguous_inputs(
         load_requirements(path)
 
 
+def test_locator_rejects_empty_requirements_and_repository_id(
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    (repository / "source.py").write_text("content\n", encoding="utf-8")
+    _commit(repository, "add source")
+
+    with pytest.raises(ValueError, match="must not be empty"):
+        locate_frozen_source_bundle(repository, {})
+    with pytest.raises(ValueError, match="repository_id"):
+        locate_frozen_source_bundle(
+            repository,
+            {"source.py": _sha256(b"content\n")},
+            repository_id=" repository",
+        )
+
+
 def test_report_publication_is_no_clobber_and_symlink_refusing(
     tmp_path: Path,
 ) -> None:
@@ -174,6 +216,8 @@ def test_cli_can_require_a_match_while_retaining_report(tmp_path: Path) -> None:
         [
             "--repository-root",
             str(repository),
+            "--repository-id",
+            "test/cli-repository",
             "--requirements-json",
             str(requirements),
             "--output",
@@ -182,11 +226,21 @@ def test_cli_can_require_a_match_while_retaining_report(tmp_path: Path) -> None:
         ]
     )
 
+    report = json.loads(output.read_text(encoding="utf-8"))
     assert exit_code == 1
-    assert json.loads(output.read_text(encoding="utf-8"))["exact_match_count"] == 0
+    assert report["repository_id"] == "test/cli-repository"
+    assert report["exact_match_count"] == 0
 
 
-def test_locator_rejects_shallow_repository(tmp_path: Path) -> None:
+def test_locator_rejects_nonrepository_and_shallow_repository(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="Git working tree"):
+        locate_frozen_source_bundle(
+            tmp_path,
+            {"source.py": _sha256(b"content\n")},
+        )
+
     source = _repository(tmp_path)
     (source / "source.py").write_text("content\n", encoding="utf-8")
     _commit(source, "add source")
