@@ -123,7 +123,7 @@ def test_release_matrix_binds_numerical_environment_and_resolver_input() -> None
     text = _text()
 
     assert "bayesian_phystwin.numerical_environment_v1" in text
-    assert "--dependency-lock \"${RESOLVER_INPUT}\"" in text
+    assert '--dependency-lock "${RESOLVER_INPUT}"' in text
     assert "--require-dependency-lock" in text
     assert "build_release_matrix_evidence.py" in text
     assert "validation-receipt-${LANE}.json" in text
