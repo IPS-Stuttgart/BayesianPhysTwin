@@ -1,0 +1,84 @@
+{
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "required_physical_manifest_count": 10,
+    "required_source_prediction_seal_count": 100,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution": {
+    "artifact_digest": "sha256:6db988a14351b9fa8744c5e42b42f6d87f06f1cdaf3ff0607e773d3748bdc4b1",
+    "artifact_id": 9110649986,
+    "artifact_name": "deform360-v6-source-prediction-evidence-31513816637-1",
+    "error": "ValueError: selector changed",
+    "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+    "execution_receipt_id": "741968a414984dca9c8c2dab2efbe716a151877d7ac7946830240bd292a47eee",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "dba748cafc1979dd697f99fb8aa70dc1cfaf9b81",
+    "terminal_stage": "stage-prefix:026-sock-cloth-ep0007",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31513816637
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair": {
+    "execution_lock_modified": false,
+    "launcher_base_git_blob_sha1": "365c5ba0143ba38f1e3d4beac9fdcca1fa63a884",
+    "launcher_base_revision": "dba748cafc1979dd697f99fb8aa70dc1cfaf9b81",
+    "original_stage_file_modified": false,
+    "runner_path": "scripts/remote/run_deform360_joint_sparse_physical_source_v5_selector_repair.py",
+    "runtime_patch_scope": "stage-prefix-only",
+    "validation_order": [
+      "validate-original-checksum-bound-physical-source-files",
+      "load-original-stage-module",
+      "apply-existing-v5-process-local-alias-patch",
+      "verify-superseded-selector-digest",
+      "verify-corrected-selector-bytes",
+      "replace-selector-digest-in-memory-only",
+      "execute-stage"
+    ]
+  },
+  "repair_id": "001910b84ded7b3f860aa208b87fedf51605fb977af8aab8df3b7e1fa45eeb67",
+  "root_cause": {
+    "corrected_selector_byte_count": 17310,
+    "corrected_selector_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "diagnosis": "The prior runtime identity amendment corrected the supplied selector bytes, but the checksum-bound historical stage retained the superseded in-module selector digest.",
+    "prior_identity_repair_id": "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90",
+    "selector_path": "src/causal4d_public/deform360_object_sam2.py",
+    "selector_repository": "IPS-Stuttgart/Causal4D",
+    "selector_repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
+    "stage_git_blob_sha1": "188e39f28099f8862c1d0cad66761bcf5d5fb955",
+    "stage_path": "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py",
+    "stage_registered_selector_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+  },
+  "schema": "bayesian-phystwin.deform360-v6-stage-prefix-selector-binding-repair",
+  "schema_version": 1,
+  "scientific_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "covariance_changed": false,
+    "endpoint_changed": false,
+    "fallback_changed": false,
+    "loss_or_gate_changed": false,
+    "physical_model_changed": false,
+    "sam2_checkpoint_changed": false,
+    "sam2_model_changed": false,
+    "selector_semantics_changed": false,
+    "source_cohort_changed": false,
+    "target_access_authorized": false
+  },
+  "semantics": "post-validation-process-local-selector-identity-repair-v1"
+}
