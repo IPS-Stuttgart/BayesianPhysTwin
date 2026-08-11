@@ -33,6 +33,7 @@ from ._deform360_covariance_residual_history_common_v1 import (
 )
 from ._portable_contracts import content_id
 from .covariance_only_hybrid import CovarianceOnlyHybridPredictionV1
+from .endpoint_model_average import MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION
 
 
 def _count_tuple(value: object, *, name: str) -> tuple[int, ...]:
@@ -44,6 +45,17 @@ def _count_tuple(value: object, *, name: str) -> tuple[int, ...]:
     )
     if not result:
         raise ValueError(f"{name} must be nonempty")
+    return result
+
+
+def _digest_tuple(value: object, *, name: str) -> tuple[str, ...]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} must be a nonempty SHA-256 sequence")
+    result = tuple(_required_sha256(item, name=name) for item in value)
+    if not result:
+        raise ValueError(f"{name} must be nonempty")
+    if len(set(result)) != len(result):
+        raise ValueError(f"{name} must be unique")
     return result
 
 
@@ -59,6 +71,13 @@ class ResidualHistoryDryRunDecisionV1:
     provider_reconstruction_manifest_id: str
     scoring_reconstruction_manifest_id: str
     registered_mean_sha256: str
+    endpoint_contract_version: int
+    endpoint_config_id: str
+    endpoint_posterior_id: str
+    endpoint_prediction_ids: tuple[str, ...]
+    future_frame_indices_sha256: str
+    future_horizon_steps_sha256: str
+    unscaled_donor_covariance_sha256: str
     accepted: bool
     fallback_reasons: tuple[str, ...]
     valid_observation_count_by_material: tuple[int, ...]
@@ -86,6 +105,11 @@ class ResidualHistoryDryRunDecisionV1:
             "provider_reconstruction_manifest_id",
             "scoring_reconstruction_manifest_id",
             "registered_mean_sha256",
+            "endpoint_config_id",
+            "endpoint_posterior_id",
+            "future_frame_indices_sha256",
+            "future_horizon_steps_sha256",
+            "unscaled_donor_covariance_sha256",
             "future_horizon_bins_sha256",
             "physical_future_mean_sha256",
             "physical_fallback_covariance_sha256",
@@ -96,6 +120,17 @@ class ResidualHistoryDryRunDecisionV1:
             name: _required_sha256(getattr(self, name), name=name)
             for name in digest_fields
         }
+        endpoint_version = genuine_integer(
+            self.endpoint_contract_version,
+            name="endpoint_contract_version",
+            minimum=1,
+        )
+        if endpoint_version != MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION:
+            raise ValueError("endpoint model contract version changed")
+        prediction_ids = _digest_tuple(
+            self.endpoint_prediction_ids,
+            name="endpoint_prediction_ids",
+        )
         if type(self.accepted) is not bool:
             raise ValueError("accepted must be a Boolean")
         if type(self.fallback_reasons) is not tuple:
@@ -166,6 +201,8 @@ class ResidualHistoryDryRunDecisionV1:
         object.__setattr__(self, "source_unit_id", source_unit_id)
         for name, value in digests.items():
             object.__setattr__(self, name, value)
+        object.__setattr__(self, "endpoint_contract_version", endpoint_version)
+        object.__setattr__(self, "endpoint_prediction_ids", prediction_ids)
         object.__setattr__(self, "fallback_reasons", reasons)
         object.__setattr__(self, "valid_observation_count_by_material", counts)
         object.__setattr__(self, "supported_material_count", supported)
@@ -194,6 +231,15 @@ class ResidualHistoryDryRunDecisionV1:
                 self.scoring_reconstruction_manifest_id
             ),
             "registered_mean_sha256": self.registered_mean_sha256,
+            "endpoint_contract_version": self.endpoint_contract_version,
+            "endpoint_config_id": self.endpoint_config_id,
+            "endpoint_posterior_id": self.endpoint_posterior_id,
+            "endpoint_prediction_ids": list(self.endpoint_prediction_ids),
+            "future_frame_indices_sha256": self.future_frame_indices_sha256,
+            "future_horizon_steps_sha256": self.future_horizon_steps_sha256,
+            "unscaled_donor_covariance_sha256": (
+                self.unscaled_donor_covariance_sha256
+            ),
             "accepted": self.accepted,
             "fallback_reasons": list(self.fallback_reasons),
             "valid_observation_count_by_material": list(
@@ -289,6 +335,27 @@ def _horizon_bins(value: object, *, future_count: int) -> np.ndarray:
     return bins
 
 
+def _future_frame_contract(
+    value: object,
+    *,
+    causal_frame_indices: np.ndarray,
+    future_count: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    if not np.all(np.diff(causal_frame_indices) == 1):
+        raise ValueError("registered endpoint inference requires contiguous causal frames")
+    future = _integer_vector(value, name="future_frame_indices")
+    if future.shape != (future_count,):
+        raise ValueError("future_frame_indices must have one entry per future frame")
+    if not np.all(np.diff(future) > 0):
+        raise ValueError("future_frame_indices must be strictly increasing")
+    causal_last = int(causal_frame_indices[-1])
+    if np.any(future <= causal_last):
+        raise ValueError("future_frame_indices must follow the causal prefix")
+    steps = np.asarray(future - causal_last, dtype=np.int64)
+    steps.setflags(write=False)
+    return future, steps
+
+
 def _fallback_result(
     *,
     physical_future: np.ndarray,
@@ -296,6 +363,12 @@ def _fallback_result(
     registered_mean: np.ndarray,
     adapter: ResidualHistoryAdapterV1,
     horizon_bins: np.ndarray,
+    future_frame_indices: np.ndarray,
+    future_horizon_steps: np.ndarray,
+    endpoint_config_id: str,
+    endpoint_posterior_id: str,
+    endpoint_prediction_ids: tuple[str, ...],
+    unscaled_donor_covariance: np.ndarray,
     reasons: Sequence[str],
     metadata: Mapping[str, Any] | None,
 ) -> ResidualHistoryDryRunResultV1:
@@ -321,6 +394,15 @@ def _fallback_result(
             name="scoring_reconstruction_manifest_id",
         ),
         registered_mean_sha256=_array_sha256(registered_mean),
+        endpoint_contract_version=MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+        endpoint_config_id=endpoint_config_id,
+        endpoint_posterior_id=endpoint_posterior_id,
+        endpoint_prediction_ids=endpoint_prediction_ids,
+        future_frame_indices_sha256=_array_sha256(future_frame_indices),
+        future_horizon_steps_sha256=_array_sha256(future_horizon_steps),
+        unscaled_donor_covariance_sha256=_array_sha256(
+            unscaled_donor_covariance
+        ),
         accepted=False,
         fallback_reasons=canonical_reasons,
         valid_observation_count_by_material=(
