@@ -3,7 +3,7 @@
     "covariance_donor_id": "independent_endpoint_v1",
     "observation_noise_std_m": 0.005,
     "point_accuracy_claimed": false,
-    "reference_mean": "final-prefix residual applied only to the same material identities observed at the final prefix frame",
+    "reference_mean": "last valid causal residual per material identity over the opened prefix",
     "reference_predictor_id": "last_residual"
   },
   "claim_boundary": {
@@ -29,7 +29,7 @@
     "provider_scoring_camera_overlap_allowed": false,
     "provider_scoring_reconstruction_artifact_reuse_allowed": false
   },
-  "lock_sha256": "ba7378f5a01659a79d41135f4fa137a61565825a7c0844aa2c5dd523257abb50",
+  "lock_sha256": "ab26b71d9bee5ad0233cf6a81fadac86ac45228e6cc77df6b1c0d0e21a8ee874",
   "policy": {
     "camera_partition_semantics": "hash-ranked balanced whole-recorder-family split-v1",
     "covariance_requirement": "finite symmetric positive semidefinite for every (H,N) block",

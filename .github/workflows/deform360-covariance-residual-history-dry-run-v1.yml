@@ -14,6 +14,7 @@ on:
       - "src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py"
       - "src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py"
       - "src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py"
+      - "src/bayesian_phystwin/_deform360_covariance_residual_history_last_valid_v1.py"
       - "src/bayesian_phystwin/deform360_covariance_residual_history_v1.py"
       - "tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py"
       - "tests/test_deform360_covariance_residual_history_v1.py"
@@ -40,7 +41,7 @@ env:
   NUMEXPR_NUM_THREADS: "1"
   PROTOCOL: >-
     protocols/locks/deform360_covariance_residual_history_dry_run_v1.json
-  LOCK_SHA256: ba7378f5a01659a79d41135f4fa137a61565825a7c0844aa2c5dd523257abb50
+  LOCK_SHA256: ab26b71d9bee5ad0233cf6a81fadac86ac45228e6cc77df6b1c0d0e21a8ee874
 
 jobs:
   contracts:
@@ -88,6 +89,7 @@ jobs:
             src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py
             src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py
             src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py
+            src/bayesian_phystwin/_deform360_covariance_residual_history_last_valid_v1.py
             src/bayesian_phystwin/deform360_covariance_residual_history_v1.py
             tests/test_deform360_covariance_residual_history_real_camera_roster_v1.py
             tests/test_deform360_covariance_residual_history_v1.py
@@ -98,6 +100,7 @@ jobs:
             src/bayesian_phystwin/_deform360_covariance_residual_history_adapter_v1.py \
             src/bayesian_phystwin/_deform360_covariance_residual_history_common_v1.py \
             src/bayesian_phystwin/_deform360_covariance_residual_history_decision_v1.py \
+            src/bayesian_phystwin/_deform360_covariance_residual_history_last_valid_v1.py \
             src/bayesian_phystwin/deform360_covariance_residual_history_v1.py \
             scripts/science/run_deform360_covariance_residual_history_dry_run_v1.py
 

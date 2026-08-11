@@ -57,9 +57,12 @@ validity bit. The adapter never applies temporal carry-forward, nearest-neighbor
 filling, spatial interpolation, material-identity reassignment, or silent row
 removal.
 
-The candidate mean uses only residuals observed at the final prefix frame and
-only for the same material identities. An identity observed earlier but missing
-at the final prefix frame remains on the physical prediction.
+The deterministic comparator is evaluated separately from storage missingness.
+For every material identity, it uses that material's last valid causal residual
+anywhere in the opened prefix. Therefore an identity observed before, but not at,
+the final prefix frame retains its last valid residual exactly as in the frozen
+`last_residual` comparator. A material never observed in the prefix retains the
+physical prediction. This lookup does not fill or alter the stored history.
 
 ## Minimum observed support
 
@@ -87,9 +90,9 @@ cannot silently consume one shared reconstruction artifact.
 
 ## Covariance-only candidate
 
-The admitted reference mean is the exact final-prefix last-residual mean. The
-covariance donor remains `independent_endpoint_v1`, scaled by the frozen
-schedule:
+The admitted reference mean is the exact per-material last-valid causal residual
+mean. The covariance donor remains `independent_endpoint_v1`, scaled by the
+frozen schedule:
 
 ```text
 early   8.0

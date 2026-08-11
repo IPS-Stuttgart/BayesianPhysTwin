@@ -268,7 +268,7 @@ def test_adapter_rejects_declared_camera_rosters_that_do_not_match_partition() -
         )
 
 
-def test_admitted_dry_run_uses_only_final_frame_residual_and_frozen_scales() -> None:
+def test_admitted_dry_run_uses_last_valid_residual_and_frozen_scales() -> None:
     arrays = _arrays(final_observed_count=12)
     arrays["provider_observation_prefix_m"][1, 12:] = 10.0
     arrays["provider_validity"][1, 12:] = True
@@ -279,11 +279,14 @@ def test_admitted_dry_run_uses_only_final_frame_residual_and_frozen_scales() -> 
     assert result.hybrid is not None
     assert result.mean_m is result.hybrid.mean_m
     assert result.decision.hybrid_reference_mean_identity_preserved
+    assert result.decision.descriptor()["reference_mean_semantics"] == (
+        "physical-future-plus-last-valid-causal-residual-per-material-identity"
+    )
     np.testing.assert_allclose(
         result.mean_m[:, :12],
         np.broadcast_to(np.array([0.01, -0.02, 0.03]), (3, 12, 3)),
     )
-    np.testing.assert_array_equal(result.mean_m[:, 12:], 0.0)
+    np.testing.assert_allclose(result.mean_m[:, 12:], 10.0)
     np.testing.assert_allclose(
         result.covariance_m2[0],
         8.0 * arrays["donor_covariance_m2"][0],
