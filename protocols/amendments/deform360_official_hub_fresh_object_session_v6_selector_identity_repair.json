@@ -1,0 +1,64 @@
+{
+  "correction": {
+    "corrected_byte_count": 17310,
+    "corrected_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "field": "runtime_sources.generic_selector_sha256",
+    "historical_registered_digest_found_in_repository_history": false,
+    "model_id_prefix": "causal4d_public/deformable-object-sam2.1-small-automatic-v1@",
+    "path": "src/causal4d_public/deform360_object_sam2.py",
+    "previous_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+    "repository": "IPS-Stuttgart/Causal4D",
+    "repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
+    "selector_class": "DeformableObjectSam2VideoPredictor"
+  },
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "execution_receipt_id": "cfcfeab74ee9cc88002e398afa2655ccc1a56752787fe6b44a961061fb7cd040",
+    "exit_code": 3,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "67daacdaafe98b63b8aa0357dccdcd11b9a81d51",
+    "terminal_stage": "locate-frozen-generic-selector",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31458096956
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "41f3580de5ca7e09bcd4c2623569c293e29ed796634c60c84ededdbd945af042",
+  "repair_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "replacement_allowed": false,
+    "repository_revision_changed": false,
+    "runtime_byte_identity_only": true,
+    "selector_algorithm_changed": false,
+    "source_cohort_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-runtime-selector-identity-repair",
+  "schema_version": 1,
+  "semantics": "target-closed-current-causal4d-selector-byte-identity-repair-before-source-prediction-v1",
+  "superseded_execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
+}
