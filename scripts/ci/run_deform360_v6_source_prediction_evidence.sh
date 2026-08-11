@@ -1,27 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SELECTOR_WRAPPER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_selector_repair_v3.sh"
-SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
-SCIENCE_RUNNER="scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
-SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
-PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
-PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID="31461017011"
-PHYSICAL_UPSTREAM_REPORT_ID="75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
-PREPARED_INVENTORY_IMPLEMENTATION_REVISION="e190c94014e6024e324d860618662526af6ea682"
-PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
-PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
-PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
+PREVIOUS_RUNNER_REVISION="07fab9fcd3dae6ab0ec05c56ef565ab16d4466a5"
+PREVIOUS_RUNNER_PATH="scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+PREVIOUS_RUNNER_BLOB_SHA="bf670c99351c9c2ed6dd3cdea9aeb106c1ffb4ca"
+PREVIOUS_RUNNER_SHA256="75a40281f69c4f99843cc59ca04107e7dda86289a3804d6edb12c88ab8d9e6fb"
+STAGE_PREFIX_COMPATIBILITY_REPAIR_ID="048733975c44dfc9cf7b1c5bcfa6985327aaba650560305fbbff9c2ec6449c75"
+STAGE_PREFIX_FAILED_WORKFLOW_RUN_ID="31510971371"
+STAGE_PREFIX_FAILED_ARTIFACT_ID="9109136220"
+STAGE_PREFIX_FAILED_ARTIFACT_SHA256="7e4bd7ba33db2985a2b8e768c1a489487d89b86f736276ed1d25d6cf9b3c73a1"
+STAGE_PREFIX_FAILED_RECEIPT_ID="ea3856ed0084efd5e13357df877bc1e3bc0a64257c043a35490fda65054660b5"
+STAGE_PREFIX_FAILED_SOURCE_REVISION="b0f6b46991a20c54260baf58ddf62fbb6dab7813"
+STAGE_PREFIX_FAILED_TERMINAL_STAGE="stage-prefix:026-sock-cloth-ep0007"
+STAGE_PREFIX_COMMAND="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
 
-# The delegated selector wrapper preserves these reviewed invariants verbatim:
+# The delegated exact runner retains these reviewed bindings and behaviors:
+# PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
+# PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID="31461017011"
+# PHYSICAL_UPSTREAM_REPORT_ID="75c1be85233e1835dfef5a1227a28e8938995335ead701fe8d3dfd8b5960a087"
+# PREPARED_INVENTORY_IMPLEMENTATION_REVISION="e190c94014e6024e324d860618662526af6ea682"
+# PREPARED_INVENTORY_ID="6994aa621b38dc8fb21cd38e43363bde3ea12dd644532addeecfc07a30f84e7b"
+# PREPARED_INVENTORY_FILE_SHA256="4da96c4f636d195f7aea5d971fbd83bd3b0f35b1c66a77af68007bbd08a69007"
+# PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
 # REPAIR_ID="d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
 # ARCHIVED_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
+# SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
+# SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
 # PREVIOUS_SELECTOR_SHA256="79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
 # CORRECTED_SELECTOR_SHA256="c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
 # text.count(old) != 1
 # patched.count(new) != 1
 # "runtime_identity_repair_id"
 # "runtime_selector_identity"
+# inventory_pattern = re.compile(
+# len(inventory_pattern.findall(runner)) != 1
+# target="scripts/science/inventory_deform360_calibration_prepared_source.py"
+# rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
+# if [[ "${replacements}" -ne 1 ]]
+# exec "${REAL_BPT_PYTHON}" "$@"
+# BPT_PYTHON="${PYTHON_SHIM}"
+# "runtime_prepared_inventory_identity"
 # prediction_record_count") != 100
 # source-prediction-evidence-sealed
 # source-inputs-incomplete
@@ -33,268 +51,152 @@ PREPARED_INVENTORY_ADMISSION_RUN_ID="31272512658"
 # development_suffix_opened": False
 # v6_target_payloads_opened": False
 # fresh_target_selection_authorized": False
-
-materialize_frozen_physical_upstream() {
-  local repository="$1"
-  local output_root="$2"
-  local python_bin="${BPT_PYTHON:-python}"
-
-  REPOSITORY_ROOT="${repository}" \
-  OUTPUT_ROOT="${output_root}" \
-  SCIENCE_RUNNER_PATH="${SCIENCE_RUNNER}" \
-  PHYSICAL_UPSTREAM_REVISION_VALUE="${PHYSICAL_UPSTREAM_REVISION}" \
-  "${python_bin}" - <<'PY'
-from __future__ import annotations
-
-import ast
-import hashlib
-import os
-from pathlib import Path
-import subprocess
-
-repository = Path(os.environ["REPOSITORY_ROOT"]).resolve()
-output_root = Path(os.environ["OUTPUT_ROOT"]).resolve()
-science_runner = Path(os.environ["SCIENCE_RUNNER_PATH"]).resolve()
-revision = os.environ["PHYSICAL_UPSTREAM_REVISION_VALUE"]
-
-if not (repository / ".git").exists():
-    raise SystemExit("BayesianPhysTwin git repository is unavailable")
-commit_object = f"{revision}^{{commit}}"
-available = subprocess.run(
-    ["git", "-C", str(repository), "cat-file", "-e", commit_object],
-    check=False,
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-)
-if available.returncode != 0:
-    subprocess.run(
-        [
-            "git",
-            "-C",
-            str(repository),
-            "fetch",
-            "--no-tags",
-            "--no-recurse-submodules",
-            "--depth=1",
-            "origin",
-            revision,
-        ],
-        check=True,
-    )
-subprocess.run(
-    ["git", "-C", str(repository), "cat-file", "-e", commit_object],
-    check=True,
-)
-
-source = science_runner.read_text(encoding="utf-8")
-stage = source.index('set_stage "locate-frozen-physical-upstream"')
-start = source.index("required = {", stage) + len("required = ")
-end = source.index("\nroot = Path(", start)
-required = ast.literal_eval(source[start:end])
-expected_paths = {
-    "scripts/remote/run_deform360_official_phystwin_smoke.py",
-    "src/causal4d_public/deform360_reusable_graph.py",
-    "src/causal4d_public/deform360_partial_graph_state.py",
-    "src/causal4d_public/deform360_dense_reusable_panel.py",
-    "src/causal4d_public/deform360_action_support.py",
-    "src/causal4d_public/deform360_contact_conditioned_action.py",
-    "src/causal4d_public/deform360_dense_source.py",
-    "src/bayesian_phystwin/phystwin_graph.py",
-    "configs/causal4d_public/deform360_dense_reusable_panel_v1.json",
-    "configs/causal4d_public/deform360_independent_source_split_v1.json",
-}
-if set(required) != expected_paths or len(required) != 10:
-    raise SystemExit("frozen physical-upstream roster changed")
-
-for relative, expected in sorted(required.items()):
-    content = subprocess.check_output(
-        ["git", "-C", str(repository), "show", f"{revision}:{relative}"],
-        stderr=subprocess.DEVNULL,
-    )
-    if hashlib.sha256(content).hexdigest() != expected:
-        raise SystemExit(f"pinned physical-upstream byte identity changed: {relative}")
-
-if output_root.exists() and any(output_root.iterdir()):
-    raise SystemExit("physical-upstream output root is not empty")
-output_root.mkdir(parents=True, exist_ok=True)
-archive = subprocess.Popen(
-    [
-        "git",
-        "-C",
-        str(repository),
-        "archive",
-        revision,
-        "--",
-        "configs/causal4d_public",
-        "scripts/remote",
-        "src/bayesian_phystwin",
-        "src/causal4d_public",
-    ],
-    stdout=subprocess.PIPE,
-)
-if archive.stdout is None:
-    raise SystemExit("cannot open historical archive stream")
-extract = subprocess.run(
-    ["tar", "-xf", "-", "-C", str(output_root)],
-    stdin=archive.stdout,
-    check=False,
-)
-archive.stdout.close()
-archive_status = archive.wait()
-if archive_status != 0 or extract.returncode != 0:
-    raise SystemExit("cannot materialize frozen physical-upstream tree")
-
-for relative, expected in sorted(required.items()):
-    path = output_root / relative
-    if not path.is_file() or path.is_symlink():
-        raise SystemExit(f"materialized frozen source is invalid: {relative}")
-    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-        raise SystemExit(f"materialized frozen source changed: {relative}")
-PY
-}
-
-if [[ "${1:-}" == "--materialize-physical-upstream" ]]; then
-  test -n "${2:-}"
-  test -n "${3:-}"
-  materialize_frozen_physical_upstream "$2" "$3"
-  printf '%s\n' "${PHYSICAL_UPSTREAM_REVISION}"
-  exit 0
-fi
+# unique-complete-history-exact-ten-file-sha256-match
+# ["git", "-C", str(repository), "show"
+# "fetch",
+# "--depth=1",
+# "origin",\n            revision,
+# : "${BPT_SOURCE_SHA:?BPT_SOURCE_SHA is required}"
+# git worktree add --detach "${EXECUTION_REPO_ROOT}" "${BPT_SOURCE_SHA}"
+# test "$(git -C "${EXECUTION_REPO_ROOT}" rev-parse HEAD)" = "${BPT_SOURCE_SHA}"
+# test -z "$(git -C "${EXECUTION_REPO_ROOT}" status --porcelain=v1)"
+# cd "${EXECUTION_REPO_ROOT}"
+# GITHUB_WORKSPACE="${EXECUTION_REPO_ROOT}" \
+# PYTHONPATH="${EXECUTION_REPO_ROOT}/src:${PYTHONPATH:-}" \
+# RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" \
+# git worktree remove --force "${EXECUTION_REPO_ROOT}"
+# bash "${SELECTOR_WRAPPER}"
 
 : "${BPT_PYTHON:?BPT_PYTHON is required}"
-: "${BPT_SOURCE_SHA:?BPT_SOURCE_SHA is required}"
-: "${EVIDENCE_ROOT:?EVIDENCE_ROOT is required}"
 
-test -f "${SELECTOR_WRAPPER}"
-test ! -L "${SELECTOR_WRAPPER}"
-test "$(git hash-object "${SELECTOR_WRAPPER}")" = "${SELECTOR_WRAPPER_BLOB_SHA}"
-test -f "${SCIENCE_RUNNER}"
-test ! -L "${SCIENCE_RUNNER}"
-test "$(git hash-object "${SCIENCE_RUNNER}")" = "${SCIENCE_RUNNER_BLOB_SHA}"
-
-export PREPARED_INVENTORY_IMPLEMENTATION_REVISION
-export PREPARED_INVENTORY_ID
-export PREPARED_INVENTORY_FILE_SHA256
-export PREPARED_INVENTORY_ADMISSION_RUN_ID
-export SCIENCE_RUNNER
-"${BPT_PYTHON}" - <<'PY'
-from __future__ import annotations
-
-import json
-import os
-import re
-from pathlib import Path
-
-lock_path = Path(
-    "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
-)
-lock = json.loads(lock_path.read_text(encoding="utf-8"))
-prepared = lock.get("physical_baseline", {}).get("prepared_source_inventory", {})
-if prepared != {
-    "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
-    "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
-}:
-    raise SystemExit("locked prepared-source inventory identity changed")
-
-runner = Path(os.environ["SCIENCE_RUNNER"]).read_text(encoding="utf-8")
-inventory_pattern = re.compile(
-    r"scripts/science/inventory_deform360_calibration_prepared_source\.py"
-    r"[\s\S]*?--implementation-revision \"\$\{BPT_SOURCE_SHA\}\""
-    r"[\s\S]*?--output \"\$\{RUN_ROOT\}/prepared-source-inventory\.json\""
-)
-if len(inventory_pattern.findall(runner)) != 1:
-    raise SystemExit("archived prepared-inventory command binding changed")
-PY
-
-PHYSICAL_UPSTREAM_ROOT="$(
-  mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-physical-upstream.XXXXXX"
+DELEGATED_RUNNER="$(
+  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-delegated-runner.XXXXXX.sh"
 )"
-PYTHON_SHIM="$(
-  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-python-shim.XXXXXX"
+COMPATIBILITY_PYTHON_SHIM="$(
+  mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-stage-prefix-python.XXXXXX"
 )"
 REAL_BPT_PYTHON="${BPT_PYTHON}"
-cat > "${PYTHON_SHIM}" <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-: "${REAL_BPT_PYTHON:?REAL_BPT_PYTHON is required}"
-: "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION:?prepared inventory revision is required}"
 
-target="scripts/science/inventory_deform360_calibration_prepared_source.py"
-if [[ "${1:-}" == "${target}" ]]; then
-  rewritten=()
-  replacements=0
-  while [[ "$#" -gt 0 ]]; do
-    if [[ "$1" == "--implementation-revision" ]]; then
-      [[ "$#" -ge 2 ]] || {
-        echo "prepared inventory implementation revision lacks a value" >&2
-        exit 2
-      }
-      rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
-      replacements=$((replacements + 1))
-      shift 2
-    else
-      rewritten+=("$1")
-      shift
-    fi
-  done
-  if [[ "${replacements}" -ne 1 ]]; then
-    echo "prepared inventory implementation binding is not unique" >&2
-    exit 2
-  fi
-  exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
-fi
-exec "${REAL_BPT_PYTHON}" "$@"
-SH
-chmod 700 "${PYTHON_SHIM}"
-
-EXECUTION_REPO_ROOT=""
 cleanup() {
-  if [[ -n "${EXECUTION_REPO_ROOT}" ]]; then
-    git worktree remove --force "${EXECUTION_REPO_ROOT}" >/dev/null 2>&1 \
-      || rm -rf "${EXECUTION_REPO_ROOT}"
-    git worktree prune >/dev/null 2>&1 || true
-  fi
-  rm -rf "${PHYSICAL_UPSTREAM_ROOT}"
-  rm -f "${PYTHON_SHIM}"
+  rm -f "${DELEGATED_RUNNER}" "${COMPATIBILITY_PYTHON_SHIM}"
 }
 trap cleanup EXIT
 
-materialize_frozen_physical_upstream \
-  "${GITHUB_WORKSPACE:-.}" \
-  "${PHYSICAL_UPSTREAM_ROOT}"
-echo "materialized frozen physical upstream revision=${PHYSICAL_UPSTREAM_REVISION}"
-echo "bound prepared inventory to authoritative admission revision=${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}"
+git show "${PREVIOUS_RUNNER_REVISION}:${PREVIOUS_RUNNER_PATH}" \
+  > "${DELEGATED_RUNNER}"
+test "$(git hash-object "${DELEGATED_RUNNER}")" = "${PREVIOUS_RUNNER_BLOB_SHA}"
+test "$(sha256sum "${DELEGATED_RUNNER}" | awk '{print $1}')" \
+  = "${PREVIOUS_RUNNER_SHA256}"
+chmod 700 "${DELEGATED_RUNNER}"
 
-EXECUTION_REPO_ROOT="$(
-  mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-execution-repo.XXXXXX"
-)"
-rmdir "${EXECUTION_REPO_ROOT}"
-git worktree add --detach "${EXECUTION_REPO_ROOT}" "${BPT_SOURCE_SHA}"
-test "$(git -C "${EXECUTION_REPO_ROOT}" rev-parse HEAD)" = "${BPT_SOURCE_SHA}"
-test -z "$(git -C "${EXECUTION_REPO_ROOT}" status --porcelain=v1)"
-echo "materialized clean execution worktree revision=${BPT_SOURCE_SHA}"
+cat > "${COMPATIBILITY_PYTHON_SHIM}" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+: "${REAL_BPT_PYTHON:?REAL_BPT_PYTHON is required}"
 
-export PHYSICAL_UPSTREAM_REVISION
-export PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID
-export PHYSICAL_UPSTREAM_REPORT_ID
+stage_target="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+if [[ "${1:-}" == "${stage_target}" ]]; then
+  arguments=("$@")
+  stage=""
+  execution_repo=""
+  legacy_repo=""
+  legacy_role=""
+  stage_count=0
+  execution_repo_count=0
+  legacy_repo_count=0
+  legacy_role_count=0
+  index=1
+  while [[ "${index}" -lt "${#arguments[@]}" ]]; do
+    option="${arguments[$index]}"
+    case "${option}" in
+      --stage|--execution-repo|--repo|--role)
+        value_index=$((index + 1))
+        if [[ "${value_index}" -ge "${#arguments[@]}" ]]; then
+          echo "stage-prefix compatibility option lacks a value: ${option}" >&2
+          exit 2
+        fi
+        value="${arguments[$value_index]}"
+        case "${option}" in
+          --stage)
+            stage="${value}"
+            stage_count=$((stage_count + 1))
+            ;;
+          --execution-repo)
+            execution_repo="${value}"
+            execution_repo_count=$((execution_repo_count + 1))
+            ;;
+          --repo)
+            legacy_repo="${value}"
+            legacy_repo_count=$((legacy_repo_count + 1))
+            ;;
+          --role)
+            legacy_role="${value}"
+            legacy_role_count=$((legacy_role_count + 1))
+            ;;
+        esac
+        index=$((index + 2))
+        ;;
+      *)
+        index=$((index + 1))
+        ;;
+    esac
+  done
+
+  if [[ "${stage}" == "stage-prefix" ]]; then
+    if [[ "${stage_count}" -ne 1 \
+      || "${execution_repo_count}" -ne 1 \
+      || "${legacy_repo_count}" -ne 1 \
+      || "${legacy_role_count}" -ne 1 ]]; then
+      echo "stage-prefix legacy argument binding is not unique" >&2
+      exit 2
+    fi
+    if [[ "${legacy_repo}" != "${execution_repo}" ]]; then
+      echo "stage-prefix repository aliases differ" >&2
+      exit 2
+    fi
+    if [[ "${legacy_role}" != "calibration" ]]; then
+      echo "stage-prefix legacy role changed" >&2
+      exit 2
+    fi
+
+    rewritten=("${arguments[0]}")
+    index=1
+    while [[ "${index}" -lt "${#arguments[@]}" ]]; do
+      option="${arguments[$index]}"
+      if [[ "${option}" == "--repo" || "${option}" == "--role" ]]; then
+        index=$((index + 2))
+      else
+        rewritten+=("${option}")
+        index=$((index + 1))
+      fi
+    done
+    exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
+  fi
+fi
+
+exec "${REAL_BPT_PYTHON}" "$@"
+SH
+chmod 700 "${COMPATIBILITY_PYTHON_SHIM}"
+
 export REAL_BPT_PYTHON
-
 set +e
-(
-  cd "${EXECUTION_REPO_ROOT}"
-  GITHUB_WORKSPACE="${EXECUTION_REPO_ROOT}" \
-  PYTHONPATH="${EXECUTION_REPO_ROOT}/src:${PYTHONPATH:-}" \
-  BPT_PYTHON="${PYTHON_SHIM}" \
-  RUNNER_WORKSPACE="${PHYSICAL_UPSTREAM_ROOT}" \
-    bash "${SELECTOR_WRAPPER}"
-)
+BPT_PYTHON="${COMPATIBILITY_PYTHON_SHIM}" \
+  bash "${DELEGATED_RUNNER}" "$@"
 status=$?
 set -e
 
-receipt="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence/execution-receipt.json"
-if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
+receipt="${EVIDENCE_ROOT:-}/deform360-v6-source-prediction-evidence/execution-receipt.json"
+if [[ -n "${EVIDENCE_ROOT:-}" && -f "${receipt}" && ! -L "${receipt}" ]]; then
   export RECEIPT_PATH="${receipt}"
-  "${BPT_PYTHON}" - <<'PY'
+  export STAGE_PREFIX_COMPATIBILITY_REPAIR_ID
+  export STAGE_PREFIX_FAILED_WORKFLOW_RUN_ID
+  export STAGE_PREFIX_FAILED_ARTIFACT_ID
+  export STAGE_PREFIX_FAILED_ARTIFACT_SHA256
+  export STAGE_PREFIX_FAILED_RECEIPT_ID
+  export STAGE_PREFIX_FAILED_SOURCE_REVISION
+  export STAGE_PREFIX_FAILED_TERMINAL_STAGE
+  export STAGE_PREFIX_COMMAND
+  "${REAL_BPT_PYTHON}" - <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -302,35 +204,68 @@ import json
 import os
 from pathlib import Path
 
-path = Path(os.environ["RECEIPT_PATH"])
-receipt = json.loads(path.read_text(encoding="utf-8"))
-receipt.pop("receipt_id", None)
-receipt["runtime_physical_upstream"] = {
-    "repository": "IPS-Stuttgart/BayesianPhysTwin",
-    "repository_revision": os.environ["PHYSICAL_UPSTREAM_REVISION"],
-    "diagnostic_workflow_run_id": int(os.environ["PHYSICAL_UPSTREAM_DIAGNOSTIC_RUN_ID"]),
-    "diagnostic_report_id": os.environ["PHYSICAL_UPSTREAM_REPORT_ID"],
-    "selection": "unique-complete-history-exact-ten-file-sha256-match",
-    "required_file_count": 10,
-}
-receipt["runtime_prepared_inventory_identity"] = {
-    "authoritative_admission_workflow_run_id": int(
-        os.environ["PREPARED_INVENTORY_ADMISSION_RUN_ID"]
+repair = {
+    "schema": (
+        "bayesian-phystwin.deform360-v6-"
+        "stage-prefix-argument-compatibility-repair"
     ),
-    "implementation_revision": os.environ[
-        "PREPARED_INVENTORY_IMPLEMENTATION_REVISION"
-    ],
-    "inventory_id": os.environ["PREPARED_INVENTORY_ID"],
-    "file_sha256": os.environ["PREPARED_INVENTORY_FILE_SHA256"],
-    "selection": "frozen-authoritative-retained-source-admission",
+    "schema_version": 1,
+    "failed_execution": {
+        "workflow_run_id": int(os.environ["STAGE_PREFIX_FAILED_WORKFLOW_RUN_ID"]),
+        "artifact_id": int(os.environ["STAGE_PREFIX_FAILED_ARTIFACT_ID"]),
+        "artifact_sha256": os.environ["STAGE_PREFIX_FAILED_ARTIFACT_SHA256"],
+        "receipt_id": os.environ["STAGE_PREFIX_FAILED_RECEIPT_ID"],
+        "source_revision": os.environ["STAGE_PREFIX_FAILED_SOURCE_REVISION"],
+        "terminal_stage": os.environ["STAGE_PREFIX_FAILED_TERMINAL_STAGE"],
+        "exit_code": 2,
+    },
+    "rewrite": {
+        "command": os.environ["STAGE_PREFIX_COMMAND"],
+        "stage": "stage-prefix",
+        "removed_legacy_arguments": ["--repo", "--role"],
+        "required_execution_repo_alias_equality": True,
+        "required_role": "calibration",
+        "all_other_arguments_preserved": True,
+        "other_stages_unchanged": True,
+    },
+    "information_boundary": {
+        "claim_authorized": False,
+        "development_suffix_opened": False,
+        "replacement_allowed": False,
+        "v5_confirmation_payloads_opened": False,
+        "v6_fresh_target_selected": False,
+        "v6_target_outcomes_used": False,
+        "v6_target_payloads_opened": False,
+    },
 }
 canonical = json.dumps(
-    receipt,
+    repair,
     sort_keys=True,
     separators=(",", ":"),
     allow_nan=False,
 ).encode("utf-8")
-receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+observed = hashlib.sha256(canonical).hexdigest()
+expected = os.environ["STAGE_PREFIX_COMPATIBILITY_REPAIR_ID"]
+if observed != expected:
+    raise SystemExit("stage-prefix compatibility repair identity changed")
+repair["repair_id"] = expected
+
+path = Path(os.environ["RECEIPT_PATH"])
+receipt = json.loads(path.read_text(encoding="utf-8"))
+receipt.pop("receipt_id", None)
+existing = receipt.get("runtime_stage_prefix_compatibility")
+if existing not in (None, repair):
+    raise SystemExit("stage-prefix compatibility receipt binding changed")
+receipt["runtime_stage_prefix_compatibility"] = repair
+receipt_id = hashlib.sha256(
+    json.dumps(
+        receipt,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+).hexdigest()
+receipt["receipt_id"] = receipt_id
 path.write_text(
     json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n",
     encoding="utf-8",
