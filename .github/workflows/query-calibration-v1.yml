@@ -6,8 +6,10 @@ on:
     paths:
       - ".github/workflows/query-calibration-v1.yml"
       - "src/bayesian_phystwin/query_calibration.py"
+      - "src/bayesian_phystwin/query_covariance_treatment/**"
       - "tests/test_query_calibration*.py"
       - "docs/query_calibration_v1.md"
+      - "docs/query_covariance_treatment_v1.md"
       - "docs/finite_group_calibration_design.md"
   workflow_dispatch:
 
@@ -90,18 +92,28 @@ jobs:
           } | tee "${QUERY_CALIBRATION_RUN_ROOT}/environment.txt"
 
       - name: Check focused source quality
+        shell: bash
         run: |
-          python -m ruff check \
-            src/bayesian_phystwin/query_calibration.py \
-            tests/test_query_calibration.py \
-            tests/test_query_calibration_validation.py \
+          set -euo pipefail
+          files=(
+            src/bayesian_phystwin/query_calibration.py
+            src/bayesian_phystwin/query_covariance_treatment/__init__.py
+            src/bayesian_phystwin/query_covariance_treatment/_common.py
+            src/bayesian_phystwin/query_covariance_treatment/_relevance_types.py
+            src/bayesian_phystwin/query_covariance_treatment/relevance.py
+            src/bayesian_phystwin/query_covariance_treatment/_admission_policy.py
+            src/bayesian_phystwin/query_covariance_treatment/_admission_decision.py
+            src/bayesian_phystwin/query_covariance_treatment/admission.py
+            tests/test_query_calibration.py
+            tests/test_query_calibration_validation.py
             tests/test_query_calibration_hardening.py
-          python -m ruff format --check \
+            tests/test_query_calibration_covariance_treatment.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
             src/bayesian_phystwin/query_calibration.py \
-            tests/test_query_calibration.py \
-            tests/test_query_calibration_validation.py \
-            tests/test_query_calibration_hardening.py
-          python -m mypy src/bayesian_phystwin/query_calibration.py
+            src/bayesian_phystwin/query_covariance_treatment
 
       - name: Run focused and adjacent contracts
         shell: bash
@@ -111,14 +123,23 @@ jobs:
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
             tests/test_query_calibration_hardening.py \
+            tests/test_query_calibration_covariance_treatment.py \
             tests/test_calibration.py \
             tests/test_grouped_conformal.py \
             | tee "${QUERY_CALIBRATION_RUN_ROOT}/pytest.txt"
           python -m py_compile \
             src/bayesian_phystwin/query_calibration.py \
+            src/bayesian_phystwin/query_covariance_treatment/__init__.py \
+            src/bayesian_phystwin/query_covariance_treatment/_common.py \
+            src/bayesian_phystwin/query_covariance_treatment/_relevance_types.py \
+            src/bayesian_phystwin/query_covariance_treatment/relevance.py \
+            src/bayesian_phystwin/query_covariance_treatment/_admission_policy.py \
+            src/bayesian_phystwin/query_covariance_treatment/_admission_decision.py \
+            src/bayesian_phystwin/query_covariance_treatment/admission.py \
             tests/test_query_calibration.py \
             tests/test_query_calibration_validation.py \
-            tests/test_query_calibration_hardening.py
+            tests/test_query_calibration_hardening.py \
+            tests/test_query_calibration_covariance_treatment.py
 
       - name: Verify clean repository state
         shell: bash
