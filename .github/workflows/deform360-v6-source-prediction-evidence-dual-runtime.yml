@@ -1,0 +1,726 @@
+name: Deform360 v6 source prediction evidence — dual CUDA runtimes
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
+      - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
+      - "scripts/ci/dispatch_deform360_v6_source_python.sh"
+      - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
+      - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
+      - "scripts/ci/dispatch_deform360_v6_source_python.sh"
+      - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-v6-source-prediction-dual-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed
+  VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  METRIC_BATCH_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-visible-source-gate-v2/146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89/136f72b996e9c76b0bab3ab5db5d0fe7172e0307/metric-batch
+  OFFICIAL_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/data-7fea8e2
+  ADAPTIVE_CONFIRMATION_RAW_ROOT: /mnt/lexar4tb/datasets/deform360/adaptive-confirmation-download-5a9c56d593462486bdd0953dcaf6f9c643bf8370
+  SOURCE_RUN_ID: "31236564360"
+  SOURCE_ARTIFACT_NAME: deform360-official-calibration-source-31236564360-1
+  DEFORM360_PHYSICAL_REVISION: 0fe36f0b7a7a917ba62b5f8cee707299a9a4a317
+  DEFORM360_PROCESSING_PYPROJECT_SHA256: 0ccfe6a386c184613191ccdaa8f2912bc3c148a7dda9c9f126959301d250232e
+  EXPECTED_PRIMARY_PIP_CHECK_CONFLICT: "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
+  OFFICIAL_PHYSTWIN_REVISION: 2b6630528141b9cba5a7677c8b88b2129b4a8390
+  SAM2_REVISION: 2b90b9f5ceec907a1c18123530e92e794ad901a4
+  CAUSAL4D_DISCOVERY_REVISION: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
+  AMENDMENT_ID: f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f
+  FRAME_ZERO_RUNTIME_REPAIR_ID: 6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8
+  FRAME_ZERO_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json
+  FRAME_ZERO_RUNTIME_REPAIR_SHA256: c4e52e4fc86d79c738d98a357a053845a3bc9d7a4d30d60642a37803b121478b
+  PRIMARY_PYTHON_VERSION: "3.12"
+  PRIMARY_TORCH_VERSION: 2.5.1+cu121
+  FRAME_ZERO_PYTHON_VERSION: "3.10"
+  FRAME_ZERO_NUMPY_VERSION: "1.26.4"
+  FRAME_ZERO_TORCH_VERSION: 2.4.0+cu121
+  FRAME_ZERO_TORCHVISION_VERSION: 0.19.0+cu121
+  FRAME_ZERO_GSPLAT_VERSION: 1.4.0+pt24cu121
+  FRAME_ZERO_NERFSTUDIO_VERSION: "1.1.5"
+  PYTORCH_CU121_INDEX: https://download.pytorch.org/whl/cu121
+  GSPLAT_PT24_CU121_INDEX: https://docs.gsplat.studio/whl/pt24cu121
+  ISSUE_NUMBER: "148"
+
+jobs:
+  contracts:
+    name: Dual-runtime contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the target-closed dual-runtime repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            "pip==25.2" \
+            "setuptools==80.9.0" \
+            "wheel==0.45.1"
+          python -m pip install -e ".[dev,graph]"
+          python -m ruff check \
+            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py
+          python -m ruff format --check \
+            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py
+          bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
+            tests/test_pull_request_workflow_integrity.py
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  evidence:
+    name: Seal 100 real source predictions / workstation2 / dual runtime
+    needs: contracts
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 720
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Admit the sole runner and target-closed roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          nvidia-smi
+          test -d "${RESULTS_ROOT}"
+          test -d "${PROCESSED_ROOT}/aligned"
+          test -d "${VISUAL_PRODUCTION_ROOT}"
+          test -d "${METRIC_BATCH_ROOT}"
+          for admitted in \
+            "${RESULTS_ROOT}" \
+            "${PROCESSED_ROOT}" \
+            "${VISUAL_PRODUCTION_ROOT}" \
+            "${METRIC_BATCH_ROOT}"; do
+            case "${admitted}/" in
+              "${OFFICIAL_RAW_ROOT}/"*|"${ADAPTIVE_CONFIRMATION_RAW_ROOT}/"*)
+                echo "an admitted path overlaps a forbidden raw root" >&2
+                exit 1
+                ;;
+            esac
+          done
+          echo "development_suffix_opened=false"
+          echo "v5_confirmation_payloads_opened=false"
+          echo "v6_target_payloads_opened=false"
+          echo "v6_target_outcomes_used=false"
+          echo "replacement_allowed=false"
+
+      - name: Check out exact protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen Deform360 physical source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.DEFORM360_PHYSICAL_REVISION }}
+          path: _deform360_physical
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen official PhysTwin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Jianghanxiao/PhysTwin
+          ref: ${{ env.OFFICIAL_PHYSTWIN_REVISION }}
+          path: _official_phystwin
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen SAM2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: facebookresearch/sam2
+          ref: ${{ env.SAM2_REVISION }}
+          path: _sam2
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out Causal4D source for exact-file discovery
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_DISCOVERY_REVISION }}
+          path: _causal4d_discovery
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Download authoritative calibration source artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ env.SOURCE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-v6-source-artifact
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Set up frame-zero Python 3.10
+        id: python310
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+
+      - name: Set up primary Python 3.12
+        id: python312
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build isolated primary and frame-zero CUDA runtimes
+        id: runtime
+        shell: bash
+        env:
+          PRIMARY_BOOTSTRAP_PYTHON: ${{ steps.python312.outputs.python-path }}
+          FRAME_ZERO_BOOTSTRAP_PYTHON: ${{ steps.python310.outputs.python-path }}
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-dual-runtime-bootstrap.log
+        run: |
+          set -euo pipefail
+          set +e
+          (
+            set -euo pipefail
+            test "$(sha256sum "${FRAME_ZERO_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${FRAME_ZERO_RUNTIME_REPAIR_SHA256}"
+            test "$(sha256sum _deform360_physical/pyproject.toml | awk '{print $1}')" \
+              = "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
+
+            primary_runtime="${RUNNER_TEMP}/deform360-v6-primary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            frame_zero_runtime="${RUNNER_TEMP}/deform360-v6-frame-zero-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            dispatcher="${RUNNER_TEMP}/deform360-v6-python-dispatch-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            marker="${RUNNER_TEMP}/deform360-v6-frame-zero-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+            constraints="${RUNNER_TEMP}/deform360-v6-frame-zero-constraints-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+            test ! -e "${primary_runtime}"
+            test ! -e "${frame_zero_runtime}"
+            test ! -e "${dispatcher}"
+            test ! -e "${marker}"
+            test ! -e "${constraints}"
+
+            "${PRIMARY_BOOTSTRAP_PYTHON}" -m venv \
+              --copies --system-site-packages "${primary_runtime}"
+            primary_python="${primary_runtime}/bin/python"
+            "${primary_python}" -m pip install \
+              "pip==25.2" \
+              "setuptools==80.9.0" \
+              "wheel==0.45.1"
+            "${primary_python}" -m pip install -e ".[graph,vision]"
+            "${primary_python}" -m pip install -e "./_deform360_physical[processing]"
+            SAM2_BUILD_CUDA=0 \
+              "${primary_python}" -m pip install -e ./_sam2
+            "${primary_python}" -m pip install \
+              "virtualenv==21.7.4" \
+              "fpsample>=0.3" \
+              "h5py>=3.8" \
+              "hydra-core>=1.3.2" \
+              "imageio>=2.34" \
+              "iopath>=0.1.10" \
+              "networkx>=3.0" \
+              "pillow>=9.4" \
+              "plyfile>=1.0" \
+              "scipy>=1.10" \
+              "tqdm>=4.66" \
+              "trimesh>=4.0" \
+              "warp-lang>=1.6" \
+              "yourdfpy>=0.0.56"
+            set +e
+            primary_pip_check="$("${primary_python}" -m pip check 2>&1)"
+            primary_pip_status=$?
+            set -e
+            printf '%s\n' "${primary_pip_check}"
+            test "${primary_pip_status}" -eq 1
+            test "$(printf '%s\n' "${primary_pip_check}" | wc -l)" -eq 1
+            test "${primary_pip_check}" = "${EXPECTED_PRIMARY_PIP_CHECK_CONFLICT}"
+
+            "${FRAME_ZERO_BOOTSTRAP_PYTHON}" -m venv \
+              --copies "${frame_zero_runtime}"
+            frame_zero_python="${frame_zero_runtime}/bin/python"
+            "${frame_zero_python}" -m pip install \
+              "pip==25.2" \
+              "setuptools==80.9.0" \
+              "wheel==0.45.1"
+            "${frame_zero_python}" -m pip install \
+              "numpy==${FRAME_ZERO_NUMPY_VERSION}"
+            "${frame_zero_python}" -m pip install \
+              --index-url "${PYTORCH_CU121_INDEX}" \
+              --extra-index-url https://pypi.org/simple \
+              "torch==${FRAME_ZERO_TORCH_VERSION}" \
+              "torchvision==${FRAME_ZERO_TORCHVISION_VERSION}"
+            "${frame_zero_python}" -m pip install \
+              --no-deps \
+              --index-url "${GSPLAT_PT24_CU121_INDEX}" \
+              "gsplat==${FRAME_ZERO_GSPLAT_VERSION}"
+            printf '%s\n' \
+              "numpy==${FRAME_ZERO_NUMPY_VERSION}" \
+              "torch==${FRAME_ZERO_TORCH_VERSION}" \
+              "torchvision==${FRAME_ZERO_TORCHVISION_VERSION}" \
+              "gsplat==${FRAME_ZERO_GSPLAT_VERSION}" \
+              "nerfstudio==${FRAME_ZERO_NERFSTUDIO_VERSION}" \
+              "opencv-python-headless==4.10.0.84" \
+              "opencv-contrib-python==4.10.0.84" \
+              > "${constraints}"
+            PIP_CONSTRAINT="${constraints}" \
+              "${frame_zero_python}" -m pip install -e ".[graph,vision]"
+            PIP_CONSTRAINT="${constraints}" \
+              "${frame_zero_python}" -m pip install \
+                "nerfstudio==${FRAME_ZERO_NERFSTUDIO_VERSION}"
+            PIP_CONSTRAINT="${constraints}" \
+              "${frame_zero_python}" -m pip install -e \
+                "./_deform360_physical[processing]"
+            "${frame_zero_python}" -m pip check
+
+            install -m 700 \
+              scripts/ci/dispatch_deform360_v6_source_python.sh \
+              "${dispatcher}"
+            test ! -L "${dispatcher}"
+            test -x "${dispatcher}"
+
+            BPT_PRIMARY_PYTHON="${primary_python}" \
+            BPT_FRAME_ZERO_PYTHON="${frame_zero_python}" \
+            BPT_FRAME_ZERO_RUNTIME_MARKER="${marker}" \
+            "${dispatcher}" - <<'PY'
+          from importlib.metadata import version
+
+          import bayesian_phystwin
+          import deform360
+          import sam2
+          import torch
+          import warp
+
+          if not torch.cuda.is_available():
+              raise SystemExit("primary CUDA runtime is unavailable")
+          if version("torch") != "2.5.1+cu121":
+              raise SystemExit("primary Torch runtime identity changed")
+          if version("SAM-2") != "1.0":
+              raise SystemExit("primary SAM2 runtime identity changed")
+          if version("virtualenv") != "21.7.4":
+              raise SystemExit("primary virtualenv identity changed")
+          print(version("torch"))
+          print(version("SAM-2"))
+          print(version("bayesian-phystwin"))
+          print(version("deform360"))
+          print(warp.__version__)
+          print(bayesian_phystwin.__file__)
+          print(deform360.__file__)
+          print(sam2.__file__)
+          PY
+
+            "${frame_zero_python}" - <<'PY'
+          from importlib.metadata import version
+
+          import bayesian_phystwin
+          import deform360
+          from gsplat.cuda._backend import _C
+          from nerfstudio.configs import method_configs
+          from nerfstudio.scripts import exporter
+          import torch
+
+          expected = {
+              "numpy": "1.26.4",
+              "torch": "2.4.0+cu121",
+              "torchvision": "0.19.0+cu121",
+              "gsplat": "1.4.0+pt24cu121",
+              "nerfstudio": "1.1.5",
+          }
+          observed = {name: version(name) for name in expected}
+          if observed != expected:
+              raise SystemExit(f"frame-zero runtime identity changed: {observed!r}")
+          if not torch.cuda.is_available():
+              raise SystemExit("frame-zero CUDA runtime is unavailable")
+          if _C is None or not hasattr(_C, "CameraModelType"):
+              raise SystemExit("precompiled gsplat CUDA backend is unavailable")
+          if "splatfacto" not in method_configs.method_configs:
+              raise SystemExit("nerfstudio splatfacto method is unavailable")
+          if not hasattr(exporter, "ExportGaussianSplat"):
+              raise SystemExit("nerfstudio Gaussian exporter is unavailable")
+          print(observed)
+          print(type(_C).__name__)
+          print(bayesian_phystwin.__file__)
+          print(deform360.__file__)
+          PY
+
+            {
+              echo "BPT_PRIMARY_PYTHON=${primary_python}"
+              echo "BPT_FRAME_ZERO_PYTHON=${frame_zero_python}"
+              echo "BPT_FRAME_ZERO_RUNTIME_MARKER=${marker}"
+              echo "BPT_PYTHON=${dispatcher}"
+            } >> "${GITHUB_ENV}"
+          ) > "${RUNTIME_LOG}" 2>&1
+          status=$?
+          set -e
+          cat "${RUNTIME_LOG}"
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Generate real prefix-only source prediction evidence
+        id: execute
+        if: steps.runtime.outputs.exit_code == '0'
+        shell: bash
+        env:
+          BPT_SOURCE_SHA: ${{ github.sha }}
+          SOURCE_ARTIFACT_DIR: ${{ runner.temp }}/deform360-v6-source-artifact
+          DEFORM360_PHYSICAL_REPO: ${{ github.workspace }}/_deform360_physical
+          OFFICIAL_PHYSTWIN_REPO: ${{ github.workspace }}/_official_phystwin
+          SAM2_REPO: ${{ github.workspace }}/_sam2
+          EVIDENCE_ROOT: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          set +e
+          bash scripts/ci/run_deform360_v6_source_prediction_evidence.sh
+          status=$?
+          set -e
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Ensure bounded execution receipt exists
+        id: receipt
+        if: always()
+        shell: bash
+        env:
+          BPT_SOURCE_SHA: ${{ github.sha }}
+          EVIDENCE_ROOT: ${{ runner.temp }}
+          RUNTIME_EXIT_CODE: ${{ steps.runtime.outputs.exit_code }}
+          EXECUTE_EXIT_CODE: ${{ steps.execute.outputs.exit_code }}
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-dual-runtime-bootstrap.log
+        run: |
+          set -euo pipefail
+          compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+          logs="${compact}/logs"
+          receipt="${compact}/execution-receipt.json"
+          mkdir -p "${logs}"
+          test ! -L "${compact}"
+          test ! -L "${logs}"
+          test ! -L "${receipt}"
+          if [[ -f "${receipt}" ]]; then
+            exit 0
+          fi
+          export RECEIPT_PATH="${receipt}"
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          runtime_raw = os.environ.get("RUNTIME_EXIT_CODE", "").strip()
+          execute_raw = os.environ.get("EXECUTE_EXIT_CODE", "").strip()
+          runtime_log = Path(os.environ["RUNTIME_LOG"])
+          if not runtime_raw:
+              stage = "build-isolated-primary-and-frame-zero-runtimes"
+              exit_code = 1
+              error = "dual runtime bootstrap did not publish an exit code"
+          elif int(runtime_raw) != 0:
+              stage = "build-isolated-primary-and-frame-zero-runtimes"
+              exit_code = int(runtime_raw)
+              error = (
+                  runtime_log.read_text(encoding="utf-8", errors="replace")[-16000:]
+                  if runtime_log.is_file() and not runtime_log.is_symlink()
+                  else "dual runtime bootstrap failed without a retained log"
+              )
+          elif not execute_raw:
+              stage = "generate-real-prefix-only-source-prediction-evidence"
+              exit_code = 1
+              error = "source execution did not publish an exit code or receipt"
+          else:
+              stage = "generate-real-prefix-only-source-prediction-evidence"
+              observed = int(execute_raw)
+              exit_code = observed if observed else 1
+              error = "source execution completed without a bounded receipt"
+          receipt = {
+              "schema": "bayesian-phystwin.deform360-v6-source-prediction-execution-receipt",
+              "schema_version": 1,
+              "amendment_id": os.environ["AMENDMENT_ID"],
+              "source_revision": os.environ["BPT_SOURCE_SHA"],
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+              "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "status": "source-technical-failure-retained",
+              "terminal_stage": stage,
+              "exit_code": exit_code,
+              "error": error,
+              "artifacts": {},
+              "physical_manifest_count": 0,
+              "source_prediction_seal_count": 0,
+              "information_boundary": {
+                  "development_suffix_opened": False,
+                  "future_object_observations_used_for_prediction": False,
+                  "v5_confirmation_payloads_opened": False,
+                  "v5_confirmation_outcomes_used": False,
+                  "v6_fresh_target_selected": False,
+                  "v6_target_payloads_opened": False,
+                  "v6_target_outcomes_used": False,
+                  "replacement_allowed": False,
+              },
+              "claim_authorized": False,
+              "fresh_target_selection_authorized": False,
+              "fresh_target_payload_access_authorized": False,
+          }
+          canonical = json.dumps(
+              receipt,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+          Path(os.environ["RECEIPT_PATH"]).write_text(
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Bind the frame-zero CUDA runtime into the receipt
+        if: always()
+        shell: bash
+        env:
+          EVIDENCE_ROOT: ${{ runner.temp }}
+          RUNTIME_EXIT_CODE: ${{ steps.runtime.outputs.exit_code }}
+        run: |
+          set -euo pipefail
+          compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+          receipt="${compact}/execution-receipt.json"
+          test -f "${receipt}"
+          test ! -L "${receipt}"
+          export RECEIPT_PATH="${receipt}"
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RECEIPT_PATH"])
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          receipt.pop("receipt_id", None)
+          marker_raw = os.environ.get("BPT_FRAME_ZERO_RUNTIME_MARKER", "").strip()
+          marker_path = Path(marker_raw) if marker_raw else None
+          activated = bool(
+              marker_path is not None
+              and marker_path.is_file()
+              and not marker_path.is_symlink()
+          )
+          if activated:
+              marker = json.loads(marker_path.read_text(encoding="utf-8"))
+              expected = {
+                  "repair_id": os.environ["FRAME_ZERO_RUNTIME_REPAIR_ID"],
+                  "stage": "frame-zero",
+              }
+              if marker != expected:
+                  raise SystemExit("frame-zero runtime activation marker changed")
+          if "runtime_frame_zero_precompiled_cuda" in receipt:
+              raise SystemExit("frame-zero runtime receipt field already exists")
+          receipt["runtime_frame_zero_precompiled_cuda"] = {
+              "activated": activated,
+              "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
+              "dispatcher_stage": "frame-zero",
+              "dispatcher_target": (
+                  "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+              ),
+              "frame_zero_python_version": os.environ["FRAME_ZERO_PYTHON_VERSION"],
+              "frame_zero_torch_version": os.environ["FRAME_ZERO_TORCH_VERSION"],
+              "frame_zero_torchvision_version": os.environ[
+                  "FRAME_ZERO_TORCHVISION_VERSION"
+              ],
+              "gsplat_index": os.environ["GSPLAT_PT24_CU121_INDEX"],
+              "gsplat_version": os.environ["FRAME_ZERO_GSPLAT_VERSION"],
+              "non_frame_zero_calls_use_primary_runtime": True,
+              "primary_python_version": os.environ["PRIMARY_PYTHON_VERSION"],
+              "primary_torch_version": os.environ["PRIMARY_TORCH_VERSION"],
+              "pytorch_index": os.environ["PYTORCH_CU121_INDEX"],
+              "repair_file_sha256": os.environ["FRAME_ZERO_RUNTIME_REPAIR_SHA256"],
+              "repair_id": os.environ["FRAME_ZERO_RUNTIME_REPAIR_ID"],
+              "repair_path": os.environ["FRAME_ZERO_RUNTIME_REPAIR_PATH"],
+              "runtime_probe_passed": os.environ.get("RUNTIME_EXIT_CODE") == "0",
+          }
+          canonical = json.dumps(
+              receipt,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+          path.write_text(
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Retain bounded runner diagnostics
+        if: always()
+        shell: bash
+        env:
+          BPT_SOURCE_SHA: ${{ github.sha }}
+          EVIDENCE_ROOT: ${{ runner.temp }}
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-dual-runtime-bootstrap.log
+        run: |
+          set -euo pipefail
+          compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+          logs="${compact}/logs"
+          run_root="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
+          mkdir -p "${logs}"
+          test ! -L "${compact}"
+          test ! -L "${logs}"
+          if [[ -f "${RUNTIME_LOG}" && ! -L "${RUNTIME_LOG}" ]]; then
+            tail -c 64000 "${RUNTIME_LOG}" > "${logs}/dual-runtime-bootstrap.log"
+          fi
+          if [[ -d "${run_root}/logs" ]]; then
+            while IFS= read -r log; do
+              target="${logs}/$(basename "${log}")"
+              test ! -L "${target}"
+              tail -c 64000 "${log}" > "${target}"
+            done < <(find "${run_root}/logs" -type f -name '*.log' | sort)
+          fi
+          rm -f "${compact}/SHA256SUMS"
+          (
+            cd "${compact}"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Upload compact source prediction evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deform360-v6-source-prediction-dual-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deform360-v6-source-prediction-evidence
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 6
+          overwrite: false
+
+      - name: Publish bounded source receipt to issue 148
+        if: always()
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test ! -L "${RECEIPT_PATH}"
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          receipt = json.loads(Path(os.environ["RECEIPT_PATH"]).read_text())
+          runtime = receipt["runtime_frame_zero_precompiled_cuda"]
+          body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
+
+          - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
+          - exact protected-main revision: `{receipt['source_revision']}`
+          - receipt ID: `{receipt['receipt_id']}`
+          - terminal stage: `{receipt['terminal_stage']}`
+          - exit code: `{receipt['exit_code']}`
+          - physical manifests: `{receipt['physical_manifest_count']}/10`
+          - sealed source predictions: `{receipt['source_prediction_seal_count']}/100`
+          - frame-zero precompiled CUDA runtime activated: `{str(runtime['activated']).lower()}`
+          - frame-zero gsplat: `{runtime['gsplat_version']}`
+          - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
+          - development suffix opened: `false`
+          - v5 confirmation payloads opened: `false`
+          - v6 fresh target selected: `false`
+          - v6 target payloads opened: `false`
+          - v6 target outcomes used: `false`
+          - replacement allowed: `false`
+
+          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime. All other calls use the frozen primary runtime. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          """
+          request = urllib.request.Request(
+              (
+                  "https://api.github.com/repos/"
+                  f"{os.environ['GITHUB_REPOSITORY']}/issues/"
+                  f"{os.environ['ISSUE_NUMBER']}/comments"
+              ),
+              data=json.dumps({"body": body}).encode("utf-8"),
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 201:
+                  raise SystemExit(f"unexpected issue API status: {response.status}")
+          PY
+
+      - name: Enforce terminal source status
+        if: always()
+        shell: bash
+        env:
+          RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
+        run: |
+          set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test ! -L "${RECEIPT_PATH}"
+          status=$(python -c 'import json,os; print(json.load(open(os.environ["RECEIPT_PATH"]))["status"])')
+          case "${status}" in
+            source-prediction-evidence-sealed)
+              exit 0
+              ;;
+            source-inputs-incomplete)
+              exit 3
+              ;;
+            *)
+              exit 1
+              ;;
+          esac

@@ -1,0 +1,73 @@
+{
+  "claim_boundary": "Technical completion of the already-frozen Deform360 frame-zero reconstruction runtime. It authorizes no source result, suffix access, confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
+    "cuda_toolkit_or_jit_build_required": false,
+    "dispatcher_stage": "frame-zero",
+    "dispatcher_target": "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py",
+    "frame_zero_python_version": "3.10",
+    "frame_zero_runtime_isolated_from_sam2": true,
+    "frame_zero_torch_version": "2.4.0+cu121",
+    "frame_zero_torchvision_version": "0.19.0+cu121",
+    "gsplat_index": "https://docs.gsplat.studio/whl/pt24cu121",
+    "gsplat_version": "1.4.0+pt24cu121",
+    "non_frame_zero_calls_use_primary_runtime": true,
+    "primary_python_version": "3.12",
+    "primary_sam2_version": "1.0",
+    "primary_torch_version": "2.5.1+cu121",
+    "pytorch_index": "https://download.pytorch.org/whl/cu121"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge-or-explicit-main-workflow-dispatch",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:bb14ce5365ba3dcd46c17d52ea0c2ba36d71ec678176ef761bfe65a526e49917",
+    "artifact_id": 9117335082,
+    "error_message": "AttributeError: 'NoneType' object has no attribute 'CameraModelType' after gsplat reported that no CUDA toolkit was found",
+    "execution_receipt_id": "e8b1d22443251e2a5f14a8538c0f73f591ea10c1d625e0b6326fbb885a63a190",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "98e20353fa80caa8a58e1885c487f3bfbfb02b93",
+    "terminal_stage": "frame-zero:026-sock-cloth-ep0007",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31532027045
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8",
+  "repair_scope": {
+    "candidate_changed": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "frame_zero_cuda_runtime_completed": true,
+    "loss_changed": false,
+    "mean_changed": false,
+    "physical_algorithm_changed": false,
+    "prediction_horizons_changed": false,
+    "selector_changed": false,
+    "suffix_policy_changed": false,
+    "target_policy_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-frame-zero-cuda-runtime-repair",
+  "schema_version": 1
+}
