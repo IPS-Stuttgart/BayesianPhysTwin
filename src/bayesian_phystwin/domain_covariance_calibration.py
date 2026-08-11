@@ -6,7 +6,7 @@ import hashlib
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -442,11 +442,13 @@ class DomainCovarianceCalibrationDecisionV1:
 
     @property
     def mean_loo_nll_improvement(self) -> float:
-        return float(np.mean([row[3] - row[4] for row in self.leave_one_group_out]))
+        held = cast(Sequence[HeldGroupScore], self.leave_one_group_out)
+        return float(np.mean([row[3] - row[4] for row in held]))
 
     @property
     def worst_loo_nll_regression(self) -> float:
-        return max(0.0, max(row[4] - row[3] for row in self.leave_one_group_out))
+        held = cast(Sequence[HeldGroupScore], self.leave_one_group_out)
+        return max(0.0, max(row[4] - row[3] for row in held))
 
     def descriptor(self) -> dict[str, object]:
         return {
@@ -476,7 +478,7 @@ class DomainCovarianceCalibrationDecisionV1:
                     "nll_improvement": row[3] - row[4],
                     "nll_regression": max(0.0, row[4] - row[3]),
                 }
-                for row in self.leave_one_group_out
+                for row in cast(Sequence[HeldGroupScore], self.leave_one_group_out)
             ],
             "mean_loo_nll_improvement": self.mean_loo_nll_improvement,
             "worst_loo_nll_regression": self.worst_loo_nll_regression,
