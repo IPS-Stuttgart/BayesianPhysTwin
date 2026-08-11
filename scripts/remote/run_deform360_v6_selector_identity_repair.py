@@ -21,9 +21,7 @@ from bayesian_phystwin.deform360_joint_sparse_physical_source_v5 import (
     validate_joint_sparse_physical_execution_v5,
 )
 
-REPAIR_SCHEMA = (
-    "bayesian-phystwin.deform360-v6-source-runtime-selector-identity-repair"
-)
+REPAIR_SCHEMA = "bayesian-phystwin.deform360-v6-source-runtime-selector-identity-repair"
 REPAIR_ID = "41f3580de5ca7e09bcd4c2623569c293e29ed796634c60c84ededdbd945af042"
 EXECUTION_AMENDMENT_ID = (
     "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
@@ -91,8 +89,7 @@ def load_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         "selector identity repair changed",
     )
     _require(
-        repair.get("superseded_execution_amendment_id")
-        == EXECUTION_AMENDMENT_ID,
+        repair.get("superseded_execution_amendment_id") == EXECUTION_AMENDMENT_ID,
         "selector repair uses another execution amendment",
     )
     correction = _mapping(repair.get("correction"), name="selector correction")
@@ -102,12 +99,10 @@ def load_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         and correction.get("path") == SELECTOR_RELATIVE_PATH.as_posix()
         and correction.get("previous_sha256") == PREVIOUS_SELECTOR_SHA256
         and correction.get("corrected_sha256") == CORRECTED_SELECTOR_SHA256
-        and correction.get("corrected_byte_count")
-        == CORRECTED_SELECTOR_BYTE_COUNT
+        and correction.get("corrected_byte_count") == CORRECTED_SELECTOR_BYTE_COUNT
         and correction.get("historical_registered_digest_found_in_repository_history")
         is False
-        and correction.get("selector_class")
-        == "DeformableObjectSam2VideoPredictor"
+        and correction.get("selector_class") == "DeformableObjectSam2VideoPredictor"
         and correction.get("model_id_prefix")
         == "causal4d_public/deformable-object-sam2.1-small-automatic-v1@",
         "selector correction changed",
@@ -119,8 +114,7 @@ def load_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
     _require(
         failed.get("workflow_run_id") == 31458096956
         and failed.get("workflow_run_attempt") == 1
-        and failed.get("source_revision")
-        == "67daacdaafe98b63b8aa0357dccdcd11b9a81d51"
+        and failed.get("source_revision") == "67daacdaafe98b63b8aa0357dccdcd11b9a81d51"
         and failed.get("execution_receipt_id")
         == "cfcfeab74ee9cc88002e398afa2655ccc1a56752787fe6b44a961061fb7cd040"
         and failed.get("terminal_stage") == "locate-frozen-generic-selector"
@@ -166,8 +160,7 @@ def load_selector_identity_repair(path: str | Path) -> Mapping[str, Any]:
         name="repair execution authorization",
     )
     _require(
-        authorization.get("event")
-        == "push-to-protected-main-after-reviewed-merge"
+        authorization.get("event") == "push-to-protected-main-after-reviewed-merge"
         and authorization.get("runner_name") == "workstation2"
         and authorization.get("runner_labels")
         == ["self-hosted", "Linux", "X64", "nvidia-smi"]
@@ -246,8 +239,7 @@ def main() -> int:
     script = repository / "scripts" / "remote" / STAGE_SCRIPT
     module = _load_stage(script)
     _require(
-        getattr(module, "GENERIC_SELECTOR_SHA256", None)
-        == PREVIOUS_SELECTOR_SHA256,
+        getattr(module, "GENERIC_SELECTOR_SHA256", None) == PREVIOUS_SELECTOR_SHA256,
         "locked stage no longer carries the superseded selector digest",
     )
     _require(
