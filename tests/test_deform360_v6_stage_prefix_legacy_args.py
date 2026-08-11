@@ -27,7 +27,7 @@ def _patch_python() -> str:
         'BASE_LAUNCHER="${base_launcher}" \\\n'
         'PATCHED_LAUNCHER="${patched_launcher}" \\\n'
         'PATCH_ID_VALUE="${PATCH_ID}" \\\n'
-        '"${BPT_PYTHON}" - <<\'PY\'\n'
+        "\"${BPT_PYTHON}\" - <<'PY'\n"
     )
     assert text.count(marker) == 1
     remainder = text.split(marker, 1)[1]
@@ -38,7 +38,7 @@ def _patch_python() -> str:
 
 def _bootstrap_python() -> str:
     text = LAUNCHER.read_text(encoding="utf-8")
-    marker = 'cat > "${selector_bootstrap}" <<\'PY\'\n'
+    marker = "cat > \"${selector_bootstrap}\" <<'PY'\n"
     assert text.count(marker) == 1
     remainder = text.split(marker, 1)[1]
     body, tail = remainder.split('\nPY\nchmod 600 "${selector_bootstrap}"', 1)
@@ -245,10 +245,7 @@ def test_launcher_pins_the_complete_preceding_runtime_lineage() -> None:
     text = LAUNCHER.read_text(encoding="utf-8")
 
     assert 'BASE_REVISION="dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"' in text
-    assert (
-        'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"'
-        in text
-    )
+    assert 'BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"' in text
     assert f'REPAIR_ID="{REPAIR_ID}"' in text
     assert f'PREVIOUS_STAGE_SELECTOR_SHA256="{PREVIOUS}"' in text
     assert f'CORRECTED_STAGE_SELECTOR_SHA256="{CORRECTED}"' in text
