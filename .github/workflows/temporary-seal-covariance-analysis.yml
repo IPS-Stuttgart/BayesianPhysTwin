@@ -32,18 +32,20 @@ jobs:
 
           path = Path('.github/workflows/full22-covariance-only-hybrid-v1.yml')
           text = path.read_text(encoding='utf-8')
-          old = '''    if: >-
-              github.event_name != 'pull_request' ||
-              github.event.pull_request.head.repo.full_name == github.repository
-          '''
-          new = '''    # The registered pull-request result is sealed. Reproduce the expensive
-              # analysis only through an explicit manual dispatch; PRs still validate contracts.
-              if: github.event_name == 'workflow_dispatch'
-          '''
-          if old not in text:
-              raise SystemExit('registered analysis condition was not found exactly once')
+          old = (
+              "    if: >-\n"
+              "      github.event_name != 'pull_request' ||\n"
+              "      github.event.pull_request.head.repo.full_name == github.repository\n"
+          )
+          new = (
+              "    # The registered pull-request result is sealed. Reproduce the expensive\n"
+              "    # analysis only through an explicit dispatch; PRs still validate contracts.\n"
+              "    if: github.event_name == 'workflow_dispatch'\n"
+          )
           if text.count(old) != 1:
-              raise SystemExit('registered analysis condition was not unique')
+              raise SystemExit(
+                  f'registered analysis condition count changed: {text.count(old)}'
+              )
           path.write_text(text.replace(old, new), encoding='utf-8')
           PY
           rm .github/workflows/temporary-seal-covariance-analysis.yml
