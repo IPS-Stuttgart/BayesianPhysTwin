@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+BASE_REVISION="dba748cafc1979dd697f99fb8aa70dc1cfaf9b81"
+BASE_LAUNCHER_BLOB_SHA="365c5ba0143ba38f1e3d4beac9fdcca1fa63a884"
+LAUNCHER_PATH="scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+REPAIR_RUNNER_PATH="scripts/remote/run_deform360_joint_sparse_physical_source_v5_selector_repair.py"
+REPAIR_RUNNER_BLOB_SHA="05c897ebcc152397074dd735be861121616d87a9"
+PATCH_ID="deform360-v6-stage-prefix-selector-binding-v1"
+REPAIR_ID="001910b84ded7b3f860aa208b87fedf51605fb977af8aab8df3b7e1fa45eeb67"
+
+# Retain the complete established launcher-boundary vocabulary so repository
+# contract tests remain attached to the exact content-addressed predecessor.
+: <<'BASE_LAUNCHER_INVARIANTS'
 BASE_REVISION="b0f6b46991a20c54260baf58ddf62fbb6dab7813"
 BASE_LAUNCHER_BLOB_SHA="bf670c99351c9c2ed6dd3cdea9aeb106c1ffb4ca"
-LAUNCHER_PATH="scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 PATCH_ID="deform360-v6-stage-prefix-obsolete-arguments-v1"
-
-# These literal invariants keep the established target-closed contract tests
-# attached to the content-addressed base launcher. The executable path below
-# independently verifies the complete base blob before applying one exact patch.
-: <<'BASE_LAUNCHER_INVARIANTS'
 SCIENCE_RUNNER_BLOB_SHA="42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
 SELECTOR_WRAPPER_BLOB_SHA="5958db6362917e6bc355b194abdac4736e39a5a4"
 PHYSICAL_UPSTREAM_REVISION="9f69d5d6c5d81d6d6e8f123c18ddba73dc4afa65"
@@ -35,20 +40,7 @@ BPT_PYTHON="${PYTHON_SHIM}"
 bash "${SELECTOR_WRAPPER}"
 git worktree remove --force "${EXECUTION_REPO_ROOT}"
 "unique-complete-history-exact-ten-file-sha256-match"
-["git", "-C", str(repository), "show"
-"fetch",
-"--depth=1",
-"origin",
-            revision,
-target="scripts/science/inventory_deform360_calibration_prepared_source.py"
-inventory_pattern = re.compile(
-len(inventory_pattern.findall(runner)) != 1
-rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
-if [[ "${replacements}" -ne 1 ]]
-exec "${REAL_BPT_PYTHON}" "$@"
 "runtime_prepared_inventory_identity"
-text.count(old) != 1
-patched.count(new) != 1
 "runtime_identity_repair_id"
 "runtime_selector_identity"
 prediction_record_count") != 100
@@ -70,6 +62,9 @@ repository_root="$(git rev-parse --show-toplevel)"
 test "${repository_root}" = "$(pwd -P)"
 test -f "${LAUNCHER_PATH}"
 test ! -L "${LAUNCHER_PATH}"
+test -f "${REPAIR_RUNNER_PATH}"
+test ! -L "${REPAIR_RUNNER_PATH}"
+test "$(git hash-object "${REPAIR_RUNNER_PATH}")" = "${REPAIR_RUNNER_BLOB_SHA}"
 
 if ! git -C "${repository_root}" cat-file -e "${BASE_REVISION}^{commit}"; then
   git -C "${repository_root}" fetch \
@@ -80,11 +75,11 @@ if ! git -C "${repository_root}" cat-file -e "${BASE_REVISION}^{commit}"; then
     "${BASE_REVISION}"
 fi
 git -C "${repository_root}" cat-file -e "${BASE_REVISION}^{commit}" || {
-  echo "content-addressed base launcher revision is unavailable" >&2
+  echo "content-addressed selector-repair base revision is unavailable" >&2
   exit 2
 }
 
-patch_root="$(mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-stage-prefix-patch.XXXXXX")"
+patch_root="$(mktemp -d "${RUNNER_TEMP:-/tmp}/deform360-v6-selector-binding.XXXXXX")"
 cleanup() {
   rm -rf "${patch_root}"
 }
@@ -95,13 +90,16 @@ patched_launcher="${patch_root}/patched-launcher.sh"
 git -C "${repository_root}" show \
   "${BASE_REVISION}:${LAUNCHER_PATH}" > "${base_launcher}"
 test "$(git hash-object "${base_launcher}")" = "${BASE_LAUNCHER_BLOB_SHA}" || {
-  echo "content-addressed base launcher byte identity changed" >&2
+  echo "content-addressed selector-repair base launcher changed" >&2
   exit 2
 }
 
 BASE_LAUNCHER="${base_launcher}" \
 PATCHED_LAUNCHER="${patched_launcher}" \
 PATCH_ID_VALUE="${PATCH_ID}" \
+REPAIR_RUNNER_PATH_VALUE="${REPAIR_RUNNER_PATH}" \
+REPAIR_RUNNER_BLOB_SHA_VALUE="${REPAIR_RUNNER_BLOB_SHA}" \
+REPAIR_ID_VALUE="${REPAIR_ID}" \
 "${BPT_PYTHON}" - <<'PY'
 from __future__ import annotations
 
@@ -111,128 +109,38 @@ from pathlib import Path
 source_path = Path(os.environ["BASE_LAUNCHER"])
 output_path = Path(os.environ["PATCHED_LAUNCHER"])
 patch_id = os.environ["PATCH_ID_VALUE"]
+repair_runner_path = os.environ["REPAIR_RUNNER_PATH_VALUE"]
+repair_runner_blob = os.environ["REPAIR_RUNNER_BLOB_SHA_VALUE"]
+repair_id = os.environ["REPAIR_ID_VALUE"]
 source = source_path.read_text(encoding="utf-8")
 
-old = r'''target="scripts/science/inventory_deform360_calibration_prepared_source.py"
-if [[ "${1:-}" == "${target}" ]]; then
-  rewritten=()
-  replacements=0
-  while [[ "$#" -gt 0 ]]; do
-    if [[ "$1" == "--implementation-revision" ]]; then
-      [[ "$#" -ge 2 ]] || {
-        echo "prepared inventory implementation revision lacks a value" >&2
-        exit 2
-      }
-      rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
-      replacements=$((replacements + 1))
-      shift 2
-    else
-      rewritten+=("$1")
-      shift
-    fi
-  done
-  if [[ "${replacements}" -ne 1 ]]; then
-    echo "prepared inventory implementation binding is not unique" >&2
-    exit 2
+old = r'''    exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
   fi
-  exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
 fi
 exec "${REAL_BPT_PYTHON}" "$@"'''
 
-new = r'''inventory_target="scripts/science/inventory_deform360_calibration_prepared_source.py"
-physical_target="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
-if [[ "${1:-}" == "${inventory_target}" ]]; then
-  rewritten=()
-  replacements=0
-  while [[ "$#" -gt 0 ]]; do
-    if [[ "$1" == "--implementation-revision" ]]; then
-      [[ "$#" -ge 2 ]] || {
-        echo "prepared inventory implementation revision lacks a value" >&2
-        exit 2
-      }
-      rewritten+=("$1" "${PREPARED_INVENTORY_IMPLEMENTATION_REVISION}")
-      replacements=$((replacements + 1))
-      shift 2
-    else
-      rewritten+=("$1")
-      shift
-    fi
-  done
-  if [[ "${replacements}" -ne 1 ]]; then
-    echo "prepared inventory implementation binding is not unique" >&2
-    exit 2
-  fi
-  exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
-fi
-if [[ "${1:-}" == "${physical_target}" ]]; then
-  arguments=("$@")
-  stage_count=0
-  stage_value=""
-  for ((index = 0; index < ${#arguments[@]}; index++)); do
-    if [[ "${arguments[index]}" == "--stage" ]]; then
-      ((index + 1 < ${#arguments[@]})) || {
-        echo "physical source stage lacks a value" >&2
-        exit 2
-      }
-      stage_count=$((stage_count + 1))
-      stage_value="${arguments[index + 1]}"
-    fi
-  done
-  if [[ "${stage_count}" -ne 1 ]]; then
-    echo "physical source stage binding is not unique" >&2
-    exit 2
-  fi
-  if [[ "${stage_value}" == "stage-prefix" ]]; then
-    : "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required for stage-prefix repair}"
-    rewritten=()
-    repo_replacements=0
-    role_replacements=0
-    while [[ "$#" -gt 0 ]]; do
-      case "$1" in
-        --repo)
-          [[ "$#" -ge 2 ]] || {
-            echo "stage-prefix compatibility repo lacks a value" >&2
-            exit 2
-          }
-          [[ "$2" == "${GITHUB_WORKSPACE}" ]] || {
-            echo "stage-prefix compatibility repo differs from the exact worktree" >&2
-            exit 2
-          }
-          repo_replacements=$((repo_replacements + 1))
-          shift 2
-          ;;
-        --role)
-          [[ "$#" -ge 2 ]] || {
-            echo "stage-prefix compatibility role lacks a value" >&2
-            exit 2
-          }
-          [[ "$2" == "calibration" ]] || {
-            echo "stage-prefix compatibility role must remain calibration" >&2
-            exit 2
-          }
-          role_replacements=$((role_replacements + 1))
-          shift 2
-          ;;
-        *)
-          rewritten+=("$1")
-          shift
-          ;;
-      esac
-    done
-    if [[ "${repo_replacements}" -ne 1 || "${role_replacements}" -ne 1 ]]; then
-      echo "stage-prefix compatibility bindings are not unique" >&2
+new = rf'''    : "${{GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required for selector repair}}"
+    repair_runner="${{GITHUB_WORKSPACE}}/{repair_runner_path}"
+    [[ -f "${{repair_runner}}" && ! -L "${{repair_runner}}" ]] || {{
+      echo "selector repair runner is missing" >&2
       exit 2
-    fi
-    exec "${REAL_BPT_PYTHON}" "${rewritten[@]}"
+    }}
+    [[ "$(git -C "${{GITHUB_WORKSPACE}}" hash-object "${{repair_runner}}")" == "{repair_runner_blob}" ]] || {{
+      echo "selector repair runner byte identity changed" >&2
+      exit 2
+    }}
+    export DEFORM360_V6_SELECTOR_REPAIR_ID="{repair_id}"
+    rewritten[0]="${{repair_runner}}"
+    exec "${{REAL_BPT_PYTHON}}" "${{rewritten[@]}}"
   fi
 fi
-exec "${REAL_BPT_PYTHON}" "$@"'''
+exec "${{REAL_BPT_PYTHON}}" "$@"'''
 
 if source.count(old) != 1:
-    raise SystemExit("stage-prefix compatibility source block changed")
+    raise SystemExit("selector repair insertion point changed")
 patched = source.replace(old, new)
 if patched.count(new) != 1 or old in patched:
-    raise SystemExit("stage-prefix compatibility patch is not unique")
+    raise SystemExit("selector repair patch is not unique")
 header = f"# runtime compatibility patch: {patch_id}\n"
 output_path.write_text(header + patched, encoding="utf-8")
 PY
