@@ -1,0 +1,85 @@
+name: Temporary register video cadence coverage
+
+on:
+  push:
+    branches:
+      - deform360-public-endpoint-ffmpeg-lock-v5-2-2
+    paths:
+      - ".github/workflows/temporary-register-video-cadence-coverage.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-register-video-cadence-coverage
+  cancel-in-progress: true
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: deform360-public-endpoint-ffmpeg-lock-v5-2-2
+          fetch-depth: 1
+          persist-credentials: true
+          clean: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Register and validate focused coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph]"
+          python -m pip install "coverage==7.13.3"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.github/quality/test-suites.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          suite = payload['suites']['stable-core-coverage']
+          member = 'tests/test_deform360_exact_video_cadence.py'
+          anchor = 'tests/test_deform360_joint_sparse_public_endpoint_v5_2.py'
+          if member not in suite:
+              suite.insert(suite.index(anchor), member)
+          path.write_text(
+              json.dumps(payload, indent=2, sort_keys=False) + '\n',
+              encoding='utf-8',
+          )
+          PY
+          python tools/quality/test_suite_manifest.py validate --json
+          python -m coverage run --branch --source=bayesian_phystwin \
+            -m pytest -q tests/test_deform360_exact_video_cadence.py
+          python -m coverage json -o focused-coverage.json
+          python - <<'PY'
+          import json
+
+          report = json.load(open('focused-coverage.json', encoding='utf-8'))
+          path = 'src/bayesian_phystwin/deform360_exact_video_cadence.py'
+          summary = report['files'][path]['summary']
+          lines = 100.0 * summary['covered_lines'] / summary['num_statements']
+          branches = (
+              100.0 * summary['covered_branches'] / summary['num_branches']
+              if summary['num_branches']
+              else 100.0
+          )
+          print(f'{path}: lines={lines:.2f}%, branches={branches:.2f}%')
+          if lines < 90.0 or branches < 80.0:
+              raise SystemExit(
+                  f'focused coverage below floor: '
+                  f'lines={lines:.2f}%, branches={branches:.2f}%'
+              )
+          PY
+          rm .github/workflows/temporary-register-video-cadence-coverage.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/quality/test-suites.json \
+            .github/workflows/temporary-register-video-cadence-coverage.yml
+          git commit -m "Register video cadence tests for stable coverage"
+          git push origin HEAD:deform360-public-endpoint-ffmpeg-lock-v5-2-2
