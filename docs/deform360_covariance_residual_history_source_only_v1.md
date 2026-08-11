@@ -42,6 +42,18 @@ revision, configuration, input source artifacts, reconstruction artifact, and
 parent reconstruction lineage. The contract rejects shared input bytes and any
 overlap between provider and scoring reconstruction lineages.
 
+## Registered-study binding
+
+The owning prospective study is issue `#461`. Its paper-side native protocol is
+`preregistrations/deform360_covariance_only_confirmation_v1.json`, with protocol
+ID `fa16c105e6d535d1e229ccf086fd69d05b2be74592b5c4e3f6c5289b8915fee3`
+and selection-artifact SHA-256
+`dc1c2d192fbb841d2f0e290d77f21d697983b3f8bfbcae476e71fe902309cd82`.
+The registered information order requires 100 sealed source prediction records
+and a source-positive authorization before any of the twelve disjoint
+confirmation outcomes may be opened. This module implements only the source-side
+contract and grants no authorization token.
+
 ## Evidence boundary
 
 Passing the contract tests establishes deterministic construction, explicit
