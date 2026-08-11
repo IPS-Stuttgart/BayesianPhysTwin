@@ -3,18 +3,30 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 from pathlib import PurePosixPath
 from typing import Any
 
 import numpy as np
 
+_TAMPERED_METADATA_MESSAGE = "frozen metadata backing storage was mutated"
+
 
 class FrozenDict(dict):
-    """Dict-compatible recursively immutable JSON mapping."""
+    """Dict-compatible recursively immutable JSON mapping.
 
-    __slots__ = ()
+    Direct calls to the built-in ``dict`` mutators bypass Python overrides. A
+    sealed snapshot therefore makes such tampering fail closed during normal
+    access, serialization, and content-addressed identity construction.
+    """
+
+    __snapshot: tuple[tuple[Any, Any], ...]
+    __slots__ = ("__snapshot",)
     _MUTATORS = frozenset({"clear", "pop", "popitem", "setdefault", "update"})
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        dict.__init__(self, *args, **kwargs)
+        object.__setattr__(self, "_FrozenDict__snapshot", tuple(dict.items(self)))
 
     def __getattribute__(self, name: str) -> Any:
         if name in type(self)._MUTATORS:
@@ -24,6 +36,61 @@ class FrozenDict(dict):
     @staticmethod
     def _immutable(*args: object, **kwargs: object) -> None:
         raise TypeError("metadata is immutable")
+
+    def _assert_untampered(self) -> None:
+        snapshot = self.__snapshot
+        actual = tuple(dict.items(self))
+        if len(actual) != len(snapshot):
+            raise RuntimeError(_TAMPERED_METADATA_MESSAGE)
+        for (actual_key, actual_value), (expected_key, expected_value) in zip(
+            actual, snapshot, strict=True
+        ):
+            if actual_key != expected_key or actual_value is not expected_value:
+                raise RuntimeError(_TAMPERED_METADATA_MESSAGE)
+            _assert_frozen_value_untampered(expected_value)
+
+    def _snapshot_dict(self) -> dict[str, Any]:
+        self._assert_untampered()
+        return dict(self.__snapshot)
+
+    def __getitem__(self, key: Any) -> Any:
+        return self._snapshot_dict()[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._snapshot_dict())
+
+    def __len__(self) -> int:
+        return len(self._snapshot_dict())
+
+    def __contains__(self, key: object) -> bool:
+        return key in self._snapshot_dict()
+
+    def __reversed__(self) -> Iterator[str]:
+        return reversed(self._snapshot_dict())
+
+    def items(self) -> Any:
+        return self._snapshot_dict().items()
+
+    def keys(self) -> Any:
+        return self._snapshot_dict().keys()
+
+    def values(self) -> Any:
+        return self._snapshot_dict().values()
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        return self._snapshot_dict().get(key, default)
+
+    def copy(self) -> dict[str, Any]:
+        return self._snapshot_dict()
+
+    def __repr__(self) -> str:
+        return repr(self._snapshot_dict())
+
+    def __eq__(self, other: object) -> bool:
+        return self._snapshot_dict() == other
+
+    def __ne__(self, other: object) -> bool:
+        return self._snapshot_dict() != other
 
     def __setitem__(self, key: object, value: object) -> None:
         self._immutable(key, value)
@@ -44,12 +111,22 @@ class FrozenDict(dict):
 
 
 class FrozenList(list):
-    """List-compatible recursively immutable JSON sequence."""
+    """List-compatible recursively immutable JSON sequence.
 
-    __slots__ = ()
+    The sealed tuple detects direct calls to built-in ``list`` mutators before
+    the sequence can participate in serialization or a content-addressed digest.
+    """
+
+    __snapshot: tuple[Any, ...]
+    __slots__ = ("__snapshot",)
     _MUTATORS = frozenset(
         {"append", "clear", "extend", "insert", "pop", "remove", "reverse", "sort"}
     )
+
+    def __init__(self, values: Iterable[Any] = ()) -> None:
+        snapshot = tuple(values)
+        list.__init__(self, snapshot)
+        object.__setattr__(self, "_FrozenList__snapshot", snapshot)
 
     def __getattribute__(self, name: str) -> Any:
         if name in type(self)._MUTATORS:
@@ -59,6 +136,48 @@ class FrozenList(list):
     @staticmethod
     def _immutable(*args: object, **kwargs: object) -> None:
         raise TypeError("metadata is immutable")
+
+    def _assert_untampered(self) -> None:
+        snapshot = self.__snapshot
+        actual = tuple(list.__iter__(self))
+        if len(actual) != len(snapshot):
+            raise RuntimeError(_TAMPERED_METADATA_MESSAGE)
+        for actual_value, expected_value in zip(actual, snapshot, strict=True):
+            if actual_value is not expected_value:
+                raise RuntimeError(_TAMPERED_METADATA_MESSAGE)
+            _assert_frozen_value_untampered(expected_value)
+
+    def _snapshot_tuple(self) -> tuple[Any, ...]:
+        self._assert_untampered()
+        return self.__snapshot
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._snapshot_tuple())
+
+    def __len__(self) -> int:
+        return len(self._snapshot_tuple())
+
+    def __getitem__(self, key: Any) -> Any:
+        snapshot = self._snapshot_tuple()
+        return list(snapshot[key]) if isinstance(key, slice) else snapshot[key]
+
+    def __contains__(self, value: object) -> bool:
+        return value in self._snapshot_tuple()
+
+    def __reversed__(self) -> Iterator[Any]:
+        return reversed(self._snapshot_tuple())
+
+    def copy(self) -> list[Any]:
+        return list(self._snapshot_tuple())
+
+    def __repr__(self) -> str:
+        return repr(list(self._snapshot_tuple()))
+
+    def __eq__(self, other: object) -> bool:
+        return list(self._snapshot_tuple()) == other
+
+    def __ne__(self, other: object) -> bool:
+        return list(self._snapshot_tuple()) != other
 
     def __setitem__(self, key: object, value: object) -> None:
         self._immutable(key, value)
@@ -80,6 +199,13 @@ class FrozenList(list):
     def __deepcopy__(self, memo: dict[int, Any]) -> list[Any]:
         del memo
         return plain_json(self)
+
+
+def _assert_frozen_value_untampered(value: Any) -> None:
+    if isinstance(value, FrozenDict):
+        value._assert_untampered()
+    elif isinstance(value, FrozenList):
+        value._assert_untampered()
 
 
 def plain_json(value: Any) -> Any:
