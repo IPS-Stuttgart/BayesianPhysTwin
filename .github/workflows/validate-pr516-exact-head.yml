@@ -76,7 +76,7 @@ jobs:
             --cov-report=term-missing \
             --cov-fail-under=95
 
-      - name: Verify the content-addressed v6 policy and clean worktree
+      - name: Verify the content-addressed v6 policy and clean tracked worktree
         shell: bash
         run: |
           set -euo pipefail
@@ -102,4 +102,13 @@ jobs:
               raise SystemExit("fresh object-session v6 policy identity changed")
           PY
           git diff --exit-code
+          status="$(git status --porcelain=v1 --untracked-files=normal)"
+          printf '%s\n' "${status}"
+          unexpected="$(
+            printf '%s\n' "${status}" \
+              | grep -Ev '^\?\? (\.coverage|\.mypy_cache/|\.ruff_cache/|src/bayesian_phystwin\.egg-info/)$' \
+              || true
+          )"
+          test -z "${unexpected}"
+          git clean -ffdx
           test -z "$(git status --porcelain=v1)"
