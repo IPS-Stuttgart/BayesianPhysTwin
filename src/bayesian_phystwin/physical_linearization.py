@@ -404,8 +404,8 @@ def evaluate_nonlinear_closure(
     nonlinear = np.asarray(nonlinear_query_m, dtype=np.float64)
     if baseline.shape != linearized.shape or baseline.shape != nonlinear.shape:
         raise ValueError("closure query arrays must have identical shapes")
-    if baseline.ndim != 2 or baseline.shape[1] != 3:
-        raise ValueError("closure query arrays must have shape (Q, 3)")
+    if baseline.ndim != 2 or baseline.shape[1] != 3 or baseline.shape[0] == 0:
+        raise ValueError("closure query arrays must have shape (Q, 3) with Q >= 1")
     if (
         not np.all(np.isfinite(baseline))
         or not np.all(np.isfinite(linearized))
