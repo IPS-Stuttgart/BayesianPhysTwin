@@ -11,18 +11,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
 REPAIR_RUNNER = (
-    ROOT
-    / "scripts/remote/"
+    ROOT / "scripts/remote/"
     "run_deform360_joint_sparse_physical_source_v5_selector_repair.py"
 )
 REPAIR = (
-    ROOT
-    / "protocols/amendments/"
+    ROOT / "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_stage_selector_binding_repair.json"
 )
-EXPECTED_REPAIR_ID = (
-    "001910b84ded7b3f860aa208b87fedf51605fb977af8aab8df3b7e1fa45eeb67"
-)
+EXPECTED_REPAIR_ID = "001910b84ded7b3f860aa208b87fedf51605fb977af8aab8df3b7e1fa45eeb67"
 
 
 def _patch_python(text: str) -> str:
@@ -96,10 +92,12 @@ def test_launcher_patch_replaces_only_the_stage_prefix_tail(tmp_path: Path) -> N
 
     patched = output.read_text(encoding="utf-8")
     assert old not in patched
-    assert patched.count("rewritten[0]=\"${repair_runner}\"") == 1
+    assert patched.count('rewritten[0]="${repair_runner}"') == 1
     assert patched.count("selector repair runner byte identity changed") == 1
     assert patched.count("export DEFORM360_V6_SELECTOR_REPAIR_ID") == 1
-    assert patched.startswith("# runtime compatibility patch: fixture-selector-binding\n")
+    assert patched.startswith(
+        "# runtime compatibility patch: fixture-selector-binding\n"
+    )
 
 
 def test_repair_record_is_content_addressed_and_target_closed() -> None:
