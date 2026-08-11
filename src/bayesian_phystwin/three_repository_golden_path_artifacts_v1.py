@@ -27,16 +27,12 @@ GOLDEN_PATH_SELECTION_SCHEMA = (
     "bayesian_phystwin.three_repository_golden_path_selection"
 )
 GOLDEN_PATH_SELECTION_SCHEMA_VERSION = 1
-GOLDEN_PATH_BUNDLE_SCHEMA = (
-    "bayesian_phystwin.three_repository_golden_path_bundle"
-)
+GOLDEN_PATH_BUNDLE_SCHEMA = "bayesian_phystwin.three_repository_golden_path_bundle"
 GOLDEN_PATH_BUNDLE_SCHEMA_VERSION = 1
 
 GoldenPathDecision = Literal["accepted", "rejected"]
 _COMPONENT_KEYS = ("bayesian_phystwin", "prob4d", "causal4d")
-_ARRAY_FIELDS = frozenset(
-    {"array_id", "dtype", "shape", "nbytes", "payload_sha256"}
-)
+_ARRAY_FIELDS = frozenset({"array_id", "dtype", "shape", "nbytes", "payload_sha256"})
 _SELECTION_FIELDS = frozenset(
     {
         "artifact_id",
@@ -130,8 +126,7 @@ def _component_mapping(
     if set(payload) != set(_COMPONENT_KEYS):
         raise ValueError(f"{name} must contain the complete component roster")
     normalized = {
-        key: validator(payload[key], name=f"{name}.{key}")
-        for key in _COMPONENT_KEYS
+        key: validator(payload[key], name=f"{name}.{key}") for key in _COMPONENT_KEYS
     }
     return cast(
         Mapping[str, str],
@@ -186,9 +181,7 @@ class ArrayByteIdentityV1:
             dtype=canonical.dtype.str,
             shape=canonical.shape,
             nbytes=canonical.nbytes,
-            payload_sha256=hashlib.sha256(
-                canonical.tobytes(order="C")
-            ).hexdigest(),
+            payload_sha256=hashlib.sha256(canonical.tobytes(order="C")).hexdigest(),
         )
 
     @property
@@ -315,7 +308,9 @@ class GoldenPathSelectionArtifactV1:
             if candidate_accepted:
                 raise ValueError("rejected decision cannot accept the candidate")
             if not reason.endswith("exact-baseline-fallback"):
-                raise ValueError("rejected decision must declare exact baseline fallback")
+                raise ValueError(
+                    "rejected decision must declare exact baseline fallback"
+                )
             if selected.array_id != baseline.array_id:
                 raise ValueError("rejected decision changed the baseline bytes")
             fallback = sha256_digest(fallback, name="exact_fallback_identity")
@@ -536,12 +531,15 @@ class GoldenPathEvidenceBundleV1:
     def __post_init__(self) -> None:
         accepted = self.accepted
         rejected = self.rejected
-        if type(accepted) is not GoldenPathSelectionArtifactV1 or type(
-            rejected
-        ) is not GoldenPathSelectionArtifactV1:
+        if (
+            type(accepted) is not GoldenPathSelectionArtifactV1
+            or type(rejected) is not GoldenPathSelectionArtifactV1
+        ):
             raise ValueError("golden-path bundle entries have invalid types")
         if accepted.decision != "accepted" or rejected.decision != "rejected":
-            raise ValueError("golden-path bundle requires accepted and rejected entries")
+            raise ValueError(
+                "golden-path bundle requires accepted and rejected entries"
+            )
         for name in (
             "case_id",
             "protocol_id",
