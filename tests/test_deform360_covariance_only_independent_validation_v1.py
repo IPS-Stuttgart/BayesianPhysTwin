@@ -110,11 +110,13 @@ def test_frozen_candidate_matches_sealed_development_evidence() -> None:
         "247bc8b85ec425f4272ba867e3a7c878a7e05d56"
     )
     assert evidence["report_id"] == summary["report_id"]
-    assert evidence["development_effect_mean_gaussian_nll"] == (
-        summary["primary_effect"]["mean_gaussian_nll_difference"]
+    assert (
+        evidence["development_effect_mean_gaussian_nll"]
+        == (summary["primary_effect"]["mean_gaussian_nll_difference"])
     )
-    assert evidence["development_effect_simultaneous_95_ci"] == (
-        summary["primary_effect"]["simultaneous_95_ci"]
+    assert (
+        evidence["development_effect_simultaneous_95_ci"]
+        == (summary["primary_effect"]["simultaneous_95_ci"])
     )
 
 
@@ -123,8 +125,9 @@ def test_implementation_and_selection_bytes_are_frozen() -> None:
     identity = protocol["implementation_identity"]
     cohort = protocol["cohort"]
 
-    assert _git_blob_sha1(COMPOSITION) == (
-        identity["covariance_composition_git_blob_sha1"]
+    assert (
+        _git_blob_sha1(COMPOSITION)
+        == (identity["covariance_composition_git_blob_sha1"])
     )
     assert _git_blob_sha1(ANALYSIS) == identity["analysis_git_blob_sha1"]
     assert _git_blob_sha1(SUMMARY) == identity["development_summary_git_blob_sha1"]
