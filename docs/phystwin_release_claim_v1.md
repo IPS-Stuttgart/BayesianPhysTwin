@@ -9,6 +9,8 @@ metric.
 
 The canonical paper-side synthesis is maintained in
 [BayesianPhysTwin-Paper](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/bpt_release_claim_synthesis_2026-08-10.md).
+Its machine-readable counterpart is
+[`evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json`](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json).
 The owning point-result source remains the
 [full-22 evidence report](phystwin_sota_22_v1.md).
 
@@ -59,6 +61,49 @@ Release notes and API documentation must keep three layers separate:
 The software release does not authorize a general claim of calibrated Bayesian
 posterior uncertainty.
 
+## Exact-mean covariance-only retrospective evidence
+
+A separate retrospective intervention holds the complete `last_residual` point
+mean exactly fixed and changes only the attached covariance. Donor identity and
+one scale per early, middle, and late horizon were selected under outer
+leave-one-physical-object/session-out folds. The primary cross-fitted result is:
+
+| Quantity | Result |
+| --- | ---: |
+| Mean Gaussian NLL difference | **`-9.136`** |
+| Simultaneous 95% interval | **`[-13.961, -4.312]`** |
+| Better / worse / tied units | `17 / 5 / 0` |
+| Exact mean identity | `22/22` units |
+| Track-error difference | exactly `0 m` |
+| Chamfer-distance difference | exactly `0 m` |
+| Marginal 90% coverage | `70.6%` to `91.0%` |
+| Mean full interval width | `16.45 mm` to `50.94 mm` |
+| Width ratio | `3.10×` |
+
+Because the point trajectory is identical, the relative Gaussian-score change
+is attributable to the covariance under the frozen scoring model rather than a
+point-prediction change. The coverage gain must always be reported with the
+`3.10×` width cost.
+
+The 22 outcomes were already open. Cross-fitting prevents each held unit from
+selecting its own covariance donor or scale, but it does not create fresh
+confirmation. The result is retrospective mechanism evidence only and does not
+authorize independent calibration or deployment. It also does not authorize a
+new point-accuracy claim because track and Chamfer outputs are exactly
+unchanged.
+
+For a separately registered fresh object/session study, the complete-source
+candidate is frozen as the exact `last_residual` mean plus
+`independent_endpoint_v1` covariance with early/middle/late scales
+`[8, 16, 16]`. No target outcome may retune the donor, scales, scoring rule,
+guard, fallback, or cohort boundaries.
+
+The detailed paper-side record is the
+[exact-mean covariance-only note](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/full22_covariance_only_hybrid_2026-08-11.md),
+and the compact source is the
+[`evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json`](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/evidence/bayesian_phystwin/bpt-release-synthesis-v1/summary.json)
+release synthesis.
+
 ## Independent-validation boundary
 
 The controlled Prob4D-to-BayesianPhysTwin mechanism is positive on its synthetic
@@ -105,8 +150,9 @@ structured covariance handling, testing, packaging, and cross-repository
 contracts. Such changes are engineering evidence only unless a registered run
 binds the exact revision and fresh outcomes.
 
-In particular, green CI, exact fallback tests, bounded I/O, stricter solver
-convergence checks, or a new provider adapter do not by themselves change the
+In particular, green CI, exact fallback tests, accepted or rejected golden-path
+fixtures, bounded I/O, stricter solver convergence checks, valid wheel and source
+distributions, or a new provider adapter do not by themselves change the
 release claim above.
 
 ## Required release wording
@@ -115,11 +161,15 @@ Every release note that cites the full-22 improvement should also state:
 
 - last residual is the principal matched comparator and is marginally better on
   equal-case track error;
+- the exact-mean covariance-only result improves the frozen Gaussian score while
+  point outputs remain exactly unchanged, carries a `3.10×` interval-width cost,
+  and remains retrospective development evidence;
 - raw posterior covariance is severely undercalibrated;
 - conformal results are width-bearing and assumption-specific; and
 - independent real-provider and independent-object transfer remain unconfirmed.
 
 The current evidence does not authorize claims of a unique deterministic winner,
-calibrated raw posterior covariance, dynamically identified simulator-state
+calibrated raw posterior covariance, fresh-cohort calibration from the
+cross-fitted covariance-only result, dynamically identified simulator-state
 correction, independent-object transfer, deployment safety, or overall state of
 the art.
