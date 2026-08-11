@@ -10,6 +10,7 @@ on:
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+      - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
   push:
     branches: [main]
     paths:
@@ -19,6 +20,7 @@ on:
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
+      - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
 
 permissions:
   contents: read
@@ -88,6 +90,7 @@ jobs:
           files=(
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+            tests/test_deform360_v6_runtime_bootstrap_receipt.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
@@ -96,6 +99,7 @@ jobs:
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_runtime_bootstrap_receipt.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
@@ -131,6 +135,15 @@ jobs:
               raise SystemExit("runtime probe uses an undefined package attribute")
           if 'version("bayesian-phystwin")' not in workflow:
               raise SystemExit("runtime probe is not bound to installed metadata")
+          runtime_pin = '"virtualenv' + '==21.7.4"'
+          if workflow.count(runtime_pin) != 1:
+              raise SystemExit("GPU runtime virtualenv identity is not exact")
+          if "id: runtime" not in workflow:
+              raise SystemExit("GPU runtime bootstrap has no bounded status output")
+          if "Ensure bounded execution receipt exists" not in workflow:
+              raise SystemExit("workflow has no pre-science fallback receipt")
+          if "if: steps.runtime.outputs.exit_code == '0'" not in workflow:
+              raise SystemExit("science execution is not gated on runtime admission")
           PY
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -240,37 +253,44 @@ jobs:
           python-version: "3.12"
 
       - name: Build isolated GPU source runtime
+        id: runtime
         shell: bash
+        env:
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-source-runtime-bootstrap.log
         run: |
           set -euo pipefail
-          runtime="${RUNNER_TEMP}/deform360-v6-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          test ! -e "${runtime}"
-          python -m venv --copies --system-site-packages "${runtime}"
-          runtime_python="${runtime}/bin/python"
-          "${runtime_python}" -m pip install \
-            "pip==25.2" \
-            "setuptools==80.9.0" \
-            "wheel==0.45.1"
-          "${runtime_python}" -m pip install -e ".[graph,vision]"
-          "${runtime_python}" -m pip install -e ./_deform360_physical
-          SAM2_BUILD_CUDA=0 \
-            "${runtime_python}" -m pip install -e ./_sam2
-          "${runtime_python}" -m pip install \
-            "fpsample>=0.3" \
-            "h5py>=3.8" \
-            "hydra-core>=1.3.2" \
-            "imageio>=2.34" \
-            "iopath>=0.1.10" \
-            "networkx>=3.0" \
-            "pillow>=9.4" \
-            "plyfile>=1.0" \
-            "scipy>=1.10" \
-            "tqdm>=4.66" \
-            "trimesh>=4.0" \
-            "warp-lang>=1.6" \
-            "yourdfpy>=0.0.56"
-          "${runtime_python}" -m pip check
-          "${runtime_python}" - <<'PY'
+          set +e
+          (
+            set -euo pipefail
+            runtime="${RUNNER_TEMP}/deform360-v6-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            test ! -e "${runtime}"
+            python -m venv --copies --system-site-packages "${runtime}"
+            runtime_python="${runtime}/bin/python"
+            "${runtime_python}" -m pip install \
+              "pip==25.2" \
+              "setuptools==80.9.0" \
+              "wheel==0.45.1"
+            "${runtime_python}" -m pip install -e ".[graph,vision]"
+            "${runtime_python}" -m pip install -e ./_deform360_physical
+            SAM2_BUILD_CUDA=0 \
+              "${runtime_python}" -m pip install -e ./_sam2
+            "${runtime_python}" -m pip install \
+              "virtualenv==21.7.4" \
+              "fpsample>=0.3" \
+              "h5py>=3.8" \
+              "hydra-core>=1.3.2" \
+              "imageio>=2.34" \
+              "iopath>=0.1.10" \
+              "networkx>=3.0" \
+              "pillow>=9.4" \
+              "plyfile>=1.0" \
+              "scipy>=1.10" \
+              "tqdm>=4.66" \
+              "trimesh>=4.0" \
+              "warp-lang>=1.6" \
+              "yourdfpy>=0.0.56"
+            "${runtime_python}" -m pip check
+            "${runtime_python}" - <<'PY'
           from importlib.metadata import version
 
           import bayesian_phystwin
@@ -281,18 +301,28 @@ jobs:
 
           if not torch.cuda.is_available():
               raise SystemExit("CUDA is unavailable")
+          if version("virtualenv") != "21.7.4":
+              raise SystemExit("virtualenv runtime identity changed")
           print(torch.__version__)
           print(warp.__version__)
+          print(version("virtualenv"))
           print(version("bayesian-phystwin"))
           print(version("deform360"))
           print(bayesian_phystwin.__file__)
           print(deform360.__file__)
           print(sam2.__file__)
           PY
-          echo "BPT_PYTHON=${runtime_python}" >> "${GITHUB_ENV}"
+            echo "BPT_PYTHON=${runtime_python}" >> "${GITHUB_ENV}"
+          ) >"${RUNTIME_LOG}" 2>&1
+          status=$?
+          set -e
+          cat "${RUNTIME_LOG}"
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
 
       - name: Generate real prefix-only source prediction evidence
         id: execute
+        if: steps.runtime.outputs.exit_code == '0'
         shell: bash
         env:
           BPT_SOURCE_SHA: ${{ github.sha }}
@@ -310,8 +340,173 @@ jobs:
           echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
           exit 0
 
-      - name: Retain bounded runner diagnostics
+      - name: Ensure bounded execution receipt exists
+        id: receipt
         if: always()
+        shell: bash
+        env:
+          BPT_SOURCE_SHA: ${{ github.sha }}
+          EVIDENCE_ROOT: ${{ runner.temp }}
+          RUNTIME_EXIT_CODE: ${{ steps.runtime.outputs.exit_code }}
+          EXECUTE_EXIT_CODE: ${{ steps.execute.outputs.exit_code }}
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-source-runtime-bootstrap.log
+        run: |
+          set -euo pipefail
+          compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+          logs="${compact}/logs"
+          receipt="${compact}/execution-receipt.json"
+          if [[ -L "${compact}" || ( -e "${compact}" && ! -d "${compact}" ) ]]; then
+            echo "refusing non-directory or symlinked compact evidence path" >&2
+            exit 1
+          fi
+          mkdir -p "${compact}"
+          if [[ -L "${compact}" || ! -d "${compact}" ]]; then
+            echo "compact evidence path failed real-directory validation" >&2
+            exit 1
+          fi
+          if [[ -L "${receipt}" ]]; then
+            echo "refusing symlinked execution receipt" >&2
+            exit 1
+          fi
+          receipt_exists=false
+          if [[ -f "${receipt}" ]]; then
+            receipt_exists=true
+          elif [[ -e "${receipt}" ]]; then
+            echo "refusing non-file execution receipt path" >&2
+            exit 1
+          fi
+          if [[ -L "${logs}" || ( -e "${logs}" && ! -d "${logs}" ) ]]; then
+            echo "refusing non-directory or symlinked compact log path" >&2
+            exit 1
+          fi
+          mkdir -p "${logs}"
+          if [[ -L "${logs}" || ! -d "${logs}" ]]; then
+            echo "compact log path failed real-directory validation" >&2
+            exit 1
+          fi
+          if [[ "${receipt_exists}" = true ]]; then
+            exit 0
+          fi
+          if [[ -f "${RUNTIME_LOG}" && ! -L "${RUNTIME_LOG}" ]]; then
+            retained_runtime_log="${logs}/runtime-bootstrap.log"
+            if [[ -L "${retained_runtime_log}" || -e "${retained_runtime_log}" ]]; then
+              echo "refusing pre-existing retained runtime log" >&2
+              exit 1
+            fi
+            tail -c 32000 "${RUNTIME_LOG}" \
+              > "${retained_runtime_log}"
+          fi
+          if [[ -L "${receipt}" || -e "${receipt}" ]]; then
+            echo "execution receipt path changed before write" >&2
+            exit 1
+          fi
+          export RECEIPT_PATH="${receipt}"
+          "${BPT_PYTHON:-python}" - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          runtime_raw = os.environ.get("RUNTIME_EXIT_CODE", "").strip()
+          execute_raw = os.environ.get("EXECUTE_EXIT_CODE", "").strip()
+          runtime_log = Path(os.environ["RUNTIME_LOG"])
+
+          if not runtime_raw:
+              stage = "build-isolated-gpu-source-runtime"
+              exit_code = 1
+              error = "GPU runtime bootstrap did not publish an exit code"
+          elif int(runtime_raw) != 0:
+              stage = "build-isolated-gpu-source-runtime"
+              exit_code = int(runtime_raw)
+              error = (
+                  runtime_log.read_text(encoding="utf-8", errors="replace")[-16000:]
+                  if runtime_log.is_file() and not runtime_log.is_symlink()
+                  else "GPU runtime bootstrap failed without a retained log"
+              )
+          elif not execute_raw:
+              stage = "generate-real-prefix-only-source-prediction-evidence"
+              exit_code = 1
+              error = "source execution did not publish an exit code or receipt"
+          else:
+              stage = "generate-real-prefix-only-source-prediction-evidence"
+              observed = int(execute_raw)
+              exit_code = observed if observed != 0 else 1
+              error = "source execution completed without a bounded receipt"
+
+          receipt = {
+              "schema": (
+                  "bayesian-phystwin.deform360-v6-source-prediction-"
+                  "execution-receipt"
+              ),
+              "schema_version": 1,
+              "amendment_id": (
+                  "f8ed525480a6a96265af3cd58e62a96b"
+                  "f1ed748294d0af02aa6386763b993b7f"
+              ),
+              "source_revision": os.environ["BPT_SOURCE_SHA"],
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+              "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "runner_name": os.environ.get("RUNNER_NAME"),
+              "status": "source-technical-failure-retained",
+              "terminal_stage": stage,
+              "exit_code": exit_code,
+              "error": error,
+              "artifacts": {
+                  name: {
+                      "path": relative,
+                      "sha256": None,
+                      "byte_count": None,
+                  }
+                  for name, relative in {
+                      "prepared_source_inventory": "prepared-source-inventory.json",
+                      "source_plan_inputs": "source-plan-inputs.json",
+                      "source_plan": "source-plan.json",
+                      "prediction_batch": (
+                          "prediction-panel/source-prediction-batch.json"
+                      ),
+                      "prediction_receipt": (
+                          "prediction-panel/source-prediction-receipt.json"
+                      ),
+                  }.items()
+              },
+              "physical_manifest_count": 0,
+              "source_prediction_seal_count": 0,
+              "information_boundary": {
+                  "development_suffix_opened": False,
+                  "future_object_observations_used_for_prediction": False,
+                  "v5_confirmation_payloads_opened": False,
+                  "v5_confirmation_outcomes_used": False,
+                  "v6_fresh_target_selected": False,
+                  "v6_target_payloads_opened": False,
+                  "v6_target_outcomes_used": False,
+                  "replacement_allowed": False,
+              },
+              "claim_authorized": False,
+              "fresh_target_selection_authorized": False,
+              "fresh_target_payload_access_authorized": False,
+          }
+          canonical = json.dumps(
+              receipt,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+          payload = (
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n"
+          )
+          flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+          flags |= getattr(os, "O_NOFOLLOW", 0)
+          descriptor = os.open(os.environ["RECEIPT_PATH"], flags, 0o600)
+          with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+              stream.write(payload)
+          PY
+
+      - name: Retain bounded runner diagnostics
+        id: diagnostics
+        if: always() && steps.receipt.outcome == 'success'
         shell: bash
         env:
           BPT_SOURCE_SHA: ${{ github.sha }}
@@ -320,12 +515,28 @@ jobs:
           set -euo pipefail
           run_root="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
           compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
-          mkdir -p "${compact}/logs"
+          logs="${compact}/logs"
+          if [[ -L "${compact}" || ! -d "${compact}" ]]; then
+            echo "compact evidence path is not a real directory" >&2
+            exit 1
+          fi
+          if [[ -L "${logs}" || ! -d "${logs}" ]]; then
+            echo "compact log path is not a real directory" >&2
+            exit 1
+          fi
           if [[ -d "${run_root}/logs" ]]; then
             while IFS= read -r log; do
-              target="${compact}/logs/$(basename "${log}")"
+              target="${logs}/$(basename "${log}")"
+              if [[ -L "${target}" || ( -e "${target}" && ! -f "${target}" ) ]]; then
+                echo "refusing unsafe retained diagnostic target" >&2
+                exit 1
+              fi
               tail -c 32000 "${log}" > "${target}"
             done < <(find "${run_root}/logs" -type f -name '*.log' | sort)
+          fi
+          if find "${compact}" -type l -print -quit | grep -q .; then
+            echo "compact evidence contains a symlink" >&2
+            exit 1
           fi
           if [[ -f "${compact}/SHA256SUMS" ]]; then
             rm "${compact}/SHA256SUMS"
@@ -339,7 +550,10 @@ jobs:
           )
 
       - name: Upload compact source prediction evidence
-        if: always()
+        if: >-
+          always() &&
+          steps.receipt.outcome == 'success' &&
+          steps.diagnostics.outcome == 'success'
         id: upload
         uses: actions/upload-artifact@v7
         with:
@@ -349,7 +563,11 @@ jobs:
           retention-days: 180
 
       - name: Publish bounded source receipt to issue 148
-        if: always()
+        if: >-
+          always() &&
+          steps.receipt.outcome == 'success' &&
+          steps.diagnostics.outcome == 'success' &&
+          steps.upload.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
@@ -357,6 +575,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test ! -L "${RECEIPT_PATH}"
           python - <<'PY'
           import json
           import os
@@ -404,12 +624,17 @@ jobs:
           PY
 
       - name: Enforce terminal source status
-        if: always()
+        if: >-
+          always() &&
+          steps.receipt.outcome == 'success' &&
+          steps.diagnostics.outcome == 'success'
         env:
           RECEIPT_PATH: ${{ runner.temp }}/deform360-v6-source-prediction-evidence/execution-receipt.json
         shell: bash
         run: |
           set -euo pipefail
+          test -f "${RECEIPT_PATH}"
+          test ! -L "${RECEIPT_PATH}"
           status=$(python -c 'import json,os; print(json.load(open(os.environ["RECEIPT_PATH"]))["status"])')
           case "${status}" in
             source-prediction-evidence-sealed)
