@@ -20,13 +20,55 @@ Prepare the release on an ordinary pull request before creating a tag:
    required for the changed interfaces, security scanning, and the release
    candidate workflow.
 5. Review the generated `release-evidence.json`, wheel, source distribution,
-   CycloneDX SBOM, build-environment record, and workflow summary.
+   CycloneDX SBOM, build-environment record, six installed-artifact lane
+   receipts, `release-matrix-evidence.json`, and both workflow summaries.
 
 The release-candidate workflow checks out the exact pull-request head or tag
-commit, binds `SOURCE_DATE_EPOCH` to that commit, installs an exact release
-build stack, builds without an implicit isolated toolchain, applies strict Twine
-validation, resolves and audits runtime dependencies, and emits a
-content-addressed evidence record.
+commit, binds `SOURCE_DATE_EPOCH` to that commit, installs the checked-in exact
+release build resolver input, builds without an implicit isolated toolchain,
+applies strict Twine validation, resolves and audits runtime dependencies, and
+emits a content-addressed evidence record.
+
+## Exact resolver inputs and installed-artifact matrix
+
+The release workflow treats dependency resolution as evidence rather than an
+unrecorded side effect. The checked-in resolver inputs are:
+
+- `requirements/release-build.txt` for the candidate build and audit toolchain;
+- `requirements/release-runtime-py310-floor.txt` for the declared Python 3.10
+  and NumPy 1.23.5 runtime floor;
+- `requirements/release-runtime-py312.txt` for the supported Python 3.12 lane;
+  and
+- `requirements/release-runtime-py314.txt` for the supported Python 3.14 lane.
+
+After building exactly one wheel and one source distribution, the workflow
+installs **both artifacts** in isolated environments on Python 3.10, 3.12, and
+3.14. Every lane installs its exact resolver input first, installs the candidate
+artifact without dependency re-resolution, checks the installed requirements,
+exercises the stable CLI and versioned integration namespace, and verifies the
+exact NumPy version.
+
+Each lane then captures a `NumericalEnvironmentV1` runtime fragment. The profile
+binds the complete installed distribution inventory, Python and NumPy runtime,
+NumPy build configuration, execution controls, and the SHA-256 plus byte count
+of the exact resolver input. A content-addressed lane receipt additionally binds
+the source revision, release evidence ID, candidate artifact digest, and stable
+claim boundary.
+
+`tools/release/build_release_matrix_evidence.py` admits only the exact six-lane
+roster:
+
+```text
+Python 3.10 × wheel/sdist × NumPy 1.23.5
+Python 3.12 × wheel/sdist × NumPy 2.2.6
+Python 3.14 × wheel/sdist × NumPy 2.5.2
+```
+
+The aggregate matrix evidence fails closed on a missing, duplicate, drifted, or
+tampered lane; an artifact digest mismatch; resolver-input drift; a numerical
+profile mismatch; or a source-contract mismatch. The matrix remains packaging
+and compatibility evidence. It does not show physical accuracy, uncertainty
+calibration, unseen-object transfer, deployment safety, or scientific benefit.
 
 ## Evidence boundary
 
@@ -39,7 +81,10 @@ content-addressed evidence record.
 - canonical archive paths and a link-free source distribution;
 - the exact source revision and source contract hashes;
 - the complete recorded Python build environment;
-- the runtime CycloneDX SBOM; and
+- the exact build and runtime resolver inputs;
+- the runtime CycloneDX SBOM;
+- the six content-addressed installed-artifact lane receipts and numerical
+  environment profiles; and
 - SHA-256 and byte counts for every retained release artifact.
 
 The generated record deliberately states that it is build and provenance
