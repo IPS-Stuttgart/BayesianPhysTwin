@@ -323,14 +323,19 @@ def _validated_summary(
     else:
         if any(item is None for item in directional):
             raise ValueError("active queries require directional fractions")
-        minimum, mean, maximum = cast(tuple[float, float, float], directional)
+        defined_directional = cast(tuple[float, float, float], directional)
+        minimum, mean, maximum = defined_directional
         if not minimum <= mean <= maximum:
             raise ValueError("directional shared fractions are not ordered")
-        if shared == 0.0 and not all(_close(item, 0.0) for item in directional):
+        if shared == 0.0 and not all(
+            _close(item, 0.0) for item in defined_directional
+        ):
             raise ValueError(
                 "zero shared covariance requires zero directional fractions"
             )
-        if conditional == 0.0 and not all(_close(item, 1.0) for item in directional):
+        if conditional == 0.0 and not all(
+            _close(item, 1.0) for item in defined_directional
+        ):
             raise ValueError(
                 "all-shared covariance requires unit directional fractions"
             )
