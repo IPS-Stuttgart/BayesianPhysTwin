@@ -1,0 +1,61 @@
+{
+  "correction": {
+    "active_launcher_git_blob_sha1": "365c5ba0143ba38f1e3d4beac9fdcca1fa63a884",
+    "active_launcher_path": "scripts/ci/run_deform360_v6_source_prediction_evidence.sh",
+    "active_launcher_revision": "dba748cafc1979dd697f99fb8aa70dc1cfaf9b81",
+    "corrected_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+    "field": "GENERIC_SELECTOR_SHA256",
+    "frozen_stage_path": "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py",
+    "frozen_wrapper_path": "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py",
+    "mechanism": "process-local-wrapper-load-stage-monkeypatch-after-frozen-source-validation",
+    "previous_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+  },
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:6db988a14351b9fa8744c5e42b42f6d87f06f1cdaf3ff0607e773d3748bdc4b1",
+    "artifact_id": 9110649986,
+    "artifact_name": "deform360-v6-source-prediction-evidence-31513816637-1",
+    "error": "ValueError: selector changed",
+    "execution_receipt_id": "741968a414984dca9c8c2dab2efbe716a151877d7ac7946830240bd292a47eee",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "dba748cafc1979dd697f99fb8aa70dc1cfaf9b81",
+    "terminal_stage": "stage-prefix:026-sock-cloth-ep0007",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31513816637
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair_id": "6e31a60bced8ce5d407fe3572eb6b0f5cfc314775cdac1f1c8ff5a1e5d076b11",
+  "repair_scope": {
+    "archived_science_runner_changed": false,
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "covariance_changed": false,
+    "frozen_stage_source_changed": false,
+    "frozen_wrapper_changed": false,
+    "loss_or_gate_changed": false,
+    "physical_model_changed": false,
+    "replacement_allowed": false,
+    "runtime_constant_identity_only": true,
+    "selector_semantics_changed": false,
+    "selector_source_changed": false,
+    "source_cohort_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-stage-selector-identity-repair",
+  "schema_version": 1,
+  "superseded_runtime_identity_repair_id": "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
+}
