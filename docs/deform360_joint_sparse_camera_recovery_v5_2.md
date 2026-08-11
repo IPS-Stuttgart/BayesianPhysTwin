@@ -37,6 +37,17 @@ The camera threshold is not relaxed, a one-camera update is never admitted,
 and the original v5.1 batch is neither overwritten nor reinterpreted. The new
 batch must be completely sealed before any development suffix is opened.
 
+### Source-independent v5.2.1 contract correction
+
+The metric-prefix contract explicitly represents a camera with no projected
+robot taxels as a valid, checksummed artifact with zero support. Such a camera
+is deterministically ineligible and is never sent to the visual provider. The
+original implementation rejected this representable state before the frozen
+ranker could apply that rule, despite already allowing zero per-frame counts.
+The correction changes neither the candidate roster nor any ranking, cluster,
+camera-count, fallback, or outcome boundary. Positive-support v1 artifacts
+remain valid and behavior-compatible.
+
 ## Executable custody sequence
 
 The registered commands are separated at the suffix boundary:

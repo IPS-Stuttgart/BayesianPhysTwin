@@ -489,7 +489,7 @@ def validate_deform360_robot_metric_prefix(
     projected_count = genuine_integer(
         manifest["projected_point_count"],
         name="projected_point_count",
-        minimum=1,
+        minimum=0,
     )
     _require(
         counts.tolist() == list(declared_counts)
@@ -640,7 +640,6 @@ def materialize_deform360_robot_metric_prefix(
         source_shape=source_shape,
         target_shape=target_shape,
     )
-    _require(np.any(valid), "released robot geometry is outside this camera prefix")
     frame_indices: np.ndarray = np.arange(prefix_start, prefix_stop, dtype=np.int64)
     source_artifacts = dict(
         sorted(

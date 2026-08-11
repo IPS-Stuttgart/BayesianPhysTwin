@@ -82,6 +82,7 @@ def test_amendment_declares_public_data_and_no_human_approval() -> None:
 
 def test_metric_camera_ranking_is_deterministic_and_target_free() -> None:
     values = [
+        _support("camera-e", clusters=0, frames=0, points=0),
         _support("camera-d", clusters=7, frames=20, points=9000),
         _support("camera-c", clusters=12, frames=2, points=800),
         _support("camera-b", clusters=12, frames=2, points=800),
