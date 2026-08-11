@@ -227,6 +227,48 @@ def test_infeasible_factorial_panel_stops_before_payload(tmp_path: Path) -> None
         )
 
 
+def test_schema_amendment_records_nonselective_field_without_filtering(
+    tmp_path: Path,
+) -> None:
+    repository, protocol_path, snapshot = _fixture(tmp_path)
+    protocol = json.loads(protocol_path.read_text())
+    protocol["status"] = "schema-amended-before-target-roster-and-payload-access"
+    protocol["selection"]["nonprehensile_selection_policy"] = (
+        "record-only-never-used-for-selection"
+    )
+    protocol["selection"]["metadata_invalid_candidate_policy"] = (
+        "malformed action or bimanual terminates; nonprehensile is record-only"
+    )
+    protocol["amendment"] = {
+        "candidate_panel_reused_without_replacement": True,
+        "target_roster_created_before_amendment": False,
+        "target_payload_opened_before_amendment": False,
+        "only_selection_change": (
+            "nonprehensile is record-only and cannot affect eligibility or assignment"
+        ),
+    }
+    protocol.pop("protocol_sha256")
+    protocol["protocol_sha256"] = _canonical(protocol)
+    _write(protocol_path, protocol)
+    for metadata in snapshot["metadata_by_object"].values():
+        for sequence in metadata["sequences"].values():
+            sequence["nonprehensile"] = None
+
+    result, _ = build_selection(
+        snapshot,
+        repository=repository,
+        protocol_path=protocol_path,
+        implementation_revision="c" * 40,
+    )
+
+    assert len(result["target_roster"]) == 24
+    assert all(row["nonprehensile"] is None for row in result["target_roster"])
+    assert all(
+        row["nonprehensile_metadata_valid"] is False
+        for row in result["target_roster"]
+    )
+
+
 def test_protocol_tampering_is_rejected(tmp_path: Path) -> None:
     repository, protocol_path, _ = _fixture(tmp_path)
     protocol = json.loads(protocol_path.read_text())

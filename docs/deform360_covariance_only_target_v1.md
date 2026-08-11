@@ -57,3 +57,19 @@ must remain exactly identical because the mean is unchanged.
 This protocol cannot support a point-accuracy, physical-state, Causal4D, Prob4D,
 or state-of-the-art claim. A paper claim requires the independently locked target
 gate to pass with complete 24-session failure accounting.
+
+## Metadata-gate result and v1.1 amendment
+
+The fixed 32-object v1 candidate panel was opened at the metadata-only boundary.
+Strict validation then stopped because one released episode has malformed
+`nonprehensile` metadata. No target roster was created and no camera, tactile,
+robot, geometry, track, or outcome payload was opened. The complete panel was
+retained in a hash-only exclusion artifact; no replacement occurred.
+
+A names-only capacity audit found that discarding the panel would leave only two
+untouched non-`-cloth` objects, making a new balanced 24-session panel impossible.
+Protocol v1.1 therefore reuses the identical panel and makes one schema-only
+change: `nonprehensile` is recorded with a validity flag but cannot affect
+eligibility or assignment. `action` and `bimanual`, the two metadata fields that
+actually define the factorial cells, remain strict. The amendment was frozen
+before roster creation or target payload access.

@@ -90,9 +90,14 @@ def load_protocol(path: Path, *, repository: Path) -> tuple[dict[str, Any], set[
     protocol = _load_json(path.resolve())
     _require(protocol.get("schema") == PROTOCOL_SCHEMA, "protocol schema changed")
     _require(protocol.get("schema_version") == 1, "protocol version changed")
+    status = protocol.get("status")
     _require(
-        protocol.get("status") == "locked-before-target-metadata-access",
-        "protocol is not pre-metadata locked",
+        status
+        in {
+            "locked-before-target-metadata-access",
+            "schema-amended-before-target-roster-and-payload-access",
+        },
+        "protocol is not locked before target payload access",
     )
     expected = _require_sha256(
         protocol.get("protocol_sha256"), name="protocol_sha256"
@@ -120,11 +125,52 @@ def load_protocol(path: Path, *, repository: Path) -> tuple[dict[str, Any], set[
         selection.get("candidate_objects_per_stratum") == 16,
         "candidate-panel size changed",
     )
-    _require(
-        selection.get("metadata_invalid_candidate_policy")
-        == "terminate before target payload; do not replace",
-        "metadata failure policy changed",
+    nonprehensile_policy = selection.get(
+        "nonprehensile_selection_policy",
+        "strict-yes-no-or-terminate",
     )
+    _require(
+        nonprehensile_policy
+        in {
+            "strict-yes-no-or-terminate",
+            "record-only-never-used-for-selection",
+        },
+        "nonprehensile selection policy changed",
+    )
+    if status == "locked-before-target-metadata-access":
+        _require(
+            selection.get("metadata_invalid_candidate_policy")
+            == "terminate before target payload; do not replace",
+            "metadata failure policy changed",
+        )
+        _require(
+            nonprehensile_policy == "strict-yes-no-or-terminate",
+            "v1 metadata policy changed",
+        )
+    else:
+        amendment = protocol.get("amendment")
+        _require(isinstance(amendment, Mapping), "schema amendment is missing")
+        _require(
+            amendment.get("candidate_panel_reused_without_replacement") is True,
+            "schema amendment replaced the candidate panel",
+        )
+        _require(
+            amendment.get("target_roster_created_before_amendment") is False,
+            "schema amendment followed target-roster creation",
+        )
+        _require(
+            amendment.get("target_payload_opened_before_amendment") is False,
+            "schema amendment followed target payload access",
+        )
+        _require(
+            amendment.get("only_selection_change")
+            == "nonprehensile is record-only and cannot affect eligibility or assignment",
+            "schema amendment changed more than the nonselective field",
+        )
+        _require(
+            nonprehensile_policy == "record-only-never-used-for-selection",
+            "schema amendment policy changed",
+        )
     exclusion_record = protocol.get("exclusion")
     _require(isinstance(exclusion_record, Mapping), "exclusion record is missing")
     relative = exclusion_record.get("artifact_path")
@@ -233,6 +279,7 @@ def _episode_options(
     stratum: str,
     seed: str,
     families: Mapping[str, Sequence[str]],
+    nonprehensile_policy: str,
 ) -> dict[tuple[str, str, str], dict[str, Any]]:
     sequences = metadata.get("sequences")
     _require(isinstance(sequences, Mapping) and sequences, f"{object_id} has no sequences")
@@ -255,10 +302,17 @@ def _episode_options(
             bimanual in {"yes", "no"},
             f"{object_id} episode {episode_id} bimanual is malformed",
         )
-        _require(
-            nonprehensile in {"yes", "no"},
-            f"{object_id} episode {episode_id} nonprehensile is malformed",
-        )
+        nonprehensile_valid = nonprehensile in {"yes", "no"}
+        if nonprehensile_policy == "strict-yes-no-or-terminate":
+            _require(
+                nonprehensile_valid,
+                f"{object_id} episode {episode_id} nonprehensile is malformed",
+            )
+        else:
+            _require(
+                nonprehensile_policy == "record-only-never-used-for-selection",
+                "unknown nonprehensile selection policy",
+            )
         family = _action_family(action, families)
         cell = (stratum, str(bimanual), family)
         record = {
@@ -267,7 +321,8 @@ def _episode_options(
             "action": action,
             "action_family": family,
             "bimanual": bimanual,
-            "nonprehensile": nonprehensile,
+            "nonprehensile": nonprehensile if nonprehensile_valid else None,
+            "nonprehensile_metadata_valid": nonprehensile_valid,
         }
         previous = by_cell.get(cell)
         if previous is None or (
@@ -408,6 +463,10 @@ def build_selection(
     _require(set(metadata) == panel_ids, "metadata object set changed")
     _require(set(metadata_sha) == panel_ids, "metadata hash object set changed")
     families = selection["action_families"]
+    nonprehensile_policy = selection.get(
+        "nonprehensile_selection_policy",
+        "strict-yes-no-or-terminate",
+    )
     options: dict[str, dict[tuple[str, str, str], dict[str, Any]]] = {}
     bound_panel: list[dict[str, Any]] = []
     for row in panel:
@@ -421,6 +480,7 @@ def build_selection(
             stratum=row["stratum"],
             seed=str(selection["seed"]),
             families=families,
+            nonprehensile_policy=str(nonprehensile_policy),
         )
         options[object_id] = object_options
         bound_panel.append(
