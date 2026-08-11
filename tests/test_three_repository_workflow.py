@@ -86,3 +86,13 @@ def test_three_repository_workflow_materializes_exact_decision_evidence() -> Non
     assert "if-no-files-found: error" in text
     assert "Neither record is an accuracy," in text
     assert "calibration, transfer, or physical-benefit claim." in text
+
+
+def test_three_repository_workflow_validates_after_venv_cleanup() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert '${RUNNER_TEMP}/three-repository-venv/bin/python' not in text
+    assert "typed validation completed inside the isolated" in text
+    assert "import json" in text
+    assert "manifest artifact digest changed" in text
+    assert "accepted/rejected artifacts disagree" in text
