@@ -26,6 +26,7 @@ from ._portable_contracts import (
 )
 from .deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseVisualWindowRowsV5,
+    associate_deform360_joint_sparse_geometry_v5,
 )
 from .endpoint_model_average import (
     ModelAveragedEndpointConfigV1,
@@ -43,6 +44,15 @@ HORIZON_COVARIANCE_MULTIPLIER_V1: Final = {
     "late": 16.0,
 }
 CAMERA_PARTITION_NAMESPACE_V1: Final = "deform360-covariance-camera-partition-v1"
+ASSOCIATION_CANDIDATE_COUNT_V1: Final = 4
+ASSOCIATION_SCALE_M_V1: Final = 0.010
+MAXIMUM_ASSOCIATION_DISTANCE_M_V1: Final = 0.040
+ASSOCIATION_ENTROPY_STRENGTH_V1: Final = 0.5
+MINIMUM_EFFECTIVE_ROW_SUPPORT_V1: Final = 0.05
+BOUNDARY_RELIABILITY_SCALE_PIXELS_V1: Final = 8.0
+BOUNDARY_RELIABILITY_FLOOR_V1: Final = 0.25
+OVERLAP_DISAGREEMENT_SCALE_M_V1: Final = 0.015
+OBSERVATION_VARIANCE_FLOOR_M2_V1: Final = 4e-6
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -102,9 +112,12 @@ class Deform360CausalResidualHistoryV1:
     frame_indices: np.ndarray
     material_identity_ids: tuple[str, ...]
     residual_world_m: np.ndarray
+    observation_covariance_world_m2: np.ndarray
+    prior_reliability: np.ndarray
     valid_mask: np.ndarray
     prefix_range_half_open: tuple[int, int]
     provider_camera_ids: tuple[str, ...]
+    observation_split_artifact_id: str
     source_artifact_ids: Mapping[str, str]
     coordinate_frame: str = "deform360_world"
     position_units: str = "m"
@@ -115,6 +128,11 @@ class Deform360CausalResidualHistoryV1:
         _require(raw_frames.dtype.kind in "iu", "frame_indices must be integers")
         frames = _readonly(raw_frames, dtype=np.int64)
         residual = _readonly(self.residual_world_m, dtype=np.float64)
+        covariance = _readonly(
+            self.observation_covariance_world_m2,
+            dtype=np.float64,
+        )
+        reliability = _readonly(self.prior_reliability, dtype=np.float64)
         raw_valid = np.asarray(self.valid_mask)
         _require(raw_valid.dtype.kind == "b", "valid_mask must be boolean")
         valid = _readonly(raw_valid, dtype=np.bool_)
@@ -126,6 +144,19 @@ class Deform360CausalResidualHistoryV1:
             valid.shape == residual.shape[:2],
             "valid_mask must match the residual frame and identity dimensions",
         )
+        _validate_covariance(
+            covariance,
+            name="observation_covariance_world_m2",
+        )
+        _require(
+            covariance.shape[:2] == residual.shape[:2],
+            "observation covariance must match the residual history",
+        )
+        _require(
+            reliability.shape == residual.shape[:2]
+            and np.all((reliability >= 0.0) & (reliability <= 1.0)),
+            "prior_reliability must match the history and lie in [0,1]",
+        )
         _require(
             frames.shape == (len(residual),),
             "frame_indices must match the residual history length",
@@ -134,6 +165,11 @@ class Deform360CausalResidualHistoryV1:
         _require(
             np.all(residual[~valid] == 0.0),
             "invalid residual entries must be explicit zero, never filled observations",
+        )
+        _require(
+            np.all(covariance[~valid] == 0.0)
+            and np.all(reliability[~valid] == 0.0),
+            "invalid history entries cannot carry covariance or reliability evidence",
         )
         start, stop = self.prefix_range_half_open
         _require(
@@ -168,8 +204,18 @@ class Deform360CausalResidualHistoryV1:
         object.__setattr__(self, "frame_indices", frames)
         object.__setattr__(self, "material_identity_ids", identities)
         object.__setattr__(self, "residual_world_m", residual)
+        object.__setattr__(self, "observation_covariance_world_m2", covariance)
+        object.__setattr__(self, "prior_reliability", reliability)
         object.__setattr__(self, "valid_mask", valid)
         object.__setattr__(self, "provider_camera_ids", cameras)
+        object.__setattr__(
+            self,
+            "observation_split_artifact_id",
+            sha256_digest(
+                self.observation_split_artifact_id,
+                name="observation_split_artifact_id",
+            ),
+        )
         object.__setattr__(self, "source_artifact_ids", sources)
 
     @property
@@ -182,14 +228,33 @@ class Deform360CausalResidualHistoryV1:
                 "frame_indices_sha256": _array_sha256(self.frame_indices),
                 "material_identity_ids": list(self.material_identity_ids),
                 "residual_world_m_sha256": _array_sha256(self.residual_world_m),
+                "observation_covariance_world_m2_sha256": _array_sha256(
+                    self.observation_covariance_world_m2
+                ),
+                "prior_reliability_sha256": _array_sha256(
+                    self.prior_reliability
+                ),
                 "valid_mask_sha256": _array_sha256(self.valid_mask),
                 "prefix_range_half_open": list(self.prefix_range_half_open),
                 "provider_camera_ids": list(self.provider_camera_ids),
+                "observation_split_artifact_id": (
+                    self.observation_split_artifact_id
+                ),
                 "source_artifact_ids": dict(self.source_artifact_ids),
                 "coordinate_frame": self.coordinate_frame,
                 "position_units": self.position_units,
                 "covariance_units": self.covariance_units,
                 "missing_frame_policy": "explicit-invalid-zero-never-nearest-filled",
+                "endpoint_noise_policy": (
+                    "source-frozen-model-average-noise-grid-supersedes-row-covariance;"
+                    "row-covariance-retained-for-audit;"
+                    "cue-only-reliability-controls-admission"
+                ),
+                "state_residual_used_for_prior_reliability": False,
+                "association_probability_used_for_prior_reliability": False,
+                "association_probability_used_for_assignment_and_admission": True,
+                "row_covariance_used_by_endpoint_filter": False,
+                "prior_reliability_used_by_endpoint_filter": False,
             }
         )
 
@@ -238,11 +303,11 @@ class Deform360ObservationSplitV1:
             set(provider).isdisjoint(scoring),
             "provider and scoring cameras must be disjoint",
         )
-        provider_artifact = nonempty_string(
+        provider_artifact = sha256_digest(
             self.provider_reconstruction_artifact_id,
             name="provider_reconstruction_artifact_id",
         )
-        scoring_artifact = nonempty_string(
+        scoring_artifact = sha256_digest(
             self.scoring_reconstruction_artifact_id,
             name="scoring_reconstruction_artifact_id",
         )
@@ -319,6 +384,8 @@ class Deform360CovarianceOnlyForecastV1:
     case_donor_admitted: bool
     fallback_reason: str
     history_artifact_id: str
+    observation_split_artifact_id: str
+    scoring_reconstruction_artifact_id: str
     reference_mean_sha256: str
 
     def __post_init__(self) -> None:
@@ -360,8 +427,16 @@ class Deform360CovarianceOnlyForecastV1:
         )
         _require(type(self.case_donor_admitted) is bool, "case_donor_admitted must be bool")
         reason = nonempty_string(self.fallback_reason, name="fallback_reason")
-        history_id = nonempty_string(self.history_artifact_id, name="history_artifact_id")
-        expected_mean = nonempty_string(
+        history_id = sha256_digest(self.history_artifact_id, name="history_artifact_id")
+        split_id = sha256_digest(
+            self.observation_split_artifact_id,
+            name="observation_split_artifact_id",
+        )
+        scoring_id = sha256_digest(
+            self.scoring_reconstruction_artifact_id,
+            name="scoring_reconstruction_artifact_id",
+        )
+        expected_mean = sha256_digest(
             self.reference_mean_sha256,
             name="reference_mean_sha256",
         )
@@ -385,6 +460,9 @@ class Deform360CovarianceOnlyForecastV1:
         object.__setattr__(self, "prior_only_mask", prior_only)
         object.__setattr__(self, "fallback_reason", reason)
         object.__setattr__(self, "history_artifact_id", history_id)
+        object.__setattr__(self, "observation_split_artifact_id", split_id)
+        object.__setattr__(self, "scoring_reconstruction_artifact_id", scoring_id)
+        object.__setattr__(self, "reference_mean_sha256", expected_mean)
 
     @property
     def artifact_id(self) -> str:
@@ -411,6 +489,13 @@ class Deform360CovarianceOnlyForecastV1:
                 "case_donor_admitted": self.case_donor_admitted,
                 "fallback_reason": self.fallback_reason,
                 "history_artifact_id": self.history_artifact_id,
+                "observation_split_artifact_id": (
+                    self.observation_split_artifact_id
+                ),
+                "scoring_reconstruction_artifact_id": (
+                    self.scoring_reconstruction_artifact_id
+                ),
+                "reference_mean_sha256": self.reference_mean_sha256,
                 "coordinate_frame": "deform360_world",
                 "position_units": "m",
                 "covariance_units": "m^2",
@@ -424,13 +509,18 @@ def estimate_deform360_causal_residual_history_v1(
     physical_prediction_world_m: object,
     frame_indices: object,
     material_identity_ids: Sequence[str],
+    observation_split: Deform360ObservationSplitV1,
     source_artifact_ids: Mapping[str, str],
-    association_candidate_count: int = 4,
-    association_scale_m: float = 0.010,
-    maximum_residual_m: float = 0.030,
+    association_candidate_count: int = ASSOCIATION_CANDIDATE_COUNT_V1,
+    association_scale_m: float = ASSOCIATION_SCALE_M_V1,
+    maximum_association_distance_m: float = MAXIMUM_ASSOCIATION_DISTANCE_M_V1,
+    association_entropy_strength: float = ASSOCIATION_ENTROPY_STRENGTH_V1,
+    minimum_effective_row_support: float = MINIMUM_EFFECTIVE_ROW_SUPPORT_V1,
 ) -> Deform360CausalResidualHistoryV1:
-    """Build a complete causal residual series without filling missing frames."""
+    """Build an admissible cue-weighted history without clipping innovations."""
 
+    if not isinstance(observation_split, Deform360ObservationSplitV1):
+        raise TypeError("observation_split must be a Deform360ObservationSplitV1")
     windows = tuple(visual_windows)
     _require(
         bool(windows)
@@ -439,6 +529,23 @@ def estimate_deform360_causal_residual_history_v1(
             for window in windows
         ),
         "visual_windows must contain validated v5 rows",
+    )
+    keys = tuple((window.camera_id, window.window_id) for window in windows)
+    _require(len(set(keys)) == len(keys), "visual camera/window repeats")
+    windows = tuple(
+        sorted(
+            windows,
+            key=lambda window: (
+                window.camera_id,
+                int(np.min(window.frame_indices)),
+                window.window_id,
+            ),
+        )
+    )
+    provider_cameras = tuple(sorted({window.camera_id for window in windows}))
+    _require(
+        provider_cameras == observation_split.provider_camera_ids,
+        "visual windows do not match the registered provider camera panel",
     )
     raw_frames = np.asarray(frame_indices)
     _require(
@@ -465,7 +572,8 @@ def estimate_deform360_causal_residual_history_v1(
     )
     for name, value in (
         ("association_scale_m", association_scale_m),
-        ("maximum_residual_m", maximum_residual_m),
+        ("maximum_association_distance_m", maximum_association_distance_m),
+        ("minimum_effective_row_support", minimum_effective_row_support),
     ):
         _require(
             not isinstance(value, (bool, np.bool_))
@@ -473,6 +581,16 @@ def estimate_deform360_causal_residual_history_v1(
             and value > 0.0,
             f"{name} must be finite and positive",
         )
+    _require(
+        not isinstance(association_entropy_strength, (bool, np.bool_))
+        and np.isfinite(association_entropy_strength)
+        and association_entropy_strength >= 0.0,
+        "association_entropy_strength must be finite and nonnegative",
+    )
+    _require(
+        minimum_effective_row_support <= 1.0,
+        "minimum_effective_row_support must not exceed one",
+    )
     frame_to_local = {int(frame): index for index, frame in enumerate(frames)}
     _require(
         all(
@@ -482,56 +600,183 @@ def estimate_deform360_causal_residual_history_v1(
         "visual row leaves the registered causal prefix",
     )
     residual = np.zeros_like(physical, dtype=np.float64)
+    covariance = np.zeros((*physical.shape[:2], 3, 3), dtype=np.float64)
+    reliability = np.zeros(physical.shape[:2], dtype=np.float64)
     valid = np.zeros(physical.shape[:2], dtype=np.bool_)
-    candidate_count = min(association_candidate_count, physical.shape[1])
     for frame, local_index in frame_to_local.items():
-        selected_points = [
-            np.asarray(window.point_world_m[window.frame_indices == frame])
+        selected_windows = [
+            (window, np.flatnonzero(window.frame_indices == frame))
             for window in windows
             if np.any(window.frame_indices == frame)
         ]
-        if not selected_points:
+        if not selected_windows:
             continue
-        points = np.concatenate(selected_points, axis=0)
+        points = np.concatenate(
+            [window.point_world_m[selected] for window, selected in selected_windows],
+            axis=0,
+        )
+        source_covariance = np.concatenate(
+            [
+                window.point_covariance_m2[selected]
+                for window, selected in selected_windows
+            ],
+            axis=0,
+        )
+        source_confidence = np.concatenate(
+            [window.source_confidence[selected] for window, selected in selected_windows]
+        )
+        mask_distance = np.concatenate(
+            [window.mask_distance_pixels[selected] for window, selected in selected_windows]
+        )
+        disagreement = np.concatenate(
+            [
+                window.overlap_disagreement_m[selected]
+                for window, selected in selected_windows
+            ]
+        )
+        contributors = np.concatenate(
+            [window.contributor_count[selected] for window, selected in selected_windows]
+        )
         reference = physical[local_index]
-        squared = np.sum(np.square(points[:, None] - reference[None]), axis=2)
-        indices = np.argpartition(
-            squared,
-            kth=candidate_count - 1,
-            axis=1,
-        )[:, :candidate_count]
-        selected_squared = np.take_along_axis(squared, indices, axis=1)
-        order = np.argsort(selected_squared, axis=1, kind="mergesort")
-        indices = np.take_along_axis(indices, order, axis=1)
-        selected_squared = np.take_along_axis(selected_squared, order, axis=1)
-        logits = -0.5 * selected_squared / association_scale_m**2
-        logits -= np.max(logits, axis=1, keepdims=True)
-        assignment = np.exp(np.clip(logits, -700.0, 0.0))
-        assignment /= np.sum(assignment, axis=1, keepdims=True)
-        predicted = np.sum(assignment[..., None] * reference[indices], axis=1)
-        row_residual = points - predicted
+        indices, assignment, _, association_probability = (
+            associate_deform360_joint_sparse_geometry_v5(
+                reference,
+                points,
+                candidate_count=association_candidate_count,
+                scale_m=association_scale_m,
+                maximum_distance_m=maximum_association_distance_m,
+                entropy_strength=association_entropy_strength,
+            )
+        )
+        candidate_count = indices.shape[1]
+        candidate_points = reference[indices]
+        predicted = np.sum(assignment[..., None] * candidate_points, axis=1)
+        offset = candidate_points - predicted[:, None]
+        assignment_covariance = np.einsum(
+            "mk,mki,mkj->mij",
+            assignment,
+            offset,
+            offset,
+            optimize=True,
+        )
+        row_covariance = (
+            source_covariance
+            + assignment_covariance
+            + OBSERVATION_VARIANCE_FLOOR_M2_V1 * np.eye(3)[None]
+        )
+        boundary_reliability = BOUNDARY_RELIABILITY_FLOOR_V1 + (
+            1.0 - BOUNDARY_RELIABILITY_FLOOR_V1
+        ) * (
+            1.0
+            - np.exp(-mask_distance / BOUNDARY_RELIABILITY_SCALE_PIXELS_V1)
+        )
+        overlap_reliability = np.exp(
+            -0.5
+            * np.square(disagreement / OVERLAP_DISAGREEMENT_SCALE_M_V1)
+        )
+        # Contributor count never increases confidence when overlap correlation
+        # is unknown. The penalty is residual-independent and duplicate-safe.
+        correlation_penalty = 1.0 / np.sqrt(contributors.astype(np.float64))
+        cue_reliability = np.clip(
+            source_confidence
+            * boundary_reliability
+            * overlap_reliability
+            * correlation_penalty,
+            0.0,
+            1.0,
+        )
+        contribution = (
+            assignment
+            * association_probability[:, None]
+            * cue_reliability[:, None]
+        )
+        candidate_residual = points[:, None, :] - candidate_points
+        candidate_second_moment = (
+            row_covariance[:, None]
+            + candidate_residual[..., :, None]
+            * candidate_residual[..., None, :]
+        )
         numerator = np.zeros_like(reference)
-        denominator = np.zeros(len(reference), dtype=np.float64)
+        denominator: np.ndarray = np.zeros(len(reference), dtype=np.float64)
+        second_moment: np.ndarray = np.zeros(
+            (len(reference), 3, 3),
+            dtype=np.float64,
+        )
+        maximum_association_support: np.ndarray = np.zeros(
+            len(reference),
+            dtype=np.float64,
+        )
+        maximum_prior_reliability: np.ndarray = np.zeros(
+            len(reference),
+            dtype=np.float64,
+        )
         for candidate in range(candidate_count):
             np.add.at(
                 numerator,
                 indices[:, candidate],
-                assignment[:, candidate, None] * row_residual,
+                contribution[:, candidate, None]
+                * candidate_residual[:, candidate],
             )
-            np.add.at(denominator, indices[:, candidate], assignment[:, candidate])
-        direct = denominator > 0.0
-        residual[local_index, direct] = (
-            numerator[direct] / denominator[direct, None]
+            np.add.at(
+                denominator,
+                indices[:, candidate],
+                contribution[:, candidate],
+            )
+            np.add.at(
+                second_moment,
+                indices[:, candidate],
+                contribution[:, candidate, None, None]
+                * candidate_second_moment[:, candidate],
+            )
+            np.maximum.at(
+                maximum_association_support,
+                indices[:, candidate],
+                contribution[:, candidate],
+            )
+            np.maximum.at(
+                maximum_prior_reliability,
+                indices[:, candidate],
+                np.where(
+                    contribution[:, candidate] >= minimum_effective_row_support,
+                    cue_reliability,
+                    0.0,
+                ),
+            )
+        admitted = (
+            (denominator > 0.0)
+            & (maximum_association_support >= minimum_effective_row_support)
         )
-        norms = np.linalg.norm(residual[local_index, direct], axis=1)
-        clipped = norms > maximum_residual_m
-        if np.any(clipped):
-            selected = np.flatnonzero(direct)[clipped]
-            residual[local_index, selected] *= (
-                maximum_residual_m / norms[clipped]
-            )[:, None]
-        valid[local_index] = direct
+        residual[local_index, admitted] = (
+            numerator[admitted] / denominator[admitted, None]
+        )
+        covariance[local_index, admitted] = (
+            second_moment[admitted] / denominator[admitted, None, None]
+            - residual[local_index, admitted, :, None]
+            * residual[local_index, admitted, None, :]
+        )
+        covariance[local_index, admitted] = 0.5 * (
+            covariance[local_index, admitted]
+            + covariance[local_index, admitted].swapaxes(-1, -2)
+        )
+        minimum_eigenvalue = np.linalg.eigvalsh(
+            covariance[local_index, admitted]
+        )[:, 0]
+        adjustment = np.maximum(-minimum_eigenvalue, 0.0) + 1e-15
+        covariance[local_index, admitted] += adjustment[:, None, None] * np.eye(3)
+        # Geometry determines association and admission only. Once admitted, the
+        # stored perception reliability is made exclusively from source cues.
+        reliability[local_index, admitted] = maximum_prior_reliability[admitted]
+        valid[local_index] = admitted
     sources = dict(source_artifact_ids)
+    for key, digest in (
+        ("observation-split/v1", observation_split.artifact_id),
+        (
+            "reconstruction/provider",
+            observation_split.provider_reconstruction_artifact_id,
+        ),
+    ):
+        _require(key not in sources, f"{key} source key conflicts")
+        sources[key] = digest
     for index, window in enumerate(windows):
         key = f"visual-window/{index:04d}"
         _require(key not in sources, "visual-window source key conflicts")
@@ -540,9 +785,12 @@ def estimate_deform360_causal_residual_history_v1(
         frame_indices=frames,
         material_identity_ids=identities,
         residual_world_m=residual,
+        observation_covariance_world_m2=covariance,
+        prior_reliability=reliability,
         valid_mask=valid,
         prefix_range_half_open=(int(frames[0]), int(frames[-1]) + 1),
-        provider_camera_ids=tuple(sorted({window.camera_id for window in windows})),
+        provider_camera_ids=provider_cameras,
+        observation_split_artifact_id=observation_split.artifact_id,
         source_artifact_ids=sources,
     )
 
@@ -554,6 +802,8 @@ def build_deform360_covariance_only_forecast_v1(
     future_frame_indices: object,
     horizon_labels: Sequence[str],
     history: Deform360CausalResidualHistoryV1,
+    observation_split: Deform360ObservationSplitV1,
+    registered_reference_mean_sha256: str,
     support_config: Deform360CovarianceDonorSupportConfigV1 | None = None,
     endpoint_config: ModelAveragedEndpointConfigV1 | None = None,
 ) -> Deform360CovarianceOnlyForecastV1:
@@ -561,6 +811,16 @@ def build_deform360_covariance_only_forecast_v1(
 
     if not isinstance(history, Deform360CausalResidualHistoryV1):
         raise TypeError("history must be a Deform360CausalResidualHistoryV1")
+    if not isinstance(observation_split, Deform360ObservationSplitV1):
+        raise TypeError("observation_split must be a Deform360ObservationSplitV1")
+    _require(
+        history.observation_split_artifact_id == observation_split.artifact_id,
+        "history is not bound to the registered observation split",
+    )
+    _require(
+        history.provider_camera_ids == observation_split.provider_camera_ids,
+        "history provider cameras changed after split registration",
+    )
     support = support_config or Deform360CovarianceDonorSupportConfigV1()
     if not isinstance(support, Deform360CovarianceDonorSupportConfigV1):
         raise TypeError("support_config must be a donor support config")
@@ -572,7 +832,14 @@ def build_deform360_covariance_only_forecast_v1(
         and np.all(np.isfinite(raw_mean)),
         "reference_mean_world_m must have finite floating shape (H,N,3)",
     )
-    reference_mean_sha256 = _array_sha256(raw_mean)
+    reference_mean_sha256 = sha256_digest(
+        registered_reference_mean_sha256,
+        name="registered_reference_mean_sha256",
+    )
+    _require(
+        _array_sha256(raw_mean) == reference_mean_sha256,
+        "reference mean bytes do not match the registered baseline digest",
+    )
     mean = np.array(raw_mean, copy=True, order="C")
     raw_fallback = np.asarray(fallback_covariance_world_m2)
     _require(raw_fallback.dtype.kind == "f", "fallback covariance must be floating")
@@ -644,14 +911,27 @@ def build_deform360_covariance_only_forecast_v1(
         case_donor_admitted=admitted,
         fallback_reason=fallback_reason,
         history_artifact_id=history.artifact_id,
+        observation_split_artifact_id=observation_split.artifact_id,
+        scoring_reconstruction_artifact_id=(
+            observation_split.scoring_reconstruction_artifact_id
+        ),
         reference_mean_sha256=reference_mean_sha256,
     )
 
 
 __all__ = [
+    "ASSOCIATION_CANDIDATE_COUNT_V1",
+    "ASSOCIATION_ENTROPY_STRENGTH_V1",
+    "ASSOCIATION_SCALE_M_V1",
+    "BOUNDARY_RELIABILITY_FLOOR_V1",
+    "BOUNDARY_RELIABILITY_SCALE_PIXELS_V1",
     "DEFORM360_COVARIANCE_PROVIDER_SCHEMA",
     "DEFORM360_COVARIANCE_PROVIDER_VERSION",
     "HORIZON_COVARIANCE_MULTIPLIER_V1",
+    "MAXIMUM_ASSOCIATION_DISTANCE_M_V1",
+    "MINIMUM_EFFECTIVE_ROW_SUPPORT_V1",
+    "OBSERVATION_VARIANCE_FLOOR_M2_V1",
+    "OVERLAP_DISAGREEMENT_SCALE_M_V1",
     "Deform360CausalResidualHistoryV1",
     "Deform360CovarianceDonorSupportConfigV1",
     "Deform360CovarianceOnlyForecastV1",

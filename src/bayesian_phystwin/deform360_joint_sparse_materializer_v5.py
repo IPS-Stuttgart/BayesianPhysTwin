@@ -704,6 +704,54 @@ def _association(
     return indices, weights, entropy, np.clip(probability, 0.0, 1.0)
 
 
+def associate_deform360_joint_sparse_geometry_v5(
+    reference_world_m: np.ndarray,
+    query_world_m: np.ndarray,
+    *,
+    candidate_count: int,
+    scale_m: float,
+    maximum_distance_m: float,
+    entropy_strength: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Expose the frozen v5 geometry-only association for sibling providers."""
+
+    reference = np.asarray(reference_world_m, dtype=np.float64)
+    query = np.asarray(query_world_m, dtype=np.float64)
+    _require(
+        reference.ndim == 2
+        and reference.shape[1] == 3
+        and len(reference) >= 1
+        and np.all(np.isfinite(reference)),
+        "association reference must have finite shape (N>=1,3)",
+    )
+    _require(
+        query.ndim == 2
+        and query.shape[1] == 3
+        and len(query) >= 1
+        and np.all(np.isfinite(query)),
+        "association query must have finite shape (M>=1,3)",
+    )
+    _require(
+        type(candidate_count) is int and candidate_count >= 1,
+        "invalid candidate count",
+    )
+    scale = _positive(scale_m, name="association scale")
+    maximum = _positive(maximum_distance_m, name="maximum association distance")
+    entropy = _positive(
+        entropy_strength,
+        name="association entropy strength",
+        allow_zero=True,
+    )
+    return _association(
+        reference,
+        query,
+        candidate_count=candidate_count,
+        scale_m=scale,
+        maximum_distance_m=maximum,
+        entropy_strength=entropy,
+    )
+
+
 def _state_basis(
     physical: np.ndarray,
     *,
@@ -1590,6 +1638,7 @@ __all__ = [
     "Deform360JointSparseMaterializationResultV5",
     "Deform360JointSparsePrefixFitV5",
     "Deform360JointSparseVisualWindowRowsV5",
+    "associate_deform360_joint_sparse_geometry_v5",
     "extract_deform360_joint_sparse_visual_rows_v5",
     "materialize_deform360_joint_sparse_prediction_v5",
 ]

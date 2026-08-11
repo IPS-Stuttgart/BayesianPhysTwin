@@ -31,6 +31,15 @@ def _canonical_sha256(value: dict[str, Any]) -> str:
     ).hexdigest()
 
 
+def _array_sha256(value: np.ndarray) -> str:
+    array = np.ascontiguousarray(value)
+    digest = hashlib.sha256()
+    digest.update(array.dtype.str.encode("ascii"))
+    digest.update(json.dumps(array.shape, separators=(",", ":")).encode("ascii"))
+    digest.update(array.view(np.uint8))
+    return digest.hexdigest()
+
+
 def _window(
     camera_id: str,
     frame_indices: np.ndarray,
@@ -94,6 +103,12 @@ def run_source_only_dry_run() -> dict[str, Any]:
         camera_ids=("camera-a", "camera-b", "camera-c", "camera-d"),
         object_session_hash="3" * 64,
     )
+    split = Deform360ObservationSplitV1(
+        provider_camera_ids=provider_cameras,
+        scoring_camera_ids=scoring_cameras,
+        provider_reconstruction_artifact_id="a" * 64,
+        scoring_reconstruction_artifact_id="b" * 64,
+    )
     history = estimate_deform360_causal_residual_history_v1(
         visual_windows=(
             _window(
@@ -112,14 +127,9 @@ def run_source_only_dry_run() -> dict[str, Any]:
         physical_prediction_world_m=physical,
         frame_indices=np.arange(4),
         material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=split,
         source_artifact_ids={"synthetic/physical-prefix": "2" * 64},
         association_candidate_count=1,
-    )
-    split = Deform360ObservationSplitV1(
-        provider_camera_ids=provider_cameras,
-        scoring_camera_ids=scoring_cameras,
-        provider_reconstruction_artifact_id="synthetic-provider-reconstruction",
-        scoring_reconstruction_artifact_id="synthetic-scoring-reconstruction",
     )
     mean = np.arange(48, dtype=np.float32).reshape(4, 4, 3) / 1000.0
     fallback_covariance = np.broadcast_to(
@@ -132,10 +142,16 @@ def run_source_only_dry_run() -> dict[str, Any]:
         future_frame_indices=np.arange(4, 8),
         horizon_labels=("early", "middle", "middle", "late"),
         history=history,
+        observation_split=split,
+        registered_reference_mean_sha256=_array_sha256(mean),
     )
     unsupported = replace(
         history,
         residual_world_m=np.zeros_like(history.residual_world_m),
+        observation_covariance_world_m2=np.zeros_like(
+            history.observation_covariance_world_m2
+        ),
+        prior_reliability=np.zeros_like(history.prior_reliability),
         valid_mask=np.zeros_like(history.valid_mask),
     )
     fallback = build_deform360_covariance_only_forecast_v1(
@@ -144,6 +160,71 @@ def run_source_only_dry_run() -> dict[str, Any]:
         future_frame_indices=np.arange(4, 8),
         horizon_labels=("early", "middle", "middle", "late"),
         history=unsupported,
+        observation_split=split,
+        registered_reference_mean_sha256=_array_sha256(mean),
+    )
+
+    far_points = np.asarray(
+        [
+            [17.0, 0.0, 0.0],
+            [17.0, 0.0, 0.0],
+        ]
+    )
+    far_history = estimate_deform360_causal_residual_history_v1(
+        visual_windows=(
+            _window(
+                provider_cameras[0],
+                np.asarray([0, 1]),
+                np.zeros(2, dtype=np.int64),
+                far_points,
+            ),
+            _window(
+                provider_cameras[1],
+                np.asarray([0, 1]),
+                np.zeros(2, dtype=np.int64),
+                far_points,
+            ),
+        ),
+        physical_prediction_world_m=physical,
+        frame_indices=np.arange(4),
+        material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=split,
+        source_artifact_ids={"synthetic/far-prefix": "4" * 64},
+    )
+    far_fallback = build_deform360_covariance_only_forecast_v1(
+        reference_mean_world_m=mean,
+        fallback_covariance_world_m2=fallback_covariance,
+        future_frame_indices=np.arange(4, 8),
+        horizon_labels=("early", "middle", "middle", "late"),
+        history=far_history,
+        observation_split=split,
+        registered_reference_mean_sha256=_array_sha256(mean),
+    )
+
+    midpoint_nodes = np.array(physical, copy=True)
+    midpoint_nodes[:, 1, 0] = 0.010
+    midpoint = np.asarray([[0.005, 0.0, 0.0], [0.005, 0.0, 0.0]])
+    midpoint_history = estimate_deform360_causal_residual_history_v1(
+        visual_windows=(
+            _window(
+                provider_cameras[0],
+                np.asarray([0, 1]),
+                np.zeros(2, dtype=np.int64),
+                midpoint,
+            ),
+            _window(
+                provider_cameras[1],
+                np.asarray([0, 1]),
+                np.zeros(2, dtype=np.int64),
+                midpoint,
+            ),
+        ),
+        physical_prediction_world_m=midpoint_nodes,
+        frame_indices=np.arange(4),
+        material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=split,
+        source_artifact_ids={"synthetic/midpoint-prefix": "5" * 64},
+        association_candidate_count=2,
     )
     payload: dict[str, Any] = {
         "schema": DRY_RUN_SCHEMA,
@@ -195,6 +276,31 @@ def run_source_only_dry_run() -> dict[str, Any]:
             ),
             "empirical_identity_count": int(np.sum(fallback.empirical_donor_mask)),
         },
+        "far_point_rejection": {
+            "valid_entry_count": int(np.sum(far_history.valid_mask)),
+            "update_count": far_fallback.update_count.tolist(),
+            "case_donor_admitted": far_fallback.case_donor_admitted,
+            "covariance_byte_identical": (
+                far_fallback.covariance_world_m2.tobytes()
+                == fallback_covariance.tobytes()
+            ),
+        },
+        "candidate_specific_midpoint": {
+            "node_0_residual_x_m": float(midpoint_history.residual_world_m[0, 0, 0]),
+            "node_1_residual_x_m": float(midpoint_history.residual_world_m[0, 1, 0]),
+            "opposite_signed": bool(
+                midpoint_history.residual_world_m[0, 0, 0] > 0.0
+                and midpoint_history.residual_world_m[0, 1, 0] < 0.0
+            ),
+            "assignment_spread_retained": bool(
+                np.all(
+                    midpoint_history.observation_covariance_world_m2[
+                        :2, :2, 0, 0
+                    ]
+                    > 25e-6
+                )
+            ),
+        },
         "gate_passed": bool(
             candidate.case_donor_admitted
             and candidate.mean_world_m.tobytes() == mean.tobytes()
@@ -203,6 +309,12 @@ def run_source_only_dry_run() -> dict[str, Any]:
             and fallback.mean_world_m.tobytes() == mean.tobytes()
             and fallback.covariance_world_m2.tobytes()
             == fallback_covariance.tobytes()
+            and not np.any(far_history.valid_mask)
+            and not far_fallback.case_donor_admitted
+            and far_fallback.covariance_world_m2.tobytes()
+            == fallback_covariance.tobytes()
+            and midpoint_history.residual_world_m[0, 0, 0] > 0.0
+            and midpoint_history.residual_world_m[0, 1, 0] < 0.0
             and set(split.provider_camera_ids).isdisjoint(split.scoring_camera_ids)
         ),
         "claim_boundary": (

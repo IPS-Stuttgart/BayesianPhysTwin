@@ -1,25 +1,42 @@
 {
   "admitted_candidate": {
-    "artifact_id": "091a9f4ccf2217b8b8b4860879d9663611dd49d97d900eb01cddc78f55249c22",
+    "artifact_id": "fd67318117825164bf3afa41290ce779884aca3c8727ea71e406e2e5f8ca276a",
     "case_donor_admitted": true,
     "empirical_identity_count": 4,
     "mean_byte_identical": true,
     "minimum_covariance_eigenvalue_m2": 5.306705920041748e-06,
     "prior_only_identity_count": 0
   },
+  "candidate_specific_midpoint": {
+    "assignment_spread_retained": true,
+    "node_0_residual_x_m": 0.005,
+    "node_1_residual_x_m": -0.005,
+    "opposite_signed": true
+  },
   "claim_boundary": "Implementation dry run only; no target, official benchmark, calibration, point-accuracy, or state-of-the-art claim.",
-  "dry_run_sha256": "8619d028f8efdd627170e324739c952d57c36d1a9f2b34ae0755875516f83d6e",
+  "dry_run_sha256": "0a5de03cb4a510f3b9b8d5c6b105836f3322de5ea230e62d9faa862ec9e00b0f",
   "failed_support_fallback": {
-    "artifact_id": "5bcbbfb77a71edab53febb1da06ae75af578aa48176954e3bbaaedd695e4bed5",
+    "artifact_id": "c8b8f6d0919e0af985b6c54d9eff20f18ac3bf37f6620041bb71d49cff2055c3",
     "case_donor_admitted": false,
     "covariance_byte_identical": true,
     "empirical_identity_count": 0,
     "fallback_reason": "insufficient-observed-frames+insufficient-empirical-identities",
     "mean_byte_identical": true
   },
+  "far_point_rejection": {
+    "case_donor_admitted": false,
+    "covariance_byte_identical": true,
+    "update_count": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "valid_entry_count": 0
+  },
   "gate_passed": true,
   "history": {
-    "artifact_id": "d7e7befb431f660154ae78577c22e2c15e318d82d71f606d93247ae56345907f",
+    "artifact_id": "76dce4cf9ba73c94b4d2a3e211ee970210de18054541af76525734c0d1cb0334",
     "coordinate_frame": "deform360_world",
     "covariance_units": "m^2",
     "missing_entries_are_zero": true,
@@ -41,7 +58,7 @@
     ]
   },
   "observation_split": {
-    "artifact_id": "31b9da8fcb7417b977d11ed108e45958d7d92bbdb425ffbc24aecf04f4e3a364",
+    "artifact_id": "59c7785a9975ee6a77db201139ee5cbbf7aff95aadb82d6b8cf48441dc941441",
     "camera_sets_disjoint": true,
     "provider_camera_ids": [
       "camera-b",

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import replace
 
 import numpy as np
@@ -48,6 +50,27 @@ def _visual_window(
     )
 
 
+def _split(
+    *,
+    provider_camera_ids: tuple[str, ...] = ("provider-a",),
+) -> Deform360ObservationSplitV1:
+    return Deform360ObservationSplitV1(
+        provider_camera_ids=provider_camera_ids,
+        scoring_camera_ids=("scoring-a", "scoring-b"),
+        provider_reconstruction_artifact_id="a" * 64,
+        scoring_reconstruction_artifact_id="b" * 64,
+    )
+
+
+def _array_sha256(value: np.ndarray) -> str:
+    array = np.ascontiguousarray(value)
+    digest = hashlib.sha256()
+    digest.update(array.dtype.str.encode("ascii"))
+    digest.update(json.dumps(array.shape, separators=(",", ":")).encode("ascii"))
+    digest.update(array.view(np.uint8))
+    return digest.hexdigest()
+
+
 def _history() -> Deform360CausalResidualHistoryV1:
     physical = np.broadcast_to(
         np.asarray(
@@ -72,6 +95,7 @@ def _history() -> Deform360CausalResidualHistoryV1:
         physical_prediction_world_m=physical,
         frame_indices=np.arange(10, 13),
         material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=_split(),
         source_artifact_ids={"physical/prefix": "2" * 64},
         association_candidate_count=1,
     )
@@ -84,6 +108,24 @@ def _forecast_inputs() -> tuple[np.ndarray, np.ndarray, np.ndarray, tuple[str, .
         (3, 4, 3, 3),
     ).copy()
     return mean, fallback, np.arange(13, 16), ("early", "middle", "late")
+
+
+def _forecast(
+    *,
+    history: Deform360CausalResidualHistoryV1,
+    support_config: Deform360CovarianceDonorSupportConfigV1 | None = None,
+):
+    mean, fallback, future, labels = _forecast_inputs()
+    return build_deform360_covariance_only_forecast_v1(
+        reference_mean_world_m=mean,
+        fallback_covariance_world_m2=fallback,
+        future_frame_indices=future,
+        horizon_labels=labels,
+        history=history,
+        observation_split=_split(),
+        registered_reference_mean_sha256=_array_sha256(mean),
+        support_config=support_config,
+    )
 
 
 def test_causal_history_preserves_identity_order_and_missingness() -> None:
@@ -104,6 +146,10 @@ def test_causal_history_preserves_identity_order_and_missingness() -> None:
         ],
     )
     assert np.all(history.residual_world_m[~history.valid_mask] == 0.0)
+    assert np.all(
+        history.observation_covariance_world_m2[~history.valid_mask] == 0.0
+    )
+    assert np.all(history.prior_reliability[~history.valid_mask] == 0.0)
     assert history.coordinate_frame == "deform360_world"
     assert history.position_units == "m"
     assert history.covariance_units == "m^2"
@@ -128,6 +174,7 @@ def test_duplicate_correlated_window_does_not_change_residual_history() -> None:
         physical_prediction_world_m=physical,
         frame_indices=np.arange(10, 13),
         material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=_split(),
         source_artifact_ids={"physical/prefix": "2" * 64},
         association_candidate_count=1,
     )
@@ -145,6 +192,184 @@ def test_duplicate_correlated_window_does_not_change_residual_history() -> None:
         rtol=0.0,
     )
     np.testing.assert_array_equal(repeated.valid_mask, original.valid_mask)
+    np.testing.assert_allclose(
+        repeated.observation_covariance_world_m2,
+        original.observation_covariance_world_m2,
+        atol=1e-14,
+        rtol=0.0,
+    )
+    np.testing.assert_allclose(
+        repeated.prior_reliability,
+        original.prior_reliability,
+        atol=1e-14,
+        rtol=0.0,
+    )
+
+
+def test_far_points_cannot_manufacture_support_and_force_exact_fallback() -> None:
+    physical = np.broadcast_to(
+        np.asarray(
+            [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]
+        )[None],
+        (2, 4, 3),
+    ).copy()
+    rows = (
+        (0, 0, np.asarray([17.0, 0.0, 0.0])),
+        (1, 0, np.asarray([17.0, 0.0, 0.0])),
+    )
+    history = estimate_deform360_causal_residual_history_v1(
+        visual_windows=(_visual_window(camera_id="provider-a", frame_points=rows),),
+        physical_prediction_world_m=physical,
+        frame_indices=np.arange(2),
+        material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=_split(),
+        source_artifact_ids={"physical/prefix": "2" * 64},
+    )
+    result = _forecast(history=history)
+
+    assert not np.any(history.valid_mask)
+    assert not np.any(result.update_count)
+    assert result.case_donor_admitted is False
+    assert result.covariance_world_m2.tobytes() == (
+        result.fallback_covariance_world_m2.tobytes()
+    )
+
+
+def test_ambiguous_midpoint_uses_candidate_specific_residual_and_spread() -> None:
+    physical = np.broadcast_to(
+        np.asarray(
+            [[0.0, 0.0, 0.0], [0.010, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]
+        )[None],
+        (2, 4, 3),
+    ).copy()
+    midpoint = np.asarray([0.005, 0.0, 0.0])
+    rows = ((0, 0, midpoint), (1, 0, midpoint))
+    history = estimate_deform360_causal_residual_history_v1(
+        visual_windows=(_visual_window(camera_id="provider-a", frame_points=rows),),
+        physical_prediction_world_m=physical,
+        frame_indices=np.arange(2),
+        material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=_split(),
+        source_artifact_ids={"physical/prefix": "2" * 64},
+        association_candidate_count=2,
+    )
+
+    np.testing.assert_array_equal(
+        history.valid_mask,
+        [[True, True, False, False], [True, True, False, False]],
+    )
+    np.testing.assert_allclose(history.residual_world_m[:, 0, 0], 0.005)
+    np.testing.assert_allclose(history.residual_world_m[:, 1, 0], -0.005)
+    assert np.all(history.observation_covariance_world_m2[:, :2, 0, 0] > 25e-6)
+
+
+def test_admitted_innovation_is_not_clipped_before_robust_endpoint() -> None:
+    physical = np.asarray(
+        [[[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]]
+    )
+    rows = ((0, 0, np.asarray([0.039, 0.0, 0.0])),)
+    history = estimate_deform360_causal_residual_history_v1(
+        visual_windows=(_visual_window(camera_id="provider-a", frame_points=rows),),
+        physical_prediction_world_m=physical,
+        frame_indices=np.arange(1),
+        material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=_split(),
+        source_artifact_ids={"physical/prefix": "2" * 64},
+        association_candidate_count=1,
+    )
+
+    assert history.valid_mask[0, 0]
+    assert history.residual_world_m[0, 0, 0] == pytest.approx(0.039)
+
+
+def test_zero_cue_reliability_cannot_create_an_endpoint_update() -> None:
+    physical = np.asarray(
+        [[[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]]
+    )
+    window = _visual_window(
+        camera_id="provider-a",
+        frame_points=((0, 0, np.asarray([0.001, 0.0, 0.0])),),
+    )
+    window = replace(window, source_confidence=np.zeros(1))
+    history = estimate_deform360_causal_residual_history_v1(
+        visual_windows=(window,),
+        physical_prediction_world_m=physical,
+        frame_indices=np.arange(1),
+        material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+        observation_split=_split(),
+        source_artifact_ids={"physical/prefix": "2" * 64},
+        association_candidate_count=1,
+    )
+
+    assert not np.any(history.valid_mask)
+
+
+def test_state_residual_does_not_change_admitted_prior_reliability() -> None:
+    physical = np.asarray(
+        [[[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]]
+    )
+
+    def build(offset_m: float) -> Deform360CausalResidualHistoryV1:
+        return estimate_deform360_causal_residual_history_v1(
+            visual_windows=(
+                _visual_window(
+                    camera_id="provider-a",
+                    frame_points=(
+                        (0, 0, np.asarray([offset_m, 0.0, 0.0])),
+                    ),
+                ),
+            ),
+            physical_prediction_world_m=physical,
+            frame_indices=np.arange(1),
+            material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+            observation_split=_split(),
+            source_artifact_ids={"physical/prefix": "2" * 64},
+            association_candidate_count=1,
+        )
+
+    near = build(0.001)
+    farther = build(0.030)
+
+    assert near.valid_mask[0, 0] and farther.valid_mask[0, 0]
+    assert farther.residual_world_m[0, 0, 0] > near.residual_world_m[0, 0, 0]
+    assert farther.prior_reliability[0, 0] == pytest.approx(
+        near.prior_reliability[0, 0]
+    )
+
+
+def test_metric_point_covariance_is_retained_without_changing_reliability() -> None:
+    physical = np.asarray(
+        [[[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]]
+    )
+    base = _visual_window(
+        camera_id="provider-a",
+        frame_points=((0, 0, np.asarray([0.001, 0.0, 0.0])),),
+    )
+
+    def build(variance_m2: float) -> Deform360CausalResidualHistoryV1:
+        window = replace(
+            base,
+            point_covariance_m2=np.eye(3)[None] * variance_m2,
+        )
+        return estimate_deform360_causal_residual_history_v1(
+            visual_windows=(window,),
+            physical_prediction_world_m=physical,
+            frame_indices=np.arange(1),
+            material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+            observation_split=_split(),
+            source_artifact_ids={"physical/prefix": "2" * 64},
+            association_candidate_count=1,
+        )
+
+    low = build(1e-6)
+    high = build(9e-6)
+
+    assert high.observation_covariance_world_m2[0, 0, 0, 0] > (
+        low.observation_covariance_world_m2[0, 0, 0, 0]
+    )
+    assert high.prior_reliability[0, 0] == pytest.approx(
+        low.prior_reliability[0, 0]
+    )
 
 
 def test_covariance_donor_keeps_mean_bytes_and_falls_back_per_identity() -> None:
@@ -156,6 +381,8 @@ def test_covariance_donor_keeps_mean_bytes_and_falls_back_per_identity() -> None
         future_frame_indices=future,
         horizon_labels=labels,
         history=history,
+        observation_split=_split(),
+        registered_reference_mean_sha256=_array_sha256(mean),
     )
 
     assert result.case_donor_admitted is True
@@ -171,7 +398,15 @@ def test_weak_case_and_all_zero_updates_are_exact_fallback() -> None:
     history = _history()
     valid = np.zeros_like(history.valid_mask)
     residual = np.zeros_like(history.residual_world_m)
-    unsupported = replace(history, valid_mask=valid, residual_world_m=residual)
+    unsupported = replace(
+        history,
+        valid_mask=valid,
+        residual_world_m=residual,
+        observation_covariance_world_m2=np.zeros_like(
+            history.observation_covariance_world_m2
+        ),
+        prior_reliability=np.zeros_like(history.prior_reliability),
+    )
     mean, fallback, future, labels = _forecast_inputs()
     result = build_deform360_covariance_only_forecast_v1(
         reference_mean_world_m=mean,
@@ -179,6 +414,8 @@ def test_weak_case_and_all_zero_updates_are_exact_fallback() -> None:
         future_frame_indices=future,
         horizon_labels=labels,
         history=unsupported,
+        observation_split=_split(),
+        registered_reference_mean_sha256=_array_sha256(mean),
     )
 
     assert result.case_donor_admitted is False
@@ -204,6 +441,8 @@ def test_support_gate_is_registered_and_not_inferred_from_prior_covariance() -> 
         future_frame_indices=future,
         horizon_labels=labels,
         history=history,
+        observation_split=_split(),
+        registered_reference_mean_sha256=_array_sha256(mean),
         support_config=strict,
     )
 
@@ -225,8 +464,8 @@ def test_observation_split_rejects_shared_views_or_reconstruction() -> None:
     split = Deform360ObservationSplitV1(
         provider_camera_ids=("camera-a", "camera-b"),
         scoring_camera_ids=("camera-c", "camera-d"),
-        provider_reconstruction_artifact_id="provider-reconstruction",
-        scoring_reconstruction_artifact_id="scoring-reconstruction",
+        provider_reconstruction_artifact_id="a" * 64,
+        scoring_reconstruction_artifact_id="b" * 64,
     )
     assert set(split.provider_camera_ids).isdisjoint(split.scoring_camera_ids)
 
@@ -235,8 +474,75 @@ def test_observation_split_rejects_shared_views_or_reconstruction() -> None:
     with pytest.raises(ValueError, match="distinct artifacts"):
         replace(
             split,
-            scoring_reconstruction_artifact_id="provider-reconstruction",
+            scoring_reconstruction_artifact_id="a" * 64,
         )
+    with pytest.raises(ValueError, match="lowercase SHA-256"):
+        replace(split, provider_reconstruction_artifact_id="not-a-digest")
+
+
+def test_history_and_forecast_enforce_registered_observation_split() -> None:
+    history = _history()
+    mean, fallback, future, labels = _forecast_inputs()
+    changed_split = replace(
+        _split(),
+        scoring_reconstruction_artifact_id="c" * 64,
+    )
+
+    with pytest.raises(ValueError, match="registered observation split"):
+        build_deform360_covariance_only_forecast_v1(
+            reference_mean_world_m=mean,
+            fallback_covariance_world_m2=fallback,
+            future_frame_indices=future,
+            horizon_labels=labels,
+            history=history,
+            observation_split=changed_split,
+            registered_reference_mean_sha256=_array_sha256(mean),
+        )
+    with pytest.raises(ValueError, match="registered baseline digest"):
+        build_deform360_covariance_only_forecast_v1(
+            reference_mean_world_m=mean,
+            fallback_covariance_world_m2=fallback,
+            future_frame_indices=future,
+            horizon_labels=labels,
+            history=history,
+            observation_split=_split(),
+            registered_reference_mean_sha256="f" * 64,
+        )
+
+
+def test_history_is_window_order_invariant_and_rejects_duplicate_keys() -> None:
+    physical = np.broadcast_to(
+        np.asarray(
+            [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0]]
+        )[None],
+        (2, 4, 3),
+    ).copy()
+    first_window = _visual_window(
+        camera_id="provider-a",
+        frame_points=((0, 0, physical[0, 0] + [0.001, 0, 0]),),
+    )
+    second_window = _visual_window(
+        camera_id="provider-b",
+        frame_points=((1, 1, physical[1, 1] + [0.001, 0, 0]),),
+    )
+    split = _split(provider_camera_ids=("provider-a", "provider-b"))
+
+    def build(windows):
+        return estimate_deform360_causal_residual_history_v1(
+            visual_windows=windows,
+            physical_prediction_world_m=physical,
+            frame_indices=np.arange(2),
+            material_identity_ids=("node-0", "node-1", "node-2", "node-3"),
+            observation_split=split,
+            source_artifact_ids={"physical/prefix": "2" * 64},
+            association_candidate_count=1,
+        )
+
+    assert build((first_window, second_window)).artifact_id == build(
+        (second_window, first_window)
+    ).artifact_id
+    with pytest.raises(ValueError, match="camera/window repeats"):
+        build((first_window, first_window))
 
 
 def test_camera_partition_is_names_only_deterministic_and_disjoint() -> None:
@@ -271,6 +577,8 @@ def test_future_horizon_must_start_after_prefix() -> None:
             future_frame_indices=np.arange(12, 15),
             horizon_labels=labels,
             history=history,
+            observation_split=_split(),
+            registered_reference_mean_sha256=_array_sha256(mean),
         )
 
 
@@ -286,3 +594,13 @@ def test_source_only_end_to_end_dry_run_passes_without_target_access() -> None:
     assert result["observation_split"]["camera_sets_disjoint"] is True
     assert result["admitted_candidate"]["mean_byte_identical"] is True
     assert result["failed_support_fallback"]["covariance_byte_identical"] is True
+    assert result["far_point_rejection"] == {
+        "case_donor_admitted": False,
+        "covariance_byte_identical": True,
+        "update_count": [0, 0, 0, 0],
+        "valid_entry_count": 0,
+    }
+    assert result["candidate_specific_midpoint"]["opposite_signed"] is True
+    assert result["candidate_specific_midpoint"][
+        "assignment_spread_retained"
+    ] is True

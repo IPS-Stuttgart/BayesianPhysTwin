@@ -159,6 +159,12 @@ updates, and a case needs two observed frames plus 50% empirically supported
 identities. Prior-only covariance is not accepted as evidence. Unsupported
 identities and failed cases use exact fallback.
 
+Before target decode, a source-only amendment also froze admissible geometry
+association, candidate-specific innovations, assignment-mixture covariance,
+residual-independent cue reliability, canonical unique windows, and explicit
+observation-split/reference-mean digest binding. Distant rows cannot manufacture
+support, and the robust endpoint mixture sees each admitted innovation once.
+
 Because official processed annotations are absent, the official track/Chamfer
 checks are marked unavailable. Registered scores are per-identity 3D marginal
 NLL, NEES, coverage, and interval volume, aggregated within session and then
