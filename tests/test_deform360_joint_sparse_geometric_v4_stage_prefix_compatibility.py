@@ -82,9 +82,7 @@ def test_non_stage_prefix_arguments_are_not_rewritten() -> None:
     ("arguments", "match"),
     [
         (
-            _legacy_stage_prefix_arguments(
-                repository=Path("/different/repository")
-            ),
+            _legacy_stage_prefix_arguments(repository=Path("/different/repository")),
             "legacy stage-prefix repository changed",
         ),
         (
