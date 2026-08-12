@@ -25,9 +25,7 @@ STABLE_API_MANIFESTS = (
     "api/versioned-public-api-v1.json",
     "api/inference-public-api-v1.json",
 )
-UNREGISTERED_MODULE_POLICY = (
-    "internal-or-experimental-no-compatibility-promise"
-)
+UNREGISTERED_MODULE_POLICY = "internal-or-experimental-no-compatibility-promise"
 _FIELDS = {
     "schema",
     "schema_version",
@@ -102,9 +100,7 @@ def _load_json(path: Path, *, name: str) -> Mapping[str, Any]:
             f"cannot read {name} {path}: {error}"
         ) from error
     except json.JSONDecodeError as error:
-        raise PublicModuleLifecycleError(
-            f"invalid {name} JSON: {error}"
-        ) from error
+        raise PublicModuleLifecycleError(f"invalid {name} JSON: {error}") from error
     if not isinstance(payload, Mapping):
         raise PublicModuleLifecycleError(f"{name} root must be a JSON object")
     return payload
@@ -112,9 +108,7 @@ def _load_json(path: Path, *, name: str) -> Mapping[str, Any]:
 
 def _canonical_text(value: object, *, name: str) -> str:
     if type(value) is not str or not value or value.strip() != value:
-        raise PublicModuleLifecycleError(
-            f"{name} must be nonempty canonical text"
-        )
+        raise PublicModuleLifecycleError(f"{name} must be nonempty canonical text")
     if any(character in value for character in "\x00\r\n"):
         raise PublicModuleLifecycleError(f"{name} must be single-line text")
     return value
@@ -146,13 +140,9 @@ def _module_name(value: object, *, name: str) -> str:
         raise PublicModuleLifecycleError(f"{name} must be below {PACKAGE}")
     parts = module.split(".")
     if any(not part.isidentifier() for part in parts):
-        raise PublicModuleLifecycleError(
-            f"{name} must be a canonical Python module"
-        )
+        raise PublicModuleLifecycleError(f"{name} must be a canonical Python module")
     if any(part.startswith("_") for part in parts[1:]):
-        raise PublicModuleLifecycleError(
-            f"{name} must identify a public module"
-        )
+        raise PublicModuleLifecycleError(f"{name} must identify a public module")
     return module
 
 
@@ -160,17 +150,14 @@ def _module_list(value: object, *, name: str) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
         raise PublicModuleLifecycleError(f"{name} must be a JSON array")
     modules = tuple(
-        _module_name(item, name=f"{name}[{index}]")
-        for index, item in enumerate(value)
+        _module_name(item, name=f"{name}[{index}]") for index, item in enumerate(value)
     )
     if not modules:
         raise PublicModuleLifecycleError(f"{name} must not be empty")
     if len(set(modules)) != len(modules):
         raise PublicModuleLifecycleError(f"{name} contains duplicate modules")
     if modules != tuple(sorted(modules)):
-        raise PublicModuleLifecycleError(
-            f"{name} must use canonical lexical order"
-        )
+        raise PublicModuleLifecycleError(f"{name} must use canonical lexical order")
     return modules
 
 
@@ -184,8 +171,7 @@ def load_lifecycle_manifest(
         missing = sorted(_FIELDS - set(payload))
         unknown = sorted(set(payload) - _FIELDS)
         raise PublicModuleLifecycleError(
-            "lifecycle manifest fields changed; "
-            f"missing={missing}, unknown={unknown}"
+            f"lifecycle manifest fields changed; missing={missing}, unknown={unknown}"
         )
     expected_scalars = {
         "schema": SCHEMA,
@@ -199,18 +185,13 @@ def load_lifecycle_manifest(
     }
     for field, expected in expected_scalars.items():
         if payload[field] != expected:
-            raise PublicModuleLifecycleError(
-                f"public-module lifecycle {field} changed"
-            )
+            raise PublicModuleLifecycleError(f"public-module lifecycle {field} changed")
 
     raw_stable_manifests = payload["stable_api_manifests"]
-    if (
-        isinstance(raw_stable_manifests, (str, bytes))
-        or not isinstance(raw_stable_manifests, Sequence)
+    if isinstance(raw_stable_manifests, (str, bytes)) or not isinstance(
+        raw_stable_manifests, Sequence
     ):
-        raise PublicModuleLifecycleError(
-            "stable_api_manifests must be a JSON array"
-        )
+        raise PublicModuleLifecycleError("stable_api_manifests must be a JSON array")
     stable_manifests = tuple(
         _repository_path(
             item,
@@ -219,9 +200,7 @@ def load_lifecycle_manifest(
         for index, item in enumerate(raw_stable_manifests)
     )
     if stable_manifests != STABLE_API_MANIFESTS:
-        raise PublicModuleLifecycleError(
-            "stable API manifest bindings changed"
-        )
+        raise PublicModuleLifecycleError("stable API manifest bindings changed")
     _repository_path(
         payload["root_export_migration"],
         name="root_export_migration",
@@ -265,22 +244,16 @@ def _root_owner_modules(path: Path) -> frozenset[str]:
     }
     for field, value in expected.items():
         if payload[field] != value:
-            raise PublicModuleLifecycleError(
-                f"root-export migration {field} changed"
-            )
+            raise PublicModuleLifecycleError(f"root-export migration {field} changed")
 
     raw_owners = payload["owners"]
-    if isinstance(raw_owners, (str, bytes)) or not isinstance(
-        raw_owners, Sequence
-    ):
+    if isinstance(raw_owners, (str, bytes)) or not isinstance(raw_owners, Sequence):
         raise PublicModuleLifecycleError(
             "root-export migration owners must be a JSON array"
         )
     owners: set[str] = set()
     for index, raw_owner in enumerate(raw_owners):
-        if not isinstance(raw_owner, Mapping) or set(
-            raw_owner
-        ) != _ROOT_OWNER_FIELDS:
+        if not isinstance(raw_owner, Mapping) or set(raw_owner) != _ROOT_OWNER_FIELDS:
             raise PublicModuleLifecycleError(
                 f"root-export owner {index} fields changed"
             )
@@ -293,9 +266,7 @@ def _root_owner_modules(path: Path) -> frozenset[str]:
                 f"duplicate root-export owner module: {module}"
             )
         symbols = raw_owner["symbols"]
-        if isinstance(symbols, (str, bytes)) or not isinstance(
-            symbols, Sequence
-        ):
+        if isinstance(symbols, (str, bytes)) or not isinstance(symbols, Sequence):
             raise PublicModuleLifecycleError(
                 f"root owners[{index}].symbols must be a JSON array"
             )
@@ -342,13 +313,9 @@ def validate_public_module_lifecycle(
     overlaps = {
         "stable/compatibility": sorted(stable & compatibility),
         "stable/experimental": sorted(stable & experimental),
-        "compatibility/experimental": sorted(
-            compatibility & experimental
-        ),
+        "compatibility/experimental": sorted(compatibility & experimental),
     }
-    active_overlaps = {
-        name: modules for name, modules in overlaps.items() if modules
-    }
+    active_overlaps = {name: modules for name, modules in overlaps.items() if modules}
     if active_overlaps:
         raise PublicModuleLifecycleError(
             f"lifecycle categories overlap: {active_overlaps}"
@@ -361,9 +328,7 @@ def validate_public_module_lifecycle(
         )
 
     root_owners = _root_owner_modules(root_migration_path)
-    non_root_lifecycle = sorted(
-        (compatibility | experimental) - root_owners
-    )
+    non_root_lifecycle = sorted((compatibility | experimental) - root_owners)
     if non_root_lifecycle:
         raise PublicModuleLifecycleError(
             "compatibility or experimental entries are not root owners: "
@@ -373,8 +338,7 @@ def validate_public_module_lifecycle(
     missing_root_owners = sorted(root_owners - classified)
     if missing_root_owners:
         raise PublicModuleLifecycleError(
-            "root owners are not fully classified: "
-            f"{missing_root_owners}"
+            f"root owners are not fully classified: {missing_root_owners}"
         )
 
     dataset_bound = {
