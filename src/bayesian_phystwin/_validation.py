@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TypeVar
 
 T = TypeVar("T")
@@ -35,29 +34,7 @@ def optional_instance(
     return value
 
 
-def instance_or_default(
-    value: object,
-    expected_type: type[T],
-    default_factory: Callable[[], T],
-    *,
-    name: str,
-) -> T:
-    """Resolve an omitted value without treating arbitrary falsey objects as absent."""
-
-    if value is None:
-        resolved = default_factory()
-        if not isinstance(resolved, expected_type):
-            raise TypeError(
-                f"{name} default factory must return a {expected_type.__name__}"
-            )
-        return resolved
-    if not isinstance(value, expected_type):
-        raise TypeError(f"{name} must be a {expected_type.__name__} or None")
-    return value
-
-
 __all__ = [
-    "instance_or_default",
     "lowercase_sha256",
     "optional_instance",
 ]
