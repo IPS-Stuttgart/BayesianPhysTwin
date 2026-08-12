@@ -1,0 +1,55 @@
+{
+  "claim_boundary": "Technical completion of the registered Deform360 v6 gsplat CUDA runtime after the native extension build reached PyTorch but the isolated environment lacked Ninja. It authorizes no source result, suffix access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "dependency_surface": "bayesian-phystwin[vision]",
+    "distribution": "ninja",
+    "distribution_version": "1.13.0",
+    "executable": "ninja",
+    "gsplat_version": "1.4.0",
+    "installation": "isolated-runtime-pip-resolution",
+    "jit_consumer": "torch.utils.cpp_extension",
+    "required_before_native_backend_probe": true
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:d4727c8ad965bc005e6ce9412a56779331258eac7fdde837caf15467a7c576b1",
+    "artifact_id": 9133317708,
+    "error_message": "Ninja is required to load C++ extensions",
+    "execution_receipt_id": "51d39d1bd939bd8b04d003dfefca89c7cb09548561fa401067859944b9388320",
+    "execution_receipt_sha256": "b4adfe591e3c5b06b4d4747311ccb320595080b7531ed4633abe3a1e01ef34f9",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "79689525a0cde848b44173d05a33877c2774153c",
+    "terminal_stage": "build-isolated-gpu-source-runtime",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31576200607
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_cuda_host_compiler_repair_id": "01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0",
+  "repair_id": "e64ff97aa573023502ac363a68231732c32e8af18b3257f7bd60b5f607c6ae25",
+  "repair_scope": {
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "loss_or_gate_changed": false,
+    "model_family_changed": false,
+    "model_size_changed": false,
+    "ninja_runtime_dependency_added": true,
+    "prob4d_role_changed": false,
+    "replacement_allowed": false,
+    "scientific_code_changed": false,
+    "source_cohort_changed": false,
+    "suffix_or_target_opened": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-gsplat-ninja-runtime-repair",
+  "schema_version": 1
+}
