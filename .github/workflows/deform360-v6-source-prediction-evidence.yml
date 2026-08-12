@@ -10,12 +10,15 @@ on:
       - "docs/deform360_v6_runtime_dependency_scope_repair_2026-08-12.md"
       - "docs/deform360_v6_gsplat_cuda_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_cuda_host_compiler_gnu11_repair_2026-08-12.md"
+      - "docs/deform360_v6_ninja_build_tool_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_gsplat_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_cuda_host_compiler_gnu11.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_ninja_build_tool.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh"
+      - "scripts/ci/bootstrap_deform360_v6_ninja.sh"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
@@ -33,12 +36,15 @@ on:
       - "docs/deform360_v6_runtime_dependency_scope_repair_2026-08-12.md"
       - "docs/deform360_v6_gsplat_cuda_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_cuda_host_compiler_gnu11_repair_2026-08-12.md"
+      - "docs/deform360_v6_ninja_build_tool_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_gsplat_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_cuda_host_compiler_gnu11.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_ninja_build_tool.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
       - "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh"
+      - "scripts/ci/bootstrap_deform360_v6_ninja.sh"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
@@ -86,6 +92,9 @@ env:
   CUDA_HOST_COMPILER_REPAIR_ID: 01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0
   CUDA_HOST_COMPILER_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_cuda_host_compiler_gnu11.json
   CUDA_HOST_COMPILER_REPAIR_SHA256: 4771a44c9c38158e54659ec2c420fe33e2c22f725adf977d891c7b9b978109e5
+  NINJA_BUILD_TOOL_REPAIR_ID: 4cee24a0db69c0f8902e6f58a492a0186be7b17c7f19a3e74ef06f3d781a6292
+  NINJA_BUILD_TOOL_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_ninja_build_tool.json
+  NINJA_BUILD_TOOL_REPAIR_SHA256: 576b134583437f76d264a4814cd357e80f9f413bed911519ae83a0787e15e4c1
   EXPECTED_PIP_CHECK_CONFLICT: "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
   NUMPY_VERSION: "1.26.4"
   PYRECEST_VERSION: "2.4.3"
@@ -134,6 +143,7 @@ jobs:
           python -m pip install -e ".[dev,graph]"
           files=(
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
+            tests/test_deform360_v6_ninja_build_tool_repair.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
             tests/test_deform360_v6_gsplat_cuda_runtime_repair.py
             tests/test_deform360_v6_processing_runtime_repair.py
@@ -146,10 +156,12 @@ jobs:
           python -m mypy \
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
           bash -n scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh
+          bash -n scripts/ci/bootstrap_deform360_v6_ninja.sh
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
             tests/test_deform360_v6_gsplat_cuda_runtime_repair.py \
+            tests/test_deform360_v6_ninja_build_tool_repair.py \
             tests/test_deform360_v6_processing_runtime_repair.py \
             tests/test_deform360_v6_runtime_dependency_scope_repair.py \
             tests/test_deform360_v6_runtime_bootstrap_receipt.py \
@@ -314,6 +326,9 @@ jobs:
           CUDA_HOST_COMPILER_REPAIR_ID: ${{ env.CUDA_HOST_COMPILER_REPAIR_ID }}
           CUDA_HOST_COMPILER_REPAIR_PATH: ${{ env.CUDA_HOST_COMPILER_REPAIR_PATH }}
           CUDA_HOST_COMPILER_REPAIR_SHA256: ${{ env.CUDA_HOST_COMPILER_REPAIR_SHA256 }}
+          NINJA_BUILD_TOOL_REPAIR_ID: ${{ env.NINJA_BUILD_TOOL_REPAIR_ID }}
+          NINJA_BUILD_TOOL_REPAIR_PATH: ${{ env.NINJA_BUILD_TOOL_REPAIR_PATH }}
+          NINJA_BUILD_TOOL_REPAIR_SHA256: ${{ env.NINJA_BUILD_TOOL_REPAIR_SHA256 }}
         run: |
           set -euo pipefail
           set +e
@@ -335,6 +350,7 @@ jobs:
               "setuptools==80.9.0" \
               "wheel==0.45.1"
             "${runtime_python}" -m pip install -e ".[graph,vision]"
+            source "scripts/ci/bootstrap_deform360_v6_ninja.sh" "${runtime}"
             test "$(sha256sum _deform360_physical/pyproject.toml | awk '{print $1}')" \
               = "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
             "${runtime_python}" -m pip install -e "./_deform360_physical[processing]"
@@ -397,6 +413,8 @@ jobs:
               raise SystemExit("nerfstudio runtime identity changed")
           if version("gsplat") != "1.4.0":
               raise SystemExit("gsplat runtime identity changed")
+          if version("ninja") != "1.13.0":
+              raise SystemExit("Ninja runtime identity changed")
           if "splatfacto" not in method_configs.method_configs:
               raise SystemExit("nerfstudio splatfacto method is unavailable")
           if not hasattr(exporter, "ExportGaussianSplat"):
@@ -409,6 +427,7 @@ jobs:
           print(version("nuscenes-devkit"))
           print(version("nerfstudio"))
           print(version("gsplat"))
+          print(version("ninja"))
           print(version("bayesian-phystwin"))
           print(version("deform360"))
           print(bayesian_phystwin.__file__)
@@ -673,6 +692,47 @@ jobs:
                   "repair_path": os.environ[
                       "CUDA_HOST_COMPILER_REPAIR_PATH"
                   ],
+              },
+              "runtime_ninja_build_tool_repair": {
+                  "activated": (
+                      os.environ.get("NINJA_PYTORCH_PROBE_PASSED") == "true"
+                  ),
+                  "registered_build_tool": {
+                      "distribution": "ninja",
+                      "executable_sha256": (
+                          "696f9628a79d9ce50314cf9556d7cd1a1d1ec52b8fd52828"
+                          "f6f9db1719565b67"
+                      ),
+                      "executable_version": (
+                          "1.13.0.git.kitware.jobserver-pipe-1"
+                      ),
+                      "version": "1.13.0",
+                      "wheel_sha256": (
+                          "fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293ba"
+                          "fcc7b7f8e6517dfa"
+                      ),
+                  },
+                  "observed_build_tool": {
+                      "executable_path": os.environ.get(
+                          "NINJA_EXECUTABLE_PATH"
+                      ),
+                      "executable_sha256": os.environ.get(
+                          "NINJA_EXECUTABLE_SHA256"
+                      ),
+                      "executable_version": os.environ.get(
+                          "NINJA_EXECUTABLE_VERSION"
+                      ),
+                      "pytorch_probe_passed": (
+                          os.environ.get("NINJA_PYTORCH_PROBE_PASSED")
+                          == "true"
+                      ),
+                      "version": os.environ.get("NINJA_DISTRIBUTION_VERSION"),
+                  },
+                  "repair_file_sha256": os.environ[
+                      "NINJA_BUILD_TOOL_REPAIR_SHA256"
+                  ],
+                  "repair_id": os.environ["NINJA_BUILD_TOOL_REPAIR_ID"],
+                  "repair_path": os.environ["NINJA_BUILD_TOOL_REPAIR_PATH"],
               },
               "runtime_dependency_scope_repair": {
                   "activated": False,
