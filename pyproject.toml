@@ -102,3 +102,32 @@ ignore_missing_imports = true
 no_implicit_optional = true
 show_error_codes = true
 warn_unused_ignores = true
+
+# Mypy's aggregate `strict` switch is not reliably scoped per module. Enumerate
+# the per-module-capable strict options for the supported artifact and
+# cross-repository integration boundary. The changed-source ratchet additionally
+# invokes `mypy --strict` on the same files, covering global-only strict flags.
+[[tool.mypy.overrides]]
+module = [
+    "bayesian_phystwin.run_manifest",
+    "bayesian_phystwin.repository_provenance",
+    "bayesian_phystwin.run_manifest_v2",
+    "bayesian_phystwin.claim_bundle_v1",
+    "bayesian_phystwin.evidence_decision_v1",
+    "bayesian_phystwin.physical_query_v1",
+    "bayesian_phystwin.v1",
+    "bayesian_phystwin.causal4d_provider_v1",
+    "bayesian_phystwin.prob4d_causal_lineage",
+]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+extra_checks = true
+no_implicit_reexport = true
+strict_equality = true
+warn_return_any = true
+warn_unused_ignores = true

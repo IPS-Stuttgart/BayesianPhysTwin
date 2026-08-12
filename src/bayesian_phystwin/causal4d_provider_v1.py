@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from . import causal4d_scientific_provider_v1 as _scientific_provider
 from .contracts.provider import (
@@ -108,7 +109,7 @@ class OfficialPhysTwinReplayProvider:
         if self._closed:
             raise RuntimeError("PhysTwin replay provider is closed")
 
-    def set_group_log_scales(self, values: np.ndarray) -> None:
+    def set_group_log_scales(self, values: NDArray[Any]) -> None:
         self._require_open()
         array = np.asarray(values, dtype=np.float32)
         target = self._simulator.group_log_scale_tensor
@@ -127,7 +128,7 @@ class OfficialPhysTwinReplayProvider:
             )
         self._wp.synchronize()
 
-    def set_controller_points(self, values: np.ndarray) -> None:
+    def set_controller_points(self, values: NDArray[Any]) -> None:
         self._require_open()
         array = np.asarray(values, dtype=np.float32)
         current = self._simulator.controller_points
@@ -143,7 +144,7 @@ class OfficialPhysTwinReplayProvider:
         ).contiguous()
         self._wp.synchronize()
 
-    def replay_initial(self, *, frame_count: int) -> tuple[np.ndarray, np.ndarray]:
+    def replay_initial(self, *, frame_count: int) -> tuple[NDArray[Any], NDArray[Any]]:
         self._require_open()
         if frame_count < 1:
             raise ValueError("frame_count must be positive")
@@ -152,16 +153,18 @@ class OfficialPhysTwinReplayProvider:
             self._wp,
             frame_count=frame_count,
         )
-        return np.asarray(positions), np.asarray(velocities)
+        position_array: NDArray[Any] = np.asarray(positions)
+        velocity_array: NDArray[Any] = np.asarray(velocities)
+        return position_array, velocity_array
 
     def replay_restart(
         self,
-        position_m: np.ndarray,
-        velocity_mps: np.ndarray,
+        position_m: NDArray[Any],
+        velocity_mps: NDArray[Any],
         *,
         start_frame: int,
         stop_frame: int,
-    ) -> np.ndarray:
+    ) -> NDArray[Any]:
         self._require_open()
         position = np.asarray(position_m, dtype=np.float32)
         velocity = np.asarray(velocity_mps, dtype=np.float32)
@@ -175,7 +178,7 @@ class OfficialPhysTwinReplayProvider:
             raise ValueError("restart state must be finite")
         if not 0 <= start_frame < stop_frame:
             raise ValueError("restart frame interval must be nonempty")
-        return np.asarray(
+        result: NDArray[Any] = np.asarray(
             rollout_restart(
                 self._simulator,
                 self._torch,
@@ -187,6 +190,7 @@ class OfficialPhysTwinReplayProvider:
                 device=self._device,
             )
         )
+        return result
 
     def close(self) -> None:
         if self._closed:

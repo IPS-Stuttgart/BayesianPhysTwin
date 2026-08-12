@@ -8,6 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from bayesian_phystwin import GaugeAwareBeliefConfig
+from bayesian_phystwin.causal4d_provider_v1 import causal4d_provider_manifest
 from bayesian_phystwin.inference.v1 import (
     ClaimBearingProb4DCandidateV1,
     CompleteBeliefGuardDecisionV1,
@@ -15,6 +16,9 @@ from bayesian_phystwin.inference.v1 import (
     PhysicalLinearizationV1,
     finalize_guarded_update,
     infer_prob4d_candidate,
+)
+from bayesian_phystwin.prob4d_causal_lineage import (
+    validate_prob4d_causal_observation_belief,
 )
 from bayesian_phystwin.v1 import ObservationBeliefV1, load_observation_belief
 
@@ -44,6 +48,20 @@ def infer_candidate(
     )
 
 
+def validate_prob4d_observation(
+    observation: ObservationBeliefV1,
+) -> dict[str, object]:
+    """Exercise the public Prob4D compatibility boundary."""
+
+    return validate_prob4d_causal_observation_belief(observation)
+
+
+def provider_manifest() -> dict[str, object]:
+    """Exercise the public Causal4D compatibility boundary."""
+
+    return causal4d_provider_manifest(provider_revision="0" * 40)
+
+
 def finalize_candidate(
     inference: ClaimBearingProb4DCandidateV1,
     baseline: ExternalBelief,
@@ -64,3 +82,4 @@ config = GaugeAwareBeliefConfig()
 assert_type(config, GaugeAwareBeliefConfig)
 assert_type(config.maximum_iterations, int)
 assert_type(load_validated_observation(Path("observation.npz")), ObservationBeliefV1)
+assert_type(provider_manifest(), dict[str, object])

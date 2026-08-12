@@ -23,16 +23,31 @@ from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
-# These targets have a clean mypy baseline and therefore remain unconditional.
-_ALWAYS_TYPE_TARGETS = (
+# Portable artifact validators and manifests that own the installed v1 boundary.
+_STRICT_ARTIFACT_TYPE_TARGETS = (
     "src/bayesian_phystwin/run_manifest.py",
     "src/bayesian_phystwin/repository_provenance.py",
     "src/bayesian_phystwin/run_manifest_v2.py",
+    "src/bayesian_phystwin/claim_bundle_v1.py",
+    "src/bayesian_phystwin/evidence_decision_v1.py",
+    "src/bayesian_phystwin/physical_query_v1.py",
+)
+
+# Public integration entry points used by independent, Prob4D, and Causal4D
+# consumers. Keep this tuple in both unconditional and strict checks.
+_STRICT_INTEGRATION_TYPE_TARGETS = (
+    "src/bayesian_phystwin/v1/__init__.py",
+    "src/bayesian_phystwin/causal4d_provider_v1.py",
+    "src/bayesian_phystwin/prob4d_causal_lineage.py",
+)
+
+# These targets have a clean mypy baseline and therefore remain unconditional.
+_ALWAYS_TYPE_TARGETS = (
+    *_STRICT_ARTIFACT_TYPE_TARGETS,
     "src/bayesian_phystwin/cli/main.py",
     "src/bayesian_phystwin/cli/run_manifest.py",
     "src/bayesian_phystwin/gauge_aware_belief.py",
-    "src/bayesian_phystwin/causal4d_provider_v1.py",
-    "src/bayesian_phystwin/prob4d_causal_lineage.py",
+    *_STRICT_INTEGRATION_TYPE_TARGETS,
 )
 
 # These stable scientific modules contain pre-existing typing debt. They are
@@ -47,12 +62,11 @@ _CHANGED_ONLY_TYPE_DEBT = (
 )
 
 _STRICT_TYPE_TARGETS = (
-    "src/bayesian_phystwin/run_manifest.py",
-    "src/bayesian_phystwin/repository_provenance.py",
-    "src/bayesian_phystwin/run_manifest_v2.py",
+    *_STRICT_ARTIFACT_TYPE_TARGETS,
     "src/bayesian_phystwin/cli/main.py",
     "src/bayesian_phystwin/cli/run_manifest.py",
     "src/bayesian_phystwin/gauge_aware_belief.py",
+    *_STRICT_INTEGRATION_TYPE_TARGETS,
 )
 
 
