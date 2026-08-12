@@ -1,8 +1,8 @@
 """Deliberately small, versioned integration API for Bayesian-PhysTwin.
 
-The legacy package root remains unchanged. New integrations should prefer this
-namespace so the portable contract surface can evolve independently from the
-research-oriented root API.
+The historical package root remains available through a lazy compatibility
+shim. New integrations should prefer this namespace so the portable contract
+surface can evolve independently from the research-oriented root API.
 """
 
 from ..claim_bundle_v1 import (

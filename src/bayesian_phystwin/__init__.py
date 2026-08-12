@@ -1,242 +1,255 @@
-"""Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
+"""Reliability-aware Bayesian utilities for PhysTwin-style experiments.
 
-from .bias_aware_belief import (
-    BiasAwareStateUpdateConfig,
-    BiasAwareStateUpdateResult,
-    GuardedUpdateDecision,
-    IdentifiableStateBasis,
-    PhysicalResponseBasis,
-    SourceGroupRegretBound,
-    SourceRegretCertificate,
-    apply_group_regret_bound,
-    apply_regret_guard,
-    build_physical_response_basis,
-    decode_bias_aware_state,
-    fit_source_group_regret_bound,
-    fit_source_regret_certificate,
-    restrict_state_basis_to_identifiable_subspace,
-)
-from .bias_aware_input_contract import update_bias_aware_state
-from .calibration import (
-    BinaryCalibrationMetrics,
-    FiniteGroupCalibrationDesign,
-    binary_calibration_metrics,
-    finite_group_conformal_rank,
-    maximum_finite_group_coverage,
-    minimum_groups_for_finite_conformal,
-    plan_finite_group_calibration,
-)
-from .claim_bearing_prob4d import (
-    build_claim_bearing_gauge_aware_batch_from_artifacts,
-    build_claim_bearing_gauge_aware_batch_from_observation_belief,
-)
-from .complete_belief_selection import (
-    CompleteBeliefGuardDecisionV1,
-    CompleteBeliefSelectionV1,
-    select_complete_belief,
-)
-from .deform360_calibration_factor_materializer import (
-    DEFAULT_DEFORM360_CALIBRATION_BELIEF_CONFIG,
-    DEFAULT_DEFORM360_KINEMATIC_CONTACT_CONFIG,
-    DEFORM360_CALIBRATION_FACTOR_SCHEMA,
-    DEFORM360_CALIBRATION_FACTOR_SEMANTICS,
-    DEFORM360_CALIBRATION_FACTOR_VERSION,
-    DEFORM360_KINEMATIC_CONTACT_SEMANTICS,
-    Deform360CalibrationFactorMaterializationV1,
-    Deform360KinematicContactConfig,
-    build_deform360_kinematic_contact_anchor,
-    materialize_deform360_calibration_factors,
-    publish_deform360_calibration_factor_materialization,
-)
-from .deform360_contact_anchor import (
-    DEFORM360_CONTACT_ANCHOR_SCHEMA,
-    DEFORM360_CONTACT_ANCHOR_SEMANTICS,
-    DEFORM360_CONTACT_ANCHOR_UNITS,
-    DEFORM360_CONTACT_ANCHOR_VERSION,
-    DEFORM360_SOURCE_REPOSITORY,
-    DEFORM360_TACTILE_SOURCE_UNITS,
-    Deform360ContactAnchorV1,
-    attach_deform360_contact_anchor,
-    load_deform360_contact_anchor,
-    save_deform360_contact_anchor,
-)
-from .deform360_public_contact_prefix import (
-    DEFORM360_CONTACT_PATIENCE_FRAMES,
-    DEFORM360_PUBLIC_CONTACT_PREFIX_CLAIM_BOUNDARY,
-    DEFORM360_PUBLIC_CONTACT_PREFIX_SCHEMA,
-    DEFORM360_PUBLIC_CONTACT_PREFIX_SEMANTICS,
-    DEFORM360_PUBLIC_CONTACT_PREFIX_VERSION,
-    DEFORM360_TACTILE_AXIS_MAP_CLAIM_BOUNDARY,
-    DEFORM360_TACTILE_AXIS_MAP_SCHEMA,
-    DEFORM360_TACTILE_AXIS_MAP_SEMANTICS,
-    DEFORM360_TACTILE_AXIS_MAP_VERSION,
-    TAXELS_PER_GRIPPER,
-    build_deform360_tactile_axis_map,
-    load_deform360_tactile_axis_map,
-    materialize_deform360_public_contact_prefix,
-    save_deform360_tactile_axis_map,
-    validate_deform360_public_contact_prefix,
-    validate_deform360_tactile_axis_map,
-)
-from .deform360_visual_provider_lock import (
-    DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID,
-    DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT,
-    DEFORM360_FINITE_GROUP_CONFORMAL_RANK,
-    DEFORM360_MOTIONCRAFTER_REPOSITORY,
-    DEFORM360_PROB4D_REPOSITORY,
-    DEFORM360_VISUAL_CALIBRATION_LOCK_SCHEMA,
-    DEFORM360_VISUAL_CALIBRATION_LOCK_SEMANTICS,
-    DEFORM360_VISUAL_CALIBRATION_LOCK_VERSION,
-    DEFORM360_VISUAL_PROVIDER_AMENDMENT_ID,
-    DEFORM360_VISUAL_PROVIDER_LOCK_SCHEMA,
-    DEFORM360_VISUAL_PROVIDER_LOCK_SEMANTICS,
-    DEFORM360_VISUAL_PROVIDER_LOCK_VERSION,
-    DEFORM360_VISUOTACTILE_PROTOCOL_ID,
-    Deform360VisualCalibrationLockV1,
-    Deform360VisualProviderLockV1,
-    load_deform360_visual_calibration_lock,
-    load_deform360_visual_provider_lock,
-    save_deform360_visual_calibration_lock,
-    save_deform360_visual_provider_lock,
-)
-from .drift_bias import (
-    RandomWalkBiasConfig,
-    RandomWalkBiasResult,
-    filter_random_walk_bias,
-    robust_random_walk_log_evidence_batch,
-)
-from .endpoint_model_average import (
-    DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
-    MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
-    ModelAveragedEndpointConfigV1,
-    ModelAveragedEndpointPosteriorV1,
-    ModelAveragedEndpointPredictionV1,
-    infer_model_averaged_endpoint,
-    predict_model_averaged_endpoint,
-)
-from .gauge_aware_belief import (
-    GaugeAwareBeliefConfig,
-    GaugeAwareBeliefResult,
-    GaugeAwareObservationBatch,
-    GaugeAwareSelection,
-    decode_gauge_aware_query,
-    select_gauge_aware_candidate,
-    update_gauge_aware_belief,
-)
-from .group_sandwich_covariance import (
-    GROUP_SANDWICH_COVARIANCE_SCHEMA,
-    GROUP_SANDWICH_COVARIANCE_VERSION,
-    SMALL_SAMPLE_CORRECTIONS,
-    GroupSandwichCovarianceResultV1,
-    SmallSampleCorrection,
-    estimate_group_sandwich_covariance,
-)
-from .grouped_conformal import (
-    ConformalScore,
-    GroupedConformalResult,
-    finite_group_conformal_quantile,
-    group_max_nonconformity_scores,
-    grouped_conformal_upper_bounds,
-)
-from .grouped_likelihood import (
-    CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS,
-    COVARIANCE_MARGINAL_SCORE_SEMANTICS,
-    ConditionalGroupedStudentTObjectiveConfig,
-    ConditionalGroupedStudentTObjectiveResult,
-    GroupedStudentTLikelihoodConfig,
-    GroupedStudentTLikelihoodResult,
-    conditional_grouped_student_t_mixture_objective,
-    grouped_student_t_mixture_likelihood,
-)
-from .material_identity_marginalization import (
-    MaterialIdentityLikelihoodEvidenceV1,
-    MaterialIdentityStatePosteriorV1,
-    Prob4DMaterialIdentityMixtureV1,
-    load_prob4d_material_identity_mixture,
-    marginalize_material_identity_state,
-    material_identity_candidate_lineage,
-    validate_prob4d_material_identity_mixture,
-)
-from .nuisance_aware_information import (
-    GreedyNuisanceAwareSelection,
-    NuisanceAwareInformationState,
-    NuisanceAwareInformationUpdate,
-    greedy_nuisance_aware_selection,
-)
-from .observation_belief import (
-    OBSERVATION_BELIEF_SCHEMA,
-    OBSERVATION_BELIEF_VERSION,
-    ObservationBeliefV1,
-    load_observation_belief,
-    save_observation_belief,
-)
-from .observation_belief_gauge_adapter import (
-    ObservationBeliefGaugeAdapterResult,
-    build_gauge_aware_batch_from_observation_belief,
-    centered_view_translation_bias_jacobian,
-    global_translation_bias_jacobian,
-)
-from .parameter_posterior import ParameterEnsemble
-from .physical_linearization import (
-    NonlinearClosureV1,
-    PhysicalLinearizationV1,
-    build_gauge_aware_batch_from_artifacts,
-    evaluate_nonlinear_closure,
-    load_physical_linearization,
-    save_physical_linearization,
-    validate_observation_linearization_alignment,
-)
-from .phystwin_adapter import (
-    PhysTwinExportConfig,
-    PhysTwinMotionCueConfig,
-    build_phystwin_motion_cues,
-    export_phystwin_residuals,
-    write_export_summary,
-)
-from .prior_aware_gauge_belief import (
-    PriorAwareGaugeConfigV1,
-    update_prior_aware_gauge_belief,
-)
-from .prob4d_causal_lineage import (
-    PROB4D_CAUSAL_LINEAGE_VERSION,
-    PROB4D_CAUSAL_STREAM_ID,
-    PROB4D_SOURCE_REPOSITORY,
-    is_prob4d_causal_observation_belief,
-    validate_claim_bearing_prob4d_observation_belief,
-    validate_prob4d_causal_observation_belief,
-)
-from .prospective_prob4d_update import (
-    CLAIM_BEARING_PROB4D_UPDATE_VERSION,
-    ClaimBearingProb4DUpdateV1,
-    update_claim_bearing_prob4d_from_artifacts,
-)
-from .pseudo_measurements import (
-    PseudoMeasurementBatch,
-    ReliabilityConfig,
-    ReliabilityResult,
-    measurement_variance,
-    reliability_weighted_loss,
-    score_reliability,
-)
-from .residual_replay import ResidualReplayResult, replay_residual_csv
-from .robust_likelihood import (
-    RobustLikelihoodConfig,
-    RobustLikelihoodResult,
-    robust_mixture_likelihood,
-)
-from .structured_reliability import (
-    MARKOV_TIME_MODE_INTEGER_STEPS,
-    MARKOV_TIME_MODE_ORDER_ONLY,
-    MarkovReliabilityConfig,
-    MarkovReliabilityResult,
-    markov_log_evidence_batch,
-    smooth_markov_reliability,
-)
-from .synthetic_benchmark import (
-    SyntheticBenchmarkConfig,
-    run_synthetic_benchmark,
-    run_synthetic_case,
-)
+The historical package-root export surface is retained as a lazy compatibility
+shim. New integrations should import from :mod:`bayesian_phystwin.v1` or from
+the owning module recorded in ``api/root-export-migration-v1.json``.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from importlib import import_module
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Final
+
+if TYPE_CHECKING:  # pragma: no cover - static typing only
+    from .bias_aware_belief import (
+        BiasAwareStateUpdateConfig,
+        BiasAwareStateUpdateResult,
+        GuardedUpdateDecision,
+        IdentifiableStateBasis,
+        PhysicalResponseBasis,
+        SourceGroupRegretBound,
+        SourceRegretCertificate,
+        apply_group_regret_bound,
+        apply_regret_guard,
+        build_physical_response_basis,
+        decode_bias_aware_state,
+        fit_source_group_regret_bound,
+        fit_source_regret_certificate,
+        restrict_state_basis_to_identifiable_subspace,
+    )
+    from .bias_aware_input_contract import update_bias_aware_state
+    from .calibration import (
+        BinaryCalibrationMetrics,
+        FiniteGroupCalibrationDesign,
+        binary_calibration_metrics,
+        finite_group_conformal_rank,
+        maximum_finite_group_coverage,
+        minimum_groups_for_finite_conformal,
+        plan_finite_group_calibration,
+    )
+    from .claim_bearing_prob4d import (
+        build_claim_bearing_gauge_aware_batch_from_artifacts,
+        build_claim_bearing_gauge_aware_batch_from_observation_belief,
+    )
+    from .complete_belief_selection import (
+        CompleteBeliefGuardDecisionV1,
+        CompleteBeliefSelectionV1,
+        select_complete_belief,
+    )
+    from .deform360_calibration_factor_materializer import (
+        DEFAULT_DEFORM360_CALIBRATION_BELIEF_CONFIG,
+        DEFAULT_DEFORM360_KINEMATIC_CONTACT_CONFIG,
+        DEFORM360_CALIBRATION_FACTOR_SCHEMA,
+        DEFORM360_CALIBRATION_FACTOR_SEMANTICS,
+        DEFORM360_CALIBRATION_FACTOR_VERSION,
+        DEFORM360_KINEMATIC_CONTACT_SEMANTICS,
+        Deform360CalibrationFactorMaterializationV1,
+        Deform360KinematicContactConfig,
+        build_deform360_kinematic_contact_anchor,
+        materialize_deform360_calibration_factors,
+        publish_deform360_calibration_factor_materialization,
+    )
+    from .deform360_contact_anchor import (
+        DEFORM360_CONTACT_ANCHOR_SCHEMA,
+        DEFORM360_CONTACT_ANCHOR_SEMANTICS,
+        DEFORM360_CONTACT_ANCHOR_UNITS,
+        DEFORM360_CONTACT_ANCHOR_VERSION,
+        DEFORM360_SOURCE_REPOSITORY,
+        DEFORM360_TACTILE_SOURCE_UNITS,
+        Deform360ContactAnchorV1,
+        attach_deform360_contact_anchor,
+        load_deform360_contact_anchor,
+        save_deform360_contact_anchor,
+    )
+    from .deform360_public_contact_prefix import (
+        DEFORM360_CONTACT_PATIENCE_FRAMES,
+        DEFORM360_PUBLIC_CONTACT_PREFIX_CLAIM_BOUNDARY,
+        DEFORM360_PUBLIC_CONTACT_PREFIX_SCHEMA,
+        DEFORM360_PUBLIC_CONTACT_PREFIX_SEMANTICS,
+        DEFORM360_PUBLIC_CONTACT_PREFIX_VERSION,
+        DEFORM360_TACTILE_AXIS_MAP_CLAIM_BOUNDARY,
+        DEFORM360_TACTILE_AXIS_MAP_SCHEMA,
+        DEFORM360_TACTILE_AXIS_MAP_SEMANTICS,
+        DEFORM360_TACTILE_AXIS_MAP_VERSION,
+        TAXELS_PER_GRIPPER,
+        build_deform360_tactile_axis_map,
+        load_deform360_tactile_axis_map,
+        materialize_deform360_public_contact_prefix,
+        save_deform360_tactile_axis_map,
+        validate_deform360_public_contact_prefix,
+        validate_deform360_tactile_axis_map,
+    )
+    from .deform360_visual_provider_lock import (
+        DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID,
+        DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT,
+        DEFORM360_FINITE_GROUP_CONFORMAL_RANK,
+        DEFORM360_MOTIONCRAFTER_REPOSITORY,
+        DEFORM360_PROB4D_REPOSITORY,
+        DEFORM360_VISUAL_CALIBRATION_LOCK_SCHEMA,
+        DEFORM360_VISUAL_CALIBRATION_LOCK_SEMANTICS,
+        DEFORM360_VISUAL_CALIBRATION_LOCK_VERSION,
+        DEFORM360_VISUAL_PROVIDER_AMENDMENT_ID,
+        DEFORM360_VISUAL_PROVIDER_LOCK_SCHEMA,
+        DEFORM360_VISUAL_PROVIDER_LOCK_SEMANTICS,
+        DEFORM360_VISUAL_PROVIDER_LOCK_VERSION,
+        DEFORM360_VISUOTACTILE_PROTOCOL_ID,
+        Deform360VisualCalibrationLockV1,
+        Deform360VisualProviderLockV1,
+        load_deform360_visual_calibration_lock,
+        load_deform360_visual_provider_lock,
+        save_deform360_visual_calibration_lock,
+        save_deform360_visual_provider_lock,
+    )
+    from .drift_bias import (
+        RandomWalkBiasConfig,
+        RandomWalkBiasResult,
+        filter_random_walk_bias,
+        robust_random_walk_log_evidence_batch,
+    )
+    from .endpoint_model_average import (
+        DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1,
+        MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION,
+        ModelAveragedEndpointConfigV1,
+        ModelAveragedEndpointPosteriorV1,
+        ModelAveragedEndpointPredictionV1,
+        infer_model_averaged_endpoint,
+        predict_model_averaged_endpoint,
+    )
+    from .gauge_aware_belief import (
+        GaugeAwareBeliefConfig,
+        GaugeAwareBeliefResult,
+        GaugeAwareObservationBatch,
+        GaugeAwareSelection,
+        decode_gauge_aware_query,
+        select_gauge_aware_candidate,
+        update_gauge_aware_belief,
+    )
+    from .group_sandwich_covariance import (
+        GROUP_SANDWICH_COVARIANCE_SCHEMA,
+        GROUP_SANDWICH_COVARIANCE_VERSION,
+        SMALL_SAMPLE_CORRECTIONS,
+        GroupSandwichCovarianceResultV1,
+        SmallSampleCorrection,
+        estimate_group_sandwich_covariance,
+    )
+    from .grouped_conformal import (
+        ConformalScore,
+        GroupedConformalResult,
+        finite_group_conformal_quantile,
+        group_max_nonconformity_scores,
+        grouped_conformal_upper_bounds,
+    )
+    from .grouped_likelihood import (
+        CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS,
+        COVARIANCE_MARGINAL_SCORE_SEMANTICS,
+        ConditionalGroupedStudentTObjectiveConfig,
+        ConditionalGroupedStudentTObjectiveResult,
+        GroupedStudentTLikelihoodConfig,
+        GroupedStudentTLikelihoodResult,
+        conditional_grouped_student_t_mixture_objective,
+        grouped_student_t_mixture_likelihood,
+    )
+    from .material_identity_marginalization import (
+        MaterialIdentityLikelihoodEvidenceV1,
+        MaterialIdentityStatePosteriorV1,
+        Prob4DMaterialIdentityMixtureV1,
+        load_prob4d_material_identity_mixture,
+        marginalize_material_identity_state,
+        material_identity_candidate_lineage,
+        validate_prob4d_material_identity_mixture,
+    )
+    from .nuisance_aware_information import (
+        GreedyNuisanceAwareSelection,
+        NuisanceAwareInformationState,
+        NuisanceAwareInformationUpdate,
+        greedy_nuisance_aware_selection,
+    )
+    from .observation_belief import (
+        OBSERVATION_BELIEF_SCHEMA,
+        OBSERVATION_BELIEF_VERSION,
+        ObservationBeliefV1,
+        load_observation_belief,
+        save_observation_belief,
+    )
+    from .observation_belief_gauge_adapter import (
+        ObservationBeliefGaugeAdapterResult,
+        build_gauge_aware_batch_from_observation_belief,
+        centered_view_translation_bias_jacobian,
+        global_translation_bias_jacobian,
+    )
+    from .parameter_posterior import ParameterEnsemble
+    from .physical_linearization import (
+        NonlinearClosureV1,
+        PhysicalLinearizationV1,
+        build_gauge_aware_batch_from_artifacts,
+        evaluate_nonlinear_closure,
+        load_physical_linearization,
+        save_physical_linearization,
+        validate_observation_linearization_alignment,
+    )
+    from .phystwin_adapter import (
+        PhysTwinExportConfig,
+        PhysTwinMotionCueConfig,
+        build_phystwin_motion_cues,
+        export_phystwin_residuals,
+        write_export_summary,
+    )
+    from .prior_aware_gauge_belief import (
+        PriorAwareGaugeConfigV1,
+        update_prior_aware_gauge_belief,
+    )
+    from .prob4d_causal_lineage import (
+        PROB4D_CAUSAL_LINEAGE_VERSION,
+        PROB4D_CAUSAL_STREAM_ID,
+        PROB4D_SOURCE_REPOSITORY,
+        is_prob4d_causal_observation_belief,
+        validate_claim_bearing_prob4d_observation_belief,
+        validate_prob4d_causal_observation_belief,
+    )
+    from .prospective_prob4d_update import (
+        CLAIM_BEARING_PROB4D_UPDATE_VERSION,
+        ClaimBearingProb4DUpdateV1,
+        update_claim_bearing_prob4d_from_artifacts,
+    )
+    from .pseudo_measurements import (
+        PseudoMeasurementBatch,
+        ReliabilityConfig,
+        ReliabilityResult,
+        measurement_variance,
+        reliability_weighted_loss,
+        score_reliability,
+    )
+    from .residual_replay import ResidualReplayResult, replay_residual_csv
+    from .robust_likelihood import (
+        RobustLikelihoodConfig,
+        RobustLikelihoodResult,
+        robust_mixture_likelihood,
+    )
+    from .structured_reliability import (
+        MARKOV_TIME_MODE_INTEGER_STEPS,
+        MARKOV_TIME_MODE_ORDER_ONLY,
+        MarkovReliabilityConfig,
+        MarkovReliabilityResult,
+        markov_log_evidence_batch,
+        smooth_markov_reliability,
+    )
+    from .synthetic_benchmark import (
+        SyntheticBenchmarkConfig,
+        run_synthetic_benchmark,
+        run_synthetic_case,
+    )
 
 __all__ = [
     "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
@@ -424,3 +437,355 @@ __all__ = [
     "validate_prob4d_material_identity_mixture",
     "write_export_summary",
 ]
+
+_ROOT_EXPORT_GROUPS: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
+    (
+        "bias_aware_belief",
+        (
+            "BiasAwareStateUpdateConfig",
+            "BiasAwareStateUpdateResult",
+            "GuardedUpdateDecision",
+            "IdentifiableStateBasis",
+            "PhysicalResponseBasis",
+            "SourceGroupRegretBound",
+            "SourceRegretCertificate",
+            "apply_group_regret_bound",
+            "apply_regret_guard",
+            "build_physical_response_basis",
+            "decode_bias_aware_state",
+            "fit_source_group_regret_bound",
+            "fit_source_regret_certificate",
+            "restrict_state_basis_to_identifiable_subspace",
+        ),
+    ),
+    ("bias_aware_input_contract", ("update_bias_aware_state",)),
+    (
+        "calibration",
+        (
+            "BinaryCalibrationMetrics",
+            "FiniteGroupCalibrationDesign",
+            "binary_calibration_metrics",
+            "finite_group_conformal_rank",
+            "maximum_finite_group_coverage",
+            "minimum_groups_for_finite_conformal",
+            "plan_finite_group_calibration",
+        ),
+    ),
+    (
+        "claim_bearing_prob4d",
+        (
+            "build_claim_bearing_gauge_aware_batch_from_artifacts",
+            "build_claim_bearing_gauge_aware_batch_from_observation_belief",
+        ),
+    ),
+    (
+        "complete_belief_selection",
+        (
+            "CompleteBeliefGuardDecisionV1",
+            "CompleteBeliefSelectionV1",
+            "select_complete_belief",
+        ),
+    ),
+    (
+        "deform360_calibration_factor_materializer",
+        (
+            "DEFAULT_DEFORM360_CALIBRATION_BELIEF_CONFIG",
+            "DEFAULT_DEFORM360_KINEMATIC_CONTACT_CONFIG",
+            "DEFORM360_CALIBRATION_FACTOR_SCHEMA",
+            "DEFORM360_CALIBRATION_FACTOR_SEMANTICS",
+            "DEFORM360_CALIBRATION_FACTOR_VERSION",
+            "DEFORM360_KINEMATIC_CONTACT_SEMANTICS",
+            "Deform360CalibrationFactorMaterializationV1",
+            "Deform360KinematicContactConfig",
+            "build_deform360_kinematic_contact_anchor",
+            "materialize_deform360_calibration_factors",
+            "publish_deform360_calibration_factor_materialization",
+        ),
+    ),
+    (
+        "deform360_contact_anchor",
+        (
+            "DEFORM360_CONTACT_ANCHOR_SCHEMA",
+            "DEFORM360_CONTACT_ANCHOR_SEMANTICS",
+            "DEFORM360_CONTACT_ANCHOR_UNITS",
+            "DEFORM360_CONTACT_ANCHOR_VERSION",
+            "DEFORM360_SOURCE_REPOSITORY",
+            "DEFORM360_TACTILE_SOURCE_UNITS",
+            "Deform360ContactAnchorV1",
+            "attach_deform360_contact_anchor",
+            "load_deform360_contact_anchor",
+            "save_deform360_contact_anchor",
+        ),
+    ),
+    (
+        "deform360_public_contact_prefix",
+        (
+            "DEFORM360_CONTACT_PATIENCE_FRAMES",
+            "DEFORM360_PUBLIC_CONTACT_PREFIX_CLAIM_BOUNDARY",
+            "DEFORM360_PUBLIC_CONTACT_PREFIX_SCHEMA",
+            "DEFORM360_PUBLIC_CONTACT_PREFIX_SEMANTICS",
+            "DEFORM360_PUBLIC_CONTACT_PREFIX_VERSION",
+            "DEFORM360_TACTILE_AXIS_MAP_CLAIM_BOUNDARY",
+            "DEFORM360_TACTILE_AXIS_MAP_SCHEMA",
+            "DEFORM360_TACTILE_AXIS_MAP_SEMANTICS",
+            "DEFORM360_TACTILE_AXIS_MAP_VERSION",
+            "TAXELS_PER_GRIPPER",
+            "build_deform360_tactile_axis_map",
+            "load_deform360_tactile_axis_map",
+            "materialize_deform360_public_contact_prefix",
+            "save_deform360_tactile_axis_map",
+            "validate_deform360_public_contact_prefix",
+            "validate_deform360_tactile_axis_map",
+        ),
+    ),
+    (
+        "deform360_visual_provider_lock",
+        (
+            "DEFORM360_FINITE_GROUP_CALIBRATION_DESIGN_ID",
+            "DEFORM360_FINITE_GROUP_CALIBRATION_GROUP_COUNT",
+            "DEFORM360_FINITE_GROUP_CONFORMAL_RANK",
+            "DEFORM360_MOTIONCRAFTER_REPOSITORY",
+            "DEFORM360_PROB4D_REPOSITORY",
+            "DEFORM360_VISUAL_CALIBRATION_LOCK_SCHEMA",
+            "DEFORM360_VISUAL_CALIBRATION_LOCK_SEMANTICS",
+            "DEFORM360_VISUAL_CALIBRATION_LOCK_VERSION",
+            "DEFORM360_VISUAL_PROVIDER_AMENDMENT_ID",
+            "DEFORM360_VISUAL_PROVIDER_LOCK_SCHEMA",
+            "DEFORM360_VISUAL_PROVIDER_LOCK_SEMANTICS",
+            "DEFORM360_VISUAL_PROVIDER_LOCK_VERSION",
+            "DEFORM360_VISUOTACTILE_PROTOCOL_ID",
+            "Deform360VisualCalibrationLockV1",
+            "Deform360VisualProviderLockV1",
+            "load_deform360_visual_calibration_lock",
+            "load_deform360_visual_provider_lock",
+            "save_deform360_visual_calibration_lock",
+            "save_deform360_visual_provider_lock",
+        ),
+    ),
+    (
+        "drift_bias",
+        (
+            "RandomWalkBiasConfig",
+            "RandomWalkBiasResult",
+            "filter_random_walk_bias",
+            "robust_random_walk_log_evidence_batch",
+        ),
+    ),
+    (
+        "endpoint_model_average",
+        (
+            "DEFAULT_MODEL_AVERAGED_ENDPOINT_CONFIG_V1",
+            "MODEL_AVERAGED_ENDPOINT_CONTRACT_VERSION",
+            "ModelAveragedEndpointConfigV1",
+            "ModelAveragedEndpointPosteriorV1",
+            "ModelAveragedEndpointPredictionV1",
+            "infer_model_averaged_endpoint",
+            "predict_model_averaged_endpoint",
+        ),
+    ),
+    (
+        "gauge_aware_belief",
+        (
+            "GaugeAwareBeliefConfig",
+            "GaugeAwareBeliefResult",
+            "GaugeAwareObservationBatch",
+            "GaugeAwareSelection",
+            "decode_gauge_aware_query",
+            "select_gauge_aware_candidate",
+            "update_gauge_aware_belief",
+        ),
+    ),
+    (
+        "group_sandwich_covariance",
+        (
+            "GROUP_SANDWICH_COVARIANCE_SCHEMA",
+            "GROUP_SANDWICH_COVARIANCE_VERSION",
+            "SMALL_SAMPLE_CORRECTIONS",
+            "GroupSandwichCovarianceResultV1",
+            "SmallSampleCorrection",
+            "estimate_group_sandwich_covariance",
+        ),
+    ),
+    (
+        "grouped_conformal",
+        (
+            "ConformalScore",
+            "GroupedConformalResult",
+            "finite_group_conformal_quantile",
+            "group_max_nonconformity_scores",
+            "grouped_conformal_upper_bounds",
+        ),
+    ),
+    (
+        "grouped_likelihood",
+        (
+            "CONDITIONAL_GROUP_OBJECTIVE_SEMANTICS",
+            "COVARIANCE_MARGINAL_SCORE_SEMANTICS",
+            "ConditionalGroupedStudentTObjectiveConfig",
+            "ConditionalGroupedStudentTObjectiveResult",
+            "GroupedStudentTLikelihoodConfig",
+            "GroupedStudentTLikelihoodResult",
+            "conditional_grouped_student_t_mixture_objective",
+            "grouped_student_t_mixture_likelihood",
+        ),
+    ),
+    (
+        "material_identity_marginalization",
+        (
+            "MaterialIdentityLikelihoodEvidenceV1",
+            "MaterialIdentityStatePosteriorV1",
+            "Prob4DMaterialIdentityMixtureV1",
+            "load_prob4d_material_identity_mixture",
+            "marginalize_material_identity_state",
+            "material_identity_candidate_lineage",
+            "validate_prob4d_material_identity_mixture",
+        ),
+    ),
+    (
+        "nuisance_aware_information",
+        (
+            "GreedyNuisanceAwareSelection",
+            "NuisanceAwareInformationState",
+            "NuisanceAwareInformationUpdate",
+            "greedy_nuisance_aware_selection",
+        ),
+    ),
+    (
+        "observation_belief",
+        (
+            "OBSERVATION_BELIEF_SCHEMA",
+            "OBSERVATION_BELIEF_VERSION",
+            "ObservationBeliefV1",
+            "load_observation_belief",
+            "save_observation_belief",
+        ),
+    ),
+    (
+        "observation_belief_gauge_adapter",
+        (
+            "ObservationBeliefGaugeAdapterResult",
+            "build_gauge_aware_batch_from_observation_belief",
+            "centered_view_translation_bias_jacobian",
+            "global_translation_bias_jacobian",
+        ),
+    ),
+    ("parameter_posterior", ("ParameterEnsemble",)),
+    (
+        "physical_linearization",
+        (
+            "NonlinearClosureV1",
+            "PhysicalLinearizationV1",
+            "build_gauge_aware_batch_from_artifacts",
+            "evaluate_nonlinear_closure",
+            "load_physical_linearization",
+            "save_physical_linearization",
+            "validate_observation_linearization_alignment",
+        ),
+    ),
+    (
+        "phystwin_adapter",
+        (
+            "PhysTwinExportConfig",
+            "PhysTwinMotionCueConfig",
+            "build_phystwin_motion_cues",
+            "export_phystwin_residuals",
+            "write_export_summary",
+        ),
+    ),
+    (
+        "prior_aware_gauge_belief",
+        (
+            "PriorAwareGaugeConfigV1",
+            "update_prior_aware_gauge_belief",
+        ),
+    ),
+    (
+        "prob4d_causal_lineage",
+        (
+            "PROB4D_CAUSAL_LINEAGE_VERSION",
+            "PROB4D_CAUSAL_STREAM_ID",
+            "PROB4D_SOURCE_REPOSITORY",
+            "is_prob4d_causal_observation_belief",
+            "validate_claim_bearing_prob4d_observation_belief",
+            "validate_prob4d_causal_observation_belief",
+        ),
+    ),
+    (
+        "prospective_prob4d_update",
+        (
+            "CLAIM_BEARING_PROB4D_UPDATE_VERSION",
+            "ClaimBearingProb4DUpdateV1",
+            "update_claim_bearing_prob4d_from_artifacts",
+        ),
+    ),
+    (
+        "pseudo_measurements",
+        (
+            "PseudoMeasurementBatch",
+            "ReliabilityConfig",
+            "ReliabilityResult",
+            "measurement_variance",
+            "reliability_weighted_loss",
+            "score_reliability",
+        ),
+    ),
+    (
+        "residual_replay",
+        (
+            "ResidualReplayResult",
+            "replay_residual_csv",
+        ),
+    ),
+    (
+        "robust_likelihood",
+        (
+            "RobustLikelihoodConfig",
+            "RobustLikelihoodResult",
+            "robust_mixture_likelihood",
+        ),
+    ),
+    (
+        "structured_reliability",
+        (
+            "MARKOV_TIME_MODE_INTEGER_STEPS",
+            "MARKOV_TIME_MODE_ORDER_ONLY",
+            "MarkovReliabilityConfig",
+            "MarkovReliabilityResult",
+            "markov_log_evidence_batch",
+            "smooth_markov_reliability",
+        ),
+    ),
+    (
+        "synthetic_benchmark",
+        (
+            "SyntheticBenchmarkConfig",
+            "run_synthetic_benchmark",
+            "run_synthetic_case",
+        ),
+    ),
+)
+_ROOT_EXPORT_MODULES: Final[Mapping[str, str]] = MappingProxyType(
+    {
+        symbol: module_name
+        for module_name, symbols in _ROOT_EXPORT_GROUPS
+        for symbol in symbols
+    }
+)
+
+
+def __getattr__(name: str) -> Any:
+    """Resolve one historical package-root export on first use."""
+
+    module_name = _ROOT_EXPORT_MODULES.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    value = getattr(import_module(f".{module_name}", __name__), name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    """Expose the complete compatibility surface without importing it."""
+
+    return sorted(set(globals()) | set(__all__))
