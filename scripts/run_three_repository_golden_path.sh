@@ -9,8 +9,9 @@ Usage:
 
 Requires clean Git checkouts at exact commits. Builds one wheel from each
 repository, installs only those wheels into a fresh virtual environment, copies
-the integration tests outside every source tree, and runs them in Python
-isolated mode.
+repository-owned integration tests outside every source tree, and runs each
+explicit test file in its own isolated Pytest process. Only the staged test
+file's directory is added for sibling helper imports; source trees remain hidden.
 EOF
 }
 
@@ -110,6 +111,8 @@ TEST_VENV="${WORK_ROOT}/test-venv"
 WHEELHOUSE="${WORK_ROOT}/wheelhouse"
 RUN_ROOT="${WORK_ROOT}/run"
 SOURCE_ROOT="${WORK_ROOT}/sources"
+TEST_PATH_LIST="${WORK_ROOT}/integration-test-paths.txt"
+TEST_INVENTORY="${WORK_ROOT}/integration-test-inventory.json"
 BPT_BUILD_ROOT="${SOURCE_ROOT}/bayesian-phystwin"
 PROB4D_BUILD_ROOT="${SOURCE_ROOT}/prob4d"
 CAUSAL4D_BUILD_ROOT="${SOURCE_ROOT}/causal4d"
@@ -171,15 +174,17 @@ python -m venv "${TEST_VENV}"
 env -u PYTHONPATH PYTHONNOUSERSITE=1 \
   "${TEST_VENV}/bin/python" -I -c 'from importlib import import_module; expected="a62c693a14c227daa1f4c8db850e691a1d0081df0c853cf0174c33d0b8504ce9"; names=("prob4d.observation_contract_bundle","bayesian_phystwin.observation_contract_bundle","causal4d.observation_contract_bundle"); observed={name:import_module(name).observation_contract_bundle_manifest()["bundle_sha256"] for name in names}; assert set(observed.values())=={expected}, observed; print(f"verified shared observation-contract bundle {expected}")'
 
-shopt -s nullglob
-integration_tests=(
-  "${BPT_BUILD_ROOT}"/integration_tests/test_three_repository_*.py
-)
-if (( ${#integration_tests[@]} == 0 )); then
-  echo "No three-repository integration tests were found." >&2
-  exit 1
-fi
-cp "${integration_tests[@]}" "${RUN_ROOT}/"
+"${TEST_VENV}/bin/python" \
+  "${BPT_BUILD_ROOT}/scripts/discover_three_repository_tests.py" \
+  --source "bayesian_phystwin=${BPT_BUILD_ROOT}" \
+  --source "prob4d=${PROB4D_BUILD_ROOT}" \
+  --source "causal4d=${CAUSAL4D_BUILD_ROOT}" \
+  --output-root "${RUN_ROOT}" \
+  --path-list "${TEST_PATH_LIST}" \
+  --inventory "${TEST_INVENTORY}"
+mapfile -t integration_tests < "${TEST_PATH_LIST}"
+cat "${TEST_INVENTORY}"
+export THREE_REPOSITORY_INTEGRATION_TEST_INVENTORY="${TEST_INVENTORY}"
 
 export THREE_REPO_SOURCE_ROOTS="$({
   printf '%s' "${BPT_ROOT}"
@@ -190,8 +195,11 @@ export THREE_REPO_SOURCE_ROOTS="$({
 })"
 
 cd "${RUN_ROOT}"
-env -u PYTHONPATH \
-  PYTHONNOUSERSITE=1 \
-  "${TEST_VENV}/bin/python" -I -m pytest \
-  -q \
-  test_three_repository_*.py
+for integration_test in "${integration_tests[@]}"; do
+  env -u PYTHONPATH \
+    PYTHONNOUSERSITE=1 \
+    "${TEST_VENV}/bin/python" -I -m pytest \
+    -q \
+    --import-mode=prepend \
+    "${integration_test}"
+done

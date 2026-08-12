@@ -1,0 +1,73 @@
+name: Repository-owned three-repository test staging
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/three-repository-test-discovery.yml"
+      - "scripts/discover_three_repository_tests.py"
+      - "scripts/run_three_repository_golden_path.sh"
+      - "tests/test_three_repository_test_discovery.py"
+      - "tests/test_three_repository_multi_owner_policy.py"
+      - "docs/repository-owned-three-repository-tests.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/three-repository-test-discovery.yml"
+      - "scripts/discover_three_repository_tests.py"
+      - "scripts/run_three_repository_golden_path.sh"
+      - "tests/test_three_repository_test_discovery.py"
+      - "tests/test_three_repository_multi_owner_policy.py"
+      - "docs/repository-owned-three-repository-tests.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-owned-three-repository-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate discovery and staging / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install the lightweight development environment
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e ".[dev]"
+          python -m pip check
+
+      - name: Validate source and policy contracts
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            scripts/discover_three_repository_tests.py \
+            tests/test_three_repository_test_discovery.py \
+            tests/test_three_repository_multi_owner_policy.py
+          python -m ruff format --check \
+            scripts/discover_three_repository_tests.py \
+            tests/test_three_repository_test_discovery.py \
+            tests/test_three_repository_multi_owner_policy.py
+          python -m pytest -q \
+            tests/test_three_repository_test_discovery.py \
+            tests/test_three_repository_multi_owner_policy.py
+          python -m py_compile scripts/discover_three_repository_tests.py
+          bash -n scripts/run_three_repository_golden_path.sh
