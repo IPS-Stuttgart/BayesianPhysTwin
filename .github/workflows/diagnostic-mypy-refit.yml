@@ -1,0 +1,46 @@
+name: Apply MyPy refit annotation
+
+on:
+  push:
+    branches:
+      - agent/fail-closed-phystwin-refit-inputs
+
+permissions:
+  contents: write
+
+jobs:
+  mypy-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/fail-closed-phystwin-refit-inputs
+          fetch-depth: 0
+      - name: Apply exact type annotation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/phystwin_refit.py")
+          text = path.read_text(encoding="utf-8")
+          old = "        weights = support.astype(float)\n"
+          new = "        weights: np.ndarray = support.astype(float)\n"
+          if text.count(old) != 2:
+              raise SystemExit(
+                  f"expected two branch assignments, found {text.count(old)}"
+              )
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          rm .github/workflows/diagnostic-mypy-refit.yml
+      - name: Commit annotation and remove diagnostic
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/phystwin_refit.py \
+            .github/workflows/diagnostic-mypy-refit.yml
+          git commit -m "Annotate refit objective weights"
+          git push origin HEAD:agent/fail-closed-phystwin-refit-inputs
