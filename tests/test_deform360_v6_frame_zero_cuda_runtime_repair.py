@@ -6,6 +6,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from bayesian_phystwin._portable_contracts import content_id
 from bayesian_phystwin.deform360_frame_zero_initializer import (
     FrameZeroInitializerConfig,
@@ -49,6 +51,9 @@ def _stub(path: Path, route: str) -> None:
         'if [[ -n "${REPAIR_ID_LOG:-}" ]]; then\n'
         '  printf \'%s\\n\' "${REPAIR_ID-}" > "${REPAIR_ID_LOG}"\n'
         "fi\n"
+        'if [[ -n "${STDIN_LOG:-}" ]]; then\n'
+        '  cat > "${STDIN_LOG}"\n'
+        "fi\n"
         'printf \'%s\\n\' "$@" >> "${ROUTE_LOG}"\n',
         encoding="utf-8",
     )
@@ -60,6 +65,7 @@ def _dispatch(
     arguments: list[str],
     *,
     environment_overrides: dict[str, str] | None = None,
+    stdin_text: str | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], list[str], Path, Path]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     primary = tmp_path / "primary.sh"
@@ -68,6 +74,7 @@ def _dispatch(
     marker = tmp_path / "frame-zero-runtime.json"
     fallback_config_marker = tmp_path / "frame-zero-fallback-config-repair.json"
     official_phystwin_marker = tmp_path / "official-phystwin-runtime.json"
+    case_stdin_isolation_marker = tmp_path / "case-stdin-isolation.json"
     _stub(primary, "primary")
     _stub(frame_zero, "frame-zero")
     environment = {
@@ -77,8 +84,11 @@ def _dispatch(
         "BPT_FRAME_ZERO_RUNTIME_MARKER": str(marker),
         "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER": str(fallback_config_marker),
         "BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER": str(official_phystwin_marker),
+        "BPT_CASE_STDIN_ISOLATION_MARKER": str(case_stdin_isolation_marker),
         "ROUTE_LOG": str(route_log),
     }
+    if stdin_text is not None:
+        environment["STDIN_LOG"] = str(tmp_path / "stdin.log")
     environment.update(environment_overrides or {})
     result = subprocess.run(
         ["bash", str(DISPATCHER), *arguments],
@@ -86,11 +96,66 @@ def _dispatch(
         capture_output=True,
         text=True,
         env=environment,
+        input=stdin_text,
     )
     routed = (
         route_log.read_text(encoding="utf-8").splitlines() if route_log.exists() else []
     )
     return result, routed, marker, fallback_config_marker
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["scripts/science/materialize_deform360_joint_sparse_physical_source_v5.py"],
+        ["scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"],
+        [PHYSICAL_TARGET, "--stage", "stage-prefix"],
+        [
+            PHYSICAL_TARGET,
+            "--stage",
+            "frame-zero",
+            FALLBACK_CONFIG_FLAG,
+            PREVIOUS_FALLBACK_CONFIG,
+        ],
+        [PHYSICAL_TARGET, "--stage", "physical-prior"],
+    ],
+)
+def test_per_case_entry_points_cannot_consume_roster_stdin(
+    tmp_path: Path, arguments: list[str]
+) -> None:
+    case_root = tmp_path / hashlib.sha256("\0".join(arguments).encode()).hexdigest()
+    result, _, _, _ = _dispatch(
+        case_root,
+        arguments,
+        stdin_text="remaining-object-row\n",
+    )
+
+    assert result.returncode == 0
+    assert (case_root / "stdin.log").read_text(encoding="utf-8") == ""
+    marker = json.loads(
+        (case_root / "case-stdin-isolation.json").read_text(encoding="utf-8")
+    )
+    assert marker == {
+        "repair_id": (
+            "08df8831e0261b482c9e682b30b0a7fdf37b0924de23a58484db9ce2546b625e"
+        ),
+        "stdin": "/dev/null",
+    }
+
+
+def test_generic_dispatch_preserves_stdin_for_existing_heredocs(tmp_path: Path) -> None:
+    result, routed, _, _ = _dispatch(
+        tmp_path,
+        ["-"],
+        stdin_text="print('existing-heredoc')\n",
+    )
+
+    assert result.returncode == 0
+    assert routed == ["primary", "-"]
+    assert (tmp_path / "stdin.log").read_text(encoding="utf-8") == (
+        "print('existing-heredoc')\n"
+    )
+    assert not (tmp_path / "case-stdin-isolation.json").exists()
 
 
 def test_frame_zero_cuda_runtime_repair_is_content_addressed_and_closed() -> None:
