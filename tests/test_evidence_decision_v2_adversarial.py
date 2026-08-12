@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from test_evidence_decision_v2 import _decision, _manifest, _metric
 
 import bayesian_phystwin.evidence_decision_v2 as evidence_decision_v2_module
 from bayesian_phystwin.evidence_decision import load_evidence_decision
@@ -16,7 +17,6 @@ from bayesian_phystwin.evidence_decision_v2 import (
     load_evidence_decision_v2,
     write_evidence_decision_v2,
 )
-from test_evidence_decision_v2 import _decision, _manifest, _metric
 
 
 def _build(manifest: Any, summary: Path, *, claim_id: str = "bpt.physical.guard"):
