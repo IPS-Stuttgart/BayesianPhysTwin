@@ -46,7 +46,7 @@ def _receipt_id(payload: dict[str, object]) -> str:
 
 def test_dispatcher_scrubs_unobserved_legacy_receipt_probes(tmp_path: Path) -> None:
     receipt = tmp_path / "execution-receipt.json"
-    program = '''
+    program = """
 import json
 import os
 from pathlib import Path
@@ -63,7 +63,7 @@ receipt["runtime_ninja_build_tool_repair"] = {
 }
 receipt["receipt_id"] = "stale"
 path.write_text(json.dumps(receipt) + "\\n", encoding="utf-8")
-'''
+"""
 
     completed = subprocess.run(
         ["bash", str(DISPATCHER), "-"],
@@ -87,8 +87,7 @@ def test_dispatcher_does_not_inject_legacy_probes_into_other_stdin(
 ) -> None:
     receipt = tmp_path / "unused.json"
     program = (
-        "import os; "
-        "print(os.environ.get('CUDA_HOST_COMPILER_PROBE_PASSED', 'missing'))"
+        "import os; print(os.environ.get('CUDA_HOST_COMPILER_PROBE_PASSED', 'missing'))"
     )
 
     completed = subprocess.run(
