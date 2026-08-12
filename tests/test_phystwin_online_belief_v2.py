@@ -5,12 +5,11 @@ import pytest
 
 from bayesian_phystwin.phystwin_online_belief import (
     finite_sample_absolute_residual_quantile_m as finite_sample_v1,
-)
-from bayesian_phystwin.phystwin_online_belief import (
     update_recursive_rbf_belief as update_v1,
 )
 from bayesian_phystwin.phystwin_online_belief_v2 import (
     RecursiveRbfBeliefConfig,
+    RecursiveRbfBeliefSnapshot,
     finite_sample_absolute_residual_quantile_m,
     initialize_recursive_rbf_belief,
     update_recursive_rbf_belief,
@@ -34,7 +33,11 @@ def _problem() -> tuple[
     return points, center_ids, RecursiveRbfBeliefConfig()
 
 
-def _prior():
+def _prior() -> tuple[
+    np.ndarray,
+    RecursiveRbfBeliefConfig,
+    RecursiveRbfBeliefSnapshot,
+]:
     points, center_ids, config = _problem()
     prior = initialize_recursive_rbf_belief(
         center_ids,
