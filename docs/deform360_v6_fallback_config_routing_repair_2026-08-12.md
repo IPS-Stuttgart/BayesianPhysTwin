@@ -15,6 +15,24 @@ and execution receipt
 It records zero physical manifests, zero source prediction seals, and false for
 every suffix, confirmation, target, replacement, and claim authorization flag.
 
+## Latest protected-main corroboration
+
+Protected-main single-runtime run `31579234343` used source revision
+`ab3e5cbedea7c163b8f340d6cc7b858dc5edde53`. Its checksum-pinned GNU 11,
+CUDA 12.1, gsplat, and Ninja runtime probes passed. For the first registered
+source case, Splatfacto again completed all 500 iterations and the Gaussian
+export completed before the frame-zero loader rejected the same integration
+report with `fallback source config changed`.
+
+The bounded artifact is `9134627670`, with digest
+`sha256:de3092dc213ec04836e8856362f300f99f90a2293e2bcfda4c2c1c3e4071b625`
+and execution receipt
+`dcf59f6a453bf7d53512479fac5ea95aa4fd98fa7ecd16414e0c2b188a4c2b0b`.
+It records zero physical manifests, zero source prediction seals, and false for
+every suffix, confirmation, target, replacement, and claim authorization flag.
+This independently confirms that the remaining failure is argument routing,
+not reconstruction, CUDA compilation, or the frozen frame-zero initializer.
+
 ## Diagnosis
 
 The frozen source runner supplied
@@ -48,3 +66,8 @@ This changes no candidate, cohort, initializer algorithm, physical algorithm,
 mean, covariance, loss, horizon, selector, suffix policy, target policy, or
 loader digest. It authorizes one reviewed protected-main source execution only;
 it does not authorize a scientific result or any outcome access.
+
+The latest provenance update intentionally exercises the already-reviewed
+protected-main dual-runtime workflow, whose dispatcher contains this exact
+routing repair. The execution must still seal all ten physical manifests and
+all 100 source predictions before any downstream evidence is admissible.
