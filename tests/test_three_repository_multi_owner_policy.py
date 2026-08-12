@@ -26,8 +26,10 @@ def test_golden_path_collects_repository_owned_tests_from_all_three_sources() ->
 def test_golden_path_uses_collision_safe_explicit_test_paths() -> None:
     text = RUNNER.read_text(encoding="utf-8")
 
-    assert "--import-mode=importlib" in text
-    assert '"${integration_tests[@]}"' in text
+    assert 'for integration_test in "${integration_tests[@]}"; do' in text
+    assert "--import-mode=prepend" in text
+    assert '"${integration_test}"' in text
+    assert "--import-mode=importlib" not in text
     assert (
         '"${BPT_BUILD_ROOT}"/integration_tests/test_three_repository_*.py' not in text
     )
