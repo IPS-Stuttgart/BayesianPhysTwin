@@ -1,3 +1,5 @@
+"""Adversarial tests for fail-closed PhysTwin refit input contracts."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
