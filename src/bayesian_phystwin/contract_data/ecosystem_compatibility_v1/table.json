@@ -20,7 +20,7 @@
       },
       "requires_python": ">=3.10",
       "role": "Probabilistic 4D observation and covariance producer",
-      "supported_versions": ">=0.4,<0.5"
+      "supported_versions": ">=0.4,<0.6"
     },
     {
       "component_id": "causal4d",
@@ -148,13 +148,13 @@
     {
       "distribution_ranges": {
         "bayesian_phystwin": ">=0.4,<0.5",
-        "prob4d": ">=0.4,<0.5"
+        "prob4d": ">=0.4,<0.6"
       },
       "exact_revisions_required_for_evidence": true,
       "interface_id": "prob4d-provider-v1-to-bayesian-phystwin",
       "lifecycle": "frozen_compatibility",
       "notes": [
-        "Provider-v1 remains available for historical reproduction and exploratory interoperability.",
+        "Prob4D 0.5 retains provider-v1 only as an artifact-compatibility bridge; full provider-v1 execution requires the exact Prob4D 0.4.1 release.",
         "Claim-bearing admission uses the independently attested Prob4D provider-v2 boundary.",
         "The content-addressed provider manifest retains the historical source repository identity FlorianPfaff/Prob4D."
       ],
@@ -167,7 +167,7 @@
           "api_version": 1,
           "lifecycle": "frozen_compatibility",
           "module": "prob4d.provider_v1",
-          "role": "historical_and_exploratory_observation_provider"
+          "role": "historical_artifact_compatibility"
         }
       ],
       "required_artifact_schema_versions": {
@@ -195,13 +195,13 @@
     {
       "distribution_ranges": {
         "bayesian_phystwin": ">=0.4,<0.5",
-        "prob4d": ">=0.4,<0.5"
+        "prob4d": ">=0.4,<0.6"
       },
       "exact_revisions_required_for_evidence": true,
       "interface_id": "prob4d-provider-v2-to-bayesian-phystwin",
       "lifecycle": "production",
       "notes": [
-        "Claim-bearing observations require complete calibration metadata and independently verified runtime revision evidence.",
+        "Prob4D 0.5 exposes the current provider-v2 contract through prob4d.api.v2 and the prob4d.provider_v2 implementation module.",
         "Provider-v2 joint cross-window gauge factors require ObservationFactorBundle schema version 4.",
         "The content-addressed provider manifest retains the historical source repository identity FlorianPfaff/Prob4D."
       ],
