@@ -22,7 +22,6 @@ from .propagated_state_belief import (
     propagated_state_readout,
 )
 
-
 PROPAGATED_STATE_CORRECTION_SCHEMA_VERSION = 1
 
 
