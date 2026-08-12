@@ -33,7 +33,7 @@ the installed machine-readable resource
 The current package lines are:
 
 - `bayesian-phystwin>=0.4,<0.5`;
-- `prob4d>=0.4,<0.5`; and
+- `prob4d>=0.4,<0.6`; and
 - `causal4d>=0.5,<0.6`.
 
 These ranges express development interoperability only. They are not experiment
