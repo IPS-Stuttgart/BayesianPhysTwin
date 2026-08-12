@@ -1,13 +1,13 @@
 # Public API policy
 
-BayesianPhysTwin 0.4 separates two compatibility surfaces with different
+BayesianPhysTwin 0.4 separates three compatibility surfaces with different
 purposes:
 
-1. the large historical package-root convenience API; and
-2. the deliberately small `bayesian_phystwin.v1` integration API used by new
-   ecosystem consumers.
+1. the large historical package-root convenience API;
+2. the deliberately small `bayesian_phystwin.v1` artifact-integration API; and
+3. the explicit `bayesian_phystwin.inference.v1` guarded-inference API.
 
-Both surfaces have exact, ordered export snapshots. The snapshots are
+All three surfaces have exact, ordered export snapshots. The snapshots are
 compatibility ratchets, not claims that every research helper has the same
 support level.
 
@@ -49,9 +49,9 @@ A future `0.5` compatibility line may contract the root after documenting
 replacement imports and deprecating supported interfaces where practical. The
 `0.4` snapshot remains immutable evidence of the earlier import surface.
 
-## Versioned integration surface
+## Versioned artifact-integration surface
 
-New Prob4D, Causal4D, and independent integrations should prefer
+New Prob4D, Causal4D, and independent artifact integrations should prefer
 `bayesian_phystwin.v1`. Its exact ordered surface is recorded in
 `api/versioned-public-api-v1.json` and is intentionally much smaller than the
 package root.
@@ -73,6 +73,36 @@ Provider-specific modules and artifact schemas may remain narrower than
 not evidence of estimator accuracy, covariance calibration, physical transfer,
 or deployment safety.
 
+## Versioned guarded-inference surface
+
+New inference consumers should prefer `bayesian_phystwin.inference.v1`. Its exact
+ordered surface is recorded in `api/inference-public-api-v1.json`. It exposes the
+supported strict Prob4D candidate-inference entry point together with explicit
+complete-belief selection and exact fallback.
+
+The inference namespace deliberately keeps deployment policy outside the
+estimator. Candidate construction, nonlinear closure, and the source-frozen
+regret guard remain separate caller-owned steps. `finalize_guarded_update` then
+records the candidate-inference identity, verifies that numerical admission
+agrees with the guard decision, and validates complete-belief selection, selected
+object identity, and exact fallback in one immutable result.
+
+Within the BayesianPhysTwin `0.4.x` line:
+
+- the recorded `bayesian_phystwin.inference.v1.__all__` order and symbol set are
+  frozen;
+- configuration objects are accepted only as `None` or their declared runtime
+  types, never through truthiness-based fallback;
+- rejected routing returns the exact baseline object;
+- optional vision, graph, dataset, and experiment modules remain outside the
+  supported import boundary; and
+- a new estimator, guard policy, or covariance meaning requires a separately
+  reviewed contract rather than a silent behavior change behind `v1`.
+
+A valid inference record is implementation and provenance evidence. It does not
+establish provider competence, calibrated covariance, unseen-object transfer,
+Causal4D benefit, deployment safety, or state of the art.
+
 ## Validation
 
 From a source checkout with the package importable:
@@ -81,6 +111,8 @@ From a source checkout with the package importable:
 python tools/quality/check_public_api.py
 python tools/quality/check_public_api.py \
   --manifest api/versioned-public-api-v1.json
+python tools/quality/check_public_api.py \
+  --manifest api/inference-public-api-v1.json
 python tools/quality/check_root_export_migration.py
 ```
 
@@ -91,6 +123,7 @@ attribute, and the project minor-version line. The migration checker additionall
 validates exact root-snapshot coverage, runtime owner mappings, and object
 identity between every lazy root export and its explicit owning module.
 
-The complete Python test matrix exercises both snapshots, isolated root and
-`v1` import boundaries, and the migration map. `MANIFEST.in` also requires all
-three manifest files and both checkers in the source distribution.
+The complete Python test matrix exercises all three export snapshots, isolated
+root, artifact-v1, and inference-v1 import boundaries, and the migration map.
+`MANIFEST.in` also requires all four manifest files and both checkers in the
+source distribution.

@@ -46,6 +46,7 @@ def test_release_artifacts_are_built_and_installed_on_every_supported_python() -
     assert "for kind in wheel sdist" in text
     assert "--no-build-isolation" in text
     assert "import bayesian_phystwin.v1 as api" in text
+    assert "import bayesian_phystwin.inference.v1 as inference_api" in text
     assert "find dist -maxdepth 1 -name '*.whl'" in text
     assert "find dist -maxdepth 1 -name '*.tar.gz'" in text
 
@@ -53,11 +54,16 @@ def test_release_artifacts_are_built_and_installed_on_every_supported_python() -
 def test_public_api_changes_trigger_installed_import_isolation_checks() -> None:
     text = _workflow_text()
     watched_paths = (
+        "api/inference-public-api-v1.json",
         "api/root-public-api-v0.4.json",
         "api/root-export-migration-v1.json",
         "api/versioned-public-api-v1.json",
+        "docs/inference_v1.md",
         "src/bayesian_phystwin/__init__.py",
+        "src/bayesian_phystwin/_validation.py",
+        "src/bayesian_phystwin/inference/**",
         "src/bayesian_phystwin/v1/**",
+        "tests/test_inference_v1.py",
         "tests/test_public_api_manifest.py",
         "tests/test_versioned_api_v1.py",
         "tools/quality/check_public_api.py",
