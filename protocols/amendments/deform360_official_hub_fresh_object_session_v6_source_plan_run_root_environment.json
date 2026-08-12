@@ -1,0 +1,70 @@
+{
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "required_physical_manifest_count": 10,
+    "required_source_prediction_seal_count": 100,
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution": {
+    "artifact_digest": "sha256:e5dda15cbff1850a92c8b6ab68d8257ca29b1b18fccc6198e974cd8257563bce",
+    "artifact_id": 9130158355,
+    "artifact_name": "deform360-v6-source-prediction-dual-runtime-31566855876-1",
+    "execution_receipt_id": "c9ea0e47203b0d4880a6937668f9ed81c2578bc1a6d566ec177634d1ee43a04f",
+    "physical_manifest_count": 10,
+    "source_plan_inputs_byte_count": 95838,
+    "source_plan_inputs_sha256": "5203e4baa5d3e51f490628c43949ab0f440a47ba9d23378dc90000e8c12f4961",
+    "source_plan_present": false,
+    "source_prediction_seal_count": 0,
+    "source_revision": "e41b39b56388a41627657e5c4a7aee6dde991fd3",
+    "status": "source-technical-failure-retained",
+    "terminal_stage": "materialize-source-plan",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31566855876
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "repair": {
+    "archived_science_runner_changed": false,
+    "binding": "derive-and-export-run-root-only-for-generic-python-after-source-plan-inputs-exist",
+    "dispatcher_path": "scripts/ci/dispatch_deform360_v6_source_python.sh",
+    "dispatcher_previous_git_blob_sha1": "5f976d42b5bde299f4a6be8259e025dc08c032a5",
+    "environment_variable": "RUN_ROOT",
+    "marker_filename": "source-plan-run-root-environment-repair.json",
+    "source_plan_inputs_filename": "source-plan-inputs.json",
+    "source_plan_output_filename": "source-plan.json"
+  },
+  "repair_id": "2637a1d95f0af46461a44e5f62e3264d07f75531c1fe490d8ad78a5d4404817d",
+  "root_cause": {
+    "diagnosis": "The immutable archived launcher assigns RUN_ROOT as a non-exported shell variable, then invokes an inline Python child through BPT_PYTHON which reads os.environ['RUN_ROOT']; the valid source-plan-input artifact is written before that child raises KeyError.",
+    "inline_python_environment_lookup": "RUN_ROOT",
+    "source_plan_inputs_serializable_with_allow_nan_false": true,
+    "source_plan_inputs_valid_json": true
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-plan-run-root-environment-repair",
+  "schema_version": 1,
+  "scientific_scope": {
+    "camera_panel_changed": false,
+    "candidate_roster_changed": false,
+    "claim_authorized": false,
+    "covariance_changed": false,
+    "endpoint_changed": false,
+    "fallback_changed": false,
+    "loss_or_gate_changed": false,
+    "physical_model_changed": false,
+    "selector_changed": false,
+    "source_cohort_changed": false,
+    "target_access_authorized": false
+  },
+  "semantics": "post-physical-source-plan-environment-export-repair-v1"
+}
