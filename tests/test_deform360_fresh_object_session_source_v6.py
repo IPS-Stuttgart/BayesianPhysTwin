@@ -235,7 +235,7 @@ def _bundle(
         )
         for seal in batch["records"]
     ]
-    evidence = v6.assemble_deform360_v6_source_evidence(
+    evidence = v6._assemble_deform360_v6_source_evidence_legacy(  # noqa: SLF001
         prediction_batch=batch,
         outcomes=outcomes,
     )
@@ -260,7 +260,7 @@ def test_positive_source_gate_is_prediction_first_and_target_closed() -> None:
         == batch
     )
     assert (
-        v6.assemble_deform360_v6_source_evidence(
+        v6._assemble_deform360_v6_source_evidence_legacy(  # noqa: SLF001
             prediction_batch=batch,
             outcomes=list(reversed(outcomes)),
         )
@@ -277,7 +277,7 @@ def test_positive_source_gate_is_prediction_first_and_target_closed() -> None:
     )
     assert v6.validate_deform360_v6_source_evidence(evidence) == evidence
 
-    result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
+    result = v6._evaluate_deform360_v6_source_gate_legacy(evidence, policy)  # noqa: SLF001
 
     assert result["source_gate_passed"] is True
     assert result["selected_variant"] == v6.D1_NATIVE
@@ -299,7 +299,7 @@ def test_positive_source_gate_is_prediction_first_and_target_closed() -> None:
 def test_source_negative_retains_reference_without_target_access() -> None:
     policy, _, _, _, _, _, evidence = _bundle(positive=False)
 
-    result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
+    result = v6._evaluate_deform360_v6_source_gate_legacy(evidence, policy)  # noqa: SLF001
 
     assert result["source_gate_passed"] is False
     assert result["selected_variant"] == v6.B1
@@ -323,7 +323,7 @@ def test_unavailable_covariance_variant_is_retained_as_exact_fallback() -> None:
     assert all(
         row["deployed_proper_score"] == row["fallback_proper_score"] for row in rows
     )
-    result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
+    result = v6._evaluate_deform360_v6_source_gate_legacy(evidence, policy)  # noqa: SLF001
     assert result["selected_variant"] == v6.D1_NATIVE
 
 
@@ -503,12 +503,12 @@ def test_evidence_roster_and_tournament_identity_fail_closed() -> None:
     _, _, _, _, batch, outcomes, evidence = _bundle()
 
     with pytest.raises(ValueError, match="ten outcomes"):
-        v6.assemble_deform360_v6_source_evidence(
+        v6._assemble_deform360_v6_source_evidence_legacy(  # noqa: SLF001
             prediction_batch=batch,
             outcomes=outcomes[:-1],
         )
     with pytest.raises(ValueError, match="repeats an outcome"):
-        v6.assemble_deform360_v6_source_evidence(
+        v6._assemble_deform360_v6_source_evidence_legacy(  # noqa: SLF001
             prediction_batch=batch,
             outcomes=[*outcomes[:-1], outcomes[0]],
         )
@@ -538,7 +538,7 @@ def test_adapter_enforces_eight_fold_stability(monkeypatch) -> None:
         return report
 
     monkeypatch.setattr(v6, "analyze_discrepancy_candidate_tournament", unstable)
-    result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
+    result = v6._evaluate_deform360_v6_source_gate_legacy(evidence, policy)  # noqa: SLF001
 
     assert result["checks"]["stable_variant_selection"] is False
     assert result["source_gate_passed"] is False
@@ -547,7 +547,7 @@ def test_adapter_enforces_eight_fold_stability(monkeypatch) -> None:
 
 def test_result_validation_rejects_target_or_claim_authorization() -> None:
     policy, _, _, _, _, _, evidence = _bundle()
-    result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
+    result = v6._evaluate_deform360_v6_source_gate_legacy(evidence, policy)  # noqa: SLF001
 
     for key in (
         "fresh_target_selection_authorized",
@@ -568,7 +568,7 @@ def test_result_validation_rejects_target_or_claim_authorization() -> None:
 
 def test_atomic_publication_is_non_replacing(tmp_path: Path) -> None:
     policy, _, _, _, batch, _, evidence = _bundle()
-    result = v6.evaluate_deform360_v6_source_gate(evidence, policy)
+    result = v6._evaluate_deform360_v6_source_gate_legacy(evidence, policy)  # noqa: SLF001
     batch_path = tmp_path / "batch.json"
     evidence_path = tmp_path / "evidence.json"
     result_path = tmp_path / "result.json"
