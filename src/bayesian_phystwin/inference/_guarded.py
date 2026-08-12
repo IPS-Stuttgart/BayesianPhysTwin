@@ -90,9 +90,7 @@ class GuardedUpdateResultV1(Generic[BeliefT]):
         candidate_id = _belief_id(self.candidate_belief, name="candidate_belief")
         selected_id = _belief_id(self.selected_belief, name="selected_belief")
         if not isinstance(self.guard_decision, CompleteBeliefGuardDecisionV1):
-            raise TypeError(
-                "guard_decision must be a CompleteBeliefGuardDecisionV1"
-            )
+            raise TypeError("guard_decision must be a CompleteBeliefGuardDecisionV1")
         if not isinstance(self.selection, CompleteBeliefSelectionV1):
             raise TypeError("selection must be a CompleteBeliefSelectionV1")
         if self.guard_decision.inference_admissible != inference_admissible:
@@ -146,8 +144,7 @@ class GuardedUpdateResultV1(Generic[BeliefT]):
     @property
     def exact_fallback(self) -> bool:
         return (
-            not self.selected_candidate
-            and self.selected_belief is self.baseline_belief
+            not self.selected_candidate and self.selected_belief is self.baseline_belief
         )
 
     @property
@@ -182,9 +179,7 @@ def finalize_guarded_update(
     """Route one complete candidate or return the exact baseline object."""
 
     if not isinstance(inference, GuardedCandidateInference):
-        raise TypeError(
-            "inference must expose candidate_id and inference_admissible"
-        )
+        raise TypeError("inference must expose candidate_id and inference_admissible")
     inference_candidate_id = lowercase_sha256(
         inference.candidate_id,
         name="inference.candidate_id",
@@ -196,9 +191,7 @@ def finalize_guarded_update(
     _belief_id(baseline_belief, name="baseline_belief")
     _belief_id(candidate_belief, name="candidate_belief")
     if not isinstance(guard_decision, CompleteBeliefGuardDecisionV1):
-        raise TypeError(
-            "guard_decision must be a CompleteBeliefGuardDecisionV1"
-        )
+        raise TypeError("guard_decision must be a CompleteBeliefGuardDecisionV1")
     if guard_decision.inference_admissible != inference_admissible:
         raise ValueError(
             "guard decision disagrees with candidate inference admissibility"
