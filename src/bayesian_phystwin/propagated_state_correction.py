@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 
@@ -21,11 +22,10 @@ from .propagated_state_belief import (
     propagated_state_readout,
 )
 
-
 PROPAGATED_STATE_CORRECTION_SCHEMA_VERSION = 1
 
 
-def _require(condition: bool, message: str) -> None:
+def _require(condition: bool | np.bool_, message: str) -> None:
     if not condition:
         raise ValueError(message)
 
@@ -157,7 +157,7 @@ def scale_posterior_covariance_for_state_limits(
     _require(np.all(np.isfinite(covariance)), "covariance is non-finite")
     _require(0.0 < position_scale <= 1.0, "position scale must lie in (0, 1]")
     _require(0.0 < velocity_scale <= 1.0, "velocity scale must lie in (0, 1]")
-    scale = np.ones(dimension, dtype=np.float64)
+    scale: np.ndarray = np.ones(dimension, dtype=np.float64)
     scale[: 3 * graph_rank] = position_scale
     scale[3 * graph_rank : 6 * graph_rank] = velocity_scale
     return scale[:, None] * covariance * scale[None]
@@ -271,14 +271,29 @@ def select_propagated_state_update(
     trajectory byte-for-byte.
     """
 
-    cfg = selection_config or PropagatedStateSelectionConfig()
+    if selection_config is None:
+        cfg = PropagatedStateSelectionConfig()
+    elif isinstance(selection_config, PropagatedStateSelectionConfig):
+        cfg = selection_config
+    else:
+        raise TypeError("selection_config must be a PropagatedStateSelectionConfig")
+    if belief_config is not None and not isinstance(
+        belief_config, PropagatedStateBeliefConfig
+    ):
+        raise TypeError("belief_config must be a PropagatedStateBeliefConfig")
+
     innovation = np.asarray(innovation_m, dtype=np.float64)
-    mask = np.asarray(available, dtype=bool)
+    raw_mask = np.asarray(available)
     response = np.asarray(state_response_at_step_m, dtype=np.float64)
     observed_basis = np.asarray(observed_graph_basis, dtype=np.float64)
     full_basis = np.asarray(full_graph_basis, dtype=np.float64)
     _require(innovation.ndim == 3 and innovation.shape[2] == 3, "innovation changed")
-    _require(mask.shape == innovation.shape[:2], "availability changed")
+    _require(raw_mask.shape == innovation.shape[:2], "availability changed")
+    _require(
+        raw_mask.dtype == np.dtype(np.bool_),
+        "availability must contain only booleans",
+    )
+    mask = np.asarray(raw_mask, dtype=np.bool_)
     _require(response.shape[:3] == innovation.shape, "state response changed")
     _require(observed_basis.shape[0] == innovation.shape[1], "basis coverage changed")
     _require(
@@ -294,6 +309,11 @@ def select_propagated_state_update(
     else:
         reliability = np.asarray(prior_reliability, dtype=np.float64)
         _require(reliability.shape == mask.shape, "reliability shape changed")
+        _require(
+            np.all(np.isfinite(reliability))
+            and np.all((reliability >= 0.0) & (reliability <= 1.0)),
+            "prior reliability must lie in [0, 1]",
+        )
     variance = None
     if observation_variance_m2 is not None:
         variance = np.asarray(observation_variance_m2, dtype=np.float64)
@@ -334,7 +354,7 @@ def select_propagated_state_update(
     )
 
     zero_weights = np.zeros(response.shape[3], dtype=np.float64)
-    zero_position = np.zeros((len(full_basis), 3), dtype=np.float64)
+    zero_position: np.ndarray = np.zeros((len(full_basis), 3), dtype=np.float64)
     diagnostics: dict[str, Any] = {
         "selection_uses_forecast_frames": False,
         "fit_frame_count": cfg.fit_frame_count,
@@ -601,7 +621,8 @@ def write_propagated_state_correction(
     target.parent.mkdir(parents=True, exist_ok=True)
     manifest_path = target.with_suffix(".json")
     arrays_path = target.with_suffix(".npz")
-    np.savez_compressed(arrays_path, **correction._arrays())
+    array_payload: dict[str, Any] = correction._arrays()
+    np.savez_compressed(arrays_path, **array_payload)
     manifest = {
         **correction._scalars(),
         "artifact_id": correction.artifact_id,
