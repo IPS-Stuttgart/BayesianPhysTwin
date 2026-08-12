@@ -7,12 +7,27 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-12
+
 ### Added
 
 - A content-addressed `PhysicalQueryV1` freeze for target-blind physical
   queries, exact fallback, required marginal and complete-joint-gauge
   covariance treatments, proper-score decision margins, independent-group
   resampling, and exact package, repository, provider, and evidence bindings.
+- Content-addressed accepted and rejected three-repository golden-path decision
+  artifacts that bind exact baseline and candidate arrays, installed-wheel stack
+  identities, guard outcomes, and byte-identical exact-fallback routing.
+- Read-only exact-head release compatibility evidence that builds and installs
+  both wheel and source distribution on Python 3.10, 3.12, and 3.14, validates
+  the declared NumPy `1.23.0` floor, and retains `NumericalEnvironmentV1` bound
+  to the exact dependency resolver input.
+- Strict static typing and isolated installed-wheel consumer checks for the
+  supported `bayesian_phystwin.v1`, Prob4D lineage, and Causal4D provider
+  boundaries.
+- A prospective recursive-belief v2 boundary that rejects non-Boolean
+  availability masks, preserves valid-mask v1 parity, and prevents mutation of
+  caller-owned masks.
 - Proper multivariate predictive scoring for registered physical queries, with
   energy, variogram, exact Gaussian log, and weighted interval scores; matched
   candidate attribution; exact-fallback-aware decisive-evidence export; and a
@@ -23,7 +38,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - Exact factorized tree-block posterior covariance application, arbitrary linear
   query and cross covariance, and selected marginals without complete dense
   materialization.
-- An additive structured gauge-aware result and claim-bearing tree-sparse Prob4D update that preserve rejected prior uncertainty in precision form, report materialization cost, and require explicit budgeted conversion to the historical dense result.
+- An additive structured gauge-aware result and claim-bearing tree-sparse Prob4D
+  update that preserve rejected prior uncertainty in precision form, report
+  materialization cost, and require explicit budgeted conversion to the
+  historical dense result.
 - An MIT license for project-authored source code and documentation.
 - Machine-readable software citation metadata in `CITATION.cff`.
 - A Python and Causal4D provider compatibility policy in `SUPPORT.md`.
@@ -46,15 +64,17 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   including the embedded manifest, calibration IDs, numerical modes, and runtime
   revision evidence.
 - A strict claim-bearing Prob4D validation entry point for new prospective
-  Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
+  Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1
+  reproduction.
 - Dedicated claim-bearing Prob4D observation and physical-linearization adapters
   that validate explicit stream-v2 joint covariance, calibration provenance, and
   runtime attestation before an innovation is formed.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
-- Nuisance-aware marginalized information gain and deterministic greedy candidate
-  selection for active observations with explicit camera, gauge, or shared-bias
-  coefficients, covariance whitening, reliability weighting, and exact fallback.
+- Nuisance-aware marginalized information gain and deterministic greedy
+  candidate selection for active observations with explicit camera, gauge, or
+  shared-bias coefficients, covariance whitening, reliability weighting, and
+  exact fallback.
 - An explicit conditional grouped Student-t objective that uses the same mixture
   kernel, reliability semantics, zero-support behavior, and provider-final versus
   consumer-owned information powers as prior-aware gauge inference.
@@ -97,6 +117,15 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Changed
 
+- Direct `SPDSystem` construction now replays the complete positive-definite
+  admission contract, rejects forged factors and diagnostics, and canonicalizes
+  accepted matrix and Cholesky storage without changing `from_matrix` numerical
+  behavior.
+- Release-facing README, support policy, claim contract, and changelog wording
+  now keep the last-residual comparator, exact-mean covariance-only retrospective
+  result and `3.10×` interval-width cost, raw-covariance failure, conformal
+  coverage-width boundary, and unconfirmed independent transfer synchronized
+  with the canonical paper-side compact evidence.
 - Content-addressed observation beliefs, physical linearizations, gauge-aware
   batches, posterior results, and selection records now store arrays in
   immutable bytes-backed NumPy views. Callers can no longer re-enable write
@@ -110,7 +139,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   reject nonnumeric, non-finite, and out-of-domain measurements, cues, labels,
   and probabilities instead of clipping or truth-value coercing them.
   Reliability and likelihood results also defensively own immutable arrays.
-- Random-walk drift-bias inference now preserves typed track identities, rejects serialized ID collisions, malformed probabilities, non-finite timestamps and numerical updates, and returns defensively owned immutable result/evidence artifacts.
+- Random-walk drift-bias inference now preserves typed track identities, rejects
+  serialized ID collisions, malformed probabilities, non-finite timestamps and
+  numerical updates, and returns defensively owned immutable result/evidence
+  artifacts.
 - Markov reliability now validates typed sequence identities without lossy string
   coercion, rejects mixed identities such as `1` and `"1"` instead of merging
   tracks, requires priors in `[0, 1]`, rejects invalid falsey configurations, and
@@ -119,7 +151,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - The historical grouped Student-t operation now identifies itself explicitly as
   a covariance-marginalized diagnostic that does not use prior reliability. Its
   component densities and responsibilities share the prior-aware solver's mixture
-  kernel, while the new conditional operation exposes the solver-aligned objective.
+  kernel, while the new conditional operation exposes the solver-aligned
+  objective.
 - `ParameterEnsemble` now defensively owns its arrays and rejects empty,
   non-finite, negative-residual, invalid-reliability, corrupted-weight, and
   invalid-jitter inputs instead of silently clipping or propagating them.
@@ -133,10 +166,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   of silently coercing them. Content-addressed observation, linearization,
   nonlinear-closure, guard, and selection metadata is recursively immutable, so
   nested mutation cannot change an existing artifact or decision ID.
-- Active-query configuration, plan metadata, candidate identities, camera indices,
-  and nuisance-aware greedy selection counts now require genuine integer values;
-  booleans and fractional values fail closed instead of silently changing the
-  number or identity of selected observations.
+- Active-query configuration, plan metadata, candidate identities, camera
+  indices, and nuisance-aware greedy selection counts now require genuine
+  integer values; booleans and fractional values fail closed instead of silently
+  changing the number or identity of selected observations.
 - The package now installs exactly one executable, `bpt`. Stable operations and
   research workflows are reached through grouped routes and lazy dispatch.
 - Command help, documentation, and installed-artifact tests now distinguish
@@ -144,10 +177,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   archived reproduction paths.
 - Prob4D causal-lineage validation now fails closed on any present but malformed
   provider-v2 attestation and reports a compact validated provider summary.
-- Claim-bearing Prob4D validation now requires an explicitly declared causal stream
-  contract v2, the full joint cross-window gauge covariance, matching calibration
-  IDs, calibration of every alignment, and zero covariance-fallback use. Attested
-  legacy stream-v1 marginals and inferred stream versions are no longer admissible.
+- Claim-bearing Prob4D validation now requires an explicitly declared causal
+  stream contract v2, the full joint cross-window gauge covariance, matching
+  calibration IDs, calibration of every alignment, and zero covariance-fallback
+  use. Attested legacy stream-v1 marginals and inferred stream versions are no
+  longer admissible.
 - Missing private-Prob4D credentials now fail trusted pull requests, `main`,
   scheduled, and manual three-repository runs instead of producing a green skip.
   External-fork pull requests still run the producer-neutral consumer fixture and
@@ -157,10 +191,12 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   returned IRLS weights and uses Cholesky solves for positive-definite prior and
   posterior systems instead of generic matrix inversion.
 - Observation-belief metadata and gauge-aware batch/result metadata, diagnostics,
-  and input lineage are now recursively immutable after canonical JSON validation,
-  so nested mutation cannot change an existing artifact, update, or audit record.
-- Grouped low-rank covariance statistics now use blockwise Cholesky/Woodbury solves
-  without explicit covariance inverses or a dense all-factor-groups matrix.
+  and input lineage are now recursively immutable after canonical JSON
+  validation, so nested mutation cannot change an existing artifact, update, or
+  audit record.
+- Grouped low-rank covariance statistics now use blockwise Cholesky/Woodbury
+  solves without explicit covariance inverses or a dense all-factor-groups
+  matrix.
 - Fixed endpoint posteriors expose an explicit read-only `updated_mask`, and
   no-support summaries serialize JSON `null` rather than non-finite statistics.
 
