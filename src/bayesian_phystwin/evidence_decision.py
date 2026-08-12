@@ -6,18 +6,23 @@ from pathlib import Path
 from typing import TypeAlias
 
 from .evidence_decision_v1 import (
-    EVIDENCE_DECISION_SCHEMA as EVIDENCE_DECISION_SCHEMA_V1,
-    EVIDENCE_DECISION_SCHEMA_VERSION as EVIDENCE_DECISION_SCHEMA_VERSION_V1,
     EvidenceDecisionV1,
     _load_json_mapping,
     _require_integer,
-    load_evidence_decision as load_evidence_decision_v1,
 )
+from .evidence_decision_v1 import (
+    EVIDENCE_DECISION_SCHEMA as EVIDENCE_DECISION_SCHEMA_V1,
+)
+from .evidence_decision_v1 import (
+    EVIDENCE_DECISION_SCHEMA_VERSION as EVIDENCE_DECISION_SCHEMA_VERSION_V1,
+)
+from .evidence_decision_v1 import load_evidence_decision as load_evidence_decision_v1
+from .evidence_decision_v2 import EvidenceDecisionV2, load_evidence_decision_v2
 from .evidence_decision_v2 import (
     EVIDENCE_DECISION_SCHEMA as EVIDENCE_DECISION_SCHEMA_V2,
+)
+from .evidence_decision_v2 import (
     EVIDENCE_DECISION_SCHEMA_VERSION as EVIDENCE_DECISION_SCHEMA_VERSION_V2,
-    EvidenceDecisionV2,
-    load_evidence_decision_v2,
 )
 
 EvidenceDecision: TypeAlias = EvidenceDecisionV1 | EvidenceDecisionV2
