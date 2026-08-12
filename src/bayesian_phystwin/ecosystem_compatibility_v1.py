@@ -400,9 +400,7 @@ def _validate_cross_field_semantics(
     interfaces: Sequence[Mapping[str, object]],
 ) -> None:
     component_ranges = {
-        cast(str, component["component_id"]): cast(
-            str, component["supported_versions"]
-        )
+        cast(str, component["component_id"]): cast(str, component["supported_versions"])
         for component in components
     }
     for interface in interfaces:
@@ -417,9 +415,7 @@ def _validate_cross_field_semantics(
                 )
 
         participant_roots = frozenset(participants)
-        modules = cast(
-            Sequence[Mapping[str, object]], interface["provider_modules"]
-        )
+        modules = cast(Sequence[Mapping[str, object]], interface["provider_modules"])
         for module in modules:
             module_name = cast(str, module["module"])
             if module_name.partition(".")[0] not in participant_roots:
