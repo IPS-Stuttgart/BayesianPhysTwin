@@ -448,7 +448,7 @@ def build_phystwin_track_objective(
             1.0 - cfg.minimum_probability,
             cfg.minimum_probability,
         )
-        weights = support.astype(float)
+        weights: np.ndarray = support.astype(float)
     elif variant == "visible":
         support = visible_array
         prior = np.where(
