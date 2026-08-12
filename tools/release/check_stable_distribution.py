@@ -92,7 +92,9 @@ def load_contract(path: str | Path) -> dict[str, object]:
     try:
         raw = json.loads(source.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        raise StableDistributionError("cannot read stable distribution contract") from error
+        raise StableDistributionError(
+            "cannot read stable distribution contract"
+        ) from error
     contract = _mapping(raw, "contract")
     expected = {"schema", "schema_version", "compatibility_line", "wheel", "sdist"}
     if set(contract) != expected:
@@ -141,9 +143,15 @@ def load_contract(path: str | Path) -> dict[str, object]:
         if set(specification) != expected_import:
             raise StableDistributionError("isolated import fields changed")
         _literal(specification["module"], "isolated module")
-        _archive_path(_literal(specification["api_manifest"], "API manifest"), "API manifest")
-        _string_tuple(specification["forbidden_external_modules"], "forbidden externals")
-        _string_tuple(specification["forbidden_package_prefixes"], "forbidden package prefixes")
+        _archive_path(
+            _literal(specification["api_manifest"], "API manifest"), "API manifest"
+        )
+        _string_tuple(
+            specification["forbidden_external_modules"], "forbidden externals"
+        )
+        _string_tuple(
+            specification["forbidden_package_prefixes"], "forbidden package prefixes"
+        )
 
     sdist = _mapping(contract["sdist"], "sdist")
     expected_sdist = {
@@ -157,7 +165,9 @@ def load_contract(path: str | Path) -> dict[str, object]:
     _positive_integer(sdist["maximum_size_bytes"], "sdist maximum_size_bytes")
     _positive_integer(sdist["maximum_regular_member_count"], "sdist member limit")
     _string_tuple(sdist["required_members"], "sdist required_members", paths=True)
-    _string_tuple(sdist["supported_self_test_files"], "supported self tests", paths=True)
+    _string_tuple(
+        sdist["supported_self_test_files"], "supported self tests", paths=True
+    )
     return dict(contract)
 
 
@@ -175,7 +185,9 @@ def _zip_members(path: Path) -> tuple[dict[str, zipfile.ZipInfo], bytes]:
                 mode = (item.external_attr >> 16) & 0o177777
                 file_type = stat.S_IFMT(mode)
                 if file_type and file_type != stat.S_IFREG:
-                    raise StableDistributionError("wheel contains a link or special member")
+                    raise StableDistributionError(
+                        "wheel contains a link or special member"
+                    )
                 members[name] = item
                 if name.endswith(".dist-info/entry_points.txt"):
                     entry_points.append(name)
@@ -197,7 +209,11 @@ def _console_scripts(value: bytes) -> dict[str, str]:
         parser.read_string(text)
     except configparser.Error as error:
         raise StableDistributionError("entry_points.txt is invalid") from error
-    return dict(parser.items("console_scripts")) if parser.has_section("console_scripts") else {}
+    return (
+        dict(parser.items("console_scripts"))
+        if parser.has_section("console_scripts")
+        else {}
+    )
 
 
 def _isolated_import(
@@ -212,8 +228,12 @@ def _isolated_import(
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        raise StableDistributionError(f"cannot read API manifest for {module}") from error
-    expected_symbols = sorted(_string_tuple(_mapping(manifest, "API manifest").get("symbols"), "symbols"))
+        raise StableDistributionError(
+            f"cannot read API manifest for {module}"
+        ) from error
+    expected_symbols = sorted(
+        _string_tuple(_mapping(manifest, "API manifest").get("symbols"), "symbols")
+    )
     payload = {
         "wheel": str(wheel.resolve()),
         "module": module,
@@ -221,7 +241,7 @@ def _isolated_import(
         "forbidden_external_modules": list(specification["forbidden_external_modules"]),
         "forbidden_package_prefixes": list(specification["forbidden_package_prefixes"]),
     }
-    script = r'''
+    script = r"""
 import importlib, json, platform, sys
 p=json.loads(sys.argv[1]); sys.path.insert(0,p["wheel"])
 m=importlib.import_module(p["module"])
@@ -238,12 +258,18 @@ origin=str(getattr(m,"__file__", ""))
 if p["wheel"] not in origin: raise SystemExit("module was not loaded from candidate wheel")
 import numpy
 print(json.dumps({"module":p["module"],"symbol_count":len(actual),"module_member":origin.split(p["wheel"]+"/",1)[-1],"runtime":{"python_implementation":platform.python_implementation(),"python_version":platform.python_version(),"numpy_version":numpy.__version__}},sort_keys=True))
-'''
+"""
     environment = dict(os.environ)
     environment["PYTHONNOUSERSITE"] = "1"
     with tempfile.TemporaryDirectory(prefix="bpt-stable-import-") as directory:
         process = subprocess.run(
-            [python_executable, "-I", "-c", script, json.dumps(payload, sort_keys=True)],
+            [
+                python_executable,
+                "-I",
+                "-c",
+                script,
+                json.dumps(payload, sort_keys=True),
+            ],
             cwd=directory,
             env=environment,
             check=False,
@@ -256,7 +282,9 @@ print(json.dumps({"module":p["module"],"symbol_count":len(actual),"module_member
     try:
         return cast(dict[str, object], json.loads(process.stdout))
     except json.JSONDecodeError as error:
-        raise StableDistributionError(f"isolated import {module} returned invalid JSON") from error
+        raise StableDistributionError(
+            f"isolated import {module} returned invalid JSON"
+        ) from error
 
 
 def _sdist_members(path: Path) -> tuple[str, set[str]]:
@@ -265,11 +293,17 @@ def _sdist_members(path: Path) -> tuple[str, set[str]]:
             roots: set[str] = set()
             regular: set[str] = set()
             for item in archive.getmembers():
-                raw = item.name[:-1] if item.isdir() and item.name.endswith("/") else item.name
+                raw = (
+                    item.name[:-1]
+                    if item.isdir() and item.name.endswith("/")
+                    else item.name
+                )
                 name = _archive_path(raw, "sdist member")
                 roots.add(name.split("/", 1)[0])
                 if item.issym() or item.islnk():
-                    raise StableDistributionError("sdist contains a symbolic or hard link")
+                    raise StableDistributionError(
+                        "sdist contains a symbolic or hard link"
+                    )
                 if not item.isdir() and not item.isfile():
                     raise StableDistributionError("sdist contains a special member")
                 if item.isfile():
@@ -305,16 +339,24 @@ def validate_distributions(
     wheel_members, entry_points = _zip_members(wheel_source)
     if len(wheel_members) > cast(int, wheel_contract["maximum_member_count"]):
         raise StableDistributionError("wheel exceeds its member-count budget")
-    missing_wheel = set(cast(tuple[str, ...], wheel_contract["required_members"])) - set(wheel_members)
+    missing_wheel = set(
+        cast(tuple[str, ...], wheel_contract["required_members"])
+    ) - set(wheel_members)
     if missing_wheel:
-        raise StableDistributionError(f"wheel is missing required members: {sorted(missing_wheel)}")
+        raise StableDistributionError(
+            f"wheel is missing required members: {sorted(missing_wheel)}"
+        )
     forbidden = [
         member
         for member in wheel_members
-        if member.startswith(tuple(cast(Sequence[str], wheel_contract["forbidden_member_prefixes"])))
+        if member.startswith(
+            tuple(cast(Sequence[str], wheel_contract["forbidden_member_prefixes"]))
+        )
     ]
     if forbidden:
-        raise StableDistributionError(f"wheel contains repository-only members: {forbidden}")
+        raise StableDistributionError(
+            f"wheel contains repository-only members: {forbidden}"
+        )
     scripts = _console_scripts(entry_points)
     expected_scripts = dict(cast(Mapping[str, str], wheel_contract["console_scripts"]))
     if scripts != expected_scripts:
@@ -326,7 +368,9 @@ def validate_distributions(
             project_root=root,
             python_executable=python_executable,
         )
-        for item in cast(Sequence[Mapping[str, Any]], wheel_contract["isolated_imports"])
+        for item in cast(
+            Sequence[Mapping[str, Any]], wheel_contract["isolated_imports"]
+        )
     ]
 
     sdist_size = sdist_source.stat().st_size
@@ -335,12 +379,18 @@ def validate_distributions(
     sdist_root, sdist_members = _sdist_members(sdist_source)
     if len(sdist_members) > cast(int, sdist_contract["maximum_regular_member_count"]):
         raise StableDistributionError("sdist exceeds its member-count budget")
-    required_relative = set(cast(tuple[str, ...], sdist_contract["required_members"])) | set(
-        cast(tuple[str, ...], sdist_contract["supported_self_test_files"])
-    )
-    missing_sdist = {item for item in required_relative if f"{sdist_root}/{item}" not in sdist_members}
+    required_relative = set(
+        cast(tuple[str, ...], sdist_contract["required_members"])
+    ) | set(cast(tuple[str, ...], sdist_contract["supported_self_test_files"]))
+    missing_sdist = {
+        item
+        for item in required_relative
+        if f"{sdist_root}/{item}" not in sdist_members
+    }
     if missing_sdist:
-        raise StableDistributionError(f"sdist is missing stable members: {sorted(missing_sdist)}")
+        raise StableDistributionError(
+            f"sdist is missing stable members: {sorted(missing_sdist)}"
+        )
 
     return {
         "schema": REPORT_SCHEMA,
@@ -367,8 +417,12 @@ def validate_distributions(
             "maximum_size_bytes": sdist_contract["maximum_size_bytes"],
             "archive_root": sdist_root,
             "regular_member_count": len(sdist_members),
-            "maximum_regular_member_count": sdist_contract["maximum_regular_member_count"],
-            "supported_self_test_files": list(sdist_contract["supported_self_test_files"]),
+            "maximum_regular_member_count": sdist_contract[
+                "maximum_regular_member_count"
+            ],
+            "supported_self_test_files": list(
+                sdist_contract["supported_self_test_files"]
+            ),
         },
         "claim_boundary": (
             "Distribution membership, size, entry-point, public-API, and isolated-import "
