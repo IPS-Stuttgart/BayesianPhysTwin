@@ -8,7 +8,8 @@ ratchets quality without requiring an all-at-once cleanup:
 * every added or modified package module is type-checked;
 * mature public contracts are type-checked on every run;
 * stable modules with pre-existing type debt become blocking when modified;
-* a smaller, mature subset is checked with ``mypy --strict``.
+* a smaller, mature subset is checked with ``mypy --strict``; and
+* newly added workflows satisfy lifecycle and immutable-action policy.
 """
 
 from __future__ import annotations
@@ -177,6 +178,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     else:
         print("No added or modified Python files require Ruff checks.", flush=True)
+
+    workflow_policy_command = [
+        sys.executable,
+        "tools/quality/check_workflow_policy.py",
+        "--head",
+        head,
+    ]
+    if base is not None:
+        workflow_policy_command.extend(("--base", base))
+    _run(
+        tuple(workflow_policy_command),
+        label="Workflow lifecycle and immutable-action policy",
+    )
 
     changed_package_modules = tuple(
         path for path in changed_python if path.startswith("src/bayesian_phystwin/")
