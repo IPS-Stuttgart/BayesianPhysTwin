@@ -82,6 +82,11 @@ The only progressing command is:
 python scripts/science/run_deform360_fresh_object_session_source_v6_1.py --help
 ```
 
+Before `seal-batch`, the registered point and covariance candidates are
+materialized and sealed by the separate prefix-only producer documented in
+`docs/deform360_fresh_object_session_candidate_v6_1.md`. Its execution receipt
+does not authorize `assemble`, suffix access, or source-gate evaluation.
+
 Every subcommand requires the exact base policy, covariance amendment, nested
 repair, and ten-unit source selection. `seal-batch` requires exactly 100 raw
 prediction files. `assemble` requires exactly 100 outcome files and can run only
@@ -94,8 +99,9 @@ closed with a retirement error.
 ## Scientific boundary
 
 This repair uses no v6 challenger outcome, v5 confirmation payload or outcome,
-v6 target payload or outcome, human selection, or replacement. Prob4D is used
-only through the already sealed decoded-uniform observation artifacts in the
-upstream source batch; no new Prob4D or MotionCrafter inference is introduced by
-this source-contract repair. A passing source gate would justify only the next
+v6 target payload or outcome, human selection, or replacement. The upstream
+visual bundle was produced by the Prob4D pipeline, but the sealed source plan
+selects its MotionCrafter `baseline_disjoint.npz` product, not decoded-uniform
+overlap fusion. No new Prob4D or MotionCrafter inference is introduced by this
+source-contract repair. A passing source gate would justify only the next
 pre-registered source-to-fresh confirmation stage, not a state-of-the-art claim.
