@@ -323,9 +323,7 @@ def _expected_outcome(
             ("deterministic-reference-unsupported", "selected-exact-fallback"),
         )
     mean = mean_inference_admissible and mean_regret_guard_accepted
-    covariance = (
-        covariance_treatment_authorized and covariance_candidate_admissible
-    )
+    covariance = covariance_treatment_authorized and covariance_candidate_admissible
     reasons = [
         "mean-update-authorized" if mean else "mean-update-rejected",
         (
@@ -411,9 +409,7 @@ class BeliefComponentAdmissionDecisionV1:
             mean_regret_guard_accepted=self.mean_regret_guard_accepted,
             covariance_treatment_authorized=self.covariance_treatment_authorized,
             covariance_candidate_admissible=self.covariance_candidate_admissible,
-            common_prerequisites_admissible=(
-                self.common_prerequisites_admissible
-            ),
+            common_prerequisites_admissible=(self.common_prerequisites_admissible),
             reference_supported=self.reference_supported,
         )
         if (mode, arm_id) != expected[:2]:
@@ -462,15 +458,9 @@ class BeliefComponentAdmissionDecisionV1:
             "covariance_decision_id": self.covariance_decision_id,
             "mean_inference_admissible": self.mean_inference_admissible,
             "mean_regret_guard_accepted": self.mean_regret_guard_accepted,
-            "covariance_treatment_authorized": (
-                self.covariance_treatment_authorized
-            ),
-            "covariance_candidate_admissible": (
-                self.covariance_candidate_admissible
-            ),
-            "common_prerequisites_admissible": (
-                self.common_prerequisites_admissible
-            ),
+            "covariance_treatment_authorized": (self.covariance_treatment_authorized),
+            "covariance_candidate_admissible": (self.covariance_candidate_admissible),
+            "common_prerequisites_admissible": (self.common_prerequisites_admissible),
             "reference_supported": self.reference_supported,
             "mean_authorized": self.mean_authorized,
             "covariance_authorized": self.covariance_authorized,
@@ -564,9 +554,7 @@ def compose_belief_component_admission(
     if not isinstance(policy, BeliefComponentAdmissionPolicyV1):
         raise TypeError("policy must be a BeliefComponentAdmissionPolicyV1")
     if not isinstance(mean_guard_decision, CompleteBeliefGuardDecisionV1):
-        raise TypeError(
-            "mean_guard_decision must be a CompleteBeliefGuardDecisionV1"
-        )
+        raise TypeError("mean_guard_decision must be a CompleteBeliefGuardDecisionV1")
     if not isinstance(
         covariance_decision,
         QueryCovarianceTreatmentDecisionV1,
@@ -576,24 +564,15 @@ def compose_belief_component_admission(
         )
     if mean_guard_decision.common_domain_id != policy.common_domain_id:
         raise ValueError("mean guard binds a different common domain")
-    if (
-        mean_guard_decision.baseline_belief_id
-        != policy.deterministic_reference_arm_id
-    ):
+    if mean_guard_decision.baseline_belief_id != policy.deterministic_reference_arm_id:
         raise ValueError("mean guard does not bind the deterministic reference")
     if mean_guard_decision.candidate_belief_id != policy.mean_candidate_arm_id:
         raise ValueError("mean guard does not bind the registered mean candidate")
     if covariance_decision.exact_fallback_id != policy.exact_fallback_policy_id:
         raise ValueError("covariance decision binds a different exact fallback")
-    if (
-        covariance_decision.reference_policy_id
-        != policy.reference_covariance_policy_id
-    ):
+    if covariance_decision.reference_policy_id != policy.reference_covariance_policy_id:
         raise ValueError("covariance decision binds a different reference policy")
-    if (
-        covariance_decision.candidate_policy_id
-        != policy.candidate_covariance_policy_id
-    ):
+    if covariance_decision.candidate_policy_id != policy.candidate_covariance_policy_id:
         raise ValueError("covariance decision binds a different candidate policy")
     covariance_admissible = genuine_boolean(
         covariance_candidate_admissible,
@@ -645,9 +624,7 @@ class BeliefComponentAdmissionResultV1(Generic[BeliefT]):
 
     def __post_init__(self) -> None:
         if not isinstance(self.decision, BeliefComponentAdmissionDecisionV1):
-            raise TypeError(
-                "decision must be a BeliefComponentAdmissionDecisionV1"
-            )
+            raise TypeError("decision must be a BeliefComponentAdmissionDecisionV1")
         policy = self.decision.policy
         arms = {
             "exact-fallback": (
@@ -676,10 +653,13 @@ class BeliefComponentAdmissionResultV1(Generic[BeliefT]):
             raise ValueError(
                 "selected routing must reuse the exact registered belief object"
             )
-        if _belief_id(
-            self.selected_belief,
-            name="selected_belief",
-        ) != self.decision.selected_arm_id:
+        if (
+            _belief_id(
+                self.selected_belief,
+                name="selected_belief",
+            )
+            != self.decision.selected_arm_id
+        ):
             raise ValueError("selected belief ID differs from the decision")
         object.__setattr__(
             self,
