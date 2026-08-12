@@ -100,6 +100,15 @@ jobs:
           persist-credentials: false
           clean: true
 
+      - name: Check out exact merged Prob4D producer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Prob4D
+          ref: b2953319e9b7afea04013c214c502b38c5a83489
+          path: .ci/prob4d
+          persist-credentials: false
+          clean: true
+
       - name: Set up Python 3.12
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -112,8 +121,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --no-cache-dir -e ".[dev]"
-          python -m pip install --no-cache-dir \
-            "prob4d @ git+https://github.com/IPS-Stuttgart/Prob4D@b2953319e9b7afea04013c214c502b38c5a83489"
+          python -m pip install --no-cache-dir ./.ci/prob4d
           python -m pip check
           python - <<'PY'
           import sys
