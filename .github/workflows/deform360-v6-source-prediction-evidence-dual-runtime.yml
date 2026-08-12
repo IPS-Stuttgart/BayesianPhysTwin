@@ -11,17 +11,20 @@ on:
       - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_case_subprocess_stdin_isolation_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
       - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
+      - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
   push:
     branches: [main]
     paths:
@@ -32,17 +35,20 @@ on:
       - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_case_subprocess_stdin_isolation_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
       - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
+      - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
   workflow_dispatch:
 
 permissions:
@@ -113,6 +119,9 @@ env:
   OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID: 72db4752194340a4e8122332ec7483e7d397240c714b3aeec771b1e043369deb
   OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json
   OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_SHA256: 5d0054d3efffe5fe5b5ce8dd96ae5eb009a399c8ed26f8c054dba9575d5f072e
+  CASE_STDIN_ISOLATION_REPAIR_ID: 08df8831e0261b482c9e682b30b0a7fdf37b0924de23a58484db9ce2546b625e
+  CASE_STDIN_ISOLATION_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json
+  CASE_STDIN_ISOLATION_REPAIR_SHA256: 0fed80a495addd92080b6a4bdb11f83d3f4cbd9ed7ffa3fa66d90ac6934f3bf4
   OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID: 9be2526499e5f907e47de8229b68d0bf785fb913
   OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID: 18ffea5595189505e24e2af360aa570de56e2466
   OFFICIAL_PHYSTWIN_PYTORCH3D_VERSION: "0.7.8"
@@ -137,7 +146,7 @@ env:
   OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST: "8.9"
   OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS: "-include cstdint"
   OFFICIAL_PHYSTWIN_MAX_JOBS: "2"
-  DISPATCHER_SHA256: 50487ffb17e08bc6c1a38e82b54bda975699033a353ae211f63912e24e97989a
+  DISPATCHER_SHA256: be6d84af023e8295a9727f0a7b8785969aaea510779c1e56ab20a34dc0b03074
   PRIMARY_PYTHON_VERSION: "3.12"
   PRIMARY_TORCH_VERSION: 2.5.1+cu121
   FRAME_ZERO_PYTHON_VERSION: "3.10"
@@ -188,18 +197,21 @@ jobs:
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
-            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py
+            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
+            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py
           python -m ruff format --check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
-            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py
+            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
+            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
+            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -340,6 +352,8 @@ jobs:
               = "${PRIMARY_PYNPUT_RUNTIME_REPAIR_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
               = "${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_SHA256}"
+            test "$(sha256sum "${CASE_STDIN_ISOLATION_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${CASE_STDIN_ISOLATION_REPAIR_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/env_install/env_install.sh" | awk '{print $1}')" \
               = "${PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/qqtt/engine/trainer_warp.py" | awk '{print $1}')" \
@@ -399,6 +413,7 @@ jobs:
             marker="${RUNNER_TEMP}/deform360-v6-frame-zero-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             config_repair_marker="${RUNNER_TEMP}/deform360-v6-fallback-config-repair-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             official_runtime_marker="${RUNNER_TEMP}/deform360-v6-official-phystwin-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+            case_stdin_isolation_marker="${RUNNER_TEMP}/deform360-v6-case-stdin-isolation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             official_bootstrap_marker="${RUNNER_TEMP}/deform360-v6-official-phystwin-bootstrap-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             official_build_root="${RUNNER_TEMP}/deform360-v6-official-phystwin-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             official_wheelhouse="${RUNNER_TEMP}/deform360-v6-official-phystwin-wheels-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -794,6 +809,7 @@ jobs:
               echo "BPT_FRAME_ZERO_RUNTIME_MARKER=${marker}"
               echo "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER=${config_repair_marker}"
               echo "BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER=${official_runtime_marker}"
+              echo "BPT_CASE_STDIN_ISOLATION_MARKER=${case_stdin_isolation_marker}"
               echo "BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER=${official_bootstrap_marker}"
               echo "BPT_PYTHON=${dispatcher}"
             } >> "${GITHUB_ENV}"
@@ -1002,6 +1018,25 @@ jobs:
               }
               if official_marker != expected_official_marker:
                   raise SystemExit("official PhysTwin runtime activation marker changed")
+          stdin_marker_raw = os.environ.get(
+              "BPT_CASE_STDIN_ISOLATION_MARKER", ""
+          ).strip()
+          stdin_marker_path = Path(stdin_marker_raw) if stdin_marker_raw else None
+          stdin_isolation_activated = bool(
+              stdin_marker_path is not None
+              and stdin_marker_path.is_file()
+              and not stdin_marker_path.is_symlink()
+          )
+          if stdin_isolation_activated:
+              stdin_marker = json.loads(
+                  stdin_marker_path.read_text(encoding="utf-8")
+              )
+              expected_stdin_marker = {
+                  "repair_id": os.environ["CASE_STDIN_ISOLATION_REPAIR_ID"],
+                  "stdin": "/dev/null",
+              }
+              if stdin_marker != expected_stdin_marker:
+                  raise SystemExit("case stdin isolation marker changed")
           bootstrap_marker_raw = os.environ.get(
               "BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER", ""
           ).strip()
@@ -1064,6 +1099,8 @@ jobs:
               raise SystemExit("primary pynput runtime receipt field already exists")
           if "runtime_official_phystwin_py310" in receipt:
               raise SystemExit("official PhysTwin runtime receipt field already exists")
+          if "runtime_case_subprocess_stdin_isolation" in receipt:
+              raise SystemExit("case stdin isolation receipt field already exists")
           receipt["runtime_frame_zero_precompiled_cuda"] = {
               "activated": activated,
               "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
@@ -1247,6 +1284,31 @@ jobs:
               "source_checkout_unchanged": bootstrap_probe_passed,
               "torch_version": os.environ["FRAME_ZERO_TORCH_VERSION"],
           }
+          receipt["runtime_case_subprocess_stdin_isolation"] = {
+              "activated": stdin_isolation_activated,
+              "default_dispatch_stdin_preserved": True,
+              "dispatcher_file_sha256": os.environ["DISPATCHER_SHA256"],
+              "isolated_entry_points": [
+                  (
+                      "scripts/remote/"
+                      "run_deform360_joint_sparse_physical_source_v5.py"
+                  ),
+                  (
+                      "scripts/remote/"
+                      "run_deform360_v6_stage_selector_identity_repair.py"
+                  ),
+                  (
+                      "scripts/science/"
+                      "materialize_deform360_joint_sparse_physical_source_v5.py"
+                  ),
+              ],
+              "isolated_stdin": "/dev/null",
+              "repair_file_sha256": os.environ[
+                  "CASE_STDIN_ISOLATION_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["CASE_STDIN_ISOLATION_REPAIR_ID"],
+              "repair_path": os.environ["CASE_STDIN_ISOLATION_REPAIR_PATH"],
+          }
           canonical = json.dumps(
               receipt,
               sort_keys=True,
@@ -1330,6 +1392,7 @@ jobs:
           cma_runtime = receipt["runtime_primary_cma_import_dependency"]
           pynput_runtime = receipt["runtime_primary_pynput_import_dependency"]
           official_runtime = receipt["runtime_official_phystwin_py310"]
+          stdin_isolation = receipt["runtime_case_subprocess_stdin_isolation"]
           body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
 
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
@@ -1347,6 +1410,7 @@ jobs:
           - primary headless pynput dependency activated: `{str(pynput_runtime['activated']).lower()}`
           - official PhysTwin Python 3.10 bootstrap passed: `{str(official_runtime['bootstrap_probe_passed']).lower()}`
           - physical-prior Python 3.10 route activated: `{str(official_runtime['physical_prior_stage_activated']).lower()}`
+          - per-case subprocess stdin isolation activated: `{str(stdin_isolation['activated']).lower()}`
           - simple-knn source tree: `{official_runtime['simple_knn_tree_oid']}`
           - Gaussian rasterizer source tree: `{official_runtime['diff_gaussian_rasterization_tree_oid']}`
           - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
@@ -1357,7 +1421,7 @@ jobs:
           - v6 target outcomes used: `false`
           - replacement allowed: `false`
 
-          This run routes frame-zero reconstruction and the physical-prior stage through the upstream-compatible Python 3.10/Torch 2.4 runtime. It builds the two Gaussian CUDA extensions from exact frozen PhysTwin source trees outside that checkout, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits only hash-pinned downloaded dependencies. Interactive keyboard control is disabled and the registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          This run routes frame-zero reconstruction and the physical-prior stage through the upstream-compatible Python 3.10/Torch 2.4 runtime. It builds the two Gaussian CUDA extensions from exact frozen PhysTwin source trees outside that checkout, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits only hash-pinned downloaded dependencies. Registered per-case subprocess entry points receive closed standard input so they cannot consume the frozen object-roster stream; generic dispatcher calls retain their existing stdin behavior. Interactive keyboard control is disabled and the registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
           """
           request = urllib.request.Request(
               (

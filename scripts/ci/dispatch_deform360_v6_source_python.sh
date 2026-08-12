@@ -6,11 +6,15 @@ set -euo pipefail
 : "${BPT_FRAME_ZERO_RUNTIME_MARKER:?BPT_FRAME_ZERO_RUNTIME_MARKER is required}"
 : "${BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER:?BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER is required}"
 : "${BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER:?BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER is required}"
+: "${BPT_CASE_STDIN_ISOLATION_MARKER:?BPT_CASE_STDIN_ISOLATION_MARKER is required}"
 
 readonly FRAME_ZERO_DISPATCH_REPAIR_ID="6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8"
 readonly FALLBACK_CONFIG_ROUTE_REPAIR_ID="df4fd52c65acc25c70c4cde650dd021f704e799dceda3323f3aa28af6fd99e0e"
 readonly OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID="72db4752194340a4e8122332ec7483e7d397240c714b3aeec771b1e043369deb"
+readonly CASE_STDIN_ISOLATION_REPAIR_ID="08df8831e0261b482c9e682b30b0a7fdf37b0924de23a58484db9ce2546b625e"
 readonly PHYSICAL_TARGET="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+readonly STAGE_SELECTOR_HELPER_TARGET="scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"
+readonly MATERIALIZER_TARGET="scripts/science/materialize_deform360_joint_sparse_physical_source_v5.py"
 readonly FRAME_ZERO_STAGE="frame-zero"
 readonly PHYSICAL_PRIOR_STAGE="physical-prior"
 readonly FALLBACK_CONFIG_FLAG="--persistence-fallback-source-config"
@@ -21,6 +25,38 @@ readonly CORRECTED_FALLBACK_CONFIG_FILE_SHA256="60e9887836ea0ba3410066dbb5668988
 readonly EXPECTED_MARKER="{\"repair_id\":\"${FRAME_ZERO_DISPATCH_REPAIR_ID}\",\"stage\":\"${FRAME_ZERO_STAGE}\"}"
 readonly EXPECTED_FALLBACK_CONFIG_REPAIR_MARKER="{\"corrected_config\":\"${CORRECTED_FALLBACK_CONFIG}\",\"previous_config\":\"${PREVIOUS_FALLBACK_CONFIG}\",\"repair_id\":\"${FALLBACK_CONFIG_ROUTE_REPAIR_ID}\",\"stage\":\"${FRAME_ZERO_STAGE}\"}"
 readonly EXPECTED_OFFICIAL_PHYSTWIN_RUNTIME_MARKER="{\"repair_id\":\"${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID}\",\"stage\":\"${PHYSICAL_PRIOR_STAGE}\"}"
+readonly EXPECTED_CASE_STDIN_ISOLATION_MARKER="{\"repair_id\":\"${CASE_STDIN_ISOLATION_REPAIR_ID}\",\"stdin\":\"/dev/null\"}"
+
+mark_case_stdin_isolation() {
+  local marker="${BPT_CASE_STDIN_ISOLATION_MARKER}"
+  local parent
+  local temporary
+  parent="$(dirname "${marker}")"
+  mkdir -p "${parent}"
+  if [[ -L "${marker}" ]]; then
+    echo "refusing symlinked case stdin isolation marker" >&2
+    exit 2
+  fi
+  if [[ -e "${marker}" ]]; then
+    [[ -f "${marker}" ]] || {
+      echo "case stdin isolation marker is not a regular file" >&2
+      exit 2
+    }
+    [[ "$(cat "${marker}")" == "${EXPECTED_CASE_STDIN_ISOLATION_MARKER}" ]] || {
+      echo "case stdin isolation marker changed" >&2
+      exit 2
+    }
+    return
+  fi
+  temporary="${marker}.tmp.$$"
+  umask 077
+  printf '%s\n' "${EXPECTED_CASE_STDIN_ISOLATION_MARKER}" > "${temporary}"
+  [[ ! -L "${temporary}" && -f "${temporary}" ]] || {
+    echo "case stdin isolation marker temporary path is unsafe" >&2
+    exit 2
+  }
+  mv "${temporary}" "${marker}"
+}
 
 mark_frame_zero_runtime() {
   local marker="${BPT_FRAME_ZERO_RUNTIME_MARKER}"
@@ -171,12 +207,22 @@ if [[ "${1:-}" == "${PHYSICAL_TARGET}" ]]; then
     }
     mark_frame_zero_runtime
     mark_fallback_config_repair
-    exec "${BPT_FRAME_ZERO_PYTHON}" "${arguments[@]}"
+    mark_case_stdin_isolation
+    exec "${BPT_FRAME_ZERO_PYTHON}" "${arguments[@]}" </dev/null
   fi
   if [[ "${stage_value}" == "${PHYSICAL_PRIOR_STAGE}" ]]; then
     mark_official_phystwin_runtime
-    exec "${BPT_FRAME_ZERO_PYTHON}" "${arguments[@]}"
+    mark_case_stdin_isolation
+    exec "${BPT_FRAME_ZERO_PYTHON}" "${arguments[@]}" </dev/null
   fi
+  mark_case_stdin_isolation
+  exec "${BPT_PRIMARY_PYTHON}" "$@" </dev/null
+fi
+
+if [[ "${1:-}" == "${STAGE_SELECTOR_HELPER_TARGET}" \
+  || "${1:-}" == "${MATERIALIZER_TARGET}" ]]; then
+  mark_case_stdin_isolation
+  exec "${BPT_PRIMARY_PYTHON}" "$@" </dev/null
 fi
 
 exec "${BPT_PRIMARY_PYTHON}" "$@"
