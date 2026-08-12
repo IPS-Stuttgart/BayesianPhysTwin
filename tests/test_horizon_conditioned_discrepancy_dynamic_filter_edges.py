@@ -68,6 +68,18 @@ def test_input_and_type_failures() -> None:
             end_frame=1,
             config=object(),  # type: ignore[arg-type]
         )
+    for variance in (
+        np.zeros((2, 2)),
+        np.full((2, 1), -1.0),
+        np.full((2, 1), np.nan),
+    ):
+        with pytest.raises(ValueError, match="observation_variance_m2"):
+            infer_dynamic_endpoint_model_average(
+                np.zeros((2, 1, 3)),
+                np.ones((2, 1), dtype=bool),
+                end_frame=1,
+                observation_variance_m2=variance,
+            )
     posterior = infer_dynamic_endpoint_model_average(
         np.zeros((1, 1, 3)),
         np.ones((1, 1), dtype=bool),
@@ -138,6 +150,50 @@ def test_result_arrays_are_defensively_owned_and_read_only() -> None:
     assert all(not value.flags.writeable for value in arrays)
     with pytest.raises(ValueError):
         posterior.mean_m[0, 0] = 1.0
+
+
+def test_metric_observation_variance_reduces_update_confidence() -> None:
+    residual = np.array([[[0.01, 0.0, 0.0]]])
+    valid = np.ones((1, 1), dtype=bool)
+    component = _single(FixedBayesianAnchorConfigV1())
+    precise = infer_dynamic_endpoint_model_average(
+        residual,
+        valid,
+        end_frame=1,
+        config=component,
+        observation_variance_m2=np.zeros((1, 1)),
+    )
+    uncertain = infer_dynamic_endpoint_model_average(
+        residual,
+        valid,
+        end_frame=1,
+        config=component,
+        observation_variance_m2=np.full((1, 1), 0.1**2),
+    )
+
+    assert np.linalg.norm(uncertain.mean_m[0]) < np.linalg.norm(precise.mean_m[0])
+    assert uncertain.covariance_m2[0, 0, 0] > precise.covariance_m2[0, 0, 0]
+
+
+def test_gross_innovation_is_rejected_once_by_the_robust_mixture() -> None:
+    component = _single(
+        FixedBayesianAnchorConfigV1(
+            process_std_m=0.0,
+            observation_std_m=0.0025,
+            inlier_prior=0.95,
+            outlier_variance_multiplier=100.0,
+        )
+    )
+    posterior = infer_dynamic_endpoint_model_average(
+        np.array([[[1.0, 0.0, 0.0]]]),
+        np.ones((1, 1), dtype=bool),
+        end_frame=1,
+        config=component,
+        observation_variance_m2=np.zeros((1, 1)),
+    )
+
+    assert posterior.final_nominal_probability[0] < 1e-6
+    assert posterior.mean_m[0, 0] < 0.2
 
 
 def test_nonfinite_internal_evidence_fails_closed(

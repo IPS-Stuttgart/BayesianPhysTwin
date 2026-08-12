@@ -44,7 +44,7 @@ from bayesian_phystwin.prob4d_provider_attestation import (
 
 ROOT = Path(__file__).resolve().parents[1]
 
-_EXPECTED_TABLE_ID = "7c59d154fda374aef21ee3ff7c141ca6dab1abb4963d28e97d29b20718eeba45"
+_EXPECTED_TABLE_ID = "2c3416e1aa037f427c9489057821a25b224fb8368a979a9a0e3cbf711f82bc1e"
 _EXPECTED_CAUSAL4D_MODULES = (
     ("bayesian_phystwin.causal4d_artifacts_v1", 1, "frozen_compatibility"),
     ("bayesian_phystwin.causal4d_artifacts_v2", 2, "production_additive"),
@@ -358,7 +358,7 @@ def test_component_lines_match_current_package_contracts() -> None:
         "required_dependencies": {"numpy": ">=1.23"},
         "role": "Bayesian physical-twin inference and compatibility bridge",
     }
-    assert table.component("prob4d")["supported_versions"] == ">=0.4,<0.5"
+    assert table.component("prob4d")["supported_versions"] == ">=0.4,<0.6"
     causal4d = table.component("causal4d")
     assert causal4d["supported_versions"] == ">=0.5,<0.6"
     assert causal4d["required_dependencies"] == {
@@ -414,6 +414,8 @@ def test_prob4d_provider_rows_separate_historical_and_claim_bearing_use() -> Non
         ("prob4d.provider_v1", 1)
     ]
     assert provider_v1["supports_claim_bearing_admission"] is False
+    assert provider_v1["distribution_ranges"]["prob4d"] == ">=0.4,<0.6"
+    assert "0.4.1" in " ".join(provider_v1["notes"])
 
     v2_modules = cast(Sequence[Mapping[str, Any]], provider_v2["provider_modules"])
     assert [(item["module"], item["api_version"]) for item in v2_modules] == [
@@ -429,6 +431,7 @@ def test_prob4d_provider_rows_separate_historical_and_claim_bearing_use() -> Non
     assert v2_schemas["ObservationFactorBundle"] == [4]
     assert provider_v2["supports_claim_bearing_admission"] is True
     assert provider_v2["exact_revisions_required_for_evidence"] is True
+    assert provider_v2["distribution_ranges"]["prob4d"] == ">=0.4,<0.6"
 
 
 def test_resource_bytes_round_trip_through_strict_validation() -> None:

@@ -13,6 +13,7 @@ import numpy as np
 from .calibration import binary_calibration_metrics
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
+    _frame_arrays,
     build_phystwin_track_objective,
 )
 
@@ -30,6 +31,16 @@ def _sha256(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def _config(
+    value: PhysTwinRefitReliabilityConfig | None,
+) -> PhysTwinRefitReliabilityConfig:
+    if value is None:
+        return PhysTwinRefitReliabilityConfig()
+    if isinstance(value, PhysTwinRefitReliabilityConfig):
+        return value
+    raise TypeError("config must be a PhysTwinRefitReliabilityConfig or None")
+
+
 def evaluate_phystwin_prior_arrays(
     visible: np.ndarray,
     motion_valid: np.ndarray,
@@ -39,26 +50,18 @@ def evaluate_phystwin_prior_arrays(
 ) -> dict[str, object]:
     """Compare cue priors with hard-gate labels on target-visible tracks."""
 
-    visible_array = np.asarray(visible, dtype=bool)
-    valid_array = np.asarray(motion_valid, dtype=bool)
-    if visible_array.ndim != 2:
-        raise ValueError("visible must have shape (T, N)")
-    frame_count, track_count = visible_array.shape
-    if valid_array.shape not in {
-        (frame_count, track_count),
-        (frame_count - 1, track_count),
-    }:
-        raise ValueError("motion_valid must have shape (T, N) or (T-1, N)")
+    cfg = _config(config)
+    visible_array, valid_by_target_frame = _frame_arrays(visible, motion_valid)
     support = visible_array[1:]
-    labels = valid_array[: frame_count - 1][support]
+    labels = valid_by_target_frame[1:][support]
     variants: dict[str, object] = {}
     for variant in ("mixture", "markov_mixture"):
         objective = build_phystwin_track_objective(
             visible_array,
-            valid_array,
+            motion_valid,
             cues=cues,
             variant=variant,
-            config=config,
+            config=cfg,
         )
         probability = objective.prior_inlier_probability[1:][support].astype(float)
         variants[variant] = {
@@ -70,7 +73,10 @@ def evaluate_phystwin_prior_arrays(
         }
     return {
         "support_contract": "target frame visible; motion gate indexed at t-1",
-        "warning": "PhysTwin's motion gate is a related heuristic, not corruption ground truth.",
+        "warning": (
+            "PhysTwin's motion gate is a related heuristic, not corruption "
+            "ground truth."
+        ),
         "measurement_count": int(len(labels)),
         "hard_valid_rate": float(np.mean(labels)),
         "variants": variants,
@@ -85,6 +91,7 @@ def evaluate_phystwin_prior_files(
 ) -> dict[str, object]:
     """Load trusted official artifacts and return prior calibration provenance."""
 
+    cfg = _config(config)
     data = _load_pickle(final_data_path)
     with np.load(cues_path) as archive:
         cues = {name: np.asarray(archive[name]) for name in archive.files}
@@ -92,7 +99,7 @@ def evaluate_phystwin_prior_files(
         data["object_visibilities"],
         data["object_motions_valid"],
         cues,
-        config=config,
+        config=cfg,
     )
     return {
         "schema_version": 1,
@@ -107,7 +114,7 @@ def evaluate_phystwin_prior_files(
             },
         },
         "config": {
-            "reliability": vars(config or PhysTwinRefitReliabilityConfig()),
+            "reliability": vars(cfg),
             "static_variant": "mixture",
             "temporal_variant": "markov_mixture",
         },

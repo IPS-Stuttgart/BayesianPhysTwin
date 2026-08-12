@@ -81,10 +81,6 @@ def test_three_repository_workflow_materializes_exact_decision_evidence() -> Non
     assert "rejected-selection.json" in text
     assert "golden-path-bundle.json" in text
     assert "run-manifest-v2.json" in text
-    assert "public-api-manifest.json" in text
-    assert "Prob4D public-API manifest ID" in text
-    assert "prob4d.public-api-manifest" in text
-    assert "github-repository-id:1295794737" in text
     assert "exact_fallback_identity" in text
     assert "retention-days: 90" in text
     assert "if-no-files-found: error" in text

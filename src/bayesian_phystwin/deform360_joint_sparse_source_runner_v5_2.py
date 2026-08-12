@@ -27,6 +27,7 @@ from ._portable_contracts import (
     source_artifact_mapping,
 )
 from .deform360_joint_sparse_camera_recovery_v5_2 import (
+    CAMERA_REUSE_POLICY,
     RECOVERY_POLICY,
     validate_deform360_joint_sparse_camera_audit_v5_2,
 )
@@ -168,6 +169,21 @@ CAMERA_RECOVERY_ARTIFACT_NAMES: Final = frozenset(
         "recovery_preflight",
         "recovery_provider_plan",
         "recovery_provider_run",
+    }
+)
+CAMERA_REUSE_ARTIFACT_NAMES: Final = frozenset(
+    {
+        "amendment",
+        "base_camera_audit",
+        "base_prediction_batch",
+        "base_prediction_receipt",
+        "base_source_plan",
+        "camera_reuse_preflight",
+        "camera_reuse_receipt",
+        "combined_camera_audit_plan",
+        "final_camera_audit",
+        "metric_batch_result",
+        "metric_prefix_plan",
     }
 )
 
@@ -370,13 +386,20 @@ def _normalized_camera_recovery(value: object) -> dict[str, Any]:
         _mapping(recovery.get("source_artifacts"), name="camera recovery artifacts"),
         name="camera recovery artifacts",
     )
+    artifact_names = set(artifact_ids)
     _require(
-        set(artifact_ids) == CAMERA_RECOVERY_ARTIFACT_NAMES
-        and set(source_artifacts) == CAMERA_RECOVERY_ARTIFACT_NAMES,
+        artifact_names in {CAMERA_RECOVERY_ARTIFACT_NAMES, CAMERA_REUSE_ARTIFACT_NAMES}
+        and set(source_artifacts) == artifact_names,
         "camera recovery artifact roster changed",
     )
+    expected_policy = (
+        RECOVERY_POLICY
+        if artifact_names == CAMERA_RECOVERY_ARTIFACT_NAMES
+        else CAMERA_REUSE_POLICY
+    )
     _require(
-        recovery.get("policy") == RECOVERY_POLICY, "camera recovery policy changed"
+        recovery.get("policy") == expected_policy,
+        "camera recovery policy changed",
     )
     _require(
         recovery.get("base_prediction_batch_preserved") is True,
@@ -385,7 +408,7 @@ def _normalized_camera_recovery(value: object) -> dict[str, Any]:
     return {
         "artifact_ids": dict(artifact_ids),
         "source_artifacts": dict(source_artifacts),
-        "policy": dict(RECOVERY_POLICY),
+        "policy": dict(expected_policy),
         "base_prediction_batch_preserved": True,
     }
 
@@ -1069,6 +1092,7 @@ def publish_deform360_joint_sparse_source_prediction_panel_v5_2(
 
 __all__ = [
     "CAMERA_RECOVERY_ARTIFACT_NAMES",
+    "CAMERA_REUSE_ARTIFACT_NAMES",
     "SOURCE_PLAN_BOUNDARY",
     "SOURCE_PLAN_SCHEMA",
     "SOURCE_PLAN_SEMANTICS",

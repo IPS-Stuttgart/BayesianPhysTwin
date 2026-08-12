@@ -1,5 +1,12 @@
 # Deform360 v6 source challenger, covariance, and guard gate
 
+> **Retired progression path.** Before any v6 challenger suffix outcome or v6
+> target payload was opened, a source-independent audit found that this adapter
+> consumed precomputed guard decisions and calibrated interval summaries instead
+> of fitting them inside each outer fold. Its archives remain immutable
+> provenance, but its public evaluator now fails closed. Use the corrected v6.1
+> contract in `docs/deform360_fresh_object_session_source_v6_1.md`.
+
 ## Purpose
 
 This stage implements the first executable boundary of the frozen Deform360
