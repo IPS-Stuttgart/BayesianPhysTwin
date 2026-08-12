@@ -6,6 +6,7 @@ import hashlib
 from typing import Literal
 
 import numpy as np
+from numpy.typing import NDArray
 
 from ._independent_group_inference_common import (
     BOOTSTRAP_CHUNK_SIZE,
@@ -39,11 +40,15 @@ def exact_sign_flip_inference(
     global_tolerance = float(np.max(tolerance))
     rms_scale = np.sqrt(np.mean(np.square(effects), axis=0))
     pattern_hash = hashlib.sha256()
-    bit_positions = np.arange(group_count, dtype=np.uint64)[None, :]
+    bit_positions: NDArray[np.uint64] = np.arange(
+        group_count, dtype=np.uint64
+    )[None, :]
 
     for start in range(0, pattern_count, BOOTSTRAP_CHUNK_SIZE):
         stop = min(pattern_count, start + BOOTSTRAP_CHUNK_SIZE)
-        pattern_ids = np.arange(start, stop, dtype=np.uint64)[:, None]
+        pattern_ids: NDArray[np.uint64] = np.arange(
+            start, stop, dtype=np.uint64
+        )[:, None]
         bits = (pattern_ids >> bit_positions) & np.uint64(1)
         signs_i8 = np.where(bits == 0, 1, -1).astype(np.int8, copy=False)
         pattern_hash.update(np.asarray(signs_i8, dtype=np.dtype("<i1")).tobytes())
