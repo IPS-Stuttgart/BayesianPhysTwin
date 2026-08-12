@@ -60,9 +60,7 @@ def _prior() -> tuple[
     ],
 )
 def test_quantile_rejects_nonboolean_availability(available: np.ndarray) -> None:
-    residual = np.asarray(
-        [[0.001, 0.0, 0.0], [0.002, 0.0, 0.0], [0.003, 0.0, 0.0]]
-    )
+    residual = np.asarray([[0.001, 0.0, 0.0], [0.002, 0.0, 0.0], [0.003, 0.0, 0.0]])
 
     with pytest.raises(ValueError, match="available must contain only booleans"):
         finite_sample_absolute_residual_quantile_m(residual, available, 0.9)
@@ -161,9 +159,7 @@ def test_v2_quantile_is_exactly_v1_for_valid_boolean_inputs() -> None:
 
 def test_v2_update_is_exactly_v1_for_valid_boolean_inputs() -> None:
     points, config, prior = _prior()
-    residual = np.asarray(
-        [[0.01, 0.0, 0.0], [0.02, -0.01, 0.0], [0.03, 0.0, 0.01]]
-    )
+    residual = np.asarray([[0.01, 0.0, 0.0], [0.02, -0.01, 0.0], [0.03, 0.0, 0.01]])
     available = np.asarray([True, False, True])
 
     registered, registered_reliability = update_v1(
