@@ -99,16 +99,118 @@ def test_spd_system_rejects_nonfinite_factor_and_condition_diagnostics(
         SPDSystem.from_matrix(np.eye(2), name="condition-inf fixture")
 
 
+def test_spd_system_direct_construction_replays_admission() -> None:
+    matrix = np.asarray([[2.0, 0.25], [0.25, 1.0]])
+    factor = np.linalg.cholesky(matrix)
+    direct = SPDSystem(
+        name="direct fixture",
+        matrix=matrix,
+        cholesky=factor,
+        condition_number=float(np.linalg.cond(matrix)),
+        symmetry_error=0.0,
+        symmetry_tolerance=1e-12,
+        solve_residual_tolerance=1e-10,
+    )
+
+    matrix[0, 0] = 99.0
+    factor[0, 0] = 99.0
+    assert np.allclose(direct.matrix, [[2.0, 0.25], [0.25, 1.0]])
+    assert np.allclose(direct.cholesky @ direct.cholesky.T, direct.matrix)
+    assert not direct.matrix.flags.writeable
+    assert not direct.cholesky.flags.writeable
+
+
+def test_spd_system_direct_construction_preserves_prior_symmetry_diagnostic() -> None:
+    candidate = np.asarray([[2.0, 0.25 + 5e-13], [0.25, 1.0]])
+    admitted = SPDSystem.from_matrix(
+        candidate,
+        name="asymmetric fixture",
+        symmetry_absolute_tolerance=1e-12,
+        symmetry_relative_tolerance=0.0,
+    )
+
+    reconstructed = SPDSystem(
+        name=admitted.name,
+        matrix=admitted.matrix,
+        cholesky=admitted.cholesky,
+        condition_number=admitted.condition_number,
+        symmetry_error=admitted.symmetry_error,
+        symmetry_tolerance=admitted.symmetry_tolerance,
+        solve_residual_tolerance=admitted.solve_residual_tolerance,
+    )
+
+    assert reconstructed.symmetry_error == admitted.symmetry_error
+    assert reconstructed.symmetry_tolerance == admitted.symmetry_tolerance
+    assert np.array_equal(reconstructed.matrix, admitted.matrix)
+
+
+@pytest.mark.parametrize(
+    ("changes", "error_type", "message"),
+    [
+        (
+            {"cholesky": np.diag(np.asarray([0.0, 1.0]))},
+            SPDValidationError,
+            "cholesky does not match",
+        ),
+        (
+            {"condition_number": 2.0},
+            SPDConditionError,
+            "condition_number does not describe",
+        ),
+        (
+            {"symmetry_error": 1e-3, "symmetry_tolerance": 1e-4},
+            SPDValidationError,
+            "symmetry_error exceeds",
+        ),
+        (
+            {"solve_residual_tolerance": float("inf")},
+            ValueError,
+            "finite and nonnegative",
+        ),
+    ],
+)
+def test_spd_system_direct_construction_rejects_forged_fields(
+    changes: dict[str, object],
+    error_type: type[Exception],
+    message: str,
+) -> None:
+    fields: dict[str, object] = {
+        "name": "identity fixture",
+        "matrix": np.eye(2),
+        "cholesky": np.eye(2),
+        "condition_number": 1.0,
+        "symmetry_error": 0.0,
+        "symmetry_tolerance": 1e-12,
+        "solve_residual_tolerance": 1e-10,
+    }
+    fields.update(changes)
+    with pytest.raises(error_type, match=message):
+        SPDSystem(**fields)  # type: ignore[arg-type]
+
+
+def test_spd_system_rejects_underreported_direct_asymmetry() -> None:
+    matrix = np.asarray([[2.0, 0.25 + 5e-13], [0.25, 1.0]])
+    canonical = 0.5 * (matrix + matrix.T)
+    with pytest.raises(SPDValidationError, match="understates"):
+        SPDSystem(
+            name="underreported fixture",
+            matrix=matrix,
+            cholesky=np.linalg.cholesky(canonical),
+            condition_number=float(np.linalg.cond(canonical)),
+            symmetry_error=0.0,
+            symmetry_tolerance=1e-12,
+            solve_residual_tolerance=1e-10,
+        )
+
+
 def test_spd_system_rejects_invalid_logdet_and_residual_inputs() -> None:
     system = SPDSystem.from_matrix(np.eye(2), name="identity fixture")
-    invalid_factor = SPDSystem(
-        name=system.name,
-        matrix=system.matrix,
-        cholesky=np.diag(np.asarray([0.0, 1.0])),
-        condition_number=system.condition_number,
-        symmetry_error=system.symmetry_error,
-        symmetry_tolerance=system.symmetry_tolerance,
-        solve_residual_tolerance=system.solve_residual_tolerance,
+
+    invalid_factor = SPDSystem.from_matrix(np.eye(2), name="invalid-factor fixture")
+    object.__setattr__(
+        invalid_factor,
+        "cholesky",
+        np.diag(np.asarray([0.0, 1.0])),
     )
     with np.errstate(divide="ignore"):
         with pytest.raises(SPDValidationError, match="log determinant"):
@@ -123,15 +225,8 @@ def test_spd_system_rejects_invalid_logdet_and_residual_inputs() -> None:
     with pytest.raises(SPDSolveError, match="finite"):
         system.relative_residual(np.ones(2), np.asarray([np.nan, 0.0]))
 
-    invalid_matrix = SPDSystem(
-        name=system.name,
-        matrix=np.full((2, 2), np.inf),
-        cholesky=system.cholesky,
-        condition_number=system.condition_number,
-        symmetry_error=system.symmetry_error,
-        symmetry_tolerance=system.symmetry_tolerance,
-        solve_residual_tolerance=system.solve_residual_tolerance,
-    )
+    invalid_matrix = SPDSystem.from_matrix(np.eye(2), name="invalid-matrix fixture")
+    object.__setattr__(invalid_matrix, "matrix", np.full((2, 2), np.inf))
     with np.errstate(invalid="ignore"):
         with pytest.raises(SPDSolveError, match="non-finite"):
             invalid_matrix.relative_residual(np.ones(2), np.ones(2))
