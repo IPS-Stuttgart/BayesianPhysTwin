@@ -7,6 +7,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from bayesian_phystwin.deform360_fresh_object_session_public_inputs_v6_1 import (
+    prepare_deform360_disjoint_visual_window_v6_1,
+)
 from bayesian_phystwin.deform360_joint_sparse_materializer_v5 import (
     Deform360JointSparseExtractionConfigV5,
     Deform360JointSparsePrefixFitV5,
@@ -153,6 +156,58 @@ def test_contributor_duplication_does_not_raise_prior_reliability(
     assert np.all(rows_a.source_confidence == 1.0)
     assert np.all(rows_a.contributor_count == 1)
     assert np.all(rows_b.contributor_count == 500)
+
+
+def test_v61_adapter_preserves_v5_numerics_and_relabels_disjoint_provenance(
+    tmp_path: Path,
+) -> None:
+    decoded, metric, fit = _fixture(tmp_path)
+
+    legacy_rows, legacy_gauge = prepare_deform360_joint_sparse_visual_window_v5(
+        camera_id="camera-0",
+        decoded_uniform_path=decoded,
+        metric_prefix_path=metric,
+        raw_prefix_range_half_open=(10, 14),
+        fit=fit,
+        source_artifact_ids={"provider.json": "b" * 64},
+        metric_cluster_size_pixels=4,
+    )
+    rows, gauge = prepare_deform360_disjoint_visual_window_v6_1(
+        camera_id="camera-0",
+        disjoint_motioncrafter_path=decoded,
+        metric_prefix_path=metric,
+        raw_prefix_range_half_open=(10, 14),
+        fit=fit,
+        source_artifact_ids={"provider.json": "b" * 64},
+        metric_cluster_size_pixels=4,
+    )
+
+    assert rows.window_id == "motioncrafter-disjoint-baseline:camera-0"
+    assert rows.source_artifact_ids[
+        "motioncrafter-disjoint-baseline/camera-0.npz"
+    ] == _sha256(decoded)
+    assert all(
+        not key.startswith("prob4d-decoded-uniform/")
+        for key in rows.source_artifact_ids
+    )
+    assert all(
+        not key.startswith("prob4d-decoded-uniform/")
+        for key in gauge.source_artifact_ids
+    )
+    assert rows.source_artifact_ids["metric-gauge/camera-0.json"] == gauge.artifact_id
+    for field in (
+        "frame_indices",
+        "pixel_yx",
+        "point_world_m",
+        "point_covariance_m2",
+        "source_confidence",
+        "mask_distance_pixels",
+        "overlap_disagreement_m",
+        "contributor_count",
+    ):
+        assert np.array_equal(getattr(rows, field), getattr(legacy_rows, field))
+    assert np.array_equal(gauge.linear, legacy_gauge.linear)
+    assert np.array_equal(gauge.translation, legacy_gauge.translation)
 
 
 def test_public_adapter_rejects_weak_metric_cluster_support(tmp_path: Path) -> None:
