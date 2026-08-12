@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import fields, replace
+from dataclasses import fields
 from typing import Any
 
 import pytest
@@ -164,9 +164,7 @@ def test_noninitial_and_technical_states_require_lineage_and_decision() -> None:
             )
         )
     with pytest.raises(ValueError, match="requires a terminal decision"):
-        ProspectiveStudyStateV1(
-            **_state_kwargs(stage="terminal-technical")
-        )
+        ProspectiveStudyStateV1(**_state_kwargs(stage="terminal-technical"))
 
 
 @pytest.mark.parametrize(
@@ -234,7 +232,7 @@ def test_state_rejects_wrong_access_and_terminal_shape() -> None:
         )
 
 
-def test_source_negative_rejects_missing_decision_target_artifacts_and_access() -> None:
+def test_source_negative_rejects_missing_decision_artifacts_and_access() -> None:
     with pytest.raises(ValueError, match="requires a terminal decision"):
         ProspectiveStudyStateV1(
             **_state_kwargs(stage="terminal-source-negative")
@@ -304,7 +302,7 @@ def test_nontechnical_transition_rejects_explicit_access_flags() -> None:
         )
 
 
-def test_technical_transition_inherits_open_access_and_validates_flag_types() -> None:
+def test_technical_transition_inherits_access_and_validates_flags() -> None:
     scored = _target_scored_state()
     technical = advance_prospective_study(
         scored,
