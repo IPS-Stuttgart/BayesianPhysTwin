@@ -1,0 +1,420 @@
+name: Deform360 v6 source camera reuse
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/deform360-v6-source-camera-reuse.yml"
+      - "docs/deform360_v6_source_camera_reuse.md"
+      - "protocols/amendments/deform360_v6_source_camera_reuse_v1.json"
+      - "scripts/ci/run_deform360_v6_source_camera_reuse.sh"
+      - "scripts/science/materialize_deform360_v6_source_camera_reuse.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py"
+      - "src/bayesian_phystwin/deform360_v6_source_camera_reuse.py"
+      - "tests/test_deform360_joint_sparse_camera_recovery_v5_2.py"
+      - "tests/test_deform360_v6_source_camera_reuse*.py"
+  workflow_dispatch:
+    inputs:
+      execute_authorized:
+        description: Run the one protected source-prefix camera-reuse execution
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-v6-source-camera-reuse-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  VISUAL_PRODUCTION_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/calibration-visual-production/715ab8479bad4d97eba766cdba1a161f1f6e83e3fd597bb09a2bf8ab8dc91e15/c4e68bf54aa4f039a1bed04cd4f2cdcc3eedfe4c
+  METRIC_BATCH_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-prob4d-visible-source-gate-v2/146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89/136f72b996e9c76b0bab3ab5db5d0fe7172e0307/metric-batch
+  AMENDMENT_PATH: protocols/amendments/deform360_v6_source_camera_reuse_v1.json
+  AMENDMENT_ID: 5cc43432eb509b98442d289ec884b30780ff26c76ab8654826d000bb4832e3b3
+  AMENDMENT_FILE_SHA256: fa331fd278026bfea93a4738a61c16fcdfd1f222f65d252b41b02ca9f98e3e18
+  EXECUTION_LOCK_PATH: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
+  EXECUTION_LOCK_ID: 76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189
+  EXECUTION_LOCK_FILE_SHA256: 429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a
+  METRIC_PREFIX_PLAN_PATH: results/sota/deform360_prob4d_sample_admissibility_v3/source-artifact/metric-support/metric-prefix-plan.json
+  METRIC_PREFIX_PLAN_ID: beb40127dc5d673f9a236550e90b6e38924067a667a885228fd4cf8496c20cc4
+  METRIC_PREFIX_PLAN_FILE_SHA256: a130c3f54c309f86fe67e4a3a8713aae6eed461e28dda2d4223b5ae914fedec3
+  METRIC_BATCH_RESULT_PATH: results/sota/deform360_prob4d_sample_admissibility_v3/source-artifact/metric-support/metric-batch-result.json
+  METRIC_BATCH_RESULT_ID: c8b26c0ea5dd26cd0406282a0cc01659afc557cbda74615b1702a35a9c970180
+  METRIC_BATCH_RESULT_FILE_SHA256: 2ee39a8ad799b43e7203b18cb55486817db396dbd97ac81acd4924c8b2696554
+  VISUAL_PRODUCTION_RESULT_ID: 146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89
+  VISUAL_PRODUCTION_RESULT_FILE_SHA256: 7af3d3bc17bfbe923c4c3754ff20179fd1d51417dd8a56d8475e4eecac66879b
+  BASE_RUN_ID: "31585420194"
+  BASE_RUN_ATTEMPT: "1"
+  BASE_HEAD_SHA: 6bb16bb307349c50535b1b368c60dfb4d5d17ab9
+  BASE_WORKFLOW_NAME: Deform360 v6 source prediction evidence — dual CUDA runtimes
+  BASE_WORKFLOW_PATH: .github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml
+  BASE_ARTIFACT_ID: "9137481740"
+  BASE_ARTIFACT_NAME: deform360-v6-source-prediction-dual-runtime-31585420194-1
+  BASE_ARTIFACT_DIGEST: sha256:d811ff1ea4d6ad22a6e7476d2911602af1ee71f81339c0737e1cc60fd5883f9d
+  BASE_ARTIFACT_DIGEST_SHA256: d811ff1ea4d6ad22a6e7476d2911602af1ee71f81339c0737e1cc60fd5883f9d
+  BASE_ARTIFACT_BYTES: "722235"
+  BASE_EXECUTION_RECEIPT_ID: cf3ebb9e69eb3c15051ba4ae39e2d0338ec244e0c49e587a277f7b36344c5f3d
+  BASE_EXECUTION_RECEIPT_FILE_SHA256: f1cd4ccfb8281a167718a30e5a6af1caaf740ba7a9d49081638efaabdeaf8441
+
+jobs:
+  contracts:
+    name: Source camera-reuse contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the exact source-only reuse implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph,vision]"
+          files=(
+            scripts/science/materialize_deform360_v6_source_camera_reuse.py
+            src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py
+            src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py
+            src/bayesian_phystwin/deform360_v6_source_camera_reuse.py
+            tests/test_deform360_joint_sparse_camera_recovery_v5_2.py
+            tests/test_deform360_v6_source_camera_reuse.py
+            tests/test_deform360_v6_source_camera_reuse_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m mypy \
+            scripts/science/materialize_deform360_v6_source_camera_reuse.py \
+            src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py \
+            src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py \
+            src/bayesian_phystwin/deform360_v6_source_camera_reuse.py
+          bash -n scripts/ci/run_deform360_v6_source_camera_reuse.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_joint_sparse_camera_recovery_v5_2.py \
+            tests/test_deform360_v6_source_camera_reuse.py \
+            tests/test_deform360_v6_source_camera_reuse_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          test "$(sha256sum "${AMENDMENT_PATH}" | awk '{print $1}')" = \
+            "${AMENDMENT_FILE_SHA256}"
+          python scripts/science/materialize_deform360_v6_source_camera_reuse.py \
+            validate-amendment --amendment "${AMENDMENT_PATH}"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  execute:
+    name: Seal versioned source panel / workstation2
+    needs: contracts
+    if: >-
+      inputs.execute_authorized == true &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.ref_protected == true &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 180
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Publish the closed execution boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          echo "public_real_world_dataset=true"
+          echo "new_measurements_collected=false"
+          echo "human_approval_used=false"
+          echo "new_provider_inference_run=false"
+          echo "prob4d_used=false"
+          echo "source_suffix_opened=false"
+          echo "confirmation_payloads_opened=false"
+          echo "target_outcomes_used=false"
+          echo "independent_confirmation_authorized=false"
+
+      - name: Check out exact protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the exact reviewed implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[graph,vision]"
+          python -m pip check
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Verify the immutable base execution and artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${BASE_RUN_ID}")"
+          test "$(jq -r '.name' <<<"${run}")" = "${BASE_WORKFLOW_NAME}"
+          test "$(jq -r '.path' <<<"${run}")" = "${BASE_WORKFLOW_PATH}"
+          test "$(jq -r '.event' <<<"${run}")" = "push"
+          test "$(jq -r '.head_branch' <<<"${run}")" = "main"
+          test "$(jq -r '.head_sha' <<<"${run}")" = "${BASE_HEAD_SHA}"
+          test "$(jq -r '.status' <<<"${run}")" = "completed"
+          test "$(jq -r '.conclusion' <<<"${run}")" = "success"
+          test "$(jq -r '.run_attempt' <<<"${run}")" = "${BASE_RUN_ATTEMPT}"
+          artifact="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${BASE_ARTIFACT_ID}")"
+          test "$(jq -r '.id' <<<"${artifact}")" = "${BASE_ARTIFACT_ID}"
+          test "$(jq -r '.name' <<<"${artifact}")" = "${BASE_ARTIFACT_NAME}"
+          test "$(jq -r '.digest' <<<"${artifact}")" = "${BASE_ARTIFACT_DIGEST}"
+          test "$(jq -r '.size_in_bytes' <<<"${artifact}")" = "${BASE_ARTIFACT_BYTES}"
+          test "$(jq -r '.expired' <<<"${artifact}")" = "false"
+          test "$(jq -r '.workflow_run.id' <<<"${artifact}")" = "${BASE_RUN_ID}"
+          test "$(jq -r '.workflow_run.head_sha' <<<"${artifact}")" = "${BASE_HEAD_SHA}"
+
+      - name: Download only the exact compact base artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: ${{ env.BASE_ARTIFACT_NAME }}
+          path: ${{ runner.temp }}/deform360-v6-base-source
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.BASE_RUN_ID }}
+
+      - name: Admit the exact source-only roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          results="$(realpath -e "${RESULTS_ROOT}")"
+          visual="$(realpath -e "${VISUAL_PRODUCTION_ROOT}")"
+          metric="$(realpath -e "${METRIC_BATCH_ROOT}")"
+          test "${results}" = "${RESULTS_ROOT}"
+          test "${visual}" = "${VISUAL_PRODUCTION_ROOT}"
+          test "${metric}" = "${METRIC_BATCH_ROOT}"
+          case "${visual}/" in "${results}/"*) ;; *) exit 2 ;; esac
+          case "${metric}/" in "${results}/"*) ;; *) exit 2 ;; esac
+          test "$(sha256sum "${AMENDMENT_PATH}" | awk '{print $1}')" = \
+            "${AMENDMENT_FILE_SHA256}"
+          test "$(sha256sum "${EXECUTION_LOCK_PATH}" | awk '{print $1}')" = \
+            "${EXECUTION_LOCK_FILE_SHA256}"
+          test "$(sha256sum "${METRIC_PREFIX_PLAN_PATH}" | awk '{print $1}')" = \
+            "${METRIC_PREFIX_PLAN_FILE_SHA256}"
+          test "$(sha256sum "${METRIC_BATCH_RESULT_PATH}" | awk '{print $1}')" = \
+            "${METRIC_BATCH_RESULT_FILE_SHA256}"
+          test "$(jq -r '.execution_lock_id' "${EXECUTION_LOCK_PATH}")" = \
+            "${EXECUTION_LOCK_ID}"
+          test "$(jq -r '.plan_id' "${METRIC_PREFIX_PLAN_PATH}")" = \
+            "${METRIC_PREFIX_PLAN_ID}"
+          test "$(jq -r '.result_id' "${METRIC_BATCH_RESULT_PATH}")" = \
+            "${METRIC_BATCH_RESULT_ID}"
+          visual_result="${VISUAL_PRODUCTION_ROOT}/visual-production-result.json"
+          test -f "${visual_result}"
+          test ! -L "${visual_result}"
+          test "$(sha256sum "${visual_result}" | awk '{print $1}')" = \
+            "${VISUAL_PRODUCTION_RESULT_FILE_SHA256}"
+          test "$(jq -r '.result_id' "${visual_result}")" = \
+            "${VISUAL_PRODUCTION_RESULT_ID}"
+          base_receipt="${RUNNER_TEMP}/deform360-v6-base-source/execution-receipt.json"
+          test -f "${base_receipt}"
+          test ! -L "${base_receipt}"
+          test "$(sha256sum "${base_receipt}" | awk '{print $1}')" = \
+            "${BASE_EXECUTION_RECEIPT_FILE_SHA256}"
+          test "$(jq -r '.receipt_id' "${base_receipt}")" = \
+            "${BASE_EXECUTION_RECEIPT_ID}"
+          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-camera-reuse/${AMENDMENT_ID}"
+          test ! -e "${output}"
+          test ! -e "${output}.claim"
+          {
+            echo "BASE_ARTIFACT_ROOT=${RUNNER_TEMP}/deform360-v6-base-source"
+            echo "BPT_SOURCE_SHA=${GITHUB_SHA}"
+            echo "RUN_ROOT=${output}"
+            echo "RUN_CLAIM=${output}.claim"
+            echo "VISUAL_PRODUCTION_RESULT_PATH=${visual_result}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Materialize and seal the target-closed recovery panel
+        id: execute
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          bash scripts/ci/run_deform360_v6_source_camera_reuse.sh \
+            > "${RUNNER_TEMP}/deform360-v6-camera-reuse-run.log" 2>&1
+          status=$?
+          set -e
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Retain one bounded execution receipt
+        id: retain
+        if: always() && steps.execute.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUN_ROOT}/compact"
+          claim="${RUN_CLAIM}"
+          if [[ ! -f "${claim}" || -L "${claim}" ]]; then
+            echo "empirical execution did not create its one-shot claim" >&2
+            exit 0
+          fi
+          expected="$(printf 'workflow_run_id=%s\nworkflow_run_attempt=%s\nsource_revision=%s\n' \
+            "${GITHUB_RUN_ID}" "${GITHUB_RUN_ATTEMPT}" "${GITHUB_SHA}")"
+          if [[ "$(cat "${claim}")" != "${expected}" ]]; then
+            echo "durable execution root belongs to another run" >&2
+            exit 0
+          fi
+          echo "owns_run=true" >> "${GITHUB_OUTPUT}"
+          if [[ -e "${RUN_ROOT}" ]]; then
+            test -d "${RUN_ROOT}"
+            test ! -L "${RUN_ROOT}"
+          else
+            mkdir "${RUN_ROOT}"
+          fi
+          if [[ -e "${compact}" ]]; then
+            test -d "${compact}"
+            test ! -L "${compact}"
+          else
+            mkdir "${compact}"
+          fi
+          logs="${compact}/logs"
+          if [[ -e "${logs}" ]]; then
+            test -d "${logs}"
+            test ! -L "${logs}"
+          else
+            mkdir "${logs}"
+          fi
+          marker="${compact}/execution-started.txt"
+          if [[ ! -e "${marker}" ]]; then
+            install -m 600 "${claim}" "${marker}"
+          fi
+          test -f "${marker}"
+          test ! -L "${marker}"
+          test "$(cat "${marker}")" = "${expected}"
+          log="${RUNNER_TEMP}/deform360-v6-camera-reuse-run.log"
+          if [[ -f "${log}" && ! -L "${log}" ]]; then
+            tail -c 64000 "${log}" > "${logs}/runner.log"
+          fi
+          receipt="${compact}/execution-receipt.json"
+          status="${{ steps.execute.outputs.exit_code }}"
+          status="${status:-1}"
+          if [[ "${status}" != "0" && -f "${receipt}" ]]; then
+            test ! -L "${receipt}"
+            preterminal="${compact}/preterminal-execution-receipt.json"
+            test ! -e "${preterminal}"
+            mv "${receipt}" "${preterminal}"
+          fi
+          if [[ ! -f "${receipt}" ]]; then
+            python scripts/science/materialize_deform360_v6_source_camera_reuse.py \
+              retain-failure \
+              --amendment "${AMENDMENT_PATH}" \
+              --execution-lock "${EXECUTION_LOCK_PATH}" \
+              --source-revision "${GITHUB_SHA}" \
+              --runner-name "${RUNNER_NAME}" \
+              --workflow-run-id "${GITHUB_RUN_ID}" \
+              --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}" \
+              --base-run-id "${BASE_RUN_ID}" \
+              --base-run-attempt "${BASE_RUN_ATTEMPT}" \
+              --base-head-sha "${BASE_HEAD_SHA}" \
+              --base-artifact-id "${BASE_ARTIFACT_ID}" \
+              --base-artifact-name "${BASE_ARTIFACT_NAME}" \
+              --base-artifact-digest-sha256 "${BASE_ARTIFACT_DIGEST_SHA256}" \
+              --terminal-stage materialize-and-seal-source-panel \
+              --exit-code "$(( status == 0 ? 1 : status ))" \
+              --artifact-root "${compact}" \
+              --output "${receipt}"
+          fi
+          rm -f "${compact}/SHA256SUMS"
+          (
+            cd "${compact}"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Verify compact evidence and closed boundary
+        if: always() && steps.retain.outputs.owns_run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUN_ROOT}/compact"
+          (
+            cd "${compact}"
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+          python scripts/science/materialize_deform360_v6_source_camera_reuse.py \
+            validate-receipt --receipt "${compact}/execution-receipt.json"
+          jq -e '
+            .information_boundary.new_provider_inference_run == false and
+            .information_boundary.source_suffix_opened == false and
+            .information_boundary.confirmation_payloads_opened == false and
+            .information_boundary.target_outcomes_used == false and
+            .source_suffix_access_authorized == false and
+            .independent_confirmation_authorized == false and
+            .claim_authorized == false and
+            (
+              (
+                .status == "source-camera-reuse-predictions-sealed" and
+                .prediction_record_count == 100
+              ) or
+              (
+                .status == "source-camera-reuse-technical-failure-retained" and
+                .exit_code > 0
+              )
+            )
+          ' "${compact}/execution-receipt.json" >/dev/null
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1)"
+
+      - name: Upload compact source-only evidence
+        if: always() && steps.retain.outputs.owns_run == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-v6-source-camera-reuse-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.RUN_ROOT }}/compact
+          if-no-files-found: error
+          retention-days: 180
+
+      - name: Preserve the one-shot terminal decision
+        if: always() && steps.execute.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="${{ steps.execute.outputs.exit_code }}"
+          status="${status:-1}"
+          test "${{ steps.retain.outputs.owns_run }}" = "true"
+          test "${status}" = "0"
+
+# No endpoint plan or scoring command appears here. Source suffixes remain closed.
