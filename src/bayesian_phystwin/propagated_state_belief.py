@@ -234,9 +234,14 @@ def infer_propagated_state_belief(
     no coordinate-separable linearization is assumed.
     """
 
-    cfg = config or PropagatedStateBeliefConfig()
+    if config is None:
+        cfg = PropagatedStateBeliefConfig()
+    elif isinstance(config, PropagatedStateBeliefConfig):
+        cfg = config
+    else:
+        raise TypeError("config must be a PropagatedStateBeliefConfig")
     innovation = np.asarray(innovation_m, dtype=np.float64)
-    mask = np.asarray(available, dtype=bool)
+    raw_mask = np.asarray(available)
     response = np.asarray(state_response_at_step_m, dtype=np.float64)
     bias_basis = np.asarray(shared_bias_basis, dtype=np.float64)
     _require(
@@ -244,7 +249,12 @@ def infer_propagated_state_belief(
         "innovation must have shape (T, N, 3)",
     )
     frame_count, point_count, _ = innovation.shape
-    _require(mask.shape == (frame_count, point_count), "availability shape changed")
+    _require(raw_mask.shape == (frame_count, point_count), "availability shape changed")
+    _require(
+        raw_mask.dtype == np.dtype(np.bool_),
+        "availability must contain only booleans",
+    )
+    mask = np.asarray(raw_mask, dtype=np.bool_)
     _require(
         response.ndim == 4 and response.shape[:3] == innovation.shape,
         "state response must have shape (T, N, 3, K)",

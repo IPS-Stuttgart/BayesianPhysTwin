@@ -4,7 +4,10 @@ import json
 
 import numpy as np
 
-from bayesian_phystwin.propagated_state_belief import PropagatedStateBeliefConfig
+from bayesian_phystwin.propagated_state_belief import (
+    PropagatedStateBeliefConfig,
+    infer_propagated_state_belief,
+)
 from bayesian_phystwin.propagated_state_correction import (
     PropagatedStateCorrection,
     PropagatedStateSelectionConfig,
@@ -14,6 +17,8 @@ from bayesian_phystwin.propagated_state_correction import (
     select_propagated_state_update,
     write_propagated_state_correction,
 )
+
+
 def _orthonormal_basis(point_count: int = 12, rank: int = 4) -> np.ndarray:
     coordinate = np.linspace(-1.0, 1.0, point_count)
     values = np.column_stack([coordinate**degree for degree in range(rank)])
@@ -209,3 +214,48 @@ def test_state_limit_scaling_transforms_covariance_and_cross_terms() -> None:
     assert scaled[0, 3] == 0.125
     assert scaled[0, 6] == 0.5
     assert scaled[6, 6] == 1.0
+
+
+def test_direct_belief_rejects_non_boolean_availability() -> None:
+    innovation, available, response, basis, _, _ = _selection_problem(
+        state_is_useful=True
+    )
+    invalid_masks = (
+        np.ones(available.shape, dtype=np.int64),
+        np.full(available.shape, 0.5, dtype=np.float64),
+        np.full(available.shape, -1.0, dtype=np.float64),
+        np.full(available.shape, np.inf, dtype=np.float64),
+        np.full(available.shape, np.nan, dtype=np.float64),
+    )
+
+    for invalid_available in invalid_masks:
+        try:
+            infer_propagated_state_belief(
+                innovation,
+                invalid_available,
+                response,
+                basis,
+            )
+        except ValueError as error:
+            assert str(error) == "availability must contain only booleans"
+        else:
+            raise AssertionError("non-boolean availability unexpectedly accepted")
+
+
+def test_direct_belief_rejects_falsey_non_config() -> None:
+    innovation, available, response, basis, _, _ = _selection_problem(
+        state_is_useful=True
+    )
+
+    try:
+        infer_propagated_state_belief(
+            innovation,
+            available,
+            response,
+            basis,
+            config=0,  # type: ignore[arg-type]
+        )
+    except TypeError as error:
+        assert str(error) == "config must be a PropagatedStateBeliefConfig"
+    else:
+        raise AssertionError("falsey non-config unexpectedly accepted")
