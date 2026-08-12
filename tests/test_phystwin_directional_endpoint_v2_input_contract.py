@@ -71,7 +71,9 @@ def test_multiview_validity_rejects_non_boolean_values(value: np.ndarray) -> Non
     ],
 )
 def test_priority_identities_reject_non_boolean_values(value: np.ndarray) -> None:
-    with pytest.raises(ValueError, match="priority identities must contain only booleans"):
+    with pytest.raises(
+        ValueError, match="priority identities must contain only booleans"
+    ):
         _call(priority_identities=value)
 
 
