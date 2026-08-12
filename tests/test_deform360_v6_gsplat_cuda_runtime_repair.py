@@ -10,6 +10,10 @@ AMENDMENT = ROOT / (
     "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_gsplat_cuda_runtime.json"
 )
+HOST_COMPILER_AMENDMENT = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_cuda_host_compiler.json"
+)
 BOOTSTRAP = ROOT / "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh"
 WORKFLOW = ROOT / ".github/workflows/deform360-v6-source-prediction-evidence.yml"
 
@@ -72,10 +76,63 @@ def test_gsplat_cuda_runtime_repair_is_content_addressed_and_target_closed() -> 
     )
 
 
+def test_cuda_host_compiler_repair_is_content_addressed_and_target_closed() -> None:
+    payload = json.loads(HOST_COMPILER_AMENDMENT.read_text(encoding="utf-8"))
+    declared = payload.pop("repair_id")
+
+    assert declared == content_id(payload)
+    assert declared == (
+        "e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721"
+    )
+    assert payload["predecessor_gsplat_cuda_runtime_repair_id"] == (
+        "44da91d95947d07d9d930bd0c707d16da9555bc7b9ea3042fcf0a88444ec3bb4"
+    )
+    assert payload["failed_execution_evidence"] == {
+        "artifact_digest": (
+            "sha256:e563bba93ef78aa45714ade7114842944ee7dcc07d29442d94cc5857b987bc43"
+        ),
+        "artifact_id": 9131235897,
+        "error_message": (
+            "unsupported GNU version! gcc versions later than 12 are not supported!"
+        ),
+        "exit_code": 1,
+        "physical_manifest_count": 0,
+        "source_prediction_seal_count": 0,
+        "source_revision": "88c2af78fd76252896d9fe00ed8b2400a14ade5e",
+        "terminal_stage": "build-isolated-gpu-source-runtime",
+        "workflow_run_attempt": 1,
+        "workflow_run_id": 31570771026,
+    }
+    assert payload["correction"] == {
+        "compiler_family": "GNU",
+        "compiler_major_version": 12,
+        "compiler_paths": {
+            "cc": "/usr/bin/gcc-12",
+            "cxx": "/usr/bin/g++-12",
+        },
+        "cuda_host_compiler_environment": [
+            "CC",
+            "CXX",
+            "CUDAHOSTCXX",
+            "NVCC_CCBIN",
+        ],
+        "nvcc_compiler_bindir_probe_required": True,
+        "unsupported_compiler_override_allowed": False,
+    }
+    assert not any(payload["information_boundary"].values())
+    assert payload["repair_scope"]["host_compiler_binding_added"] is True
+    assert all(
+        value is False
+        for key, value in payload["repair_scope"].items()
+        if key != "host_compiler_binding_added"
+    )
+
+
 def test_cuda_bootstrap_is_checksum_pinned_and_fails_before_science() -> None:
     bootstrap = BOOTSTRAP.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
     relative_amendment = str(AMENDMENT.relative_to(ROOT))
+    relative_host_amendment = str(HOST_COMPILER_AMENDMENT.relative_to(ROOT))
     relative_bootstrap = str(BOOTSTRAP.relative_to(ROOT))
 
     assert (
@@ -87,6 +144,7 @@ def test_cuda_bootstrap_is_checksum_pinned_and_fails_before_science() -> None:
         "fb532bf9626c0ba48cb9c7e4aca80488e12f255d18765a31bf4f4324deb385c7" in workflow
     )
     assert relative_amendment in workflow
+    assert relative_host_amendment in bootstrap
     assert relative_bootstrap in workflow
     call = f'source "{relative_bootstrap}" "${{runtime}}"'
     assert call in workflow
@@ -113,8 +171,16 @@ def test_cuda_bootstrap_is_checksum_pinned_and_fails_before_science() -> None:
         "TORCH_EXTENSIONS_DIR",
         "release 12.1",
         "cuda-runtime-probe.cu",
+        "/usr/bin/gcc-12",
+        "/usr/bin/g++-12",
+        "CUDAHOSTCXX",
+        "NVCC_CCBIN",
+        "--compiler-bindir",
+        "e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721",
+        "8d9663ecd6665fc4c5fcd2b31907200a768ced90e0abb03c006cb04c9bc0a281",
     ):
         assert token in bootstrap
+    assert "allow-unsupported-compiler" not in bootstrap
 
     runtime_call = workflow.index(call)
     science_call = workflow.index(
