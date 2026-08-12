@@ -1,12 +1,30 @@
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/ci/check_changed_python.py"
+
+
+def _load_preflight_module() -> ModuleType:
+    specification = importlib.util.spec_from_file_location(
+        "bpt_check_changed_python",
+        SCRIPT,
+    )
+    assert specification is not None
+    assert specification.loader is not None
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[specification.name] = module
+    specification.loader.exec_module(module)
+    return module
+
+
+PREFLIGHT = _load_preflight_module()
 
 
 def _git(repository: Path, *arguments: str) -> str:
@@ -55,6 +73,14 @@ def _run_preflight(
         capture_output=True,
         text=True,
     )
+
+
+def _scan_source(tmp_path: Path, source: str) -> tuple[object, ...]:
+    relative = Path("src/bayesian_phystwin/example.py")
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True)
+    target.write_text(source, encoding="utf-8")
+    return PREFLIGHT.scientific_boundary_violations(tmp_path, (relative,))
 
 
 def test_checks_only_existing_changed_python_files(tmp_path: Path) -> None:
@@ -164,3 +190,89 @@ def test_rejects_changed_python_symlink(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "must not be a symlink" in result.stderr
+
+
+def test_rejects_truthy_boolean_mask_coercion(tmp_path: Path) -> None:
+    violations = _scan_source(
+        tmp_path,
+        "import numpy as np\n\n"
+        "def admit(available: object) -> np.ndarray:\n"
+        "    return np.asarray(available, dtype=bool)\n",
+    )
+
+    assert [violation.code for violation in violations] == ["BPTQ001"]
+    assert "truth-coerces NaN" in violations[0].message
+
+
+def test_rejects_falsey_configuration_defaulting(tmp_path: Path) -> None:
+    violations = _scan_source(
+        tmp_path,
+        "class ExampleConfig:\n"
+        "    pass\n\n"
+        "def select(config: object | None = None) -> object:\n"
+        "    return config or ExampleConfig()\n",
+    )
+
+    assert [violation.code for violation in violations] == ["BPTQ002"]
+    assert "branch on `is None`" in violations[0].message
+
+
+def test_allows_explicit_mask_and_configuration_admission(tmp_path: Path) -> None:
+    violations = _scan_source(
+        tmp_path,
+        "import numpy as np\n\n"
+        "class ExampleConfig:\n"
+        "    pass\n\n"
+        "def admit(\n"
+        "    available: object,\n"
+        "    config: ExampleConfig | None = None,\n"
+        ") -> tuple[np.ndarray, ExampleConfig]:\n"
+        "    raw_mask = np.asarray(available)\n"
+        "    if raw_mask.dtype != np.dtype(np.bool_):\n"
+        "        raise ValueError('availability must contain only booleans')\n"
+        "    mask = np.asarray(raw_mask, dtype=np.bool_)\n"
+        "    cfg = ExampleConfig() if config is None else config\n"
+        "    return mask, cfg\n",
+    )
+
+    assert violations == ()
+
+
+def test_allows_audited_boolean_coercion_suppression(tmp_path: Path) -> None:
+    violations = _scan_source(
+        tmp_path,
+        "import numpy as np\n\n"
+        "def normalize(values: object) -> np.ndarray:\n"
+        "    return np.asarray(\n"
+        "        values, dtype=bool\n"
+        "    )  # bpt-quality: allow BPTQ001 -- internal 0/1 sentinel\n",
+    )
+
+    assert violations == ()
+
+
+def test_fast_preflight_reports_boundary_pattern_before_ruff(tmp_path: Path) -> None:
+    repository = tmp_path / "repository"
+    _initialize_repository(repository)
+    source = repository / "src/bayesian_phystwin/module.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("VALUE = 1\n", encoding="utf-8")
+    _git(repository, "add", ".")
+    _git(repository, "commit", "-m", "base")
+    base = _git(repository, "rev-parse", "HEAD")
+
+    source.write_text(
+        "import numpy as np\n\n"
+        "def admit(available: object) -> np.ndarray:\n"
+        "    return np.asarray(available, dtype=bool)\n",
+        encoding="utf-8",
+    )
+    _git(repository, "add", "src/bayesian_phystwin/module.py")
+    _git(repository, "commit", "-m", "unsafe mask coercion")
+    head = _git(repository, "rev-parse", "HEAD")
+
+    result = _run_preflight(repository, base=base, head=head)
+
+    assert result.returncode != 0
+    assert "BPTQ001" in result.stderr
+    assert "unsafe scientific-boundary pattern" in result.stderr
