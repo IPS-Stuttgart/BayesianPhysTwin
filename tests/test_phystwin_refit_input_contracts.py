@@ -63,6 +63,7 @@ def test_refit_objective_rejects_invalid_cue_mappings(invalid: object) -> None:
         ("flow_scale", np.inf, ValueError),
         ("occlusion_probability", 1.1, ValueError),
         ("markov_inlier_persistence", 1.0, ValueError),
+        ("markov_outlier_persistence", True, TypeError),
     ],
 )
 def test_refit_config_fails_closed_on_invalid_values(
