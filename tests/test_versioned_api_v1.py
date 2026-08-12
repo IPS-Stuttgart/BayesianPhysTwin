@@ -162,5 +162,6 @@ def test_unknown_root_attribute_remains_an_attribute_error() -> None:
 
     assert set(bayesian_phystwin.__all__).issubset(dir(bayesian_phystwin))
 
+    missing_name = "definitely_not_a_public_export"
     with pytest.raises(AttributeError, match="has no attribute"):
-        getattr(bayesian_phystwin, "definitely_not_a_public_export")
+        getattr(bayesian_phystwin, missing_name)
