@@ -67,6 +67,7 @@ def _dispatch(
     route_log = tmp_path / "route.log"
     marker = tmp_path / "frame-zero-runtime.json"
     fallback_config_marker = tmp_path / "frame-zero-fallback-config-repair.json"
+    official_phystwin_marker = tmp_path / "official-phystwin-runtime.json"
     _stub(primary, "primary")
     _stub(frame_zero, "frame-zero")
     environment = {
@@ -75,6 +76,7 @@ def _dispatch(
         "BPT_FRAME_ZERO_PYTHON": str(frame_zero),
         "BPT_FRAME_ZERO_RUNTIME_MARKER": str(marker),
         "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER": str(fallback_config_marker),
+        "BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER": str(official_phystwin_marker),
         "ROUTE_LOG": str(route_log),
     }
     environment.update(environment_overrides or {})
@@ -127,8 +129,8 @@ def test_workflow_binds_exact_precompiled_cuda_runtime() -> None:
     assert "https://download.pytorch.org/whl/cu121" in workflow
     assert "https://docs.gsplat.studio/whl/pt24cu121" in workflow
     assert 'hasattr(_C, "CameraModelType")' in workflow
-    assert "nvcc" not in workflow
-    assert "cuda-toolkit" not in workflow
+    assert 'OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS: "-include cstdint"' in workflow
+    assert "OFFICIAL_PHYSTWIN_CUDA_HOME: /usr/local/cuda" in workflow
     assert "BPT_PYTHON=${dispatcher}" in workflow
     assert '--system-site-packages "${frame_zero_runtime}"' not in workflow
     frame_zero_venv = (
@@ -138,7 +140,7 @@ def test_workflow_binds_exact_precompiled_cuda_runtime() -> None:
     assert frame_zero_venv in workflow
 
 
-def test_dispatcher_routes_only_frame_zero_to_precompiled_runtime(
+def test_dispatcher_routes_frame_zero_and_physical_prior_to_py310_runtime(
     tmp_path: Path,
 ) -> None:
     primary, primary_route, primary_marker, primary_config_marker = _dispatch(
@@ -195,9 +197,16 @@ def test_dispatcher_routes_only_frame_zero_to_precompiled_runtime(
         [PHYSICAL_TARGET, "--stage", "physical-prior"],
     )
     assert physical_prior.returncode == 0
-    assert route == ["primary", PHYSICAL_TARGET, "--stage", "physical-prior"]
+    assert route == ["frame-zero", PHYSICAL_TARGET, "--stage", "physical-prior"]
     assert not marker.exists()
     assert not config_marker.exists()
+    official_marker = tmp_path / "physical-prior/official-phystwin-runtime.json"
+    assert json.loads(official_marker.read_text(encoding="utf-8")) == {
+        "repair_id": (
+            "72db4752194340a4e8122332ec7483e7d397240c714b3aeec771b1e043369deb"
+        ),
+        "stage": "physical-prior",
+    }
 
 
 def test_dispatcher_rejects_ambiguous_physical_stage(tmp_path: Path) -> None:
@@ -208,6 +217,23 @@ def test_dispatcher_rejects_ambiguous_physical_stage(tmp_path: Path) -> None:
 
     assert result.returncode == 2
     assert "stage binding is not unique" in result.stderr
+    assert route == []
+    assert not marker.exists()
+    assert not config_marker.exists()
+
+
+def test_dispatcher_rejects_changed_official_runtime_marker(tmp_path: Path) -> None:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    official_marker = tmp_path / "official-phystwin-runtime.json"
+    official_marker.write_text("{}\n", encoding="utf-8")
+
+    result, route, marker, config_marker = _dispatch(
+        tmp_path,
+        [PHYSICAL_TARGET, "--stage", "physical-prior"],
+    )
+
+    assert result.returncode == 2
+    assert "official PhysTwin runtime marker changed" in result.stderr
     assert route == []
     assert not marker.exists()
     assert not config_marker.exists()
