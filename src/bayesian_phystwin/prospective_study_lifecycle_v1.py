@@ -404,6 +404,7 @@ class ProspectiveStudyStateV1:
             return
         if self.sequence_number == 0 or self.previous_state_id is None:
             raise ValueError("noninitial lifecycle states require a predecessor")
+        self._validate_unique_artifact_identities()
         self._validate_contiguous_artifacts()
         if self.stage in _STANDARD_SHAPE:
             prefix, payload, outcomes, terminal = _STANDARD_SHAPE[self.stage]
@@ -422,6 +423,15 @@ class ProspectiveStudyStateV1:
             raise ValueError("design-locked cannot bind a terminal decision")
         if self.target_payload_opened or self.target_outcomes_opened:
             raise ValueError("design-locked must keep protected target data closed")
+
+    def _validate_unique_artifact_identities(self) -> None:
+        identities = [
+            getattr(self, name)
+            for name in (*_ARTIFACT_FIELDS, "terminal_decision_id")
+            if getattr(self, name) is not None
+        ]
+        if len(set(identities)) != len(identities):
+            raise ValueError("study artifact identities must be unique")
 
     def _validate_contiguous_artifacts(self) -> None:
         present = [getattr(self, name) is not None for name in _ARTIFACT_FIELDS]
