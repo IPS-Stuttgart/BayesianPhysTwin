@@ -138,6 +138,17 @@ RECOVERY_POLICY: Final = {
     "base_prediction_batch_mutation_allowed": False,
 }
 
+CAMERA_REUSE_POLICY: Final = {
+    **RECOVERY_POLICY,
+    "candidate_set": (
+        "validated-metric-plan-nonreserved-cameras-not-already-attempted"
+    ),
+    "provider_product": "existing-integrity-bound-disjoint-baseline",
+    "prob4d_used": False,
+    "new_provider_inference_allowed": False,
+    "execution_cardinality": "one-durable-source-execution-without-replacement",
+}
+
 RECOVERY_CLAIM_BOUNDARY: Final = (
     "Source-prefix camera admission and provider execution only. The recovery "
     "uses public Deform360 recordings and establishes no prediction benefit, "
@@ -739,6 +750,14 @@ def _validate_metric_support(value: object) -> dict[str, Any]:
         "metric-camera eligibility changed",
     )
     return cast(dict[str, Any], plain_json(support))
+
+
+def validate_deform360_metric_camera_support_v5_2(
+    value: object,
+) -> dict[str, Any]:
+    """Validate one frozen robot-geometry camera-support summary."""
+
+    return _validate_metric_support(value)
 
 
 def rank_deform360_metric_camera_support_v5_2(
@@ -1804,6 +1823,7 @@ def save_deform360_joint_sparse_camera_recovery_artifact_v5_2(
 __all__ = [
     "AUDIT_INFORMATION_BOUNDARY",
     "CAMERA_AUDIT_SCHEMA",
+    "CAMERA_REUSE_POLICY",
     "CAMERA_RECOVERY_AMENDMENT_SCHEMA",
     "CAMERA_RECOVERY_PREFLIGHT_SCHEMA",
     "MAXIMUM_ADDITIONAL_CAMERAS",
@@ -1819,6 +1839,7 @@ __all__ = [
     "rank_deform360_metric_camera_support_v5_2",
     "save_deform360_joint_sparse_camera_recovery_artifact_v5_2",
     "summarize_deform360_metric_camera_support_v5_2",
+    "validate_deform360_metric_camera_support_v5_2",
     "validate_deform360_joint_sparse_camera_audit_v5_2",
     "validate_deform360_joint_sparse_camera_recovery_amendment_v5_2",
     "validate_deform360_joint_sparse_camera_recovery_preflight_v5_2",
