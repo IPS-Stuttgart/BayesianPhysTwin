@@ -74,21 +74,9 @@ if payload["correction"]["torch_cuda_version"] != "12.1":
     raise SystemExit("gsplat CUDA runtime repair no longer targets cu121")
 PY
 
-host_compiler_repair_path=(
-  "protocols/amendments/"
-  "deform360_official_hub_fresh_object_session_v6_cuda_host_compiler.json"
-)
-host_compiler_repair_path="${host_compiler_repair_path[*]}"
-host_compiler_repair_id=(
-  "e935a990cd380b10f225617d4b439ff6"
-  "09593d63a93e44c27e8fcba5e1dec721"
-)
-host_compiler_repair_id="${host_compiler_repair_id[*]}"
-host_compiler_repair_sha256=(
-  "8d9663ecd6665fc4c5fcd2b31907200a"
-  "768ced90e0abb03c006cb04c9bc0a281"
-)
-host_compiler_repair_sha256="${host_compiler_repair_sha256[*]}"
+host_compiler_repair_path="protocols/amendments/deform360_official_hub_fresh_object_session_v6_cuda_host_compiler.json"
+host_compiler_repair_id="e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721"
+host_compiler_repair_sha256="8d9663ecd6665fc4c5fcd2b31907200a768ced90e0abb03c006cb04c9bc0a281"
 
 if [[ -L "${host_compiler_repair_path}" || \
       ! -f "${host_compiler_repair_path}" ]]; then
@@ -186,7 +174,7 @@ CPP
   --std=c++17 \
   --compile \
   "${host_probe_source}" \
-  --output "${host_probe_object}"
+  -o "${host_probe_object}"
 test -s "${host_probe_object}"
 rm -- "${host_probe_source}" "${host_probe_object}"
 
