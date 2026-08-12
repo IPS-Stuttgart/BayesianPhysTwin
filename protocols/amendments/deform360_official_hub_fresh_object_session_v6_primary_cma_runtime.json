@@ -1,0 +1,75 @@
+{
+  "claim_boundary": "Source-independent completion of the isolated primary runtime required by the already-frozen official PhysTwin checkout. It authorizes no source result, suffix access, confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "cma_optimizer_selected": false,
+    "distribution": "cma",
+    "frozen_official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "import_only_dependency": true,
+    "install_mode": "isolated-primary-runtime-only, binary-wheel-only, no-dependencies, require-hashes",
+    "required_by": "qqtt/engine/cma_optimize_warp.py",
+    "runtime_probe": "import cma and verify importlib.metadata.version('cma')",
+    "upstream_environment_declaration": "pip install cma",
+    "version": "4.4.4",
+    "wheel_filename": "cma-4.4.4-py3-none-any.whl",
+    "wheel_sha256": "edb6d02eb2aac2d54650f16a8f0c70711ff17445957de7c9de92ff7fd4b7ef38"
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:8404656b614c8999748ff871e104efd8e0a128cdfa6bffc2b82cf586ada9f901",
+    "artifact_id": 9123586004,
+    "error_message": "No module named 'cma'",
+    "error_type": "ModuleNotFoundError",
+    "execution_receipt_id": "05b00579271313b79f9c96b6ba247d9c8cb7722df4d3e1588050edc2beb287a1",
+    "exit_code": 1,
+    "fallback_config_routing_repair_activated": true,
+    "physical_manifest_count": 0,
+    "registered_source_case_ordinal": 1,
+    "source_prediction_seal_count": 0,
+    "source_revision": "942214b80c9fb257b6cd98bef079150645a9039b",
+    "terminal_stage": "physical-prior",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31548916577
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_fallback_config_routing_repair_id": "df4fd52c65acc25c70c4cde650dd021f704e799dceda3323f3aa28af6fd99e0e",
+  "repair_id": "29487f91243232dd824bd4e8e394ce6ac91e05ce94709a7014c8fc3f5b61c97c",
+  "repair_scope": {
+    "candidate_changed": false,
+    "cma_optimizer_selected": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "fallback_algorithm_changed": false,
+    "loss_changed": false,
+    "mean_changed": false,
+    "physical_algorithm_changed": false,
+    "prediction_horizons_changed": false,
+    "primary_cma_import_dependency_completed": true,
+    "selector_changed": false,
+    "suffix_policy_changed": false,
+    "target_policy_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-primary-cma-runtime-repair",
+  "schema_version": 1
+}
