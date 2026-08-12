@@ -24,7 +24,9 @@ def _source(tmp_path: Path, name: str, files: dict[str, bytes]) -> Path:
     return root
 
 
-def test_stages_tests_from_every_owner_and_preserves_support_files(tmp_path: Path) -> None:
+def test_stages_tests_from_every_owner_and_preserves_support_files(
+    tmp_path: Path,
+) -> None:
     bpt = _source(
         tmp_path,
         "bpt",
