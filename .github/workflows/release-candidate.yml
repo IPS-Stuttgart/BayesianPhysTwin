@@ -13,8 +13,11 @@ on:
       - "api/**"
       - "docs/public_api_policy.md"
       - "docs/releasing.md"
+      - "docs/stable_distribution_contract_v1.md"
+      - "release/stable_distribution_contract_v1.json"
       - "pyproject.toml"
       - "tests/test_release_candidate_evidence.py"
+      - "tests/test_stable_distribution_contract.py"
       - "tests/test_release_candidate_workflow_policy.py"
       - "tests/test_release_metadata.py"
       - "tools/quality/check_public_api.py"
@@ -60,6 +63,7 @@ jobs:
           python -m pip install --upgrade "pip==26.1.2"
           python -m pip install \
             "build==1.5.0" \
+            "numpy==2.2.6" \
             "pip-audit==2.10.1" \
             "setuptools==83.0.0" \
             "twine==6.2.0" \
@@ -115,6 +119,20 @@ jobs:
           python -m build --no-isolation
           python -m twine check --strict dist/*
 
+      - name: Validate the stable distribution surface
+        shell: bash
+        run: |
+          wheel=$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)
+          sdist=$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)
+          test -n "${wheel}"
+          test -n "${sdist}"
+          python tools/release/check_stable_distribution.py \
+            --contract release/stable_distribution_contract_v1.json \
+            --wheel "${wheel}" \
+            --sdist "${sdist}" \
+            --project-root . \
+            --output stable-distribution-report.json
+
       - name: Resolve, audit, and retain the runtime SBOM
         run: |
           python -m pip_audit \
@@ -146,12 +164,26 @@ jobs:
           from pathlib import Path
 
           evidence = json.loads(Path("release-evidence.json").read_text())
+          stable = json.loads(Path("stable-distribution-report.json").read_text())
           with Path("release-summary.md").open("w", encoding="utf-8") as stream:
               stream.write("### Release candidate evidence\n\n")
               stream.write(f"- Version: `{evidence['project_version']}`\n")
               stream.write(f"- Candidate tag: `{evidence['release_tag']}`\n")
               stream.write(f"- Source: `{evidence['source_revision']}`\n")
               stream.write(f"- Evidence ID: `{evidence['evidence_id']}`\n")
+              stream.write(
+                  f"- Wheel surface: `{stable['wheel']['member_count']}` members, "
+                  f"`{stable['wheel']['size_bytes']}` bytes\n"
+              )
+              stream.write(
+                  f"- Sdist surface: `{stable['sdist']['regular_member_count']}` members, "
+                  f"`{stable['sdist']['size_bytes']}` bytes\n"
+              )
+              runtime = stable["wheel"]["isolated_imports"][0]["runtime"]
+              stream.write(
+                  f"- Isolated import runtime: Python `{runtime['python_version']}`, "
+                  f"NumPy `{runtime['numpy_version']}`\n"
+              )
           PY
           cat release-summary.md >> "${GITHUB_STEP_SUMMARY}"
 
@@ -165,5 +197,6 @@ jobs:
             release-evidence.json
             release-sbom.cdx.json
             release-summary.md
+            stable-distribution-report.json
           if-no-files-found: error
           retention-days: 30
