@@ -28,6 +28,7 @@ on:
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
       - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
       - "tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py"
+      - "tests/test_deform360_v6_dual_runtime_source_plan_root_environment.py"
   push:
     branches: [main]
     paths:
@@ -55,6 +56,7 @@ on:
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
       - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
       - "tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py"
+      - "tests/test_deform360_v6_dual_runtime_source_plan_root_environment.py"
   workflow_dispatch:
 
 permissions:
@@ -208,14 +210,16 @@ jobs:
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
-            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
+            tests/test_deform360_v6_dual_runtime_source_plan_root_environment.py
           python -m ruff format --check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
-            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
+            tests/test_deform360_v6_dual_runtime_source_plan_root_environment.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
@@ -224,6 +228,7 @@ jobs:
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
             tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
+            tests/test_deform360_v6_dual_runtime_source_plan_root_environment.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -848,6 +853,8 @@ jobs:
           OFFICIAL_PHYSTWIN_REPO: ${{ github.workspace }}/_official_phystwin
           SAM2_REPO: ${{ github.workspace }}/_sam2
           EVIDENCE_ROOT: ${{ runner.temp }}
+          RUN_ROOT: ${{ env.RESULTS_ROOT }}/bayesian-phystwin/deform360-v6-source-prediction/${{ env.AMENDMENT_ID }}/${{ github.sha }}
+          PREDICTION_ROOT: ${{ env.RESULTS_ROOT }}/bayesian-phystwin/deform360-v6-source-prediction/${{ env.AMENDMENT_ID }}/${{ github.sha }}/prediction-panel
         run: |
           set -euo pipefail
           set +e
