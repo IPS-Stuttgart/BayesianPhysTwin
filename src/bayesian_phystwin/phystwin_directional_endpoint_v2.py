@@ -87,26 +87,41 @@ def robust_directional_endpoint_v2(
 ) -> DirectionalEndpointPosteriorV2:
     """Filter directional innovations while retaining exact mixture covariance."""
 
-    numerical_config = config or DirectionalEndpointConfigV2()
+    if config is None:
+        numerical_config = DirectionalEndpointConfigV2()
+    elif isinstance(config, DirectionalEndpointConfigV2):
+        numerical_config = config
+    else:
+        raise TypeError("config must be a DirectionalEndpointConfigV2")
+
     source = np.asarray(source_residual, dtype=np.float64)
     multiview = np.asarray(multiview_residual, dtype=np.float64)
-    source_mask = np.asarray(source_valid, dtype=bool)
-    multiview_mask = np.asarray(multiview_valid, dtype=bool)
+    raw_source_mask = np.asarray(source_valid)
+    raw_multiview_mask = np.asarray(multiview_valid)
     projectors = np.asarray(tangent_projectors, dtype=np.float64)
-    priority = np.asarray(priority_identities, dtype=bool)
+    raw_priority = np.asarray(priority_identities)
 
-    if source.ndim != 3 or source.shape[2] != 3:
-        raise ValueError("source residual must have shape (frame, point, 3)")
+    if source.ndim != 3 or source.shape[2] != 3 or source.shape[1] < 1:
+        raise ValueError("source residual must have shape (frame, point>=1, 3)")
     if multiview.shape != source.shape:
         raise ValueError("multiview residual must match source residual")
-    if source_mask.shape != source.shape[:2]:
+    if raw_source_mask.shape != source.shape[:2]:
         raise ValueError("source validity must match the residual axes")
-    if multiview_mask.shape != source.shape[:2]:
+    if raw_multiview_mask.shape != source.shape[:2]:
         raise ValueError("multiview validity must match the residual axes")
     if projectors.shape != (source.shape[1], 3, 3):
         raise ValueError("tangent projectors must have shape (point, 3, 3)")
-    if priority.shape != (source.shape[1],):
+    if raw_priority.shape != (source.shape[1],):
         raise ValueError("priority identities must match the point axis")
+    if raw_source_mask.dtype != np.dtype(np.bool_):
+        raise ValueError("source validity must contain only booleans")
+    if raw_multiview_mask.dtype != np.dtype(np.bool_):
+        raise ValueError("multiview validity must contain only booleans")
+    if raw_priority.dtype != np.dtype(np.bool_):
+        raise ValueError("priority identities must contain only booleans")
+    source_mask = np.asarray(raw_source_mask, dtype=np.bool_)
+    multiview_mask = np.asarray(raw_multiview_mask, dtype=np.bool_)
+    priority = np.asarray(raw_priority, dtype=np.bool_)
     if np.any(source_mask & ~np.isfinite(source).all(axis=2)):
         raise ValueError("valid source residuals must be finite")
     if np.any(multiview_mask & ~np.isfinite(multiview).all(axis=2)):
