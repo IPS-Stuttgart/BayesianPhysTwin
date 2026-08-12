@@ -89,8 +89,9 @@ print(json.dumps({{
 def test_unknown_root_attribute_uses_normal_module_error_semantics() -> None:
     package = __import__("bayesian_phystwin")
 
+    name = "not_a_public_export"
     try:
-        package.not_a_public_export
+        getattr(package, name)
     except AttributeError as error:
         assert "not_a_public_export" in str(error)
     else:  # pragma: no cover - regression guard
