@@ -1,17 +1,14 @@
-"""External-consumer type-check fixture for the installed public API."""
+"""External-consumer type-check fixture for the installed public APIs."""
 
 from pathlib import Path
 from typing import assert_type
 
-from bayesian_phystwin import (
-    GaugeAwareBeliefConfig,
-    ObservationBeliefV1,
-    load_observation_belief,
-)
+from bayesian_phystwin import GaugeAwareBeliefConfig
+from bayesian_phystwin.v1 import ObservationBeliefV1, load_observation_belief
 
 
 def load_validated_observation(path: Path) -> ObservationBeliefV1:
-    """Exercise the public observation contract without importing private modules."""
+    """Exercise the stable observation contract from an installed wheel."""
 
     return load_observation_belief(path)
 
