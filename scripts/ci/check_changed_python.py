@@ -238,9 +238,7 @@ class _ScientificBoundaryVisitor(ast.NodeVisitor):
             )
         if numpy_array_call:
             dtype_values = [
-                keyword.value
-                for keyword in node.keywords
-                if keyword.arg == "dtype"
+                keyword.value for keyword in node.keywords if keyword.arg == "dtype"
             ]
             if len(node.args) >= 2:
                 dtype_values.append(node.args[1])
@@ -257,9 +255,7 @@ class _ScientificBoundaryVisitor(ast.NodeVisitor):
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
         if self.parameter_stack and isinstance(node.op, ast.Or):
             parameters = self.parameter_stack[-1]
-            for parameter, fallback in zip(
-                node.values, node.values[1:], strict=False
-            ):
+            for parameter, fallback in zip(node.values, node.values[1:], strict=False):
                 if not isinstance(parameter, ast.Name):
                     continue
                 if (
