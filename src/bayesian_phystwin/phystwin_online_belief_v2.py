@@ -17,9 +17,13 @@ from .phystwin_online_belief import (
     RecursiveRbfBeliefSnapshot,
     decode_recursive_rbf_belief,
     deterministic_farthest_point_ids,
-    finite_sample_absolute_residual_quantile_m as _finite_sample_v1,
     initialize_recursive_rbf_belief,
     robust_huber_continuation_gain,
+)
+from .phystwin_online_belief import (
+    finite_sample_absolute_residual_quantile_m as _finite_sample_v1,
+)
+from .phystwin_online_belief import (
     update_recursive_rbf_belief as _update_v1,
 )
 
