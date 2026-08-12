@@ -51,7 +51,9 @@ def test_dispatcher_rejects_unknown_schema_and_version(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="unsupported evidence-decision schema version"):
+    with pytest.raises(
+        ValueError, match="unsupported evidence-decision schema version"
+    ):
         load_evidence_decision(path)
 
 
@@ -80,9 +82,7 @@ def test_decision_rejects_malformed_repository_collections() -> None:
         _decision(repositories=(object(),))
 
     without_primary = tuple(
-        replace(state, role="downstream")
-        if state.role == "primary"
-        else state
+        replace(state, role="downstream") if state.role == "primary" else state
         for state in repositories
     )
     with pytest.raises(ValueError, match="exactly one primary"):
@@ -205,7 +205,9 @@ def test_v2_loader_rejects_schema_and_version_drift(tmp_path: Path) -> None:
     payload = decision.as_dict()
     payload["schema_version"] = 3
     path.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(ValueError, match="unsupported evidence-decision schema version"):
+    with pytest.raises(
+        ValueError, match="unsupported evidence-decision schema version"
+    ):
         load_evidence_decision_v2(path)
 
 
