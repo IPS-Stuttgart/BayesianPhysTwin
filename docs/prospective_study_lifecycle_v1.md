@@ -47,7 +47,19 @@ Every transition binds exactly one new SHA-256 artifact identity and the exact
 predecessor state. Existing prediction, score, authorization, or terminal
 artifacts cannot be replaced. `validate_prospective_study_chain` recomputes the
 complete chain and rejects changed ancestry, artifact substitution, illegal
-stage skipping, or inconsistent target-access flags.
+stage skipping, inconsistent target-access flags, or reuse of an earlier
+transition identity.
+
+## Role-bound artifact identities
+
+The lifecycle intentionally treats each transition identity as opaque so frozen
+v1 states remain stable. New claim-bearing studies should derive that identity
+with
+[`prospective_study_artifact_binding_v1`](prospective_study_artifact_binding_v1.md).
+The additive binding contract preserves the digest of the underlying bytes while
+binding it to the exact protocol, lifecycle stage, artifact role, and artifact
+schema. Its stronger chain validator also rejects replay of the same raw content
+under another lifecycle role.
 
 ## Target-access boundary
 
@@ -104,3 +116,8 @@ state = advance_prospective_study(
     artifact_id=source_prediction_bundle_sha256,
 )
 ```
+
+The final example shows the historical opaque-identity API. New claim-bearing
+code should use `advance_role_bound_prospective_study` from the additive binding
+module so the lifecycle stores a domain-separated role-binding identity rather
+than a raw artifact digest.
