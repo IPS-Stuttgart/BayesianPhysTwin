@@ -4,6 +4,19 @@
 new integrations. It composes existing strict contracts; it does not introduce a
 new estimator, guard, covariance interpretation, or scientific claim.
 
+## Choose the supported namespace
+
+Use the smallest versioned namespace that owns the operation:
+
+| Task | Supported namespace |
+| --- | --- |
+| Load and write portable observation, query, run, decision, and claim artifacts | `bayesian_phystwin.v1` |
+| Construct a strict Prob4D candidate and finalize a guarded complete-belief decision | `bayesian_phystwin.inference.v1` |
+| Maintain a historical pre-versioned integration | Package-root compatibility shim or the owning module in the migration map |
+
+New code should not discover inference helpers through the historical package
+root. The root remains a lazy compatibility surface for existing integrations.
+
 ## Why this namespace exists
 
 The broad package root is a compatibility surface, while
@@ -18,8 +31,8 @@ strict observation and linearization admission
     -> complete candidate selection or exact baseline fallback
 ```
 
-The new namespace provides one stable import location for the first and last
-steps while preserving the explicit guard boundary between them.
+The inference namespace provides one stable import location for the first and
+last steps while preserving the explicit guard boundary between them.
 
 ## Candidate inference
 
@@ -75,14 +88,47 @@ decision, complete-belief selection, selected artifact, exact-fallback flag, and
 immutable metadata. `to_record()` produces the portable identifier-only record;
 it does not serialize arbitrary application-owned belief payloads.
 
+## Keep point-mean and covariance decisions separate
+
+A valid candidate may contain raw posterior-covariance semantics, but that does
+not establish calibration or authorize a mean update. A registered experiment
+should state which complete candidate belief is being guarded:
+
+- a point-mean and uncertainty update;
+- a covariance-only candidate that preserves the exact registered mean object; or
+- the unchanged physical baseline.
+
+`finalize_guarded_update` routes between the two complete beliefs supplied by the
+caller. It does not silently construct a covariance-only candidate, relabel raw
+covariance as calibrated, or allow a covariance result to imply improved point
+prediction.
+
+## Integration checklist
+
+Before protected target outcomes are opened:
+
+1. validate the versioned observation and physical-linearization artifacts;
+2. freeze solver configuration and covariance semantics;
+3. construct the complete candidate belief without interpreting it as accepted;
+4. evaluate the separately registered closure and regret guard;
+5. finalize the complete-belief route and retain its identifier-only record;
+6. verify that rejection returned the exact baseline object; and
+7. keep provider competence, physical-query benefit, and downstream Causal4D
+   benefit as separate decisions.
+
+## Executable accepted and fallback example
+
 Run the bundled deterministic demonstration:
 
 ```bash
 python examples/guarded_inference_v1.py
 ```
 
-It exercises one accepted candidate and one regret-guard rejection. The rejected
-case returns the same baseline Python object, not a reconstructed numerical copy.
+It emits one JSON object with accepted and rejected records. The accepted record
+shows that the selected belief is the exact candidate object. The rejected record
+shows `exact_fallback=true`, reason `regret-guard-rejected`, and that the selected
+belief is the exact baseline Python object rather than a reconstructed numerical
+copy. Repository tests execute this example and lock those identity guarantees.
 
 ## Compatibility contract
 
