@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/release-compatibility-evidence.yml"
+      - "api/inference-public-api-v1.json"
       - "api/root-public-api-v0.4.json"
       - "api/root-export-migration-v1.json"
       - "api/versioned-public-api-v1.json"
@@ -12,13 +13,17 @@ on:
       - "requirements/release-build-py312.txt"
       - "pyproject.toml"
       - "src/bayesian_phystwin/__init__.py"
+      - "src/bayesian_phystwin/_validation.py"
+      - "src/bayesian_phystwin/inference/**"
       - "src/bayesian_phystwin/numerical_environment_v1.py"
       - "src/bayesian_phystwin/v1/**"
+      - "tests/test_inference_v1.py"
       - "tests/test_public_api_manifest.py"
       - "tests/test_release_compatibility_workflow_policy.py"
       - "tests/test_versioned_api_v1.py"
       - "tools/quality/check_public_api.py"
       - "tools/quality/check_root_export_migration.py"
+      - "docs/inference_v1.md"
       - "docs/public_api_policy.md"
       - "docs/releasing.md"
   push:
@@ -116,9 +121,12 @@ jobs:
               )
 
           import bayesian_phystwin.v1 as api
+          import bayesian_phystwin.inference.v1 as inference_api
 
           if not api.__all__:
               raise SystemExit("versioned integration API is empty")
+          if not inference_api.__all__:
+              raise SystemExit("versioned guarded-inference API is empty")
           forbidden_package_prefixes = (
               "bayesian_phystwin.deform360_",
               "bayesian_phystwin.experiments",
