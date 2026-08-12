@@ -50,6 +50,28 @@ def test_release_artifacts_are_built_and_installed_on_every_supported_python() -
     assert "find dist -maxdepth 1 -name '*.tar.gz'" in text
 
 
+def test_public_api_changes_trigger_installed_import_isolation_checks() -> None:
+    text = _workflow_text()
+    watched_paths = (
+        "MANIFEST.in",
+        "api/root-public-api-v0.4.json",
+        "api/root-export-migration-v1.json",
+        "api/versioned-public-api-v1.json",
+        "src/bayesian_phystwin/__init__.py",
+        "src/bayesian_phystwin/v1/**",
+        "tests/test_public_api_manifest.py",
+        "tests/test_versioned_api_v1.py",
+        "tools/quality/check_public_api.py",
+        "tools/quality/check_root_export_migration.py",
+    )
+
+    for path in watched_paths:
+        assert f'- "{path}"' in text
+    assert 'root_modules != ["bayesian_phystwin"]' in text
+    assert "forbidden_package_prefixes" in text
+    assert "stable API import loaded forbidden modules" in text
+
+
 def test_declared_numpy_floor_is_exact_and_runs_the_core_contracts() -> None:
     text = _workflow_text()
 
