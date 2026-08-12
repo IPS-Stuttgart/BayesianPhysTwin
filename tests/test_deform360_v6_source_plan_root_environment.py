@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +14,6 @@ ARCHIVED_RUNNER = (
     ROOT / "scripts/ci/archive/run_deform360_v6_source_prediction_evidence_v2.sh"
 )
 ARCHIVED_RUNNER_BLOB_SHA = "42dd4f3e0d05f18b9ff0a0bdcf90fbd282f0f6f1"
-AMENDMENT_ID = "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f"
 
 
 def _workflow_steps() -> list[dict[str, Any]]:
@@ -39,10 +39,10 @@ def _inline_python_after(stage: str) -> str:
     return body + "\n"
 
 
-def _git_blob_sha256_identity(path: Path) -> str:
+def _git_blob_sha(path: Path) -> str:
     content = path.read_bytes()
     header = f"blob {len(content)}\0".encode("ascii")
-    return hashlib.sha1(header + content).hexdigest()  # noqa: S324
+    return hashlib.sha1(header + content, usedforsecurity=False).hexdigest()
 
 
 def test_source_execution_exports_exact_archived_inline_roots() -> None:
@@ -56,11 +56,11 @@ def test_source_execution_exports_exact_archived_inline_roots() -> None:
 
     assert environment["RUN_ROOT"] == run_root
     assert environment["PREDICTION_ROOT"] == f"{run_root}/prediction-panel"
-    assert _git_blob_sha256_identity(ARCHIVED_RUNNER) == ARCHIVED_RUNNER_BLOB_SHA
+    assert _git_blob_sha(ARCHIVED_RUNNER) == ARCHIVED_RUNNER_BLOB_SHA
 
 
 def test_archived_source_plan_and_evidence_blocks_use_bound_roots(
-    monkeypatch: Any,
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     run_root = tmp_path / "run"
