@@ -65,9 +65,31 @@ def _matrix_norm(value: np.ndarray) -> float:
     return float(np.linalg.norm(value, ord=np.inf))
 
 
+def _numeric_matrix(value: object, *, name: str) -> np.ndarray:
+    try:
+        untyped = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise SPDValidationError(f"{name} must be a numeric float64 matrix") from error
+    if untyped.dtype.kind not in "fiu":
+        raise SPDValidationError(f"{name} must be a numeric float64 matrix")
+    matrix = untyped.astype(np.float64, copy=False)
+    if matrix.ndim != 2:
+        raise SPDValidationError(f"{name} must be a matrix")
+    if not np.all(np.isfinite(matrix)):
+        raise SPDValidationError(f"{name} must be finite")
+    return matrix
+
+
 @dataclass(frozen=True, slots=True)
 class SPDSystem:
-    """One validated SPD matrix and its unique retained Cholesky factor."""
+    """One validated SPD matrix and its unique retained Cholesky factor.
+
+    ``from_matrix`` is the canonical constructor. Direct dataclass construction
+    remains supported for compatibility, but it replays the complete numerical
+    admission contract and rejects inconsistent matrix, factor, condition, or
+    diagnostic fields. This prevents callers from bypassing the fail-closed
+    boundary by supplying a forged Cholesky factor or permissive diagnostics.
+    """
 
     name: str
     matrix: np.ndarray
@@ -76,6 +98,115 @@ class SPDSystem:
     symmetry_error: float
     symmetry_tolerance: float
     solve_residual_tolerance: float
+
+    def __post_init__(self) -> None:
+        """Replay admission for direct construction and canonicalize all fields."""
+
+        declared_symmetry_error = _finite_nonnegative(
+            self.symmetry_error,
+            name="symmetry_error",
+        )
+        declared_symmetry_tolerance = _finite_nonnegative(
+            self.symmetry_tolerance,
+            name="symmetry_tolerance",
+        )
+        if declared_symmetry_error > declared_symmetry_tolerance:
+            raise SPDValidationError(
+                "symmetry_error exceeds the declared symmetry_tolerance"
+            )
+        declared_condition = _finite_positive(
+            self.condition_number,
+            name="condition_number",
+        )
+        if declared_condition < 1.0:
+            raise SPDConditionError("condition_number must be at least one")
+        residual_tolerance = _finite_positive(
+            self.solve_residual_tolerance,
+            name="solve_residual_tolerance",
+        )
+
+        replayed = type(self).from_matrix(
+            self.matrix,
+            name=self.name,
+            symmetry_absolute_tolerance=declared_symmetry_tolerance,
+            symmetry_relative_tolerance=0.0,
+            solve_residual_tolerance=residual_tolerance,
+        )
+        if declared_symmetry_error < replayed.symmetry_error:
+            raise SPDValidationError(
+                "symmetry_error understates the supplied matrix asymmetry"
+            )
+
+        factor = _numeric_matrix(self.cholesky, name="cholesky")
+        if factor.shape != replayed.cholesky.shape:
+            raise SPDValidationError("cholesky shape differs from the SPD matrix")
+        factor_scale = max(1.0, float(np.max(np.abs(replayed.cholesky))))
+        factor_tolerance = (
+            64.0
+            * replayed.dimension
+            * np.finfo(np.float64).eps
+            * factor_scale
+        )
+        if not np.allclose(
+            factor,
+            replayed.cholesky,
+            rtol=64.0 * replayed.dimension * np.finfo(np.float64).eps,
+            atol=factor_tolerance,
+        ):
+            raise SPDValidationError(
+                "cholesky does not match the unique factor of the supplied matrix"
+            )
+
+        condition_tolerance = (
+            128.0
+            * replayed.dimension
+            * np.finfo(np.float64).eps
+            * max(1.0, replayed.condition_number)
+        )
+        if abs(declared_condition - replayed.condition_number) > condition_tolerance:
+            raise SPDConditionError(
+                "condition_number does not describe the supplied matrix"
+            )
+
+        object.__setattr__(self, "name", replayed.name)
+        object.__setattr__(self, "matrix", replayed.matrix)
+        object.__setattr__(self, "cholesky", replayed.cholesky)
+        object.__setattr__(self, "condition_number", replayed.condition_number)
+        object.__setattr__(self, "symmetry_error", declared_symmetry_error)
+        object.__setattr__(self, "symmetry_tolerance", declared_symmetry_tolerance)
+        object.__setattr__(
+            self,
+            "solve_residual_tolerance",
+            replayed.solve_residual_tolerance,
+        )
+
+    @classmethod
+    def _from_validated(
+        cls,
+        *,
+        name: str,
+        matrix: np.ndarray,
+        cholesky: np.ndarray,
+        condition_number: float,
+        symmetry_error: float,
+        symmetry_tolerance: float,
+        solve_residual_tolerance: float,
+    ) -> SPDSystem:
+        """Construct from values already admitted by :meth:`from_matrix`."""
+
+        instance = object.__new__(cls)
+        object.__setattr__(instance, "name", name)
+        object.__setattr__(instance, "matrix", matrix)
+        object.__setattr__(instance, "cholesky", cholesky)
+        object.__setattr__(instance, "condition_number", condition_number)
+        object.__setattr__(instance, "symmetry_error", symmetry_error)
+        object.__setattr__(instance, "symmetry_tolerance", symmetry_tolerance)
+        object.__setattr__(
+            instance,
+            "solve_residual_tolerance",
+            solve_residual_tolerance,
+        )
+        return instance
 
     @classmethod
     def from_matrix(
@@ -170,7 +301,7 @@ class SPDSystem:
                 f"the declared limit {condition_limit:.17g}"
             )
 
-        return cls(
+        return cls._from_validated(
             name=system_name,
             matrix=_immutable_float64(matrix),
             cholesky=_immutable_float64(cholesky),
