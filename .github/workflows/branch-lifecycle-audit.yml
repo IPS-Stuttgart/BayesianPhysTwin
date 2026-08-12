@@ -1,3 +1,5 @@
+# workflow-lifecycle: permanent
+# workflow-owner: IPS-Stuttgart maintainers
 name: Branch lifecycle audit
 
 on:
@@ -20,7 +22,7 @@ concurrency:
 
 jobs:
   audit:
-    name: Inventory branches without modifying refs
+    name: Inventory branches and workflows without modifying refs
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -43,7 +45,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build the read-only lifecycle inventory
+      - name: Build the read-only branch lifecycle inventory
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REQUESTED_STALE_DAYS: ${{ inputs.stale_days }}
@@ -60,6 +62,15 @@ jobs:
             --output-json branch-lifecycle-audit/inventory.json \
             --output-markdown branch-lifecycle-audit/report.md
 
+      - name: Build the read-only workflow lifecycle inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/quality/check_workflow_policy.py \
+            --inventory-only \
+            --inventory-json branch-lifecycle-audit/workflows.json \
+            --inventory-markdown branch-lifecycle-audit/workflows.md
+
       - name: Publish the operator summary
         if: always()
         shell: bash
@@ -68,6 +79,13 @@ jobs:
             cat branch-lifecycle-audit/report.md >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "Branch lifecycle audit did not publish a report." \
+              >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ -f branch-lifecycle-audit/workflows.md ]]; then
+            printf '\n---\n\n' >> "${GITHUB_STEP_SUMMARY}"
+            cat branch-lifecycle-audit/workflows.md >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Workflow lifecycle audit did not publish a report." \
               >> "${GITHUB_STEP_SUMMARY}"
           fi
 
