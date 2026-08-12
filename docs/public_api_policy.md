@@ -32,6 +32,19 @@ For the `0.4.x` line:
   invalid scientific claim may still override the ordinary deprecation period,
   as described in `SUPPORT.md`.
 
+The legacy names are implemented as a lazy compatibility shim. Importing
+`bayesian_phystwin` alone does not import the research, Deform360, graph, vision,
+or experiment modules that own those names. Accessing a recorded root export
+imports its owning module once, returns the original object, and caches that
+object on the package. The symbol set, order, and object identities therefore
+remain compatible while the default import path becomes NumPy-only and cheap.
+
+The ownership table is recorded in `api/root-export-migration-v1.json`. It maps
+every frozen `0.4` root symbol to the explicit module import that new code should
+use and binds the ordering to `api/root-public-api-v0.4.json`. The table targets
+the planned `0.5` compatibility line, but it does not itself remove a root name,
+activate a deprecation warning, or authorize a version change.
+
 A future `0.5` compatibility line may contract the root after documenting
 replacement imports and deprecating supported interfaces where practical. The
 `0.4` snapshot remains immutable evidence of the earlier import surface.
@@ -68,12 +81,16 @@ From a source checkout with the package importable:
 python tools/quality/check_public_api.py
 python tools/quality/check_public_api.py \
   --manifest api/versioned-public-api-v1.json
+python tools/quality/check_root_export_migration.py
 ```
 
-Add `--json` to either command for a machine-readable report. The checker
-validates the manifest schema, schema-policy pairing, symbol uniqueness, literal
-module identity, exact `__all__` order, existence of every exported attribute,
-and the project minor-version line.
+Add `--json` to any checker for a machine-readable report. The public-API
+checker validates the manifest schema, schema-policy pairing, symbol uniqueness,
+literal module identity, exact `__all__` order, existence of every exported
+attribute, and the project minor-version line. The migration checker additionally
+validates exact root-snapshot coverage, runtime owner mappings, and object
+identity between every lazy root export and its explicit owning module.
 
-The complete Python test matrix exercises both snapshots. `MANIFEST.in` also
-requires both manifest files in the source distribution.
+The complete Python test matrix exercises both snapshots, isolated root and
+`v1` import boundaries, and the migration map. `MANIFEST.in` also requires all
+three manifest files and both checkers in the source distribution.
