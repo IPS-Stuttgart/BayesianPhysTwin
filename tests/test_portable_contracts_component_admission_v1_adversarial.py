@@ -125,9 +125,9 @@ def test_policy_rejects_aliasing_and_coerced_permissions() -> None:
             policy,
             candidate_covariance_policy_id=(policy.reference_covariance_policy_id),
         )
-    with pytest.raises(ValueError, match="allow_covariance_only must be boolean"):
+    with pytest.raises(ValueError, match="allow_covariance_only must be a boolean"):
         replace(policy, allow_covariance_only=cast(Any, 1))
-    with pytest.raises(ValueError, match="allow_mean_only must be boolean"):
+    with pytest.raises(ValueError, match="allow_mean_only must be a boolean"):
         replace(policy, allow_mean_only=cast(Any, "false"))
 
 
@@ -259,7 +259,7 @@ def test_composer_rejects_wrong_types_and_cross_artifact_mismatches() -> None:
     for field in kwargs:
         malformed = dict(kwargs)
         malformed[field] = 1
-        with pytest.raises(ValueError, match=f"{field} must be boolean"):
+        with pytest.raises(ValueError, match=f"{field} must be a boolean"):
             compose_belief_component_admission(
                 policy,
                 mean,
