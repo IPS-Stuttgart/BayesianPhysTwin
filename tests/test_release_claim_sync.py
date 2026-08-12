@@ -145,4 +145,10 @@ def test_repository_release_claim_contract_is_synchronized() -> None:
 
     assert report["contract_name"] == "phystwin-release-claim-v1"
     assert len(report["documents"]) == 4
-    assert len(report["source_documents"]) == 3
+    assert [entry["path"] for entry in report["source_documents"]] == [
+        "docs/full22_covariance_only_hybrid_v1.md",
+        "docs/phystwin_release_claim_v1.md",
+        "docs/phystwin_sota_22_v1.md",
+        "protocols/locks/deform360_covariance_only_independent_validation_v1.json",
+        "protocols/locks/deform360_official_hub_fresh_object_session_v6.json",
+    ]

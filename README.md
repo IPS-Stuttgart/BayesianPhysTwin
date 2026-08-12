@@ -65,14 +65,24 @@ source-support prerequisite: `313/324` streams were supported, `11` support
 negatives were retained, `0` technical failures occurred, source covariance was
 not fitted, and its twelve confirmation objects were not opened.
 
-A separate registered Deform360 v6 route now freezes exactly ten opened source
-object-sessions and twelve disjoint confirmation object-sessions, the exact
-`last_residual` mean, covariance donor `independent_endpoint_v1`, horizon scales
-`[8, 16, 16]`, and unchanged physical fallback. It requires 100 sealed
-prefix-only source predictions and a source authorization decision before any
-confirmation payload can be opened. The paper-side analysis was preregistered
-before target access. The twelve confirmation object-sessions remain closed;
-there is still no fresh-transfer result.
+The separate covariance-only independent-validation protocol
+`deform360_covariance_only_independent_validation_v1` freezes exactly ten opened
+development/source object-sessions and twelve disjoint confirmation
+object-sessions, the exact `last_residual` mean, covariance donor
+`independent_endpoint_v1`, horizon scales `[8, 16, 16]`, and unchanged physical
+fallback. It requires 100 sealed prefix-only source predictions and a source
+authorization decision before any confirmation payload can be opened. The
+paper-side analysis was preregistered before target access. The twelve
+confirmation object-sessions remain closed; there is still no covariance-only
+fresh-transfer result.
+
+The distinct Deform360 fresh-object-session v6/v6.1 study is not that
+covariance-only protocol. It uses ten source object-sessions to select one
+candidate, covariance interpretation, interval calibration, and guard, and it
+reserves sixteen previously untouched target object-sessions: eight sheet and
+eight volumetric. V6.1 repairs the nested source evaluation before any
+challenger suffix or fresh-target payload is opened. Neither study currently
+authorizes an independent-object claim.
 
 ## Architecture
 
