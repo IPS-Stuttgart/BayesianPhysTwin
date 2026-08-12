@@ -18,6 +18,24 @@ its base and enforces the following rules:
   blocking without making unrelated pull requests inherit old debt;
 - the mature public-interface subset passes `mypy --strict`.
 
+The fast changed-source preflight also parses every changed package module and
+rejects high-confidence boundary patterns that previously caused silent input
+reinterpretation:
+
+- `BPTQ001` rejects NumPy `array`/`asarray` calls with `dtype=bool`, because
+  truth conversion turns arbitrary nonzero values and `NaN` into available
+  support. Public inputs must first prove that their dtype is boolean and may
+  then be copied with `dtype=np.bool_`;
+- `BPTQ002` rejects `config or SomeConfig()` when `config` is a function
+  parameter, because a falsey invalid object would silently select defaults.
+  Public configuration inputs must branch on `is None` and validate their type.
+
+An intentional internal conversion can be suppressed only next to the complete
+expression with an auditable marker such as
+`# bpt-quality: allow BPTQ001 -- internal 0/1 sentinel`. Suppressions are not an
+alternative to validation at public observation, belief, provider, or guard
+boundaries.
+
 The changed-only debt set is explicit in the quality helper and currently
 contains the observation archive, observation-to-gauge adapter, internal
 contract/solver, and Prob4D observation-contract modules. Removing a module from
