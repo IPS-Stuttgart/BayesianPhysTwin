@@ -287,9 +287,7 @@ def solve_spd(
 
     intermediate = np.linalg.solve(factor, right_matrix)
     solution_matrix = np.linalg.solve(factor.T, intermediate)
-    solution: FloatArray = (
-        solution_matrix[:, 0] if was_vector else solution_matrix
-    )
+    solution: FloatArray = solution_matrix[:, 0] if was_vector else solution_matrix
     covariance: FloatArray | None = None
     if compute_covariance:
         inverse_factor = np.linalg.solve(
@@ -397,9 +395,7 @@ def solve_psd(
     if rank:
         retained_eigenvalues = eigenvalues[retained]
         retained_vectors = eigenvectors[:, retained]
-        condition_number = float(
-            retained_eigenvalues[-1] / retained_eigenvalues[0]
-        )
+        condition_number = float(retained_eigenvalues[-1] / retained_eigenvalues[0])
         if maximum_condition is not None and condition_number > maximum_condition:
             raise np.linalg.LinAlgError(
                 "retained matrix condition number exceeds maximum_condition_number"
@@ -408,8 +404,7 @@ def solve_psd(
             projected[retained] / retained_eigenvalues[:, None]
         )
         covariance = (
-            (retained_vectors * (1.0 / retained_eigenvalues))
-            @ retained_vectors.T
+            (retained_vectors * (1.0 / retained_eigenvalues)) @ retained_vectors.T
             if compute_covariance
             else None
         )
