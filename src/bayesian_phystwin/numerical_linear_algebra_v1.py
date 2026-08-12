@@ -378,7 +378,10 @@ def solve_psd(
         )
 
     eigenvalues, eigenvectors = np.linalg.eigh(normal)
-    spectral_scale = max(float(np.max(np.abs(eigenvalues))), np.finfo(float).tiny)
+    spectral_scale = max(
+        float(np.max(np.abs(eigenvalues))),
+        float(np.finfo(float).tiny),
+    )
     absolute_rank_tolerance = rank_tolerance * spectral_scale
     if float(eigenvalues[0]) < -absolute_rank_tolerance:
         raise np.linalg.LinAlgError("matrix must be positive semidefinite")
