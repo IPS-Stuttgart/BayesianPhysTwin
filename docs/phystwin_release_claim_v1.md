@@ -134,14 +134,16 @@ or opening its confirmation panel would violate the frozen information order.
 The exact paper-side evidence is in the
 [Deform360 source-support result](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper/blob/main/docs/deform360_prob4d_source_support_negative_2026-08-09.md).
 
-### Separate registered Deform360 v6 confirmation route
+### Separate covariance-only independent-validation route
 
-A separate existing-data route freezes the exact ten opened development/source
-object-sessions and twelve disjoint confirmation object-sessions from the
-content-addressed selection artifact. It does not reinterpret or rescue the
-terminal complete-stream provider version above.
+The protocol
+[`deform360_covariance_only_independent_validation_v1`](deform360_covariance_only_independent_validation_v1.md)
+freezes the exact ten opened development/source object-sessions and twelve
+disjoint confirmation object-sessions from the content-addressed selection
+artifact. It does not reinterpret or rescue the terminal complete-stream
+provider version above.
 
-The v6 route requires, in order:
+The covariance-only route requires, in order:
 
 1. exactly 100 sealed prefix-only source prediction records;
 2. a target-blind source decision under the frozen candidate and source panel;
@@ -155,6 +157,22 @@ stratum non-regression checks, worst-object reporting, and positive/negative
 wording were preregistered before target access. The twelve confirmation
 object-sessions remain closed. A source-negative result is complete evidence and
 keeps them closed; no target result may revise the candidate or analysis.
+
+### Distinct Deform360 fresh-object-session v6/v6.1 route
+
+The Deform360 fresh-object-session v6/v6.1 study is a separate challenger
+protocol. It uses ten source object-sessions to select one candidate, covariance
+interpretation, interval calibration, and guard, and it reserves sixteen
+previously untouched target object-sessions: eight sheet and eight volumetric.
+V6.1 repairs the nested source evaluation before any challenger suffix or
+fresh-target payload is opened.
+
+Unlike the covariance-only protocol, v6/v6.1 does not freeze the exact
+`last_residual` mean plus one covariance donor as its sole confirmatory
+candidate. Its candidate family, target roster, confirmatory contrasts, and
+claim scope are therefore not interchangeable with the twelve-object
+covariance-only study. Neither protocol currently authorizes an
+independent-object claim.
 
 ## Software versus scientific evidence
 
@@ -178,7 +196,9 @@ Every release note that cites the full-22 improvement should also state:
   and improves proper score only with a `3.10×` mean-width cost;
 - conformal results are width-bearing and assumption-specific; and
 - independent real-provider and independent-object transfer remain unconfirmed,
-  with the registered twelve-object confirmation panel still closed.
+  with the registered twelve-object covariance-only confirmation panel still
+  closed and the distinct sixteen-object v6/v6.1 challenger study kept
+  separate.
 
 The current evidence does not authorize claims of a unique deterministic winner,
 calibrated raw posterior covariance, dynamically identified simulator-state
