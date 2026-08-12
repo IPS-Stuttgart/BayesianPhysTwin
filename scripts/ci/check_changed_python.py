@@ -2,8 +2,8 @@
 """Run inexpensive source checks on Python files changed between two revisions.
 
 In addition to Ruff and byte compilation, changed package modules are scanned for
-high-confidence input-boundary patterns that previously caused silent scientific
-contract violations.
+high-confidence input-boundary and numerical patterns that previously caused
+silent scientific contract violations.
 """
 
 from __future__ import annotations
@@ -171,6 +171,8 @@ class _ScientificBoundaryVisitor(ast.NodeVisitor):
         self.source_lines = source_lines
         self.numpy_aliases = {"np", "numpy"}
         self.numpy_array_calls: set[str] = set()
+        self.numpy_linalg_aliases: set[str] = set()
+        self.numpy_inverse_calls: set[str] = set()
         self.parameter_stack: list[frozenset[str]] = []
         self.violations: list[ScientificBoundaryViolation] = []
 
@@ -197,12 +199,20 @@ class _ScientificBoundaryVisitor(ast.NodeVisitor):
         for imported in node.names:
             if imported.name == "numpy":
                 self.numpy_aliases.add(imported.asname or "numpy")
+            elif imported.name == "numpy.linalg":
+                self.numpy_linalg_aliases.add(imported.asname or "numpy.linalg")
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module == "numpy":
             for imported in node.names:
                 if imported.name in _NUMPY_ARRAY_CALLS:
                     self.numpy_array_calls.add(imported.asname or imported.name)
+                elif imported.name == "linalg":
+                    self.numpy_linalg_aliases.add(imported.asname or imported.name)
+        elif node.module == "numpy.linalg":
+            for imported in node.names:
+                if imported.name == "inv":
+                    self.numpy_inverse_calls.add(imported.asname or imported.name)
 
     def _visit_function(
         self,
@@ -250,6 +260,24 @@ class _ScientificBoundaryVisitor(ast.NodeVisitor):
                     "values; validate the mask dtype first and convert to "
                     "np.bool_ only after admission",
                 )
+
+        numpy_inverse_call = qualified in self.numpy_inverse_calls
+        if qualified is not None and "." in qualified:
+            prefix, _, name = qualified.rpartition(".")
+            numpy_inverse_call = name == "inv" and (
+                prefix in self.numpy_linalg_aliases
+                or any(
+                    prefix == f"{alias}.linalg" for alias in self.numpy_aliases
+                )
+            )
+        if numpy_inverse_call:
+            self._record(
+                node,
+                "BPTQ003",
+                "direct numpy.linalg.inv hides solver choice and conditioning; "
+                "use an explicit solve, Cholesky factorization, or admitted "
+                "eigendecomposition and retain numerical diagnostics",
+            )
         self.generic_visit(node)
 
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
