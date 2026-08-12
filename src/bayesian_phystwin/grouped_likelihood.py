@@ -362,7 +362,9 @@ def grouped_student_t_mixture_likelihood(
     Use :func:`conditional_grouped_student_t_mixture_objective` for that objective.
     """
 
-    settings = config or GroupedStudentTLikelihoodConfig()
+    settings = config if config is not None else GroupedStudentTLikelihoodConfig()
+    if not isinstance(settings, GroupedStudentTLikelihoodConfig):
+        raise TypeError("config must be a GroupedStudentTLikelihoodConfig")
     predicted = np.asarray(predicted_xyz_m, dtype=np.float64)
     if predicted.shape != belief.mean_xyz_m.shape:
         raise ValueError("predicted_xyz_m must match the observation mean shape")
@@ -454,7 +456,11 @@ def conditional_grouped_student_t_mixture_objective(
     semantics as prior-aware inference.
     """
 
-    settings = config or ConditionalGroupedStudentTObjectiveConfig()
+    settings = (
+        config if config is not None else ConditionalGroupedStudentTObjectiveConfig()
+    )
+    if not isinstance(settings, ConditionalGroupedStudentTObjectiveConfig):
+        raise TypeError("config must be a ConditionalGroupedStudentTObjectiveConfig")
     predicted = np.asarray(conditional_prediction_xyz_m, dtype=np.float64)
     if predicted.shape != belief.mean_xyz_m.shape:
         raise ValueError(
