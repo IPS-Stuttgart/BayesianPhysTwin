@@ -3,7 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from bayesian_phystwin.propagated_state_correction import select_propagated_state_update
+from bayesian_phystwin.propagated_state_correction import (
+    select_propagated_state_update,
+)
 
 
 _NON_BOOLEAN_AVAILABILITY = (
