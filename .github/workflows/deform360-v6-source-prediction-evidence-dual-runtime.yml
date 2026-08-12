@@ -7,8 +7,10 @@ on:
       - ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
       - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
+      - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
   push:
@@ -17,8 +19,10 @@ on:
       - ".github/workflows/deform360-v6-source-prediction-evidence-dual-runtime.yml"
       - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
+      - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
   workflow_dispatch:
@@ -60,7 +64,16 @@ env:
   DISPATCH_NAMESPACE_REPAIR_ID: 468c1a9073518609695435a564602ca88f871560a0db95429289fd32c0a611bc
   DISPATCH_NAMESPACE_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json
   DISPATCH_NAMESPACE_REPAIR_SHA256: d60ec449557d7f0486f22405ef388780278e9340431a60c831660e9d99f150ef
-  DISPATCHER_SHA256: b1573cf49e72f340e4f9f1102ec7bf9c641ea75daf84440250926194f1e94358
+  FALLBACK_CONFIG_ROUTE_REPAIR_ID: df4fd52c65acc25c70c4cde650dd021f704e799dceda3323f3aa28af6fd99e0e
+  FALLBACK_CONFIG_ROUTE_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json
+  FALLBACK_CONFIG_ROUTE_REPAIR_SHA256: cb4def8c4238c5af2fb14411efbff894c65fb6a69da2ea727a79066e8908ffdc
+  PREVIOUS_FALLBACK_CONFIG_PATH: configs/sota/deform360_reconstruction_failure_persistence_fallback_v1.json
+  PREVIOUS_FALLBACK_CONFIG_FILE_SHA256: 240554ed41986cf5b330225d759c8df24de99d8642f9c1dcd6114185ee16fc0d
+  PREVIOUS_FALLBACK_CONFIG_CANONICAL_SHA256: bf483664c191157fe98bd8624247e22bcbd371b709da90b9ce0bb5e5c790aa50
+  CORRECTED_FALLBACK_CONFIG_PATH: configs/sota/deform360_frame_zero_initializer_source_v1.json
+  CORRECTED_FALLBACK_CONFIG_FILE_SHA256: 60e9887836ea0ba3410066dbb5668988e35763ea6161826752b24b257cf9fc66
+  CORRECTED_FALLBACK_CONFIG_CANONICAL_SHA256: 64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759
+  DISPATCHER_SHA256: 39ed0b957780ae8e89cbe74e220c8dd9e4c3e1d39dcfc0244cbbd28a5bc88a9c
   PRIMARY_PYTHON_VERSION: "3.12"
   PRIMARY_TORCH_VERSION: 2.5.1+cu121
   FRAME_ZERO_PYTHON_VERSION: "3.10"
@@ -245,6 +258,45 @@ jobs:
               = "${FRAME_ZERO_RUNTIME_REPAIR_SHA256}"
             test "$(sha256sum "${DISPATCH_NAMESPACE_REPAIR_PATH}" | awk '{print $1}')" \
               = "${DISPATCH_NAMESPACE_REPAIR_SHA256}"
+            test "$(sha256sum "${FALLBACK_CONFIG_ROUTE_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${FALLBACK_CONFIG_ROUTE_REPAIR_SHA256}"
+            test "$(sha256sum "${PREVIOUS_FALLBACK_CONFIG_PATH}" | awk '{print $1}')" \
+              = "${PREVIOUS_FALLBACK_CONFIG_FILE_SHA256}"
+            test "$(sha256sum "${CORRECTED_FALLBACK_CONFIG_PATH}" | awk '{print $1}')" \
+              = "${CORRECTED_FALLBACK_CONFIG_FILE_SHA256}"
+            "${PRIMARY_BOOTSTRAP_PYTHON}" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          expected = (
+              (
+                  os.environ["PREVIOUS_FALLBACK_CONFIG_PATH"],
+                  os.environ["PREVIOUS_FALLBACK_CONFIG_CANONICAL_SHA256"],
+                  False,
+              ),
+              (
+                  os.environ["CORRECTED_FALLBACK_CONFIG_PATH"],
+                  os.environ["CORRECTED_FALLBACK_CONFIG_CANONICAL_SHA256"],
+                  True,
+              ),
+          )
+          for path_raw, expected_digest, method_required in expected:
+              payload = json.loads(Path(path_raw).read_text(encoding="utf-8"))
+              canonical = json.dumps(
+                  payload["config"],
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  allow_nan=False,
+              ).encode("utf-8")
+              digest = hashlib.sha256(canonical).hexdigest()
+              if digest != payload.get("config_sha256") or digest != expected_digest:
+                  raise SystemExit(f"fallback config canonical identity changed: {path_raw}")
+              has_method = isinstance(payload["config"].get("method"), dict)
+              if has_method is not method_required:
+                  raise SystemExit(f"fallback config role changed: {path_raw}")
+          PY
             test "$(sha256sum scripts/ci/dispatch_deform360_v6_source_python.sh | awk '{print $1}')" \
               = "${DISPATCHER_SHA256}"
             test "$(sha256sum _deform360_physical/pyproject.toml | awk '{print $1}')" \
@@ -254,11 +306,13 @@ jobs:
             frame_zero_runtime="${RUNNER_TEMP}/deform360-v6-frame-zero-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             dispatcher="${RUNNER_TEMP}/deform360-v6-python-dispatch-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             marker="${RUNNER_TEMP}/deform360-v6-frame-zero-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+            config_repair_marker="${RUNNER_TEMP}/deform360-v6-fallback-config-repair-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             constraints="${RUNNER_TEMP}/deform360-v6-frame-zero-constraints-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
             test ! -e "${primary_runtime}"
             test ! -e "${frame_zero_runtime}"
             test ! -e "${dispatcher}"
             test ! -e "${marker}"
+            test ! -e "${config_repair_marker}"
             test ! -e "${constraints}"
 
             "${PRIMARY_BOOTSTRAP_PYTHON}" -m venv \
@@ -343,6 +397,7 @@ jobs:
             BPT_PRIMARY_PYTHON="${primary_python}" \
             BPT_FRAME_ZERO_PYTHON="${frame_zero_python}" \
             BPT_FRAME_ZERO_RUNTIME_MARKER="${marker}" \
+            BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER="${config_repair_marker}" \
             "${dispatcher}" - <<'PY'
           from importlib.metadata import version
 
@@ -411,6 +466,7 @@ jobs:
               echo "BPT_PRIMARY_PYTHON=${primary_python}"
               echo "BPT_FRAME_ZERO_PYTHON=${frame_zero_python}"
               echo "BPT_FRAME_ZERO_RUNTIME_MARKER=${marker}"
+              echo "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER=${config_repair_marker}"
               echo "BPT_PYTHON=${dispatcher}"
             } >> "${GITHUB_ENV}"
           ) > "${RUNTIME_LOG}" 2>&1
@@ -576,10 +632,33 @@ jobs:
               }
               if marker != expected:
                   raise SystemExit("frame-zero runtime activation marker changed")
+          config_marker_raw = os.environ.get(
+              "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER", ""
+          ).strip()
+          config_marker_path = Path(config_marker_raw) if config_marker_raw else None
+          config_repair_activated = bool(
+              config_marker_path is not None
+              and config_marker_path.is_file()
+              and not config_marker_path.is_symlink()
+          )
+          if config_repair_activated:
+              config_marker = json.loads(
+                  config_marker_path.read_text(encoding="utf-8")
+              )
+              expected_config_marker = {
+                  "corrected_config": os.environ["CORRECTED_FALLBACK_CONFIG_PATH"],
+                  "previous_config": os.environ["PREVIOUS_FALLBACK_CONFIG_PATH"],
+                  "repair_id": os.environ["FALLBACK_CONFIG_ROUTE_REPAIR_ID"],
+                  "stage": "frame-zero",
+              }
+              if config_marker != expected_config_marker:
+                  raise SystemExit("fallback-config repair activation marker changed")
           if "runtime_frame_zero_precompiled_cuda" in receipt:
               raise SystemExit("frame-zero runtime receipt field already exists")
           if "runtime_dispatch_namespace_repair" in receipt:
               raise SystemExit("dispatch namespace receipt field already exists")
+          if "runtime_fallback_config_routing_repair" in receipt:
+              raise SystemExit("fallback-config routing receipt field already exists")
           receipt["runtime_frame_zero_precompiled_cuda"] = {
               "activated": activated,
               "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
@@ -615,6 +694,40 @@ jobs:
               "repair_id": os.environ["DISPATCH_NAMESPACE_REPAIR_ID"],
               "repair_path": os.environ["DISPATCH_NAMESPACE_REPAIR_PATH"],
               "value_changed": False,
+          }
+          receipt["runtime_fallback_config_routing_repair"] = {
+              "activated": config_repair_activated,
+              "argument_flag": "--persistence-fallback-source-config",
+              "corrected_config_canonical_sha256": os.environ[
+                  "CORRECTED_FALLBACK_CONFIG_CANONICAL_SHA256"
+              ],
+              "corrected_config_file_sha256": os.environ[
+                  "CORRECTED_FALLBACK_CONFIG_FILE_SHA256"
+              ],
+              "corrected_config_path": os.environ[
+                  "CORRECTED_FALLBACK_CONFIG_PATH"
+              ],
+              "dispatcher_file_sha256": os.environ["DISPATCHER_SHA256"],
+              "dispatcher_stage": "frame-zero",
+              "dispatcher_target": (
+                  "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+              ),
+              "fallback_algorithm_changed": False,
+              "loader_digest_changed": False,
+              "previous_config_canonical_sha256": os.environ[
+                  "PREVIOUS_FALLBACK_CONFIG_CANONICAL_SHA256"
+              ],
+              "previous_config_file_sha256": os.environ[
+                  "PREVIOUS_FALLBACK_CONFIG_FILE_SHA256"
+              ],
+              "previous_config_path": os.environ[
+                  "PREVIOUS_FALLBACK_CONFIG_PATH"
+              ],
+              "repair_file_sha256": os.environ[
+                  "FALLBACK_CONFIG_ROUTE_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["FALLBACK_CONFIG_ROUTE_REPAIR_ID"],
+              "repair_path": os.environ["FALLBACK_CONFIG_ROUTE_REPAIR_PATH"],
           }
           canonical = json.dumps(
               receipt,
@@ -695,6 +808,7 @@ jobs:
           receipt = json.loads(Path(os.environ["RECEIPT_PATH"]).read_text())
           runtime = receipt["runtime_frame_zero_precompiled_cuda"]
           namespace = receipt["runtime_dispatch_namespace_repair"]
+          config_route = receipt["runtime_fallback_config_routing_repair"]
           body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
 
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
@@ -707,6 +821,7 @@ jobs:
           - frame-zero precompiled CUDA runtime activated: `{str(runtime['activated']).lower()}`
           - frame-zero gsplat: `{runtime['gsplat_version']}`
           - dispatcher namespace repair activated: `{str(namespace['activated']).lower()}`
+          - fallback-config routing repair activated: `{str(config_route['activated']).lower()}`
           - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
           - development suffix opened: `false`
           - v5 confirmation payloads opened: `false`
@@ -715,7 +830,7 @@ jobs:
           - v6 target outcomes used: `false`
           - replacement allowed: `false`
 
-          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime. All other calls use the frozen primary runtime. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime and replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification. All other calls use the frozen primary runtime. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
           """
           request = urllib.request.Request(
               (

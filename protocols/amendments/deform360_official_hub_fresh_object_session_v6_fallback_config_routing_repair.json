@@ -1,0 +1,81 @@
+{
+  "claim_boundary": "Source-independent argument-routing correction for the already-frozen Deform360 v6 frame-zero initializer. It authorizes no source result, suffix access, confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "corrected_config": {
+      "canonical_config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759",
+      "file_sha256": "60e9887836ea0ba3410066dbb5668988e35763ea6161826752b24b257cf9fc66",
+      "method_config_present": true,
+      "path": "configs/sota/deform360_frame_zero_initializer_source_v1.json"
+    },
+    "dispatcher_stage": "frame-zero",
+    "dispatcher_target": "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py",
+    "exact_argument_flag": "--persistence-fallback-source-config",
+    "loader_pinned_config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759",
+    "match_policy": "replace exactly one occurrence only when target, stage, flag, and previous path all match",
+    "previous_config": {
+      "canonical_config_sha256": "bf483664c191157fe98bd8624247e22bcbd371b709da90b9ce0bb5e5c790aa50",
+      "file_sha256": "240554ed41986cf5b330225d759c8df24de99d8642f9c1dcd6114185ee16fc0d",
+      "method_config_present": false,
+      "path": "configs/sota/deform360_reconstruction_failure_persistence_fallback_v1.json"
+    }
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge-or-explicit-main-workflow-dispatch",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:9b8cb6149846328939c87242f0bd39ae5728c98221d5c8545a68e5da4fe8e8fb",
+    "artifact_id": 9121774996,
+    "error_message": "fallback source config changed",
+    "execution_receipt_id": "238f7a42ae607991ff8a166c99bb06fd789df40604e26a07ef8c02d1db66f5a6",
+    "exit_code": 1,
+    "frame_zero_runtime_activated": true,
+    "frame_zero_runtime_probe_passed": true,
+    "physical_manifest_count": 0,
+    "registered_source_case_ordinal": 1,
+    "source_prediction_seal_count": 0,
+    "source_revision": "5b2aadb87466381633844af52d3014764b301980",
+    "terminal_stage": "frame-zero",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31543722289
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_dispatch_namespace_repair_id": "468c1a9073518609695435a564602ca88f871560a0db95429289fd32c0a611bc",
+  "repair_id": "df4fd52c65acc25c70c4cde650dd021f704e799dceda3323f3aa28af6fd99e0e",
+  "repair_scope": {
+    "candidate_changed": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "fallback_algorithm_changed": false,
+    "fallback_config_argument_routed": true,
+    "loader_digest_changed": false,
+    "loss_changed": false,
+    "mean_changed": false,
+    "physical_algorithm_changed": false,
+    "prediction_horizons_changed": false,
+    "selector_changed": false,
+    "suffix_policy_changed": false,
+    "target_policy_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-fallback-config-routing-repair",
+  "schema_version": 1
+}
