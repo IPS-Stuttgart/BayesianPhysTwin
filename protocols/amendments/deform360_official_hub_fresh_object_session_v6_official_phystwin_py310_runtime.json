@@ -1,0 +1,148 @@
+{
+  "claim_boundary": "Source-independent completion of the upstream-compatible official PhysTwin physical-prior runtime. It authorizes no source result, suffix access, confirmation access, target access, model selection, scientific claim, deployment, or state-of-the-art statement.",
+  "correction": {
+    "binary_import_probes": [
+      "from simple_knn._C import distCUDA2",
+      "from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer"
+    ],
+    "build": {
+      "cuda_home": "/usr/local/cuda",
+      "cuda_toolkit_version": "12.9.86",
+      "max_jobs": 2,
+      "nvcc_prepend_flags": "-include cstdint",
+      "source_copy_outside_frozen_checkout": true,
+      "torch_cuda_arch_list": "8.9"
+    },
+    "dependencies": {
+      "cma": {
+        "sha256": "edb6d02eb2aac2d54650f16a8f0c70711ff17445957de7c9de92ff7fd4b7ef38",
+        "version": "4.4.4"
+      },
+      "einops": {
+        "sha256": "919387eb55330f5757c6bea9165c5ff5cfe63a642682ea788a6d472576d81737",
+        "version": "0.8.1"
+      },
+      "evdev": {
+        "sha256": "5d3278892ce1f92a74d6bf888cc8525d9f68af85dbe336c95d1c87fb8f423069",
+        "version": "1.9.2"
+      },
+      "iopath": {
+        "sha256": "3311c16a4d9137223e20f141655759933e1eda24f8bff166af834af3c645ef01",
+        "version": "0.1.10"
+      },
+      "kornia": {
+        "sha256": "32dfe77c9c74a87a2de49395aa3c2c376a1b63c27611a298b394d02d13905819",
+        "version": "0.8.2"
+      },
+      "kornia_rs": {
+        "sha256": "b7faddb0f7077a208917ba7c245bf7f87e663b62bd1236bde83beba72dc99dc5",
+        "version": "0.1.14"
+      },
+      "ninja": {
+        "sha256": "fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293bafcc7b7f8e6517dfa",
+        "version": "1.13.0"
+      },
+      "portalocker": {
+        "sha256": "d985a430d265adf31adf12bc0bf3501aea59efc495e9104c057e5dfb7394c226",
+        "version": "4.1.0"
+      },
+      "pynput": {
+        "sha256": "8cc38cf13a6ab2749cb375678be8a0fd705d7ce49c8001ff5db4007a723bbef1",
+        "version": "1.8.2"
+      },
+      "python_xlib": {
+        "sha256": "c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398",
+        "version": "0.33"
+      },
+      "six": {
+        "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+        "version": "1.17.0"
+      },
+      "warp_lang": {
+        "sha256": "96449fc1e3b354185e2f09434fb794b5953ab2e8673b104d7e7f48d5d418bb35",
+        "version": "1.16.0"
+      }
+    },
+    "dispatcher_stages": [
+      "frame-zero",
+      "physical-prior"
+    ],
+    "dispatcher_target": "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py",
+    "full_import_probe": "from qqtt.engine.trainer_warp import InvPhyTrainerWarp",
+    "frozen_official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "install_mode": "isolated Python 3.10 runtime; exact hashes for downloaded packages; exact vendored source trees compiled into wheels outside the frozen checkout",
+    "pytorch3d": {
+      "filename": "pytorch3d-0.7.8-cp310-cp310-linux_x86_64.whl",
+      "sha256": "fa593e799a020a60507d2d92b5d60e4543b78af0372bd37136dfa81535dbfc6c",
+      "url": "https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt240/pytorch3d-0.7.8-cp310-cp310-linux_x86_64.whl",
+      "version": "0.7.8"
+    },
+    "python_version": "3.10",
+    "torch_version": "2.4.0+cu121",
+    "vendored_extensions": {
+      "diff_gaussian_rasterization": {
+        "git_tree_oid": "18ffea5595189505e24e2af360aa570de56e2466"
+      },
+      "simple_knn": {
+        "git_tree_oid": "9be2526499e5f907e47de8229b68d0bf785fb913"
+      }
+    }
+  },
+  "execution_amendment_id": "f8ed525480a6a96265af3cd58e62a96bf1ed748294d0af02aa6386763b993b7f",
+  "execution_authorization": {
+    "event": "push-to-protected-main-after-reviewed-merge-or-explicit-main-workflow-dispatch",
+    "fresh_target_payload_access_authorized": false,
+    "fresh_target_selection_authorized": false,
+    "runner_labels": [
+      "self-hosted",
+      "Linux",
+      "X64",
+      "nvidia-smi"
+    ],
+    "runner_name": "workstation2",
+    "source_prediction_batch_required_before_suffix_access": true
+  },
+  "failed_execution_evidence": {
+    "artifact_digest": "sha256:ec7bfa7d80c54e2b1e9e1535baeea1c599733b6ef75e6afa315ca805237984e4",
+    "artifact_id": 9125080496,
+    "error_message": "No module named 'simple_knn'",
+    "error_type": "ModuleNotFoundError",
+    "execution_receipt_id": "b12b6e2da3e8663508876932511ccd14e8c3949c24785a9b74e86c4e16e4d60a",
+    "exit_code": 1,
+    "physical_manifest_count": 0,
+    "source_prediction_seal_count": 0,
+    "source_revision": "64a62c014e6e5217fc2d55970005da76b13fc31e",
+    "status": "source-technical-failure-retained",
+    "terminal_stage": "build-isolated-primary-and-frame-zero-runtimes",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31553243837
+  },
+  "information_boundary": {
+    "development_suffix_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "replacement_allowed": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_opened": false,
+    "v6_fresh_target_selected": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_opened": false
+  },
+  "predecessor_primary_pynput_runtime_repair_id": "4a6e9655859d2d6da28d248a8bc0ecbfc142fce28566982d8897740c46542825",
+  "repair_id": "72db4752194340a4e8122332ec7483e7d397240c714b3aeec771b1e043369deb",
+  "repair_scope": {
+    "candidate_changed": false,
+    "cohort_changed": false,
+    "covariance_changed": false,
+    "fallback_algorithm_changed": false,
+    "loss_changed": false,
+    "mean_changed": false,
+    "official_phystwin_py310_runtime_completed": true,
+    "physical_algorithm_changed": false,
+    "prediction_horizons_changed": false,
+    "selector_changed": false,
+    "suffix_policy_changed": false,
+    "target_policy_changed": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6-official-phystwin-py310-runtime-repair",
+  "schema_version": 1
+}

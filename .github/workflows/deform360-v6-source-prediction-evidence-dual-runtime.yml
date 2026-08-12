@@ -10,15 +10,18 @@ on:
       - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
       - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
+      - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
   push:
     branches: [main]
     paths:
@@ -28,15 +31,18 @@ on:
       - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
       - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
+      - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
   workflow_dispatch:
 
 permissions:
@@ -104,7 +110,34 @@ env:
   PRIMARY_PYTHON_XLIB_WHEEL_SHA256: c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398
   PRIMARY_SIX_VERSION: "1.17.0"
   PRIMARY_SIX_WHEEL_SHA256: 4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
-  DISPATCHER_SHA256: 39ed0b957780ae8e89cbe74e220c8dd9e4c3e1d39dcfc0244cbbd28a5bc88a9c
+  OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID: 72db4752194340a4e8122332ec7483e7d397240c714b3aeec771b1e043369deb
+  OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json
+  OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_SHA256: 5d0054d3efffe5fe5b5ce8dd96ae5eb009a399c8ed26f8c054dba9575d5f072e
+  OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID: 9be2526499e5f907e47de8229b68d0bf785fb913
+  OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID: 18ffea5595189505e24e2af360aa570de56e2466
+  OFFICIAL_PHYSTWIN_PYTORCH3D_VERSION: "0.7.8"
+  OFFICIAL_PHYSTWIN_PYTORCH3D_URL: https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt240/pytorch3d-0.7.8-cp310-cp310-linux_x86_64.whl
+  OFFICIAL_PHYSTWIN_PYTORCH3D_WHEEL_SHA256: fa593e799a020a60507d2d92b5d60e4543b78af0372bd37136dfa81535dbfc6c
+  OFFICIAL_PHYSTWIN_NINJA_VERSION: "1.13.0"
+  OFFICIAL_PHYSTWIN_NINJA_WHEEL_SHA256: fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293bafcc7b7f8e6517dfa
+  OFFICIAL_PHYSTWIN_WARP_VERSION: "1.16.0"
+  OFFICIAL_PHYSTWIN_WARP_WHEEL_SHA256: 96449fc1e3b354185e2f09434fb794b5953ab2e8673b104d7e7f48d5d418bb35
+  OFFICIAL_PHYSTWIN_KORNIA_VERSION: "0.8.2"
+  OFFICIAL_PHYSTWIN_KORNIA_WHEEL_SHA256: 32dfe77c9c74a87a2de49395aa3c2c376a1b63c27611a298b394d02d13905819
+  OFFICIAL_PHYSTWIN_KORNIA_RS_VERSION: "0.1.14"
+  OFFICIAL_PHYSTWIN_KORNIA_RS_WHEEL_SHA256: b7faddb0f7077a208917ba7c245bf7f87e663b62bd1236bde83beba72dc99dc5
+  OFFICIAL_PHYSTWIN_EINOPS_VERSION: "0.8.1"
+  OFFICIAL_PHYSTWIN_EINOPS_WHEEL_SHA256: 919387eb55330f5757c6bea9165c5ff5cfe63a642682ea788a6d472576d81737
+  OFFICIAL_PHYSTWIN_IOPATH_VERSION: "0.1.10"
+  OFFICIAL_PHYSTWIN_IOPATH_SDIST_SHA256: 3311c16a4d9137223e20f141655759933e1eda24f8bff166af834af3c645ef01
+  OFFICIAL_PHYSTWIN_PORTALOCKER_VERSION: "4.1.0"
+  OFFICIAL_PHYSTWIN_PORTALOCKER_WHEEL_SHA256: d985a430d265adf31adf12bc0bf3501aea59efc495e9104c057e5dfb7394c226
+  OFFICIAL_PHYSTWIN_CUDA_HOME: /usr/local/cuda
+  OFFICIAL_PHYSTWIN_CUDA_TOOLKIT_VERSION: 12.9.86
+  OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST: "8.9"
+  OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS: "-include cstdint"
+  OFFICIAL_PHYSTWIN_MAX_JOBS: "2"
+  DISPATCHER_SHA256: 50487ffb17e08bc6c1a38e82b54bda975699033a353ae211f63912e24e97989a
   PRIMARY_PYTHON_VERSION: "3.12"
   PRIMARY_TORCH_VERSION: 2.5.1+cu121
   FRAME_ZERO_PYTHON_VERSION: "3.10"
@@ -154,16 +187,19 @@ jobs:
           python -m ruff check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
-            tests/test_deform360_v6_primary_pynput_runtime_repair.py
+            tests/test_deform360_v6_primary_pynput_runtime_repair.py \
+            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py
           python -m ruff format --check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
-            tests/test_deform360_v6_primary_pynput_runtime_repair.py
+            tests/test_deform360_v6_primary_pynput_runtime_repair.py \
+            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
+            tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -302,6 +338,8 @@ jobs:
               = "${PRIMARY_CMA_RUNTIME_REPAIR_SHA256}"
             test "$(sha256sum "${PRIMARY_PYNPUT_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
               = "${PRIMARY_PYNPUT_RUNTIME_REPAIR_SHA256}"
+            test "$(sha256sum "${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/env_install/env_install.sh" | awk '{print $1}')" \
               = "${PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/qqtt/engine/trainer_warp.py" | awk '{print $1}')" \
@@ -347,12 +385,26 @@ jobs:
               = "${DISPATCHER_SHA256}"
             test "$(sha256sum _deform360_physical/pyproject.toml | awk '{print $1}')" \
               = "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
+            test "$(git -C "${OFFICIAL_PHYSTWIN_REPO}" rev-parse HEAD:gaussian_splatting/submodules/simple-knn)" \
+              = "${OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID}"
+            test "$(git -C "${OFFICIAL_PHYSTWIN_REPO}" rev-parse HEAD:gaussian_splatting/submodules/diff-gaussian-rasterization)" \
+              = "${OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID}"
+            test -x "${OFFICIAL_PHYSTWIN_CUDA_HOME}/bin/nvcc"
+            "${OFFICIAL_PHYSTWIN_CUDA_HOME}/bin/nvcc" --version \
+              | grep -F "V${OFFICIAL_PHYSTWIN_CUDA_TOOLKIT_VERSION}"
 
             primary_runtime="${RUNNER_TEMP}/deform360-v6-primary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             frame_zero_runtime="${RUNNER_TEMP}/deform360-v6-frame-zero-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             dispatcher="${RUNNER_TEMP}/deform360-v6-python-dispatch-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             marker="${RUNNER_TEMP}/deform360-v6-frame-zero-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             config_repair_marker="${RUNNER_TEMP}/deform360-v6-fallback-config-repair-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+            official_runtime_marker="${RUNNER_TEMP}/deform360-v6-official-phystwin-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+            official_bootstrap_marker="${RUNNER_TEMP}/deform360-v6-official-phystwin-bootstrap-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+            official_build_root="${RUNNER_TEMP}/deform360-v6-official-phystwin-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            official_wheelhouse="${RUNNER_TEMP}/deform360-v6-official-phystwin-wheels-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            official_binary_requirements="${RUNNER_TEMP}/deform360-v6-official-phystwin-binary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+            official_iopath_requirement="${RUNNER_TEMP}/deform360-v6-official-phystwin-iopath-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+            pytorch3d_wheel="${RUNNER_TEMP}/pytorch3d-0.7.8-cp310-cp310-linux_x86_64.whl"
             constraints="${RUNNER_TEMP}/deform360-v6-frame-zero-constraints-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
             cma_requirement="${RUNNER_TEMP}/deform360-v6-primary-cma-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
             pynput_requirements="${RUNNER_TEMP}/deform360-v6-primary-pynput-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
@@ -361,6 +413,13 @@ jobs:
             test ! -e "${dispatcher}"
             test ! -e "${marker}"
             test ! -e "${config_repair_marker}"
+            test ! -e "${official_runtime_marker}"
+            test ! -e "${official_bootstrap_marker}"
+            test ! -e "${official_build_root}"
+            test ! -e "${official_wheelhouse}"
+            test ! -e "${official_binary_requirements}"
+            test ! -e "${official_iopath_requirement}"
+            test ! -e "${pytorch3d_wheel}"
             test ! -e "${constraints}"
             test ! -e "${cma_requirement}"
             test ! -e "${pynput_requirements}"
@@ -455,6 +514,93 @@ jobs:
             PIP_CONSTRAINT="${constraints}" \
               "${frame_zero_python}" -m pip install -e \
                 "./_deform360_physical[processing]"
+
+            printf '%s\n' \
+              "ninja==${OFFICIAL_PHYSTWIN_NINJA_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_NINJA_WHEEL_SHA256}" \
+              "warp-lang==${OFFICIAL_PHYSTWIN_WARP_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_WARP_WHEEL_SHA256}" \
+              "kornia==${OFFICIAL_PHYSTWIN_KORNIA_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_KORNIA_WHEEL_SHA256}" \
+              "kornia_rs==${OFFICIAL_PHYSTWIN_KORNIA_RS_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_KORNIA_RS_WHEEL_SHA256}" \
+              "einops==${OFFICIAL_PHYSTWIN_EINOPS_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_EINOPS_WHEEL_SHA256}" \
+              "portalocker==${OFFICIAL_PHYSTWIN_PORTALOCKER_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_PORTALOCKER_WHEEL_SHA256}" \
+              > "${official_binary_requirements}"
+            "${frame_zero_python}" -m pip install \
+              --no-deps \
+              --only-binary=:all: \
+              --require-hashes \
+              --requirement "${official_binary_requirements}"
+            printf '%s\n' \
+              "iopath==${OFFICIAL_PHYSTWIN_IOPATH_VERSION} --hash=sha256:${OFFICIAL_PHYSTWIN_IOPATH_SDIST_SHA256}" \
+              > "${official_iopath_requirement}"
+            "${frame_zero_python}" -m pip install \
+              --no-build-isolation \
+              --no-deps \
+              --no-binary=iopath \
+              --require-hashes \
+              --requirement "${official_iopath_requirement}"
+            "${frame_zero_python}" -m pip install \
+              --no-deps \
+              --only-binary=:all: \
+              --require-hashes \
+              --requirement "${cma_requirement}"
+            "${frame_zero_python}" -m pip install \
+              --no-build-isolation \
+              --only-binary=pynput,python-xlib,six \
+              --no-binary=evdev \
+              --require-hashes \
+              --requirement "${pynput_requirements}"
+
+            curl --fail --location --proto '=https' --tlsv1.2 \
+              --output "${pytorch3d_wheel}" \
+              "${OFFICIAL_PHYSTWIN_PYTORCH3D_URL}"
+            test "$(sha256sum "${pytorch3d_wheel}" | awk '{print $1}')" \
+              = "${OFFICIAL_PHYSTWIN_PYTORCH3D_WHEEL_SHA256}"
+            "${frame_zero_python}" -m pip install \
+              --no-deps "${pytorch3d_wheel}"
+
+            mkdir -p "${official_build_root}" "${official_wheelhouse}"
+            cp -a \
+              "${OFFICIAL_PHYSTWIN_REPO}/gaussian_splatting/submodules/simple-knn" \
+              "${official_build_root}/simple-knn"
+            cp -a \
+              "${OFFICIAL_PHYSTWIN_REPO}/gaussian_splatting/submodules/diff-gaussian-rasterization" \
+              "${official_build_root}/diff-gaussian-rasterization"
+            CUDA_HOME="${OFFICIAL_PHYSTWIN_CUDA_HOME}" \
+            PATH="${OFFICIAL_PHYSTWIN_CUDA_HOME}/bin:${PATH}" \
+            MAX_JOBS="${OFFICIAL_PHYSTWIN_MAX_JOBS}" \
+            NVCC_PREPEND_FLAGS="${OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS}" \
+            TORCH_CUDA_ARCH_LIST="${OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST}" \
+              "${frame_zero_python}" -m pip wheel \
+                --no-build-isolation \
+                --no-deps \
+                --wheel-dir "${official_wheelhouse}" \
+                "${official_build_root}/simple-knn"
+            CUDA_HOME="${OFFICIAL_PHYSTWIN_CUDA_HOME}" \
+            PATH="${OFFICIAL_PHYSTWIN_CUDA_HOME}/bin:${PATH}" \
+            MAX_JOBS="${OFFICIAL_PHYSTWIN_MAX_JOBS}" \
+            NVCC_PREPEND_FLAGS="${OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS}" \
+            TORCH_CUDA_ARCH_LIST="${OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST}" \
+              "${frame_zero_python}" -m pip wheel \
+                --no-build-isolation \
+                --no-deps \
+                --wheel-dir "${official_wheelhouse}" \
+                "${official_build_root}/diff-gaussian-rasterization"
+            mapfile -t simple_knn_wheels < <(
+              find "${official_wheelhouse}" -maxdepth 1 -type f \
+                -name 'simple_knn-*.whl' -print | sort
+            )
+            mapfile -t rasterizer_wheels < <(
+              find "${official_wheelhouse}" -maxdepth 1 -type f \
+                -name 'diff_gaussian_rasterization-*.whl' -print | sort
+            )
+            test "${#simple_knn_wheels[@]}" -eq 1
+            test "${#rasterizer_wheels[@]}" -eq 1
+            simple_knn_wheel="${simple_knn_wheels[0]}"
+            rasterizer_wheel="${rasterizer_wheels[0]}"
+            simple_knn_wheel_sha256="$(sha256sum "${simple_knn_wheel}" | awk '{print $1}')"
+            rasterizer_wheel_sha256="$(sha256sum "${rasterizer_wheel}" | awk '{print $1}')"
+            "${frame_zero_python}" -m pip install \
+              --no-deps "${simple_knn_wheel}" "${rasterizer_wheel}"
+            test -z "$(git -C "${OFFICIAL_PHYSTWIN_REPO}" status --porcelain=v1)"
             "${frame_zero_python}" -m pip check
 
             install -m 700 \
@@ -468,9 +614,9 @@ jobs:
             BPT_FRAME_ZERO_PYTHON="${frame_zero_python}" \
             BPT_FRAME_ZERO_RUNTIME_MARKER="${marker}" \
             BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER="${config_repair_marker}" \
+            BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER="${official_runtime_marker}" \
             "${dispatcher}" - <<'PY'
           from importlib.metadata import version
-          from pathlib import Path
           import sys
 
           import bayesian_phystwin
@@ -511,14 +657,6 @@ jobs:
               raise SystemExit("primary pynput dummy backend was not selected")
           if not callable(keyboard.Listener):
               raise SystemExit("primary pynput import probe failed")
-          official_root = Path(os.environ["OFFICIAL_PHYSTWIN_REPO"]).resolve()
-          if not official_root.is_dir() or official_root.is_symlink():
-              raise SystemExit("frozen official PhysTwin checkout is unavailable")
-          sys.path.insert(0, str(official_root))
-          from qqtt.engine.trainer_warp import InvPhyTrainerWarp
-
-          if not callable(InvPhyTrainerWarp):
-              raise SystemExit("frozen InvPhyTrainerWarp import closure failed")
           if os.environ.get("REPAIR_ID") != "selector-repair-environment-probe-v1":
               raise SystemExit("dispatcher changed an inherited repair identity")
           print(version("torch"))
@@ -533,20 +671,46 @@ jobs:
           print(sam2.__file__)
           PY
 
-            "${frame_zero_python}" - <<'PY'
+            BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER="${official_bootstrap_marker}" \
+            SIMPLE_KNN_WHEEL_SHA256="${simple_knn_wheel_sha256}" \
+            RASTERIZER_WHEEL_SHA256="${rasterizer_wheel_sha256}" \
+              "${frame_zero_python}" - <<'PY'
           from importlib.metadata import version
+          import json
+          import os
+          from pathlib import Path
+          import sys
 
           import bayesian_phystwin
+          import cma
           import deform360
+          from diff_gaussian_rasterization import (
+              GaussianRasterizationSettings,
+              GaussianRasterizer,
+          )
           from gsplat.cuda._backend import _C
           from nerfstudio.configs import method_configs
           from nerfstudio.scripts import exporter
+          from pynput import keyboard
+          from simple_knn._C import distCUDA2
           import torch
 
           expected = {
+              "cma": os.environ["PRIMARY_CMA_VERSION"],
+              "diff-gaussian-rasterization": "0.0.0",
+              "einops": os.environ["OFFICIAL_PHYSTWIN_EINOPS_VERSION"],
               "numpy": "1.26.4",
+              "iopath": os.environ["OFFICIAL_PHYSTWIN_IOPATH_VERSION"],
+              "kornia": os.environ["OFFICIAL_PHYSTWIN_KORNIA_VERSION"],
+              "kornia_rs": os.environ["OFFICIAL_PHYSTWIN_KORNIA_RS_VERSION"],
+              "ninja": os.environ["OFFICIAL_PHYSTWIN_NINJA_VERSION"],
+              "portalocker": os.environ["OFFICIAL_PHYSTWIN_PORTALOCKER_VERSION"],
+              "pynput": os.environ["PRIMARY_PYNPUT_VERSION"],
+              "pytorch3d": os.environ["OFFICIAL_PHYSTWIN_PYTORCH3D_VERSION"],
+              "simple_knn": "0.0.0",
               "torch": "2.4.0+cu121",
               "torchvision": "0.19.0+cu121",
+              "warp-lang": os.environ["OFFICIAL_PHYSTWIN_WARP_VERSION"],
               "gsplat": "1.4.0+pt24cu121",
               "nerfstudio": "1.1.5",
           }
@@ -555,12 +719,69 @@ jobs:
               raise SystemExit(f"frame-zero runtime identity changed: {observed!r}")
           if not torch.cuda.is_available():
               raise SystemExit("frame-zero CUDA runtime is unavailable")
+          if torch.version.cuda != "12.1":
+              raise SystemExit("official PhysTwin Torch CUDA identity changed")
+          if torch.cuda.get_device_capability() != (8, 9):
+              raise SystemExit("official PhysTwin CUDA architecture changed")
           if _C is None or not hasattr(_C, "CameraModelType"):
               raise SystemExit("precompiled gsplat CUDA backend is unavailable")
+          if not callable(distCUDA2):
+              raise SystemExit("simple-knn CUDA extension is unavailable")
+          if not callable(GaussianRasterizationSettings) or not callable(
+              GaussianRasterizer
+          ):
+              raise SystemExit("Gaussian rasterizer CUDA extension is unavailable")
+          if not callable(cma.CMAEvolutionStrategy):
+              raise SystemExit("official PhysTwin CMA import probe failed")
+          if "pynput.keyboard._dummy" not in sys.modules or not callable(
+              keyboard.Listener
+          ):
+              raise SystemExit("official PhysTwin headless pynput probe failed")
           if "splatfacto" not in method_configs.method_configs:
               raise SystemExit("nerfstudio splatfacto method is unavailable")
           if not hasattr(exporter, "ExportGaussianSplat"):
               raise SystemExit("nerfstudio Gaussian exporter is unavailable")
+          official_root = Path(os.environ["OFFICIAL_PHYSTWIN_REPO"]).resolve()
+          if not official_root.is_dir() or official_root.is_symlink():
+              raise SystemExit("frozen official PhysTwin checkout is unavailable")
+          sys.path.insert(0, str(official_root))
+          from qqtt.engine.trainer_warp import InvPhyTrainerWarp
+
+          if not callable(InvPhyTrainerWarp):
+              raise SystemExit("frozen InvPhyTrainerWarp import closure failed")
+          marker_path = Path(os.environ["BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER"])
+          if marker_path.exists() or marker_path.is_symlink():
+              raise SystemExit("official PhysTwin bootstrap marker already exists")
+          marker = {
+              "cuda_toolkit_version": os.environ[
+                  "OFFICIAL_PHYSTWIN_CUDA_TOOLKIT_VERSION"
+              ],
+              "diff_gaussian_rasterization_tree_oid": os.environ[
+                  "OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID"
+              ],
+              "diff_gaussian_rasterization_wheel_sha256": os.environ[
+                  "RASTERIZER_WHEEL_SHA256"
+              ],
+              "nvcc_prepend_flags": os.environ[
+                  "OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS"
+              ],
+              "repair_id": os.environ["OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID"],
+              "simple_knn_tree_oid": os.environ[
+                  "OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID"
+              ],
+              "simple_knn_wheel_sha256": os.environ[
+                  "SIMPLE_KNN_WHEEL_SHA256"
+              ],
+              "torch_cuda_arch_list": os.environ[
+                  "OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST"
+              ],
+          }
+          temporary = marker_path.with_suffix(marker_path.suffix + ".tmp")
+          temporary.write_text(
+              json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          temporary.replace(marker_path)
           print(observed)
           print(type(_C).__name__)
           print(bayesian_phystwin.__file__)
@@ -572,6 +793,8 @@ jobs:
               echo "BPT_FRAME_ZERO_PYTHON=${frame_zero_python}"
               echo "BPT_FRAME_ZERO_RUNTIME_MARKER=${marker}"
               echo "BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER=${config_repair_marker}"
+              echo "BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER=${official_runtime_marker}"
+              echo "BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER=${official_bootstrap_marker}"
               echo "BPT_PYTHON=${dispatcher}"
             } >> "${GITHUB_ENV}"
           ) > "${RUNTIME_LOG}" 2>&1
@@ -698,7 +921,7 @@ jobs:
           )
           PY
 
-      - name: Bind the frame-zero CUDA runtime into the receipt
+      - name: Bind the registered CUDA runtimes into the receipt
         if: always()
         shell: bash
         env:
@@ -758,6 +981,77 @@ jobs:
               }
               if config_marker != expected_config_marker:
                   raise SystemExit("fallback-config repair activation marker changed")
+          official_marker_raw = os.environ.get(
+              "BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER", ""
+          ).strip()
+          official_marker_path = (
+              Path(official_marker_raw) if official_marker_raw else None
+          )
+          official_activated = bool(
+              official_marker_path is not None
+              and official_marker_path.is_file()
+              and not official_marker_path.is_symlink()
+          )
+          if official_activated:
+              official_marker = json.loads(
+                  official_marker_path.read_text(encoding="utf-8")
+              )
+              expected_official_marker = {
+                  "repair_id": os.environ["OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID"],
+                  "stage": "physical-prior",
+              }
+              if official_marker != expected_official_marker:
+                  raise SystemExit("official PhysTwin runtime activation marker changed")
+          bootstrap_marker_raw = os.environ.get(
+              "BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER", ""
+          ).strip()
+          bootstrap_marker_path = (
+              Path(bootstrap_marker_raw) if bootstrap_marker_raw else None
+          )
+          bootstrap_probe_passed = bool(
+              bootstrap_marker_path is not None
+              and bootstrap_marker_path.is_file()
+              and not bootstrap_marker_path.is_symlink()
+          )
+          bootstrap_marker = None
+          if bootstrap_probe_passed:
+              bootstrap_marker = json.loads(
+                  bootstrap_marker_path.read_text(encoding="utf-8")
+              )
+              expected_static = {
+                  "cuda_toolkit_version": os.environ[
+                      "OFFICIAL_PHYSTWIN_CUDA_TOOLKIT_VERSION"
+                  ],
+                  "diff_gaussian_rasterization_tree_oid": os.environ[
+                      "OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID"
+                  ],
+                  "nvcc_prepend_flags": os.environ[
+                      "OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS"
+                  ],
+                  "repair_id": os.environ["OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID"],
+                  "simple_knn_tree_oid": os.environ[
+                      "OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID"
+                  ],
+                  "torch_cuda_arch_list": os.environ[
+                      "OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST"
+                  ],
+              }
+              for key, expected_value in expected_static.items():
+                  if bootstrap_marker.get(key) != expected_value:
+                      raise SystemExit(
+                          f"official PhysTwin bootstrap marker changed: {key}"
+                      )
+              for key in (
+                  "diff_gaussian_rasterization_wheel_sha256",
+                  "simple_knn_wheel_sha256",
+              ):
+                  digest = bootstrap_marker.get(key)
+                  if not isinstance(digest, str) or len(digest) != 64 or any(
+                      character not in "0123456789abcdef" for character in digest
+                  ):
+                      raise SystemExit(
+                          f"official PhysTwin built-wheel digest is invalid: {key}"
+                      )
           if "runtime_frame_zero_precompiled_cuda" in receipt:
               raise SystemExit("frame-zero runtime receipt field already exists")
           if "runtime_dispatch_namespace_repair" in receipt:
@@ -768,6 +1062,8 @@ jobs:
               raise SystemExit("primary CMA runtime receipt field already exists")
           if "runtime_primary_pynput_import_dependency" in receipt:
               raise SystemExit("primary pynput runtime receipt field already exists")
+          if "runtime_official_phystwin_py310" in receipt:
+              raise SystemExit("official PhysTwin runtime receipt field already exists")
           receipt["runtime_frame_zero_precompiled_cuda"] = {
               "activated": activated,
               "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
@@ -782,7 +1078,8 @@ jobs:
               ],
               "gsplat_index": os.environ["GSPLAT_PT24_CU121_INDEX"],
               "gsplat_version": os.environ["FRAME_ZERO_GSPLAT_VERSION"],
-              "non_frame_zero_calls_use_primary_runtime": True,
+              "non_frame_zero_calls_use_primary_runtime": False,
+              "physical_prior_uses_same_py310_runtime": True,
               "primary_python_version": os.environ["PRIMARY_PYTHON_VERSION"],
               "primary_torch_version": os.environ["PRIMARY_TORCH_VERSION"],
               "pytorch_index": os.environ["PYTORCH_CU121_INDEX"],
@@ -843,7 +1140,7 @@ jobs:
               "cma_optimizer_selected": False,
               "distribution": "cma",
               "import_only_dependency": True,
-              "install_scope": "isolated-primary-runtime-only",
+              "install_scope": "isolated-primary-and-official-py310-runtimes",
               "repair_file_sha256": os.environ[
                   "PRIMARY_CMA_RUNTIME_REPAIR_SHA256"
               ],
@@ -857,8 +1154,9 @@ jobs:
               "backend": os.environ["PYNPUT_BACKEND"],
               "evdev_sdist_sha256": os.environ["PRIMARY_EVDEV_SDIST_SHA256"],
               "evdev_version": os.environ["PRIMARY_EVDEV_VERSION"],
-              "full_invphytrainer_import_probe": True,
-              "install_scope": "isolated-primary-runtime-only",
+              "full_import_probe_runtime": "isolated-official-phystwin-py310",
+              "full_invphytrainer_import_probe": bootstrap_probe_passed,
+              "install_scope": "isolated-primary-and-official-py310-runtimes",
               "interactive_keyboard_control_selected": False,
               "pynput_version": os.environ["PRIMARY_PYNPUT_VERSION"],
               "pynput_wheel_sha256": os.environ["PRIMARY_PYNPUT_WHEEL_SHA256"],
@@ -879,6 +1177,75 @@ jobs:
               "repair_path": os.environ["PRIMARY_PYNPUT_RUNTIME_REPAIR_PATH"],
               "six_version": os.environ["PRIMARY_SIX_VERSION"],
               "six_wheel_sha256": os.environ["PRIMARY_SIX_WHEEL_SHA256"],
+          }
+          receipt["runtime_official_phystwin_py310"] = {
+              "activated": official_activated,
+              "binary_import_probes": [
+                  "from simple_knn._C import distCUDA2",
+                  (
+                      "from diff_gaussian_rasterization import "
+                      "GaussianRasterizationSettings, GaussianRasterizer"
+                  ),
+              ],
+              "bootstrap_probe_passed": bootstrap_probe_passed,
+              "build": {
+                  "cuda_home": os.environ["OFFICIAL_PHYSTWIN_CUDA_HOME"],
+                  "cuda_toolkit_version": os.environ[
+                      "OFFICIAL_PHYSTWIN_CUDA_TOOLKIT_VERSION"
+                  ],
+                  "max_jobs": int(os.environ["OFFICIAL_PHYSTWIN_MAX_JOBS"]),
+                  "nvcc_prepend_flags": os.environ[
+                      "OFFICIAL_PHYSTWIN_NVCC_PREPEND_FLAGS"
+                  ],
+                  "source_copy_outside_frozen_checkout": True,
+                  "torch_cuda_arch_list": os.environ[
+                      "OFFICIAL_PHYSTWIN_TORCH_CUDA_ARCH_LIST"
+                  ],
+              },
+              "diff_gaussian_rasterization_tree_oid": os.environ[
+                  "OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID"
+              ],
+              "diff_gaussian_rasterization_wheel_sha256": (
+                  bootstrap_marker[
+                      "diff_gaussian_rasterization_wheel_sha256"
+                  ]
+                  if bootstrap_marker
+                  else None
+              ),
+              "dispatcher_stages": ["frame-zero", "physical-prior"],
+              "dispatcher_target": (
+                  "scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
+              ),
+              "frozen_official_phystwin_revision": os.environ[
+                  "OFFICIAL_PHYSTWIN_REVISION"
+              ],
+              "full_import_probe": (
+                  "from qqtt.engine.trainer_warp import InvPhyTrainerWarp"
+              ),
+              "physical_prior_stage_activated": official_activated,
+              "pytorch3d": {
+                  "sha256": os.environ[
+                      "OFFICIAL_PHYSTWIN_PYTORCH3D_WHEEL_SHA256"
+                  ],
+                  "url": os.environ["OFFICIAL_PHYSTWIN_PYTORCH3D_URL"],
+                  "version": os.environ["OFFICIAL_PHYSTWIN_PYTORCH3D_VERSION"],
+              },
+              "python_version": os.environ["FRAME_ZERO_PYTHON_VERSION"],
+              "repair_file_sha256": os.environ[
+                  "OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID"],
+              "repair_path": os.environ["OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_PATH"],
+              "simple_knn_tree_oid": os.environ[
+                  "OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID"
+              ],
+              "simple_knn_wheel_sha256": (
+                  bootstrap_marker["simple_knn_wheel_sha256"]
+                  if bootstrap_marker
+                  else None
+              ),
+              "source_checkout_unchanged": bootstrap_probe_passed,
+              "torch_version": os.environ["FRAME_ZERO_TORCH_VERSION"],
           }
           canonical = json.dumps(
               receipt,
@@ -962,6 +1329,7 @@ jobs:
           config_route = receipt["runtime_fallback_config_routing_repair"]
           cma_runtime = receipt["runtime_primary_cma_import_dependency"]
           pynput_runtime = receipt["runtime_primary_pynput_import_dependency"]
+          official_runtime = receipt["runtime_official_phystwin_py310"]
           body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
 
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
@@ -977,6 +1345,10 @@ jobs:
           - fallback-config routing repair activated: `{str(config_route['activated']).lower()}`
           - primary CMA import dependency activated: `{str(cma_runtime['activated']).lower()}`
           - primary headless pynput dependency activated: `{str(pynput_runtime['activated']).lower()}`
+          - official PhysTwin Python 3.10 bootstrap passed: `{str(official_runtime['bootstrap_probe_passed']).lower()}`
+          - physical-prior Python 3.10 route activated: `{str(official_runtime['physical_prior_stage_activated']).lower()}`
+          - simple-knn source tree: `{official_runtime['simple_knn_tree_oid']}`
+          - Gaussian rasterizer source tree: `{official_runtime['diff_gaussian_rasterization_tree_oid']}`
           - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
           - development suffix opened: `false`
           - v5 confirmation payloads opened: `false`
@@ -985,7 +1357,7 @@ jobs:
           - v6 target outcomes used: `false`
           - replacement allowed: `false`
 
-          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits the hash-pinned import dependencies required by the frozen official PhysTwin checkout. Interactive keyboard control is disabled and the registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          This run routes frame-zero reconstruction and the physical-prior stage through the upstream-compatible Python 3.10/Torch 2.4 runtime. It builds the two Gaussian CUDA extensions from exact frozen PhysTwin source trees outside that checkout, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits only hash-pinned downloaded dependencies. Interactive keyboard control is disabled and the registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
           """
           request = urllib.request.Request(
               (
