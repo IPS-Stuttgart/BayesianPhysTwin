@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -26,7 +27,6 @@ from .structured_reliability import (
     MarkovReliabilityConfig,
     smooth_markov_reliability,
 )
-
 
 SCORE_COLUMNS = (
     "residual_norm",
@@ -96,7 +96,9 @@ def _sort_suffixes(suffixes: Sequence[str]) -> list[str]:
     return sorted(suffixes, key=key)
 
 
-def _detect_vector_columns(fieldnames: Sequence[str]) -> tuple[list[str], list[str], list[str]]:
+def _detect_vector_columns(
+    fieldnames: Sequence[str],
+) -> tuple[list[str], list[str], list[str]]:
     for observed_prefix, predicted_prefix in (
         ("observed_", "predicted_"),
         ("obs_", "pred_"),
@@ -126,7 +128,9 @@ def _parse_float(row: dict[str, str], column: str, row_number: int) -> float:
     try:
         parsed = float(value)
     except (TypeError, ValueError) as error:
-        raise ValueError(f"row {row_number}: {column} must be numeric, got {value!r}") from error
+        raise ValueError(
+            f"row {row_number}: {column} must be numeric, got {value!r}"
+        ) from error
     if not np.isfinite(parsed):
         raise ValueError(f"row {row_number}: {column} must be finite")
     return parsed
@@ -154,7 +158,9 @@ def _parse_bool(value: str, *, row_number: int, column: str) -> bool:
     )
 
 
-def _load_residual_csv(path: str | Path, *, default_variance: float) -> _LoadedResiduals:
+def _load_residual_csv(
+    path: str | Path, *, default_variance: float
+) -> _LoadedResiduals:
     input_path = Path(path)
     if default_variance <= 0.0:
         raise ValueError("default_variance must be positive")
@@ -185,7 +191,8 @@ def _load_residual_csv(path: str | Path, *, default_variance: float) -> _LoadedR
 
     observed: list[list[float]] = []
     predicted: list[list[float]] = []
-    variance: list[float] | list[list[float]] = []
+    scalar_variance: list[float] = []
+    coordinate_variance: list[list[float]] = []
     confidence: list[float] | None = [] if "confidence" in fieldnames else None
     occluded: list[bool] | None = [] if "occluded" in fieldnames else None
     boundary: list[float] | None = [] if "boundary_distance" in fieldnames else None
@@ -201,12 +208,18 @@ def _load_residual_csv(path: str | Path, *, default_variance: float) -> _LoadedR
     targets: list[bool] | None = [] if label_column else None
 
     for row_number, row in enumerate(rows, start=2):
-        observed.append([_parse_float(row, column, row_number) for column in observed_columns])
-        predicted.append([_parse_float(row, column, row_number) for column in predicted_columns])
+        observed.append(
+            [_parse_float(row, column, row_number) for column in observed_columns]
+        )
+        predicted.append(
+            [_parse_float(row, column, row_number) for column in predicted_columns]
+        )
         if variance_mode == "scalar":
-            variance.append(_parse_float(row, variance_columns[0], row_number))
+            scalar_variance.append(_parse_float(row, variance_columns[0], row_number))
         elif variance_mode == "coordinate":
-            variance.append([_parse_float(row, column, row_number) for column in variance_columns])
+            coordinate_variance.append(
+                [_parse_float(row, column, row_number) for column in variance_columns]
+            )
 
         if confidence is not None:
             confidence.append(_parse_optional_float(row, "confidence", row_number, 1.0))
@@ -222,7 +235,9 @@ def _load_residual_csv(path: str | Path, *, default_variance: float) -> _LoadedR
                 _parse_optional_float(row, "boundary_distance", row_number, np.inf)
             )
         if flow is not None:
-            flow.append(_parse_optional_float(row, "flow_inconsistency", row_number, 0.0))
+            flow.append(
+                _parse_optional_float(row, "flow_inconsistency", row_number, 0.0)
+            )
         if targets is not None and label_column is not None:
             target = _parse_bool(
                 row.get(label_column, ""),
@@ -232,7 +247,12 @@ def _load_residual_csv(path: str | Path, *, default_variance: float) -> _LoadedR
             targets.append(not target if invert_label else target)
 
     batch_variance: float | list[float] | list[list[float]]
-    batch_variance = default_variance if variance_mode == "default" else variance
+    if variance_mode == "default":
+        batch_variance = default_variance
+    elif variance_mode == "scalar":
+        batch_variance = scalar_variance
+    else:
+        batch_variance = coordinate_variance
     batch = PseudoMeasurementBatch(
         observed=observed,
         predicted=predicted,
@@ -249,12 +269,13 @@ def _load_residual_csv(path: str | Path, *, default_variance: float) -> _LoadedR
         variance_mode=variance_mode,
         inlier_label=label_column,
     )
+    inlier_target = None if targets is None else np.asarray(tuple(targets))
     return _LoadedResiduals(
         batch=batch,
         rows=rows,
         fieldnames=fieldnames,
         schema=schema,
-        inlier_target=None if targets is None else np.asarray(targets, dtype=bool),
+        inlier_target=inlier_target,
     )
 
 
@@ -299,7 +320,9 @@ def _per_frame_summary(
             "mean_prior_reliability": float(np.mean(prior[selected])),
             "mean_posterior_inlier_probability": float(np.mean(posterior[selected])),
             "prior_effective_sample_size": _effective_sample_size(prior[selected]),
-            "posterior_effective_sample_size": _effective_sample_size(posterior[selected]),
+            "posterior_effective_sample_size": _effective_sample_size(
+                posterior[selected]
+            ),
         }
         if structured is not None:
             frame_summary["mean_structured_inlier_probability"] = float(
@@ -325,9 +348,27 @@ def replay_residual_csv(
 ) -> ResidualReplayResult:
     """Score one canonical residual CSV and return paper-ready summaries."""
 
-    reliability_cfg = reliability_config or ReliabilityConfig()
-    likelihood_cfg = likelihood_config or RobustLikelihoodConfig()
-    markov_cfg = markov_config or MarkovReliabilityConfig()
+    if reliability_config is None:
+        reliability_cfg = ReliabilityConfig()
+    elif isinstance(reliability_config, ReliabilityConfig):
+        reliability_cfg = reliability_config
+    else:
+        raise TypeError("reliability_config must be a ReliabilityConfig")
+
+    if likelihood_config is None:
+        likelihood_cfg = RobustLikelihoodConfig()
+    elif isinstance(likelihood_config, RobustLikelihoodConfig):
+        likelihood_cfg = likelihood_config
+    else:
+        raise TypeError("likelihood_config must be a RobustLikelihoodConfig")
+
+    if markov_config is None:
+        markov_cfg = MarkovReliabilityConfig()
+    elif isinstance(markov_config, MarkovReliabilityConfig):
+        markov_cfg = markov_config
+    else:
+        raise TypeError("markov_config must be a MarkovReliabilityConfig")
+
     loaded = _load_residual_csv(path, default_variance=default_variance)
     observed, predicted = loaded.batch.arrays()
     variance = measurement_variance(loaded.batch)
@@ -382,7 +423,9 @@ def replay_residual_csv(
                 loaded.batch,
                 reliability_cfg,
             ),
-            "mean_unweighted_gaussian_nll": float(np.mean(-likelihood.log_inlier_density)),
+            "mean_unweighted_gaussian_nll": float(
+                np.mean(-likelihood.log_inlier_density)
+            ),
             "mean_robust_mixture_nll": likelihood.mean_negative_log_likelihood,
         },
     }

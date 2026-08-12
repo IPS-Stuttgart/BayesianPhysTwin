@@ -1,8 +1,14 @@
 import csv
 import json
 from pathlib import Path
+from typing import Any, cast
+
+import pytest
 
 from bayesian_phystwin import replay_residual_csv
+from bayesian_phystwin.pseudo_measurements import ReliabilityConfig
+from bayesian_phystwin.robust_likelihood import RobustLikelihoodConfig
+from bayesian_phystwin.structured_reliability import MarkovReliabilityConfig
 
 
 def _write_fixture(path: Path) -> None:
@@ -16,7 +22,9 @@ def _write_fixture(path: Path) -> None:
     )
 
 
-def test_replay_reports_robustness_calibration_and_frame_metrics(tmp_path: Path) -> None:
+def test_replay_reports_robustness_calibration_and_frame_metrics(
+    tmp_path: Path,
+) -> None:
     input_csv = tmp_path / "residuals.csv"
     _write_fixture(input_csv)
 
@@ -26,7 +34,9 @@ def test_replay_reports_robustness_calibration_and_frame_metrics(tmp_path: Path)
     assert result.summary["measurement_dimension"] == 2
     assert result.summary["labels"] == {"inlier_count": 2, "outlier_count": 1}
     assert result.summary["calibration"]["prior_reliability"]["roc_auc"] == 1.0
-    assert result.summary["calibration"]["structured_inlier_probability"]["roc_auc"] == 1.0
+    assert (
+        result.summary["calibration"]["structured_inlier_probability"]["roc_auc"] == 1.0
+    )
     assert result.summary["structured_reliability"]["sequence_count"] == 2
     assert len(result.summary["per_frame"]) == 2
     assert len(result.scored_rows) == 3
@@ -65,3 +75,76 @@ def test_replay_accepts_compact_obs_pred_columns(tmp_path: Path) -> None:
 
     assert result.summary["measurement_dimension"] == 2
     assert result.summary["columns"]["variance_mode"] == "default"
+
+
+def test_replay_accepts_coordinate_variance_columns(tmp_path: Path) -> None:
+    variance_csv = tmp_path / "coordinate.csv"
+    variance_csv.write_text(
+        "observed_x,observed_y,predicted_x,predicted_y,variance_x,variance_y\n"
+        "1.0,2.0,1.1,2.1,0.01,0.02\n",
+        encoding="utf-8",
+    )
+    compact_csv = tmp_path / "compact-coordinate.csv"
+    compact_csv.write_text(
+        "observed_x,observed_y,predicted_x,predicted_y,var_x,var_y\n"
+        "1.0,2.0,1.1,2.1,0.01,0.02\n",
+        encoding="utf-8",
+    )
+
+    variance_result = replay_residual_csv(variance_csv)
+    compact_result = replay_residual_csv(compact_csv)
+
+    assert variance_result.summary["columns"]["variance_mode"] == "coordinate"
+    assert variance_result.summary["columns"]["variance"] == (
+        "variance_x",
+        "variance_y",
+    )
+    assert compact_result.summary["columns"]["variance"] == ("var_x", "var_y")
+
+
+def test_replay_rejects_nonnumeric_vector_values(tmp_path: Path) -> None:
+    input_csv = tmp_path / "invalid.csv"
+    input_csv.write_text(
+        "observed_x,predicted_x\nbad,0.0\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="observed_x must be numeric"):
+        replay_residual_csv(input_csv)
+
+
+def test_replay_rejects_falsey_invalid_configs(tmp_path: Path) -> None:
+    input_csv = tmp_path / "residuals.csv"
+    _write_fixture(input_csv)
+    invalid_cases = (
+        (
+            {"reliability_config": 0},
+            "reliability_config must be a ReliabilityConfig",
+        ),
+        (
+            {"likelihood_config": 0},
+            "likelihood_config must be a RobustLikelihoodConfig",
+        ),
+        (
+            {"markov_config": 0},
+            "markov_config must be a MarkovReliabilityConfig",
+        ),
+    )
+
+    for kwargs, message in invalid_cases:
+        with pytest.raises(TypeError, match=message):
+            replay_residual_csv(input_csv, **cast(dict[str, Any], kwargs))
+
+
+def test_replay_accepts_explicit_config_instances(tmp_path: Path) -> None:
+    input_csv = tmp_path / "residuals.csv"
+    _write_fixture(input_csv)
+
+    result = replay_residual_csv(
+        input_csv,
+        reliability_config=ReliabilityConfig(),
+        likelihood_config=RobustLikelihoodConfig(),
+        markov_config=MarkovReliabilityConfig(),
+    )
+
+    assert result.summary["measurement_count"] == 3
