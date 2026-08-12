@@ -9,13 +9,16 @@ on:
       - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
       - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
+      - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
   push:
     branches: [main]
     paths:
@@ -24,13 +27,16 @@ on:
       - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
       - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
       - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
+      - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
+      - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
   workflow_dispatch:
 
 permissions:
@@ -48,6 +54,7 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   NUMEXPR_NUM_THREADS: "1"
+  PYNPUT_BACKEND: dummy
   AUTHORIZED_RUNNER_NAME: workstation2
   RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
   PROCESSED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed
@@ -84,6 +91,19 @@ env:
   PRIMARY_CMA_RUNTIME_REPAIR_SHA256: 0230d5655abc86319849d452f9db586310d21737528934596cf9c342ecd4b83b
   PRIMARY_CMA_VERSION: "4.4.4"
   PRIMARY_CMA_WHEEL_SHA256: edb6d02eb2aac2d54650f16a8f0c70711ff17445957de7c9de92ff7fd4b7ef38
+  PRIMARY_PYNPUT_RUNTIME_REPAIR_ID: 4a6e9655859d2d6da28d248a8bc0ecbfc142fce28566982d8897740c46542825
+  PRIMARY_PYNPUT_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json
+  PRIMARY_PYNPUT_RUNTIME_REPAIR_SHA256: d453c55b02603434d01c0819dc0d653e95754c0a7f125ff334c408cc98f09c8f
+  PRIMARY_PYNPUT_VERSION: "1.8.2"
+  PRIMARY_PYNPUT_WHEEL_SHA256: 8cc38cf13a6ab2749cb375678be8a0fd705d7ce49c8001ff5db4007a723bbef1
+  PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256: 5de429018aec646a33fc2f5434b1ce7d74208063c51f7b17cb6f33c087369be3
+  PRIMARY_PYNPUT_TRAINER_SHA256: 260052644c5751336635c3fda52c0f8197ce76fab8eefe3b7b905b1f569d8eb3
+  PRIMARY_EVDEV_VERSION: "1.9.2"
+  PRIMARY_EVDEV_SDIST_SHA256: 5d3278892ce1f92a74d6bf888cc8525d9f68af85dbe336c95d1c87fb8f423069
+  PRIMARY_PYTHON_XLIB_VERSION: "0.33"
+  PRIMARY_PYTHON_XLIB_WHEEL_SHA256: c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398
+  PRIMARY_SIX_VERSION: "1.17.0"
+  PRIMARY_SIX_WHEEL_SHA256: 4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
   DISPATCHER_SHA256: 39ed0b957780ae8e89cbe74e220c8dd9e4c3e1d39dcfc0244cbbd28a5bc88a9c
   PRIMARY_PYTHON_VERSION: "3.12"
   PRIMARY_TORCH_VERSION: 2.5.1+cu121
@@ -133,14 +153,17 @@ jobs:
           python -m pip install -e ".[dev,graph]"
           python -m ruff check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
-            tests/test_deform360_v6_primary_cma_runtime_repair.py
+            tests/test_deform360_v6_primary_cma_runtime_repair.py \
+            tests/test_deform360_v6_primary_pynput_runtime_repair.py
           python -m ruff format --check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
-            tests/test_deform360_v6_primary_cma_runtime_repair.py
+            tests/test_deform360_v6_primary_cma_runtime_repair.py \
+            tests/test_deform360_v6_primary_pynput_runtime_repair.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
+            tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -262,6 +285,7 @@ jobs:
         env:
           PRIMARY_BOOTSTRAP_PYTHON: ${{ steps.python312.outputs.python-path }}
           FRAME_ZERO_BOOTSTRAP_PYTHON: ${{ steps.python310.outputs.python-path }}
+          OFFICIAL_PHYSTWIN_REPO: ${{ github.workspace }}/_official_phystwin
           RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-dual-runtime-bootstrap.log
         run: |
           set -euo pipefail
@@ -276,6 +300,12 @@ jobs:
               = "${FALLBACK_CONFIG_ROUTE_REPAIR_SHA256}"
             test "$(sha256sum "${PRIMARY_CMA_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
               = "${PRIMARY_CMA_RUNTIME_REPAIR_SHA256}"
+            test "$(sha256sum "${PRIMARY_PYNPUT_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${PRIMARY_PYNPUT_RUNTIME_REPAIR_SHA256}"
+            test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/env_install/env_install.sh" | awk '{print $1}')" \
+              = "${PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256}"
+            test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/qqtt/engine/trainer_warp.py" | awk '{print $1}')" \
+              = "${PRIMARY_PYNPUT_TRAINER_SHA256}"
             test "$(sha256sum "${PREVIOUS_FALLBACK_CONFIG_PATH}" | awk '{print $1}')" \
               = "${PREVIOUS_FALLBACK_CONFIG_FILE_SHA256}"
             test "$(sha256sum "${CORRECTED_FALLBACK_CONFIG_PATH}" | awk '{print $1}')" \
@@ -325,6 +355,7 @@ jobs:
             config_repair_marker="${RUNNER_TEMP}/deform360-v6-fallback-config-repair-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             constraints="${RUNNER_TEMP}/deform360-v6-frame-zero-constraints-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
             cma_requirement="${RUNNER_TEMP}/deform360-v6-primary-cma-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+            pynput_requirements="${RUNNER_TEMP}/deform360-v6-primary-pynput-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
             test ! -e "${primary_runtime}"
             test ! -e "${frame_zero_runtime}"
             test ! -e "${dispatcher}"
@@ -332,6 +363,7 @@ jobs:
             test ! -e "${config_repair_marker}"
             test ! -e "${constraints}"
             test ! -e "${cma_requirement}"
+            test ! -e "${pynput_requirements}"
 
             "${PRIMARY_BOOTSTRAP_PYTHON}" -m venv \
               --copies --system-site-packages "${primary_runtime}"
@@ -367,6 +399,18 @@ jobs:
               --only-binary=:all: \
               --require-hashes \
               --requirement "${cma_requirement}"
+            printf '%s\n' \
+              "pynput==${PRIMARY_PYNPUT_VERSION} --hash=sha256:${PRIMARY_PYNPUT_WHEEL_SHA256}" \
+              "evdev==${PRIMARY_EVDEV_VERSION} --hash=sha256:${PRIMARY_EVDEV_SDIST_SHA256}" \
+              "python-xlib==${PRIMARY_PYTHON_XLIB_VERSION} --hash=sha256:${PRIMARY_PYTHON_XLIB_WHEEL_SHA256}" \
+              "six==${PRIMARY_SIX_VERSION} --hash=sha256:${PRIMARY_SIX_WHEEL_SHA256}" \
+              > "${pynput_requirements}"
+            "${primary_python}" -m pip install \
+              --no-build-isolation \
+              --only-binary=pynput,python-xlib,six \
+              --no-binary=evdev \
+              --require-hashes \
+              --requirement "${pynput_requirements}"
             set +e
             primary_pip_check="$("${primary_python}" -m pip check 2>&1)"
             primary_pip_status=$?
@@ -426,11 +470,14 @@ jobs:
             BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER="${config_repair_marker}" \
             "${dispatcher}" - <<'PY'
           from importlib.metadata import version
+          from pathlib import Path
+          import sys
 
           import bayesian_phystwin
           import cma
           import deform360
           import os
+          from pynput import keyboard
           import sam2
           import torch
           import warp
@@ -447,11 +494,37 @@ jobs:
               raise SystemExit("primary CMA runtime identity changed")
           if not callable(cma.CMAEvolutionStrategy):
               raise SystemExit("primary CMA import probe failed")
+          expected_pynput = {
+              "evdev": os.environ["PRIMARY_EVDEV_VERSION"],
+              "pynput": os.environ["PRIMARY_PYNPUT_VERSION"],
+              "python-xlib": os.environ["PRIMARY_PYTHON_XLIB_VERSION"],
+              "six": os.environ["PRIMARY_SIX_VERSION"],
+          }
+          observed_pynput = {name: version(name) for name in expected_pynput}
+          if observed_pynput != expected_pynput:
+              raise SystemExit(
+                  f"primary pynput runtime identity changed: {observed_pynput!r}"
+              )
+          if os.environ.get("PYNPUT_BACKEND") != "dummy":
+              raise SystemExit("primary pynput backend is not headless")
+          if "pynput.keyboard._dummy" not in sys.modules:
+              raise SystemExit("primary pynput dummy backend was not selected")
+          if not callable(keyboard.Listener):
+              raise SystemExit("primary pynput import probe failed")
+          official_root = Path(os.environ["OFFICIAL_PHYSTWIN_REPO"]).resolve()
+          if not official_root.is_dir() or official_root.is_symlink():
+              raise SystemExit("frozen official PhysTwin checkout is unavailable")
+          sys.path.insert(0, str(official_root))
+          from qqtt.engine.trainer_warp import InvPhyTrainerWarp
+
+          if not callable(InvPhyTrainerWarp):
+              raise SystemExit("frozen InvPhyTrainerWarp import closure failed")
           if os.environ.get("REPAIR_ID") != "selector-repair-environment-probe-v1":
               raise SystemExit("dispatcher changed an inherited repair identity")
           print(version("torch"))
           print(version("SAM-2"))
           print(version("cma"))
+          print(observed_pynput)
           print(version("bayesian-phystwin"))
           print(version("deform360"))
           print(warp.__version__)
@@ -693,6 +766,8 @@ jobs:
               raise SystemExit("fallback-config routing receipt field already exists")
           if "runtime_primary_cma_import_dependency" in receipt:
               raise SystemExit("primary CMA runtime receipt field already exists")
+          if "runtime_primary_pynput_import_dependency" in receipt:
+              raise SystemExit("primary pynput runtime receipt field already exists")
           receipt["runtime_frame_zero_precompiled_cuda"] = {
               "activated": activated,
               "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
@@ -777,6 +852,34 @@ jobs:
               "version": os.environ["PRIMARY_CMA_VERSION"],
               "wheel_sha256": os.environ["PRIMARY_CMA_WHEEL_SHA256"],
           }
+          receipt["runtime_primary_pynput_import_dependency"] = {
+              "activated": os.environ.get("RUNTIME_EXIT_CODE") == "0",
+              "backend": os.environ["PYNPUT_BACKEND"],
+              "evdev_sdist_sha256": os.environ["PRIMARY_EVDEV_SDIST_SHA256"],
+              "evdev_version": os.environ["PRIMARY_EVDEV_VERSION"],
+              "full_invphytrainer_import_probe": True,
+              "install_scope": "isolated-primary-runtime-only",
+              "interactive_keyboard_control_selected": False,
+              "pynput_version": os.environ["PRIMARY_PYNPUT_VERSION"],
+              "pynput_wheel_sha256": os.environ["PRIMARY_PYNPUT_WHEEL_SHA256"],
+              "frozen_upstream_environment_sha256": os.environ[
+                  "PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256"
+              ],
+              "frozen_trainer_sha256": os.environ[
+                  "PRIMARY_PYNPUT_TRAINER_SHA256"
+              ],
+              "python_xlib_version": os.environ["PRIMARY_PYTHON_XLIB_VERSION"],
+              "python_xlib_wheel_sha256": os.environ[
+                  "PRIMARY_PYTHON_XLIB_WHEEL_SHA256"
+              ],
+              "repair_file_sha256": os.environ[
+                  "PRIMARY_PYNPUT_RUNTIME_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["PRIMARY_PYNPUT_RUNTIME_REPAIR_ID"],
+              "repair_path": os.environ["PRIMARY_PYNPUT_RUNTIME_REPAIR_PATH"],
+              "six_version": os.environ["PRIMARY_SIX_VERSION"],
+              "six_wheel_sha256": os.environ["PRIMARY_SIX_WHEEL_SHA256"],
+          }
           canonical = json.dumps(
               receipt,
               sort_keys=True,
@@ -858,6 +961,7 @@ jobs:
           namespace = receipt["runtime_dispatch_namespace_repair"]
           config_route = receipt["runtime_fallback_config_routing_repair"]
           cma_runtime = receipt["runtime_primary_cma_import_dependency"]
+          pynput_runtime = receipt["runtime_primary_pynput_import_dependency"]
           body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
 
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
@@ -872,6 +976,7 @@ jobs:
           - dispatcher namespace repair activated: `{str(namespace['activated']).lower()}`
           - fallback-config routing repair activated: `{str(config_route['activated']).lower()}`
           - primary CMA import dependency activated: `{str(cma_runtime['activated']).lower()}`
+          - primary headless pynput dependency activated: `{str(pynput_runtime['activated']).lower()}`
           - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
           - development suffix opened: `false`
           - v5 confirmation payloads opened: `false`
@@ -880,7 +985,7 @@ jobs:
           - v6 target outcomes used: `false`
           - replacement allowed: `false`
 
-          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits the hash-pinned import dependency required by the frozen official PhysTwin checkout. The registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits the hash-pinned import dependencies required by the frozen official PhysTwin checkout. Interactive keyboard control is disabled and the registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
           """
           request = urllib.request.Request(
               (
