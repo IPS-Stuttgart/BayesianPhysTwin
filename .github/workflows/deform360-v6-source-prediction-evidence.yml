@@ -8,13 +8,17 @@ on:
       - "docs/deform360_v6_source_prediction_evidence.md"
       - "docs/deform360_v6_processing_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_runtime_dependency_scope_repair_2026-08-12.md"
+      - "docs/deform360_v6_gsplat_cuda_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_gsplat_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
+      - "tests/test_deform360_v6_gsplat_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_processing_runtime_repair.py"
       - "tests/test_deform360_v6_runtime_dependency_scope_repair.py"
   push:
@@ -24,13 +28,17 @@ on:
       - "docs/deform360_v6_source_prediction_evidence.md"
       - "docs/deform360_v6_processing_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_runtime_dependency_scope_repair_2026-08-12.md"
+      - "docs/deform360_v6_gsplat_cuda_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_processing_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_gsplat_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_prediction_execution.json"
+      - "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh"
       - "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
       - "scripts/science/materialize_deform360_v6_source_plan_inputs.py"
       - "tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py"
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
+      - "tests/test_deform360_v6_gsplat_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_processing_runtime_repair.py"
       - "tests/test_deform360_v6_runtime_dependency_scope_repair.py"
 
@@ -66,6 +74,9 @@ env:
   RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID: 1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460
   RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json
   RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256: 86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31
+  GSPLAT_CUDA_RUNTIME_REPAIR_ID: 44da91d95947d07d9d930bd0c707d16da9555bc7b9ea3042fcf0a88444ec3bb4
+  GSPLAT_CUDA_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_gsplat_cuda_runtime.json
+  GSPLAT_CUDA_RUNTIME_REPAIR_SHA256: fb532bf9626c0ba48cb9c7e4aca80488e12f255d18765a31bf4f4324deb385c7
   EXPECTED_PIP_CHECK_CONFLICT: "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
   NUMPY_VERSION: "1.26.4"
   PYRECEST_VERSION: "2.4.3"
@@ -115,6 +126,7 @@ jobs:
           files=(
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py
+            tests/test_deform360_v6_gsplat_cuda_runtime_repair.py
             tests/test_deform360_v6_processing_runtime_repair.py
             tests/test_deform360_v6_runtime_dependency_scope_repair.py
             tests/test_deform360_v6_runtime_bootstrap_receipt.py
@@ -123,9 +135,11 @@ jobs:
           python -m ruff format --check "${files[@]}"
           python -m mypy \
             scripts/science/materialize_deform360_v6_source_plan_inputs.py
+          bash -n scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh
           bash -n scripts/ci/run_deform360_v6_source_prediction_evidence.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_joint_sparse_geometric_v4_v6_source_execution.py \
+            tests/test_deform360_v6_gsplat_cuda_runtime_repair.py \
             tests/test_deform360_v6_processing_runtime_repair.py \
             tests/test_deform360_v6_runtime_dependency_scope_repair.py \
             tests/test_deform360_v6_runtime_bootstrap_receipt.py \
@@ -297,8 +311,11 @@ jobs:
               = "${DEFORM360_PROCESSING_REPAIR_SHA256}"
             test "$(sha256sum "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" | awk '{print $1}')" \
               = "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256}"
+            test "$(sha256sum "${GSPLAT_CUDA_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${GSPLAT_CUDA_RUNTIME_REPAIR_SHA256}"
             python -m venv --copies --system-site-packages "${runtime}"
             runtime_python="${runtime}/bin/python"
+            source "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh" "${runtime}"
             "${runtime_python}" -m pip install \
               "pip==25.2" \
               "setuptools==80.9.0" \
@@ -346,6 +363,14 @@ jobs:
 
           if not torch.cuda.is_available():
               raise SystemExit("CUDA is unavailable")
+          if torch.version.cuda != "12.1":
+              raise SystemExit("PyTorch CUDA runtime is not cu121")
+          from gsplat.cuda._backend import _C as gsplat_cuda_backend
+
+          if gsplat_cuda_backend is None:
+              raise SystemExit("gsplat CUDA backend is unavailable")
+          if not hasattr(gsplat_cuda_backend, "CameraModelType"):
+              raise SystemExit("gsplat CUDA backend API is incomplete")
           if version("virtualenv") != "21.7.4":
               raise SystemExit("virtualenv runtime identity changed")
           if version("numpy") != "1.26.4":
@@ -567,6 +592,18 @@ jobs:
                       "DEFORM360_PROCESSING_REPAIR_SHA256"
                   ],
               },
+              "runtime_gsplat_cuda_repair": {
+                  "activated": bool(runtime_raw and int(runtime_raw) == 0),
+                  "compiled_backend_required": True,
+                  "repair_file_sha256": os.environ[
+                      "GSPLAT_CUDA_RUNTIME_REPAIR_SHA256"
+                  ],
+                  "repair_id": os.environ["GSPLAT_CUDA_RUNTIME_REPAIR_ID"],
+                  "repair_path": os.environ[
+                      "GSPLAT_CUDA_RUNTIME_REPAIR_PATH"
+                  ],
+                  "torch_cuda_version": "12.1",
+              },
               "runtime_dependency_scope_repair": {
                   "activated": False,
                   "exact_allowlisted_pip_check_line": os.environ[
@@ -619,6 +656,7 @@ jobs:
         env:
           BPT_SOURCE_SHA: ${{ github.sha }}
           EVIDENCE_ROOT: ${{ runner.temp }}
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v6-source-runtime-bootstrap.log
         run: |
           set -euo pipefail
           run_root="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
@@ -641,6 +679,17 @@ jobs:
               fi
               tail -c 32000 "${log}" > "${target}"
             done < <(find "${run_root}/logs" -type f -name '*.log' | sort)
+          fi
+          if [[ -f "${RUNTIME_LOG}" && ! -L "${RUNTIME_LOG}" ]]; then
+            runtime_target="${logs}/runtime-bootstrap.log"
+            if [[ -L "${runtime_target}" || \
+                  ( -e "${runtime_target}" && ! -f "${runtime_target}" ) ]]; then
+              echo "refusing unsafe retained runtime-log target" >&2
+              exit 1
+            fi
+            if [[ ! -e "${runtime_target}" ]]; then
+              tail -c 32000 "${RUNTIME_LOG}" > "${runtime_target}"
+            fi
           fi
           if find "${compact}" -type l -print -quit | grep -q .; then
             echo "compact evidence contains a symlink" >&2
