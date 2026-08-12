@@ -100,6 +100,20 @@ The common required artifact schemas are version 1 for `GraphBelief`,
 Causal4D contract remain authoritative for module-specific capabilities and
 additional schemas.
 
+## Cross-field consistency
+
+Schema version 1 has one authoritative development range per component. Every
+interface row must repeat the matching component ranges exactly; otherwise the
+loader rejects the table instead of allowing component-level and interface-level
+compatibility claims to disagree.
+
+Provider modules must also belong to one of the interface's declared
+participants. For example, a Prob4D-to-BayesianPhysTwin row cannot silently name
+a `causal4d.*` provider module. Finally, any interface that permits claim-bearing
+admission must require exact repository revisions for its evidence. These checks
+are semantic cross-references: each field can be individually well formed while
+the combined table is still unsafe or contradictory.
+
 ## Reading the installed table
 
 ```python
@@ -119,8 +133,9 @@ print(
 
 The loader rejects duplicate JSON keys, non-finite values, unknown fields,
 noncanonical package ranges, reordered or duplicate provider rows, unsupported
-schema-version lists, coerced Boolean flags, and any weakening of the evidence
-boundary.
+schema-version lists, coerced Boolean flags, contradictory component/interface
+ranges, provider modules outside their declared participants, claim-bearing rows
+without exact revision evidence, and any weakening of the evidence boundary.
 
 ## Continuous compatibility ownership
 

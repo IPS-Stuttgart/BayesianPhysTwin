@@ -181,6 +181,10 @@ def _bad_interface_range(payload: dict[str, Any]) -> None:
     _interfaces(payload)[0]["distribution_ranges"]["causal4d"] = "~0.5"
 
 
+def _contradictory_interface_range(payload: dict[str, Any]) -> None:
+    _interfaces(payload)[0]["distribution_ranges"]["causal4d"] = ">=0.5,<0.7"
+
+
 def _empty_provider_modules(payload: dict[str, Any]) -> None:
     _interfaces(payload)[0]["provider_modules"] = []
 
@@ -197,6 +201,10 @@ def _duplicate_provider_module(payload: dict[str, Any]) -> None:
 
 def _bad_provider_module_path(payload: dict[str, Any]) -> None:
     _interfaces(payload)[1]["provider_modules"][0]["module"] = "Prob4D provider"
+
+
+def _provider_module_outside_participants(payload: dict[str, Any]) -> None:
+    _interfaces(payload)[1]["provider_modules"][0]["module"] = "causal4d.provider_v1"
 
 
 def _bad_provider_api(payload: dict[str, Any]) -> None:
@@ -243,6 +251,12 @@ def _coerced_revision_flag(payload: dict[str, Any]) -> None:
     _interfaces(payload)[1]["exact_revisions_required_for_evidence"] = 1
 
 
+def _claim_without_revision_lock(payload: dict[str, Any]) -> None:
+    interface = _interfaces(payload)[0]
+    interface["supports_claim_bearing_admission"] = True
+    interface["exact_revisions_required_for_evidence"] = False
+
+
 def _notes_are_text(payload: dict[str, Any]) -> None:
     _interfaces(payload)[1]["notes"] = "note"
 
@@ -279,10 +293,12 @@ _MUTATIONS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
     ("participant", _unknown_participant),
     ("range roster", _range_roster_mismatch),
     ("interface range", _bad_interface_range),
+    ("interface/component range", _contradictory_interface_range),
     ("empty provider modules", _empty_provider_modules),
     ("provider module order", _unsorted_provider_modules),
     ("duplicate provider module", _duplicate_provider_module),
     ("provider module path", _bad_provider_module_path),
+    ("provider participant", _provider_module_outside_participants),
     ("provider API", _bad_provider_api),
     ("module lifecycle", _bad_module_lifecycle),
     ("empty schemas", _empty_schema_mapping),
@@ -293,6 +309,7 @@ _MUTATIONS: tuple[tuple[str, Callable[[dict[str, Any]], None]], ...] = (
     ("interface lifecycle", _bad_interface_lifecycle),
     ("claim Boolean", _coerced_claim_flag),
     ("revision Boolean", _coerced_revision_flag),
+    ("claim revision lock", _claim_without_revision_lock),
     ("notes type", _notes_are_text),
     ("duplicate note", _duplicate_note),
     ("evidence boundary", _weaken_evidence_boundary),

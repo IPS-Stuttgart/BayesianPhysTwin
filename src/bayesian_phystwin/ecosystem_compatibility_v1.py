@@ -395,6 +395,44 @@ def _validated_interface(value: object) -> dict[str, object]:
     }
 
 
+def _validate_cross_field_semantics(
+    components: Sequence[Mapping[str, object]],
+    interfaces: Sequence[Mapping[str, object]],
+) -> None:
+    component_ranges = {
+        cast(str, component["component_id"]): cast(str, component["supported_versions"])
+        for component in components
+    }
+    for interface in interfaces:
+        interface_id = cast(str, interface["interface_id"])
+        participants = cast(Sequence[str], interface["participants"])
+        ranges = cast(Mapping[str, str], interface["distribution_ranges"])
+        for participant in participants:
+            if ranges[participant] != component_ranges[participant]:
+                raise ValueError(
+                    f"{interface_id}.distribution_ranges[{participant!r}] must "
+                    f"match {participant}.supported_versions"
+                )
+
+        participant_roots = frozenset(participants)
+        modules = cast(Sequence[Mapping[str, object]], interface["provider_modules"])
+        for module in modules:
+            module_name = cast(str, module["module"])
+            if module_name.partition(".")[0] not in participant_roots:
+                raise ValueError(
+                    f"{interface_id}.provider_modules contains a module outside "
+                    "the declared participants"
+                )
+
+        if cast(bool, interface["supports_claim_bearing_admission"]) and not cast(
+            bool, interface["exact_revisions_required_for_evidence"]
+        ):
+            raise ValueError(
+                f"{interface_id} permits claim-bearing admission without exact "
+                "revision evidence"
+            )
+
+
 def _validated_evidence_boundary(value: object) -> dict[str, bool]:
     payload = _mapping(value, name="evidence_boundary")
     require_exact_fields(
@@ -447,6 +485,7 @@ def _validated_table(value: Mapping[str, Any]) -> dict[str, object]:
     interface_ids = [cast(str, item["interface_id"]) for item in interfaces]
     if not interfaces or interface_ids != sorted(set(interface_ids)):
         raise ValueError("interfaces must be sorted and unique")
+    _validate_cross_field_semantics(components, interfaces)
     return {
         "schema_name": ECOSYSTEM_COMPATIBILITY_SCHEMA,
         "schema_version": ECOSYSTEM_COMPATIBILITY_SCHEMA_VERSION,
