@@ -1,0 +1,59 @@
+name: Clean up registered residual-history fix once
+
+on:
+  push:
+    branches:
+      - fix/registered-residual-history-donor-fallback-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-registered-residual-history-ci-once
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/registered-residual-history-donor-fallback-v1
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Fix quality annotations and remove temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/deform360_registered_residual_history_v1/_common.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = {
+              "    bins = np.empty(count, dtype=np.int64)\n":
+                  "    bins: np.ndarray = np.empty(count, dtype=np.int64)\n",
+              "    positions = np.arange(count, dtype=np.int64)\n":
+                  "    positions: np.ndarray = np.arange(count, dtype=np.int64)\n",
+              "    steps = np.arange(1, future_count + 1, dtype=np.int64)\n":
+                  "    steps: np.ndarray = np.arange(1, future_count + 1, dtype=np.int64)\n",
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f"expected exactly one occurrence of {old!r}")
+              text = text.replace(old, new)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          rm -f .github/workflows/fix-registered-residual-history-quality-once.yml
+          rm -f .github/workflows/cleanup-registered-residual-history-ci-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Fix residual-history contract quality gate'
+          git push origin HEAD:fix/registered-residual-history-donor-fallback-v1
