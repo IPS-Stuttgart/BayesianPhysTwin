@@ -54,11 +54,20 @@ def test_distribution_links_use_canonical_organization_repository() -> None:
     assert project_urls["Issues"] == f"{canonical}/issues"
     assert _cff_scalar("url") == canonical
     assert _cff_scalar("repository-code") == canonical
-    for path in (ROOT / "README.md", ROOT / "THIRD_PARTY_NOTICES.md"):
+
+    first_party_documents = (
+        ROOT / "README.md",
+        ROOT / "THIRD_PARTY_NOTICES.md",
+        ROOT / "docs" / "causal4d_migration.md",
+    )
+    for path in first_party_documents:
         text = path.read_text(encoding="utf-8")
         assert "github.com/FlorianPfaff/Bayesian-PhysTwin" not in text
         assert "github.com/FlorianPfaff/Prob4D" not in text
         assert "github.com/FlorianPfaff/Causal4D" not in text
+
+    migration = (ROOT / "docs" / "causal4d_migration.md").read_text(encoding="utf-8")
+    assert "https://github.com/IPS-Stuttgart/Causal4D" in migration
 
 
 def test_distribution_declares_spdx_license_expression() -> None:
