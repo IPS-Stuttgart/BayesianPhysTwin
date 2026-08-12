@@ -127,6 +127,13 @@ Workflow changes require explicit review and must use least-privilege permission
 immutable action revisions, exact checkout identities, and no persisted checkout
 credentials unless a narrowly documented publication step requires them.
 
+New workflow files must follow the
+[workflow lifecycle policy](docs/workflow_lifecycle.md):
+permanent workflows declare an owner and maintained lifecycle, while exceptional
+manual temporary workflows additionally bind an issue and expiry date. Put
+experiment-specific behavior in versioned scripts and protocols rather than
+adding another one-shot Actions entry point.
+
 ## Evidence promotion
 
 Results belong in the canonical paper-notes repository only after the producing
