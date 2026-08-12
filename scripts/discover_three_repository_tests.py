@@ -9,9 +9,10 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NoReturn, Sequence
+from typing import NoReturn
 
 INVENTORY_SCHEMA = "bayesian-phystwin.three-repository-test-inventory.v1"
 _OWNER_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
