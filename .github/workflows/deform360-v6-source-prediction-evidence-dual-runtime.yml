@@ -8,11 +8,14 @@ on:
       - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
       - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
+      - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
+      - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
   push:
     branches: [main]
     paths:
@@ -20,11 +23,14 @@ on:
       - "docs/deform360_v6_frame_zero_cuda_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_dispatch_namespace_repair_2026-08-12.md"
       - "docs/deform360_v6_fallback_config_routing_repair_2026-08-12.md"
+      - "docs/deform360_v6_primary_cma_runtime_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
+      - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
   workflow_dispatch:
 
 permissions:
@@ -73,6 +79,11 @@ env:
   CORRECTED_FALLBACK_CONFIG_PATH: configs/sota/deform360_frame_zero_initializer_source_v1.json
   CORRECTED_FALLBACK_CONFIG_FILE_SHA256: 60e9887836ea0ba3410066dbb5668988e35763ea6161826752b24b257cf9fc66
   CORRECTED_FALLBACK_CONFIG_CANONICAL_SHA256: 64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759
+  PRIMARY_CMA_RUNTIME_REPAIR_ID: 29487f91243232dd824bd4e8e394ce6ac91e05ce94709a7014c8fc3f5b61c97c
+  PRIMARY_CMA_RUNTIME_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_cma_runtime.json
+  PRIMARY_CMA_RUNTIME_REPAIR_SHA256: 0230d5655abc86319849d452f9db586310d21737528934596cf9c342ecd4b83b
+  PRIMARY_CMA_VERSION: "4.4.4"
+  PRIMARY_CMA_WHEEL_SHA256: edb6d02eb2aac2d54650f16a8f0c70711ff17445957de7c9de92ff7fd4b7ef38
   DISPATCHER_SHA256: 39ed0b957780ae8e89cbe74e220c8dd9e4c3e1d39dcfc0244cbbd28a5bc88a9c
   PRIMARY_PYTHON_VERSION: "3.12"
   PRIMARY_TORCH_VERSION: 2.5.1+cu121
@@ -121,12 +132,15 @@ jobs:
             "wheel==0.45.1"
           python -m pip install -e ".[dev,graph]"
           python -m ruff check \
-            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py
+            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
+            tests/test_deform360_v6_primary_cma_runtime_repair.py
           python -m ruff format --check \
-            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py
+            tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
+            tests/test_deform360_v6_primary_cma_runtime_repair.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
+            tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -260,6 +274,8 @@ jobs:
               = "${DISPATCH_NAMESPACE_REPAIR_SHA256}"
             test "$(sha256sum "${FALLBACK_CONFIG_ROUTE_REPAIR_PATH}" | awk '{print $1}')" \
               = "${FALLBACK_CONFIG_ROUTE_REPAIR_SHA256}"
+            test "$(sha256sum "${PRIMARY_CMA_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${PRIMARY_CMA_RUNTIME_REPAIR_SHA256}"
             test "$(sha256sum "${PREVIOUS_FALLBACK_CONFIG_PATH}" | awk '{print $1}')" \
               = "${PREVIOUS_FALLBACK_CONFIG_FILE_SHA256}"
             test "$(sha256sum "${CORRECTED_FALLBACK_CONFIG_PATH}" | awk '{print $1}')" \
@@ -308,12 +324,14 @@ jobs:
             marker="${RUNNER_TEMP}/deform360-v6-frame-zero-runtime-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             config_repair_marker="${RUNNER_TEMP}/deform360-v6-fallback-config-repair-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
             constraints="${RUNNER_TEMP}/deform360-v6-frame-zero-constraints-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+            cma_requirement="${RUNNER_TEMP}/deform360-v6-primary-cma-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
             test ! -e "${primary_runtime}"
             test ! -e "${frame_zero_runtime}"
             test ! -e "${dispatcher}"
             test ! -e "${marker}"
             test ! -e "${config_repair_marker}"
             test ! -e "${constraints}"
+            test ! -e "${cma_requirement}"
 
             "${PRIMARY_BOOTSTRAP_PYTHON}" -m venv \
               --copies --system-site-packages "${primary_runtime}"
@@ -341,6 +359,14 @@ jobs:
               "trimesh>=4.0" \
               "warp-lang>=1.6" \
               "yourdfpy>=0.0.56"
+            printf '%s\n' \
+              "cma==${PRIMARY_CMA_VERSION} --hash=sha256:${PRIMARY_CMA_WHEEL_SHA256}" \
+              > "${cma_requirement}"
+            "${primary_python}" -m pip install \
+              --no-deps \
+              --only-binary=:all: \
+              --require-hashes \
+              --requirement "${cma_requirement}"
             set +e
             primary_pip_check="$("${primary_python}" -m pip check 2>&1)"
             primary_pip_status=$?
@@ -402,6 +428,7 @@ jobs:
           from importlib.metadata import version
 
           import bayesian_phystwin
+          import cma
           import deform360
           import os
           import sam2
@@ -416,10 +443,15 @@ jobs:
               raise SystemExit("primary SAM2 runtime identity changed")
           if version("virtualenv") != "21.7.4":
               raise SystemExit("primary virtualenv identity changed")
+          if version("cma") != os.environ["PRIMARY_CMA_VERSION"]:
+              raise SystemExit("primary CMA runtime identity changed")
+          if not callable(cma.CMAEvolutionStrategy):
+              raise SystemExit("primary CMA import probe failed")
           if os.environ.get("REPAIR_ID") != "selector-repair-environment-probe-v1":
               raise SystemExit("dispatcher changed an inherited repair identity")
           print(version("torch"))
           print(version("SAM-2"))
+          print(version("cma"))
           print(version("bayesian-phystwin"))
           print(version("deform360"))
           print(warp.__version__)
@@ -659,6 +691,8 @@ jobs:
               raise SystemExit("dispatch namespace receipt field already exists")
           if "runtime_fallback_config_routing_repair" in receipt:
               raise SystemExit("fallback-config routing receipt field already exists")
+          if "runtime_primary_cma_import_dependency" in receipt:
+              raise SystemExit("primary CMA runtime receipt field already exists")
           receipt["runtime_frame_zero_precompiled_cuda"] = {
               "activated": activated,
               "compiled_backend_probe": "gsplat.cuda._backend._C.CameraModelType",
@@ -728,6 +762,20 @@ jobs:
               ],
               "repair_id": os.environ["FALLBACK_CONFIG_ROUTE_REPAIR_ID"],
               "repair_path": os.environ["FALLBACK_CONFIG_ROUTE_REPAIR_PATH"],
+          }
+          receipt["runtime_primary_cma_import_dependency"] = {
+              "activated": os.environ.get("RUNTIME_EXIT_CODE") == "0",
+              "cma_optimizer_selected": False,
+              "distribution": "cma",
+              "import_only_dependency": True,
+              "install_scope": "isolated-primary-runtime-only",
+              "repair_file_sha256": os.environ[
+                  "PRIMARY_CMA_RUNTIME_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["PRIMARY_CMA_RUNTIME_REPAIR_ID"],
+              "repair_path": os.environ["PRIMARY_CMA_RUNTIME_REPAIR_PATH"],
+              "version": os.environ["PRIMARY_CMA_VERSION"],
+              "wheel_sha256": os.environ["PRIMARY_CMA_WHEEL_SHA256"],
           }
           canonical = json.dumps(
               receipt,
@@ -809,6 +857,7 @@ jobs:
           runtime = receipt["runtime_frame_zero_precompiled_cuda"]
           namespace = receipt["runtime_dispatch_namespace_repair"]
           config_route = receipt["runtime_fallback_config_routing_repair"]
+          cma_runtime = receipt["runtime_primary_cma_import_dependency"]
           body = f"""## Deform360 v6 dual-runtime source evidence: `{receipt['status']}`
 
           - workflow run: `{receipt['workflow_run_id']}`, attempt `{receipt['workflow_run_attempt']}`
@@ -822,6 +871,7 @@ jobs:
           - frame-zero gsplat: `{runtime['gsplat_version']}`
           - dispatcher namespace repair activated: `{str(namespace['activated']).lower()}`
           - fallback-config routing repair activated: `{str(config_route['activated']).lower()}`
+          - primary CMA import dependency activated: `{str(cma_runtime['activated']).lower()}`
           - Actions artifact ID: `{os.environ.get('ARTIFACT_ID') or 'unknown'}`
           - development suffix opened: `false`
           - v5 confirmation payloads opened: `false`
@@ -830,7 +880,7 @@ jobs:
           - v6 target outcomes used: `false`
           - replacement allowed: `false`
 
-          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime and replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification. All other calls use the frozen primary runtime. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
+          This run routes only the frame-zero reconstruction call to the exact precompiled gsplat CUDA runtime, replaces the uniquely matched stale integration-report argument with the already-frozen initializer specification, and admits the hash-pinned import dependency required by the frozen official PhysTwin checkout. The registered optimizer and physical arm are unchanged. It cannot score the development suffix, select a fresh v6 cohort, open target data, or authorize a claim.
           """
           request = urllib.request.Request(
               (
