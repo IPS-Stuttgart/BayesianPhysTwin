@@ -423,6 +423,12 @@ if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
   export RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256
   export EXPECTED_PIP_CHECK_CONFLICT NUMPY_VERSION PYRECEST_VERSION
   export NUSCENES_DEVKIT_VERSION
+  export CUDA_HOST_COMPILER_REPAIR_ID CUDA_HOST_COMPILER_REPAIR_PATH
+  export CUDA_HOST_COMPILER_REPAIR_SHA256 CUDA_HOST_COMPILER_VERSION
+  export CUDA_HOST_CC_PACKAGE CUDA_HOST_CXX_PACKAGE
+  export CUDA_HOST_CC_RESOLVED CUDA_HOST_CXX_RESOLVED
+  export CUDA_HOST_CC_SHA256 CUDA_HOST_CXX_SHA256
+  export CUDA_HOST_COMPILER_PROBE_PASSED
   export STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}"
   receipt_python="${BPT_PYTHON}"
   "${receipt_python}" - <<'PY'
@@ -508,6 +514,52 @@ receipt["runtime_deform360_processing_dependencies"] = {
     "repair_file_sha256": os.environ["PROCESSING_RUNTIME_REPAIR_SHA256"],
     "repair_id": os.environ["PROCESSING_RUNTIME_REPAIR_ID"],
     "repair_path": os.environ["PROCESSING_RUNTIME_REPAIR_PATH"],
+}
+receipt["runtime_cuda_host_compiler_repair"] = {
+    "activated": True,
+    "registered_compiler": {
+        "family": "GNU",
+        "paths": {
+            "cc": "/usr/bin/gcc-11",
+            "cxx": "/usr/bin/g++-11",
+        },
+        "resolved_paths": {
+            "cc": "/usr/bin/x86_64-linux-gnu-gcc-11",
+            "cxx": "/usr/bin/x86_64-linux-gnu-g++-11",
+        },
+        "resolved_sha256": {
+            "cc": (
+                "920b82bda223384ee558b43dd2a6e4c465b40ba268380f12"
+                "ea59df45eeb7609d"
+            ),
+            "cxx": (
+                "02ba98cc5feefe173cfb8c28c98089817737800537dc7189"
+                "138ed66b07cf56ec"
+            ),
+        },
+        "version": "11.5.0",
+    },
+    "observed_compiler": {
+        "probe_passed": (
+            os.environ["CUDA_HOST_COMPILER_PROBE_PASSED"] == "true"
+        ),
+        "package_versions": {
+            "cc": os.environ["CUDA_HOST_CC_PACKAGE"],
+            "cxx": os.environ["CUDA_HOST_CXX_PACKAGE"],
+        },
+        "resolved_paths": {
+            "cc": os.environ["CUDA_HOST_CC_RESOLVED"],
+            "cxx": os.environ["CUDA_HOST_CXX_RESOLVED"],
+        },
+        "resolved_sha256": {
+            "cc": os.environ["CUDA_HOST_CC_SHA256"],
+            "cxx": os.environ["CUDA_HOST_CXX_SHA256"],
+        },
+        "version": os.environ["CUDA_HOST_COMPILER_VERSION"],
+    },
+    "repair_file_sha256": os.environ["CUDA_HOST_COMPILER_REPAIR_SHA256"],
+    "repair_id": os.environ["CUDA_HOST_COMPILER_REPAIR_ID"],
+    "repair_path": os.environ["CUDA_HOST_COMPILER_REPAIR_PATH"],
 }
 receipt["runtime_dependency_scope_repair"] = {
     "activated": True,

@@ -14,6 +14,11 @@ HOST_COMPILER_AMENDMENT = ROOT / (
     "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_cuda_host_compiler.json"
 )
+GNU11_HOST_COMPILER_AMENDMENT = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_"
+    "cuda_host_compiler_gnu11.json"
+)
 BOOTSTRAP = ROOT / "scripts/ci/bootstrap_deform360_v6_gsplat_cuda.sh"
 WORKFLOW = ROOT / ".github/workflows/deform360-v6-source-prediction-evidence.yml"
 
@@ -128,11 +133,51 @@ def test_cuda_host_compiler_repair_is_content_addressed_and_target_closed() -> N
     )
 
 
+def test_gnu11_host_compiler_successor_is_content_addressed_and_closed() -> None:
+    payload = json.loads(GNU11_HOST_COMPILER_AMENDMENT.read_text(encoding="utf-8"))
+    declared = payload.pop("repair_id")
+
+    assert declared == content_id(payload)
+    assert declared == (
+        "01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0"
+    )
+    assert payload["predecessor_host_compiler_repair_id"] == (
+        "e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721"
+    )
+    failed = payload["failed_execution_evidence"]
+    assert failed["workflow_run_id"] == 31572805759
+    assert failed["artifact_id"] == 9131997879
+    assert failed["artifact_digest"] == (
+        "sha256:99fb907a41abae55e6b4bfc9c428152bb267019432d005d4f479c272c30c145a"
+    )
+    assert failed["execution_receipt_id"] == (
+        "c87880567b37dff33c9d15386a409dec0b1be872869923dd391f5ebc4ed73d2a"
+    )
+    assert failed["physical_manifest_count"] == 0
+    assert failed["source_prediction_seal_count"] == 0
+    correction = payload["correction"]
+    assert correction["compiler_major_version"] == 11
+    assert correction["compiler_versions"] == {"cc": "11.5.0", "cxx": "11.5.0"}
+    assert correction["resolved_compiler_sha256"] == {
+        "cc": "920b82bda223384ee558b43dd2a6e4c465b40ba268380f12ea59df45eeb7609d",
+        "cxx": "02ba98cc5feefe173cfb8c28c98089817737800537dc7189138ed66b07cf56ec",
+    }
+    assert correction["source_independent_probe"]["result"] == "passed"
+    assert correction["unsupported_compiler_override_allowed"] is False
+    assert not any(payload["information_boundary"].values())
+    assert payload["repair_scope"]["host_compiler_binding_corrected"] is True
+    assert all(
+        value is False
+        for key, value in payload["repair_scope"].items()
+        if key != "host_compiler_binding_corrected"
+    )
+
+
 def test_cuda_bootstrap_is_checksum_pinned_and_fails_before_science() -> None:
     bootstrap = BOOTSTRAP.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
     relative_amendment = str(AMENDMENT.relative_to(ROOT))
-    relative_host_amendment = str(HOST_COMPILER_AMENDMENT.relative_to(ROOT))
+    relative_host_amendment = str(GNU11_HOST_COMPILER_AMENDMENT.relative_to(ROOT))
     relative_bootstrap = str(BOOTSTRAP.relative_to(ROOT))
 
     assert (
@@ -171,16 +216,25 @@ def test_cuda_bootstrap_is_checksum_pinned_and_fails_before_science() -> None:
         "TORCH_EXTENSIONS_DIR",
         "release 12.1",
         "cuda-runtime-probe.cu",
-        "/usr/bin/gcc-12",
-        "/usr/bin/g++-12",
+        "/usr/bin/gcc-11",
+        "/usr/bin/g++-11",
+        "/usr/bin/x86_64-linux-gnu-gcc-11",
+        "/usr/bin/x86_64-linux-gnu-g++-11",
         "CUDAHOSTCXX",
         "NVCC_CCBIN",
         "--compiler-bindir",
+        "01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0",
         "e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721",
-        "8d9663ecd6665fc4c5fcd2b31907200a768ced90e0abb03c006cb04c9bc0a281",
+        "4771a44c9c38158e54659ec2c420fe33e2c22f725adf977d891c7b9b978109e5",
+        "920b82bda223384ee558b43dd2a6e4c465b40ba268380f12ea59df45eeb7609d",
+        "02ba98cc5feefe173cfb8c28c98089817737800537dc7189138ed66b07cf56ec",
     ):
         assert token in bootstrap
     assert "allow-unsupported-compiler" not in bootstrap
+    assert '"runtime_cuda_host_compiler_repair"' in workflow
+    assert '"runtime_cuda_host_compiler_repair"' in (
+        ROOT / "scripts/ci/run_deform360_v6_source_prediction_evidence.sh"
+    ).read_text(encoding="utf-8")
 
     runtime_call = workflow.index(call)
     science_call = workflow.index(
