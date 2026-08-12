@@ -329,7 +329,7 @@ class _ArrayConversionFailure:
     ("cholesky", "message"),
     [
         (_ArrayConversionFailure(), "numeric float64 matrix"),
-        ([['1.0', '0.0'], ['0.0', '1.0']], "numeric float64 matrix"),
+        ([["1.0", "0.0"], ["0.0", "1.0"]], "numeric float64 matrix"),
         (np.ones(2), "must be a matrix"),
         (np.asarray([[1.0, np.nan], [0.0, 1.0]]), "must be finite"),
     ],
