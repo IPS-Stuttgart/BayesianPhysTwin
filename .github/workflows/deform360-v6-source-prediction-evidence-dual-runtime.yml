@@ -13,6 +13,7 @@ on:
       - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_case_subprocess_stdin_isolation_repair_2026-08-12.md"
       - "docs/deform360_v6_case_stdin_marker_bootstrap_binding_repair_2026-08-12.md"
+      - "docs/deform360_v6_source_plan_run_root_export_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
@@ -21,6 +22,7 @@ on:
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_stdin_marker_bootstrap_binding.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_plan_run_root_export.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
@@ -28,6 +30,7 @@ on:
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
       - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
       - "tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py"
+      - "tests/test_deform360_v6_source_plan_run_root_export_repair.py"
   push:
     branches: [main]
     paths:
@@ -40,6 +43,7 @@ on:
       - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_case_subprocess_stdin_isolation_repair_2026-08-12.md"
       - "docs/deform360_v6_case_stdin_marker_bootstrap_binding_repair_2026-08-12.md"
+      - "docs/deform360_v6_source_plan_run_root_export_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
@@ -48,6 +52,7 @@ on:
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_stdin_marker_bootstrap_binding.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_plan_run_root_export.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
@@ -55,6 +60,7 @@ on:
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
       - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
       - "tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py"
+      - "tests/test_deform360_v6_source_plan_run_root_export_repair.py"
   workflow_dispatch:
 
 permissions:
@@ -131,6 +137,9 @@ env:
   CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_ID: 0c7db33c55c2f4ed6047b20565f06d3569072f22fcd9805662a6dae13b947861
   CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_stdin_marker_bootstrap_binding.json
   CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_SHA256: eacf423727b88641fefa5f38800c7b72d76936fb20b54498bc4a9476b831f678
+  SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_ID: a9edb62ea0d3c933df2e604618c0a471bee74d3408e3492214d8fdb2e5f28545
+  SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_plan_run_root_export.json
+  SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256: 99c776ad94346247383a0143cc39ce7b125a996c51ae3e3c6cc31d24b29abf40
   OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID: 9be2526499e5f907e47de8229b68d0bf785fb913
   OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID: 18ffea5595189505e24e2af360aa570de56e2466
   OFFICIAL_PHYSTWIN_PYTORCH3D_VERSION: "0.7.8"
@@ -208,14 +217,16 @@ jobs:
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
-            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
+            tests/test_deform360_v6_source_plan_run_root_export_repair.py
           python -m ruff format --check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
-            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
+            tests/test_deform360_v6_source_plan_run_root_export_repair.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
@@ -224,6 +235,7 @@ jobs:
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
             tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
+            tests/test_deform360_v6_source_plan_run_root_export_repair.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -368,6 +380,8 @@ jobs:
               = "${CASE_STDIN_ISOLATION_REPAIR_SHA256}"
             test "$(sha256sum "${CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_PATH}" | awk '{print $1}')" \
               = "${CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_SHA256}"
+            test "$(sha256sum "${SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/env_install/env_install.sh" | awk '{print $1}')" \
               = "${PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/qqtt/engine/trainer_warp.py" | awk '{print $1}')" \
@@ -960,6 +974,7 @@ jobs:
         env:
           EVIDENCE_ROOT: ${{ runner.temp }}
           RUNTIME_EXIT_CODE: ${{ steps.runtime.outputs.exit_code }}
+          EXECUTE_EXIT_CODE: ${{ steps.execute.outputs.exit_code }}
         run: |
           set -euo pipefail
           compact="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
@@ -1342,6 +1357,35 @@ jobs:
                   "CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_PATH"
               ],
           }
+          expected_run_root_export = {
+              "activated": True,
+              "archived_launcher_assignment_changed": False,
+              "dual_runtime_workflow_is_sole_empirical_executor": True,
+              "environment_seed": "RUN_ROOT=",
+              "export_attribute_inherited_by_nested_shells": True,
+              "inline_extractor_environment_key": "RUN_ROOT",
+              "legacy_empirical_executor_retired": True,
+              "legacy_hosted_contracts_retained": True,
+              "repair_file_sha256": os.environ[
+                  "SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_ID"],
+              "repair_path": os.environ[
+                  "SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH"
+              ],
+              "run_root_value_still_assigned_by_archived_launcher": True,
+              "source_plan_payload_changed": False,
+          }
+          observed_run_root_export = receipt.get(
+              "runtime_source_plan_run_root_export_repair"
+          )
+          if observed_run_root_export is None:
+              expected_run_root_export["activated"] = False
+              receipt["runtime_source_plan_run_root_export_repair"] = (
+                  expected_run_root_export
+              )
+          elif observed_run_root_export != expected_run_root_export:
+              raise SystemExit("source-plan run-root export receipt field changed")
           canonical = json.dumps(
               receipt,
               sort_keys=True,

@@ -181,6 +181,7 @@ jobs:
     name: Seal 100 real source predictions / workstation2
     needs: contracts
     if: >-
+      false &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'IPS-Stuttgart/BayesianPhysTwin'

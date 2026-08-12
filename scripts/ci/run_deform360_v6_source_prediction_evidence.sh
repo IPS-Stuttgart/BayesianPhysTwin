@@ -24,6 +24,9 @@ DEFORM360_PROCESSING_PYPROJECT_SHA256="0ccfe6a386c184613191ccdaa8f2912bc3c148a7d
 DEFORM360_PHYSICAL_REVISION="0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
 NERFSTUDIO_VERSION="1.1.5"
 GSPLAT_VERSION="1.4.0"
+SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_ID="a9edb62ea0d3c933df2e604618c0a471bee74d3408e3492214d8fdb2e5f28545"
+SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_plan_run_root_export.json"
+SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256="99c776ad94346247383a0143cc39ce7b125a996c51ae3e3c6cc31d24b29abf40"
 RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID="1b5f822991ed674554f4052f8112255b33d911bbb0f4797840ba1879e452f460"
 RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH="protocols/amendments/deform360_official_hub_fresh_object_session_v6_runtime_dependency_scope.json"
 RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256="86d0a49bdf93adf25f214b69bdd52e774f1028493dc9b2228dbf1bef14518a31"
@@ -106,6 +109,7 @@ for path in \
   "${STAGE_SELECTOR_REPAIR_PATH}" \
   "${STAGE_SELECTOR_API_REPAIR_PATH}" \
   "${PROCESSING_RUNTIME_REPAIR_PATH}" \
+  "${SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH}" \
   "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" \
   "${STAGE_SELECTOR_HELPER_PATH}" \
   "${STAGE_SELECTOR_CONSUMER_PATH}"
@@ -127,6 +131,11 @@ test "$(sha256sum "${STAGE_SELECTOR_API_REPAIR_PATH}" | awk '{print $1}')" \
 test "$(sha256sum "${PROCESSING_RUNTIME_REPAIR_PATH}" | awk '{print $1}')" \
   = "${PROCESSING_RUNTIME_REPAIR_SHA256}" || {
   echo "Deform360 processing runtime repair bytes changed" >&2
+  exit 2
+}
+test "$(sha256sum "${SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH}" | awk '{print $1}')" \
+  = "${SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256}" || {
+  echo "source-plan run-root export repair bytes changed" >&2
   exit 2
 }
 test "$(sha256sum "${RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH}" | awk '{print $1}')" \
@@ -396,6 +405,7 @@ DEFORM360_V6_STAGE_SELECTOR_REPAIR_PATH="${STAGE_SELECTOR_REPAIR_PATH}" \
 DEFORM360_V6_STAGE_SELECTOR_API_REPAIR_PATH="${STAGE_SELECTOR_API_REPAIR_PATH}" \
 DEFORM360_V6_STAGE_SELECTOR_HELPER_PATH="${STAGE_SELECTOR_HELPER_PATH}" \
 DEFORM360_V6_STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}" \
+RUN_ROOT="" \
   bash "${patched_launcher}" "$@"
 status=$?
 set -e
@@ -418,6 +428,9 @@ if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
   export PROCESSING_RUNTIME_REPAIR_SHA256
   export DEFORM360_PROCESSING_PYPROJECT_SHA256 DEFORM360_PHYSICAL_REVISION
   export NERFSTUDIO_VERSION GSPLAT_VERSION
+  export SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_ID
+  export SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH
+  export SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256
   export RUNTIME_DEPENDENCY_SCOPE_REPAIR_ID
   export RUNTIME_DEPENDENCY_SCOPE_REPAIR_PATH
   export RUNTIME_DEPENDENCY_SCOPE_REPAIR_SHA256
@@ -508,6 +521,23 @@ receipt["runtime_deform360_processing_dependencies"] = {
     "repair_file_sha256": os.environ["PROCESSING_RUNTIME_REPAIR_SHA256"],
     "repair_id": os.environ["PROCESSING_RUNTIME_REPAIR_ID"],
     "repair_path": os.environ["PROCESSING_RUNTIME_REPAIR_PATH"],
+}
+receipt["runtime_source_plan_run_root_export_repair"] = {
+    "activated": True,
+    "archived_launcher_assignment_changed": False,
+    "dual_runtime_workflow_is_sole_empirical_executor": True,
+    "environment_seed": "RUN_ROOT=",
+    "export_attribute_inherited_by_nested_shells": True,
+    "inline_extractor_environment_key": "RUN_ROOT",
+    "legacy_empirical_executor_retired": True,
+    "legacy_hosted_contracts_retained": True,
+    "repair_file_sha256": os.environ[
+        "SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_SHA256"
+    ],
+    "repair_id": os.environ["SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_ID"],
+    "repair_path": os.environ["SOURCE_PLAN_RUN_ROOT_EXPORT_REPAIR_PATH"],
+    "run_root_value_still_assigned_by_archived_launcher": True,
+    "source_plan_payload_changed": False,
 }
 receipt["runtime_dependency_scope_repair"] = {
     "activated": True,
