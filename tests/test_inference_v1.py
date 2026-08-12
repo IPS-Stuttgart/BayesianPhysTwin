@@ -193,7 +193,7 @@ def test_finalize_guarded_update_fails_closed_on_invalid_public_inputs() -> None
             candidate,
             decision,
         )
-    with pytest.raises(TypeError, match="must be a bool"):
+    with pytest.raises(ValueError, match="must be a boolean"):
         finalize_guarded_update(
             DummyInference(_digest("inference"), cast(Any, 1)),
             baseline,
@@ -328,7 +328,7 @@ def test_guarded_update_result_revalidates_constructor_scalars() -> None:
 
     with pytest.raises(ValueError, match="lowercase SHA-256"):
         _rebuild_result(accepted, inference_candidate_id="bad")
-    with pytest.raises(TypeError, match="must be a bool"):
+    with pytest.raises(ValueError, match="must be a boolean"):
         _rebuild_result(accepted, inference_admissible=1)
     with pytest.raises(TypeError, match="baseline_belief must expose artifact_id"):
         _rebuild_result(accepted, baseline_belief=object())
