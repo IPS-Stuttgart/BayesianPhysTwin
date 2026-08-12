@@ -39,6 +39,17 @@ PROCESSING_ENV = {
     "GSPLAT_CUDA_RUNTIME_REPAIR_SHA256": (
         "fb532bf9626c0ba48cb9c7e4aca80488e12f255d18765a31bf4f4324deb385c7"
     ),
+    "CUDA_HOST_COMPILER_REPAIR_ID": (
+        "01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0"
+    ),
+    "CUDA_HOST_COMPILER_REPAIR_PATH": (
+        "protocols/amendments/"
+        "deform360_official_hub_fresh_object_session_v6_"
+        "cuda_host_compiler_gnu11.json"
+    ),
+    "CUDA_HOST_COMPILER_REPAIR_SHA256": (
+        "4771a44c9c38158e54659ec2c420fe33e2c22f725adf977d891c7b9b978109e5"
+    ),
     "NERFSTUDIO_VERSION": "1.1.5",
     "EXPECTED_PIP_CHECK_CONFLICT": (
         "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
@@ -192,6 +203,17 @@ def test_bootstrap_failure_receipt_is_bounded_and_target_closed(
         receipt["runtime_gsplat_cuda_repair"]["repair_id"]
         == PROCESSING_ENV["GSPLAT_CUDA_RUNTIME_REPAIR_ID"]
     )
+    compiler = receipt["runtime_cuda_host_compiler_repair"]
+    assert compiler["activated"] is False
+    assert compiler["registered_compiler"]["version"] == "11.5.0"
+    assert compiler["observed_compiler"] == {
+        "package_versions": {"cc": None, "cxx": None},
+        "probe_passed": False,
+        "resolved_paths": {"cc": None, "cxx": None},
+        "resolved_sha256": {"cc": None, "cxx": None},
+        "version": None,
+    }
+    assert compiler["repair_id"] == PROCESSING_ENV["CUDA_HOST_COMPILER_REPAIR_ID"]
     assert receipt["runtime_dependency_scope_repair"]["activated"] is False
     assert receipt["runtime_dependency_scope_repair"]["pyrecest_runtime_used"] is False
     assert (

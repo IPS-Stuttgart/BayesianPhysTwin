@@ -2,7 +2,8 @@
 # Source this file from the Deform360 v6 GPU runtime bootstrap.
 # It installs only the checksum-pinned CUDA 12.1 compiler/runtime headers
 # required to compile gsplat 1.4.0 against the inherited PyTorch cu121 build,
-# and binds nvcc to the registered GNU 12 host compiler.
+# and binds nvcc to the registered GNU 11 host compiler available on the sole
+# authorized runner.
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   echo "bootstrap_deform360_v6_gsplat_cuda.sh must be sourced" >&2
@@ -74,9 +75,10 @@ if payload["correction"]["torch_cuda_version"] != "12.1":
     raise SystemExit("gsplat CUDA runtime repair no longer targets cu121")
 PY
 
-host_compiler_repair_path="protocols/amendments/deform360_official_hub_fresh_object_session_v6_cuda_host_compiler.json"
-host_compiler_repair_id="e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721"
-host_compiler_repair_sha256="8d9663ecd6665fc4c5fcd2b31907200a768ced90e0abb03c006cb04c9bc0a281"
+host_compiler_repair_path="protocols/amendments/deform360_official_hub_fresh_object_session_v6_cuda_host_compiler_gnu11.json"
+host_compiler_repair_id="01a5b25972e5b254bfd0ed40fadfd3417532519869d70f404acedf64b98147e0"
+host_compiler_repair_sha256="4771a44c9c38158e54659ec2c420fe33e2c22f725adf977d891c7b9b978109e5"
+predecessor_host_compiler_repair_id="e935a990cd380b10f225617d4b439ff609593d63a93e44c27e8fcba5e1dec721"
 
 if [[ -L "${host_compiler_repair_path}" || \
       ! -f "${host_compiler_repair_path}" ]]; then
@@ -95,7 +97,7 @@ fi
 "${runtime_python}" - \
   "${host_compiler_repair_path}" \
   "${host_compiler_repair_id}" \
-  "${GSPLAT_CUDA_RUNTIME_REPAIR_ID}" <<'PY'
+  "${predecessor_host_compiler_repair_id}" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -117,21 +119,57 @@ canonical = json.dumps(
 observed_id = hashlib.sha256(canonical).hexdigest()
 if declared_id != expected_id or observed_id != expected_id:
     raise SystemExit("CUDA host-compiler repair identity changed")
-if payload["predecessor_gsplat_cuda_runtime_repair_id"] != expected_predecessor:
+if payload["predecessor_host_compiler_repair_id"] != expected_predecessor:
     raise SystemExit("CUDA host-compiler repair predecessor changed")
 if any(payload["information_boundary"].values()):
     raise SystemExit("CUDA host-compiler repair opens a forbidden boundary")
 correction = payload["correction"]
-if correction["compiler_family"] != "GNU":
-    raise SystemExit("CUDA host-compiler family changed")
-if correction["compiler_major_version"] != 12:
-    raise SystemExit("CUDA host-compiler major version changed")
+expected_correction = {
+    "compiler_family": "GNU",
+    "compiler_major_version": 11,
+    "compiler_package_versions": {
+        "cc": "gcc-11 11.5.0-1ubuntu1~24.04.1",
+        "cxx": "g++-11 11.5.0-1ubuntu1~24.04.1",
+    },
+    "compiler_paths": {
+        "cc": "/usr/bin/gcc-11",
+        "cxx": "/usr/bin/g++-11",
+    },
+    "compiler_versions": {"cc": "11.5.0", "cxx": "11.5.0"},
+    "cuda_host_compiler_environment": [
+        "CC",
+        "CXX",
+        "CUDAHOSTCXX",
+        "NVCC_CCBIN",
+    ],
+    "nvcc_compiler_bindir_probe_required": True,
+    "resolved_compiler_paths": {
+        "cc": "/usr/bin/x86_64-linux-gnu-gcc-11",
+        "cxx": "/usr/bin/x86_64-linux-gnu-g++-11",
+    },
+    "resolved_compiler_sha256": {
+        "cc": "920b82bda223384ee558b43dd2a6e4c465b40ba268380f12ea59df45eeb7609d",
+        "cxx": "02ba98cc5feefe173cfb8c28c98089817737800537dc7189138ed66b07cf56ec",
+    },
+    "source_independent_probe": {
+        "cuda_toolkit_release": "12.1.1",
+        "host": "workstation2",
+        "probe": (
+            "compile a trivial CUDA translation unit with nvcc "
+            "--compiler-bindir /usr/bin/g++-11"
+        ),
+        "result": "passed",
+    },
+    "unsupported_compiler_override_allowed": False,
+}
+if correction != expected_correction:
+    raise SystemExit("CUDA host-compiler correction changed")
 if correction["unsupported_compiler_override_allowed"] is not False:
     raise SystemExit("unsupported CUDA host-compiler override was authorized")
 PY
 
-host_cc=/usr/bin/gcc-12
-host_cxx=/usr/bin/g++-12
+host_cc=/usr/bin/gcc-11
+host_cxx=/usr/bin/g++-11
 for compiler in "${host_cc}" "${host_cxx}"; do
   if [[ ! -x "${compiler}" ]]; then
     echo "registered CUDA host compiler is unavailable: ${compiler}" >&2
@@ -143,15 +181,38 @@ for compiler in "${host_cc}" "${host_cxx}"; do
     return 1
   fi
 done
+host_cc_resolved=$(readlink -f -- "${host_cc}")
+host_cxx_resolved=$(readlink -f -- "${host_cxx}")
 host_cc_version=$("${host_cc}" -dumpfullversion -dumpversion)
 host_cxx_version=$("${host_cxx}" -dumpfullversion -dumpversion)
-if [[ "${host_cc_version%%.*}" != "12" || \
-      "${host_cxx_version%%.*}" != "12" ]]; then
-  echo "registered CUDA host compilers must report GNU major version 12" >&2
+host_cc_package=$(dpkg-query -W -f='${Package} ${Version}' gcc-11)
+host_cxx_package=$(dpkg-query -W -f='${Package} ${Version}' g++-11)
+if [[ "${host_cc_version}" != "11.5.0" || \
+      "${host_cxx_version}" != "11.5.0" ]]; then
+  echo "registered CUDA host compilers must report GNU version 11.5.0" >&2
   return 1
 fi
 if [[ "${host_cc_version}" != "${host_cxx_version}" ]]; then
   echo "registered CUDA C and C++ compiler versions differ" >&2
+  return 1
+fi
+if [[ "${host_cc_package}" != "gcc-11 11.5.0-1ubuntu1~24.04.1" || \
+      "${host_cxx_package}" != "g++-11 11.5.0-1ubuntu1~24.04.1" ]]; then
+  echo "registered CUDA host compiler package identity changed" >&2
+  return 1
+fi
+if [[ "${host_cc_resolved}" != "/usr/bin/x86_64-linux-gnu-gcc-11" || \
+      "${host_cxx_resolved}" != "/usr/bin/x86_64-linux-gnu-g++-11" ]]; then
+  echo "registered CUDA host compiler resolution changed" >&2
+  return 1
+fi
+host_cc_sha256=$(sha256sum "${host_cc_resolved}" | awk '{print $1}')
+host_cxx_sha256=$(sha256sum "${host_cxx_resolved}" | awk '{print $1}')
+if [[ "${host_cc_sha256}" != \
+      "920b82bda223384ee558b43dd2a6e4c465b40ba268380f12ea59df45eeb7609d" || \
+      "${host_cxx_sha256}" != \
+      "02ba98cc5feefe173cfb8c28c98089817737800537dc7189138ed66b07cf56ec" ]]; then
+  echo "registered CUDA host compiler byte identity changed" >&2
   return 1
 fi
 
@@ -353,6 +414,13 @@ rm -- "${probe_source}" "${probe_object}"
   printf 'CUDA_HOST_COMPILER_REPAIR_SHA256=%s\n' \
     "${host_compiler_repair_sha256}"
   printf 'CUDA_HOST_COMPILER_VERSION=%s\n' "${host_cxx_version}"
+  printf 'CUDA_HOST_CC_PACKAGE=%s\n' "${host_cc_package}"
+  printf 'CUDA_HOST_CXX_PACKAGE=%s\n' "${host_cxx_package}"
+  printf 'CUDA_HOST_CC_RESOLVED=%s\n' "${host_cc_resolved}"
+  printf 'CUDA_HOST_CXX_RESOLVED=%s\n' "${host_cxx_resolved}"
+  printf 'CUDA_HOST_CC_SHA256=%s\n' "${host_cc_sha256}"
+  printf 'CUDA_HOST_CXX_SHA256=%s\n' "${host_cxx_sha256}"
+  printf 'CUDA_HOST_COMPILER_PROBE_PASSED=true\n'
   printf 'CUDA_HOME=%s\n' "${CUDA_HOME}"
   printf 'CUDA_PATH=%s\n' "${CUDA_PATH}"
   printf 'LD_LIBRARY_PATH=%s\n' "${LD_LIBRARY_PATH}"
