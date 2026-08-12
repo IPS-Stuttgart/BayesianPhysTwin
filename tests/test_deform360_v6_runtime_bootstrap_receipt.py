@@ -28,6 +28,17 @@ PROCESSING_ENV = {
         "b60a18821b0e260519ffda2289b20cb247b1a36c91eac9a528d953111e7b520c"
     ),
     "GSPLAT_VERSION": "1.4.0",
+    "GSPLAT_CUDA_RUNTIME_REPAIR_ID": (
+        "44da91d95947d07d9d930bd0c707d16da9555bc7b9ea3042fcf0a88444ec3bb4"
+    ),
+    "GSPLAT_CUDA_RUNTIME_REPAIR_PATH": (
+        "protocols/amendments/"
+        "deform360_official_hub_fresh_object_session_v6_"
+        "gsplat_cuda_runtime.json"
+    ),
+    "GSPLAT_CUDA_RUNTIME_REPAIR_SHA256": (
+        "fb532bf9626c0ba48cb9c7e4aca80488e12f255d18765a31bf4f4324deb385c7"
+    ),
     "NERFSTUDIO_VERSION": "1.1.5",
     "EXPECTED_PIP_CHECK_CONFLICT": (
         "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
@@ -175,6 +186,11 @@ def test_bootstrap_failure_receipt_is_bounded_and_target_closed(
     assert (
         receipt["runtime_deform360_processing_dependencies"]["install_target"]
         == "_deform360_physical[processing]"
+    )
+    assert receipt["runtime_gsplat_cuda_repair"]["activated"] is False
+    assert (
+        receipt["runtime_gsplat_cuda_repair"]["repair_id"]
+        == PROCESSING_ENV["GSPLAT_CUDA_RUNTIME_REPAIR_ID"]
     )
     assert receipt["runtime_dependency_scope_repair"]["activated"] is False
     assert receipt["runtime_dependency_scope_repair"]["pyrecest_runtime_used"] is False
