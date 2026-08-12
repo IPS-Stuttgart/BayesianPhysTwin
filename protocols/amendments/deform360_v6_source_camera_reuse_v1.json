@@ -1,0 +1,86 @@
+{
+  "all_camera_sources": {
+    "metric_batch_result": {
+      "file_sha256": "2ee39a8ad799b43e7203b18cb55486817db396dbd97ac81acd4924c8b2696554",
+      "result_id": "c8b26c0ea5dd26cd0406282a0cc01659afc557cbda74615b1702a35a9c970180"
+    },
+    "metric_prefix_plan": {
+      "file_sha256": "a130c3f54c309f86fe67e4a3a8713aae6eed461e28dda2d4223b5ae914fedec3",
+      "plan_id": "beb40127dc5d673f9a236550e90b6e38924067a667a885228fd4cf8496c20cc4"
+    },
+    "visual_production": {
+      "file_sha256": "7af3d3bc17bfbe923c4c3754ff20179fd1d51417dd8a56d8475e4eecac66879b",
+      "result_id": "146f885351b2af0134b8b3d3c28a76deaa899749b1b1306e0d7061807ae95f89"
+    }
+  },
+  "amendment_id": "5cc43432eb509b98442d289ec884b30780ff26c76ab8654826d000bb4832e3b3",
+  "base_execution_lock": {
+    "execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
+    "file_sha256": "429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a"
+  },
+  "base_source_execution": {
+    "artifact_digest_sha256": "d811ff1ea4d6ad22a6e7476d2911602af1ee71f81339c0737e1cc60fd5883f9d",
+    "artifact_id": 9137481740,
+    "artifact_name": "deform360-v6-source-prediction-dual-runtime-31585420194-1",
+    "execution_receipt_file_sha256": "f1cd4ccfb8281a167718a30e5a6af1caaf740ba7a9d49081638efaabdeaf8441",
+    "execution_receipt_id": "cf3ebb9e69eb3c15051ba4ae39e2d0338ec244e0c49e587a277f7b36344c5f3d",
+    "head_sha": "6bb16bb307349c50535b1b368c60dfb4d5d17ab9",
+    "run_attempt": 1,
+    "run_id": 31585420194
+  },
+  "base_source_evidence": {
+    "prediction_batch": {
+      "file_sha256": "c99575e7af7aa2654d69b46843a550fef51f40c56c9ba48a5cb4f7fb39f44b57",
+      "prediction_batch_id": "c030edb49f035fd918c4be060533ec580dc5d470a4e4ced901b9f44a9412c9ed"
+    },
+    "prediction_receipt": {
+      "file_sha256": "2d645fe6c477ed3f2c4cb342a4de8def657cfcc33ac87d1c8399dac4dfa3bb9c",
+      "receipt_id": "2c4ad8a00c8267d52ed0d453815f7d5493e9bf55546250d6002d7cf7a89aa12c"
+    },
+    "source_plan": {
+      "file_sha256": "fa59b4655e061d181bf95d2f3e9a6ad83290032bb0a54e870afb2b3cadb7bd23",
+      "plan_id": "6c55447a79200521c6781cf43fa1f1809006f43a190a7da23183a597c52b0067"
+    }
+  },
+  "claim_boundary": "Public Deform360 source-prefix camera admission and archive reuse only. This artifact opens no source suffix, confirmation payload, or target outcome and establishes no prediction, calibration, Causal4D, safety, or state-of-the-art claim.",
+  "information_boundary": {
+    "confirmation_payloads_opened": false,
+    "development_suffix_opened": false,
+    "existing_source_provider_products_reused": true,
+    "future_object_observations_used": false,
+    "human_approval_used": false,
+    "new_measurements_collected": false,
+    "new_provider_inference_run": false,
+    "physical_state_innovation_used": false,
+    "public_source_prefix_payloads_opened": true,
+    "target_outcomes_used": false
+  },
+  "policy": {
+    "base_prediction_batch_mutation_allowed": false,
+    "camera_failure_scope": "per-camera-never-object-wide-v1",
+    "camera_replacement_allowed": false,
+    "candidate_set": "validated-metric-plan-nonreserved-cameras-not-already-attempted",
+    "execution_cardinality": "one-durable-source-execution-without-replacement",
+    "insufficient_support_action": "exact-B0-physical-fallback",
+    "maximum_additional_cameras": 4,
+    "metric_cluster_size_pixels": 32,
+    "metric_gauge_threshold_relaxation_allowed": false,
+    "minimum_independent_clusters": 8,
+    "minimum_passing_camera_count": 2,
+    "new_provider_inference_allowed": false,
+    "post_provider_rule": "retain-all-and-only-independently-passing-cameras",
+    "prob4d_used": false,
+    "provider_product": "existing-integrity-bound-disjoint-baseline",
+    "ranking": [
+      "maximum-independent-cluster-count-descending",
+      "qualifying-causal-frame-count-descending",
+      "total-projected-point-count-descending",
+      "camera-id-ascending"
+    ],
+    "recovery_trigger": "fewer-than-two-passing-base-cameras"
+  },
+  "schema": "bayesian-phystwin.deform360-v6-source-camera-reuse-amendment",
+  "schema_version": 1,
+  "semantics": "additive-source-prefix-camera-failure-granularity-repair-v1",
+  "status": "locked-before-source-prefix-camera-audit"
+}

@@ -37,8 +37,9 @@ def infer_dynamic_endpoint_model_average(
     *,
     end_frame: int,
     config: DynamicEndpointModelAverageConfigV2 | None = None,
+    observation_variance_m2: np.ndarray | None = None,
 ) -> DynamicEndpointPosteriorV2:
-    """Infer a dynamic endpoint after rejecting lossy residual coercions."""
+    """Infer a dynamic endpoint with optional metric observation variance."""
 
     try:
         raw_residual = np.asarray(residual_m)
@@ -51,6 +52,7 @@ def infer_dynamic_endpoint_model_average(
         valid,
         end_frame=end_frame,
         config=config,
+        observation_variance_m2=observation_variance_m2,
     )
 
 

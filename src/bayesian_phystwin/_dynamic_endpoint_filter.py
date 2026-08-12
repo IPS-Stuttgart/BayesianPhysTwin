@@ -19,7 +19,8 @@ def _validated_inputs(
     valid: np.ndarray,
     *,
     end_frame: int,
-) -> tuple[np.ndarray, np.ndarray, int]:
+    observation_variance_m2: np.ndarray | None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     residual = np.asarray(residual_m, dtype=np.float64)
     raw_validity = np.asarray(valid)
     if residual.ndim != 3 or residual.shape[2:] != (3,) or residual.shape[1] < 1:
@@ -31,6 +32,18 @@ def _validated_inputs(
     validity = np.asarray(raw_validity, dtype=np.bool_)
     if not np.all(np.isfinite(residual)):
         raise ValueError("residual_m must contain only finite values")
+    if observation_variance_m2 is None:
+        metric_variance = np.zeros(residual.shape[:2], dtype=np.float64)
+    else:
+        metric_variance = np.asarray(observation_variance_m2, dtype=np.float64)
+        if metric_variance.shape != residual.shape[:2]:
+            raise ValueError(
+                "observation_variance_m2 must match the residual frame and track dimensions"
+            )
+        if not np.all(np.isfinite(metric_variance)) or np.any(metric_variance < 0.0):
+            raise ValueError(
+                "observation_variance_m2 must contain finite nonnegative values"
+            )
     if isinstance(end_frame, (bool, np.bool_)) or not isinstance(
         end_frame,
         (int, np.integer),
@@ -39,7 +52,7 @@ def _validated_inputs(
     frame_stop = int(end_frame)
     if not 0 < frame_stop <= len(residual):
         raise ValueError("end_frame must lie inside the residual sequence")
-    return residual, validity, frame_stop
+    return residual, validity, metric_variance, frame_stop
 
 
 def _admit_psd_2x2(value: np.ndarray, *, name: str) -> np.ndarray:
@@ -55,6 +68,7 @@ def _admit_psd_2x2(value: np.ndarray, *, name: str) -> np.ndarray:
 def _filter_component(
     residual: np.ndarray,
     validity: np.ndarray,
+    metric_observation_variance: np.ndarray,
     *,
     end_frame: int,
     component: DynamicEndpointComponentV2,
@@ -76,7 +90,7 @@ def _filter_component(
     log_evidence = np.zeros(track_count, dtype=np.float64)
     log_prior = np.log(inlier_prior)
     log_outlier_prior = np.log1p(-inlier_prior)
-    outlier_observation_variance = observation_variance * outlier_multiplier
+    base_outlier_observation_variance = observation_variance * outlier_multiplier
 
     for frame in range(end_frame):
         state_mean = np.einsum("ab,nbc->nac", transition, state_mean)
@@ -91,8 +105,13 @@ def _filter_component(
         predicted_mean = state_mean[mask]
         predicted_covariance = state_covariance[mask]
         innovation = residual[frame, mask] - predicted_mean[:, 0, :]
+        metric_variance = metric_observation_variance[frame, mask]
+        inlier_observation_variance = observation_variance + metric_variance
+        outlier_observation_variance = (
+            base_outlier_observation_variance + metric_variance
+        )
         inlier_innovation_variance = (
-            predicted_covariance[:, 0, 0] + observation_variance
+            predicted_covariance[:, 0, 0] + inlier_observation_variance
         )
         outlier_innovation_variance = (
             predicted_covariance[:, 0, 0] + outlier_observation_variance
@@ -118,7 +137,7 @@ def _filter_component(
             updated_mean[:, 0, :] = residual[frame, mask]
             updated_mean[:, 1, :] = 0.0
             effective_variance = (
-                probability * observation_variance
+                probability * inlier_observation_variance
                 + (1.0 - probability) * outlier_observation_variance
             )
             updated_covariance = np.zeros_like(predicted_covariance)
@@ -154,7 +173,7 @@ def _filter_component(
                     predicted_covariance,
                 ),
                 inlier_residual_transition.swapaxes(1, 2),
-            ) + observation_variance * (
+            ) + inlier_observation_variance[:, None, None] * (
                 inlier_gain[:, :, None] * inlier_gain[:, None, :]
             )
             outlier_covariance = np.matmul(
@@ -163,7 +182,7 @@ def _filter_component(
                     predicted_covariance,
                 ),
                 outlier_residual_transition.swapaxes(1, 2),
-            ) + outlier_observation_variance * (
+            ) + outlier_observation_variance[:, None, None] * (
                 outlier_gain[:, :, None] * outlier_gain[:, None, :]
             )
             inlier_delta = inlier_mean - updated_mean
@@ -249,13 +268,15 @@ def infer_dynamic_endpoint_model_average(
     *,
     end_frame: int,
     config: DynamicEndpointModelAverageConfigV2 | None = None,
+    observation_variance_m2: np.ndarray | None = None,
 ) -> DynamicEndpointPosteriorV2:
     """Infer a robust endpoint across constant, persistent, and trend models."""
 
-    residual, validity, frame_stop = _validated_inputs(
+    residual, validity, metric_variance, frame_stop = _validated_inputs(
         residual_m,
         valid,
         end_frame=end_frame,
+        observation_variance_m2=observation_variance_m2,
     )
     settings = (
         DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2 if config is None else config
@@ -279,6 +300,7 @@ def infer_dynamic_endpoint_model_average(
         ) = _filter_component(
             residual,
             validity,
+            metric_variance,
             end_frame=frame_stop,
             component=component,
         )
