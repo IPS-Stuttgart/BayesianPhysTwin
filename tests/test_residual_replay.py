@@ -77,6 +77,42 @@ def test_replay_accepts_compact_obs_pred_columns(tmp_path: Path) -> None:
     assert result.summary["columns"]["variance_mode"] == "default"
 
 
+def test_replay_accepts_coordinate_variance_columns(tmp_path: Path) -> None:
+    variance_csv = tmp_path / "coordinate.csv"
+    variance_csv.write_text(
+        "observed_x,observed_y,predicted_x,predicted_y,variance_x,variance_y\n"
+        "1.0,2.0,1.1,2.1,0.01,0.02\n",
+        encoding="utf-8",
+    )
+    compact_csv = tmp_path / "compact-coordinate.csv"
+    compact_csv.write_text(
+        "observed_x,observed_y,predicted_x,predicted_y,var_x,var_y\n"
+        "1.0,2.0,1.1,2.1,0.01,0.02\n",
+        encoding="utf-8",
+    )
+
+    variance_result = replay_residual_csv(variance_csv)
+    compact_result = replay_residual_csv(compact_csv)
+
+    assert variance_result.summary["columns"]["variance_mode"] == "coordinate"
+    assert variance_result.summary["columns"]["variance"] == (
+        "variance_x",
+        "variance_y",
+    )
+    assert compact_result.summary["columns"]["variance"] == ("var_x", "var_y")
+
+
+def test_replay_rejects_nonnumeric_vector_values(tmp_path: Path) -> None:
+    input_csv = tmp_path / "invalid.csv"
+    input_csv.write_text(
+        "observed_x,predicted_x\nbad,0.0\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="observed_x must be numeric"):
+        replay_residual_csv(input_csv)
+
+
 def test_replay_rejects_falsey_invalid_configs(tmp_path: Path) -> None:
     input_csv = tmp_path / "residuals.csv"
     _write_fixture(input_csv)
