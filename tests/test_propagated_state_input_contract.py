@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from bayesian_phystwin.propagated_state_belief import infer_propagated_state_belief
 from bayesian_phystwin.propagated_state_correction import select_propagated_state_update
 
 
@@ -69,6 +68,8 @@ def _call_belief(
     available: np.ndarray | None = None,
     config: object | None = None,
 ) -> object:
+    from bayesian_phystwin.propagated_state_belief import infer_propagated_state_belief
+
     innovation, default_available, response, _, _, _, _ = _problem()
     selected_available = default_available if available is None else available
     return infer_propagated_state_belief(
