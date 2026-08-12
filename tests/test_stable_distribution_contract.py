@@ -50,9 +50,7 @@ def _contract(root: Path) -> Path:
                     "module": "bayesian_phystwin",
                     "api_manifest": "api.json",
                     "forbidden_external_modules": ["xmlrpc"],
-                    "forbidden_package_prefixes": [
-                        "bayesian_phystwin.experiments"
-                    ],
+                    "forbidden_package_prefixes": ["bayesian_phystwin.experiments"],
                 }
             ],
         },
@@ -64,9 +62,7 @@ def _contract(root: Path) -> Path:
                 "docs/stable_distribution_contract_v1.md",
                 "tools/release/check_stable_distribution.py",
             ],
-            "supported_self_test_files": [
-                "tests/test_stable_distribution_contract.py"
-            ],
+            "supported_self_test_files": ["tests/test_stable_distribution_contract.py"],
         },
     }
     path = root / "contract.json"
@@ -84,8 +80,7 @@ def _wheel(
     members: dict[str, bytes | str | zipfile.ZipInfo] = {
         "bayesian_phystwin/__init__.py": package_source,
         "fixture-0.4.0.dist-info/entry_points.txt": (
-            "[console_scripts]\n"
-            "bpt = bayesian_phystwin:main\n"
+            "[console_scripts]\nbpt = bayesian_phystwin:main\n"
         ),
     }
     members.update(extra or {})
@@ -181,10 +176,7 @@ def test_isolated_import_rejects_optional_dependency_leak(tmp_path: Path) -> Non
         _validate(
             tmp_path,
             package_source=(
-                "import xmlrpc.client\n"
-                '__all__ = ["A"]\n'
-                "def main():\n"
-                "    return 0\n"
+                'import xmlrpc.client\n__all__ = ["A"]\ndef main():\n    return 0\n'
             ),
         )
 
