@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import bayesian_phystwin.deform360_fresh_object_session_public_inputs_v6_1 as v61_inputs
 from bayesian_phystwin.deform360_fresh_object_session_public_inputs_v6_1 import (
     prepare_deform360_disjoint_visual_window_v6_1,
 )
@@ -208,6 +209,17 @@ def test_v61_adapter_preserves_v5_numerics_and_relabels_disjoint_provenance(
         assert np.array_equal(getattr(rows, field), getattr(legacy_rows, field))
     assert np.array_equal(gauge.linear, legacy_gauge.linear)
     assert np.array_equal(gauge.translation, legacy_gauge.translation)
+
+
+def test_v61_adapter_rejects_conflicting_disjoint_lineage() -> None:
+    with pytest.raises(ValueError, match="source digest conflicts"):
+        v61_inputs._disjoint_sources(
+            {
+                "prob4d-decoded-uniform/camera-0.npz": "a" * 64,
+                "motioncrafter-disjoint-baseline/camera-0.npz": "b" * 64,
+            },
+            camera_id="camera-0",
+        )
 
 
 def test_public_adapter_rejects_weak_metric_cluster_support(tmp_path: Path) -> None:
