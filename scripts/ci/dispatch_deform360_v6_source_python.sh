@@ -151,6 +151,112 @@ mark_official_phystwin_runtime() {
   mv "${temporary}" "${marker}"
 }
 
+set_legacy_receipt_default() {
+  local family="$1"
+  local name="$2"
+  local value="$3"
+  if declare -p "${name}" >/dev/null 2>&1; then
+    export "${name}"
+    return
+  fi
+  printf -v "${name}" '%s' "${value}"
+  export "${name}"
+  if [[ "${family}" == "cuda" ]]; then
+    BPT_CUDA_LEGACY_RECEIPT_DEFAULTED=true
+  else
+    BPT_NINJA_LEGACY_RECEIPT_DEFAULTED=true
+  fi
+}
+
+run_stdin_with_receipt_compatibility() {
+  local stdin_copy
+  local status
+  stdin_copy="$(
+    mktemp "${RUNNER_TEMP:-/tmp}/deform360-v6-dispatch-stdin.XXXXXX"
+  )"
+  chmod 600 "${stdin_copy}"
+  cat > "${stdin_copy}"
+
+  if ! grep -Fq 'path = Path(os.environ["RECEIPT_PATH"])' "${stdin_copy}" \
+    || ! grep -Fq 'receipt["runtime_cuda_host_compiler_repair"] = {' "${stdin_copy}" \
+    || ! grep -Fq 'receipt["runtime_ninja_build_tool_repair"] = {' "${stdin_copy}"; then
+    set +e
+    "${BPT_PRIMARY_PYTHON}" "$@" < "${stdin_copy}"
+    status=$?
+    set -e
+    rm -f "${stdin_copy}"
+    return "${status}"
+  fi
+
+  : "${RECEIPT_PATH:?RECEIPT_PATH is required for legacy receipt compatibility}"
+  BPT_CUDA_LEGACY_RECEIPT_DEFAULTED=false
+  BPT_NINJA_LEGACY_RECEIPT_DEFAULTED=false
+  export BPT_CUDA_LEGACY_RECEIPT_DEFAULTED
+  export BPT_NINJA_LEGACY_RECEIPT_DEFAULTED
+
+  set_legacy_receipt_default cuda CUDA_HOST_COMPILER_REPAIR_ID "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_COMPILER_REPAIR_PATH "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_COMPILER_REPAIR_SHA256 "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_COMPILER_VERSION "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_CC_PACKAGE "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_CXX_PACKAGE "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_CC_RESOLVED "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_CXX_RESOLVED "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_CC_SHA256 "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_CXX_SHA256 "not-observed"
+  set_legacy_receipt_default cuda CUDA_HOST_COMPILER_PROBE_PASSED "false"
+  set_legacy_receipt_default ninja NINJA_BUILD_TOOL_REPAIR_ID "not-observed"
+  set_legacy_receipt_default ninja NINJA_BUILD_TOOL_REPAIR_PATH "not-observed"
+  set_legacy_receipt_default ninja NINJA_BUILD_TOOL_REPAIR_SHA256 "not-observed"
+  set_legacy_receipt_default ninja NINJA_DISTRIBUTION_VERSION "not-observed"
+  set_legacy_receipt_default ninja NINJA_EXECUTABLE_PATH "not-observed"
+  set_legacy_receipt_default ninja NINJA_EXECUTABLE_SHA256 "not-observed"
+  set_legacy_receipt_default ninja NINJA_EXECUTABLE_VERSION "not-observed"
+  set_legacy_receipt_default ninja NINJA_PYTORCH_PROBE_PASSED "false"
+
+  set +e
+  "${BPT_PRIMARY_PYTHON}" "$@" < "${stdin_copy}"
+  status=$?
+  set -e
+  rm -f "${stdin_copy}"
+  [[ "${status}" -eq 0 ]] || return "${status}"
+
+  if [[ "${BPT_CUDA_LEGACY_RECEIPT_DEFAULTED}" == "false" \
+    && "${BPT_NINJA_LEGACY_RECEIPT_DEFAULTED}" == "false" ]]; then
+    return 0
+  fi
+
+  "${BPT_PRIMARY_PYTHON}" - <<'PY'
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+from pathlib import Path
+
+path = Path(os.environ["RECEIPT_PATH"])
+if path.is_symlink() or not path.is_file():
+    raise SystemExit("legacy receipt compatibility output is unavailable or unsafe")
+receipt = json.loads(path.read_text(encoding="utf-8"))
+receipt.pop("receipt_id", None)
+if os.environ["BPT_CUDA_LEGACY_RECEIPT_DEFAULTED"] == "true":
+    receipt.pop("runtime_cuda_host_compiler_repair", None)
+if os.environ["BPT_NINJA_LEGACY_RECEIPT_DEFAULTED"] == "true":
+    receipt.pop("runtime_ninja_build_tool_repair", None)
+canonical = json.dumps(
+    receipt,
+    sort_keys=True,
+    separators=(",", ":"),
+    allow_nan=False,
+).encode("utf-8")
+receipt["receipt_id"] = hashlib.sha256(canonical).hexdigest()
+path.write_text(
+    json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n",
+    encoding="utf-8",
+)
+PY
+}
+
 if [[ "${1:-}" == "${PHYSICAL_TARGET}" ]]; then
   arguments=("$@")
   stage_count=0
@@ -223,6 +329,11 @@ if [[ "${1:-}" == "${STAGE_SELECTOR_HELPER_TARGET}" \
   || "${1:-}" == "${MATERIALIZER_TARGET}" ]]; then
   mark_case_stdin_isolation
   exec "${BPT_PRIMARY_PYTHON}" "$@" </dev/null
+fi
+
+if [[ "${1:-}" == "-" ]]; then
+  run_stdin_with_receipt_compatibility "$@"
+  exit $?
 fi
 
 exec "${BPT_PRIMARY_PYTHON}" "$@"
