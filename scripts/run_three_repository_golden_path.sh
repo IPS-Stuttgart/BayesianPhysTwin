@@ -9,8 +9,9 @@ Usage:
 
 Requires clean Git checkouts at exact commits. Builds one wheel from each
 repository, installs only those wheels into a fresh virtual environment, copies
-repository-owned integration tests outside every source tree, and runs them in
-Python isolated mode.
+repository-owned integration tests outside every source tree, and runs each
+explicit test file in its own isolated Pytest process. Only the staged test
+file's directory is added for sibling helper imports; source trees remain hidden.
 EOF
 }
 
@@ -194,9 +195,11 @@ export THREE_REPO_SOURCE_ROOTS="$({
 })"
 
 cd "${RUN_ROOT}"
-env -u PYTHONPATH \
-  PYTHONNOUSERSITE=1 \
-  "${TEST_VENV}/bin/python" -I -m pytest \
-  -q \
-  --import-mode=importlib \
-  "${integration_tests[@]}"
+for integration_test in "${integration_tests[@]}"; do
+  env -u PYTHONPATH \
+    PYTHONNOUSERSITE=1 \
+    "${TEST_VENV}/bin/python" -I -m pytest \
+    -q \
+    --import-mode=prepend \
+    "${integration_test}"
+done
