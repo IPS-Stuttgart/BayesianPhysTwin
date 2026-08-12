@@ -163,8 +163,7 @@ def finite_effect_matrix(
     effects = np.asarray(raw, dtype=np.float64)
     if effects.shape != (group_count, estimand_count):
         raise ValueError(
-            "group_effects must have shape "
-            f"({group_count}, {estimand_count})"
+            f"group_effects must have shape ({group_count}, {estimand_count})"
         )
     if not np.all(np.isfinite(effects)):
         raise ValueError("group_effects must contain only finite values")
