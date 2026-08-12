@@ -14,12 +14,14 @@ on:
       - "scripts/release/verify_pep561_distribution.py"
       - "src/bayesian_phystwin/__init__.py"
       - "src/bayesian_phystwin/_validation.py"
+      - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/claim_bundle_v1.py"
       - "src/bayesian_phystwin/evidence_decision_v1.py"
       - "src/bayesian_phystwin/gauge_aware_belief.py"
       - "src/bayesian_phystwin/inference/**"
       - "src/bayesian_phystwin/observation_belief.py"
       - "src/bayesian_phystwin/physical_query_v1.py"
+      - "src/bayesian_phystwin/prob4d_causal_lineage.py"
       - "src/bayesian_phystwin/py.typed"
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
@@ -27,6 +29,8 @@ on:
       - "src/bayesian_phystwin/v1/**"
       - "tests/test_inference_v1.py"
       - "tests/test_pep561_packaging.py"
+      - "tests/test_strict_integration_typing_policy.py"
+      - "tools/quality/changed_python_quality.py"
   push:
     branches: [main]
     paths:
@@ -41,12 +45,14 @@ on:
       - "scripts/release/verify_pep561_distribution.py"
       - "src/bayesian_phystwin/__init__.py"
       - "src/bayesian_phystwin/_validation.py"
+      - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/claim_bundle_v1.py"
       - "src/bayesian_phystwin/evidence_decision_v1.py"
       - "src/bayesian_phystwin/gauge_aware_belief.py"
       - "src/bayesian_phystwin/inference/**"
       - "src/bayesian_phystwin/observation_belief.py"
       - "src/bayesian_phystwin/physical_query_v1.py"
+      - "src/bayesian_phystwin/prob4d_causal_lineage.py"
       - "src/bayesian_phystwin/py.typed"
       - "src/bayesian_phystwin/repository_provenance.py"
       - "src/bayesian_phystwin/run_manifest.py"
@@ -54,6 +60,8 @@ on:
       - "src/bayesian_phystwin/v1/**"
       - "tests/test_inference_v1.py"
       - "tests/test_pep561_packaging.py"
+      - "tests/test_strict_integration_typing_policy.py"
+      - "tools/quality/changed_python_quality.py"
   workflow_dispatch:
 
 permissions:
