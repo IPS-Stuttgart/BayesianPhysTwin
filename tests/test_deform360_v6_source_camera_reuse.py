@@ -383,9 +383,10 @@ def test_combined_plan_reuses_integrity_bound_archive_and_rejects_tamper(
         "build_deform360_joint_sparse_source_prediction_plan_v5",
         lambda **kwargs: {"plan_id": _sha("combined"), "objects": kwargs["objects"]},
     )
+    lock = {"execution_lock_id": reuse.EXECUTION_LOCK_ID}
 
     combined, receipt = reuse.build_deform360_v6_source_camera_reuse_plan(
-        lock={"execution_lock_id": _sha("lock")},
+        lock=lock,
         base_source_plan=base,
         base_camera_audit={},
         preflight=preflight,
@@ -408,7 +409,7 @@ def test_combined_plan_reuses_integrity_bound_archive_and_rejects_tamper(
     archive.write_bytes(b"tampered")
     with pytest.raises(ValueError, match="integrity changed"):
         reuse.build_deform360_v6_source_camera_reuse_plan(
-            lock={"execution_lock_id": _sha("lock")},
+            lock=lock,
             base_source_plan=base,
             base_camera_audit={},
             preflight=preflight,

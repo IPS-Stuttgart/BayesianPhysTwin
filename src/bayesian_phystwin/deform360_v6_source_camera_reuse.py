@@ -177,8 +177,10 @@ _PREFLIGHT_OBJECT_FIELDS = frozenset(
 )
 _RECEIPT_FIELDS = frozenset(
     {
+        "amendment_id",
         "base_source_plan_id",
         "combined_source_plan_id",
+        "execution_lock_id",
         "information_boundary",
         "metric_prefix_plan_id",
         "preflight_id",
@@ -1103,6 +1105,8 @@ def build_deform360_v6_source_camera_reuse_plan(
         "schema": REUSE_RECEIPT_SCHEMA,
         "schema_version": REUSE_RECEIPT_VERSION,
         "semantics": REUSE_RECEIPT_SEMANTICS,
+        "amendment_id": AMENDMENT_ID,
+        "execution_lock_id": lock["execution_lock_id"],
         "base_source_plan_id": base["plan_id"],
         "preflight_id": normalized_preflight["preflight_id"],
         "metric_prefix_plan_id": metric_plan["plan_id"],

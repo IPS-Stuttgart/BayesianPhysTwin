@@ -1,19 +1,10 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #640
+# workflow-expiry: 2026-09-15
 name: Deform360 v6 source camera reuse
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/deform360-v6-source-camera-reuse.yml"
-      - "docs/deform360_v6_source_camera_reuse.md"
-      - "protocols/amendments/deform360_v6_source_camera_reuse_v1.json"
-      - "scripts/ci/run_deform360_v6_source_camera_reuse.sh"
-      - "scripts/science/materialize_deform360_v6_source_camera_reuse.py"
-      - "src/bayesian_phystwin/deform360_joint_sparse_camera_recovery_v5_2.py"
-      - "src/bayesian_phystwin/deform360_joint_sparse_source_runner_v5_2.py"
-      - "src/bayesian_phystwin/deform360_v6_source_camera_reuse.py"
-      - "tests/test_deform360_joint_sparse_camera_recovery_v5_2.py"
-      - "tests/test_deform360_v6_source_camera_reuse*.py"
   workflow_dispatch:
     inputs:
       execute_authorized:
@@ -81,7 +72,7 @@ jobs:
       - name: Check out exact proposed source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
           clean: true
