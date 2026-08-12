@@ -68,12 +68,12 @@ def test_workflow_binds_marker_before_first_dispatcher_probe() -> None:
     assert str(AMENDMENT.relative_to(ROOT)) in workflow
     probe = (
         'BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER="${official_runtime_marker}" \\\n'
-        '            BPT_CASE_STDIN_ISOLATION_MARKER='
+        "            BPT_CASE_STDIN_ISOLATION_MARKER="
         '"${case_stdin_isolation_marker}" \\\n'
-        '            "${dispatcher}" - <<\'PY\''
+        "            \"${dispatcher}\" - <<'PY'"
     )
     assert probe in workflow
-    assert workflow.count('"${dispatcher}" - <<\'PY\'') == 1
+    assert workflow.count("\"${dispatcher}\" - <<'PY'") == 1
     assert workflow.count('test ! -e "${case_stdin_isolation_marker}"') == 2
     assert '"runtime_case_stdin_marker_bootstrap_binding"' in workflow
 
@@ -107,12 +107,8 @@ def test_source_plan_environment_repair_is_content_addressed() -> None:
         "workflow_run_attempt": 1,
         "workflow_run_id": 31581551099,
     }
-    assert payload["repair_scope"][
-        "source_plan_environment_binding_completed"
-    ]
-    assert payload["repair_scope"][
-        "terminal_receipt_compatibility_completed"
-    ]
+    assert payload["repair_scope"]["source_plan_environment_binding_completed"]
+    assert payload["repair_scope"]["terminal_receipt_compatibility_completed"]
     assert all(
         value is False
         for key, value in payload["repair_scope"].items()
@@ -127,34 +123,21 @@ def test_source_plan_environment_repair_is_content_addressed() -> None:
 def test_source_plan_launcher_binds_exact_predecessor_and_run_root() -> None:
     payload = json.loads(SOURCE_PLAN_AMENDMENT.read_text(encoding="utf-8"))
     source = SOURCE_PLAN_LAUNCHER.read_text(encoding="utf-8")
-    amendment_digest = hashlib.sha256(
-        SOURCE_PLAN_AMENDMENT.read_bytes()
-    ).hexdigest()
+    amendment_digest = hashlib.sha256(SOURCE_PLAN_AMENDMENT.read_bytes()).hexdigest()
 
-    assert (
-        'readonly BASE_REVISION="812da43f993b4fc5e1f6a96bcc308756b131fc4c"'
-        in source
-    )
+    assert 'readonly BASE_REVISION="812da43f993b4fc5e1f6a96bcc308756b131fc4c"' in source
     assert (
         'readonly BASE_LAUNCHER_BLOB_SHA="'
-        'b2b2307a2f89f3983cce349e1220033bf7f8f50c"'
-        in source
+        'b2b2307a2f89f3983cce349e1220033bf7f8f50c"' in source
     )
-    assert (
-        f'SOURCE_PLAN_ENVIRONMENT_REPAIR_ID=\\\n"{payload["repair_id"]}"'
-        in source
-    )
-    assert (
-        f'SOURCE_PLAN_ENVIRONMENT_REPAIR_SHA256=\\\n"{amendment_digest}"'
-        in source
-    )
+    assert f'SOURCE_PLAN_ENVIRONMENT_REPAIR_ID=\\\n"{payload["repair_id"]}"' in source
+    assert f'SOURCE_PLAN_ENVIRONMENT_REPAIR_SHA256=\\\n"{amendment_digest}"' in source
     assert 'git show "${BASE_REVISION}:${LAUNCHER_PATH}"' in source
     assert 'git hash-object "${base_launcher}"' in source
     assert (
         'expected_run_root="${RESULTS_ROOT}/bayesian-phystwin/"\\\n'
         '"deform360-v6-source-prediction/${AMENDMENT_ID}/'
-        '${BPT_SOURCE_SHA}"'
-        in source
+        '${BPT_SOURCE_SHA}"' in source
     )
     assert "RUN_ROOT differs from the deterministic source-plan path" in source
     assert "export RUN_ROOT" in source
@@ -167,10 +150,7 @@ def test_source_plan_launcher_removes_only_synthetic_legacy_fields() -> None:
 
     assert 'export_default CUDA_HOST_COMPILER_PROBE_PASSED "false"' in source
     assert 'export_default NINJA_PYTORCH_PROBE_PASSED "false"' in source
-    assert (
-        'receipt.pop("runtime_cuda_host_compiler_repair", None)'
-        in source
-    )
+    assert 'receipt.pop("runtime_cuda_host_compiler_repair", None)' in source
     assert 'receipt.pop("runtime_ninja_build_tool_repair", None)' in source
     assert '"legacy_receipt_defaults_removed": list(legacy_defaults)' in source
     assert '"failed_execution_receipt_id": (' in source
