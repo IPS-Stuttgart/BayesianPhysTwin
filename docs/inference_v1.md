@@ -84,6 +84,24 @@ python examples/guarded_inference_v1.py
 It exercises one accepted candidate and one regret-guard rejection. The rejected
 case returns the same baseline Python object, not a reconstructed numerical copy.
 
+## Separate mean and covariance admission
+
+When point-mean and covariance evidence have separate frozen decisions, use the
+explicit `bayesian_phystwin.inference.components_v1` module. It composes the
+existing point regret guard and query covariance decision into a five-arm policy:
+physical fallback, deterministic reference, mean-only, covariance-only, or full
+belief. A positive covariance result cannot rescue a rejected mean, and a
+positive mean cannot silently authorize covariance.
+
+The default policy permits covariance-only routing and retains the deterministic
+reference when only the mean passes. Common-domain or reference-support failure
+returns the exact physical fallback object. See
+[`component_admission_v1.md`](component_admission_v1.md) for the complete decision
+matrix, artifact bindings, and routing example.
+
+This explicit submodule is not re-exported by `bayesian_phystwin.inference.v1`;
+the existing exact 12-symbol namespace remains unchanged.
+
 ## Compatibility contract
 
 The exact ordered export surface is recorded in
