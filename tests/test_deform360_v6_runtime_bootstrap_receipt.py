@@ -50,6 +50,16 @@ PROCESSING_ENV = {
     "CUDA_HOST_COMPILER_REPAIR_SHA256": (
         "4771a44c9c38158e54659ec2c420fe33e2c22f725adf977d891c7b9b978109e5"
     ),
+    "NINJA_BUILD_TOOL_REPAIR_ID": (
+        "4cee24a0db69c0f8902e6f58a492a0186be7b17c7f19a3e74ef06f3d781a6292"
+    ),
+    "NINJA_BUILD_TOOL_REPAIR_PATH": (
+        "protocols/amendments/"
+        "deform360_official_hub_fresh_object_session_v6_ninja_build_tool.json"
+    ),
+    "NINJA_BUILD_TOOL_REPAIR_SHA256": (
+        "576b134583437f76d264a4814cd357e80f9f413bed911519ae83a0787e15e4c1"
+    ),
     "NERFSTUDIO_VERSION": "1.1.5",
     "EXPECTED_PIP_CHECK_CONFLICT": (
         "pyrecest 2.4.3 has requirement numpy<2.5,>=2.0, but you have numpy 1.26.4."
@@ -214,6 +224,17 @@ def test_bootstrap_failure_receipt_is_bounded_and_target_closed(
         "version": None,
     }
     assert compiler["repair_id"] == PROCESSING_ENV["CUDA_HOST_COMPILER_REPAIR_ID"]
+    ninja = receipt["runtime_ninja_build_tool_repair"]
+    assert ninja["activated"] is False
+    assert ninja["registered_build_tool"]["version"] == "1.13.0"
+    assert ninja["observed_build_tool"] == {
+        "executable_path": None,
+        "executable_sha256": None,
+        "executable_version": None,
+        "pytorch_probe_passed": False,
+        "version": None,
+    }
+    assert ninja["repair_id"] == PROCESSING_ENV["NINJA_BUILD_TOOL_REPAIR_ID"]
     assert receipt["runtime_dependency_scope_repair"]["activated"] is False
     assert receipt["runtime_dependency_scope_repair"]["pyrecest_runtime_used"] is False
     assert (
