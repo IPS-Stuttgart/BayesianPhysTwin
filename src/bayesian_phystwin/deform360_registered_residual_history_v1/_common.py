@@ -148,8 +148,8 @@ def _boolean_array(value: object, *, name: str) -> np.ndarray:
 
 def _canonical_horizon_bins(future_count: int) -> np.ndarray:
     count = _integer(future_count, name="future_count", minimum=3)
-    bins = np.empty(count, dtype=np.int64)
-    positions = np.arange(count, dtype=np.int64)
+    bins: np.ndarray = np.empty(count, dtype=np.int64)
+    positions: np.ndarray = np.arange(count, dtype=np.int64)
     for label, indices in enumerate(np.array_split(positions, 3)):
         bins[indices] = label
     bins.setflags(write=False)
@@ -157,7 +157,7 @@ def _canonical_horizon_bins(future_count: int) -> np.ndarray:
 
 
 def _future_horizon_steps(future_count: int) -> np.ndarray:
-    steps = np.arange(1, future_count + 1, dtype=np.int64)
+    steps: np.ndarray = np.arange(1, future_count + 1, dtype=np.int64)
     steps.setflags(write=False)
     return steps
 
