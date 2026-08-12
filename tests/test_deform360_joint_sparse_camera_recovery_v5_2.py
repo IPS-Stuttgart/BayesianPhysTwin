@@ -95,6 +95,12 @@ def test_metric_camera_ranking_is_deterministic_and_target_free() -> None:
     assert ranked == ("camera-b", "camera-c", "camera-a")
 
 
+def test_metric_camera_support_public_validator_preserves_canonical_record() -> None:
+    value = _support("camera-a", clusters=8, frames=1, points=100)
+
+    assert module.validate_deform360_metric_camera_support_v5_2(value) == value
+
+
 def test_metric_camera_ranking_rejects_duplicate_camera() -> None:
     value = _support("camera-a", clusters=8, frames=1, points=100)
 
