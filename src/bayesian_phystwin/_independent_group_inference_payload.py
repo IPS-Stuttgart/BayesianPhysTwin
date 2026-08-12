@@ -73,19 +73,11 @@ def inference_descriptor(
         "standard_error": array_payload(record.standard_error),
         "root_mean_square_scale": array_payload(record.root_mean_square_scale),
         "standardized_mean": array_payload(record.standardized_mean),
-        "exact_unadjusted_p_value": array_payload(
-            record.exact_unadjusted_p_value
-        ),
-        "exact_familywise_p_value": array_payload(
-            record.exact_familywise_p_value
-        ),
+        "exact_unadjusted_p_value": array_payload(record.exact_unadjusted_p_value),
+        "exact_familywise_p_value": array_payload(record.exact_familywise_p_value),
         "exact_global_family_p_value": record.exact_global_family_p_value,
-        "pointwise_interval_lower": array_payload(
-            record.pointwise_interval_lower
-        ),
-        "pointwise_interval_upper": array_payload(
-            record.pointwise_interval_upper
-        ),
+        "pointwise_interval_lower": array_payload(record.pointwise_interval_lower),
+        "pointwise_interval_upper": array_payload(record.pointwise_interval_upper),
         "simultaneous_interval_lower": array_payload(
             record.simultaneous_interval_lower
         ),
