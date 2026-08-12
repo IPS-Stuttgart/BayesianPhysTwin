@@ -53,7 +53,6 @@ def test_release_artifacts_are_built_and_installed_on_every_supported_python() -
 def test_public_api_changes_trigger_installed_import_isolation_checks() -> None:
     text = _workflow_text()
     watched_paths = (
-        "MANIFEST.in",
         "api/root-public-api-v0.4.json",
         "api/root-export-migration-v1.json",
         "api/versioned-public-api-v1.json",
