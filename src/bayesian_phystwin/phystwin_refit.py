@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-
 REFIT_VARIANTS = (
     "hard",
     "visible",
@@ -497,9 +496,10 @@ def phystwin_tracking_metrics(
         raise ValueError("trajectory has fewer vertices than observed tracks")
     if mask_array.shape != observed_array.shape[:2]:
         raise ValueError("mask must match observed's first two axes")
-    residual = observed_array - trajectory_array[
-        : observed_array.shape[0], : observed_array.shape[1]
-    ]
+    residual = (
+        observed_array
+        - trajectory_array[: observed_array.shape[0], : observed_array.shape[1]]
+    )
     selected = residual[mask_array]
     if len(selected) == 0:
         return {"count": 0}
