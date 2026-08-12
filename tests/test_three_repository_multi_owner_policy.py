@@ -18,7 +18,9 @@ def test_golden_path_collects_repository_owned_tests_from_all_three_sources() ->
     assert '--path-list "${TEST_PATH_LIST}"' in text
     assert '--inventory "${TEST_INVENTORY}"' in text
     assert 'mapfile -t integration_tests < "${TEST_PATH_LIST}"' in text
-    assert 'export THREE_REPOSITORY_INTEGRATION_TEST_INVENTORY="${TEST_INVENTORY}"' in text
+    assert (
+        'export THREE_REPOSITORY_INTEGRATION_TEST_INVENTORY="${TEST_INVENTORY}"' in text
+    )
 
 
 def test_golden_path_uses_collision_safe_explicit_test_paths() -> None:
@@ -26,7 +28,9 @@ def test_golden_path_uses_collision_safe_explicit_test_paths() -> None:
 
     assert "--import-mode=importlib" in text
     assert '"${integration_tests[@]}"' in text
-    assert '"${BPT_BUILD_ROOT}"/integration_tests/test_three_repository_*.py' not in text
+    assert (
+        '"${BPT_BUILD_ROOT}"/integration_tests/test_three_repository_*.py' not in text
+    )
     assert 'cp "${integration_tests[@]}" "${RUN_ROOT}/"' not in text
     assert "pytest -q test_three_repository_*.py" not in text
 
@@ -34,14 +38,17 @@ def test_golden_path_uses_collision_safe_explicit_test_paths() -> None:
 def test_discovery_helper_is_fail_closed_and_inventory_versioned() -> None:
     text = DISCOVERY.read_text(encoding="utf-8")
 
-    assert 'INVENTORY_SCHEMA = "bayesian-phystwin.three-repository-test-inventory.v1"' in text
-    assert 'flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL' in text
-    assert 'path.is_symlink()' in text
-    assert 'not path.is_file()' in text
-    assert 'if not pytest_paths:' in text
-    assert 'output path must not be inside source repository' in text
-    assert 'source owners must be unique' in text
-    assert 'source repository roots must be unique' in text
+    assert (
+        'INVENTORY_SCHEMA = "bayesian-phystwin.three-repository-test-inventory.v1"'
+        in text
+    )
+    assert "flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL" in text
+    assert "path.is_symlink()" in text
+    assert "not path.is_file()" in text
+    assert "if not pytest_paths:" in text
+    assert "output path must not be inside source repository" in text
+    assert "source owners must be unique" in text
+    assert "source repository roots must be unique" in text
 
 
 def test_focused_workflow_is_read_only_pinned_and_tracks_every_surface() -> None:
