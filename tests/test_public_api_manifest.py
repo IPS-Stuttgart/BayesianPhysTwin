@@ -13,6 +13,7 @@ TOOL_PATH = ROOT / "tools/quality/check_public_api.py"
 MIGRATION_TOOL_PATH = ROOT / "tools/quality/check_root_export_migration.py"
 MANIFEST_PATH = ROOT / "api/root-public-api-v0.4.json"
 VERSIONED_MANIFEST_PATH = ROOT / "api/versioned-public-api-v1.json"
+INFERENCE_MANIFEST_PATH = ROOT / "api/inference-public-api-v1.json"
 MIGRATION_MANIFEST_PATH = ROOT / "api/root-export-migration-v1.json"
 
 
@@ -68,6 +69,20 @@ def test_versioned_integration_api_matches_snapshot() -> None:
     }
 
 
+def test_guarded_inference_api_matches_snapshot() -> None:
+    manifest = tool.load_manifest(INFERENCE_MANIFEST_PATH)
+    report = tool.validate_public_api(manifest, version="0.4.0")
+
+    assert report == {
+        "package": "bayesian_phystwin.inference.v1",
+        "project_version": "0.4.0",
+        "compatibility_line": "0.4",
+        "policy": "exact-guarded-inference-export-surface",
+        "symbol_count": 12,
+        "status": "matched",
+    }
+
+
 def test_root_export_migration_matches_runtime_owners() -> None:
     report = migration_tool.validate_root_export_migration(
         MIGRATION_MANIFEST_PATH,
@@ -117,6 +132,25 @@ def test_versioned_api_reordering_is_explicitly_reviewed() -> None:
         tool.validate_public_api(
             manifest,
             module=_fake_module(reordered, name="bayesian_phystwin.v1"),
+            version="0.4.1",
+        )
+
+
+def test_inference_api_reordering_is_explicitly_reviewed() -> None:
+    manifest = tool.load_manifest(INFERENCE_MANIFEST_PATH)
+    reordered = list(manifest["symbols"])
+    reordered[0], reordered[1] = reordered[1], reordered[0]
+
+    with pytest.raises(
+        tool.PublicApiError,
+        match="bayesian_phystwin.inference.v1 API order",
+    ):
+        tool.validate_public_api(
+            manifest,
+            module=_fake_module(
+                reordered,
+                name="bayesian_phystwin.inference.v1",
+            ),
             version="0.4.1",
         )
 
