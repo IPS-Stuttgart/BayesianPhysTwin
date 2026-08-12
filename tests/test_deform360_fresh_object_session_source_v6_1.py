@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -215,6 +216,189 @@ def test_legacy_public_evaluator_is_nonprogressing() -> None:
         RuntimeError, match="legacy Deform360 v6 source evaluator is retired"
     ):
         v6_legacy.evaluate_deform360_v6_source_gate({}, {})
+
+
+def test_scalar_contract_helpers_reject_noncanonical_values() -> None:
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        v61._mapping([], name="value")  # noqa: SLF001
+    with pytest.raises(ValueError, match="must be a JSON array"):
+        v61._sequence("not-an-array", name="value")  # noqa: SLF001
+    with pytest.raises(ValueError, match="must be a canonical string"):
+        v61._identifier(" padded ", name="value")  # noqa: SLF001
+    with pytest.raises(ValueError, match="must be a finite real number"):
+        v61._finite(True, name="value")  # noqa: SLF001
+    with pytest.raises(ValueError, match="must be finite and at least"):
+        v61._finite(-1.0, name="value", minimum=0.0)  # noqa: SLF001
+    with pytest.raises(ValueError, match="content identity changed"):
+        v61._content_identity(  # noqa: SLF001
+            {"artifact_id": "0" * 64, "value": 1},
+            field="artifact_id",
+            name="artifact",
+        )
+
+
+@pytest.mark.parametrize(
+    ("path", "replacement", "message"),
+    [
+        (("base_policy", "policy_id"), "0" * 64, "binds another policy"),
+        (
+            (
+                "correction",
+                "guard_threshold_fitted_inside_each_outer_fold",
+            ),
+            False,
+            "correction changed",
+        ),
+        (
+            ("covariance_calibration", "calibration_method"),
+            "split-conformal",
+            "covariance calibration changed",
+        ),
+        (
+            ("nested_selection", "variant_tie_break"),
+            [],
+            "selection order changed",
+        ),
+        (
+            ("information_boundary", "source_outcomes_used_to_design_this_repair"),
+            True,
+            "crossed its information boundary",
+        ),
+        (
+            ("observation_feeder", "new_prob4d_inference_run"),
+            True,
+            "observation feeder changed",
+        ),
+    ],
+)
+def test_repair_loader_rejects_bound_contract_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    path: tuple[str, str],
+    replacement: object,
+    message: str,
+) -> None:
+    repair = json.loads(REPAIR_PATH.read_text(encoding="utf-8"))
+    repair[path[0]][path[1]] = replacement
+    body = {key: value for key, value in repair.items() if key != "amendment_id"}
+    amendment_id = v61.content_id(body)
+    repair["amendment_id"] = amendment_id
+    monkeypatch.setattr(v61, "NESTED_REPAIR_ID", amendment_id)
+    changed = tmp_path / "repair.json"
+    changed.write_text(json.dumps(repair), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        v61.load_deform360_v6_nested_source_repair(changed)
+
+
+def test_repair_loader_rejects_schema_and_identity_drift(tmp_path: Path) -> None:
+    repair = json.loads(REPAIR_PATH.read_text(encoding="utf-8"))
+    repair["schema"] = "changed"
+    changed = tmp_path / "schema.json"
+    changed.write_text(json.dumps(repair), encoding="utf-8")
+    with pytest.raises(ValueError, match="schema changed"):
+        v61.load_deform360_v6_nested_source_repair(changed)
+
+    repair = json.loads(REPAIR_PATH.read_text(encoding="utf-8"))
+    repair["amendment_id"] = "0" * 64
+    changed = tmp_path / "identity.json"
+    changed.write_text(json.dumps(repair), encoding="utf-8")
+    with pytest.raises(ValueError, match="content identity changed"):
+        v61.load_deform360_v6_nested_source_repair(changed)
+
+
+def test_cohort_contract_rejects_shape_stratum_and_balance() -> None:
+    malformed = _cohort()
+    malformed["object-0"] = (0,)  # type: ignore[assignment]
+    with pytest.raises(ValueError, match="identity must be"):
+        v61._cohort(malformed)  # noqa: SLF001
+
+    wrong_stratum = _cohort()
+    wrong_stratum["object-0"] = (0, "rope")
+    with pytest.raises(ValueError, match="stratum changed"):
+        v61._cohort(wrong_stratum)  # noqa: SLF001
+
+    incomplete = _cohort()
+    incomplete.pop("object-0")
+    with pytest.raises(ValueError, match="five units per stratum"):
+        v61._cohort(incomplete)  # noqa: SLF001
+
+
+def test_raw_variant_contract_rejects_roster_and_availability_drift() -> None:
+    variants = {
+        variant_id: _variant(
+            variant_id,
+            outer_id="object-0",
+            object_id="object-1",
+            unavailable=set(),
+        )
+        for variant_id in VARIANT_IDS
+    }
+
+    changed = copy.deepcopy(variants)
+    changed[D1_NATIVE]["fit_object_ids"] = []
+    with pytest.raises(ValueError, match="fit roster changed"):
+        _build_prediction_with_variants(changed)
+
+    changed = copy.deepcopy(variants)
+    changed[B0].update(
+        available=False,
+        prediction_artifact_id=None,
+        fit_artifact_id=None,
+        covariance_artifact_id=None,
+        unavailable_reason="missing",
+    )
+    with pytest.raises(ValueError, match="must be available"):
+        _build_prediction_with_variants(changed)
+
+    changed = copy.deepcopy(variants)
+    changed[B0]["risk_score"] = 0.1
+    with pytest.raises(ValueError, match="must not carry a risk score"):
+        _build_prediction_with_variants(changed)
+
+    changed = copy.deepcopy(variants)
+    changed[B0]["unavailable_reason"] = "contradiction"
+    with pytest.raises(ValueError, match="has an unavailable reason"):
+        _build_prediction_with_variants(changed)
+
+    changed = copy.deepcopy(variants)
+    changed[VT1_OBSERVED].update(
+        available=False,
+        unavailable_reason="missing",
+        risk_score=None,
+    )
+    with pytest.raises(ValueError, match="has an artifact"):
+        _build_prediction_with_variants(changed)
+
+    changed = copy.deepcopy(variants)
+    changed[VT1_OBSERVED].update(
+        available=False,
+        prediction_artifact_id=None,
+        fit_artifact_id=None,
+        covariance_artifact_id=None,
+        unavailable_reason="missing",
+    )
+    changed[VT1_OBSERVED]["risk_score"] = 0.1
+    with pytest.raises(ValueError, match="has a risk score"):
+        _build_prediction_with_variants(changed)
+
+    changed = copy.deepcopy(variants)
+    changed[VT1_OBSERVED]["fit_artifact_id"] = _digest("different-fit")
+    with pytest.raises(ValueError, match="share one raw mean and fit"):
+        _build_prediction_with_variants(changed)
+
+
+def _build_prediction_with_variants(variants: Mapping[str, Any]) -> dict[str, Any]:
+    return v61.build_deform360_v6_raw_nested_prediction(
+        cohort=_cohort(),
+        upstream_prediction_batch_id=UPSTREAM_BATCH_ID,
+        upstream_revision=UPSTREAM_REVISION,
+        candidate_revision=CANDIDATE_REVISION,
+        outer_held_out_object_id="object-0",
+        object_id="object-1",
+        variants=variants,
+        source_artifacts={"source.json": _digest("source")},
+    )
 
 
 def test_raw_prediction_separates_upstream_and_candidate_revisions() -> None:
