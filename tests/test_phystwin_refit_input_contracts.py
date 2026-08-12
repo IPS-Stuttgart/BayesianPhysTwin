@@ -316,9 +316,24 @@ def test_tracking_metrics_reject_nonfinite_coordinates() -> None:
     [
         (np.zeros((3, 2, 2)), np.zeros((3, 2, 3)), np.ones((3, 2), bool), "observed"),
         (np.zeros((3, 2, 3)), np.zeros((3, 2, 2)), np.ones((3, 2), bool), "trajectory"),
-        (np.zeros((3, 2, 3)), np.zeros((2, 2, 3)), np.ones((3, 2), bool), "fewer frames"),
-        (np.zeros((3, 2, 3)), np.zeros((3, 1, 3)), np.ones((3, 2), bool), "fewer vertices"),
-        (np.zeros((3, 2, 3)), np.zeros((3, 2, 3)), np.ones((2, 2), bool), "mask must match"),
+        (
+            np.zeros((3, 2, 3)),
+            np.zeros((2, 2, 3)),
+            np.ones((3, 2), bool),
+            "fewer frames",
+        ),
+        (
+            np.zeros((3, 2, 3)),
+            np.zeros((3, 1, 3)),
+            np.ones((3, 2), bool),
+            "fewer vertices",
+        ),
+        (
+            np.zeros((3, 2, 3)),
+            np.zeros((3, 2, 3)),
+            np.ones((2, 2), bool),
+            "mask must match",
+        ),
     ],
 )
 def test_tracking_metrics_reject_shape_mismatches(
