@@ -1,0 +1,116 @@
+{
+  "amendment_id": "4792bcf1c69cf7885edd0c4e1a2ffbb1d7cd5af9032839841057ba329d5f1196",
+  "base_covariance_amendment": {
+    "amendment_id": "6113d481321f176929ccab0a38a4efacbeeb6620f53d7954d102b0b4fb1879c7",
+    "path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+  },
+  "base_policy": {
+    "path": "protocols/locks/deform360_official_hub_fresh_object_session_v6.json",
+    "policy_id": "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f"
+  },
+  "correction": {
+    "candidate_revision_separate_from_upstream_batch_revision": true,
+    "covariance_method_selected_inside_each_outer_fold": true,
+    "exact_source_selection_bound_in_each_raw_record": true,
+    "guard_threshold_fitted_inside_each_outer_fold": true,
+    "legacy_public_evaluator_retired": true,
+    "legacy_precomputed_acceptance_not_admissible": true,
+    "legacy_precomputed_interval_summary_not_admissible": true,
+    "legacy_prediction_seals_are_nonprogressing_diagnostic_only": true,
+    "legacy_split_conformal_label_superseded": true,
+    "later_covariance_amendment_tie_break_applied": true,
+    "raw_prediction_and_risk_score_sealed_before_source_suffix_scoring": true,
+    "reason": "The first source adapter encoded acceptance thresholds and calibrated interval summaries in pre-outcome prediction records, contradicting the base policy's nested source-only guard and covariance calibration requirements. No v6 candidate panel, v6 source outcome, or v6 target payload had been opened when this source-independent defect was identified."
+  },
+  "covariance_calibration": {
+    "calibration_method": "nested-source-cross-fitted-grouped-residual-calibration",
+    "calibration_group": "physical-object-session",
+    "covariance_transform": "positive-scalar-times-raw-covariance",
+    "full_interval_width": "mean-diameter-of-simultaneous-query-ellipsoids",
+    "finite_sample_split_conformal_coverage_claimed": false,
+    "full_source_target_calibration_uses_ten_leave-one-object-out_residuals": true,
+    "grouped_residual_quantile_rank_rule": "ceil((n+1)*nominal-coverage)",
+    "minimum_training_groups": 9,
+    "nominal_coverage": 0.9,
+    "outer_held_out_unit_excluded_from_scale_and_quantile_fit": true,
+    "proper_score": "equal-object-mean-three-dimensional-gaussian-negative-log-likelihood",
+    "scale_fit": "closed-form-equal-object-gaussian-nll-minimizer-clipped-to-1e-6-1e6",
+    "scale_and_quantile_share_outer_training_residuals": true,
+    "simultaneous_group_nonconformity": "maximum-query-mahalanobis-norm",
+    "supersedes_base_covariance_amendment_requirement": "source_only_variance_scale_and_split_conformal_required",
+    "supersedes_base_policy_interval_calibration_label": "group-clustered-split-conformal",
+    "supersession_reason": "With nine outer-training units, estimating the covariance scale and a 90-percent rank-9 grouped quantile from the same cross-fitted residuals is not split conformal. This source-independent correction removes that coverage claim before any challenger suffix outcome is opened.",
+    "training_group_count_per_outer_fold": 9,
+    "variance_scale_and_grouped_residual_quantile_fitted_on_raw_candidate_outcomes_regardless_of_guard_acceptance": true
+  },
+  "fallback": {
+    "rejected_or_unavailable_candidate_uses_exact_physical_point_and_calibrated_physical_interval": true,
+    "fallback_metrics_are_not_recomputed_from_candidate_covariance": true
+  },
+  "guard_fit": {
+    "harmful_margin": 0.02,
+    "maximum_harmful_training_units": 1,
+    "minimum_training_acceptance_fraction": 0.8,
+    "minimum_training_acceptance_units_per_outer_fold": 8,
+    "objective_order": [
+      "lowest-equal-object-mean-deployed-point-loss",
+      "fewest-harmful-accepted-units",
+      "largest-accepted-count",
+      "lowest-inclusive-risk-threshold"
+    ],
+    "tie_policy": "accept-complete-tied-risk-blocks"
+  },
+  "information_boundary": {
+    "human_selection_used": false,
+    "replacement_allowed": false,
+    "source_outcomes_used_to_design_this_repair": false,
+    "source_suffix_opened_for_v6_candidates": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_used": false,
+    "v6_target_outcomes_used": false,
+    "v6_target_payloads_used": false
+  },
+  "nested_selection": {
+    "candidate_family_order": [
+      "B1_last_causal_residual",
+      "D1_dynamic_endpoint_model_average_v2",
+      "VT1_joint_sparse_visuotactile_guarded_v5"
+    ],
+    "candidate_training_eligibility": {
+      "maximum_harmful_accepted_units": 1,
+      "minimum_relative_point_improvement_over_reference": 0.02,
+      "proper_score_nonregression_over_reference": true
+    },
+    "covariance_method_order": [
+      "working-irls",
+      "observed-information",
+      "group-sandwich"
+    ],
+    "covariance_tie_break": [
+      "lowest-training-gaussian-nll",
+      "lowest-training-full-interval-width",
+      "lower-registered-complexity"
+    ],
+    "outer_fold_count": 10,
+    "training_units_per_outer_fold": 9,
+    "variant_tie_break": [
+      "lowest-training-deployed-gaussian-nll",
+      "lowest-training-deployed-point-loss",
+      "lowest-training-deployed-full-interval-width",
+      "lower-registered-complexity"
+    ]
+  },
+  "observation_feeder": {
+    "existing_decoded_uniform_prob4d_artifacts_used": true,
+    "existing_source_provider_products_reused": true,
+    "new_motioncrafter_inference_run": false,
+    "new_prob4d_inference_run": false,
+    "upstream_execution_receipt_id": "a408e44eaecf9e63311a2f1a6f511f130e586031e8a0e8e795d58fa5696e3026",
+    "upstream_prediction_batch_id": "5b1cdf3f047b52665650dcbf56d8ec205ced8788e2cdd0e528793a9ece9387f0",
+    "upstream_prediction_receipt_id": "04a5a8b71603b66850e35122405bc24c5de1e766c14cc2b58974f1ea97fb49ef",
+    "upstream_receipt_declares_prob4d_used": true,
+    "upstream_revision": "913909596b71ac6ad717835ce7a87ae01e42c5ab"
+  },
+  "schema": "bayesian-phystwin.deform360-fresh-object-session-v6-nested-source-contract-repair",
+  "schema_version": 1
+}

@@ -7,10 +7,15 @@ on:
       - ".github/workflows/deform360-fresh-object-session-source-v6-contracts.yml"
       - ".github/quality/test-suites.json"
       - "docs/deform360_fresh_object_session_source_v6.md"
+      - "docs/deform360_fresh_object_session_source_v6_1.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_nested_source_contract_repair.json"
       - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
+      - "scripts/science/run_deform360_fresh_object_session_source_v6_1.py"
       - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py"
       - "tests/test_deform360_fresh_object_session_source_v6.py"
+      - "tests/test_deform360_fresh_object_session_source_v6_1.py"
       - "tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py"
   push:
     branches: [main]
@@ -18,10 +23,15 @@ on:
       - ".github/workflows/deform360-fresh-object-session-source-v6-contracts.yml"
       - ".github/quality/test-suites.json"
       - "docs/deform360_fresh_object_session_source_v6.md"
+      - "docs/deform360_fresh_object_session_source_v6_1.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_nested_source_contract_repair.json"
       - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
+      - "scripts/science/run_deform360_fresh_object_session_source_v6_1.py"
       - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py"
       - "tests/test_deform360_fresh_object_session_source_v6.py"
+      - "tests/test_deform360_fresh_object_session_source_v6_1.py"
       - "tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py"
 
 permissions:
@@ -68,15 +78,22 @@ jobs:
           python -m pip install -e ".[dev]" "build>=1.2"
           files=(
             src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py
             scripts/science/run_deform360_fresh_object_session_source_v6.py
+            scripts/science/run_deform360_fresh_object_session_source_v6_1.py
             tests/test_deform360_fresh_object_session_source_v6.py
+            tests/test_deform360_fresh_object_session_source_v6_1.py
             tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m py_compile "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py \
+            scripts/science/run_deform360_fresh_object_session_source_v6_1.py
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_fresh_object_session_source_v6.py \
+            tests/test_deform360_fresh_object_session_source_v6_1.py \
             tests/test_deform360_fresh_object_session_v6_protocol.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
@@ -93,6 +110,12 @@ jobs:
               (
                   "protocols/amendments/"
                   "deform360_official_hub_fresh_object_session_v6_source_covariance.json",
+                  "amendment_id",
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_fresh_object_session_v6_"
+                  "nested_source_contract_repair.json",
                   "amendment_id",
               ),
           ):
@@ -116,13 +139,23 @@ jobs:
           listing="$(tar -tzf "${archive}")"
           grep -Fq '/docs/deform360_fresh_object_session_source_v6.md' \
             <<<"${listing}"
+          grep -Fq '/docs/deform360_fresh_object_session_source_v6_1.md' \
+            <<<"${listing}"
           amendment_path='/protocols/amendments/'
           amendment_path+='deform360_official_hub_fresh_object_session_'
           amendment_path+='v6_source_covariance.json'
           grep -Fq "${amendment_path}" <<<"${listing}"
+          repair_path='/protocols/amendments/'
+          repair_path+='deform360_official_hub_fresh_object_session_'
+          repair_path+='v6_nested_source_contract_repair.json'
+          grep -Fq "${repair_path}" <<<"${listing}"
           grep -Fq '/scripts/science/run_deform360_fresh_object_session_source_v6.py' \
             <<<"${listing}"
+          grep -Fq '/scripts/science/run_deform360_fresh_object_session_source_v6_1.py' \
+            <<<"${listing}"
           grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py' \
             <<<"${listing}"
           rm -rf build dist ./*.egg-info src/*.egg-info
           git diff --exit-code
