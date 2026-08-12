@@ -33,7 +33,12 @@ def update_prior_aware_gauge_belief(
 ) -> GaugeAwareBeliefResult:
     """Infer state while conditioning identifiability on nuisance priors."""
 
-    cfg = config or PriorAwareGaugeConfigV1()
+    if config is None:
+        cfg = PriorAwareGaugeConfigV1()
+    elif isinstance(config, PriorAwareGaugeConfigV1):
+        cfg = config
+    else:
+        raise TypeError("config must be a PriorAwareGaugeConfigV1")
     if batch.prior_nominal_probability is None or batch.composite_weight is None:
         raise ValueError("validated observation mixture metadata is missing")
     observation_nominal = np.asarray(batch.prior_nominal_probability)

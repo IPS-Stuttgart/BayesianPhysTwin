@@ -107,6 +107,28 @@ def test_group_mixture_downweights_corrupted_group() -> None:
     assert result.diagnostics["prior_nominal_probability_used_inside_mixture"]
 
 
+def test_prior_aware_update_rejects_falsey_non_config() -> None:
+    with pytest.raises(TypeError, match="config must be a PriorAwareGaugeConfigV1"):
+        update_prior_aware_gauge_belief(
+            _confounded_batch(1e-10),
+            config=cast(Any, 0),
+        )
+
+
+def test_prior_aware_update_uses_defaults_when_config_is_omitted() -> None:
+    implicit = update_prior_aware_gauge_belief(_confounded_batch(1e-10))
+    explicit = update_prior_aware_gauge_belief(
+        _confounded_batch(1e-10),
+        config=PriorAwareGaugeConfigV1(),
+    )
+
+    assert implicit.inference_admissible == explicit.inference_admissible
+    np.testing.assert_allclose(
+        implicit.state_coefficients,
+        explicit.state_coefficients,
+    )
+
+
 @dataclass
 class Observation:
     artifact_id: str
