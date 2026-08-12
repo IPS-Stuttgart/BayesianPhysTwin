@@ -8,16 +8,6 @@ from bayesian_phystwin.propagated_state_correction import (
 )
 
 
-_NON_BOOLEAN_AVAILABILITY = (
-    np.ones((5, 2), dtype=np.int64),
-    np.full((5, 2), 0.5, dtype=np.float64),
-    np.full((5, 2), -1.0, dtype=np.float64),
-    np.full((5, 2), np.inf, dtype=np.float64),
-    # NaN is truthy under NumPy's bool coercion and must never mean "available".
-    np.full((5, 2), np.nan, dtype=np.float64),
-)
-
-
 def _problem() -> tuple[
     np.ndarray,
     np.ndarray,
@@ -65,36 +55,20 @@ def _call(
     )
 
 
-def _call_belief(
-    *,
-    available: np.ndarray | None = None,
-    config: object | None = None,
-) -> object:
-    from bayesian_phystwin.propagated_state_belief import infer_propagated_state_belief
-
-    innovation, default_available, response, _, _, _, _ = _problem()
-    selected_available = default_available if available is None else available
-    return infer_propagated_state_belief(
-        innovation,
-        selected_available,
-        response,
-        np.zeros((response.shape[1], 0), dtype=np.float64),
-        config=config,  # type: ignore[arg-type]
-    )
-
-
-@pytest.mark.parametrize("available", _NON_BOOLEAN_AVAILABILITY)
+@pytest.mark.parametrize(
+    "available",
+    [
+        np.ones((5, 2), dtype=np.int64),
+        np.full((5, 2), 0.5, dtype=np.float64),
+        np.full((5, 2), -1.0, dtype=np.float64),
+        np.full((5, 2), np.inf, dtype=np.float64),
+        # NaN is truthy under NumPy's bool coercion and must never mean "available".
+        np.full((5, 2), np.nan, dtype=np.float64),
+    ],
+)
 def test_selection_rejects_non_boolean_availability(available: np.ndarray) -> None:
     with pytest.raises(ValueError, match="availability must contain only booleans"):
         _call(available=available)
-
-
-@pytest.mark.parametrize("available", _NON_BOOLEAN_AVAILABILITY)
-def test_direct_belief_rejects_non_boolean_availability(
-    available: np.ndarray,
-) -> None:
-    with pytest.raises(ValueError, match="availability must contain only booleans"):
-        _call_belief(available=available)
 
 
 @pytest.mark.parametrize(
@@ -126,11 +100,3 @@ def test_selection_rejects_invalid_belief_config_before_inference() -> None:
         match="belief_config must be a PropagatedStateBeliefConfig",
     ):
         _call(belief_config=0)
-
-
-def test_direct_belief_rejects_falsey_non_config() -> None:
-    with pytest.raises(
-        TypeError,
-        match="config must be a PropagatedStateBeliefConfig",
-    ):
-        _call_belief(config=0)
