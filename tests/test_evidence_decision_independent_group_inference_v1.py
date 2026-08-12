@@ -88,8 +88,8 @@ def test_exact_sign_flip_matches_independent_brute_force() -> None:
         group_ids=("g4", "g2", "g1", "g3"),
         replicates=64,
     )
-    expected_unadjusted, expected_familywise, expected_global = (
-        _brute_force_p_values(effects[[2, 1, 3, 0]])
+    expected_unadjusted, expected_familywise, expected_global = _brute_force_p_values(
+        effects[[2, 1, 3, 0]]
     )
 
     np.testing.assert_array_equal(
@@ -101,9 +101,7 @@ def test_exact_sign_flip_matches_independent_brute_force() -> None:
         expected_familywise,
     )
     assert result.exact_global_family_p_value == expected_global
-    assert np.all(
-        result.exact_familywise_p_value >= result.exact_unadjusted_p_value
-    )
+    assert np.all(result.exact_familywise_p_value >= result.exact_unadjusted_p_value)
     assert result.sign_pattern_count == 2 ** len(effects)
 
 
