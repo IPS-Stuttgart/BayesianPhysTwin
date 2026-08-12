@@ -234,9 +234,7 @@ def test_state_rejects_wrong_access_and_terminal_shape() -> None:
 
 def test_source_negative_rejects_missing_decision_artifacts_and_access() -> None:
     with pytest.raises(ValueError, match="requires a terminal decision"):
-        ProspectiveStudyStateV1(
-            **_state_kwargs(stage="terminal-source-negative")
-        )
+        ProspectiveStudyStateV1(**_state_kwargs(stage="terminal-source-negative"))
     with pytest.raises(ValueError, match="cannot bind target artifacts"):
         ProspectiveStudyStateV1(
             **_state_kwargs(
