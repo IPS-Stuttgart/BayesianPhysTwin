@@ -142,10 +142,7 @@ class SPDSystem:
             raise SPDValidationError("cholesky shape differs from the SPD matrix")
         factor_scale = max(1.0, float(np.max(np.abs(replayed.cholesky))))
         factor_tolerance = (
-            64.0
-            * replayed.dimension
-            * np.finfo(np.float64).eps
-            * factor_scale
+            64.0 * replayed.dimension * np.finfo(np.float64).eps * factor_scale
         )
         if not np.allclose(
             factor,
@@ -252,9 +249,7 @@ class SPDSystem:
                 f"{system_name} must be a numeric float64 matrix"
             ) from error
         if untyped_candidate.dtype.kind not in "fiu":
-            raise SPDValidationError(
-                f"{system_name} must be a numeric float64 matrix"
-            )
+            raise SPDValidationError(f"{system_name} must be a numeric float64 matrix")
         candidate = untyped_candidate.astype(np.float64, copy=False)
         if candidate.ndim != 2 or candidate.shape[0] != candidate.shape[1]:
             raise SPDValidationError(f"{system_name} must be a square matrix")
@@ -292,9 +287,7 @@ class SPDSystem:
                 f"{system_name} condition number could not be evaluated"
             ) from error
         if not np.isfinite(condition_number):
-            raise SPDConditionError(
-                f"{system_name} has a non-finite condition number"
-            )
+            raise SPDConditionError(f"{system_name} has a non-finite condition number")
         if condition_limit is not None and condition_number > condition_limit:
             raise SPDConditionError(
                 f"{system_name} condition number {condition_number:.17g} exceeds "
@@ -324,9 +317,7 @@ class SPDSystem:
         diagonal = np.diag(self.cholesky)
         result = 2.0 * float(np.sum(np.log(diagonal)))
         if not np.isfinite(result):
-            raise SPDValidationError(
-                f"{self.name} has a non-finite log determinant"
-            )
+            raise SPDValidationError(f"{self.name} has a non-finite log determinant")
         return result
 
     def _right_hand_side(self, value: object, *, name: str) -> np.ndarray:
@@ -338,9 +329,7 @@ class SPDSystem:
             raise SPDSolveError(f"{name} must be numeric")
         right = untyped_right.astype(np.float64, copy=False)
         if right.ndim not in (1, 2) or right.shape[0] != self.dimension:
-            raise SPDSolveError(
-                f"{name} must have leading dimension {self.dimension}"
-            )
+            raise SPDSolveError(f"{name} must have leading dimension {self.dimension}")
         if not np.all(np.isfinite(right)):
             raise SPDSolveError(f"{name} must be finite")
         return right
@@ -397,20 +386,15 @@ class SPDSystem:
         except np.linalg.LinAlgError as error:
             raise SPDSolveError(f"{self.name} whitening solve failed") from error
         if not np.all(np.isfinite(whitened)):
-            raise SPDSolveError(
-                f"{self.name} whitening produced non-finite values"
-            )
+            raise SPDSolveError(f"{self.name} whitening produced non-finite values")
         residual = self.cholesky @ whitened - right
         denominator = max(
             np.finfo(np.float64).tiny,
-            _matrix_norm(self.cholesky) * _matrix_norm(whitened)
-            + _matrix_norm(right),
+            _matrix_norm(self.cholesky) * _matrix_norm(whitened) + _matrix_norm(right),
         )
         relative = _matrix_norm(residual) / denominator
         if not np.isfinite(relative) or relative > self.solve_residual_tolerance:
-            raise SPDSolveError(
-                f"{self.name} whitening residual violates its contract"
-            )
+            raise SPDSolveError(f"{self.name} whitening residual violates its contract")
         return _immutable_float64(whitened)
 
     def quadratic_form(self, value: object) -> float:
