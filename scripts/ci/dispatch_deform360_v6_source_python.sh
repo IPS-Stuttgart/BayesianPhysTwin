@@ -12,6 +12,7 @@ readonly FRAME_ZERO_DISPATCH_REPAIR_ID="6524b544bb59d06fee3388906d680b8f1436a0c6
 readonly FALLBACK_CONFIG_ROUTE_REPAIR_ID="df4fd52c65acc25c70c4cde650dd021f704e799dceda3323f3aa28af6fd99e0e"
 readonly OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID="72db4752194340a4e8122332ec7483e7d397240c714b3aeec771b1e043369deb"
 readonly CASE_STDIN_ISOLATION_REPAIR_ID="08df8831e0261b482c9e682b30b0a7fdf37b0924de23a58484db9ce2546b625e"
+readonly SOURCE_PLAN_RUN_ROOT_REPAIR_ID="2637a1d95f0af46461a44e5f62e3264d07f75531c1fe490d8ad78a5d4404817d"
 readonly PHYSICAL_TARGET="scripts/remote/run_deform360_joint_sparse_physical_source_v5.py"
 readonly STAGE_SELECTOR_HELPER_TARGET="scripts/remote/run_deform360_v6_stage_selector_identity_repair.py"
 readonly MATERIALIZER_TARGET="scripts/science/materialize_deform360_joint_sparse_physical_source_v5.py"
@@ -22,10 +23,14 @@ readonly PREVIOUS_FALLBACK_CONFIG="configs/sota/deform360_reconstruction_failure
 readonly PREVIOUS_FALLBACK_CONFIG_FILE_SHA256="240554ed41986cf5b330225d759c8df24de99d8642f9c1dcd6114185ee16fc0d"
 readonly CORRECTED_FALLBACK_CONFIG="configs/sota/deform360_frame_zero_initializer_source_v1.json"
 readonly CORRECTED_FALLBACK_CONFIG_FILE_SHA256="60e9887836ea0ba3410066dbb5668988e35763ea6161826752b24b257cf9fc66"
+readonly SOURCE_PLAN_INPUTS_FILENAME="source-plan-inputs.json"
+readonly SOURCE_PLAN_OUTPUT_FILENAME="source-plan.json"
+readonly SOURCE_PLAN_RUN_ROOT_MARKER_FILENAME="source-plan-run-root-environment-repair.json"
 readonly EXPECTED_MARKER="{\"repair_id\":\"${FRAME_ZERO_DISPATCH_REPAIR_ID}\",\"stage\":\"${FRAME_ZERO_STAGE}\"}"
 readonly EXPECTED_FALLBACK_CONFIG_REPAIR_MARKER="{\"corrected_config\":\"${CORRECTED_FALLBACK_CONFIG}\",\"previous_config\":\"${PREVIOUS_FALLBACK_CONFIG}\",\"repair_id\":\"${FALLBACK_CONFIG_ROUTE_REPAIR_ID}\",\"stage\":\"${FRAME_ZERO_STAGE}\"}"
 readonly EXPECTED_OFFICIAL_PHYSTWIN_RUNTIME_MARKER="{\"repair_id\":\"${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_ID}\",\"stage\":\"${PHYSICAL_PRIOR_STAGE}\"}"
 readonly EXPECTED_CASE_STDIN_ISOLATION_MARKER="{\"repair_id\":\"${CASE_STDIN_ISOLATION_REPAIR_ID}\",\"stdin\":\"/dev/null\"}"
+readonly EXPECTED_SOURCE_PLAN_RUN_ROOT_MARKER="{\"binding\":\"derived-exported-run-root\",\"repair_id\":\"${SOURCE_PLAN_RUN_ROOT_REPAIR_ID}\",\"source_plan_inputs_present\":true}"
 
 mark_case_stdin_isolation() {
   local marker="${BPT_CASE_STDIN_ISOLATION_MARKER}"
@@ -151,6 +156,74 @@ mark_official_phystwin_runtime() {
   mv "${temporary}" "${marker}"
 }
 
+bind_source_plan_run_root() {
+  local computed_run_root
+  local compact_root
+  local marker
+  local temporary
+
+  [[ "${1:-}" == "-" ]] || return 0
+  [[ -z "${RUN_ROOT+x}" ]] || return 0
+  [[ -n "${RESULTS_ROOT:-}" ]] || return 0
+  [[ -n "${AMENDMENT_ID:-}" ]] || return 0
+  [[ -n "${BPT_SOURCE_SHA:-}" ]] || return 0
+
+  computed_run_root="${RESULTS_ROOT}/bayesian-phystwin/deform360-v6-source-prediction/${AMENDMENT_ID}/${BPT_SOURCE_SHA}"
+  if [[ ! -e "${computed_run_root}" && ! -L "${computed_run_root}" ]]; then
+    return 0
+  fi
+  [[ -d "${computed_run_root}" && ! -L "${computed_run_root}" ]] || {
+    echo "source-plan run root is not a real directory" >&2
+    exit 2
+  }
+  if [[ ! -e "${computed_run_root}/${SOURCE_PLAN_INPUTS_FILENAME}" \
+    && ! -L "${computed_run_root}/${SOURCE_PLAN_INPUTS_FILENAME}" ]]; then
+    return 0
+  fi
+  [[ -f "${computed_run_root}/${SOURCE_PLAN_INPUTS_FILENAME}" \
+    && ! -L "${computed_run_root}/${SOURCE_PLAN_INPUTS_FILENAME}" ]] || {
+    echo "source-plan inputs path is not a real file" >&2
+    exit 2
+  }
+  [[ ! -L "${computed_run_root}/${SOURCE_PLAN_OUTPUT_FILENAME}" ]] || {
+    echo "source-plan output path is symlinked" >&2
+    exit 2
+  }
+
+  export RUN_ROOT="${computed_run_root}"
+  [[ -n "${EVIDENCE_ROOT:-}" ]] || return 0
+  compact_root="${EVIDENCE_ROOT}/deform360-v6-source-prediction-evidence"
+  [[ ! -L "${compact_root}" ]] || {
+    echo "source-plan repair evidence root is symlinked" >&2
+    exit 2
+  }
+  mkdir -p "${compact_root}"
+  marker="${compact_root}/${SOURCE_PLAN_RUN_ROOT_MARKER_FILENAME}"
+  if [[ -L "${marker}" ]]; then
+    echo "refusing symlinked source-plan run-root marker" >&2
+    exit 2
+  fi
+  if [[ -e "${marker}" ]]; then
+    [[ -f "${marker}" ]] || {
+      echo "source-plan run-root marker is not a regular file" >&2
+      exit 2
+    }
+    [[ "$(cat "${marker}")" == "${EXPECTED_SOURCE_PLAN_RUN_ROOT_MARKER}" ]] || {
+      echo "source-plan run-root marker changed" >&2
+      exit 2
+    }
+    return 0
+  fi
+  temporary="${marker}.tmp.$$"
+  umask 077
+  printf '%s\n' "${EXPECTED_SOURCE_PLAN_RUN_ROOT_MARKER}" > "${temporary}"
+  [[ ! -L "${temporary}" && -f "${temporary}" ]] || {
+    echo "source-plan run-root marker temporary path is unsafe" >&2
+    exit 2
+  }
+  mv "${temporary}" "${marker}"
+}
+
 if [[ "${1:-}" == "${PHYSICAL_TARGET}" ]]; then
   arguments=("$@")
   stage_count=0
@@ -225,4 +298,5 @@ if [[ "${1:-}" == "${STAGE_SELECTOR_HELPER_TARGET}" \
   exec "${BPT_PRIMARY_PYTHON}" "$@" </dev/null
 fi
 
+bind_source_plan_run_root "$@"
 exec "${BPT_PRIMARY_PYTHON}" "$@"
