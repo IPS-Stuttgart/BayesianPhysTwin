@@ -81,12 +81,8 @@ def _covariance_decision(
         exact_fallback_id=policy.exact_fallback_policy_id,
         shared_covariance_relevance=0.5,
         relevance_threshold=0.1,
-        selected_covariance_treatment=(
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
-        principal_covariance_treatment=(
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
+        selected_covariance_treatment=(COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
+        principal_covariance_treatment=(COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
         principal_treatment_matches=True,
         value_certificate_certified=True,
         authorized=True,
@@ -115,9 +111,7 @@ def _beliefs(
             policy.deterministic_reference_arm_id
         ),
         "mean_candidate_belief": _Belief(policy.mean_candidate_arm_id),
-        "covariance_candidate_belief": _Belief(
-            policy.covariance_candidate_arm_id
-        ),
+        "covariance_candidate_belief": _Belief(policy.covariance_candidate_arm_id),
         "full_belief": _Belief(policy.full_belief_arm_id),
     }
 
@@ -129,9 +123,7 @@ def test_policy_rejects_aliasing_and_coerced_permissions() -> None:
     with pytest.raises(ValueError, match="covariance policies must differ"):
         replace(
             policy,
-            candidate_covariance_policy_id=(
-                policy.reference_covariance_policy_id
-            ),
+            candidate_covariance_policy_id=(policy.reference_covariance_policy_id),
         )
     with pytest.raises(ValueError, match="allow_covariance_only must be boolean"):
         replace(policy, allow_covariance_only=cast(Any, 1))
@@ -233,9 +225,7 @@ def test_composer_rejects_wrong_types_and_cross_artifact_mismatches() -> None:
             policy, cast(Any, object()), covariance, **kwargs
         )
     with pytest.raises(TypeError, match="covariance_decision must be"):
-        compose_belief_component_admission(
-            policy, mean, cast(Any, object()), **kwargs
-        )
+        compose_belief_component_admission(policy, mean, cast(Any, object()), **kwargs)
 
     mean_mutations = (
         ("common_domain_id", _digest("other-domain"), "different common domain"),
