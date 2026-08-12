@@ -454,9 +454,7 @@ def load_evidence_decision_v2(path: str | Path) -> EvidenceDecisionV2:
             payload["scientific_decision"]
         ),
         authorization=_require_authorization(payload["authorization"]),
-        run_classification=_require_run_classification(
-            payload["run_classification"]
-        ),
+        run_classification=_require_run_classification(payload["run_classification"]),
         evidence_level=_require_integer(
             payload["evidence_level"], name="evidence_level"
         ),
