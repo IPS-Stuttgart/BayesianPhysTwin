@@ -5,11 +5,22 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/release-compatibility-evidence.yml"
+      - "MANIFEST.in"
+      - "api/root-public-api-v0.4.json"
+      - "api/root-export-migration-v1.json"
+      - "api/versioned-public-api-v1.json"
       - "requirements/numpy-floor-py310.txt"
       - "requirements/release-build-py312.txt"
       - "pyproject.toml"
+      - "src/bayesian_phystwin/__init__.py"
       - "src/bayesian_phystwin/numerical_environment_v1.py"
+      - "src/bayesian_phystwin/v1/**"
+      - "tests/test_public_api_manifest.py"
       - "tests/test_release_compatibility_workflow_policy.py"
+      - "tests/test_versioned_api_v1.py"
+      - "tools/quality/check_public_api.py"
+      - "tools/quality/check_root_export_migration.py"
+      - "docs/public_api_policy.md"
       - "docs/releasing.md"
   push:
     tags:
@@ -88,8 +99,52 @@ jobs:
               "wheel==0.47.0"
             "${python_bin}" -m pip install --no-build-isolation "${artifact}"
             "${python_bin}" -m pip check
-            "${python_bin}" -I -c \
-              'import bayesian_phystwin.v1 as api; assert api.__all__'
+            "${python_bin}" -I - <<'PY'
+          import sys
+
+          import bayesian_phystwin
+
+          root_modules = sorted(
+              name
+              for name in sys.modules
+              if name == "bayesian_phystwin"
+              or name.startswith("bayesian_phystwin.")
+          )
+          if root_modules != ["bayesian_phystwin"]:
+              raise SystemExit(
+                  "package-root import loaded implementation modules: "
+                  f"{root_modules}"
+              )
+
+          import bayesian_phystwin.v1 as api
+
+          if not api.__all__:
+              raise SystemExit("versioned integration API is empty")
+          forbidden_package_prefixes = (
+              "bayesian_phystwin.deform360_",
+              "bayesian_phystwin.experiments",
+              "bayesian_phystwin.phystwin_",
+              "bayesian_phystwin.synthetic_benchmark",
+          )
+          forbidden_external = {
+              "cv2",
+              "numpyro",
+              "pymc",
+              "scipy",
+              "torch",
+          }
+          leaked = sorted(
+              name
+              for name in sys.modules
+              if name in forbidden_external
+              or name.startswith(forbidden_package_prefixes)
+          )
+          if leaked:
+              raise SystemExit(
+                  "stable API import loaded forbidden modules: "
+                  f"{leaked}"
+              )
+          PY
             "${environment}/bin/bpt" --help >/dev/null
             "${environment}/bin/bpt" provider manifest --help >/dev/null
             "${environment}/bin/bpt" observation validate --help >/dev/null
