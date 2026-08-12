@@ -146,8 +146,7 @@ def test_finalize_guarded_update_reuses_accepted_candidate() -> None:
     assert result.selected_candidate is True
     assert result.exact_fallback is False
     assert (
-        result.to_record()["selected_belief_id"]
-        == result.candidate_belief.artifact_id
+        result.to_record()["selected_belief_id"] == result.candidate_belief.artifact_id
     )
     assert result.to_record()["inference_candidate_id"] == result.inference_candidate_id
     assert len(result.artifact_id) == 64
