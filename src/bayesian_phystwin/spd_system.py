@@ -349,7 +349,7 @@ class SPDSystem:
         residual = self.matrix @ solution_array - right_array
         numerator = _matrix_norm(residual)
         denominator = max(
-            np.finfo(np.float64).tiny,
+            float(np.finfo(np.float64).tiny),
             _matrix_norm(self.matrix) * _matrix_norm(solution_array)
             + _matrix_norm(right_array),
         )
@@ -389,7 +389,7 @@ class SPDSystem:
             raise SPDSolveError(f"{self.name} whitening produced non-finite values")
         residual = self.cholesky @ whitened - right
         denominator = max(
-            np.finfo(np.float64).tiny,
+            float(np.finfo(np.float64).tiny),
             _matrix_norm(self.cholesky) * _matrix_norm(whitened) + _matrix_norm(right),
         )
         relative = _matrix_norm(residual) / denominator
@@ -426,7 +426,7 @@ class SPDSystem:
         )
         tolerance = max(
             10.0 * self.solve_residual_tolerance,
-            100.0 * self.dimension * np.finfo(np.float64).eps,
+            100.0 * self.dimension * float(np.finfo(np.float64).eps),
         )
         if not np.isfinite(relative) or relative > tolerance:
             raise SPDSolveError(
