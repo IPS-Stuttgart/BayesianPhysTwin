@@ -32,7 +32,7 @@ def _inline_python_after(stage: str) -> str:
     stage_marker = f'set_stage "{stage}"\n'
     assert text.count(stage_marker) == 1
     tail = text.split(stage_marker, 1)[1]
-    heredoc_marker = '"${BPT_PYTHON}" - <<\'PY\'\n'
+    heredoc_marker = "\"${BPT_PYTHON}\" - <<'PY'\n"
     assert heredoc_marker in tail
     body, remainder = tail.split(heredoc_marker, 1)[1].split("\nPY\n", 1)
     assert remainder
@@ -78,9 +78,10 @@ def test_archived_source_plan_and_evidence_blocks_use_bound_roots(
     source_plan_block = _inline_python_after("materialize-source-plan")
     assert 'os.environ["RUN_ROOT"]' in source_plan_block
     exec(compile(source_plan_block, str(ARCHIVED_RUNNER), "exec"), {})
-    assert json.loads(
-        (run_root / "source-plan.json").read_text(encoding="utf-8")
-    ) == plan
+    assert (
+        json.loads((run_root / "source-plan.json").read_text(encoding="utf-8"))
+        == plan
+    )
 
     prediction_root = run_root / "prediction-panel"
     seals = prediction_root / "source-seals"
