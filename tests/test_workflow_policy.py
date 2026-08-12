@@ -52,7 +52,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@{'b' * 40}
+      - uses: actions/checkout@{"b" * 40}
 """
 
 
@@ -69,9 +69,7 @@ def test_valid_permanent_workflow_passes() -> None:
 
 
 def test_new_workflow_requires_lifecycle_metadata() -> None:
-    text = _permanent_workflow().replace(
-        "# workflow-lifecycle: permanent\n", ""
-    )
+    text = _permanent_workflow().replace("# workflow-lifecycle: permanent\n", "")
 
     record = inspect_workflow(
         Path(".github/workflows/package.yml"),

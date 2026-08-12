@@ -37,12 +37,8 @@ _METADATA_PATTERNS = {
         r"^#\s*workflow-lifecycle:\s*(permanent|temporary)\s*$",
         re.MULTILINE | re.IGNORECASE,
     ),
-    "owner": re.compile(
-        r"^#\s*workflow-owner:\s*(\S.*\S|\S)\s*$", re.MULTILINE
-    ),
-    "issue": re.compile(
-        r"^#\s*workflow-issue:\s*(\S.*\S|\S)\s*$", re.MULTILINE
-    ),
+    "owner": re.compile(r"^#\s*workflow-owner:\s*(\S.*\S|\S)\s*$", re.MULTILINE),
+    "issue": re.compile(r"^#\s*workflow-issue:\s*(\S.*\S|\S)\s*$", re.MULTILINE),
     "expiry": re.compile(
         r"^#\s*workflow-expiry:\s*(\d{4}-\d{2}-\d{2})\s*$", re.MULTILINE
     ),
@@ -64,9 +60,7 @@ _FORBIDDEN_TEMPORARY_EVENT = re.compile(
     re.MULTILINE,
 )
 _WORKFLOW_DISPATCH_EVENT = re.compile(r"^\s{2}workflow_dispatch:", re.MULTILINE)
-_PULL_REQUEST_TARGET_EVENT = re.compile(
-    r"^\s{2}pull_request_target:", re.MULTILINE
-)
+_PULL_REQUEST_TARGET_EVENT = re.compile(r"^\s{2}pull_request_target:", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -393,9 +387,7 @@ def _inventory_markdown(records: Iterable[WorkflowRecord]) -> str:
             )
         )
         for record in managed_violations:
-            lines.append(
-                f"| `{record.path}` | {'; '.join(record.violations)} |"
-            )
+            lines.append(f"| `{record.path}` | {'; '.join(record.violations)} |")
         lines.append("")
 
     if legacy_temporary:
