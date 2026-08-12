@@ -184,17 +184,12 @@ def test_private_and_missing_module_identities_are_rejected(
 
 
 def test_lifecycle_policy_is_shipped_and_unconditionally_checked() -> None:
-    source_manifest = (ROOT / "MANIFEST.in").read_text(
+    source_manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8").splitlines()
+    quality = (ROOT / "tools/quality/changed_python_quality.py").read_text(
         encoding="utf-8"
-    ).splitlines()
-    quality = (
-        ROOT / "tools/quality/changed_python_quality.py"
-    ).read_text(encoding="utf-8")
+    )
 
     assert "include api/public-module-lifecycle-v1.json" in source_manifest
     assert "include docs/public_module_lifecycle_v1.md" in source_manifest
-    assert (
-        "include tools/quality/check_public_module_lifecycle.py"
-        in source_manifest
-    )
+    assert "include tools/quality/check_public_module_lifecycle.py" in source_manifest
     assert "tools/quality/check_public_module_lifecycle.py" in quality
