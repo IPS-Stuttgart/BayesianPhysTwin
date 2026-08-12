@@ -12,6 +12,7 @@ on:
       - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_case_subprocess_stdin_isolation_repair_2026-08-12.md"
+      - "docs/deform360_v6_case_stdin_marker_bootstrap_binding_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
@@ -19,12 +20,14 @@ on:
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_stdin_marker_bootstrap_binding.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
       - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
       - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
+      - "tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py"
   push:
     branches: [main]
     paths:
@@ -36,6 +39,7 @@ on:
       - "docs/deform360_v6_primary_pynput_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_official_phystwin_py310_runtime_repair_2026-08-12.md"
       - "docs/deform360_v6_case_subprocess_stdin_isolation_repair_2026-08-12.md"
+      - "docs/deform360_v6_case_stdin_marker_bootstrap_binding_repair_2026-08-12.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_dispatch_namespace_repair.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_fallback_config_routing_repair.json"
@@ -43,12 +47,14 @@ on:
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_primary_pynput_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_official_phystwin_py310_runtime.json"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_stdin_marker_bootstrap_binding.json"
       - "scripts/ci/dispatch_deform360_v6_source_python.sh"
       - "tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py"
       - "tests/test_deform360_v6_primary_cma_runtime_repair.py"
       - "tests/test_deform360_v6_primary_pynput_runtime_repair.py"
       - "tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py"
       - "tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py"
+      - "tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py"
   workflow_dispatch:
 
 permissions:
@@ -122,6 +128,9 @@ env:
   CASE_STDIN_ISOLATION_REPAIR_ID: 08df8831e0261b482c9e682b30b0a7fdf37b0924de23a58484db9ce2546b625e
   CASE_STDIN_ISOLATION_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_subprocess_stdin_isolation.json
   CASE_STDIN_ISOLATION_REPAIR_SHA256: 0fed80a495addd92080b6a4bdb11f83d3f4cbd9ed7ffa3fa66d90ac6934f3bf4
+  CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_ID: 0c7db33c55c2f4ed6047b20565f06d3569072f22fcd9805662a6dae13b947861
+  CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_case_stdin_marker_bootstrap_binding.json
+  CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_SHA256: eacf423727b88641fefa5f38800c7b72d76936fb20b54498bc4a9476b831f678
   OFFICIAL_PHYSTWIN_SIMPLE_KNN_TREE_OID: 9be2526499e5f907e47de8229b68d0bf785fb913
   OFFICIAL_PHYSTWIN_RASTERIZER_TREE_OID: 18ffea5595189505e24e2af360aa570de56e2466
   OFFICIAL_PHYSTWIN_PYTORCH3D_VERSION: "0.7.8"
@@ -198,13 +207,15 @@ jobs:
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
-            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py
+            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py
           python -m ruff format --check \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
             tests/test_deform360_v6_primary_cma_runtime_repair.py \
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
-            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py
+            tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py
           bash -n scripts/ci/dispatch_deform360_v6_source_python.sh
           python -m pytest -q -p no:cacheprovider \
             tests/test_deform360_v6_frame_zero_cuda_runtime_repair.py \
@@ -212,6 +223,7 @@ jobs:
             tests/test_deform360_v6_primary_pynput_runtime_repair.py \
             tests/test_deform360_v6_official_phystwin_py310_runtime_repair.py \
             tests/test_deform360_v6_case_subprocess_stdin_isolation_repair.py \
+            tests/test_deform360_v6_case_stdin_marker_bootstrap_binding_repair.py \
             tests/test_pull_request_workflow_integrity.py
           git diff --exit-code
           test -z "$(git status --porcelain=v1)"
@@ -354,6 +366,8 @@ jobs:
               = "${OFFICIAL_PHYSTWIN_RUNTIME_REPAIR_SHA256}"
             test "$(sha256sum "${CASE_STDIN_ISOLATION_REPAIR_PATH}" | awk '{print $1}')" \
               = "${CASE_STDIN_ISOLATION_REPAIR_SHA256}"
+            test "$(sha256sum "${CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_PATH}" | awk '{print $1}')" \
+              = "${CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/env_install/env_install.sh" | awk '{print $1}')" \
               = "${PRIMARY_PYNPUT_UPSTREAM_ENVIRONMENT_SHA256}"
             test "$(sha256sum "${OFFICIAL_PHYSTWIN_REPO}/qqtt/engine/trainer_warp.py" | awk '{print $1}')" \
@@ -429,6 +443,7 @@ jobs:
             test ! -e "${marker}"
             test ! -e "${config_repair_marker}"
             test ! -e "${official_runtime_marker}"
+            test ! -e "${case_stdin_isolation_marker}"
             test ! -e "${official_bootstrap_marker}"
             test ! -e "${official_build_root}"
             test ! -e "${official_wheelhouse}"
@@ -630,6 +645,7 @@ jobs:
             BPT_FRAME_ZERO_RUNTIME_MARKER="${marker}" \
             BPT_FRAME_ZERO_FALLBACK_CONFIG_REPAIR_MARKER="${config_repair_marker}" \
             BPT_OFFICIAL_PHYSTWIN_RUNTIME_MARKER="${official_runtime_marker}" \
+            BPT_CASE_STDIN_ISOLATION_MARKER="${case_stdin_isolation_marker}" \
             "${dispatcher}" - <<'PY'
           from importlib.metadata import version
           import sys
@@ -685,6 +701,7 @@ jobs:
           print(deform360.__file__)
           print(sam2.__file__)
           PY
+            test ! -e "${case_stdin_isolation_marker}"
 
             BPT_OFFICIAL_PHYSTWIN_BOOTSTRAP_MARKER="${official_bootstrap_marker}" \
             SIMPLE_KNN_WHEEL_SHA256="${simple_knn_wheel_sha256}" \
@@ -1308,6 +1325,22 @@ jobs:
               ],
               "repair_id": os.environ["CASE_STDIN_ISOLATION_REPAIR_ID"],
               "repair_path": os.environ["CASE_STDIN_ISOLATION_REPAIR_PATH"],
+          }
+          receipt["runtime_case_stdin_marker_bootstrap_binding"] = {
+              "activated": os.environ.get("RUNTIME_EXIT_CODE") == "0",
+              "activation_marker_created_by_bootstrap_probe": False,
+              "binding_added_before_first_dispatcher_call": True,
+              "bootstrap_dispatch_target": "-",
+              "generic_dispatch_stdin_preserved": True,
+              "marker_environment_key": "BPT_CASE_STDIN_ISOLATION_MARKER",
+              "per_case_marker_creation_unchanged": True,
+              "repair_file_sha256": os.environ[
+                  "CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_SHA256"
+              ],
+              "repair_id": os.environ["CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_ID"],
+              "repair_path": os.environ[
+                  "CASE_STDIN_MARKER_BOOTSTRAP_REPAIR_PATH"
+              ],
           }
           canonical = json.dumps(
               receipt,
