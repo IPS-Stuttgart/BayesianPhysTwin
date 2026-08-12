@@ -61,6 +61,7 @@ def _call(
         np.ones((5, 2), dtype=np.int64),
         np.full((5, 2), 0.5, dtype=np.float64),
         np.full((5, 2), -1.0, dtype=np.float64),
+        np.full((5, 2), np.inf, dtype=np.float64),
         # NaN is truthy under NumPy's bool coercion and must never mean "available".
         np.full((5, 2), np.nan, dtype=np.float64),
     ],
