@@ -25,7 +25,7 @@ from .propagated_state_belief import (
 PROPAGATED_STATE_CORRECTION_SCHEMA_VERSION = 1
 
 
-def _require(condition: bool, message: str) -> None:
+def _require(condition: bool | np.bool_, message: str) -> None:
     if not condition:
         raise ValueError(message)
 
@@ -157,7 +157,7 @@ def scale_posterior_covariance_for_state_limits(
     _require(np.all(np.isfinite(covariance)), "covariance is non-finite")
     _require(0.0 < position_scale <= 1.0, "position scale must lie in (0, 1]")
     _require(0.0 < velocity_scale <= 1.0, "velocity scale must lie in (0, 1]")
-    scale = np.ones(dimension, dtype=np.float64)
+    scale: np.ndarray = np.ones(dimension, dtype=np.float64)
     scale[: 3 * graph_rank] = position_scale
     scale[3 * graph_rank : 6 * graph_rank] = velocity_scale
     return scale[:, None] * covariance * scale[None]
@@ -354,7 +354,7 @@ def select_propagated_state_update(
     )
 
     zero_weights = np.zeros(response.shape[3], dtype=np.float64)
-    zero_position = np.zeros((len(full_basis), 3), dtype=np.float64)
+    zero_position: np.ndarray = np.zeros((len(full_basis), 3), dtype=np.float64)
     diagnostics: dict[str, Any] = {
         "selection_uses_forecast_frames": False,
         "fit_frame_count": cfg.fit_frame_count,
@@ -621,7 +621,8 @@ def write_propagated_state_correction(
     target.parent.mkdir(parents=True, exist_ok=True)
     manifest_path = target.with_suffix(".json")
     arrays_path = target.with_suffix(".npz")
-    np.savez_compressed(arrays_path, **correction._arrays())
+    array_payload: dict[str, Any] = correction._arrays()
+    np.savez_compressed(arrays_path, **array_payload)
     manifest = {
         **correction._scalars(),
         "artifact_id": correction.artifact_id,
