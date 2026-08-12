@@ -66,9 +66,7 @@ def test_distribution_links_use_canonical_organization_repository() -> None:
         assert "github.com/FlorianPfaff/Prob4D" not in text
         assert "github.com/FlorianPfaff/Causal4D" not in text
 
-    migration = (ROOT / "docs" / "causal4d_migration.md").read_text(
-        encoding="utf-8"
-    )
+    migration = (ROOT / "docs" / "causal4d_migration.md").read_text(encoding="utf-8")
     assert "https://github.com/IPS-Stuttgart/Causal4D" in migration
 
 
