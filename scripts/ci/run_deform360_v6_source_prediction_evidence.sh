@@ -429,6 +429,10 @@ if [[ -f "${receipt}" && ! -L "${receipt}" ]]; then
   export CUDA_HOST_CC_RESOLVED CUDA_HOST_CXX_RESOLVED
   export CUDA_HOST_CC_SHA256 CUDA_HOST_CXX_SHA256
   export CUDA_HOST_COMPILER_PROBE_PASSED
+  export NINJA_BUILD_TOOL_REPAIR_ID NINJA_BUILD_TOOL_REPAIR_PATH
+  export NINJA_BUILD_TOOL_REPAIR_SHA256 NINJA_DISTRIBUTION_VERSION
+  export NINJA_EXECUTABLE_PATH NINJA_EXECUTABLE_SHA256
+  export NINJA_EXECUTABLE_VERSION NINJA_PYTORCH_PROBE_PASSED
   export STAGE_SELECTOR_ACTIVATION_MARKER="${activation_marker}"
   receipt_python="${BPT_PYTHON}"
   "${receipt_python}" - <<'PY'
@@ -560,6 +564,32 @@ receipt["runtime_cuda_host_compiler_repair"] = {
     "repair_file_sha256": os.environ["CUDA_HOST_COMPILER_REPAIR_SHA256"],
     "repair_id": os.environ["CUDA_HOST_COMPILER_REPAIR_ID"],
     "repair_path": os.environ["CUDA_HOST_COMPILER_REPAIR_PATH"],
+}
+receipt["runtime_ninja_build_tool_repair"] = {
+    "activated": True,
+    "registered_build_tool": {
+        "distribution": "ninja",
+        "executable_sha256": (
+            "696f9628a79d9ce50314cf9556d7cd1a1d1ec52b8fd52828f6f9db1719565b67"
+        ),
+        "executable_version": "1.13.0.git.kitware.jobserver-pipe-1",
+        "version": "1.13.0",
+        "wheel_sha256": (
+            "fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293bafcc7b7f8e6517dfa"
+        ),
+    },
+    "observed_build_tool": {
+        "executable_path": os.environ["NINJA_EXECUTABLE_PATH"],
+        "executable_sha256": os.environ["NINJA_EXECUTABLE_SHA256"],
+        "executable_version": os.environ["NINJA_EXECUTABLE_VERSION"],
+        "pytorch_probe_passed": (
+            os.environ["NINJA_PYTORCH_PROBE_PASSED"] == "true"
+        ),
+        "version": os.environ["NINJA_DISTRIBUTION_VERSION"],
+    },
+    "repair_file_sha256": os.environ["NINJA_BUILD_TOOL_REPAIR_SHA256"],
+    "repair_id": os.environ["NINJA_BUILD_TOOL_REPAIR_ID"],
+    "repair_path": os.environ["NINJA_BUILD_TOOL_REPAIR_PATH"],
 }
 receipt["runtime_dependency_scope_repair"] = {
     "activated": True,
