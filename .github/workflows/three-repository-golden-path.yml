@@ -269,6 +269,16 @@ jobs:
                   ).encode("utf-8")
               ).hexdigest()
 
+          def canonical_line_id(value):
+              serialized = json.dumps(
+                  value,
+                  sort_keys=True,
+                  separators=(",", ":"),
+                  ensure_ascii=False,
+                  allow_nan=False,
+              )
+              return hashlib.sha256((serialized + "\n").encode("utf-8")).hexdigest()
+
           def require_digest(value, name):
               if (
                   type(value) is not str
@@ -277,6 +287,167 @@ jobs:
               ):
                   raise SystemExit(f"{name} is not a lowercase SHA-256 digest")
               return value
+
+          def require_exact_fields(value, expected, name):
+              if type(value) is not dict:
+                  raise SystemExit(f"{name} must be a JSON object")
+              fields = set(value)
+              if fields != expected:
+                  raise SystemExit(
+                      f"{name} fields changed: "
+                      f"missing={sorted(expected - fields)}, "
+                      f"extra={sorted(fields - expected)}"
+                  )
+              return value
+
+          def require_exact_string(value, name):
+              if type(value) is not str or not value or value != value.strip():
+                  raise SystemExit(f"{name} must be a nonempty exact string")
+              return value
+
+          def require_exact_integer(value, expected, name):
+              if type(value) is not int or value != expected:
+                  raise SystemExit(f"{name} must equal {expected}")
+              return value
+
+          def validate_exports(value, name):
+              if type(value) is not list:
+                  raise SystemExit(f"{name} must be a JSON array")
+              if any(type(item) is not str or not item for item in value):
+                  raise SystemExit(f"{name} must contain nonempty exact strings")
+              if value != sorted(value) or len(value) != len(set(value)):
+                  raise SystemExit(f"{name} must be sorted and unique")
+              if any(
+                  item.startswith("_") and item != "__version__"
+                  for item in value
+              ):
+                  raise SystemExit(f"{name} contains a private export")
+
+          def validate_public_api_manifest(record):
+              require_exact_fields(
+                  record,
+                  {
+                      "schema",
+                      "schema_version",
+                      "package",
+                      "surfaces",
+                      "claim_boundary",
+                      "manifest_id",
+                  },
+                  "Prob4D public-API manifest",
+              )
+              if record["schema"] != "prob4d.public-api-manifest":
+                  raise SystemExit("unsupported Prob4D public-API manifest schema")
+              require_exact_integer(
+                  record["schema_version"],
+                  1,
+                  "Prob4D public-API manifest schema version",
+              )
+              expected_boundary = (
+                  "This manifest records installed Python compatibility surfaces "
+                  "and their exact export inventories. It is interoperability "
+                  "evidence only; it does not establish provider accuracy, "
+                  "uncertainty calibration, physical-query improvement, Causal4D "
+                  "intervention benefit, deployment safety, or state of the art."
+              )
+              if record["claim_boundary"] != expected_boundary:
+                  raise SystemExit(
+                      "Prob4D public-API manifest claim boundary changed"
+                  )
+
+              package = require_exact_fields(
+                  record["package"],
+                  {"name", "version", "project_id"},
+                  "Prob4D public-API package",
+              )
+              if package["name"] != "prob4d":
+                  raise SystemExit("Prob4D public-API package name changed")
+              require_exact_string(
+                  package["version"],
+                  "Prob4D public-API package version",
+              )
+              if package["project_id"] != "github-repository-id:1295794737":
+                  raise SystemExit("Prob4D public-API project identity changed")
+
+              surfaces = require_exact_fields(
+                  record["surfaces"],
+                  {"compatibility_root", "api_v1", "api_v2"},
+                  "Prob4D public-API surfaces",
+              )
+              root_surface = require_exact_fields(
+                  surfaces["compatibility_root"],
+                  {"module", "surface_version", "loading", "exports"},
+                  "Prob4D compatibility root",
+              )
+              if root_surface["module"] != "prob4d":
+                  raise SystemExit("Prob4D compatibility-root module changed")
+              require_exact_integer(
+                  root_surface["surface_version"],
+                  1,
+                  "Prob4D compatibility-root surface version",
+              )
+              if root_surface["loading"] != "lazy-compatibility-shim-v1":
+                  raise SystemExit("Prob4D compatibility-root loading mode changed")
+              validate_exports(
+                  root_surface["exports"],
+                  "Prob4D compatibility-root exports",
+              )
+
+              api_v1 = require_exact_fields(
+                  surfaces["api_v1"],
+                  {"module", "api_version", "provider_api_version", "exports"},
+                  "Prob4D API v1",
+              )
+              if api_v1["module"] != "prob4d.api.v1":
+                  raise SystemExit("Prob4D API-v1 module changed")
+              require_exact_integer(api_v1["api_version"], 1, "Prob4D API-v1 version")
+              require_exact_integer(
+                  api_v1["provider_api_version"],
+                  1,
+                  "Prob4D API-v1 provider version",
+              )
+              validate_exports(api_v1["exports"], "Prob4D API-v1 exports")
+
+              api_v2 = require_exact_fields(
+                  surfaces["api_v2"],
+                  {
+                      "module",
+                      "api_version",
+                      "provider_api_version",
+                      "provider_factor_api_version",
+                      "exports",
+                  },
+                  "Prob4D API v2",
+              )
+              if api_v2["module"] != "prob4d.api.v2":
+                  raise SystemExit("Prob4D API-v2 module changed")
+              require_exact_integer(api_v2["api_version"], 2, "Prob4D API-v2 version")
+              require_exact_integer(
+                  api_v2["provider_api_version"],
+                  2,
+                  "Prob4D API-v2 provider version",
+              )
+              require_exact_integer(
+                  api_v2["provider_factor_api_version"],
+                  2,
+                  "Prob4D API-v2 provider-factor version",
+              )
+              validate_exports(api_v2["exports"], "Prob4D API-v2 exports")
+
+              expected_id = require_digest(
+                  record["manifest_id"],
+                  "Prob4D public-API manifest ID",
+              )
+              unsigned = {
+                  key: value
+                  for key, value in record.items()
+                  if key != "manifest_id"
+              }
+              if expected_id != canonical_line_id(unsigned):
+                  raise SystemExit(
+                      "Prob4D public-API manifest ID does not match its payload"
+                  )
+              return expected_id
 
           def validate_content_id(record, id_field, name):
               expected = require_digest(record.get(id_field), name)
@@ -329,6 +500,7 @@ jobs:
               "lineage-bound-physical-posterior.npz",
               "lineage-bound-twin-belief.npz",
               "profile-bound.npz",
+              "public-api-manifest.json",
               "rejected-selection.json",
               "run-manifest-v2.json",
           }
@@ -346,11 +518,15 @@ jobs:
           accepted = load_json(root / "accepted-selection.json")
           rejected = load_json(root / "rejected-selection.json")
           bundle = load_json(root / "golden-path-bundle.json")
+          public_api_manifest = load_json(root / "public-api-manifest.json")
 
           manifest_id = validate_content_id(
               manifest,
               "manifest_id",
               "run manifest ID",
+          )
+          public_api_manifest_id = validate_public_api_manifest(
+              public_api_manifest
           )
           evidence_fingerprint = require_digest(
               manifest.get("evidence_fingerprint"),
@@ -472,6 +648,9 @@ jobs:
               )
               summary.write(f"- Run manifest: `{manifest_id}`\n")
               summary.write(
+                  f"- Prob4D public API manifest: `{public_api_manifest_id}`\n"
+              )
+              summary.write(
                   "- Evidence admission: `promotable` "
                   "(typed validation completed inside the isolated "
                   "installed-wheel test)\n\n"
@@ -487,6 +666,7 @@ jobs:
             "${EVIDENCE_ROOT}/accepted-selection.json" \
             "${EVIDENCE_ROOT}/rejected-selection.json" \
             "${EVIDENCE_ROOT}/golden-path-bundle.json" \
+            "${EVIDENCE_ROOT}/public-api-manifest.json" \
             "${EVIDENCE_ROOT}/run-manifest-v2.json"
 
       - name: Upload the content-addressed golden-path evidence
