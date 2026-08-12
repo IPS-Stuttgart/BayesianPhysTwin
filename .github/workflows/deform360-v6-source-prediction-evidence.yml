@@ -17,6 +17,7 @@ on:
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
       - "tests/test_deform360_v6_processing_runtime_repair.py"
       - "tests/test_deform360_v6_runtime_dependency_scope_repair.py"
+      - "tests/test_deform360_v6_source_plan_root_environment.py"
   push:
     branches: [main]
     paths:
@@ -33,6 +34,7 @@ on:
       - "tests/test_deform360_v6_runtime_bootstrap_receipt.py"
       - "tests/test_deform360_v6_processing_runtime_repair.py"
       - "tests/test_deform360_v6_runtime_dependency_scope_repair.py"
+      - "tests/test_deform360_v6_source_plan_root_environment.py"
 
 permissions:
   contents: read
@@ -118,6 +120,7 @@ jobs:
             tests/test_deform360_v6_processing_runtime_repair.py
             tests/test_deform360_v6_runtime_dependency_scope_repair.py
             tests/test_deform360_v6_runtime_bootstrap_receipt.py
+            tests/test_deform360_v6_source_plan_root_environment.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
@@ -129,6 +132,7 @@ jobs:
             tests/test_deform360_v6_processing_runtime_repair.py \
             tests/test_deform360_v6_runtime_dependency_scope_repair.py \
             tests/test_deform360_v6_runtime_bootstrap_receipt.py \
+            tests/test_deform360_v6_source_plan_root_environment.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
@@ -395,6 +399,8 @@ jobs:
           OFFICIAL_PHYSTWIN_REPO: ${{ github.workspace }}/_official_phystwin
           SAM2_REPO: ${{ github.workspace }}/_sam2
           EVIDENCE_ROOT: ${{ runner.temp }}
+          RUN_ROOT: ${{ env.RESULTS_ROOT }}/bayesian-phystwin/deform360-v6-source-prediction/${{ env.AMENDMENT_ID }}/${{ github.sha }}
+          PREDICTION_ROOT: ${{ env.RESULTS_ROOT }}/bayesian-phystwin/deform360-v6-source-prediction/${{ env.AMENDMENT_ID }}/${{ github.sha }}/prediction-panel
         run: |
           set -euo pipefail
           set +e
