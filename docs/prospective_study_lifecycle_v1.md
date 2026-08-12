@@ -24,6 +24,19 @@ The protocol receives a canonical SHA-256 content identity. Group identifiers
 are sorted and unique, and any overlap between source and protected target
 rosters fails closed.
 
+## Protocol authority
+
+A valid immutable protocol does not by itself prove that it is the current
+protocol for a scientific claim. Long-running projects can retain several valid
+issues or paper plans after the governing design changes.
+
+`prospective_protocol_authority_v1` provides a separate content-addressed
+registry with exactly one authoritative protocol per claim, explicit
+supersession chains, historical classifications, and cycle/dangling-reference
+rejection. `lock_authoritative_prospective_study` binds the registry, authority
+entry, and claim identities into the initial lifecycle state before execution.
+See [prospective protocol authority registry v1](prospective_protocol_authority_v1.md).
+
 ## Lifecycle
 
 A normal positive or negative target study follows this sequence:
