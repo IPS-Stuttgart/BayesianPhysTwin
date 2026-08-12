@@ -13,6 +13,7 @@ on:
         default: "60"
 
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 
@@ -71,6 +72,18 @@ jobs:
             --inventory-json branch-lifecycle-audit/workflows.json \
             --inventory-markdown branch-lifecycle-audit/workflows.md
 
+      - name: Compare the Actions registry with checked-in workflows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/maintenance/workflow_registry_audit.py \
+            --repository-root . \
+            --repository "${GITHUB_REPOSITORY}" \
+            --output-json branch-lifecycle-audit/workflow-registry.json \
+            --output-markdown branch-lifecycle-audit/workflow-registry.md
+
       - name: Publish the operator summary
         if: always()
         shell: bash
@@ -86,6 +99,14 @@ jobs:
             cat branch-lifecycle-audit/workflows.md >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "Workflow lifecycle audit did not publish a report." \
+              >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ -f branch-lifecycle-audit/workflow-registry.md ]]; then
+            printf '\n---\n\n' >> "${GITHUB_STEP_SUMMARY}"
+            cat branch-lifecycle-audit/workflow-registry.md \
+              >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Workflow registry audit did not publish a report." \
               >> "${GITHUB_STEP_SUMMARY}"
           fi
 
