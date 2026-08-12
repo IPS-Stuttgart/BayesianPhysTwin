@@ -171,11 +171,15 @@ def _weighted_rmse(
     selected = np.asarray(available, dtype=bool)
     weights = np.asarray(reliability, dtype=np.float64)
     finite = np.all(np.isfinite(residual), axis=2)
-    node_weight = np.where(selected & finite, weights, 0.0)
+    usable = selected & finite
+    node_weight = np.where(usable, weights, 0.0)
     denominator = 3.0 * float(np.sum(node_weight))
     _require(denominator > 0.0, "validation interval has no observation support")
+    safe_residual = np.where(usable[:, :, None], residual, 0.0)
     return float(
-        np.sqrt(np.sum(node_weight[:, :, None] * np.square(residual)) / denominator)
+        np.sqrt(
+            np.sum(node_weight[:, :, None] * np.square(safe_residual)) / denominator
+        )
     )
 
 
