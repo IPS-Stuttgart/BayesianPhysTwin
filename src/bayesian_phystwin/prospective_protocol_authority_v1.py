@@ -271,9 +271,7 @@ class ProspectiveProtocolAuthorityRegistryV1:
         self._validate_registry()
 
     def _validate_registry(self) -> None:
-        by_key: dict[
-            tuple[str, str], ProspectiveProtocolAuthorityEntryV1
-        ] = {}
+        by_key: dict[tuple[str, str], ProspectiveProtocolAuthorityEntryV1] = {}
         protocol_names: set[tuple[str, str]] = set()
         claims: dict[str, list[ProspectiveProtocolAuthorityEntryV1]] = {}
         for entry in self.entries:
@@ -316,17 +314,13 @@ class ProspectiveProtocolAuthorityRegistryV1:
         *,
         claim_id: str,
         start: ProspectiveProtocolAuthorityEntryV1,
-        by_key: Mapping[
-            tuple[str, str], ProspectiveProtocolAuthorityEntryV1
-        ],
+        by_key: Mapping[tuple[str, str], ProspectiveProtocolAuthorityEntryV1],
     ) -> str:
         seen: set[str] = set()
         current = start
         while current.authority_status == "superseded":
             if current.protocol_content_id in seen:
-                raise ValueError(
-                    f"claim {claim_id!r} contains a supersession cycle"
-                )
+                raise ValueError(f"claim {claim_id!r} contains a supersession cycle")
             seen.add(current.protocol_content_id)
             successor_id = current.superseded_by_protocol_content_id
             if successor_id is None:
@@ -503,14 +497,13 @@ def lock_authoritative_prospective_study(
         claim_id=claim_id,
         protocol=protocol,
     )
-    supplied = {} if metadata is None else dict(
-        _mapping(metadata, name="study lock metadata")
+    supplied = (
+        {} if metadata is None else dict(_mapping(metadata, name="study lock metadata"))
     )
     collisions = sorted(_AUTHORITY_METADATA_FIELDS & set(supplied))
     if collisions:
         raise ValueError(
-            "study lock metadata cannot override authority bindings: "
-            f"{collisions}"
+            f"study lock metadata cannot override authority bindings: {collisions}"
         )
     supplied.update(
         {
