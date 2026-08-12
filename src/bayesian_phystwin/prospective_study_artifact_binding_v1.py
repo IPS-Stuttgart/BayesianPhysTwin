@@ -226,8 +226,7 @@ class ProspectiveStudyArtifactBindingV1:
             raise ValueError("unexpected prospective-study artifact-binding schema")
         if (
             type(value["schema_version"]) is not int
-            or value["schema_version"]
-            != PROSPECTIVE_STUDY_ARTIFACT_BINDING_VERSION
+            or value["schema_version"] != PROSPECTIVE_STUDY_ARTIFACT_BINDING_VERSION
         ):
             raise ValueError("unexpected artifact-binding schema version")
         result = cls(
