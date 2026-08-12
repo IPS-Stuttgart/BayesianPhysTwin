@@ -7,7 +7,9 @@ include api/root-public-api-v0.4.json
 include api/root-export-migration-v1.json
 include api/versioned-public-api-v1.json
 include api/inference-public-api-v1.json
+include api/public-module-lifecycle-v1.json
 include docs/public_api_policy.md
+include docs/public_module_lifecycle_v1.md
 include docs/inference_v1.md
 include docs/component_admission_v1.md
 include docs/releasing.md
@@ -22,6 +24,7 @@ include docs/physical_query_v1.md
 include examples/guarded_inference_v1.py
 include tools/quality/check_public_api.py
 include tools/quality/check_root_export_migration.py
+include tools/quality/check_public_module_lifecycle.py
 include tools/release/build_release_evidence.py
 include docs/deform360_calibration_observability_batch.md
 include docs/deform360_calibration_factor_materializer.md
