@@ -51,14 +51,18 @@ def _run_case(*, accepted: bool) -> dict[str, object]:
     )
     return {
         "case": label,
+        "guard_accepted": accepted,
+        "selection_reason": result.selection.reason,
         "selected_candidate": result.selected_candidate,
         "exact_fallback": result.exact_fallback,
         "selected_belief_id": result.selected_belief.artifact_id,
+        "selected_belief_is_candidate_object": result.selected_belief is candidate,
+        "selected_belief_is_baseline_object": result.selected_belief is baseline,
         "result_id": result.artifact_id,
     }
 
 
-if __name__ == "__main__":
+def main() -> None:
     print(
         json.dumps(
             {
@@ -68,3 +72,7 @@ if __name__ == "__main__":
             sort_keys=True,
         )
     )
+
+
+if __name__ == "__main__":
+    main()

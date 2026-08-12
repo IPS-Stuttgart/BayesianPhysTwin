@@ -190,21 +190,68 @@ bpt benchmark synthetic \
 
 ## Python API
 
-Loading an observation belief revalidates its schema, content address,
-covariance, identities, and exclusive causal cutoff:
+New integrations should use the two versioned public namespaces rather than the
+historical package-root compatibility shim.
+
+### Portable artifacts
+
+`bayesian_phystwin.v1` owns portable observations, physical queries, run
+manifests, evidence decisions, and claim bundles. Loading an observation belief
+revalidates its schema, content address, covariance, identities, and exclusive
+causal cutoff:
 
 ```python
-from bayesian_phystwin import load_observation_belief
+from bayesian_phystwin.v1 import load_observation_belief
 
 belief = load_observation_belief("observation_belief.npz")
 print(belief.summary())
 ```
 
-The portable contract is documented in
+### Guarded inference
+
+`bayesian_phystwin.inference.v1` owns the supported candidate-to-guard-to-route
+path for new inference consumers:
+
+```python
+from bayesian_phystwin.inference.v1 import (
+    finalize_guarded_update,
+    infer_prob4d_candidate,
+)
+
+candidate_inference = infer_prob4d_candidate(
+    observation,
+    linearization,
+    physical_prediction_xyz_m=physical_prediction,
+    config=frozen_solver_config,
+)
+result = finalize_guarded_update(
+    candidate_inference,
+    baseline_belief,
+    candidate_belief,
+    guard_decision,
+    metadata={"protocol_id": protocol_id},
+)
+
+if result.exact_fallback:
+    assert result.selected_belief is baseline_belief
+else:
+    assert result.selected_belief is candidate_belief
+```
+
+Candidate inference does not choose a guard or establish covariance calibration.
+Point-mean and covariance-only candidates should remain separate registered
+complete beliefs. Run the deterministic accepted/fallback demonstration with:
+
+```bash
+python examples/guarded_inference_v1.py
+```
+
+The portable artifact contract is documented in
 [ObservationBeliefV1](docs/observation_belief_contract.md). The
-[gauge-aware adapter](docs/gauge_aware_observation_update.md) and
+[Guarded inference API v1](docs/inference_v1.md),
+[gauge-aware adapter](docs/gauge_aware_observation_update.md), and
 [prior-aware guarded update](docs/prior_aware_guarded_update.md) describe the
-state-update and exact-fallback boundaries.
+candidate, state-update, and exact-fallback boundaries.
 
 ## Documentation map
 
@@ -213,6 +260,8 @@ state-update and exact-fallback boundaries.
   conformal-width, and independent-validation wording for software releases.
 - [Command-line interface](docs/command_line.md): grouped routes, lifecycle
   registry, and contribution policy.
+- [Guarded inference API v1](docs/inference_v1.md): canonical versioned
+  candidate inference, caller-owned guard, and exact complete-belief fallback.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, experimental command families, and placement policy.
 - [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
