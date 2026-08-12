@@ -88,12 +88,8 @@ def _covariance_decision(
         exact_fallback_id=policy.exact_fallback_policy_id,
         shared_covariance_relevance=0.5,
         relevance_threshold=0.1,
-        selected_covariance_treatment=(
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
-        principal_covariance_treatment=(
-            COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE
-        ),
+        selected_covariance_treatment=(COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
+        principal_covariance_treatment=(COMPLETE_EXPLICIT_JOINT_GAUGE_COVARIANCE),
         principal_treatment_matches=True,
         value_certificate_certified=authorized,
         authorized=authorized,
@@ -114,9 +110,7 @@ def _beliefs(
             policy.deterministic_reference_arm_id
         ),
         "mean_candidate_belief": _Belief(policy.mean_candidate_arm_id),
-        "covariance_candidate_belief": _Belief(
-            policy.covariance_candidate_arm_id
-        ),
+        "covariance_candidate_belief": _Belief(policy.covariance_candidate_arm_id),
         "full_belief": _Belief(policy.full_belief_arm_id),
     }
 
@@ -247,9 +241,7 @@ def test_policy_and_decision_roundtrip_and_atomic_publication(tmp_path) -> None:
         reference_supported=True,
     )
 
-    restored_policy = BeliefComponentAdmissionPolicyV1.from_mapping(
-        policy.to_record()
-    )
+    restored_policy = BeliefComponentAdmissionPolicyV1.from_mapping(policy.to_record())
     restored_decision = BeliefComponentAdmissionDecisionV1.from_mapping(
         decision.to_record()
     )
