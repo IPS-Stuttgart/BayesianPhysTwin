@@ -188,12 +188,15 @@ def stage_integration_tests(
         "total_test_files": len(pytest_paths),
     }
     path_text = "".join(f"{path}\n" for path in pytest_paths)
-    inventory_text = json.dumps(
-        inventory,
-        sort_keys=True,
-        indent=2,
-        allow_nan=False,
-    ) + "\n"
+    inventory_text = (
+        json.dumps(
+            inventory,
+            sort_keys=True,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
     _write_new_text(path_list, path_text)
     _write_new_text(inventory_path, inventory_text)
     return inventory
