@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Any, Generic, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 
@@ -58,7 +58,7 @@ def _content_id(payload: Mapping[str, object]) -> str:
 
 def _belief_id(value: object, *, name: str) -> str:
     try:
-        artifact_id = getattr(value, "artifact_id")
+        artifact_id = cast(ArtifactBelief, value).artifact_id
     except AttributeError as error:
         raise TypeError(f"{name} must expose artifact_id") from error
     return lowercase_sha256(artifact_id, name=f"{name}.artifact_id")
