@@ -79,8 +79,7 @@ def test_archived_source_plan_and_evidence_blocks_use_bound_roots(
     assert 'os.environ["RUN_ROOT"]' in source_plan_block
     exec(compile(source_plan_block, str(ARCHIVED_RUNNER), "exec"), {})
     assert (
-        json.loads((run_root / "source-plan.json").read_text(encoding="utf-8"))
-        == plan
+        json.loads((run_root / "source-plan.json").read_text(encoding="utf-8")) == plan
     )
 
     prediction_root = run_root / "prediction-panel"
