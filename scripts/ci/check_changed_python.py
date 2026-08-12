@@ -266,9 +266,7 @@ class _ScientificBoundaryVisitor(ast.NodeVisitor):
             prefix, _, name = qualified.rpartition(".")
             numpy_inverse_call = name == "inv" and (
                 prefix in self.numpy_linalg_aliases
-                or any(
-                    prefix == f"{alias}.linalg" for alias in self.numpy_aliases
-                )
+                or any(prefix == f"{alias}.linalg" for alias in self.numpy_aliases)
             )
         if numpy_inverse_call:
             self._record(
