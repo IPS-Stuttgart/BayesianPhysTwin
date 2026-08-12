@@ -153,6 +153,16 @@ def test_spd_system_direct_construction_preserves_prior_symmetry_diagnostic() ->
             "cholesky does not match",
         ),
         (
+            {"cholesky": np.eye(1)},
+            SPDValidationError,
+            "cholesky shape differs",
+        ),
+        (
+            {"condition_number": 0.5},
+            SPDConditionError,
+            "condition_number must be at least one",
+        ),
+        (
             {"condition_number": 2.0},
             SPDConditionError,
             "condition_number does not describe",
@@ -218,6 +228,8 @@ def test_spd_system_rejects_invalid_logdet_and_residual_inputs() -> None:
 
     with pytest.raises(SPDSolveError, match="numeric"):
         system.solve(object())
+    with pytest.raises(SPDSolveError, match="leading dimension"):
+        system.solve(np.ones(3))
     with pytest.raises(SPDSolveError, match="numeric"):
         system.relative_residual(np.ones(2), object())
     with pytest.raises(SPDSolveError, match="shape differs"):
@@ -311,6 +323,31 @@ def test_spd_system_enforces_solve_whitening_and_inverse_residuals(
 class _ArrayConversionFailure:
     def __array__(self, dtype: object = None) -> np.ndarray:
         raise ValueError("deliberate array conversion failure")
+
+
+@pytest.mark.parametrize(
+    ("cholesky", "message"),
+    [
+        (_ArrayConversionFailure(), "numeric float64 matrix"),
+        ([['1.0', '0.0'], ['0.0', '1.0']], "numeric float64 matrix"),
+        (np.ones(2), "must be a matrix"),
+        (np.asarray([[1.0, np.nan], [0.0, 1.0]]), "must be finite"),
+    ],
+)
+def test_spd_system_direct_construction_rejects_malformed_cholesky(
+    cholesky: object,
+    message: str,
+) -> None:
+    with pytest.raises(SPDValidationError, match=message):
+        SPDSystem(
+            name="malformed Cholesky fixture",
+            matrix=np.eye(2),
+            cholesky=cholesky,  # type: ignore[arg-type]
+            condition_number=1.0,
+            symmetry_error=0.0,
+            symmetry_tolerance=1e-12,
+            solve_residual_tolerance=1e-10,
+        )
 
 
 def test_spd_system_rejects_lossy_and_failed_numeric_coercion() -> None:
