@@ -41,7 +41,7 @@ Owner labels and source roots must be unique. Output paths must be outside every
 source repository. Symbolic links and non-regular entries are rejected rather
 than followed or silently omitted.
 
-## Collision-safe staging
+## Collision-safe staging and execution
 
 Tests are staged below an owner namespace:
 
@@ -52,9 +52,14 @@ run/
   causal4d/
 ```
 
-The runner passes a deterministic list of explicit test paths to Pytest and uses
-`--import-mode=importlib`. Two repositories may therefore use the same test file
-name without one module shadowing the other.
+The runner consumes a deterministic list of explicit test paths. Every test file
+runs in a separate Python-isolated Pytest process with `--import-mode=prepend`.
+Pytest therefore adds only that staged test file's directory for repository-local
+helper imports; no source checkout is exposed on `sys.path`. Running one explicit
+file per process also allows different repositories to use the same test-module
+name without import collisions. Because the parent of an owner directory is not
+added, an owner label such as `bayesian_phystwin` cannot shadow the installed
+package of the same name.
 
 The path list and the versioned JSON inventory are created with exclusive
 no-clobber semantics. The inventory records every owner, the sorted relative
@@ -71,7 +76,7 @@ The focused workflow checks:
 - empty-suite, symbolic-link, occupied-output, and unsafe-output rejection;
 - exclusive manifest publication;
 - exact golden-path source bindings;
-- collision-safe explicit Pytest invocation; and
+- collision-safe explicit per-file Pytest invocation; and
 - shell syntax for the installed-wheel runner.
 
 The full installed-wheel golden path remains authoritative for compatibility of
