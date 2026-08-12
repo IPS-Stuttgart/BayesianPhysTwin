@@ -161,9 +161,7 @@ def test_manifest_rejects_contract_substitution(tmp_path: Path) -> None:
 
 def test_migration_manifest_rejects_duplicate_symbols(tmp_path: Path) -> None:
     payload = json.loads(MIGRATION_MANIFEST_PATH.read_text(encoding="utf-8"))
-    payload["owners"][0]["symbols"].append(
-        payload["owners"][0]["symbols"][0]
-    )
+    payload["owners"][0]["symbols"].append(payload["owners"][0]["symbols"][0])
     path = tmp_path / "migration.json"
     path.write_text(json.dumps(payload), encoding="utf-8")
 
