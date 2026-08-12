@@ -10,12 +10,14 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOL_PATH = ROOT / "tools/quality/check_public_api.py"
+MIGRATION_TOOL_PATH = ROOT / "tools/quality/check_root_export_migration.py"
 MANIFEST_PATH = ROOT / "api/root-public-api-v0.4.json"
 VERSIONED_MANIFEST_PATH = ROOT / "api/versioned-public-api-v1.json"
+MIGRATION_MANIFEST_PATH = ROOT / "api/root-export-migration-v1.json"
 
 
-def _tool() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("check_public_api", TOOL_PATH)
+def _tool(path: Path, *, name: str) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -23,7 +25,11 @@ def _tool() -> ModuleType:
     return module
 
 
-tool = _tool()
+tool = _tool(TOOL_PATH, name="check_public_api")
+migration_tool = _tool(
+    MIGRATION_TOOL_PATH,
+    name="check_root_export_migration",
+)
 
 
 def _fake_module(symbols: list[str], *, name: str = "bayesian_phystwin") -> ModuleType:
@@ -58,6 +64,24 @@ def test_versioned_integration_api_matches_snapshot() -> None:
         "compatibility_line": "0.4",
         "policy": "exact-versioned-integration-export-surface",
         "symbol_count": 38,
+        "status": "matched",
+    }
+
+
+def test_root_export_migration_matches_runtime_owners() -> None:
+    report = migration_tool.validate_root_export_migration(
+        MIGRATION_MANIFEST_PATH,
+        root_manifest_path=MANIFEST_PATH,
+    )
+
+    assert report == {
+        "source_package": "bayesian_phystwin",
+        "source_compatibility_line": "0.4",
+        "target_compatibility_line": "0.5",
+        "policy": "lazy-legacy-root-to-owning-module",
+        "owner_count": 30,
+        "symbol_count": 184,
+        "resolved": True,
         "status": "matched",
     }
 
@@ -135,6 +159,51 @@ def test_manifest_rejects_contract_substitution(tmp_path: Path) -> None:
         tool.load_manifest(path)
 
 
+def test_migration_manifest_rejects_duplicate_symbols(tmp_path: Path) -> None:
+    payload = json.loads(MIGRATION_MANIFEST_PATH.read_text(encoding="utf-8"))
+    payload["owners"][0]["symbols"].append(
+        payload["owners"][0]["symbols"][0]
+    )
+    path = tmp_path / "migration.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(
+        migration_tool.RootExportMigrationError,
+        match="duplicate export symbol",
+    ):
+        migration_tool.load_migration_manifest(path)
+
+
+def test_migration_manifest_rejects_runtime_owner_drift(tmp_path: Path) -> None:
+    payload = json.loads(MIGRATION_MANIFEST_PATH.read_text(encoding="utf-8"))
+    payload["owners"][0]["module"] = "bayesian_phystwin.wrong_owner"
+    path = tmp_path / "migration.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(
+        migration_tool.RootExportMigrationError,
+        match="runtime migration mapping differs",
+    ):
+        migration_tool.validate_root_export_migration(
+            path,
+            root_manifest_path=MANIFEST_PATH,
+            resolve=False,
+        )
+
+
+def test_migration_manifest_rejects_unknown_fields(tmp_path: Path) -> None:
+    payload = json.loads(MIGRATION_MANIFEST_PATH.read_text(encoding="utf-8"))
+    payload["unexpected"] = True
+    path = tmp_path / "migration.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(
+        migration_tool.RootExportMigrationError,
+        match="fields changed",
+    ):
+        migration_tool.load_migration_manifest(path)
+
+
 def test_manifest_compatibility_line_tracks_project_version() -> None:
     manifest = tool.load_manifest(MANIFEST_PATH)
 
@@ -163,3 +232,10 @@ def test_project_version_parser_is_python_3_10_compatible(tmp_path: Path) -> Non
     )
     with pytest.raises(tool.PublicApiError, match="one literal version"):
         tool.project_version(pyproject)
+
+
+def test_migration_contract_is_part_of_the_source_distribution() -> None:
+    manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8").splitlines()
+
+    assert "include api/root-export-migration-v1.json" in manifest
+    assert "include tools/quality/check_root_export_migration.py" in manifest
