@@ -271,14 +271,29 @@ def select_propagated_state_update(
     trajectory byte-for-byte.
     """
 
-    cfg = selection_config or PropagatedStateSelectionConfig()
+    if selection_config is None:
+        cfg = PropagatedStateSelectionConfig()
+    elif isinstance(selection_config, PropagatedStateSelectionConfig):
+        cfg = selection_config
+    else:
+        raise TypeError("selection_config must be a PropagatedStateSelectionConfig")
+    if belief_config is not None and not isinstance(
+        belief_config, PropagatedStateBeliefConfig
+    ):
+        raise TypeError("belief_config must be a PropagatedStateBeliefConfig")
+
     innovation = np.asarray(innovation_m, dtype=np.float64)
-    mask = np.asarray(available, dtype=bool)
+    raw_mask = np.asarray(available)
     response = np.asarray(state_response_at_step_m, dtype=np.float64)
     observed_basis = np.asarray(observed_graph_basis, dtype=np.float64)
     full_basis = np.asarray(full_graph_basis, dtype=np.float64)
     _require(innovation.ndim == 3 and innovation.shape[2] == 3, "innovation changed")
-    _require(mask.shape == innovation.shape[:2], "availability changed")
+    _require(raw_mask.shape == innovation.shape[:2], "availability changed")
+    _require(
+        raw_mask.dtype == np.dtype(np.bool_),
+        "availability must contain only booleans",
+    )
+    mask = np.asarray(raw_mask, dtype=np.bool_)
     _require(response.shape[:3] == innovation.shape, "state response changed")
     _require(observed_basis.shape[0] == innovation.shape[1], "basis coverage changed")
     _require(
@@ -294,6 +309,11 @@ def select_propagated_state_update(
     else:
         reliability = np.asarray(prior_reliability, dtype=np.float64)
         _require(reliability.shape == mask.shape, "reliability shape changed")
+        _require(
+            np.all(np.isfinite(reliability))
+            and np.all((reliability >= 0.0) & (reliability <= 1.0)),
+            "prior reliability must lie in [0, 1]",
+        )
     variance = None
     if observation_variance_m2 is not None:
         variance = np.asarray(observation_variance_m2, dtype=np.float64)
