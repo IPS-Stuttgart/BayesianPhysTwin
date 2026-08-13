@@ -127,6 +127,24 @@ def test_part_descriptors_change_embeddings_when_enabled() -> None:
     assert not torch.allclose(output["parts"][0], output["parts"][1])
 
 
+def test_zero_initialized_part_adapter_receives_gradient() -> None:
+    training = _training_namespace()
+    model_type = install_part_aware_simple_model(
+        training,
+        part_feature_dim=3,
+        part_feature_scale=1.0,
+    )
+    model = model_type(d_mat=2)
+
+    output = model(**_inputs([[1, 0, 0], [0, 1, 0]]))
+    (output["parts"][0, 0] - output["parts"][1, 0]).backward()
+
+    weight_gradient = model.part_feature_encoder[-1].weight.grad
+    assert weight_gradient is not None
+    assert torch.isfinite(weight_gradient).all()
+    assert torch.count_nonzero(weight_gradient) > 0
+
+
 def test_frozen_motion_backbone_is_cached_per_video_tensor() -> None:
     training = _training_namespace()
     model_type = install_part_aware_simple_model(training, part_feature_dim=3)
@@ -206,16 +224,16 @@ def test_part_forward_case_preserves_distributed_wrapper() -> None:
     wrapper = Wrapper(model)
     batch = {
         "z_geo": [torch.zeros(1)],
-        "material_dist": [
-            torch.tensor([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
-        ],
+        "material_dist": [torch.tensor([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]])],
         "edge_part_idx": [torch.tensor([0])],
         "part_features": [torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])],
         "geo_stats": [torch.zeros(1)],
         "ctrl_rest_length": [torch.empty(0)],
     }
 
-    output = training.forward_case(wrapper, batch, 0, torch.device("cpu"), torch.zeros(1))
+    output = training.forward_case(
+        wrapper, batch, 0, torch.device("cpu"), torch.zeros(1)
+    )
 
     assert wrapper.calls == 1
     assert output["parts"].shape == (2, 2)
