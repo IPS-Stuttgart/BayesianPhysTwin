@@ -2,7 +2,7 @@
 # workflow-owner: IPS-Stuttgart maintainers
 # workflow-issue: #645
 # workflow-expiry: 2026-09-30
-name: Deform360 v6.1 public-source scorer gsplat attestation repair
+name: Deform360 v6.1 public-source scorer endpoint gsplat base repair
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deform360-v61-source-scorer-gsplat-attestation-v1
+  group: deform360-v61-source-scorer-endpoint-gsplat-base-v1
   cancel-in-progress: false
 
 env:
@@ -47,6 +47,14 @@ env:
   CUDNN_FAILED_SOURCE_REVISION: 9a18d3a4dd4aa95c69308f184c77958ddc4eec8d
   ATTESTATION_FAILED_WORKFLOW_RUN_ID: "31663298362"
   ATTESTATION_FAILED_SOURCE_REVISION: a671b1bafdcfb6e32ba370a2a8d4a157144651c2
+  ENDPOINT_FAILED_WORKFLOW_RUN_ID: "31666009357"
+  ENDPOINT_FAILED_SOURCE_REVISION: cde6f9da37c2697e50897f2b9ce8360c744325bc
+  ENDPOINT_FAILED_RECEIPT_ID: 69967a3441da85fc1a862d8206b6cb750d167dbabfc0c921c47adbc87f738f61
+  ENDPOINT_FAILED_RECEIPT_FILE_SHA256: a0b6b2ff1a7ce5dd4732a2896b0f6f4cff593a5f29e43b9bd5a6cc160135c027
+  ENDPOINT_GSPLAT_BASE_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_endpoint_gsplat_base_runtime.json
+  ENDPOINT_GSPLAT_BASE_REPAIR_ID: 1b3136b89be19d5dc587ce3a27e8a2e8ac621248a202662d1fe9e2ba086da5b5
+  ENDPOINT_GSPLAT_BASE_REPAIR_FILE_SHA256: cf0ed8720d734580885f54a9bc52fb366a45967b0ef45e9af5b35cd0a0edbd7d
+  ENDPOINT_PROCESSOR_SHA256: bfac71d11c8226397b65ee261f1758e18f5e87bfe1bf868f5f3924141883fdb5
   EXECUTION_LOCK_PATH: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
   EXECUTION_LOCK_ID: 76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189
   EXECUTION_LOCK_FILE_SHA256: 429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a
@@ -140,6 +148,12 @@ jobs:
             "${GSPLAT_ATTESTATION_REPAIR_FILE_SHA256}"
           test "$(jq -r '.repair_id' "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = \
             "${GSPLAT_ATTESTATION_REPAIR_ID}"
+          test "$(sha256sum "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}" | awk '{print $1}')" = \
+            "${ENDPOINT_GSPLAT_BASE_REPAIR_FILE_SHA256}"
+          test "$(jq -r '.repair_id' "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}")" = \
+            "${ENDPOINT_GSPLAT_BASE_REPAIR_ID}"
+          test "$(sha256sum scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py | awk '{print $1}')" = \
+            "${ENDPOINT_PROCESSOR_SHA256}"
           python scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
             validate-amendment \
             --scoring-amendment "${SOURCE_SCORING_AMENDMENT_PATH}" >/dev/null
@@ -263,6 +277,24 @@ jobs:
             test "$(jq -r '.failed_execution_evidence.source_revision' \
               "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = \
               "${ATTESTATION_FAILED_SOURCE_REVISION}"
+            test "$(sha256sum "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}" | awk '{print $1}')" = \
+              "${ENDPOINT_GSPLAT_BASE_REPAIR_FILE_SHA256}"
+            test "$(jq -r '.repair_id' "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}")" = \
+              "${ENDPOINT_GSPLAT_BASE_REPAIR_ID}"
+            test "$(jq -r '.failed_execution_evidence.workflow_run_id' \
+              "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}")" = \
+              "${ENDPOINT_FAILED_WORKFLOW_RUN_ID}"
+            test "$(jq -r '.failed_execution_evidence.source_revision' \
+              "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}")" = \
+              "${ENDPOINT_FAILED_SOURCE_REVISION}"
+            test "$(jq -r '.failed_execution_evidence.compact_receipt_id' \
+              "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}")" = \
+              "${ENDPOINT_FAILED_RECEIPT_ID}"
+            test "$(jq -r '.failed_execution_evidence.compact_receipt_file_sha256' \
+              "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}")" = \
+              "${ENDPOINT_FAILED_RECEIPT_FILE_SHA256}"
+            test "$(sha256sum scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py | awk '{print $1}')" = \
+              "${ENDPOINT_PROCESSOR_SHA256}"
             runtime="${RUNNER_TEMP}/deform360-v61-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             wheel="${RUNNER_TEMP}/gsplat-1.4.0+pt24cu121-cp310-cp310-linux_x86_64.whl"
             cudnn_wheel="${RUNNER_TEMP}/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl"
@@ -411,7 +443,7 @@ jobs:
             "${UPSTREAM_SOURCE_PLAN_FILE_SHA256}"
           test "$(jq -r '.plan_id' "${candidate_compact}/upstream-source-plan.json")" = \
             "${UPSTREAM_SOURCE_PLAN_ID}"
-          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer-gsplat-attestation/${GSPLAT_ATTESTATION_REPAIR_ID}"
+          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer-endpoint-gsplat-base/${ENDPOINT_GSPLAT_BASE_REPAIR_ID}"
           endpoint="${output}-endpoint"
           test ! -e "${output}"
           test ! -e "${output}.claim"
@@ -471,20 +503,23 @@ jobs:
             "${compact}/cudnn-supply-runtime-repair.json"
           install -m 600 "${GSPLAT_ATTESTATION_REPAIR_PATH}" \
             "${compact}/gsplat-attestation-runtime-repair.json"
+          install -m 600 "${ENDPOINT_GSPLAT_BASE_REPAIR_PATH}" \
+            "${compact}/endpoint-gsplat-base-runtime-repair.json"
           cat > "${compact}/source-runtime-repair-attestation.json" <<EOF
           {
             "cudnn_distribution_version": "${CUDNN_DISTRIBUTION_VERSION}",
             "cudnn_wheel_byte_count": ${CUDNN_WHEEL_BYTE_COUNT},
             "cudnn_wheel_sha256": "${CUDNN_WHEEL_SHA256}",
             "cudnn_supply_repair_id": "${CUDNN_SUPPLY_REPAIR_ID}",
+            "endpoint_gsplat_base_repair_id": "${ENDPOINT_GSPLAT_BASE_REPAIR_ID}",
             "gsplat_attestation_repair_id": "${GSPLAT_ATTESTATION_REPAIR_ID}",
             "gsplat_distribution_version": "${GSPLAT_DISTRIBUTION_VERSION}",
             "gsplat_extension_sha256": "${GSPLAT_EXTENSION_SHA256}",
             "gsplat_wheel_byte_count": ${GSPLAT_WHEEL_BYTE_COUNT},
             "gsplat_wheel_sha256": "${GSPLAT_WHEEL_SHA256}",
-            "predecessor_source_revision": "${ATTESTATION_FAILED_SOURCE_REVISION}",
-            "predecessor_workflow_run_id": ${ATTESTATION_FAILED_WORKFLOW_RUN_ID},
-            "runtime_attestation_changed_only": true
+            "predecessor_source_revision": "${ENDPOINT_FAILED_SOURCE_REVISION}",
+            "predecessor_workflow_run_id": ${ENDPOINT_FAILED_WORKFLOW_RUN_ID},
+            "runtime_and_endpoint_dependency_attestation_changed_only": true
           }
           EOF
           log="${RUNNER_TEMP}/deform360-v61-source-scorer.log"
@@ -591,7 +626,7 @@ jobs:
         if: always() && steps.retain.outputs.owns_run == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: deform360-v61-source-scorer-gsplat-attestation-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform360-v61-source-scorer-endpoint-gsplat-base-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.RUN_ROOT }}/compact
           if-no-files-found: error
           retention-days: 180
