@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-backend-real-replay-smoke-v1",
+  "locked_at_utc": "2026-08-13T19:06:04Z",
+  "status": "development-only replay smoke on an already-open PhysTwin-22 case",
+  "claim_boundary": "This run may establish that an object-disjoint MatPhys spring field can be replayed through the official PhysTwin Warp simulator and consumed by the guarded Bayesian-PhysTwin backend. The case and its future were opened previously, so this run cannot establish independent transfer, calibration, or state of the art.",
+  "implementation": {
+    "repository": "IPS-Stuttgart/BayesianPhysTwin",
+    "minimum_revision": "cb3eb97a9cbfa17d66b53e7e3ae9b5dfc36e2de4",
+    "required_feature": "paired factual-action and frame-zero-held-controller physical archive export",
+    "frozen_candidate_parent_revision": "97bd0ac7e6ae153b30874e06b1c79cda5a27a63f"
+  },
+  "backends": {
+    "incumbent": "released PhysTwin checkpoint replayed by official PhysTwin Warp",
+    "candidate": "object-disjoint MatPhys spring_Y at strength 1.0 replayed by the same official PhysTwin Warp simulator",
+    "identity_control": "the incumbent replay exported through the same paired-action archive path",
+    "official_phystwin": {
+      "repository": "Jianghanxiao/PhysTwin",
+      "revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390"
+    },
+    "matphys": {
+      "repository": "Yrainy0615/MatPhys",
+      "revision": "c16b858dfb79bf21024ead24b45a710600de7b4f"
+    }
+  },
+  "case": {
+    "case_id": "double_lift_zebra",
+    "target_object_id": "zebra",
+    "why_selected": "The previously frozen object-disjoint family selector chose the nonzero alpha_1000 arm using only the declared prefix validation interval, and all required public artifacts are durably available.",
+    "matphys_training_object_ids": [
+      "cloth",
+      "cloth_1",
+      "cloth_3",
+      "cloth_4",
+      "dinosor",
+      "rope",
+      "rope_1",
+      "rope_4",
+      "sloth",
+      "weird_package"
+    ],
+    "target_object_excluded_from_matphys_training": true,
+    "target_future_observations_used_for_matphys_proposal": false,
+    "known_future_robot_action_used": true
+  },
+  "causal_intervals": {
+    "proposal_evidence_end_frame_exclusive": 30,
+    "validation_frame_range_half_open": [
+      30,
+      40
+    ],
+    "future_frame_start": 40,
+    "future_outcomes_may_be_opened_for_this_smoke": false
+  },
+  "inputs": {
+    "final_data.pkl": "fa81083526ab4d41a9b153a8d39b51a7baa9f5726184c52ff34e4902e26b9dc8",
+    "optimal_params.pkl": "9dc8496dfa23820210103f9547b9dfa17285b148cfc3a8aaa1bf73918db9ed5e",
+    "released_checkpoint.pth": "061d580a0ed7faf1e07b6fb067bff182beb92aedacc460ea01ea624783e9cf2f",
+    "candidate_spring_y.npy": "70500ecc8d08139a25e70db120610f9cbcdf68458d58bb009339f7f70cdca0cc",
+    "matphys_loo_spring_fields.json": "0f6b6e6f8992b9272f61af1041f0070793996ee3e5ef70a4901f590239838efb",
+    "matphys_source_training_audit.json": "92b7c4f894b527cd1ed1e15394da799dfac90f94ca4b0d02b2a0f364c92f3fe5",
+    "matphys_source_export_manifest.json": "3e3054574ec12ef31c34dab999fc441496dddda12e3887abebd515ab75952062",
+    "matphys_protocol.json": "7b55899eb9b48362d70f696012a07eac2cc24666ca23c3c7de52044f64f78cc0",
+    "family_selection.json": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890",
+    "hard_cues.npz": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85"
+  },
+  "execution": {
+    "proposal_strength": 1.0,
+    "refit_variant": "hard",
+    "epochs": 0,
+    "fit_end_frame": 30,
+    "train_end_frame": 40,
+    "selection_only": true,
+    "freeze_collision": true,
+    "dt": 0.00005,
+    "num_substeps": 667,
+    "deterministic_spring_forces": true,
+    "export_physical_action_pair": true,
+    "zero_action_semantics": "hold every controller point at its frame-zero position while preserving gravity, support, collision, and the selected material field",
+    "observation_semantics": "hard-valid tracks only; cues do not depend on the PhysTwin state residual",
+    "future_metric_input": null
+  },
+  "gate": {
+    "metrics": [
+      "validation_chamfer_distance_m",
+      "validation_track_error_m"
+    ],
+    "minimum_relative_score_improvement": 0.01,
+    "maximum_per_metric_regression": 0.0,
+    "maximum_identity_replay_coordinate_rmse_m": 0.001,
+    "fallback": "byte-exact incumbent six-array archive",
+    "score": "equal mean of candidate-to-incumbent validation CD and track ratios"
+  },
+  "required_outputs": [
+    "incumbent physical_action_pair.npz",
+    "candidate physical_action_pair.npz",
+    "zero-strength identity replay physical_action_pair.npz",
+    "content-addressed MatPhys proposal manifest",
+    "prefix-only gate manifest",
+    "guarded selected backend bundle",
+    "input and output SHA-256 manifest",
+    "runtime and revision provenance"
+  ],
+  "advancement_rule": "A successful replay only justifies freezing a genuinely fresh public-object source protocol. A larger claim additionally requires object-disjoint transfer, calibration, late-horizon, and worst-case-regression gates on that fresh panel.",
+  "forbidden": [
+    "opening or scoring frames at or after frame 40 during this replay smoke",
+    "using future observations to alter the MatPhys spring field or proposal strength",
+    "changing the frozen Deform360 v6.1 candidate or scorer",
+    "using held-v8 runtime, target, query, score, barrier, or outcome artifacts",
+    "calling this already-open development case an independent confirmation or state-of-the-art result"
+  ]
+}
