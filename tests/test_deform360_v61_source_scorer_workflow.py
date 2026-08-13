@@ -7,8 +7,13 @@ from pathlib import Path
 from bayesian_phystwin._portable_contracts import content_id
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / (".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml")
+WORKFLOW = ROOT / (
+    ".github/workflows/deform360-v61-source-scorer-gsplat-attestation.yml"
+)
 RETIRED_WORKFLOW = ROOT / ".github/workflows/deform360-v61-source-scorer.yml"
+RETIRED_CUDNN_WORKFLOW = ROOT / (
+    ".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml"
+)
 RUNNER = ROOT / "scripts/ci/run_deform360_v61_source_scorer.sh"
 DOCUMENT = ROOT / "docs/deform360_fresh_object_session_source_scoring_v6_1.md"
 AMENDMENT = ROOT / (
@@ -22,6 +27,10 @@ RUNTIME_REPAIR = ROOT / (
     "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json"
 )
+GSPLAT_ATTESTATION_REPAIR = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json"
+)
 
 
 def test_workflow_runs_one_protected_source_execution_without_confirmation() -> None:
@@ -29,6 +38,7 @@ def test_workflow_runs_one_protected_source_execution_without_confirmation() -> 
     runner = RUNNER.read_text(encoding="utf-8")
 
     assert not RETIRED_WORKFLOW.exists()
+    assert not RETIRED_CUDNN_WORKFLOW.exists()
     assert "# workflow-lifecycle: temporary" in workflow
     assert "# workflow-issue: #645" in workflow
     assert "pull_request:" not in workflow
@@ -40,7 +50,7 @@ def test_workflow_runs_one_protected_source_execution_without_confirmation() -> 
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in workflow
     assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in workflow
     assert "cancel-in-progress: false" in workflow
-    assert "deform360-v61-source-scorer-cudnn-supply-v1" in workflow
+    assert "deform360-v61-source-scorer-gsplat-attestation-v1" in workflow
     assert "os.O_EXCL" in runner
     assert 'test ! -e "${output}"' in workflow
     assert 'test ! -e "${output}.claim"' in workflow
@@ -102,6 +112,8 @@ def test_runtime_is_precompiled_hash_locked_and_never_jit_compiled() -> None:
         "165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f" in workflow
     )
     assert 'version("nvidia-cudnn-cu12") != "9.1.0.70"' in workflow
+    assert 'gsplat.__version__ != "1.4.0+pt24cu121"' in workflow
+    assert 'gsplat.__version__ != "1.4.0"' not in workflow
     assert workflow.index('pip install --no-deps "${cudnn_wheel}"') < workflow.index(
         'pip install -r "${CUDA_RUNTIME_LOCK_PATH}"'
     )
@@ -141,6 +153,7 @@ def test_source_scoring_artifacts_are_packaged_and_documented() -> None:
         "docs/deform360_fresh_object_session_source_scoring_v6_1.md",
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json",
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json",
+        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json",
         "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt",
         "scripts/ci/run_deform360_v61_source_scorer.sh",
         "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py",
@@ -181,6 +194,57 @@ def test_cudnn_supply_repair_is_content_addressed_and_science_preserving() -> No
     assert scope["supply_route_changed"] is True
     for field, changed in scope.items():
         if field != "supply_route_changed":
+            assert changed is False, field
+
+    scientific = repair["scientific_identity"]
+    expected = {
+        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
+        "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
+        "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
+        "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py": "endpoint_processor_sha256",
+        "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
+        "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
+    }
+    for relative, field in expected.items():
+        observed = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+        assert observed == scientific[field], relative
+
+
+def test_gsplat_attestation_repair_is_content_addressed_and_science_preserving() -> (
+    None
+):
+    repair = json.loads(GSPLAT_ATTESTATION_REPAIR.read_text(encoding="utf-8"))
+    declared = repair.pop("repair_id")
+
+    assert declared == content_id(repair)
+    assert declared == (
+        "2a4eb1eab33653fcef140861361d59c5e17f44ac3c81a766594aa76f45346bc6"
+    )
+    failure = repair["failed_execution_evidence"]
+    assert failure["workflow_run_id"] == 31663298362
+    assert failure["source_revision"] == ("a671b1bafdcfb6e32ba370a2a8d4a157144651c2")
+    assert failure["source_suffix_opened"] is False
+    assert failure["durable_run_claim_created"] is False
+    assert failure["artifact_count"] == 0
+    assert repair["correction"]["module_attestation"] == {
+        "corrected_expected_version": "1.4.0+pt24cu121",
+        "incorrect_expected_version": "1.4.0",
+        "probe": "gsplat.__version__",
+        "reason": (
+            "The checksum-pinned wheel's gsplat/version.py declares the local build "
+            "tag in __version__; the failed guard incorrectly compared that module "
+            "value with the untagged base release while simultaneously requiring the "
+            "tagged distribution version."
+        ),
+    }
+    assert repair["information_boundary"]["confirmation_payloads_opened"] is False
+    assert repair["information_boundary"]["target_outcomes_opened"] is False
+    assert repair["information_boundary"]["held_v8_artifacts_accessed"] is False
+
+    scope = repair["repair_scope"]
+    assert scope["runtime_attestation_changed"] is True
+    for field, changed in scope.items():
+        if field != "runtime_attestation_changed":
             assert changed is False, field
 
     scientific = repair["scientific_identity"]
