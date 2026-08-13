@@ -1,3 +1,4 @@
+import argparse
 import json
 from pathlib import Path
 
@@ -5,6 +6,7 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin._portable_contracts import write_atomic_json
+from bayesian_phystwin.cli import matphys_backend as matphys_backend_cli
 from bayesian_phystwin.cli.matphys_backend import main as matphys_backend_main
 from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     PHYSICAL_ARRAY_NAMES,
@@ -212,6 +214,33 @@ def test_proposal_rejects_target_object_training_and_changed_source_bytes(
 
 
 @pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("training_object_ids", "source-object", "JSON array"),
+        ("target_evidence_end_frame_exclusive", -1, "nonnegative integer"),
+        ("proposal_strength", True, "finite number"),
+        ("proposal_strength", float("nan"), "finite number"),
+        ("proposal_strength", 0.0, "must be >"),
+        ("proposal_strength", 2.0, "must be <="),
+    ],
+)
+def test_proposal_rejects_malformed_contract_values(
+    tmp_path: Path, field: str, value: object, message: str
+) -> None:
+    proposal_path, _, _, _, _ = _manifests(tmp_path)
+    proposal = json.loads(proposal_path.read_text(encoding="utf-8"))
+    proposal[field] = value
+
+    with pytest.raises(ValueError, match=message):
+        validate_matphys_backend_proposal(proposal, verify_files=False)
+
+
+def test_proposal_requires_a_json_object() -> None:
+    with pytest.raises(ValueError, match="JSON object"):
+        validate_matphys_backend_proposal([], verify_files=False)
+
+
+@pytest.mark.parametrize(
     "spring_values",
     [
         np.ones((2, 2), dtype=np.float32),
@@ -260,6 +289,37 @@ def test_gate_rejects_overlap_and_future_opening(tmp_path: Path) -> None:
     gate["gate_id"] = content_id(identity)
     with pytest.raises(ValueError, match="after future outcomes opened"):
         validate_matphys_backend_gate(gate, proposal=proposal)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("validation_frame_range_half_open", [2], "exactly two"),
+        ("validation_frame_range_half_open", [2, True], "integer frame"),
+        ("validation_frame_range_half_open", [3, 2], "nonempty half-open"),
+        ("future_frame_start", 0, "positive integer"),
+    ],
+)
+def test_gate_rejects_malformed_frame_contracts(
+    tmp_path: Path, field: str, value: object, message: str
+) -> None:
+    proposal_path, gate_path, _, _, _ = _manifests(tmp_path)
+    proposal = validate_matphys_backend_proposal(
+        json.loads(proposal_path.read_text(encoding="utf-8")), verify_files=False
+    )
+    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    gate[field] = value
+
+    with pytest.raises(ValueError, match=message):
+        validate_matphys_backend_gate(gate, proposal=proposal)
+
+
+def test_cli_metric_loader_rejects_noncanonical_fields(tmp_path: Path) -> None:
+    metrics = tmp_path / "metrics.json"
+    metrics.write_text(json.dumps({"chamfer_distance_m": 0.01}), encoding="utf-8")
+
+    with pytest.raises(argparse.ArgumentTypeError, match="fields changed"):
+        matphys_backend_cli._metrics(str(metrics))
 
 
 def test_candidate_cannot_change_topology_support_contract(tmp_path: Path) -> None:
