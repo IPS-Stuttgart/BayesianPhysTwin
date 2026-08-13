@@ -432,9 +432,12 @@ def test_workflow_is_read_only_and_never_runs_on_pull_requests() -> None:
 
     assert set(workflow["on"]) == {"schedule", "workflow_dispatch"}
     assert workflow["permissions"] == {
+        "actions": "read",
         "contents": "read",
         "pull-requests": "read",
     }
+    assert "workflow_registry_audit.py" in text
+    assert "workflow-registry.json" in text
     assert "refs/heads/*:refs/remotes/origin/*" in text
     assert "refs/tags/*:refs/tags/*" in text
     assert "git push" not in text
