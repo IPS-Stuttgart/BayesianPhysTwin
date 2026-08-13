@@ -783,8 +783,14 @@ def _prepare_score_cells(
         )
         for local_index, frame in enumerate(expected_frames):
             depth = np.asarray(view.depth_m[local_index], dtype=np.float64)
+            raw_mask = np.asarray(view.object_mask[local_index])
+            _require(
+                raw_mask.dtype == np.dtype(np.bool_),
+                "reserved object mask must contain only booleans",
+            )
+            object_mask = np.asarray(raw_mask, dtype=np.bool_)
             valid = (
-                np.asarray(view.object_mask[local_index], dtype=bool)
+                object_mask
                 & np.isfinite(depth)
                 & (depth >= config.minimum_depth_m)
                 & (depth <= config.maximum_depth_m)
@@ -925,7 +931,9 @@ def score_deform360_v61_candidate_artifact(
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Score one sealed candidate on a common B0-defined query roster."""
 
-    cfg = config or Deform360V61SourceScoreConfig()
+    cfg = Deform360V61SourceScoreConfig() if config is None else config
+    if not isinstance(cfg, Deform360V61SourceScoreConfig):
+        raise TypeError("config must be a Deform360V61SourceScoreConfig")
     seal, candidate = load_deform360_v61_candidate_artifact(candidate_directory)
     object_id = _identifier(prediction.get("object_id"), name="object_id")
     episode_id_raw = prediction.get("episode_id")

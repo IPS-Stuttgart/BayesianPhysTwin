@@ -201,6 +201,36 @@ def test_challenger_motion_cannot_change_query_admission(tmp_path: Path) -> None
     )
 
 
+def test_score_rejects_non_boolean_masks_and_falsey_non_config(
+    tmp_path: Path,
+) -> None:
+    _, prediction = _publish_candidate(tmp_path / "candidate", d1_shift_m=0.0)
+    views = list(_partial_views())
+    object.__setattr__(
+        views[0],
+        "object_mask",
+        np.asarray(views[0].object_mask, dtype=np.float64),
+    )
+
+    with pytest.raises(ValueError, match="mask must contain only booleans"):
+        scorer.score_deform360_v61_candidate_artifact(
+            prediction=prediction,
+            candidate_directory=tmp_path / "candidate",
+            reserved_views=views,
+        )
+
+    with pytest.raises(
+        TypeError,
+        match="config must be a Deform360V61SourceScoreConfig",
+    ):
+        scorer.score_deform360_v61_candidate_artifact(
+            prediction=prediction,
+            candidate_directory=tmp_path / "candidate",
+            reserved_views=_partial_views(),
+            config=0,  # type: ignore[arg-type]
+        )
+
+
 def test_unavailable_public_tactile_variants_are_exact_b0_scores(
     tmp_path: Path,
 ) -> None:
