@@ -40,8 +40,7 @@ def _metrics(value: str) -> dict[str, float]:
         if set(raw) != {"chamfer_distance_m", "track_error_m"}:
             raise ValueError("metric record fields changed")
         if any(
-            isinstance(raw[name], bool)
-            or not isinstance(raw[name], (int, float))
+            isinstance(raw[name], bool) or not isinstance(raw[name], (int, float))
             for name in ("chamfer_distance_m", "track_error_m")
         ):
             raise ValueError("metric record values must be JSON numbers")
@@ -71,9 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     proposal.add_argument("--proposal-strength", type=float, required=True)
     proposal.add_argument("--checkpoint", type=Path, required=True)
     proposal.add_argument("--spring-field", type=Path, required=True)
-    proposal.add_argument(
-        "--source-artifacts", type=_source_artifacts, required=True
-    )
+    proposal.add_argument("--source-artifacts", type=_source_artifacts, required=True)
 
     gate = commands.add_parser(
         "gate", help="write a disjoint causal-prefix MatPhys selection gate"
@@ -118,9 +115,7 @@ def _proposal(args: argparse.Namespace) -> dict[str, object]:
         simulator_revision=args.simulator_revision,
         target_object_id=args.target_object_id,
         training_object_ids=tuple(sorted(args.training_object_id)),
-        target_evidence_end_frame_exclusive=(
-            args.target_evidence_end_frame_exclusive
-        ),
+        target_evidence_end_frame_exclusive=(args.target_evidence_end_frame_exclusive),
         proposal_strength=args.proposal_strength,
         checkpoint_path=args.checkpoint,
         spring_field_path=args.spring_field,

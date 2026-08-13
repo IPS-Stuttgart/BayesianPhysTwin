@@ -181,9 +181,12 @@ def test_metric_regression_forces_exact_fallback(tmp_path: Path) -> None:
     )
 
     assert artifact["candidate_accepted"] is False
-    assert artifact["selection"]["decisions"]["matphys_warp_proposal"][
-        "no_metric_regression"
-    ] is False
+    assert (
+        artifact["selection"]["decisions"]["matphys_warp_proposal"][
+            "no_metric_regression"
+        ]
+        is False
+    )
     assert (tmp_path / "output" / SELECTED_ARCHIVE_FILENAME).read_bytes() == (
         incumbent.read_bytes()
     )

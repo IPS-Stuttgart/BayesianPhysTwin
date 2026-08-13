@@ -40,13 +40,9 @@ from .phystwin_backbone_family_gate import (
     trajectory_coordinate_rmse,
 )
 
-MATPHYS_BACKEND_PROPOSAL_SCHEMA: Final = (
-    "bayesian-phystwin.matphys-backend-proposal"
-)
+MATPHYS_BACKEND_PROPOSAL_SCHEMA: Final = "bayesian-phystwin.matphys-backend-proposal"
 MATPHYS_BACKEND_GATE_SCHEMA: Final = "bayesian-phystwin.matphys-backend-gate"
-MATPHYS_BACKEND_ARTIFACT_SCHEMA: Final = (
-    "bayesian-phystwin.matphys-backend-artifact"
-)
+MATPHYS_BACKEND_ARTIFACT_SCHEMA: Final = "bayesian-phystwin.matphys-backend-artifact"
 MATPHYS_BACKEND_VERSION: Final = 1
 MATPHYS_BACKEND_KIND: Final = "matphys-spring-proposal-phystwin-warp-v1"
 MATPHYS_PARAMETERIZATION: Final = "spring_Y-log-space-overlay"
@@ -170,9 +166,7 @@ _SELECTION_FIELDS: Final = frozenset(
         "maximum_metric_regression",
     }
 )
-_METRIC_FIELDS: Final = frozenset(
-    {"chamfer_distance_m", "track_error_m"}
-)
+_METRIC_FIELDS: Final = frozenset({"chamfer_distance_m", "track_error_m"})
 _EVALUATED_ARCHIVE_FIELDS: Final = frozenset(
     {
         "incumbent",
@@ -303,9 +297,7 @@ def _normalize_spring_field_identity(
     verify_file: bool,
 ) -> dict[str, object]:
     record = _mapping(value, name="spring_field")
-    require_exact_fields(
-        record, expected=_SPRING_FIELD_FIELDS, name="spring_field"
-    )
+    require_exact_fields(record, expected=_SPRING_FIELD_FIELDS, name="spring_field")
     identity = _normalize_file_identity(
         {"path": record.get("path"), "sha256": record.get("sha256")},
         name="spring_field",
@@ -436,9 +428,7 @@ def validate_matphys_backend_proposal(
         simulator_repository == PHYSTWIN_SOURCE_REPOSITORY,
         "MatPhys rollout must use the official PhysTwin repository",
     )
-    target = nonempty_string(
-        proposal.get("target_object_id"), name="target_object_id"
-    )
+    target = nonempty_string(proposal.get("target_object_id"), name="target_object_id")
     training = _normalized_object_ids(proposal.get("training_object_ids"))
     _require(target not in training, "MatPhys training includes the target object")
     _require(
@@ -537,9 +527,7 @@ def build_matphys_backend_gate(
         "proposal_id": proposal_id,
         "target_object_id": target_object_id,
         "case_id": case_id,
-        "validation_frame_range_half_open": list(
-            validation_frame_range_half_open
-        ),
+        "validation_frame_range_half_open": list(validation_frame_range_half_open),
         "future_frame_start": future_frame_start,
         "future_outcomes_opened": False,
         "evaluated_archive_sha256s": {
@@ -609,8 +597,7 @@ def validate_matphys_backend_gate(
             "MatPhys gate names another target object",
         )
         _require(
-            validation_start
-            >= int(proposal["target_evidence_end_frame_exclusive"]),
+            validation_start >= int(proposal["target_evidence_end_frame_exclusive"]),
             "MatPhys validation overlaps proposal fitting evidence",
         )
     artifacts = source_artifact_mapping(
@@ -853,8 +840,7 @@ def materialize_matphys_backend(
     evaluated_digests = gate["evaluated_archive_sha256s"]
     _require(
         _file_sha256(incumbent_path) == evaluated_digests["incumbent"]
-        and _file_sha256(candidate_path)
-        == evaluated_digests["matphys_warp_proposal"]
+        and _file_sha256(candidate_path) == evaluated_digests["matphys_warp_proposal"]
         and _file_sha256(identity_path)
         == evaluated_digests["zero_strength_identity_replay"],
         "MatPhys gate was evaluated on different physical archive bytes",
@@ -863,14 +849,10 @@ def materialize_matphys_backend(
     identity_rmse_m = trajectory_coordinate_rmse(
         incumbent["prediction_m"], identity["prediction_m"]
     )
-    stability_eligible = bool(
-        identity_rmse_m <= gate["maximum_identity_replay_rmse_m"]
-    )
+    stability_eligible = bool(identity_rmse_m <= gate["maximum_identity_replay_rmse_m"])
     metrics = {
         "incumbent": cast(Mapping[str, object], gate["incumbent_metrics"]),
-        "matphys_warp_proposal": cast(
-            Mapping[str, object], gate["candidate_metrics"]
-        ),
+        "matphys_warp_proposal": cast(Mapping[str, object], gate["candidate_metrics"]),
     }
     selected, scores, decisions = choose_guarded_backbone_family(
         metrics,
@@ -905,10 +887,9 @@ def materialize_matphys_backend(
         _copy_no_overwrite(proposal_path, proposal_copy)
         _copy_no_overwrite(gate_path, gate_copy)
         candidate_accepted = selected == "matphys_warp_proposal"
-        exact_fallback = (
-            candidate_accepted is False
-            and _file_sha256(archive) == _file_sha256(incumbent_path)
-        )
+        exact_fallback = candidate_accepted is False and _file_sha256(
+            archive
+        ) == _file_sha256(incumbent_path)
         _require(
             candidate_accepted or exact_fallback,
             "rejected MatPhys proposal did not preserve exact incumbent bytes",
@@ -930,9 +911,7 @@ def materialize_matphys_backend(
                 "identity_replay_stable": stability_eligible,
                 "scores": scores,
                 "decisions": decisions,
-                "minimum_relative_improvement": gate[
-                    "minimum_relative_improvement"
-                ],
+                "minimum_relative_improvement": gate["minimum_relative_improvement"],
                 "maximum_metric_regression": gate["maximum_metric_regression"],
             },
             "inputs": {
@@ -1013,8 +992,7 @@ def validate_matphys_backend_artifact(output_dir: str | Path) -> dict[str, Any]:
     _require(
         provenance_root.is_dir()
         and not provenance_root.is_symlink()
-        and {entry.name for entry in provenance_root.iterdir()}
-        == _PROVENANCE_ROSTER,
+        and {entry.name for entry in provenance_root.iterdir()} == _PROVENANCE_ROSTER,
         "MatPhys backend provenance roster changed",
     )
     artifact_path = _ordinary_file(
@@ -1125,8 +1103,7 @@ def validate_matphys_backend_artifact(output_dir: str | Path) -> dict[str, Any]:
     )
     accepted = artifact.get("candidate_accepted")
     _require(
-        type(accepted) is bool
-        and accepted == (selected == "matphys_warp_proposal"),
+        type(accepted) is bool and accepted == (selected == "matphys_warp_proposal"),
         "MatPhys backend acceptance disagrees with selection",
     )
     selection = _mapping(artifact.get("selection"), name="selection")
@@ -1145,24 +1122,18 @@ def validate_matphys_backend_artifact(output_dir: str | Path) -> dict[str, Any]:
         == gate["maximum_metric_regression"],
         "MatPhys selection thresholds differ from the gate",
     )
-    identity_stable = bool(
-        identity_rmse_m <= gate["maximum_identity_replay_rmse_m"]
-    )
+    identity_stable = bool(identity_rmse_m <= gate["maximum_identity_replay_rmse_m"])
     expected_selected, expected_scores, expected_decisions = (
         choose_guarded_backbone_family(
             {
-                "incumbent": cast(
-                    Mapping[str, object], gate["incumbent_metrics"]
-                ),
+                "incumbent": cast(Mapping[str, object], gate["incumbent_metrics"]),
                 "matphys_warp_proposal": cast(
                     Mapping[str, object], gate["candidate_metrics"]
                 ),
             },
             cast(Mapping[str, object], gate["incumbent_metrics"]),
             fallback_family="incumbent",
-            minimum_relative_improvement=float(
-                gate["minimum_relative_improvement"]
-            ),
+            minimum_relative_improvement=float(gate["minimum_relative_improvement"]),
             maximum_metric_regression=float(gate["maximum_metric_regression"]),
             eligible_families={
                 "incumbent": True,
@@ -1178,9 +1149,7 @@ def validate_matphys_backend_artifact(output_dir: str | Path) -> dict[str, Any]:
         "MatPhys backend guard decision changed",
     )
     output_record = _mapping(artifact.get("output"), name="output")
-    require_exact_fields(
-        output_record, expected=_ARTIFACT_OUTPUT_FIELDS, name="output"
-    )
+    require_exact_fields(output_record, expected=_ARTIFACT_OUTPUT_FIELDS, name="output")
     _require(
         output_record.get("byte_exact_source_copy") is True,
         "MatPhys backend output is not a byte-exact source copy",
@@ -1195,9 +1164,7 @@ def validate_matphys_backend_artifact(output_dir: str | Path) -> dict[str, Any]:
     archive = _ordinary_file(
         output / archive_relative, name="selected MatPhys backend archive"
     )
-    archive_digest = sha256_digest(
-        output_record.get("sha256"), name="output.sha256"
-    )
+    archive_digest = sha256_digest(output_record.get("sha256"), name="output.sha256")
     source_digest = sha256_digest(
         output_record.get("source_archive_sha256"),
         name="output.source_archive_sha256",
@@ -1224,8 +1191,7 @@ def validate_matphys_backend_artifact(output_dir: str | Path) -> dict[str, Any]:
         checksums_path.is_file()
         and checksums_path.read_text(encoding="ascii")
         == "".join(
-            f"{digest}  {name}\n"
-            for name, digest in sorted(expected_checksums.items())
+            f"{digest}  {name}\n" for name, digest in sorted(expected_checksums.items())
         ),
         "MatPhys backend checksum manifest changed",
     )
