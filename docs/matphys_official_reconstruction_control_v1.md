@@ -1,5 +1,11 @@
 # MatPhys all-frame reconstruction control v1
 
+Status: superseded before execution. No training or outcome artifact exists.
+The runner loaded a graph-part proxy without installing the part-aware decoder,
+so its DINO descriptors would have been ignored. The corrected, explicitly new
+Bayesian-PhysTwin variant is locked in
+`matphys_part_aware_reconstruction_control_v1.md`.
+
 ## Purpose
 
 This control tests the current public MatPhys parameterization on its advertised

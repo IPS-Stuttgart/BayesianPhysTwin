@@ -2,7 +2,9 @@
   "schema_version": 1,
   "protocol_id": "matphys-official-reconstruction-control-v1",
   "locked_at_utc": "2026-08-14T00:00:00Z",
-  "status": "development-only all-frame reconstruction control on an already-open case",
+  "status": "superseded before execution; no training or outcome artifact exists",
+  "superseded_by": "matphys-part-aware-reconstruction-control-v1",
+  "supersession_reason": "A source-independent audit found that the runner loaded graph-part artifacts but did not install the part-aware decoder, so DINO descriptors were silently unused.",
   "claim_boundary": "This control deliberately fits future RGB, geometry, and track observations from the same case. It can test MatPhys reconstruction capacity and parameter export, but it cannot support a causal forecast, transfer result, calibration result, or state-of-the-art claim.",
   "question": "Can the current public MatPhys per-case architecture, when given its advertised all-frame transductive objective, fit an already-open PhysTwin case well enough to justify extracting its full spring and global-parameter proposal into the pinned PhysTwin runtime?",
   "case": {

@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
+import inspect
 import json
+import sys
+import textwrap
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -14,6 +19,7 @@ from bayesian_phystwin.matphys_reconstruction_control import (
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
     validate_matphys_reconstruction_audit,
+    validate_matphys_reconstruction_protocol,
     write_matphys_reconstruction_audit,
 )
 
@@ -54,6 +60,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
                         "name": "case_a",
                         "node_sem": _identity(node_sem),
                         "train_ready": _identity(train_ready),
+                        "semantic_dimension": 8,
                     }
                 ],
             }
@@ -74,6 +81,8 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
                     "random_seed": 42,
                     "fit_all_frames": True,
                     "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+                    "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
+                    "part_feature_scale": 1.0,
                 },
             }
         )
@@ -88,6 +97,9 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
         "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+        "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
+        "part_feature_scale": 1.0,
+        "semantic_dimension": 8,
     }
     audit = tmp_path / "audit.json"
     write_matphys_reconstruction_audit(
@@ -122,7 +134,7 @@ def test_reconstruction_audit_binds_deliberate_future_access(tmp_path: Path) -> 
 def test_reconstruction_checkpoint_cannot_pass_causal_validator(tmp_path: Path) -> None:
     audit, checkpoint, _ = _fixture(tmp_path)
 
-    with pytest.raises(ValueError, match="unsupported or legacy MatPhys causal-audit"):
+    with pytest.raises(ValueError, match="does not forbid future observations"):
         validate_causal_training_audit(audit, checkpoint)
 
 
@@ -164,3 +176,77 @@ def test_reconstruction_audit_rejects_predictive_relabeling(tmp_path: Path) -> N
 
     with pytest.raises(ValueError, match="predictive_use_authorized"):
         validate_matphys_reconstruction_audit(audit, checkpoint)
+
+
+def test_reconstruction_audit_rejects_unwired_part_decoder(tmp_path: Path) -> None:
+    audit, checkpoint, _ = _fixture(tmp_path)
+    payload = json.loads(audit.read_text())
+    payload["training_configuration"].pop("part_model_contract")
+    audit.write_text(json.dumps(payload))
+
+    with pytest.raises(ValueError, match="part_model_contract"):
+        validate_matphys_reconstruction_audit(audit, checkpoint)
+
+
+def test_reconstruction_protocol_rejects_unwired_part_decoder(tmp_path: Path) -> None:
+    audit, _, configuration = _fixture(tmp_path)
+    protocol = Path(json.loads(audit.read_text())["protocol"]["path"])
+    payload = json.loads(protocol.read_text())
+    payload["implementation"].pop("part_model_contract")
+    protocol.write_text(json.dumps(payload))
+
+    with pytest.raises(ValueError, match="training settings differ"):
+        validate_matphys_reconstruction_protocol(
+            protocol,
+            case_name="case_a",
+            source_commit="a" * 40,
+            training_configuration=configuration,
+        )
+
+
+def test_reconstruction_runner_installs_part_adapter(monkeypatch) -> None:
+    scripts = Path(__file__).parents[1] / "scripts" / "remote"
+    path = scripts / "run_matphys_reconstruction_control.py"
+    spec = importlib.util.spec_from_file_location(
+        "run_matphys_reconstruction_control_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(scripts))
+    try:
+        runner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runner)
+    finally:
+        sys.path.remove(str(scripts))
+    received = {}
+
+    def install(training, *, part_feature_dim, part_feature_scale):
+        received.update(
+            training=training,
+            part_feature_dim=part_feature_dim,
+            part_feature_scale=part_feature_scale,
+        )
+
+    monkeypatch.setattr(runner, "install_part_aware_simple_model", install)
+    training = SimpleNamespace()
+    dimension = runner._install_reconstruction_part_model(
+        training,
+        {"cases": [{"semantic_dimension": 1024}]},
+        part_feature_scale=1.0,
+    )
+
+    assert dimension == 1024
+    assert received == {
+        "training": training,
+        "part_feature_dim": 1024,
+        "part_feature_scale": 1.0,
+    }
+    import ast
+
+    for handler in (runner.train, runner.export):
+        tree = ast.parse(textwrap.dedent(inspect.getsource(handler)))
+        assert any(
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "_install_reconstruction_part_model"
+            for node in ast.walk(tree)
+        )

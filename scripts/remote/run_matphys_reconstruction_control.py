@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import os
 import pickle
@@ -40,12 +41,18 @@ from run_matphys_causal import (  # noqa: E402
 from bayesian_phystwin.matphys_causal_bridge import (  # noqa: E402
     sha256_file,
 )
+from bayesian_phystwin.matphys_part_model import (  # noqa: E402
+    PART_AWARE_MODEL_CONTRACT,
+    install_part_aware_simple_model,
+)
 from bayesian_phystwin.matphys_reconstruction_control import (  # noqa: E402
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
     MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY,
+    MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
     validate_matphys_reconstruction_audit,
+    validate_matphys_reconstruction_protocol,
     write_matphys_reconstruction_audit,
 )
 from bayesian_phystwin.phystwin_official_evaluation import (  # noqa: E402
@@ -85,9 +92,41 @@ def _frame_lengths(data_root: Path, case: str) -> dict[str, int]:
     return {case: int(split.get("frame_len", split["test"][1]))}
 
 
-def _training_configuration(args: argparse.Namespace) -> dict[str, object]:
+def _semantic_dimension(proxy: dict[str, object]) -> int:
+    records = proxy.get("cases")
+    if not isinstance(records, list) or len(records) != 1:
+        raise ValueError("part-aware reconstruction requires exactly one proxy case")
+    semantic_dimension = records[0].get("semantic_dimension")
+    if (
+        isinstance(semantic_dimension, bool)
+        or not isinstance(semantic_dimension, int)
+        or semantic_dimension < 1
+    ):
+        raise ValueError("part-aware reconstruction proxy omits semantic dimension")
+    return semantic_dimension
+
+
+def _install_reconstruction_part_model(
+    training: object,
+    proxy: dict[str, object],
+    *,
+    part_feature_scale: float,
+) -> int:
+    semantic_dimension = _semantic_dimension(proxy)
+    install_part_aware_simple_model(
+        training,
+        part_feature_dim=semantic_dimension,
+        part_feature_scale=part_feature_scale,
+    )
+    return semantic_dimension
+
+
+def _training_configuration(
+    args: argparse.Namespace,
+    proxy: dict[str, object],
+) -> dict[str, object]:
     return {
-        "architecture": "released-SimpleVideoMaterialPhysicsModel",
+        "architecture": "released-SimpleVideoMaterialPhysicsModel-plus-DINO-part-adapter",
         "case_count": 1,
         "epochs": int(args.epochs),
         "eval_every": int(args.eval_every),
@@ -98,6 +137,9 @@ def _training_configuration(args: argparse.Namespace) -> dict[str, object]:
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
         "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+        "part_model_contract": PART_AWARE_MODEL_CONTRACT,
+        "part_feature_scale": float(args.part_feature_scale),
+        "semantic_dimension": _semantic_dimension(proxy),
         "missing_public_artifact_boundary": (
             "MatPhys does not release the final per-case train_ready.pt bundle; "
             "the registered deterministic DINO graph-part proxy is used."
@@ -146,14 +188,29 @@ def train(args: argparse.Namespace) -> None:
         raise ValueError("learning rate must be finite and positive")
     if args.random_seed < 0:
         raise ValueError("random seed must be nonnegative")
+    if not np.isfinite(args.part_feature_scale) or args.part_feature_scale <= 0.0:
+        raise ValueError("part feature scale must be finite and positive")
 
     proxy = _prepare_proxy(_proxy_args(args), [case], frame_len_by_case)
     if proxy.get("contract") != "causal-dino-graph-voronoi-parts-v1":
         raise ValueError("reconstruction control requires the registered DINO proxy")
+    source_commit = _source_commit(matphys_root)
+    training_configuration = _training_configuration(args, proxy)
+    validate_matphys_reconstruction_protocol(
+        protocol_path,
+        case_name=case,
+        source_commit=source_commit,
+        training_configuration=training_configuration,
+    )
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
     import train_model_video_material_simple as training
 
+    _install_reconstruction_part_model(
+        training,
+        proxy,
+        part_feature_scale=args.part_feature_scale,
+    )
     training.load_video_frames = _causal_video_loader(frame_len_by_case)
     _install_source_supervised_objective_guard(training, data_root, frame_len_by_case)
     _install_finite_adamw(training)
@@ -238,7 +295,7 @@ def train(args: argparse.Namespace) -> None:
         output_dir / "reconstruction_training_audit.json",
         protocol_path=protocol_path,
         source_repository=MATPHYS_REPOSITORY,
-        source_commit=_source_commit(matphys_root),
+        source_commit=source_commit,
         data_root=data_root,
         case_name=case,
         split_path=data_root / case / "split.json",
@@ -246,9 +303,14 @@ def train(args: argparse.Namespace) -> None:
         accessed_frame_paths=accessed_paths[case],
         objective_end_frame_exclusive=objective_ends[case],
         proxy_summary_path=proxy["summary_path"],
-        training_configuration=_training_configuration(args),
+        training_configuration=training_configuration,
         runtime_access_log_paths=logs,
-        implementation_paths=(Path(__file__).resolve(),),
+        implementation_paths=(
+            Path(__file__).resolve(),
+            Path(inspect.getsourcefile(install_part_aware_simple_model)).resolve(),
+            Path(inspect.getsourcefile(write_matphys_reconstruction_audit)).resolve(),
+            Path(inspect.getsourcefile(write_matphys_reconstruction_audit)).resolve(),
+        ),
     )
     print(json.dumps(audit, indent=2, sort_keys=True))
 
@@ -319,6 +381,17 @@ def export(args: argparse.Namespace) -> None:
     import train_model_video_material_simple as training
     from material_param_dataset import MaterialDatasetConfig, MaterialParamDataset
 
+    proxy = json.loads(
+        (Path(args.proxy_root).resolve() / "proxy_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    part_feature_scale = float(audit["training_configuration"]["part_feature_scale"])
+    semantic_dimension = _install_reconstruction_part_model(
+        training,
+        proxy,
+        part_feature_scale=part_feature_scale,
+    )
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     model_args = _checkpoint_namespace(checkpoint["args"], args)
     device = torch.device(args.device)
@@ -333,6 +406,8 @@ def export(args: argparse.Namespace) -> None:
         logk_max=model_args.logk_max,
         logk_residual_scale=model_args.logk_residual_scale,
         logk_soft_clamp=model_args.logk_soft_clamp,
+        part_feature_dim=semantic_dimension,
+        part_feature_scale=part_feature_scale,
     ).to(device)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     model.eval()
@@ -403,11 +478,18 @@ def export(args: argparse.Namespace) -> None:
         json.dumps(evaluation, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     manifest = {
-        "schema_version": 1,
-        "contract": "matphys-all-frame-reconstruction-export-v1",
+        "schema_version": 2,
+        "contract": MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT,
         "claim_boundary": MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY,
         "future_observations_used": True,
         "predictive_use_authorized": False,
+        "method": {
+            "upstream_architecture": "released-SimpleVideoMaterialPhysicsModel",
+            "part_model_contract": PART_AWARE_MODEL_CONTRACT,
+            "part_feature_scale": part_feature_scale,
+            "semantic_dimension": semantic_dimension,
+            "published_matphys_method": False,
+        },
         "source_repository": MATPHYS_REPOSITORY,
         "source_commit": audit["source_commit"],
         "training_audit": {
@@ -476,6 +558,7 @@ def main() -> None:
     train_parser.add_argument("--dino-keyframes", type=int, default=4)
     train_parser.add_argument("--part-count", type=int, default=5)
     train_parser.add_argument("--semantic-edge-weight", type=float, default=4.0)
+    train_parser.add_argument("--part-feature-scale", type=float, default=1.0)
     train_parser.set_defaults(handler=train)
 
     export_parser = subparsers.add_parser("export", parents=[common])

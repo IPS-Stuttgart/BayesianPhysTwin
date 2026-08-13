@@ -3,18 +3,24 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from .matphys_causal_bridge import sha256_file
+from .matphys_part_model import PART_AWARE_MODEL_CONTRACT
 
-MATPHYS_RECONSTRUCTION_AUDIT_SCHEMA_VERSION = 1
+MATPHYS_RECONSTRUCTION_AUDIT_SCHEMA_VERSION = 2
 MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT = (
-    "matphys-per-case-all-frame-reconstruction-audit-v1"
+    "matphys-per-case-all-frame-part-aware-reconstruction-audit-v2"
 )
 MATPHYS_RECONSTRUCTION_VIDEO_SCOPE = "uniform-numeric-full-sequence-v1"
 MATPHYS_RECONSTRUCTION_TRAINING_SCOPE = "per-case-all-frame-transductive-v1"
 MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY = "fixed-terminal-epoch-v1"
+MATPHYS_RECONSTRUCTION_PROXY_CONTRACT = "causal-dino-graph-voronoi-parts-v1"
+MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT = (
+    "matphys-all-frame-part-aware-reconstruction-export-v2"
+)
 MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY = (
     "This checkpoint used future RGB, geometry, and track observations from the "
     "same case. It is an offline reconstruction-capacity control, not a causal "
@@ -42,6 +48,8 @@ def _validate_identity(value: object, *, label: str) -> Path:
 
 def _validate_proxy(proxy_path: Path, case_name: str) -> dict[str, object]:
     proxy = json.loads(proxy_path.read_text(encoding="utf-8"))
+    if proxy.get("contract") != MATPHYS_RECONSTRUCTION_PROXY_CONTRACT:
+        raise ValueError("reconstruction proxy uses an unsupported contract")
     records = proxy.get("cases")
     if not isinstance(records, list) or len(records) != 1:
         raise ValueError("reconstruction proxy must contain exactly one case")
@@ -49,6 +57,13 @@ def _validate_proxy(proxy_path: Path, case_name: str) -> dict[str, object]:
         raise ValueError("reconstruction proxy case changed")
     for key in ("node_sem", "train_ready"):
         _validate_identity(records[0].get(key), label=f"proxy {key}")
+    semantic_dimension = records[0].get("semantic_dimension")
+    if (
+        isinstance(semantic_dimension, bool)
+        or not isinstance(semantic_dimension, int)
+        or semantic_dimension < 1
+    ):
+        raise ValueError("reconstruction proxy omits its semantic dimension")
     return proxy
 
 
@@ -61,6 +76,8 @@ def _validate_training_configuration(value: object) -> dict[str, object]:
         "video_scope": MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
+        "proxy_contract": MATPHYS_RECONSTRUCTION_PROXY_CONTRACT,
+        "part_model_contract": PART_AWARE_MODEL_CONTRACT,
     }
     for key, expected in required.items():
         if configuration.get(key) != expected:
@@ -68,7 +85,60 @@ def _validate_training_configuration(value: object) -> dict[str, object]:
     epochs = configuration.get("epochs")
     if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
         raise ValueError("reconstruction epochs must be a positive integer")
+    semantic_dimension = configuration.get("semantic_dimension")
+    if (
+        isinstance(semantic_dimension, bool)
+        or not isinstance(semantic_dimension, int)
+        or semantic_dimension < 1
+    ):
+        raise ValueError("reconstruction semantic dimension must be positive")
+    part_feature_scale = configuration.get("part_feature_scale")
+    if (
+        isinstance(part_feature_scale, bool)
+        or not isinstance(part_feature_scale, (int, float))
+        or not math.isfinite(float(part_feature_scale))
+        or not 0.0 < float(part_feature_scale)
+    ):
+        raise ValueError("reconstruction part feature scale must be positive")
     return configuration
+
+
+def validate_matphys_reconstruction_protocol(
+    protocol_path: str | Path,
+    *,
+    case_name: str,
+    source_commit: str,
+    training_configuration: Mapping[str, object],
+) -> dict[str, object]:
+    """Fail before training when a reconstruction request differs from its lock."""
+
+    source = Path(protocol_path).resolve()
+    protocol = json.loads(source.read_text(encoding="utf-8"))
+    protocol_case = protocol.get("case")
+    protocol_implementation = protocol.get("implementation")
+    if not isinstance(protocol_case, Mapping) or not isinstance(
+        protocol_implementation, Mapping
+    ):
+        raise ValueError("reconstruction protocol omits case or implementation")
+    if protocol_case.get("case_id") != case_name:
+        raise ValueError("reconstruction case differs from protocol")
+    if protocol_implementation.get("matphys_revision") != source_commit:
+        raise ValueError("MatPhys revision differs from reconstruction protocol")
+    configuration = _validate_training_configuration(training_configuration)
+    protocol_training = {
+        "epochs": protocol_implementation.get("epochs"),
+        "eval_every": protocol_implementation.get("eval_every"),
+        "learning_rate": protocol_implementation.get("learning_rate"),
+        "random_seed": protocol_implementation.get("random_seed"),
+        "fit_all_frames": protocol_implementation.get("fit_all_frames"),
+        "proxy_contract": protocol_implementation.get("proxy_contract"),
+        "part_model_contract": protocol_implementation.get("part_model_contract"),
+        "part_feature_scale": protocol_implementation.get("part_feature_scale"),
+    }
+    audited_training = {key: configuration.get(key) for key in protocol_training}
+    if protocol_training != audited_training:
+        raise ValueError("reconstruction training settings differ from protocol")
+    return protocol
 
 
 def write_matphys_reconstruction_audit(
@@ -124,6 +194,12 @@ def write_matphys_reconstruction_audit(
         frame_files.append({"frame_id": frame_id, **_identity(frame_path)})
 
     configuration = _validate_training_configuration(training_configuration)
+    validate_matphys_reconstruction_protocol(
+        protocol_path,
+        case_name=case_name,
+        source_commit=source_commit,
+        training_configuration=configuration,
+    )
 
     proxy_path = Path(proxy_summary_path).resolve()
     _validate_proxy(proxy_path, case_name)
@@ -203,7 +279,6 @@ def validate_matphys_reconstruction_audit(
     if checkpoint != requested_checkpoint:
         raise ValueError("checkpoint is not bound by the reconstruction audit")
     protocol_path = _validate_identity(audit.get("protocol"), label="protocol")
-    protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
     proxy_path = _validate_identity(audit.get("proxy"), label="proxy")
     case = audit.get("case")
     if not isinstance(case, Mapping):
@@ -245,27 +320,12 @@ def validate_matphys_reconstruction_audit(
     configuration = _validate_training_configuration(
         audit.get("training_configuration")
     )
-    protocol_case = protocol.get("case")
-    protocol_implementation = protocol.get("implementation")
-    if not isinstance(protocol_case, Mapping) or not isinstance(
-        protocol_implementation, Mapping
-    ):
-        raise ValueError("reconstruction protocol omits case or implementation")
-    protocol_training = {
-        "epochs": protocol_implementation.get("epochs"),
-        "eval_every": protocol_implementation.get("eval_every"),
-        "learning_rate": protocol_implementation.get("learning_rate"),
-        "random_seed": protocol_implementation.get("random_seed"),
-        "fit_all_frames": protocol_implementation.get("fit_all_frames"),
-        "proxy_contract": protocol_implementation.get("proxy_contract"),
-    }
-    audited_training = {key: configuration.get(key) for key in protocol_training}
-    if protocol_training != audited_training:
-        raise ValueError("reconstruction training settings differ from protocol")
-    if protocol_case.get("case_id") != case_name:
-        raise ValueError("reconstruction case differs from protocol")
-    if protocol_implementation.get("matphys_revision") != audit.get("source_commit"):
-        raise ValueError("MatPhys revision differs from reconstruction protocol")
+    validate_matphys_reconstruction_protocol(
+        protocol_path,
+        case_name=case_name,
+        source_commit=str(audit.get("source_commit", "")),
+        training_configuration=configuration,
+    )
     return {
         **audit,
         "audit_path": str(source),

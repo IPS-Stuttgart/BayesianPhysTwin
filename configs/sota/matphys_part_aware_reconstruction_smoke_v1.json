@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1",
+  "locked_at_utc": "2026-08-14T05:00:00Z",
+  "status": "mechanical one-epoch smoke on an already-open case",
+  "claim_boundary": "This smoke deliberately fits future observations from the same case. It verifies only runtime wiring, finite optimization, provenance, export, and metric plumbing; it is not accuracy evidence.",
+  "case": {
+    "case_id": "single_lift_sloth",
+    "released_train_interval": [0, 59],
+    "released_test_interval": [59, 85],
+    "all_frames_used_for_fitting": true
+  },
+  "implementation": {
+    "matphys_repository": "https://github.com/Yrainy0615/MatPhys",
+    "matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "fit_all_frames": true,
+    "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+    "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
+    "part_feature_scale": 1.0,
+    "checkpoint_policy": "fixed terminal epoch only",
+    "epochs": 1,
+    "eval_every": 1,
+    "learning_rate": 0.0003,
+    "random_seed": 42
+  },
+  "pass_conditions": [
+    "the terminal checkpoint and optimizer state are finite",
+    "the audit binds future RGB access and rejects predictive use",
+    "the audit binds the graph-part proxy and part-aware decoder implementation",
+    "strict checkpoint export succeeds",
+    "the official metric evaluator emits finite train/test metrics"
+  ],
+  "forbidden": [
+    "using smoke metrics to select a model or threshold",
+    "calling this the published MatPhys method",
+    "using any smoke checkpoint in predictive evaluation"
+  ]
+}
