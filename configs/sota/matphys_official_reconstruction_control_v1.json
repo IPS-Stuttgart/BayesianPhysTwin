@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-official-reconstruction-control-v1",
+  "locked_at_utc": "2026-08-14T00:00:00Z",
+  "status": "development-only all-frame reconstruction control on an already-open case",
+  "claim_boundary": "This control deliberately fits future RGB, geometry, and track observations from the same case. It can test MatPhys reconstruction capacity and parameter export, but it cannot support a causal forecast, transfer result, calibration result, or state-of-the-art claim.",
+  "question": "Can the current public MatPhys per-case architecture, when given its advertised all-frame transductive objective, fit an already-open PhysTwin case well enough to justify extracting its full spring and global-parameter proposal into the pinned PhysTwin runtime?",
+  "case": {
+    "case_id": "single_lift_sloth",
+    "selection": "canonical previously opened development case used throughout the MatPhys causal audits",
+    "released_train_interval": [
+      0,
+      59
+    ],
+    "released_test_interval": [
+      59,
+      85
+    ],
+    "all_frames_used_for_fitting": true
+  },
+  "implementation": {
+    "bayesian_phystwin_branch": "research/matphys-backend-real-smoke-v1",
+    "matphys_repository": "https://github.com/Yrainy0615/MatPhys",
+    "matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "architecture": "released SimpleVideoMaterialPhysicsModel",
+    "video_frame_order": "numeric filename stems, 16 uniformly sampled over all 85 frames",
+    "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+    "proxy_boundary": "MatPhys does not release its final per-case train_ready.pt bundle. The deterministic Bayesian-PhysTwin DINO graph-part proxy supplies the missing part assignment and material rows and is not represented as an official MatPhys artifact.",
+    "fit_all_frames": true,
+    "checkpoint_policy": "fixed terminal epoch only",
+    "epochs": 200,
+    "eval_every": 10,
+    "learning_rate": 0.0003,
+    "random_seed": 42,
+    "losses": {
+      "track": 1.0,
+      "geometry": 1.0,
+      "render": 0.0,
+      "acceleration_smoothness": 0.01
+    },
+    "finite_optimizer_guard": "transactional-finite-adamw-v1"
+  },
+  "controls": {
+    "released_phystwin": "the released inference.pkl on the same case",
+    "prior_matphys_causal": "the already-frozen causal-prefix MatPhys trajectory, interpreted only as prior engineering evidence",
+    "official_metric_contract": "released PhysTwin CD and frame-zero manual-identity track metrics",
+    "intervals_reported": [
+      "released train interval [1,59)",
+      "released test interval [59,85)"
+    ]
+  },
+  "outputs": [
+    "terminal MatPhys checkpoint",
+    "hash-bound all-frame reconstruction audit",
+    "complete object-plus-controller spring_Y field",
+    "all seven MatPhys global contact and damping parameters",
+    "full official Warp trajectory",
+    "official interval metrics",
+    "content-addressed export manifest"
+  ],
+  "decision_rule": {
+    "capacity_pass": "terminal MatPhys trajectory improves both released-test CD and released-test track error versus released PhysTwin and has finite learned parameters",
+    "backend_export_pass": "complete spring field and all seven globals replay with exact frame-zero/node-order compatibility in pinned official PhysTwin",
+    "advance": "A capacity and backend-export pass may motivate a new source-only causal architecture. It never authorizes reuse of this checkpoint or these all-frame parameters for predictive evaluation."
+  },
+  "forbidden": [
+    "calling any metric from this control causal, predictive, held-out, transferred, calibrated, or state of the art",
+    "using this case to tune a fresh target-facing selector",
+    "altering the frozen Deform360 v6.1 candidate or scorer",
+    "using held-v8 runtime, target, query, score, barrier, or outcome artifacts",
+    "opening any fresh target or confirmation outcome"
+  ]
+}
