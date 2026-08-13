@@ -15,14 +15,12 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
-import cv2
 import numpy as np
 
 from bayesian_phystwin._portable_contracts import (
     load_strict_json_object,
     write_atomic_json,
 )
-from bayesian_phystwin.deform360_exact_video_cadence import decoded_frame_count
 from bayesian_phystwin.deform360_fresh_object_session_source_scorer_v6_1 import (
     ENDPOINT_ARCHIVE_MEMBERS,
     SOURCE_SCORING_AMENDMENT_ID,
@@ -252,6 +250,8 @@ def _validate_dependencies(
 
 
 def _frame_count(video: Path) -> int:
+    import cv2  # noqa: PLC0415
+
     capture = cv2.VideoCapture(str(video))
     try:
         _require(capture.isOpened(), f"cannot open public RGB video: {video}")
@@ -268,6 +268,10 @@ def _trim_video(
     start: int,
     count: int,
 ) -> None:
+    from bayesian_phystwin.deform360_exact_video_cadence import (  # noqa: PLC0415
+        decoded_frame_count,
+    )
+
     subprocess.run(
         [
             str(ffmpeg),
