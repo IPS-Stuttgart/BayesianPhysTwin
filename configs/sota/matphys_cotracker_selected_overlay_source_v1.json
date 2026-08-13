@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-cotracker-selected-overlay-source-v1",
+  "locked_at_utc": "2026-08-13T20:22:25Z",
+  "status": "post-open source diagnostic on the previously examined PhysTwin-22 cohort",
+  "claim_boundary": "This experiment can test whether automatic prefix RGB-D correspondence adds to the already selected object-disjoint MatPhys plus Bayesian overlay. All 22 outcomes were opened previously, so a pass authorizes only a genuinely fresh public-object source panel and cannot establish independent transfer or state of the art.",
+  "physical_baseline": {
+    "kind": "selected_overlay_sequential",
+    "description": "object-disjoint MatPhys spring family selected from the allowed prefix, followed by the frozen within-family Bayesian-anchor or last-residual overlay",
+    "family_selection_sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890",
+    "matphys_protocol_sha256": "7b55899eb9b48362d70f696012a07eac2cc24666ca23c3c7de52044f64f78cc0"
+  },
+  "observation": {
+    "source": "cotracker3_source_depth",
+    "cue_manifest_sha256": "899fadb41531bfe27d7743d8ba055e16fab3521259d1e3b7cbf945059ca82175",
+    "prefix_only": true,
+    "manual_prefix_override": false,
+    "manual_tracks_role": "evaluation-only",
+    "minimum_quality": 0.5,
+    "maximum_cycle_error_px": 5.0
+  },
+  "frozen_runner": {
+    "path": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "baseline_kind": "selected_overlay_sequential",
+    "dense_correction_scales": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+    "maximum_residuals_m": [0.04, 0.06, 0.1, 0.15, 0.2, 0.4],
+    "prior_strengths": [0.0001],
+    "relative_cap_multipliers": [0.5, 1.0, 2.0, 4.0, 8.0, 16.0],
+    "temporal_gamma_candidates": [0.0, 0.25, 0.5, 1.0]
+  },
+  "decision_arms": {
+    "primary": "causal_selected_dense_relative_cap_temporal",
+    "fixed_control": "dense_raw_manual_override__scale_0p75__cap_040mm",
+    "fixed_control_note": "The legacy source key contains manual_override, but manual_prefix_override is false, so no manual observation is applied. The analyzer enforces this boundary."
+  },
+  "advancement_gate": {
+    "minimum_relative_improvement_percent_each_metric": 5.0,
+    "minimum_joint_case_wins": 16,
+    "maximum_case_metric_regression_percent": 10.0,
+    "require_chamfer_below_m": 0.008,
+    "require_track_below_m": 0.015,
+    "passing_decision": "advance-to-fresh-public-object-source-panel",
+    "failing_decision": "stop-selected-overlay-cotracker-composition"
+  },
+  "forbidden": [
+    "using any manual trajectory before the future evaluation",
+    "using future RGB, depth, point clouds, or manual trajectories to form or select a prediction",
+    "selecting a different broad-runner candidate after reading this result",
+    "modifying the frozen Deform360 v6.1 candidate or scorer",
+    "using held-v8 runtime, target, query, score, barrier, or outcome artifacts",
+    "calling a passing opened-cohort result independent evidence or state of the art"
+  ]
+}
