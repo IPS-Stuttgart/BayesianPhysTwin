@@ -245,6 +245,27 @@ def test_refit_cli_can_seal_future_metrics():
     assert args.selection_only
 
 
+def test_refit_cli_can_export_physical_action_pair():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "mixture",
+            "--train-end-frame",
+            "64",
+            "--selection-only",
+            "--export-physical-action-pair",
+        ]
+    )
+
+    assert args.export_physical_action_pair
+
+
 def test_selection_only_headless_intervals_exclude_test():
     config = HeadlessPhysTwinRefitConfig(
         variant="mixture",

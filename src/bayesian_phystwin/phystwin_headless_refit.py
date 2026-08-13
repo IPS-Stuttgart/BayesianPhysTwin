@@ -15,6 +15,10 @@ from typing import Any
 
 import numpy as np
 
+from .phystwin_action_pair_archive import (
+    build_phystwin_action_pair_arrays,
+    write_phystwin_action_pair_archive,
+)
 from .phystwin_graph import (
     PartPairSpringGrouping,
     PhysTwinSpringGraphConfig,
@@ -22,15 +26,14 @@ from .phystwin_graph import (
     part_pair_spring_grouping,
     spatial_spring_region_ids,
 )
+from .phystwin_official_evaluation import evaluate_official_phystwin_interval
+from .phystwin_piecewise_topology import load_piecewise_topology_artifact
 from .phystwin_profile import (
     clustered_track_log_likelihood,
     grid_parameter_posterior,
     predictive_observation_calibration,
     truncate_profile_prediction_weights,
 )
-from .phystwin_official_evaluation import evaluate_official_phystwin_interval
-from .phystwin_piecewise_topology import load_piecewise_topology_artifact
-from .phystwin_spring_field import build_canonical_spring_basis
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -38,6 +41,7 @@ from .phystwin_refit import (
     evaluate_phystwin_trajectory_splits,
     phystwin_tracking_metrics,
 )
+from .phystwin_spring_field import build_canonical_spring_basis
 
 
 @dataclass(frozen=True)
@@ -225,6 +229,7 @@ def run_headless_phystwin_refit(
     profile_weights_path: str | Path | None = None,
     spring_partition_path: str | Path | None = None,
     spring_topology_path: str | Path | None = None,
+    export_physical_action_pair: bool = False,
 ) -> dict[str, Any]:
     """Run one refit and write its trajectory, checkpoint, history, and summary."""
 
@@ -789,6 +794,23 @@ def run_headless_phystwin_refit(
     if best_parameters is not None:
         restore_parameters(best_parameters)
     trajectory = simulate_trajectory(frame_count)
+    action_pair_arrays = None
+    if export_physical_action_pair:
+        held_controller = np.repeat(controller_points[:1], frame_count, axis=0)
+        simulator.set_controller_trajectory(tensor(held_controller, torch.float32))
+        wp.synchronize()
+        try:
+            held_controller_trajectory = simulate_trajectory(frame_count)
+        finally:
+            simulator.set_controller_trajectory(torch_controller)
+            wp.synchronize()
+        action_pair_arrays = build_phystwin_action_pair_arrays(
+            trajectory,
+            held_controller_trajectory,
+            springs=graph.springs,
+            rest_lengths_m=graph.rest_lengths,
+            object_spring_count=graph.num_object_springs,
+        )
 
     final_spring_y = (
         torch.exp(wp.to_torch(simulator.wp_spring_Y)).detach().cpu().numpy().copy()
@@ -1171,6 +1193,12 @@ def run_headless_phystwin_refit(
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    action_pair = None
+    if action_pair_arrays is not None:
+        action_pair = write_phystwin_action_pair_archive(
+            output_path / "physical_action_pair.npz",
+            action_pair_arrays,
+        )
     spring_basis_path = None
     if canonical_spring_basis is not None:
         spring_basis_path = output_path / "canonical_spring_basis.npz"
@@ -1499,6 +1527,9 @@ def run_headless_phystwin_refit(
             ),
         },
     }
+    if action_pair is not None:
+        summary["physical_action_pair"] = action_pair
+        summary["outputs"]["physical_action_pair"] = action_pair["path"]
     summary_path = output_path / "summary.json"
     summary["outputs"]["summary"] = str(summary_path.resolve())
     summary_path.write_text(

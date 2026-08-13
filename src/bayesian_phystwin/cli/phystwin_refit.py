@@ -97,6 +97,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Generate the rollout but score observations only through train_end_frame.",
     )
+    parser.add_argument(
+        "--export-physical-action-pair",
+        action="store_true",
+        help=(
+            "Also replay the selected state with controllers held at frame zero and "
+            "write the six-array physical-backend archive."
+        ),
+    )
     return parser
 
 
@@ -160,6 +168,7 @@ def main() -> None:
             evaluate_future=not args.selection_only,
             device=args.device,
         ),
+        export_physical_action_pair=args.export_physical_action_pair,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 
