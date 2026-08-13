@@ -2,7 +2,7 @@
 # workflow-owner: IPS-Stuttgart maintainers
 # workflow-issue: #645
 # workflow-expiry: 2026-09-30
-name: Deform360 v6.1 public-source scorer cuDNN supply repair
+name: Deform360 v6.1 public-source scorer gsplat attestation repair
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deform360-v61-source-scorer-cudnn-supply-v1
+  group: deform360-v61-source-scorer-gsplat-attestation-v1
   cancel-in-progress: false
 
 env:
@@ -40,8 +40,13 @@ env:
   CUDNN_SUPPLY_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json
   CUDNN_SUPPLY_REPAIR_ID: afc4753c60e48062b6ae3b0789a6d924bb832d2b8b186c4d450ee2ca75dbf0ca
   CUDNN_SUPPLY_REPAIR_FILE_SHA256: 17514f57667763b79e48f13c5c36c7c40fe2e6b52e5ed18b4b8eb89a03a0599a
-  PREDECESSOR_WORKFLOW_RUN_ID: "31660983482"
-  PREDECESSOR_SOURCE_REVISION: 9a18d3a4dd4aa95c69308f184c77958ddc4eec8d
+  GSPLAT_ATTESTATION_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json
+  GSPLAT_ATTESTATION_REPAIR_ID: 2a4eb1eab33653fcef140861361d59c5e17f44ac3c81a766594aa76f45346bc6
+  GSPLAT_ATTESTATION_REPAIR_FILE_SHA256: 3c39973c74787f505113b4750eccd5d31818e3a0a1f507b0737c3ea27272a5cd
+  CUDNN_FAILED_WORKFLOW_RUN_ID: "31660983482"
+  CUDNN_FAILED_SOURCE_REVISION: 9a18d3a4dd4aa95c69308f184c77958ddc4eec8d
+  ATTESTATION_FAILED_WORKFLOW_RUN_ID: "31663298362"
+  ATTESTATION_FAILED_SOURCE_REVISION: a671b1bafdcfb6e32ba370a2a8d4a157144651c2
   EXECUTION_LOCK_PATH: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
   EXECUTION_LOCK_ID: 76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189
   EXECUTION_LOCK_FILE_SHA256: 429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a
@@ -68,6 +73,7 @@ env:
   GSPLAT_WHEEL_URL: https://github.com/nerfstudio-project/gsplat/releases/download/v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl
   GSPLAT_WHEEL_SHA256: 2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff
   GSPLAT_WHEEL_BYTE_COUNT: "14805290"
+  GSPLAT_DISTRIBUTION_VERSION: 1.4.0+pt24cu121
   GSPLAT_EXTENSION_SHA256: e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b
 
 jobs:
@@ -130,6 +136,10 @@ jobs:
             "${CUDNN_SUPPLY_REPAIR_FILE_SHA256}"
           test "$(jq -r '.repair_id' "${CUDNN_SUPPLY_REPAIR_PATH}")" = \
             "${CUDNN_SUPPLY_REPAIR_ID}"
+          test "$(sha256sum "${GSPLAT_ATTESTATION_REPAIR_PATH}" | awk '{print $1}')" = \
+            "${GSPLAT_ATTESTATION_REPAIR_FILE_SHA256}"
+          test "$(jq -r '.repair_id' "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = \
+            "${GSPLAT_ATTESTATION_REPAIR_ID}"
           python scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
             validate-amendment \
             --scoring-amendment "${SOURCE_SCORING_AMENDMENT_PATH}" >/dev/null
@@ -238,9 +248,21 @@ jobs:
             test "$(jq -r '.repair_id' "${CUDNN_SUPPLY_REPAIR_PATH}")" = \
               "${CUDNN_SUPPLY_REPAIR_ID}"
             test "$(jq -r '.failed_execution_evidence.workflow_run_id' \
-              "${CUDNN_SUPPLY_REPAIR_PATH}")" = "${PREDECESSOR_WORKFLOW_RUN_ID}"
+              "${CUDNN_SUPPLY_REPAIR_PATH}")" = "${CUDNN_FAILED_WORKFLOW_RUN_ID}"
             test "$(jq -r '.failed_execution_evidence.source_revision' \
-              "${CUDNN_SUPPLY_REPAIR_PATH}")" = "${PREDECESSOR_SOURCE_REVISION}"
+              "${CUDNN_SUPPLY_REPAIR_PATH}")" = "${CUDNN_FAILED_SOURCE_REVISION}"
+            test "$(sha256sum "${GSPLAT_ATTESTATION_REPAIR_PATH}" | awk '{print $1}')" = \
+              "${GSPLAT_ATTESTATION_REPAIR_FILE_SHA256}"
+            test "$(jq -r '.repair_id' "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = \
+              "${GSPLAT_ATTESTATION_REPAIR_ID}"
+            test "$(jq -r '.predecessor_runtime_repair.repair_id' \
+              "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = "${CUDNN_SUPPLY_REPAIR_ID}"
+            test "$(jq -r '.failed_execution_evidence.workflow_run_id' \
+              "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = \
+              "${ATTESTATION_FAILED_WORKFLOW_RUN_ID}"
+            test "$(jq -r '.failed_execution_evidence.source_revision' \
+              "${GSPLAT_ATTESTATION_REPAIR_PATH}")" = \
+              "${ATTESTATION_FAILED_SOURCE_REVISION}"
             runtime="${RUNNER_TEMP}/deform360-v61-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             wheel="${RUNNER_TEMP}/gsplat-1.4.0+pt24cu121-cp310-cp310-linux_x86_64.whl"
             cudnn_wheel="${RUNNER_TEMP}/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl"
@@ -305,7 +327,10 @@ jobs:
               raise SystemExit("the registered two-GPU runtime is unavailable")
           if any(torch.cuda.get_device_capability(i) != (8, 9) for i in range(2)):
               raise SystemExit("CUDA device capability changed")
-          if gsplat.__version__ != "1.4.0" or version("gsplat") != "1.4.0+pt24cu121":
+          if (
+              gsplat.__version__ != "1.4.0+pt24cu121"
+              or version("gsplat") != "1.4.0+pt24cu121"
+          ):
               raise SystemExit("gsplat distribution identity changed")
           extension = Path(_C.__file__).resolve()
           located = Path(distribution("gsplat").locate_file("gsplat/csrc.so")).resolve()
@@ -320,7 +345,12 @@ jobs:
               raise SystemExit("nerfstudio splatfacto is unavailable")
           if not hasattr(exporter, "ExportGaussianSplat"):
               raise SystemExit("nerfstudio exporter is unavailable")
-          print(torch.__version__, torchvision.__version__, version("gsplat"))
+          print(
+              torch.__version__,
+              torchvision.__version__,
+              gsplat.__version__,
+              version("gsplat"),
+          )
           print(extension, observed, sam2.__file__)
           PY
             {
@@ -381,7 +411,7 @@ jobs:
             "${UPSTREAM_SOURCE_PLAN_FILE_SHA256}"
           test "$(jq -r '.plan_id' "${candidate_compact}/upstream-source-plan.json")" = \
             "${UPSTREAM_SOURCE_PLAN_ID}"
-          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer-cudnn-supply/${CUDNN_SUPPLY_REPAIR_ID}"
+          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer-gsplat-attestation/${GSPLAT_ATTESTATION_REPAIR_ID}"
           endpoint="${output}-endpoint"
           test ! -e "${output}"
           test ! -e "${output}.claim"
@@ -439,15 +469,22 @@ jobs:
           test ! -L "${compact}"
           install -m 600 "${CUDNN_SUPPLY_REPAIR_PATH}" \
             "${compact}/cudnn-supply-runtime-repair.json"
-          cat > "${compact}/cudnn-supply-runtime-attestation.json" <<EOF
+          install -m 600 "${GSPLAT_ATTESTATION_REPAIR_PATH}" \
+            "${compact}/gsplat-attestation-runtime-repair.json"
+          cat > "${compact}/source-runtime-repair-attestation.json" <<EOF
           {
             "cudnn_distribution_version": "${CUDNN_DISTRIBUTION_VERSION}",
             "cudnn_wheel_byte_count": ${CUDNN_WHEEL_BYTE_COUNT},
             "cudnn_wheel_sha256": "${CUDNN_WHEEL_SHA256}",
-            "predecessor_source_revision": "${PREDECESSOR_SOURCE_REVISION}",
-            "predecessor_workflow_run_id": ${PREDECESSOR_WORKFLOW_RUN_ID},
-            "repair_id": "${CUDNN_SUPPLY_REPAIR_ID}",
-            "supply_route_changed_only": true
+            "cudnn_supply_repair_id": "${CUDNN_SUPPLY_REPAIR_ID}",
+            "gsplat_attestation_repair_id": "${GSPLAT_ATTESTATION_REPAIR_ID}",
+            "gsplat_distribution_version": "${GSPLAT_DISTRIBUTION_VERSION}",
+            "gsplat_extension_sha256": "${GSPLAT_EXTENSION_SHA256}",
+            "gsplat_wheel_byte_count": ${GSPLAT_WHEEL_BYTE_COUNT},
+            "gsplat_wheel_sha256": "${GSPLAT_WHEEL_SHA256}",
+            "predecessor_source_revision": "${ATTESTATION_FAILED_SOURCE_REVISION}",
+            "predecessor_workflow_run_id": ${ATTESTATION_FAILED_WORKFLOW_RUN_ID},
+            "runtime_attestation_changed_only": true
           }
           EOF
           log="${RUNNER_TEMP}/deform360-v61-source-scorer.log"
@@ -554,7 +591,7 @@ jobs:
         if: always() && steps.retain.outputs.owns_run == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
-          name: deform360-v61-source-scorer-${{ github.run_id }}-${{ github.run_attempt }}
+          name: deform360-v61-source-scorer-gsplat-attestation-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.RUN_ROOT }}/compact
           if-no-files-found: error
           retention-days: 180
