@@ -165,3 +165,59 @@ density, energy score, selective risk, and deterministic error against exact
 persistence should be evaluated on independent object or acquisition-session
 groups. Rejected downstream physical updates must continue to return the exact
 physical baseline.
+
+## Full-covariance v3 path
+
+`infer_full_covariance_dynamic_endpoint_model_average` is an additive
+prospective path for observations that carry complete metric covariance. It
+reuses the source-frozen v2 component family, priors, evidence pooling, and
+causal cutoff, but it does not reduce a supplied observation covariance to a
+single variance.
+
+The component state is ordered as
+
+```text
+[level_x, level_y, level_z, velocity_x, velocity_y, velocity_z].
+```
+
+For every valid observation, the filter consumes
+`observation_covariance_m2[t, n]` with shape `3 x 3`. The inlier and outlier
+innovation models add the component's isotropic base noise to that covariance,
+then evaluate the multivariate Gaussian densities by Cholesky factorization.
+Accepted component updates use complete matrix-valued Kalman gains and
+Joseph-form covariance expressions. Robust inlier/outlier uncertainty and
+between-component disagreement are combined with the law of total covariance.
+No eigenvalue clipping, diagonalization, pseudoinverse, or largest-eigenvalue
+collapse is applied.
+
+```python
+import numpy as np
+
+from bayesian_phystwin.dynamic_endpoint_model_average import (
+    infer_full_covariance_dynamic_endpoint_model_average,
+    predict_full_covariance_dynamic_endpoint_model_average,
+)
+
+observation_covariance_m2 = np.zeros((*residual_m.shape[:2], 3, 3))
+observation_covariance_m2[..., 0, 0] = 1.0e-6
+observation_covariance_m2[..., 1, 1] = 4.0e-6
+observation_covariance_m2[..., 2, 2] = 9.0e-6
+
+posterior = infer_full_covariance_dynamic_endpoint_model_average(
+    residual_m,
+    valid,
+    end_frame=causal_prefix_stop,
+    observation_covariance_m2=observation_covariance_m2,
+)
+prediction = predict_full_covariance_dynamic_endpoint_model_average(
+    posterior,
+    horizon_steps=20,
+)
+```
+
+This path is deliberately separate from the scalar v2 function. Existing v2
+callers and the registered Deform360 v6.1 candidate remain unchanged. A future
+protocol must freeze which covariance path it uses before source scoring or
+target access, and must evaluate proper score, coverage, interval width, and
+worst-group harm on independent object/session units before scientific
+promotion.
