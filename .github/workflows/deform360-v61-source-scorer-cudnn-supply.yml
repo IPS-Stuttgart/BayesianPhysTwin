@@ -2,7 +2,7 @@
 # workflow-owner: IPS-Stuttgart maintainers
 # workflow-issue: #645
 # workflow-expiry: 2026-09-30
-name: Deform360 v6.1 public-source scorer
+name: Deform360 v6.1 public-source scorer cuDNN supply repair
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deform360-v61-source-scorer-v1
+  group: deform360-v61-source-scorer-cudnn-supply-v1
   cancel-in-progress: false
 
 env:
@@ -37,6 +37,11 @@ env:
   SOURCE_SCORING_AMENDMENT_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json
   SOURCE_SCORING_AMENDMENT_ID: e8b962a8abf228114495683cfb9ba87ee802e7405ca92f1f28b5a76df3faa371
   SOURCE_SCORING_AMENDMENT_FILE_SHA256: c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1
+  CUDNN_SUPPLY_REPAIR_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json
+  CUDNN_SUPPLY_REPAIR_ID: afc4753c60e48062b6ae3b0789a6d924bb832d2b8b186c4d450ee2ca75dbf0ca
+  CUDNN_SUPPLY_REPAIR_FILE_SHA256: 17514f57667763b79e48f13c5c36c7c40fe2e6b52e5ed18b4b8eb89a03a0599a
+  PREDECESSOR_WORKFLOW_RUN_ID: "31660983482"
+  PREDECESSOR_SOURCE_REVISION: 9a18d3a4dd4aa95c69308f184c77958ddc4eec8d
   EXECUTION_LOCK_PATH: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
   EXECUTION_LOCK_ID: 76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189
   EXECUTION_LOCK_FILE_SHA256: 429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a
@@ -56,6 +61,10 @@ env:
   CAUSAL4D_REVISION: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
   CUDA_RUNTIME_LOCK_PATH: requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt
   CUDA_RUNTIME_LOCK_SHA256: e46e32b809fd9438437cf0ff4138dccb119904b5f1d9f90900df99603f278af3
+  CUDNN_WHEEL_URL: https://files.pythonhosted.org/packages/9f/fd/713452cd72343f682b1c7b9321e23829f00b842ceaedcda96e742ea0b0b3/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl
+  CUDNN_WHEEL_SHA256: 165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f
+  CUDNN_WHEEL_BYTE_COUNT: "664752741"
+  CUDNN_DISTRIBUTION_VERSION: 9.1.0.70
   GSPLAT_WHEEL_URL: https://github.com/nerfstudio-project/gsplat/releases/download/v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl
   GSPLAT_WHEEL_SHA256: 2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff
   GSPLAT_WHEEL_BYTE_COUNT: "14805290"
@@ -117,6 +126,10 @@ jobs:
             "${EXECUTION_LOCK_FILE_SHA256}"
           test "$(sha256sum "${CUDA_RUNTIME_LOCK_PATH}" | awk '{print $1}')" = \
             "${CUDA_RUNTIME_LOCK_SHA256}"
+          test "$(sha256sum "${CUDNN_SUPPLY_REPAIR_PATH}" | awk '{print $1}')" = \
+            "${CUDNN_SUPPLY_REPAIR_FILE_SHA256}"
+          test "$(jq -r '.repair_id' "${CUDNN_SUPPLY_REPAIR_PATH}")" = \
+            "${CUDNN_SUPPLY_REPAIR_ID}"
           python scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
             validate-amendment \
             --scoring-amendment "${SOURCE_SCORING_AMENDMENT_PATH}" >/dev/null
@@ -220,11 +233,21 @@ jobs:
               "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
             test "$(sha256sum "${CUDA_RUNTIME_LOCK_PATH}" | awk '{print $1}')" = \
               "${CUDA_RUNTIME_LOCK_SHA256}"
+            test "$(sha256sum "${CUDNN_SUPPLY_REPAIR_PATH}" | awk '{print $1}')" = \
+              "${CUDNN_SUPPLY_REPAIR_FILE_SHA256}"
+            test "$(jq -r '.repair_id' "${CUDNN_SUPPLY_REPAIR_PATH}")" = \
+              "${CUDNN_SUPPLY_REPAIR_ID}"
+            test "$(jq -r '.failed_execution_evidence.workflow_run_id' \
+              "${CUDNN_SUPPLY_REPAIR_PATH}")" = "${PREDECESSOR_WORKFLOW_RUN_ID}"
+            test "$(jq -r '.failed_execution_evidence.source_revision' \
+              "${CUDNN_SUPPLY_REPAIR_PATH}")" = "${PREDECESSOR_SOURCE_REVISION}"
             runtime="${RUNNER_TEMP}/deform360-v61-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             wheel="${RUNNER_TEMP}/gsplat-1.4.0+pt24cu121-cp310-cp310-linux_x86_64.whl"
+            cudnn_wheel="${RUNNER_TEMP}/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl"
             checkpoint="/mnt/lexar4tb/datasets/deform360/sam2-2b90b9f5/checkpoints/sam2.1_hiera_small.pt"
             test ! -e "${runtime}"
             test ! -e "${wheel}"
+            test ! -e "${cudnn_wheel}"
             test -f "${checkpoint}"
             test ! -L "${checkpoint}"
             test "$(sha256sum "${checkpoint}" | awk '{print $1}')" = \
@@ -233,6 +256,14 @@ jobs:
             python_path="${runtime}/bin/python"
             "${python_path}" -m pip install \
               "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+            curl --fail --location --retry 5 --retry-delay 2 \
+              --proto '=https' --tlsv1.2 \
+              --output "${cudnn_wheel}" "${CUDNN_WHEEL_URL}"
+            test "$(stat -c '%s' "${cudnn_wheel}")" = \
+              "${CUDNN_WHEEL_BYTE_COUNT}"
+            test "$(sha256sum "${cudnn_wheel}" | awk '{print $1}')" = \
+              "${CUDNN_WHEEL_SHA256}"
+            "${python_path}" -m pip install --no-deps "${cudnn_wheel}"
             "${python_path}" -m pip install -r "${CUDA_RUNTIME_LOCK_PATH}"
             curl --fail --location --retry 5 --retry-delay 2 \
               --proto '=https' --tlsv1.2 \
@@ -266,6 +297,8 @@ jobs:
               raise SystemExit("Python runtime identity changed")
           if torch.__version__ != "2.4.0+cu121" or torch.version.cuda != "12.1":
               raise SystemExit("Torch runtime identity changed")
+          if version("nvidia-cudnn-cu12") != "9.1.0.70":
+              raise SystemExit("cuDNN distribution identity changed")
           if torchvision.__version__ != "0.19.0+cu121":
               raise SystemExit("torchvision runtime identity changed")
           if not torch.cuda.is_available() or torch.cuda.device_count() < 2:
@@ -292,6 +325,7 @@ jobs:
           PY
             {
               echo "BPT_PYTHON=${python_path}"
+              echo "CUDNN_WHEEL=${cudnn_wheel}"
               echo "GSPLAT_WHEEL=${wheel}"
               echo "SAM2_CHECKPOINT=${checkpoint}"
             } >> "${GITHUB_ENV}"
@@ -347,7 +381,7 @@ jobs:
             "${UPSTREAM_SOURCE_PLAN_FILE_SHA256}"
           test "$(jq -r '.plan_id' "${candidate_compact}/upstream-source-plan.json")" = \
             "${UPSTREAM_SOURCE_PLAN_ID}"
-          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer/${SOURCE_SCORING_AMENDMENT_ID}"
+          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer-cudnn-supply/${CUDNN_SUPPLY_REPAIR_ID}"
           endpoint="${output}-endpoint"
           test ! -e "${output}"
           test ! -e "${output}.claim"
@@ -403,6 +437,19 @@ jobs:
           mkdir -p "${compact}/logs"
           test -d "${compact}"
           test ! -L "${compact}"
+          install -m 600 "${CUDNN_SUPPLY_REPAIR_PATH}" \
+            "${compact}/cudnn-supply-runtime-repair.json"
+          cat > "${compact}/cudnn-supply-runtime-attestation.json" <<EOF
+          {
+            "cudnn_distribution_version": "${CUDNN_DISTRIBUTION_VERSION}",
+            "cudnn_wheel_byte_count": ${CUDNN_WHEEL_BYTE_COUNT},
+            "cudnn_wheel_sha256": "${CUDNN_WHEEL_SHA256}",
+            "predecessor_source_revision": "${PREDECESSOR_SOURCE_REVISION}",
+            "predecessor_workflow_run_id": ${PREDECESSOR_WORKFLOW_RUN_ID},
+            "repair_id": "${CUDNN_SUPPLY_REPAIR_ID}",
+            "supply_route_changed_only": true
+          }
+          EOF
           log="${RUNNER_TEMP}/deform360-v61-source-scorer.log"
           if [[ -f "${log}" && ! -L "${log}" ]]; then
             tail -c 64000 "${log}" > "${compact}/logs/runner.log"
