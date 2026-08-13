@@ -1,0 +1,64 @@
+{
+  "arms": {
+    "fixed_scale_control": {
+      "baseline_equal_case_mean": {
+        "chamfer_distance_m": 0.010241871772498017,
+        "track_error_m": 0.019059182631448054
+      },
+      "below_published_8mm_15mm_operating_point": false,
+      "candidate_equal_case_mean": {
+        "chamfer_distance_m": 0.00863946379026153,
+        "track_error_m": 0.019375393546125035
+      },
+      "exact_case_ties": 0,
+      "joint_case_wins": 11,
+      "maximum_case_metric_regression_percent": 69.43829640294854,
+      "relative_improvement_percent": {
+        "chamfer_distance_m": 15.645655577717276,
+        "track_error_m": -1.6591000820529667
+      },
+      "source_candidate_name": "dense_raw_manual_override__scale_0p75__cap_040mm"
+    },
+    "primary_causal_temporal": {
+      "baseline_equal_case_mean": {
+        "chamfer_distance_m": 0.010241871772498017,
+        "track_error_m": 0.019059182631448054
+      },
+      "below_published_8mm_15mm_operating_point": false,
+      "candidate_equal_case_mean": {
+        "chamfer_distance_m": 0.008574563780290666,
+        "track_error_m": 0.022808115881904453
+      },
+      "exact_case_ties": 1,
+      "joint_case_wins": 7,
+      "maximum_case_metric_regression_percent": 136.71500906165005,
+      "relative_improvement_percent": {
+        "chamfer_distance_m": 16.27932890826157,
+        "track_error_m": -19.669958166362168
+      },
+      "source_candidate_name": "causal_selected_dense_relative_cap_temporal"
+    }
+  },
+  "case_count": 22,
+  "claim_boundary": "All 22 PhysTwin outcomes were previously opened. CoTracker uses only prefix RGB-D evidence and manual tracks are evaluation-only. This is development evidence, not independent transfer or a state-of-the-art claim.",
+  "decision": "stop-selected-overlay-cotracker-composition",
+  "fixed_comparator": "dense_raw_manual_override__scale_0p75__cap_040mm",
+  "gate_passed": false,
+  "gates": {
+    "below_published_8mm_15mm_operating_point": false,
+    "chamfer_improvement_at_least_threshold": true,
+    "joint_case_wins_at_least_threshold": false,
+    "maximum_case_metric_regression_within_limit": false,
+    "track_improvement_at_least_threshold": false
+  },
+  "input": {
+    "path": "/mnt/corsair/florianpfaff/matphys-cotracker-selected-overlay-source-v1-f9fafec3/raw_source_report.json",
+    "sha256": "67d4d222172610d571f0691ea0c60abd4f6fd34e68552a4750a38838afc12927"
+  },
+  "maximum_case_metric_regression_percent": 10.0,
+  "minimum_joint_case_wins": 16,
+  "minimum_relative_improvement_percent": 5.0,
+  "primary_candidate": "causal_selected_dense_relative_cap_temporal",
+  "schema_version": 1,
+  "status": "post-open automatic MatPhys/CoTracker composition source diagnostic"
+}
