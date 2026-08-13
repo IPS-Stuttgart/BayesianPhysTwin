@@ -1,0 +1,22 @@
+{
+  "backend": "candidate",
+  "case_id": "double_lift_zebra",
+  "frame_range_half_open": [
+    30,
+    40
+  ],
+  "future_frame_start": 40,
+  "future_outcomes_opened": false,
+  "inputs": {
+    "final_data.pkl": "fa81083526ab4d41a9b153a8d39b51a7baa9f5726184c52ff34e4902e26b9dc8",
+    "gt_track_3d.pkl": "053a5f59bb859a980fd5aeef51d1b04f5a650288197cf6d511dff9c397831585",
+    "physical_action_pair.npz": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555"
+  },
+  "metrics": {
+    "chamfer_distance_m": 0.004833140371675683,
+    "track_error_m": 0.005720152993175701
+  },
+  "protocol_id": "matphys-backend-real-replay-smoke-v1",
+  "schema": "bayesian-phystwin.matphys-prefix-metrics",
+  "schema_version": 1
+}

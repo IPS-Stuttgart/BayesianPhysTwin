@@ -87,7 +87,11 @@ def phystwin_graph_action_support(
         adjacency[int(first)].append((int(second), length))
         adjacency[int(second)].append((int(first), length))
 
-    distances = np.full(object_point_count, np.inf, dtype=np.float64)
+    distances: np.ndarray = np.full(
+        object_point_count,
+        np.inf,
+        dtype=np.float64,
+    )
     queue: list[tuple[float, int]] = []
     for anchor in sorted(anchors):
         distances[anchor] = 0.0

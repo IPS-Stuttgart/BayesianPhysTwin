@@ -1,0 +1,83 @@
+{
+  "artifact_id": "ef65cc79adca707fe7020336de0442f07cc2fc9bc0f50ff8b79540fadd48e3f0",
+  "backend_kind": "matphys-spring-proposal-phystwin-warp-v1",
+  "candidate_accepted": true,
+  "case_id": "double_lift_zebra",
+  "claim_boundary": "A MatPhys spring-field proposal replayed by the official PhysTwin Warp simulator. Selection uses only the declared causal validation prefix and has an exact incumbent fallback. This artifact alone does not establish target transfer, predictive calibration, safety, or state of the art.",
+  "gate_id": "813ff70f8a7fa06cd2e7e72159670430190a69173d88128520dda43a622b4da4",
+  "information_boundary": {
+    "future_outcomes_opened_for_gate": false,
+    "known_future_robot_action_used": true,
+    "prediction_hashed_before_future_outcome_scoring": true,
+    "rejected_proposal_uses_byte_exact_incumbent": true,
+    "selection_uses_declared_validation_prefix_only": true,
+    "target_future_observations_used_for_proposal": false
+  },
+  "inputs": {
+    "candidate_archive": {
+      "path": "/mnt/corsair/florianpfaff/matphys-backend-real-replay-smoke-v1-a28bf335/candidate/physical_action_pair.npz",
+      "sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555"
+    },
+    "gate_manifest": {
+      "path": "provenance/matphys-gate.json",
+      "sha256": "f57baca86350f2e5f506f2acb2f4b568c00bbe460a4bd424a06e384608628fb2"
+    },
+    "identity_replay_archive": {
+      "path": "/mnt/corsair/florianpfaff/matphys-backend-real-replay-smoke-v1-a28bf335/identity/physical_action_pair.npz",
+      "sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+    },
+    "incumbent_archive": {
+      "path": "/mnt/corsair/florianpfaff/matphys-backend-real-replay-smoke-v1-a28bf335/incumbent/physical_action_pair.npz",
+      "sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+    },
+    "proposal_manifest": {
+      "path": "provenance/matphys-proposal.json",
+      "sha256": "3f69c75466de05c7b231c8fc0e9d2b7bac940ccca85c5e3b5bdbc828a6e377bc"
+    }
+  },
+  "output": {
+    "byte_count": 11704342,
+    "byte_exact_source_copy": true,
+    "exact_incumbent_fallback_verified": false,
+    "path": "physical-prediction.npz",
+    "sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+    "source_archive_sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555"
+  },
+  "proposal_id": "b0fbd3cfe31cd37733bd07bd74b5b3fbb138c4bd6ec71aa33f5311e3e2bbe3e2",
+  "schema": "bayesian-phystwin.matphys-backend-artifact",
+  "schema_version": 1,
+  "selected_backend": "matphys_warp_proposal",
+  "selection": {
+    "decisions": {
+      "incumbent": {
+        "accepted": true,
+        "metric_ratios_to_fallback": {
+          "chamfer_distance_m": 1.0,
+          "track_error_m": 1.0
+        },
+        "no_metric_regression": true,
+        "relative_score_improvement_over_fallback": 0.0,
+        "stability_eligible": true
+      },
+      "matphys_warp_proposal": {
+        "accepted": true,
+        "metric_ratios_to_fallback": {
+          "chamfer_distance_m": 0.9562540041640128,
+          "track_error_m": 0.7271158894549926
+        },
+        "no_metric_regression": true,
+        "relative_score_improvement_over_fallback": 0.15831505319049732,
+        "stability_eligible": true
+      }
+    },
+    "identity_replay_coordinate_rmse_m": 0.0,
+    "identity_replay_stable": true,
+    "maximum_identity_replay_rmse_m": 0.001,
+    "maximum_metric_regression": 0.0,
+    "minimum_relative_improvement": 0.01,
+    "scores": {
+      "incumbent": 1.0,
+      "matphys_warp_proposal": 0.8416849468095027
+    }
+  }
+}

@@ -94,10 +94,16 @@ compare incumbent, MatPhys/Warp, and guarded selection with the same causal
 prefix, action, metrics, calibration audit, and exact fallback. The frozen
 Deform360 v6.1 source scorer must not be retrofitted with this backend.
 
-The currently preserved LOO22 workspace is a result summary rather than a
-portable six-array replay bundle, so this implementation has contract and
-synthetic end-to-end smoke coverage but no newly executed real-data score. A
-fresh preregistered evaluation is not justified by implementation alone. First
-reproduce one already-open development case through the full MatPhys-field plus
-Warp producer, including an exact zero-strength identity replay; only then lock
-a source-only public-data panel.
+The required real-data replay smoke is now complete on the already-open
+`double_lift_zebra` development case. An object-disjoint MatPhys field changed
+the Warp trajectory by 3.062 mm coordinate RMSE on the locked validation prefix.
+Its validation CD improved from 5.054 to 4.833 mm and track error from 7.867 to
+5.720 mm. The independent zero-strength replay was byte-identical to the
+incumbent, and the guard therefore selected the real MatPhys/Warp archive.
+
+This is integration and source-development evidence, not an independent SOTA
+result: the case had been examined before, and no future score was opened for
+the new replay. The compact evidence is under
+`results/sota/diagnostics/matphys_backend_real_replay_smoke_v1`. The next
+admissible experiment is a preregistered, object-disjoint public source panel
+with transfer, calibration, late-horizon, and worst-case-regression gates.

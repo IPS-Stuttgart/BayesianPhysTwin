@@ -1,0 +1,35 @@
+{
+  "candidate_metrics": {
+    "chamfer_distance_m": 0.004833140371675683,
+    "track_error_m": 0.005720152993175701
+  },
+  "case_id": "double_lift_zebra",
+  "evaluated_archive_sha256s": {
+    "incumbent": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b",
+    "matphys_warp_proposal": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555",
+    "zero_strength_identity_replay": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+  },
+  "future_frame_start": 40,
+  "future_outcomes_opened": false,
+  "gate_id": "813ff70f8a7fa06cd2e7e72159670430190a69173d88128520dda43a622b4da4",
+  "incumbent_metrics": {
+    "chamfer_distance_m": 0.005054243277026553,
+    "track_error_m": 0.007866906879814197
+  },
+  "maximum_identity_replay_rmse_m": 0.001,
+  "maximum_metric_regression": 0.0,
+  "minimum_relative_improvement": 0.01,
+  "proposal_id": "b0fbd3cfe31cd37733bd07bd74b5b3fbb138c4bd6ec71aa33f5311e3e2bbe3e2",
+  "schema": "bayesian-phystwin.matphys-backend-gate",
+  "schema_version": 1,
+  "source_artifacts": {
+    "replay/candidate_validation_metrics.json": "d84a67c2c0db810f2affb85dbb00516a856223f241ca9cfa97a8cd816fa20d79",
+    "replay/incumbent_validation_metrics.json": "ec9d447857fc53f340a0522c7d7236515c342adeee4ac3f48104115778a7040c",
+    "replay/protocol.json": "7b247e89fb557be3c28ab34c6a1b294f10ed7751d80252096a165ad76ca6f489"
+  },
+  "target_object_id": "zebra",
+  "validation_frame_range_half_open": [
+    30,
+    40
+  ]
+}

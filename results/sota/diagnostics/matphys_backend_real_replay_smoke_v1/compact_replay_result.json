@@ -1,0 +1,91 @@
+{
+  "action_response_coordinate_rmse_m": {
+    "candidate": 0.028831243968604158,
+    "incumbent": 0.030065985936189206
+  },
+  "action_support": {
+    "effective_sample_size": 2352.97021484375,
+    "maximum": 1.0,
+    "median": 0.15157510340213776,
+    "minimum": 0.022496899589896202,
+    "sum": 1081.783447265625
+  },
+  "archives": {
+    "candidate": {
+      "byte_count": 11704342,
+      "path": "/mnt/corsair/florianpfaff/matphys-backend-real-replay-smoke-v1-a28bf335/candidate/physical_action_pair.npz",
+      "sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555"
+    },
+    "incumbent": {
+      "byte_count": 11703828,
+      "path": "/mnt/corsair/florianpfaff/matphys-backend-real-replay-smoke-v1-a28bf335/incumbent/physical_action_pair.npz",
+      "sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+    }
+  },
+  "candidate_vs_incumbent_held_controller_coordinate_rmse_m": {
+    "all_frames": 0.00032474486920230515,
+    "unscored_prediction_frames_40_end": 0.0003465855672617758,
+    "validation_frames_30_39": 0.000329903247220136
+  },
+  "candidate_vs_incumbent_prediction_coordinate_rmse_m": {
+    "all_frames": 0.0040575062517580395,
+    "fit_frames_1_29": 0.0013846180548905548,
+    "unscored_prediction_frames_40_end": 0.00668965364871187,
+    "validation_frames_30_39": 0.003061869862065541
+  },
+  "case_id": "double_lift_zebra",
+  "contract": {
+    "action_support_exact": true,
+    "array_names": [
+      "action_support",
+      "driven_readout_m",
+      "frame_zero_points_m",
+      "persistence_m",
+      "prediction_m",
+      "zero_action_readout_m"
+    ],
+    "array_names_equal": true,
+    "finite": true,
+    "frame_zero_exact": true,
+    "persistence_exact": true,
+    "prediction_dtype": "float32",
+    "prediction_shape": [
+      58,
+      4607,
+      3
+    ]
+  },
+  "future_outcomes_scored": false,
+  "protocol_id": "matphys-backend-real-replay-smoke-v1",
+  "schema": "bayesian-phystwin.matphys-real-replay-smoke-result",
+  "schema_version": 1,
+  "status": "development-only-backend-replay-passed",
+  "summary_checks": {
+    "candidate": {
+      "code_commit": "a28bf33539026d03d9da933a7b3c65619c0c9bad",
+      "future_metrics_opened": false,
+      "gt_track_3d": null,
+      "official_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "runtime": {
+        "cuda_version": "12.1",
+        "device_name": "NVIDIA RTX 6000 Ada Generation",
+        "torch_version": "2.4.0+cu121",
+        "warp_version": "1.15.0"
+      },
+      "spring_geometric_mean": 15669.759482569496
+    },
+    "incumbent": {
+      "code_commit": "a28bf33539026d03d9da933a7b3c65619c0c9bad",
+      "future_metrics_opened": false,
+      "gt_track_3d": null,
+      "official_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "runtime": {
+        "cuda_version": "12.1",
+        "device_name": "NVIDIA RTX 6000 Ada Generation",
+        "torch_version": "2.4.0+cu121",
+        "warp_version": "1.15.0"
+      },
+      "spring_geometric_mean": 30055.761292430798
+    }
+  }
+}

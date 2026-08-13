@@ -1,0 +1,46 @@
+{
+  "backend_kind": "matphys-spring-proposal-phystwin-warp-v1",
+  "checkpoint": {
+    "path": "/mnt/corsair/florianpfaff/matphys-backend-real-replay-smoke-v1-a28bf335/matphys_fold03_zebra_source_checkpoint.pth",
+    "sha256": "14349ded1fb447a46c286f44f24c002405d65f37cbaab1938851b890dbcd27f1"
+  },
+  "claim_boundary": "A MatPhys spring-field proposal replayed by the official PhysTwin Warp simulator. Selection uses only the declared causal validation prefix and has an exact incumbent fallback. This artifact alone does not establish target transfer, predictive calibration, safety, or state of the art.",
+  "known_future_robot_action_used": true,
+  "parameterization": "spring_Y-log-space-overlay",
+  "proposal_id": "b0fbd3cfe31cd37733bd07bd74b5b3fbb138c4bd6ec71aa33f5311e3e2bbe3e2",
+  "proposal_strength": 1.0,
+  "rollout_backend": "official-phystwin-warp",
+  "schema": "bayesian-phystwin.matphys-backend-proposal",
+  "schema_version": 1,
+  "simulator_repository": "Jianghanxiao/PhysTwin",
+  "simulator_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+  "source_artifacts": {
+    "protocol/matphys_guarded_bayesian_loo22_v2.json": "7b55899eb9b48362d70f696012a07eac2cc24666ca23c3c7de52044f64f78cc0",
+    "source/fold_03_external_backbone_manifest.json": "3e3054574ec12ef31c34dab999fc441496dddda12e3887abebd515ab75952062",
+    "source/fold_03_source_supervised_training_audit.json": "92b7c4f894b527cd1ed1e15394da799dfac90f94ca4b0d02b2a0f364c92f3fe5",
+    "source/loo_spring_fields.json": "0f6b6e6f8992b9272f61af1041f0070793996ee3e5ef70a4901f590239838efb"
+  },
+  "source_repository": "Yrainy0615/MatPhys",
+  "source_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+  "spring_field": {
+    "count": 74893,
+    "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/partial_bundle_fixed_open22_v3/cases/double_lift_zebra/candidate_spring_y.npy",
+    "sha256": "70500ecc8d08139a25e70db120610f9cbcdf68458d58bb009339f7f70cdca0cc"
+  },
+  "target_evidence_end_frame_exclusive": 30,
+  "target_future_observations_used": false,
+  "target_object_excluded": true,
+  "target_object_id": "zebra",
+  "training_object_ids": [
+    "cloth",
+    "cloth_1",
+    "cloth_3",
+    "cloth_4",
+    "dinosor",
+    "rope",
+    "rope_1",
+    "rope_4",
+    "sloth",
+    "weird_package"
+  ]
+}
