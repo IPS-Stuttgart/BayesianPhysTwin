@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1",
-  "locked_at_utc": "2026-08-14T05:00:00Z",
+  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.1",
+  "locked_at_utc": "2026-08-13T22:37:44Z",
   "status": "mechanical one-epoch smoke on an already-open case",
   "claim_boundary": "This smoke deliberately fits future observations from the same case. It verifies only runtime wiring, finite optimization, provenance, export, and metric plumbing; it is not accuracy evidence.",
   "case": {
@@ -14,7 +14,7 @@
     "matphys_repository": "https://github.com/Yrainy0615/MatPhys",
     "matphys_revision": "c16b858dfb79bf21024ead24b45a710600de7b4f",
     "fit_all_frames": true,
-    "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+    "proxy_contract": "causal-dino-graph-parts-compact-unused-edge-semantics-v1",
     "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
     "part_feature_scale": 1.0,
     "checkpoint_policy": "fixed terminal epoch only",

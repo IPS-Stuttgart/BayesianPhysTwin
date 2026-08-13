@@ -136,7 +136,7 @@ def _training_configuration(
         "video_scope": MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
-        "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+        "proxy_contract": str(proxy["contract"]),
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
         "part_feature_scale": float(args.part_feature_scale),
         "semantic_dimension": _semantic_dimension(proxy),
@@ -157,7 +157,7 @@ def _proxy_args(args: argparse.Namespace) -> SimpleNamespace:
     return SimpleNamespace(
         proxy_root=args.proxy_root,
         graph_parts=True,
-        compact_unused_edge_semantics=False,
+        compact_unused_edge_semantics=bool(args.compact_unused_edge_semantics),
         matphys_root=args.matphys_root,
         data_root=args.data_root,
         dino_model=args.dino_model,
@@ -192,8 +192,6 @@ def train(args: argparse.Namespace) -> None:
         raise ValueError("part feature scale must be finite and positive")
 
     proxy = _prepare_proxy(_proxy_args(args), [case], frame_len_by_case)
-    if proxy.get("contract") != "causal-dino-graph-voronoi-parts-v1":
-        raise ValueError("reconstruction control requires the registered DINO proxy")
     source_commit = _source_commit(matphys_root)
     training_configuration = _training_configuration(args, proxy)
     validate_matphys_reconstruction_protocol(
@@ -559,6 +557,7 @@ def main() -> None:
     train_parser.add_argument("--part-count", type=int, default=5)
     train_parser.add_argument("--semantic-edge-weight", type=float, default=4.0)
     train_parser.add_argument("--part-feature-scale", type=float, default=1.0)
+    train_parser.add_argument("--compact-unused-edge-semantics", action="store_true")
     train_parser.set_defaults(handler=train)
 
     export_parser = subparsers.add_parser("export", parents=[common])

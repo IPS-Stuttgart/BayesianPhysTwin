@@ -26,6 +26,13 @@ the `simple-videomae-dino-part-conditioning-v1` adapter at positive scale in
 both training and export. Validation rejects a checkpoint whose audit does not
 bind that contract.
 
+A second source-independent preflight found that the staged byte-bound proxy
+uses the registered compact edge-semantics contract. Version 1.1 names that
+contract explicitly. Its `train_ready.pt`, 1024-dimensional part descriptors,
+assignments, material distributions, and graph provenance are inherited from
+the full proxy; only node/edge semantic tensors unused by the simple decoder
+are compacted. No training or outcome was produced under version 1.
+
 ## Decision
 
 Run the separately locked

@@ -204,6 +204,28 @@ def test_reconstruction_protocol_rejects_unwired_part_decoder(tmp_path: Path) ->
         )
 
 
+def test_reconstruction_audit_accepts_registered_compact_proxy(tmp_path: Path) -> None:
+    audit, checkpoint, _ = _fixture(tmp_path)
+    payload = json.loads(audit.read_text())
+    proxy_path = Path(payload["proxy"]["path"])
+    proxy = json.loads(proxy_path.read_text())
+    compact_contract = "causal-dino-graph-parts-compact-unused-edge-semantics-v1"
+    proxy["contract"] = compact_contract
+    proxy_path.write_text(json.dumps(proxy))
+    protocol_path = Path(payload["protocol"]["path"])
+    protocol = json.loads(protocol_path.read_text())
+    protocol["implementation"]["proxy_contract"] = compact_contract
+    protocol_path.write_text(json.dumps(protocol))
+    payload["proxy"] = _identity(proxy_path)
+    payload["protocol"] = _identity(protocol_path)
+    payload["training_configuration"]["proxy_contract"] = compact_contract
+    audit.write_text(json.dumps(payload))
+
+    validated = validate_matphys_reconstruction_audit(audit, checkpoint)
+
+    assert validated["training_configuration"]["proxy_contract"] == compact_contract
+
+
 def test_reconstruction_runner_installs_part_adapter(monkeypatch) -> None:
     scripts = Path(__file__).parents[1] / "scripts" / "remote"
     path = scripts / "run_matphys_reconstruction_control.py"

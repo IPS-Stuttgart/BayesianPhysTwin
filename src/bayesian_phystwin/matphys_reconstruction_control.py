@@ -8,6 +8,10 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from .matphys_causal_bridge import sha256_file
+from .matphys_graph_parts import (
+    GRAPH_PART_COMPACT_PROXY_CONTRACT,
+    GRAPH_PART_PROXY_CONTRACT,
+)
 from .matphys_part_model import PART_AWARE_MODEL_CONTRACT
 
 MATPHYS_RECONSTRUCTION_AUDIT_SCHEMA_VERSION = 2
@@ -17,7 +21,9 @@ MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT = (
 MATPHYS_RECONSTRUCTION_VIDEO_SCOPE = "uniform-numeric-full-sequence-v1"
 MATPHYS_RECONSTRUCTION_TRAINING_SCOPE = "per-case-all-frame-transductive-v1"
 MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY = "fixed-terminal-epoch-v1"
-MATPHYS_RECONSTRUCTION_PROXY_CONTRACT = "causal-dino-graph-voronoi-parts-v1"
+MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS = frozenset(
+    (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
+)
 MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT = (
     "matphys-all-frame-part-aware-reconstruction-export-v2"
 )
@@ -48,7 +54,7 @@ def _validate_identity(value: object, *, label: str) -> Path:
 
 def _validate_proxy(proxy_path: Path, case_name: str) -> dict[str, object]:
     proxy = json.loads(proxy_path.read_text(encoding="utf-8"))
-    if proxy.get("contract") != MATPHYS_RECONSTRUCTION_PROXY_CONTRACT:
+    if proxy.get("contract") not in MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS:
         raise ValueError("reconstruction proxy uses an unsupported contract")
     records = proxy.get("cases")
     if not isinstance(records, list) or len(records) != 1:
@@ -76,12 +82,18 @@ def _validate_training_configuration(value: object) -> dict[str, object]:
         "video_scope": MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
-        "proxy_contract": MATPHYS_RECONSTRUCTION_PROXY_CONTRACT,
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
     }
     for key, expected in required.items():
         if configuration.get(key) != expected:
             raise ValueError(f"reconstruction training configuration violates {key}")
+    if (
+        configuration.get("proxy_contract")
+        not in MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS
+    ):
+        raise ValueError(
+            "reconstruction training configuration violates proxy_contract"
+        )
     epochs = configuration.get("epochs")
     if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
         raise ValueError("reconstruction epochs must be a positive integer")
