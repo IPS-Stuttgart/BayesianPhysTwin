@@ -1,0 +1,184 @@
+{
+  "amendment_id": "e8b962a8abf228114495683cfb9ba87ee802e7405ca92f1f28b5a76df3faa371",
+  "base_policy": {
+    "path": "protocols/locks/deform360_official_hub_fresh_object_session_v6.json",
+    "policy_id": "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f"
+  },
+  "candidate_barrier": {
+    "candidate_amendment_file_sha256": "6b5b5b99bea29c2927d52fb6ae52623f1d154a038932b6922900b709c30b10db",
+    "candidate_amendment_id": "593ca6c08ee5430ad37bc0cc5bb3d1b79d77a049714cb36a8c78696f3c68cfee",
+    "candidate_execution_receipt_file_sha256": "d2569acd499c7d21a11937a22de012418e6f15579394944ffe7399a8b89c3bf6",
+    "candidate_execution_receipt_id": "65747822fa8380296a572811772fce88b9275a7e1148a8015e1156f520f7e369",
+    "candidate_panel_receipt_file_sha256": "2b96b8c92fe3be4e7ea92fd8a58fa3c3858279d2cc3d081d723d870fd84ff7ed",
+    "candidate_panel_receipt_id": "db3cc4351436492db5962bc1e99f516adc38a5031140b675b45dc6d752b7559a",
+    "candidate_revision": "2eb8d12e2120d58d0d678c3771d29faaeb765497",
+    "prediction_record_count": 100,
+    "raw_prediction_batch_file_sha256": "b3a22f24015d0c0d8e757b5946dafd21dd61394c1c91a872a9eb56d28e2a74e6",
+    "raw_prediction_batch_id": "d27674518f523db4fddb9cc108dd3d77321dddefeccc866b2b81044bf44ebee8",
+    "technical_failure_record_count": 0,
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31647329129
+  },
+  "endpoint_carrier": {
+    "camera_substitution_allowed": false,
+    "evaluation_frame_range_half_open": [
+      58,
+      76
+    ],
+    "fixed_support_camera_panel": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "geometry_source": "released-public-rgb-derived-expected-depth-after-prefix-seal",
+    "mask_method": "object-agnostic-automatic-sam2-candidate-on-local-frame-zero",
+    "maximum_target_points_per_reserved_view_frame": 4096,
+    "minimum_reconstruction_support_cameras_per_frame": 2,
+    "minimum_supported_cells_per_reserved_view": 9,
+    "minimum_supported_reserved_views_per_evaluation_frame": 1,
+    "minimum_target_points_per_reserved_view_frame": 32,
+    "partial_mask_frames_allowed": true,
+    "reconstruction_support_panel": "lexical-union-of-fixed-panel-and-the-two-presealed-reserved-cameras",
+    "reserved_camera_count": 2,
+    "reserved_cameras_selected_before_payload_access": true,
+    "reserved_views_used_for_prediction": false,
+    "sam2_checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "sam2_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+    "target_cell_admission": "reserved-mask-and-finite-rendered-depth-and-B0-visible-query-roster",
+    "target_pixel_subsampling_domain": "v61-source-target-pixel-v1",
+    "terminal_unit_action_on_support_failure": "retain-technical-failure-stop-before-source-gate-no-replacement",
+    "unscored_tail_frame_range_half_open": [
+      76,
+      81
+    ]
+  },
+  "historical_boundary": {
+    "historical_v5_2_attempt_reinterpreted": false,
+    "historical_v5_2_attempt_rerun": false,
+    "historical_v5_2_terminal_record_preserved": true,
+    "partial_support_contract_motivated_by_previously_disclosed_technical_failure": true,
+    "this_is_a_new_source_scoring_protocol_layer": true
+  },
+  "information_boundary": {
+    "claim_authorized": false,
+    "confirmation_payloads_opened": false,
+    "future_object_observations_used_for_prediction": false,
+    "held_v8_artifacts_accessed": false,
+    "human_approval_required": false,
+    "human_selection_used": false,
+    "independent_confirmation_authorized": false,
+    "motioncrafter_disjoint_baseline_used": true,
+    "new_measurements_collected": false,
+    "new_motioncrafter_inference_run": false,
+    "new_prob4d_inference_run": false,
+    "prob4d_decoded_uniform_fusion_used": false,
+    "prob4d_pipeline_artifacts_reused": true,
+    "public_real_world_dataset": true,
+    "replacement_allowed": false,
+    "source_outcomes_used_to_design_scoring_arithmetic": false,
+    "source_suffix_opened": false,
+    "target_outcomes_opened": false
+  },
+  "raw_scoring": {
+    "candidate_dependent_missing_queries_allowed": false,
+    "cell_point_loss": "symmetric-chamfer-mm-between-common-candidate-nodes-and-reserved-view-target-points",
+    "common_query_roster": "B0-visible-graph-node-indices-per-admitted-reserved-view-frame",
+    "covariance_indexing": "candidate-local-evaluation-frame-and-common-graph-node",
+    "group_nonconformity": "maximum-query-mahalanobis-norm",
+    "mean_log_determinant": "arithmetic-mean-over-common-three-dimensional-queries",
+    "mean_raw_mahalanobis_squared": "arithmetic-mean-over-common-three-dimensional-queries",
+    "mean_raw_radius": "arithmetic-mean-square-root-maximum-covariance-eigenvalue",
+    "nearest_target_assignment": "independent-nearest-reserved-view-target-point-per-common-query",
+    "object_point_loss": "arithmetic-mean-over-admitted-reserved-view-frame-cells",
+    "probabilistic_residual": "candidate-graph-node-minus-nearest-reserved-view-target-point",
+    "query_dimension": 3,
+    "unavailable_variant_action": "exact-B0-score-carrier"
+  },
+  "schema": "bayesian-phystwin.deform360-fresh-object-session-v6-source-scoring-amendment",
+  "schema_version": 1,
+  "source_gate": {
+    "confirmation_opening_requires_pass": true,
+    "evaluator": "deform360-v6.1-nested-source-gate-unchanged",
+    "nested_outer_fold_count": 10,
+    "required_exact_winner_match_count": 8,
+    "source_unit_count": 10
+  },
+  "source_processing": {
+    "dataset_repository": "brownu/deform360",
+    "dataset_revision": "f804696d7a133908c7497ffdab43819d879b5cbc",
+    "depth": {
+      "expected_depth": true,
+      "frame_count": 81,
+      "gripper_urdf_mask_applied": true,
+      "object_mask_applied": true,
+      "preview_video": false,
+      "storage_dtype": "uint16",
+      "storage_unit": "millimetre"
+    },
+    "reconstruction": {
+      "cube_half_extent_m": 0.5,
+      "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "depth_stage_sha256": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+      "first_frame_iterations": 500,
+      "minimum_visual_hull_points": 512,
+      "reconstruct_stage_sha256": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+      "reuse_previous_geometry": false,
+      "urdf_render_stage_sha256": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467",
+      "voxel_resolution": 120,
+      "warm_start_iterations": 250
+    },
+    "runtime": {
+      "ffmpeg_sha256": "36d94a605d612e4090d1b8aec889d0c0801c6eafb1593c90f5c0dfd2e2966a45",
+      "ffmpeg_version_first_line": "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers",
+      "gsplat_backend_probe": "CameraModelType.PINHOLE",
+      "gsplat_base_version": "1.4.0",
+      "gsplat_distribution_version": "1.4.0+pt24cu121",
+      "gsplat_extension_relative_path": "gsplat/csrc.so",
+      "gsplat_extension_sha256": "e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b",
+      "gsplat_wheel_byte_count": 14805290,
+      "gsplat_wheel_sha256": "2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff",
+      "gsplat_wheel_url": "https://github.com/nerfstudio-project/gsplat/releases/download/v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl",
+      "jit_compilation_used": false,
+      "nvcc_required": false,
+      "python_major_minor": "3.10",
+      "source_independent_runtime_repair": {
+        "file_sha256": "c4e52e4fc86d79c738d98a357a053845a3bc9d7a4d30d60642a37803b121478b",
+        "path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_frame_zero_cuda_runtime.json",
+        "repair_id": "6524b544bb59d06fee3388906d680b8f1436a0c6a36555cd8f3de0c76074deb8"
+      },
+      "torch_cuda_arch_list": "8.9",
+      "torch_cuda_version": "12.1",
+      "torch_version": "2.4.0+cu121"
+    },
+    "selector": {
+      "base_path": "src/causal4d_public/deform360_sam2.py",
+      "base_source_sha256": "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184",
+      "identity_repair": {
+        "algorithm_changed": false,
+        "applied_before_v6_1_source_suffix_access": true,
+        "file_sha256": "2b3827cb3909d0d35145155c90a473ca3dfd2dec00704c35ae2b57859ec5c8d7",
+        "path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_generic_selector_identity_repair.json",
+        "repair_id": "d7e516ced90469589c3e4c3c12672a503fe8bbdb3a6f3316d852c266fd0f3d90"
+      },
+      "object_path": "src/causal4d_public/deform360_object_sam2.py",
+      "object_source_sha256": "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5",
+      "repository": "IPS-Stuttgart/Causal4D",
+      "repository_revision": "50e3682a5dbf976b20cc9115b6e7a975d0144ea5"
+    },
+    "video_materialization": "exact-ffmpeg-libx264-crf12-30hz-legacy-vsync-cfr"
+  },
+  "upstream_source_plan": {
+    "file_sha256": "08863166df11033f4a968c94a4cb5bd02869175ce3bf1c1859c8ac49be371991",
+    "plan_id": "d9b9e4df9d020e8ae076f407f61d5e1f328c68d2f4fe4d8e4ad1688d2d253100",
+    "revision": "913909596b71ac6ad717835ce7a87ae01e42c5ab"
+  }
+}

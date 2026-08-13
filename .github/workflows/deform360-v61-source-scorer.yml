@@ -1,0 +1,528 @@
+# workflow-lifecycle: temporary
+# workflow-owner: IPS-Stuttgart maintainers
+# workflow-issue: #645
+# workflow-expiry: 2026-09-30
+name: Deform360 v6.1 public-source scorer
+
+on:
+  workflow_dispatch:
+    inputs:
+      execute_authorized:
+        description: Run the one protected public-source suffix scorer
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deform360-v61-source-scorer-v1
+  cancel-in-progress: false
+
+env:
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  PYOPENGL_PLATFORM: egl
+  TORCH_CUDA_ARCH_LIST: "8.9"
+  AUTHORIZED_RUNNER_NAME: workstation2
+  RESULTS_ROOT: /mnt/lexar4tb/datasets/deform360/results
+  ALIGNED_ROOT: /mnt/lexar4tb/datasets/deform360_official_hub_visuotactile_v1/calibration-processed/aligned
+  CANDIDATE_RUN_ROOT: /mnt/lexar4tb/datasets/deform360/results/bayesian-phystwin/deform360-v61-candidate-producer/593ca6c08ee5430ad37bc0cc5bb3d1b79d77a049714cb36a8c78696f3c68cfee
+  SOURCE_SCORING_AMENDMENT_PATH: protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json
+  SOURCE_SCORING_AMENDMENT_ID: e8b962a8abf228114495683cfb9ba87ee802e7405ca92f1f28b5a76df3faa371
+  SOURCE_SCORING_AMENDMENT_FILE_SHA256: c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1
+  EXECUTION_LOCK_PATH: protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json
+  EXECUTION_LOCK_ID: 76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189
+  EXECUTION_LOCK_FILE_SHA256: 429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a
+  CANDIDATE_REVISION: 2eb8d12e2120d58d0d678c3771d29faaeb765497
+  CANDIDATE_PANEL_RECEIPT_ID: db3cc4351436492db5962bc1e99f516adc38a5031140b675b45dc6d752b7559a
+  CANDIDATE_PANEL_RECEIPT_FILE_SHA256: 2b96b8c92fe3be4e7ea92fd8a58fa3c3858279d2cc3d081d723d870fd84ff7ed
+  CANDIDATE_EXECUTION_RECEIPT_ID: 65747822fa8380296a572811772fce88b9275a7e1148a8015e1156f520f7e369
+  CANDIDATE_EXECUTION_RECEIPT_FILE_SHA256: d2569acd499c7d21a11937a22de012418e6f15579394944ffe7399a8b89c3bf6
+  RAW_PREDICTION_BATCH_ID: d27674518f523db4fddb9cc108dd3d77321dddefeccc866b2b81044bf44ebee8
+  RAW_PREDICTION_BATCH_FILE_SHA256: b3a22f24015d0c0d8e757b5946dafd21dd61394c1c91a872a9eb56d28e2a74e6
+  UPSTREAM_SOURCE_PLAN_ID: d9b9e4df9d020e8ae076f407f61d5e1f328c68d2f4fe4d8e4ad1688d2d253100
+  UPSTREAM_SOURCE_PLAN_FILE_SHA256: 08863166df11033f4a968c94a4cb5bd02869175ce3bf1c1859c8ac49be371991
+  DEFORM360_REVISION: 0fe36f0b7a7a917ba62b5f8cee707299a9a4a317
+  DEFORM360_PROCESSING_PYPROJECT_SHA256: 0ccfe6a386c184613191ccdaa8f2912bc3c148a7dda9c9f126959301d250232e
+  SAM2_REVISION: 2b90b9f5ceec907a1c18123530e92e794ad901a4
+  SAM2_CHECKPOINT_SHA256: 6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38
+  CAUSAL4D_REVISION: 50e3682a5dbf976b20cc9115b6e7a975d0144ea5
+  CUDA_RUNTIME_LOCK_PATH: requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt
+  CUDA_RUNTIME_LOCK_SHA256: e46e32b809fd9438437cf0ff4138dccb119904b5f1d9f90900df99603f278af3
+  GSPLAT_WHEEL_URL: https://github.com/nerfstudio-project/gsplat/releases/download/v1.4.0/gsplat-1.4.0%2Bpt24cu121-cp310-cp310-linux_x86_64.whl
+  GSPLAT_WHEEL_SHA256: 2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff
+  GSPLAT_WHEEL_BYTE_COUNT: "14805290"
+  GSPLAT_EXTENSION_SHA256: e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b
+
+jobs:
+  contracts:
+    name: Source scorer contracts / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - name: Check out exact proposed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate the exact target-closed scorer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev,graph,vision]"
+          files=(
+            scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py
+            scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py
+            src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py
+            tests/test_deform360_fresh_object_session_source_scorer_v6_1.py
+            tests/test_deform360_v61_source_scorer_workflow.py
+          )
+          python -m ruff check "${files[@]}"
+          python -m ruff format --check "${files[@]}"
+          python -m py_compile "${files[@]}"
+          python -m mypy \
+            scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
+            src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py
+          bash -n scripts/ci/run_deform360_v61_source_scorer.sh
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_fresh_object_session_source_scorer_v6_1.py \
+            tests/test_deform360_fresh_object_session_source_v6.py \
+            tests/test_deform360_fresh_object_session_source_v6_1.py \
+            tests/test_deform360_v61_source_scorer_workflow.py \
+            tests/test_pull_request_workflow_integrity.py
+          test "$(sha256sum "${SOURCE_SCORING_AMENDMENT_PATH}" | awk '{print $1}')" = \
+            "${SOURCE_SCORING_AMENDMENT_FILE_SHA256}"
+          test "$(sha256sum "${EXECUTION_LOCK_PATH}" | awk '{print $1}')" = \
+            "${EXECUTION_LOCK_FILE_SHA256}"
+          test "$(sha256sum "${CUDA_RUNTIME_LOCK_PATH}" | awk '{print $1}')" = \
+            "${CUDA_RUNTIME_LOCK_SHA256}"
+          python scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
+            validate-amendment \
+            --scoring-amendment "${SOURCE_SCORING_AMENDMENT_PATH}" >/dev/null
+          python tools/quality/check_workflow_policy.py \
+            --base "${{ github.event.pull_request.base.sha || github.event.before }}" \
+            --head "${GITHUB_SHA}"
+          git diff --exit-code
+          test -z "$(git status --porcelain=v1)"
+
+  execute:
+    name: Score public source panel / workstation2
+    needs: contracts
+    if: >-
+      inputs.execute_authorized == true &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.ref_protected == true &&
+      github.repository == 'IPS-Stuttgart/BayesianPhysTwin'
+    runs-on: [self-hosted, Linux, X64, nvidia-smi]
+    timeout-minutes: 1440
+    permissions:
+      contents: read
+    steps:
+      - name: Publish the closed information boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          echo "public_real_world_dataset=true"
+          echo "new_measurements_collected=false"
+          echo "human_approval_required=false"
+          echo "source_suffix_opened=false"
+          echo "confirmation_payloads_opened=false"
+          echo "target_outcomes_opened=false"
+          echo "held_v8_artifacts_accessed=false"
+          echo "prob4d_decoded_uniform_fusion_used=false"
+          echo "motioncrafter_disjoint_baseline_used=true"
+          echo "independent_confirmation_authorized=false"
+
+      - name: Check out exact protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen Deform360 source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lhy0807/deform360
+          ref: ${{ env.DEFORM360_REVISION }}
+          path: _deform360
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen SAM2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: facebookresearch/sam2
+          ref: ${{ env.SAM2_REVISION }}
+          path: _sam2
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Check out frozen Causal4D selector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: IPS-Stuttgart/Causal4D
+          ref: ${{ env.CAUSAL4D_REVISION }}
+          path: _causal4d
+          fetch-depth: 1
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python 3.10
+        id: python310
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+
+      - name: Build and attest the isolated source runtime
+        id: runtime
+        shell: bash
+        env:
+          BOOTSTRAP_PYTHON: ${{ steps.python310.outputs.python-path }}
+          RUNTIME_LOG: ${{ runner.temp }}/deform360-v61-source-runtime.log
+        run: |
+          set -euo pipefail
+          set +e
+          (
+            set -euo pipefail
+            test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+            test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+            test "$(git -C _deform360 rev-parse HEAD)" = "${DEFORM360_REVISION}"
+            test "$(git -C _sam2 rev-parse HEAD)" = "${SAM2_REVISION}"
+            test "$(git -C _causal4d rev-parse HEAD)" = "${CAUSAL4D_REVISION}"
+            test "$(sha256sum _deform360/pyproject.toml | awk '{print $1}')" = \
+              "${DEFORM360_PROCESSING_PYPROJECT_SHA256}"
+            test "$(sha256sum "${CUDA_RUNTIME_LOCK_PATH}" | awk '{print $1}')" = \
+              "${CUDA_RUNTIME_LOCK_SHA256}"
+            runtime="${RUNNER_TEMP}/deform360-v61-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            wheel="${RUNNER_TEMP}/gsplat-1.4.0+pt24cu121-cp310-cp310-linux_x86_64.whl"
+            checkpoint="/mnt/lexar4tb/datasets/deform360/sam2-2b90b9f5/checkpoints/sam2.1_hiera_small.pt"
+            test ! -e "${runtime}"
+            test ! -e "${wheel}"
+            test -f "${checkpoint}"
+            test ! -L "${checkpoint}"
+            test "$(sha256sum "${checkpoint}" | awk '{print $1}')" = \
+              "${SAM2_CHECKPOINT_SHA256}"
+            "${BOOTSTRAP_PYTHON}" -m venv --copies "${runtime}"
+            python_path="${runtime}/bin/python"
+            "${python_path}" -m pip install \
+              "pip==25.2" "setuptools==80.9.0" "wheel==0.45.1"
+            "${python_path}" -m pip install -r "${CUDA_RUNTIME_LOCK_PATH}"
+            curl --fail --location --retry 5 --retry-delay 2 \
+              --proto '=https' --tlsv1.2 \
+              --output "${wheel}" "${GSPLAT_WHEEL_URL}"
+            test "$(stat -c '%s' "${wheel}")" = "${GSPLAT_WHEEL_BYTE_COUNT}"
+            test "$(sha256sum "${wheel}" | awk '{print $1}')" = \
+              "${GSPLAT_WHEEL_SHA256}"
+            "${python_path}" -m pip install --no-deps "${wheel}"
+            "${python_path}" -m pip install -e ".[graph,vision]"
+            "${python_path}" -m pip install "./_deform360[processing]"
+            SAM2_BUILD_CUDA=0 "${python_path}" -m pip install --no-deps -e ./_sam2
+            "${python_path}" -m pip install \
+              "fpsample>=0.3" "hydra-core>=1.3.2" "iopath>=0.1.10" \
+              "pillow>=9.4" "plyfile>=1.0" "scipy>=1.10" \
+              "tqdm>=4.66" "trimesh>=4.0" "yourdfpy>=0.0.56"
+            "${python_path}" - <<'PY'
+          import hashlib
+          from importlib.metadata import distribution, version
+          from pathlib import Path
+          import sys
+
+          import gsplat
+          from gsplat.cuda._backend import _C
+          from nerfstudio.configs import method_configs
+          from nerfstudio.scripts import exporter
+          import sam2
+          import torch
+          import torchvision
+
+          if sys.version_info[:2] != (3, 10):
+              raise SystemExit("Python runtime identity changed")
+          if torch.__version__ != "2.4.0+cu121" or torch.version.cuda != "12.1":
+              raise SystemExit("Torch runtime identity changed")
+          if torchvision.__version__ != "0.19.0+cu121":
+              raise SystemExit("torchvision runtime identity changed")
+          if not torch.cuda.is_available() or torch.cuda.device_count() < 2:
+              raise SystemExit("the registered two-GPU runtime is unavailable")
+          if any(torch.cuda.get_device_capability(i) != (8, 9) for i in range(2)):
+              raise SystemExit("CUDA device capability changed")
+          if gsplat.__version__ != "1.4.0" or version("gsplat") != "1.4.0+pt24cu121":
+              raise SystemExit("gsplat distribution identity changed")
+          extension = Path(_C.__file__).resolve()
+          located = Path(distribution("gsplat").locate_file("gsplat/csrc.so")).resolve()
+          observed = hashlib.sha256(extension.read_bytes()).hexdigest()
+          if extension != located or observed != (
+              "e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b"
+          ):
+              raise SystemExit("precompiled gsplat CUDA extension changed")
+          if str(_C.CameraModelType.PINHOLE) != "CameraModelType.PINHOLE":
+              raise SystemExit("gsplat CUDA backend is unavailable")
+          if "splatfacto" not in method_configs.method_configs:
+              raise SystemExit("nerfstudio splatfacto is unavailable")
+          if not hasattr(exporter, "ExportGaussianSplat"):
+              raise SystemExit("nerfstudio exporter is unavailable")
+          print(torch.__version__, torchvision.__version__, version("gsplat"))
+          print(extension, observed, sam2.__file__)
+          PY
+            {
+              echo "BPT_PYTHON=${python_path}"
+              echo "GSPLAT_WHEEL=${wheel}"
+              echo "SAM2_CHECKPOINT=${checkpoint}"
+            } >> "${GITHUB_ENV}"
+          ) > "${RUNTIME_LOG}" 2>&1
+          status=$?
+          set -e
+          cat "${RUNTIME_LOG}"
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Admit one empty durable source-scoring root
+        id: admit
+        if: steps.runtime.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "${AUTHORIZED_RUNNER_NAME}"
+          results="$(realpath -e "${RESULTS_ROOT}")"
+          aligned="$(realpath -e "${ALIGNED_ROOT}")"
+          candidate="$(realpath -e "${CANDIDATE_RUN_ROOT}")"
+          candidate_panel="$(realpath -e "${CANDIDATE_RUN_ROOT}/candidate-panel")"
+          candidate_compact="$(realpath -e "${CANDIDATE_RUN_ROOT}/compact")"
+          test "${results}" = "${RESULTS_ROOT}"
+          test "${aligned}" = "${ALIGNED_ROOT}"
+          test "${candidate}" = "${CANDIDATE_RUN_ROOT}"
+          test -z "$(find "${candidate_panel}" "${candidate_compact}" -type l -print -quit)"
+          test "$(sha256sum "${SOURCE_SCORING_AMENDMENT_PATH}" | awk '{print $1}')" = \
+            "${SOURCE_SCORING_AMENDMENT_FILE_SHA256}"
+          test "$(jq -r '.amendment_id' "${SOURCE_SCORING_AMENDMENT_PATH}")" = \
+            "${SOURCE_SCORING_AMENDMENT_ID}"
+          test "$(sha256sum "${EXECUTION_LOCK_PATH}" | awk '{print $1}')" = \
+            "${EXECUTION_LOCK_FILE_SHA256}"
+          test "$(jq -r '.execution_lock_id' "${EXECUTION_LOCK_PATH}")" = \
+            "${EXECUTION_LOCK_ID}"
+          test "$(sha256sum "${candidate_panel}/candidate-panel-receipt.json" | awk '{print $1}')" = \
+            "${CANDIDATE_PANEL_RECEIPT_FILE_SHA256}"
+          test "$(jq -r '.receipt_id' "${candidate_panel}/candidate-panel-receipt.json")" = \
+            "${CANDIDATE_PANEL_RECEIPT_ID}"
+          test "$(sha256sum "${candidate_panel}/raw-nested-prediction-batch.json" | awk '{print $1}')" = \
+            "${RAW_PREDICTION_BATCH_FILE_SHA256}"
+          test "$(jq -r '.prediction_batch_id' "${candidate_panel}/raw-nested-prediction-batch.json")" = \
+            "${RAW_PREDICTION_BATCH_ID}"
+          test "$(sha256sum "${candidate_compact}/execution-receipt.json" | awk '{print $1}')" = \
+            "${CANDIDATE_EXECUTION_RECEIPT_FILE_SHA256}"
+          test "$(jq -r '.receipt_id' "${candidate_compact}/execution-receipt.json")" = \
+            "${CANDIDATE_EXECUTION_RECEIPT_ID}"
+          test "$(jq -r '.candidate_revision' "${candidate_compact}/execution-receipt.json")" = \
+            "${CANDIDATE_REVISION}"
+          test "$(jq -r '.prediction_record_count' "${candidate_compact}/execution-receipt.json")" = 100
+          test "$(jq -r '.technical_failure_record_count' "${candidate_compact}/execution-receipt.json")" = 0
+          test "$(jq -r '.information_boundary.source_suffix_opened' "${candidate_compact}/execution-receipt.json")" = false
+          test "$(sha256sum "${candidate_compact}/upstream-source-plan.json" | awk '{print $1}')" = \
+            "${UPSTREAM_SOURCE_PLAN_FILE_SHA256}"
+          test "$(jq -r '.plan_id' "${candidate_compact}/upstream-source-plan.json")" = \
+            "${UPSTREAM_SOURCE_PLAN_ID}"
+          output="${RESULTS_ROOT}/bayesian-phystwin/deform360-v61-source-scorer/${SOURCE_SCORING_AMENDMENT_ID}"
+          endpoint="${output}-endpoint"
+          test ! -e "${output}"
+          test ! -e "${output}.claim"
+          test ! -e "${endpoint}"
+          {
+            echo "BPT_SOURCE_SHA=${GITHUB_SHA}"
+            echo "CANDIDATE_ROOT=${candidate_panel}"
+            echo "CANDIDATE_EXECUTION_RECEIPT=${candidate_compact}/execution-receipt.json"
+            echo "SOURCE_PLAN=${candidate_compact}/upstream-source-plan.json"
+            echo "CAUSAL4D_REPOSITORY=${GITHUB_WORKSPACE}/_causal4d"
+            echo "DEFORM360_REPOSITORY=${GITHUB_WORKSPACE}/_deform360"
+            echo "SAM2_REPOSITORY=${GITHUB_WORKSPACE}/_sam2"
+            echo "RUN_ROOT=${output}"
+            echo "RUN_CLAIM=${output}.claim"
+            echo "ENDPOINT_ROOT=${endpoint}"
+          } >> "${GITHUB_ENV}"
+          echo "admitted=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Run the one authorized public-source scorer
+        id: execute
+        if: steps.admit.outputs.admitted == 'true'
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          bash scripts/ci/run_deform360_v61_source_scorer.sh \
+            > "${RUNNER_TEMP}/deform360-v61-source-scorer.log" 2>&1
+          status=$?
+          set -e
+          echo "exit_code=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Retain one bounded terminal source receipt
+        id: retain
+        if: always() && steps.execute.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "${RUN_CLAIM}" || -L "${RUN_CLAIM}" ]]; then
+            echo "source scorer did not create its one-shot claim" >&2
+            exit 0
+          fi
+          expected="$(printf 'workflow_run_id=%s\nworkflow_run_attempt=%s\nsource_revision=%s\n' \
+            "${GITHUB_RUN_ID}" "${GITHUB_RUN_ATTEMPT}" "${GITHUB_SHA}")"
+          if [[ "$(cat "${RUN_CLAIM}")" != "${expected}" ]]; then
+            echo "durable source root belongs to another run" >&2
+            exit 0
+          fi
+          echo "owns_run=true" >> "${GITHUB_OUTPUT}"
+          test -d "${RUN_ROOT}"
+          test ! -L "${RUN_ROOT}"
+          compact="${RUN_ROOT}/compact"
+          mkdir -p "${compact}/logs"
+          test -d "${compact}"
+          test ! -L "${compact}"
+          log="${RUNNER_TEMP}/deform360-v61-source-scorer.log"
+          if [[ -f "${log}" && ! -L "${log}" ]]; then
+            tail -c 64000 "${log}" > "${compact}/logs/runner.log"
+          fi
+          receipt="${compact}/source-scoring-receipt.json"
+          status="${{ steps.execute.outputs.exit_code }}"
+          status="${status:-1}"
+          if [[ ! -f "${receipt}" ]]; then
+            test -f "${compact}/source-suffix-opening-authorization.json"
+            if [[ -d "${ENDPOINT_ROOT}/terminal-failures" ]]; then
+              test ! -L "${ENDPOINT_ROOT}/terminal-failures"
+              test -z "$(find "${ENDPOINT_ROOT}/terminal-failures" -type l -print -quit)"
+              cp -a "${ENDPOINT_ROOT}/terminal-failures" \
+                "${compact}/endpoint-terminal-failures"
+            fi
+            if [[ -d "${RUN_ROOT}/source-outcomes" ]]; then
+              test ! -L "${RUN_ROOT}/source-outcomes"
+              test -z "$(find "${RUN_ROOT}/source-outcomes" -type l -print -quit)"
+              cp -a "${RUN_ROOT}/source-outcomes" \
+                "${compact}/partial-source-outcomes"
+            fi
+            if [[ -d "${RUN_ROOT}/support-reports" ]]; then
+              test ! -L "${RUN_ROOT}/support-reports"
+              test -z "$(find "${RUN_ROOT}/support-reports" -type l -print -quit)"
+              cp -a "${RUN_ROOT}/support-reports" \
+                "${compact}/partial-support-reports"
+            fi
+            source_opened=false
+            if [[ -f "${compact}/source-suffix-opened.txt" ]] && \
+               [[ "$(cat "${compact}/source-suffix-opened.txt")" = true ]]; then
+              source_opened=true
+            fi
+            stage=source-scorer
+            if [[ -f "${compact}/terminal-stage.txt" ]]; then
+              stage="$(cat "${compact}/terminal-stage.txt")"
+            fi
+            command=(
+              "${BPT_PYTHON}"
+              scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py
+              retain-failure
+              --scorer-revision "${GITHUB_SHA}"
+              --runner-name "${RUNNER_NAME}"
+              --workflow-run-id "${GITHUB_RUN_ID}"
+              --workflow-run-attempt "${GITHUB_RUN_ATTEMPT}"
+              --authorization "${compact}/source-suffix-opening-authorization.json"
+              --terminal-stage "${stage}"
+              --exit-code "$(( status == 0 ? 1 : status ))"
+              --artifact-root "${compact}"
+              --output "${receipt}"
+            )
+            if [[ "${source_opened}" = true ]]; then
+              command+=(--source-suffix-opened)
+            fi
+            "${command[@]}" >/dev/null
+          fi
+          rm -f "${compact}/SHA256SUMS"
+          (
+            cd "${compact}"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+            sha256sum --check SHA256SUMS >/dev/null
+          )
+
+      - name: Verify compact source decision and closed confirmation boundary
+        if: always() && steps.retain.outputs.owns_run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          compact="${RUN_ROOT}/compact"
+          (cd "${compact}" && sha256sum --check SHA256SUMS >/dev/null)
+          "${BPT_PYTHON}" scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
+            validate-receipt --receipt "${compact}/source-scoring-receipt.json" >/dev/null
+          jq -e '
+            .information_boundary.confirmation_payloads_opened == false and
+            .information_boundary.target_outcomes_opened == false and
+            .information_boundary.held_v8_artifacts_accessed == false and
+            .information_boundary.human_approval_required == false and
+            .information_boundary.new_measurements_collected == false and
+            .information_boundary.prob4d_decoded_uniform_fusion_used == false and
+            .independent_confirmation_authorized == false and
+            .claim_authorized == false and
+            (
+              (
+                (.status == "source-challenger-advanced" or
+                 .status == "source-reference-retained") and
+                .source_gate_evaluated == null and
+                .outcome_count == 100
+              ) or
+              (
+                .status == "source-scoring-technical-failure-retained" and
+                .source_gate_evaluated == false and
+                .source_gate_passed == null and
+                .source_continuation_authorized == false
+              )
+            )
+          ' "${compact}/source-scoring-receipt.json" >/dev/null
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test -z "$(git status --porcelain=v1 --untracked-files=no)"
+
+      - name: Upload compact public-source evidence
+        if: always() && steps.retain.outputs.owns_run == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: deform360-v61-source-scorer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.RUN_ROOT }}/compact
+          if-no-files-found: error
+          retention-days: 180
+
+      - name: Require one complete one-shot terminal decision
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.runtime.outputs.exit_code }}" = "0"
+          test "${{ steps.admit.outputs.admitted }}" = "true"
+          test "${{ steps.execute.outcome }}" != "skipped"
+          status="${{ steps.execute.outputs.exit_code }}"
+          status="${status:-1}"
+          test "${{ steps.retain.outputs.owns_run }}" = "true"
+          test "${status}" = "0"
+
+# This workflow contains no confirmation, target, held-v8, or claim command.
