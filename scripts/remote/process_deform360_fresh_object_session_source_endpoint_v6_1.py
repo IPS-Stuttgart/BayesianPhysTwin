@@ -98,6 +98,19 @@ def _ffmpeg_version_first_line(ffmpeg: Path) -> str:
     return lines[0]
 
 
+def _gsplat_versions_match(
+    *,
+    module_version: str,
+    distribution_version: str,
+    expected_base_version: str,
+    expected_distribution_version: str,
+) -> bool:
+    return (
+        module_version == distribution_version == expected_distribution_version
+        and module_version.partition("+")[0] == expected_base_version
+    )
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -200,9 +213,12 @@ def _validate_dependencies(
         "Torch/CUDA runtime changed",
     )
     _require(
-        gsplat.__version__ == runtime["gsplat_base_version"]
-        and importlib.metadata.version("gsplat")
-        == runtime["gsplat_distribution_version"],
+        _gsplat_versions_match(
+            module_version=str(gsplat.__version__),
+            distribution_version=importlib.metadata.version("gsplat"),
+            expected_base_version=str(runtime["gsplat_base_version"]),
+            expected_distribution_version=str(runtime["gsplat_distribution_version"]),
+        ),
         "gsplat distribution changed",
     )
     _require(

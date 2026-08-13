@@ -8,11 +8,14 @@ from bayesian_phystwin._portable_contracts import content_id
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / (
-    ".github/workflows/deform360-v61-source-scorer-gsplat-attestation.yml"
+    ".github/workflows/deform360-v61-source-scorer-endpoint-gsplat-base.yml"
 )
 RETIRED_WORKFLOW = ROOT / ".github/workflows/deform360-v61-source-scorer.yml"
 RETIRED_CUDNN_WORKFLOW = ROOT / (
     ".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml"
+)
+RETIRED_GSPLAT_WORKFLOW = ROOT / (
+    ".github/workflows/deform360-v61-source-scorer-gsplat-attestation.yml"
 )
 RUNNER = ROOT / "scripts/ci/run_deform360_v61_source_scorer.sh"
 DOCUMENT = ROOT / "docs/deform360_fresh_object_session_source_scoring_v6_1.md"
@@ -31,6 +34,10 @@ GSPLAT_ATTESTATION_REPAIR = ROOT / (
     "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json"
 )
+ENDPOINT_GSPLAT_BASE_REPAIR = ROOT / (
+    "protocols/amendments/"
+    "deform360_official_hub_fresh_object_session_v6_1_endpoint_gsplat_base_runtime.json"
+)
 
 
 def test_workflow_runs_one_protected_source_execution_without_confirmation() -> None:
@@ -39,6 +46,7 @@ def test_workflow_runs_one_protected_source_execution_without_confirmation() -> 
 
     assert not RETIRED_WORKFLOW.exists()
     assert not RETIRED_CUDNN_WORKFLOW.exists()
+    assert not RETIRED_GSPLAT_WORKFLOW.exists()
     assert "# workflow-lifecycle: temporary" in workflow
     assert "# workflow-issue: #645" in workflow
     assert "pull_request:" not in workflow
@@ -50,7 +58,7 @@ def test_workflow_runs_one_protected_source_execution_without_confirmation() -> 
     assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in workflow
     assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in workflow
     assert "cancel-in-progress: false" in workflow
-    assert "deform360-v61-source-scorer-gsplat-attestation-v1" in workflow
+    assert "deform360-v61-source-scorer-endpoint-gsplat-base-v1" in workflow
     assert "os.O_EXCL" in runner
     assert 'test ! -e "${output}"' in workflow
     assert 'test ! -e "${output}.claim"' in workflow
@@ -154,6 +162,8 @@ def test_source_scoring_artifacts_are_packaged_and_documented() -> None:
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json",
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json",
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json",
+        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_endpoint_gsplat_base_runtime.json",
+        "docs/deform360_v61_source_scorer_endpoint_gsplat_base_repair_2026-08-13.md",
         "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt",
         "scripts/ci/run_deform360_v61_source_scorer.sh",
         "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py",
@@ -201,13 +211,15 @@ def test_cudnn_supply_repair_is_content_addressed_and_science_preserving() -> No
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
         "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
         "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
-        "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py": "endpoint_processor_sha256",
         "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
         "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
     }
     for relative, field in expected.items():
         observed = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
         assert observed == scientific[field], relative
+    assert scientific["endpoint_processor_sha256"] == (
+        "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa"
+    )
 
 
 def test_gsplat_attestation_repair_is_content_addressed_and_science_preserving() -> (
@@ -252,10 +264,95 @@ def test_gsplat_attestation_repair_is_content_addressed_and_science_preserving()
         "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
         "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
         "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
-        "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py": "endpoint_processor_sha256",
         "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
         "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
     }
     for relative, field in expected.items():
         observed = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
         assert observed == scientific[field], relative
+    assert scientific["endpoint_processor_sha256"] == (
+        "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa"
+    )
+
+
+def test_endpoint_gsplat_base_repair_is_content_addressed_and_source_independent() -> (
+    None
+):
+    repair = json.loads(ENDPOINT_GSPLAT_BASE_REPAIR.read_text(encoding="utf-8"))
+    declared = repair.pop("repair_id")
+
+    assert declared == content_id(repair)
+    assert declared == (
+        "1b3136b89be19d5dc587ce3a27e8a2e8ac621248a202662d1fe9e2ba086da5b5"
+    )
+    failure = repair["failed_execution_evidence"]
+    assert failure["workflow_run_id"] == 31666009357
+    assert failure["source_revision"] == ("cde6f9da37c2697e50897f2b9ce8360c744325bc")
+    assert failure["compact_receipt_id"] == (
+        "69967a3441da85fc1a862d8206b6cb750d167dbabfc0c921c47adbc87f738f61"
+    )
+    assert failure["compact_receipt_file_sha256"] == (
+        "a0b6b2ff1a7ce5dd4732a2896b0f6f4cff593a5f29e43b9bd5a6cc160135c027"
+    )
+    assert failure["source_suffix_opened"] is True
+    assert failure["endpoint_geometry_materialized"] is False
+    assert failure["endpoint_geometry_inspected"] is False
+    assert failure["scored_outcome_count"] == 0
+    assert failure["source_gate_evaluated"] is False
+    assert (
+        repair["information_boundary"]["source_outcomes_used_to_design_repair"] is False
+    )
+    assert repair["information_boundary"]["confirmation_payloads_opened"] is False
+    assert repair["information_boundary"]["target_outcomes_opened"] is False
+    assert repair["information_boundary"]["held_v8_artifacts_accessed"] is False
+
+    scope = repair["repair_scope"]
+    changed_fields = {
+        "endpoint_dependency_attestation_changed",
+        "endpoint_processor_source_changed",
+    }
+    for field, changed in scope.items():
+        assert changed is (field in changed_fields), field
+
+    scientific = repair["scientific_identity"]
+    assert scientific["predecessor_endpoint_processor_sha256"] == (
+        "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa"
+    )
+    assert (
+        scientific["corrected_endpoint_processor_sha256"]
+        == hashlib.sha256(
+            (
+                ROOT
+                / "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py"
+            ).read_bytes()
+        ).hexdigest()
+    )
+    expected = {
+        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
+        "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
+        "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
+        "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
+        "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
+    }
+    for relative, field in expected.items():
+        assert (
+            hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+            == scientific[field]
+        )
+
+
+def test_workflow_binds_the_terminal_endpoint_failure_and_new_repair() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    for value in (
+        "31666009357",
+        "cde6f9da37c2697e50897f2b9ce8360c744325bc",
+        "69967a3441da85fc1a862d8206b6cb750d167dbabfc0c921c47adbc87f738f61",
+        "a0b6b2ff1a7ce5dd4732a2896b0f6f4cff593a5f29e43b9bd5a6cc160135c027",
+        "1b3136b89be19d5dc587ce3a27e8a2e8ac621248a202662d1fe9e2ba086da5b5",
+        "cf0ed8720d734580885f54a9bc52fb366a45967b0ef45e9af5b35cd0a0edbd7d",
+        "bfac71d11c8226397b65ee261f1758e18f5e87bfe1bf868f5f3924141883fdb5",
+    ):
+        assert value in workflow
+    assert "endpoint-gsplat-base-runtime-repair.json" in workflow
+    assert "deform360-v61-source-scorer-endpoint-gsplat-base/" in workflow

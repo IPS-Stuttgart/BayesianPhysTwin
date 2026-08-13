@@ -435,6 +435,29 @@ def test_processor_never_uses_modern_fps_mode_or_camera_substitution() -> None:
     assert "build.ninja" not in source
 
 
+def test_processor_accepts_the_pinned_tagged_gsplat_build() -> None:
+    processor = _processor_module()
+
+    assert processor._gsplat_versions_match(  # noqa: SLF001
+        module_version="1.4.0+pt24cu121",
+        distribution_version="1.4.0+pt24cu121",
+        expected_base_version="1.4.0",
+        expected_distribution_version="1.4.0+pt24cu121",
+    )
+    assert not processor._gsplat_versions_match(  # noqa: SLF001
+        module_version="1.4.0",
+        distribution_version="1.4.0+pt24cu121",
+        expected_base_version="1.4.0",
+        expected_distribution_version="1.4.0+pt24cu121",
+    )
+    assert not processor._gsplat_versions_match(  # noqa: SLF001
+        module_version="1.4.0+pt24cu122",
+        distribution_version="1.4.0+pt24cu122",
+        expected_base_version="1.4.0",
+        expected_distribution_version="1.4.0+pt24cu121",
+    )
+
+
 def test_terminal_failure_receipt_is_not_a_scored_negative() -> None:
     authorization = {
         "schema": scorer.SOURCE_SUFFIX_AUTHORIZATION_SCHEMA,
