@@ -31,10 +31,11 @@ from bayesian_phystwin.physical_rollout_v1 import (
 
 JAX_REVISION = "82c6993c16704e38611f9cb91a5b70f1c690daee"
 GENESIS_REVISION = "06a5f2518c254f7ef2cc8757a7f84ed96eb68232"
+DEFAULT_FLOAT_DTYPE = np.dtype("float32")
 
 
 def _raw_arrays(
-    dtype: np.dtype[np.floating] = np.dtype("float32"),
+    dtype: np.dtype[np.floating] = DEFAULT_FLOAT_DTYPE,
 ) -> dict[str, np.ndarray]:
     frame_zero = np.array(
         [

@@ -14,6 +14,12 @@ import numpy.typing as npt
 
 from ._canonical_contracts import plain_json
 from ._lagrangian_common_v1 import (
+    _ARTIFACT_FIELDS,
+    _FILE_FIELDS,
+    _INPUT_FIELDS,
+    _MAPPING_FIELDS,
+    _PROVENANCE_ROSTER,
+    _ROOT_ROSTER,
     ARTIFACT_FILENAME,
     CHECKSUMS_FILENAME,
     LAGRANGIAN_ARTIFACT_SCHEMA,
@@ -23,12 +29,6 @@ from ._lagrangian_common_v1 import (
     PHYSICAL_ARCHIVE_FILENAME,
     RAW_ARCHIVE_FILENAME,
     RUNTIME_FILENAME,
-    _ARTIFACT_FIELDS,
-    _FILE_FIELDS,
-    _INPUT_FIELDS,
-    _MAPPING_FIELDS,
-    _PROVENANCE_ROSTER,
-    _ROOT_ROSTER,
     _mapping,
     _ordinary_file,
     _positive_integer,

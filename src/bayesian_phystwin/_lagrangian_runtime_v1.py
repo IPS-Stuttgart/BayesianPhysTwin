@@ -11,6 +11,8 @@ import numpy.typing as npt
 
 from ._canonical_contracts import plain_json
 from ._lagrangian_common_v1 import (
+    _INFORMATION_BOUNDARY_FIELDS,
+    _RUNTIME_FIELDS,
     GENESIS_MPM_PROFILE,
     JAX_FEM_PROFILE,
     LAGRANGIAN_BACKEND_PROFILES,
@@ -18,8 +20,6 @@ from ._lagrangian_common_v1 import (
     LAGRANGIAN_RUNTIME_SCHEMA,
     LAGRANGIAN_SCHEMA_VERSION,
     FloatArray,
-    _INFORMATION_BOUNDARY_FIELDS,
-    _RUNTIME_FIELDS,
     _finite_positive,
     _finite_vector3,
     _mapping,
@@ -287,4 +287,3 @@ def physical_rollout_from_lagrangian_points(
         "frame_zero_points_m": frame_zero,
     }
     return validate_physical_rollout_arrays(physical)
-
