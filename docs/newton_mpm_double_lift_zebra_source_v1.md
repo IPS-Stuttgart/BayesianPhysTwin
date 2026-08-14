@@ -72,10 +72,11 @@ only after the validation gate passes. Technical failures remain in the fixed
 eight-candidate denominator.
 
 Each grid manifest binds the clean Git commit and SHA-256 identities of the
-runtime, gate, and CLI modules. Candidate records are schema-checked and their
+runtime, gate, and CLI modules, plus exact Newton, Warp, NumPy, SciPy, and
+Python runtime versions. Candidate records are schema-checked and their
 material parameters must match the same-index frozen grid entry. Before any
-future file is opened, the prefix result's content ID, selected archive, and all
-validation checks are independently re-derived from the sealed grid.
+future file is opened, the prefix result's content ID, selected archive, and
+all validation checks are independently re-derived from the sealed grid.
 
 The initial ten-frame feasibility run read frame-zero geometry and controller
 motion only. It established finite execution for 4,607 irregular source

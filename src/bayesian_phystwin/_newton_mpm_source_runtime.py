@@ -11,6 +11,7 @@ from typing import Any, cast
 import newton
 import numpy as np
 import numpy.typing as npt
+import scipy
 import warp as wp
 from newton.solvers import SolverImplicitMPM
 
@@ -341,6 +342,8 @@ def run_source_grid(
         "runtime": {
             "engine_version": newton.__version__,
             "warp_version": wp.__version__,
+            "numpy_version": np.__version__,
+            "scipy_version": scipy.__version__,
             "python_version": platform.python_version(),
             "device": str(selected_device.alias),
             "device_name": str(selected_device.name),

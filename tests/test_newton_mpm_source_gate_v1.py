@@ -156,6 +156,8 @@ def _source_fixture(tmp_path: Path) -> dict[str, Path]:
             "engine": "newton-implicit-mpm",
             "engine_version": "1.5.0",
             "warp_version": "1.16.0",
+            "numpy_version": np.__version__,
+            "scipy_version": "1.18.0",
             "fps": 30.0,
             "substeps": 4,
             "voxel_size_m": 0.02,
@@ -287,6 +289,8 @@ def _grid_manifest(
         "runtime": {
             "engine_version": "1.5.0",
             "warp_version": "1.16.0",
+            "numpy_version": np.__version__,
+            "scipy_version": "1.18.0",
             "python_version": "3.12.0",
             "device": "cuda:0",
             "device_name": "synthetic-test-device",

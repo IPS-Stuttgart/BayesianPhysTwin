@@ -1009,6 +1009,8 @@ def load_grid_manifest(
             {
                 "engine_version",
                 "warp_version",
+                "numpy_version",
+                "scipy_version",
                 "python_version",
                 "device",
                 "device_name",
@@ -1021,6 +1023,11 @@ def load_grid_manifest(
         runtime.get("engine_version") == simulation["engine_version"]
         and runtime.get("warp_version") == simulation["warp_version"],
         "grid runtime versions differ from the frozen protocol",
+    )
+    _require(
+        runtime.get("numpy_version") == simulation["numpy_version"]
+        and runtime.get("scipy_version") == simulation["scipy_version"],
+        "grid numerical-library versions differ from the frozen protocol",
     )
     implementation = _mapping(value.get("implementation"), name="implementation")
     require_exact_fields(
