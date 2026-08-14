@@ -62,6 +62,11 @@ def _validate_proxy(proxy_path: Path, case_name: str) -> dict[str, object]:
         raise ValueError("reconstruction proxy must contain exactly one case")
     if records[0].get("name") != case_name:
         raise ValueError("reconstruction proxy case changed")
+    mapping_path = _validate_identity(proxy.get("mapping"), label="proxy mapping")
+    mapping = json.loads(mapping_path.read_text(encoding="utf-8"))
+    case_mapping = mapping.get("case_to_material")
+    if not isinstance(case_mapping, Mapping) or set(case_mapping) != {case_name}:
+        raise ValueError("reconstruction proxy mapping must contain exactly its case")
     for key in ("node_sem", "train_ready"):
         _validate_identity(records[0].get(key), label=f"proxy {key}")
     semantic_dimension = records[0].get("semantic_dimension")

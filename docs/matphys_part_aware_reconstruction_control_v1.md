@@ -39,6 +39,12 @@ by pinned MatPhys. Version 1.2 installs a signature-compatible warning adapter
 before importing MatPhys and records the failed launch log hash in the protocol.
 That launch produced no checkpoint, metric, or scientific outcome.
 
+The v1.2 retry passed import but stopped before model construction because the
+staged proxy summary selected one case while its material mapping still listed
+four. Version 1.3 requires both the proxy records and mapping to contain exactly
+the requested case. The v1.2 launch likewise produced no checkpoint, metric, or
+scientific outcome.
+
 ## Decision
 
 Run the separately locked

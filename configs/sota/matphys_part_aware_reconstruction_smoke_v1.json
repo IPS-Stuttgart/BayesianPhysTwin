@@ -1,11 +1,14 @@
 {
   "schema_version": 1,
-  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.2",
-  "locked_at_utc": "2026-08-13T23:59:21Z",
+  "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.3",
+  "locked_at_utc": "2026-08-14T00:07:36Z",
   "status": "mechanical one-epoch smoke on an already-open case",
   "supersedes_before_execution": {
-    "protocol_id": "matphys-part-aware-reconstruction-smoke-v1.1",
-    "reason": "The first launch stopped during import before model construction because Warp 1.15 omits the private warn helper expected by pinned MatPhys. It produced no checkpoint, metric, or scientific outcome. The failure log SHA-256 is dd4507a2ff84cdcf180ad1787f6f8718ce98fe37985a93225dfcfdcc94e0100e."
+    "protocol_ids": [
+      "matphys-part-aware-reconstruction-smoke-v1.1",
+      "matphys-part-aware-reconstruction-smoke-v1.2"
+    ],
+    "reason": "Version 1.1 stopped during import before model construction because Warp 1.15 omits the private warn helper expected by pinned MatPhys (log SHA-256 dd4507a2ff84cdcf180ad1787f6f8718ce98fe37985a93225dfcfdcc94e0100e). Version 1.2 passed that import but stopped before model construction because the staged proxy mapping still enumerated extra cases (log SHA-256 6ea3a2efa7dee5fa3ae157285fc3c26e594dbe25e55b399965810c95040a3062). Neither produced a checkpoint, metric, or scientific outcome. Version 1.3 requires a true single-case mapping."
   },
   "claim_boundary": "This smoke deliberately fits future observations from the same case. It verifies only runtime wiring, finite optimization, provenance, export, and metric plumbing; it is not accuracy evidence.",
   "case": {

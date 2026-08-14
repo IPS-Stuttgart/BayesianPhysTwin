@@ -46,6 +46,15 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         frames[frame_id] = frame
     proxy_root = tmp_path / "proxy"
     proxy_root.mkdir()
+    mapping = proxy_root / "case_to_material.json"
+    mapping.write_text(
+        json.dumps(
+            {
+                "case_to_material": {"case_a": "cloth"},
+                "class_to_id": {"cloth": 0},
+            }
+        )
+    )
     node_sem = proxy_root / "node_sem.npz"
     train_ready = proxy_root / "train_ready.pt"
     node_sem.write_bytes(b"node-sem")
@@ -55,6 +64,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         json.dumps(
             {
                 "contract": "causal-dino-graph-voronoi-parts-v1",
+                "mapping": _identity(mapping),
                 "cases": [
                     {
                         "name": "case_a",
@@ -226,6 +236,24 @@ def test_reconstruction_audit_accepts_registered_compact_proxy(tmp_path: Path) -
     validated = validate_matphys_reconstruction_audit(audit, checkpoint)
 
     assert validated["training_configuration"]["proxy_contract"] == compact_contract
+
+
+def test_reconstruction_audit_rejects_extra_proxy_mapping_case(tmp_path: Path) -> None:
+    audit, checkpoint, _ = _fixture(tmp_path)
+    payload = json.loads(audit.read_text())
+    proxy_path = Path(payload["proxy"]["path"])
+    proxy = json.loads(proxy_path.read_text())
+    mapping_path = Path(proxy["mapping"]["path"])
+    mapping = json.loads(mapping_path.read_text())
+    mapping["case_to_material"]["case_b"] = "cloth"
+    mapping_path.write_text(json.dumps(mapping))
+    proxy["mapping"] = _identity(mapping_path)
+    proxy_path.write_text(json.dumps(proxy))
+    payload["proxy"] = _identity(proxy_path)
+    audit.write_text(json.dumps(payload))
+
+    with pytest.raises(ValueError, match="exactly its case"):
+        validate_matphys_reconstruction_audit(audit, checkpoint)
 
 
 def test_reconstruction_runner_installs_part_adapter(monkeypatch) -> None:
