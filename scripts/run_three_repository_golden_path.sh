@@ -203,3 +203,33 @@ for integration_test in "${integration_tests[@]}"; do
     --import-mode=prepend \
     "${integration_test}"
 done
+
+# Newer Prob4D revisions publish an installed-wheel public-API manifest after
+# the historical root evidence roster has been materialized. Keep that
+# compatibility evidence without weakening the exact root-roster check used by
+# BayesianPhysTwin: relocate it into a dedicated subdirectory, then verify it
+# against the exact installed Prob4D wheel before the temporary environment is
+# removed. Older explicitly selected Prob4D revisions may not publish it.
+if [[ -n "${THREE_REPOSITORY_EVIDENCE_OUTPUT:-}" ]]; then
+  EVIDENCE_ROOT="$(absolute_path "${THREE_REPOSITORY_EVIDENCE_OUTPUT}")"
+  PUBLIC_API_MANIFEST="${EVIDENCE_ROOT}/public-api-manifest.json"
+  if [[ -e "${PUBLIC_API_MANIFEST}" ]]; then
+    if [[ ! -f "${PUBLIC_API_MANIFEST}" || -L "${PUBLIC_API_MANIFEST}" ]]; then
+      echo "Prob4D public-API manifest must be a regular file." >&2
+      exit 1
+    fi
+    COMPATIBILITY_ROOT="${EVIDENCE_ROOT}/compatibility"
+    COMPATIBILITY_MANIFEST="${COMPATIBILITY_ROOT}/prob4d-public-api-manifest.json"
+    mkdir -p "${COMPATIBILITY_ROOT}"
+    if [[ -e "${COMPATIBILITY_MANIFEST}" ]]; then
+      echo "Refusing to replace an existing compatibility manifest." >&2
+      exit 1
+    fi
+    mv -- "${PUBLIC_API_MANIFEST}" "${COMPATIBILITY_MANIFEST}"
+    env -u PYTHONPATH PYTHONNOUSERSITE=1 \
+      "${TEST_VENV}/bin/python" -I -m prob4d.public_api_manifest verify \
+      "${COMPATIBILITY_MANIFEST}" \
+      --require-current
+    sha256sum "${COMPATIBILITY_MANIFEST}"
+  fi
+fi

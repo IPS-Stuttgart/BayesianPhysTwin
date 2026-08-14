@@ -10,15 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / (
     ".github/workflows/deform360-v61-source-scorer-endpoint-gsplat-base.yml"
 )
-RETIRED_WORKFLOW = ROOT / ".github/workflows/deform360-v61-source-scorer.yml"
-RETIRED_CUDNN_WORKFLOW = ROOT / (
-    ".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml"
+RETIREMENT = (
+    ROOT / "results/diagnostics/deform360_v61_one_shot_retirement_v1/retirement.json"
 )
-RETIRED_GSPLAT_WORKFLOW = ROOT / (
-    ".github/workflows/deform360-v61-source-scorer-gsplat-attestation.yml"
-)
-RUNNER = ROOT / "scripts/ci/run_deform360_v61_source_scorer.sh"
-DOCUMENT = ROOT / "docs/deform360_fresh_object_session_source_scoring_v6_1.md"
 AMENDMENT = ROOT / (
     "protocols/amendments/"
     "deform360_official_hub_fresh_object_session_v6_1_source_scoring.json"
@@ -26,154 +20,48 @@ AMENDMENT = ROOT / (
 RUNTIME_LOCK = ROOT / (
     "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt"
 )
-RUNTIME_REPAIR = ROOT / (
-    "protocols/amendments/"
-    "deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json"
-)
-GSPLAT_ATTESTATION_REPAIR = ROOT / (
-    "protocols/amendments/"
-    "deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json"
-)
-ENDPOINT_GSPLAT_BASE_REPAIR = ROOT / (
-    "protocols/amendments/"
-    "deform360_official_hub_fresh_object_session_v6_1_endpoint_gsplat_base_runtime.json"
-)
 
 
-def test_workflow_runs_one_protected_source_execution_without_confirmation() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-    runner = RUNNER.read_text(encoding="utf-8")
-
-    assert not RETIRED_WORKFLOW.exists()
-    assert not RETIRED_CUDNN_WORKFLOW.exists()
-    assert not RETIRED_GSPLAT_WORKFLOW.exists()
-    assert "# workflow-lifecycle: temporary" in workflow
-    assert "# workflow-issue: #645" in workflow
-    assert "pull_request:" not in workflow
-    assert "push:" not in workflow
-    assert "workflow_dispatch:" in workflow
-    assert "inputs.execute_authorized == true" in workflow
-    assert "github.ref == 'refs/heads/main'" in workflow
-    assert "github.ref_protected == true" in workflow
-    assert "github.repository == 'IPS-Stuttgart/BayesianPhysTwin'" in workflow
-    assert "runs-on: [self-hosted, Linux, X64, nvidia-smi]" in workflow
-    assert "cancel-in-progress: false" in workflow
-    assert "deform360-v61-source-scorer-endpoint-gsplat-base-v1" in workflow
-    assert "os.O_EXCL" in runner
-    assert 'test ! -e "${output}"' in workflow
-    assert 'test ! -e "${output}.claim"' in workflow
-    assert 'test ! -e "${endpoint}"' in workflow
-    assert "independent_confirmation_authorized=false" in workflow
-    assert "confirmation_payloads_opened=false" in workflow
-    assert "contents: write" not in workflow
-    assert "git push" not in workflow
+def _retirement_record() -> dict[str, object]:
+    return json.loads(RETIREMENT.read_text(encoding="utf-8"))
 
 
-def test_authorized_dispatch_cannot_pass_after_runtime_or_admission_skip() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
+def test_source_scorer_is_retired_after_terminal_retained_failure() -> None:
+    assert not WORKFLOW.exists()
 
-    assert "Require one complete one-shot terminal decision" in workflow
-    assert 'test "${{ steps.runtime.outputs.exit_code }}" = "0"' in workflow
-    assert 'test "${{ steps.admit.outputs.admitted }}" = "true"' in workflow
-    assert 'test "${{ steps.execute.outcome }}" != "skipped"' in workflow
-    assert 'test "${{ steps.retain.outputs.owns_run }}" = "true"' in workflow
-
-
-def test_workflow_binds_the_exact_candidate_barrier_and_public_source() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-
-    for value in (
-        "e8b962a8abf228114495683cfb9ba87ee802e7405ca92f1f28b5a76df3faa371",
-        "c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1",
-        "65747822fa8380296a572811772fce88b9275a7e1148a8015e1156f520f7e369",
-        "db3cc4351436492db5962bc1e99f516adc38a5031140b675b45dc6d752b7559a",
-        "d27674518f523db4fddb9cc108dd3d77321dddefeccc866b2b81044bf44ebee8",
-        "d9b9e4df9d020e8ae076f407f61d5e1f328c68d2f4fe4d8e4ad1688d2d253100",
-        "2eb8d12e2120d58d0d678c3771d29faaeb765497",
-        "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
-        "2b90b9f5ceec907a1c18123530e92e794ad901a4",
-        "50e3682a5dbf976b20cc9115b6e7a975d0144ea5",
-    ):
-        assert value in workflow
-    assert "candidate-panel-receipt.json" in workflow
-    assert "raw-nested-prediction-batch.json" in workflow
-    assert ".technical_failure_record_count'" in workflow
-    assert "= 0" in workflow
-
-
-def test_runtime_is_precompiled_hash_locked_and_never_jit_compiled() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-    runner = RUNNER.read_text(encoding="utf-8")
-    combined = f"{workflow}\n{runner}"
-
-    assert "1.4.0+pt24cu121" in workflow
-    assert (
-        "2efb8b8f4ad3275db05707fa6f9cf110482e7fd269c78a4cc7dc5b08cfc957ff" in workflow
+    record = _retirement_record()
+    scorer = record["scorer"]
+    assert isinstance(scorer, dict)
+    assert scorer["tracking_issue"] == 645
+    assert scorer["workflow_run_id"] == 31669176135
+    assert scorer["workflow_run_attempt"] == 1
+    assert scorer["source_revision"] == ("74e556d6f9b503409f3b163ef27ccb7a17c61d85")
+    assert scorer["workflow_conclusion"] == "failure"
+    assert scorer["artifact_id"] == 9169119864
+    assert scorer["artifact_sha256"] == (
+        "b1a8ea2e4d3952af4b446fa4d420ea23f310b4e43396cc8505978302fcd4e42f"
     )
-    assert (
-        "e0b664c9d6f355e611bdfa720103b86b399ded3dcc5ecfaf59eaade992f1359b" in workflow
+    assert scorer["source_scoring_receipt_id"] == (
+        "f284be9c6a83afe5688030cfec466f0bbe2f2a24d7ce0aa13eac272d9763742c"
     )
-    assert 'pip install --no-deps "${wheel}"' in workflow
-    assert 'pip install --no-deps "${cudnn_wheel}"' in workflow
-    assert "nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl" in workflow
-    assert (
-        "165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f" in workflow
-    )
-    assert 'version("nvidia-cudnn-cu12") != "9.1.0.70"' in workflow
-    assert 'gsplat.__version__ != "1.4.0+pt24cu121"' in workflow
-    assert 'gsplat.__version__ != "1.4.0"' not in workflow
-    assert workflow.index('pip install --no-deps "${cudnn_wheel}"') < workflow.index(
-        'pip install -r "${CUDA_RUNTIME_LOCK_PATH}"'
-    )
-    assert "gsplat/csrc.so" in workflow
-    assert "build.ninja" not in combined
-    assert "nvcc" not in combined.lower()
+    assert scorer["terminal_status"] == ("source-scoring-technical-failure-retained")
+    assert scorer["terminal_stage"] == "endpoint-processing"
+    assert scorer["exit_code"] == 2
+    assert scorer["source_suffix_opened"] is True
+    assert scorer["source_gate_evaluated"] is False
+    assert scorer["source_gate_passed"] is None
+    assert scorer["source_continuation_authorized"] is False
+    assert scorer["replacement_allowed"] is False
+    assert scorer["confirmation_payloads_opened"] is False
+    assert scorer["target_outcomes_opened"] is False
+    assert scorer["held_v8_artifacts_accessed"] is False
 
 
-def test_runner_scores_only_after_authorization_and_retains_failures() -> None:
-    runner = RUNNER.read_text(encoding="utf-8")
+def test_retirement_preserves_frozen_reproduction_inputs() -> None:
+    record = _retirement_record()
+    declared = record.pop("record_id")
+    assert declared == content_id(record)
 
-    authorization = runner.index("  authorize \\")
-    suffix_marker = runner.index("source-suffix-opened.txt")
-    endpoint = runner.index("process_deform360_fresh_object_session_source_endpoint")
-    score = runner.index("  score \\")
-    assert authorization < suffix_marker < endpoint < score
-    assert "worker 0 &" in runner
-    assert "worker 1 &" in runner
-    assert "source-scoring-receipt.json" in runner
-    assert "source-score-exit-code.txt" in runner
-    assert '"${score_status}" -ne 0 && "${score_status}" -ne 3' in runner
-    for forbidden in (
-        "confirmation-payload",
-        "target-outcome",
-        "held-v8",
-        "export_prob4d_uniform.py",
-        "new_motioncrafter",
-    ):
-        assert forbidden not in runner.lower()
-
-
-def test_source_scoring_artifacts_are_packaged_and_documented() -> None:
-    manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
-    document = " ".join(DOCUMENT.read_text(encoding="utf-8").split())
-
-    for relative in (
-        "docs/deform360_fresh_object_session_source_scoring_v6_1.md",
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json",
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json",
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_gsplat_attestation_runtime.json",
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_endpoint_gsplat_base_runtime.json",
-        "docs/deform360_v61_source_scorer_endpoint_gsplat_base_repair_2026-08-13.md",
-        "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt",
-        "scripts/ci/run_deform360_v61_source_scorer.sh",
-        "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py",
-        "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py",
-    ):
-        assert f"include {relative}" in manifest
-    assert "public real-world RGB recordings" in document
-    assert "collects no new measurement and requires no human approval" in document
-    assert "decoded-uniform Prob4D overlap fusion is unused" in document
-    assert "never becomes a scored loss" in document
     assert hashlib.sha256(AMENDMENT.read_bytes()).hexdigest() == (
         "c616fe1fbe19785452535772adfa937501a0fa35ab41b3c2fc995a968e60a8f1"
     )
@@ -181,178 +69,7 @@ def test_source_scoring_artifacts_are_packaged_and_documented() -> None:
         "e46e32b809fd9438437cf0ff4138dccb119904b5f1d9f90900df99603f278af3"
     )
 
-
-def test_cudnn_supply_repair_is_content_addressed_and_science_preserving() -> None:
-    repair = json.loads(RUNTIME_REPAIR.read_text(encoding="utf-8"))
-    declared = repair.pop("repair_id")
-
-    assert declared == content_id(repair)
-    assert declared == (
-        "afc4753c60e48062b6ae3b0789a6d924bb832d2b8b186c4d450ee2ca75dbf0ca"
-    )
-    failure = repair["failed_execution_evidence"]
-    assert failure["workflow_run_id"] == 31660983482
-    assert failure["source_revision"] == ("9a18d3a4dd4aa95c69308f184c77958ddc4eec8d")
-    assert failure["source_suffix_opened"] is False
-    assert failure["durable_run_claim_created"] is False
-    assert failure["artifact_count"] == 0
-    assert repair["information_boundary"]["confirmation_payloads_opened"] is False
-    assert repair["information_boundary"]["target_outcomes_opened"] is False
-    assert repair["information_boundary"]["held_v8_artifacts_accessed"] is False
-
-    scope = repair["repair_scope"]
-    assert scope["supply_route_changed"] is True
-    for field, changed in scope.items():
-        if field != "supply_route_changed":
-            assert changed is False, field
-
-    scientific = repair["scientific_identity"]
-    expected = {
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
-        "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
-        "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
-        "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
-        "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
-    }
-    for relative, field in expected.items():
-        observed = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
-        assert observed == scientific[field], relative
-    assert scientific["endpoint_processor_sha256"] == (
-        "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa"
-    )
-
-
-def test_gsplat_attestation_repair_is_content_addressed_and_science_preserving() -> (
-    None
-):
-    repair = json.loads(GSPLAT_ATTESTATION_REPAIR.read_text(encoding="utf-8"))
-    declared = repair.pop("repair_id")
-
-    assert declared == content_id(repair)
-    assert declared == (
-        "2a4eb1eab33653fcef140861361d59c5e17f44ac3c81a766594aa76f45346bc6"
-    )
-    failure = repair["failed_execution_evidence"]
-    assert failure["workflow_run_id"] == 31663298362
-    assert failure["source_revision"] == ("a671b1bafdcfb6e32ba370a2a8d4a157144651c2")
-    assert failure["source_suffix_opened"] is False
-    assert failure["durable_run_claim_created"] is False
-    assert failure["artifact_count"] == 0
-    assert repair["correction"]["module_attestation"] == {
-        "corrected_expected_version": "1.4.0+pt24cu121",
-        "incorrect_expected_version": "1.4.0",
-        "probe": "gsplat.__version__",
-        "reason": (
-            "The checksum-pinned wheel's gsplat/version.py declares the local build "
-            "tag in __version__; the failed guard incorrectly compared that module "
-            "value with the untagged base release while simultaneously requiring the "
-            "tagged distribution version."
-        ),
-    }
-    assert repair["information_boundary"]["confirmation_payloads_opened"] is False
-    assert repair["information_boundary"]["target_outcomes_opened"] is False
-    assert repair["information_boundary"]["held_v8_artifacts_accessed"] is False
-
-    scope = repair["repair_scope"]
-    assert scope["runtime_attestation_changed"] is True
-    for field, changed in scope.items():
-        if field != "runtime_attestation_changed":
-            assert changed is False, field
-
-    scientific = repair["scientific_identity"]
-    expected = {
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
-        "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
-        "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
-        "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
-        "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
-    }
-    for relative, field in expected.items():
-        observed = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
-        assert observed == scientific[field], relative
-    assert scientific["endpoint_processor_sha256"] == (
-        "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa"
-    )
-
-
-def test_endpoint_gsplat_base_repair_is_content_addressed_and_source_independent() -> (
-    None
-):
-    repair = json.loads(ENDPOINT_GSPLAT_BASE_REPAIR.read_text(encoding="utf-8"))
-    declared = repair.pop("repair_id")
-
-    assert declared == content_id(repair)
-    assert declared == (
-        "1b3136b89be19d5dc587ce3a27e8a2e8ac621248a202662d1fe9e2ba086da5b5"
-    )
-    failure = repair["failed_execution_evidence"]
-    assert failure["workflow_run_id"] == 31666009357
-    assert failure["source_revision"] == ("cde6f9da37c2697e50897f2b9ce8360c744325bc")
-    assert failure["compact_receipt_id"] == (
-        "69967a3441da85fc1a862d8206b6cb750d167dbabfc0c921c47adbc87f738f61"
-    )
-    assert failure["compact_receipt_file_sha256"] == (
-        "a0b6b2ff1a7ce5dd4732a2896b0f6f4cff593a5f29e43b9bd5a6cc160135c027"
-    )
-    assert failure["source_suffix_opened"] is True
-    assert failure["endpoint_geometry_materialized"] is False
-    assert failure["endpoint_geometry_inspected"] is False
-    assert failure["scored_outcome_count"] == 0
-    assert failure["source_gate_evaluated"] is False
-    assert (
-        repair["information_boundary"]["source_outcomes_used_to_design_repair"] is False
-    )
-    assert repair["information_boundary"]["confirmation_payloads_opened"] is False
-    assert repair["information_boundary"]["target_outcomes_opened"] is False
-    assert repair["information_boundary"]["held_v8_artifacts_accessed"] is False
-
-    scope = repair["repair_scope"]
-    changed_fields = {
-        "endpoint_dependency_attestation_changed",
-        "endpoint_processor_source_changed",
-    }
-    for field, changed in scope.items():
-        assert changed is (field in changed_fields), field
-
-    scientific = repair["scientific_identity"]
-    assert scientific["predecessor_endpoint_processor_sha256"] == (
-        "386b4eb4ecea9ec4d6876aa5b5f280d1cb870e22971acd19c4bc22de66fc02fa"
-    )
-    assert (
-        scientific["corrected_endpoint_processor_sha256"]
-        == hashlib.sha256(
-            (
-                ROOT
-                / "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py"
-            ).read_bytes()
-        ).hexdigest()
-    )
-    expected = {
-        "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json": "source_scoring_amendment_file_sha256",
-        "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json": "execution_lock_file_sha256",
-        "scripts/ci/run_deform360_v61_source_scorer.sh": "scorer_runner_sha256",
-        "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_cli_sha256",
-        "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py": "scorer_library_sha256",
-    }
-    for relative, field in expected.items():
-        assert (
-            hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
-            == scientific[field]
-        )
-
-
-def test_workflow_binds_the_terminal_endpoint_failure_and_new_repair() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-
-    for value in (
-        "31666009357",
-        "cde6f9da37c2697e50897f2b9ce8360c744325bc",
-        "69967a3441da85fc1a862d8206b6cb750d167dbabfc0c921c47adbc87f738f61",
-        "a0b6b2ff1a7ce5dd4732a2896b0f6f4cff593a5f29e43b9bd5a6cc160135c027",
-        "1b3136b89be19d5dc587ce3a27e8a2e8ac621248a202662d1fe9e2ba086da5b5",
-        "cf0ed8720d734580885f54a9bc52fb366a45967b0ef45e9af5b35cd0a0edbd7d",
-        "bfac71d11c8226397b65ee261f1758e18f5e87bfe1bf868f5f3924141883fdb5",
-    ):
-        assert value in workflow
-    assert "endpoint-gsplat-base-runtime-repair.json" in workflow
-    assert "deform360-v61-source-scorer-endpoint-gsplat-base/" in workflow
+    claim_boundary = record["claim_boundary"]
+    assert isinstance(claim_boundary, str)
+    assert "source gate was not evaluated" in claim_boundary
+    assert "no continuation or confirmation was authorized" in claim_boundary
