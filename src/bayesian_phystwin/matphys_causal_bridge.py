@@ -465,6 +465,8 @@ def write_causal_training_audit(
     proxy_summary_path: str | Path,
     parameterization: Mapping[str, object] | None = None,
     absolute_part_field: Mapping[str, object] | None = None,
+    implementation_paths: Sequence[str | Path] = (),
+    registered_protocol_path: str | Path | None = None,
     runtime_access_log_paths: Sequence[str | Path] = (),
 ) -> dict[str, object]:
     """Bind checkpoint bytes to an observed-frame access log."""
@@ -552,6 +554,7 @@ def write_causal_training_audit(
         "proxy": {"path": str(proxy_path), "sha256": sha256_file(proxy_path)},
         "checkpoints": checkpoints,
         "cases": cases,
+        "implementation_files": _artifact_identities(implementation_paths),
         "runtime_access_logs": _artifact_identities(runtime_access_log_paths),
     }
     if parameterization is not None and absolute_part_field is not None:
@@ -561,9 +564,18 @@ def write_causal_training_audit(
     if parameterization is not None:
         audit["parameterization"] = dict(parameterization)
     if absolute_part_field is not None:
+        if not implementation_paths:
+            raise ValueError("absolute part-field audit omits its implementation")
+        if registered_protocol_path is None:
+            raise ValueError("absolute part-field audit omits its registered protocol")
         audit["absolute_part_field"] = (
             validate_matphys_causal_absolute_part_field(absolute_part_field)
         )
+        audit["registered_protocol"] = _artifact_identities(
+            [registered_protocol_path]
+        )[0]
+    elif registered_protocol_path is not None:
+        raise ValueError("registered absolute protocol has no absolute part field")
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -602,6 +614,9 @@ def validate_causal_training_audit(
         raise ValueError("MatPhys checkpoint audit does not use the terminal epoch")
     _validate_artifact_identities(
         audit.get("runtime_access_logs"), label="MatPhys runtime access log"
+    )
+    _validate_artifact_identities(
+        audit.get("implementation_files"), label="MatPhys implementation file"
     )
     checkpoint = Path(checkpoint_path).resolve()
     identity = {"path": str(checkpoint), "sha256": sha256_file(checkpoint)}
@@ -687,6 +702,15 @@ def validate_causal_training_audit(
             raise ValueError("absolute part-field audit must bind exactly one case")
         if proxy_summary.get("contract") != validated_absolute["proxy_contract"]:
             raise ValueError("absolute part-field proxy contract changed")
+        implementation_files = audit.get("implementation_files")
+        if not isinstance(implementation_files, list) or not implementation_files:
+            raise ValueError("absolute part-field implementation is unbound")
+        registered_protocol = audit.get("registered_protocol")
+        if not isinstance(registered_protocol, dict):
+            raise ValueError("absolute part-field protocol is unbound")
+        _validate_artifact_identities(
+            [registered_protocol], label="MatPhys registered protocol"
+        )
     return {
         **audit,
         "audit_path": str(source),

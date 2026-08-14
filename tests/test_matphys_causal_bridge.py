@@ -155,6 +155,10 @@ def test_causal_absolute_part_field_audit_is_exact_and_fail_closed(
     proxy_payload["contract"] = "causal-dino-graph-voronoi-parts-v1"
     proxy.write_text(json.dumps(proxy_payload) + "\n", encoding="utf-8")
     frames = _frame_sources(tmp_path, [0, 2, 4])
+    implementation = tmp_path / "runner.py"
+    implementation.write_text("# exact runner\n", encoding="utf-8")
+    protocol = tmp_path / "protocol.json"
+    protocol.write_text('{"protocol_id":"absolute-v1"}\n', encoding="utf-8")
     field = matphys_causal_absolute_part_field(
         proxy_contract="causal-dino-graph-voronoi-parts-v1",
         part_model_contract="simple-videomae-dino-part-conditioning-v1",
@@ -179,6 +183,8 @@ def test_causal_absolute_part_field_audit_is_exact_and_fail_closed(
         split_by_case={"case_a": {"train": [0, 6], "test": [6, 8]}},
         proxy_summary_path=proxy,
         absolute_part_field=field,
+        implementation_paths=[implementation],
+        registered_protocol_path=protocol,
     )
 
     validated = validate_causal_training_audit(audit_path, checkpoint)
@@ -186,6 +192,10 @@ def test_causal_absolute_part_field_audit_is_exact_and_fail_closed(
     assert field["contract"] == MATPHYS_CAUSAL_ABSOLUTE_PART_FIELD_CONTRACT
     assert field["future_observations_used"] is False
     assert field["published_matphys_method"] is False
+    assert validated["implementation_files"][0]["sha256"] == sha256_file(
+        implementation
+    )
+    assert validated["registered_protocol"]["sha256"] == sha256_file(protocol)
 
     original = json.loads(audit_path.read_text(encoding="utf-8"))
     changed = json.loads(json.dumps(original))
@@ -202,6 +212,11 @@ def test_causal_absolute_part_field_audit_is_exact_and_fail_closed(
     )
     audit_path.write_text(json.dumps(changed), encoding="utf-8")
     with pytest.raises(ValueError, match="proxy contract changed"):
+        validate_causal_training_audit(audit_path, checkpoint)
+
+    audit_path.write_text(json.dumps(original), encoding="utf-8")
+    implementation.write_text("# changed runner\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="implementation file bytes changed"):
         validate_causal_training_audit(audit_path, checkpoint)
 
 
@@ -236,6 +251,8 @@ def test_causal_audit_rejects_two_part_field_families(tmp_path: Path) -> None:
             proxy_summary_path=proxy,
             parameterization={},
             absolute_part_field=field,
+            implementation_paths=[checkpoint],
+            registered_protocol_path=proxy,
         )
 
 

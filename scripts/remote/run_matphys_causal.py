@@ -1134,6 +1134,8 @@ def _validate_training_mode(
             raise ValueError("absolute part fields require fresh initialization")
         if not args.finite_optimizer_guard:
             raise ValueError("absolute part fields require the finite optimizer guard")
+        if args.protocol is None or not Path(args.protocol).resolve().is_file():
+            raise ValueError("absolute part fields require a registered protocol")
     elif args.graph_parts and args.teacher_residual_log_scale is None:
         raise ValueError("graph parts require the identity-preserving teacher residual")
     return absolute_part_field
@@ -1471,11 +1473,26 @@ def train(args) -> None:
             **common_audit,
         )
     else:
+        implementation_paths = (
+            [
+                Path(__file__).resolve(),
+                Path(inspect.getsourcefile(install_part_aware_simple_model)).resolve(),
+                Path(
+                    inspect.getsourcefile(matphys_causal_absolute_part_field)
+                ).resolve(),
+            ]
+            if absolute_part_field is not None
+            else []
+        )
         audit = write_causal_training_audit(
             checkpoints,
             output_dir / "causal_training_audit.json",
             split_by_case=_splits(data_root, cases),
             absolute_part_field=absolute_part_field,
+            implementation_paths=implementation_paths,
+            registered_protocol_path=(
+                args.protocol if absolute_part_field is not None else None
+            ),
             **common_audit,
         )
     print(json.dumps(audit, indent=2, sort_keys=True))
@@ -2004,6 +2021,7 @@ def main() -> None:
     train_parser.add_argument("--fit-fraction", type=float, default=1.0)
     train_parser.add_argument("--graph-parts", action="store_true")
     train_parser.add_argument("--absolute-part-field", action="store_true")
+    train_parser.add_argument("--protocol")
     train_parser.add_argument("--dino-model", default="dinov2_vitl14_reg")
     train_parser.add_argument("--dino-image-size", type=int, default=518)
     train_parser.add_argument("--dino-keyframes", type=int, default=4)

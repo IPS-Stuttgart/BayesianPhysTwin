@@ -273,6 +273,7 @@ def _absolute_part_args(**overrides):
         "initialization_checkpoint": None,
         "initialization_sha256": None,
         "finite_optimizer_guard": True,
+        "protocol": __file__,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -294,6 +295,7 @@ def test_absolute_part_training_mode_is_explicit_and_mutually_exclusive() -> Non
         ({"teacher_proximity_weight": 0.1}, "cannot use teacher proximity"),
         ({"initialization_checkpoint": "/checkpoint"}, "fresh initialization"),
         ({"finite_optimizer_guard": False}, "finite optimizer guard"),
+        ({"protocol": None}, "registered protocol"),
     )
     for overrides, message in conflicts:
         with pytest.raises(ValueError, match=message):

@@ -26,6 +26,8 @@ The causal training audit stores these choices under
 `matphys-causal-absolute-part-field-v1`. Export keeps this record separate from
 the older teacher `parameterization`, writes the complete applied spring field,
 and reports absolute per-part stiffness rather than a teacher-relative ratio.
+The audit also rehashes the exact runner, adapter, bridge, and registered
+protocol bytes; changing any of them invalidates export.
 
 ## Frozen competence sequence
 
