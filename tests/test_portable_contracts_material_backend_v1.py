@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import runpy
+import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -14,6 +16,37 @@ def _runtime(tmp_path: Path, payload: dict[str, object]) -> Path:
     path = tmp_path / "runtime.json"
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
+
+
+def _variant(
+    producer_profile_id: str = "test-profile-v1",
+    *,
+    transport: backend.BackendTransportV1 = "material-trajectory-v1",
+    legacy: bool = False,
+) -> backend.MaterialBackendVariantV1:
+    return backend.MaterialBackendVariantV1(
+        producer_profile_id=producer_profile_id,
+        transport=transport,
+        legacy=legacy,
+    )
+
+
+def _spec(
+    profile_id: str = "test-family-v1",
+    *,
+    priority: int = 1,
+    maturity: backend.BackendMaturityV1 = "supported",
+    variants: tuple[backend.MaterialBackendVariantV1, ...] | None = None,
+) -> backend.MaterialBackendSpecV1:
+    return backend.MaterialBackendSpecV1(
+        profile_id=profile_id,
+        engine_repository="example/engine",
+        solver_family="test-solver",
+        identity_kind="test-node",
+        priority=priority,
+        maturity=maturity,
+        variants=(_variant(),) if variants is None else variants,
+    )
 
 
 def test_registry_consolidates_duplicate_genesis_profiles() -> None:
@@ -30,10 +63,141 @@ def test_registry_consolidates_duplicate_genesis_profiles() -> None:
     canonical = backend.resolve_material_backend_profile("genesis-mpm-v1")
     legacy = backend.resolve_material_backend_profile("genesis-world-mpm-v1")
     assert canonical.profile_id == legacy.profile_id == "genesis-mpm-v1"
+    assert canonical.producer_profile_id == "genesis-mpm-v1"
+    assert legacy.producer_profile_id == "genesis-world-mpm-v1"
     assert canonical.transport == "material-trajectory-v1"
     assert not canonical.legacy_alias
     assert legacy.transport == "lagrangian-export-v1"
     assert legacy.legacy_alias
+    assert legacy.to_record()["selected_variant"]["legacy"] is True
+
+
+@pytest.mark.parametrize(
+    ("producer_profile_id", "transport", "legacy", "error", "message"),
+    [
+        (
+            "",
+            "material-trajectory-v1",
+            False,
+            ValueError,
+            "canonical string",
+        ),
+        (
+            " padded ",
+            "material-trajectory-v1",
+            False,
+            ValueError,
+            "canonical string",
+        ),
+        (
+            cast(str, 7),
+            "material-trajectory-v1",
+            False,
+            ValueError,
+            "canonical string",
+        ),
+        (
+            "profile-v1",
+            cast(backend.BackendTransportV1, "unknown-transport"),
+            False,
+            ValueError,
+            "unsupported backend transport",
+        ),
+        (
+            "profile-v1",
+            "material-trajectory-v1",
+            cast(bool, 1),
+            TypeError,
+            "genuine bool",
+        ),
+    ],
+)
+def test_backend_variant_validation_fails_closed(
+    producer_profile_id: str,
+    transport: backend.BackendTransportV1,
+    legacy: bool,
+    error: type[Exception],
+    message: str,
+) -> None:
+    with pytest.raises(error, match=message):
+        backend.MaterialBackendVariantV1(
+            producer_profile_id=producer_profile_id,
+            transport=transport,
+            legacy=legacy,
+        )
+
+
+@pytest.mark.parametrize(
+    ("factory", "message"),
+    [
+        (
+            lambda: backend.MaterialBackendSpecV1(
+                profile_id="",
+                engine_repository="example/engine",
+                solver_family="solver",
+                identity_kind="node",
+                priority=1,
+                maturity="supported",
+                variants=(_variant(),),
+            ),
+            "profile_id must be a canonical string",
+        ),
+        (
+            lambda: _spec(priority=0),
+            "priority must be a positive integer",
+        ),
+        (
+            lambda: _spec(
+                maturity=cast(backend.BackendMaturityV1, "unknown")
+            ),
+            "unsupported backend maturity",
+        ),
+        (
+            lambda: _spec(variants=()),
+            "at least one backend variant",
+        ),
+        (
+            lambda: _spec(variants=(_variant(), _variant())),
+            "producer profile IDs must be unique",
+        ),
+        (
+            lambda: _spec(variants=(_variant(legacy=True),)),
+            "requires a non-legacy variant",
+        ),
+    ],
+)
+def test_backend_spec_validation_fails_closed(
+    factory: Any,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        factory()
+
+
+def test_producer_index_rejects_duplicates_across_families(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    shared = _variant("shared-profile-v1")
+    first = _spec("first-family-v1", variants=(shared,))
+    second = _spec("second-family-v1", variants=(shared,))
+    monkeypatch.setattr(
+        backend,
+        "MATERIAL_BACKEND_SPECS",
+        {first.profile_id: first, second.profile_id: second},
+    )
+    with pytest.raises(RuntimeError, match="duplicate producer profile"):
+        backend._producer_index()
+
+
+@pytest.mark.parametrize("profile_id", ["", cast(str, 3)])
+def test_resolve_rejects_noncanonical_profile_ids(profile_id: str) -> None:
+    with pytest.raises(ValueError, match="nonempty string"):
+        backend.resolve_material_backend_profile(profile_id)
+
+
+def test_resolve_rejects_unknown_profile() -> None:
+    with pytest.raises(ValueError, match="unknown material backend profile"):
+        backend.resolve_material_backend_profile("unknown-profile-v1")
 
 
 def test_materialize_dispatches_from_runtime_schema(
@@ -81,6 +245,31 @@ def test_materialize_dispatches_from_runtime_schema(
         output_dir=tmp_path / "canonical-output",
     ) == {"artifact": "material"}
     assert calls[-1][0] == "material"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {
+            "backend_profile": "jax-fem-quasistatic-v1",
+            "backend_kind": "sofa-fem-v1",
+        },
+    ],
+)
+def test_runtime_selection_requires_exactly_one_transport_key(
+    tmp_path: Path,
+    payload: dict[str, object],
+) -> None:
+    runtime = _runtime(tmp_path, payload)
+    with pytest.raises(ValueError, match="exactly one"):
+        backend._runtime_selection(runtime)
+
+
+def test_runtime_selection_requires_string_profile(tmp_path: Path) -> None:
+    runtime = _runtime(tmp_path, {"backend_kind": 3})
+    with pytest.raises(ValueError, match="must be a string"):
+        backend._runtime_selection(runtime)
 
 
 def test_materialize_rejects_profile_and_transport_mismatches(
@@ -154,3 +343,20 @@ def test_legacy_cli_module_routes_to_canonical_cli() -> None:
     assert material_trajectory_backend.build_parser is lagrangian_backend.build_parser
     args = lagrangian_backend.build_parser().parse_args(["profiles"])
     assert args.command == "profiles"
+
+
+def test_legacy_cli_module_entrypoint(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    module_path = Path(material_trajectory_backend.__file__ or "")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["material_trajectory_backend", "profiles"],
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        runpy.run_path(str(module_path), run_name="__main__")
+    assert exit_info.value.code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["schema"] == "bayesian-phystwin.material-backend-registry"
