@@ -41,9 +41,18 @@ moves no files, and changes no runtime behavior.
 
 Experimental modules are dataset-specific, benchmark-specific, or
 research-lifecycle surfaces. The current registry classifies every Deform360
-root owner and `synthetic_benchmark` as experimental. Exact revisions and frozen
-artifacts remain reproducible, but current-main forward compatibility is not
-promised outside separately versioned contracts that those modules may consume.
+root owner, `synthetic_benchmark`, and the external-physics producer, registry,
+and qualification modules as experimental. Exact revisions and frozen artifacts
+remain reproducible, but current-main forward compatibility is not promised
+outside separately versioned contracts that those modules may consume.
+
+The external-physics modules deliberately remain experimental even though their
+runtime and qualification records are content-addressed. A listed backend profile
+is only a compatibility target, a valid runtime is only a candidate rollout, and
+a passing source-only qualification is not independent-object accuracy,
+calibrated uncertainty, deployment authorization, or Causal4D intervention
+evidence. Stable promotion requires a demonstrated consumer boundary and the
+corresponding installed-artifact and scientific evidence gates.
 
 Experimental status does not authorize target access, confirmation access,
 retuning, deployment, or a scientific claim. It is software lifecycle metadata
@@ -58,8 +67,8 @@ and cannot be added to the public lifecycle registry.
 New public modules should be registered only when their intended lifecycle is
 clear. Adding a stable module requires a documented consumer boundary and
 appropriate installed-artifact tests. Adding a historical compatibility module
-requires an explicit package-root compatibility decision. Dataset or benchmark
-surfaces should normally remain experimental.
+requires an explicit package-root compatibility decision. Dataset, benchmark,
+or unqualified backend surfaces should normally remain experimental.
 
 ## Validation
 
