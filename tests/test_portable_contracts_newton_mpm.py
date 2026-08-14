@@ -59,7 +59,7 @@ def test_newton_mpm_focused_contracts_are_in_stable_suite(
                 "driven_particle_positions_m",
                 arrays["driven_particle_positions_m"][0],
             ),
-            "shape (T,P,3)",
+            r"shape \(T,P,3\)",
         ),
         (
             lambda arrays: arrays.__setitem__(
@@ -114,7 +114,7 @@ def test_raw_newton_rollout_validation_branches(
             lambda arrays: arrays.__setitem__(
                 "prediction_m", arrays["prediction_m"][0]
             ),
-            "shape (T,N,3)",
+            r"shape \(T,N,3\)",
         ),
         (
             lambda arrays: arrays.__setitem__(
