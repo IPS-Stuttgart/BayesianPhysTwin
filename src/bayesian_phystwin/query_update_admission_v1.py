@@ -20,9 +20,7 @@ from ._canonical_contracts import (
 )
 from ._portable_contracts import content_id, sha256_digest
 
-QUERY_UPDATE_ADMISSION_SCHEMA: Final = (
-    "bayesian_phystwin.query_update_admission"
-)
+QUERY_UPDATE_ADMISSION_SCHEMA: Final = "bayesian_phystwin.query_update_admission"
 QUERY_UPDATE_ADMISSION_VERSION: Final = 1
 QUERY_UPDATE_ADMISSION_CLAIM_BOUNDARY: Final = (
     "Software composition and exact-fallback evidence only. Authorization does "
