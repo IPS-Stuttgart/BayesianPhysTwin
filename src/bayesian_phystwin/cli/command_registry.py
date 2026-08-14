@@ -229,7 +229,7 @@ def validate_registry(commands: Iterable[CommandSpec] = COMMANDS) -> None:
     routes: set[tuple[str, ...]] = set()
     previous_routes: set[tuple[str, ...]] = set()
     aliases: set[str] = set()
-    supported_dependencies = {"data", "graph", "pyrecest", "vision"}
+    supported_dependencies = {"data", "graph", "mpm", "pyrecest", "vision"}
     for command in commands:
         if not command.command_id or command.command_id.startswith("-"):
             raise ValueError(f"invalid command id: {command.command_id!r}")
