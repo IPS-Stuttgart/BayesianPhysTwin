@@ -163,7 +163,7 @@ def test_invalid_inputs_and_artifact_identity_fail_closed(tmp_path: Any) -> None
         _qualification(source_group_ids=("object-a",))
     with pytest.raises(ValueError, match="unique"):
         _qualification(source_group_ids=("object-a", "object-a"))
-    with pytest.raises(ValueError, match="literal Boolean"):
+    with pytest.raises(ValueError, match="boolean"):
         _qualification(exact_fallback_verified=cast(Any, 1))
     with pytest.raises(ValueError, match="nonnegative"):
         _qualification(maximum_zero_action_drift_m=-1.0)
