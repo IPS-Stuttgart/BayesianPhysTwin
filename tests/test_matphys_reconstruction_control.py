@@ -15,6 +15,7 @@ from bayesian_phystwin.matphys_causal_bridge import (
     validate_causal_training_audit,
 )
 from bayesian_phystwin.matphys_reconstruction_control import (
+    MATPHYS_RECONSTRUCTION_ADAPTER_AUDIT_CONTRACT,
     MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT,
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
     MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
@@ -156,9 +157,16 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
     return audit, checkpoint, configuration
 
 
-def _result_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+def _result_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     audit, checkpoint, _ = _fixture(tmp_path)
     audit_payload = json.loads(audit.read_text())
+    audit_payload["training_configuration"]["epochs"] = 200
+    protocol_path = Path(audit_payload["protocol"]["path"])
+    protocol = json.loads(protocol_path.read_text())
+    protocol["implementation"]["epochs"] = 200
+    protocol_path.write_text(json.dumps(protocol))
+    audit_payload["protocol"] = _identity(protocol_path)
+    audit.write_text(json.dumps(audit_payload))
     split = Path(audit_payload["case"]["split"]["path"])
     final_data = tmp_path / "final_data.pkl"
     gt_track = tmp_path / "gt_track_3d.pkl"
@@ -252,7 +260,19 @@ def _result_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
             }
         )
     )
-    return audit, checkpoint, export_manifest, baseline_metrics
+    adapter_audit = tmp_path / "part_adapter_audit.json"
+    adapter_audit.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "contract": MATPHYS_RECONSTRUCTION_ADAPTER_AUDIT_CONTRACT,
+                "checkpoint": _identity(checkpoint),
+                "finite": True,
+                "adapter_moved_from_zero": True,
+            }
+        )
+    )
+    return audit, checkpoint, export_manifest, baseline_metrics, adapter_audit
 
 
 def test_reconstruction_audit_binds_deliberate_future_access(tmp_path: Path) -> None:
@@ -269,10 +289,10 @@ def test_reconstruction_audit_binds_deliberate_future_access(tmp_path: Path) -> 
 def test_reconstruction_result_recomputes_joint_terminal_decision(
     tmp_path: Path,
 ) -> None:
-    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    audit, checkpoint, manifest, baseline, adapter = _result_fixture(tmp_path)
 
     result = build_matphys_reconstruction_result(
-        audit, checkpoint, manifest, baseline
+        audit, checkpoint, manifest, baseline, adapter
     )
 
     assert result["contract"] == MATPHYS_RECONSTRUCTION_RESULT_CONTRACT
@@ -291,7 +311,7 @@ def test_reconstruction_result_recomputes_joint_terminal_decision(
 def test_reconstruction_result_requires_both_metrics_to_improve(
     tmp_path: Path,
 ) -> None:
-    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    audit, checkpoint, manifest, baseline, adapter = _result_fixture(tmp_path)
     payload = json.loads(manifest.read_text())
     metrics_path = Path(payload["case"]["official_metrics"]["path"])
     metrics = json.loads(metrics_path.read_text())
@@ -301,7 +321,7 @@ def test_reconstruction_result_requires_both_metrics_to_improve(
     manifest.write_text(json.dumps(payload))
 
     result = build_matphys_reconstruction_result(
-        audit, checkpoint, manifest, baseline
+        audit, checkpoint, manifest, baseline, adapter
     )
 
     assert result["decision"]["capacity_pass"] is False
@@ -309,18 +329,18 @@ def test_reconstruction_result_requires_both_metrics_to_improve(
 
 
 def test_reconstruction_result_rejects_checkpoint_substitution(tmp_path: Path) -> None:
-    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    audit, checkpoint, manifest, baseline, adapter = _result_fixture(tmp_path)
     replacement = tmp_path / "best_checkpoint.pth"
     replacement.write_bytes(checkpoint.read_bytes())
 
     with pytest.raises(ValueError, match="not bound by the reconstruction audit"):
         build_matphys_reconstruction_result(
-            audit, replacement, manifest, baseline
+            audit, replacement, manifest, baseline, adapter
         )
 
 
 def test_reconstruction_result_rejects_metric_input_drift(tmp_path: Path) -> None:
-    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    audit, checkpoint, manifest, baseline, adapter = _result_fixture(tmp_path)
     baseline_payload = json.loads(baseline.read_text())
     drifted = tmp_path / "drifted_final_data.pkl"
     drifted.write_bytes(b"drifted")
@@ -329,19 +349,31 @@ def test_reconstruction_result_rejects_metric_input_drift(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError, match="final_data identities differ"):
         build_matphys_reconstruction_result(
-            audit, checkpoint, manifest, baseline
+            audit, checkpoint, manifest, baseline, adapter
         )
 
 
 def test_reconstruction_result_rejects_forged_spring_summary(tmp_path: Path) -> None:
-    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    audit, checkpoint, manifest, baseline, adapter = _result_fixture(tmp_path)
     payload = json.loads(manifest.read_text())
     payload["case"]["spring_field"]["minimum"] = 2.0
     manifest.write_text(json.dumps(payload))
 
     with pytest.raises(ValueError, match="spring summary differs"):
         build_matphys_reconstruction_result(
-            audit, checkpoint, manifest, baseline
+            audit, checkpoint, manifest, baseline, adapter
+        )
+
+
+def test_reconstruction_result_rejects_unmoved_adapter(tmp_path: Path) -> None:
+    audit, checkpoint, manifest, baseline, adapter = _result_fixture(tmp_path)
+    payload = json.loads(adapter.read_text())
+    payload["adapter_moved_from_zero"] = False
+    adapter.write_text(json.dumps(payload))
+
+    with pytest.raises(ValueError, match="part adapter did not pass"):
+        build_matphys_reconstruction_result(
+            audit, checkpoint, manifest, baseline, adapter
         )
 
 

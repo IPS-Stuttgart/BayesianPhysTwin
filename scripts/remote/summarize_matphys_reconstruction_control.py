@@ -18,6 +18,7 @@ def main() -> None:
     parser.add_argument("terminal_checkpoint")
     parser.add_argument("export_manifest")
     parser.add_argument("released_phystwin_metrics")
+    parser.add_argument("part_adapter_audit")
     parser.add_argument("output_json")
     args = parser.parse_args()
     result = build_matphys_reconstruction_result(
@@ -25,6 +26,7 @@ def main() -> None:
         args.terminal_checkpoint,
         args.export_manifest,
         args.released_phystwin_metrics,
+        args.part_adapter_audit,
     )
     output = Path(args.output_json).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -37,6 +37,9 @@ MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT = (
 MATPHYS_RECONSTRUCTION_RESULT_CONTRACT = (
     "matphys-all-frame-part-aware-reconstruction-result-v1"
 )
+MATPHYS_RECONSTRUCTION_ADAPTER_AUDIT_CONTRACT = (
+    "matphys-part-adapter-terminal-audit-v1"
+)
 MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY = (
     "This checkpoint used future RGB, geometry, and track observations from the "
     "same case. It is an offline reconstruction-capacity control, not a causal "
@@ -379,10 +382,26 @@ def build_matphys_reconstruction_result(
     checkpoint_path: str | Path,
     export_manifest_path: str | Path,
     baseline_metrics_path: str | Path,
+    adapter_audit_path: str | Path,
 ) -> dict[str, object]:
     """Recompute the locked capacity decision from byte-bound terminal artifacts."""
 
     audit = validate_matphys_reconstruction_audit(audit_path, checkpoint_path)
+    if audit["training_configuration"].get("epochs") != 200:
+        raise ValueError("capacity decision requires the locked 200 epochs")
+    adapter_path = Path(adapter_audit_path).resolve()
+    adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+    if (
+        adapter.get("schema_version") != 1
+        or adapter.get("contract") != MATPHYS_RECONSTRUCTION_ADAPTER_AUDIT_CONTRACT
+        or adapter.get("finite") is not True
+        or adapter.get("adapter_moved_from_zero") is not True
+    ):
+        raise ValueError("terminal part adapter did not pass its audit")
+    if _validate_identity(
+        adapter.get("checkpoint"), label="adapter checkpoint"
+    ) != Path(checkpoint_path).resolve():
+        raise ValueError("adapter audit changed the terminal checkpoint")
     manifest_path = Path(export_manifest_path).resolve()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     expected_manifest = {
@@ -530,6 +549,7 @@ def build_matphys_reconstruction_result(
             "export_manifest": _identity(manifest_path),
             "candidate_metrics": _identity(candidate_path),
             "released_phystwin_metrics": _identity(baseline_path),
+            "part_adapter_audit": _identity(adapter_path),
         },
         "case": audit["case"]["name"],
         "terminal_test_metrics_mm": {
@@ -545,6 +565,7 @@ def build_matphys_reconstruction_result(
             "complete_positive_spring_field": True,
             "spring_count": spring_count,
             "finite_global_parameter_count": len(global_parameters),
+            "finite_moved_part_adapter": True,
         },
         "decision": {
             "capacity_pass": capacity_pass,
