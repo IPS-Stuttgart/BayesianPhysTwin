@@ -28,7 +28,13 @@ evidence that Newton or MPM as model families are inadequate.
 - deterministic replay RMSE: `0.0 m`;
 - maximum zero-action drift: `0.0 m`;
 - final ensemble spread: `0.570 mm`; and
-- target, held-out, and source-future outcomes read: `false`.
+- target or held-out artifacts read: `false`; and
+- source-future outcome artifact supplied to the scorer: `false`.
+
+The custody preparer did read the full already-open public source payload once
+to create physically separate prediction, prefix, and future files. The
+outcome-blind grid read only the prediction file, and the gate scorer read only
+the prefix file.
 
 The following table reports the separately frozen validation split in
 millimetres.
