@@ -219,10 +219,7 @@ class PhysicsBackendQualificationV1:
             reasons.append("topology-identity")
         if self.physical_sanity_violations != 0:
             reasons.append("physical-sanity")
-        if (
-            self.maximum_jacobian_relative_error
-            > self.allowed_jacobian_relative_error
-        ):
+        if self.maximum_jacobian_relative_error > self.allowed_jacobian_relative_error:
             reasons.append("finite-difference-jacobian")
         if self.source_query_parity_rmse_m > self.allowed_source_query_parity_rmse_m:
             reasons.append("source-query-parity")
@@ -269,12 +266,8 @@ class PhysicsBackendQualificationV1:
             ),
             "topology_identity_preserved": self.topology_identity_preserved,
             "physical_sanity_violations": self.physical_sanity_violations,
-            "maximum_jacobian_relative_error": (
-                self.maximum_jacobian_relative_error
-            ),
-            "allowed_jacobian_relative_error": (
-                self.allowed_jacobian_relative_error
-            ),
+            "maximum_jacobian_relative_error": (self.maximum_jacobian_relative_error),
+            "allowed_jacobian_relative_error": (self.allowed_jacobian_relative_error),
             "source_query_parity_rmse_m": self.source_query_parity_rmse_m,
             "allowed_source_query_parity_rmse_m": (
                 self.allowed_source_query_parity_rmse_m
@@ -319,9 +312,7 @@ class PhysicsBackendQualificationV1:
         if not isinstance(profile_raw, Mapping):
             raise ValueError("backend_profile must be a JSON object")
         result = cls(
-            backend_profile=profile_from_mapping(
-                cast(Mapping[str, Any], profile_raw)
-            ),
+            backend_profile=profile_from_mapping(cast(Mapping[str, Any], profile_raw)),
             runtime_id=cast(str, payload.get("runtime_id")),
             qualification_protocol_id=cast(
                 str,
