@@ -109,7 +109,9 @@ def test_release_surfaces_report_terminal_v61_source_status() -> None:
         assert "v6.1 retirement record" in normalized
 
     claim = _text(CLAIM).replace("source-gate", "source gate")
-    assert "terminal receipt forbids replacement, retry, and source continuation" in claim
+    assert (
+        "terminal receipt forbids replacement, retry, and source continuation" in claim
+    )
     assert "No fresh-target, confirmation, or held-v8 payload was opened" in claim
 
 
