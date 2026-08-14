@@ -147,9 +147,7 @@ def test_backend_variant_validation_fails_closed(
             "priority must be a positive integer",
         ),
         (
-            lambda: _spec(
-                maturity=cast(backend.BackendMaturityV1, "unknown")
-            ),
+            lambda: _spec(maturity=cast(backend.BackendMaturityV1, "unknown")),
             "unsupported backend maturity",
         ),
         (
