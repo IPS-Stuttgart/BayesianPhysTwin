@@ -153,9 +153,10 @@ def test_profiles_materialize_deterministically_into_one_physical_contract(
 
     assert first_artifact == validate_material_trajectory_backend(first)
     assert first_artifact["artifact_id"] == second_artifact["artifact_id"]
-    assert first_artifact["profile"] == get_material_backend_profile(
-        backend_kind
-    ).to_dict()
+    assert (
+        first_artifact["profile"]
+        == get_material_backend_profile(backend_kind).to_dict()
+    )
     physical = load_physical_rollout_archive(first / PHYSICAL_ARCHIVE_FILENAME)
     assert set(physical) == PHYSICAL_ROLLOUT_ARRAY_NAMES
     expected = _raw_arrays()["driven_material_positions_m"][:, [4, 0, 2]]
