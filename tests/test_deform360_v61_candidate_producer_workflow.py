@@ -8,8 +8,7 @@ from bayesian_phystwin._portable_contracts import content_id
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/deform360-v61-candidate-producer.yml"
 RETIREMENT = (
-    ROOT
-    / "results/diagnostics/deform360_v61_one_shot_retirement_v1/retirement.json"
+    ROOT / "results/diagnostics/deform360_v61_one_shot_retirement_v1/retirement.json"
 )
 
 
@@ -26,9 +25,7 @@ def test_candidate_producer_is_retired_after_one_terminal_success() -> None:
     assert producer["tracking_issue"] == 642
     assert producer["workflow_run_id"] == 31647329129
     assert producer["workflow_run_attempt"] == 1
-    assert producer["source_revision"] == (
-        "2eb8d12e2120d58d0d678c3771d29faaeb765497"
-    )
+    assert producer["source_revision"] == ("2eb8d12e2120d58d0d678c3771d29faaeb765497")
     assert producer["workflow_conclusion"] == "success"
     assert producer["artifact_id"] == 9161411983
     assert producer["artifact_sha256"] == (
