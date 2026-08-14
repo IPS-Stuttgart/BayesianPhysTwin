@@ -217,10 +217,18 @@ def _claim_binding_payload(
     }
 
 
-def _bundle_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path]:
+def _bundle_inputs(
+    root: Path,
+    *,
+    overwrite_manifest: bool = False,
+) -> tuple[Path, Path, Path, Path, Path]:
     manifest = _manifest(root)
     manifest_path = root / "run-manifest.json"
-    write_run_manifest(manifest_path, manifest)
+    write_run_manifest(
+        manifest_path,
+        manifest,
+        overwrite=overwrite_manifest,
+    )
     summary_path = root / "evidence-summary.json"
     summary_path.write_text(
         json.dumps(_summary(), indent=2, sort_keys=True) + "\n",
@@ -247,9 +255,10 @@ def _bundle_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path]:
     return manifest_path, summary_path, binding_path, figure_path, table_path
 
 
-def _build(root: Path):
+def _build(root: Path, *, overwrite_manifest: bool = False):
     manifest_path, summary_path, binding_path, figure_path, table_path = _bundle_inputs(
-        root
+        root,
+        overwrite_manifest=overwrite_manifest,
     )
     extras = (
         claim_bundle_artifact(
@@ -284,7 +293,7 @@ def test_claim_bundle_round_trips_and_revalidates_bound_evidence(
 
     loaded = load_claim_bundle(bundle_path)
     manifest = verify_claim_bundle_artifacts(loaded, root=tmp_path)
-    rebuilt, _ = _build(tmp_path)
+    rebuilt, _ = _build(tmp_path, overwrite_manifest=True)
 
     assert loaded == bundle
     assert rebuilt.bundle_id == bundle.bundle_id
@@ -348,6 +357,7 @@ def test_claim_bundle_rejects_semantic_drift_and_nonclaim_runs(
     write_run_manifest(
         manifest_path,
         _manifest(tmp_path, classification="exploratory"),
+        overwrite=True,
     )
     summary_path.write_text(json.dumps(_summary()), encoding="utf-8")
     with pytest.raises(ValueError, match="controlled or confirmatory"):
@@ -368,6 +378,7 @@ def test_claim_bundle_rejects_missing_paper_profile_and_reserved_extra(
     write_run_manifest(
         manifest_path,
         replace(manifest, information_boundary={}),
+        overwrite=True,
     )
     with pytest.raises(ValueError, match="no paper-evidence profile"):
         build_claim_bundle(
@@ -376,7 +387,7 @@ def test_claim_bundle_rejects_missing_paper_profile_and_reserved_extra(
             artifact_root=tmp_path,
         )
 
-    write_run_manifest(manifest_path, manifest)
+    write_run_manifest(manifest_path, manifest, overwrite=True)
     reserved = claim_bundle_artifact(
         figure_path,
         name="not-a-manifest",

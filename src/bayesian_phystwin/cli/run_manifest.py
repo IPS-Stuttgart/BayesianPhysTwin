@@ -243,6 +243,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=["bayesian-phystwin", "numpy"],
     )
+    create.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=("atomically replace an existing manifest instead of failing closed"),
+    )
     create.add_argument("--notes", default="")
 
     validate = subparsers.add_parser("validate", help="validate a saved manifest")
@@ -319,7 +324,11 @@ def _create(args: argparse.Namespace) -> int:
     )
     if paper_evidence_requested:
         validate_paper_evidence_manifest(manifest)
-    write_run_manifest(args.manifest, manifest)
+    write_run_manifest(
+        args.manifest,
+        manifest,
+        overwrite=args.overwrite,
+    )
     print(
         json.dumps(
             {
