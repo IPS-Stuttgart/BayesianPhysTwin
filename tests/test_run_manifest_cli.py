@@ -193,3 +193,38 @@ def test_run_manifest_v2_rejects_empty_run_id() -> None:
             information_boundary={},
             configuration={},
         )
+
+
+def test_run_manifest_cli_overwrite_is_explicit(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    observed: list[bool] = []
+
+    def record_write(path, manifest, *, overwrite=False):
+        del path, manifest
+        observed.append(overwrite)
+
+    monkeypatch.setattr(
+        run_manifest_cli,
+        "write_run_manifest",
+        record_write,
+    )
+    arguments = [
+        "create",
+        str(tmp_path / "manifest.json"),
+        "--run-id",
+        "smoke",
+        "--revision",
+        "b" * 40,
+        "--classification",
+        "infrastructure",
+        "--statistical-unit",
+        "test case",
+        "--command-line",
+        "bpt provider manifest",
+    ]
+
+    assert main(arguments) == 0
+    assert main([*arguments, "--overwrite"]) == 0
+    assert observed == [False, True]
