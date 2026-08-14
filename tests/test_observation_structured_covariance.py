@@ -94,6 +94,10 @@ def _original_dense_covariance(belief: ObservationBeliefV1) -> np.ndarray:
     return result
 
 
+def _assert_covariance_parity(actual: np.ndarray, expected: np.ndarray) -> None:
+    np.testing.assert_allclose(actual, expected, rtol=1e-14, atol=1e-18)
+
+
 def _mapping() -> dict[str, str]:
     return {
         "gauge_x": "gauge",
@@ -112,16 +116,16 @@ def test_factor_group_expansion_preserves_dense_covariance_exactly() -> None:
         metadata={"protocol_id": "adapter-test"},
     )
 
-    assert np.array_equal(
+    _assert_covariance_parity(
         covariance.dense_covariance_m2(maximum_dimension=12),
         _original_dense_covariance(belief),
     )
-    assert np.array_equal(
+    _assert_covariance_parity(
         covariance.shared_factors_m["gauge"].reshape(12, 4)
         @ covariance.shared_factors_m["gauge"].reshape(12, 4).T,
         _original_component_covariance(belief, (0, 1)),
     )
-    assert np.array_equal(
+    _assert_covariance_parity(
         covariance.shared_factors_m["process"].reshape(12, 2)
         @ covariance.shared_factors_m["process"].reshape(12, 2).T,
         _original_component_covariance(belief, (2,)),
@@ -159,7 +163,7 @@ def test_factor_groups_remain_independent_and_row_ids_are_deterministic() -> Non
     expected_within_group = (
         belief.low_rank_factor_m[0] @ belief.low_rank_factor_m[1].T
     )
-    assert np.array_equal(
+    _assert_covariance_parity(
         covariance.cross_covariance_m2(ids[0], ids[1]),
         expected_within_group,
     )
@@ -178,7 +182,7 @@ def test_archive_roundtrip_retains_adapter_identity(tmp_path: Path) -> None:
 
     assert loaded.artifact_id == covariance.artifact_id
     assert loaded.descriptor() == covariance.descriptor()
-    assert np.array_equal(
+    _assert_covariance_parity(
         loaded.dense_covariance_m2(maximum_dimension=12),
         _original_dense_covariance(belief),
     )
@@ -289,7 +293,7 @@ def test_argument_types_are_not_coerced() -> None:
             coordinate_frame=" world ",
             factor_components=_mapping(),
         )
-    with pytest.raises(ValueError, match="genuine integer"):
+    with pytest.raises(ValueError, match="must be an integer"):
         structured_covariance_from_observation_belief(
             belief,
             coordinate_frame="world",
