@@ -109,72 +109,70 @@ class MaterialBackendSpecV1:
         }
 
 
-MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = (
-    MappingProxyType(
-        {
-            "jax-fem-quasistatic-v1": MaterialBackendSpecV1(
-                profile_id="jax-fem-quasistatic-v1",
-                engine_repository="deepmodeling/jax-fem",
-                solver_family="differentiable-fem",
-                identity_kind="mesh-node",
-                priority=1,
-                maturity="preferred",
-                variants=(
-                    MaterialBackendVariantV1(
-                        producer_profile_id="jax-fem-quasistatic-v1",
-                        transport="lagrangian-export-v1",
-                    ),
+MATERIAL_BACKEND_SPECS: Final[Mapping[str, MaterialBackendSpecV1]] = MappingProxyType(
+    {
+        "jax-fem-quasistatic-v1": MaterialBackendSpecV1(
+            profile_id="jax-fem-quasistatic-v1",
+            engine_repository="deepmodeling/jax-fem",
+            solver_family="differentiable-fem",
+            identity_kind="mesh-node",
+            priority=1,
+            maturity="preferred",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="jax-fem-quasistatic-v1",
+                    transport="lagrangian-export-v1",
                 ),
             ),
-            "sofa-fem-v1": MaterialBackendSpecV1(
-                profile_id="sofa-fem-v1",
-                engine_repository="sofa-framework/sofa",
-                solver_family="finite-element-method",
-                identity_kind="mechanical-node-index",
-                priority=2,
-                maturity="supported",
-                variants=(
-                    MaterialBackendVariantV1(
-                        producer_profile_id="sofa-fem-v1",
-                        transport="material-trajectory-v1",
-                    ),
+        ),
+        "sofa-fem-v1": MaterialBackendSpecV1(
+            profile_id="sofa-fem-v1",
+            engine_repository="sofa-framework/sofa",
+            solver_family="finite-element-method",
+            identity_kind="mechanical-node-index",
+            priority=2,
+            maturity="supported",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="sofa-fem-v1",
+                    transport="material-trajectory-v1",
                 ),
             ),
-            "genesis-mpm-v1": MaterialBackendSpecV1(
-                profile_id="genesis-mpm-v1",
-                engine_repository="Genesis-Embodied-AI/genesis-world",
-                solver_family="material-point-method",
-                identity_kind="material-particle-index",
-                priority=3,
-                maturity="supported",
-                variants=(
-                    MaterialBackendVariantV1(
-                        producer_profile_id="genesis-mpm-v1",
-                        transport="material-trajectory-v1",
-                    ),
-                    MaterialBackendVariantV1(
-                        producer_profile_id="genesis-world-mpm-v1",
-                        transport="lagrangian-export-v1",
-                        legacy=True,
-                    ),
+        ),
+        "genesis-mpm-v1": MaterialBackendSpecV1(
+            profile_id="genesis-mpm-v1",
+            engine_repository="Genesis-Embodied-AI/genesis-world",
+            solver_family="material-point-method",
+            identity_kind="material-particle-index",
+            priority=3,
+            maturity="supported",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="genesis-mpm-v1",
+                    transport="material-trajectory-v1",
+                ),
+                MaterialBackendVariantV1(
+                    producer_profile_id="genesis-world-mpm-v1",
+                    transport="lagrangian-export-v1",
+                    legacy=True,
                 ),
             ),
-            "mujoco-flex-v1": MaterialBackendSpecV1(
-                profile_id="mujoco-flex-v1",
-                engine_repository="google-deepmind/mujoco",
-                solver_family="mujoco-flex",
-                identity_kind="flex-vertex-index",
-                priority=4,
-                maturity="experimental",
-                variants=(
-                    MaterialBackendVariantV1(
-                        producer_profile_id="mujoco-flex-v1",
-                        transport="material-trajectory-v1",
-                    ),
+        ),
+        "mujoco-flex-v1": MaterialBackendSpecV1(
+            profile_id="mujoco-flex-v1",
+            engine_repository="google-deepmind/mujoco",
+            solver_family="mujoco-flex",
+            identity_kind="flex-vertex-index",
+            priority=4,
+            maturity="experimental",
+            variants=(
+                MaterialBackendVariantV1(
+                    producer_profile_id="mujoco-flex-v1",
+                    transport="material-trajectory-v1",
                 ),
             ),
-        }
-    )
+        ),
+    }
 )
 
 
