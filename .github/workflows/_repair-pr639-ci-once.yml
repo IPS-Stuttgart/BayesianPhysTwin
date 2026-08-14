@@ -33,6 +33,14 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
+      - name: Merge current main
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI"
+          git config user.email "openai@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+
       - name: Apply typing and stable-suite repairs
         run: |
           python - <<'PY'
@@ -69,7 +77,7 @@ jobs:
           PY
 
       - name: Install validation dependencies
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev]" coverage
 
       - name: Validate focused contracts, typing, and coverage
         run: |
