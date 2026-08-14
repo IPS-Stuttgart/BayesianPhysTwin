@@ -54,6 +54,9 @@ def _import_runtime(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
 
 
 def _protocol(*, expected_material_count: int = 8) -> SourceProtocol:
+    density = 4 * 1000.0 * (2.0 * 0.003) ** 3 / (
+        expected_material_count * 0.01**3
+    )
     value: dict[str, Any] = {
         "protocol_id": "volumetric-source-test-v2",
         "geometry": {
@@ -72,7 +75,7 @@ def _protocol(*, expected_material_count: int = 8) -> SourceProtocol:
             "voxel_size_m": 0.02,
             "particle_spacing_m": 0.01,
             "maximum_particle_count": 100,
-            "density_kg_m3": 1000.0,
+            "density_kg_m3": density,
             "poisson_ratio": 0.35,
             "gravity_m_s2": [0.0, 0.0, 0.0],
             "max_iterations": 50,
@@ -85,11 +88,17 @@ def _protocol(*, expected_material_count: int = 8) -> SourceProtocol:
             "particleization": "regular-convex-hull-v2",
             "readout": "inverse-distance-material-displacement-v2",
             "contact": "finite-mass-compliant-projection-v2",
+            "mass_normalization": "preserve-reference-direct-particle-total-mass-v2",
+            "particle_radius_rule": "half-particle-spacing-v2",
+            "reference_query_particle_radius_m": 0.003,
+            "reference_query_density_kg_m3": 1000.0,
             "contact_coupling_per_frame": 0.35,
             "query_neighbour_count": 8,
             "query_inverse_distance_power": 2.0,
             "expected_internal_material_particle_count": expected_material_count,
             "expected_transferred_contact_particle_count": 2,
+            "expected_query_map_maximum_distance_m": 0.0,
+            "query_map_distance_tolerance_m": 1.0e-12,
         },
         "parameter_grid": [
             {"young_modulus_pa": 25_000.0, "damping": 0.002},
@@ -185,6 +194,17 @@ def test_volumetric_config_binds_the_new_hypothesis(
     with pytest.raises(ValueError, match="simulation.solver"):
         runtime._volumetric_config(
             SourceProtocol(protocol.path, changed, protocol.sha256),
+            young_modulus_pa=25_000.0,
+            damping=0.002,
+        )
+    changed_density = dict(protocol.value)
+    changed_density["simulation"] = dict(
+        protocol.value["simulation"],
+        density_kg_m3=1000.0,
+    )
+    with pytest.raises(ValueError, match="total-mass normalization"):
+        runtime._volumetric_config(
+            SourceProtocol(protocol.path, changed_density, protocol.sha256),
             young_modulus_pa=25_000.0,
             damping=0.002,
         )

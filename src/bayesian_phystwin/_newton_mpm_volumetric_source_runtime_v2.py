@@ -78,6 +78,8 @@ def _require_frozen_solver(simulation: Mapping[str, Any]) -> None:
         "particleization": "regular-convex-hull-v2",
         "readout": "inverse-distance-material-displacement-v2",
         "contact": "finite-mass-compliant-projection-v2",
+        "mass_normalization": "preserve-reference-direct-particle-total-mass-v2",
+        "particle_radius_rule": "half-particle-spacing-v2",
     }
     for name, value in expected.items():
         if simulation.get(name) != value:
@@ -120,11 +122,7 @@ def _volumetric_config(
             "maximum_particle_count",
             minimum=4,
         ),
-        density_kg_m3=_simulation_number(
-            simulation,
-            "density_kg_m3",
-            positive=True,
-        ),
+        density_kg_m3=_simulation_number(simulation, "density_kg_m3", positive=True),
         young_modulus_pa=young_modulus_pa,
         poisson_ratio=_simulation_number(simulation, "poisson_ratio"),
         damping=damping,
@@ -150,6 +148,34 @@ def _volumetric_config(
             float(gravity[2]),
         ),
     )
+    reference_radius = _simulation_number(
+        simulation,
+        "reference_query_particle_radius_m",
+        positive=True,
+    )
+    reference_density = _simulation_number(
+        simulation,
+        "reference_query_density_kg_m3",
+        positive=True,
+    )
+    expected_internal_count = _simulation_integer(
+        simulation,
+        "expected_internal_material_particle_count",
+        minimum=4,
+    )
+    expected_density = (
+        protocol.material_count
+        * reference_density
+        * (2.0 * reference_radius) ** 3
+        / (expected_internal_count * config.particle_spacing_m**3)
+    )
+    if not np.isclose(
+        config.density_kg_m3,
+        expected_density,
+        rtol=0.0,
+        atol=1.0e-12,
+    ):
+        raise ValueError("simulation density violates total-mass normalization")
     config.validate()
     return config
 
@@ -172,6 +198,20 @@ def _validate_rollout_contract(
         raise RuntimeError("volumetric material particle count changed")
     if len(rollout.contact_map.material_indices) != expected_contact:
         raise RuntimeError("transferred contact particle count changed")
+    expected_map_distance = _simulation_number(
+        simulation,
+        "expected_query_map_maximum_distance_m",
+    )
+    map_tolerance = _simulation_number(
+        simulation,
+        "query_map_distance_tolerance_m",
+        positive=True,
+    )
+    if (
+        abs(rollout.query_map.maximum_distance_m - expected_map_distance)
+        > map_tolerance
+    ):
+        raise RuntimeError("volumetric query-map distance changed")
     expected_material_shape = (
         protocol.frame_count,
         expected_material,
