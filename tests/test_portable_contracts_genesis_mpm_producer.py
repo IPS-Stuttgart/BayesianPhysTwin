@@ -586,9 +586,7 @@ def test_backend_producer_writes_bound_genesis_runtime(tmp_path: Path) -> None:
     assert raw.is_file()
     assert runtime.is_file()
     assert result["rollout"]["profile_id"] == "genesis-mpm-v1"
-    assert result["runtime"]["backend_profile"]["profile_id"] == (
-        "genesis-mpm-v1"
-    )
+    assert result["runtime"]["backend_profile"]["profile_id"] == ("genesis-mpm-v1")
     assert result["runtime"]["frame_count"] == 3
     assert result["runtime"]["query_count"] == 2
     assert result["runtime"]["raw_rollout_sha256"] == file_sha256(raw)
