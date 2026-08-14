@@ -73,3 +73,13 @@ fixed 200-epoch terminal checkpoint only if the smoke passes mechanically.
 A positive reconstruction result would show capacity only. A later predictive
 experiment would need a separately frozen source-only training design, target
 prefix selection, pinned-PhysTwin replay parity, and an independent cohort.
+
+## Descriptive spatial audit
+
+The terminal export also receives a separately committed, non-decision-bearing
+audit of spring variation across the five frozen DINO graph parts. It rebuilds
+the exact object and controller edge-to-part mapping through pinned MatPhys,
+then reports each part's geometric-mean stiffness and the maximum-to-minimum
+part ratio. This distinguishes a genuinely spatial solution from another
+nearly global stiffness shift. It does not alter the locked two-metric capacity
+gate or authorize predictive use.

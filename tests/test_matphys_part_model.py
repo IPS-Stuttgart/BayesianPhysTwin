@@ -8,8 +8,42 @@ from torch import nn  # noqa: E402
 
 from bayesian_phystwin.matphys_part_model import (  # noqa: E402
     install_part_aware_simple_model,
+    summarize_part_spring_field,
     summarize_part_spring_ratios,
 )
+
+
+def test_summarize_part_spring_field_reports_spatial_variation() -> None:
+    summary = summarize_part_spring_field(
+        np.asarray([1.0, 4.0, 9.0, 16.0]),
+        np.asarray([0, 0, 1, 1]),
+    )
+
+    assert summary["overall"]["count"] == 4
+    assert summary["by_part"][0]["geometric_mean"] == pytest.approx(2.0)
+    assert summary["by_part"][1]["geometric_mean"] == pytest.approx(12.0)
+    assert summary["spatial_variation"] == {
+        "distinct_part_count": 2,
+        "minimum_part_geometric_mean": pytest.approx(2.0),
+        "maximum_part_geometric_mean": pytest.approx(12.0),
+        "maximum_to_minimum_part_geometric_mean_ratio": pytest.approx(6.0),
+        "part_log_geometric_mean_std": pytest.approx(np.log(6.0) / 2.0),
+    }
+
+
+@pytest.mark.parametrize(
+    ("spring", "parts", "message"),
+    (
+        ([1.0], [0, 1], "cover"),
+        ([0.0], [0], "positive"),
+        ([1.0], [-1], "nonnegative"),
+    ),
+)
+def test_summarize_part_spring_field_rejects_invalid_inputs(
+    spring: list[float], parts: list[int], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        summarize_part_spring_field(np.asarray(spring), np.asarray(parts))
 
 
 class _Codebook(nn.Module):

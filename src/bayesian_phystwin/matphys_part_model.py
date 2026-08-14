@@ -8,8 +8,56 @@ from typing import Any
 
 import numpy as np
 
-
 PART_AWARE_MODEL_CONTRACT = "simple-videomae-dino-part-conditioning-v1"
+
+
+def summarize_part_spring_field(
+    spring_y: np.ndarray,
+    edge_part_index: np.ndarray,
+) -> dict[str, object]:
+    """Summarize a complete positive spring field by its applied graph part."""
+
+    spring = np.asarray(spring_y, dtype=float).reshape(-1)
+    part_index = np.asarray(edge_part_index, dtype=int).reshape(-1)
+    if len(spring) == 0 or len(part_index) != len(spring):
+        raise ValueError("edge part indices must cover the spring field")
+    if not np.all(np.isfinite(spring)) or np.any(spring <= 0.0):
+        raise ValueError("spring field must be finite and positive")
+    if np.any(part_index < 0):
+        raise ValueError("edge part indices must be nonnegative")
+
+    def statistics(values: np.ndarray) -> dict[str, float | int]:
+        return {
+            "count": int(len(values)),
+            "mean": float(np.mean(values)),
+            "std": float(np.std(values)),
+            "minimum": float(np.min(values)),
+            "maximum": float(np.max(values)),
+            "geometric_mean": float(np.exp(np.mean(np.log(values)))),
+        }
+
+    by_part = [
+        {"part": int(part), **statistics(spring[part_index == part])}
+        for part in sorted(set(part_index.tolist()))
+    ]
+    part_geometric_means = np.asarray(
+        [record["geometric_mean"] for record in by_part], dtype=float
+    )
+    return {
+        "overall": statistics(spring),
+        "by_part": by_part,
+        "spatial_variation": {
+            "distinct_part_count": len(by_part),
+            "minimum_part_geometric_mean": float(np.min(part_geometric_means)),
+            "maximum_part_geometric_mean": float(np.max(part_geometric_means)),
+            "maximum_to_minimum_part_geometric_mean_ratio": float(
+                np.max(part_geometric_means) / np.min(part_geometric_means)
+            ),
+            "part_log_geometric_mean_std": float(
+                np.std(np.log(part_geometric_means))
+            ),
+        },
+    }
 
 
 def summarize_part_spring_ratios(
