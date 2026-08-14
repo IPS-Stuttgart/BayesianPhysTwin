@@ -238,9 +238,7 @@ def _group_gaussian_nll(
     total = 0.0
     dimension = residual.shape[1]
     constant = dimension * np.log(2.0 * np.pi)
-    for index, (error, matrix) in enumerate(
-        zip(residual, transformed, strict=True)
-    ):
+    for index, (error, matrix) in enumerate(zip(residual, transformed, strict=True)):
         factor = _cholesky(matrix, name=f"transformed covariance {index}")
         whitened = np.linalg.solve(factor, error)
         log_determinant = 2.0 * float(np.sum(np.log(np.diag(factor))))
