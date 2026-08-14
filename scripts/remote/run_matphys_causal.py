@@ -420,6 +420,28 @@ def _configure_matphys_imports(matphys_root: Path) -> None:
     _install_wandb_stub()
 
 
+def _install_warp_warn_compatibility() -> None:
+    """Restore the private warning signature expected by pinned MatPhys."""
+
+    import warnings
+
+    import warp._src.utils as warp_utils
+
+    if hasattr(warp_utils, "warn"):
+        return
+    emitted_once: set[tuple[str, object]] = set()
+
+    def warn(message, category=None, stacklevel=1, once=False):
+        key = (str(message), category)
+        if once and key in emitted_once:
+            return
+        if once:
+            emitted_once.add(key)
+        warnings.warn(message, category=category, stacklevel=stacklevel + 1)
+
+    warp_utils.warn = warn
+
+
 def _source_commit(matphys_root: Path) -> str:
     return subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=matphys_root, text=True
@@ -1243,6 +1265,7 @@ def train(args) -> None:
     proxy = _prepare_proxy(args, cases, evidence_end_by_case)
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
+    _install_warp_warn_compatibility()
     import train_model_video_material_simple as training
 
     initialization_state, initialization_identity = _load_trunk_initialization(args)
@@ -1672,15 +1695,7 @@ def export(args) -> None:
     proxy = _prepare_proxy(args, cases, evidence_end_by_case)
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
-    # MatPhys's warning filter targets a Warp-private helper removed in newer
-    # Warp builds. Supplying the standard equivalent keeps export-only replays
-    # compatible without changing any simulation path.
-    import warnings
-
-    import warp._src.utils as warp_utils
-
-    if not hasattr(warp_utils, "warn"):
-        warp_utils.warn = warnings.warn
+    _install_warp_warn_compatibility()
     import train_model_video_material_simple as training
     from material_param_dataset import (
         MaterialDatasetConfig,

@@ -51,3 +51,18 @@ one already-open case cannot establish a cohort-level state-of-the-art result.
 Prob4D is unused and MolmoMotion remains at zero weight. No artifact from this
 experiment may modify the frozen Causal4D acquisition candidate or authorize
 fresh target access.
+
+## Stage-0 import amendment
+
+The first one-epoch mechanical attempt stopped while importing pinned MatPhys,
+before model or optimizer construction, because Warp 1.15 no longer exposes the
+private `warp._src.utils.warn` helper MatPhys wraps. It produced no checkpoint,
+export, or scientific metric. The exact invocation and failure log are bound by
+`configs/sota/matphys_causal_absolute_part_competence_v1_amendment.json`.
+
+Version 1.1 permits exactly one new one-epoch run in `stage0-v1.1` after adding
+the signature-compatible warning adapter already exercised by the all-frame
+control. The adapter only restores warning dispatch, including MatPhys's
+`once` argument; it does not alter data, simulation, model, optimization, or
+any gate. Stage 1 remains unauthorized until this retry passes the original
+mechanical gate.

@@ -8,6 +8,12 @@ PROTOCOL = (
     / "sota"
     / "matphys_causal_absolute_part_competence_v1.json"
 )
+AMENDMENT = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "matphys_causal_absolute_part_competence_v1_amendment.json"
+)
 
 
 def test_absolute_part_competence_protocol_is_causal_and_single_run() -> None:
@@ -32,3 +38,26 @@ def test_absolute_part_competence_protocol_is_causal_and_single_run() -> None:
     assert "at or after frame 34" in forbidden
     assert "held-v8" in forbidden
     assert "fresh target" in forbidden
+
+
+def test_stage_zero_amendment_allows_one_mechanical_retry_only() -> None:
+    amendment = json.loads(AMENDMENT.read_text(encoding="utf-8"))
+
+    assert amendment["protocol_id"] == (
+        "matphys-causal-absolute-part-competence-v1.1"
+    )
+    assert amendment["base_protocol"]["sha256"] == (
+        "91e17a9fb4fbd5fe85b456e074d68c7e206c55f3609e5fd57d97774c6e87a616"
+    )
+    failed = amendment["failed_attempt"]
+    assert failed["checkpoint_created"] is False
+    assert failed["future_metrics_opened"] is False
+    assert failed["exit_code"] == 1
+    retry = amendment["stage_0_retry"]
+    assert retry["directory"] == "stage0-v1.1"
+    assert retry["epochs"] == 1
+    assert retry["maximum_runs"] == 1
+    assert retry["future_metrics_may_be_opened"] is False
+    assert "unauthorized" in amendment["stage_1_causal_competence"][
+        "authorization"
+    ]

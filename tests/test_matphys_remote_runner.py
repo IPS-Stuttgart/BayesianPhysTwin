@@ -16,6 +16,34 @@ def _load_runner():
     return module
 
 
+def test_warp_warn_compatibility_preserves_once_signature(monkeypatch) -> None:
+    runner = _load_runner()
+    messages = []
+    fake_utils = SimpleNamespace()
+    fake_warp = SimpleNamespace(_src=SimpleNamespace(utils=fake_utils))
+    monkeypatch.setitem(sys.modules, "warp", fake_warp)
+    monkeypatch.setitem(sys.modules, "warp._src", fake_warp._src)
+    monkeypatch.setitem(sys.modules, "warp._src.utils", fake_utils)
+    monkeypatch.setattr(
+        "warnings.warn",
+        lambda message, category=None, stacklevel=1: messages.append(
+            (str(message), category, stacklevel)
+        ),
+    )
+
+    runner._install_warp_warn_compatibility()
+    fake_utils.warn("same", category=RuntimeWarning, stacklevel=3, once=True)
+    fake_utils.warn("same", category=RuntimeWarning, stacklevel=3, once=True)
+    fake_utils.warn("repeat", once=False)
+    fake_utils.warn("repeat", once=False)
+
+    assert messages == [
+        ("same", RuntimeWarning, 4),
+        ("repeat", None, 2),
+        ("repeat", None, 2),
+    ]
+
+
 def test_ddp_runtime_access_logs_merge_disjoint_case_shards(
     tmp_path: Path,
     monkeypatch,

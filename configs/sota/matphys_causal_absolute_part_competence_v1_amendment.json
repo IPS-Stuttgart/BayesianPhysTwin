@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-causal-absolute-part-competence-v1.1",
+  "locked_at_utc": "2026-08-14T02:43:19Z",
+  "status": "source-independent mechanical-retry amendment",
+  "supersedes_for_stage_0": "matphys-causal-absolute-part-competence-v1",
+  "base_protocol": {
+    "path": "configs/sota/matphys_causal_absolute_part_competence_v1.json",
+    "sha256": "91e17a9fb4fbd5fe85b456e074d68c7e206c55f3609e5fd57d97774c6e87a616"
+  },
+  "claim_boundary": "This amendment authorizes one outcome-blind mechanical retry after a source-independent import failure. It does not authorize future metric access, stage 1, tuning, confirmation, or a state-of-the-art claim.",
+  "failed_attempt": {
+    "stage": "stage-0-mechanical-smoke",
+    "implementation_revision": "6777b2429f608d547e95499a3ac31e1ab0e0a19c",
+    "invocation_path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage0/invocation.json",
+    "invocation_sha256": "b99728c4eea8ea5a2d7821f6faed3eef5b159d25c8d641d87eeae63a8374c729",
+    "log_path": "/mnt/corsair/florianpfaff/matphys-causal-absolute-part-v1/stage0/train.stdout.log",
+    "log_sha256": "193e0b360d8ad28edca0116e106f18db3e177ee52b852790a1d6b3781f0ace04",
+    "exit_code": 1,
+    "failure": "Pinned MatPhys imported warp._src.utils.warn, which is absent from the installed Warp 1.15 runtime.",
+    "boundary": "The exception occurred while importing MatPhys, before model construction, optimizer construction, checkpoint creation, export, or scientific outcome evaluation.",
+    "checkpoint_created": false,
+    "future_metrics_opened": false
+  },
+  "authorized_change": {
+    "scope": "Install the signature-compatible warp._src.utils.warn adapter already used by the all-frame reconstruction control before importing MatPhys in causal training and export.",
+    "simulation_changed": false,
+    "model_changed": false,
+    "optimizer_changed": false,
+    "data_or_split_changed": false,
+    "gate_changed": false
+  },
+  "stage_0_retry": {
+    "directory": "stage0-v1.1",
+    "epochs": 1,
+    "maximum_runs": 1,
+    "arguments": "Identical to the failed stage-0 invocation except for the committed implementation revision and this registered amendment path.",
+    "future_metrics_may_be_opened": false,
+    "pass": "The base protocol stage-0 gate passes under a hash-bound audit and export.",
+    "failure": "Stop. No further retry or stage-1 execution is authorized without a new prospective amendment."
+  },
+  "stage_1_causal_competence": {
+    "authorization": "Still governed by the byte-bound base protocol and unauthorized unless the single v1.1 stage-0 retry passes.",
+    "epochs": 200,
+    "maximum_runs": 1,
+    "future_gate_unchanged": true
+  },
+  "inherited_boundaries": [
+    "all bound inputs, hyperparameters, causal frame limits, competence gates, and forbidden actions in the base protocol remain unchanged",
+    "Prob4D remains unused and MolmoMotion beta remains zero",
+    "no held-v8 artifact may be accessed",
+    "no fresh target or confirmation outcome may be opened"
+  ]
+}
