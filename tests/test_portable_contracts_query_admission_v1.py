@@ -61,14 +61,14 @@ def _repositories() -> tuple[RepositoryState, ...]:
 
 
 def _provider(**changes: object) -> EvidenceDecisionV1:
-    values: dict[str, object] = {
-        "claim_id": "bpt.provider.competence",
-        "protocol_id": "fresh-provider-v1",
-        "status": "pass",
-        "run_classification": "confirmatory",
-        "claim_authorized": True,
-        "evidence_level": 3,
-        "metric": DecisionMetricV1(
+    result = EvidenceDecisionV1(
+        claim_id="bpt.provider.competence",
+        protocol_id="fresh-provider-v1",
+        status="pass",
+        run_classification="confirmatory",
+        claim_authorized=True,
+        evidence_level=3,
+        metric=DecisionMetricV1(
             name="physical_query_regret",
             comparison="candidate_vs_physical_fallback",
             rule="upper_bound_le_zero",
@@ -76,16 +76,15 @@ def _provider(**changes: object) -> EvidenceDecisionV1:
             threshold_value=0.0,
             unit="nll-per-dimension",
         ),
-        "run_manifest_id": _sha256("run-manifest"),
-        "evidence_fingerprint": _sha256("evidence-fingerprint"),
-        "evidence_summary_sha256": _sha256("evidence-summary"),
-        "repositories": _repositories(),
-        "limitations": ("query-specific source evidence only",),
-        "metadata": {"target_opened": False},
-        "created_utc": "2026-08-14T08:00:00+00:00",
-    }
-    values.update(changes)
-    return EvidenceDecisionV1(**values)  # type: ignore[arg-type]
+        run_manifest_id=_sha256("run-manifest"),
+        evidence_fingerprint=_sha256("evidence-fingerprint"),
+        evidence_summary_sha256=_sha256("evidence-summary"),
+        repositories=_repositories(),
+        limitations=("query-specific source evidence only",),
+        metadata={"target_opened": False},
+        created_utc="2026-08-14T08:00:00+00:00",
+    )
+    return replace(result, **changes)
 
 
 def _query(provider_decision_id: str) -> PhysicalQueryV1:
@@ -160,35 +159,37 @@ def _covariance_decision(query: PhysicalQueryV1) -> QueryCovarianceTreatmentDeci
     )
 
 
-def _evidence(query: PhysicalQueryV1, **changes: object) -> QueryAdmissionEvidenceV1:
-    values: dict[str, object] = {
-        "candidate_belief_id": _sha256("candidate-belief"),
-        "candidate_query_mean_id": _sha256("candidate-query-mean"),
-        "candidate_query_covariance_id": _sha256("candidate-query-covariance"),
-        "baseline_query_mean_id": _sha256("baseline-query-mean"),
-        "baseline_query_covariance_id": _sha256("baseline-query-covariance"),
-        "evaluation_artifact_id": _sha256("query-evaluation"),
-        "score_metric": query.primary_proper_score,
-        "width_unit": query.physical_unit,
-        "statistical_unit": query.bootstrap.independent_group_definition,
-        "independent_group_count": 12,
-        "mean_score_regret": -0.02,
-        "score_regret_upper_bound": 0.0,
-        "maximum_score_increase": 0.01,
-        "worst_group_score_regret": 0.02,
-        "harmful_group_fraction": 0.0,
-        "accepted_coverage": 0.90,
-        "mean_full_width": 0.12,
-        "identifiable_subspace_overlap": 0.80,
-        "shared_covariance_relevance": 0.20,
-        "expected_information_gain": 0.30,
-        "policy_frozen_before_evaluation_outcomes": True,
-        "evaluation_outcomes_used_for_candidate_selection": False,
-        "evaluation_groups_independent": True,
-        "metadata": {"target_opened": False},
-    }
-    values.update(changes)
-    return QueryAdmissionEvidenceV1(**values)  # type: ignore[arg-type]
+def _evidence(
+    query: PhysicalQueryV1,
+    **changes: object,
+) -> QueryAdmissionEvidenceV1:
+    result = QueryAdmissionEvidenceV1(
+        candidate_belief_id=_sha256("candidate-belief"),
+        candidate_query_mean_id=_sha256("candidate-query-mean"),
+        candidate_query_covariance_id=_sha256("candidate-query-covariance"),
+        baseline_query_mean_id=_sha256("baseline-query-mean"),
+        baseline_query_covariance_id=_sha256("baseline-query-covariance"),
+        evaluation_artifact_id=_sha256("query-evaluation"),
+        score_metric=query.primary_proper_score,
+        width_unit=query.physical_unit,
+        statistical_unit=query.bootstrap.independent_group_definition,
+        independent_group_count=12,
+        mean_score_regret=-0.02,
+        score_regret_upper_bound=0.0,
+        maximum_score_increase=0.01,
+        worst_group_score_regret=0.02,
+        harmful_group_fraction=0.0,
+        accepted_coverage=0.90,
+        mean_full_width=0.12,
+        identifiable_subspace_overlap=0.80,
+        shared_covariance_relevance=0.20,
+        expected_information_gain=0.30,
+        policy_frozen_before_evaluation_outcomes=True,
+        evaluation_outcomes_used_for_candidate_selection=False,
+        evaluation_groups_independent=True,
+        metadata={"target_opened": False},
+    )
+    return replace(result, **changes)
 
 
 def _policy() -> QueryAdmissionPolicyV1:
@@ -308,10 +309,7 @@ def test_information_order_and_grouping_fail_closed() -> None:
     assert certificate.exact_fallback
     assert "insufficient-independent-groups" in certificate.reasons
     assert "query-policy-not-frozen-before-outcomes" in certificate.reasons
-    assert (
-        "evaluation-outcomes-used-for-candidate-selection"
-        in certificate.reasons
-    )
+    assert "evaluation-outcomes-used-for-candidate-selection" in certificate.reasons
     assert "evaluation-groups-not-independent" in certificate.reasons
 
 
@@ -368,7 +366,4 @@ def test_redundant_decision_fields_cannot_be_tampered() -> None:
     with pytest.raises(ValueError, match="admitted contradicts"):
         replace(certificate, admitted=False)
     with pytest.raises(ValueError, match="reasons contradict"):
-        replace(
-            certificate,
-            reasons=("provider-decision-not-pass",),
-        )
+        replace(certificate, reasons=("provider-decision-not-pass",))
