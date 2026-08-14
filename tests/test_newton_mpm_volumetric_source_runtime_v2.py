@@ -421,6 +421,30 @@ def test_frozen_volumetric_source_protocol_is_valid() -> None:
     assert amendment["future_object_outcome_read"] is False
 
 
+def test_volumetric_v2_1_compact_result_preserves_failed_gate_boundary() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    evidence = (
+        repository
+        / "results/sota/diagnostics"
+        / "newton_mpm_double_stretch_zebra_volumetric_source_v2_1"
+    )
+    grid = json.loads((evidence / "newton-grid.json").read_text())
+    prefix = json.loads((evidence / "prefix-result.json").read_text())
+
+    assert grid["successful_candidate_count"] == 8
+    assert grid["technical_failure_count"] == 0
+    assert grid["information_boundary"]["object_outcome_artifact_read"] is False
+    assert prefix["validation_gate_passed"] is False
+    assert prefix["validation_checks"]["balanced_validation_improvement"] is True
+    assert prefix["validation_checks"]["identity_nonregression_vs_incumbent"] is False
+    assert prefix["validation_checks"]["chamfer_nonregression_vs_incumbent"] is False
+    assert prefix["selection"] == "exact_incumbent_fallback"
+    assert prefix["selected_physical_is_byte_exact_source"] is True
+    assert prefix["future_scoring_authorized"] is False
+    assert prefix["information_boundary"]["future_outcomes_read"] is False
+    assert not (evidence / "future-result.json").exists()
+
+
 def test_volumetric_source_cli_reports_missing_optional_runtime(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
