@@ -18,16 +18,8 @@ The stable category includes:
 
 - `bayesian_phystwin.v1` and its artifact owners;
 - `bayesian_phystwin.inference.v1` and its guarded-inference owners;
-- `bayesian_phystwin.inference.components_v1` for separate point-mean and
-  covariance admission;
-- `bayesian_phystwin.inference.component_beliefs_v1` for semantic validation of
-  the five complete-belief arms;
 - the public Causal4D provider-v1 and provider-v2 modules; and
 - the Prob4D causal-lineage validation bridge.
-
-The two component-admission modules remain explicit direct imports. Registering
-them as stable does not add symbols to the exact
-`bayesian_phystwin.inference.v1` export snapshot.
 
 Stable status does not promote every implementation dependency imported by
 those modules. It applies only to the explicitly registered module identities
@@ -64,12 +56,12 @@ An importable module absent from the registry is internal or experimental and
 has no compatibility promise. Underscore-prefixed modules are always internal
 and cannot be added to the public lifecycle registry.
 
-The external-physics adapter, backend registry, Genesis producer, and source-only
-qualification module deliberately remain unregistered. They do not own any
-historical package-root exports, and registering them in the explicit
-experimental list would falsely imply root ownership. Their content-addressed
-records remain reproducible, but the modules themselves carry the manifest's
-`internal-or-experimental-no-compatibility-promise` status.
+The external-physics adapter, backend registry, Genesis and JAX-FEM producers,
+and source-only qualification module deliberately remain unregistered. They do
+not own any historical package-root exports, and registering them in the
+explicit experimental list would falsely imply root ownership. Their
+content-addressed records remain reproducible, but the modules themselves carry
+the manifest's `internal-or-experimental-no-compatibility-promise` status.
 
 A listed backend profile is only a compatibility target, a valid runtime is only
 a candidate rollout, and a passing source-only qualification is not
