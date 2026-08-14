@@ -72,6 +72,71 @@ This matters because a complete belief may contain state, parameters,
 discrepancy, nuisance variables, weights, covariance factors, and provenance.
 Those fields must remain mutually consistent under both acceptance and fallback.
 
+## Semantic arm binding
+
+Artifact-ID routing alone cannot prove that an object labelled “covariance-only”
+actually retains the deterministic-reference mean, or that a “mean-only” object
+retains the reference covariance. Complete beliefs that expose content-bound
+component identities can use the stable companion module
+`bayesian_phystwin.inference.component_beliefs_v1`.
+
+A componentized complete belief exposes four lowercase SHA-256 identities:
+
+- `artifact_id` for the complete belief;
+- `common_domain_id` for the shared query/evaluation domain;
+- `mean_component_id` for the complete point-mean payload; and
+- `covariance_component_id` for the complete covariance payload and semantics.
+
+The complete belief's own artifact contract must bind the two component
+identities. The companion module does not infer component identities from arrays
+or bless an unbound caller declaration.
+
+`bind_componentized_belief_arms` validates and content-addresses the full
+five-arm grid:
+
+- the mean candidate differs from the deterministic-reference mean;
+- the covariance candidate differs from the reference covariance;
+- the mean-only arm retains the exact reference covariance identity;
+- the covariance-only arm retains the exact deterministic-reference mean
+  identity; and
+- the full arm reuses both candidate component identities.
+
+It snapshots all component identities and fails closed if a caller-owned object
+changes before routing. `route_componentized_belief_admission` then delegates to
+the existing five-arm router and verifies that every routed arm is the exact
+object from the validated arm set.
+
+```python
+from bayesian_phystwin.inference.component_beliefs_v1 import (
+    bind_componentized_belief_arms,
+    route_componentized_belief_admission,
+)
+
+arm_set = bind_componentized_belief_arms(
+    policy,
+    exact_fallback_belief=physical_fallback,
+    deterministic_reference_belief=last_residual,
+    mean_candidate_belief=mean_candidate,
+    covariance_candidate_belief=covariance_only,
+    full_belief=full_candidate,
+    metadata={"protocol_id": protocol_id},
+)
+
+result = route_componentized_belief_admission(
+    decision,
+    arm_set,
+    metadata={"run_manifest_id": run_manifest_id},
+)
+selected = result.selected_belief
+```
+
+`arm_set.to_record()` is a compact, identifier-only audit record for a
+three-repository evidence capsule. The result record adds the selected mean and
+covariance component identities, the existing component-admission decision and
+result identities, and the exact-fallback flag. Causal4D should still consume
+only the selected accepted belief; neither record is a substitute for downstream
+intervention evidence.
+
 ## Example
 
 ```python
@@ -115,8 +180,9 @@ selected = result.selected_belief
 
 ## Scientific boundary
 
-A valid decision establishes content identity, cross-artifact consistency, and
-exact-object routing only. It does not establish provider competence, calibrated
-raw covariance, unseen-object transfer, safe deployment, Causal4D intervention
-benefit, or state of the art. Those claims require the separately frozen fresh
-physical study and its independent object/session-level evidence.
+A valid decision or semantic arm binding establishes content identity,
+cross-artifact consistency, component-label consistency, and exact-object routing
+only. It does not establish provider competence, calibrated raw covariance,
+unseen-object transfer, safe deployment, Causal4D intervention benefit, or state
+of the art. Those claims require the separately frozen fresh physical study and
+its independent object/session-level evidence.
