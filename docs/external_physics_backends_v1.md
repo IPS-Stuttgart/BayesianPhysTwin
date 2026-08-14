@@ -148,6 +148,53 @@ The runtime contract requires:
 - an independently simulated zero-action replay; and
 - the known action bound to the driven replay.
 
+## Source-only backend qualification
+
+A valid runtime bundle is not automatically a qualified physical model. The
+separate `PhysicsBackendQualificationV1` record binds one exact runtime and one
+incumbent runtime to a frozen source-only protocol, independent source groups,
+measured numerical diagnostics, thresholds, and exact fallback evidence.
+
+A passing record requires all of the following:
+
+- valid units, coordinate frame, persistent entity order, and query identity;
+- byte-reproducible reruns;
+- zero-action equilibrium drift below a frozen threshold;
+- rigid-transform equivariance error below a frozen threshold;
+- time-step-refinement sensitivity below a frozen threshold;
+- unchanged topology and entity identity;
+- zero declared physical-sanity violations;
+- finite-difference Jacobian agreement below a frozen relative-error threshold;
+- source-query parity to the registered incumbent below a frozen RMSE threshold;
+- byte-identical exact fallback for unsupported or rejected cases;
+- a protocol frozen before source outcomes were inspected; and
+- no target outcome use.
+
+The record is content-addressed and stores all failure reasons. A failed record
+remains useful source evidence but cannot authorize the runtime. Bind a validated
+runtime before any guarded or target-facing use:
+
+```python
+from bayesian_phystwin.physics_backend_qualification_v1 import (
+    load_physics_backend_qualification_v1,
+    require_qualified_backend_runtime,
+)
+from bayesian_phystwin.physics_backend_registry_v1 import profile_from_mapping
+
+qualification = load_physics_backend_qualification_v1(
+    "physics-backend-qualification.json"
+)
+require_qualified_backend_runtime(
+    profile_from_mapping(runtime_manifest["backend_profile"]),
+    runtime_manifest["runtime_id"],
+    qualification,
+)
+```
+
+This qualification is still source-side mechanism evidence. Independent-object
+accuracy, calibrated uncertainty, and downstream Causal4D benefit require their
+own frozen confirmation protocols.
+
 ## Third-party profiles
 
 Additional engines can register a profile without modifying
@@ -171,17 +218,16 @@ A profile is only an available producer boundary. Before it can replace or join
 the incumbent physical model on a target protocol, require all of the following
 on already-open, source-only development data:
 
-1. frame-zero query alignment in metres and in the registered coordinate frame;
-2. repeat-run and zero-action noise-floor measurements;
-3. a fixed parameter prior or source-only posterior with non-degenerate spread;
-4. held-out source-prefix improvement or demonstrable complementarity to the
+1. a passing `PhysicsBackendQualificationV1` bound to the exact runtime;
+2. a fixed parameter prior or source-only posterior with non-degenerate spread;
+3. held-out source-prefix improvement or demonstrable complementarity to the
    incumbent under the same action and metrics;
-5. calibration checks using proper multivariate scores, not mean trajectory
+4. calibration checks using proper multivariate scores, not mean trajectory
    error alone;
-6. a frozen guard whose rejection path is a byte-identical incumbent artifact;
-7. no target outcome or future observation in fitting, profile choice, or
+5. a frozen guard whose rejection path is a byte-identical incumbent artifact;
+6. no target outcome or future observation in fitting, profile choice, or
    acceptance; and
-8. a separately hashed prediction before independent future outcomes are
+7. a separately hashed prediction before independent future outcomes are
    opened.
 
 The Genesis replay producer is now implemented. Its next step is one
