@@ -1,0 +1,51 @@
+name: Format external physics backend branch
+
+on:
+  push:
+    branches:
+      - agent/external-physics-backends
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install formatter
+        run: python -m pip install "ruff>=0.6"
+      - name: Apply repository formatting
+        run: >-
+          python -m ruff format
+          src/bayesian_phystwin/cli/external_physics_backend.py
+          src/bayesian_phystwin/external_physics_backend_v1.py
+          src/bayesian_phystwin/physics_backend_registry_v1.py
+          tests/test_portable_contracts_external_physics.py
+          tests/test_portable_contracts_external_physics_registry.py
+      - name: Commit formatted files
+        shell: bash
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/cli/external_physics_backend.py \
+            src/bayesian_phystwin/external_physics_backend_v1.py \
+            src/bayesian_phystwin/physics_backend_registry_v1.py \
+            tests/test_portable_contracts_external_physics.py \
+            tests/test_portable_contracts_external_physics_registry.py
+          if git diff --cached --quiet; then
+            echo "Files are already formatted."
+            exit 0
+          fi
+          git commit -m "Apply repository formatting"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
