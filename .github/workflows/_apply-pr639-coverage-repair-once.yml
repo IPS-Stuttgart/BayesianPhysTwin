@@ -1,0 +1,226 @@
+name: Apply PR 639 coverage repair once
+
+on:
+  push:
+    branches:
+      - agent/run-manifest-v2-hardening
+    paths:
+      - ".github/workflows/_apply-pr639-coverage-repair-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-pr639-coverage-repair-once
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/run-manifest-v2-hardening
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Apply focused source, suite, and adversarial-test repair
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source_path = Path("src/bayesian_phystwin/run_manifest_v2.py")
+          source = source_path.read_text(encoding="utf-8")
+          replacements = (
+              (
+                  "        return content_id(self.scientific_descriptor())\n",
+                  "        return cast(str, content_id(self.scientific_descriptor()))\n",
+              ),
+              (
+                  "        return content_id(self.descriptor())\n",
+                  "        return cast(str, content_id(self.descriptor()))\n",
+              ),
+          )
+          for old, new in replacements:
+              old_count = source.count(old)
+              new_count = source.count(new)
+              if old_count == 1 and new_count == 0:
+                  source = source.replace(old, new)
+              elif old_count == 0 and new_count == 1:
+                  pass
+              else:
+                  raise SystemExit(
+                      "unexpected RunManifestV2 return form: "
+                      f"old={old_count}, new={new_count}"
+                  )
+          source_path.write_text(source, encoding="utf-8")
+
+          suite_path = Path(".github/quality/test-suites.json")
+          payload = json.loads(suite_path.read_text(encoding="utf-8"))
+          suites = payload["suites"]
+          hardening_test = "tests/test_run_manifest_v2_hardening.py"
+          anchor = "tests/test_run_manifest_v2.py"
+          for suite_name in ("stable-core-coverage", "core-contracts"):
+              entries = suites[suite_name]
+              if hardening_test not in entries:
+                  entries.insert(entries.index(anchor) + 1, hardening_test)
+          suite_path.write_text(
+              json.dumps(payload, indent=2) + "\n",
+              encoding="utf-8",
+          )
+
+          test_path = Path("tests/test_run_manifest_v2_hardening.py")
+          tests = test_path.read_text(encoding="utf-8")
+          module_import = (
+              "import pytest\n\n"
+              "import bayesian_phystwin.run_manifest_v2 as run_manifest_v2_module\n"
+          )
+          if "import bayesian_phystwin.run_manifest_v2 as run_manifest_v2_module" not in tests:
+              if tests.count("import pytest\n") != 1:
+                  raise SystemExit("unexpected pytest import roster")
+              tests = tests.replace("import pytest\n", module_import, 1)
+
+          marker = "def test_fail_closed_constructor_branches_are_covered"
+          if marker not in tests:
+              tests = tests.rstrip() + r'''
+
+
+          def test_exact_field_guard_rejects_nonstring_fields() -> None:
+              manifest_from_payload = getattr(
+                  run_manifest_v2_module,
+                  "_manifest_from_payload",
+              )
+
+              with pytest.raises(ValueError, match="literal string fields"):
+                  manifest_from_payload({1: "value"})
+
+
+          def test_fail_closed_constructor_branches_are_covered(
+              tmp_path: Path,
+          ) -> None:
+              manifest = _manifest(tmp_path)
+
+              with pytest.raises(
+                  ValueError,
+                  match="command must contain nonempty strings",
+              ):
+                  replace(manifest, command=())
+              with pytest.raises(ValueError, match="repository must use owner/name"):
+                  replace(
+                      manifest,
+                      repository=" IPS-Stuttgart/BayesianPhysTwin",
+                  )
+              with pytest.raises(ValueError, match="unknown run classification"):
+                  replace(manifest, classification="unknown")
+              with pytest.raises(
+                  ValueError,
+                  match="created_utc must include a timezone",
+              ):
+                  replace(manifest, created_utc="2026-07-26T20:00:00")
+              with pytest.raises(
+                  ValueError,
+                  match="claim_ids must be unique nonempty identifiers",
+              ):
+                  replace(manifest, claim_ids=("claim", "claim"))
+              with pytest.raises(
+                  ValueError,
+                  match="package_versions must be a mapping",
+              ):
+                  replace(manifest, package_versions=())
+
+
+          def test_invalid_artifact_role_is_rejected_by_v2_boundary(
+              tmp_path: Path,
+          ) -> None:
+              manifest = _manifest(tmp_path)
+              artifact = replace(manifest.inputs[0])
+              object.__setattr__(artifact, "role", "sidecar")
+
+              with pytest.raises(
+                  ValueError,
+                  match="artifact role must be 'input' or 'output'",
+              ):
+                  replace(manifest, inputs=(artifact,))
+
+
+          def test_writer_rejects_post_write_identity_mismatch(
+              tmp_path: Path,
+              monkeypatch: pytest.MonkeyPatch,
+          ) -> None:
+              manifest = _manifest(tmp_path)
+              altered = replace(manifest, notes="altered after publication")
+              monkeypatch.setattr(
+                  run_manifest_v2_module,
+                  "load_run_manifest_v2",
+                  lambda _path: altered,
+              )
+
+              with pytest.raises(
+                  RuntimeError,
+                  match="failed post-write verification",
+              ):
+                  write_run_manifest(tmp_path / "mismatch.json", manifest)
+
+
+          @pytest.mark.parametrize(
+              ("field", "value", "message"),
+              [
+                  (
+                      "schema_name",
+                      "bayesian_phystwin.unsupported",
+                      "unsupported run-manifest schema",
+                  ),
+                  (
+                      "schema_version",
+                      3,
+                      "unsupported run-manifest version",
+                  ),
+              ],
+          )
+          def test_loader_rejects_schema_dispatch_drift(
+              tmp_path: Path,
+              field: str,
+              value: object,
+              message: str,
+          ) -> None:
+              path = tmp_path / "manifest.json"
+              write_run_manifest(path, _manifest(tmp_path))
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              payload[field] = value
+              path.write_text(json.dumps(payload), encoding="utf-8")
+
+              with pytest.raises(ValueError, match=message):
+                  load_run_manifest_v2(path)
+          ''' + "\n"
+          test_path.write_text(tests, encoding="utf-8")
+          PY
+
+          python -m pip install --disable-pip-version-check --quiet ruff
+          python -m ruff check --fix -- \
+            src/bayesian_phystwin/run_manifest_v2.py \
+            tests/test_run_manifest_v2_hardening.py
+          python -m ruff format -- \
+            src/bayesian_phystwin/run_manifest_v2.py \
+            tests/test_run_manifest_v2_hardening.py
+
+      - name: Commit and push repair immediately
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI"
+          git config user.email "openai@users.noreply.github.com"
+          git add \
+            src/bayesian_phystwin/run_manifest_v2.py \
+            tests/test_run_manifest_v2_hardening.py \
+            .github/quality/test-suites.json
+          git diff --cached --check
+          git commit -m "Fix RunManifestV2 typing and coverage gates"
+          git push origin HEAD:agent/run-manifest-v2-hardening
