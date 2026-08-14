@@ -5,6 +5,7 @@ import json
 import sys
 import types
 from contextlib import nullcontext
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -394,6 +395,30 @@ def test_frozen_volumetric_source_protocol_is_valid() -> None:
     assert simulation["expected_internal_material_particle_count"] == 5620
     assert simulation["expected_transferred_contact_particle_count"] == 25
     assert protocol.value["external_components"]["prob4d"] == "unused"
+
+    amended = load_source_protocol(
+        repository
+        / "configs/sota/newton_mpm_double_stretch_zebra_volumetric_source_v2_1.json"
+    )
+    amended_without_provenance = deepcopy(dict(amended.value))
+    amendment = amended_without_provenance.pop("amendment")
+    expected_amendment = deepcopy(dict(protocol.value))
+    expected_amendment["protocol_id"] = amended.protocol_id
+    expected_amendment["simulation"]["expected_query_map_maximum_distance_m"] = (
+        0.0259761295949988
+    )
+
+    assert (
+        amended.protocol_id == "newton-mpm-double-stretch-zebra-volumetric-source-v2-1"
+    )
+    assert amended_without_provenance == expected_amendment
+    assert amendment["changed_fields"] == [
+        "protocol_id",
+        "simulation.expected_query_map_maximum_distance_m",
+    ]
+    assert amendment["base_protocol_sha256"] == protocol.sha256
+    assert amendment["fit_or_validation_outcome_read"] is False
+    assert amendment["future_object_outcome_read"] is False
 
 
 def test_volumetric_source_cli_reports_missing_optional_runtime(

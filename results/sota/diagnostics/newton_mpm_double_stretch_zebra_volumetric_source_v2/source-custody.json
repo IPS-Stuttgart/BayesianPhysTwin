@@ -1,0 +1,55 @@
+{
+  "artifacts": {
+    "future-outcomes.npz": {
+      "byte_count": 953861,
+      "sha256": "4853e7b7073620e8aad86b4a06137e9385df11edd8793e6ddded5e36bc014d46"
+    },
+    "prefix-outcomes.npz": {
+      "byte_count": 8034233,
+      "sha256": "003db2c831f58c65a855e95e2889327abf2893cd2e2e613fe638edf614977c73"
+    },
+    "source-inputs.npz": {
+      "byte_count": 141850,
+      "sha256": "22b6f2fbaccdbb1b8d14f4a301de041c88d02db2fca8d62b9f69b05684d1ef8a"
+    }
+  },
+  "case_id": "double_stretch_zebra",
+  "custody_id": "1ed0834675c5b30661f2ad9289537abe8c049ef686ef4d9c5c54857e0e0dc75d",
+  "information_boundary": {
+    "custody_preparer_read_full_already_open_source_payload": true,
+    "prediction_input_contains_future_object_observations": false,
+    "prediction_input_contains_known_full_controller_action": true,
+    "prefix_and_future_outcomes_are_separate_files": true,
+    "target_or_held_out_artifact_read": false
+  },
+  "mapping": {
+    "attached_material_particle_count": 16,
+    "controller_edge_count": 16
+  },
+  "protocol_id": "newton-mpm-double-stretch-zebra-volumetric-source-v2",
+  "protocol_sha256": "899d85a2353464521a1a9cf49b57ff94ba60b9dbf2bc2afd19d2e73aa650944d",
+  "schema": "bayesian-phystwin.newton-mpm-source-custody-v1",
+  "schema_version": 1,
+  "sources": {
+    "final_data": {
+      "byte_count": 34762410,
+      "sha256": "880a083589457ba0db8e937f6283d7918afae048eb290bf0a9cea78645854b44"
+    },
+    "incumbent_physical": {
+      "byte_count": 40061644,
+      "sha256": "c0d169b4df7077aab6e81a7338cb86db5c5f5772e5011f42804c75a7c98dbefd"
+    },
+    "matphys_physical": {
+      "byte_count": 40061644,
+      "sha256": "f633dd863da1a9da82433821328fe3cccbb94cc1ae08c29d51ff2f85f4ef51ae"
+    },
+    "matphys_replay_result": {
+      "byte_count": 2213,
+      "sha256": "1c24b561f311abf6e72b5f5e16b835b513244e60ebcbab7d379e62cd810acf4e"
+    },
+    "optimal_params": {
+      "byte_count": 551,
+      "sha256": "0b06883a66a2307fa0919ca3884f2157801afeb2f240803eee072e098538fa2d"
+    }
+  }
+}
