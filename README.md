@@ -80,9 +80,14 @@ The distinct Deform360 fresh-object-session v6/v6.1 study is not that
 covariance-only protocol. It uses ten source object-sessions to select one
 candidate, covariance interpretation, interval calibration, and guard, and it
 reserves sixteen previously untouched target object-sessions: eight sheet and
-eight volumetric. V6.1 repairs the nested source evaluation before any
-challenger suffix or fresh-target payload is opened. Neither study currently
-authorizes an independent-object claim.
+eight volumetric. Its producer sealed 100 source-prefix predictions with zero
+producer failures. The one authorized public-source scorer then opened the
+registered source suffix and terminated with a retained endpoint-processing
+technical failure before source-gate evaluation. Replacement and continuation
+are forbidden; no fresh-target, confirmation, or held-v8 payload was opened. The
+temporary workflows are retired, and exact run, artifact, and receipt identities
+are preserved in the [v6.1 retirement record](results/diagnostics/deform360_v61_one_shot_retirement_v1/README.md).
+Neither study currently authorizes an independent-object claim.
 
 ## Architecture
 
