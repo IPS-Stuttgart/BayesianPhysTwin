@@ -151,4 +151,5 @@ def test_repository_release_claim_contract_is_synchronized() -> None:
         "docs/phystwin_sota_22_v1.md",
         "protocols/locks/deform360_covariance_only_independent_validation_v1.json",
         "protocols/locks/deform360_official_hub_fresh_object_session_v6.json",
+        "results/diagnostics/deform360_v61_one_shot_retirement_v1/retirement.json",
     ]

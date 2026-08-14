@@ -164,8 +164,14 @@ The Deform360 fresh-object-session v6/v6.1 study is a separate challenger
 protocol. It uses ten source object-sessions to select one candidate, covariance
 interpretation, interval calibration, and guard, and it reserves sixteen
 previously untouched target object-sessions: eight sheet and eight volumetric.
-V6.1 repairs the nested source evaluation before any challenger suffix or
-fresh-target payload is opened.
+Its producer sealed 100 source-prefix predictions with zero producer failures.
+The one authorized public-source scorer then opened the registered source suffix
+and terminated with a retained endpoint-processing technical failure before the
+source gate was evaluated. The terminal receipt forbids replacement, retry, and
+source continuation. No fresh-target, confirmation, or held-v8 payload was
+opened. The one-shot workflows are retired, and the exact run, artifact, archive
+digest, and receipt identities are preserved in the
+[v6.1 retirement record](../results/diagnostics/deform360_v61_one_shot_retirement_v1/README.md).
 
 Unlike the covariance-only protocol, v6/v6.1 does not freeze the exact
 `last_residual` mean plus one covariance donor as its sole confirmatory
@@ -195,10 +201,11 @@ Every release note that cites the full-22 improvement should also state:
 - the retrospective covariance-only result preserves exact point predictions
   and improves proper score only with a `3.10×` mean-width cost;
 - conformal results are width-bearing and assumption-specific; and
-- independent real-provider and independent-object transfer remain unconfirmed,
-  with the registered twelve-object covariance-only confirmation panel still
-  closed and the distinct sixteen-object v6/v6.1 challenger study kept
-  separate.
+- independent real-provider and independent-object transfer remain unconfirmed:
+  the registered twelve-object covariance-only confirmation panel remains
+  closed, while the distinct sixteen-object v6/v6.1 challenger route is terminal
+  at a retained source-scoring technical failure before source-gate evaluation
+  and opened no fresh-target payload.
 
 The current evidence does not authorize claims of a unique deterministic winner,
 calibrated raw posterior covariance, dynamically identified simulator-state

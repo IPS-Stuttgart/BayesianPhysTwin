@@ -98,6 +98,23 @@ def test_release_surfaces_keep_deform360_protocols_distinct() -> None:
     assert "No donor, scale, endpoint" in claim
 
 
+def test_release_surfaces_report_terminal_v61_source_status() -> None:
+    for path in (README, SUPPORT, CLAIM):
+        normalized = _text(path).replace("source-gate", "source gate")
+        assert "endpoint-processing technical failure" in normalized
+        assert "source gate" in normalized
+        assert "fresh-target" in normalized
+        assert "replacement" in normalized.casefold()
+        assert "continuation" in normalized.casefold()
+        assert "v6.1 retirement record" in normalized
+
+    claim = _text(CLAIM).replace("source-gate", "source gate")
+    assert (
+        "terminal receipt forbids replacement, retry, and source continuation" in claim
+    )
+    assert "No fresh-target, confirmation, or held-v8 payload was opened" in claim
+
+
 def test_release_claim_forbids_overstatement() -> None:
     claim = _text(CLAIM)
     forbidden_boundaries = (
