@@ -107,7 +107,7 @@ DESCRIPTION_OVERRIDES: Final[dict[str, str]] = {
         "select one matched discrepancy belief on source-only groups"
     ),
     "materialize-lagrangian-backend": (
-        "materialize or validate JAX-FEM and Genesis World fixed-identity exports"
+        "materialize or validate registered external material backends"
     ),
     "materialize-matphys-backend": (
         "build or validate a guarded MatPhys spring-proposal backend artifact"
@@ -140,7 +140,7 @@ EXACT_OWNERS: Final[dict[str, str]] = {
     "diagnose-provider-failures": "provider-failure-decomposition-v1",
     "score-probabilistic-predictions": "probabilistic-prediction-scoring-v1",
     "select-discrepancy-candidate": "discrepancy-candidate-tournament-v1",
-    "materialize-lagrangian-backend": "lagrangian-backend-v1",
+    "materialize-lagrangian-backend": "material-backend-v1",
     "materialize-matphys-backend": "matphys-backend-v1",
     "materialize-newton-mpm-backend": "newton-mpm-backend-v1",
 }
