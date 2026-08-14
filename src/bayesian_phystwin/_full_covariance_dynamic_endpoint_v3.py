@@ -270,9 +270,9 @@ def _persistence_update(
     nominal_probability = float(np.exp(log_inlier - log_mixture))
     if not np.isfinite(log_mixture) or not np.isfinite(nominal_probability):
         raise DynamicEndpointNumericalError(f"{name} mixture probability is non-finite")
-    updated_mean = np.zeros(6, dtype=np.float64)
+    updated_mean: np.ndarray = np.zeros(6, dtype=np.float64)
     updated_mean[:3] = observation
-    updated_covariance = np.zeros((6, 6), dtype=np.float64)
+    updated_covariance: np.ndarray = np.zeros((6, 6), dtype=np.float64)
     updated_covariance[:3, :3] = (
         nominal_probability * inlier_covariance
         + (1.0 - nominal_probability) * outlier_covariance
@@ -503,7 +503,7 @@ def _transition_power(
     horizon_steps: int,
 ) -> tuple[np.ndarray, np.ndarray]:
     result_transition = np.eye(6, dtype=np.float64)
-    result_process = np.zeros((6, 6), dtype=np.float64)
+    result_process: np.ndarray = np.zeros((6, 6), dtype=np.float64)
     base_transition = np.array(transition, dtype=np.float64, copy=True)
     base_process = np.array(process, dtype=np.float64, copy=True)
     remaining = horizon_steps
@@ -547,12 +547,14 @@ def predict_full_covariance_dynamic_endpoint_model_average(
         raise ValueError("horizon_steps must be a nonnegative integer")
     component_count = len(posterior.config.components)
     track_count = len(posterior.mean_m)
-    component_mean = np.empty((component_count, track_count, 3), dtype=np.float64)
-    component_velocity = np.empty(
+    component_mean: np.ndarray = np.empty(
+        (component_count, track_count, 3), dtype=np.float64
+    )
+    component_velocity: np.ndarray = np.empty(
         (component_count, track_count, 3),
         dtype=np.float64,
     )
-    component_covariance = np.empty(
+    component_covariance: np.ndarray = np.empty(
         (component_count, track_count, 3, 3),
         dtype=np.float64,
     )
