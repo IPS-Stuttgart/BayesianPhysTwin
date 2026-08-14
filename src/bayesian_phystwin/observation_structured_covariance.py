@@ -16,7 +16,11 @@ from typing import Any, Final, cast
 
 import numpy as np
 
-from ._canonical_contracts import frozen_finite_json_mapping, genuine_integer, plain_json
+from ._canonical_contracts import (
+    frozen_finite_json_mapping,
+    genuine_integer,
+    plain_json,
+)
 from .observation_belief import ObservationBeliefV1
 from .structured_point_covariance import (
     SHARED_COVARIANCE_COMPONENTS,
