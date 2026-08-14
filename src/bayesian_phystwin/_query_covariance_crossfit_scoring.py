@@ -95,9 +95,7 @@ def score_query_covariance_group(
     effective_rank: list[float] = []
     condition_number: list[float] = []
     constant = transform.dimension * np.log(2.0 * np.pi)
-    for index, (error, matrix) in enumerate(
-        zip(errors, transformed, strict=True)
-    ):
+    for index, (error, matrix) in enumerate(zip(errors, transformed, strict=True)):
         factor = _cholesky(matrix, name=f"transformed covariance {index}")
         whitened = np.linalg.solve(factor, error)
         squared = float(whitened @ whitened)
@@ -160,9 +158,7 @@ def group_gaussian_energy_score(
         )
     transformed = apply_structured_query_covariance(raw_covariance, transform)
     scores: list[float] = []
-    for index, (error, matrix) in enumerate(
-        zip(errors, transformed, strict=True)
-    ):
+    for index, (error, matrix) in enumerate(zip(errors, transformed, strict=True)):
         factor = _cholesky(matrix, name=f"transformed covariance {index}")
         first = samples[0] @ factor.T
         second = samples[1] @ factor.T
