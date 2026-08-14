@@ -104,9 +104,9 @@ def _build_model(
         dtype=np.float64,
     )
     particles_per_cell = 2
-    resolution = np.ceil(
-        particles_per_cell * extent / config.voxel_size_m
-    ).astype(np.int64)
+    resolution = np.ceil(particles_per_cell * extent / config.voxel_size_m).astype(
+        np.int64
+    )
     cell_size = extent / (resolution + 1)
     cell_volume = float(np.prod(cell_size))
     particle_radius = float(np.cbrt(cell_volume) * 0.5)

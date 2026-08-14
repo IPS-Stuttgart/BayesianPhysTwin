@@ -42,9 +42,9 @@ def _raw_arrays() -> dict[str, np.ndarray]:
     zero = np.repeat(frame_zero[None], 76, axis=0)
     driven = zero.copy()
     ramp = np.linspace(0.0, 0.02, len(driven), dtype=np.float32)
-    driven[:, :, 2] += ramp[:, None] * np.linspace(
-        0.0, 1.0, len(frame_zero), dtype=np.float32
-    )[None]
+    driven[:, :, 2] += (
+        ramp[:, None] * np.linspace(0.0, 1.0, len(frame_zero), dtype=np.float32)[None]
+    )
     driven[0] = frame_zero
     return {
         "driven_particle_positions_m": driven,

@@ -186,7 +186,9 @@ def _finite_positive(value: object, *, name: str) -> float:
 def _finite_vector(value: object, *, name: str) -> list[float]:
     if not isinstance(value, list) or len(value) != 3:
         raise ValueError(f"{name} must contain three finite numbers")
-    if any(isinstance(item, bool) or not isinstance(item, (int, float)) for item in value):
+    if any(
+        isinstance(item, bool) or not isinstance(item, (int, float)) for item in value
+    ):
         raise ValueError(f"{name} must contain three finite numbers")
     result = [float(item) for item in value]
     if not np.all(np.isfinite(result)):
@@ -236,7 +238,9 @@ def validate_newton_mpm_runtime_manifest(
         "outcomes_read": False,
         "known_action_used": True,
     }
-    _require(dict(boundary) == expected_boundary, "runtime information boundary changed")
+    _require(
+        dict(boundary) == expected_boundary, "runtime information boundary changed"
+    )
     frame_count = _positive_integer(value.get("frame_count"), name="frame_count")
     _require(frame_count >= 2, "frame_count must be at least two")
     _positive_integer(value.get("particle_count"), name="particle_count")
@@ -300,7 +304,9 @@ def validate_newton_mpm_runtime_manifest(
         name="raw_rollout_sha256",
     )
     identity = {key: item for key, item in value.items() if key != "runtime_id"}
-    _require(value.get("runtime_id") == content_id(identity), "runtime identity changed")
+    _require(
+        value.get("runtime_id") == content_id(identity), "runtime identity changed"
+    )
     if raw_rollout_path is not None:
         raw_path = _ordinary_file(raw_rollout_path, name="raw rollout")
         _require(file_sha256(raw_path) == raw_digest, "raw rollout SHA-256 changed")
@@ -444,7 +450,9 @@ def materialize_newton_mpm_backend(
     driven = raw["driven_particle_positions_m"]
     indices = np.asarray(raw["material_query_indices"], dtype=np.int64)
     _require(runtime["frame_count"] == driven.shape[0], "runtime frame count differs")
-    _require(runtime["particle_count"] == driven.shape[1], "runtime particle count differs")
+    _require(
+        runtime["particle_count"] == driven.shape[1], "runtime particle count differs"
+    )
     _require(runtime["query_count"] == len(indices), "runtime query count differs")
     physical = physical_rollout_from_newton_particles(raw)
 
@@ -515,7 +523,11 @@ def validate_newton_mpm_backend(output_dir: str | Path) -> dict[str, Any]:
     )
     root = requested_root.resolve(strict=True)
     _require(
-        {path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()}
+        {
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*")
+            if path.is_file()
+        }
         == {
             ARTIFACT_FILENAME,
             CHECKSUMS_FILENAME,
@@ -525,11 +537,17 @@ def validate_newton_mpm_backend(output_dir: str | Path) -> dict[str, Any]:
         },
         "backend bundle file roster changed",
     )
-    artifact = load_strict_json_object(root / ARTIFACT_FILENAME, label="Newton artifact")
+    artifact = load_strict_json_object(
+        root / ARTIFACT_FILENAME, label="Newton artifact"
+    )
     require_exact_fields(artifact, expected=_ARTIFACT_FIELDS, name="Newton artifact")
-    _require(artifact.get("schema") == NEWTON_MPM_ARTIFACT_SCHEMA, "artifact schema changed")
+    _require(
+        artifact.get("schema") == NEWTON_MPM_ARTIFACT_SCHEMA, "artifact schema changed"
+    )
     _require(artifact.get("schema_version") == 1, "artifact schema version changed")
-    _require(artifact.get("backend_kind") == NEWTON_MPM_BACKEND_KIND, "backend kind changed")
+    _require(
+        artifact.get("backend_kind") == NEWTON_MPM_BACKEND_KIND, "backend kind changed"
+    )
     inputs_raw = artifact.get("inputs")
     if not isinstance(inputs_raw, Mapping):
         raise ValueError("inputs must be a JSON object")
@@ -557,7 +575,9 @@ def validate_newton_mpm_backend(output_dir: str | Path) -> dict[str, Any]:
         load_strict_json_object(runtime_path, label="Newton runtime manifest"),
         raw_rollout_path=raw_path,
     )
-    _require(artifact.get("runtime_id") == runtime["runtime_id"], "runtime binding changed")
+    _require(
+        artifact.get("runtime_id") == runtime["runtime_id"], "runtime binding changed"
+    )
     _, raw = load_newton_particle_rollout(raw_path)
     expected = physical_rollout_from_newton_particles(raw)
     actual = load_physical_rollout_archive(physical_path)
@@ -593,13 +613,19 @@ def validate_newton_mpm_backend(output_dir: str | Path) -> dict[str, Any]:
         "claim boundary changed",
     )
     identity = {key: item for key, item in artifact.items() if key != "artifact_id"}
-    _require(artifact.get("artifact_id") == content_id(identity), "artifact identity changed")
-    checksum_lines = (root / CHECKSUMS_FILENAME).read_text(encoding="ascii").splitlines()
+    _require(
+        artifact.get("artifact_id") == content_id(identity), "artifact identity changed"
+    )
+    checksum_lines = (
+        (root / CHECKSUMS_FILENAME).read_text(encoding="ascii").splitlines()
+    )
     expected_lines = []
     for path in sorted(
         (root / ARTIFACT_FILENAME, physical_path, raw_path, runtime_path),
         key=lambda item: item.as_posix(),
     ):
-        expected_lines.append(f"{file_sha256(path)}  {path.relative_to(root).as_posix()}")
+        expected_lines.append(
+            f"{file_sha256(path)}  {path.relative_to(root).as_posix()}"
+        )
     _require(checksum_lines == expected_lines, "SHA256SUMS changed")
     return cast(dict[str, Any], plain_json(artifact))
