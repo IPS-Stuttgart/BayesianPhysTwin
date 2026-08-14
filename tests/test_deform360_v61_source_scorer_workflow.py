@@ -11,8 +11,7 @@ WORKFLOW = ROOT / (
     ".github/workflows/deform360-v61-source-scorer-endpoint-gsplat-base.yml"
 )
 RETIREMENT = (
-    ROOT
-    / "results/diagnostics/deform360_v61_one_shot_retirement_v1/retirement.json"
+    ROOT / "results/diagnostics/deform360_v61_one_shot_retirement_v1/retirement.json"
 )
 AMENDMENT = ROOT / (
     "protocols/amendments/"
@@ -36,9 +35,7 @@ def test_source_scorer_is_retired_after_terminal_retained_failure() -> None:
     assert scorer["tracking_issue"] == 645
     assert scorer["workflow_run_id"] == 31669176135
     assert scorer["workflow_run_attempt"] == 1
-    assert scorer["source_revision"] == (
-        "74e556d6f9b503409f3b163ef27ccb7a17c61d85"
-    )
+    assert scorer["source_revision"] == ("74e556d6f9b503409f3b163ef27ccb7a17c61d85")
     assert scorer["workflow_conclusion"] == "failure"
     assert scorer["artifact_id"] == 9169119864
     assert scorer["artifact_sha256"] == (
@@ -47,9 +44,7 @@ def test_source_scorer_is_retired_after_terminal_retained_failure() -> None:
     assert scorer["source_scoring_receipt_id"] == (
         "f284be9c6a83afe5688030cfec466f0bbe2f2a24d7ce0aa13eac272d9763742c"
     )
-    assert scorer["terminal_status"] == (
-        "source-scoring-technical-failure-retained"
-    )
+    assert scorer["terminal_status"] == ("source-scoring-technical-failure-retained")
     assert scorer["terminal_stage"] == "endpoint-processing"
     assert scorer["exit_code"] == 2
     assert scorer["source_suffix_opened"] is True
