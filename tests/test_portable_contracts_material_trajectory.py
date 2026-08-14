@@ -202,9 +202,9 @@ def test_valid_runtime_without_source_path_and_invalid_scalar_contracts(
 ) -> None:
     raw_path = _raw_archive(tmp_path / "raw.npz")
     valid = _runtime_payload(raw_path, "sofa-fem-v1")
-    assert validate_material_runtime_manifest(valid)["runtime_id"] == valid[
-        "runtime_id"
-    ]
+    assert (
+        validate_material_runtime_manifest(valid)["runtime_id"] == valid["runtime_id"]
+    )
 
     invalid_cases = (
         ("simulation", [], "JSON object"),
