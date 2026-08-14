@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import runpy
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -195,6 +197,31 @@ def test_runtime_profile_fields_fail_closed(
         validate_material_runtime_manifest(payload)
 
 
+def test_valid_runtime_without_source_path_and_invalid_scalar_contracts(
+    tmp_path: Path,
+) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    valid = _runtime_payload(raw_path, "sofa-fem-v1")
+    assert validate_material_runtime_manifest(valid)["runtime_id"] == valid[
+        "runtime_id"
+    ]
+
+    invalid_cases = (
+        ("simulation", [], "JSON object"),
+        ("frame_count", 0, "positive integer"),
+        ("time_step_s", "fast", "finite positive number"),
+        ("time_step_s", float("inf"), "finite positive number"),
+    )
+    for field, value, message in invalid_cases:
+        payload = _runtime_payload(raw_path, "sofa-fem-v1")
+        payload[field] = value
+        with pytest.raises(ValueError, match=message):
+            validate_material_runtime_manifest(payload)
+
+    with pytest.raises(ValueError, match="ordinary non-symlink file"):
+        validate_material_runtime_manifest(valid, raw_rollout_path=tmp_path)
+
+
 def test_runtime_rejects_nonfinite_parameters_and_future_information(
     tmp_path: Path,
 ) -> None:
@@ -300,3 +327,29 @@ def test_cli_profiles_are_machine_readable(capsys: pytest.CaptureFixture[str]) -
         "mujoco-flex-v1",
         "sofa-fem-v1",
     ]
+
+
+def test_cli_materialize_validate_and_module_entrypoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path, "sofa-fem-v1")
+    output = tmp_path / "output"
+
+    assert main(["materialize", str(raw_path), str(runtime_path), str(output)]) == 0
+    materialized = json.loads(capsys.readouterr().out)
+    assert materialized["backend_kind"] == "sofa-fem-v1"
+
+    assert main(["validate", str(output)]) == 0
+    validated = json.loads(capsys.readouterr().out)
+    assert validated["artifact_id"] == materialized["artifact_id"]
+
+    module_path = Path(sys.modules[main.__module__].__file__ or "")
+    monkeypatch.setattr(sys, "argv", ["material_trajectory_backend", "profiles"])
+    with pytest.raises(SystemExit) as exit_info:
+        runpy.run_path(str(module_path), run_name="__main__")
+    assert exit_info.value.code == 0
+    module_payload = json.loads(capsys.readouterr().out)
+    assert len(module_payload["profiles"]) == 3
