@@ -74,7 +74,7 @@ class NewtonMpmSmokeConfig:
 
 
 @wp.kernel
-def _translate_kinematic_particles(
+def _translate_kinematic_particles(  # pragma: no cover - CUDA kernel
     indices: wp.array(dtype=wp.int32),  # type: ignore[valid-type]
     rest_positions: wp.array(dtype=wp.vec3),  # type: ignore[valid-type]
     output_positions: wp.array(dtype=wp.vec3),  # type: ignore[valid-type]
@@ -92,7 +92,7 @@ def _translate_kinematic_particles(
     output_velocity_gradients[particle_index] = wp.mat33(0.0)
 
 
-def _build_model(
+def _build_model(  # pragma: no cover - exercised by the CUDA smoke
     config: NewtonMpmSmokeConfig,
     *,
     device: str,
@@ -143,7 +143,7 @@ def _build_model(
     return model, frame_zero, np.flatnonzero(driven_mask).astype(np.int32)
 
 
-def _simulate_one(
+def _simulate_one(  # pragma: no cover - exercised by the CUDA smoke
     config: NewtonMpmSmokeConfig,
     *,
     device: str,
