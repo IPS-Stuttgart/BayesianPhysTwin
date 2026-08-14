@@ -8,6 +8,7 @@ import textwrap
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from bayesian_phystwin.matphys_causal_bridge import (
@@ -170,9 +171,10 @@ def _result_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
         (gt_track, b"gt-track"),
         (candidate_trajectory, b"candidate"),
         (baseline_trajectory, b"baseline"),
-        (spring, b"positive-spring-field"),
     ):
         path.write_bytes(content)
+    spring_values = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    np.save(spring, spring_values, allow_pickle=False)
     globals_path.write_text(
         json.dumps(
             {
@@ -238,9 +240,11 @@ def _result_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
                     "spring_field": {
                         **_identity(spring),
                         "count": 3,
-                        "minimum": 1.0,
-                        "maximum": 3.0,
-                        "geometric_mean": 2.0,
+                        "minimum": float(np.min(spring_values)),
+                        "maximum": float(np.max(spring_values)),
+                        "geometric_mean": float(
+                            np.exp(np.mean(np.log(spring_values)))
+                        ),
                     },
                     "global_parameters": _identity(globals_path),
                     "official_metrics": _identity(candidate_metrics),
@@ -324,6 +328,18 @@ def test_reconstruction_result_rejects_metric_input_drift(tmp_path: Path) -> Non
     baseline.write_text(json.dumps(baseline_payload))
 
     with pytest.raises(ValueError, match="final_data identities differ"):
+        build_matphys_reconstruction_result(
+            audit, checkpoint, manifest, baseline
+        )
+
+
+def test_reconstruction_result_rejects_forged_spring_summary(tmp_path: Path) -> None:
+    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    payload = json.loads(manifest.read_text())
+    payload["case"]["spring_field"]["minimum"] = 2.0
+    manifest.write_text(json.dumps(payload))
+
+    with pytest.raises(ValueError, match="spring summary differs"):
         build_matphys_reconstruction_result(
             audit, checkpoint, manifest, baseline
         )

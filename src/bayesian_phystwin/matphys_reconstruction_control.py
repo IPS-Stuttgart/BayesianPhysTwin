@@ -7,6 +7,8 @@ import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
+import numpy as np
+
 from .matphys_causal_bridge import sha256_file
 from .matphys_graph_parts import (
     GRAPH_PART_COMPACT_PROXY_CONTRACT,
@@ -413,7 +415,8 @@ def build_matphys_reconstruction_result(
     spring = case.get("spring_field")
     if not isinstance(spring, Mapping):
         raise ValueError("reconstruction export omits the spring field")
-    _validate_identity(spring, label="spring field")
+    spring_path = _validate_identity(spring, label="spring field")
+    spring_array = np.load(spring_path, allow_pickle=False)
     spring_values = {
         key: float(spring.get(key, float("nan")))
         for key in ("minimum", "maximum", "geometric_mean")
@@ -423,10 +426,25 @@ def build_matphys_reconstruction_result(
         isinstance(spring_count, bool)
         or not isinstance(spring_count, int)
         or spring_count < 1
+        or spring_array.shape != (spring_count,)
+        or not np.all(np.isfinite(spring_array))
+        or not np.all(spring_array > 0.0)
         or not all(math.isfinite(value) and value > 0.0 for value in spring_values.values())
         or not spring_values["minimum"] <= spring_values["maximum"]
     ):
         raise ValueError("reconstruction export has an invalid spring field")
+    observed_spring = {
+        "minimum": float(np.min(spring_array)),
+        "maximum": float(np.max(spring_array)),
+        "geometric_mean": float(np.exp(np.mean(np.log(spring_array)))),
+    }
+    if any(
+        not math.isclose(
+            observed_spring[key], spring_values[key], rel_tol=1.0e-9, abs_tol=0.0
+        )
+        for key in observed_spring
+    ):
+        raise ValueError("reconstruction spring summary differs from its bytes")
     globals_path = _validate_identity(
         case.get("global_parameters"), label="global parameters"
     )
