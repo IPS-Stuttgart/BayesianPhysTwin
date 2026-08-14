@@ -221,9 +221,7 @@ def validate_material_trajectory_backend(
         f"provenance/{RUNTIME_FILENAME}",
     }
     actual_roster = {
-        path.relative_to(root).as_posix()
-        for path in root.rglob("*")
-        if path.is_file()
+        path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()
     }
     _require(actual_roster == expected_roster, "backend bundle file roster changed")
 
@@ -331,9 +329,9 @@ def validate_material_trajectory_backend(
         for path in sorted(checksum_paths, key=lambda item: item.as_posix())
     ]
     try:
-        actual_lines = (root / CHECKSUMS_FILENAME).read_text(
-            encoding="ascii"
-        ).splitlines()
+        actual_lines = (
+            (root / CHECKSUMS_FILENAME).read_text(encoding="ascii").splitlines()
+        )
     except (OSError, UnicodeError) as error:
         raise ValueError("cannot read backend checksums") from error
     _require(actual_lines == expected_lines, "backend checksums changed")
