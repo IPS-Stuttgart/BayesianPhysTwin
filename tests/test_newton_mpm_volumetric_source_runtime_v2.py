@@ -13,7 +13,10 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.cli import newton_mpm_backend as newton_cli
-from bayesian_phystwin.newton_mpm_source_gate_v1 import SourceProtocol
+from bayesian_phystwin.newton_mpm_source_gate_v1 import (
+    SourceProtocol,
+    load_source_protocol,
+)
 from bayesian_phystwin.newton_mpm_volumetric_bridge_v2 import (
     MaterialContactMapV2,
     MaterialQueryMapV2,
@@ -54,9 +57,7 @@ def _import_runtime(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
 
 
 def _protocol(*, expected_material_count: int = 8) -> SourceProtocol:
-    density = 4 * 1000.0 * (2.0 * 0.003) ** 3 / (
-        expected_material_count * 0.01**3
-    )
+    density = 4 * 1000.0 * (2.0 * 0.003) ** 3 / (expected_material_count * 0.01**3)
     value: dict[str, Any] = {
         "protocol_id": "volumetric-source-test-v2",
         "geometry": {
@@ -374,6 +375,25 @@ def test_volumetric_source_command_is_registered() -> None:
 
     assert args.command == "source-run-volumetric-grid"
     assert args.device == "cuda:1"
+
+
+def test_frozen_volumetric_source_protocol_is_valid() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    protocol = load_source_protocol(
+        repository
+        / "configs/sota/newton_mpm_double_stretch_zebra_volumetric_source_v2.json"
+    )
+    simulation = protocol.value["simulation"]
+
+    assert (
+        protocol.protocol_id == "newton-mpm-double-stretch-zebra-volumetric-source-v2"
+    )
+    assert protocol.fit_range == (138, 167)
+    assert protocol.validation_range == (167, 177)
+    assert protocol.future_range == (177, 198)
+    assert simulation["expected_internal_material_particle_count"] == 5620
+    assert simulation["expected_transferred_contact_particle_count"] == 25
+    assert protocol.value["external_components"]["prob4d"] == "unused"
 
 
 def test_volumetric_source_cli_reports_missing_optional_runtime(
