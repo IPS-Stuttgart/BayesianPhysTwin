@@ -1,0 +1,156 @@
+{
+  "schema": "bayesian-phystwin.newton-mpm-source-gate-protocol",
+  "schema_version": 1,
+  "protocol_id": "newton-mpm-double-lift-zebra-source-v1",
+  "case_id": "double_lift_zebra",
+  "cohort_role": "already-open-development-source",
+  "claim_boundary": "A one-case source-development mechanism gate for a Newton implicit-MPM backend. It is not a fresh evaluation, a PhysWorld reproduction, a calibration claim, or evidence of state-of-the-art accuracy.",
+  "information_boundary": {
+    "frame_zero_object_geometry_allowed": true,
+    "known_full_controller_trajectory_allowed": true,
+    "optimal_contact_neighbour_settings_allowed": true,
+    "fit_object_frames_half_open": [
+      1,
+      30
+    ],
+    "validation_object_frames_half_open": [
+      30,
+      40
+    ],
+    "future_object_frames_half_open": [
+      40,
+      58
+    ],
+    "future_open_only_after_validation_gate": true,
+    "target_or_held_out_artifact_access_allowed": false
+  },
+  "source_files": {
+    "final_data": {
+      "sha256": "fa81083526ab4d41a9b153a8d39b51a7baa9f5726184c52ff34e4902e26b9dc8"
+    },
+    "optimal_params": {
+      "sha256": "9dc8496dfa23820210103f9547b9dfa17285b148cfc3a8aaa1bf73918db9ed5e"
+    },
+    "incumbent_physical": {
+      "sha256": "e40e24f33dffd48883f969c38d5fba2410a34cc12f9daf01d3910cb75f69890b"
+    },
+    "matphys_physical": {
+      "sha256": "98caca506ca3b7422a8a642d096ccbc885e6a6580827466171793d597ca31555"
+    },
+    "matphys_replay_result": {
+      "sha256": "a4d8edd3a2f652e5110d414443009a36c29464c40af00bad121b9a51a32ed474"
+    }
+  },
+  "geometry": {
+    "coordinate_frame": "released-phystwin-world-v1",
+    "position_units": "m",
+    "frame_count": 58,
+    "observed_identity_count": 3887,
+    "surface_point_count": 471,
+    "interior_point_count": 249,
+    "material_particle_count": 4607,
+    "controller_point_count": 30,
+    "structure_order": [
+      "object_points_frame_zero",
+      "surface_points",
+      "interior_points"
+    ]
+  },
+  "contact_mapping": {
+    "rule": "official-phystwin-radius-neighbours-v1",
+    "controller_radius_m": 0.07005542576313019,
+    "controller_max_neighbours": 30,
+    "expected_controller_edge_count": 342,
+    "expected_attached_material_particle_count": 107,
+    "multi_controller_reduction": "inverse-distance-normalized-per-material-particle",
+    "minimum_distance_m": 1e-06
+  },
+  "simulation": {
+    "engine": "newton-implicit-mpm",
+    "engine_version": "1.5.0",
+    "warp_version": "1.16.0",
+    "fps": 30.0,
+    "substeps": 4,
+    "voxel_size_m": 0.02,
+    "particle_radius_m": 0.003,
+    "density_kg_m3": 1000.0,
+    "poisson_ratio": 0.35,
+    "gravity_m_s2": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_iterations": 50,
+    "tolerance": 1e-05,
+    "solver": "cr",
+    "integration_scheme": "pic",
+    "strain_basis": "P1d",
+    "velocity_basis": "Q1"
+  },
+  "parameter_grid": [
+    {
+      "young_modulus_pa": 25000.0,
+      "damping": 0.002
+    },
+    {
+      "young_modulus_pa": 25000.0,
+      "damping": 0.02
+    },
+    {
+      "young_modulus_pa": 100000.0,
+      "damping": 0.002
+    },
+    {
+      "young_modulus_pa": 100000.0,
+      "damping": 0.02
+    },
+    {
+      "young_modulus_pa": 500000.0,
+      "damping": 0.002
+    },
+    {
+      "young_modulus_pa": 500000.0,
+      "damping": 0.02
+    },
+    {
+      "young_modulus_pa": 2000000.0,
+      "damping": 0.002
+    },
+    {
+      "young_modulus_pa": 2000000.0,
+      "damping": 0.02
+    }
+  ],
+  "selection": {
+    "fit_metric": "equal-weight identity-coordinate-rmse and symmetric-chamfer ratios versus persistence",
+    "tie_break": [
+      "lower young_modulus_pa",
+      "lower damping"
+    ],
+    "validation_gates": {
+      "maximum_balanced_ratio_vs_persistence": 0.95,
+      "maximum_identity_rmse_ratio_vs_incumbent": 1.1,
+      "maximum_chamfer_ratio_vs_incumbent": 1.1,
+      "maximum_zero_action_drift_m": 0.002,
+      "maximum_replay_coordinate_rmse_m": 1e-07,
+      "minimum_final_ensemble_spread_m": 0.0001,
+      "maximum_final_ensemble_spread_m": 0.1
+    },
+    "failure_policy": "byte-exact incumbent physical archive",
+    "required_successful_candidates": 8,
+    "no_replacement": true
+  },
+  "metrics": {
+    "identity": "coordinate RMSE over released visible and motion-valid observed identities",
+    "chamfer": "symmetric mean Euclidean nearest-neighbour distance between predicted and observed valid identity point sets",
+    "aggregation": "equal frame within split; one development case",
+    "units": "m"
+  },
+  "pre_full_horizon_feasibility": {
+    "frames_simulated": 10,
+    "future_object_observations_read": false,
+    "finite": true,
+    "attachment_material_particle_count": 107,
+    "purpose": "implementation feasibility only; no parameter or gate selected from an object-motion score"
+  }
+}
