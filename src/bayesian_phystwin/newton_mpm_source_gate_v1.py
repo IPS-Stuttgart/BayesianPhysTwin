@@ -1199,7 +1199,10 @@ def _score_prediction_splits(
 ) -> dict[str, dict[str, float]]:
     prediction = np.asarray(arrays["prediction_m"])[:, : protocol.observed_count]
     outcome = np.asarray(outcomes["object_points_m"])
-    valid = np.asarray(outcomes["valid_mask"], dtype=bool)
+    valid = cast(
+        npt.NDArray[np.bool_],
+        np.asarray(outcomes["valid_mask"]),
+    )
     fit_start, fit_stop = protocol.fit_range
     validation_start, validation_stop = protocol.validation_range
     return {
@@ -1856,7 +1859,10 @@ def score_future_if_authorized(
         metrics[name] = _split_metrics(
             prediction,
             np.asarray(outcomes["object_points_m"]),
-            np.asarray(outcomes["valid_mask"], dtype=bool),
+            cast(
+                npt.NDArray[np.bool_],
+                np.asarray(outcomes["valid_mask"]),
+            ),
             local_start=0,
             local_stop=local_stop,
         )
