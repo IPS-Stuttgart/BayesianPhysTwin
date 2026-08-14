@@ -414,7 +414,7 @@ class RunManifestV2:
     def evidence_fingerprint(self) -> str:
         """Stable identity for scientifically equivalent manifest instances."""
 
-        return content_id(self.scientific_descriptor())
+        return cast(str, content_id(self.scientific_descriptor()))
 
     def descriptor(self) -> dict[str, object]:
         return {
@@ -426,7 +426,7 @@ class RunManifestV2:
 
     @property
     def manifest_id(self) -> str:
-        return content_id(self.descriptor())
+        return cast(str, content_id(self.descriptor()))
 
     def as_dict(self) -> dict[str, object]:
         return {"manifest_id": self.manifest_id, **self.descriptor()}
