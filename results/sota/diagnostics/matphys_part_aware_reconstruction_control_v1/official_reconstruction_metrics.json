@@ -1,0 +1,54 @@
+{
+  "claim_boundary": "This checkpoint used future RGB, geometry, and track observations from the same case. It is an offline reconstruction-capacity control, not a causal forecast, transfer result, calibration result, or state-of-the-art claim.",
+  "evaluation": {
+    "test": {
+      "chamfer_distance_m": 0.011317063370613131,
+      "frame_count": 26,
+      "frame_end_exclusive": 85,
+      "frame_start": 59,
+      "track_error_m": 0.017356220613624455
+    },
+    "train": {
+      "chamfer_distance_m": 0.00392994714241751,
+      "frame_count": 58,
+      "frame_end_exclusive": 59,
+      "frame_start": 1,
+      "track_error_m": 0.004816263732427936
+    }
+  },
+  "inputs": {
+    "final_data": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/final_data.pkl",
+      "sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2"
+    },
+    "gt_track_3d": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/gt_track_3d.pkl",
+      "sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255"
+    },
+    "split": {
+      "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/split.json",
+      "sha256": "023d7fc38af55d3e1eda0cab7d523333e9c7260775287c0946b05503dacb39fd"
+    },
+    "trajectory": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/trajectory.pkl",
+      "sha256": "8e8b16eff493dff89580a5bf10670fb09bdebdc6049c41b20c4cf393f2e303c5"
+    }
+  },
+  "metric_contract": {
+    "chamfer_distance_m": "Per-frame mean one-way L1 nearest-neighbor distance from visible observed object points to predicted surface points, then frame mean.",
+    "compatibility": "Matches the released PhysTwin evaluate_chamfer.py and evaluate_track.py definitions.",
+    "track_error_m": "Frame-0 nearest-vertex correspondence for finite manual tracks; per-frame mean Euclidean error, then frame mean."
+  },
+  "schema_version": 1,
+  "split": {
+    "frame_len": 85,
+    "test": [
+      59,
+      85
+    ],
+    "train": [
+      0,
+      59
+    ]
+  }
+}

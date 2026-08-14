@@ -1,0 +1,97 @@
+{
+  "artifacts": {
+    "checkpoint": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/last_checkpoint.pth",
+      "sha256": "c8407722279b04022804e032fb433b2f6156863057363d656ead970628116f26"
+    },
+    "export_manifest": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/reconstruction_export_manifest.json",
+      "sha256": "e30a4fab2809e1507b3192d7fde863f79739921e8fe3848af64f2008183d92d1"
+    },
+    "proxy_summary": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/proxy-single-lift-sloth-v1.3/proxy_summary.json",
+      "sha256": "f2f670ea5de11c94fe26d2d3115b895a816dcea6c50bb747a53264762188646c"
+    },
+    "spring_field": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/candidate_spring_y.npy",
+      "sha256": "a66e21c65d0216e15e56d902ad6106c3c5afaa65bc2a66baf19838ef0e4d487e"
+    },
+    "train_ready": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/proxy-single-lift-sloth-v1.3/results/single_lift_sloth/train/train_ready.pt",
+      "sha256": "fb65c7bc5376db248dad96e3796d6b7a5253396fd34c96019a9b66ab70131cbc"
+    }
+  },
+  "case": "single_lift_sloth",
+  "claim_boundary": "Descriptive all-frame reconstruction diagnostic only. This audit does not alter the capacity gate or authorize causal, predictive, transfer, calibration, or state-of-the-art claims.",
+  "contract": "matphys-reconstruction-part-spring-field-audit-v1",
+  "controller_spring_count": 236,
+  "edge_part_index_sha256": "63cdef0aa7323f3af9c46cc0e86c9b848d54269d9a0e64d0fe67197d1d90297c",
+  "matphys_source_commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+  "object_spring_count": 110597,
+  "part_count": 5,
+  "schema_version": 1,
+  "summary": {
+    "by_part": [
+      {
+        "count": 43515,
+        "geometric_mean": 1197.7384839346032,
+        "maximum": 99999.96875,
+        "mean": 4643.307102971744,
+        "minimum": 1000.0001220703125,
+        "part": 0,
+        "std": 18412.07254382693
+      },
+      {
+        "count": 22803,
+        "geometric_mean": 10400.484079566737,
+        "maximum": 99999.96875,
+        "mean": 49323.64194519875,
+        "minimum": 1000.0001220703125,
+        "part": 1,
+        "std": 48684.482763372696
+      },
+      {
+        "count": 19816,
+        "geometric_mean": 9352.614131704122,
+        "maximum": 99999.96875,
+        "mean": 46924.70928744091,
+        "minimum": 1000.0001220703125,
+        "part": 2,
+        "std": 48539.25588723623
+      },
+      {
+        "count": 12983,
+        "geometric_mean": 79347.59742267353,
+        "maximum": 99999.96875,
+        "mean": 94595.25292385806,
+        "minimum": 1000.0001220703125,
+        "part": 3,
+        "std": 22091.055237685334
+      },
+      {
+        "count": 11716,
+        "geometric_mean": 4743.933421452978,
+        "maximum": 99999.96875,
+        "mean": 33379.53496642941,
+        "minimum": 1000.0001220703125,
+        "part": 4,
+        "std": 45992.41471838589
+      }
+    ],
+    "overall": {
+      "count": 110833,
+      "geometric_mean": 5100.314147871367,
+      "maximum": 99999.96875,
+      "mean": 34970.13845586827,
+      "minimum": 1000.0001220703125,
+      "std": 46567.31261710388
+    },
+    "spatial_variation": {
+      "distinct_part_count": 5,
+      "maximum_part_geometric_mean": 79347.59742267353,
+      "maximum_to_minimum_part_geometric_mean_ratio": 66.24784832997477,
+      "minimum_part_geometric_mean": 1197.7384839346032,
+      "part_log_geometric_mean_std": 1.3579278638343748
+    }
+  }
+}

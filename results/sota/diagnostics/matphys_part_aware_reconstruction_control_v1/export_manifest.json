@@ -1,0 +1,49 @@
+{
+  "case": {
+    "frame_len": 85,
+    "global_parameters": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/candidate_global_parameters.json",
+      "sha256": "923cdb84ebc251fce660d0dc3a03eab036a6ed56f14a29064b17753c4d60aff7"
+    },
+    "name": "single_lift_sloth",
+    "official_metrics": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/official_reconstruction_metrics.json",
+      "sha256": "8b78337900e6381c061b2e8d700460749187a0d72ab553e91e08139dc7fd98ff"
+    },
+    "released_train_end_frame_exclusive": 59,
+    "spring_field": {
+      "count": 110833,
+      "geometric_mean": 5100.30712890625,
+      "maximum": 99999.96875,
+      "minimum": 1000.0001220703125,
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/candidate_spring_y.npy",
+      "sha256": "a66e21c65d0216e15e56d902ad6106c3c5afaa65bc2a66baf19838ef0e4d487e"
+    },
+    "trajectory": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/trajectory.pkl",
+      "sha256": "8e8b16eff493dff89580a5bf10670fb09bdebdc6049c41b20c4cf393f2e303c5"
+    }
+  },
+  "checkpoint": {
+    "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/last_checkpoint.pth",
+    "sha256": "c8407722279b04022804e032fb433b2f6156863057363d656ead970628116f26"
+  },
+  "claim_boundary": "This checkpoint used future RGB, geometry, and track observations from the same case. It is an offline reconstruction-capacity control, not a causal forecast, transfer result, calibration result, or state-of-the-art claim.",
+  "contract": "matphys-all-frame-part-aware-reconstruction-export-v2",
+  "future_observations_used": true,
+  "method": {
+    "part_feature_scale": 1.0,
+    "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
+    "published_matphys_method": false,
+    "semantic_dimension": 1024,
+    "upstream_architecture": "released-SimpleVideoMaterialPhysicsModel"
+  },
+  "predictive_use_authorized": false,
+  "schema_version": 2,
+  "source_commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+  "source_repository": "https://github.com/Yrainy0615/MatPhys",
+  "training_audit": {
+    "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/reconstruction_training_audit.json",
+    "sha256": "02e050b76467c39ddf8112706d2705a69a635ef3ae1cf654815134ac45bd278c"
+  }
+}

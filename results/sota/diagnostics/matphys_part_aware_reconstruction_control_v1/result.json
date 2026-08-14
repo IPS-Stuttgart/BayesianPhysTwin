@@ -1,0 +1,59 @@
+{
+  "artifacts": {
+    "audit": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/reconstruction_training_audit.json",
+      "sha256": "02e050b76467c39ddf8112706d2705a69a635ef3ae1cf654815134ac45bd278c"
+    },
+    "candidate_metrics": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/cases/single_lift_sloth/official_reconstruction_metrics.json",
+      "sha256": "8b78337900e6381c061b2e8d700460749187a0d72ab553e91e08139dc7fd98ff"
+    },
+    "export_manifest": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1-export/reconstruction_export_manifest.json",
+      "sha256": "e30a4fab2809e1507b3192d7fde863f79739921e8fe3848af64f2008183d92d1"
+    },
+    "part_adapter_audit": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/part_adapter_terminal_audit.json",
+      "sha256": "de58fe89fb72da80a278d5a27921931e8b33fcc0da0f844a6c9f0c67385c09ee"
+    },
+    "released_phystwin_metrics": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/released-phystwin-single-lift-sloth-official-metrics.json",
+      "sha256": "19b9e1203e686643201802418d0261a04b1fc6c66470d88f6307b30a80651f73"
+    },
+    "terminal_checkpoint": {
+      "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/last_checkpoint.pth",
+      "sha256": "c8407722279b04022804e032fb433b2f6156863057363d656ead970628116f26"
+    }
+  },
+  "backend_export": {
+    "complete_positive_spring_field": true,
+    "finite_global_parameter_count": 7,
+    "finite_moved_part_adapter": true,
+    "spring_count": 110833
+  },
+  "case": "single_lift_sloth",
+  "claim_boundary": "This checkpoint used future RGB, geometry, and track observations from the same case. It is an offline reconstruction-capacity control, not a causal forecast, transfer result, calibration result, or state-of-the-art claim.",
+  "contract": "matphys-all-frame-part-aware-reconstruction-result-v1",
+  "decision": {
+    "advance_to_source_only_causal_design": true,
+    "authorizes_predictive_use_of_checkpoint": false,
+    "backend_export_pass": true,
+    "capacity_pass": true
+  },
+  "future_observations_used": true,
+  "improvement_percent": {
+    "chamfer_distance_m": 36.63469885778965,
+    "track_error_m": 30.37016725680314
+  },
+  "predictive_use_authorized": false,
+  "published_matphys_method": false,
+  "released_phystwin_test_metrics_mm": {
+    "chamfer_distance": 17.8600324887817,
+    "track_error": 24.926414339721696
+  },
+  "schema_version": 1,
+  "terminal_test_metrics_mm": {
+    "chamfer_distance": 11.31706337061313,
+    "track_error": 17.356220613624455
+  }
+}

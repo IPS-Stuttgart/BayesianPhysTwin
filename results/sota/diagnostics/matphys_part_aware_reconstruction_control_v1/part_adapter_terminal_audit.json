@@ -1,0 +1,35 @@
+{
+  "adapter_moved_from_zero": true,
+  "checkpoint": {
+    "path": "/mnt/corsair/florianpfaff/matphys-official-reconstruction-control-v1/part-aware-control-v1.3-run1/last_checkpoint.pth",
+    "sha256": "c8407722279b04022804e032fb433b2f6156863057363d656ead970628116f26"
+  },
+  "contract": "matphys-part-adapter-terminal-audit-v1",
+  "finite": true,
+  "schema_version": 1,
+  "tensors": {
+    "part_feature_encoder.1.bias": {
+      "finite": true,
+      "l2_norm": 0.05108853057026863,
+      "maximum_absolute": 0.014445224776864052,
+      "nonzero_count": 32,
+      "shape": [
+        32
+      ]
+    },
+    "part_feature_encoder.1.weight": {
+      "finite": true,
+      "l2_norm": 3.3673434257507324,
+      "maximum_absolute": 0.15676294267177582,
+      "nonzero_count": 32768,
+      "shape": [
+        32,
+        1024
+      ]
+    }
+  },
+  "zero_initialized_parameters": [
+    "part_feature_encoder.1.weight",
+    "part_feature_encoder.1.bias"
+  ]
+}
