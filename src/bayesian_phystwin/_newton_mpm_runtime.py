@@ -220,7 +220,12 @@ def run_newton_mpm_smoke(
 ) -> dict[str, Any]:
     """Run driven and zero-action beams and seal a raw particle artifact."""
 
-    smoke = config or NewtonMpmSmokeConfig()
+    if config is None:
+        smoke = NewtonMpmSmokeConfig()
+    elif isinstance(config, NewtonMpmSmokeConfig):
+        smoke = config
+    else:
+        raise TypeError("config must be a NewtonMpmSmokeConfig")
     smoke.validate()
     raw_path = Path(raw_rollout_path)
     runtime_path = Path(runtime_manifest_path)
