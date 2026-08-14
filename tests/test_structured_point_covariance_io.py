@@ -185,9 +185,7 @@ def test_resource_limits_fail_before_acceptance(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="shared rank"):
         load_structured_point_covariance(
             path,
-            limits=StructuredPointCovarianceIOLimitsV1(
-                maximum_total_shared_rank=2
-            ),
+            limits=StructuredPointCovarianceIOLimitsV1(maximum_total_shared_rank=2),
         )
 
 
@@ -196,9 +194,7 @@ def test_duplicate_and_nonfinite_json_are_rejected(tmp_path: Path) -> None:
     write_structured_point_covariance(path, _artifact())
     payload = _payload(path)
     raw = str(payload["descriptor_json"].item())
-    payload["descriptor_json"] = np.asarray(
-        raw[:-1] + ',"schema":"duplicate"}'
-    )
+    payload["descriptor_json"] = np.asarray(raw[:-1] + ',"schema":"duplicate"}')
     _write_payload(path, payload)
     with pytest.raises(ValueError, match="duplicate JSON"):
         load_structured_point_covariance(path)
@@ -218,9 +214,7 @@ def test_schema_and_component_roster_are_frozen(tmp_path: Path) -> None:
     payload = _payload(path)
     descriptor = _descriptor(payload)
     assert descriptor["schema"] == STRUCTURED_POINT_COVARIANCE_ARCHIVE_SCHEMA
-    assert descriptor["schema_version"] == (
-        STRUCTURED_POINT_COVARIANCE_ARCHIVE_VERSION
-    )
+    assert descriptor["schema_version"] == (STRUCTURED_POINT_COVARIANCE_ARCHIVE_VERSION)
     descriptor["schema_version"] = 2
     _replace_descriptor(payload, descriptor)
     _write_payload(path, payload)
