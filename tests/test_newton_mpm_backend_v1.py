@@ -20,6 +20,7 @@ from bayesian_phystwin.newton_mpm_backend_v1 import (
     load_newton_particle_rollout,
     materialize_newton_mpm_backend,
     validate_newton_mpm_backend,
+    validate_newton_mpm_runtime_manifest,
 )
 from bayesian_phystwin.physical_rollout_v1 import (
     PHYSICAL_ROLLOUT_ARRAY_NAMES,
@@ -210,3 +211,102 @@ def test_bundle_detects_mutated_particle_provenance(tmp_path: Path) -> None:
     provenance.write_bytes(provenance.read_bytes() + b"changed")
     with pytest.raises(ValueError, match="byte count changed"):
         validate_newton_mpm_backend(output)
+
+
+def test_runtime_manifest_validation_edge_branches(tmp_path: Path) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+    runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+
+    # Direct validation without a raw path exercises the optional custody branch.
+    assert (
+        validate_newton_mpm_runtime_manifest(runtime)["runtime_id"]
+        == runtime["runtime_id"]
+    )
+
+    for key, replacement, message in (
+        ("frame_count", 0, "frame_count must be a positive integer"),
+        (
+            "time_step_s",
+            True,
+            "time_step_s must be a finite positive number",
+        ),
+        (
+            "time_step_s",
+            float("inf"),
+            "time_step_s must be a finite positive number",
+        ),
+        ("simulation", None, "simulation must be a JSON object"),
+        (
+            "information_boundary",
+            None,
+            "information_boundary must be a JSON object",
+        ),
+    ):
+        payload = json.loads(json.dumps(runtime))
+        payload[key] = replacement
+        with pytest.raises(ValueError, match=message):
+            validate_newton_mpm_runtime_manifest(payload)
+
+    for replacement in (
+        [0.3, 0.05],
+        [0.3, True, 0.05],
+        [0.3, float("nan"), 0.05],
+    ):
+        payload = json.loads(json.dumps(runtime))
+        payload["simulation"]["beam_extents_m"] = replacement
+        with pytest.raises(
+            ValueError,
+            match="beam_extents_m must contain three finite numbers",
+        ):
+            validate_newton_mpm_runtime_manifest(payload)
+
+
+def test_bundle_rejects_non_object_nested_records(tmp_path: Path) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+
+    for case, message in (
+        ("inputs", "inputs must be a JSON object"),
+        ("raw_rollout", "raw_rollout must be a JSON object"),
+        ("mapping", "mapping must be a JSON object"),
+    ):
+        output = tmp_path / case
+        materialize_newton_mpm_backend(
+            raw_rollout_path=raw_path,
+            runtime_manifest_path=runtime_path,
+            output_dir=output,
+        )
+        artifact_path = output / ARTIFACT_FILENAME
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        if case == "inputs":
+            artifact["inputs"] = None
+        elif case == "raw_rollout":
+            artifact["inputs"]["raw_rollout"] = None
+        else:
+            artifact["mapping"] = None
+        artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+        with pytest.raises(ValueError, match=message):
+            validate_newton_mpm_backend(output)
+
+
+def test_physical_archive_frame_count_and_missing_file_branches(
+    tmp_path: Path,
+) -> None:
+    raw_path = _raw_archive(tmp_path / "raw.npz")
+    runtime_path = _runtime_manifest(tmp_path / "runtime.json", raw_path)
+    output = tmp_path / "output"
+    materialize_newton_mpm_backend(
+        raw_rollout_path=raw_path,
+        runtime_manifest_path=runtime_path,
+        output_dir=output,
+    )
+    physical_path = output / PHYSICAL_ARCHIVE_FILENAME
+    physical = load_physical_rollout_archive(
+        physical_path,
+        expected_frame_count=76,
+    )
+    assert physical["prediction_m"].shape[0] == 76
+
+    with pytest.raises(ValueError, match="must be an ordinary file"):
+        load_physical_rollout_archive(tmp_path / "missing.npz")
