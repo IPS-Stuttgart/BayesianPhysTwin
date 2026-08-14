@@ -378,9 +378,10 @@ def test_cli_lists_profiles_and_validates_bundle(
     genesis = next(
         item for item in listed["profiles"] if item["profile_id"] == "genesis-mpm-v1"
     )
-    assert {
-        variant["producer_profile_id"] for variant in genesis["variants"]
-    } == {"genesis-mpm-v1", "genesis-world-mpm-v1"}
+    assert {variant["producer_profile_id"] for variant in genesis["variants"]} == {
+        "genesis-mpm-v1",
+        "genesis-world-mpm-v1",
+    }
 
     raw_path = _raw_archive(tmp_path / "raw.npz")
     runtime_path = _runtime_manifest(
