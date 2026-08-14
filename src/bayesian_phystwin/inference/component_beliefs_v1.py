@@ -132,15 +132,14 @@ def _validate_arm_records(
         raise ValueError(
             "mean candidate must differ from the deterministic-reference mean"
         )
-    if covariance_only["covariance_component_id"] == reference[
-        "covariance_component_id"
-    ]:
+    if (
+        covariance_only["covariance_component_id"]
+        == reference["covariance_component_id"]
+    ):
         raise ValueError(
             "covariance candidate must differ from the reference covariance"
         )
-    if mean_only["covariance_component_id"] != reference[
-        "covariance_component_id"
-    ]:
+    if mean_only["covariance_component_id"] != reference["covariance_component_id"]:
         raise ValueError("mean-only arm must retain the reference covariance")
     if covariance_only["mean_component_id"] != reference["mean_component_id"]:
         raise ValueError(
@@ -148,9 +147,7 @@ def _validate_arm_records(
         )
     if full["mean_component_id"] != mean_only["mean_component_id"]:
         raise ValueError("full-belief arm must reuse the candidate mean")
-    if full["covariance_component_id"] != covariance_only[
-        "covariance_component_id"
-    ]:
+    if full["covariance_component_id"] != covariance_only["covariance_component_id"]:
         raise ValueError("full-belief arm must reuse the candidate covariance")
 
 
@@ -290,9 +287,7 @@ class ComponentizedBeliefAdmissionResultV1(Generic[BeliefT]):
             "selected_mode": self.selected_mode,
             "selected_belief_id": self.selected_belief.artifact_id,
             "selected_mean_component_id": self.selected_mean_component_id,
-            "selected_covariance_component_id": (
-                self.selected_covariance_component_id
-            ),
+            "selected_covariance_component_id": (self.selected_covariance_component_id),
             "exact_fallback": self.exact_fallback,
             "claim_boundary": COMPONENTIZED_BELIEF_CLAIM_BOUNDARY,
             "metadata": plain_json(self.metadata),
