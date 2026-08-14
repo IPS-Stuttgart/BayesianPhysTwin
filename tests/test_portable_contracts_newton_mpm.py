@@ -311,14 +311,17 @@ def test_newton_cli_dispatches_all_commands(
 
     monkeypatch.setattr(cli, "materialize_newton_mpm_backend", materialize)
     monkeypatch.setattr(cli, "validate_newton_mpm_backend", validate)
-    assert cli.main(
-        [
-            "materialize",
-            str(tmp_path / "raw.npz"),
-            str(tmp_path / "runtime.json"),
-            str(tmp_path / "bundle"),
-        ]
-    ) == 0
+    assert (
+        cli.main(
+            [
+                "materialize",
+                str(tmp_path / "raw.npz"),
+                str(tmp_path / "runtime.json"),
+                str(tmp_path / "bundle"),
+            ]
+        )
+        == 0
+    )
     assert cli.main(["validate", str(tmp_path / "bundle")]) == 0
 
     fake_runtime = types.ModuleType("bayesian_phystwin._newton_mpm_runtime")
