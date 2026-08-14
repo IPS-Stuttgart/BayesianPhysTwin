@@ -22,11 +22,7 @@ _CALIBRATION_DIGEST = "2" * 64
 
 
 def _belief(*, factor_names: tuple[str, ...] | None = None) -> ObservationBeliefV1:
-    names = (
-        ("gauge_x", "gauge_y", "process")
-        if factor_names is None
-        else factor_names
-    )
+    names = ("gauge_x", "gauge_y", "process") if factor_names is None else factor_names
     count = 4
     rank = len(names)
     factor = np.arange(count * 3 * rank, dtype=np.float64).reshape(count, 3, rank)
@@ -160,9 +156,7 @@ def test_factor_groups_remain_independent_and_row_ids_are_deterministic() -> Non
         covariance.cross_covariance_m2(ids[0], ids[2]),
         np.zeros((3, 3), dtype=np.float64),
     )
-    expected_within_group = (
-        belief.low_rank_factor_m[0] @ belief.low_rank_factor_m[1].T
-    )
+    expected_within_group = belief.low_rank_factor_m[0] @ belief.low_rank_factor_m[1].T
     _assert_covariance_parity(
         covariance.cross_covariance_m2(ids[0], ids[1]),
         expected_within_group,
