@@ -1,0 +1,79 @@
+name: PR 653 MyPy repair
+
+on:
+  push:
+    branches:
+      - feature/full-covariance-dynamic-endpoint-v3
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feature/full-covariance-dynamic-endpoint-v3
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Add explicit NumPy local annotations and validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/bayesian_phystwin/_full_covariance_dynamic_endpoint_v3.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = (
+              (
+                  "    updated_mean = np.zeros(6, dtype=np.float64)\n",
+                  "    updated_mean: np.ndarray = np.zeros(6, dtype=np.float64)\n",
+              ),
+              (
+                  "    updated_covariance = np.zeros((6, 6), dtype=np.float64)\n",
+                  "    updated_covariance: np.ndarray = np.zeros((6, 6), dtype=np.float64)\n",
+              ),
+              (
+                  "    result_process = np.zeros((6, 6), dtype=np.float64)\n",
+                  "    result_process: np.ndarray = np.zeros((6, 6), dtype=np.float64)\n",
+              ),
+              (
+                  "    component_mean = np.empty((component_count, track_count, 3), dtype=np.float64)\n",
+                  "    component_mean: np.ndarray = np.empty(\n"
+                  "        (component_count, track_count, 3), dtype=np.float64\n"
+                  "    )\n",
+              ),
+              (
+                  "    component_velocity = np.empty(\n",
+                  "    component_velocity: np.ndarray = np.empty(\n",
+              ),
+              (
+                  "    component_covariance = np.empty(\n",
+                  "    component_covariance: np.ndarray = np.empty(\n",
+              ),
+          )
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f"expected exactly one match for {old!r}, found {count}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          python -m pip install --disable-pip-version-check -e ".[dev]"
+          python -m ruff check src/bayesian_phystwin/_full_covariance_dynamic_endpoint_v3.py
+          python -m ruff format --check src/bayesian_phystwin/_full_covariance_dynamic_endpoint_v3.py
+          python -m mypy src/bayesian_phystwin/_full_covariance_dynamic_endpoint_v3.py
+          git rm .github/workflows/pr653-mypy-repair.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/bayesian_phystwin/_full_covariance_dynamic_endpoint_v3.py
+          git commit -m "Annotate full-covariance v3 NumPy locals"
+          git push origin HEAD:feature/full-covariance-dynamic-endpoint-v3
