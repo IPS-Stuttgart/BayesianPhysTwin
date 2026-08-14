@@ -1,0 +1,53 @@
+{
+  "claim_boundary": "The candidate producer completed and the one authorized public-source scorer terminated with a retained technical-failure receipt after source-suffix opening. The source gate was not evaluated, no continuation or confirmation was authorized, and the one-shot workflows are retired without changing any candidate, protocol, cohort, target boundary, or scientific claim.",
+  "producer": {
+    "artifact_id": 9161411983,
+    "artifact_name": "deform360-v61-candidate-producer-31647329129-1",
+    "artifact_sha256": "03065bdecf9dd5906e70d5722f8d5f1608ae4968dccda585e13e732d5b7a9849",
+    "candidate_panel_receipt_id": "db3cc4351436492db5962bc1e99f516adc38a5031140b675b45dc6d752b7559a",
+    "execution_receipt_id": "65747822fa8380296a572811772fce88b9275a7e1148a8015e1156f520f7e369",
+    "prediction_record_count": 100,
+    "raw_prediction_batch_id": "d27674518f523db4fddb9cc108dd3d77321dddefeccc866b2b81044bf44ebee8",
+    "source_revision": "2eb8d12e2120d58d0d678c3771d29faaeb765497",
+    "source_suffix_opened": false,
+    "technical_failure_record_count": 0,
+    "tracking_issue": 642,
+    "workflow_conclusion": "success",
+    "workflow_path": ".github/workflows/deform360-v61-candidate-producer.yml",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31647329129
+  },
+  "record_id": "ea4f31a025ec714ce8f13025a1af899028fac0a4ad12d3cf3bfd305c957bd168",
+  "retirement": {
+    "confirmation_authorized": false,
+    "producer_workflow_deleted": true,
+    "rerun_authorized": false,
+    "scorer_workflow_deleted": true,
+    "target_access_authorized": false
+  },
+  "schema": "bayesian-phystwin.deform360-v6.1-one-shot-workflow-retirement",
+  "schema_version": 1,
+  "scorer": {
+    "artifact_id": 9169119864,
+    "artifact_name": "deform360-v61-source-scorer-endpoint-gsplat-base-31669176135-1",
+    "artifact_sha256": "b1a8ea2e4d3952af4b446fa4d420ea23f310b4e43396cc8505978302fcd4e42f",
+    "confirmation_payloads_opened": false,
+    "exit_code": 2,
+    "held_v8_artifacts_accessed": false,
+    "replacement_allowed": false,
+    "source_continuation_authorized": false,
+    "source_gate_evaluated": false,
+    "source_gate_passed": null,
+    "source_revision": "74e556d6f9b503409f3b163ef27ccb7a17c61d85",
+    "source_scoring_receipt_id": "f284be9c6a83afe5688030cfec466f0bbe2f2a24d7ce0aa13eac272d9763742c",
+    "source_suffix_opened": true,
+    "target_outcomes_opened": false,
+    "terminal_stage": "endpoint-processing",
+    "terminal_status": "source-scoring-technical-failure-retained",
+    "tracking_issue": 645,
+    "workflow_conclusion": "failure",
+    "workflow_path": ".github/workflows/deform360-v61-source-scorer-endpoint-gsplat-base.yml",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 31669176135
+  }
+}
