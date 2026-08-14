@@ -48,6 +48,41 @@ retains:
 This supports physical-query uncertainty audits, component ablations, and later
 object/session-level calibration while retaining coherent cross-point modes.
 
+## Portable archive boundary
+
+`structured_point_covariance_io` preserves the complete decomposition in a
+strict NPZ archive instead of reducing it to dense covariance or independent
+marginals:
+
+```python
+from bayesian_phystwin.structured_point_covariance_io import (
+    load_structured_point_covariance,
+    write_structured_point_covariance,
+)
+
+write_structured_point_covariance("covariance.npz", covariance)
+reloaded = load_structured_point_covariance("covariance.npz")
+assert reloaded.artifact_id == covariance.artifact_id
+```
+
+The archive contains one exact `float64` local-block array, one exact `float64`
+root per declared shared component, and a strict finite JSON descriptor that
+binds the original `StructuredPointCovarianceV1` content identity. The loader:
+
+- rejects duplicate JSON keys, non-finite constants, unknown fields, unsupported
+  component labels, missing or extra archive members, and dtype or shape drift;
+- enforces archive, decoded-byte, point-count, shared-rank, descriptor, and
+  compression-ratio budgets before accepting the artifact;
+- rejects symbolic links and files that change while being read; and
+- reconstructs the covariance through its normal validator and verifies the
+  exact original descriptor and artifact identity.
+
+Publication is atomic and no-clobber by default. Deliberate replacement requires
+`overwrite=True`, and a completed temporary archive is loaded and identity-
+checked before it becomes visible at the destination. This makes the artifact
+suitable for a future Prob4D-to-BayesianPhysTwin-to-Causal4D conformance corpus
+without changing any current provider contract or frozen protocol.
+
 ## Diagnostic materialization
 
 `dense_covariance_m2()` exists only for bounded diagnostics and requires an
@@ -57,10 +92,11 @@ retained ranks rather than quadratically with the number of points.
 
 ## Information and claim boundary
 
-The contract is a covariance representation, not an uncertainty-calibration
-result. A non-null `calibration_artifact_id` records external calibration
-lineage; it does not by itself prove coverage. Promotion still requires the
-registered object/session-level calibration and held-out physical-query gates.
+The contract and its archive are covariance representations, not uncertainty-
+calibration results. A non-null `calibration_artifact_id` records external
+calibration lineage; it does not by itself prove coverage. Promotion still
+requires the registered object/session-level calibration and held-out physical-
+query gates.
 
 This prospective representation does not alter the frozen Deform360 confirmation
 protocol. It is intended for a later protocol version or a separately registered
