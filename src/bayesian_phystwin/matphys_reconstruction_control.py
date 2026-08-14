@@ -32,6 +32,9 @@ MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS = frozenset(
 MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT = (
     "matphys-all-frame-part-aware-reconstruction-export-v2"
 )
+MATPHYS_RECONSTRUCTION_RESULT_CONTRACT = (
+    "matphys-all-frame-part-aware-reconstruction-result-v1"
+)
 MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY = (
     "This checkpoint used future RGB, geometry, and track observations from the "
     "same case. It is an offline reconstruction-capacity control, not a causal "
@@ -366,4 +369,169 @@ def validate_matphys_reconstruction_audit(
         **audit,
         "audit_path": str(source),
         "audit_sha256": sha256_file(source),
+    }
+
+
+def build_matphys_reconstruction_result(
+    audit_path: str | Path,
+    checkpoint_path: str | Path,
+    export_manifest_path: str | Path,
+    baseline_metrics_path: str | Path,
+) -> dict[str, object]:
+    """Recompute the locked capacity decision from byte-bound terminal artifacts."""
+
+    audit = validate_matphys_reconstruction_audit(audit_path, checkpoint_path)
+    manifest_path = Path(export_manifest_path).resolve()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_manifest = {
+        "schema_version": 2,
+        "contract": MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT,
+        "claim_boundary": MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY,
+        "future_observations_used": True,
+        "predictive_use_authorized": False,
+    }
+    for key, expected in expected_manifest.items():
+        if manifest.get(key) != expected:
+            raise ValueError(f"unsupported MatPhys reconstruction export: {key}")
+    method = manifest.get("method")
+    if not isinstance(method, Mapping) or method.get("published_matphys_method") is not False:
+        raise ValueError("reconstruction export mislabels the method")
+    if method.get("part_model_contract") != PART_AWARE_MODEL_CONTRACT:
+        raise ValueError("reconstruction export changed the part model")
+    if _validate_identity(manifest.get("checkpoint"), label="export checkpoint") != Path(
+        checkpoint_path
+    ).resolve():
+        raise ValueError("reconstruction export did not use the terminal checkpoint")
+    if _validate_identity(
+        manifest.get("training_audit"), label="training audit"
+    ) != Path(audit_path).resolve():
+        raise ValueError("reconstruction export changed the training audit")
+    case = manifest.get("case")
+    if not isinstance(case, Mapping) or case.get("name") != audit["case"]["name"]:
+        raise ValueError("reconstruction export changed the case")
+
+    spring = case.get("spring_field")
+    if not isinstance(spring, Mapping):
+        raise ValueError("reconstruction export omits the spring field")
+    _validate_identity(spring, label="spring field")
+    spring_values = {
+        key: float(spring.get(key, float("nan")))
+        for key in ("minimum", "maximum", "geometric_mean")
+    }
+    spring_count = spring.get("count")
+    if (
+        isinstance(spring_count, bool)
+        or not isinstance(spring_count, int)
+        or spring_count < 1
+        or not all(math.isfinite(value) and value > 0.0 for value in spring_values.values())
+        or not spring_values["minimum"] <= spring_values["maximum"]
+    ):
+        raise ValueError("reconstruction export has an invalid spring field")
+    globals_path = _validate_identity(
+        case.get("global_parameters"), label="global parameters"
+    )
+    global_parameters = json.loads(globals_path.read_text(encoding="utf-8"))
+    expected_globals = {
+        "collide_elas",
+        "collide_fric",
+        "collide_object_elas",
+        "collide_object_fric",
+        "collision_dist",
+        "dashpot_damping",
+        "drag_damping",
+    }
+    if set(global_parameters) != expected_globals or not all(
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+        for value in global_parameters.values()
+    ):
+        raise ValueError("reconstruction export has invalid global parameters")
+
+    candidate_path = _validate_identity(
+        case.get("official_metrics"), label="candidate metrics"
+    )
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    baseline_path = Path(baseline_metrics_path).resolve()
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    for label, payload in (("candidate", candidate), ("baseline", baseline)):
+        inputs = payload.get("inputs")
+        evaluation = payload.get("evaluation")
+        if not isinstance(inputs, Mapping) or not isinstance(evaluation, Mapping):
+            raise ValueError(f"{label} official metrics are incomplete")
+        for split_name in ("train", "test"):
+            values = evaluation.get(split_name)
+            if not isinstance(values, Mapping):
+                raise ValueError(f"{label} official metrics omit {split_name}")
+            for metric in ("chamfer_distance_m", "track_error_m"):
+                value = values.get(metric)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value))
+                    or float(value) < 0.0
+                ):
+                    raise ValueError(f"{label} official metric is invalid: {metric}")
+    for name in ("final_data", "gt_track_3d", "split"):
+        if candidate["inputs"].get(name) != baseline["inputs"].get(name):
+            raise ValueError(f"candidate and baseline {name} identities differ")
+    if candidate.get("split") != baseline.get("split"):
+        raise ValueError("candidate and baseline split metadata differ")
+
+    finiteness = []
+    for identity in audit["runtime_access_logs"]:
+        path = Path(str(identity["path"]))
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("contract") == "finite-model-and-optimizer-checkpoint-v1":
+            finiteness.append(payload)
+    if len(finiteness) != 1 or finiteness[0].get("finite") is not True:
+        raise ValueError("reconstruction audit lacks one finite checkpoint report")
+    if finiteness[0].get("checkpoint") != audit["checkpoint"]:
+        raise ValueError("finiteness report changed the terminal checkpoint")
+
+    candidate_test = candidate["evaluation"]["test"]
+    baseline_test = baseline["evaluation"]["test"]
+    metric_names = ("chamfer_distance_m", "track_error_m")
+    improvements = {
+        name: 100.0
+        * (float(baseline_test[name]) - float(candidate_test[name]))
+        / float(baseline_test[name])
+        for name in metric_names
+    }
+    capacity_pass = all(improvements[name] > 0.0 for name in metric_names)
+    return {
+        "schema_version": 1,
+        "contract": MATPHYS_RECONSTRUCTION_RESULT_CONTRACT,
+        "claim_boundary": MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY,
+        "future_observations_used": True,
+        "predictive_use_authorized": False,
+        "published_matphys_method": False,
+        "artifacts": {
+            "audit": _identity(audit_path),
+            "terminal_checkpoint": _identity(checkpoint_path),
+            "export_manifest": _identity(manifest_path),
+            "candidate_metrics": _identity(candidate_path),
+            "released_phystwin_metrics": _identity(baseline_path),
+        },
+        "case": audit["case"]["name"],
+        "terminal_test_metrics_mm": {
+            name.removesuffix("_m"): 1000.0 * float(candidate_test[name])
+            for name in metric_names
+        },
+        "released_phystwin_test_metrics_mm": {
+            name.removesuffix("_m"): 1000.0 * float(baseline_test[name])
+            for name in metric_names
+        },
+        "improvement_percent": improvements,
+        "backend_export": {
+            "complete_positive_spring_field": True,
+            "spring_count": spring_count,
+            "finite_global_parameter_count": len(global_parameters),
+        },
+        "decision": {
+            "capacity_pass": capacity_pass,
+            "backend_export_pass": True,
+            "advance_to_source_only_causal_design": capacity_pass,
+            "authorizes_predictive_use_of_checkpoint": False,
+        },
     }

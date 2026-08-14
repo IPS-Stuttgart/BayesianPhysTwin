@@ -17,9 +17,11 @@ from bayesian_phystwin.matphys_reconstruction_control import (
     MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT,
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
     MATPHYS_RECONSTRUCTION_OBJECTIVE_GUARD,
+    MATPHYS_RECONSTRUCTION_RESULT_CONTRACT,
     MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
+    build_matphys_reconstruction_result,
     validate_matphys_reconstruction_audit,
     validate_matphys_reconstruction_protocol,
     write_matphys_reconstruction_audit,
@@ -80,6 +82,16 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
     )
     checkpoint = tmp_path / "checkpoint.pth"
     checkpoint.write_bytes(b"checkpoint")
+    finiteness = tmp_path / "checkpoint_finiteness.json"
+    finiteness.write_text(
+        json.dumps(
+            {
+                "contract": "finite-model-and-optimizer-checkpoint-v1",
+                "finite": True,
+                "checkpoint": _identity(checkpoint),
+            }
+        )
+    )
     protocol = tmp_path / "protocol.json"
     protocol.write_text(
         json.dumps(
@@ -138,8 +150,105 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         objective_end_frame_exclusive=5,
         proxy_summary_path=proxy,
         training_configuration=configuration,
+        runtime_access_log_paths=(finiteness,),
     )
     return audit, checkpoint, configuration
+
+
+def _result_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+    audit, checkpoint, _ = _fixture(tmp_path)
+    audit_payload = json.loads(audit.read_text())
+    split = Path(audit_payload["case"]["split"]["path"])
+    final_data = tmp_path / "final_data.pkl"
+    gt_track = tmp_path / "gt_track_3d.pkl"
+    candidate_trajectory = tmp_path / "candidate.pkl"
+    baseline_trajectory = tmp_path / "baseline.pkl"
+    spring = tmp_path / "spring.npy"
+    globals_path = tmp_path / "globals.json"
+    for path, content in (
+        (final_data, b"final-data"),
+        (gt_track, b"gt-track"),
+        (candidate_trajectory, b"candidate"),
+        (baseline_trajectory, b"baseline"),
+        (spring, b"positive-spring-field"),
+    ):
+        path.write_bytes(content)
+    globals_path.write_text(
+        json.dumps(
+            {
+                "collide_elas": 0.1,
+                "collide_fric": 0.2,
+                "collide_object_elas": 0.3,
+                "collide_object_fric": 0.4,
+                "collision_dist": 0.01,
+                "dashpot_damping": 10.0,
+                "drag_damping": 2.0,
+            }
+        )
+    )
+
+    def metrics(path: Path, trajectory: Path, *, cd: float, track: float) -> None:
+        path.write_text(
+            json.dumps(
+                {
+                    "inputs": {
+                        "trajectory": _identity(trajectory),
+                        "final_data": _identity(final_data),
+                        "gt_track_3d": _identity(gt_track),
+                        "split": _identity(split),
+                    },
+                    "split": json.loads(split.read_text()),
+                    "evaluation": {
+                        "train": {
+                            "chamfer_distance_m": cd,
+                            "track_error_m": track,
+                        },
+                        "test": {
+                            "chamfer_distance_m": cd,
+                            "track_error_m": track,
+                        },
+                    },
+                }
+            )
+        )
+
+    candidate_metrics = tmp_path / "candidate_metrics.json"
+    baseline_metrics = tmp_path / "baseline_metrics.json"
+    metrics(candidate_metrics, candidate_trajectory, cd=0.008, track=0.009)
+    metrics(baseline_metrics, baseline_trajectory, cd=0.010, track=0.012)
+    export_manifest = tmp_path / "export_manifest.json"
+    export_manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "contract": "matphys-all-frame-part-aware-reconstruction-export-v2",
+                "claim_boundary": audit_payload["claim_boundary"],
+                "future_observations_used": True,
+                "predictive_use_authorized": False,
+                "method": {
+                    "part_model_contract": (
+                        "simple-videomae-dino-part-conditioning-v1"
+                    ),
+                    "published_matphys_method": False,
+                },
+                "checkpoint": _identity(checkpoint),
+                "training_audit": _identity(audit),
+                "case": {
+                    "name": "case_a",
+                    "spring_field": {
+                        **_identity(spring),
+                        "count": 3,
+                        "minimum": 1.0,
+                        "maximum": 3.0,
+                        "geometric_mean": 2.0,
+                    },
+                    "global_parameters": _identity(globals_path),
+                    "official_metrics": _identity(candidate_metrics),
+                },
+            }
+        )
+    )
+    return audit, checkpoint, export_manifest, baseline_metrics
 
 
 def test_reconstruction_audit_binds_deliberate_future_access(tmp_path: Path) -> None:
@@ -151,6 +260,73 @@ def test_reconstruction_audit_binds_deliberate_future_access(tmp_path: Path) -> 
     assert validated["future_observations_used"] is True
     assert validated["predictive_use_authorized"] is False
     assert validated["case"]["fitted_future_interval"] == [3, 5]
+
+
+def test_reconstruction_result_recomputes_joint_terminal_decision(
+    tmp_path: Path,
+) -> None:
+    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+
+    result = build_matphys_reconstruction_result(
+        audit, checkpoint, manifest, baseline
+    )
+
+    assert result["contract"] == MATPHYS_RECONSTRUCTION_RESULT_CONTRACT
+    assert result["decision"] == {
+        "capacity_pass": True,
+        "backend_export_pass": True,
+        "advance_to_source_only_causal_design": True,
+        "authorizes_predictive_use_of_checkpoint": False,
+    }
+    assert result["terminal_test_metrics_mm"] == {
+        "chamfer_distance": 8.0,
+        "track_error": 9.0,
+    }
+
+
+def test_reconstruction_result_requires_both_metrics_to_improve(
+    tmp_path: Path,
+) -> None:
+    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    payload = json.loads(manifest.read_text())
+    metrics_path = Path(payload["case"]["official_metrics"]["path"])
+    metrics = json.loads(metrics_path.read_text())
+    metrics["evaluation"]["test"]["track_error_m"] = 0.013
+    metrics_path.write_text(json.dumps(metrics))
+    payload["case"]["official_metrics"] = _identity(metrics_path)
+    manifest.write_text(json.dumps(payload))
+
+    result = build_matphys_reconstruction_result(
+        audit, checkpoint, manifest, baseline
+    )
+
+    assert result["decision"]["capacity_pass"] is False
+    assert result["decision"]["advance_to_source_only_causal_design"] is False
+
+
+def test_reconstruction_result_rejects_checkpoint_substitution(tmp_path: Path) -> None:
+    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    replacement = tmp_path / "best_checkpoint.pth"
+    replacement.write_bytes(checkpoint.read_bytes())
+
+    with pytest.raises(ValueError, match="not bound by the reconstruction audit"):
+        build_matphys_reconstruction_result(
+            audit, replacement, manifest, baseline
+        )
+
+
+def test_reconstruction_result_rejects_metric_input_drift(tmp_path: Path) -> None:
+    audit, checkpoint, manifest, baseline = _result_fixture(tmp_path)
+    baseline_payload = json.loads(baseline.read_text())
+    drifted = tmp_path / "drifted_final_data.pkl"
+    drifted.write_bytes(b"drifted")
+    baseline_payload["inputs"]["final_data"] = _identity(drifted)
+    baseline.write_text(json.dumps(baseline_payload))
+
+    with pytest.raises(ValueError, match="final_data identities differ"):
+        build_matphys_reconstruction_result(
+            audit, checkpoint, manifest, baseline
+        )
 
 
 def test_reconstruction_checkpoint_cannot_pass_causal_validator(tmp_path: Path) -> None:
