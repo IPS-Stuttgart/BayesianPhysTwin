@@ -232,6 +232,48 @@ def validate_deform_dlo2_stage_authorization(
     """Require the registered two-parent wrapper for every DLO2 source run."""
 
     contract = authorization.get("contract")
+    if contract == "deform-dlo2-local-residual-authorization-v1":
+        protocol_identity = authorization.get("protocol")
+        parent = authorization.get("parent_local_residual_result")
+        required = protocol.get("authorization")
+        fixed_arm = protocol.get("local_residual")
+        selected_spec = parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        required_spec = (
+            fixed_arm.get("fixed_arm") if isinstance(fixed_arm, Mapping) else None
+        )
+        if (
+            protocol.get("dlo_types") != ("DLO2",)
+            or authorization.get("official_eval_read") is not False
+            or authorization.get("source_test_opened") is not False
+            or not isinstance(protocol_identity, Mapping)
+            or protocol_identity.get("sha256") != protocol_sha256
+            or not isinstance(required, Mapping)
+            or not isinstance(parent, Mapping)
+            or parent.get("sha256") != required.get("required_parent_result_sha256")
+            or parent.get("contract") != required.get("required_parent_contract")
+            or parent.get("protocol_sha256")
+            != required.get("required_parent_protocol_sha256")
+            or parent.get("source_gate_passed") is not True
+            or parent.get("fresh_dlo2_local_residual_authorized") is not True
+            or parent.get("dlo2_read") is not False
+            or parent.get("official_eval_read") is not False
+            or parent.get("selected_arm")
+            != required.get("required_parent_selected_arm")
+            or not isinstance(selected_spec, Mapping)
+            or not isinstance(required_spec, Mapping)
+            or float(selected_spec.get("ridge", math.nan))
+            != float(required_spec.get("ridge", math.nan))
+            or float(selected_spec.get("shrinkage", math.nan))
+            != float(required_spec.get("shrinkage", math.nan))
+        ):
+            raise ValueError("DLO2 local-residual stage authorization differs")
+        return {
+            "contract": str(contract),
+            "protocol_sha256": protocol_sha256,
+            "selected_arm": str(parent["selected_arm"]),
+            "parent_local_residual_result_sha256": str(parent["sha256"]),
+        }
+
     if contract == "deform-dlo2-deep-seed-authorization-v1":
         protocol_identity = authorization.get("protocol")
         parent = authorization.get("parent_deep_ensemble_result")
@@ -242,7 +284,9 @@ def validate_deform_dlo2_stage_authorization(
             else None
         )
         role = protocol.get("deep_ensemble_role")
-        selected_spec = parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        selected_spec = (
+            parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        )
         weights = (
             selected_spec.get("weights") if isinstance(selected_spec, Mapping) else None
         )

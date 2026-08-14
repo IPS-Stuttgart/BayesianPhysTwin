@@ -8,14 +8,34 @@ from bayesian_phystwin.deform_dlo_local_residual import (
     build_deform_local_residual_features,
     deform_causal_inputs,
     fit_deform_local_residual,
+    load_deform_dlo2_local_residual_protocol,
     load_deform_local_residual_protocol,
     predict_deform_local_residual,
     serialize_deform_local_residual_model,
+    validate_deform_dlo2_local_residual_parent,
+)
+from bayesian_phystwin.deform_dlo_source import (
+    sha256_file,
+    validate_deform_dlo2_stage_authorization,
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo_local_residual_v4.json"
 RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_local_residual.py"
+DLO2_PROTOCOL = (
+    REPOSITORY_ROOT / "configs" / "sota" / "deform_dlo2_local_residual_v5.json"
+)
+DLO2_RUNNER = (
+    REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo2_local_residual.py"
+)
+SOURCE_RUNNER = REPOSITORY_ROOT / "scripts" / "remote" / "run_deform_dlo_source.py"
+DLO1_RESULT = (
+    REPOSITORY_ROOT
+    / "results"
+    / "sota"
+    / "deform_dlo_local_residual_v4"
+    / "result.json"
+)
 
 
 def _trajectories(count: int = 6, frames: int = 14, nodes: int = 7) -> np.ndarray:
@@ -82,6 +102,75 @@ def test_runner_seals_validation_before_source_and_guards_future_data() -> None:
     assert validation_seal < fallback_gate < source_load
     assert '_install_eval_read_guard(data_root / "DLO1" / "eval")' in source
     assert '_install_eval_read_guard(data_root / "DLO2")' in source
+
+
+def test_dlo2_protocol_fixes_dlo1_arm_and_validates_parent(tmp_path: Path) -> None:
+    protocol = load_deform_dlo2_local_residual_protocol(DLO2_PROTOCOL)
+    parent = json.loads(DLO1_RESULT.read_text(encoding="utf-8"))
+    validated = validate_deform_dlo2_local_residual_parent(protocol, parent)
+
+    assert protocol["local_residual"]["fixed_arm"] == {
+        "name": "r1_s0p5",
+        "ridge": 1.0,
+        "selection_source": "frozen-dlo1-v4",
+        "shrinkage": 0.5,
+    }
+    assert validated["source_gate_passed"] is True
+    assert validated["official_eval_read"] is False
+
+    changed_payload = json.loads(DLO2_PROTOCOL.read_text(encoding="utf-8"))
+    changed_payload["local_residual"]["fixed_arm"]["shrinkage"] = 0.75
+    changed = tmp_path / "changed-dlo2.json"
+    changed.write_text(json.dumps(changed_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="fixed arm differs"):
+        load_deform_dlo2_local_residual_protocol(changed)
+
+
+def test_dlo2_stage_authorization_accepts_only_bound_v4_result() -> None:
+    protocol = load_deform_dlo2_local_residual_protocol(DLO2_PROTOCOL)
+    parent = json.loads(DLO1_RESULT.read_text(encoding="utf-8"))
+    validated_parent = validate_deform_dlo2_local_residual_parent(protocol, parent)
+    authorization = {
+        "contract": "deform-dlo2-local-residual-authorization-v1",
+        "official_eval_read": False,
+        "source_test_opened": False,
+        "protocol": {"sha256": sha256_file(DLO2_PROTOCOL)},
+        "parent_local_residual_result": {
+            "sha256": sha256_file(DLO1_RESULT),
+            **validated_parent,
+        },
+    }
+
+    accepted = validate_deform_dlo2_stage_authorization(
+        protocol,
+        authorization,
+        protocol_sha256=sha256_file(DLO2_PROTOCOL),
+    )
+    assert accepted["selected_arm"] == "r1_s0p5"
+
+    authorization["parent_local_residual_result"]["source_gate_passed"] = False
+    with pytest.raises(ValueError, match="authorization differs"):
+        validate_deform_dlo2_stage_authorization(
+            protocol,
+            authorization,
+            protocol_sha256=sha256_file(DLO2_PROTOCOL),
+        )
+
+
+def test_dlo2_training_and_transfer_seal_source_before_loading() -> None:
+    generic = SOURCE_RUNNER.read_text(encoding="utf-8")
+    transfer = DLO2_RUNNER.read_text(encoding="utf-8")
+
+    training_stop = generic.index('if args.mode == "train-validation":')
+    generic_source_load = generic.index("source_test_trajectories =")
+    transfer_seal = transfer.index(
+        'selection_path = output_root / "validation_transfer_seal.json"'
+    )
+    transfer_fallback = transfer.index('if not bool(validation_gate["passed"]):')
+    transfer_source_load = transfer.index("source_trajectories =")
+    assert training_stop < generic_source_load
+    assert transfer_seal < transfer_fallback < transfer_source_load
+    assert '_install_eval_read_guard(data_root / "DLO2" / "eval")' in transfer
 
 
 def test_causal_input_extractor_omits_future_free_nodes() -> None:

@@ -39,7 +39,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument(
         "--mode",
-        choices=("preflight", "smoke", "run"),
+        choices=("preflight", "smoke", "train-validation", "run"),
         default="run",
     )
     return parser.parse_args()
@@ -81,12 +81,13 @@ def _dlo2_stage_authorization(
         authorization,
         protocol_sha256=sha256_file(protocol_path),
     )
-    parent_labels = (
-        ("parent_deep_ensemble_result",)
-        if authorization.get("contract")
-        == "deform-dlo2-deep-seed-authorization-v1"
-        else ("parent_longrun_result", "parent_posterior_result")
-    )
+    authorization_contract = authorization.get("contract")
+    if authorization_contract == "deform-dlo2-deep-seed-authorization-v1":
+        parent_labels = ("parent_deep_ensemble_result",)
+    elif authorization_contract == "deform-dlo2-local-residual-authorization-v1":
+        parent_labels = ("parent_local_residual_result",)
+    else:
+        parent_labels = ("parent_longrun_result", "parent_posterior_result")
     for label in parent_labels:
         identity = authorization[label]
         if not isinstance(identity, dict):
@@ -766,7 +767,7 @@ def main() -> int:
         checkpoint_records.append(_checkpoint_identity(checkpoint_path, update))
         return checkpoint_path
 
-    if args.mode == "run":
+    if args.mode in ("run", "train-validation"):
         checkpoint_path = save_checkpoint(0)
         validation = _rollout_records(
             {name: development_trajectories[name] for name in validation_names},
@@ -817,7 +818,7 @@ def main() -> int:
                 "seconds": time.perf_counter() - update_started,
             }
         )
-        if args.mode == "run" and update in checkpoint_updates:
+        if args.mode in ("run", "train-validation") and update in checkpoint_updates:
             checkpoint_path = save_checkpoint(update)
             validation = _rollout_records(
                 {name: development_trajectories[name] for name in validation_names},
@@ -878,6 +879,42 @@ def main() -> int:
     selected_checkpoint = Path(selected["checkpoint"]["path"])
     bundle = torch.load(selected_checkpoint, map_location=args.device)
     model.load_state_dict(bundle["model_state_dict"])
+    if args.mode == "train-validation":
+        result = {
+            "schema_version": 1,
+            "contract": "deform-dlo-training-validation-result-v1",
+            "claim_boundary": protocol["claim_boundary"],
+            "official_eval_read": False,
+            "source_test_opened": False,
+            "source_manifest": {
+                "path": str(manifest_path),
+                "sha256": sha256_file(manifest_path),
+            },
+            "window_schedule": {
+                "path": str(schedule_path),
+                "sha256": sha256_file(schedule_path),
+            },
+            "upstream": upstream,
+            "model_initialization": initialization_record,
+            "stage_authorization": stage_authorization,
+            "runtime": {
+                "python": sys.version,
+                "torch": torch.__version__,
+                "cuda": torch.version.cuda,
+                "device": args.device,
+                "cublas_workspace_config": os.environ["CUBLAS_WORKSPACE_CONFIG"],
+                "elapsed_seconds": time.perf_counter() - started,
+            },
+            "training_losses": training_losses,
+            "checkpoints": checkpoint_records,
+            "validation": validation_records,
+            "selected_checkpoint": selected,
+        }
+        result_path = output_root / "training_validation_result.json"
+        _write_json(result_path, result, immutable=True)
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+
     source_test_trajectories = _load_named_trajectories(
         manifest,
         source_test_names,

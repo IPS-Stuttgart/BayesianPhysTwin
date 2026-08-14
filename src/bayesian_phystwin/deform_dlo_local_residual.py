@@ -121,6 +121,132 @@ def load_deform_local_residual_protocol(path: str | Path) -> dict[str, object]:
     return result
 
 
+def load_deform_dlo2_local_residual_protocol(path: str | Path) -> dict[str, object]:
+    """Load the fixed-arm fresh DLO2 transfer protocol."""
+
+    from bayesian_phystwin.deform_dlo_source import load_deform_dlo_source_protocol
+
+    protocol = load_deform_dlo_source_protocol(path)
+    if protocol.get("dlo_types") != ("DLO2",):
+        raise ValueError("local-residual transfer protocol must remain DLO2-only")
+    local = protocol.get("local_residual")
+    if not isinstance(local, Mapping):
+        raise ValueError("DLO2 protocol omits the local-residual contract")
+    for key in ("parent_protocol", "parent_result"):
+        identity = local.get(key)
+        if (
+            not isinstance(identity, Mapping)
+            or not str(identity.get("repository_path", ""))
+            or len(str(identity.get("sha256", ""))) != 64
+        ):
+            raise ValueError("DLO2 local-residual parent identity is invalid")
+    fixed = local.get("fixed_arm")
+    if (
+        not isinstance(fixed, Mapping)
+        or fixed.get("name") != "r1_s0p5"
+        or float(cast(Any, fixed.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, fixed.get("shrinkage", math.nan))) != 0.5
+        or fixed.get("selection_source") != "frozen-dlo1-v4"
+        or local.get("query_evidence")
+        != "two-observed-states-known-future-clamped-action-and-baseline-rollout-only"
+        or local.get("future_free_node_truth") != "fit-and-score-only"
+        or local.get("operator") != "per-node-trajectory-grouped-bayesian-ridge-v1"
+        or local.get("duplicate_policy") != "collapse-exact-causal-query-clusters"
+        or local.get("clamped_node_policy") != "baseline-exact"
+        or local.get("fallback") != "selected-dlo2-checkpoint-exact"
+    ):
+        raise ValueError("DLO2 local-residual fixed arm differs from DLO1")
+    floor = float(cast(Any, local.get("coordinate_variance_floor_m2", math.nan)))
+    if not math.isfinite(floor) or floor <= 0.0:
+        raise ValueError("DLO2 local-residual variance floor is invalid")
+    for stage in ("validation_gate", "source_transfer_gate"):
+        gate = local.get(stage)
+        if not isinstance(gate, Mapping):
+            raise ValueError("DLO2 local-residual gate is invalid")
+        improvement = float(
+            cast(Any, gate.get("minimum_relative_improvement", math.nan))
+        )
+        ratio = float(cast(Any, gate.get("maximum_case_ratio", math.nan)))
+        wins = int(cast(Any, gate.get("minimum_case_wins", -1)))
+        if (
+            not math.isfinite(improvement)
+            or not 0.0 < improvement < 1.0
+            or not math.isfinite(ratio)
+            or ratio < 1.0
+            or wins < 1
+        ):
+            raise ValueError("DLO2 local-residual gate threshold is invalid")
+    source_gate = cast(Mapping[str, object], local["source_transfer_gate"])
+    maximum = float(cast(Any, source_gate.get("maximum_candidate_l1_m", math.nan)))
+    if not math.isfinite(maximum) or maximum != 0.0097:
+        raise ValueError("DLO2 local-residual published-reference gate changed")
+    authorization = protocol.get("authorization")
+    parent_result = cast(Mapping[str, object], local["parent_result"])
+    parent_protocol = cast(Mapping[str, object], local["parent_protocol"])
+    if (
+        not isinstance(authorization, Mapping)
+        or authorization.get("required_parent_contract")
+        != "deform-dlo-local-residual-result-v4"
+        or authorization.get("required_parent_result_sha256")
+        != parent_result.get("sha256")
+        or authorization.get("required_parent_protocol_sha256")
+        != parent_protocol.get("sha256")
+        or authorization.get("required_parent_selected_arm") != fixed.get("name")
+        or authorization.get("required_parent_source_gate_passed") is not True
+        or authorization.get("required_parent_fresh_dlo2_local_residual_authorized")
+        is not True
+    ):
+        raise ValueError("DLO2 local-residual authorization contract is invalid")
+    return protocol
+
+
+def validate_deform_dlo2_local_residual_parent(
+    protocol: Mapping[str, object],
+    parent: Mapping[str, object],
+) -> dict[str, object]:
+    """Verify that the frozen DLO1 v4 result authorizes DLO2 access."""
+
+    authorization = protocol.get("authorization")
+    local = protocol.get("local_residual")
+    source_gate = parent.get("source_gate")
+    selected_spec = parent.get("selected_spec")
+    if (
+        not isinstance(authorization, Mapping)
+        or not isinstance(local, Mapping)
+        or not isinstance(source_gate, Mapping)
+        or not isinstance(selected_spec, Mapping)
+        or parent.get("contract") != authorization.get("required_parent_contract")
+        or parent.get("protocol_sha256")
+        != authorization.get("required_parent_protocol_sha256")
+        or parent.get("selected_arm")
+        != authorization.get("required_parent_selected_arm")
+        or source_gate.get("passed")
+        is not authorization.get("required_parent_source_gate_passed")
+        or parent.get("fresh_dlo2_local_residual_authorized")
+        is not authorization.get("required_parent_fresh_dlo2_local_residual_authorized")
+        or parent.get("dlo2_read") is not False
+        or parent.get("official_eval_read") is not False
+        or float(cast(Any, selected_spec.get("ridge", math.nan))) != 1.0
+        or float(cast(Any, selected_spec.get("shrinkage", math.nan))) != 0.5
+    ):
+        raise ValueError("DLO1 local-residual result did not authorize DLO2")
+    return {
+        "contract": str(parent["contract"]),
+        "protocol_sha256": str(parent["protocol_sha256"]),
+        "selected_arm": str(parent["selected_arm"]),
+        "selected_spec": {
+            "ridge": float(cast(Any, selected_spec["ridge"])),
+            "shrinkage": float(cast(Any, selected_spec["shrinkage"])),
+        },
+        "source_gate_passed": bool(source_gate["passed"]),
+        "fresh_dlo2_local_residual_authorized": bool(
+            parent["fresh_dlo2_local_residual_authorized"]
+        ),
+        "dlo2_read": False,
+        "official_eval_read": False,
+    }
+
+
 def _finite_array(values: np.ndarray, *, ndim: int, label: str) -> np.ndarray:
     array = np.asarray(values, dtype=np.float64)
     if array.ndim != ndim or array.size == 0 or not np.isfinite(array).all():
