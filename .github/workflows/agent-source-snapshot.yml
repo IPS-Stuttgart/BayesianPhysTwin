@@ -18,15 +18,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/upload-artifact@v4
         with:
-          name: agent-source-snapshot
+          name: agent-repository-snapshot
           path: |
-            .github/quality/test-suites.json
-            docs/source_reading_guide.md
-            src/bayesian_phystwin/_query_covariance_crossfit_common.py
-            src/bayesian_phystwin/_query_covariance_crossfit_scoring.py
-            src/bayesian_phystwin/_query_covariance_crossfit_selection.py
-            src/bayesian_phystwin/query_covariance_crossfit.py
-            tests/test_query_covariance_crossfit.py
+            .github
+            docs
+            scripts
+            src
+            tests
+            README.md
+            pyproject.toml
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 1
