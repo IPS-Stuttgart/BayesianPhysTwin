@@ -37,6 +37,18 @@ Thus a long source sequence cannot dominate merely because it has more frames,
 tracks, or points. Tiny negative eigenvalues consistent with floating-point
 roundoff are clipped; materially non-PSD inputs fail closed.
 
+The candidate grid also has a hard independent-group rank budget:
+
+```text
+maximum_low_rank_rank = min(query_dimension, number_of_groups - 2)
+```
+
+This budget is checked from the declared group roster before any residual or
+covariance outcome is inspected. Two development groups therefore admit only a
+rank-zero transform; three groups admit at most rank one. This is deliberately
+conservative and prevents a high-dimensional low-rank term from being justified
+by too few independent physical units.
+
 ## Frozen selection
 
 The hyperparameter grid and the reference candidate must be fixed before any
@@ -45,21 +57,39 @@ per held-out physical group. Selection minimizes, in order:
 
 1. mean group NLL;
 2. worst group NLL;
-3. median group NLL; and
-4. the content-addressed candidate ID.
+3. median group NLL;
+4. mean root-mean-square marginal standard deviation;
+5. worst covariance condition number; and
+6. the content-addressed candidate ID.
 
-A candidate is eligible only when its worst group NLL regret relative to the
-registered reference does not exceed `maximum_worst_group_regret`. Setting this
-to zero requires no held-out development group to be harmed. The reference is
-always eligible, so the procedure has an exact statistical fallback even when
-no structured correction passes the guard.
+A non-reference candidate is eligible only when all three registered guards
+pass:
+
+- its worst group NLL regret relative to the registered reference does not
+  exceed `maximum_worst_group_regret`;
+- its worst held-out covariance condition number does not exceed
+  `maximum_condition_number`; and
+- its held-out root-mean-square marginal standard deviation is no more than
+  `maximum_width_ratio` times the reference width in every group.
+
+Setting the regret threshold to zero requires no held-out development group to
+be harmed. The conditioning and width guards prevent apparent NLL gains that are
+obtained through near-singular matrices or extreme interval inflation. The
+reference is always eligible, so the procedure has an exact statistical fallback
+even when the reference itself lies outside a deployment-oriented numerical
+budget.
 
 After selection, the low-rank term is refitted on all development groups. The
 result binds the predictor, query set, grouping rule, development evidence,
-canonical group roster, complete candidate grid, cross-validated group-score
-matrix, reference, selected transform, and information-order declarations.
-Candidate and group order are canonical, and all arrays are retained in
-bytes-backed read-only storage.
+canonical group roster, complete candidate grid, cross-validated group NLL,
+condition-number and width matrices, all guard thresholds, reference, selected
+transform, and information-order declarations. Candidate and group order are
+canonical, and all arrays are retained in bytes-backed read-only storage.
+
+The artifact also reports the selected mean NLL gain, selected maximum condition
+number, and selected mean and worst-group width ratios. These values make the
+proper-score improvement and its sharpness cost visible together; they do not
+replace evaluation on disjoint calibration and confirmation units.
 
 ## Evaluation diagnostics
 
@@ -123,6 +153,8 @@ selection = fit_cross_fitted_query_covariance(
     development_evidence_id=source_manifest_id,
     reference_candidate_id=raw.candidate_id,
     maximum_worst_group_regret=0.0,
+    maximum_condition_number=1e6,
+    maximum_width_ratio=2.0,
     hyperparameter_grid_frozen_before_scores=True,
     target_outcomes_used=False,
 )
