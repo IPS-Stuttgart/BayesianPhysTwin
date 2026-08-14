@@ -30,9 +30,7 @@ from .physical_rollout_v1 import write_deterministic_npz
 from .physics_backend_registry_v1 import get_backend_profile
 
 GENESIS_MPM_PROFILE_ID: Final = "genesis-mpm-v1"
-GENESIS_MPM_PRODUCER_RESULT_SCHEMA: Final = (
-    "bayesian-phystwin.genesis-mpm-producer"
-)
+GENESIS_MPM_PRODUCER_RESULT_SCHEMA: Final = "bayesian-phystwin.genesis-mpm-producer"
 GENESIS_MPM_PRODUCER_RESULT_VERSION: Final = 1
 
 FloatArray: TypeAlias = npt.NDArray[np.floating[Any]]
@@ -114,9 +112,7 @@ def _capture_positions(
         )
         positions = np.ascontiguousarray(positions[0]).copy()
     _require(
-        positions.ndim == 2
-        and positions.shape[0] >= 1
-        and positions.shape[1] == 3,
+        positions.ndim == 2 and positions.shape[0] >= 1 and positions.shape[1] == 3,
         "Genesis particle positions must have shape (P,3)",
     )
     _require(
@@ -140,9 +136,7 @@ def _build_replay(
     if not callable(getattr(scene, "step", None)):
         raise ValueError("Genesis replay scene must expose step()")
     if not callable(getattr(entity, "get_particles_pos", None)):
-        raise ValueError(
-            "Genesis replay entity must expose get_particles_pos()"
-        )
+        raise ValueError("Genesis replay entity must expose get_particles_pos()")
     return scene, entity
 
 
@@ -217,8 +211,7 @@ def _action_support(
     )
     support = np.ascontiguousarray(raw, dtype=dtype)
     _require(
-        np.all(np.isfinite(support))
-        and np.all((support >= 0.0) & (support <= 1.0)),
+        np.all(np.isfinite(support)) and np.all((support >= 0.0) & (support <= 1.0)),
         "action_support must be a finite vector in [0,1]",
     )
     return cast(FloatArray, support)
