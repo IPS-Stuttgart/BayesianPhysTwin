@@ -1,14 +1,15 @@
 {
   "schema_version": 1,
-  "protocol_id": "matphys-part-aware-reconstruction-control-v1.1",
-  "locked_at_utc": "2026-08-13T22:37:44Z",
+  "protocol_id": "matphys-part-aware-reconstruction-control-v1.2",
+  "locked_at_utc": "2026-08-14T00:15:00Z",
   "status": "development-only all-frame reconstruction control on an already-open case",
   "supersedes_before_execution": {
     "protocol_ids": [
       "matphys-official-reconstruction-control-v1",
-      "matphys-part-aware-reconstruction-control-v1"
+      "matphys-part-aware-reconstruction-control-v1",
+      "matphys-part-aware-reconstruction-control-v1.1"
     ],
-    "reason": "A source-independent audit first found that the original runner did not install the part-aware decoder, then preflight found that the staged byte-bound proxy used the registered compact edge-semantics contract rather than the full proxy contract. No training or outcome was produced under either superseded protocol."
+    "reason": "Source-independent audits found that the original runner did not install the part-aware decoder, the staged byte-bound proxy used the registered compact edge-semantics contract, and upstream's provisional 8:2 loader split is empty for one case before its case-specific branch replaces both loaders. Version 1.2 binds the narrow single-case provisional-split compatibility used by the smoke. No 200-epoch training or outcome was produced under the superseded protocols."
   },
   "claim_boundary": "This control deliberately fits future RGB, geometry, and track observations from the same case. It tests a new Bayesian-PhysTwin part-aware MatPhys variant, not the published MatPhys method, and cannot support a causal forecast, transfer result, calibration result, or state-of-the-art claim.",
   "question": "Can a MatPhys decoder with an explicitly wired DINO graph-part adapter fit an already-open PhysTwin case well enough to justify a later source-only causal transfer design?",
@@ -30,6 +31,7 @@
     "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
     "part_feature_scale": 1.0,
     "warp_warning_compatibility": "warp-private-warn-signature-v1",
+    "single_case_loader_compatibility": "matphys-single-case-provisional-split-v1",
     "proxy_boundary": "MatPhys does not release its final per-case train_ready.pt bundle. The deterministic Bayesian-PhysTwin DINO graph-part proxy and adapter are new components, not official MatPhys artifacts.",
     "fit_all_frames": true,
     "checkpoint_policy": "fixed terminal epoch only",

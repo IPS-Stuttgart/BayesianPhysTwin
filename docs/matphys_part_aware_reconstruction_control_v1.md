@@ -45,6 +45,15 @@ four. Version 1.3 requires both the proxy records and mapping to contain exactly
 the requested case. The v1.2 launch likewise produced no checkpoint, metric, or
 scientific outcome.
 
+The v1.3 retry reached the upstream dataset splitter, which computes
+`floor(0.8 * 1) = 0` and tries to construct a shuffled empty loader before its
+existing `--case_name` branch replaces both loaders with the selected case.
+Version 1.4 binds a narrow compatibility wrapper that sets only this provisional
+split to one case. The upstream case-specific loaders and all training targets
+remain unchanged. The v1.3 launch produced no checkpoint, metric, or scientific
+outcome (log SHA-256
+`ca8d2a5f13883350af10288b91b8f97a8bb63fac05b648bab8b0b049ac2cd92b`).
+
 ## Decision
 
 Run the separately locked

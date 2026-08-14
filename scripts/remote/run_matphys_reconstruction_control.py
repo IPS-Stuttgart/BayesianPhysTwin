@@ -49,6 +49,7 @@ from bayesian_phystwin.matphys_reconstruction_control import (  # noqa: E402
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
     MATPHYS_RECONSTRUCTION_CLAIM_BOUNDARY,
     MATPHYS_RECONSTRUCTION_EXPORT_CONTRACT,
+    MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
     MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY,
@@ -98,6 +99,26 @@ def _install_warp_warn_compatibility() -> None:
         warnings.warn(message, category=category, stacklevel=stacklevel + 1)
 
     warp_utils.warn = warn
+
+
+def _install_single_case_loader_compatibility(training: object) -> None:
+    """Keep MatPhys's provisional split nonempty for a one-case fit."""
+
+    original = training.create_train_test_dataloaders
+
+    def create_train_test_dataloaders(*args, **kwargs):
+        if len(args) > 3:
+            raise ValueError("single-case compatibility requires keyword train_ratio")
+        kwargs["train_ratio"] = 1.0
+        result = original(*args, **kwargs)
+        if len(result) != 3 or len(result[0]) != 1:
+            raise RuntimeError("single-case compatibility received multiple cases")
+        return result
+
+    training.create_train_test_dataloaders = create_train_test_dataloaders
+    training._single_case_loader_compatibility = (
+        MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
+    )
 
 
 def _split(data_root: Path, case: str) -> dict[str, object]:
@@ -161,6 +182,9 @@ def _training_configuration(
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
         "warp_warning_compatibility": (
             MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY
+        ),
+        "single_case_loader_compatibility": (
+            MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
         ),
         "proxy_contract": str(proxy["contract"]),
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
@@ -231,6 +255,7 @@ def train(args: argparse.Namespace) -> None:
     _install_warp_warn_compatibility()
     import train_model_video_material_simple as training
 
+    _install_single_case_loader_compatibility(training)
     _install_reconstruction_part_model(
         training,
         proxy,

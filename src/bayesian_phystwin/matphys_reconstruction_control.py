@@ -22,6 +22,9 @@ MATPHYS_RECONSTRUCTION_VIDEO_SCOPE = "uniform-numeric-full-sequence-v1"
 MATPHYS_RECONSTRUCTION_TRAINING_SCOPE = "per-case-all-frame-transductive-v1"
 MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY = "fixed-terminal-epoch-v1"
 MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY = "warp-private-warn-signature-v1"
+MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY = (
+    "matphys-single-case-provisional-split-v1"
+)
 MATPHYS_RECONSTRUCTION_PROXY_CONTRACTS = frozenset(
     (GRAPH_PART_PROXY_CONTRACT, GRAPH_PART_COMPACT_PROXY_CONTRACT)
 )
@@ -91,6 +94,9 @@ def _validate_training_configuration(value: object) -> dict[str, object]:
         "warp_warning_compatibility": (
             MATPHYS_RECONSTRUCTION_WARP_WARNING_COMPATIBILITY
         ),
+        "single_case_loader_compatibility": (
+            MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
+        ),
         "part_model_contract": PART_AWARE_MODEL_CONTRACT,
     }
     for key, expected in required.items():
@@ -157,6 +163,9 @@ def validate_matphys_reconstruction_protocol(
         "part_feature_scale": protocol_implementation.get("part_feature_scale"),
         "warp_warning_compatibility": protocol_implementation.get(
             "warp_warning_compatibility"
+        ),
+        "single_case_loader_compatibility": protocol_implementation.get(
+            "single_case_loader_compatibility"
         ),
     }
     audited_training = {key: configuration.get(key) for key in protocol_training}

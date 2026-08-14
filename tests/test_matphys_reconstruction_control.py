@@ -16,6 +16,7 @@ from bayesian_phystwin.matphys_causal_bridge import (
 from bayesian_phystwin.matphys_reconstruction_control import (
     MATPHYS_RECONSTRUCTION_AUDIT_CONTRACT,
     MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
+    MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY,
     MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
     MATPHYS_RECONSTRUCTION_VIDEO_SCOPE,
     validate_matphys_reconstruction_audit,
@@ -94,6 +95,9 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
                     "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
                     "part_feature_scale": 1.0,
                     "warp_warning_compatibility": "warp-private-warn-signature-v1",
+                    "single_case_loader_compatibility": (
+                        "matphys-single-case-provisional-split-v1"
+                    ),
                 },
             }
         )
@@ -108,6 +112,9 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         "training_scope": MATPHYS_RECONSTRUCTION_TRAINING_SCOPE,
         "checkpoint_policy": MATPHYS_RECONSTRUCTION_CHECKPOINT_POLICY,
         "warp_warning_compatibility": "warp-private-warn-signature-v1",
+        "single_case_loader_compatibility": (
+            MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
+        ),
         "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
         "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
         "part_feature_scale": 1.0,
@@ -343,3 +350,42 @@ def test_reconstruction_warp_warn_compatibility_preserves_once_signature(
         ("repeat", None, 2),
         ("repeat", None, 2),
     ]
+
+
+def test_reconstruction_single_case_loader_compatibility_avoids_empty_split(
+    monkeypatch,
+) -> None:
+    scripts = Path(__file__).parents[1] / "scripts" / "remote"
+    path = scripts / "run_matphys_reconstruction_control.py"
+    spec = importlib.util.spec_from_file_location(
+        "run_matphys_reconstruction_control_loader_test", path
+    )
+    assert spec is not None and spec.loader is not None
+    sys.path.insert(0, str(scripts))
+    try:
+        runner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runner)
+    finally:
+        sys.path.remove(str(scripts))
+    received = {}
+    full_dataset = ["only-case"]
+
+    def create_train_test_dataloaders(*args, **kwargs):
+        received.update(args=args, kwargs=kwargs)
+        return full_dataset, "provisional-train", "provisional-test"
+
+    training = SimpleNamespace(
+        create_train_test_dataloaders=create_train_test_dataloaders
+    )
+    runner._install_single_case_loader_compatibility(training)
+
+    result = training.create_train_test_dataloaders(
+        cfg="cfg", batch_size=1, train_ratio=0.8
+    )
+
+    assert result == (full_dataset, "provisional-train", "provisional-test")
+    assert received["kwargs"]["train_ratio"] == 1.0
+    assert (
+        training._single_case_loader_compatibility
+        == MATPHYS_RECONSTRUCTION_SINGLE_CASE_LOADER_COMPATIBILITY
+    )
