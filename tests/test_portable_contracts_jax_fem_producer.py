@@ -222,9 +222,7 @@ def test_producer_runs_fresh_solve_sequences_with_jax_synchronization(
     assert result["query_count"] == 2
     assert result["position_dtype"] == np.dtype(np.float32).str
     assert result["solution_index"] == 0
-    assert result["solution_semantics"] == (
-        "nodal-displacement-from-fixed-reference"
-    )
+    assert result["solution_semantics"] == ("nodal-displacement-from-fixed-reference")
     assert result["independent_replay_count"] == 2
     assert result["action_timing"] == "control-before-solve"
     assert result["raw_rollout_sha256"] == file_sha256(output)
@@ -237,9 +235,7 @@ def test_producer_runs_fresh_solve_sequences_with_jax_synchronization(
 def test_direct_numpy_solution_uses_default_field_index(tmp_path: Path) -> None:
     factory, replays = _factory(solution_mode="direct", jax_like=False)
     output = tmp_path / "direct.npz"
-    producer.produce_jax_fem_entity_rollout(
-        **_producer_kwargs(output, factory)
-    )
+    producer.produce_jax_fem_entity_rollout(**_producer_kwargs(output, factory))
     assert "ready" not in replays[0].events
 
 
