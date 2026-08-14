@@ -469,7 +469,7 @@ def write_structured_point_covariance(
         raise ValueError("structured covariance target must not be a directory")
 
     descriptor = _archive_descriptor(covariance)
-    payload: dict[str, object] = {
+    payload: dict[str, np.ndarray] = {
         "descriptor_json": np.asarray(
             json.dumps(
                 descriptor,
