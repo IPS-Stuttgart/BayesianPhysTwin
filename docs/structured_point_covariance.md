@@ -48,6 +48,57 @@ retains:
 This supports physical-query uncertainty audits, component ablations, and later
 object/session-level calibration while retaining coherent cross-point modes.
 
+## Exact `ObservationBeliefV1` bridge
+
+`ObservationBeliefV1` uses a different but compatible dependence convention:
+rows with one `factor_group_id` share the declared latent factor columns, while
+different factor groups are independent. The
+`observation_structured_covariance` adapter expands each factor group into a
+disjoint column block and then groups factor columns under an explicit
+caller-supplied component classification:
+
+```python
+from bayesian_phystwin.observation_structured_covariance import (
+    structured_covariance_from_observation_belief,
+)
+
+covariance = structured_covariance_from_observation_belief(
+    observation,
+    coordinate_frame="world",
+    factor_components={
+        name: "gauge" for name in observation.factor_names
+    },
+)
+```
+
+For factor groups \(g\) and component-specific column selections \(I_c\), the
+adapter constructs
+
+\[
+U_c = [U_{c,1},\ldots,U_{c,G}],
+\]
+
+where \(U_{c,g}\) contains the original columns \(I_c\) on rows belonging to
+factor group \(g\) and zeros elsewhere. Consequently,
+
+\[
+\operatorname{blockdiag}(D_n) + \sum_c U_cU_c^\mathsf{T}
+\]
+
+is exactly the covariance represented by the observation artifact. The adapter
+performs no truncation, rescaling, calibration, or inference. It fails closed
+when:
+
+- a factor name is unclassified or classified more than once;
+- a component label is outside the frozen roster;
+- factor names are ambiguous duplicates; or
+- the exact group expansion exceeds the caller's rank budget.
+
+The coordinate frame is mandatory rather than inferred from metadata. The
+result binds the source observation artifact identity, provider revision,
+causal frame stop, component mapping, group count, expanded ranks, and caller
+metadata.
+
 ## Portable archive boundary
 
 `structured_point_covariance_io` preserves the complete decomposition in a
@@ -79,9 +130,13 @@ binds the original `StructuredPointCovarianceV1` content identity. The loader:
 
 Publication is atomic and no-clobber by default. Deliberate replacement requires
 `overwrite=True`, and a completed temporary archive is loaded and identity-
-checked before it becomes visible at the destination. This makes the artifact
-suitable for a future Prob4D-to-BayesianPhysTwin-to-Causal4D conformance corpus
-without changing any current provider contract or frozen protocol.
+checked before it becomes visible at the destination. The convenience function
+`write_observation_structured_covariance()` performs the exact observation
+bridge and verified publication as one operation.
+
+Together, the adapter and archive make the named uncertainty budget suitable for
+a future Prob4D-to-BayesianPhysTwin-to-Causal4D conformance corpus without
+changing any current provider contract or frozen protocol.
 
 ## Diagnostic materialization
 
@@ -92,11 +147,11 @@ retained ranks rather than quadratically with the number of points.
 
 ## Information and claim boundary
 
-The contract and its archive are covariance representations, not uncertainty-
-calibration results. A non-null `calibration_artifact_id` records external
-calibration lineage; it does not by itself prove coverage. Promotion still
-requires the registered object/session-level calibration and held-out physical-
-query gates.
+The contract, adapter, and archive are covariance representations, not
+uncertainty-calibration results. A non-null `calibration_artifact_id` records
+external calibration lineage; it does not by itself prove coverage. Promotion
+still requires the registered object/session-level calibration and held-out
+physical-query gates.
 
 This prospective representation does not alter the frozen Deform360 confirmation
 protocol. It is intended for a later protocol version or a separately registered
