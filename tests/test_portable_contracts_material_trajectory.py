@@ -322,10 +322,12 @@ def test_bundle_detects_count_provenance_roster_and_profile_tampering(
 def test_cli_profiles_are_machine_readable(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["profiles"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert [record["backend_kind"] for record in payload["profiles"]] == [
+    assert payload["schema"] == "bayesian-phystwin.material-backend-registry"
+    assert [record["profile_id"] for record in payload["profiles"]] == [
+        "jax-fem-quasistatic-v1",
+        "sofa-fem-v1",
         "genesis-mpm-v1",
         "mujoco-flex-v1",
-        "sofa-fem-v1",
     ]
 
 
@@ -352,4 +354,5 @@ def test_cli_materialize_validate_and_module_entrypoint(
         runpy.run_path(str(module_path), run_name="__main__")
     assert exit_info.value.code == 0
     module_payload = json.loads(capsys.readouterr().out)
-    assert len(module_payload["profiles"]) == 3
+    assert module_payload["schema"] == "bayesian-phystwin.material-backend-registry"
+    assert len(module_payload["profiles"]) == 4

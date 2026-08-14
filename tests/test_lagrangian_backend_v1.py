@@ -368,9 +368,19 @@ def test_cli_lists_profiles_and_validates_bundle(
 ) -> None:
     assert cli_main(["profiles"]) == 0
     listed = json.loads(capsys.readouterr().out)
-    assert {item["backend_profile"] for item in listed} == {
-        JAX_FEM_PROFILE,
-        GENESIS_MPM_PROFILE,
+    assert listed["schema"] == "bayesian-phystwin.material-backend-registry"
+    assert [item["profile_id"] for item in listed["profiles"]] == [
+        "jax-fem-quasistatic-v1",
+        "sofa-fem-v1",
+        "genesis-mpm-v1",
+        "mujoco-flex-v1",
+    ]
+    genesis = next(
+        item for item in listed["profiles"] if item["profile_id"] == "genesis-mpm-v1"
+    )
+    assert {variant["producer_profile_id"] for variant in genesis["variants"]} == {
+        "genesis-mpm-v1",
+        "genesis-world-mpm-v1",
     }
 
     raw_path = _raw_archive(tmp_path / "raw.npz")

@@ -65,14 +65,14 @@ def test_discrepancy_tournament_is_a_registered_diagnostic() -> None:
     assert command.optional_dependencies == ()
 
 
-def test_lagrangian_backend_is_a_registered_experiment() -> None:
+def test_material_backend_is_a_registered_experiment() -> None:
     command = find_command_metadata("materialize-lagrangian-backend")
     assert command is not None
     assert command.status is CommandStatus.EXPERIMENT
     assert command.canonical_command == (
         "bpt experiment run materialize-lagrangian-backend"
     )
-    assert command.owner == "lagrangian-backend-v1"
+    assert command.owner == "material-backend-v1"
     assert command.optional_dependencies == ()
 
 
