@@ -12,6 +12,9 @@ from bayesian_phystwin.newton_mpm_backend_v1 import (
     materialize_newton_mpm_backend,
     validate_newton_mpm_backend,
 )
+from bayesian_phystwin.newton_mpm_source_comparators_v1 import (
+    materialize_source_comparators,
+)
 from bayesian_phystwin.newton_mpm_source_gate_v1 import (
     prepare_source_case,
     score_future_if_authorized,
@@ -75,6 +78,15 @@ def build_parser() -> argparse.ArgumentParser:
     run_volumetric_source.add_argument("source_inputs", type=Path)
     run_volumetric_source.add_argument("output_dir", type=Path)
     run_volumetric_source.add_argument("--device", default="cuda:0")
+
+    materialize_comparators = commands.add_parser(
+        "source-materialize-comparators",
+        help="materialize matched source-only incumbent and MatPhys archives",
+    )
+    materialize_comparators.add_argument("final_data", type=Path)
+    materialize_comparators.add_argument("incumbent_trajectory", type=Path)
+    materialize_comparators.add_argument("matphys_trajectory", type=Path)
+    materialize_comparators.add_argument("output_dir", type=Path)
 
     score_source = commands.add_parser(
         "source-score-prefix",
@@ -199,6 +211,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = _run_source_grid(args)
     elif args.command == "source-run-volumetric-grid":
         result = _run_volumetric_source_grid(args)
+    elif args.command == "source-materialize-comparators":
+        result = materialize_source_comparators(
+            final_data_path=args.final_data,
+            incumbent_trajectory_path=args.incumbent_trajectory,
+            matphys_trajectory_path=args.matphys_trajectory,
+            output_dir=args.output_dir,
+        )
     elif args.command == "source-score-prefix":
         result = score_prefix_gate(
             protocol_path=args.protocol,
