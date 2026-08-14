@@ -1,17 +1,34 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 SUPPORT = ROOT / "SUPPORT.md"
 CLAIM = ROOT / "docs" / "phystwin_release_claim_v1.md"
+COVARIANCE_PROTOCOL = (
+    ROOT
+    / "protocols"
+    / "locks"
+    / "deform360_covariance_only_independent_validation_v1.json"
+)
+FRESH_PROTOCOL = (
+    ROOT / "protocols" / "locks" / "deform360_official_hub_fresh_object_session_v6.json"
+)
 
 
 def _text(path: Path) -> str:
     """Normalize Markdown wrapping without changing scientific wording."""
 
     return " ".join(path.read_text(encoding="utf-8").split())
+
+
+def _json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
 
 
 def test_release_surfaces_retain_matched_comparator_and_raw_covariance_boundary() -> (
@@ -46,19 +63,37 @@ def test_release_surfaces_bind_covariance_only_effect_and_width_cost() -> None:
     assert "0.910" in readme
 
 
-def test_release_surfaces_keep_terminal_and_registered_deform360_routes_separate() -> (
-    None
-):
+def test_release_surfaces_keep_deform360_protocols_distinct() -> None:
+    covariance = _json(COVARIANCE_PROTOCOL)
+    fresh = _json(FRESH_PROTOCOL)
+
+    assert covariance["cohort"]["development_object_session_count"] == 10
+    assert covariance["cohort"]["target_object_session_count"] == 12
+    assert (
+        covariance["prediction_barrier"]["source_prediction_seal_count_required"] == 100
+    )
+    assert fresh["guard_calibration"]["outer_folds"] == 10
+    assert fresh["fresh_selection"]["object_count"] == 16
+    assert fresh["evaluation"]["target_unit_count"] == 16
+
+    obsolete = (
+        "separate registered deform360 v6 route now freezes exactly ten opened "
+        "source object-sessions and twelve disjoint confirmation object-sessions"
+    )
     for path in (README, SUPPORT, CLAIM):
         text = _text(path)
         assert "313/324" in text
         assert "11" in text
         assert "100 sealed" in text
+        assert "deform360_covariance_only_independent_validation_v1" in text
         assert "twelve" in text
+        assert "fresh-object-session v6/v6.1" in text
+        assert "sixteen" in text
+        assert obsolete not in text.casefold()
 
     claim = _text(CLAIM)
-    assert "Terminal complete-stream official-Hub provider version" in claim
-    assert "Separate registered Deform360 v6 confirmation route" in claim
+    assert "Separate covariance-only independent-validation route" in claim
+    assert "Distinct Deform360 fresh-object-session v6/v6.1 route" in claim
     assert "A source-negative result is complete evidence" in claim
     assert "No donor, scale, endpoint" in claim
 

@@ -103,6 +103,23 @@ A valid inference record is implementation and provenance evidence. It does not
 establish provider competence, calibrated covariance, unseen-object transfer,
 Causal4D benefit, deployment safety, or state of the art.
 
+## Public module lifecycle
+
+The public API snapshots define symbol compatibility, while
+`api/public-module-lifecycle-v1.json` classifies importable public modules as
+stable, historical compatibility, or experimental. The registry is bound to the
+root-export migration and the two versioned API manifests.
+
+Stable modules own documented artifact, guarded-inference, or provider
+boundaries. Historical compatibility modules retain `0.4.x` root behavior
+without being promoted into the versioned API. Dataset- and benchmark-specific
+root owners remain explicitly experimental. Unregistered modules have no
+compatibility promise.
+
+The registry does not move modules, remove historical imports, activate
+deprecation warnings, or create scientific evidence. Its complete policy is
+documented in `docs/public_module_lifecycle_v1.md`.
+
 ## Validation
 
 From a source checkout with the package importable:
@@ -114,6 +131,7 @@ python tools/quality/check_public_api.py \
 python tools/quality/check_public_api.py \
   --manifest api/inference-public-api-v1.json
 python tools/quality/check_root_export_migration.py
+python tools/quality/check_public_module_lifecycle.py
 ```
 
 Add `--json` to any checker for a machine-readable report. The public-API
@@ -121,9 +139,12 @@ checker validates the manifest schema, schema-policy pairing, symbol uniqueness,
 literal module identity, exact `__all__` order, existence of every exported
 attribute, and the project minor-version line. The migration checker additionally
 validates exact root-snapshot coverage, runtime owner mappings, and object
-identity between every lazy root export and its explicit owning module.
+identity between every lazy root export and its explicit owning module. The
+lifecycle checker validates disjoint lifecycle categories, complete root-owner
+coverage, required stable boundaries, dataset classification, and source-file
+identity.
 
 The complete Python test matrix exercises all three export snapshots, isolated
-root, artifact-v1, and inference-v1 import boundaries, and the migration map.
-`MANIFEST.in` also requires all four manifest files and both checkers in the
-source distribution.
+root, artifact-v1, and inference-v1 import boundaries, the migration map, and
+the module lifecycle registry. `MANIFEST.in` also requires all five manifest
+files and all three checkers in the source distribution.
