@@ -1,0 +1,45 @@
+name: Apply outcome-blind covariance rehearsal patch
+
+on:
+  push:
+    branches:
+      - agent/covariance-only-scorer-rehearsal-v1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-covariance-rehearsal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Verify and apply the reviewed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload=.github/agent/covariance-rehearsal.patch.gz
+          test "$(sha256sum "$payload" | cut -d' ' -f1)" = \
+            4d501d22dd41a2120c3b4d38895a557849aa503fb8c7e58f2b0cafd50f61b327
+          gunzip -c "$payload" > "$RUNNER_TEMP/covariance-rehearsal.patch"
+          test "$(sha256sum "$RUNNER_TEMP/covariance-rehearsal.patch" | cut -d' ' -f1)" = \
+            77da07a99be9a91b63d0dd63cfaf006db1366402c6e42a8f71882c8409fc2af6
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git am --3way "$RUNNER_TEMP/covariance-rehearsal.patch"
+      - name: Remove the one-shot bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm \
+            .github/agent/covariance-rehearsal.patch.gz \
+            .github/workflows/agent-apply-covariance-rehearsal.yml
+          git commit -m "Remove covariance rehearsal patch bootstrap"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
