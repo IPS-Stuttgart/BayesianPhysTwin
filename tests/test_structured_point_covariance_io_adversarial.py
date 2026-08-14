@@ -240,16 +240,12 @@ def test_additional_archive_resource_budgets_are_enforced(tmp_path: Path) -> Non
     with pytest.raises(ValueError, match="uncompressed byte budget"):
         load_structured_point_covariance(
             path,
-            limits=StructuredPointCovarianceIOLimitsV1(
-                maximum_uncompressed_bytes=1
-            ),
+            limits=StructuredPointCovarianceIOLimitsV1(maximum_uncompressed_bytes=1),
         )
     with pytest.raises(ValueError, match="compression-ratio budget"):
         load_structured_point_covariance(
             path,
-            limits=StructuredPointCovarianceIOLimitsV1(
-                maximum_compression_ratio=1.0
-            ),
+            limits=StructuredPointCovarianceIOLimitsV1(maximum_compression_ratio=1.0),
         )
 
 
@@ -319,7 +315,9 @@ def test_decode_and_snapshot_failures_are_wrapped(
         load_structured_point_covariance(path)
 
     monkeypatch.undo()
-    monkeypatch.setattr(covariance_io, "_snapshot_unchanged", lambda first, second: False)
+    monkeypatch.setattr(
+        covariance_io, "_snapshot_unchanged", lambda first, second: False
+    )
     with pytest.raises(ValueError, match="changed while being read"):
         load_structured_point_covariance(path)
 
