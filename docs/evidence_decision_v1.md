@@ -6,6 +6,10 @@ tables, figures, the run manifest, or the claim bundle. It gives reviewers and
 automation a small fail-closed record that says what was decided and binds that
 record to the exact evidence.
 
+> V1 remains immutable and supported for existing evidence. New producers that
+> must distinguish execution validity, scientific outcome, and authorization
+> should use [evidence decision v2](evidence_decision_v2.md).
+
 The contract records:
 
 - a claim and protocol identifier;
