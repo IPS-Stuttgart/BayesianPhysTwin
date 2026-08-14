@@ -39,20 +39,12 @@ moves no files, and changes no runtime behavior.
 
 ## Experimental modules
 
-Experimental modules are dataset-specific, benchmark-specific, or
-research-lifecycle surfaces. The current registry classifies every Deform360
-root owner, `synthetic_benchmark`, and the external-physics producer, registry,
-and qualification modules as experimental. Exact revisions and frozen artifacts
+The explicit experimental category covers dataset-specific, benchmark-specific,
+or research-lifecycle modules that also own symbols on the historical package
+root. The current registry classifies every Deform360 root owner and
+`synthetic_benchmark` as experimental. Exact revisions and frozen artifacts
 remain reproducible, but current-main forward compatibility is not promised
 outside separately versioned contracts that those modules may consume.
-
-The external-physics modules deliberately remain experimental even though their
-runtime and qualification records are content-addressed. A listed backend profile
-is only a compatibility target, a valid runtime is only a candidate rollout, and
-a passing source-only qualification is not independent-object accuracy,
-calibrated uncertainty, deployment authorization, or Causal4D intervention
-evidence. Stable promotion requires a demonstrated consumer boundary and the
-corresponding installed-artifact and scientific evidence gates.
 
 Experimental status does not authorize target access, confirmation access,
 retuning, deployment, or a scientific claim. It is software lifecycle metadata
@@ -64,11 +56,26 @@ An importable module absent from the registry is internal or experimental and
 has no compatibility promise. Underscore-prefixed modules are always internal
 and cannot be added to the public lifecycle registry.
 
+The external-physics adapter, backend registry, Genesis producer, and source-only
+qualification module deliberately remain unregistered. They do not own any
+historical package-root exports, and registering them in the explicit
+experimental list would falsely imply root ownership. Their content-addressed
+records remain reproducible, but the modules themselves carry the manifest's
+`internal-or-experimental-no-compatibility-promise` status.
+
+A listed backend profile is only a compatibility target, a valid runtime is only
+a candidate rollout, and a passing source-only qualification is not
+independent-object accuracy, calibrated uncertainty, deployment authorization,
+or Causal4D intervention evidence. Stable promotion requires a demonstrated
+consumer boundary and the corresponding installed-artifact and scientific
+evidence gates.
+
 New public modules should be registered only when their intended lifecycle is
 clear. Adding a stable module requires a documented consumer boundary and
 appropriate installed-artifact tests. Adding a historical compatibility module
-requires an explicit package-root compatibility decision. Dataset, benchmark,
-or unqualified backend surfaces should normally remain experimental.
+requires an explicit package-root compatibility decision. A dataset, benchmark,
+or unqualified backend surface without root ownership should normally remain
+unregistered under the fail-closed policy.
 
 ## Validation
 
