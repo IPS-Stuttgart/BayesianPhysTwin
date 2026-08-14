@@ -12,9 +12,7 @@ from ._portable_contracts import nonempty_string, repository_name, require_exact
 
 PHYSICS_BACKEND_PROFILE_SCHEMA: Final = "bayesian-phystwin.physics-backend-profile"
 PHYSICS_BACKEND_PROFILE_VERSION: Final = 1
-PHYSICS_BACKEND_ENTRY_POINT_GROUP: Final = (
-    "bayesian_phystwin.physics_backends.v1"
-)
+PHYSICS_BACKEND_ENTRY_POINT_GROUP: Final = "bayesian_phystwin.physics_backends.v1"
 
 _PROFILE_FIELDS: Final = frozenset(
     {
@@ -110,15 +108,11 @@ def profile_from_mapping(value: Mapping[str, Any]) -> PhysicsBackendProfileV1:
         raise ValueError("priority must be a positive integer")
     return PhysicsBackendProfileV1(
         profile_id=nonempty_string(value.get("profile_id"), name="profile_id"),
-        display_name=nonempty_string(
-            value.get("display_name"), name="display_name"
-        ),
+        display_name=nonempty_string(value.get("display_name"), name="display_name"),
         engine_repository=repository_name(
             value.get("engine_repository"), name="engine_repository"
         ),
-        solver_family=nonempty_string(
-            value.get("solver_family"), name="solver_family"
-        ),
+        solver_family=nonempty_string(value.get("solver_family"), name="solver_family"),
         state_representation=nonempty_string(
             value.get("state_representation"), name="state_representation"
         ),
@@ -128,9 +122,7 @@ def profile_from_mapping(value: Mapping[str, Any]) -> PhysicsBackendProfileV1:
         differentiability=nonempty_string(
             value.get("differentiability"), name="differentiability"
         ),
-        contact_model=nonempty_string(
-            value.get("contact_model"), name="contact_model"
-        ),
+        contact_model=nonempty_string(value.get("contact_model"), name="contact_model"),
         priority=priority,
         role=nonempty_string(value.get("role"), name="role"),
         rationale=nonempty_string(value.get("rationale"), name="rationale"),

@@ -41,12 +41,8 @@ from .physics_backend_registry_v1 import (
     profile_from_mapping,
 )
 
-EXTERNAL_PHYSICS_RUNTIME_SCHEMA: Final = (
-    "bayesian-phystwin.external-physics-runtime"
-)
-EXTERNAL_PHYSICS_ARTIFACT_SCHEMA: Final = (
-    "bayesian-phystwin.external-physics-backend"
-)
+EXTERNAL_PHYSICS_RUNTIME_SCHEMA: Final = "bayesian-phystwin.external-physics-runtime"
+EXTERNAL_PHYSICS_ARTIFACT_SCHEMA: Final = "bayesian-phystwin.external-physics-backend"
 EXTERNAL_PHYSICS_SCHEMA_VERSION: Final = 1
 EXTERNAL_PHYSICS_RAW_ARRAY_NAMES: Final = frozenset(
     {
@@ -367,18 +363,14 @@ def validate_external_physics_runtime_manifest(
     engine_revision = exact_revision(
         value.get("engine_revision"), name="engine_revision"
     )
-    engine_version = nonempty_string(
-        value.get("engine_version"), name="engine_version"
-    )
+    engine_version = nonempty_string(value.get("engine_version"), name="engine_version")
     producer_repository = repository_name(
         value.get("producer_repository"), name="producer_repository"
     )
     producer_revision = exact_revision(
         value.get("producer_revision"), name="producer_revision"
     )
-    artifacts_raw = _mapping(
-        value.get("producer_artifacts"), name="producer_artifacts"
-    )
+    artifacts_raw = _mapping(value.get("producer_artifacts"), name="producer_artifacts")
     producer_artifacts = source_artifact_mapping(
         cast(Mapping[str, str], artifacts_raw),
         name="producer_artifacts",
@@ -402,12 +394,8 @@ def validate_external_physics_runtime_manifest(
     entity_identity = sha256_digest(
         value.get("entity_identity_sha256"), name="entity_identity_sha256"
     )
-    topology = sha256_digest(
-        value.get("topology_sha256"), name="topology_sha256"
-    )
-    material_model = nonempty_string(
-        value.get("material_model"), name="material_model"
-    )
+    topology = sha256_digest(value.get("topology_sha256"), name="topology_sha256")
+    material_model = nonempty_string(value.get("material_model"), name="material_model")
     parameterization_raw = _mapping(
         value.get("parameterization"), name="parameterization"
     )
@@ -591,9 +579,7 @@ def _validate_file_record(
     require_exact_fields(record, expected=_FILE_FIELDS, name=name)
     _require(record.get("path") == expected_path, f"{name} path changed")
     digest = sha256_digest(record.get("sha256"), name=f"{name}.sha256")
-    byte_count = _positive_integer(
-        record.get("byte_count"), name=f"{name}.byte_count"
-    )
+    byte_count = _positive_integer(record.get("byte_count"), name=f"{name}.byte_count")
     path = _ordinary_file(root / expected_path, name=name)
     _require(path.stat().st_size == byte_count, f"{name} byte count changed")
     _require(file_sha256(path) == digest, f"{name} SHA-256 changed")
@@ -686,9 +672,7 @@ def validate_external_physics_backend(output_dir: str | Path) -> dict[str, Any]:
     )
     root = requested_root.resolve(strict=True)
     actual_files = {
-        path.relative_to(root).as_posix()
-        for path in root.rglob("*")
-        if path.is_file()
+        path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()
     }
     expected_files = {
         ARTIFACT_FILENAME,

@@ -124,9 +124,7 @@ def _runtime(args: argparse.Namespace) -> dict[str, Any]:
         time_step_s=args.time_step_s,
         topology_sha256=args.topology_sha256,
         material_model=args.material_model,
-        observation_end_frame_exclusive=(
-            args.observation_end_frame_exclusive
-        ),
+        observation_end_frame_exclusive=(args.observation_end_frame_exclusive),
         parameterization=_parameterization(args.parameterization_json),
         producer_artifacts=_producer_artifacts(args.producer_artifact),
     )

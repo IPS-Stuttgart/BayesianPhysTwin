@@ -102,10 +102,13 @@ def test_runtime_manifest_binds_profile_identity_and_causal_boundary(
         "target_outcomes_used": False,
         "known_action_used": True,
     }
-    assert validate_external_physics_runtime_manifest(
-        runtime,
-        raw_rollout_path=raw,
-    ) == runtime
+    assert (
+        validate_external_physics_runtime_manifest(
+            runtime,
+            raw_rollout_path=raw,
+        )
+        == runtime
+    )
 
 
 def test_end_to_end_bundle_rederives_portable_rollout(tmp_path: Path) -> None:
@@ -148,10 +151,9 @@ def test_bundle_is_deterministic_for_the_same_inputs(tmp_path: Path) -> None:
         output_dir=tmp_path / "second",
     )
     assert first["artifact_id"] == second["artifact_id"]
-    assert (
-        (tmp_path / "first" / PHYSICAL_ARCHIVE_FILENAME).read_bytes()
-        == (tmp_path / "second" / PHYSICAL_ARCHIVE_FILENAME).read_bytes()
-    )
+    assert (tmp_path / "first" / PHYSICAL_ARCHIVE_FILENAME).read_bytes() == (
+        tmp_path / "second" / PHYSICAL_ARCHIVE_FILENAME
+    ).read_bytes()
 
 
 def test_tampered_output_and_extra_files_fail_closed(tmp_path: Path) -> None:

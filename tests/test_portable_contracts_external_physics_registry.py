@@ -66,11 +66,14 @@ def test_profile_mapping_round_trip_is_exact() -> None:
 def test_plugin_discovery_is_explicit_and_deterministic() -> None:
     plugin = _plugin_profile()
     entry_points = [_EntryPoint("zeta", lambda: plugin)]
-    assert get_backend_profile(
-        plugin.profile_id,
-        include_plugins=True,
-        entry_points=entry_points,
-    ) == plugin
+    assert (
+        get_backend_profile(
+            plugin.profile_id,
+            include_plugins=True,
+            entry_points=entry_points,
+        )
+        == plugin
+    )
     with pytest.raises(ValueError, match="entry_points require"):
         discover_backend_profiles(entry_points=entry_points)
     with pytest.raises(ValueError, match="unknown backend profile"):
