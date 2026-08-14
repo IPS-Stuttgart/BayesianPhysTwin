@@ -21,7 +21,9 @@ manifest CLI creates V2 records and validates both V1 and V2. V2 adds:
 - claim, method-freeze, protocol, split, and baseline identifiers; and
 - a timestamp-independent `evidence_fingerprint`.
 
-A schema change never reinterprets an existing version.
+A schema change never reinterprets an existing version. Valid existing V2
+records retain their exact timezone-aware `created_utc` spelling; the
+hardening below rejects only malformed or coercion-dependent records.
 
 ## Repository state
 
@@ -83,6 +85,11 @@ bpt run manifest create runs/example/manifest.json \
   --output-artifact metrics=metrics.json
 ```
 
+Publication is atomic and no-clobber by default. If the destination already
+exists, creation fails without changing it. `--overwrite` is an explicit
+atomic replacement mechanism for an unsealed local draft; it should not be
+used to replace a sealed evidence record.
+
 `runtime.json` can add numerical execution details Python cannot infer
 portably, such as GPU model, CUDA and driver versions, Warp and Torch builds,
 container-image digest, and deterministic versus atomic spring-force mode.
@@ -90,8 +97,10 @@ It cannot replace Python version, operating system, machine, processor, byte
 order, or the explicitly selected environment captured by the runtime. Runtime,
 configuration, information-boundary, and related-repository JSON reject
 duplicate object keys and non-finite constants rather than relying on parser
-coercion. Environment variables are never collected wholesale; only explicitly
-named canonical identifiers are recorded.
+coercion. After construction or loading, the configuration, information
+boundary, runtime environment, package versions, and every nested JSON container
+are recursively immutable. Environment variables are never collected wholesale;
+only explicitly named canonical identifiers are recorded.
 
 Every V2 manifest binds:
 
@@ -130,9 +139,11 @@ bpt run manifest validate runs/example/manifest.json \
 
 Artifact paths are stored relative to `--artifact-root`. Validation rejects path
 traversal, missing files, changed sizes, changed digests, schema drift, and
-content-address tampering. V2 additionally rejects evidence-fingerprint drift,
-nonexact repository revisions, duplicate repository identities, and malformed
-claim/runtime records.
+content-address tampering. V2 additionally rejects duplicate JSON keys,
+non-literal or coercion-dependent scalar fields, noncanonical artifact paths,
+uppercase or malformed SHA-256 identities, Boolean seeds, evidence-fingerprint
+drift, nonexact repository revisions, duplicate repository identities, and
+malformed claim/runtime records.
 
 A manifest does not turn a run into scientific evidence by itself. Method
 freezing, split integrity, target-data sealing, negative controls, statistical
