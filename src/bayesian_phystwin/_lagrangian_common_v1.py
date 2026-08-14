@@ -89,8 +89,8 @@ _PROFILE_DEFINITIONS: Final[dict[str, _ProfileDefinition]] = {
         ),
     },
 }
-LAGRANGIAN_BACKEND_PROFILES: Final[Mapping[str, _ProfileDefinition]] = (
-    MappingProxyType(_PROFILE_DEFINITIONS)
+LAGRANGIAN_BACKEND_PROFILES: Final[Mapping[str, _ProfileDefinition]] = MappingProxyType(
+    _PROFILE_DEFINITIONS
 )
 
 _RUNTIME_FIELDS: Final = frozenset(
@@ -249,4 +249,3 @@ def describe_lagrangian_backend_profiles() -> list[dict[str, object]]:
         }
         for profile, definition in sorted(LAGRANGIAN_BACKEND_PROFILES.items())
     ]
-

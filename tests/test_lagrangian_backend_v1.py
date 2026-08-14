@@ -181,8 +181,7 @@ def test_profiles_materialize_to_the_shared_physical_contract(
 
 def test_profile_registry_exposes_strain_and_dynamics_candidates() -> None:
     profiles = {
-        item["backend_profile"]: item
-        for item in describe_lagrangian_backend_profiles()
+        item["backend_profile"]: item for item in describe_lagrangian_backend_profiles()
     }
     assert set(profiles) == {JAX_FEM_PROFILE, GENESIS_MPM_PROFILE}
     assert profiles[JAX_FEM_PROFILE]["identity_kind"] == "mesh-node"
@@ -315,9 +314,10 @@ def test_runtime_manifest_source_only_and_validation_edges(tmp_path: Path) -> No
     }
     identity = {key: value for key, value in runtime.items() if key != "runtime_id"}
     runtime["runtime_id"] = content_id(identity)
-    assert validate_lagrangian_runtime_manifest(runtime)["runtime_id"] == runtime[
-        "runtime_id"
-    ]
+    assert (
+        validate_lagrangian_runtime_manifest(runtime)["runtime_id"]
+        == runtime["runtime_id"]
+    )
 
     for field, replacement, message in (
         ("frame_count", True, "frame_count must be a positive integer"),

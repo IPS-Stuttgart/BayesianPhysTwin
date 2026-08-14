@@ -122,9 +122,7 @@ def _validate_runtime_against_arrays(
         "runtime point_count changed",
     )
     _require(runtime.get("query_count") == len(indices), "runtime query_count changed")
-    expected_precision = (
-        "float32" if driven.dtype == np.dtype("float32") else "float64"
-    )
+    expected_precision = "float32" if driven.dtype == np.dtype("float32") else "float64"
     metadata = _mapping(runtime.get("backend_metadata"), name="backend_metadata")
     _require(
         metadata.get("precision") == expected_precision,
