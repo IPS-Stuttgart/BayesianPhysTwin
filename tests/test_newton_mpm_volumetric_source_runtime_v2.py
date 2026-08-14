@@ -239,6 +239,12 @@ def test_volumetric_source_grid_seals_query_readouts(
     assert manifest["information_boundary"]["object_outcome_artifact_read"] is False
     with np.load(output / "candidate-00" / "physical-prediction.npz") as stored:
         assert stored["prediction_m"].shape == (5, 4, 3)
+        np.testing.assert_allclose(
+            stored["action_support"],
+            np.ones(4, dtype=np.float32),
+            atol=2.0e-7,
+            rtol=0.0,
+        )
         np.testing.assert_array_equal(
             stored["frame_zero_points_m"], inputs["frame_zero_points_m"]
         )
@@ -291,6 +297,16 @@ def test_particle_count_mismatch_is_a_retained_technical_failure(
         record["error_message"] == "volumetric material particle count changed"
         for record in manifest["candidates"]
     )
+
+
+def test_volumetric_action_support_rejects_no_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = _import_runtime(monkeypatch)
+    trajectory = np.zeros((3, 4, 3), dtype=np.float32)
+
+    with pytest.raises(RuntimeError, match="no action response"):
+        runtime._normalized_action_support(trajectory, trajectory.copy())
 
 
 def test_volumetric_source_cli_delegates_to_optional_runtime(

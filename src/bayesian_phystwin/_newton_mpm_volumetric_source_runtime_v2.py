@@ -235,6 +235,21 @@ def _same_static_maps(
     )
 
 
+def _normalized_action_support(
+    driven: npt.NDArray[np.float32],
+    zero: npt.NDArray[np.float32],
+) -> npt.NDArray[np.float32]:
+    response = np.linalg.norm(
+        driven.astype(np.float64) - zero.astype(np.float64),
+        axis=2,
+    )
+    maximum_response = np.max(response, axis=0)
+    normalization = float(np.max(maximum_response))
+    if not np.isfinite(normalization) or normalization <= 0.0:
+        raise RuntimeError("volumetric candidate produced no action response")
+    return np.ascontiguousarray(maximum_response / normalization, dtype=np.float32)
+
+
 def run_volumetric_source_grid(
     *,
     protocol_path: str | Path,
@@ -257,7 +272,6 @@ def run_volumetric_source_grid(
     final_predictions: list[npt.NDArray[np.float32]] = []
     grid = cast(list[dict[str, Any]], protocol.value["parameter_grid"])
     points = np.asarray(inputs["frame_zero_points_m"], dtype=np.float32)
-    support = np.asarray(inputs["action_support"], dtype=np.float32)
 
     with wp.ScopedDevice(selected_device):
         for index, parameter_value in enumerate(grid):
@@ -303,6 +317,7 @@ def run_volumetric_source_grid(
                 driven_query = driven.query_trajectory_m
                 zero_query = zero.query_trajectory_m
                 replay_query = replay.query_trajectory_m
+                support = _normalized_action_support(driven_query, zero_query)
                 physical_path = candidate_dir / "physical-prediction.npz"
                 write_deterministic_npz(
                     physical_path,
