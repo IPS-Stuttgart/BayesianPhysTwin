@@ -29,6 +29,8 @@ def _fit(
     candidates: Sequence[StructuredQueryCovarianceCandidateV1],
     *,
     maximum_worst_group_regret: float = 10.0,
+    maximum_condition_number: float = 1.0e8,
+    maximum_width_ratio: float = 4.0,
 ) -> QueryCovarianceCrossFitV1:
     ids, residuals, covariances = _anisotropic_groups()
     return fit_cross_fitted_query_covariance(
@@ -42,9 +44,22 @@ def _fit(
         development_evidence_id="d" * 64,
         reference_candidate_id=candidates[0].candidate_id,
         maximum_worst_group_regret=maximum_worst_group_regret,
+        maximum_condition_number=maximum_condition_number,
+        maximum_width_ratio=maximum_width_ratio,
         hyperparameter_grid_frozen_before_scores=True,
         target_outcomes_used=False,
     )
+
+
+class _BombSequence(Sequence[object]):
+    def __len__(self) -> int:
+        raise AssertionError("outcomes were inspected")
+
+    def __getitem__(self, index: int) -> object:
+        raise AssertionError("outcomes were inspected")
+
+    def __iter__(self) -> Iterator[object]:
+        raise AssertionError("outcomes were inspected")
 
 
 def test_cross_fit_selects_rank_one_excess_and_is_permutation_invariant() -> None:
@@ -58,7 +73,12 @@ def test_cross_fit_selects_rank_one_excess_and_is_permutation_invariant() -> Non
     assert result.selected_mean_group_nll < np.mean(
         result.cross_validated_group_nll[:, result.reference_index]
     )
+    assert result.selected_mean_group_nll_gain > 0.0
     assert result.selected_transform.numerical_low_rank == 1
+    assert result.maximum_low_rank_rank == 1
+    assert result.selected_maximum_condition_number == pytest.approx(4.0)
+    assert result.selected_mean_width_ratio == pytest.approx(np.sqrt(2.5))
+    assert result.selected_worst_group_width_ratio == pytest.approx(np.sqrt(2.5))
     np.testing.assert_allclose(
         result.selected_transform.low_rank_covariance,
         np.diag([3.0, 0.0]),
@@ -106,6 +126,46 @@ def test_worst_group_regret_guard_retains_reference() -> None:
     )
     assert result.selected_candidate_id == raw.candidate_id
     assert result.selected_worst_group_regret == 0.0
+
+
+def test_conditioning_and_width_guards_retain_reference() -> None:
+    raw = StructuredQueryCovarianceCandidateV1()
+    rank_one = StructuredQueryCovarianceCandidateV1(
+        low_rank_rank=1,
+        low_rank_fraction=1.0,
+    )
+
+    condition_guard = _fit(
+        [raw, rank_one],
+        maximum_condition_number=2.0,
+        maximum_width_ratio=4.0,
+    )
+    rank_one_index = tuple(
+        candidate.candidate_id for candidate in condition_guard.candidates
+    ).index(rank_one.candidate_id)
+    assert np.max(
+        condition_guard.cross_validated_group_maximum_condition_number[
+            :, rank_one_index
+        ]
+    ) == pytest.approx(4.0)
+    assert condition_guard.selected_candidate_id == raw.candidate_id
+
+    width_guard = _fit(
+        [raw, rank_one],
+        maximum_condition_number=10.0,
+        maximum_width_ratio=1.5,
+    )
+    rank_one_index = tuple(
+        candidate.candidate_id for candidate in width_guard.candidates
+    ).index(rank_one.candidate_id)
+    width_ratio = (
+        width_guard.cross_validated_group_mean_marginal_std[:, rank_one_index]
+        / width_guard.cross_validated_group_mean_marginal_std[
+            :, width_guard.reference_index
+        ]
+    )
+    assert np.max(width_ratio) > 1.5
+    assert width_guard.selected_candidate_id == raw.candidate_id
 
 
 def test_transform_is_psd_immutable_and_preserves_cross_axis_structure() -> None:
@@ -179,17 +239,6 @@ def test_diagnostics_and_energy_score_are_finite_and_group_balanced() -> None:
     assert score > 0.0
 
 
-class _BombSequence(Sequence[object]):
-    def __len__(self) -> int:
-        raise AssertionError("outcomes were inspected")
-
-    def __getitem__(self, index: int) -> object:
-        raise AssertionError("outcomes were inspected")
-
-    def __iter__(self) -> Iterator[object]:
-        raise AssertionError("outcomes were inspected")
-
-
 def test_information_order_fails_before_outcomes_are_inspected() -> None:
     with pytest.raises(ValueError, match="grid must be frozen"):
         fit_cross_fitted_query_covariance(
@@ -225,7 +274,29 @@ def test_information_order_fails_before_outcomes_are_inspected() -> None:
         )
 
 
-def test_invalid_candidates_and_singular_scoring_fail_closed() -> None:
+def test_independent_group_rank_budget_fails_before_outcome_inspection() -> None:
+    raw = StructuredQueryCovarianceCandidateV1()
+    rank_two = StructuredQueryCovarianceCandidateV1(
+        low_rank_rank=2,
+        low_rank_fraction=1.0,
+    )
+    with pytest.raises(ValueError, match="independent-group rank budget"):
+        fit_cross_fitted_query_covariance(
+            ["a", "b", "c"],
+            _BombSequence(),
+            _BombSequence(),
+            [raw, rank_two],
+            predictor_id=DIGEST,
+            query_set_id="b" * 64,
+            grouping_rule_id="c" * 64,
+            development_evidence_id="d" * 64,
+            reference_candidate_id=raw.candidate_id,
+            hyperparameter_grid_frozen_before_scores=True,
+            target_outcomes_used=False,
+        )
+
+
+def test_invalid_candidates_thresholds_and_singular_scoring_fail_closed() -> None:
     with pytest.raises(ValueError, match="fraction must be zero"):
         StructuredQueryCovarianceCandidateV1(low_rank_fraction=0.5)
     with pytest.raises(ValueError, match="fraction must be positive"):
@@ -234,6 +305,10 @@ def test_invalid_candidates_and_singular_scoring_fail_closed() -> None:
     raw = StructuredQueryCovarianceCandidateV1()
     with pytest.raises(ValueError, match="unique"):
         _fit([raw, raw])
+    with pytest.raises(ValueError, match="maximum_condition_number"):
+        _fit([raw], maximum_condition_number=0.5)
+    with pytest.raises(ValueError, match="maximum_width_ratio"):
+        _fit([raw], maximum_width_ratio=0.5)
 
     transform = StructuredQueryCovarianceTransformV1(
         candidate=raw,
@@ -272,9 +347,17 @@ def test_artifact_replays_selection_and_detects_tampering() -> None:
             development_group_ids=result.development_group_ids,
             candidates=result.candidates,
             cross_validated_group_nll=scores,
+            cross_validated_group_maximum_condition_number=(
+                result.cross_validated_group_maximum_condition_number
+            ),
+            cross_validated_group_mean_marginal_std=(
+                result.cross_validated_group_mean_marginal_std
+            ),
             reference_candidate_id=result.reference_candidate_id,
             selected_candidate_id=result.selected_candidate_id,
             maximum_worst_group_regret=result.maximum_worst_group_regret,
+            maximum_condition_number=result.maximum_condition_number,
+            maximum_width_ratio=result.maximum_width_ratio,
             selected_transform=result.selected_transform,
             hyperparameter_grid_frozen_before_scores=True,
             target_outcomes_used=False,
