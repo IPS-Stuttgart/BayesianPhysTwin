@@ -11,6 +11,7 @@ import numpy as np
 from .contracts.fixed_anchor import FixedBayesianAnchorConfigV1
 
 DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONTRACT_VERSION = 2
+FULL_COVARIANCE_DYNAMIC_ENDPOINT_CONTRACT_VERSION = 3
 EvidencePoolingV2: TypeAlias = Literal["per_track", "object"]
 
 
@@ -361,9 +362,36 @@ def _component_matrices(
     )
 
 
+def _expanded_component_matrices(
+    component: DynamicEndpointComponentV2,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float, float, bool]:
+    """Expand a level/velocity component to a correlated three-axis state."""
+
+    (
+        transition,
+        process,
+        initial,
+        observation_variance,
+        inlier_prior,
+        outlier_multiplier,
+        exact_persistence,
+    ) = _component_matrices(component)
+    identity_3 = np.eye(3, dtype=np.float64)
+    return (
+        np.kron(transition, identity_3),
+        np.kron(process, identity_3),
+        np.kron(initial, identity_3),
+        observation_variance,
+        inlier_prior,
+        outlier_multiplier,
+        exact_persistence,
+    )
+
+
 __all__ = [
     "DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2",
     "DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONTRACT_VERSION",
+    "FULL_COVARIANCE_DYNAMIC_ENDPOINT_CONTRACT_VERSION",
     "DampedTrendEndpointComponentV2",
     "DynamicEndpointComponentV2",
     "DynamicEndpointModelAverageConfigV2",

@@ -13,6 +13,7 @@ import numpy as np
 from ._dynamic_endpoint_components import (
     DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2,
     DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONTRACT_VERSION,
+    FULL_COVARIANCE_DYNAMIC_ENDPOINT_CONTRACT_VERSION,
     DampedTrendEndpointComponentV2,
     DynamicEndpointComponentV2,
     DynamicEndpointModelAverageConfigV2,
@@ -24,11 +25,17 @@ from ._dynamic_endpoint_components import (
 from ._dynamic_endpoint_contract import (
     DynamicEndpointPosteriorV2,
     DynamicEndpointPredictionV2,
+    FullCovarianceDynamicEndpointPosteriorV3,
+    FullCovarianceDynamicEndpointPredictionV3,
 )
 from ._dynamic_endpoint_filter import (
     infer_dynamic_endpoint_model_average as _infer_dynamic_endpoint_model_average,
 )
 from ._dynamic_endpoint_prediction import predict_dynamic_endpoint_model_average
+from ._full_covariance_dynamic_endpoint_v3 import (
+    infer_full_covariance_dynamic_endpoint_model_average,
+    predict_full_covariance_dynamic_endpoint_model_average,
+)
 
 
 def infer_dynamic_endpoint_model_average(
@@ -59,15 +66,20 @@ def infer_dynamic_endpoint_model_average(
 __all__ = [
     "DEFAULT_DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONFIG_V2",
     "DYNAMIC_ENDPOINT_MODEL_AVERAGE_CONTRACT_VERSION",
+    "FULL_COVARIANCE_DYNAMIC_ENDPOINT_CONTRACT_VERSION",
     "DampedTrendEndpointComponentV2",
     "DynamicEndpointComponentV2",
     "DynamicEndpointModelAverageConfigV2",
     "DynamicEndpointNumericalError",
     "DynamicEndpointPosteriorV2",
     "DynamicEndpointPredictionV2",
+    "FullCovarianceDynamicEndpointPosteriorV3",
+    "FullCovarianceDynamicEndpointPredictionV3",
     "EvidencePoolingV2",
     "PersistenceEndpointComponentV2",
     "component_kind",
     "infer_dynamic_endpoint_model_average",
+    "infer_full_covariance_dynamic_endpoint_model_average",
     "predict_dynamic_endpoint_model_average",
+    "predict_full_covariance_dynamic_endpoint_model_average",
 ]
