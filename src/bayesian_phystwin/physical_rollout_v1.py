@@ -145,7 +145,7 @@ def load_physical_rollout_archive(
 
 def _npy_bytes(value: npt.NDArray[Any]) -> bytes:
     output = io.BytesIO()
-    np.lib.format.write_array(  # type: ignore[no-untyped-call]
+    np.lib.format.write_array(
         output,
         np.ascontiguousarray(value),
         version=(2, 0),
