@@ -103,9 +103,7 @@ def _policy(
             "deterministic_reference_belief"
         ].artifact_id,
         mean_candidate_arm_id=beliefs["mean_candidate_belief"].artifact_id,
-        covariance_candidate_arm_id=beliefs[
-            "covariance_candidate_belief"
-        ].artifact_id,
+        covariance_candidate_arm_id=beliefs["covariance_candidate_belief"].artifact_id,
         full_belief_arm_id=beliefs["full_belief"].artifact_id,
         exact_fallback_policy_id=_digest("fallback-policy"),
         reference_covariance_policy_id=_digest("reference-policy"),
