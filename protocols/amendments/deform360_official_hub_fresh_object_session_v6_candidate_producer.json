@@ -1,0 +1,99 @@
+{
+  "amendment_id": "593ca6c08ee5430ad37bc0cc5bb3d1b79d77a049714cb36a8c78696f3c68cfee",
+  "base_nested_repair": {
+    "amendment_id": "4792bcf1c69cf7885edd0c4e1a2ffbb1d7cd5af9032839841057ba329d5f1196",
+    "path": "protocols/amendments/deform360_official_hub_fresh_object_session_v6_nested_source_contract_repair.json"
+  },
+  "base_execution_lock": {
+    "execution_lock_id": "76b74483790ace51d642889be2e3dbb22149e30f7919b5855a18066434e25189",
+    "file_sha256": "429a2c6e745a223ef5cae3c22ab991c09201121943624a9574036fec69b2c33a",
+    "path": "protocols/locks/deform360_official_hub_joint_sparse_source_execution_v5.json"
+  },
+  "base_policy": {
+    "path": "protocols/locks/deform360_official_hub_fresh_object_session_v6.json",
+    "policy_id": "480bcc287a6d8ee1523c2e0d09e31b9cc12557ea3788d62642b84a4f1897671f"
+  },
+  "candidate_producer": {
+    "association": "four-nearest-physical-nodes-soft-distance-and-entropy-v1",
+    "association_candidate_count": 4,
+    "association_entropy_strength": 0.5,
+    "association_maximum_distance_m": 0.04,
+    "association_scale_m": 0.01,
+    "baseline_raw_covariance": "isotropic-0.010-m-standard-deviation-per-node-query",
+    "causal_frame_range_half_open": [
+      0,
+      58
+    ],
+    "d1_component_family": "dynamic-endpoint-model-average-v2-frozen-default-components",
+    "d1_evidence_pooling": "object",
+    "d1_evidence_pooling_scope": "within-target-object-graph-nodes-only",
+    "cross_object_parameters_fitted": false,
+    "nested_fit_roster_role": "eligibility-and-provenance-only",
+    "dense_pixel_treatment": "one-aggregate-per-frame-and-graph-node",
+    "evaluation_frame_range_half_open": [
+      58,
+      76
+    ],
+    "missing_node_policy": "invalid-no-nearest-fill",
+    "point_baselines": "byte-exact-B0-and-B1-from-sealed-upstream-prediction-artifact",
+    "prior_reliability": "source-confidence-times-mask-distance-times-overlap-consistency",
+    "association_probability_combination": "separate-generalized-Bayes-power-after-prior-reliability",
+    "assignment_mixture_spread": "included-in-metric-observation-covariance",
+    "prior_reliability_uses_state_residual": false,
+    "state_innovation_processing": "once-through-dynamic-robust-mixture-without-pre-filter-clipping",
+    "metric_observation_variance": "largest-eigenvalue-m2-added-once-to-robust-mixture-likelihood",
+    "unknown_correlation_fusion": "per-frame-node-covariance-intersection-with-disagreement-spread",
+    "visual_provider_product": "motioncrafter-baseline-disjoint-from-overlapping-window-bundle",
+    "upstream_source_plan_legacy_field_name": "decoded_uniform",
+    "prob4d_pipeline_artifacts_reused": true,
+    "prob4d_decoded_uniform_fusion_used": false,
+    "new_prob4d_inference_run": false,
+    "new_motioncrafter_inference_run": false,
+    "public_vt1_policy": "explicit-unavailable-exact-b0-fallback",
+    "risk_score": "one-minus-mean-clipped-update-count-over-three"
+  },
+  "claim_boundary": "This source-independent amendment makes the already registered D1 candidate executable on the sealed public-source prefix. It adds no candidate, changes no source or target unit, opens no suffix, runs no new MotionCrafter or Prob4D inference, and does not claim source or target improvement.",
+  "information_boundary": {
+    "human_selection_used": false,
+    "motioncrafter_disjoint_baseline_used": true,
+    "prob4d_decoded_uniform_fusion_used": false,
+    "prob4d_pipeline_artifacts_reused": true,
+    "source_outcomes_used": false,
+    "source_suffix_opened": false,
+    "target_outcomes_used": false,
+    "target_payloads_used": false,
+    "v5_confirmation_outcomes_used": false,
+    "v5_confirmation_payloads_used": false
+  },
+  "public_tactile_boundary": {
+    "axis_identity_status": "unavailable-in-release",
+    "unavailable_reason": "released-tactile-robot-axis-identity-unavailable",
+    "visual_evidence_relabelled_as_visuotactile": false,
+    "vt1_covariance_variants_available": false
+  },
+  "raw_suffix_scoring": {
+    "common_query_roster": "B0-visible-graph-node-indices-per-reserved-view-frame",
+    "candidate_dependent_missing_queries_allowed": false,
+    "group_nonconformity": "maximum-query-mahalanobis-norm",
+    "mean_log_determinant": "arithmetic-mean-over-common-three-dimensional-queries",
+    "mean_raw_mahalanobis_squared": "arithmetic-mean-over-common-three-dimensional-queries",
+    "mean_raw_radius": "arithmetic-mean-square-root-maximum-covariance-eigenvalue",
+    "point_loss": "registered-reserved-view-symmetric-chamfer-mm",
+    "probabilistic_residual": "candidate-graph-node-minus-nearest-reserved-view-target-point",
+    "reserved_views_used_for_prediction": false,
+    "suffix_access_before_100_record_barrier": false
+  },
+  "schema": "bayesian-phystwin.deform360-fresh-object-session-v6-candidate-producer-amendment",
+  "schema_version": 1,
+  "upstream": {
+    "execution_receipt_file_sha256": "5f8e8668a056cd21dbe1bfb6bf17ae8fdba201861ca32677b99ba704758e8255",
+    "execution_receipt_id": "a408e44eaecf9e63311a2f1a6f511f130e586031e8a0e8e795d58fa5696e3026",
+    "prediction_batch_file_sha256": "5b40c7d0a71a841c937875a2fafc8d224d23204f367ab092f7f8ff92883bfd87",
+    "prediction_batch_id": "5b1cdf3f047b52665650dcbf56d8ec205ced8788e2cdd0e528793a9ece9387f0",
+    "prediction_receipt_file_sha256": "584597aa3025444acd334fb50c8acee26abe0af44c4dee7537aa37be37155803",
+    "prediction_receipt_id": "04a5a8b71603b66850e35122405bc24c5de1e766c14cc2b58974f1ea97fb49ef",
+    "revision": "913909596b71ac6ad717835ce7a87ae01e42c5ab",
+    "source_plan_file_sha256": "08863166df11033f4a968c94a4cb5bd02869175ce3bf1c1859c8ac49be371991",
+    "source_plan_id": "d9b9e4df9d020e8ae076f407f61d5e1f328c68d2f4fe4d8e4ad1688d2d253100"
+  }
+}

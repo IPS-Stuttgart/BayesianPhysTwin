@@ -886,7 +886,7 @@ def _tournament_input(
     }
 
 
-def assemble_deform360_v6_source_evidence(
+def _assemble_deform360_v6_source_evidence_legacy(
     *,
     prediction_batch: Mapping[str, Any],
     outcomes: Sequence[Mapping[str, Any]],
@@ -941,6 +941,20 @@ def assemble_deform360_v6_source_evidence(
         "information_boundary": dict(_EVIDENCE_BOUNDARY),
     }
     return {**identity, "evidence_id": content_id(identity)}
+
+
+def assemble_deform360_v6_source_evidence(
+    *,
+    prediction_batch: Mapping[str, Any],
+    outcomes: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Refuse assembly through the retired precomputed source adapter."""
+
+    del prediction_batch, outcomes
+    raise RuntimeError(
+        "the legacy Deform360 v6 source assembler is retired because it consumes "
+        "precomputed guard and interval decisions; use the nested v6.1 contract"
+    )
 
 
 def validate_deform360_v6_source_evidence(value: object) -> dict[str, Any]:
@@ -1012,10 +1026,10 @@ def _records_for_variant(
     ]
 
 
-def evaluate_deform360_v6_source_gate(
+def _evaluate_deform360_v6_source_gate_legacy(
     evidence: Mapping[str, Any], policy: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Apply v6 stability and stratum checks without target authorization."""
+    """Retained only to reproduce tests of the retired precomputed adapter."""
 
     validated = validate_deform360_v6_source_evidence(evidence)
     tournament_input = _mapping(
@@ -1149,6 +1163,18 @@ def evaluate_deform360_v6_source_gate(
         ),
     }
     return {"result_id": content_id(descriptor), **plain_json(descriptor)}
+
+
+def evaluate_deform360_v6_source_gate(
+    evidence: Mapping[str, Any], policy: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Refuse progression through the outcome-dependent legacy source adapter."""
+
+    del evidence, policy
+    raise RuntimeError(
+        "the legacy Deform360 v6 source evaluator is retired because it consumes "
+        "precomputed guard and interval decisions; use the nested v6.1 contract"
+    )
 
 
 def validate_deform360_v6_source_result(value: object) -> dict[str, Any]:

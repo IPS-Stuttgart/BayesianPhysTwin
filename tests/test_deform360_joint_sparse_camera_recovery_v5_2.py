@@ -95,6 +95,12 @@ def test_metric_camera_ranking_is_deterministic_and_target_free() -> None:
     assert ranked == ("camera-b", "camera-c", "camera-a")
 
 
+def test_metric_camera_support_public_validator_preserves_canonical_record() -> None:
+    value = _support("camera-a", clusters=8, frames=1, points=100)
+
+    assert module.validate_deform360_metric_camera_support_v5_2(value) == value
+
+
 def test_metric_camera_ranking_rejects_duplicate_camera() -> None:
     value = _support("camera-a", clusters=8, frames=1, points=100)
 
@@ -1174,6 +1180,40 @@ def test_recovery_source_plan_uses_two_view_admission_and_exact_fallback() -> No
         )
         == plan
     )
+
+
+def test_reuse_source_plan_uses_distinct_lineage_and_same_exact_fallback() -> None:
+    lock = load_deform360_joint_sparse_source_execution_lock_v5(LOCK_PATH)
+    objects, audit = _attempted_objects_and_audit()
+    artifact_names = source_module_v5_2.CAMERA_REUSE_ARTIFACT_NAMES
+    lineage = {
+        "artifact_ids": {name: "6" * 64 for name in artifact_names},
+        "source_artifacts": {name: "7" * 64 for name in artifact_names},
+        "policy": dict(module.CAMERA_REUSE_POLICY),
+        "base_prediction_batch_preserved": True,
+    }
+    lineage["artifact_ids"]["final_camera_audit"] = audit["audit_id"]
+
+    plan = source_module_v5_2.build_deform360_joint_sparse_source_prediction_plan_v5_2(
+        lock=lock,
+        implementation_revision="8" * 40,
+        attempted_objects=objects,
+        final_camera_audit=audit,
+        camera_recovery=lineage,
+    )
+
+    assert plan["camera_recovery"]["policy"] == module.CAMERA_REUSE_POLICY
+    assert plan["objects"][0]["visual_windows"] == []
+    first_audit = audit["objects"][0]
+    assert plan["objects"][0]["camera_admission"] == {
+        "attempted_camera_ids": first_audit["attempted_camera_ids"],
+        "passing_camera_ids": first_audit["passing_camera_ids"],
+        "failed_camera_ids": first_audit["failed_camera_ids"],
+        "minimum_passing_camera_count": 2,
+        "admitted": False,
+        "exact_physical_fallback_required": True,
+        "final_camera_audit_id": audit["audit_id"],
+    }
 
 
 def test_recovery_source_plan_rejects_audit_archive_digest_mismatch() -> None:

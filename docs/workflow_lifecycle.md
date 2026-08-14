@@ -84,8 +84,39 @@ python tools/quality/check_workflow_policy.py \
 ```
 
 The scheduled branch-lifecycle workflow publishes this inventory alongside its
-branch report. The JSON includes every workflow; the Markdown summary caps the
-legacy temporary-looking table to keep the Actions summary usable.
+branch report. The JSON includes every checked-in workflow; the Markdown summary
+caps the legacy temporary-looking table to keep the Actions summary usable.
+
+## Registry entries versus checked-in files
+
+GitHub retains Actions workflow registry entries and historical runs after the
+corresponding YAML file is removed from the default branch. The value returned as
+`total_count` by the Actions workflows API is therefore a registry-history count,
+not the number of workflow definitions currently present in the repository.
+
+Audit both surfaces explicitly:
+
+```bash
+GITHUB_TOKEN="<read-token>" \
+python tools/maintenance/workflow_registry_audit.py \
+  --repository IPS-Stuttgart/BayesianPhysTwin \
+  --repository-root . \
+  --output-json workflow-registry-inventory.json \
+  --output-markdown workflow-registry-report.md
+```
+
+The audit classifies each registry entry as checked in, orphaned and active,
+orphaned and disabled, or orphaned with another state. It also reports workflow
+files that are present in the checkout but not yet visible in the registry. The
+inventory is content-addressed independently of its generation timestamp.
+
+The scheduled branch-lifecycle audit runs this comparison with read-only
+`actions` and `contents` permissions. It never disables a workflow. An orphaned
+active registry entry may be disabled only through a separate audited maintainer
+action after confirming that its YAML is absent and that any relevant run,
+artifact, revision, and evidence identity have been preserved. Disabling the
+registry entry does not delete historical runs or turn them into scientific
+evidence.
 
 ## Cleanup order
 
@@ -97,7 +128,9 @@ legacy temporary-looking table to keep the Actions summary usable.
    the workflow filename.
 4. Delete only workflows whose operational and reproducibility dependencies are
    resolved.
-5. Classify the small permanent control plane explicitly and retain the audit
+5. Use the registry audit to distinguish deleted YAML from still-active GitHub
+   registry entries, then disable only reviewed orphaned entries.
+6. Classify the small permanent control plane explicitly and retain the audit
    artifact with the maintenance record.
 
 Do not reinterpret workflow consolidation as a change to an estimator, dataset,

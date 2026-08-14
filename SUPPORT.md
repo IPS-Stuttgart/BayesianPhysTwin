@@ -33,7 +33,7 @@ the installed machine-readable resource
 The current package lines are:
 
 - `bayesian-phystwin>=0.4,<0.5`;
-- `prob4d>=0.4,<0.5`; and
+- `prob4d>=0.4,<0.6`; and
 - `causal4d>=0.5,<0.6`.
 
 These ranges express development interoperability only. They are not experiment
@@ -64,17 +64,27 @@ boundaries together:
 - the terminal complete-stream official-Hub provider version remains a
   `313/324` support result with `11` retained support negatives, no covariance
   fit, and no confirmation access; and
-- the separate registered v6 route still requires 100 sealed source prediction
-  records and a source-positive authorization before its twelve disjoint
-  confirmation object-sessions may be opened.
+- the separate `deform360_covariance_only_independent_validation_v1` route still
+  requires 100 sealed source prediction records and a source-positive
+  authorization before its twelve disjoint confirmation object-sessions may be
+  opened.
 
 A package installation, compatible provider manifest, green CI run, or successful
 source-only adapter test does not establish unseen-object transfer. The
-registered v6 candidate remains exact caller-owned `last_residual` mean identity
-with `independent_endpoint_v1` covariance, horizon scales `[8, 16, 16]`, and
-exact registered comparator/physical fallback on rejection. No target-side
-retuning, replacement, denominator change, donor substitution, endpoint change,
-or action-family restriction is supported.
+registered covariance-only candidate remains exact caller-owned `last_residual`
+mean identity with `independent_endpoint_v1` covariance, horizon scales
+`[8, 16, 16]`, and exact registered comparator/physical fallback on rejection.
+No target-side retuning, replacement, denominator change, donor substitution,
+endpoint change, or action-family restriction is supported.
+
+The distinct Deform360 fresh-object-session v6/v6.1 study is a different
+protocol. It uses ten source object-sessions to select one challenger,
+covariance interpretation, interval calibration, and guard, and it reserves
+sixteen previously untouched target object-sessions: eight sheet and eight
+volumetric. V6.1 repairs the nested source evaluation before any challenger
+suffix or fresh-target payload is opened. Its candidate, target count, decision
+family, and claim scope must not be substituted for the twelve-object
+covariance-only protocol above.
 
 The mandatory release wording is maintained in
 [`docs/phystwin_release_claim_v1.md`](docs/phystwin_release_claim_v1.md).

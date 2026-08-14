@@ -8,7 +8,8 @@ ratchets quality without requiring an all-at-once cleanup:
 * every added or modified package module is type-checked;
 * mature public contracts are type-checked on every run;
 * stable modules with pre-existing type debt become blocking when modified;
-* a smaller, mature subset is checked with ``mypy --strict``; and
+* a smaller, mature subset is checked with ``mypy --strict``;
+* public-module lifecycle classifications remain fail-closed; and
 * newly added workflows satisfy lifecycle and immutable-action policy.
 """
 
@@ -204,6 +205,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     _run(
         tuple(workflow_policy_command),
         label="Workflow lifecycle and immutable-action policy",
+    )
+    _run(
+        (
+            sys.executable,
+            "tools/quality/check_public_module_lifecycle.py",
+        ),
+        label="Public module lifecycle policy",
     )
 
     changed_package_modules = tuple(

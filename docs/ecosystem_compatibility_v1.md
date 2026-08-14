@@ -24,7 +24,7 @@ resolver input, and content digests.
 | Component | Distribution range | Python | Required numerical dependencies |
 | --- | --- | --- | --- |
 | BayesianPhysTwin | `bayesian-phystwin>=0.4,<0.5` | `>=3.10` | `numpy>=1.23` |
-| Prob4D | `prob4d>=0.4,<0.5` | `>=3.10` | `numpy>=1.24` |
+| Prob4D | `prob4d>=0.4,<0.6` | `>=3.10` | `numpy>=1.24` |
 | Causal4D | `causal4d>=0.5,<0.6` | `>=3.10` | `numpy>=1.24`, `packaging>=23`, `scipy>=1.10` |
 
 These are development ranges. They do not replace exact source revisions in a
@@ -159,3 +159,7 @@ A matching table row establishes only contract-level interoperability:
 - compatibility does not establish unseen-object transfer, calibrated raw
   covariance, Causal4D physical evidence, deployment authorization, or state of
   the art.
+
+## Prob4D 0.5 cleanup boundary
+
+Prob4D 0.5 is admitted for the current provider-v2 interface and for immutable provider-v1 artifact inspection. It does not restore provider-v1 estimator or export execution: exact execution reproduction remains pinned to Prob4D 0.4.1. Claim-bearing runs continue to require exact revisions, wheel hashes, provider manifests, contract-corpus identities, and artifact digests.

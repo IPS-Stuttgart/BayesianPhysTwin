@@ -7,6 +7,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ## [Unreleased]
 
+- Expanded the installed ecosystem compatibility table to admit Prob4D 0.5 for provider-v2 and historical provider-v1 artifact inspection, while pinning full provider-v1 execution to Prob4D 0.4.1.
+- Added an opt-in, content-addressed MatPhys spring-proposal backend adapter
+  with disjoint prefix gating, exact archive bindings, atomic publication, and
+  byte-identical fallback to the incumbent PhysTwin/Warp prediction.
+
 ## [0.4.0] - 2026-08-12
 
 ### Added

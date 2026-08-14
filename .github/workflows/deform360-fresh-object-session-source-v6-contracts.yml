@@ -5,23 +5,93 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deform360-fresh-object-session-source-v6-contracts.yml"
+      - ".github/workflows/deform360-v61-candidate-producer.yml"
+      - ".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml"
       - ".github/quality/test-suites.json"
       - "docs/deform360_fresh_object_session_source_v6.md"
+      - "docs/deform360_fresh_object_session_source_v6_1.md"
+      - "docs/deform360_fresh_object_session_candidate_v6_1.md"
+      - "docs/deform360_fresh_object_session_source_scoring_v6_1.md"
+      - "docs/deform360_v61_source_scorer_cudnn_supply_repair_2026-08-13.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_nested_source_contract_repair.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_candidate_producer.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json"
+      - "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt"
       - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
+      - "scripts/science/run_deform360_fresh_object_session_source_v6_1.py"
+      - "scripts/science/run_deform360_fresh_object_session_candidate_v6_1.py"
+      - "scripts/ci/run_deform360_v61_candidate_producer.sh"
+      - "scripts/ci/run_deform360_v61_source_scorer.sh"
+      - "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py"
+      - "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py"
+      - "src/bayesian_phystwin/_dynamic_endpoint_filter.py"
+      - "src/bayesian_phystwin/dynamic_endpoint_model_average.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py"
       - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_candidate_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_candidate_runner_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py"
       - "tests/test_deform360_fresh_object_session_source_v6.py"
+      - "tests/test_deform360_fresh_object_session_source_v6_1.py"
+      - "tests/test_deform360_fresh_object_session_candidate_v6_1.py"
+      - "tests/test_deform360_fresh_object_session_candidate_runner_v6_1.py"
+      - "tests/test_deform360_v61_candidate_producer_workflow.py"
+      - "tests/test_deform360_fresh_object_session_source_scorer_v6_1.py"
+      - "tests/test_deform360_v61_source_scorer_workflow.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter_edges.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py"
+      - "tests/test_deform360_joint_sparse_public_inputs_v5.py"
       - "tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/deform360-fresh-object-session-source-v6-contracts.yml"
+      - ".github/workflows/deform360-v61-candidate-producer.yml"
+      - ".github/workflows/deform360-v61-source-scorer-cudnn-supply.yml"
       - ".github/quality/test-suites.json"
       - "docs/deform360_fresh_object_session_source_v6.md"
+      - "docs/deform360_fresh_object_session_source_v6_1.md"
+      - "docs/deform360_fresh_object_session_candidate_v6_1.md"
+      - "docs/deform360_fresh_object_session_source_scoring_v6_1.md"
+      - "docs/deform360_v61_source_scorer_cudnn_supply_repair_2026-08-13.md"
       - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_source_covariance.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_nested_source_contract_repair.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_candidate_producer.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json"
+      - "protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json"
+      - "requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt"
       - "scripts/science/run_deform360_fresh_object_session_source_v6.py"
+      - "scripts/science/run_deform360_fresh_object_session_source_v6_1.py"
+      - "scripts/science/run_deform360_fresh_object_session_candidate_v6_1.py"
+      - "scripts/ci/run_deform360_v61_candidate_producer.sh"
+      - "scripts/ci/run_deform360_v61_source_scorer.sh"
+      - "scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py"
+      - "scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py"
+      - "src/bayesian_phystwin/_dynamic_endpoint_filter.py"
+      - "src/bayesian_phystwin/dynamic_endpoint_model_average.py"
+      - "src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py"
       - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_candidate_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_candidate_runner_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py"
+      - "src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py"
       - "tests/test_deform360_fresh_object_session_source_v6.py"
+      - "tests/test_deform360_fresh_object_session_source_v6_1.py"
+      - "tests/test_deform360_fresh_object_session_candidate_v6_1.py"
+      - "tests/test_deform360_fresh_object_session_candidate_runner_v6_1.py"
+      - "tests/test_deform360_v61_candidate_producer_workflow.py"
+      - "tests/test_deform360_fresh_object_session_source_scorer_v6_1.py"
+      - "tests/test_deform360_v61_source_scorer_workflow.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_filter_edges.py"
+      - "tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py"
+      - "tests/test_deform360_joint_sparse_public_inputs_v5.py"
       - "tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py"
 
 permissions:
@@ -65,19 +135,65 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install -e ".[dev]" "build>=1.2"
+          python -m pip install -e ".[dev,graph,vision]" "build>=1.2"
           files=(
+            src/bayesian_phystwin/_dynamic_endpoint_filter.py
+            src/bayesian_phystwin/dynamic_endpoint_model_average.py
+            src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py
+            src/bayesian_phystwin/deform360_fresh_object_session_candidate_v6_1.py
+            src/bayesian_phystwin/deform360_fresh_object_session_candidate_runner_v6_1.py
+            src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py
             src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py
+            src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py
+            scripts/science/run_deform360_fresh_object_session_candidate_v6_1.py
+            scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py
             scripts/science/run_deform360_fresh_object_session_source_v6.py
+            scripts/science/run_deform360_fresh_object_session_source_v6_1.py
+            scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py
+            tests/test_deform360_fresh_object_session_candidate_v6_1.py
+            tests/test_deform360_fresh_object_session_candidate_runner_v6_1.py
             tests/test_deform360_fresh_object_session_source_v6.py
+            tests/test_deform360_fresh_object_session_source_v6_1.py
+            tests/test_deform360_v61_candidate_producer_workflow.py
+            tests/test_deform360_fresh_object_session_source_scorer_v6_1.py
+            tests/test_deform360_v61_source_scorer_workflow.py
+            tests/test_horizon_conditioned_discrepancy_dynamic_filter.py
+            tests/test_horizon_conditioned_discrepancy_dynamic_filter_edges.py
+            tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py
+            tests/test_deform360_joint_sparse_public_inputs_v5.py
             tests/test_horizon_conditioned_discrepancy_deform360_v6_source.py
           )
           python -m ruff check "${files[@]}"
           python -m ruff format --check "${files[@]}"
           python -m py_compile "${files[@]}"
+          python -m mypy \
+            src/bayesian_phystwin/_dynamic_endpoint_filter.py \
+            src/bayesian_phystwin/dynamic_endpoint_model_average.py \
+            src/bayesian_phystwin/deform360_joint_sparse_public_inputs_v5.py \
+            src/bayesian_phystwin/deform360_fresh_object_session_candidate_v6_1.py \
+            src/bayesian_phystwin/deform360_fresh_object_session_candidate_runner_v6_1.py \
+            src/bayesian_phystwin/deform360_fresh_object_session_public_inputs_v6_1.py \
+            src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py \
+            src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py \
+            scripts/science/run_deform360_fresh_object_session_candidate_v6_1.py \
+            scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py \
+            scripts/science/run_deform360_fresh_object_session_source_v6_1.py
+          bash -n scripts/ci/run_deform360_v61_candidate_producer.sh
+          bash -n scripts/ci/run_deform360_v61_source_scorer.sh
           python -m pytest -q -p no:cacheprovider \
+            tests/test_deform360_fresh_object_session_candidate_v6_1.py \
+            tests/test_deform360_fresh_object_session_candidate_runner_v6_1.py \
             tests/test_deform360_fresh_object_session_source_v6.py \
+            tests/test_deform360_fresh_object_session_source_v6_1.py \
             tests/test_deform360_fresh_object_session_v6_protocol.py \
+            tests/test_deform360_v61_candidate_producer_workflow.py \
+            tests/test_deform360_fresh_object_session_source_scorer_v6_1.py \
+            tests/test_deform360_v61_source_scorer_workflow.py \
+            tests/test_horizon_conditioned_discrepancy_dynamic_filter.py \
+            tests/test_horizon_conditioned_discrepancy_dynamic_filter_edges.py \
+            tests/test_horizon_conditioned_discrepancy_dynamic_prediction.py \
+            tests/test_deform360_joint_sparse_public_inputs_v5.py \
             tests/test_pull_request_workflow_integrity.py
           python - <<'PY'
           import hashlib
@@ -93,6 +209,24 @@ jobs:
               (
                   "protocols/amendments/"
                   "deform360_official_hub_fresh_object_session_v6_source_covariance.json",
+                  "amendment_id",
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_fresh_object_session_v6_"
+                  "nested_source_contract_repair.json",
+                  "amendment_id",
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_fresh_object_session_v6_"
+                  "candidate_producer.json",
+                  "amendment_id",
+              ),
+              (
+                  "protocols/amendments/"
+                  "deform360_official_hub_fresh_object_session_v6_1_"
+                  "source_scoring.json",
                   "amendment_id",
               ),
           ):
@@ -116,13 +250,55 @@ jobs:
           listing="$(tar -tzf "${archive}")"
           grep -Fq '/docs/deform360_fresh_object_session_source_v6.md' \
             <<<"${listing}"
+          grep -Fq '/docs/deform360_fresh_object_session_source_v6_1.md' \
+            <<<"${listing}"
+          grep -Fq '/docs/deform360_fresh_object_session_candidate_v6_1.md' \
+            <<<"${listing}"
+          grep -Fq '/docs/deform360_fresh_object_session_source_scoring_v6_1.md' \
+            <<<"${listing}"
+          grep -Fq '/docs/deform360_v61_source_scorer_cudnn_supply_repair_2026-08-13.md' \
+            <<<"${listing}"
           amendment_path='/protocols/amendments/'
           amendment_path+='deform360_official_hub_fresh_object_session_'
           amendment_path+='v6_source_covariance.json'
           grep -Fq "${amendment_path}" <<<"${listing}"
+          repair_path='/protocols/amendments/'
+          repair_path+='deform360_official_hub_fresh_object_session_'
+          repair_path+='v6_nested_source_contract_repair.json'
+          grep -Fq "${repair_path}" <<<"${listing}"
+          candidate_path='/protocols/amendments/'
+          candidate_path+='deform360_official_hub_fresh_object_session_'
+          candidate_path+='v6_candidate_producer.json'
+          grep -Fq "${candidate_path}" <<<"${listing}"
+          grep -Fq '/scripts/ci/run_deform360_v61_candidate_producer.sh' \
+            <<<"${listing}"
+          grep -Fq '/scripts/ci/run_deform360_v61_source_scorer.sh' \
+            <<<"${listing}"
+          grep -Fq '/scripts/remote/process_deform360_fresh_object_session_source_endpoint_v6_1.py' \
+            <<<"${listing}"
+          grep -Fq '/scripts/science/run_deform360_fresh_object_session_source_scorer_v6_1.py' \
+            <<<"${listing}"
+          grep -Fq '/protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_source_scoring.json' \
+            <<<"${listing}"
+          grep -Fq '/protocols/amendments/deform360_official_hub_fresh_object_session_v6_1_cudnn_supply_runtime.json' \
+            <<<"${listing}"
+          grep -Fq '/requirements/locks/deform360-v61-source-scorer-pt24cu121-py310.txt' \
+            <<<"${listing}"
+          grep -Fq '/scripts/science/run_deform360_fresh_object_session_candidate_v6_1.py' \
+            <<<"${listing}"
           grep -Fq '/scripts/science/run_deform360_fresh_object_session_source_v6.py' \
             <<<"${listing}"
+          grep -Fq '/scripts/science/run_deform360_fresh_object_session_source_v6_1.py' \
+            <<<"${listing}"
           grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_source_v6.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_source_v6_1.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_source_scorer_v6_1.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_candidate_v6_1.py' \
+            <<<"${listing}"
+          grep -Fq '/src/bayesian_phystwin/deform360_fresh_object_session_candidate_runner_v6_1.py' \
             <<<"${listing}"
           rm -rf build dist ./*.egg-info src/*.egg-info
           git diff --exit-code

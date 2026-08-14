@@ -251,6 +251,52 @@ def test_allows_audited_boolean_coercion_suppression(tmp_path: Path) -> None:
     assert violations == ()
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        "import numpy as np\n\ndef solve(matrix: object) -> object:\n"
+        "    return np.linalg.inv(matrix)\n",
+        "import numpy.linalg as npl\n\ndef solve(matrix: object) -> object:\n"
+        "    return npl.inv(matrix)\n",
+        "from numpy import linalg as la\n\ndef solve(matrix: object) -> object:\n"
+        "    return la.inv(matrix)\n",
+        "from numpy.linalg import inv as inverse\n\n"
+        "def solve(matrix: object) -> object:\n"
+        "    return inverse(matrix)\n",
+    ],
+)
+def test_rejects_direct_numpy_inverse_in_changed_package_modules(
+    tmp_path: Path,
+    source: str,
+) -> None:
+    violations = _scan_source(tmp_path, source)
+
+    assert [violation.code for violation in violations] == ["BPTQ003"]
+    assert "conditioning" in violations[0].message
+
+
+def test_allows_explicit_solve_and_audited_inverse_suppression(
+    tmp_path: Path,
+) -> None:
+    allowed = _scan_source(
+        tmp_path / "allowed",
+        "import numpy as np\n\n"
+        "def solve(matrix: object, right: object) -> object:\n"
+        "    return np.linalg.solve(matrix, right)\n",
+    )
+    suppressed = _scan_source(
+        tmp_path / "suppressed",
+        "import numpy as np\n\n"
+        "def reproduce(matrix: object) -> object:\n"
+        "    return np.linalg.inv(\n"
+        "        matrix\n"
+        "    )  # bpt-quality: allow BPTQ003 -- frozen tagged reproduction\n",
+    )
+
+    assert allowed == ()
+    assert suppressed == ()
+
+
 def test_fast_preflight_reports_boundary_pattern_before_ruff(tmp_path: Path) -> None:
     repository = tmp_path / "repository"
     _initialize_repository(repository)
